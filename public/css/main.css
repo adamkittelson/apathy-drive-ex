@@ -13,3 +13,15 @@
 code {
   font-size: 80%;
 }
+
+#scroll_container {
+  position: absolute;
+  overflow: hidden;
+  top: 0px;
+  bottom: 58px;
+}
+
+#scroll {
+  overflow: hidden;
+  height: 100%;
+}
