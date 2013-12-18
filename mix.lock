@@ -2,6 +2,8 @@
   "cowlib": {:git, "git://github.com/extend/cowlib.git", "63298e8e160031a70efff86a1acde7e7db1fcda6", [{:ref, "0.4.0"}]},
   "ecto": {:git, "git://github.com/elixir-lang/ecto.git", "d8999d42038b22fdcba5923f7fafd538f4540ec8", []},
   "exjson": {:git, "git://github.com/guedes/exjson.git", "809c951b5644f1506fbe664f1c489f15eea94f47", []},
+  "hackney": {:git, "git://github.com/benoitc/hackney.git", "8d695267012f9de7451c4bc3b557811a9b3c29b4", []},
+  "mimetypes": {:git, "https://github.com/spawngrid/mimetypes.git", "47d37a977a7d633199822bf6b08353007483d00f", [{:ref, "master"}]},
   "plug": {:git, "git://github.com/elixir-lang/plug.git", "be2a400accefcb2fa1dd23e9466723718dd6acfb", []},
   "poolboy": {:git, "git://github.com/devinus/poolboy.git", "c2c939b51aba06790ca51fa78b14c254a6ea977d", []},
   "postgrex": {:git, "git://github.com/ericmj/postgrex.git", "218db4af386045984c20eabe5771447abd5bd096", []},
