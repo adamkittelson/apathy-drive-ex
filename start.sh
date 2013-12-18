@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 if [ ! -f deps ]; then
-  mix deps.get && mix compile
+  grunt coffee && mix deps.get && mix compile --force
 fi
 
 case $1 in
