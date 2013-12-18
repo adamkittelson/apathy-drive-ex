@@ -1,0 +1,11 @@
+---
+project: apathy-drive-ex
+development_branch: master
+staging_branch: false
+qa_branch: false
+release_branch: production
+merge_strategy: merge
+remote: origin
+backup_remote: false
+confirm_staging: false
+confirm_review: false
