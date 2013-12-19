@@ -4,3 +4,4 @@ erl_crash.dump
 /tmp
 _build
 /logs
+.zenflow-log
