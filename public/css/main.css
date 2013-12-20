@@ -1,3 +1,48 @@
+.dark-cyan {
+  color: teal; }
+
+.cyan {
+  color: cyan; }
+
+.dark-red {
+  color: maroon; }
+
+.red {
+  color: red; }
+
+.dark-magenta {
+  color: purple; }
+
+.magenta {
+  color: magenta; }
+
+.white {
+  color: white; }
+
+.dark-yellow {
+  color: olive; }
+
+.yellow {
+  color: yellow; }
+
+.dark-blue {
+  color: #0000aa; }
+
+.blue {
+  color: blue; }
+
+.dark-green {
+  color: green; }
+
+.green {
+  color: lime; }
+
+.grey {
+  color: silver; }
+
+.dark-grey {
+  color: gray; }
+
 #wrap {
   background-color: black; }
 
@@ -33,7 +78,6 @@ code {
 #scroll_container {
   position: absolute;
   overflow: hidden;
-  top: 210px;
   bottom: 35px;
   width: 620px;
   padding-left: 0; }
@@ -46,4 +90,9 @@ code {
   width: 620px;
   background-color: black;
   border: none;
-  color: silver; }
+  color: silver;
+  outline: none; }
+
+#prompt {
+  color: silver;
+  margin-right: 5px; }

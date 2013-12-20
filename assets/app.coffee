@@ -1,4 +1,9 @@
 $ ->
+  adjustScrollTop = ->
+    $("#scroll_container").css("top", $("#room").height() + $(".navbar").height() + 10 + "px")
+
+  adjustScrollTop()
+
   webSocket = new WebSocket('ws://localhost:3000/_ws')
 
   webSocket.onopen = (event) ->
@@ -6,7 +11,7 @@ $ ->
 
   webSocket.onmessage = (event) ->
     console.log "Received message #{event.data}"
-    addToScroll("#scroll", "<p>Message Received: #{event.data}</p>")
+    addToScroll("#scroll", "<div>Message Received: #{event.data}</div>")
 
   webSocket.onclose = (event) ->
     console.log "Connection closed!"
@@ -19,5 +24,5 @@ $ ->
     if event.which is 13 # enter key
       command = $(event.target).val()
       $(event.target).select()
-      addToScroll('#scroll', "<p>Message Sent: #{command}</p>")
+      addToScroll('#scroll', "<div>Message Sent: #{command}</div>")
       webSocket.send JSON.stringify({ command: { text: command }})

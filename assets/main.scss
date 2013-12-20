@@ -1,18 +1,33 @@
 $dark-cyan: #008080;
+.dark-cyan { color: $dark-cyan; }
 $cyan: #0ff;
+.cyan { color: $cyan; }
 $dark-red: #800000;
+.dark-red { color: $dark-red; }
 $red: #F00;
+.red { color: $red; }
 $dark-magenta: #800080;
+.dark-magenta { color: $dark-magenta; }
 $magenta: #f0f;
+.magenta { color: $magenta; }
 $white: #fff;
+.white { color: $white; }
 $dark-yellow: #808000;
+.dark-yellow { color: $dark-yellow; }
 $yellow: #ff0;
+.yellow { color: $yellow; }
 $dark-blue: #0000AA;
+.dark-blue { color: $dark-blue; }
 $blue: #0000FF;
+.blue { color: $blue; }
 $dark-green: #008000;
+.dark-green { color: $dark-green; }
 $green: #00FF00;
+.green { color: $green; }
 $grey: #c0c0c0;
+.grey { color: $grey; }
 $dark-grey: #808080;
+.dark-grey { color: $dark-grey; }
 
 #wrap {
   background-color: black;
@@ -53,7 +68,6 @@ code {
 #scroll_container {
   position: absolute;
   overflow: hidden;
-  top: 210px;
   bottom: 35px;
   width: 620px;
   padding-left: 0;
@@ -69,4 +83,10 @@ code {
   background-color: black;
   border: none;
   color: $grey;
+  outline: none;
+}
+
+#prompt {
+  color: $grey;
+  margin-right: 5px;
 }

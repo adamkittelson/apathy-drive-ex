@@ -1,14 +1,18 @@
 (function() {
 
   $(function() {
-    var addToScroll, webSocket;
+    var addToScroll, adjustScrollTop, webSocket;
+    adjustScrollTop = function() {
+      return $("#scroll_container").css("top", $("#room").height() + $(".navbar").height() + 10 + "px");
+    };
+    adjustScrollTop();
     webSocket = new WebSocket('ws://localhost:3000/_ws');
     webSocket.onopen = function(event) {
       return console.log("Connected!");
     };
     webSocket.onmessage = function(event) {
       console.log("Received message " + event.data);
-      return addToScroll("#scroll", "<p>Message Received: " + event.data + "</p>");
+      return addToScroll("#scroll", "<div>Message Received: " + event.data + "</div>");
     };
     webSocket.onclose = function(event) {
       return console.log("Connection closed!");
@@ -22,7 +26,7 @@
       if (event.which === 13) {
         command = $(event.target).val();
         $(event.target).select();
-        addToScroll('#scroll', "<p>Message Sent: " + command + "</p>");
+        addToScroll('#scroll', "<div>Message Sent: " + command + "</div>");
         return webSocket.send(JSON.stringify({
           command: {
             text: command
