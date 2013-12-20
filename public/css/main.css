@@ -1,27 +1,49 @@
+#wrap {
+  background-color: black; }
+
+#main {
+  font-family: monospace;
+  font-size: medium;
+  color: silver; }
+
+#room {
+  width: 620px; }
+  #room .title {
+    color: cyan; }
+  #room .description {
+    text-indent: 33px; }
+  #room .items {
+    color: teal; }
+  #room .exits {
+    color: green; }
+
 #wrap > .container {
-  padding: 60px 15px 0;
-}
+  padding: 60px 15px 0; }
+
 .container .text-muted {
-  margin: 20px 0;
-}
+  margin: 20px 0; }
 
 #footer > .container {
   padding-left: 15px;
-  padding-right: 15px;
-}
+  padding-right: 15px; }
 
 code {
-  font-size: 80%;
-}
+  font-size: 80%; }
 
 #scroll_container {
   position: absolute;
   overflow: hidden;
-  top: 0px;
-  bottom: 58px;
-}
+  top: 210px;
+  bottom: 35px;
+  width: 620px;
+  padding-left: 0; }
 
 #scroll {
   overflow: hidden;
-  height: 100%;
-}
+  height: 100%; }
+
+#command {
+  width: 620px;
+  background-color: black;
+  border: none;
+  color: silver; }

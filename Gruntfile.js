@@ -5,12 +5,21 @@ module.exports = function(grunt) {
     coffee: {
       complie: {
         files: {
-          'public/js/app.js': [ 'public/coffee/*.coffee']
+          'public/js/app.js': 'assets/app.coffee'
+        }
+      }
+    },
+
+    sass: {
+      dist: {
+        files: {
+          'public/css/main.css': 'assets/main.scss'
         }
       }
     }
-    
+
   });
-  
+
   grunt.loadNpmTasks('grunt-contrib-coffee');
+  grunt.loadNpmTasks('grunt-contrib-sass');
 };
