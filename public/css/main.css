@@ -63,10 +63,10 @@
     color: green; }
 
 #wrap > .container {
-  padding: 60px 15px 0; }
+  padding: 5px 15px 0; }
 
-.container .text-muted {
-  margin: 20px 0; }
+.container {
+  width: auto; }
 
 #footer > .container {
   padding-left: 15px;

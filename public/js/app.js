@@ -3,7 +3,7 @@
   $(function() {
     var addToScroll, adjustScrollTop, webSocket;
     adjustScrollTop = function() {
-      return $("#scroll_container").css("top", $("#room").height() + $(".navbar").height() + 10 + "px");
+      return $("#scroll_container").css("top", $("#room").height() + 10 + "px");
     };
     adjustScrollTop();
     webSocket = new WebSocket('ws://localhost:3000/_ws');

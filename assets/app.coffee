@@ -1,6 +1,6 @@
 $ ->
   adjustScrollTop = ->
-    $("#scroll_container").css("top", $("#room").height() + $(".navbar").height() + 10 + "px")
+    $("#scroll_container").css("top", $("#room").height() + 10 + "px")
 
   adjustScrollTop()
 
