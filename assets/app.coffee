@@ -1,4 +1,10 @@
 $ ->
+
+  $('body').on 'click', (event) ->
+    $('#command').focus()
+
+  $('#command').focus()
+
   adjustScrollTop = ->
     $("#scroll_container").css("top", $("#room").height() + 10 + "px")
 
@@ -23,6 +29,6 @@ $ ->
   $('#command').on 'keyup', (event) ->
     if event.which is 13 # enter key
       command = $(event.target).val()
-      $(event.target).select()
+      $(event.target).val("")
       addToScroll('#scroll', "<div>Message Sent: #{command}</div>")
       webSocket.send JSON.stringify({ command: { text: command }})

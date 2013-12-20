@@ -2,6 +2,10 @@
 
   $(function() {
     var addToScroll, adjustScrollTop, webSocket;
+    $('body').on('click', function(event) {
+      return $('#command').focus();
+    });
+    $('#command').focus();
     adjustScrollTop = function() {
       return $("#scroll_container").css("top", $("#room").height() + 10 + "px");
     };
@@ -25,7 +29,7 @@
       var command;
       if (event.which === 13) {
         command = $(event.target).val();
-        $(event.target).select();
+        $(event.target).val("");
         addToScroll('#scroll', "<div>Message Sent: " + command + "</div>");
         return webSocket.send(JSON.stringify({
           command: {

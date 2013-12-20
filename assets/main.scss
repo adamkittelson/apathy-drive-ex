@@ -29,6 +29,10 @@ $grey: #c0c0c0;
 $dark-grey: #808080;
 .dark-grey { color: $dark-grey; }
 
+body {
+  overflow: hidden;
+}
+
 #wrap {
   background-color: black;
 }
@@ -75,6 +79,11 @@ code {
 #scroll {
   overflow: hidden;
   height: 100%;
+  white-space: pre-wrap;
+}
+
+#scroll:hover {
+  overflow-y: scroll;
 }
 
 #command {
