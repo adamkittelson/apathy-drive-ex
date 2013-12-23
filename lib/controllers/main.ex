@@ -9,6 +9,13 @@ defmodule ApathyDrive.Main do
 
   def websocket_init(pid, conn) do
     IO.puts "Connected! pid: #{inspect pid}"
+    room_pid = :global.whereis_name(:"82325")
+    room_info = ["room", [
+      name: ApathyDrive.NameComponent.get_name(room_pid),
+      description: ApathyDrive.DescriptionComponent.get_description(room_pid)]]
+    message = JSON.generate(room_info)
+    IO.puts message
+    pid <- message
   end
 
   def websocket_message(pid, message, conn) do
@@ -17,7 +24,7 @@ defmodule ApathyDrive.Main do
     {_label, text} = message
     case event do
       "command" ->
-        pid <- "You said #{text}."
+        pid <- JSON.generate(["scroll", "You said #{text}."])
     end
   end
 

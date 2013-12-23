@@ -1,11 +1,15 @@
 (function() {
 
   $(function() {
-    var addToScroll, adjustScrollTop, webSocket;
+    var addToScroll, adjustScrollTop, updateRoom, webSocket;
     $('body').on('click', function(event) {
       return $('#command').focus();
     });
     $('#command').focus();
+    updateRoom = function(data) {
+      $('#room .title').html(data['name']);
+      return $('#room .description').html(data['description']);
+    };
     adjustScrollTop = function() {
       return $("#scroll_container").css("top", $("#room").height() + 10 + "px");
     };
@@ -15,8 +19,14 @@
       return console.log("Connected!");
     };
     webSocket.onmessage = function(event) {
-      console.log("Received message " + event.data);
-      return addToScroll("#scroll", "<div>Message Received: " + event.data + "</div>");
+      var message;
+      message = JSON.parse(event.data);
+      switch (message[0]) {
+        case "room":
+          return updateRoom(message[1]);
+        default:
+          return addToScroll("#scroll", "<div>Message Received: " + message[1] + "</div>");
+      }
     };
     webSocket.onclose = function(event) {
       return console.log("Connection closed!");

@@ -5,6 +5,10 @@ $ ->
 
   $('#command').focus()
 
+  updateRoom = (data) ->
+    $('#room .title').html(data['name'])
+    $('#room .description').html(data['description'])
+
   adjustScrollTop = ->
     $("#scroll_container").css("top", $("#room").height() + 10 + "px")
 
@@ -16,8 +20,10 @@ $ ->
     console.log "Connected!"
 
   webSocket.onmessage = (event) ->
-    console.log "Received message #{event.data}"
-    addToScroll("#scroll", "<div>Message Received: #{event.data}</div>")
+    message = JSON.parse(event.data)
+    switch message[0]
+      when "room" then updateRoom(message[1])
+      else addToScroll("#scroll", "<div>Message Received: #{message[1]}</div>")
 
   webSocket.onclose = (event) ->
     console.log "Connection closed!"
