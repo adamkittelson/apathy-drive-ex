@@ -3,7 +3,7 @@ defmodule ApathyDrive.Mixfile do
 
   def project do
     [
-      app: :"apathy-drive-ex",
+      app: :apathy_drive,
       version: "0.0.1",
       deps: deps(Mix.env)
     ]
