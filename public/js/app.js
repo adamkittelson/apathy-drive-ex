@@ -7,8 +7,10 @@
     });
     $('#command').focus();
     updateRoom = function(data) {
+      console.log(data);
       $('#room .title').html(data['name']);
-      return $('#room .description').html(data['description']);
+      $('#room .description').html(data['description']);
+      return $('#room .exits').html("Obvious exits: " + (data['exits'].join(', ') || 'NONE'));
     };
     adjustScrollTop = function() {
       return $("#scroll_container").css("top", $("#room").height() + 10 + "px");

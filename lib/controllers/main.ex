@@ -12,7 +12,11 @@ defmodule ApathyDrive.Main do
     room_pid = :global.whereis_name(:"82325")
     room_info = ["room", [
       name: ApathyDrive.NameComponent.get_name(room_pid),
-      description: ApathyDrive.DescriptionComponent.get_description(room_pid)]]
+      description: ApathyDrive.DescriptionComponent.get_description(room_pid),
+      exits: Enum.map(ApathyDrive.ExitsComponent.get_exits(room_pid), fn (exit_pid) ->
+        ApathyDrive.DirectionComponent.get_direction(exit_pid)
+      end) ]]
+      
     message = JSON.generate(room_info)
     IO.puts message
     pid <- message
