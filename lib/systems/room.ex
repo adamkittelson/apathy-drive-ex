@@ -1,7 +1,6 @@
 defmodule Systems.Room do
   def display_current_room(player) do
-    current_room = get_current_room(player)
-    Players.send_message player, ["room", room_data(current_room)]
+    Players.send_message player, ["room", get_current_room(player) |> room_data]
   end
 
   def room_data(room) do
