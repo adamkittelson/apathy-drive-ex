@@ -1,9 +1,9 @@
-defmodule ApathyDrive.NameComponent do
+defmodule Components.Name do
   use GenEvent.Behaviour
 
   ### Public API
   def get_name(entity) do
-    :gen_event.call(entity, ApathyDrive.NameComponent, :get_name)
+    :gen_event.call(entity, Components.Name, :get_name)
   end
 
   ### GenEvent API

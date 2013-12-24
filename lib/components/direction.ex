@@ -1,9 +1,9 @@
-defmodule ApathyDrive.DirectionComponent do
+defmodule Components.Direction do
   use GenEvent.Behaviour
 
   ### Public API
   def get_direction(entity) do
-    :gen_event.call(entity, ApathyDrive.DirectionComponent, :get_direction)
+    :gen_event.call(entity, Components.Direction, :get_direction)
   end
 
   ### GenEvent API

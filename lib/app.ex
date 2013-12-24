@@ -3,7 +3,7 @@ defmodule ApathyDrive do
   require Weber.Templates.ViewsLoader
 
   def start(_type, _args) do
-    ApathyDrive.Repo.start_link
+    Repo.start_link
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)
     # compile all views

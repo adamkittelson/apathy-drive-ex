@@ -24,7 +24,7 @@ defmodule ApathyDrive.Entity do
 
   def load! do
     query = from e in ApathyDrive.Entity, limit: 500000, select: e
-    Enum.each ApathyDrive.Repo.all(query), fn(entity) ->
+    Enum.each Repo.all(query), fn(entity) ->
       ApathyDrive.Entity.load!(entity)
     end
   end
@@ -34,7 +34,7 @@ defmodule ApathyDrive.Entity do
     components = JSON.parse(entity_record.components)
     Enum.each components, fn(component) ->
       {component_name, component_values} = component
-      ApathyDrive.Entity.add_component(entity, :"Elixir.ApathyDrive.#{component_name}Component", component_values)
+      ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
     end
     :global.register_name(:"#{entity_record.id}", entity)
   end

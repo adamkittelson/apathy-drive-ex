@@ -11,12 +11,12 @@ defmodule ApathyDrive.Main do
     IO.puts "Connected! pid: #{inspect pid}"
     room_pid = :global.whereis_name(:"82325")
     room_info = ["room", [
-      name: ApathyDrive.NameComponent.get_name(room_pid),
-      description: ApathyDrive.DescriptionComponent.get_description(room_pid),
-      exits: Enum.map(ApathyDrive.ExitsComponent.get_exits(room_pid), fn (exit_pid) ->
-        ApathyDrive.DirectionComponent.get_direction(exit_pid)
+      name: Components.Name.get_name(room_pid),
+      description: Components.Description.get_description(room_pid),
+      exits: Enum.map(Components.Exits.get_exits(room_pid), fn (exit_pid) ->
+        Components.Direction.get_direction(exit_pid)
       end) ]]
-      
+
     message = JSON.generate(room_info)
     IO.puts message
     pid <- message

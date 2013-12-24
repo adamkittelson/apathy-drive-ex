@@ -1,9 +1,9 @@
-defmodule ApathyDrive.DescriptionComponent do
+defmodule Components.Description do
   use GenEvent.Behaviour
 
   ### Public API
   def get_description(entity) do
-    :gen_event.call(entity, ApathyDrive.DescriptionComponent, :get_description)
+    :gen_event.call(entity, Components.Description, :get_description)
   end
 
   ### GenEvent API

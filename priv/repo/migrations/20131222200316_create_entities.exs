@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Repo.Migrations.CreateEntities do
+defmodule Repo.Migrations.CreateEntities do
   use Ecto.Migration
 
   def up do

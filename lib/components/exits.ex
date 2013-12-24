@@ -1,9 +1,9 @@
-defmodule ApathyDrive.ExitsComponent do
+defmodule Components.Exits do
   use GenEvent.Behaviour
 
   ### Public API
   def get_exits(entity) do
-    :gen_event.call(entity, ApathyDrive.ExitsComponent, :get_exits)
+    :gen_event.call(entity, Components.Exits, :get_exits)
   end
 
   ### GenEvent API

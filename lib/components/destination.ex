@@ -1,9 +1,9 @@
-defmodule ApathyDrive.DestinationComponent do
+defmodule Components.Destination do
   use GenEvent.Behaviour
 
   ### Public API
   def get_destination(entity) do
-    :gen_event.call(entity, ApathyDrive.DestinationComponent, :get_destination)
+    :gen_event.call(entity, Components.Destination, :get_destination)
   end
 
   ### GenEvent API
