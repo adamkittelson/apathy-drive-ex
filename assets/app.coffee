@@ -10,6 +10,7 @@ $ ->
     $('#room .title').html(data['name'])
     $('#room .description').html(data['description'])
     $('#room .exits').html("Obvious exits: #{data['exits'].join(', ') || 'NONE'}")
+    adjustScrollTop()
 
   adjustScrollTop = ->
     $("#scroll_container").css("top", $("#room").height() + 10 + "px")

@@ -10,7 +10,8 @@
       console.log(data);
       $('#room .title').html(data['name']);
       $('#room .description').html(data['description']);
-      return $('#room .exits').html("Obvious exits: " + (data['exits'].join(', ') || 'NONE'));
+      $('#room .exits').html("Obvious exits: " + (data['exits'].join(', ') || 'NONE'));
+      return adjustScrollTop();
     };
     adjustScrollTop = function() {
       return $("#scroll_container").css("top", $("#room").height() + 10 + "px");
