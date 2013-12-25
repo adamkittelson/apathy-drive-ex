@@ -3,6 +3,10 @@ defmodule ApathyDrive do
   require Weber.Templates.ViewsLoader
 
   def start(_type, _args) do
+
+    :crypto.start
+    :bcrypt.start
+
     Players.start_link
     Repo.start_link
     # Set resources

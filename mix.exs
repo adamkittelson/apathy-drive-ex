@@ -19,7 +19,7 @@ defmodule ApathyDrive.Mixfile do
   defp deps(:prod) do
     [
       { :weber,  github: "0xAX/weber" },
-      { :bcrypt, github: "smarkets/erlang-bcrypt"}
+      { :bcrypt, github: "Feuerlabs/erlang-bcrypt"}
     ]
   end
 

@@ -1,8 +1,6 @@
 defmodule Players do
   use GenServer.Behaviour
 
-  import Weber.Session
-
   # Public API
   def connected(connection) do
     IO.puts "Connected! pid: #{inspect connection}"
