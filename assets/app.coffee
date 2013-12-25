@@ -40,4 +40,4 @@ $ ->
       command = $(event.target).val()
       $(event.target).val("")
       addToScroll('#scroll', "<div><span class='dark-yellow'>#{command}</span></div>")
-      webSocket.send JSON.stringify({ command: { text: command }})
+      webSocket.send JSON.stringify({ command: command })

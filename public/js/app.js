@@ -45,9 +45,7 @@
         $(event.target).val("");
         addToScroll('#scroll', "<div><span class='dark-yellow'>" + command + "</span></div>");
         return webSocket.send(JSON.stringify({
-          command: {
-            text: command
-          }
+          command: command
         }));
       }
     });

@@ -12,13 +12,12 @@ defmodule ApathyDrive.Main do
   end
 
   def websocket_message(pid, message, conn) do
-    [{event, [message]}] = JSON.parse(message)
+    [{event, message}] = JSON.parse(message)
     IO.puts "Message! Pid: #{inspect pid}, Event: #{inspect event} Message: #{inspect message}"
-    {_label, text} = message
     case event do
       "command" ->
         player = Players.find_by_connection(pid)
-        Systems.Command.execute(player, text)
+        Systems.Command.execute(player, message)
     end
   end
 
