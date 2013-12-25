@@ -18,7 +18,7 @@ defmodule ApathyDrive.Main do
     case event do
       "command" ->
         player = Players.find_by_connection(pid)
-        Players.send_message(player, ["scroll", "You said #{text}."])
+        Systems.Command.execute(player, text)
     end
   end
 

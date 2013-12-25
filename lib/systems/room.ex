@@ -5,15 +5,47 @@ defmodule Systems.Room do
 
   def room_data(room) do
     [
-      name: Components.Name.get_name(room),
-      description: Components.Description.get_description(room),
-      exits: Enum.map(Components.Exits.get_exits(room), fn (exit_pid) ->
-        Components.Direction.get_direction(exit_pid)
-      end)
+      name: name(room),
+      description: description(room),
+      exits: exit_directions(room)
     ]
   end
 
   def get_current_room(player) do
     Components.CurrentRoom.get_current_room(player)
   end
+
+  def exit_directions(room) do
+    exits(room) |> Enum.map fn (exit_pid) ->
+      Components.Direction.get_direction(exit_pid)
+    end
+  end
+
+  def exits(room) do
+    Components.Exits.get_exits(room)
+  end
+
+  def description(room) do
+    Components.Description.get_description(room)
+  end
+
+  def name(room) do
+    Components.Name.get_name(room)
+  end
+
+  def move(player, direction) do
+    destination = player |> get_current_room
+                         |> get_exit_by_direction(direction)
+                         |> Components.Destination.get_destination
+
+    ApathyDrive.Entity.notify(player, {:set_current_room, destination})
+    display_current_room(player)
+  end
+
+  def get_exit_by_direction(room, direction) do
+    exits(room) |> Enum.find fn (room_exit) ->
+      Components.Direction.get_direction(room_exit) == direction
+    end
+  end
+
 end

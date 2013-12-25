@@ -14,4 +14,9 @@ defmodule Components.CurrentRoom do
   def handle_call(:get_current_room, room_pid) do
     {:ok, room_pid, room_pid}
   end
+
+  def handle_event({:set_current_room, new_room}, room) do
+    {:ok, new_room}
+  end
+
 end
