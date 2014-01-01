@@ -36,10 +36,12 @@ defmodule Players do
 
     ApathyDrive.Entity.add_component(player, Components.Connection, connection)
 
-    room_to_start_in = :global.whereis_name(:"82325")
-    ApathyDrive.Entity.add_component(player, Components.CurrentRoom, room_to_start_in)
+    #room_to_start_in = :global.whereis_name(:"82325")
+    ApathyDrive.Entity.add_component(player, Components.CurrentRoom, nil)
 
-    Systems.Room.display_current_room(player)
+    send_message(player, ["scroll", "Please enter your email address to log in or 'new' to create a new account."])
+
+    #Systems.Room.display_current_room(player)
 
     {:noreply, [player | players] }
   end

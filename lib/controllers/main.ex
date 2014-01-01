@@ -17,7 +17,7 @@ defmodule ApathyDrive.Main do
     case event do
       "command" ->
         player = Players.find_by_connection(pid)
-        Systems.Command.execute(player, message)
+        Systems.Command.execute(player, String.split(message))
     end
   end
 
