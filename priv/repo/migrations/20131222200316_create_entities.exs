@@ -6,6 +6,6 @@ defmodule Repo.Migrations.CreateEntities do
   end
 
   def down do
-    "DROP TABLE"
+    "DROP TABLE entities"
   end
 end
