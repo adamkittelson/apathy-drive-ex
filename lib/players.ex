@@ -3,13 +3,11 @@ defmodule Players do
 
   # Public API
   def connected(connection) do
-    IO.puts "Connected! pid: #{inspect connection}"
     :gen_server.cast(:players, {:connected, connection})
   end
 
   def disconnected(connection) do
     player = find_by_connection(connection)
-    IO.puts "Player Disconnected! Pid: #{inspect connection}"
     :gen_server.cast(:players, {:disconnected, player})
   end
 
@@ -37,11 +35,13 @@ defmodule Players do
     ApathyDrive.Entity.add_component(player, Components.Connection, connection)
 
     #room_to_start_in = :global.whereis_name(:"82325")
+    #Systems.Room.display_current_room(player)
+
     ApathyDrive.Entity.add_component(player, Components.CurrentRoom, nil)
 
-    send_message(player, ["scroll", "Please enter your email address to log in or 'new' to create a new account."])
+    ApathyDrive.Entity.add_component(player, Components.Login, nil)
 
-    #Systems.Room.display_current_room(player)
+    Components.Login.intro(player)
 
     {:noreply, [player | players] }
   end
@@ -60,7 +60,6 @@ defmodule Players do
     player = Enum.find players, fn (player) ->
       Components.Connection.get_connection(player) == connection
     end
-    IO.puts "Found player #{inspect player} by connection #{inspect connection}"
     {:reply, player, players}
   end
 
