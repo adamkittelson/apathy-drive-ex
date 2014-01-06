@@ -28,7 +28,7 @@ defmodule Systems.Command do
         case command do
           "new" ->
             Components.Login.create_account_request_email(player)
-          other ->
+          _other ->
             Components.Login.sign_in_get_account(player, command)
         end
       "create_account_request_email" ->
@@ -39,7 +39,7 @@ defmodule Systems.Command do
         Components.Login.create_account_finish(player, command)
       "sign_in_check_password" ->
         Components.Login.sign_in_check_password(player, command)
-      other ->
+      _other ->
         execute_command(player, command, arguments)
     end
   end
