@@ -44,7 +44,8 @@
   color: gray; }
 
 .underline {
-  border-bottom: 1px solid green; }
+  border-bottom: 1px solid green;
+  padding-bottom: 3px; }
 
 body {
   overflow: hidden; }
