@@ -32,6 +32,7 @@ $dark-grey: #808080;
 .underline {
   border-bottom: 1px solid $dark-green;
   padding-bottom: 3px;
+  margin-bottom: 20px;
 }
 body {
   overflow: hidden;
@@ -85,6 +86,7 @@ code {
   overflow: hidden;
   height: 100%;
   white-space: pre-wrap;
+  p { margin-bottom: 10px;}
 }
 
 #scroll:hover {

@@ -8,35 +8,43 @@ defmodule Components.Login do
 
   def intro(player) do
     ApathyDrive.Entity.notify(player, {:intro})
-    Players.send_message(player, ["scroll", "Please enter your email address to log in or 'new' to create a new account."])
+    Players.send_message(player, ["scroll", "<p>Please enter your email address to log in or 'new' to create a new account.</p>"])
   end
 
   def create_account_request_email(player) do
     ApathyDrive.Entity.notify(player, :create_account_request_email)
-    Players.send_message(player, ["scroll", "Please enter the email address you would like to use."])
+    Players.send_message(player, ["scroll", "<p>Please enter the email address you would like to use.</p>"])
   end
 
   def sign_in_get_account(player, email) do
     ApathyDrive.Entity.notify(player, {:sign_in_set_email, email})
-    Players.send_message(player, ["scroll", "Please enter your password."])
+    Players.send_message(player, ["scroll", "<p>Please enter your password.</p>"])
   end
 
   def sign_in_check_password(player, password) do
     email = :gen_event.call(player, Components.Login, :get_email)
     account = ApathyDrive.Account.find(email, password)
     if account do
-      Players.send_message(player, ["scroll", "Welcome back!"])
+      Players.send_message(player, ["scroll", "<p>Welcome back!</p>"])
       display_character_select(player, account)
     else
-      Players.send_message(player, ["scroll", "Invalid username/password!"])
+      Players.send_message(player, ["scroll", "<p>Invalid username/password!</p>"])
       intro(player)
     end
   end
 
   def display_character_select(player, account) do
     ApathyDrive.Entity.notify(player, {:sign_in_set_account, account})
-    Players.send_message(player, ["scroll", "<span class='dark-yellow underline'>Characters</span>"])
-    Players.send_message(player, ["scroll", "<br><span class='dark-red'>N</span> <span class='dark-green'>:</span> <span class='dark-yellow'>New Character</span>"])
+    Players.send_message(player, ["scroll", "<p><span class='dark-yellow underline'>Characters</span></p>"])
+    Players.send_message(player, ["scroll", "<p><span class='dark-red'>N</span> <span class='dark-green'>:</span> <span class='dark-yellow'>New Character</span></p>"])
+  end
+
+  def display_race_select(player) do
+    Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a race from the following list:</span></p>"])
+    Enum.sort(Races.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
+    |> Enum.each fn(race) ->
+      Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(race)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(race)}</p>"])
+    end
   end
 
   def create_account_set_email(player, email) do
@@ -45,18 +53,18 @@ defmodule Components.Login do
       sign_in_get_account(player, email)
     else
       ApathyDrive.Entity.notify(player, {:create_account_set_email, email})
-      Players.send_message(player, ["scroll", "Please enter the password you would like to use."])
+      Players.send_message(player, ["scroll", "<p>Please enter the password you would like to use.</p>"])
     end
   end
 
   def create_account_set_password(player, password) do
     ApathyDrive.Entity.notify(player, {:create_account_set_password, password})
-    Players.send_message(player, ["scroll", "Please confirm your new password."])
+    Players.send_message(player, ["scroll", "<p>Please confirm your new password.</p>"])
   end
 
   def create_account_finish(player, password) do
     if password_confirmed?(player, password) do
-      Players.send_message(player, ["scroll", "Welcome!"])
+      Players.send_message(player, ["scroll", "<p>Welcome!</p>"])
       account = ApathyDrive.Account.new(email:     :gen_event.call(player, Components.Login, :get_email),
                                         password:  "#{:gen_event.call(player, Components.Login, :get_password)}",
                                         salt:      "#{:gen_event.call(player, Components.Login, :get_salt)}"
@@ -64,7 +72,7 @@ defmodule Components.Login do
       Repo.create account
       display_character_select(player, account)
     else
-      Players.send_message(player, ["scroll", "Passwords did not match."])
+      Players.send_message(player, ["scroll", "<p>Passwords did not match.</p>"])
       email = :gen_event.call(player, Components.Login, :get_email)
       create_account_set_email(player, email)
     end

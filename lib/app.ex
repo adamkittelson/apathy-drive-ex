@@ -8,6 +8,7 @@ defmodule ApathyDrive do
     :bcrypt.start
 
     Players.start_link
+    Races.start_link
     Repo.start_link
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)

@@ -36,6 +36,12 @@ defmodule ApathyDrive.Entity do
       {component_name, component_values} = component
       ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
     end
+    if Enum.member?(:gen_event.which_handlers(entity), Components.Type) do
+      case Components.Type.get_type(entity) do
+        "race" ->
+          Races.add(entity)
+      end
+    end
     :global.register_name(:"#{entity_record.id}", entity)
   end
 

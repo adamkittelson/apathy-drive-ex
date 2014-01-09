@@ -26,7 +26,7 @@ $ ->
     message = JSON.parse(event.data)
     switch message[0]
       when "room" then updateRoom(message[1])
-      else addToScroll("#scroll", "<div>#{message[1]}</div>")
+      else addToScroll("#scroll", message[1])
 
   webSocket.onclose = (event) ->
     console.log "Connection closed!"
@@ -39,5 +39,5 @@ $ ->
     if event.which is 13 # enter key
       command = $(event.target).val()
       $(event.target).val("")
-      addToScroll('#scroll', "<div><span class='dark-yellow'>#{command}</span></div>")
+      addToScroll('#scroll', "<p><span class='dark-yellow'>#{command}</span></p>")
       webSocket.send JSON.stringify({ command: command })

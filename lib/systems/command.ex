@@ -39,6 +39,15 @@ defmodule Systems.Command do
         Components.Login.create_account_finish(player, command)
       "sign_in_check_password" ->
         Components.Login.sign_in_check_password(player, command)
+      "character_select" ->
+        case command do
+          "N" ->
+            Components.Login.display_race_select(player)
+          "n" ->
+            Components.Login.display_race_select(player)
+          _other ->
+            Components.Login.select_character(player)
+        end
       _other ->
         execute_command(player, command, arguments)
     end
@@ -56,10 +65,10 @@ defmodule Systems.Command do
       if exit_directions && (Enum.member? exit_directions, command) do
         Systems.Room.move(player, command)
       else
-        Players.send_message(player, ["scroll", "There is no exit in that direction."])
+        Players.send_message(player, ["scroll", "<p>There is no exit in that direction.</p>"])
       end
     else
-      Players.send_message(player, ["scroll", "What?"])
+      Players.send_message(player, ["scroll", "<p>What?</p>"])
     end
   end
 

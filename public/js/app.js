@@ -28,7 +28,7 @@
         case "room":
           return updateRoom(message[1]);
         default:
-          return addToScroll("#scroll", "<div>" + message[1] + "</div>");
+          return addToScroll("#scroll", message[1]);
       }
     };
     webSocket.onclose = function(event) {
@@ -43,7 +43,7 @@
       if (event.which === 13) {
         command = $(event.target).val();
         $(event.target).val("");
-        addToScroll('#scroll', "<div><span class='dark-yellow'>" + command + "</span></div>");
+        addToScroll('#scroll', "<p><span class='dark-yellow'>" + command + "</span></p>");
         return webSocket.send(JSON.stringify({
           command: command
         }));

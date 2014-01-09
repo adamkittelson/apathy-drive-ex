@@ -45,7 +45,8 @@
 
 .underline {
   border-bottom: 1px solid green;
-  padding-bottom: 3px; }
+  padding-bottom: 3px;
+  margin-bottom: 20px; }
 
 body {
   overflow: hidden; }
@@ -94,6 +95,8 @@ code {
   overflow: hidden;
   height: 100%;
   white-space: pre-wrap; }
+  #scroll p {
+    margin-bottom: 10px; }
 
 #scroll:hover {
   overflow-y: scroll; }
