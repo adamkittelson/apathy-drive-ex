@@ -41,10 +41,11 @@ body {
   background-color: black;
 }
 
-#main {
-  font-family: monospace;
-  font-size: medium;
+#main, #prompt {
+  font-family: "Andale Mono", "Courier New", Monospace;
+  font-size: 11px;
   color: $grey;
+  line-height: 4px;
 }
 
 #room {

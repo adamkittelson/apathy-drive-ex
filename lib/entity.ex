@@ -23,7 +23,7 @@ defmodule ApathyDrive.Entity do
   end
 
   def load! do
-    query = from e in ApathyDrive.Entity, limit: 500000, select: e
+    query = from e in ApathyDrive.Entity, limit: 500000, order_by: e.id, select: e
     Enum.each Repo.all(query), fn(entity) ->
       ApathyDrive.Entity.load!(entity)
     end

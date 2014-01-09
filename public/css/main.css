@@ -53,10 +53,11 @@ body {
 #wrap {
   background-color: black; }
 
-#main {
-  font-family: monospace;
-  font-size: medium;
-  color: silver; }
+#main, #prompt {
+  font-family: "Andale Mono", "Courier New", Monospace;
+  font-size: 11px;
+  color: silver;
+  line-height: 4px; }
 
 #room {
   width: 620px; }
