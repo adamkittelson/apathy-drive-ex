@@ -36,7 +36,7 @@ defmodule Components.Login do
   def display_character_select(player, account) do
     ApathyDrive.Entity.notify(player, {:sign_in_set_account, account})
     Players.send_message(player, ["scroll", "<p><span class='dark-yellow underline'>Characters</span></p>"])
-    Players.send_message(player, ["scroll", "<p><span class='dark-red'>N</span> <span class='dark-green'>:</span> <span class='dark-yellow'>New Character</span></p>"])
+    Players.send_message(player, ["scroll", "\n\n\n\n<p><span class='dark-red'>N</span> <span class='dark-green'>:</span> <span class='dark-yellow'>New Character</span></p>"])
   end
 
   def display_race_select(player) do
@@ -45,6 +45,7 @@ defmodule Components.Login do
     |> Enum.each fn(race) ->
       Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(race)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(race)}</p>"])
     end
+    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your race [ ? for help ] :</span></p>"])
   end
 
   def create_account_set_email(player, email) do

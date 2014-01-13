@@ -106,7 +106,8 @@ code {
   background-color: black;
   border: none;
   color: silver;
-  outline: none; }
+  outline: none;
+  font-size: 11px; }
 
 #prompt {
   color: silver;
