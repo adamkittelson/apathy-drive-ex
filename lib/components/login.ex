@@ -40,12 +40,13 @@ defmodule Components.Login do
   end
 
   def display_race_select(player) do
+    ApathyDrive.Entity.notify(player, :create_character_request_race)
     Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a race from the following list:</span></p>"])
     Enum.sort(Races.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
     |> Enum.each fn(race) ->
       Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(race)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(race)}</p>"])
     end
-    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your race [ ? for help ] :</span></p>"])
+    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your race [ 'help &lt;race&gt;' for more info ] :</span></p>"])
   end
 
   def create_account_set_email(player, email) do
@@ -120,6 +121,10 @@ defmodule Components.Login do
 
   def handle_event({:sign_in_set_account, account}, _state) do
     {:ok, [step: "character_select", account: account]}
+  end
+
+  def handle_event(:create_character_request_race, state) do
+    {:ok, [step: "create_character_request_race", account: state[:account]]}
   end
 
   def handle_event(:create_account_request_email, _state) do

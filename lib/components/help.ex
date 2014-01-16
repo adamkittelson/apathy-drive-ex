@@ -10,6 +10,10 @@ defmodule Components.Help do
     :gen_event.call(entity, Components.Help, :get_keywords)
   end
 
+  def get_name(entity) do
+    :gen_event.call(entity, Components.Help, :get_name)
+  end
+
 
   ### GenEvent API
   def init(state) do
@@ -22,6 +26,10 @@ defmodule Components.Help do
 
   def handle_call(:get_keywords, state) do
     {:ok, state["keywords"], state}
+  end
+
+  def handle_call(:get_name, state) do
+    {:ok, state["name"], state}
   end
 
 end

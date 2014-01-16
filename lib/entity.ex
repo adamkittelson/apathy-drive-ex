@@ -42,6 +42,9 @@ defmodule ApathyDrive.Entity do
           Races.add(entity)
       end
     end
+    if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do
+      Systems.Help.add(entity)
+    end
     :global.register_name(:"#{entity_record.id}", entity)
   end
 

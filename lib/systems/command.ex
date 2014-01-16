@@ -48,8 +48,23 @@ defmodule Systems.Command do
           _other ->
             Components.Login.select_character(player)
         end
+      "create_character_request_race" ->
+        case command do
+          "help" -> help(player, arguments)
+          _other -> Players.send_message(player, ["scroll", "<p>What?</p>"])
+        end
       _other ->
         execute_command(player, command, arguments)
+    end
+  end
+
+  def help(player, arguments) do
+    keyword = Enum.join(arguments, " ")
+    help_info = Systems.Help.find(keyword)
+    if help_info do
+      Players.send_message(player, ["scroll", help_info])
+    else
+      Players.send_message(player, ["scroll", "<p>No help found for #{Enum.join(arguments, " ")}.</p>"])
     end
   end
 
