@@ -10,6 +10,12 @@ defmodule Races do
     :gen_server.call(:races, :all)
   end
 
+  def find_by_number(number) do
+    Enum.find(all, fn (race) ->
+      Components.Number.get_number(race) == number
+    end)
+  end
+
   # GenServer API
   def start_link() do
     :gen_server.start_link({:local, :races}, __MODULE__, [], [])

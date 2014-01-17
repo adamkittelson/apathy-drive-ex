@@ -40,6 +40,8 @@ defmodule ApathyDrive.Entity do
       case Components.Type.get_type(entity) do
         "race" ->
           Races.add(entity)
+        "class" ->
+          Classes.add(entity)
       end
     end
     if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do

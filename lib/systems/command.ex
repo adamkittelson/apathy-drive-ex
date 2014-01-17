@@ -51,7 +51,7 @@ defmodule Systems.Command do
       "create_character_request_race" ->
         case command do
           "help" -> help(player, arguments)
-          _other -> Players.send_message(player, ["scroll", "<p>What?</p>"])
+          _other -> Components.Login.create_character_set_race(player, command)
         end
       _other ->
         execute_command(player, command, arguments)

@@ -49,6 +49,31 @@ defmodule Components.Login do
     Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your race [ 'help &lt;race&gt;' for more info ] :</span></p>"])
   end
 
+  def display_class_select(player) do
+    ApathyDrive.Entity.notify(player, :create_character_request_class)
+    Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a class from the following list:</span></p>"])
+    Enum.sort(Classes.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
+    |> Enum.each fn(class) ->
+      Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(class)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(class)}</p>"])
+    end
+    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your class [ 'help &lt;class&gt;' for more info ] :</span></p>"])
+  end
+
+  def create_character_set_race(player, race_number) do
+    if Regex.match?(%r/^\d+$/, race_number) do
+      {number, _} = Integer.parse(race_number)
+      race = Races.find_by_number(number)
+      if race do
+        ApathyDrive.Entity.notify(player, {:create_character_set_race, race})
+        display_class_select(player)
+      else
+        Players.send_message(player, ["scroll", "There is no race with that number."])
+      end
+    else
+      Components.Login.display_race_select(player)
+    end
+  end
+
   def create_account_set_email(player, email) do
     account = ApathyDrive.Account.find(email)
     if account do
@@ -125,6 +150,10 @@ defmodule Components.Login do
 
   def handle_event(:create_character_request_race, state) do
     {:ok, [step: "create_character_request_race", account: state[:account]]}
+  end
+
+  def handle_event({:create_character_set_race, race}, state) do
+    {:ok, [step: "create_character_request_class", race: race, account: state[:account]]}
   end
 
   def handle_event(:create_account_request_email, _state) do
