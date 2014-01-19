@@ -64,7 +64,7 @@ defmodule Systems.Command do
     if help_info do
       Players.send_message(player, ["scroll", help_info])
     else
-      Players.send_message(player, ["scroll", "<p>No help found for #{Enum.join(arguments, " ")}.</p>"])
+      Players.send_message(player, ["scroll", "<p>Sorry, no help is available for \"#{Enum.join(arguments, " ")}\".</p>"])
     end
   end
 
