@@ -74,6 +74,21 @@ defmodule Components.Login do
     end
   end
 
+  def create_character_set_class(player, class_number) do
+    if Regex.match?(%r/^\d+$/, class_number) do
+      {number, _} = Integer.parse(class_number)
+      class = Classes.find_by_number(number)
+      if class do
+        ApathyDrive.Entity.notify(player, {:create_character_set_class, class})
+        display_character_training(player)
+      else
+        Players.send_message(player, ["scroll", "There is no class with that number."])
+      end
+    else
+      Components.Login.display_class_select(player)
+    end
+  end
+
   def create_account_set_email(player, email) do
     account = ApathyDrive.Account.find(email)
     if account do
@@ -109,6 +124,36 @@ defmodule Components.Login do
     password = :gen_event.call(player, Components.Login, :get_password)
     salt     = :gen_event.call(player, Components.Login, :get_salt)
     {:ok, password} == :bcrypt.hashpw(password_confirmation, salt)
+  end
+
+  def display_character_training(player) do
+    Players.send_message(player, ["clear scroll"])
+    Players.send_message(player, ["scroll",
+"""
+<div>   .─────────────────────────────────────.──.</div>
+<div>  /  <span class="dark-grey">Apathy</span> <span class="dark-red">Drive</span> <span class="dark-cyan">Character Creation</span>    /    \\  <span class="dark-grey">┌─</span>    <span class="magenta">Point Cost Chart</span>    <span class="dark-grey">─┐</span></div>
+<div> │                                     ├──.   │ <span class="dark-grey">│</span>                          <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Given Name</span>   <span class="white">Cole</span>               <span class="dark-red">«</span> │___\\_/  <span class="dark-grey">│</span> <span class="magenta">1st</span> <span class="dark-magenta">10 points:</span> <span class="magenta">1</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Family Name</span>  <span class="white">Avenue</span>             <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">2nd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">2</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Race</span>         Human              <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">3rd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">3</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Class</span>        Warrior            <span class="dark-red">«</span> │        <span class="dark-grey">│     ... and so on ...    │</span></div>
+<div> │                                     │        <span class="dark-grey">│</span>                          <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Strength</span>   (  40 to  200)    <span class="white">40</span> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">10</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">10</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Intellect</span>  (  40 to  200)    <span class="white">40</span> <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="dark-magenta">+</span><span class="magenta">20</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">30</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Willpower</span>  (  40 to  200)    <span class="white">40</span> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">30</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">60</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Agility</span>    (  40 to  200)    <span class="white">40</span> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">40</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">100</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Health</span>     (  40 to  200)    <span class="white">40</span> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">50</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">150</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Charm</span>      (  40 to  200)    <span class="white">40</span> <span class="dark-red">«</span> │        <span class="dark-grey">└─    ... and so on ...   ─┘</span></div>
+<div> │                                     │</div>
+<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Length</span>   <span class="white">none</span>             <span class="dark-red">«</span> │        <span class="dark-grey">┌</span> <span class="cyan">Use the Space Bar to</span></div>
+<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Colour</span>   <span class="white">black</span>            <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="cyan">toggle between choices for</span></span></div>
+<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Eye Colour</span>    <span class="white">black</span>            <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
+<div> │                                     │</div>
+<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Exit:</span> <span class="white">SAVE</span> <span class="red">«</span>  <span class="dark-red">»</span> <span class="dark-cyan">CP Left:</span>  100  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀───────</span> <span class="white">SAVE</span> <span class="cyan">your character or</span> <span class="white">EXIT</span></span></div>
+<div>┌┴───────────────────────────────.     │</div>
+<div>\\_________________________________\\___/</div>
+"""
+])
   end
 
   ### GenEvent API
@@ -154,6 +199,10 @@ defmodule Components.Login do
 
   def handle_event({:create_character_set_race, race}, state) do
     {:ok, [step: "create_character_request_class", race: race, account: state[:account]]}
+  end
+
+  def handle_event({:create_character_set_class, class}, state) do
+    {:ok, [step: "create_character_finish", class: class, race: state[:race], account: state[:account]]}
   end
 
   def handle_event(:create_account_request_email, _state) do

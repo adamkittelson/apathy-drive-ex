@@ -12,6 +12,9 @@ $ ->
     $('#room .exits').html("Obvious exits: #{data['exits'].join(', ') || 'NONE'}")
     adjustScrollTop()
 
+  clearScroll = ->
+    $('#scroll').html("")
+
   adjustScrollTop = ->
     $("#scroll_container").css("top", $("#room").height() + 10 + "px")
 
@@ -26,6 +29,7 @@ $ ->
     message = JSON.parse(event.data)
     switch message[0]
       when "room" then updateRoom(message[1])
+      when "clear scroll" then clearScroll()
       else addToScroll("#scroll", message[1])
 
   webSocket.onclose = (event) ->

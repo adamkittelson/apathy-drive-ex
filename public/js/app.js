@@ -1,7 +1,7 @@
 (function() {
 
   $(function() {
-    var addToScroll, adjustScrollTop, updateRoom, webSocket;
+    var addToScroll, adjustScrollTop, clearScroll, updateRoom, webSocket;
     $('body').on('click', function(event) {
       return $('#command').focus();
     });
@@ -12,6 +12,9 @@
       $('#room .description').html(data['description']);
       $('#room .exits').html("Obvious exits: " + (data['exits'].join(', ') || 'NONE'));
       return adjustScrollTop();
+    };
+    clearScroll = function() {
+      return $('#scroll').html("");
     };
     adjustScrollTop = function() {
       return $("#scroll_container").css("top", $("#room").height() + 10 + "px");
@@ -27,6 +30,8 @@
       switch (message[0]) {
         case "room":
           return updateRoom(message[1]);
+        case "clear scroll":
+          return clearScroll();
         default:
           return addToScroll("#scroll", message[1]);
       }

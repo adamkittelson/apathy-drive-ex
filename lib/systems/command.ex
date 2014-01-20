@@ -53,6 +53,11 @@ defmodule Systems.Command do
           "help" -> help(player, arguments)
           _other -> Components.Login.create_character_set_race(player, command)
         end
+      "create_character_request_class" ->
+        case command do
+          "help" -> help(player, arguments)
+          _other -> Components.Login.create_character_set_class(player, command)
+        end
       _other ->
         execute_command(player, command, arguments)
     end
