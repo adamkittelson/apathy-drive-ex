@@ -1,7 +1,7 @@
 $ ->
 
-  $('body').on 'click', (event) ->
-    $('#command').focus()
+  # $('body').on 'click', (event) ->
+  #   $('#command').focus()
 
   $('#command').focus()
 

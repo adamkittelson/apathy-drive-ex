@@ -2,9 +2,6 @@
 
   $(function() {
     var addToScroll, adjustScrollTop, clearScroll, updateRoom, webSocket;
-    $('body').on('click', function(event) {
-      return $('#command').focus();
-    });
     $('#command').focus();
     updateRoom = function(data) {
       console.log(data);
