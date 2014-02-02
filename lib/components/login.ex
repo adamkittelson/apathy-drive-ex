@@ -154,6 +154,7 @@ defmodule Components.Login do
 <div>\\_________________________________\\___/</div>
 """
 ])
+    Players.send_message(player, ["focus", "#first-name"])
   end
 
   ### GenEvent API
