@@ -93,13 +93,15 @@ code {
   overflow-y: scroll;
 }
 
-#command {
-  width: 620px;
+.prompt {
+  max-width: 620px;
   background-color: black;
   border: none;
   color: $grey;
   outline: none;
   font-size: 12px;
+  display: inline;
+  margin-top: 5px;
 }
 
 .field {

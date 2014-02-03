@@ -8,17 +8,20 @@ defmodule Components.Login do
 
   def intro(player) do
     ApathyDrive.Entity.notify(player, {:intro})
-    Players.send_message(player, ["scroll", "<p>Please enter your email address to log in or 'new' to create a new account.</p>"])
+    Players.send_message(player, ["scroll", "<p>Please enter your email address to log in or 'new' to create a new account: <input id='email' class='prompt'></input></p>"])
+    Players.send_message(player, ["focus", "#email"])
   end
 
   def create_account_request_email(player) do
     ApathyDrive.Entity.notify(player, :create_account_request_email)
-    Players.send_message(player, ["scroll", "<p>Please enter the email address you would like to use.</p>"])
+    Players.send_message(player, ["scroll", "<p>Please enter the email address you would like to use: <input id='email' class='prompt'></input></p>"])
+    Players.send_message(player, ["focus", "#email"])
   end
 
   def sign_in_get_account(player, email) do
     ApathyDrive.Entity.notify(player, {:sign_in_set_email, email})
-    Players.send_message(player, ["scroll", "<p>Please enter your password.</p>"])
+    Players.send_message(player, ["scroll", "<p>Please enter your password: <input id='password' type='password' class='prompt'></input></p>"])
+    Players.send_message(player, ["focus", "#password"])
   end
 
   def sign_in_check_password(player, password) do
@@ -37,6 +40,8 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:sign_in_set_account, account})
     Players.send_message(player, ["scroll", "<p><span class='dark-yellow underline'>Characters</span></p>"])
     Players.send_message(player, ["scroll", "\n\n\n\n<p><span class='dark-red'>N</span> <span class='dark-green'>:</span> <span class='dark-yellow'>New Character</span></p>"])
+    Players.send_message(player, ["scroll", "<p><span class='dark-yellow'>Please enter your selection:</span> <input id='character' class='prompt'></input></p>"])
+    Players.send_message(player, ["focus", "#character"])
   end
 
   def display_race_select(player) do
@@ -46,7 +51,17 @@ defmodule Components.Login do
     |> Enum.each fn(race) ->
       Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(race)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(race)}</p>"])
     end
-    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your race [ 'help &lt;race&gt;' for more info ] :</span></p>"])
+    prompt_for_race(player)
+  end
+
+  def prompt_for_race(player) do
+    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your race [ 'help &lt;race&gt;' for more info ]: </span><input id='race' class='prompt'></input></p>"])
+    Players.send_message(player, ["focus", "#race"])
+  end
+
+  def prompt_for_class(player) do
+    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your class [ 'help &lt;class&gt;' for more info ] :</span><input id='class' class='prompt'></input></p>"])
+    Players.send_message(player, ["focus", "#class"])
   end
 
   def display_class_select(player) do
@@ -56,7 +71,7 @@ defmodule Components.Login do
     |> Enum.each fn(class) ->
       Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(class)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(class)}</p>"])
     end
-    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your class [ 'help &lt;class&gt;' for more info ] :</span></p>"])
+    prompt_for_class(player)
   end
 
   def create_character_set_race(player, race_number) do
@@ -95,13 +110,15 @@ defmodule Components.Login do
       sign_in_get_account(player, email)
     else
       ApathyDrive.Entity.notify(player, {:create_account_set_email, email})
-      Players.send_message(player, ["scroll", "<p>Please enter the password you would like to use.</p>"])
+      Players.send_message(player, ["scroll", "<p>Please enter the password you would like to use: <input id='password' type='password' class='prompt'></input></p>"])
+      Players.send_message(player, ["focus", "#password"])
     end
   end
 
   def create_account_set_password(player, password) do
     ApathyDrive.Entity.notify(player, {:create_account_set_password, password})
-    Players.send_message(player, ["scroll", "<p>Please confirm your new password.</p>"])
+    Players.send_message(player, ["scroll", "<p>Please confirm your new password: <input id='password-confirmation' type='password' class='prompt'></input></p>"])
+    Players.send_message(player, ["focus", "#password-confirmation"])
   end
 
   def create_account_finish(player, password) do
@@ -126,17 +143,28 @@ defmodule Components.Login do
     {:ok, password} == :bcrypt.hashpw(password_confirmation, salt)
   end
 
+  def get_class(player) do
+    :gen_event.call(player, Components.Login, :get_class)
+  end
+
+  def get_race(player) do
+    :gen_event.call(player, Components.Login, :get_race)
+  end
+
   def display_character_training(player) do
+    race  = Components.Name.get_name(get_race(player))
+    class = Components.Name.get_name(get_class(player))
+
     Players.send_message(player, ["clear scroll"])
     Players.send_message(player, ["scroll",
 """
 <div>   .─────────────────────────────────────.──.</div>
 <div>  /  <span class="dark-grey">Apathy</span> <span class="dark-red">Drive</span> <span class="dark-cyan">Character Creation</span>    /    \\  <span class="dark-grey">┌─</span>    <span class="magenta">Point Cost Chart</span>    <span class="dark-grey">─┐</span></div>
 <div> │                                     ├──.   │ <span class="dark-grey">│</span>                          <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Given Name</span>   <input id="first-name" class="field" maxlength="18" size="18" value="Cole"></input> <span class="dark-red">«</span> │___\\_/  <span class="dark-grey">│</span> <span class="magenta">1st</span> <span class="dark-magenta">10 points:</span> <span class="magenta">1</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Family Name</span>  <input id="last-name" class="field" maxlength="18" size="18" value="Avenue"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">2nd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">2</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Race</span>         Human              <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">3rd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">3</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Class</span>        Warrior            <span class="dark-red">«</span> │        <span class="dark-grey">│     ... and so on ...    │</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Given Name</span>   <input id="first-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │___\\_/  <span class="dark-grey">│</span> <span class="magenta">1st</span> <span class="dark-magenta">10 points:</span> <span class="magenta">1</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Family Name</span>  <input id="last-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">2nd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">2</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Race</span>         #{String.ljust(race, 19)}<span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">3rd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">3</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Class</span>        #{String.ljust(class, 19)}<span class="dark-red">«</span> │        <span class="dark-grey">│     ... and so on ...    │</span></div>
 <div> │                                     │        <span class="dark-grey">│</span>                          <span class="dark-grey">│</span></div>
 <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Strength</span>   (  40 to  200)   <input id="strength" class="field" maxlength="3" size="3" value="40"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">10</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">10</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
 <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Intellect</span>  (  40 to  200)   <input id="intellect" class="field" maxlength="3" size="3" value="40"></input> <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="dark-magenta">+</span><span class="magenta">20</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">30</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></span></div>
@@ -176,6 +204,14 @@ defmodule Components.Login do
 
   def handle_call(:get_salt, state) do
     {:ok, state[:salt], state}
+  end
+
+  def handle_call(:get_race, state) do
+    {:ok, state[:race], state}
+  end
+
+  def handle_call(:get_class, state) do
+    {:ok, state[:class], state}
   end
 
   def handle_call(:get_account, state) do

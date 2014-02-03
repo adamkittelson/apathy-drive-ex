@@ -7,22 +7,74 @@ defmodule ApathyDrive.Main do
     {:render, [], []}
   end
 
-  def websocket_init(pid, conn) do
+  def websocket_init(pid, _conn) do
     Players.connected(pid)
   end
 
-  def websocket_message(pid, message, conn) do
-    [{event, message}] = JSON.parse(message)
+  def websocket_message(pid, message, _conn) do
+    [{event, message}]    = JSON.parse(message)
+    [command | arguments] = String.split(message)
+    player                = Players.find_by_connection(pid)
     case event do
       "command" ->
-        player = Players.find_by_connection(pid)
-        Systems.Command.execute(player, String.split(message))
-        _ ->
-          IO.puts("#{event}: #{message}")
+        Systems.Command.execute(player, command, arguments)
+      "email" ->
+        Players.send_message(player, ["disable", "##{event}"])
+        case Components.Login.get_step(player) do
+          "create_account_request_email" ->
+            Components.Login.create_account_set_email(player, command)
+          "intro" ->
+            case command do
+              "new" ->
+                Components.Login.create_account_request_email(player)
+              _other ->
+                Components.Login.sign_in_get_account(player, command)
+            end
+        end
+      "password" ->
+        Players.send_message(player, ["disable", "##{event}"])
+        case Components.Login.get_step(player) do
+          "sign_in_check_password" ->
+            Components.Login.sign_in_check_password(player, command)
+          "create_account_request_password" ->
+            Components.Login.create_account_set_password(player, command)
+        end
+      "password-confirmation" ->
+        Players.send_message(player, ["disable", "##{event}"])
+        Components.Login.create_account_finish(player, command)
+      "character" ->
+        case command do
+          "N" ->
+            Players.send_message(player, ["disable", "##{event}"])
+            Components.Login.display_race_select(player)
+          "n" ->
+            Players.send_message(player, ["disable", "##{event}"])
+            Components.Login.display_race_select(player)
+          _other ->
+            IO.puts("Character select: #{message}")
+        end
+      "race" ->
+        Players.send_message(player, ["disable", "##{event}"])
+        case command do
+          "help" ->
+            Systems.Command.help(player, arguments)
+            Components.Login.prompt_for_race(player)
+          _other -> Components.Login.create_character_set_race(player, command)
+        end
+      "class" ->
+        Players.send_message(player, ["disable", "##{event}"])
+        case command do
+          "help" ->
+            Systems.Command.help(player, arguments)
+            Components.Login.prompt_for_class(player)
+          _other -> Components.Login.create_character_set_class(player, command)
+        end
+      _ ->
+        IO.puts("#{event}: #{message}")
     end
   end
 
-  def websocket_terminate(pid, conn) do
+  def websocket_terminate(pid, _conn) do
     Players.disconnected(pid)
   end
 

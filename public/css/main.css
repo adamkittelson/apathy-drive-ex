@@ -101,13 +101,15 @@ code {
 #scroll:hover {
   overflow-y: scroll; }
 
-#command {
-  width: 620px;
+.prompt {
+  max-width: 620px;
   background-color: black;
   border: none;
   color: silver;
   outline: none;
-  font-size: 12px; }
+  font-size: 12px;
+  display: inline;
+  margin-top: 5px; }
 
 .field {
   background-color: black;

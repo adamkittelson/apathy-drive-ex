@@ -1,9 +1,9 @@
 $ ->
 
-  # $('body').on 'click', (event) ->
-  #   $('#command').focus()
+  focus = null
 
-  $('#command').focus()
+  $('body').on 'click', (event) ->
+    setFocus(focus)
 
   updateRoom = (data) ->
     console.log(data)
@@ -18,6 +18,10 @@ $ ->
   adjustScrollTop = ->
     $("#scroll_container").css("top", $("#room").height() + 10 + "px")
 
+  setFocus = (selector) ->
+    focus = selector
+    $(selector).focus()
+
   adjustScrollTop()
 
   webSocket = new WebSocket('ws://localhost:3000/_ws')
@@ -30,7 +34,8 @@ $ ->
     switch message[0]
       when "room" then updateRoom(message[1])
       when "clear scroll" then clearScroll()
-      when "focus" then $(message[1]).focus()
+      when "focus" then setFocus(message[1])
+      when "disable" then disableField(message[1])
       else addToScroll("#scroll", message[1])
 
   webSocket.onclose = (event) ->
@@ -41,12 +46,15 @@ $ ->
     $('#scroll').scrollTop($('#scroll')[0].scrollHeight)
 
   focusNext = (elem) ->
-    fields = $("#scroll").find(':input')
+    fields = $("#scroll").find('input:not([disabled])')
     fields.eq(fields.index(elem) + 1).focus()
 
   focusPrevious = (elem) ->
     fields = $("#scroll").find(':input')
     fields.eq(fields.index(elem) - 1).focus()
+
+  disableField = (selector) ->
+    $(selector).prop('disabled', true).removeAttr('id')
 
   $(document).on 'keyup', "input", (event) ->
     event.preventDefault()

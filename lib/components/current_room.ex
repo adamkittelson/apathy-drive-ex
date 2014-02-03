@@ -20,7 +20,7 @@ defmodule Components.CurrentRoom do
     {:ok, room_pid, room_pid}
   end
 
-  def handle_event({:set_current_room, new_room}, room) do
+  def handle_event({:set_current_room, new_room}, _room) do
     {:ok, new_room}
   end
 

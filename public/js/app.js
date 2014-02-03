@@ -1,8 +1,11 @@
 (function() {
 
   $(function() {
-    var addToScroll, adjustScrollTop, clearScroll, focusNext, focusPrevious, updateRoom, webSocket;
-    $('#command').focus();
+    var addToScroll, adjustScrollTop, clearScroll, disableField, focus, focusNext, focusPrevious, setFocus, updateRoom, webSocket;
+    focus = null;
+    $('body').on('click', function(event) {
+      return setFocus(focus);
+    });
     updateRoom = function(data) {
       console.log(data);
       $('#room .title').html(data['name']);
@@ -15,6 +18,10 @@
     };
     adjustScrollTop = function() {
       return $("#scroll_container").css("top", $("#room").height() + 10 + "px");
+    };
+    setFocus = function(selector) {
+      focus = selector;
+      return $(selector).focus();
     };
     adjustScrollTop();
     webSocket = new WebSocket('ws://localhost:3000/_ws');
@@ -30,7 +37,9 @@
         case "clear scroll":
           return clearScroll();
         case "focus":
-          return $(message[1]).focus();
+          return setFocus(message[1]);
+        case "disable":
+          return disableField(message[1]);
         default:
           return addToScroll("#scroll", message[1]);
       }
@@ -44,13 +53,16 @@
     };
     focusNext = function(elem) {
       var fields;
-      fields = $("#scroll").find(':input');
+      fields = $("#scroll").find('input:not([disabled])');
       return fields.eq(fields.index(elem) + 1).focus();
     };
     focusPrevious = function(elem) {
       var fields;
       fields = $("#scroll").find(':input');
       return fields.eq(fields.index(elem) - 1).focus();
+    };
+    disableField = function(selector) {
+      return $(selector).prop('disabled', true).removeAttr('id');
     };
     return $(document).on('keyup', "input", function(event) {
       var command, params;
