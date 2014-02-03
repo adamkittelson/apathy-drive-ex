@@ -47,11 +47,15 @@ $ ->
 
   focusNext = (elem) ->
     fields = $("#scroll").find('input:not([disabled])')
-    fields.eq(fields.index(elem) + 1).focus()
+    field = fields.eq(fields.index(elem) + 1)[0]
+    if field
+      setFocus("##{field.id}")
 
   focusPrevious = (elem) ->
     fields = $("#scroll").find(':input')
-    fields.eq(fields.index(elem) - 1).focus()
+    field = fields.eq(fields.index(elem) - 1)[0]
+    if field
+      setFocus("##{field.id}")
 
   disableField = (selector) ->
     $(selector).prop('disabled', true).removeAttr('id')

@@ -52,14 +52,20 @@
       return $('#scroll').scrollTop($('#scroll')[0].scrollHeight);
     };
     focusNext = function(elem) {
-      var fields;
+      var field, fields;
       fields = $("#scroll").find('input:not([disabled])');
-      return fields.eq(fields.index(elem) + 1).focus();
+      field = fields.eq(fields.index(elem) + 1)[0];
+      if (field) {
+        return setFocus("#" + field.id);
+      }
     };
     focusPrevious = function(elem) {
-      var fields;
+      var field, fields;
       fields = $("#scroll").find(':input');
-      return fields.eq(fields.index(elem) - 1).focus();
+      field = fields.eq(fields.index(elem) - 1)[0];
+      if (field) {
+        return setFocus("#" + field.id);
+      }
     };
     disableField = function(selector) {
       return $(selector).prop('disabled', true).removeAttr('id');
