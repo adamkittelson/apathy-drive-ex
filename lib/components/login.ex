@@ -60,7 +60,7 @@ defmodule Components.Login do
   end
 
   def prompt_for_class(player) do
-    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your class [ 'help &lt;class&gt;' for more info ] :</span><input id='class' class='prompt'></input></p>"])
+    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your class [ 'help &lt;class&gt;' for more info ]: </span><input id='class' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#class"])
   end
 

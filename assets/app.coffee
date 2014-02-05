@@ -20,7 +20,7 @@ $ ->
 
   setFocus = (selector) ->
     focus = selector
-    $(selector).focus()
+    $(selector).focus().select()
 
   adjustScrollTop()
 

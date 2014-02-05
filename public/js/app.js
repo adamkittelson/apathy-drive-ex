@@ -21,7 +21,7 @@
     };
     setFocus = function(selector) {
       focus = selector;
-      return $(selector).focus();
+      return $(selector).focus().select();
     };
     adjustScrollTop();
     webSocket = new WebSocket('ws://localhost:3000/_ws');
