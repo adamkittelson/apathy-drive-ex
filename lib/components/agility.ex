@@ -1,9 +1,9 @@
-defmodule Components.MaxIntellect do
+defmodule Components.Agility do
   use GenEvent.Behaviour
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.MaxIntellect, :value)
+    :gen_event.call(entity, Components.Agility, :value)
   end
 
   ### GenEvent API
@@ -13,5 +13,9 @@ defmodule Components.MaxIntellect do
 
   def handle_call(:value, value) do
     {:ok, value, value}
+  end
+
+  def handle_cast({:set_value, value}, _value) do
+    {:noreply, value }
   end
 end

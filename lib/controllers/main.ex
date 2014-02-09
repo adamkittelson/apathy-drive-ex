@@ -69,6 +69,30 @@ defmodule ApathyDrive.Main do
             Components.Login.prompt_for_class(player)
           _other -> Components.Login.create_character_set_class(player, command)
         end
+      "strength" ->
+        if Components.Login.get_step(player) == "training" do
+          Systems.Training.set_stat(player, "strength", command)
+        end
+      "agility" ->
+        if Components.Login.get_step(player) == "training" do
+          Systems.Training.set_stat(player, "agility", command)
+        end
+      "intellect" ->
+        if Components.Login.get_step(player) == "training" do
+          Systems.Training.set_stat(player, "intellect", command)
+        end
+      "willpower" ->
+        if Components.Login.get_step(player) == "training" do
+          Systems.Training.set_stat(player, "willpower", command)
+        end
+      "health" ->
+        if Components.Login.get_step(player) == "training" do
+          Systems.Training.set_stat(player, "health", command)
+        end
+      "charm" ->
+        if Components.Login.get_step(player) == "training" do
+          Systems.Training.set_stat(player, "charm", command)
+        end
       _ ->
         IO.puts("#{event}: #{message}")
     end

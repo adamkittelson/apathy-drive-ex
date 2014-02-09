@@ -40,6 +40,10 @@
           return setFocus(message[1]);
         case "disable":
           return disableField(message[1]);
+        case "update":
+          return $(message[1]).html(message[2]);
+        case "set field":
+          return $(message[1]).val(message[2]);
         default:
           return addToScroll("#scroll", message[1]);
       }
@@ -71,7 +75,7 @@
       return $(selector).prop('disabled', true).removeAttr('id');
     };
     return $(document).on('keyup', "input", function(event) {
-      var command, params;
+      var command, params, value;
       event.preventDefault();
       if (event.which === 13) {
         command = $(event.target).val();
@@ -79,15 +83,30 @@
           addToScroll('#scroll', "<p><span class='dark-yellow'>" + command + "</span></p>");
           $(event.target).val("");
         } else {
+          $("#validation").html("");
           focusNext($(event.target));
         }
         params = {};
         params[event.target.id] = command;
         return webSocket.send(JSON.stringify(params));
       } else if (event.which === 38) {
-        return focusPrevious($(event.target));
+        value = parseInt($(event.target).val());
+        if (!isNaN(value)) {
+          $("#validation").html("");
+          $(event.target).val(value + 1);
+          params = {};
+          params[event.target.id] = "" + (value + 1);
+          return webSocket.send(JSON.stringify(params));
+        }
       } else if (event.which === 40) {
-        return focusNext($(event.target));
+        value = parseInt($(event.target).val());
+        if (!isNaN(value)) {
+          $("#validation").html("");
+          $(event.target).val(value - 1);
+          params = {};
+          params[event.target.id] = "" + (value - 1);
+          return webSocket.send(JSON.stringify(params));
+        }
       }
     });
   });

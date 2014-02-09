@@ -36,6 +36,8 @@ $ ->
       when "clear scroll" then clearScroll()
       when "focus" then setFocus(message[1])
       when "disable" then disableField(message[1])
+      when "update" then $(message[1]).html(message[2])
+      when "set field" then $(message[1]).val(message[2])
       else addToScroll("#scroll", message[1])
 
   webSocket.onclose = (event) ->
@@ -68,11 +70,24 @@ $ ->
         addToScroll('#scroll', "<p><span class='dark-yellow'>#{command}</span></p>")
         $(event.target).val("")
       else
+        $("#validation").html("")
         focusNext($(event.target))
       params = {}
       params[event.target.id] = command
       webSocket.send JSON.stringify(params)
     else if event.which is 38
-      focusPrevious($(event.target))
+      value = parseInt($(event.target).val())
+      unless isNaN value
+        $("#validation").html("")
+        $(event.target).val(value + 1)
+        params = {}
+        params[event.target.id] = "#{value + 1}"
+        webSocket.send JSON.stringify(params)
     else if event.which is 40
-      focusNext($(event.target))
+      value = parseInt($(event.target).val())
+      unless isNaN value
+        $("#validation").html("")
+        $(event.target).val(value - 1)
+        params = {}
+        params[event.target.id] = "#{value - 1}"
+        webSocket.send JSON.stringify(params)

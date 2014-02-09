@@ -1,9 +1,9 @@
-defmodule Components.MinHealth do
+defmodule Components.Intellect do
   use GenEvent.Behaviour
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.MinHealth, :value)
+    :gen_event.call(entity, Components.Intellect, :value)
   end
 
   ### GenEvent API
@@ -13,5 +13,9 @@ defmodule Components.MinHealth do
 
   def handle_call(:value, value) do
     {:ok, value, value}
+  end
+
+  def handle_cast({:set_value, value}, _value) do
+    {:noreply, value }
   end
 end

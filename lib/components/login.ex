@@ -94,8 +94,19 @@ defmodule Components.Login do
       {number, _} = Integer.parse(class_number)
       class = Classes.find_by_number(number)
       if class do
-        ApathyDrive.Entity.notify(player, {:create_character_set_class, class})
-        display_character_training(player)
+        race = get_race(player)
+        {:ok, character} = ApathyDrive.Entity.init
+        ApathyDrive.Entity.add_component(character, Components.Agility,   Components.Agility.value(race))
+        ApathyDrive.Entity.add_component(character, Components.Charm,     Components.Charm.value(race))
+        ApathyDrive.Entity.add_component(character, Components.Health,    Components.Health.value(race))
+        ApathyDrive.Entity.add_component(character, Components.Intellect, Components.Intellect.value(race))
+        ApathyDrive.Entity.add_component(character, Components.Strength,  Components.Strength.value(race))
+        ApathyDrive.Entity.add_component(character, Components.Willpower, Components.Willpower.value(race))
+        ApathyDrive.Entity.add_component(character, Components.CP, 100)
+        ApathyDrive.Entity.add_component(character, Components.Class, class)
+        ApathyDrive.Entity.add_component(character, Components.Race, race)
+
+        Systems.Training.train_stats(player, character)
       else
         Players.send_message(player, ["scroll", "There is no class with that number."])
       end
@@ -151,52 +162,24 @@ defmodule Components.Login do
     :gen_event.call(player, Components.Login, :get_race)
   end
 
-  def display_character_training(player) do
-    race       = get_race(player)
-    race_name  = Components.Name.get_name(race)
-    class_name = Components.Name.get_name(get_class(player))
+  def get_character(player) do
+    :gen_event.call(player, Components.Login, :get_character)
+  end
 
-    min_str = String.rjust("#{Components.MinStrength.value(race)}", 4)
-    max_str = String.rjust("#{Components.MaxStrength.value(race)}", 4)
-    min_agi = String.rjust("#{Components.MinAgility.value(race)}", 4)
-    max_agi = String.rjust("#{Components.MaxAgility.value(race)}", 4)
-    min_int = String.rjust("#{Components.MinIntellect.value(race)}", 4)
-    max_int = String.rjust("#{Components.MaxIntellect.value(race)}", 4)
-    min_wil = String.rjust("#{Components.MinWillpower.value(race)}", 4)
-    max_wil = String.rjust("#{Components.MaxWillpower.value(race)}", 4)
-    min_hea = String.rjust("#{Components.MinHealth.value(race)}", 4)
-    max_hea = String.rjust("#{Components.MaxHealth.value(race)}", 4)
-    min_cha = String.rjust("#{Components.MinCharm.value(race)}", 4)
-    max_cha = String.rjust("#{Components.MaxCharm.value(race)}", 4)
+  def get_cp(player) do
+    :gen_event.call(player, Components.Login, :get_cp)
+  end
 
-    Players.send_message(player, ["clear scroll"])
-    Players.send_message(player, ["scroll",
-"""
-<div>   .─────────────────────────────────────.──.</div>
-<div>  /  <span class="dark-grey">Apathy</span> <span class="dark-red">Drive</span> <span class="dark-cyan">Character Creation</span>    /    \\  <span class="dark-grey">┌─</span>    <span class="magenta">Point Cost Chart</span>    <span class="dark-grey">─┐</span></div>
-<div> │                                     ├──.   │ <span class="dark-grey">│</span>                          <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Given Name</span>   <input id="first-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │___\\_/  <span class="dark-grey">│</span> <span class="magenta">1st</span> <span class="dark-magenta">10 points:</span> <span class="magenta">1</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Family Name</span>  <input id="last-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">2nd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">2</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Race</span>         #{String.ljust(race_name, 19)}<span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">3rd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">3</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Class</span>        #{String.ljust(class_name, 19)}<span class="dark-red">«</span> │        <span class="dark-grey">│     ... and so on ...    │</span></div>
-<div> │                                     │        <span class="dark-grey">│</span>                          <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Strength</span>   (#{min_str} to #{max_str})   <input id="strength" class="field" maxlength="3" size="3" value="40"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">10</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">10</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Intellect</span>  (#{min_int} to #{max_int})   <input id="intellect" class="field" maxlength="3" size="3" value="40"></input> <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="dark-magenta">+</span><span class="magenta">20</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">30</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Willpower</span>  (#{min_wil} to #{max_wil})   <input id="willpower" class="field" maxlength="3" size="3" value="40"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">30</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">60</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Agility</span>    (#{min_agi} to #{max_agi})   <input id="agility" class="field" maxlength="3" size="3" value="40"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">40</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">100</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Health</span>     (#{min_hea} to #{max_hea})   <input id="health" class="field" maxlength="3" size="3" value="40"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">50</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">150</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Charm</span>      (#{min_cha} to #{max_cha})   <input id="charm" class="field" maxlength="3" size="3" value="40"></input> <span class="dark-red">«</span> │        <span class="dark-grey">└─    ... and so on ...   ─┘</span></div>
-<div> │                                     │</div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Length</span>   <input id="hair-length" class="field" maxlength="10" size="10" value="none"></input>       <span class="dark-red">«</span> │        <span class="dark-grey">┌</span> <span class="cyan">Use the Space Bar to</span></div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Colour</span>   <input id="hair-color" class="field" maxlength="10" size="10" value="black"></input>       <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="cyan">toggle between choices for</span></span></div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Eye Colour</span>    <input id="eye-color" class="field" maxlength="10" size="10" value="black"></input>       <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
-<div> │                                     │</div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Exit:</span> <input id="save" class="field" maxlength="4" size="4" value="SAVE"></input> <span class="red">«</span>  <span class="dark-red">»</span> <span class="dark-cyan">CP Left:</span>  100  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀───────</span> <span class="white">SAVE</span> <span class="cyan">your character or</span> <span class="white">EXIT</span></span></div>
-<div>┌┴───────────────────────────────.     │</div>
-<div>\\_________________________________\\___/</div>
-"""
-])
-    Players.send_message(player, ["focus", "#first-name"])
+  def get_stat(player, stat_name) do
+    :gen_event.call(player, Components.Login, {:get_stat, stat_name})
+  end
+
+  def set_stat(player, stat_name, stat) do
+    ApathyDrive.Entity.notify(player, {:set_stat, stat_name, stat})
+  end
+
+  def set_cp(player, cp) do
+    ApathyDrive.Entity.notify(player, {:set_cp, cp})
   end
 
   ### GenEvent API
@@ -222,6 +205,28 @@ defmodule Components.Login do
 
   def handle_call(:get_race, state) do
     {:ok, state[:race], state}
+  end
+
+  def handle_call(:get_character, state) do
+    {:ok, state[:character], state}
+  end
+
+  def handle_call(:get_cp, state) do
+    {:ok, state[:stats][:cp], state}
+  end
+
+  def handle_call({:get_stat, stat_name}, state) do
+    {:ok, state[:stats][stat_name], state}
+  end
+
+  def handle_event({:set_stat, stat_name, stat}, state) do
+    stats = Keyword.put(state[:stats], stat_name, stat)
+    {:ok, Keyword.put(state, :stats, stats)}
+  end
+
+  def handle_event({:set_cp, cp}, state) do
+    stats = Keyword.put(state[:stats], :cp, cp)
+    {:ok, Keyword.put(state, :stats, stats)}
   end
 
   def handle_call(:get_class, state) do
@@ -252,8 +257,8 @@ defmodule Components.Login do
     {:ok, [step: "create_character_request_class", race: race, account: state[:account]]}
   end
 
-  def handle_event({:create_character_set_class, class}, state) do
-    {:ok, [step: "create_character_finish", class: class, race: state[:race], account: state[:account]]}
+  def handle_event({:training, character, stats}, state) do
+    {:ok, [step: "training", character: character, stats: stats]}
   end
 
   def handle_event(:create_account_request_email, _state) do
