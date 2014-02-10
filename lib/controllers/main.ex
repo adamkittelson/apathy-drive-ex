@@ -93,8 +93,11 @@ defmodule ApathyDrive.Main do
         if Components.Login.get_step(player) == "training" do
           Systems.Training.set_stat(player, "charm", command)
         end
+      "cycle" ->
+        if Components.Login.get_step(player) == "training" do
+          Systems.Training.cycle_options(player, command)
+        end
       _ ->
-        IO.puts("#{event}: #{message}")
     end
   end
 

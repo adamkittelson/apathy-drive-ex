@@ -91,3 +91,7 @@ $ ->
         params = {}
         params[event.target.id] = "#{value - 1}"
         webSocket.send JSON.stringify(params)
+    else if event.which is 32
+      params = {}
+      params["cycle"] = event.target.id
+      webSocket.send JSON.stringify(params)

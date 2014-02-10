@@ -107,6 +107,10 @@
           params[event.target.id] = "" + (value - 1);
           return webSocket.send(JSON.stringify(params));
         }
+      } else if (event.which === 32) {
+        params = {};
+        params["cycle"] = event.target.id;
+        return webSocket.send(JSON.stringify(params));
       }
     });
   });

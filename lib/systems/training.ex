@@ -41,11 +41,11 @@ defmodule Systems.Training do
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Willpower</span>  (#{String.rjust("#{wil}", 4)} to <span id="max-willpower">#{String.rjust("#{max_wil}", 4)}</span>)   <input id="willpower" class="field" maxlength="3" size="3" value="#{wil}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">30</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">60</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Agility</span>    (#{String.rjust("#{agi}", 4)} to <span id="max-agility">#{String.rjust("#{max_agi}", 4)}</span>)   <input id="agility" class="field" maxlength="3" size="3" value="#{agi}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">40</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">100</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Health</span>     (#{String.rjust("#{hea}", 4)} to <span id="max-health">#{String.rjust("#{max_hea}", 4)}</span>)   <input id="health" class="field" maxlength="3" size="3" value="#{hea}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">50</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">150</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-  <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Charm</span>      (#{String.rjust("#{cha}", 4)} to <span id="max-charm">#{String.rjust("#{max_cha}", 4)}</span>)   <input id="charm" class="field" maxlength="3" size="3" value="#{hea}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">└─    ... and so on ...   ─┘</span></div>
+  <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Charm</span>      (#{String.rjust("#{cha}", 4)} to <span id="max-charm">#{String.rjust("#{max_cha}", 4)}</span>)   <input id="charm" class="field" maxlength="3" size="3" value="#{cha}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">└─    ... and so on ...   ─┘</span></div>
   <div> │                                     │</div>
-  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Length</span>   <input id="hair-length" class="field" maxlength="10" size="10" value="none"></input>       <span class="dark-red">«</span> │        <span class="dark-grey">┌</span> <span class="cyan">Use the Space Bar to</span></div>
-  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Colour</span>   <input id="hair-color" class="field" maxlength="10" size="10" value="black"></input>       <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="cyan">toggle between choices for</span></span></div>
-  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Eye Colour</span>    <input id="eye-color" class="field" maxlength="10" size="10" value="black"></input>       <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
+  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Length</span>   <input id="hair-length" class="field" maxlength="15" size="15" value="none"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">┌</span> <span class="cyan">Use the Space Bar to</span></div>
+  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Colour</span>   <input id="hair-color" class="field" maxlength="15" size="15" value="black"></input>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="cyan">toggle between choices for</span></span></div>
+  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Eye Colour</span>    <input id="eye-color" class="field" maxlength="15" size="15" value="black"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
   <div> │                                     │</div>
   <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Exit:</span> <input id="save" class="field" maxlength="4" size="4" value="SAVE"></input> <span class="red">«</span>  <span class="dark-red">»</span> <span class="dark-cyan">CP Left:</span>  <span id="cp">#{String.rjust("#{cp}", 3)}</span>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀───────</span> <span class="white">SAVE</span> <span class="cyan">your character or</span> <span class="white">EXIT</span></span></div>
   <div>┌┴───────────────────────────────.     │</div>
@@ -144,6 +144,62 @@ defmodule Systems.Training do
         max_value = max_stat(player, character, stat)
         Players.send_message(player, ["update", "#max-#{String.downcase(stat)}", String.rjust("#{max_value}", 4)])
       end)
+    end
+
+    def hair_lengths do
+      ["short", "shoulder-length", "long", "waist-length", "ankle-length", "none"]
+    end
+
+    def hair_colors do
+      ["silver", "red", "brown", "dark-brown", "blonde", "green", "blue", "black", "white"]
+    end
+
+    def eye_colors do
+      ["yellow", "pale-blue", "sea-blue", "dark-blue", "grey-blue", "slate-grey",
+       "bright-green", "forest-green", "pale-green", "chesnut-brown", "dark-brown",
+       "hazel", "violet", "lavender", "golden", "black", "crimson"]
+    end
+
+    def cycle_options(player, field) do
+      case field do
+        "hair-length" ->
+          current_length = Components.Login.get_hair_length(player)
+          if current_length do
+            current_index = Enum.find_index(hair_lengths, fn(hair_length) ->
+              hair_length == current_length
+            end)
+            new_length = Enum.at(hair_lengths, current_index + 1, Enum.first(hair_lengths))
+          else
+            new_length = Enum.first(hair_lengths)
+          end
+          Components.Login.set_hair_length(player, new_length)
+          Players.send_message(player, ["set field", "#hair-length", new_length])
+        "hair-color" ->
+          current_color = Components.Login.get_hair_color(player)
+          if current_color do
+            current_index = Enum.find_index(hair_colors, fn(hair_color) ->
+              hair_color == current_color
+            end)
+            new_color = Enum.at(hair_colors, current_index + 1, Enum.first(hair_colors))
+          else
+            new_color = Enum.first(hair_colors)
+          end
+          Components.Login.set_hair_color(player, new_color)
+          Players.send_message(player, ["set field", "#hair-color", new_color])
+        "eye-color" ->
+          current_color = Components.Login.get_eye_color(player)
+          if current_color do
+            current_index = Enum.find_index(eye_colors, fn(eye_color) ->
+              eye_color == current_color
+            end)
+            new_color = Enum.at(eye_colors, current_index + 1, Enum.first(eye_colors))
+          else
+            new_color = Enum.first(eye_colors)
+          end
+          Components.Login.set_eye_color(player, new_color)
+          Players.send_message(player, ["set field", "#eye-color", new_color])
+        _ ->
+      end
     end
 
 end

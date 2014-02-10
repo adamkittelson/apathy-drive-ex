@@ -178,6 +178,30 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:set_stat, stat_name, stat})
   end
 
+  def get_hair_length(player) do
+    :gen_event.call(player, Components.Login, :get_hair_length)
+  end
+
+  def set_hair_length(player, hair_length) do
+    ApathyDrive.Entity.notify(player, {:set_hair_length, hair_length})
+  end
+
+  def get_hair_color(player) do
+    :gen_event.call(player, Components.Login, :get_hair_color)
+  end
+
+  def set_hair_color(player, hair_color) do
+    ApathyDrive.Entity.notify(player, {:set_hair_color, hair_color})
+  end
+
+  def get_eye_color(player) do
+    :gen_event.call(player, Components.Login, :get_eye_color)
+  end
+
+  def set_eye_color(player, eye_color) do
+    ApathyDrive.Entity.notify(player, {:set_eye_color, eye_color})
+  end
+
   def set_cp(player, cp) do
     ApathyDrive.Entity.notify(player, {:set_cp, cp})
   end
@@ -231,6 +255,30 @@ defmodule Components.Login do
 
   def handle_call(:get_class, state) do
     {:ok, state[:class], state}
+  end
+
+  def handle_call(:get_hair_length, state) do
+    {:ok, state[:hair_length], state}
+  end
+
+  def handle_event({:set_hair_length, hair_length}, state) do
+    {:ok, Keyword.put(state, :hair_length, hair_length)}
+  end
+
+  def handle_call(:get_hair_color, state) do
+    {:ok, state[:hair_color], state}
+  end
+
+  def handle_event({:set_hair_color, hair_color}, state) do
+    {:ok, Keyword.put(state, :hair_color, hair_color)}
+  end
+
+  def handle_call(:get_eye_color, state) do
+    {:ok, state[:eye_color], state}
+  end
+
+  def handle_event({:set_eye_color, eye_color}, state) do
+    {:ok, Keyword.put(state, :eye_color, eye_color)}
   end
 
   def handle_call(:get_account, state) do
