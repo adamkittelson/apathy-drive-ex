@@ -202,6 +202,14 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:set_eye_color, eye_color})
   end
 
+  def get_gender(player) do
+    :gen_event.call(player, Components.Login, :get_gender)
+  end
+
+  def set_gender(player, gender) do
+    ApathyDrive.Entity.notify(player, {:set_gender, gender})
+  end
+
   def set_cp(player, cp) do
     ApathyDrive.Entity.notify(player, {:set_cp, cp})
   end
@@ -279,6 +287,14 @@ defmodule Components.Login do
 
   def handle_event({:set_eye_color, eye_color}, state) do
     {:ok, Keyword.put(state, :eye_color, eye_color)}
+  end
+
+  def handle_call(:get_gender, state) do
+    {:ok, state[:gender], state}
+  end
+
+  def handle_event({:set_gender, gender}, state) do
+    {:ok, Keyword.put(state, :gender, gender)}
   end
 
   def handle_call(:get_account, state) do

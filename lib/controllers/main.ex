@@ -97,6 +97,22 @@ defmodule ApathyDrive.Main do
         if Components.Login.get_step(player) == "training" do
           Systems.Training.cycle_options(player, command)
         end
+       "gender" ->
+         if Components.Login.get_step(player) == "training" do
+           Systems.Training.validate_attribute(player, "gender", command)
+         end
+       "hair_color" ->
+          if Components.Login.get_step(player) == "training" do
+            Systems.Training.validate_attribute(player, "hair_color", command)
+          end
+       "hair_length" ->
+          if Components.Login.get_step(player) == "training" do
+            Systems.Training.validate_attribute(player, "hair_length", command)
+          end
+       "eye_color" ->
+          if Components.Login.get_step(player) == "training" do
+            Systems.Training.validate_attribute(player, "eye_color", command)
+          end
       _ ->
     end
   end

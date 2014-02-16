@@ -43,9 +43,10 @@ defmodule Systems.Training do
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Health</span>     (#{String.rjust("#{hea}", 4)} to <span id="max-health">#{String.rjust("#{max_hea}", 4)}</span>)   <input id="health" class="field" maxlength="3" size="3" value="#{hea}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">50</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">150</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Charm</span>      (#{String.rjust("#{cha}", 4)} to <span id="max-charm">#{String.rjust("#{max_cha}", 4)}</span>)   <input id="charm" class="field" maxlength="3" size="3" value="#{cha}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">└─    ... and so on ...   ─┘</span></div>
   <div> │                                     │</div>
-  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Length</span>   <input id="hair-length" class="field" maxlength="15" size="15" value="none"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">┌</span> <span class="cyan">Use the Space Bar to</span></div>
-  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Colour</span>   <input id="hair-color" class="field" maxlength="15" size="15" value="black"></input>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="cyan">toggle between choices for</span></span></div>
-  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Eye Colour</span>    <input id="eye-color" class="field" maxlength="15" size="15" value="black"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
+  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Gender</span>        <input id="gender" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">┌</span> <span class="cyan">Use the Space Bar to</span></div>
+  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Length</span>   <input id="hair_length" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="cyan">toggle between choices for</span></span></div>
+  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Colour</span>   <input id="hair_color" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
+  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Eye Colour</span>    <input id="eye_color" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │</div>
   <div> │                                     │</div>
   <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Exit:</span> <input id="save" class="field" maxlength="4" size="4" value="SAVE"></input> <span class="red">«</span>  <span class="dark-red">»</span> <span class="dark-cyan">CP Left:</span>  <span id="cp">#{String.rjust("#{cp}", 3)}</span>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀───────</span> <span class="white">SAVE</span> <span class="cyan">your character or</span> <span class="white">EXIT</span></span></div>
   <div>┌┴───────────────────────────────.     │</div>
@@ -160,9 +161,13 @@ defmodule Systems.Training do
        "hazel", "violet", "lavender", "golden", "black", "crimson"]
     end
 
+    def genders do
+      ["female", "male"]
+    end
+
     def cycle_options(player, field) do
       case field do
-        "hair-length" ->
+        "hair_length" ->
           current_length = Components.Login.get_hair_length(player)
           if current_length do
             current_index = Enum.find_index(hair_lengths, fn(hair_length) ->
@@ -173,8 +178,8 @@ defmodule Systems.Training do
             new_length = Enum.first(hair_lengths)
           end
           Components.Login.set_hair_length(player, new_length)
-          Players.send_message(player, ["set field", "#hair-length", new_length])
-        "hair-color" ->
+          Players.send_message(player, ["set field", "#hair_length", new_length])
+        "hair_color" ->
           current_color = Components.Login.get_hair_color(player)
           if current_color do
             current_index = Enum.find_index(hair_colors, fn(hair_color) ->
@@ -185,8 +190,8 @@ defmodule Systems.Training do
             new_color = Enum.first(hair_colors)
           end
           Components.Login.set_hair_color(player, new_color)
-          Players.send_message(player, ["set field", "#hair-color", new_color])
-        "eye-color" ->
+          Players.send_message(player, ["set field", "#hair_color", new_color])
+        "eye_color" ->
           current_color = Components.Login.get_eye_color(player)
           if current_color do
             current_index = Enum.find_index(eye_colors, fn(eye_color) ->
@@ -197,8 +202,31 @@ defmodule Systems.Training do
             new_color = Enum.first(eye_colors)
           end
           Components.Login.set_eye_color(player, new_color)
-          Players.send_message(player, ["set field", "#eye-color", new_color])
+          Players.send_message(player, ["set field", "#eye_color", new_color])
+        "gender" ->
+          current_gender = Components.Login.get_gender(player)
+          if current_gender do
+            current_index = Enum.find_index(genders, fn(gender) ->
+              gender == current_gender
+            end)
+            new_gender = Enum.at(genders, current_index + 1, Enum.first(genders))
+          else
+            new_gender = Enum.first(genders)
+          end
+          Components.Login.set_gender(player, new_gender)
+          Players.send_message(player, ["set field", "#gender", new_gender])
         _ ->
+      end
+    end
+
+    def validate_attribute(player, attribute_name, attribute) do
+      valid_values = apply(Systems.Training, :"#{attribute_name}s", [])
+
+      if Enum.member?(valid_values, attribute) do
+        apply(Components.Login, :"set_#{attribute_name}", [player, attribute])
+      else
+        cycle_options(player, attribute_name)
+        Players.send_message(player, ["focus", "##{attribute_name}"])
       end
     end
 
