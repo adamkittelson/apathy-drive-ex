@@ -6,6 +6,10 @@ defmodule Components.Connection do
     :gen_event.call(entity, Components.Connection, :get_connection)
   end
 
+  def serialize(entity) do
+    nil
+  end
+
   ### GenEvent API
   def init(connection_pid) do
     {:ok, connection_pid}

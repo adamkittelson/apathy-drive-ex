@@ -6,6 +6,10 @@ defmodule Components.Health do
     :gen_event.call(entity, Components.Health, :value)
   end
 
+  def serialize(entity) do
+    {"Health", value(entity)}
+  end
+
   ### GenEvent API
   def init(value) do
     {:ok, value}

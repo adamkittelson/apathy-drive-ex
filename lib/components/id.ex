@@ -1,13 +1,13 @@
-defmodule Components.CP do
+defmodule Components.ID do
   use GenEvent.Behaviour
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.CP, :value)
+    :gen_event.call(entity, Components.ID, :value)
   end
 
-  def serialize(entity) do
-    {"CP", value(entity)}
+  def serialize(_entity) do
+    nil
   end
 
   ### GenEvent API
@@ -19,7 +19,4 @@ defmodule Components.CP do
     {:ok, value, value}
   end
 
-  def handle_cast({:set_value, value}, _value) do
-    {:noreply, value }
-  end
 end

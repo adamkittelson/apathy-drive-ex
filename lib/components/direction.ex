@@ -6,6 +6,10 @@ defmodule Components.Direction do
     :gen_event.call(entity, Components.Direction, :get_direction)
   end
 
+  def serialize(entity) do
+    {"Direction", get_direction(entity)}
+  end
+
   ### GenEvent API
   def init(direction) do
     {:ok, direction}

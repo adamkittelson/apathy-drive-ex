@@ -31,6 +31,7 @@ defmodule ApathyDrive.Entity do
 
   def load!(entity_record) do
     {:ok, entity} = ApathyDrive.Entity.init
+    ApathyDrive.Entity.add_component(entity, Components.ID, entity_record.id)
     components = JSON.parse(entity_record.components)
     Enum.each components, fn(component) ->
       {component_name, component_values} = component
@@ -48,6 +49,30 @@ defmodule ApathyDrive.Entity do
       Systems.Help.add(entity)
     end
     :global.register_name(:"#{entity_record.id}", entity)
+  end
+
+  def list_components(entity) do
+    :gen_event.which_handlers(entity)
+  end
+
+  def serialize_components(entity) do
+    Enum.map(list_components(entity), fn (component) ->
+      component.serialize(entity)
+    end) |> Enum.reject(fn(component) ->
+      component == nil
+    end) |> JSON.generate
+  end
+
+  def save!(entity_pid) do
+    if Enum.member?(list_components(entity_pid), Components.ID) do
+      id = Components.ID.values(entity_pid)
+      entity = Repo.get(ApathyDrive.Entity, id)
+      entity.components(serialize_components(entity_pid))
+      Repo.update(entity)
+    else
+      entity = ApathyDrive.Entity.new(components: serialize_components(entity_pid))
+      Repo.create entity
+    end
   end
 
 end

@@ -61,7 +61,8 @@ body {
   line-height: 7px; }
 
 #room {
-  width: 620px; }
+  width: 620px;
+  line-height: 15px; }
   #room .title {
     color: cyan; }
   #room .description {

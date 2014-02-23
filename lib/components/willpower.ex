@@ -6,6 +6,10 @@ defmodule Components.Willpower do
     :gen_event.call(entity, Components.Willpower, :value)
   end
 
+  def serialize(entity) do
+    {"Willpower", value(entity)}
+  end
+
   ### GenEvent API
   def init(value) do
     {:ok, value}

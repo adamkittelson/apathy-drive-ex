@@ -6,9 +6,16 @@ defmodule Components.Exits do
     :gen_event.call(entity, Components.Exits, :get_exits)
   end
 
+  def serialize(entity) do
+    exit_ids = Enum.map get_exits(entity), fn (exit_pid) ->
+      Components.ID.value(exit_pid)
+    end
+    {"Exits", exit_ids}
+  end
+
   ### GenEvent API
-  def init(exit_ids) do
-    {:ok, exit_ids}
+  def init(value) do
+    {:ok, value}
   end
 
   def handle_call(:get_exits, exits) do

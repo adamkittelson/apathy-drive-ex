@@ -12,7 +12,8 @@ defmodule Systems.Room do
   end
 
   def get_current_room(player) do
-    Components.CurrentRoom.get_current_room(player)
+    character = Components.Login.get_character(player)
+    Components.CurrentRoom.get_current_room(character)
   end
 
   def exit_directions(room) do

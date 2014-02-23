@@ -6,6 +6,11 @@ defmodule Components.CurrentRoom do
     :gen_event.call(entity, Components.CurrentRoom, :get_current_room)
   end
 
+  def serialize(entity) do
+    room_pid = get_current_room(entity)
+    {"CurrentRoom", Components.ID.value(room_pid)}
+  end
+
   ### GenEvent API
   def init(room_pid) do
     {:ok, room_pid}

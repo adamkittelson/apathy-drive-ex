@@ -14,10 +14,21 @@ defmodule Components.Help do
     :gen_event.call(entity, Components.Help, :get_name)
   end
 
+  def value(entity) do
+    :gen_event.call(entity, Components.Help, :value)
+  end
+
+  def serialize(entity) do
+    {"Help", value(entity)}
+  end
 
   ### GenEvent API
   def init(state) do
     {:ok, state}
+  end
+
+  def handle_call(:value, state) do
+    {:ok, state, state}
   end
 
   def handle_call(:get_help, state) do

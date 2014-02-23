@@ -6,6 +6,10 @@ defmodule Components.Name do
     :gen_event.call(entity, Components.Name, :get_name)
   end
 
+  def serialize(entity) do
+    {"Name", get_name(entity)}
+  end
+
   ### GenEvent API
   def init(name) do
     {:ok, name}

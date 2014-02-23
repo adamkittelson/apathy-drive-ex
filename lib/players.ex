@@ -34,11 +34,6 @@ defmodule Players do
 
     ApathyDrive.Entity.add_component(player, Components.Connection, connection)
 
-    #room_to_start_in = :global.whereis_name(:"82325")
-    #Systems.Room.display_current_room(player)
-
-    ApathyDrive.Entity.add_component(player, Components.CurrentRoom, nil)
-
     ApathyDrive.Entity.add_component(player, Components.Login, nil)
 
     Components.Login.intro(player)

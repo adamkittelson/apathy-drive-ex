@@ -214,6 +214,14 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:set_cp, cp})
   end
 
+  def login(player, character) do
+    ApathyDrive.Entity.notify(player, {:login, character})
+  end
+
+  def serialize(entity) do
+    nil
+  end
+
   ### GenEvent API
   def init(state) do
     {:ok, state}
@@ -251,6 +259,30 @@ defmodule Components.Login do
     {:ok, state[:stats][stat_name], state}
   end
 
+  def handle_call(:get_class, state) do
+    {:ok, state[:class], state}
+  end
+
+  def handle_call(:get_hair_length, state) do
+    {:ok, state[:hair_length], state}
+  end
+
+  def handle_call(:get_hair_color, state) do
+    {:ok, state[:hair_color], state}
+  end
+
+  def handle_call(:get_eye_color, state) do
+    {:ok, state[:eye_color], state}
+  end
+
+  def handle_call(:get_gender, state) do
+    {:ok, state[:gender], state}
+  end
+
+  def handle_call(:get_account, state) do
+    {:ok, state[:account], state}
+  end
+
   def handle_event({:set_stat, stat_name, stat}, state) do
     stats = Keyword.put(state[:stats], stat_name, stat)
     {:ok, Keyword.put(state, :stats, stats)}
@@ -261,44 +293,20 @@ defmodule Components.Login do
     {:ok, Keyword.put(state, :stats, stats)}
   end
 
-  def handle_call(:get_class, state) do
-    {:ok, state[:class], state}
-  end
-
-  def handle_call(:get_hair_length, state) do
-    {:ok, state[:hair_length], state}
-  end
-
   def handle_event({:set_hair_length, hair_length}, state) do
     {:ok, Keyword.put(state, :hair_length, hair_length)}
-  end
-
-  def handle_call(:get_hair_color, state) do
-    {:ok, state[:hair_color], state}
   end
 
   def handle_event({:set_hair_color, hair_color}, state) do
     {:ok, Keyword.put(state, :hair_color, hair_color)}
   end
 
-  def handle_call(:get_eye_color, state) do
-    {:ok, state[:eye_color], state}
-  end
-
   def handle_event({:set_eye_color, eye_color}, state) do
     {:ok, Keyword.put(state, :eye_color, eye_color)}
   end
 
-  def handle_call(:get_gender, state) do
-    {:ok, state[:gender], state}
-  end
-
   def handle_event({:set_gender, gender}, state) do
     {:ok, Keyword.put(state, :gender, gender)}
-  end
-
-  def handle_call(:get_account, state) do
-    {:ok, state[:account], state}
   end
 
   def handle_event({:intro}, _state) do
@@ -323,6 +331,10 @@ defmodule Components.Login do
 
   def handle_event({:training, character, stats}, state) do
     {:ok, [step: "training", character: character, stats: stats]}
+  end
+
+  def handle_event({:login, character}, state) do
+    {:ok, [step: "playing", character: character]}
   end
 
   def handle_event(:create_account_request_email, _state) do

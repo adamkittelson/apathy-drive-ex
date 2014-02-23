@@ -48,7 +48,7 @@ defmodule Systems.Training do
   <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Colour</span>   <input id="hair_color" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
   <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Eye Colour</span>    <input id="eye_color" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │</div>
   <div> │                                     │</div>
-  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Exit:</span> <input id="save" class="field" maxlength="4" size="4" value="SAVE"></input> <span class="red">«</span>  <span class="dark-red">»</span> <span class="dark-cyan">CP Left:</span>  <span id="cp">#{String.rjust("#{cp}", 3)}</span>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀───────</span> <span class="white">SAVE</span> <span class="cyan">your character or</span> <span class="white">EXIT</span></span></div>
+  <div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Exit:</span> <input type="button" id="save" class="field" value="SAVE"></input> <span class="red">«</span>  <span class="dark-red">»</span> <span class="dark-cyan">CP Left:</span>  <span id="cp">#{String.rjust("#{cp}", 3)}</span>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀───────</span> <span class="white">SAVE</span> <span class="cyan">your character or</span> <span class="white">EXIT</span></span></div>
   <div>┌┴───────────────────────────────.     │</div>
   <div>\\_________________________________\\___/</div>
   <div><span id="validation" class="red"></span></div>
@@ -228,6 +228,18 @@ defmodule Systems.Training do
         cycle_options(player, attribute_name)
         Players.send_message(player, ["focus", "##{attribute_name}"])
       end
+    end
+
+    def finish(player) do
+      character = Components.Login.get_character(player)
+
+      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, :global.whereis_name(:"82325"))
+
+      ApathyDrive.Entity.save!(character)
+
+      Players.send_message(player, ["clear scroll"])
+      Systems.Room.display_current_room(player)
+
     end
 
 end

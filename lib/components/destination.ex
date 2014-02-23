@@ -6,15 +6,20 @@ defmodule Components.Destination do
     :gen_event.call(entity, Components.Destination, :get_destination)
   end
 
+  def serialize(entity) do
+    {"Destination", get_destination(entity)}
+  end
+
   ### GenEvent API
+  def init(value) when is_number(value) do
+    {:ok, :global.whereis_name(:"#{value}")}
+  end
+
   def init(destination_id) do
     {:ok, destination_id}
   end
 
   def handle_call(:get_destination, destination) do
-    if is_integer(destination) do
-      destination = :global.whereis_name(:"#{destination}")
-    end
     {:ok, destination, destination}
   end
 end

@@ -6,6 +6,10 @@ defmodule Components.Intellect do
     :gen_event.call(entity, Components.Intellect, :value)
   end
 
+  def serialize(entity) do
+    {"Intellect", value(entity)}
+  end
+
   ### GenEvent API
   def init(value) do
     {:ok, value}

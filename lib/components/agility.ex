@@ -6,6 +6,10 @@ defmodule Components.Agility do
     :gen_event.call(entity, Components.Agility, :value)
   end
 
+  def serialize(entity) do
+    {"Agility", value(entity)}
+  end
+
   ### GenEvent API
   def init(value) do
     {:ok, value}

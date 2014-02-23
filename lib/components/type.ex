@@ -5,6 +5,10 @@ defmodule Components.Type do
   def get_type(entity) do
     :gen_event.call(entity, Components.Type, :get_type)
   end
+  
+  def serialize(entity) do
+    {"Type", get_type(entity)}
+  end
 
   ### GenEvent API
   def init(type) do

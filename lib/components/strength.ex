@@ -6,6 +6,10 @@ defmodule Components.Strength do
     :gen_event.call(entity, Components.Strength, :value)
   end
 
+  def serialize(entity) do
+    {"Strength", value(entity)}
+  end
+
   ### GenEvent API
   def init(value) do
     {:ok, value}

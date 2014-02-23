@@ -6,7 +6,15 @@ defmodule Components.Race do
     :gen_event.call(entity, Components.Race, :value)
   end
 
+  def serialize(entity) do
+    {"Race", Components.Number.get_number(value(entity))}
+  end
+
   ### GenEvent API
+  def init(value) when is_number(value) do
+    {:ok, Races.find_by_number(value)}
+  end
+
   def init(value) do
     {:ok, value}
   end

@@ -6,6 +6,10 @@ defmodule Components.Charm do
     :gen_event.call(entity, Components.Charm, :value)
   end
 
+  def serialize(entity) do
+    {"Charm", value(entity)}
+  end
+
   ### GenEvent API
   def init(value) do
     {:ok, value}
