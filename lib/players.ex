@@ -19,6 +19,10 @@ defmodule Players do
     :gen_server.call(:players, {:find_by_connection, connection})
   end
 
+  def all do
+    :gen_server.call(:players, :all)
+  end
+
 
   # GenServer API
   def start_link() do
@@ -56,6 +60,10 @@ defmodule Players do
       Components.Connection.get_connection(player) == connection
     end
     {:reply, player, players}
+  end
+
+  def handle_call(:all, _from, players) do
+    {:reply, players, players}
   end
 
 end

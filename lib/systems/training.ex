@@ -126,7 +126,7 @@ defmodule Systems.Training do
 
     def calculate_cp_change(min, current, new) do
       lowest = Enum.min([current, new])
-      change = Enum.reduce(current..new, 0, fn(point, total) ->
+      Enum.reduce(current..new, 0, fn(point, total) ->
         if point == lowest do
           total
         else
@@ -233,12 +233,13 @@ defmodule Systems.Training do
     def finish(player) do
       character = Components.Login.get_character(player)
 
-      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, :global.whereis_name(:"82325"))
+      room = :global.whereis_name(:"82325")
+      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, room)
 
       ApathyDrive.Entity.save!(character)
 
       Players.send_message(player, ["clear scroll"])
-      Systems.Room.display_current_room(player)
+      Systems.Room.display_room(player, room)
 
     end
 

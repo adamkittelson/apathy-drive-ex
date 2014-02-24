@@ -218,7 +218,7 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:login, character})
   end
 
-  def serialize(entity) do
+  def serialize(_entity) do
     nil
   end
 
@@ -329,11 +329,11 @@ defmodule Components.Login do
     {:ok, [step: "create_character_request_class", race: race, account: state[:account]]}
   end
 
-  def handle_event({:training, character, stats}, state) do
+  def handle_event({:training, character, stats}, _state) do
     {:ok, [step: "training", character: character, stats: stats]}
   end
 
-  def handle_event({:login, character}, state) do
+  def handle_event({:login, character}, _state) do
     {:ok, [step: "playing", character: character]}
   end
 
