@@ -105,6 +105,7 @@ defmodule Components.Login do
         ApathyDrive.Entity.add_component(character, Components.CP, 100)
         ApathyDrive.Entity.add_component(character, Components.Class, class)
         ApathyDrive.Entity.add_component(character, Components.Race, race)
+        ApathyDrive.Entity.add_component(character, Components.Gender, nil)
 
         Systems.Training.train_stats(player, character)
       else
