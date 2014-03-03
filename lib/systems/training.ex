@@ -230,11 +230,30 @@ defmodule Systems.Training do
       end
     end
 
+    def validate_name(player, name) do
+      valid = true
+      if String.length(name) == 0 do
+        valid = false
+        Players.send_message(player, ["update", "#validation", "Name cannot be blank."])
+      end
+      if Regex.match?(%r/[^a-zA-Z]/, name) do
+        valid = false
+        Players.send_message(player, ["update", "#validation", "Name can only include letters."])
+      end
+      if valid do
+        Components.Login.set_name(player, name)
+      else
+        Players.send_message(player, ["focus", "#first-name"])
+      end
+    end
+
     def finish(player) do
       character = Components.Login.get_character(player)
 
       room = :global.whereis_name(:"82325")
       ApathyDrive.Entity.add_component(character, Components.CurrentRoom, room)
+
+      ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
 
       ApathyDrive.Entity.save!(character)
 

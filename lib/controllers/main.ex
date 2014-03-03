@@ -113,6 +113,10 @@ defmodule ApathyDrive.Main do
           if Components.Login.get_step(player) == "training" do
             Systems.Training.validate_attribute(player, "eye_color", command)
           end
+       "first-name" ->
+          if Components.Login.get_step(player) == "training" do
+            Systems.Training.validate_name(player, command)
+          end
        "save" ->
           if Components.Login.get_step(player) == "training" do
             Systems.Training.finish(player)

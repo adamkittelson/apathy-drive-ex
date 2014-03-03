@@ -210,6 +210,14 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:set_gender, gender})
   end
 
+  def get_name(player) do
+    :gen_event.call(player, Components.Login, :get_name)
+  end
+
+  def set_name(player, name) do
+    ApathyDrive.Entity.notify(player, {:set_name, name})
+  end
+
   def set_cp(player, cp) do
     ApathyDrive.Entity.notify(player, {:set_cp, cp})
   end
@@ -279,6 +287,10 @@ defmodule Components.Login do
     {:ok, state[:gender], state}
   end
 
+  def handle_call(:get_name, state) do
+    {:ok, state[:name], state}
+  end
+
   def handle_call(:get_account, state) do
     {:ok, state[:account], state}
   end
@@ -307,6 +319,10 @@ defmodule Components.Login do
 
   def handle_event({:set_gender, gender}, state) do
     {:ok, Keyword.put(state, :gender, gender)}
+  end
+
+  def handle_event({:set_name, name}, state) do
+    {:ok, Keyword.put(state, :name, name)}
   end
 
   def handle_event({:intro}, _state) do
