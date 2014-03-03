@@ -6,6 +6,10 @@ defmodule Components.Willpower do
     :gen_event.call(entity, Components.Willpower, :value)
   end
 
+  def value(entity, new_value) do
+    ApathyDrive.Entity.notify(entity, {:set_willpower, new_value})
+  end
+
   def serialize(entity) do
     {"Willpower", value(entity)}
   end
@@ -19,7 +23,11 @@ defmodule Components.Willpower do
     {:ok, value, value}
   end
 
-  def handle_cast({:set_value, value}, _value) do
-    {:noreply, value }
+  def handle_event({:set_willpower, value}, _value) do
+    {:ok, value }
+  end
+
+  def handle_event(_, current_value) do
+    {:ok, current_value}
   end
 end

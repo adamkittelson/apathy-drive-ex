@@ -117,6 +117,10 @@ defmodule ApathyDrive.Main do
           if Components.Login.get_step(player) == "training" do
             Systems.Training.validate_name(player, command)
           end
+       "last-name" ->
+          if Components.Login.get_step(player) == "training" do
+            Systems.Training.validate_last_name(player, command)
+          end
        "save" ->
           if Components.Login.get_step(player) == "training" do
             Systems.Training.finish(player)

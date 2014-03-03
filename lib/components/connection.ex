@@ -18,4 +18,8 @@ defmodule Components.Connection do
   def handle_call(:get_connection, connection_pid) do
     {:ok, connection_pid, connection_pid}
   end
+
+  def handle_event(_, current_value) do
+    {:ok, current_value}
+  end
 end

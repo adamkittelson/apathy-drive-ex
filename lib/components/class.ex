@@ -6,6 +6,10 @@ defmodule Components.Class do
     :gen_event.call(entity, Components.Class, :value)
   end
 
+  def value(entity, new_value) do
+    ApathyDrive.Entity.notify(entity, {:set_class, new_value})
+  end
+
   def serialize(entity) do
     {"Class", Components.Number.get_number(value(entity))}
   end
@@ -23,7 +27,11 @@ defmodule Components.Class do
     {:ok, value, value}
   end
 
-  def handle_cast({:set_value, value}, _value) do
-    {:noreply, value }
+  def handle_event({:set_class, new_value}, _value) do
+    {:ok, new_value }
+  end
+
+  def handle_event(_, current_value) do
+    {:ok, current_value}
   end
 end

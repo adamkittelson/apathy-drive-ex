@@ -190,6 +190,10 @@ defmodule Components.Login do
     :gen_event.call(player, Components.Login, :get_hair_color)
   end
 
+  def value(entity, new_value) do
+    ApathyDrive.Entity.notify(entity, {:set_login, new_value})
+  end
+
   def set_hair_color(player, hair_color) do
     ApathyDrive.Entity.notify(player, {:set_hair_color, hair_color})
   end
@@ -214,8 +218,16 @@ defmodule Components.Login do
     :gen_event.call(player, Components.Login, :get_name)
   end
 
+  def get_last_name(player) do
+    :gen_event.call(player, Components.Login, :get_last_name)
+  end
+
   def set_name(player, name) do
     ApathyDrive.Entity.notify(player, {:set_name, name})
+  end
+
+  def set_last_name(player, name) do
+    ApathyDrive.Entity.notify(player, {:set_last_name, name})
   end
 
   def set_cp(player, cp) do
@@ -291,8 +303,16 @@ defmodule Components.Login do
     {:ok, state[:name], state}
   end
 
+  def handle_call(:get_last_name, state) do
+    {:ok, state[:last_name], state}
+  end
+
   def handle_call(:get_account, state) do
     {:ok, state[:account], state}
+  end
+
+  def handle_event({:set_login, new_value}, _value) do
+    {:ok, new_value }
   end
 
   def handle_event({:set_stat, stat_name, stat}, state) do
@@ -323,6 +343,10 @@ defmodule Components.Login do
 
   def handle_event({:set_name, name}, state) do
     {:ok, Keyword.put(state, :name, name)}
+  end
+
+  def handle_event({:set_last_name, name}, state) do
+    {:ok, Keyword.put(state, :last_name, name)}
   end
 
   def handle_event({:intro}, _state) do

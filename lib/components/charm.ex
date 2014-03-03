@@ -6,6 +6,10 @@ defmodule Components.Charm do
     :gen_event.call(entity, Components.Charm, :value)
   end
 
+  def value(entity, new_value) do
+    ApathyDrive.Entity.notify(entity, {:set_charm, new_value})
+  end
+
   def serialize(entity) do
     {"Charm", value(entity)}
   end
@@ -19,7 +23,11 @@ defmodule Components.Charm do
     {:ok, value, value}
   end
 
-  def handle_cast({:set_value, value}, _value) do
-    {:noreply, value }
+  def handle_event({:set_charm, value}, _value) do
+    {:ok, value }
+  end
+
+  def handle_event(_, current_value) do
+    {:ok, current_value}
   end
 end

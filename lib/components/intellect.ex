@@ -6,6 +6,10 @@ defmodule Components.Intellect do
     :gen_event.call(entity, Components.Intellect, :value)
   end
 
+  def value(entity, new_value) do
+    ApathyDrive.Entity.notify(entity, {:set_intellect, new_value})
+  end
+
   def serialize(entity) do
     {"Intellect", value(entity)}
   end
@@ -19,7 +23,11 @@ defmodule Components.Intellect do
     {:ok, value, value}
   end
 
-  def handle_cast({:set_value, value}, _value) do
-    {:noreply, value }
+  def handle_event({:set_intellect, value}, _value) do
+    {:ok, value }
+  end
+
+  def handle_event(_, current_value) do
+    {:ok, current_value}
   end
 end

@@ -247,6 +247,19 @@ defmodule Systems.Training do
       end
     end
 
+    def validate_last_name(player, name) do
+      valid = true
+      if Regex.match?(%r/[^a-zA-Z ]/, name) do
+        valid = false
+        Players.send_message(player, ["update", "#validation", "Last name can only include letters and spaces."])
+      end
+      if valid do
+        Components.Login.set_last_name(player, name)
+      else
+        Players.send_message(player, ["focus", "#last-name"])
+      end
+    end
+
     def finish(player) do
       character = Components.Login.get_character(player)
 
@@ -254,6 +267,13 @@ defmodule Systems.Training do
       ApathyDrive.Entity.add_component(character, Components.CurrentRoom, room)
 
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
+      ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
+      Components.Agility.value(character, Components.Login.get_stat(player, :agility))
+      Components.Charm.value(character, Components.Login.get_stat(player, :charm))
+      Components.Health.value(character, Components.Login.get_stat(player, :health))
+      Components.Intellect.value(character, Components.Login.get_stat(player, :intellect))
+      Components.Strength.value(character, Components.Login.get_stat(player, :strength))
+      Components.Willpower.value(character, Components.Login.get_stat(player, :willpower))
 
       ApathyDrive.Entity.save!(character)
 
