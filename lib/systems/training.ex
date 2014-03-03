@@ -274,6 +274,7 @@ defmodule Systems.Training do
       Components.Intellect.value(character, Components.Login.get_stat(player, :intellect))
       Components.Strength.value(character, Components.Login.get_stat(player, :strength))
       Components.Willpower.value(character, Components.Login.get_stat(player, :willpower))
+      Components.CP.value(character, Components.Login.get_cp(player))
 
       ApathyDrive.Entity.save!(character)
 
