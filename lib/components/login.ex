@@ -264,6 +264,7 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:login, character})
     Players.send_message(player, ["clear scroll"])
     Systems.Room.display_room(player, Components.CurrentRoom.get_current_room(character))
+    Systems.Command.display_prompt(player)
   end
 
   def serialize(_entity) do

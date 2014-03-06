@@ -66,10 +66,7 @@ $ ->
     event.preventDefault()
     if event.which is 13 # enter key
       command = $(event.target).val()
-      if event.target.id is "command"
-        addToScroll('#scroll', "<p><span class='dark-yellow'>#{command}</span></p>")
-        $(event.target).val("")
-      else
+      unless event.target.id is "command"
         $("#validation").html("")
         focusNext($(event.target))
       params = {}
