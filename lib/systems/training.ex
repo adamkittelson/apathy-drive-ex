@@ -276,6 +276,9 @@ defmodule Systems.Training do
       Components.Willpower.value(character, Components.Login.get_stat(player, :willpower))
       Components.CP.value(character, Components.Login.get_cp(player))
       Components.Gender.value(character, Components.Login.get_gender(player))
+      Components.EyeColor.value(character, Components.Login.get_eye_color(player))
+      Components.HairColor.value(character, Components.Login.get_hair_color(player))
+      Components.HairLength.value(character, Components.Login.get_hair_length(player))
 
       ApathyDrive.Entity.save!(character)
 
