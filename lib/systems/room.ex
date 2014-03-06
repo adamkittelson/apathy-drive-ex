@@ -4,7 +4,19 @@ defmodule Systems.Room do
   end
 
   def display_room_in_scroll(player, room_pid) do
-    Players.send_message player, ["scroll", "<div class='room'>#{name_html(room_pid)}#{description_html(room_pid)}#{items_html(room_pid)}#{entities_html(room_pid)}#{exit_directions_html(room_pid)}</div>"]
+    Players.send_message player, ["scroll", long_room_html(room_pid)]
+  end
+
+  def display_short_room_in_scroll(player, room_pid) do
+    Players.send_message player, ["scroll", short_room_html(room_pid)]
+  end
+
+  def long_room_html(room) do
+    "<div class='room'>#{name_html(room)}#{description_html(room)}#{items_html(room)}#{entities_html(room)}#{exit_directions_html(room)}</div>"
+  end
+
+  def short_room_html(room) do
+    "<div class='room'>#{name_html(room)}#{exit_directions_html(room)}</div>"
   end
 
   def room_data(room) do
@@ -77,6 +89,7 @@ defmodule Systems.Room do
 
     ApathyDrive.Entity.notify(character, {:set_current_room, destination})
     display_room(player, destination)
+    display_short_room_in_scroll(player, destination)
   end
 
   def get_exit_by_direction(room, direction) do
