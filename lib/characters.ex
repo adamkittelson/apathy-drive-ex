@@ -16,6 +16,12 @@ defmodule Characters do
     end)
   end
 
+  def for_account(account) do
+    Enum.filter(all, fn(character) ->
+      Components.AccountID.value(character) == account.id
+    end)
+  end
+
   # GenServer API
   def start_link() do
     :gen_server.start_link({:local, :characters}, __MODULE__, [], [])

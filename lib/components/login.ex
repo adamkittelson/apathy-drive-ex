@@ -28,7 +28,6 @@ defmodule Components.Login do
     email = :gen_event.call(player, Components.Login, :get_email)
     account = ApathyDrive.Account.find(email, password)
     if account do
-      Players.send_message(player, ["scroll", "<p>Welcome back!</p>"])
       display_character_select(player, account)
     else
       Players.send_message(player, ["scroll", "<p>Invalid username/password!</p>"])
@@ -37,8 +36,15 @@ defmodule Components.Login do
   end
 
   def display_character_select(player, account) do
+    Players.send_message(player, ["clear scroll"])
     ApathyDrive.Entity.notify(player, {:sign_in_set_account, account})
-    Players.send_message(player, ["scroll", "<p><span class='dark-yellow underline'>Characters</span></p>"])
+    Players.send_message(player, ["scroll", "\n<p><span class='dark-yellow underline'>Characters</span></p>\n\n"])
+    Enum.each(Characters.for_account(account), fn(character) ->
+      name  = Components.Name.get_name(character)
+      race  = Components.Race.value(character)  |> Components.Name.get_name
+      class = Components.Class.value(character) |> Components.Name.get_name
+      Players.send_message(player, ["scroll", "<p><span class='white'>#{name}</span> <span class='dark-green'>:</span> <span class='dark-yellow'>#{race} #{class}</span></p>"])
+    end)
     Players.send_message(player, ["scroll", "\n\n\n\n<p><span class='dark-red'>N</span> <span class='dark-green'>:</span> <span class='dark-yellow'>New Character</span></p>"])
     Players.send_message(player, ["scroll", "<p><span class='dark-yellow'>Please enter your selection:</span> <input id='character' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#character"])
