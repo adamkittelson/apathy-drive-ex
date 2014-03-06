@@ -79,10 +79,7 @@
       event.preventDefault();
       if (event.which === 13) {
         command = $(event.target).val();
-        if (event.target.id === "command") {
-          addToScroll('#scroll', "<p><span class='dark-yellow'>" + command + "</span></p>");
-          $(event.target).val("");
-        } else {
+        if (event.target.id !== "command") {
           $("#validation").html("");
           focusNext($(event.target));
         }
