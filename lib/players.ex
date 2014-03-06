@@ -1,17 +1,13 @@
 defmodule Players do
   use GenServer.Behaviour
 
-  import Weber.Session
-
   # Public API
   def connected(connection) do
-    IO.puts "Connected! pid: #{inspect connection}"
     :gen_server.cast(:players, {:connected, connection})
   end
 
   def disconnected(connection) do
     player = find_by_connection(connection)
-    IO.puts "Player Disconnected! Pid: #{inspect connection}"
     :gen_server.cast(:players, {:disconnected, player})
   end
 
@@ -21,6 +17,10 @@ defmodule Players do
 
   def find_by_connection(connection) do
     :gen_server.call(:players, {:find_by_connection, connection})
+  end
+
+  def all do
+    :gen_server.call(:players, :all)
   end
 
 
@@ -38,10 +38,9 @@ defmodule Players do
 
     ApathyDrive.Entity.add_component(player, Components.Connection, connection)
 
-    room_to_start_in = :global.whereis_name(:"82325")
-    ApathyDrive.Entity.add_component(player, Components.CurrentRoom, room_to_start_in)
+    ApathyDrive.Entity.add_component(player, Components.Login, nil)
 
-    Systems.Room.display_current_room(player)
+    Components.Login.intro(player)
 
     {:noreply, [player | players] }
   end
@@ -60,8 +59,11 @@ defmodule Players do
     player = Enum.find players, fn (player) ->
       Components.Connection.get_connection(player) == connection
     end
-    IO.puts "Found player #{inspect player} by connection #{inspect connection}"
     {:reply, player, players}
+  end
+
+  def handle_call(:all, _from, players) do
+    {:reply, players, players}
   end
 
 end

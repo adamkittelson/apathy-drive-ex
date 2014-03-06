@@ -6,6 +6,14 @@ defmodule Components.Direction do
     :gen_event.call(entity, Components.Direction, :get_direction)
   end
 
+  def value(entity, new_value) do
+    ApathyDrive.Entity.notify(entity, {:set_direction, new_value})
+  end
+
+  def serialize(entity) do
+    {"Direction", get_direction(entity)}
+  end
+
   ### GenEvent API
   def init(direction) do
     {:ok, direction}
@@ -13,5 +21,13 @@ defmodule Components.Direction do
 
   def handle_call(:get_direction, direction) do
     {:ok, direction, direction}
+  end
+
+  def handle_event({:set_direction, new_value}, _value) do
+    {:ok, new_value }
+  end
+
+  def handle_event(_, current_value) do
+    {:ok, current_value}
   end
 end

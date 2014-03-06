@@ -1,6 +1,6 @@
 defmodule Systems.Room do
-  def display_current_room(player) do
-    Players.send_message player, ["room", get_current_room(player) |> room_data]
+  def display_room(player, room_pid) do
+    Players.send_message player, ["room", room_pid |> room_data]
   end
 
   def room_data(room) do
@@ -11,8 +11,8 @@ defmodule Systems.Room do
     ]
   end
 
-  def get_current_room(player) do
-    Components.CurrentRoom.get_current_room(player)
+  def get_current_room(entity) do
+    Components.CurrentRoom.get_current_room(entity)
   end
 
   def exit_directions(room) do
@@ -33,13 +33,13 @@ defmodule Systems.Room do
     Components.Name.get_name(room)
   end
 
-  def move(player, direction) do
-    destination = player |> get_current_room
-                         |> get_exit_by_direction(direction)
-                         |> Components.Destination.get_destination
+  def move(player, character, direction) do
+    current_room = get_current_room(character)
+    destination = current_room |> get_exit_by_direction(direction)
+                               |> Components.Destination.get_destination
 
-    ApathyDrive.Entity.notify(player, {:set_current_room, destination})
-    display_current_room(player)
+    ApathyDrive.Entity.notify(character, {:set_current_room, destination})
+    display_room(player, destination)
   end
 
   def get_exit_by_direction(room, direction) do

@@ -1,11 +1,11 @@
 (function() {
 
   $(function() {
-    var addToScroll, adjustScrollTop, updateRoom, webSocket;
+    var addToScroll, adjustScrollTop, clearScroll, disableField, focus, focusNext, focusPrevious, setFocus, updateRoom, webSocket;
+    focus = null;
     $('body').on('click', function(event) {
-      return $('#command').focus();
+      return setFocus(focus);
     });
-    $('#command').focus();
     updateRoom = function(data) {
       console.log(data);
       $('#room .title').html(data['name']);
@@ -13,8 +13,15 @@
       $('#room .exits').html("Obvious exits: " + (data['exits'].join(', ') || 'NONE'));
       return adjustScrollTop();
     };
+    clearScroll = function() {
+      return $('#scroll').html("");
+    };
     adjustScrollTop = function() {
       return $("#scroll_container").css("top", $("#room").height() + 10 + "px");
+    };
+    setFocus = function(selector) {
+      focus = selector;
+      return $(selector).focus().select();
     };
     adjustScrollTop();
     webSocket = new WebSocket('ws://localhost:3000/_ws');
@@ -27,8 +34,18 @@
       switch (message[0]) {
         case "room":
           return updateRoom(message[1]);
+        case "clear scroll":
+          return clearScroll();
+        case "focus":
+          return setFocus(message[1]);
+        case "disable":
+          return disableField(message[1]);
+        case "update":
+          return $(message[1]).html(message[2]);
+        case "set field":
+          return $(message[1]).val(message[2]);
         default:
-          return addToScroll("#scroll", "<div>" + message[1] + "</div>");
+          return addToScroll("#scroll", message[1]);
       }
     };
     webSocket.onclose = function(event) {
@@ -38,15 +55,62 @@
       $(elem).append(text);
       return $('#scroll').scrollTop($('#scroll')[0].scrollHeight);
     };
-    return $('#command').on('keyup', function(event) {
-      var command;
+    focusNext = function(elem) {
+      var field, fields;
+      fields = $("#scroll").find('input:not([disabled])');
+      field = fields.eq(fields.index(elem) + 1)[0];
+      if (field) {
+        return setFocus("#" + field.id);
+      }
+    };
+    focusPrevious = function(elem) {
+      var field, fields;
+      fields = $("#scroll").find(':input');
+      field = fields.eq(fields.index(elem) - 1)[0];
+      if (field) {
+        return setFocus("#" + field.id);
+      }
+    };
+    disableField = function(selector) {
+      return $(selector).prop('disabled', true).removeAttr('id');
+    };
+    return $(document).on('keyup', "input", function(event) {
+      var command, params, value;
+      event.preventDefault();
       if (event.which === 13) {
         command = $(event.target).val();
-        $(event.target).val("");
-        addToScroll('#scroll', "<div><span class='dark-yellow'>" + command + "</span></div>");
-        return webSocket.send(JSON.stringify({
-          command: command
-        }));
+        if (event.target.id === "command") {
+          addToScroll('#scroll', "<p><span class='dark-yellow'>" + command + "</span></p>");
+          $(event.target).val("");
+        } else {
+          $("#validation").html("");
+          focusNext($(event.target));
+        }
+        params = {};
+        params[event.target.id] = command;
+        return webSocket.send(JSON.stringify(params));
+      } else if (event.which === 38) {
+        value = parseInt($(event.target).val());
+        if (!isNaN(value)) {
+          $("#validation").html("");
+          $(event.target).val(value + 1);
+          params = {};
+          params[event.target.id] = "" + (value + 1);
+          return webSocket.send(JSON.stringify(params));
+        }
+      } else if (event.which === 40) {
+        value = parseInt($(event.target).val());
+        if (!isNaN(value)) {
+          $("#validation").html("");
+          $(event.target).val(value - 1);
+          params = {};
+          params[event.target.id] = "" + (value - 1);
+          return webSocket.send(JSON.stringify(params));
+        }
+      } else if (event.which === 32) {
+        params = {};
+        params["cycle"] = event.target.id;
+        return webSocket.send(JSON.stringify(params));
       }
     });
   });

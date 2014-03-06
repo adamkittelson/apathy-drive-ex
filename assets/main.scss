@@ -29,6 +29,11 @@ $grey: #c0c0c0;
 $dark-grey: #808080;
 .dark-grey { color: $dark-grey; }
 
+.underline {
+  border-bottom: 1px solid $dark-green;
+  padding-bottom: 3px;
+  margin-bottom: 20px;
+}
 body {
   overflow: hidden;
 }
@@ -37,14 +42,16 @@ body {
   background-color: black;
 }
 
-#main {
-  font-family: monospace;
-  font-size: medium;
+#main, #prompt {
+  font-family: "Andale Mono", "Courier New", Monospace;
+  font-size: 12px;
   color: $grey;
+  line-height: 7px;
 }
 
 #room {
   width: 620px;
+  line-height: 15px;
   .title { color: $cyan; }
   .description {
     text-indent: 33px;
@@ -80,21 +87,46 @@ code {
   overflow: hidden;
   height: 100%;
   white-space: pre-wrap;
+  p { margin-bottom: 10px;}
 }
 
 #scroll:hover {
   overflow-y: scroll;
 }
 
-#command {
-  width: 620px;
+.prompt {
+  max-width: 620px;
   background-color: black;
   border: none;
   color: $grey;
   outline: none;
+  font-size: 12px;
+  display: inline;
+  margin-top: 5px;
 }
+
+.field {
+  background-color: black;
+  border: none;
+  color: $white;
+  outline: none;
+  font-size: 12px;
+  height: 14px;
+  padding: 0px;
+  margin-bottom: -10px;
+  margin-top: -10px;
+}
+.field:focus { 
+  color: black;
+  background-color: $grey;
+};
 
 #prompt {
   color: $grey;
   margin-right: 5px;
+}
+
+.arrow {
+  position: relative;
+  left: -5px;
 }

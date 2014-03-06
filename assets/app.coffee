@@ -1,9 +1,9 @@
 $ ->
 
-  $('body').on 'click', (event) ->
-    $('#command').focus()
+  focus = null
 
-  $('#command').focus()
+  $('body').on 'click', (event) ->
+    setFocus(focus)
 
   updateRoom = (data) ->
     console.log(data)
@@ -12,8 +12,15 @@ $ ->
     $('#room .exits').html("Obvious exits: #{data['exits'].join(', ') || 'NONE'}")
     adjustScrollTop()
 
+  clearScroll = ->
+    $('#scroll').html("")
+
   adjustScrollTop = ->
     $("#scroll_container").css("top", $("#room").height() + 10 + "px")
+
+  setFocus = (selector) ->
+    focus = selector
+    $(selector).focus().select()
 
   adjustScrollTop()
 
@@ -26,7 +33,12 @@ $ ->
     message = JSON.parse(event.data)
     switch message[0]
       when "room" then updateRoom(message[1])
-      else addToScroll("#scroll", "<div>#{message[1]}</div>")
+      when "clear scroll" then clearScroll()
+      when "focus" then setFocus(message[1])
+      when "disable" then disableField(message[1])
+      when "update" then $(message[1]).html(message[2])
+      when "set field" then $(message[1]).val(message[2])
+      else addToScroll("#scroll", message[1])
 
   webSocket.onclose = (event) ->
     console.log "Connection closed!"
@@ -35,9 +47,51 @@ $ ->
     $(elem).append(text)
     $('#scroll').scrollTop($('#scroll')[0].scrollHeight)
 
-  $('#command').on 'keyup', (event) ->
+  focusNext = (elem) ->
+    fields = $("#scroll").find('input:not([disabled])')
+    field = fields.eq(fields.index(elem) + 1)[0]
+    if field
+      setFocus("##{field.id}")
+
+  focusPrevious = (elem) ->
+    fields = $("#scroll").find(':input')
+    field = fields.eq(fields.index(elem) - 1)[0]
+    if field
+      setFocus("##{field.id}")
+
+  disableField = (selector) ->
+    $(selector).prop('disabled', true).removeAttr('id')
+
+  $(document).on 'keyup', "input", (event) ->
+    event.preventDefault()
     if event.which is 13 # enter key
       command = $(event.target).val()
-      $(event.target).val("")
-      addToScroll('#scroll', "<div><span class='dark-yellow'>#{command}</span></div>")
-      webSocket.send JSON.stringify({ command: command })
+      if event.target.id is "command"
+        addToScroll('#scroll', "<p><span class='dark-yellow'>#{command}</span></p>")
+        $(event.target).val("")
+      else
+        $("#validation").html("")
+        focusNext($(event.target))
+      params = {}
+      params[event.target.id] = command
+      webSocket.send JSON.stringify(params)
+    else if event.which is 38
+      value = parseInt($(event.target).val())
+      unless isNaN value
+        $("#validation").html("")
+        $(event.target).val(value + 1)
+        params = {}
+        params[event.target.id] = "#{value + 1}"
+        webSocket.send JSON.stringify(params)
+    else if event.which is 40
+      value = parseInt($(event.target).val())
+      unless isNaN value
+        $("#validation").html("")
+        $(event.target).val(value - 1)
+        params = {}
+        params[event.target.id] = "#{value - 1}"
+        webSocket.send JSON.stringify(params)
+    else if event.which is 32
+      params = {}
+      params["cycle"] = event.target.id
+      webSocket.send JSON.stringify(params)

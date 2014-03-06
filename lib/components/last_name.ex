@@ -1,17 +1,17 @@
-defmodule Components.Name do
+defmodule Components.LastName do
   use GenEvent.Behaviour
 
   ### Public API
-  def get_name(entity) do
-    :gen_event.call(entity, Components.Name, :get_name)
+  def value(entity) do
+    :gen_event.call(entity, Components.LastName, :value)
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_name, new_value})
+    ApathyDrive.Entity.notify(entity, {:set_last_name, new_value})
   end
 
   def serialize(entity) do
-    {"Name", get_name(entity)}
+    {"LastName", value(entity)}
   end
 
   ### GenEvent API
@@ -19,11 +19,11 @@ defmodule Components.Name do
     {:ok, name}
   end
 
-  def handle_call(:get_name, name) do
+  def handle_call(:value, name) do
     {:ok, name, name}
   end
 
-  def handle_event({:set_name, new_value}, _value) do
+  def handle_event({:set_last_name, new_value}, _value) do
     {:ok, new_value }
   end
 
