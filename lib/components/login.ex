@@ -110,6 +110,7 @@ defmodule Components.Login do
         ApathyDrive.Entity.add_component(character, Components.EyeColor, nil)
         ApathyDrive.Entity.add_component(character, Components.HairColor, nil)
         ApathyDrive.Entity.add_component(character, Components.HairLength, nil)
+        ApathyDrive.Entity.add_component(character, Components.AccountID, Components.Login.get_account(player).id)
 
         Systems.Training.train_stats(player, character)
       else
@@ -225,6 +226,10 @@ defmodule Components.Login do
 
   def get_last_name(player) do
     :gen_event.call(player, Components.Login, :get_last_name)
+  end
+
+  def get_account(player) do
+    :gen_event.call(player, Components.Login, :get_account)
   end
 
   def set_name(player, name) do
