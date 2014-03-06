@@ -3,6 +3,10 @@ defmodule Systems.Room do
     Players.send_message player, ["room", room_pid |> room_data]
   end
 
+  def display_room_in_scroll(player, room_pid) do
+    Players.send_message player, ["scroll", "<div class='room'>#{name_html(room_pid)}#{description_html(room_pid)}#{items_html(room_pid)}#{entities_html(room_pid)}#{exit_directions_html(room_pid)}</div>"]
+  end
+
   def room_data(room) do
     [
       name: name(room),
@@ -21,6 +25,15 @@ defmodule Systems.Room do
     end
   end
 
+  def exit_directions_html(room) do
+    directions = exit_directions(room)
+    if Enum.any? directions do
+      "<div class='exits'>Obvious exits: #{Enum.join(directions, ", ")}</div>"
+    else
+      "<div class='exits'>Obvious exits: NONE</div>"
+    end
+  end
+
   def exits(room) do
     Components.Exits.get_exits(room)
   end
@@ -29,8 +42,32 @@ defmodule Systems.Room do
     Components.Description.get_description(room)
   end
 
+  def description_html(room) do
+    "<div class='description'>#{description(room)}</div>"
+  end
+
   def name(room) do
     Components.Name.get_name(room)
+  end
+
+  def name_html(room) do
+    "<div class='title'>#{name(room)}</div>"
+  end
+
+  def items(room) do
+    []
+  end
+
+  def items_html(room) do
+    "<div class='items'>#{Enum.join(items(room), ", ")}</div>"
+  end
+
+  def entities(room) do
+    []
+  end
+
+  def entities_html(room) do
+    "<div class='items'>#{Enum.join(entities(room), ", ")}</div>"
   end
 
   def move(player, character, direction) do

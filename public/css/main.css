@@ -60,16 +60,16 @@ body {
   color: silver;
   line-height: 7px; }
 
-#room {
+.room {
   width: 620px;
   line-height: 15px; }
-  #room .title {
+  .room .title {
     color: cyan; }
-  #room .description {
+  .room .description {
     text-indent: 33px; }
-  #room .items {
+  .room .items {
     color: teal; }
-  #room .exits {
+  .room .exits {
     color: green; }
 
 #wrap > .container {
@@ -95,6 +95,7 @@ code {
 #scroll {
   overflow: hidden;
   height: 100%;
+  width: 620px;
   white-space: pre-wrap; }
   #scroll p {
     margin-bottom: 10px; }

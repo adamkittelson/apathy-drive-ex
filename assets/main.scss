@@ -49,7 +49,7 @@ body {
   line-height: 7px;
 }
 
-#room {
+.room {
   width: 620px;
   line-height: 15px;
   .title { color: $cyan; }
@@ -86,6 +86,7 @@ code {
 #scroll {
   overflow: hidden;
   height: 100%;
+  width: 620px;
   white-space: pre-wrap;
   p { margin-bottom: 10px;}
 }

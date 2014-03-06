@@ -33,6 +33,7 @@ defmodule Systems.Command do
   end
 
   def execute(player, command, _arguments) do
+    command_found = false
     character = Components.Login.get_character(player)
     command = @aliases[:"#{command}"] || command
 
@@ -42,12 +43,20 @@ defmodule Systems.Command do
     end
 
     if Enum.member? @directions, command do
+      command_found = true
       if exit_directions && (Enum.member? exit_directions, command) do
         Systems.Room.move(player, character, command)
       else
         Players.send_message(player, ["scroll", "<p>There is no exit in that direction.</p>"])
       end
-    else
+    end
+
+    if Enum.member?(["l", "look"], command) do
+      command_found = true
+      Systems.Room.display_room_in_scroll(player, current_room)
+    end
+
+    if !command_found do
       Players.send_message(player, ["scroll", "<p>What?</p>"])
     end
     display_prompt(player)
