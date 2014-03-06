@@ -37,14 +37,7 @@ defmodule ApathyDrive.Entity do
       {component_name, component_values} = component
       ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
     end
-    if Enum.member?(:gen_event.which_handlers(entity), Components.Type) do
-      case Components.Type.get_type(entity) do
-        "race" ->
-          Races.add(entity)
-        "class" ->
-          Classes.add(entity)
-      end
-    end
+    add_to_type_collection(entity)
     if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do
       Systems.Help.add(entity)
     end
@@ -72,6 +65,20 @@ defmodule ApathyDrive.Entity do
     else
       entity = ApathyDrive.Entity.new(components: serialize_components(entity_pid))
       Repo.create entity
+      add_to_type_collection(entity_pid)
+    end
+  end
+
+  def add_to_type_collection(entity) do
+    if Enum.member?(:gen_event.which_handlers(entity), Components.Type) do
+      case Components.Type.get_type(entity) do
+        "race" ->
+          Races.add(entity)
+        "class" ->
+          Classes.add(entity)
+        "character" ->
+          Characters.add(entity)
+      end
     end
   end
 
