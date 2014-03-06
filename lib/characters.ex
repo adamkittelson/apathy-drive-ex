@@ -10,6 +10,12 @@ defmodule Characters do
     :gen_server.call(:characters, :all)
   end
 
+  def name_taken?(name) do
+    Enum.any?(all, fn(character) ->
+      Components.Name.get_name(character) == name
+    end)
+  end
+
   # GenServer API
   def start_link() do
     :gen_server.start_link({:local, :characters}, __MODULE__, [], [])

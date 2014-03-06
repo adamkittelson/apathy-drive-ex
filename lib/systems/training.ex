@@ -240,6 +240,10 @@ defmodule Systems.Training do
         valid = false
         Players.send_message(player, ["update", "#validation", "Name can only include letters."])
       end
+      if Characters.name_taken?(name) do
+        valid = false
+        Players.send_message(player, ["update", "#validation", "There's already a character with that name."])
+      end
       if valid do
         Components.Login.set_name(player, name)
       else
