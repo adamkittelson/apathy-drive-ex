@@ -286,8 +286,7 @@ defmodule Systems.Training do
 
       ApathyDrive.Entity.save!(character)
 
-      Players.send_message(player, ["clear scroll"])
-      Systems.Room.display_room(player, room)
+      Components.Login.login(player, character)
 
     end
 

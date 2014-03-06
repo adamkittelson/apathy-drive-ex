@@ -50,8 +50,8 @@ defmodule ApathyDrive.Main do
           "n" ->
             Players.send_message(player, ["disable", "##{event}"])
             Components.Login.display_race_select(player)
-          _other ->
-            IO.puts("Character select: #{message}")
+          _character_name ->
+            Components.Login.select_character(player, command)
         end
       "race" ->
         Players.send_message(player, ["disable", "##{event}"])

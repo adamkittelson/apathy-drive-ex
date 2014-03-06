@@ -250,8 +250,20 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:set_cp, cp})
   end
 
+  def select_character(player, character_name) do
+    account = get_account(player)
+    character = Characters.find_by_account_and_name(account, character_name)
+    if character do
+      login(player, character)
+    else
+      Players.send_message(player, ["scroll", "<p><span class='red'>You have no characters with that name.</span></p>"])
+    end
+  end
+
   def login(player, character) do
     ApathyDrive.Entity.notify(player, {:login, character})
+    Players.send_message(player, ["clear scroll"])
+    Systems.Room.display_room(player, Components.CurrentRoom.get_current_room(character))
   end
 
   def serialize(_entity) do
