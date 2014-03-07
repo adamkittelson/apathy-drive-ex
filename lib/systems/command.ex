@@ -64,6 +64,11 @@ defmodule Systems.Command do
       end
     end
 
+    if command == "help" do
+      command_found = true
+      Systems.Command.help(player, arguments)
+    end
+
     if !command_found do
       Players.send_message(player, ["scroll", "<p>What?</p>"])
     end
