@@ -66,7 +66,7 @@ defmodule Systems.Room do
     "<div class='title'>#{name(room)}</div>"
   end
 
-  def items(room) do
+  def items(_room) do
     []
   end
 
@@ -74,7 +74,7 @@ defmodule Systems.Room do
     "<div class='items'>#{Enum.join(items(room), ", ")}</div>"
   end
 
-  def entities(room) do
+  def entities(_room) do
     []
   end
 

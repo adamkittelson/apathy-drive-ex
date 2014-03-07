@@ -11,7 +11,7 @@ defmodule ApathyDrive.Entity do
 
   ### Public API
   def init do
-    :gen_event.start_link()
+    :gen_event.start()
   end
 
   def add_component(pid, component, args) do

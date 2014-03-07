@@ -59,13 +59,13 @@ defmodule Systems.Command do
     if !command_found do
       Players.send_message(player, ["scroll", "<p>What?</p>"])
     end
-    display_prompt(player)
+    display_prompt(player, character)
   end
 
-  def display_prompt(player) do
+  def display_prompt(player, character) do
     Players.send_message(player, ["disable", "#prompt"])
     Players.send_message(player, ["disable", "#command"])
-    Players.send_message(player, ["scroll", "<p><span id='prompt'>[HP=326/MA=76]:</span><input id='command' class='prompt'></input></p>"])
+    Players.send_message(player, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}]:</span><input id='command' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#command"])
   end
 

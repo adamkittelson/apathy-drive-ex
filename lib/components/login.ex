@@ -117,6 +117,9 @@ defmodule Components.Login do
         ApathyDrive.Entity.add_component(character, Components.HairColor, nil)
         ApathyDrive.Entity.add_component(character, Components.HairLength, nil)
         ApathyDrive.Entity.add_component(character, Components.AccountID, Components.Login.get_account(player).id)
+        ApathyDrive.Entity.add_component(character, Components.HPRolls, [Components.MaxHPPerLevel.value(class)])
+        ApathyDrive.Entity.add_component(character, Components.Level, 1)
+        ApathyDrive.Entity.add_component(character, Components.HP, Systems.HP.max_hp(character))
 
         Systems.Training.train_stats(player, character)
       else
@@ -264,7 +267,7 @@ defmodule Components.Login do
     ApathyDrive.Entity.notify(player, {:login, character})
     Players.send_message(player, ["clear scroll"])
     Systems.Room.display_room(player, Components.CurrentRoom.get_current_room(character))
-    Systems.Command.display_prompt(player)
+    Systems.Command.display_prompt(player, character)
   end
 
   def serialize(_entity) do
