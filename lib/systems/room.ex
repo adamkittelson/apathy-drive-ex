@@ -98,4 +98,16 @@ defmodule Systems.Room do
     end
   end
 
+  def characters_in_room(room) do
+    Enum.filter(Characters.all, fn(character) ->
+      room == Components.CurrentRoom.get_current_room(character)
+    end)
+  end
+
+  def find_character_by_name(room, character_name) do
+    Enum.find(characters_in_room(room), fn(character) ->
+      String.downcase(Components.Name.get_name(character)) == String.downcase(character_name)
+    end)
+  end
+
 end

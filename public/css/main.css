@@ -98,7 +98,8 @@ code {
   width: 620px;
   white-space: pre-wrap; }
   #scroll p {
-    margin-bottom: 10px; }
+    line-height: 15px;
+    margin-bottom: 0px; }
 
 #scroll:hover {
   overflow-y: scroll; }

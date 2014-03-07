@@ -32,7 +32,7 @@ defmodule Systems.Command do
     end
   end
 
-  def execute(player, command, _arguments) do
+  def execute(player, command, arguments) do
     command_found = false
     character = Components.Login.get_character(player)
     command = @aliases[:"#{command}"] || command
@@ -53,7 +53,15 @@ defmodule Systems.Command do
 
     if Enum.member?(["l", "look"], command) do
       command_found = true
-      Systems.Room.display_room_in_scroll(player, current_room)
+      if Enum.any? arguments do
+        if target_character = Systems.Room.find_character_by_name(current_room, Enum.join(arguments, " ")) do
+          Systems.CharacterDescription.add_character_description_to_scroll(player, target_character)
+        else
+          Players.send_message(player, ["scroll", "<p>You do not notice that here.</p>"])
+        end
+      else
+        Systems.Room.display_room_in_scroll(player, current_room)
+      end
     end
 
     if !command_found do
