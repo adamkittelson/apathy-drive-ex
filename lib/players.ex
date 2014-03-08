@@ -11,6 +11,7 @@ defmodule Players do
     character = Components.Login.get_character(player)
     if character do
       Components.Online.value(character, false)
+      Components.Player.value(character, nil)
     end
     :gen_server.cast(:players, {:disconnected, player})
   end

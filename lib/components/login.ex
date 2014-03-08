@@ -121,6 +121,7 @@ defmodule Components.Login do
         ApathyDrive.Entity.add_component(character, Components.Level, 1)
         ApathyDrive.Entity.add_component(character, Components.HP, Systems.HP.max_hp(character))
         ApathyDrive.Entity.add_component(character, Components.Online, false)
+        ApathyDrive.Entity.add_component(character, Components.Player, player)
 
         Systems.Training.train_stats(player, character)
       else
@@ -267,7 +268,8 @@ defmodule Components.Login do
   def login(player, character) do
     ApathyDrive.Entity.notify(player, {:login, character})
     Components.Online.value(character, true)
-    Players.send_message(player, ["clear scroll"])
+    Components.Player.value(character, player)
+    Components.Player.send_message(character, ["clear scroll"])
     Systems.Room.display_room(player, Components.CurrentRoom.get_current_room(character))
     Systems.Command.display_prompt(player, character)
   end

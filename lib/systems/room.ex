@@ -24,7 +24,7 @@ defmodule Systems.Room do
       name: name(room),
       description: description(room),
       exits: exit_directions(room),
-      entities: entities(player, room)
+      entities: entities(player, room) |> Enum.map(&(&1 |> Components.Name.get_name))
     ]
   end
 
@@ -80,11 +80,10 @@ defmodule Systems.Room do
     Characters.online
     |> entities_in_room(room)
     |> Enum.reject(&(&1 == character))
-    |> Enum.map(&(&1 |> Components.Name.get_name))
   end
 
   def entities_html(player, room) do
-    entities = entities(player, room)
+    entities = entities(player, room) |> Enum.map(&(&1 |> Components.Name.get_name))
     case Enum.count(entities) do
       0 ->
         ""
