@@ -10,6 +10,11 @@
       console.log(data);
       $('#room .title').html(data['name']);
       $('#room .description').html(data['description']);
+      if (data['entities'].length > 0) {
+        $('#room .entities').html("<span class='dark-magenta'>Also here:</span> <span class='magenta'>" + (data['entities'].join(', ')) + "</span><span class='dark-magenta'>.</span>");
+      } else {
+        $('#room .entities').html("");
+      }
       $('#room .exits').html("Obvious exits: " + (data['exits'].join(', ') || 'NONE'));
       return adjustScrollTop();
     };

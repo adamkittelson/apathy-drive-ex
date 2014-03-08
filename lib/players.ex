@@ -8,6 +8,10 @@ defmodule Players do
 
   def disconnected(connection) do
     player = find_by_connection(connection)
+    character = Components.Login.get_character(player)
+    if character do
+      Components.Online.value(character, false)
+    end
     :gen_server.cast(:players, {:disconnected, player})
   end
 

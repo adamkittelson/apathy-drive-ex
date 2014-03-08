@@ -1,29 +1,30 @@
 defmodule Systems.Room do
   def display_room(player, room_pid) do
-    Players.send_message player, ["room", room_pid |> room_data]
+    Players.send_message player, ["room", room_pid |> room_data(player)]
   end
 
   def display_room_in_scroll(player, room_pid) do
-    Players.send_message player, ["scroll", long_room_html(room_pid)]
+    Players.send_message player, ["scroll", long_room_html(player, room_pid)]
   end
 
   def display_short_room_in_scroll(player, room_pid) do
     Players.send_message player, ["scroll", short_room_html(room_pid)]
   end
 
-  def long_room_html(room) do
-    "<div class='room'>#{name_html(room)}#{description_html(room)}#{items_html(room)}#{entities_html(room)}#{exit_directions_html(room)}</div>"
+  def long_room_html(player, room) do
+    "<div class='room'>#{name_html(room)}#{description_html(room)}#{items_html(room)}#{entities_html(player, room)}#{exit_directions_html(room)}</div>"
   end
 
   def short_room_html(room) do
     "<div class='room'>#{name_html(room)}#{exit_directions_html(room)}</div>"
   end
 
-  def room_data(room) do
+  def room_data(room, player) do
     [
       name: name(room),
       description: description(room),
-      exits: exit_directions(room)
+      exits: exit_directions(room),
+      entities: entities(player, room)
     ]
   end
 
@@ -74,12 +75,22 @@ defmodule Systems.Room do
     "<div class='items'>#{Enum.join(items(room), ", ")}</div>"
   end
 
-  def entities(_room) do
-    []
+  def entities(player, room) do
+    character = Components.Login.get_character(player)
+    Characters.online
+    |> entities_in_room(room)
+    |> Enum.reject(&(&1 == character))
+    |> Enum.map(&(&1 |> Components.Name.get_name))
   end
 
-  def entities_html(room) do
-    "<div class='items'>#{Enum.join(entities(room), ", ")}</div>"
+  def entities_html(player, room) do
+    entities = entities(player, room)
+    case Enum.count(entities) do
+      0 ->
+        ""
+      _ ->
+        "<div class='entities'><span class='dark-magenta'>Also here:</span> <span class='magenta'>#{Enum.join(entities, ", ")}</span><span class='dark-magenta'>.</span></div>"
+    end
   end
 
   def move(player, character, direction) do
@@ -98,14 +109,14 @@ defmodule Systems.Room do
     end
   end
 
-  def characters_in_room(room) do
-    Enum.filter(Characters.all, fn(character) ->
+  def entities_in_room(entities, room) do
+    Enum.filter(entities, fn(character) ->
       room == Components.CurrentRoom.get_current_room(character)
     end)
   end
 
   def find_character_by_name(room, character_name) do
-    Enum.find(characters_in_room(room), fn(character) ->
+    Enum.find(Characters.online |> entities_in_room(room), fn(character) ->
       String.downcase(Components.Name.get_name(character)) == String.downcase(character_name)
     end)
   end
