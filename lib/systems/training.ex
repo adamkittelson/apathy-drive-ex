@@ -283,6 +283,7 @@ defmodule Systems.Training do
       Components.EyeColor.value(character, Components.Login.get_eye_color(player))
       Components.HairColor.value(character, Components.Login.get_hair_color(player))
       Components.HairLength.value(character, Components.Login.get_hair_length(player))
+      Components.HP.value(character, Systems.HP.max_hp(character))
 
       ApathyDrive.Entity.save!(character)
 
