@@ -270,7 +270,7 @@ defmodule Components.Login do
     Components.Online.value(character, true)
     Components.Player.value(character, player)
     Components.Player.send_message(character, ["clear scroll"])
-    Systems.Room.display_room(player, Components.CurrentRoom.get_current_room(character))
+    Systems.Room.display_room(character, Components.CurrentRoom.get_current_room(character))
     Systems.Command.display_prompt(player, character)
   end
 

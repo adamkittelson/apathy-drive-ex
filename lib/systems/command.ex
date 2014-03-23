@@ -60,7 +60,7 @@ defmodule Systems.Command do
           Players.send_message(player, ["scroll", "<p>You do not notice that here.</p>"])
         end
       else
-        Systems.Room.display_room_in_scroll(player, current_room)
+        Systems.Room.display_room_in_scroll(character, current_room)
       end
     end
 
