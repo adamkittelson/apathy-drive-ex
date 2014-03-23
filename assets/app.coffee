@@ -9,6 +9,10 @@ $ ->
     console.log(data)
     $('#room .title').html(data['name'])
     $('#room .description').html(data['description'])
+    if data['entities'].length > 0
+      $('#room .entities').html("<span class='dark-magenta'>Also here:</span> <span class='magenta'>#{data['entities'].join(', ')}</span><span class='dark-magenta'>.</span>")
+    else
+      $('#room .entities').html("")
     $('#room .exits').html("Obvious exits: #{data['exits'].join(', ') || 'NONE'}")
     adjustScrollTop()
 
@@ -17,10 +21,11 @@ $ ->
 
   adjustScrollTop = ->
     $("#scroll_container").css("top", $("#room").height() + 10 + "px")
+    $('#scroll').scrollTop($('#scroll')[0].scrollHeight)
 
   setFocus = (selector) ->
     focus = selector
-    $(selector).focus().select()
+    $(selector).focus()
 
   adjustScrollTop()
 
@@ -34,7 +39,7 @@ $ ->
     switch message[0]
       when "room" then updateRoom(message[1])
       when "clear scroll" then clearScroll()
-      when "focus" then setFocus(message[1])
+      when "focus" then setFocus(message[1]).select()
       when "disable" then disableField(message[1])
       when "update" then $(message[1]).html(message[2])
       when "set field" then $(message[1]).val(message[2])
@@ -45,19 +50,21 @@ $ ->
 
   addToScroll = (elem, text) ->
     $(elem).append(text)
+    $(elem).append($("#prompt").parent().detach())
+    setFocus(focus)
     $('#scroll').scrollTop($('#scroll')[0].scrollHeight)
 
   focusNext = (elem) ->
     fields = $("#scroll").find('input:not([disabled])')
     field = fields.eq(fields.index(elem) + 1)[0]
     if field
-      setFocus("##{field.id}")
+      setFocus("##{field.id}").select()
 
   focusPrevious = (elem) ->
     fields = $("#scroll").find(':input')
     field = fields.eq(fields.index(elem) - 1)[0]
     if field
-      setFocus("##{field.id}")
+      setFocus("##{field.id}").select()
 
   disableField = (selector) ->
     $(selector).prop('disabled', true).removeAttr('id')

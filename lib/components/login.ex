@@ -120,6 +120,8 @@ defmodule Components.Login do
         ApathyDrive.Entity.add_component(character, Components.HPRolls, [Components.MaxHPPerLevel.value(class)])
         ApathyDrive.Entity.add_component(character, Components.Level, 1)
         ApathyDrive.Entity.add_component(character, Components.HP, Systems.HP.max_hp(character))
+        ApathyDrive.Entity.add_component(character, Components.Online, false)
+        ApathyDrive.Entity.add_component(character, Components.Player, player)
 
         Systems.Training.train_stats(player, character)
       else
@@ -265,9 +267,14 @@ defmodule Components.Login do
 
   def login(player, character) do
     ApathyDrive.Entity.notify(player, {:login, character})
-    Players.send_message(player, ["clear scroll"])
-    Systems.Room.display_room(player, Components.CurrentRoom.get_current_room(character))
-    Systems.Command.display_prompt(player, character)
+    Components.Online.value(character, true)
+    Components.Player.value(character, player)
+    Components.Player.send_message(character, ["clear scroll"])
+
+    room = Components.CurrentRoom.get_current_room(character)
+    Systems.Room.characters_in_room(room) |> Enum.each(&(Systems.Room.display_room(&1, room)))
+
+    Systems.Command.display_prompt(character)
   end
 
   def serialize(_entity) do

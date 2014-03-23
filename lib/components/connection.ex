@@ -6,7 +6,7 @@ defmodule Components.Connection do
     :gen_event.call(entity, Components.Connection, :get_connection)
   end
 
-  def serialize(entity) do
+  def serialize(_entity) do
     nil
   end
 

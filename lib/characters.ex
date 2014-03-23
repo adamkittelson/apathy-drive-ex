@@ -22,6 +22,10 @@ defmodule Characters do
     end)
   end
 
+  def online do
+    all |> Enum.filter fn(character) -> Components.Online.value(character) == true end
+  end
+
   def find_by_account_and_name(account, name) do
     for_account(account) |> Enum.find fn(character) ->
       String.downcase(Components.Name.get_name(character)) == String.downcase(name)
