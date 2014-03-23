@@ -21,6 +21,7 @@ $ ->
 
   adjustScrollTop = ->
     $("#scroll_container").css("top", $("#room").height() + 10 + "px")
+    $('#scroll').scrollTop($('#scroll')[0].scrollHeight)
 
   setFocus = (selector) ->
     focus = selector

@@ -270,7 +270,10 @@ defmodule Components.Login do
     Components.Online.value(character, true)
     Components.Player.value(character, player)
     Components.Player.send_message(character, ["clear scroll"])
-    Systems.Room.display_room(character, Components.CurrentRoom.get_current_room(character))
+
+    room = Components.CurrentRoom.get_current_room(character)
+    Systems.Room.characters_in_room(room) |> Enum.each(&(Systems.Room.display_room(&1, room)))
+
     Systems.Command.display_prompt(character)
   end
 

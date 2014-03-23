@@ -22,7 +22,8 @@
       return $('#scroll').html("");
     };
     adjustScrollTop = function() {
-      return $("#scroll_container").css("top", $("#room").height() + 10 + "px");
+      $("#scroll_container").css("top", $("#room").height() + 10 + "px");
+      return $('#scroll').scrollTop($('#scroll')[0].scrollHeight);
     };
     setFocus = function(selector) {
       focus = selector;
