@@ -271,7 +271,7 @@ defmodule Components.Login do
     Components.Player.value(character, player)
     Components.Player.send_message(character, ["clear scroll"])
     Systems.Room.display_room(character, Components.CurrentRoom.get_current_room(character))
-    Systems.Command.display_prompt(player, character)
+    Systems.Command.display_prompt(character)
   end
 
   def serialize(_entity) do

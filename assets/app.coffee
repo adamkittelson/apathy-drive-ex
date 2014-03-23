@@ -24,7 +24,7 @@ $ ->
 
   setFocus = (selector) ->
     focus = selector
-    $(selector).focus().select()
+    $(selector).focus()
 
   adjustScrollTop()
 
@@ -38,7 +38,7 @@ $ ->
     switch message[0]
       when "room" then updateRoom(message[1])
       when "clear scroll" then clearScroll()
-      when "focus" then setFocus(message[1])
+      when "focus" then setFocus(message[1]).select()
       when "disable" then disableField(message[1])
       when "update" then $(message[1]).html(message[2])
       when "set field" then $(message[1]).val(message[2])
@@ -49,19 +49,21 @@ $ ->
 
   addToScroll = (elem, text) ->
     $(elem).append(text)
+    $(elem).append($("#prompt").parent().detach())
+    setFocus(focus)
     $('#scroll').scrollTop($('#scroll')[0].scrollHeight)
 
   focusNext = (elem) ->
     fields = $("#scroll").find('input:not([disabled])')
     field = fields.eq(fields.index(elem) + 1)[0]
     if field
-      setFocus("##{field.id}")
+      setFocus("##{field.id}").select()
 
   focusPrevious = (elem) ->
     fields = $("#scroll").find(':input')
     field = fields.eq(fields.index(elem) - 1)[0]
     if field
-      setFocus("##{field.id}")
+      setFocus("##{field.id}").select()
 
   disableField = (selector) ->
     $(selector).prop('disabled', true).removeAttr('id')

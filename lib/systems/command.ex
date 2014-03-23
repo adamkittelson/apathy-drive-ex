@@ -42,6 +42,8 @@ defmodule Systems.Command do
       exit_directions = Systems.Room.exit_directions(current_room)
     end
 
+    display_prompt(character)
+
     if Enum.member? @directions, command do
       command_found = true
       if exit_directions && (Enum.member? exit_directions, command) do
@@ -72,14 +74,13 @@ defmodule Systems.Command do
     if !command_found do
       Players.send_message(player, ["scroll", "<p>What?</p>"])
     end
-    display_prompt(player, character)
   end
 
-  def display_prompt(player, character) do
-    Players.send_message(player, ["disable", "#prompt"])
-    Players.send_message(player, ["disable", "#command"])
-    Players.send_message(player, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}]:</span><input id='command' class='prompt'></input></p>"])
-    Players.send_message(player, ["focus", "#command"])
+  def display_prompt(character) do
+    Components.Player.send_message(character, ["disable", "#prompt"])
+    Components.Player.send_message(character, ["disable", "#command"])
+    Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}]:</span><input id='command' class='prompt'></input></p>"])
+    Components.Player.send_message(character, ["focus", "#command"])
   end
 
 end

@@ -26,7 +26,7 @@
     };
     setFocus = function(selector) {
       focus = selector;
-      return $(selector).focus().select();
+      return $(selector).focus();
     };
     adjustScrollTop();
     webSocket = new WebSocket('ws://localhost:3000/_ws');
@@ -42,7 +42,7 @@
         case "clear scroll":
           return clearScroll();
         case "focus":
-          return setFocus(message[1]);
+          return setFocus(message[1]).select();
         case "disable":
           return disableField(message[1]);
         case "update":
@@ -58,6 +58,8 @@
     };
     addToScroll = function(elem, text) {
       $(elem).append(text);
+      $(elem).append($("#prompt").parent().detach());
+      setFocus(focus);
       return $('#scroll').scrollTop($('#scroll')[0].scrollHeight);
     };
     focusNext = function(elem) {
@@ -65,7 +67,7 @@
       fields = $("#scroll").find('input:not([disabled])');
       field = fields.eq(fields.index(elem) + 1)[0];
       if (field) {
-        return setFocus("#" + field.id);
+        return setFocus("#" + field.id).select();
       }
     };
     focusPrevious = function(elem) {
@@ -73,7 +75,7 @@
       fields = $("#scroll").find(':input');
       field = fields.eq(fields.index(elem) - 1)[0];
       if (field) {
-        return setFocus("#" + field.id);
+        return setFocus("#" + field.id).select();
       }
     };
     disableField = function(selector) {
