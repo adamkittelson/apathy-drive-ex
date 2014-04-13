@@ -72,7 +72,9 @@ defmodule Systems.Room do
   end
 
   def entities(character, room) do
-    characters_in_room(room, character)
+    characters = characters_in_room(room, character)
+    monsters   = monsters_in_room(room)
+    Enum.concat(characters, monsters)
   end
 
   def entities_html(character, room) do
@@ -143,13 +145,17 @@ defmodule Systems.Room do
   end
 
   def entities_in_room(entities, room) do
-    Enum.filter(entities, fn(character) ->
-      room == Components.CurrentRoom.get_current_room(character)
+    Enum.filter(entities, fn(entity) ->
+      room == Components.CurrentRoom.get_current_room(entity)
     end)
   end
 
   def characters_in_room(room) do
     Characters.online |> entities_in_room(room)
+  end
+
+  def monsters_in_room(room) do
+    Components.Monsters.value(room)
   end
 
   def characters_in_room(room, character_to_exclude) do

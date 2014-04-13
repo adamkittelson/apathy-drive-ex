@@ -78,6 +78,11 @@ defmodule ApathyDrive.Entity do
           Classes.add(entity)
         "character" ->
           Characters.add(entity)
+        "room" ->
+          ApathyDrive.Entity.add_component(entity, Components.Monsters, [])
+          Rooms.add(entity)
+        "monster" ->
+          Monsters.add(entity)
       end
     end
   end

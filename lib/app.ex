@@ -11,6 +11,8 @@ defmodule ApathyDrive do
     Races.start_link
     Classes.start_link
     Characters.start_link
+    Monsters.start_link
+    Rooms.start_link
     Systems.Help.start_link
     Repo.start_link
     # Set resources
