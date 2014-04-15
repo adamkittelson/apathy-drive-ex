@@ -79,7 +79,7 @@ defmodule ApathyDrive.Entity do
         "character" ->
           Characters.add(entity)
         "room" ->
-          ApathyDrive.Entity.add_component(entity, Components.Monsters, [])
+          Systems.Room.initialize_lair_spawning(entity)
           Rooms.add(entity)
         "monster" ->
           Monsters.add(entity)

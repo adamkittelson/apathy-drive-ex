@@ -10,6 +10,12 @@ defmodule Monsters do
     :gen_server.call(:monsters, :all)
   end
 
+  def find_by_id(id) do
+    Enum.find(all, fn (monster) ->
+      id == Components.ID.value(monster)
+    end)
+  end
+
   def find_all_by_name(name) do
     Enum.filter(all, fn (monster) ->
       monster |> Components.Name.get_name

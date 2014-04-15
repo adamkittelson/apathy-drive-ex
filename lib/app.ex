@@ -6,6 +6,7 @@ defmodule ApathyDrive do
 
     :crypto.start
     :bcrypt.start
+    :random.seed(:erlang.now)
 
     Players.start_link
     Races.start_link
