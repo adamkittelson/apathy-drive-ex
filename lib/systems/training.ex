@@ -267,7 +267,7 @@ defmodule Systems.Training do
     def finish(player) do
       character = Components.Login.get_character(player)
 
-      room = :global.whereis_name(:"82325")
+      room = Rooms.find_by_id(82325)
       ApathyDrive.Entity.add_component(character, Components.CurrentRoom, room)
 
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))

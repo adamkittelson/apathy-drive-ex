@@ -14,6 +14,7 @@ defmodule ApathyDrive do
     Characters.start_link
     Monsters.start_link
     Rooms.start_link
+    Exits.start_link
     Systems.Help.start_link
     Repo.start_link
     # Set resources

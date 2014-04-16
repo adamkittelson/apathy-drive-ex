@@ -10,6 +10,10 @@ defmodule Rooms do
     :gen_server.call(:rooms, :all)
   end
 
+  def find_by_id(id) do
+    :gen_server.call(:rooms, {:get, id})
+  end
+
   def find_all_by_name(name) do
     Enum.filter(all, fn (room) ->
       room |> Components.Name.get_name
@@ -23,16 +27,21 @@ defmodule Rooms do
     :gen_server.start_link({:local, :rooms}, __MODULE__, [], [])
   end
 
-  def init([]) do
-    {:ok, []}
+  def init(_) do
+    {:ok, HashDict.new}
   end
 
   def handle_cast({:add, room}, rooms) do
-    {:noreply, [room | rooms] }
+    id = Components.ID.value(room)
+    {:noreply, HashDict.put_new(rooms, id, room) }
   end
 
   def handle_call(:all, _from, rooms) do
-    {:reply, rooms, rooms}
+    {:reply, HashDict.values(rooms), rooms}
+  end
+
+  def handle_call({:get, id}, _from, rooms) do
+    {:reply, HashDict.get(rooms, id), rooms}
   end
 
 end

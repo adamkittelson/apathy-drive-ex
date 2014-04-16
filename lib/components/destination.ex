@@ -16,7 +16,7 @@ defmodule Components.Destination do
 
   ### GenEvent API
   def init(value) when is_number(value) do
-    {:ok, :global.whereis_name(:"#{value}")}
+    {:ok, Rooms.find_by_id(value)}
   end
 
   def init(destination_id) do

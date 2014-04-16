@@ -22,7 +22,7 @@ defmodule Components.CurrentRoom do
 
   def handle_call(:get_current_room, room_pid) do
     room_pid = if is_integer(room_pid) do
-      :global.whereis_name(:"#{room_pid}")
+      Rooms.find_by_id(room_pid)
     else
       room_pid
     end

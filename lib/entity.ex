@@ -41,7 +41,6 @@ defmodule ApathyDrive.Entity do
     if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do
       Systems.Help.add(entity)
     end
-    :global.register_name(:"#{entity_record.id}", entity)
   end
 
   def list_components(entity) do
@@ -83,6 +82,8 @@ defmodule ApathyDrive.Entity do
           Rooms.add(entity)
         "monster" ->
           Monsters.add(entity)
+        "exit" ->
+          Exits.add(entity)
       end
     end
   end

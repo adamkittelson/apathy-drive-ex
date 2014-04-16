@@ -1,8 +1,4 @@
 defmodule Systems.Room do
-  def display_room(character, room_pid) do
-    Components.Player.send_message(character, ["room", room_pid |> room_data(character)])
-  end
-
   def display_room_in_scroll(character, room_pid) do
     Components.Player.send_message(character, ["scroll", long_room_html(character, room_pid)])
   end
@@ -94,8 +90,7 @@ defmodule Systems.Room do
 
     ApathyDrive.Entity.notify(character, {:set_current_room, destination})
     notify_character_left(character, current_room, destination)
-    Components.Player.send_message(character, ["scroll", "<p><span class='dark-green'>You move to the #{direction}.</span></p>"])
-    display_room(character, destination)
+    display_room_in_scroll(character, destination)
     notify_character_entered(character, current_room, destination)
   end
 
@@ -103,7 +98,6 @@ defmodule Systems.Room do
     direction = get_direction_by_destination(room, entered_from)
     name = Components.Name.get_name(character)
     characters_in_room(room, character) |> Enum.each(fn(character_in_room) ->
-      display_room(character_in_room, room)
       if direction do
         Components.Player.send_message(character_in_room, ["scroll", "<p><span class='red'>#{name}</span> <span class='dark-green'>walks into the room from the #{direction}.</span></p>"])
       else
@@ -116,7 +110,6 @@ defmodule Systems.Room do
     direction = get_direction_by_destination(room, left_to)
     name = Components.Name.get_name(character)
     characters_in_room(room, character) |> Enum.each(fn(character_in_room) ->
-      display_room(character_in_room, room)
       if direction do
         Components.Player.send_message(character_in_room, ["scroll", "<p><span class='red'>#{name}</span> <span class='dark-green'>walks out of the room to the #{direction}.</span></p>"])
       else

@@ -25,7 +25,7 @@ defmodule Components.Exits do
   def handle_call(:get_exits, exits) do
     exits = Enum.map exits, fn (exit_id) ->
       if is_integer(exit_id) do
-        :global.whereis_name(:"#{exit_id}")
+        Exits.find_by_id(exit_id)
       else
         exit_id
       end

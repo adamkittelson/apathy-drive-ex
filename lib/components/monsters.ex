@@ -23,15 +23,15 @@ defmodule Components.Monsters do
     {:ok, value}
   end
 
-  def handle_call(:value, exits) do
-    exits = Enum.map exits, fn (exit_id) ->
-      if is_integer(exit_id) do
-        :global.whereis_name(:"#{exit_id}")
+  def handle_call(:value, monsters) do
+    exits = Enum.map monsters, fn (monster_id) ->
+      if is_integer(monster_id) do
+        Monsters.find_by_id(monster_id)
       else
-        exit_id
+        monster_id
       end
     end
-    {:ok, exits, exits}
+    {:ok, monsters, monsters}
   end
 
   def handle_event({:set_monsters, new_value}, _value) do

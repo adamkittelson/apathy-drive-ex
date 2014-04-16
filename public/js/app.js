@@ -55,6 +55,7 @@
       }
     };
     webSocket.onclose = function(event) {
+      addToScroll("#scroll}", "<p>Disconnected from server.</p>");
       return console.log("Connection closed!");
     };
     addToScroll = function(elem, text) {

@@ -11,9 +11,7 @@ defmodule Monsters do
   end
 
   def find_by_id(id) do
-    Enum.find(all, fn (monster) ->
-      id == Components.ID.value(monster)
-    end)
+    :gen_server.call(:exits, {:get, id})
   end
 
   def find_all_by_name(name) do
@@ -29,16 +27,21 @@ defmodule Monsters do
     :gen_server.start_link({:local, :monsters}, __MODULE__, [], [])
   end
 
-  def init([]) do
-    {:ok, []}
+  def init(_) do
+    {:ok, HashDict.new}
   end
 
   def handle_cast({:add, monster}, monsters) do
-    {:noreply, [monster | monsters] }
+    id = Components.ID.value(monster)
+    {:noreply, HashDict.put_new(monsters, id, monster) }
   end
 
   def handle_call(:all, _from, monsters) do
-    {:reply, monsters, monsters}
+    {:reply, HashDict.values(monsters), monsters}
+  end
+
+  def handle_call({:get, id}, _from, monsters) do
+    {:reply, HashDict.get(monsters, id), monsters}
   end
 
 end
