@@ -55,7 +55,8 @@
       }
     };
     webSocket.onclose = function(event) {
-      addToScroll("#scroll}", "<p>Disconnected from server.</p>");
+      $("#scroll").append("<p>Disconnected from server.</p>");
+      disableField("#command");
       return console.log("Connection closed!");
     };
     addToScroll = function(elem, text) {
