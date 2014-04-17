@@ -88,7 +88,7 @@ defmodule Systems.Room do
     destination = current_room |> get_exit_by_direction(direction)
                                |> Components.Destination.get_destination
 
-    ApathyDrive.Entity.notify(character, {:set_current_room, destination})
+    Components.CurrentRoom.set_current_room(character, destination)
     notify_character_left(character, current_room, destination)
     display_room_in_scroll(character, destination)
     notify_character_entered(character, current_room, destination)
