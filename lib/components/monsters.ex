@@ -24,13 +24,6 @@ defmodule Components.Monsters do
   end
 
   def handle_call(:value, monsters) do
-    exits = Enum.map monsters, fn (monster_id) ->
-      if is_integer(monster_id) do
-        Monsters.find_by_id(monster_id)
-      else
-        monster_id
-      end
-    end
     {:ok, monsters, monsters}
   end
 
