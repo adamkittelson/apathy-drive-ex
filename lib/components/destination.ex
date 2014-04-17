@@ -2,29 +2,37 @@ defmodule Components.Destination do
   use GenEvent.Behaviour
 
   ### Public API
-  def get_destination(entity) do
-    :gen_event.call(entity, Components.Destination, :get_destination)
+  def value(entity) do
+    :gen_event.call(entity, Components.Destination, :value)
   end
 
   def value(entity, new_value) do
     ApathyDrive.Entity.notify(entity, {:set_destination, new_value})
   end
 
+  def get_destination(entity) do
+    :gen_event.call(entity, Components.Destination, :get_destination)
+  end
+
+  def set_destination(entity, room_pid) do
+    value(entity, room_pid |> Components.ID.value)
+  end
+
   def serialize(entity) do
-    {"Destination", get_destination(entity)}
+    {"Destination", value(entity)}
   end
 
   ### GenEvent API
-  def init(value) when is_number(value) do
-    {:ok, Rooms.find_by_id(value)}
-  end
-
   def init(destination_id) do
     {:ok, destination_id}
   end
 
-  def handle_call(:get_destination, destination) do
-    {:ok, destination, destination}
+  def handle_call(:value, destination_id) do
+    {:ok, destination_id, destination_id}
+  end
+
+  def handle_call(:get_destination, destination_id) do
+    {:ok, Rooms.find_by_id(destination_id), destination_id}
   end
 
   def handle_event({:set_destination, new_value}, _value) do
