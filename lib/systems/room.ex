@@ -178,11 +178,9 @@ defmodule Systems.Room do
 
   def select_lair_monster(room) do
     :random.seed(:os.timestamp)
-    monster = room |> Components.LairMonsters.value
-                   |> Enum.shuffle
-                   |> Enum.first
-    IO.puts "Spawning #{Components.Name.get_name(monster)} in #{Components.Name.get_name(room)}"
-    monster
+    room |> Components.LairMonsters.get_lair_monsters
+         |> Enum.shuffle
+         |> Enum.first
   end
 
 end

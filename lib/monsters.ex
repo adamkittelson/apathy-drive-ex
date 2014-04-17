@@ -11,7 +11,7 @@ defmodule Monsters do
   end
 
   def find_by_id(id) do
-    :gen_server.call(:exits, {:get, id})
+    :gen_server.call(:monsters, {:get, id})
   end
 
   def find_all_by_name(name) do
