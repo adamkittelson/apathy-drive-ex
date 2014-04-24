@@ -56,7 +56,7 @@ defmodule Players do
 
   def handle_cast({:send_message, player, message}, players) do
     connection = Components.Connection.get_connection(player)
-    connection <- JSON.generate(message)
+    send connection, JSON.generate(message)
     {:noreply, players}
   end
 

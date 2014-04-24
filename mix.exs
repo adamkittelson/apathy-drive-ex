@@ -19,6 +19,9 @@ defmodule ApathyDrive.Mixfile do
   defp deps(:prod) do
     [
       { :weber,  github: "0xAX/weber" },
+      { :postgrex, github: "ericmj/postgrex" },
+      { :ecto, github: "elixir-lang/ecto" },
+      { :decimal, "~> 0.1.2", [git: "git://github.com/ericmj/decimal.git", override: true]},
       { :bcrypt, github: "Feuerlabs/erlang-bcrypt"}
     ]
   end

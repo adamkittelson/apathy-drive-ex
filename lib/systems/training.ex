@@ -68,7 +68,7 @@ defmodule Systems.Training do
       min = :"Elixir.Components.#{stat_name}".value(character)
       max = max_stat(player, character, stat_name)
       current = Components.Login.get_stat(player, binary_to_atom(String.downcase(stat_name)))
-      if Regex.match?(%r/^\d+$/, stat) do
+      if Regex.match?(~r/^\d+$/, stat) do
         {number, _} = Integer.parse(stat)
         if number < min do
           Players.send_message(player, ["update", "#validation", "#{stat_name} may not be lower than #{min}."])
@@ -236,7 +236,7 @@ defmodule Systems.Training do
         valid = false
         Players.send_message(player, ["update", "#validation", "Name cannot be blank."])
       end
-      if Regex.match?(%r/[^a-zA-Z]/, name) do
+      if Regex.match?(~r/[^a-zA-Z]/, name) do
         valid = false
         Players.send_message(player, ["update", "#validation", "Name can only include letters."])
       end
@@ -253,7 +253,7 @@ defmodule Systems.Training do
 
     def validate_last_name(player, name) do
       valid = true
-      if Regex.match?(%r/[^a-zA-Z ]/, name) do
+      if Regex.match?(~r/[^a-zA-Z ]/, name) do
         valid = false
         Players.send_message(player, ["update", "#validation", "Last name can only include letters and spaces."])
       end

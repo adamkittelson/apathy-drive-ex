@@ -81,7 +81,7 @@ defmodule Components.Login do
   end
 
   def create_character_set_race(player, race_number) do
-    if Regex.match?(%r/^\d+$/, race_number) do
+    if Regex.match?(~r/^\d+$/, race_number) do
       {number, _} = Integer.parse(race_number)
       race = Races.find_by_number(number)
       if race do
@@ -96,7 +96,7 @@ defmodule Components.Login do
   end
 
   def create_character_set_class(player, class_number) do
-    if Regex.match?(%r/^\d+$/, class_number) do
+    if Regex.match?(~r/^\d+$/, class_number) do
       {number, _} = Integer.parse(class_number)
       class = Classes.find_by_number(number)
       if class do
