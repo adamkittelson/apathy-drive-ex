@@ -156,7 +156,7 @@ defmodule Components.Login do
                                         password:  "#{:gen_event.call(player, Components.Login, :get_password)}",
                                         salt:      "#{:gen_event.call(player, Components.Login, :get_salt)}"
       )
-      Repo.create account
+      Repo.insert account
       display_character_select(player, account)
     else
       Players.send_message(player, ["scroll", "<p>Passwords did not match.</p>"])

@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Entity do
   use Ecto.Entity
   use Ecto.Model
-  use Ecto.Query
+  import Ecto.Query, only: [from: 2]
 
   field :components, :string
 
@@ -32,7 +32,7 @@ defmodule ApathyDrive.Entity do
   def load!(entity_record) do
     {:ok, entity} = ApathyDrive.Entity.init
     ApathyDrive.Entity.add_component(entity, Components.ID, entity_record.id)
-    components = JSON.parse(entity_record.components)
+    components = ExJSON.parse(entity_record.components)
     Enum.each components, fn(component) ->
       {component_name, component_values} = component
       ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
@@ -52,7 +52,7 @@ defmodule ApathyDrive.Entity do
       component.serialize(entity)
     end) |> Enum.reject(fn(component) ->
       component == nil
-    end) |> JSON.generate
+    end) |> ExJSON.generate
   end
 
   def save!(entity_pid) do
@@ -62,8 +62,9 @@ defmodule ApathyDrive.Entity do
       entity.components(serialize_components(entity_pid))
       Repo.update(entity)
     else
-      entity = ApathyDrive.Entity.new(components: serialize_components(entity_pid))
-      Repo.create entity
+      components = serialize_components(entity_pid)
+      entity = ApathyDrive.Entity.new(components: components)
+      Repo.insert entity
       add_to_type_collection(entity_pid)
     end
   end

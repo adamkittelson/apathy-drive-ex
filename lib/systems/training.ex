@@ -173,9 +173,9 @@ defmodule Systems.Training do
             current_index = Enum.find_index(hair_lengths, fn(hair_length) ->
               hair_length == current_length
             end)
-            new_length = Enum.at(hair_lengths, current_index + 1, Enum.first(hair_lengths))
+            new_length = Enum.at(hair_lengths, current_index + 1, List.first(hair_lengths))
           else
-            new_length = Enum.first(hair_lengths)
+            new_length = List.first(hair_lengths)
           end
           Components.Login.set_hair_length(player, new_length)
           Players.send_message(player, ["set field", "#hair_length", new_length])
@@ -185,9 +185,9 @@ defmodule Systems.Training do
             current_index = Enum.find_index(hair_colors, fn(hair_color) ->
               hair_color == current_color
             end)
-            new_color = Enum.at(hair_colors, current_index + 1, Enum.first(hair_colors))
+            new_color = Enum.at(hair_colors, current_index + 1, List.first(hair_colors))
           else
-            new_color = Enum.first(hair_colors)
+            new_color = List.first(hair_colors)
           end
           Components.Login.set_hair_color(player, new_color)
           Players.send_message(player, ["set field", "#hair_color", new_color])
@@ -197,9 +197,9 @@ defmodule Systems.Training do
             current_index = Enum.find_index(eye_colors, fn(eye_color) ->
               eye_color == current_color
             end)
-            new_color = Enum.at(eye_colors, current_index + 1, Enum.first(eye_colors))
+            new_color = Enum.at(eye_colors, current_index + 1, List.first(eye_colors))
           else
-            new_color = Enum.first(eye_colors)
+            new_color = List.first(eye_colors)
           end
           Components.Login.set_eye_color(player, new_color)
           Players.send_message(player, ["set field", "#eye_color", new_color])
@@ -209,9 +209,9 @@ defmodule Systems.Training do
             current_index = Enum.find_index(genders, fn(gender) ->
               gender == current_gender
             end)
-            new_gender = Enum.at(genders, current_index + 1, Enum.first(genders))
+            new_gender = Enum.at(genders, current_index + 1, List.first(genders))
           else
-            new_gender = Enum.first(genders)
+            new_gender = List.first(genders)
           end
           Components.Login.set_gender(player, new_gender)
           Players.send_message(player, ["set field", "#gender", new_gender])
@@ -267,8 +267,7 @@ defmodule Systems.Training do
     def finish(player) do
       character = Components.Login.get_character(player)
 
-      room = Rooms.find_by_id(82325)
-      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, room)
+      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, 82325)
 
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
       ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
