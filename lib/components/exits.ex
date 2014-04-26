@@ -2,35 +2,37 @@ defmodule Components.Exits do
   use GenEvent.Behaviour
 
   ### Public API
-  def get_exits(entity) do
-    :gen_event.call(entity, Components.Exits, :get_exits)
+  def value(entity) do
+    :gen_event.call(entity, Components.Exits, :value)
   end
 
   def value(entity, new_value) do
     ApathyDrive.Entity.notify(entity, {:set_exits, new_value})
   end
 
+  def get_exits(entity) do
+    :gen_event.call(entity, Components.Exits, :get_exits)
+  end
+
+  def set_exits(entity, exits) do
+    value(entity, Enum.map(exits, &(&1 |> Components.ID.value)))
+  end
+
   def serialize(entity) do
-    exit_ids = Enum.map get_exits(entity), fn (exit_pid) ->
-      Components.ID.value(exit_pid)
-    end
-    {"Exits", exit_ids}
+    {"Exits", value(entity)}
   end
 
   ### GenEvent API
-  def init(value) do
-    {:ok, value}
+  def init(exit_ids) do
+    {:ok, exit_ids}
   end
 
-  def handle_call(:get_exits, exits) do
-    exits = Enum.map exits, fn (exit_id) ->
-      if is_integer(exit_id) do
-        :global.whereis_name(:"#{exit_id}")
-      else
-        exit_id
-      end
-    end
-    {:ok, exits, exits}
+  def handle_call(:value, exit_ids) do
+    {:ok, exit_ids, exit_ids}
+  end
+
+  def handle_call(:get_exits, exit_ids) do
+    {:ok, Enum.map(exit_ids, &(Exits.find_by_id(&1))), exit_ids}
   end
 
   def handle_event({:set_exits, new_value}, _value) do

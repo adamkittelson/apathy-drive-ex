@@ -1,8 +1,4 @@
 defmodule Systems.Room do
-  def display_room(character, room_pid) do
-    Components.Player.send_message(character, ["room", room_pid |> room_data(character)])
-  end
-
   def display_room_in_scroll(character, room_pid) do
     Components.Player.send_message(character, ["scroll", long_room_html(character, room_pid)])
   end
@@ -72,7 +68,9 @@ defmodule Systems.Room do
   end
 
   def entities(character, room) do
-    characters_in_room(room, character)
+    characters = characters_in_room(room, character)
+    monsters   = monsters_in_room(room)
+    Enum.concat(characters, monsters)
   end
 
   def entities_html(character, room) do
@@ -90,10 +88,9 @@ defmodule Systems.Room do
     destination = current_room |> get_exit_by_direction(direction)
                                |> Components.Destination.get_destination
 
-    ApathyDrive.Entity.notify(character, {:set_current_room, destination})
+    Components.CurrentRoom.set_current_room(character, destination)
     notify_character_left(character, current_room, destination)
-    Components.Player.send_message(character, ["scroll", "<p><span class='dark-green'>You move to the #{direction}.</span></p>"])
-    display_room(character, destination)
+    display_room_in_scroll(character, destination)
     notify_character_entered(character, current_room, destination)
   end
 
@@ -101,7 +98,6 @@ defmodule Systems.Room do
     direction = get_direction_by_destination(room, entered_from)
     name = Components.Name.get_name(character)
     characters_in_room(room, character) |> Enum.each(fn(character_in_room) ->
-      display_room(character_in_room, room)
       if direction do
         Components.Player.send_message(character_in_room, ["scroll", "<p><span class='red'>#{name}</span> <span class='dark-green'>walks into the room from the #{direction}.</span></p>"])
       else
@@ -114,7 +110,6 @@ defmodule Systems.Room do
     direction = get_direction_by_destination(room, left_to)
     name = Components.Name.get_name(character)
     characters_in_room(room, character) |> Enum.each(fn(character_in_room) ->
-      display_room(character_in_room, room)
       if direction do
         Components.Player.send_message(character_in_room, ["scroll", "<p><span class='red'>#{name}</span> <span class='dark-green'>walks out of the room to the #{direction}.</span></p>"])
       else
@@ -143,13 +138,17 @@ defmodule Systems.Room do
   end
 
   def entities_in_room(entities, room) do
-    Enum.filter(entities, fn(character) ->
-      room == Components.CurrentRoom.get_current_room(character)
+    Enum.filter(entities, fn(entity) ->
+      room == Components.CurrentRoom.get_current_room(entity)
     end)
   end
 
   def characters_in_room(room) do
     Characters.online |> entities_in_room(room)
+  end
+
+  def monsters_in_room(room) do
+    Components.Monsters.value(room)
   end
 
   def characters_in_room(room, character_to_exclude) do
@@ -160,6 +159,28 @@ defmodule Systems.Room do
     Enum.find(characters_in_room(room), fn(character) ->
       String.downcase(Components.Name.get_name(character)) == String.downcase(character_name)
     end)
+  end
+
+  def initialize_lair_spawning(room) do
+    ApathyDrive.Entity.add_component(room, Components.Monsters, [])
+    if ApathyDrive.Entity.list_components(room) |> Enum.member?(Components.LairFrequency) do
+      #:timer.apply_interval(Components.LairFrequency.value(room) * 1000 * 60, Systems.Room, :spawn_lair, [room])
+    end
+  end
+
+  def spawn_lair(room) do
+    if (Systems.Room.monsters_in_room(room) |> Enum.count) < Components.LairSize.value(room) do
+      room |> select_lair_monster
+           |> Systems.Monster.spawn_monster(room)
+      spawn_lair(room)
+    end
+  end
+
+  def select_lair_monster(room) do
+    :random.seed(:os.timestamp)
+    room |> Components.LairMonsters.get_lair_monsters
+         |> Enum.shuffle
+         |> List.first
   end
 
 end

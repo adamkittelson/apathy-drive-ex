@@ -68,7 +68,7 @@ defmodule Systems.Training do
       min = :"Elixir.Components.#{stat_name}".value(character)
       max = max_stat(player, character, stat_name)
       current = Components.Login.get_stat(player, binary_to_atom(String.downcase(stat_name)))
-      if Regex.match?(%r/^\d+$/, stat) do
+      if Regex.match?(~r/^\d+$/, stat) do
         {number, _} = Integer.parse(stat)
         if number < min do
           Players.send_message(player, ["update", "#validation", "#{stat_name} may not be lower than #{min}."])
@@ -173,9 +173,9 @@ defmodule Systems.Training do
             current_index = Enum.find_index(hair_lengths, fn(hair_length) ->
               hair_length == current_length
             end)
-            new_length = Enum.at(hair_lengths, current_index + 1, Enum.first(hair_lengths))
+            new_length = Enum.at(hair_lengths, current_index + 1, List.first(hair_lengths))
           else
-            new_length = Enum.first(hair_lengths)
+            new_length = List.first(hair_lengths)
           end
           Components.Login.set_hair_length(player, new_length)
           Players.send_message(player, ["set field", "#hair_length", new_length])
@@ -185,9 +185,9 @@ defmodule Systems.Training do
             current_index = Enum.find_index(hair_colors, fn(hair_color) ->
               hair_color == current_color
             end)
-            new_color = Enum.at(hair_colors, current_index + 1, Enum.first(hair_colors))
+            new_color = Enum.at(hair_colors, current_index + 1, List.first(hair_colors))
           else
-            new_color = Enum.first(hair_colors)
+            new_color = List.first(hair_colors)
           end
           Components.Login.set_hair_color(player, new_color)
           Players.send_message(player, ["set field", "#hair_color", new_color])
@@ -197,9 +197,9 @@ defmodule Systems.Training do
             current_index = Enum.find_index(eye_colors, fn(eye_color) ->
               eye_color == current_color
             end)
-            new_color = Enum.at(eye_colors, current_index + 1, Enum.first(eye_colors))
+            new_color = Enum.at(eye_colors, current_index + 1, List.first(eye_colors))
           else
-            new_color = Enum.first(eye_colors)
+            new_color = List.first(eye_colors)
           end
           Components.Login.set_eye_color(player, new_color)
           Players.send_message(player, ["set field", "#eye_color", new_color])
@@ -209,9 +209,9 @@ defmodule Systems.Training do
             current_index = Enum.find_index(genders, fn(gender) ->
               gender == current_gender
             end)
-            new_gender = Enum.at(genders, current_index + 1, Enum.first(genders))
+            new_gender = Enum.at(genders, current_index + 1, List.first(genders))
           else
-            new_gender = Enum.first(genders)
+            new_gender = List.first(genders)
           end
           Components.Login.set_gender(player, new_gender)
           Players.send_message(player, ["set field", "#gender", new_gender])
@@ -236,7 +236,7 @@ defmodule Systems.Training do
         valid = false
         Players.send_message(player, ["update", "#validation", "Name cannot be blank."])
       end
-      if Regex.match?(%r/[^a-zA-Z]/, name) do
+      if Regex.match?(~r/[^a-zA-Z]/, name) do
         valid = false
         Players.send_message(player, ["update", "#validation", "Name can only include letters."])
       end
@@ -253,7 +253,7 @@ defmodule Systems.Training do
 
     def validate_last_name(player, name) do
       valid = true
-      if Regex.match?(%r/[^a-zA-Z ]/, name) do
+      if Regex.match?(~r/[^a-zA-Z ]/, name) do
         valid = false
         Players.send_message(player, ["update", "#validation", "Last name can only include letters and spaces."])
       end
@@ -267,8 +267,7 @@ defmodule Systems.Training do
     def finish(player) do
       character = Components.Login.get_character(player)
 
-      room = :global.whereis_name(:"82325")
-      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, room)
+      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, 82325)
 
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
       ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))

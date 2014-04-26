@@ -81,7 +81,7 @@ defmodule Components.Login do
   end
 
   def create_character_set_race(player, race_number) do
-    if Regex.match?(%r/^\d+$/, race_number) do
+    if Regex.match?(~r/^\d+$/, race_number) do
       {number, _} = Integer.parse(race_number)
       race = Races.find_by_number(number)
       if race do
@@ -96,7 +96,7 @@ defmodule Components.Login do
   end
 
   def create_character_set_class(player, class_number) do
-    if Regex.match?(%r/^\d+$/, class_number) do
+    if Regex.match?(~r/^\d+$/, class_number) do
       {number, _} = Integer.parse(class_number)
       class = Classes.find_by_number(number)
       if class do
@@ -156,7 +156,7 @@ defmodule Components.Login do
                                         password:  "#{:gen_event.call(player, Components.Login, :get_password)}",
                                         salt:      "#{:gen_event.call(player, Components.Login, :get_salt)}"
       )
-      Repo.create account
+      Repo.insert account
       display_character_select(player, account)
     else
       Players.send_message(player, ["scroll", "<p>Passwords did not match.</p>"])
@@ -270,10 +270,7 @@ defmodule Components.Login do
     Components.Online.value(character, true)
     Components.Player.value(character, player)
     Components.Player.send_message(character, ["clear scroll"])
-
-    room = Components.CurrentRoom.get_current_room(character)
-    Systems.Room.characters_in_room(room) |> Enum.each(&(Systems.Room.display_room(&1, room)))
-
+    Systems.Room.display_room_in_scroll(character, Components.CurrentRoom.get_current_room(character))
     Systems.Command.display_prompt(character)
   end
 

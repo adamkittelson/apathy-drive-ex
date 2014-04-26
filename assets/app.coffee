@@ -46,6 +46,8 @@ $ ->
       else addToScroll("#scroll", message[1])
 
   webSocket.onclose = (event) ->
+    $("#scroll").append("<p>Disconnected from server.</p>")
+    disableField("#command")
     console.log "Connection closed!"
 
   addToScroll = (elem, text) ->

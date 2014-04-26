@@ -12,8 +12,6 @@ defmodule Players do
     if character do
       Components.Online.value(character, false)
       Components.Player.value(character, nil)
-      room = Components.CurrentRoom.get_current_room(character)
-      Systems.Room.characters_in_room(room) |> Enum.each(&(Systems.Room.display_room(&1, room)))
     end
     :gen_server.cast(:players, {:disconnected, player})
   end
@@ -58,7 +56,7 @@ defmodule Players do
 
   def handle_cast({:send_message, player, message}, players) do
     connection = Components.Connection.get_connection(player)
-    connection <- JSON.generate(message)
+    send connection, ExJSON.generate(message)
     {:noreply, players}
   end
 

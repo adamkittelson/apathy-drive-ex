@@ -1,8 +1,8 @@
 defmodule Repo do
   use Ecto.Repo, adapter: Ecto.Adapters.Postgres
 
-  def url do
-    "ecto://Adam:@localhost/apathy_drive"
+  def conf do
+    parse_url "ecto://Adam:@localhost/apathy_drive"
   end
 
   def priv do

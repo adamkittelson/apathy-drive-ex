@@ -11,9 +11,9 @@ defmodule Systems.CharacterDescription do
   def interpolate(string, character) do
     case Components.Gender.value(character) do
       "male"   ->
-        String.replace(string, %r/\{\{(.+?)\/(.+?)\}\}/, "\\1")
+        String.replace(string, ~r/\{\{(.+?)\/(.+?)\}\}/, "\\1")
       "female" ->
-        String.replace(string, %r/\{\{(.+?)\/(.+?)\}\}/, "\\2")
+        String.replace(string, ~r/\{\{(.+?)\/(.+?)\}\}/, "\\2")
     end
   end
 

@@ -1,18 +1,18 @@
 defmodule ApathyDrive.Account do
   use Ecto.Entity
   use Ecto.Model
-  use Ecto.Query
+  import Ecto.Query, only: [from: 2]
 
   field :email,      :string
   field :password,   :string
   field :salt,       :string
-  field :characters, {:list, :integer}
+  field :characters, {:array, :integer}
 
   queryable "accounts" do
     field :email,      :string
     field :password,   :string
     field :salt,       :string
-    field :characters, {:list, :integer}
+    field :characters, {:array, :integer}
   end
 
   def find(email_address) do
@@ -21,7 +21,7 @@ defmodule ApathyDrive.Account do
             select: a
 
     accounts = Repo.all(query)
-    Enum.first(accounts)
+    List.first(accounts)
   end
 
   def find(email_address, password) do
