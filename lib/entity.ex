@@ -16,6 +16,7 @@ defmodule ApathyDrive.Entity do
 
   def add_component(pid, component, args) do
     :gen_event.add_handler(pid, component, args)
+    Components.add(component, pid)
   end
 
   def notify(pid, event) do

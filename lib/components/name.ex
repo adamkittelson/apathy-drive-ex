@@ -2,8 +2,12 @@ defmodule Components.Name do
   use GenEvent.Behaviour
 
   ### Public API
-  def get_name(entity) do
+  def value(entity) do
     :gen_event.call(entity, Components.Name, :get_name)
+  end
+
+  def get_name(entity) do
+    value(entity)
   end
 
   def value(entity, new_value) do

@@ -9,6 +9,7 @@ defmodule ApathyDrive do
     :random.seed(:erlang.now)
 
     Players.start_link
+    Components.start_link
     Races.start_link
     Classes.start_link
     Characters.start_link

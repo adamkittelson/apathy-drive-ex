@@ -2,8 +2,12 @@ defmodule Components.Description do
   use GenEvent.Behaviour
 
   ### Public API
-  def get_description(entity) do
+  def value(entity) do
     :gen_event.call(entity, Components.Description, :get_description)
+  end
+
+  def get_description(entity) do
+    value(entity)
   end
 
   def value(entity, new_value) do

@@ -2,8 +2,12 @@ defmodule Components.Type do
   use GenEvent.Behaviour
 
   ### Public API
-  def get_type(entity) do
+  def value(entity) do
     :gen_event.call(entity, Components.Type, :get_type)
+  end
+
+  def get_type(entity) do
+    value(entity)
   end
 
   def value(entity, new_value) do
