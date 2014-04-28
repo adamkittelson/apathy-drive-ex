@@ -7,7 +7,6 @@ defmodule Components.Name do
   end
 
   def get_name(entity) do
-    IO.puts "Getting Name for some fucking reason"
     value(entity)
   end
 
