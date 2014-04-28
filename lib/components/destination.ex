@@ -32,7 +32,7 @@ defmodule Components.Destination do
   end
 
   def handle_call(:get_destination, destination_id) do
-    {:ok, Rooms.find_by_id(destination_id), destination_id}
+    {:ok, Components.find_by(Components.ID, destination_id), destination_id}
   end
 
   def handle_event({:set_destination, new_value}, _value) do

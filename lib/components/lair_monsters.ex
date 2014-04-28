@@ -32,7 +32,7 @@ defmodule Components.LairMonsters do
   end
 
   def handle_call(:get_lair_monsters, lair_monster_ids) do
-    {:ok, Enum.map(lair_monster_ids, &(Monsters.find_by_id(&1))), lair_monster_ids}
+    {:ok, Enum.map(lair_monster_ids, &(Components.find_by(Components.ID, &1))), lair_monster_ids}
   end
 
   def handle_event({:set_lair_monsters, new_value}, _value) do

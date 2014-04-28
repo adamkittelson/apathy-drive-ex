@@ -16,7 +16,9 @@ defmodule Components.Race do
 
   ### GenEvent API
   def init(value) when is_number(value) do
-    {:ok, Races.find_by_number(value)}
+    race = Components.all(Components.IndexAsRace)
+           |> Components.find_by(Components.Number, value)
+    {:ok, race}
   end
 
   def init(value) do

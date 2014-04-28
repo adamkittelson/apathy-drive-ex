@@ -15,12 +15,12 @@ defmodule Components.Monsters do
   end
 
   def serialize(entity) do
-    nil
+    {"Monsters", []}
   end
 
   ### GenEvent API
-  def init(value) do
-    {:ok, value}
+  def init(_value) do
+    {:ok, []}
   end
 
   def handle_call(:value, monsters) do

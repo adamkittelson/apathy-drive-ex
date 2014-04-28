@@ -32,7 +32,7 @@ defmodule Components.CurrentRoom do
   end
 
   def handle_call(:get_current_room, room_id) do
-    {:ok, Rooms.find_by_id(room_id), room_id}
+    {:ok, Components.find_by(Components.ID, room_id), room_id}
   end
 
   def handle_event({:set_current_room, new_room}, _room) do

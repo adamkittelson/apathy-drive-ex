@@ -2,8 +2,12 @@ defmodule Components.Connection do
   use GenEvent.Behaviour
 
   ### Public API
-  def get_connection(entity) do
+  def value(entity) do
     :gen_event.call(entity, Components.Connection, :get_connection)
+  end
+
+  def get_connection(entity) do
+    value(entity)
   end
 
   def serialize(_entity) do

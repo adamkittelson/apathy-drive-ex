@@ -144,7 +144,7 @@ defmodule Systems.Room do
   end
 
   def characters_in_room(room) do
-    Characters.online |> entities_in_room(room)
+    Systems.Characters.online |> entities_in_room(room)
   end
 
   def monsters_in_room(room) do
@@ -162,7 +162,6 @@ defmodule Systems.Room do
   end
 
   def initialize_lair_spawning(room) do
-    ApathyDrive.Entity.add_component(room, Components.Monsters, [])
     if ApathyDrive.Entity.list_components(room) |> Enum.member?(Components.LairFrequency) do
       :timer.apply_interval(Components.LairFrequency.value(room) * 1000 * 60, Systems.Room, :spawn_lair, [room])
     end

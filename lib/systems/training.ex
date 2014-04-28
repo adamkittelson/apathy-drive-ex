@@ -240,7 +240,7 @@ defmodule Systems.Training do
         valid = false
         Players.send_message(player, ["update", "#validation", "Name can only include letters."])
       end
-      if Characters.name_taken?(name) do
+      if Systems.Characters.name_taken?(name) do
         valid = false
         Players.send_message(player, ["update", "#validation", "There's already a character with that name."])
       end
@@ -267,7 +267,7 @@ defmodule Systems.Training do
     def finish(player) do
       character = Components.Login.get_character(player)
 
-      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, 82325)
+      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, 6009)
 
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
       ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))

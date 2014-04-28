@@ -32,7 +32,7 @@ defmodule Components.Exits do
   end
 
   def handle_call(:get_exits, exit_ids) do
-    {:ok, Enum.map(exit_ids, &(Exits.find_by_id(&1))), exit_ids}
+    {:ok, Enum.map(exit_ids, &(Components.find_by(Components.ID, &1))), exit_ids}
   end
 
   def handle_event({:set_exits, new_value}, _value) do

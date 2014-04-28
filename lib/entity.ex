@@ -38,7 +38,6 @@ defmodule ApathyDrive.Entity do
       {component_name, component_values} = component
       ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
     end
-    add_to_type_collection(entity)
     if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do
       Systems.Help.add(entity)
     end
@@ -66,27 +65,6 @@ defmodule ApathyDrive.Entity do
       components = serialize_components(entity_pid)
       entity = ApathyDrive.Entity.new(components: components)
       Repo.insert entity
-      add_to_type_collection(entity_pid)
-    end
-  end
-
-  def add_to_type_collection(entity) do
-    if Enum.member?(:gen_event.which_handlers(entity), Components.Type) do
-      case Components.Type.get_type(entity) do
-        "race" ->
-          Races.add(entity)
-        "class" ->
-          Classes.add(entity)
-        "character" ->
-          Characters.add(entity)
-        "room" ->
-          Systems.Room.initialize_lair_spawning(entity)
-          Rooms.add(entity)
-        "monster" ->
-          Monsters.add(entity)
-        "exit" ->
-          Exits.add(entity)
-      end
     end
   end
 
