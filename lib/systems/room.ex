@@ -161,25 +161,4 @@ defmodule Systems.Room do
     end)
   end
 
-  def initialize_lair_spawning(room) do
-    if ApathyDrive.Entity.list_components(room) |> Enum.member?(Components.LairFrequency) do
-      :timer.apply_interval(Components.LairFrequency.value(room) * 1000 * 60, Systems.Room, :spawn_lair, [room])
-    end
-  end
-
-  def spawn_lair(room) do
-    if (Systems.Room.monsters_in_room(room) |> Enum.count) < Components.LairSize.value(room) do
-      room |> select_lair_monster
-           |> Systems.Monster.spawn_monster(room)
-      spawn_lair(room)
-    end
-  end
-
-  def select_lair_monster(room) do
-    :random.seed(:os.timestamp)
-    room |> Components.LairMonsters.get_lair_monsters
-         |> Enum.shuffle
-         |> List.first
-  end
-
 end

@@ -21,6 +21,8 @@ defmodule ApathyDrive do
     ApathyDrive.Entity.load!
     IO.puts "Done!"
 
+    Systems.LairSpawning.initialize
+
     # start weber application
     Weber.run_weber
 
