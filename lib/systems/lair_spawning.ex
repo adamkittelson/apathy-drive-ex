@@ -4,7 +4,7 @@ defmodule Systems.LairSpawning do
   end
 
   def spawn_lairs do
-      Components.all(Components.Lair) |> Enum.each(fn(room) ->
+    Components.all(Components.Lair) |> Enum.each(fn(room) ->
       {mega, seconds, _} = :os.timestamp
       spawn_at = (mega * 1000000 + seconds) - Components.Lair.frequency(room) * 60
       case Components.Lair.last_spawned_at(room) do
