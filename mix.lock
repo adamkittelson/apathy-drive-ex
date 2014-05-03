@@ -3,7 +3,7 @@
   "cowlib": {:git, "git://github.com/extend/cowlib.git", "f58340a0044856bb508df03cfe94cf79308380a2", [ref: "0.6.1"]},
   "decimal": {:package, "0.1.2"},
   "ecto": {:git, "git://github.com/elixir-lang/ecto.git", "303131c50b5881fb7836ddbe2e88e0241c5e83c6", [ref: "303131c50b5881fb7836ddbe2e88e0241c5e83c6"]},
-  "exjson": {:git, "git://github.com/guedes/exjson.git", "34377361f5b917a43672663c8d9e622b213f0e73", []},
+  "exjson": {:git, "git://github.com/adamkittelson/exjson.git", "0745ea9eb3af3105ad9235907fd51620fa927709", [ref: "0745ea9eb3af3105ad9235907fd51620fa927709"]},
   "exlager": {:git, "git://github.com/khia/exlager.git", "d3d73b2a3d0f7b8f3da11a02b5f9384da6c62110", []},
   "goldrush": {:git, "git://github.com/DeadZen/goldrush.git", "71e63212f12c25827e0c1b4198d37d5d018a7fec", [tag: "0.1.6"]},
   "lager": {:git, "https://github.com/basho/lager.git", "4d8291edb72a25ac0efde907e2ecaa115108ff90", []},
