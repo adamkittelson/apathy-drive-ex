@@ -33,7 +33,7 @@ defmodule ApathyDrive.Entity do
   def load!(entity_record) do
     {:ok, entity} = ApathyDrive.Entity.init
     ApathyDrive.Entity.add_component(entity, Components.ID, entity_record.id)
-    components = ExJSON.parse(entity_record.components)
+    components = ExJSON.parse(entity_record.components, :to_map)
     Enum.each components, fn(component) ->
       {component_name, component_values} = component
       ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)

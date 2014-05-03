@@ -56,7 +56,7 @@ defmodule Components.Lair do
   end
 
   def handle_event(:set_last_spawned_at, value) do
-    {:ok, ListDict.put(value, "last_spawned_at", :os.timestamp) }
+    {:ok, Map.put(value, "last_spawned_at", :os.timestamp) }
   end
 
   def handle_event(_, current_value) do
