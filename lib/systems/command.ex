@@ -56,8 +56,8 @@ defmodule Systems.Command do
     if Enum.member?(["l", "look"], command) do
       command_found = true
       if Enum.any? arguments do
-        if target_character = Systems.Room.find_character_by_name(current_room, Enum.join(arguments, " ")) do
-          Systems.CharacterDescription.add_character_description_to_scroll(player, target_character)
+        if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do
+          Systems.Description.add_description_to_scroll(character, target)
         else
           Players.send_message(player, ["scroll", "<p>You do not notice that here.</p>"])
         end
@@ -74,6 +74,10 @@ defmodule Systems.Command do
     if !command_found do
       Players.send_message(player, ["scroll", "<p>What?</p>"])
     end
+  end
+
+  def find_entity_in_room(room, string) do
+    room |> Systems.Room.entities_in_room |> Systems.Match.first(:name_contains, string)
   end
 
   def display_prompt(character) do

@@ -1,4 +1,4 @@
-defmodule Systems.CharacterDescription do
+defmodule Systems.Description do
   @attribute_descriptions [
     strength:  ["puny", "weak", "slightly built", "moderately built", "well built", "muscular", "powerfully built", "heroically proportioned", "Herculean", "physically Godlike"],
     health:    ["frail", "thin", "healthy", "stout", "solid", "massive", "gigantic", "colossal"],
@@ -17,13 +17,22 @@ defmodule Systems.CharacterDescription do
     end
   end
 
-  def add_character_description_to_scroll(player, character) do
-    Players.send_message player, ["scroll", "<p><span class='cyan'>#{Components.Name.get_name(character)} #{Components.LastName.value(character)}</span></p>"]
-    Players.send_message player, ["scroll", "<p>#{describe_character(character) |> interpolate(character)}</span></p>"]
+  def add_description_to_scroll(character, target) do
+    if ApathyDrive.Entity.list_components(target) |> Enum.member?(Components.Description) do
+      Components.Player.send_message character, ["scroll", "<p><span class='cyan'>#{Components.Name.value(target)}</span></p>"]
+      Components.Player.send_message character, ["scroll", "<p>#{Components.Description.value(target)}</p>"]
+    else
+      add_character_description_to_scroll(character, target)
+    end
+  end
+
+  def add_character_description_to_scroll(character, target) do
+    Components.Player.send_message character, ["scroll", "<p><span class='cyan'>#{Components.Name.get_name(target)} #{Components.LastName.value(target)}</span></p>"]
+    Components.Player.send_message character, ["scroll", "<p>#{describe_character(target) |> interpolate(target)}</span></p>"]
   end
 
   def describe_character(character) do
-    name        =  Components.Name.get_name(character)
+    name        = Components.Name.get_name(character)
     race_name   = Components.Race.value(character)  |> Components.Name.get_name
     class_name  = Components.Class.value(character) |> Components.Name.get_name
     eye_color   = Components.EyeColor.value(character)

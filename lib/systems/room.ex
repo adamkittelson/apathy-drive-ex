@@ -137,6 +137,10 @@ defmodule Systems.Room do
     end
   end
 
+  def entities_in_room(room) do
+    Enum.concat(monsters_in_room(room), characters_in_room(room))
+  end
+
   def entities_in_room(entities, room) do
     Enum.filter(entities, fn(entity) ->
       room == Components.CurrentRoom.get_current_room(entity)
@@ -153,12 +157,6 @@ defmodule Systems.Room do
 
   def characters_in_room(room, character_to_exclude) do
     characters_in_room(room) |> Enum.reject(&(&1 == character_to_exclude))
-  end
-
-  def find_character_by_name(room, character_name) do
-    Enum.find(characters_in_room(room), fn(character) ->
-      String.downcase(Components.Name.get_name(character)) == String.downcase(character_name)
-    end)
   end
 
 end
