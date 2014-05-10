@@ -30,7 +30,7 @@
       return $(selector).focus();
     };
     adjustScrollTop();
-    webSocket = new WebSocket('ws://localhost:3000/_ws');
+    webSocket = new WebSocket("" + (window.location.origin.replace('http', 'ws:')) + "/_ws");
     webSocket.onopen = function(event) {
       return console.log("Connected!");
     };
@@ -84,10 +84,15 @@
     disableField = function(selector) {
       return $(selector).prop('disabled', true).removeAttr('id');
     };
+    $(document).on('keydown', "input", function(event) {
+      if (event.which === 9 && !event.shiftKey) {
+        return event.preventDefault();
+      }
+    });
     return $(document).on('keyup', "input", function(event) {
       var command, params, value;
       event.preventDefault();
-      if (event.which === 13) {
+      if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {
         command = $(event.target).val();
         if (event.target.id !== "command") {
           $("#validation").html("");

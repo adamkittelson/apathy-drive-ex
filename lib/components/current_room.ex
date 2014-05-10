@@ -16,6 +16,7 @@ defmodule Components.CurrentRoom do
 
   def set_current_room(entity, room_pid) do
     value(entity, room_pid |> Components.ID.value)
+    ApathyDrive.Entity.save!(entity)
   end
 
   def serialize(entity) do

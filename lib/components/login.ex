@@ -118,7 +118,6 @@ defmodule Components.Login do
         ApathyDrive.Entity.add_component(character, Components.Class, class)
         ApathyDrive.Entity.add_component(character, Components.Race, race)
         ApathyDrive.Entity.add_component(character, Components.Name, "")
-        ApathyDrive.Entity.add_component(character, Components.IndexAsCharacter, nil)
         ApathyDrive.Entity.add_component(character, Components.Gender, nil)
         ApathyDrive.Entity.add_component(character, Components.EyeColor, nil)
         ApathyDrive.Entity.add_component(character, Components.HairColor, nil)
@@ -163,7 +162,7 @@ defmodule Components.Login do
                                         password:  "#{:gen_event.call(player, Components.Login, :get_password)}",
                                         salt:      "#{:gen_event.call(player, Components.Login, :get_salt)}"
       )
-      Repo.insert account
+      account = Repo.insert(account)
       display_character_select(player, account)
     else
       Players.send_message(player, ["scroll", "<p>Passwords did not match.</p>"])

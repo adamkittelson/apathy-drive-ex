@@ -29,7 +29,7 @@ $ ->
 
   adjustScrollTop()
 
-  webSocket = new WebSocket('ws://localhost:3000/_ws')
+  webSocket = new WebSocket("#{window.location.origin.replace('http', 'ws:')}/_ws")
 
   webSocket.onopen = (event) ->
     console.log "Connected!"
@@ -71,9 +71,13 @@ $ ->
   disableField = (selector) ->
     $(selector).prop('disabled', true).removeAttr('id')
 
+  $(document).on 'keydown', "input", (event) ->
+    if event.which is 9 and !event.shiftKey # prevent tab, but not shift-tab
+      event.preventDefault()
+
   $(document).on 'keyup', "input", (event) ->
     event.preventDefault()
-    if event.which is 13 # enter key
+    if event.which is 13 or (event.which is 9 and !event.shiftKey) # enter key or (non-shift) tab
       command = $(event.target).val()
       unless event.target.id is "command"
         $("#validation").html("")

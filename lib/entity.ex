@@ -57,14 +57,15 @@ defmodule ApathyDrive.Entity do
 
   def save!(entity_pid) do
     if Enum.member?(list_components(entity_pid), Components.ID) do
-      id = Components.ID.values(entity_pid)
+      id = Components.ID.value(entity_pid)
       entity = Repo.get(ApathyDrive.Entity, id)
-      entity.components(serialize_components(entity_pid))
+      entity = entity.components(serialize_components(entity_pid))
       Repo.update(entity)
     else
       components = serialize_components(entity_pid)
       entity = ApathyDrive.Entity.new(components: components)
-      Repo.insert entity
+      entity = Repo.insert(entity)
+      add_component(entity_pid, Components.ID, entity.id)
     end
   end
 

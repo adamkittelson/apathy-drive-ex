@@ -268,7 +268,7 @@ defmodule Systems.Training do
       character = Components.Login.get_character(player)
 
       ApathyDrive.Entity.add_component(character, Components.CurrentRoom, 6009)
-
+      ApathyDrive.Entity.add_component(character, Components.IndexAsCharacter, nil)
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
       ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
       Components.Agility.value(character, Components.Login.get_stat(player, :agility))
