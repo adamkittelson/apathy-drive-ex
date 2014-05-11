@@ -266,8 +266,9 @@ defmodule Systems.Training do
 
     def finish(player) do
       character = Components.Login.get_character(player)
+      start_room_id = Components.find_by(Components.StartRoom, true) |> Components.ID.value
 
-      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, 6009)
+      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, start_room_id)
       ApathyDrive.Entity.add_component(character, Components.IndexAsCharacter, nil)
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
       ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
