@@ -47,7 +47,7 @@ defmodule Systems.Command do
     if Enum.member? @directions, command do
       command_found = true
       if exit_directions && (Enum.member? exit_directions, command) do
-        Systems.Room.move(player, character, command)
+        Systems.Room.move(character, command)
       else
         Players.send_message(player, ["scroll", "<p>There is no exit in that direction.</p>"])
       end

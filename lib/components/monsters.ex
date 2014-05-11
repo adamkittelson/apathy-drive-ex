@@ -14,7 +14,7 @@ defmodule Components.Monsters do
     ApathyDrive.Entity.notify(entity, {:add_monster, monster})
   end
 
-  def serialize(entity) do
+  def serialize(_entity) do
     {"Monsters", []}
   end
 

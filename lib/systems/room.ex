@@ -83,7 +83,7 @@ defmodule Systems.Room do
     end
   end
 
-  def move(player, character, direction) do
+  def move(character, direction) do
     current_room = get_current_room(character)
     destination = current_room |> get_exit_by_direction(direction)
                                |> Components.Destination.get_destination
