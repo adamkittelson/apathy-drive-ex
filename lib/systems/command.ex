@@ -66,6 +66,11 @@ defmodule Systems.Command do
       end
     end
 
+    if command == "list" do
+      command_found = true
+      Systems.Shop.list(character, current_room)
+    end
+
     if command == "help" do
       command_found = true
       Systems.Command.help(player, arguments)
