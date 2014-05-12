@@ -4,11 +4,18 @@ defmodule Systems.Room do
   end
 
   def long_room_html(character, room) do
-    "<div class='room'>#{name_html(room)}#{description_html(room)}#{items_html(room)}#{entities_html(character, room)}#{exit_directions_html(room)}</div>"
+    "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(character, room)}#{exit_directions_html(room)}</div>"
   end
 
   def short_room_html(room) do
     "<div class='room'>#{name_html(room)}#{exit_directions_html(room)}</div>"
+  end
+
+  def shop(room) do
+    case ApathyDrive.Entity.has_component?(room, Components.Shop) do
+      true  -> "<p><br><em>Type 'list' to see a list of goods and services sold here.</em><br><br></p>"
+      false -> ""
+    end
   end
 
   def room_data(room, character) do

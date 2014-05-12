@@ -47,6 +47,10 @@ defmodule ApathyDrive.Entity do
     :gen_event.which_handlers(entity)
   end
 
+  def has_component?(entity, component) do
+    Enum.member?(list_components(entity), component)
+  end
+
   def serialize_components(entity) do
     Enum.map(list_components(entity), fn (component) ->
       component.serialize(entity)
