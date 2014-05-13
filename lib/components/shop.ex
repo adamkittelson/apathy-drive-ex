@@ -10,6 +10,12 @@ defmodule Components.Shop do
     ApathyDrive.Entity.notify(entity, {:set_shop, new_value})
   end
 
+  def items(entity) do
+    Enum.map(value(entity), fn(item_hash) ->
+      Components.find_by(Components.ID, item_hash["item"])
+    end)
+  end
+
   def serialize(entity) do
     {"Shop", value(entity)}
   end

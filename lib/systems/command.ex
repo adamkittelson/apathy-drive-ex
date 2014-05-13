@@ -71,6 +71,11 @@ defmodule Systems.Command do
       Systems.Shop.list(character, current_room)
     end
 
+    if command == "buy" do
+      command_found = true
+      Systems.Shop.buy(character, current_room, Enum.join(arguments, " "))
+    end
+
     if command == "help" do
       command_found = true
       Systems.Command.help(player, arguments)

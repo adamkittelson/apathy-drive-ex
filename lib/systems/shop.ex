@@ -19,4 +19,23 @@ defmodule Systems.Shop do
       Components.Player.send_message(character, ["scroll", "<p><span class='red'>You cannot LIST if you are not in a shop!</span></p>"])
     end
   end
+
+  def buy(character, room, item) do
+    if ApathyDrive.Entity.has_component?(room, Components.Shop) do
+      case Systems.Match.all(Components.Shop.items(room), :name_contains, item) do
+        [match] ->
+          Components.Player.send_message(character, ["scroll", "<p>You wanted to buy #{Components.Name.value(match)}</p>"])
+        [] ->
+          Components.Player.send_message(character, ["scroll", "<p>\"#{item}\" does not appear to be for sale here.</p>"])
+        matches ->
+          match_names = matches |> Enum.map &(Components.Name.value(&1))
+          Components.Player.send_message(character, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
+          Enum.each match_names, fn(match_name) ->
+            Components.Player.send_message(character, ["scroll", "<p>-- #{match_name}</p>"])
+          end
+      end
+    else
+      Components.Player.send_message(character, ["scroll", "<p><span class='red'>You cannot BUY if you are not in a shop!</span></p>"])
+    end
+  end
 end
