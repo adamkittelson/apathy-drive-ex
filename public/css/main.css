@@ -111,8 +111,7 @@ code {
   color: silver;
   outline: none;
   font-size: 12px;
-  display: inline;
-  margin-top: 5px; }
+  display: inline; }
 
 .field {
   background-color: black;

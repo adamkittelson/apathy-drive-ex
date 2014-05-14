@@ -66,6 +66,11 @@ defmodule Systems.Command do
       end
     end
 
+    if Enum.member?(["i", "inventory"], command) do
+      command_found = true
+      Systems.Item.display_inventory(character)
+    end
+
     if command == "list" do
       command_found = true
       Systems.Shop.list(character, current_room)

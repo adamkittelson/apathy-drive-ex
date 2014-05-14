@@ -24,7 +24,8 @@ defmodule Systems.Shop do
     if ApathyDrive.Entity.has_component?(room, Components.Shop) do
       case Systems.Match.all(Components.Shop.items(room), :name_contains, item) do
         [match] ->
-          Components.Player.send_message(character, ["scroll", "<p>You wanted to buy #{Components.Name.value(match)}</p>"])
+          Systems.Item.spawn_item(match, character)
+          Components.Player.send_message(character, ["scroll", "<p>You just bought #{Components.Name.value(match)} for nothing.</p>"])
         [] ->
           Components.Player.send_message(character, ["scroll", "<p>\"#{item}\" does not appear to be for sale here.</p>"])
         matches ->
