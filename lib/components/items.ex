@@ -18,6 +18,10 @@ defmodule Components.Items do
     ApathyDrive.Entity.notify(entity, {:add_item, Components.ID.value(item)})
   end
 
+  def remove_item(entity, item) do
+    ApathyDrive.Entity.notify(entity, {:remove_item, Components.ID.value(item)})
+  end
+
   def serialize(entity) do
     {"Items", value(entity)}
   end

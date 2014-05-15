@@ -6,6 +6,10 @@ defmodule Components do
     :gen_server.cast(:components, {:add, component, entity, component.value(entity)})
   end
 
+  def remove(component, entity) do
+    :gen_server.cast(:components, {:remove, component, entity, component.value(entity)})
+  end
+
   def all do
     :gen_server.call(:components, :all)
   end
@@ -48,6 +52,14 @@ defmodule Components do
     current_hash = HashDict.get(components, component, HashDict.new)
     current_pids = HashDict.get(current_hash, value, HashSet.new)
     new_pids = Set.put(current_pids, entity)
+    new_hash = HashDict.put(current_hash, value, new_pids)
+    {:noreply, HashDict.put(components, component, new_hash) }
+  end
+
+  def handle_cast({:remove, component, entity, value}, components) do
+    current_hash = HashDict.get(components, component, HashDict.new)
+    current_pids = HashDict.get(current_hash, value, HashSet.new)
+    new_pids = Set.delete(current_pids, entity)
     new_hash = HashDict.put(current_hash, value, new_pids)
     {:noreply, HashDict.put(components, component, new_hash) }
   end
