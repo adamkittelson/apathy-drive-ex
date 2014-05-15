@@ -272,6 +272,7 @@ defmodule Systems.Training do
       ApathyDrive.Entity.add_component(character, Components.IndexAsCharacter, nil)
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
       ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
+      ApathyDrive.Entity.add_component(character, Components.Items, [])
       Components.Agility.value(character, Components.Login.get_stat(player, :agility))
       Components.Charm.value(character, Components.Login.get_stat(player, :charm))
       Components.Health.value(character, Components.Login.get_stat(player, :health))

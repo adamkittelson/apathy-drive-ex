@@ -66,6 +66,26 @@ defmodule Systems.Command do
       end
     end
 
+    if Enum.member?(["i", "inventory"], command) do
+      command_found = true
+      Systems.Item.display_inventory(character)
+    end
+
+    if command == "list" do
+      command_found = true
+      Systems.Shop.list(character, current_room)
+    end
+
+    if command == "buy" do
+      command_found = true
+      Systems.Shop.buy(character, current_room, Enum.join(arguments, " "))
+    end
+
+    if command == "sell" do
+      command_found = true
+      Systems.Shop.sell(character, current_room, Enum.join(arguments, " "))
+    end
+
     if command == "help" do
       command_found = true
       Systems.Command.help(player, arguments)

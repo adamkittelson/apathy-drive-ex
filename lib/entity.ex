@@ -19,6 +19,11 @@ defmodule ApathyDrive.Entity do
     Components.add(component, pid)
   end
 
+  def remove_component(pid, component) do
+    :gen_event.delete_handler(pid, component, [])
+    Components.remove(component, pid)
+  end
+
   def notify(pid, event) do
     :gen_event.notify(pid, event)
   end
@@ -47,6 +52,10 @@ defmodule ApathyDrive.Entity do
     :gen_event.which_handlers(entity)
   end
 
+  def has_component?(entity, component) do
+    Enum.member?(list_components(entity), component)
+  end
+
   def serialize_components(entity) do
     Enum.map(list_components(entity), fn (component) ->
       component.serialize(entity)
@@ -67,6 +76,16 @@ defmodule ApathyDrive.Entity do
       entity = Repo.insert(entity)
       add_component(entity_pid, Components.ID, entity.id)
     end
+  end
+
+  def delete!(entity_pid) do
+    if Enum.member?(list_components(entity_pid), Components.ID) do
+      id = Components.ID.value(entity_pid)
+      entity = Repo.get(ApathyDrive.Entity, id)
+      Repo.delete(entity)
+    end
+    list_components(entity_pid) |> Enum.each(&(remove_component(entity_pid, &1)))
+    :gen_event.stop(entity_pid)
   end
 
 end
