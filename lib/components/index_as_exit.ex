@@ -7,7 +7,7 @@ defmodule Components.IndexAsExit do
   end
 
   def serialize(entity) do
-    {"IndexAsExit", value(entity)}
+    %{"IndexAsExit" => value(entity)}
   end
 
   ### GenEvent API

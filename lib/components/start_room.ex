@@ -7,7 +7,7 @@ defmodule Components.StartRoom do
   end
 
   def serialize(entity) do
-    {"StartRoom", value(entity)}
+    %{"StartRoom" => value(entity)}
   end
 
   ### GenEvent API

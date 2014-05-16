@@ -43,7 +43,7 @@ defmodule Components.Lair do
   end
 
   def serialize(entity) do
-    {"Lair", value(entity)}
+    %{"Lair" => value(entity)}
   end
 
   ### GenEvent API

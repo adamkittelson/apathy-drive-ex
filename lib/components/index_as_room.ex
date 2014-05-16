@@ -7,7 +7,7 @@ defmodule Components.IndexAsRoom do
   end
 
   def serialize(entity) do
-    {"IndexAsRoom", value(entity)}
+    %{"IndexAsRoom" => value(entity)}
   end
 
   ### GenEvent API

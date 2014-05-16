@@ -7,7 +7,7 @@ defmodule Components.IndexAsMonsterTemplate do
   end
 
   def serialize(entity) do
-    {"IndexAsMonsterTemplate", value(entity)}
+    %{"IndexAsMonsterTemplate" => value(entity)}
   end
 
   ### GenEvent API

@@ -23,7 +23,7 @@ defmodule Components.Help do
   end
 
   def serialize(entity) do
-    {"Help", value(entity)}
+    %{"Help" => value(entity)}
   end
 
   ### GenEvent API

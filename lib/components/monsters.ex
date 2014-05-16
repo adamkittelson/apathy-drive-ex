@@ -15,7 +15,7 @@ defmodule Components.Monsters do
   end
 
   def serialize(_entity) do
-    {"Monsters", []}
+    %{"Monsters" => []}
   end
 
   ### GenEvent API

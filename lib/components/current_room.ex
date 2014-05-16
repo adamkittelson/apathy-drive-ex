@@ -20,7 +20,7 @@ defmodule Components.CurrentRoom do
   end
 
   def serialize(entity) do
-    {"CurrentRoom", value(entity)}
+    %{"CurrentRoom" => value(entity)}
   end
 
   ### GenEvent API

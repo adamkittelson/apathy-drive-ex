@@ -15,7 +15,7 @@ defmodule Components.Direction do
   end
 
   def serialize(entity) do
-    {"Direction", get_direction(entity)}
+    %{"Direction" => get_direction(entity)}
   end
 
   ### GenEvent API

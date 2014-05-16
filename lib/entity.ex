@@ -38,7 +38,7 @@ defmodule ApathyDrive.Entity do
   def load!(entity_record) do
     {:ok, entity} = ApathyDrive.Entity.init
     ApathyDrive.Entity.add_component(entity, Components.ID, entity_record.id)
-    components = ExJSON.parse(entity_record.components, :to_map)
+    components = Jazz.decode!(entity_record.components)
     Enum.each components, fn(component) ->
       {component_name, component_values} = component
       ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
@@ -57,11 +57,14 @@ defmodule ApathyDrive.Entity do
   end
 
   def serialize_components(entity) do
-    Enum.map(list_components(entity), fn (component) ->
-      component.serialize(entity)
-    end) |> Enum.reject(fn(component) ->
-      component == nil
-    end) |> ExJSON.generate
+    Enum.reduce(list_components(entity), %{}, fn(component, components) -> 
+      component = component.serialize(entity)
+      if component == nil do
+        components
+      else
+        Map.merge(components, component)
+      end
+    end) |> Jazz.encode!
   end
 
   def save!(entity_pid) do

@@ -11,7 +11,7 @@ defmodule Components.Strength do
   end
 
   def serialize(entity) do
-    {"Strength", value(entity)}
+    %{"Strength" => value(entity)}
   end
 
   ### GenEvent API

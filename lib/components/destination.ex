@@ -19,7 +19,7 @@ defmodule Components.Destination do
   end
 
   def serialize(entity) do
-    {"Destination", value(entity)}
+    %{"Destination" => value(entity)}
   end
 
   ### GenEvent API

@@ -11,7 +11,7 @@ defmodule Components.Willpower do
   end
 
   def serialize(entity) do
-    {"Willpower", value(entity)}
+    %{"Willpower" => value(entity)}
   end
 
   ### GenEvent API

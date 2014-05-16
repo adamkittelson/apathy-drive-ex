@@ -11,7 +11,7 @@ defmodule Components.Gender do
   end
 
   def serialize(entity) do
-    {"Gender", value(entity)}
+    %{"Gender" => value(entity)}
   end
 
   ### GenEvent API

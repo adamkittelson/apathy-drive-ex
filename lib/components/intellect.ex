@@ -11,7 +11,7 @@ defmodule Components.Intellect do
   end
 
   def serialize(entity) do
-    {"Intellect", value(entity)}
+    %{"Intellect" => value(entity)}
   end
 
   ### GenEvent API

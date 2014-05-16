@@ -11,7 +11,7 @@ defmodule Components.HairColor do
   end
 
   def serialize(entity) do
-    {"HairColor", value(entity)}
+    %{"HairColor" => value(entity)}
   end
 
   ### GenEvent API

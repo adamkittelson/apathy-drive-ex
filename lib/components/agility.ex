@@ -11,7 +11,7 @@ defmodule Components.Agility do
   end
 
   def serialize(entity) do
-    {"Agility", value(entity)}
+    %{"Agility" => value(entity)}
   end
 
   ### GenEvent API

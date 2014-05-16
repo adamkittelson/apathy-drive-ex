@@ -15,7 +15,7 @@ defmodule Components.Type do
   end
 
   def serialize(entity) do
-    {"Type", get_type(entity)}
+    %{"Type" => get_type(entity)}
   end
 
   ### GenEvent API

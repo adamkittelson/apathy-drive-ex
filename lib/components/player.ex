@@ -11,7 +11,7 @@ defmodule Components.Player do
   end
 
   def serialize(_entity) do
-    {"Player", nil}
+    %{"Player" => nil}
   end
 
   def send_message(entity, message) do

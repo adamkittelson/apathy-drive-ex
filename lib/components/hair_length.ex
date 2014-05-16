@@ -11,7 +11,7 @@ defmodule Components.HairLength do
   end
 
   def serialize(entity) do
-    {"HairLength", value(entity)}
+    %{"HairLength" => value(entity)}
   end
 
   ### GenEvent API

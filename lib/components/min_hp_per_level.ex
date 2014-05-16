@@ -11,7 +11,7 @@ defmodule Components.MinHPPerLevel do
   end
 
   def serialize(entity) do
-    {"MinHPPerLevel", value(entity)}
+    %{"MinHPPerLevel" => value(entity)}
   end
 
   ### GenEvent API

@@ -11,7 +11,7 @@ defmodule Components.HPRolls do
   end
 
   def serialize(entity) do
-    {"HPRolls", value(entity)}
+    %{"HPRolls" => value(entity)}
   end
 
   ### GenEvent API

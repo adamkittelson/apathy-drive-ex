@@ -11,7 +11,7 @@ defmodule Components.Health do
   end
 
   def serialize(entity) do
-    {"Health", value(entity)}
+    %{"Health" => value(entity)}
   end
 
   ### GenEvent API

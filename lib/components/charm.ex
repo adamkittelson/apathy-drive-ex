@@ -11,7 +11,7 @@ defmodule Components.Charm do
   end
 
   def serialize(entity) do
-    {"Charm", value(entity)}
+    %{"Charm" => value(entity)}
   end
 
   ### GenEvent API

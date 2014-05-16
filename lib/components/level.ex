@@ -11,7 +11,7 @@ defmodule Components.Level do
   end
 
   def serialize(entity) do
-    {"Level", value(entity)}
+    %{"Level" => value(entity)}
   end
 
   ### GenEvent API

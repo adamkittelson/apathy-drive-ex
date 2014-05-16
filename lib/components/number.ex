@@ -15,7 +15,7 @@ defmodule Components.Number do
   end
 
   def serialize(entity) do
-    {"Number", get_number(entity)}
+    %{"Number" => get_number(entity)}
   end
 
   ### GenEvent API

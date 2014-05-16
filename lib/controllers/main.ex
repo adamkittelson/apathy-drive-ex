@@ -12,7 +12,7 @@ defmodule ApathyDrive.Main do
   end
 
   def websocket_message(pid, message, _conn) do
-    [{event, message}]    = ExJSON.parse(message)
+    [{event, message}]    = Jazz.decode!(message) |> Map.to_list
     [command | arguments] = String.split(message)
     player                = Players.find_by_connection(pid)
     case event do

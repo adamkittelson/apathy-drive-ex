@@ -17,7 +17,7 @@ defmodule Components.Shop do
   end
 
   def serialize(entity) do
-    {"Shop", value(entity)}
+    %{"Shop" => value(entity)}
   end
 
   ### GenEvent API

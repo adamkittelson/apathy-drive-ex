@@ -11,7 +11,7 @@ defmodule Components.EyeColor do
   end
 
   def serialize(entity) do
-    {"EyeColor", value(entity)}
+    %{"EyeColor" => value(entity)}
   end
 
   ### GenEvent API

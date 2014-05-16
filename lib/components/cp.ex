@@ -11,7 +11,7 @@ defmodule Components.CP do
   end
 
   def serialize(entity) do
-    {"CP", value(entity)}
+    %{"CP" => value(entity)}
   end
 
   ### GenEvent API

@@ -11,7 +11,7 @@ defmodule Components.MaxHPPerLevel do
   end
 
   def serialize(entity) do
-    {"MaxHPPerLevel", value(entity)}
+    %{"MaxHPPerLevel" => value(entity)}
   end
 
   ### GenEvent API

@@ -11,7 +11,7 @@ defmodule Components.Online do
   end
 
   def serialize(_entity) do
-    {"Online", false}
+    %{"Online" => false}
   end
 
   ### GenEvent API

@@ -19,7 +19,7 @@ defmodule Components.Exits do
   end
 
   def serialize(entity) do
-    {"Exits", value(entity)}
+    %{"Exits" => value(entity)}
   end
 
   ### GenEvent API

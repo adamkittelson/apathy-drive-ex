@@ -11,7 +11,7 @@ defmodule Components.LastName do
   end
 
   def serialize(entity) do
-    {"LastName", value(entity)}
+    %{"LastName" => value(entity)}
   end
 
   ### GenEvent API

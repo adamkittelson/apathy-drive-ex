@@ -11,7 +11,7 @@ defmodule Components.AccountID do
   end
 
   def serialize(entity) do
-    {"AccountID", value(entity)}
+    %{"AccountID" => value(entity)}
   end
 
   ### GenEvent API

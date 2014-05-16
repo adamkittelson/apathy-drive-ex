@@ -7,7 +7,7 @@ defmodule Components.IndexAsRace do
   end
 
   def serialize(entity) do
-    {"IndexAsRace", value(entity)}
+    %{"IndexAsRace" => value(entity)}
   end
 
   ### GenEvent API

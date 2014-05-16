@@ -15,7 +15,7 @@ defmodule Components.Description do
   end
 
   def serialize(entity) do
-    {"Description", get_description(entity)}
+    %{"Description" => get_description(entity)}
   end
 
   ### GenEvent API

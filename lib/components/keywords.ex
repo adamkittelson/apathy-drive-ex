@@ -11,7 +11,7 @@ defmodule Components.Keywords do
   end
 
   def serialize(entity) do
-    {"Keywords", value(entity)}
+    %{"Keywords" => value(entity)}
   end
 
   ### GenEvent API
