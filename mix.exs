@@ -18,9 +18,8 @@ defmodule ApathyDrive.Mixfile do
 
   defp deps(:prod) do
     [
-      { :weber,    github: "elixir-web/weber", ref: "3132e10754b7ce8942b13eb08b34e55009592c6d" },
+      { :weber,    github: "elixir-web/weber", ref: "a910311a8be63fc210540de03691a596d662b97c" },
       { :ecto,     github: "elixir-lang/ecto", ref: "303131c50b5881fb7836ddbe2e88e0241c5e83c6" },
-      { :exjson,   github: "adamkittelson/exjson", ref: "0745ea9eb3af3105ad9235907fd51620fa927709", override: true},
       { :jazz,     "~> 0.1.0"},
       { :postgrex, "~> 0.4.2"},
       { :bcrypt,   github: "Feuerlabs/erlang-bcrypt"}
