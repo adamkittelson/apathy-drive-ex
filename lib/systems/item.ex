@@ -2,8 +2,11 @@ defmodule Systems.Item do
 
   def spawn_item(item) do
     {:ok, entity} = ApathyDrive.Entity.init
-    ApathyDrive.Entity.add_component(entity, Components.Name,        Components.Name.get_name(item))
-    ApathyDrive.Entity.add_component(entity, Components.Description, Components.Description.get_description(item))
+    ApathyDrive.Entity.list_components(item)
+    |> Enum.reject(&(&1 == Components.ID))
+    |> Enum.each fn(component) ->
+      ApathyDrive.Entity.add_component(entity, component, component.value(item))
+    end
     ApathyDrive.Entity.save!(entity)
     entity
   end
