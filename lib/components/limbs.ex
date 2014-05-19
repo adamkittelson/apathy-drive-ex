@@ -54,8 +54,18 @@ defmodule Components.Limbs do
     end)
   end
 
+  def get_limb_names(limbs, item) do
+    Map.keys(limbs) |> Enum.filter(fn(limb_name) ->
+      limbs[limb_name]["items"] |> Enum.member?(Components.ID.value(item))
+    end)
+  end
+
+  def equipped_items(character) when is_pid(character) do
+    character |> value |> equipped_items
+  end
+
   def equipped_items(limbs) do
-    Map.values(limbs) |> Enum.map(&(&1["items"])) |> List.flatten |> Enum.map(&(Components.find_by(Components.ID, &1)))
+    Map.values(limbs) |> Enum.map(&(&1["items"])) |> List.flatten |> Enum.uniq |> Enum.map(&(Components.find_by(Components.ID, &1)))
   end
 
   ### GenEvent API
@@ -68,27 +78,31 @@ defmodule Components.Limbs do
   end
 
   def handle_call({:equip, item}, value) do
-    worn_on    = Components.WornOn.value(item)
-    slot       = Components.Slot.value(item)
-    open_limbs = Components.Limbs.open_limbs(worn_on, value, slot)
-    if Enum.count(open_limbs) < Enum.count(worn_on) do
-      item_to_remove = Enum.find(equipped_items(value), fn(equipped_item) ->
-        slot == Components.Slot.value(equipped_item)
-      end)
-      value = Enum.reduce(Map.keys(value), value, fn(limb_name, value) ->
-        limb = value[limb_name]
-        items = limb["items"]
-        items = List.delete(items, Components.ID.value(item_to_remove))
-        limb = Map.put(limb, "items", items)
-        Map.put(value, limb_name, limb)
-      end)
-    end
-    value = equip_item(item, Components.Limbs.valid_limbs(worn_on, value), value)
+    if ApathyDrive.Entity.has_component?(item, Components.WornOn) && ApathyDrive.Entity.has_component?(item, Components.Slot) do
+      worn_on    = Components.WornOn.value(item)
+      slot       = Components.Slot.value(item)
+      open_limbs = Components.Limbs.open_limbs(worn_on, value, slot)
+      if Enum.count(open_limbs) < Enum.count(worn_on) do
+        item_to_remove = Enum.find(equipped_items(value), fn(equipped_item) ->
+          slot == Components.Slot.value(equipped_item)
+        end)
+        value = Enum.reduce(Map.keys(value), value, fn(limb_name, value) ->
+          limb = value[limb_name]
+          items = limb["items"]
+          items = List.delete(items, Components.ID.value(item_to_remove))
+          limb = Map.put(limb, "items", items)
+          Map.put(value, limb_name, limb)
+        end)
+      end
+      value = equip_item(item, Components.Limbs.valid_limbs(worn_on, value), value)
 
-    if item_to_remove do
-      {:ok, %{"removed" => item_to_remove}, value}
+      if item_to_remove do
+        {:ok, %{"removed" => item_to_remove}, value}
+      else
+        {:ok, %{}, value}
+      end
     else
-      {:ok, %{}, value}
+      {:ok, %{"error" => "You can't wear that."}, value}
     end
   end
 
