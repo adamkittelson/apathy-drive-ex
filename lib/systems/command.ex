@@ -86,6 +86,11 @@ defmodule Systems.Command do
       Systems.Shop.sell(character, current_room, Enum.join(arguments, " "))
     end
 
+    if command == "wear" do
+      command_found = true
+      Systems.Item.equip(character, Enum.join(arguments, " "))
+    end
+
     if command == "help" do
       command_found = true
       Systems.Command.help(player, arguments)
