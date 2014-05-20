@@ -44,8 +44,8 @@ defmodule Components.Limbs do
     end)
   end
 
-  def equip_item(item, valid_limb_names, limbs) do
-    Enum.reduce(valid_limb_names, limbs, fn(limb_name, limbs) ->
+  def equip_item(item, limbs_to_use, limbs) do
+    Enum.reduce(limbs_to_use, limbs, fn(limb_name, limbs) ->
       limb = limbs[limb_name]
       items = limb["items"]
       items = [Components.ID.value(item) | items] |> Enum.uniq
@@ -93,8 +93,11 @@ defmodule Components.Limbs do
           limb = Map.put(limb, "items", items)
           Map.put(value, limb_name, limb)
         end)
+        open_limbs = Components.Limbs.open_limbs(worn_on, value, slot)
       end
-      value = equip_item(item, Components.Limbs.valid_limbs(worn_on, value), value)
+      limbs_needed = Enum.count(worn_on)
+      limbs_to_use = open_limbs |> Enum.take(limbs_needed)
+      value = equip_item(item, limbs_to_use, value)
 
       if item_to_remove do
         {:ok, %{"removed" => item_to_remove}, value}
