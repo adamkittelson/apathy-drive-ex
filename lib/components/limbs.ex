@@ -83,13 +83,14 @@ defmodule Components.Limbs do
       slot       = Components.Slot.value(item)
       open_limbs = Components.Limbs.open_limbs(worn_on, value, slot)
       if Enum.count(open_limbs) < Enum.count(worn_on) do
-        item_to_remove = Enum.find(equipped_items(value), fn(equipped_item) ->
+        items_to_remove = Enum.filter(equipped_items(value), fn(equipped_item) ->
           slot == Components.Slot.value(equipped_item)
         end)
         value = Enum.reduce(Map.keys(value), value, fn(limb_name, value) ->
           limb = value[limb_name]
-          items = limb["items"]
-          items = List.delete(items, Components.ID.value(item_to_remove))
+          items = Enum.reduce(items_to_remove, limb["items"], fn(item_to_remove, items) ->
+            List.delete(items, Components.ID.value(item_to_remove))
+          end)
           limb = Map.put(limb, "items", items)
           Map.put(value, limb_name, limb)
         end)
@@ -99,8 +100,8 @@ defmodule Components.Limbs do
       limbs_to_use = open_limbs |> Enum.take(limbs_needed)
       value = equip_item(item, limbs_to_use, value)
 
-      if item_to_remove do
-        {:ok, %{"removed" => item_to_remove}, value}
+      if items_to_remove do
+        {:ok, %{"removed" => items_to_remove}, value}
       else
         {:ok, %{}, value}
       end
