@@ -4,6 +4,8 @@ defmodule Systems.Monster do
     {:ok, entity} = ApathyDrive.Entity.init
     ApathyDrive.Entity.add_component(entity, Components.Name,        Components.Name.get_name(monster))
     ApathyDrive.Entity.add_component(entity, Components.Description, Components.Description.get_description(monster))
+    ApathyDrive.Entity.add_component(entity, Components.Types, ["monster"])
+    ApathyDrive.Entity.add_to_type_collection(entity)
     entity
   end
 

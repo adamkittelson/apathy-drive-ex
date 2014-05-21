@@ -43,6 +43,7 @@ defmodule ApathyDrive.Entity do
       {component_name, component_values} = component
       ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
     end
+    add_to_type_collection(entity)
     if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do
       Systems.Help.add(entity)
     end
@@ -57,7 +58,7 @@ defmodule ApathyDrive.Entity do
   end
 
   def serialize_components(entity) do
-    Enum.reduce(list_components(entity), %{}, fn(component, components) -> 
+    Enum.reduce(list_components(entity), %{}, fn(component, components) ->
       component = component.serialize(entity)
       if component == nil do
         components
@@ -78,6 +79,7 @@ defmodule ApathyDrive.Entity do
       entity = ApathyDrive.Entity.new(components: components)
       entity = Repo.insert(entity)
       add_component(entity_pid, Components.ID, entity.id)
+      add_to_type_collection(entity_pid)
     end
   end
 
@@ -89,6 +91,33 @@ defmodule ApathyDrive.Entity do
     end
     list_components(entity_pid) |> Enum.each(&(remove_component(entity_pid, &1)))
     :gen_event.stop(entity_pid)
+  end
+
+  def add_to_type_collection(entity) do
+    if Enum.member?(:gen_event.which_handlers(entity), Components.Types) do
+      Enum.each(Components.Types.get_types(entity), fn(type) ->
+        case type do
+          "race" ->
+            Races.add(entity)
+          "class" ->
+            Classes.add(entity)
+          "character" ->
+            Characters.add(entity)
+          "room" ->
+            Rooms.add(entity)
+          "monster" ->
+            Monsters.add(entity)
+          "monster_template" ->
+            MonsterTemplates.add(entity)
+          "item" ->
+            Items.add(entity)
+          "item_template" ->
+            ItemTemplates.add(entity)
+          "exit" ->
+            Exits.add(entity)
+        end
+      end)
+    end
   end
 
 end

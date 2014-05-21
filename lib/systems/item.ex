@@ -7,6 +7,7 @@ defmodule Systems.Item do
     |> Enum.each fn(component) ->
       ApathyDrive.Entity.add_component(entity, component, component.value(item))
     end
+    Components.Types.value(entity, ["item"])
     ApathyDrive.Entity.save!(entity)
     entity
   end
