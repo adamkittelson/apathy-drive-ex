@@ -22,7 +22,8 @@ defmodule ApathyDrive.Mixfile do
       { :ecto,     github: "elixir-lang/ecto", ref: "303131c50b5881fb7836ddbe2e88e0241c5e83c6" },
       { :jazz,     "~> 0.1.0"},
       { :postgrex, "~> 0.4.2"},
-      { :bcrypt,   github: "Feuerlabs/erlang-bcrypt"}
+      { :bcrypt,   github: "Feuerlabs/erlang-bcrypt"},
+      { :inflex,   github: "adamkittelson/inflex" }
     ]
   end
 

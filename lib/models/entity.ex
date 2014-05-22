@@ -97,26 +97,8 @@ defmodule ApathyDrive.Entity do
   def add_to_type_collection(entity) do
     if Enum.member?(:gen_event.which_handlers(entity), Components.Types) do
       Enum.each(Components.Types.get_types(entity), fn(type) ->
-        case type do
-          "race" ->
-            Races.add(entity)
-          "class" ->
-            Classes.add(entity)
-          "character" ->
-            Characters.add(entity)
-          "room" ->
-            Rooms.add(entity)
-          "monster" ->
-            Monsters.add(entity)
-          "monster_template" ->
-            MonsterTemplates.add(entity)
-          "item" ->
-            Items.add(entity)
-          "item_template" ->
-            ItemTemplates.add(entity)
-          "exit" ->
-            Exits.add(entity)
-        end
+        module = type |> Inflex.pluralize |> Inflex.camelize
+        :"Elixir.#{module}".add(entity)
       end)
     end
   end
@@ -124,26 +106,8 @@ defmodule ApathyDrive.Entity do
   def remove_from_type_collection(entity) do
     if Enum.member?(:gen_event.which_handlers(entity), Components.Types) do
       Enum.each(Components.Types.get_types(entity), fn(type) ->
-        case type do
-          "race" ->
-            Races.remove(entity)
-          "class" ->
-            Classes.remove(entity)
-          "character" ->
-            Characters.remove(entity)
-          "room" ->
-            Rooms.remove(entity)
-          "monster" ->
-            Monsters.remove(entity)
-          "monster_template" ->
-            MonsterTemplates.remove(entity)
-          "item" ->
-            Items.remove(entity)
-          "item_template" ->
-            ItemTemplates.remove(entity)
-          "exit" ->
-            Exits.remove(entity)
-        end
+        module = type |> Inflex.pluralize |> Inflex.camelize
+        :"Elixir.#{module}".remove(entity)
       end)
     end
   end
