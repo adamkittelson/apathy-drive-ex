@@ -6,6 +6,10 @@ defmodule ItemTemplates do
     :gen_server.cast(:item_templates, {:add, item})
   end
 
+  def remove(item) do
+    :gen_server.cast(:item_templates, {:remove, item})
+  end
+
   def all do
     :gen_server.call(:item_templates, :all)
   end
@@ -34,6 +38,10 @@ defmodule ItemTemplates do
   def handle_cast({:add, item}, item_templates) do
     id = Components.ID.value(item)
     {:noreply, HashDict.put_new(item_templates, id, item) }
+  end
+
+  def handle_cast({:remove, item_template}, item_templates) do
+    {:noreply, HashDict.delete(item_templates, Components.ID.value(item_template)) }
   end
 
   def handle_call(:all, _from, item_templates) do

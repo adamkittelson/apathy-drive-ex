@@ -6,6 +6,10 @@ defmodule Monsters do
     :gen_server.cast(:monsters, {:add, monster})
   end
 
+  def remove(monster) do
+    :gen_server.cast(:monsters, {:remove, monster})
+  end
+
   def all do
     :gen_server.call(:monsters, :all)
   end
@@ -34,6 +38,11 @@ defmodule Monsters do
   def handle_cast({:add, monster}, monsters) do
     id = Components.ID.value(monster)
     {:noreply, HashDict.put_new(monsters, id, monster) }
+  end
+
+  def handle_cast({:remove, monster}, monsters) do
+    id = Components.ID.value(monster)
+    {:noreply, HashDict.delete(monsters, id) }
   end
 
   def handle_call(:all, _from, monsters) do

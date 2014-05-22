@@ -36,6 +36,11 @@ defmodule Rooms do
     {:noreply, HashDict.put_new(rooms, id, room) }
   end
 
+  def handle_cast({:remove, room}, rooms) do
+    id = Components.ID.value(room)
+    {:noreply, HashDict.delete(rooms, id) }
+  end
+
   def handle_call(:all, _from, rooms) do
     {:reply, HashDict.values(rooms), rooms}
   end

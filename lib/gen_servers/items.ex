@@ -6,6 +6,10 @@ defmodule Items do
     :gen_server.cast(:items, {:add, item})
   end
 
+  def remove(item) do
+    :gen_server.cast(:items, {:remove, item})
+  end
+
   def all do
     :gen_server.call(:items, :all)
   end
@@ -34,6 +38,10 @@ defmodule Items do
   def handle_cast({:add, item}, items) do
     id = Components.ID.value(item)
     {:noreply, HashDict.put_new(items, id, item) }
+  end
+
+  def handle_cast({:remove, item}, items) do
+    {:noreply, HashDict.delete(items, Components.ID.value(item)) }
   end
 
   def handle_call(:all, _from, items) do

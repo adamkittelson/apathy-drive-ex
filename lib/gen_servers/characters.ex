@@ -6,6 +6,10 @@ defmodule Characters do
     :gen_server.cast(:characters, {:add, character})
   end
 
+  def remove(character) do
+    :gen_server.cast(:characters, {:remove, character})
+  end
+
   def all do
     :gen_server.call(:characters, :all)
   end
@@ -43,6 +47,10 @@ defmodule Characters do
 
   def handle_cast({:add, character}, characters) do
     {:noreply, [character | characters] }
+  end
+
+  def handle_cast({:remove, character}, characters) do
+    {:noreply, List.delete(character) }
   end
 
   def handle_call(:all, _from, characters) do

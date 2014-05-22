@@ -6,6 +6,10 @@ defmodule MonsterTemplates do
     :gen_server.cast(:monster_templates, {:add, monster})
   end
 
+  def remove(monster_template) do
+    :gen_server.cast(:monster_templates, {:remove, monster_template})
+  end
+
   def all do
     :gen_server.call(:monster_templates, :all)
   end
@@ -34,6 +38,11 @@ defmodule MonsterTemplates do
   def handle_cast({:add, monster}, monster_templates) do
     id = Components.ID.value(monster)
     {:noreply, HashDict.put_new(monster_templates, id, monster) }
+  end
+
+  def handle_cast({:remove, monster_template}, monster_templates) do
+    id = Components.ID.value(monster_template)
+    {:noreply, HashDict.delete(monster_templates, id) }
   end
 
   def handle_call(:all, _from, monster_templates) do
