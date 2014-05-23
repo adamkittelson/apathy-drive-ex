@@ -23,7 +23,7 @@ defmodule ApathyDrive.Mixfile do
       { :jazz,     "~> 0.1.0"},
       { :postgrex, "~> 0.4.2"},
       { :bcrypt,   github: "Feuerlabs/erlang-bcrypt"},
-      { :inflex,   github: "adamkittelson/inflex" }
+      { :inflex,   github: "nurugger07/inflex", ref: "2b3e3267122f7ad6276263cdaca18157d0cee2f7"}
     ]
   end
 
