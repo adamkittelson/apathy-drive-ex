@@ -3,11 +3,13 @@ defmodule Monsters do
 
   # Public API
   def add(monster) do
-    :gen_server.cast(:monsters, {:add, monster})
+    id = Components.ID.value(monster)
+    :gen_server.cast(:monsters, {:add, id, monster})
   end
 
   def remove(monster) do
-    :gen_server.cast(:monsters, {:remove, monster})
+    id = Components.ID.value(monster)
+    :gen_server.cast(:monsters, {:remove, id})
   end
 
   def all do
@@ -35,13 +37,11 @@ defmodule Monsters do
     {:ok, HashDict.new}
   end
 
-  def handle_cast({:add, monster}, monsters) do
-    id = Components.ID.value(monster)
+  def handle_cast({:add, id, monster}, monsters) do
     {:noreply, HashDict.put_new(monsters, id, monster) }
   end
 
-  def handle_cast({:remove, monster}, monsters) do
-    id = Components.ID.value(monster)
+  def handle_cast({:remove, id}, monsters) do
     {:noreply, HashDict.delete(monsters, id) }
   end
 

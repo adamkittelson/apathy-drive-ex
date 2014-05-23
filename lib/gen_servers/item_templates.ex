@@ -3,11 +3,13 @@ defmodule ItemTemplates do
 
   # Public API
   def add(item) do
-    :gen_server.cast(:item_templates, {:add, item})
+    id = Components.ID.value(item)
+    :gen_server.cast(:item_templates, {:add, id, item})
   end
 
   def remove(item) do
-    :gen_server.cast(:item_templates, {:remove, item})
+    id = Components.ID.value(item)
+    :gen_server.cast(:item_templates, {:remove, id})
   end
 
   def all do
@@ -35,13 +37,12 @@ defmodule ItemTemplates do
     {:ok, HashDict.new}
   end
 
-  def handle_cast({:add, item}, item_templates) do
-    id = Components.ID.value(item)
+  def handle_cast({:add, id, item}, item_templates) do
     {:noreply, HashDict.put_new(item_templates, id, item) }
   end
 
-  def handle_cast({:remove, item_template}, item_templates) do
-    {:noreply, HashDict.delete(item_templates, Components.ID.value(item_template)) }
+  def handle_cast({:remove, id}, item_templates) do
+    {:noreply, HashDict.delete(item_templates, id) }
   end
 
   def handle_call(:all, _from, item_templates) do

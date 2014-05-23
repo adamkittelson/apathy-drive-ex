@@ -3,7 +3,8 @@ defmodule Rooms do
 
   # Public API
   def add(room) do
-    :gen_server.cast(:rooms, {:add, room})
+    id = Components.ID.value(room)
+    :gen_server.cast(:rooms, {:add, id, room})
   end
 
   def all do
@@ -31,8 +32,7 @@ defmodule Rooms do
     {:ok, HashDict.new}
   end
 
-  def handle_cast({:add, room}, rooms) do
-    id = Components.ID.value(room)
+  def handle_cast({:add, id, room}, rooms) do
     {:noreply, HashDict.put_new(rooms, id, room) }
   end
 

@@ -3,11 +3,13 @@ defmodule MonsterTemplates do
 
   # Public API
   def add(monster) do
-    :gen_server.cast(:monster_templates, {:add, monster})
+    id = Components.ID.value(monster)
+    :gen_server.cast(:monster_templates, {:add, id, monster})
   end
 
   def remove(monster_template) do
-    :gen_server.cast(:monster_templates, {:remove, monster_template})
+    id = Components.ID.value(monster_template)
+    :gen_server.cast(:monster_templates, {:remove, id})
   end
 
   def all do
@@ -35,13 +37,11 @@ defmodule MonsterTemplates do
     {:ok, HashDict.new}
   end
 
-  def handle_cast({:add, monster}, monster_templates) do
-    id = Components.ID.value(monster)
+  def handle_cast({:add, id, monster}, monster_templates) do
     {:noreply, HashDict.put_new(monster_templates, id, monster) }
   end
 
-  def handle_cast({:remove, monster_template}, monster_templates) do
-    id = Components.ID.value(monster_template)
+  def handle_cast({:remove, id}, monster_templates) do
     {:noreply, HashDict.delete(monster_templates, id) }
   end
 

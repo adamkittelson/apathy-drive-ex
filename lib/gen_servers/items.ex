@@ -3,11 +3,13 @@ defmodule Items do
 
   # Public API
   def add(item) do
-    :gen_server.cast(:items, {:add, item})
+    id = Components.ID.value(item)
+    :gen_server.cast(:items, {:add, id, item})
   end
 
   def remove(item) do
-    :gen_server.cast(:items, {:remove, item})
+    id = Components.ID.value(item)
+    :gen_server.cast(:items, {:remove, id})
   end
 
   def all do
@@ -35,13 +37,12 @@ defmodule Items do
     {:ok, HashDict.new}
   end
 
-  def handle_cast({:add, item}, items) do
-    id = Components.ID.value(item)
+  def handle_cast({:add, id, item}, items) do
     {:noreply, HashDict.put_new(items, id, item) }
   end
 
-  def handle_cast({:remove, item}, items) do
-    {:noreply, HashDict.delete(items, Components.ID.value(item)) }
+  def handle_cast({:remove, id}, items) do
+    {:noreply, HashDict.delete(items, id) }
   end
 
   def handle_call(:all, _from, items) do

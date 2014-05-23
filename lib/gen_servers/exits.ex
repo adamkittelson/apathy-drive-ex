@@ -3,11 +3,13 @@ defmodule Exits do
 
   # Public API
   def add(exit_pid) do
-    :gen_server.cast(:exits, {:add, exit_pid})
+    id = Components.ID.value(exit_pid)
+    :gen_server.cast(:exits, {:add, id, exit_pid})
   end
 
   def remove(exit_pid) do
-    :gen_server.cast(:exits, {:remove, exit_pid})
+    id = Components.ID.value(exit_pid)
+    :gen_server.cast(:exits, {:remove, id})
   end
 
   def all do
@@ -35,13 +37,11 @@ defmodule Exits do
     {:ok, HashDict.new}
   end
 
-  def handle_cast({:add, exit_pid}, exits) do
-    id = Components.ID.value(exit_pid)
+  def handle_cast({:add, id, exit_pid}, exits) do
     {:noreply, HashDict.put_new(exits, id, exit_pid) }
   end
 
-  def handle_cast({:remove, exit_pid}, exits) do
-    id = Components.ID.value(exit_pid)
+  def handle_cast({:remove, id}, exits) do
     {:noreply, HashDict.delete(exits, id) }
   end
 
