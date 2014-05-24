@@ -50,4 +50,15 @@ defmodule Systems.Limbs do
     Map.values(limbs) |> Enum.map(&(&1["items"])) |> List.flatten |> Enum.uniq |> Enum.map(&(Components.find_by(Components.ID, &1)))
   end
 
+  def unequip_items(items_to_remove, limbs) do
+    Enum.reduce(Map.keys(limbs), limbs, fn(limb_name, limbs) ->
+      limb = limbs[limb_name]
+      items = Enum.reduce(items_to_remove, limb["items"], fn(item_to_remove, items) ->
+        List.delete(items, Components.ID.value(item_to_remove))
+      end)
+      limb = Map.put(limb, "items", items)
+      Map.put(limbs, limb_name, limb)
+    end)
+  end
+
 end
