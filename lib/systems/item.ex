@@ -51,12 +51,26 @@ defmodule Systems.Item do
             end)
             Components.Items.remove_item(character, match)
             Components.Player.send_message(character, ["scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>"])
+            ApathyDrive.Entity.save!(character)
           %{"error" => message} ->
             Components.Player.send_message(character, ["scroll", "<p>#{message}</p>"])
           _ ->
             Components.Items.remove_item(character, match)
             Components.Player.send_message(character, ["scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>"])
+            ApathyDrive.Entity.save!(character)
         end
+    end
+  end
+
+  def unequip(character, item) do
+    case Systems.Match.first(Systems.Limbs.equipped_items(character), :name_contains, item) do
+      nil ->
+        Components.Player.send_message(character, ["scroll", "<p>You are not wearing \"#{item}\".</p>"])
+      match ->
+        Components.Limbs.unequip(character, match)
+        Components.Items.add_item(character, match)
+        Components.Player.send_message(character, ["scroll", "<p>You remove #{Components.Name.value(match)}.</p>"])
+        ApathyDrive.Entity.save!(character)
     end
   end
 end

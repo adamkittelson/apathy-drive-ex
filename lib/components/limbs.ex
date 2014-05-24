@@ -14,6 +14,10 @@ defmodule Components.Limbs do
     :gen_event.call(entity, Components.Limbs, {:equip, item})
   end
 
+  def unequip(entity, item) do
+    :gen_event.call(entity, Components.Limbs, {:unequip, item})
+  end
+
   def serialize(entity) do
     %{"Limbs" => value(entity)}
   end
@@ -52,6 +56,11 @@ defmodule Components.Limbs do
     else
       {:ok, %{"error" => "You can't wear that."}, value}
     end
+  end
+
+  def handle_call({:unequip, item}, value) do
+    value = Systems.Limbs.unequip_items([item], value)
+    {:ok, item, value}
   end
 
   def handle_event({:set_limbs, value}, _value) do
