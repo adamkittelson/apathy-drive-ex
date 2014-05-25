@@ -37,15 +37,16 @@ defmodule Components.Limbs do
       worn_on    = Components.WornOn.value(item)
       slot       = Components.Slot.value(item)
       open_limbs = Systems.Limbs.open_limbs(worn_on, value, slot)
-      if Enum.count(open_limbs) < Enum.count(worn_on) do
-        items_to_remove = Enum.filter(Systems.Limbs.equipped_items(value), fn(equipped_item) ->
-          slot == Components.Slot.value(equipped_item)
-        end)
+      limbs_needed = Systems.Limbs.limbs_needed(worn_on, open_limbs)
+
+      if Map.keys(limbs_needed) |> Enum.count > 0 do
+        items_to_remove = Systems.Limbs.items_to_remove(limbs_needed, slot, value)
         value = Systems.Limbs.unequip_items(items_to_remove, value)
         open_limbs = Systems.Limbs.open_limbs(worn_on, value, slot)
       end
-      limbs_needed = Enum.count(worn_on)
-      limbs_to_use = open_limbs |> Enum.take(limbs_needed)
+
+      limbs_to_use = Systems.Limbs.limbs_to_use(open_limbs, worn_on)
+
       value = Systems.Limbs.equip_item(item, limbs_to_use, value)
 
       if items_to_remove do
