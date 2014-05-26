@@ -14,6 +14,6 @@ before_script:
   - mix local.hex --force
   - MIX_ENV=test mix do deps.get, compile
 script:
-  - mix test --no-start
+  - mix test
 env:
   - MIX_ENV=test
