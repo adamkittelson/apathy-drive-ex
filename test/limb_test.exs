@@ -26,7 +26,13 @@ defmodule LimbTest do
                                           "left hand"  => %{"items" => ["sword"]},
                                           "right hand" => %{"items" => ["club"]}
                                         })
-
+    "wielding two-handed" ->
+       ApathyDrive.Entity.add_component(character,
+                                        Components.Limbs,
+                                        %{
+                                          "left hand"  => %{"items" => ["staff"]},
+                                          "right hand" => %{"items" => ["staff"]}
+                                        })
     end
 
     {:ok, club } = ApathyDrive.Entity.init
@@ -44,7 +50,12 @@ defmodule LimbTest do
     ApathyDrive.Entity.add_component(staff, Components.Slot, "weapon")
     ApathyDrive.Entity.add_component(staff, Components.ID, "staff")
 
-    { :ok, %{character: character, club: club, sword: sword, staff: staff} }
+    {:ok, gloves } = ApathyDrive.Entity.init
+    ApathyDrive.Entity.add_component(gloves, Components.WornOn, %{"hand" => 2})
+    ApathyDrive.Entity.add_component(gloves, Components.Slot, "gauntlets")
+    ApathyDrive.Entity.add_component(gloves, Components.ID, "gloves")
+
+    { :ok, %{character: character, club: club, sword: sword, staff: staff, gloves: gloves} }
   end
 
   @tag character: "open-handed"
@@ -120,6 +131,66 @@ defmodule LimbTest do
     assert Components.Limbs.value(data[:character]) == %{
                                                          "left hand"  => %{"items" => ["staff"]},
                                                          "right hand" => %{"items" => ["staff"]}
+                                                        }
+  end
+
+  @tag character: "wielding one-handed"
+  test "an entity wielding a one-handed weapon will not remove it to wear hand armour", data do
+    assert Components.Limbs.value(data[:character]) == %{
+                                                         "left hand"  => %{"items" => ["sword"]},
+                                                         "right hand" => %{"items" => []}
+                                                       }
+
+    Components.Limbs.equip(data[:character], data[:gloves])
+
+    assert Components.Limbs.value(data[:character]) == %{
+                                                         "left hand"  => %{"items" => ["gloves","sword"]},
+                                                         "right hand" => %{"items" => ["gloves"]}
+                                                        }
+  end
+
+  @tag character: "dual-wielding"
+  test "an entity wielding two one-handed weapons will not remove them to wear hand armour", data do
+    assert Components.Limbs.value(data[:character]) == %{
+                                                         "left hand"  => %{"items" => ["sword"]},
+                                                         "right hand" => %{"items" => ["club"]}
+                                                       }
+
+    Components.Limbs.equip(data[:character], data[:gloves])
+
+    assert Components.Limbs.value(data[:character]) == %{
+                                                         "left hand"  => %{"items" => ["gloves","sword"]},
+                                                         "right hand" => %{"items" => ["gloves","club"]}
+                                                        }
+  end
+
+  @tag character: "wielding two-handed"
+  test "an entity wielding a two-handed weapon will not remove them to wear hand armour", data do
+    assert Components.Limbs.value(data[:character]) == %{
+                                                         "left hand"  => %{"items" => ["staff"]},
+                                                         "right hand" => %{"items" => ["staff"]}
+                                                       }
+
+    Components.Limbs.equip(data[:character], data[:gloves])
+
+    assert Components.Limbs.value(data[:character]) == %{
+                                                         "left hand"  => %{"items" => ["gloves","staff"]},
+                                                         "right hand" => %{"items" => ["gloves","staff"]}
+                                                        }
+  end
+
+  @tag character: "wielding two-handed"
+  test "an entity wielding a two-handed weapon will remove it to wield a one-handed weapon", data do
+    assert Components.Limbs.value(data[:character]) == %{
+                                                         "left hand"  => %{"items" => ["staff"]},
+                                                         "right hand" => %{"items" => ["staff"]}
+                                                       }
+
+    Components.Limbs.equip(data[:character], data[:sword])
+
+    assert Components.Limbs.value(data[:character]) == %{
+                                                         "left hand"  => %{"items" => ["sword"]},
+                                                         "right hand" => %{"items" => []}
                                                         }
   end
 end
