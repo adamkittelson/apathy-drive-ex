@@ -28,7 +28,7 @@ defmodule ApathyDrive.Mixfile do
   end
 
   defp deps(:test) do
-    deps(:prod) ++ [{ :hackney, github: "benoitc/hackney" }]
+    deps(:prod)
   end
 
   defp deps(_) do

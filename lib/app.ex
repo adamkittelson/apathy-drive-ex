@@ -26,9 +26,11 @@ defmodule ApathyDrive do
     # compile all views
     Weber.Templates.ViewsLoader.compile_views(File.cwd!)
 
-    IO.puts "Loading Entities..."
-    ApathyDrive.Entity.load!
-    IO.puts "Done!"
+    if Mix.env != :test do
+      IO.puts "Loading Entities..."
+      ApathyDrive.Entity.load!
+      IO.puts "Done!"
+    end
 
     Systems.LairSpawning.initialize
 

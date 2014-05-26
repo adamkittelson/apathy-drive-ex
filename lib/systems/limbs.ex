@@ -57,14 +57,22 @@ defmodule Systems.Limbs do
   end
 
   def items_to_remove(limbs_needed, slot, limbs) do
-    equipped_items = Systems.Limbs.equipped_items(limbs) 
+    equipped_items = Systems.Limbs.equipped_items(limbs)
                      |> Enum.filter(&(slot == Components.Slot.value(&1)))
     initial = %{
       :limbs_needed => limbs_needed,
       :items_to_remove => [],
       :equipped_items => equipped_items
     }
-    map = Enum.reduce(Map.get(initial, :limbs_needed) |> Map.keys, initial, fn(needed_limb, map) ->
+
+    needed_limb_names = Map.get(initial, :limbs_needed)
+                        |> Map.keys
+                        |> Enum.map(fn(limb_name) ->
+                            List.duplicate(limb_name, Map.get(initial, :limbs_needed) |> Map.get(limb_name))
+                           end)
+                        |> List.flatten
+
+    map = Enum.reduce(needed_limb_names, initial, fn(needed_limb, map) ->
       if Map.get(map, :limbs_needed) |> Map.get(needed_limb) > 0 do
         item = Map.get(map, :equipped_items) |> Enum.find(fn(equipped_item) ->
           Components.WornOn.value(equipped_item) |> Map.keys |> Enum.member?(needed_limb)
@@ -72,6 +80,7 @@ defmodule Systems.Limbs do
 
         if item do
           map = Map.put(map, :items_to_remove, [item | Map.get(map, :items_to_remove)])
+          map = Map.put(map, :equipped_items, List.delete(Map.get(map, :equipped_items), item))
           limbs_needed = Map.get(map, :limbs_needed)
           limbs_needed = Enum.reduce(Map.keys(limbs_needed), limbs_needed, fn(needed_limb, map) ->
             worn_on = Components.WornOn.value(item)

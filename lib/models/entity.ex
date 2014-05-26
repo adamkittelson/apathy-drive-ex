@@ -69,17 +69,19 @@ defmodule ApathyDrive.Entity do
   end
 
   def save!(entity_pid) do
-    if Enum.member?(list_components(entity_pid), Components.ID) do
-      id = Components.ID.value(entity_pid)
-      entity = Repo.get(ApathyDrive.Entity, id)
-      entity = entity.components(serialize_components(entity_pid))
-      Repo.update(entity)
-    else
-      components = serialize_components(entity_pid)
-      entity = ApathyDrive.Entity.new(components: components)
-      entity = Repo.insert(entity)
-      add_component(entity_pid, Components.ID, entity.id)
-      add_to_type_collection(entity_pid)
+    if Mix.env != :test do
+      if Enum.member?(list_components(entity_pid), Components.ID) do
+        id = Components.ID.value(entity_pid)
+        entity = Repo.get(ApathyDrive.Entity, id)
+        entity = entity.components(serialize_components(entity_pid))
+        Repo.update(entity)
+      else
+        components = serialize_components(entity_pid)
+        entity = ApathyDrive.Entity.new(components: components)
+        entity = Repo.insert(entity)
+        add_component(entity_pid, Components.ID, entity.id)
+        add_to_type_collection(entity_pid)
+      end
     end
   end
 
