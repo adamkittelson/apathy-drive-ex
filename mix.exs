@@ -18,7 +18,7 @@ defmodule ApathyDrive.Mixfile do
 
   defp deps(:prod) do
     [
-      { :weber,    github: "adamkittelson/weber", ref: "24d47f39b6bcc1d9730ad831724b56f51f040fcf" },
+      { :weber,    github: "adamkittelson/weber", ref: "d3d0e0f9ce497ff5699f45226636e77613670628" },
       { :ecto,     "~> 0.2.0" },
       { :jazz,     github: "meh/jazz", ref: "7af3b74e58eb1a3fc6b9874a2077efa420f6dfcc" },
       { :postgrex, "~> 0.5.1" },
