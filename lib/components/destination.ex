@@ -7,7 +7,7 @@ defmodule Components.Destination do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_destination, new_value})
+    Entity.notify(entity, {:set_destination, new_value})
   end
 
   def get_destination(entity) do

@@ -1,6 +1,6 @@
 defmodule Systems.Shop do
   def list(character, room) do
-    if ApathyDrive.Entity.has_component?(room, Components.Shop) do
+    if Entity.has_component?(room, Components.Shop) do
       Components.Player.send_message(character, ["scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span></p>"])
       Components.Player.send_message(character, ["scroll", "<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>"])
       Enum.each(Components.Shop.value(room), fn(item_hash) ->
@@ -21,7 +21,7 @@ defmodule Systems.Shop do
   end
 
   def buy(character, room, item) do
-    if ApathyDrive.Entity.has_component?(room, Components.Shop) do
+    if Entity.has_component?(room, Components.Shop) do
       case Systems.Match.all(Components.Shop.items(room), :name_contains, item) do
         [match] ->
           Systems.Item.spawn_item(match, character)
@@ -41,13 +41,13 @@ defmodule Systems.Shop do
   end
 
   def sell(character, room, item) do
-    if ApathyDrive.Entity.has_component?(room, Components.Shop) do
+    if Entity.has_component?(room, Components.Shop) do
       case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
         [match] ->
           Components.Items.remove_item(character, match)
-          ApathyDrive.Entity.save!(character)
+          Entity.save!(character)
           Components.Player.send_message(character, ["scroll", "<p>You just sold #{Components.Name.value(match)} for nothing.</p>"])
-          ApathyDrive.Entity.delete!(match)
+          Entity.delete!(match)
         [] ->
           Components.Player.send_message(character, ["scroll", "<p>You don't have \"#{item}\" to sell!</p>"])
         matches ->

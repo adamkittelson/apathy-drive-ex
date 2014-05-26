@@ -7,7 +7,7 @@ defmodule Components.Player do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_player, new_value})
+    Entity.notify(entity, {:set_player, new_value})
   end
 
   def serialize(_entity) do

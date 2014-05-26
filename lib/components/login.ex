@@ -1,3 +1,5 @@
+Code.ensure_compiled(Account)
+
 defmodule Components.Login do
   use GenEvent.Behaviour
 
@@ -11,26 +13,26 @@ defmodule Components.Login do
   end
 
   def intro(player) do
-    ApathyDrive.Entity.notify(player, {:intro})
+    Entity.notify(player, {:intro})
     Players.send_message(player, ["scroll", "<p>Please enter your email address to log in or 'new' to create a new account: <input id='email' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#email"])
   end
 
   def create_account_request_email(player) do
-    ApathyDrive.Entity.notify(player, :create_account_request_email)
+    Entity.notify(player, :create_account_request_email)
     Players.send_message(player, ["scroll", "<p>Please enter the email address you would like to use: <input id='email' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#email"])
   end
 
   def sign_in_get_account(player, email) do
-    ApathyDrive.Entity.notify(player, {:sign_in_set_email, email})
+    Entity.notify(player, {:sign_in_set_email, email})
     Players.send_message(player, ["scroll", "<p>Please enter your password: <input id='password' type='password' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#password"])
   end
 
   def sign_in_check_password(player, password) do
     email = :gen_event.call(player, Components.Login, :get_email)
-    account = ApathyDrive.Account.find(email, password)
+    account = Account.find(email, password)
     if account do
       display_character_select(player, account)
     else
@@ -41,7 +43,7 @@ defmodule Components.Login do
 
   def display_character_select(player, account) do
     Players.send_message(player, ["clear scroll"])
-    ApathyDrive.Entity.notify(player, {:sign_in_set_account, account})
+    Entity.notify(player, {:sign_in_set_account, account})
     Players.send_message(player, ["scroll", "\n<p><span class='dark-yellow underline'>Characters</span></p>\n\n"])
     Enum.each(Characters.for_account(account), fn(character) ->
       name  = Components.Name.get_name(character)
@@ -55,7 +57,7 @@ defmodule Components.Login do
   end
 
   def display_race_select(player) do
-    ApathyDrive.Entity.notify(player, :create_character_request_race)
+    Entity.notify(player, :create_character_request_race)
     Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a race from the following list:</span></p>"])
     Enum.sort(Races.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
     |> Enum.each fn(race) ->
@@ -75,7 +77,7 @@ defmodule Components.Login do
   end
 
   def display_class_select(player) do
-    ApathyDrive.Entity.notify(player, :create_character_request_class)
+    Entity.notify(player, :create_character_request_class)
     Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a class from the following list:</span></p>"])
     Enum.sort(Classes.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
     |> Enum.each fn(class) ->
@@ -89,7 +91,7 @@ defmodule Components.Login do
       {number, _} = Integer.parse(race_number)
       race = Races.find_by_number(number)
       if race do
-        ApathyDrive.Entity.notify(player, {:create_character_set_race, race})
+        Entity.notify(player, {:create_character_set_race, race})
         display_class_select(player)
       else
         Players.send_message(player, ["scroll", "There is no race with that number."])
@@ -105,27 +107,27 @@ defmodule Components.Login do
       class = Classes.find_by_number(number)
       if class do
         race = get_race(player)
-        {:ok, character} = ApathyDrive.Entity.init
-        ApathyDrive.Entity.add_component(character, Components.Agility,   Components.Agility.value(race))
-        ApathyDrive.Entity.add_component(character, Components.Charm,     Components.Charm.value(race))
-        ApathyDrive.Entity.add_component(character, Components.Health,    Components.Health.value(race))
-        ApathyDrive.Entity.add_component(character, Components.Intellect, Components.Intellect.value(race))
-        ApathyDrive.Entity.add_component(character, Components.Strength,  Components.Strength.value(race))
-        ApathyDrive.Entity.add_component(character, Components.Willpower, Components.Willpower.value(race))
-        ApathyDrive.Entity.add_component(character, Components.CP, 100)
-        ApathyDrive.Entity.add_component(character, Components.Class, class)
-        ApathyDrive.Entity.add_component(character, Components.Race, race)
-        ApathyDrive.Entity.add_component(character, Components.Name, "")
-        ApathyDrive.Entity.add_component(character, Components.Gender, nil)
-        ApathyDrive.Entity.add_component(character, Components.EyeColor, nil)
-        ApathyDrive.Entity.add_component(character, Components.HairColor, nil)
-        ApathyDrive.Entity.add_component(character, Components.HairLength, nil)
-        ApathyDrive.Entity.add_component(character, Components.AccountID, Components.Login.get_account(player).id)
-        ApathyDrive.Entity.add_component(character, Components.HPRolls, [Components.MaxHPPerLevel.value(class)])
-        ApathyDrive.Entity.add_component(character, Components.Level, 1)
-        ApathyDrive.Entity.add_component(character, Components.HP, Systems.HP.max_hp(character))
-        ApathyDrive.Entity.add_component(character, Components.Online, false)
-        ApathyDrive.Entity.add_component(character, Components.Player, player)
+        {:ok, character} = Entity.init
+        Entity.add_component(character, Components.Agility,   Components.Agility.value(race))
+        Entity.add_component(character, Components.Charm,     Components.Charm.value(race))
+        Entity.add_component(character, Components.Health,    Components.Health.value(race))
+        Entity.add_component(character, Components.Intellect, Components.Intellect.value(race))
+        Entity.add_component(character, Components.Strength,  Components.Strength.value(race))
+        Entity.add_component(character, Components.Willpower, Components.Willpower.value(race))
+        Entity.add_component(character, Components.CP, 100)
+        Entity.add_component(character, Components.Class, class)
+        Entity.add_component(character, Components.Race, race)
+        Entity.add_component(character, Components.Name, "")
+        Entity.add_component(character, Components.Gender, nil)
+        Entity.add_component(character, Components.EyeColor, nil)
+        Entity.add_component(character, Components.HairColor, nil)
+        Entity.add_component(character, Components.HairLength, nil)
+        Entity.add_component(character, Components.AccountID, Components.Login.get_account(player).id)
+        Entity.add_component(character, Components.HPRolls, [Components.MaxHPPerLevel.value(class)])
+        Entity.add_component(character, Components.Level, 1)
+        Entity.add_component(character, Components.HP, Systems.HP.max_hp(character))
+        Entity.add_component(character, Components.Online, false)
+        Entity.add_component(character, Components.Player, player)
 
         Systems.Training.train_stats(player, character)
       else
@@ -137,18 +139,18 @@ defmodule Components.Login do
   end
 
   def create_account_set_email(player, email) do
-    account = ApathyDrive.Account.find(email)
+    account = Account.find(email)
     if account do
       sign_in_get_account(player, email)
     else
-      ApathyDrive.Entity.notify(player, {:create_account_set_email, email})
+      Entity.notify(player, {:create_account_set_email, email})
       Players.send_message(player, ["scroll", "<p>Please enter the password you would like to use: <input id='password' type='password' class='prompt'></input></p>"])
       Players.send_message(player, ["focus", "#password"])
     end
   end
 
   def create_account_set_password(player, password) do
-    ApathyDrive.Entity.notify(player, {:create_account_set_password, password})
+    Entity.notify(player, {:create_account_set_password, password})
     Players.send_message(player, ["scroll", "<p>Please confirm your new password: <input id='password-confirmation' type='password' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#password-confirmation"])
   end
@@ -156,10 +158,10 @@ defmodule Components.Login do
   def create_account_finish(player, password) do
     if password_confirmed?(player, password) do
       Players.send_message(player, ["scroll", "<p>Welcome!</p>"])
-      account = ApathyDrive.Account.new(email:     :gen_event.call(player, Components.Login, :get_email),
-                                        password:  "#{:gen_event.call(player, Components.Login, :get_password)}",
-                                        salt:      "#{:gen_event.call(player, Components.Login, :get_salt)}"
-      )
+      account = %Account{ :email    => :gen_event.call(player, Components.Login, :get_email),
+                          :password =>  "#{:gen_event.call(player, Components.Login, :get_password)}",
+                          :salt     =>  "#{:gen_event.call(player, Components.Login, :get_salt)}"
+      }
       account = Repo.insert(account)
       display_character_select(player, account)
     else
@@ -196,7 +198,7 @@ defmodule Components.Login do
   end
 
   def set_stat(player, stat_name, stat) do
-    ApathyDrive.Entity.notify(player, {:set_stat, stat_name, stat})
+    Entity.notify(player, {:set_stat, stat_name, stat})
   end
 
   def get_hair_length(player) do
@@ -204,7 +206,7 @@ defmodule Components.Login do
   end
 
   def set_hair_length(player, hair_length) do
-    ApathyDrive.Entity.notify(player, {:set_hair_length, hair_length})
+    Entity.notify(player, {:set_hair_length, hair_length})
   end
 
   def get_hair_color(player) do
@@ -212,11 +214,11 @@ defmodule Components.Login do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_login, new_value})
+    Entity.notify(entity, {:set_login, new_value})
   end
 
   def set_hair_color(player, hair_color) do
-    ApathyDrive.Entity.notify(player, {:set_hair_color, hair_color})
+    Entity.notify(player, {:set_hair_color, hair_color})
   end
 
   def get_eye_color(player) do
@@ -224,7 +226,7 @@ defmodule Components.Login do
   end
 
   def set_eye_color(player, eye_color) do
-    ApathyDrive.Entity.notify(player, {:set_eye_color, eye_color})
+    Entity.notify(player, {:set_eye_color, eye_color})
   end
 
   def get_gender(player) do
@@ -232,7 +234,7 @@ defmodule Components.Login do
   end
 
   def set_gender(player, gender) do
-    ApathyDrive.Entity.notify(player, {:set_gender, gender})
+    Entity.notify(player, {:set_gender, gender})
   end
 
   def get_name(player) do
@@ -248,15 +250,15 @@ defmodule Components.Login do
   end
 
   def set_name(player, name) do
-    ApathyDrive.Entity.notify(player, {:set_name, name})
+    Entity.notify(player, {:set_name, name})
   end
 
   def set_last_name(player, name) do
-    ApathyDrive.Entity.notify(player, {:set_last_name, name})
+    Entity.notify(player, {:set_last_name, name})
   end
 
   def set_cp(player, cp) do
-    ApathyDrive.Entity.notify(player, {:set_cp, cp})
+    Entity.notify(player, {:set_cp, cp})
   end
 
   def select_character(player, character_name) do
@@ -270,7 +272,7 @@ defmodule Components.Login do
   end
 
   def login(player, character) do
-    ApathyDrive.Entity.notify(player, {:login, character})
+    Entity.notify(player, {:login, character})
     Components.Online.value(character, true)
     Components.Player.value(character, player)
     Components.Player.send_message(character, ["clear scroll"])

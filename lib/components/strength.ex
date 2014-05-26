@@ -7,7 +7,7 @@ defmodule Components.Strength do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_strength, new_value})
+    Entity.notify(entity, {:set_strength, new_value})
   end
 
   def serialize(entity) do

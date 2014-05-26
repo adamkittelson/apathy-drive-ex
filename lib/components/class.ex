@@ -7,7 +7,7 @@ defmodule Components.Class do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_class, new_value})
+    Entity.notify(entity, {:set_class, new_value})
   end
 
   def serialize(entity) do

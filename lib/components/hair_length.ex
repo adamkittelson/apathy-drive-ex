@@ -7,7 +7,7 @@ defmodule Components.HairLength do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_hair_length, new_value})
+    Entity.notify(entity, {:set_hair_length, new_value})
   end
 
   def serialize(entity) do

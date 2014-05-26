@@ -1,11 +1,8 @@
-defmodule ApathyDrive.Entity do
-  use Ecto.Entity
+defmodule Entity do
   use Ecto.Model
   import Ecto.Query, only: [from: 2]
 
-  field :components, :string
-
-  queryable "entities" do
+  schema "entities" do
     field :components, :string
   end
 
@@ -29,19 +26,19 @@ defmodule ApathyDrive.Entity do
   end
 
   def load! do
-    query = from e in ApathyDrive.Entity, limit: 500000, order_by: e.id, select: e
+    query = from e in Entity, limit: 500000, order_by: e.id, select: e
     Enum.each Repo.all(query), fn(entity) ->
-      ApathyDrive.Entity.load!(entity)
+      Entity.load!(entity)
     end
   end
 
   def load!(entity_record) do
-    {:ok, entity} = ApathyDrive.Entity.init
-    ApathyDrive.Entity.add_component(entity, Components.ID, entity_record.id)
+    {:ok, entity} = Entity.init
+    Entity.add_component(entity, Components.ID, entity_record.id)
     components = Jazz.decode!(entity_record.components)
     Enum.each components, fn(component) ->
       {component_name, component_values} = component
-      ApathyDrive.Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
+      Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
     end
     add_to_type_collection(entity)
     if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do
@@ -72,12 +69,12 @@ defmodule ApathyDrive.Entity do
     if Mix.env != :test do
       if Enum.member?(list_components(entity_pid), Components.ID) do
         id = Components.ID.value(entity_pid)
-        entity = Repo.get(ApathyDrive.Entity, id)
-        entity = entity.components(serialize_components(entity_pid))
+        entity = Repo.get(Entity, id)
+        entity = %{ entity | components: serialize_components(entity_pid)}
         Repo.update(entity)
       else
         components = serialize_components(entity_pid)
-        entity = ApathyDrive.Entity.new(components: components)
+        entity = %Entity{components: components}
         entity = Repo.insert(entity)
         add_component(entity_pid, Components.ID, entity.id)
         add_to_type_collection(entity_pid)
@@ -88,7 +85,7 @@ defmodule ApathyDrive.Entity do
   def delete!(entity_pid) do
     if Enum.member?(list_components(entity_pid), Components.ID) do
       id = Components.ID.value(entity_pid)
-      entity = Repo.get(ApathyDrive.Entity, id)
+      entity = Repo.get(Entity, id)
       Repo.delete(entity)
     end
     remove_from_type_collection(entity_pid)

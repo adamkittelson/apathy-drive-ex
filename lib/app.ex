@@ -28,7 +28,7 @@ defmodule ApathyDrive do
 
     if Mix.env != :test do
       IO.puts "Loading Entities..."
-      ApathyDrive.Entity.load!
+      Entity.load!
       IO.puts "Done!"
     end
 

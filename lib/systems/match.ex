@@ -70,7 +70,7 @@ defmodule Systems.Match do
   end
 
   def match_keyword(string, pid) do
-    if pid |> ApathyDrive.Entity.list_components |> Enum.member?(Components.Keywords) do
+    if pid |> Entity.list_components |> Enum.member?(Components.Keywords) do
       pid |> Components.Keywords.value
           |> Enum.any?(fn (keyword) ->
                String.downcase(string) == String.downcase(keyword)
@@ -87,7 +87,7 @@ defmodule Systems.Match do
   end
 
   def keyword_starts_with(string, pid) do
-    if pid |> ApathyDrive.Entity.list_components |> Enum.member?(Components.Keywords) do
+    if pid |> Entity.list_components |> Enum.member?(Components.Keywords) do
       pid |> Components.Keywords.value
           |> Enum.any?(fn (keyword) ->
                String.downcase(keyword) |> String.starts_with?(string |> String.downcase)

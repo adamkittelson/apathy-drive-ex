@@ -18,7 +18,7 @@ defmodule Systems.Description do
   end
 
   def add_description_to_scroll(character, target) do
-    if ApathyDrive.Entity.list_components(target) |> Enum.member?(Components.Description) do
+    if Entity.list_components(target) |> Enum.member?(Components.Description) do
       Components.Player.send_message character, ["scroll", "<p><span class='cyan'>#{Components.Name.value(target)}</span></p>"]
       Components.Player.send_message character, ["scroll", "<p>#{Components.Description.value(target)}</p>"]
     else

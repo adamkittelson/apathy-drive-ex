@@ -7,7 +7,7 @@ defmodule Components.Lair do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_lair, new_value})
+    Entity.notify(entity, {:set_lair, new_value})
   end
 
   def size(entity) do
@@ -27,7 +27,7 @@ defmodule Components.Lair do
   end
 
   def set_last_spawned_at(entity) do
-    ApathyDrive.Entity.notify(entity, :set_last_spawned_at)
+    Entity.notify(entity, :set_last_spawned_at)
   end
 
   def monster_templates(entity) do

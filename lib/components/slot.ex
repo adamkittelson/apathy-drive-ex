@@ -7,7 +7,7 @@ defmodule Components.Slot do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_slot, new_value})
+    Entity.notify(entity, {:set_slot, new_value})
   end
 
   def serialize(entity) do

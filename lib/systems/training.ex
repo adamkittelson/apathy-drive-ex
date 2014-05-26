@@ -16,7 +16,7 @@ defmodule Systems.Training do
 
       stats = [cp: cp, strength: str, agility: agi, intellect: int, willpower: wil, health: hea, charm: cha]
 
-      ApathyDrive.Entity.notify(player, {:training, character, stats})
+      Entity.notify(player, {:training, character, stats})
 
       max_str = max_stat(player, character, "Strength")
       max_agi = max_stat(player, character, "Agility")
@@ -268,12 +268,12 @@ defmodule Systems.Training do
       character = Components.Login.get_character(player)
       start_room_id = Components.find_by(Components.StartRoom, true) |> Components.ID.value
 
-      ApathyDrive.Entity.add_component(character, Components.CurrentRoom, start_room_id)
-      ApathyDrive.Entity.add_component(character, Components.Types, ["character"])
-      ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
-      ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
-      ApathyDrive.Entity.add_component(character, Components.Items, [])
-      ApathyDrive.Entity.add_component(character, Components.Limbs, character |> Components.Race.value |> Components.Limbs.value)
+      Entity.add_component(character, Components.CurrentRoom, start_room_id)
+      Entity.add_component(character, Components.Types, ["character"])
+      Entity.add_component(character, Components.Name, Components.Login.get_name(player))
+      Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
+      Entity.add_component(character, Components.Items, [])
+      Entity.add_component(character, Components.Limbs, character |> Components.Race.value |> Components.Limbs.value)
 
       Components.Agility.value(character, Components.Login.get_stat(player, :agility))
       Components.Charm.value(character, Components.Login.get_stat(player, :charm))
@@ -288,7 +288,7 @@ defmodule Systems.Training do
       Components.HairLength.value(character, Components.Login.get_hair_length(player))
       Components.HP.value(character, Systems.HP.max_hp(character))
 
-      ApathyDrive.Entity.save!(character)
+      Entity.save!(character)
 
       Components.Login.login(player, character)
 

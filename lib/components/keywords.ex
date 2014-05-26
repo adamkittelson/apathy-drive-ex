@@ -7,7 +7,7 @@ defmodule Components.Keywords do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_keywords, new_value})
+    Entity.notify(entity, {:set_keywords, new_value})
   end
 
   def serialize(entity) do

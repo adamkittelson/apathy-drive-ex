@@ -1,14 +1,8 @@
-defmodule ApathyDrive.Account do
-  use Ecto.Entity
+defmodule Account do
   use Ecto.Model
   import Ecto.Query, only: [from: 2]
 
-  field :email,      :string
-  field :password,   :string
-  field :salt,       :string
-  field :characters, {:array, :integer}
-
-  queryable "accounts" do
+  schema "accounts" do
     field :email,      :string
     field :password,   :string
     field :salt,       :string
@@ -16,7 +10,7 @@ defmodule ApathyDrive.Account do
   end
 
   def find(email_address) do
-    query = from a in ApathyDrive.Account,
+    query = from a in Account,
             where: a.email == "#{email_address}",
             select: a
 

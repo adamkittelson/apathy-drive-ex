@@ -1,21 +1,21 @@
 defmodule Systems.Item do
 
   def spawn_item(item) do
-    {:ok, entity} = ApathyDrive.Entity.init
-    ApathyDrive.Entity.list_components(item)
+    {:ok, entity} = Entity.init
+    Entity.list_components(item)
     |> Enum.reject(&(&1 == Components.ID))
     |> Enum.each fn(component) ->
-      ApathyDrive.Entity.add_component(entity, component, component.value(item))
+      Entity.add_component(entity, component, component.value(item))
     end
     Components.Types.value(entity, ["item"])
-    ApathyDrive.Entity.save!(entity)
+    Entity.save!(entity)
     entity
   end
 
   def spawn_item(item, entity) do
     item = spawn_item(item)
     Components.Items.add_item(entity, item)
-    ApathyDrive.Entity.save!(entity)
+    Entity.save!(entity)
   end
 
   def display_inventory(character) do
@@ -51,13 +51,13 @@ defmodule Systems.Item do
             end)
             Components.Items.remove_item(character, match)
             Components.Player.send_message(character, ["scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>"])
-            ApathyDrive.Entity.save!(character)
+            Entity.save!(character)
           %{"error" => message} ->
             Components.Player.send_message(character, ["scroll", "<p>#{message}</p>"])
           _ ->
             Components.Items.remove_item(character, match)
             Components.Player.send_message(character, ["scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>"])
-            ApathyDrive.Entity.save!(character)
+            Entity.save!(character)
         end
     end
   end
@@ -70,7 +70,7 @@ defmodule Systems.Item do
         Components.Limbs.unequip(character, match)
         Components.Items.add_item(character, match)
         Components.Player.send_message(character, ["scroll", "<p>You remove #{Components.Name.value(match)}.</p>"])
-        ApathyDrive.Entity.save!(character)
+        Entity.save!(character)
     end
   end
 end

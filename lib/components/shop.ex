@@ -7,7 +7,7 @@ defmodule Components.Shop do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_shop, new_value})
+    Entity.notify(entity, {:set_shop, new_value})
   end
 
   def items(entity) do

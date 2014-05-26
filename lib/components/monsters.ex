@@ -7,11 +7,11 @@ defmodule Components.Monsters do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_monsters, new_value})
+    Entity.notify(entity, {:set_monsters, new_value})
   end
 
   def add_monster(entity, monster) do
-    ApathyDrive.Entity.notify(entity, {:add_monster, monster})
+    Entity.notify(entity, {:add_monster, monster})
   end
 
   def serialize(_entity) do

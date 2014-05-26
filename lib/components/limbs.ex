@@ -7,7 +7,7 @@ defmodule Components.Limbs do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_limbs, new_value})
+    Entity.notify(entity, {:set_limbs, new_value})
   end
 
   def equip(entity, item) do
@@ -33,7 +33,7 @@ defmodule Components.Limbs do
   end
 
   def handle_call({:equip, item}, value) do
-    if ApathyDrive.Entity.has_component?(item, Components.WornOn) && ApathyDrive.Entity.has_component?(item, Components.Slot) do
+    if Entity.has_component?(item, Components.WornOn) && Entity.has_component?(item, Components.Slot) do
       worn_on    = Components.WornOn.value(item)
       slot       = Components.Slot.value(item)
       open_limbs = Systems.Limbs.open_limbs(worn_on, value, slot)

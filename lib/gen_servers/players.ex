@@ -39,11 +39,11 @@ defmodule Players do
   end
 
   def handle_cast({:connected, connection}, players) do
-    {:ok, player} = ApathyDrive.Entity.init
+    {:ok, player} = Entity.init
 
-    ApathyDrive.Entity.add_component(player, Components.Connection, connection)
+    Entity.add_component(player, Components.Connection, connection)
 
-    ApathyDrive.Entity.add_component(player, Components.Login, nil)
+    Entity.add_component(player, Components.Login, nil)
 
     Components.Login.intro(player)
 

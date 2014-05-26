@@ -7,7 +7,7 @@ defmodule Components.MaxHPPerLevel do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_max_hp_per_level, new_value})
+    Entity.notify(entity, {:set_max_hp_per_level, new_value})
   end
 
   def serialize(entity) do

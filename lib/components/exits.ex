@@ -7,7 +7,7 @@ defmodule Components.Exits do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_exits, new_value})
+    Entity.notify(entity, {:set_exits, new_value})
   end
 
   def get_exits(entity) do

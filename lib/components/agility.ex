@@ -7,7 +7,7 @@ defmodule Components.Agility do
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_agility, new_value})
+    Entity.notify(entity, {:set_agility, new_value})
   end
 
   def serialize(entity) do

@@ -2,32 +2,32 @@ defmodule LimbTest do
   use ExUnit.Case
 
   setup data do
-    {:ok, character } = ApathyDrive.Entity.init
+    {:ok, character } = Entity.init
 
     case data[:character] do
       "open-handed" ->
-        ApathyDrive.Entity.add_component(character,
+        Entity.add_component(character,
                                          Components.Limbs,
                                          %{
                                            "left hand"  => %{"items" => []},
                                            "right hand" => %{"items" => []}
                                          })
      "wielding one-handed" ->
-       ApathyDrive.Entity.add_component(character,
+       Entity.add_component(character,
                                         Components.Limbs,
                                         %{
                                           "left hand"  => %{"items" => ["sword"]},
                                           "right hand" => %{"items" => []}
                                         })
      "dual-wielding" ->
-       ApathyDrive.Entity.add_component(character,
+       Entity.add_component(character,
                                         Components.Limbs,
                                         %{
                                           "left hand"  => %{"items" => ["sword"]},
                                           "right hand" => %{"items" => ["club"]}
                                         })
     "wielding two-handed" ->
-       ApathyDrive.Entity.add_component(character,
+       Entity.add_component(character,
                                         Components.Limbs,
                                         %{
                                           "left hand"  => %{"items" => ["staff"]},
@@ -35,25 +35,25 @@ defmodule LimbTest do
                                         })
     end
 
-    {:ok, club } = ApathyDrive.Entity.init
-    ApathyDrive.Entity.add_component(club, Components.WornOn, %{"hand" => 1})
-    ApathyDrive.Entity.add_component(club, Components.Slot, "weapon")
-    ApathyDrive.Entity.add_component(club, Components.ID, "club")
+    {:ok, club } = Entity.init
+    Entity.add_component(club, Components.WornOn, %{"hand" => 1})
+    Entity.add_component(club, Components.Slot, "weapon")
+    Entity.add_component(club, Components.ID, "club")
 
-    {:ok, sword } = ApathyDrive.Entity.init
-    ApathyDrive.Entity.add_component(sword, Components.WornOn, %{"hand" => 1})
-    ApathyDrive.Entity.add_component(sword, Components.Slot, "weapon")
-    ApathyDrive.Entity.add_component(sword, Components.ID, "sword")
+    {:ok, sword } = Entity.init
+    Entity.add_component(sword, Components.WornOn, %{"hand" => 1})
+    Entity.add_component(sword, Components.Slot, "weapon")
+    Entity.add_component(sword, Components.ID, "sword")
 
-    {:ok, staff } = ApathyDrive.Entity.init
-    ApathyDrive.Entity.add_component(staff, Components.WornOn, %{"hand" => 2})
-    ApathyDrive.Entity.add_component(staff, Components.Slot, "weapon")
-    ApathyDrive.Entity.add_component(staff, Components.ID, "staff")
+    {:ok, staff } = Entity.init
+    Entity.add_component(staff, Components.WornOn, %{"hand" => 2})
+    Entity.add_component(staff, Components.Slot, "weapon")
+    Entity.add_component(staff, Components.ID, "staff")
 
-    {:ok, gloves } = ApathyDrive.Entity.init
-    ApathyDrive.Entity.add_component(gloves, Components.WornOn, %{"hand" => 2})
-    ApathyDrive.Entity.add_component(gloves, Components.Slot, "gauntlets")
-    ApathyDrive.Entity.add_component(gloves, Components.ID, "gloves")
+    {:ok, gloves } = Entity.init
+    Entity.add_component(gloves, Components.WornOn, %{"hand" => 2})
+    Entity.add_component(gloves, Components.Slot, "gauntlets")
+    Entity.add_component(gloves, Components.ID, "gloves")
 
     { :ok, %{character: character, club: club, sword: sword, staff: staff, gloves: gloves} }
   end
