@@ -240,7 +240,7 @@ defmodule Systems.Training do
         valid = false
         Players.send_message(player, ["update", "#validation", "Name can only include letters."])
       end
-      if Systems.Characters.name_taken?(name) do
+      if Characters.name_taken?(name) do
         valid = false
         Players.send_message(player, ["update", "#validation", "There's already a character with that name."])
       end
@@ -269,10 +269,12 @@ defmodule Systems.Training do
       start_room_id = Components.find_by(Components.StartRoom, true) |> Components.ID.value
 
       ApathyDrive.Entity.add_component(character, Components.CurrentRoom, start_room_id)
-      ApathyDrive.Entity.add_component(character, Components.IndexAsCharacter, nil)
+      ApathyDrive.Entity.add_component(character, Components.Types, ["character"])
       ApathyDrive.Entity.add_component(character, Components.Name, Components.Login.get_name(player))
       ApathyDrive.Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
       ApathyDrive.Entity.add_component(character, Components.Items, [])
+      ApathyDrive.Entity.add_component(character, Components.Limbs, character |> Components.Race.value |> Components.Limbs.value)
+
       Components.Agility.value(character, Components.Login.get_stat(player, :agility))
       Components.Charm.value(character, Components.Login.get_stat(player, :charm))
       Components.Health.value(character, Components.Login.get_stat(player, :health))

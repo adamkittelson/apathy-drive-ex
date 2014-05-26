@@ -43,7 +43,7 @@ defmodule Components.Login do
     Players.send_message(player, ["clear scroll"])
     ApathyDrive.Entity.notify(player, {:sign_in_set_account, account})
     Players.send_message(player, ["scroll", "\n<p><span class='dark-yellow underline'>Characters</span></p>\n\n"])
-    Enum.each(Systems.Characters.for_account(account), fn(character) ->
+    Enum.each(Characters.for_account(account), fn(character) ->
       name  = Components.Name.get_name(character)
       race  = Components.Race.value(character)  |> Components.Name.get_name
       class = Components.Class.value(character) |> Components.Name.get_name
@@ -57,7 +57,7 @@ defmodule Components.Login do
   def display_race_select(player) do
     ApathyDrive.Entity.notify(player, :create_character_request_race)
     Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a race from the following list:</span></p>"])
-    Enum.sort(Components.all(Components.IndexAsRace), &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
+    Enum.sort(Races.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
     |> Enum.each fn(race) ->
       Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(race)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(race)}</p>"])
     end
@@ -77,7 +77,7 @@ defmodule Components.Login do
   def display_class_select(player) do
     ApathyDrive.Entity.notify(player, :create_character_request_class)
     Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a class from the following list:</span></p>"])
-    Enum.sort(Components.all(Components.IndexAsClass), &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
+    Enum.sort(Classes.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
     |> Enum.each fn(class) ->
       Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(class)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(class)}</p>"])
     end
@@ -87,8 +87,7 @@ defmodule Components.Login do
   def create_character_set_race(player, race_number) do
     if Regex.match?(~r/^\d+$/, race_number) do
       {number, _} = Integer.parse(race_number)
-      race = Components.all(Components.IndexAsRace)
-              |> Components.find_by(Components.Number, number)
+      race = Races.find_by_number(number)
       if race do
         ApathyDrive.Entity.notify(player, {:create_character_set_race, race})
         display_class_select(player)
@@ -103,8 +102,7 @@ defmodule Components.Login do
   def create_character_set_class(player, class_number) do
     if Regex.match?(~r/^\d+$/, class_number) do
       {number, _} = Integer.parse(class_number)
-      class = Components.all(Components.IndexAsClass)
-              |> Components.find_by(Components.Number, number)
+      class = Classes.find_by_number(number)
       if class do
         race = get_race(player)
         {:ok, character} = ApathyDrive.Entity.init
@@ -263,7 +261,7 @@ defmodule Components.Login do
 
   def select_character(player, character_name) do
     account = get_account(player)
-    character = Systems.Characters.find_by_account_and_name(account, character_name)
+    character = Characters.find_by_account_and_name(account, character_name)
     if character do
       login(player, character)
     else

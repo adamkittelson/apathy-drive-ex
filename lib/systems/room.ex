@@ -155,7 +155,7 @@ defmodule Systems.Room do
   end
 
   def characters_in_room(room) do
-    Systems.Characters.online |> entities_in_room(room)
+    Characters.online |> entities_in_room(room)
   end
 
   def monsters_in_room(room) do

@@ -1,21 +1,21 @@
-defmodule Components.Type do
+defmodule Components.Types do
   use GenEvent.Behaviour
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Type, :get_type)
+    :gen_event.call(entity, Components.Types, :get_types)
   end
 
-  def get_type(entity) do
+  def get_types(entity) do
     value(entity)
   end
 
   def value(entity, new_value) do
-    ApathyDrive.Entity.notify(entity, {:set_type, new_value})
+    ApathyDrive.Entity.notify(entity, {:set_types, new_value})
   end
 
   def serialize(entity) do
-    %{"Type" => get_type(entity)}
+    %{"Types" => value(entity)}
   end
 
   ### GenEvent API
@@ -23,11 +23,11 @@ defmodule Components.Type do
     {:ok, type}
   end
 
-  def handle_call(:get_type, type) do
+  def handle_call(:get_types, type) do
     {:ok, type, type}
   end
 
-  def handle_event({:set_type, new_value}, _value) do
+  def handle_event({:set_types, new_value}, _value) do
     {:ok, new_value }
   end
 

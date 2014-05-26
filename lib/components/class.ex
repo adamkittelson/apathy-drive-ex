@@ -16,8 +16,7 @@ defmodule Components.Class do
 
   ### GenEvent API
   def init(value) when is_number(value) do
-    class = Components.all(Components.IndexAsClass)
-            |> Components.find_by(Components.Number, value)
+    class = Classes.find_by_number(value)
     {:ok, class}
   end
 

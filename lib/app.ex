@@ -9,6 +9,15 @@ defmodule ApathyDrive do
     :random.seed(:erlang.now)
 
     Players.start_link
+    Races.start_link
+    Classes.start_link
+    Characters.start_link
+    Monsters.start_link
+    MonsterTemplates.start_link
+    Items.start_link
+    ItemTemplates.start_link
+    Rooms.start_link
+    Exits.start_link
     Components.start_link
     Systems.Help.start_link
     Repo.start_link
@@ -17,9 +26,11 @@ defmodule ApathyDrive do
     # compile all views
     Weber.Templates.ViewsLoader.compile_views(File.cwd!)
 
-    IO.puts "Loading Entities..."
-    ApathyDrive.Entity.load!
-    IO.puts "Done!"
+    if Mix.env != :test do
+      IO.puts "Loading Entities..."
+      ApathyDrive.Entity.load!
+      IO.puts "Done!"
+    end
 
     Systems.LairSpawning.initialize
 
