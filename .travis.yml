@@ -1,0 +1,18 @@
+language: erlang
+otp_release:
+  - 17.0
+notifications:
+  recipients:
+    - adam@apathydrive.com
+before_install:
+  - git clone https://github.com/elixir-lang/elixir
+  - cd elixir 
+  - git reset 3c48099718cd718d25527875a407cc842cf72565 --hard
+  - make && cd ..
+before_script:
+  - export PATH=`pwd`/elixir/bin:$PATH
+  - MIX_ENV=test mix do deps.get, compile
+script:
+  - mix test --no-start
+env:
+  - MIX_ENV=test
