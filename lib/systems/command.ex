@@ -44,65 +44,39 @@ defmodule Systems.Command do
 
     display_prompt(character)
 
-    if Enum.member? @directions, command do
-      command_found = true
-      if exit_directions && (Enum.member? exit_directions, command) do
-        Systems.Room.move(character, command)
-      else
-        Players.send_message(player, ["scroll", "<p>There is no exit in that direction.</p>"])
-      end
-    end
-
-    if Enum.member?(["l", "look"], command) do
-      command_found = true
-      if Enum.any? arguments do
-        if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do
-          Systems.Description.add_description_to_scroll(character, target)
+    cond do
+      Enum.member? @directions, command ->
+        if exit_directions && (Enum.member? exit_directions, command) do
+          Systems.Room.move(character, command)
         else
-          Players.send_message(player, ["scroll", "<p>You do not notice that here.</p>"])
+          Players.send_message(player, ["scroll", "<p>There is no exit in that direction.</p>"])
         end
-      else
-        Systems.Room.display_room_in_scroll(character, current_room)
-      end
-    end
-
-    if Enum.member?(["i", "inventory"], command) do
-      command_found = true
-      Systems.Item.display_inventory(character)
-    end
-
-    if command == "list" do
-      command_found = true
-      Systems.Shop.list(character, current_room)
-    end
-
-    if command == "buy" do
-      command_found = true
-      Systems.Shop.buy(character, current_room, Enum.join(arguments, " "))
-    end
-
-    if command == "sell" do
-      command_found = true
-      Systems.Shop.sell(character, current_room, Enum.join(arguments, " "))
-    end
-
-    if command == "wear" do
-      command_found = true
-      Systems.Item.equip(character, Enum.join(arguments, " "))
-    end
-
-    if command == "remove" do
-      command_found = true
-      Systems.Item.unequip(character, Enum.join(arguments, " "))
-    end
-
-    if command == "help" do
-      command_found = true
-      Systems.Command.help(player, arguments)
-    end
-
-    if !command_found do
-      Players.send_message(player, ["scroll", "<p>What?</p>"])
+      Enum.member?(["l", "look"], command) ->
+        if Enum.any? arguments do
+          if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do
+            Systems.Description.add_description_to_scroll(character, target)
+          else
+            Players.send_message(player, ["scroll", "<p>You do not notice that here.</p>"])
+          end
+        else
+          Systems.Room.display_room_in_scroll(character, current_room)
+        end
+      Enum.member?(["i", "inventory"], command) ->
+        Systems.Item.display_inventory(character)
+      command == "list" ->
+        Systems.Shop.list(character, current_room)
+      command == "buy" ->
+        Systems.Shop.buy(character, current_room, Enum.join(arguments, " "))
+      command == "sell" ->
+        Systems.Shop.sell(character, current_room, Enum.join(arguments, " "))
+      command == "wear" ->
+        Systems.Item.equip(character, Enum.join(arguments, " "))
+      command == "remove" ->
+        Systems.Item.unequip(character, Enum.join(arguments, " "))
+      command == "help" ->
+        Systems.Command.help(player, arguments)
+      true ->
+        Players.send_message(player, ["scroll", "<p>What?</p>"])
     end
   end
 
