@@ -288,7 +288,7 @@ defmodule Systems.Training do
       Components.HairLength.value(character, Components.Login.get_hair_length(player))
       Components.HP.value(character, Systems.HP.max_hp(character))
 
-      Entity.save!(character)
+      Entities.save!(character)
 
       Components.Login.login(player, character)
 

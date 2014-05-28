@@ -133,12 +133,6 @@ defmodule Components.Limbs do
     end)
   end
 
-  defp get_limb_names(limbs, item) do
-    Map.keys(limbs) |> Enum.filter(fn(limb_name) ->
-      limbs[limb_name]["items"] |> Enum.member?(Components.ID.value(item))
-    end)
-  end
-
   defp unequip_items(items_to_remove, limbs) do
     Enum.reduce(Map.keys(limbs), limbs, fn(limb_name, limbs) ->
       limb = limbs[limb_name]

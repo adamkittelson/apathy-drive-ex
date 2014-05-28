@@ -21,6 +21,7 @@ defmodule ApathyDrive do
     Components.start_link
     Systems.Help.start_link
     Repo.start_link
+    Commands.start_link
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)
     # compile all views
@@ -28,9 +29,15 @@ defmodule ApathyDrive do
 
     if Mix.env != :test do
       IO.puts "Loading Entities..."
-      Entity.load!
+      Entities.load!
       IO.puts "Done!"
     end
+
+    File.ls!("dynamic/commands")
+    |> Enum.each fn file ->
+         Code.load_file("dynamic/commands/#{file}")
+       end
+
 
     Systems.LairSpawning.initialize
 
