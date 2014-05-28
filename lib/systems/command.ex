@@ -59,7 +59,6 @@ defmodule Systems.Command do
 
   defmacro __using__(_opts) do
     quote do
-      @before_compile Systems.Command
       @after_compile Systems.Command
 
       def name do
@@ -72,18 +71,8 @@ defmodule Systems.Command do
     end
   end
 
-  defmacro __before_compile__(_env) do
-    quote do
-      Code.ensure_loaded(Commands)
-      Commands.start_link
-    end
-  end
-
   defmacro __after_compile__(_env, _bytecode) do
     quote do
-      Code.ensure_loaded(Entity)
-      Code.ensure_loaded(Components.Keywords)
-      Code.ensure_loaded(Components.Name)
       {:ok, command} = Entity.init
       Entity.add_component(command, Components.Keywords, __MODULE__.keywords)
       Entity.add_component(command, Components.Name, __MODULE__.name)

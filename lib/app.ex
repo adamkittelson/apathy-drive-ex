@@ -33,9 +33,9 @@ defmodule ApathyDrive do
       IO.puts "Done!"
     end
 
-    File.ls!("lib/commands")
+    File.ls!("dynamic/commands")
     |> Enum.each fn file ->
-         Code.load_file("lib/commands/#{file}")
+         Code.load_file("dynamic/commands/#{file}")
        end
 
 
