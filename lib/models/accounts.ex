@@ -1,4 +1,4 @@
-defmodule Account do
+defmodule Accounts do
   use Ecto.Model
   import Ecto.Query, only: [from: 2]
 
@@ -10,7 +10,7 @@ defmodule Account do
   end
 
   def find(email_address) do
-    query = from a in Account,
+    query = from a in Accounts,
             where: a.email == "#{email_address}",
             select: a
 

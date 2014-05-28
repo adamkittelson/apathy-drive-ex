@@ -1,4 +1,4 @@
-Code.ensure_compiled(Account)
+Code.ensure_compiled(Accounts)
 
 defmodule Components.Login do
   use GenEvent.Behaviour
@@ -32,7 +32,7 @@ defmodule Components.Login do
 
   def sign_in_check_password(player, password) do
     email = :gen_event.call(player, Components.Login, :get_email)
-    account = Account.find(email, password)
+    account = Accounts.find(email, password)
     if account do
       display_character_select(player, account)
     else
@@ -139,7 +139,7 @@ defmodule Components.Login do
   end
 
   def create_account_set_email(player, email) do
-    account = Account.find(email)
+    account = Accounts.find(email)
     if account do
       sign_in_get_account(player, email)
     else
@@ -158,9 +158,9 @@ defmodule Components.Login do
   def create_account_finish(player, password) do
     if password_confirmed?(player, password) do
       Players.send_message(player, ["scroll", "<p>Welcome!</p>"])
-      account = %Account{ :email    => :gen_event.call(player, Components.Login, :get_email),
-                          :password =>  "#{:gen_event.call(player, Components.Login, :get_password)}",
-                          :salt     =>  "#{:gen_event.call(player, Components.Login, :get_salt)}"
+      account = %Accounts{ :email    => :gen_event.call(player, Components.Login, :get_email),
+                           :password =>  "#{:gen_event.call(player, Components.Login, :get_password)}",
+                           :salt     =>  "#{:gen_event.call(player, Components.Login, :get_salt)}"
       }
       account = Repo.insert(account)
       display_character_select(player, account)

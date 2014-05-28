@@ -22,18 +22,7 @@ defmodule Systems.Command do
                 "west",
                 "northwest" ]
 
-  def help(player, arguments) do
-    keyword = Enum.join(arguments, " ")
-    help_info = Systems.Help.find(keyword)
-    if help_info do
-      Players.send_message(player, ["scroll", help_info])
-    else
-      Players.send_message(player, ["scroll", "<p>Sorry, no help is available for \"#{Enum.join(arguments, " ")}\".</p>"])
-    end
-  end
-
   def execute(player, command, arguments) do
-    command_found = false
     character = Components.Login.get_character(player)
     command = @aliases[:"#{command}"] || command
 
@@ -73,10 +62,13 @@ defmodule Systems.Command do
         Systems.Item.equip(character, Enum.join(arguments, " "))
       command == "remove" ->
         Systems.Item.unequip(character, Enum.join(arguments, " "))
-      command == "help" ->
-        Systems.Command.help(player, arguments)
       true ->
-        Players.send_message(player, ["scroll", "<p>What?</p>"])
+        case Systems.Match.first(Commands.all, :keyword_starts_with, command) do
+          nil ->
+            Players.send_message(player, ["scroll", "<p>What?</p>"])
+          match ->
+            :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(character, arguments)
+        end
     end
   end
 
@@ -89,6 +81,40 @@ defmodule Systems.Command do
     Components.Player.send_message(character, ["disable", "#command"])
     Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}]:</span><input id='command' class='prompt'></input></p>"])
     Components.Player.send_message(character, ["focus", "#command"])
+  end
+
+  defmacro __using__(_opts) do
+    quote do
+      @before_compile Systems.Command
+      @after_compile Systems.Command
+
+      def name do
+        __MODULE__
+        |> Atom.to_string
+        |> String.split(".")
+        |> List.last
+        |> String.downcase
+      end
+    end
+  end
+
+  defmacro __before_compile__(_env) do
+    quote do
+      Code.ensure_loaded(Commands)
+      Commands.start_link
+    end
+  end
+
+  defmacro __after_compile__(_env, _bytecode) do
+    quote do
+      Code.ensure_loaded(Entity)
+      Code.ensure_loaded(Components.Keywords)
+      Code.ensure_loaded(Components.Name)
+      {:ok, command} = Entity.init
+      Entity.add_component(command, Components.Keywords, __MODULE__.keywords)
+      Entity.add_component(command, Components.Name, __MODULE__.name)
+      Commands.add(command)
+    end
   end
 
 end
