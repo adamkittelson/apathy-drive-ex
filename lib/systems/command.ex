@@ -40,28 +40,6 @@ defmodule Systems.Command do
         else
           Players.send_message(player, ["scroll", "<p>There is no exit in that direction.</p>"])
         end
-      Enum.member?(["l", "look"], command) ->
-        if Enum.any? arguments do
-          if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do
-            Systems.Description.add_description_to_scroll(character, target)
-          else
-            Players.send_message(player, ["scroll", "<p>You do not notice that here.</p>"])
-          end
-        else
-          Systems.Room.display_room_in_scroll(character, current_room)
-        end
-      Enum.member?(["i", "inventory"], command) ->
-        Systems.Item.display_inventory(character)
-      command == "list" ->
-        Systems.Shop.list(character, current_room)
-      command == "buy" ->
-        Systems.Shop.buy(character, current_room, Enum.join(arguments, " "))
-      command == "sell" ->
-        Systems.Shop.sell(character, current_room, Enum.join(arguments, " "))
-      command == "wear" ->
-        Systems.Item.equip(character, Enum.join(arguments, " "))
-      command == "remove" ->
-        Systems.Item.unequip(character, Enum.join(arguments, " "))
       true ->
         case Systems.Match.first(Commands.all, :keyword_starts_with, command) do
           nil ->
@@ -70,10 +48,6 @@ defmodule Systems.Command do
             :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(character, arguments)
         end
     end
-  end
-
-  def find_entity_in_room(room, string) do
-    room |> Systems.Room.entities_in_room |> Systems.Match.first(:name_contains, string)
   end
 
   def display_prompt(character) do
