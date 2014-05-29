@@ -1,52 +1,14 @@
 defmodule Systems.Command do
 
-  @aliases [ u: "up",
-             d: "down",
-             n: "north",
-             ne: "northeast",
-             e:  "east",
-             se: "southeast",
-             s:  "south",
-             sw: "southwest",
-             w:  "west",
-             nw: "northwest" ]
-
-  @directions [ "up",
-                "down",
-                "north",
-                "northeast",
-                "east",
-                "southeast",
-                "south",
-                "southwest",
-                "west",
-                "northwest" ]
-
   def execute(player, command, arguments) do
     character = Components.Login.get_character(player)
-    command = @aliases[:"#{command}"] || command
-
-    current_room = Systems.Room.get_current_room(character)
-    if current_room do
-      exit_directions = Systems.Room.exit_directions(current_room)
-    end
-
     display_prompt(character)
 
-    cond do
-      Enum.member? @directions, command ->
-        if exit_directions && (Enum.member? exit_directions, command) do
-          Systems.Room.move(character, command)
-        else
-          Players.send_message(player, ["scroll", "<p>There is no exit in that direction.</p>"])
-        end
-      true ->
-        case Systems.Match.first(Commands.all, :keyword_starts_with, command) do
-          nil ->
-            Players.send_message(player, ["scroll", "<p>What?</p>"])
-          match ->
-            :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(character, arguments)
-        end
+    case Systems.Match.first(Commands.all, :keyword_starts_with, command) do
+      nil ->
+        Components.Player.send_message(character, ["scroll", "<p>What?</p>"])
+      match ->
+        :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(character, arguments)
     end
   end
 
@@ -66,7 +28,7 @@ defmodule Systems.Command do
         |> Atom.to_string
         |> String.split(".")
         |> List.last
-        |> String.downcase
+        |> Inflex.underscore
       end
     end
   end

@@ -91,9 +91,17 @@ defmodule Systems.Room do
   end
 
   def move(character, direction) do
-    current_room = get_current_room(character)
-    destination = current_room |> get_exit_by_direction(direction)
-                               |> Components.Destination.get_destination
+    current_room = Components.CurrentRoom.get_current_room(character)
+    room_exit = current_room |> get_exit_by_direction(direction)
+    move(character, current_room, room_exit)
+  end
+
+  def move(character, _current_room, nil) do
+    Components.Player.send_message(character, ["scroll", "<p>There is no exit in that direction.</p>"])
+  end
+
+  def move(character, current_room, room_exit) do
+    destination = Components.Destination.get_destination(room_exit)
 
     Components.CurrentRoom.set_current_room(character, destination)
     notify_character_left(character, current_room, destination)
