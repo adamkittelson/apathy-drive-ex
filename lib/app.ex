@@ -22,6 +22,13 @@ defmodule ApathyDrive do
     Systems.Help.start_link
     Repo.start_link
     Commands.start_link
+    Abilities.start_link
+
+    get_file_list(["dynamic/**/*.ex"])
+    |> Enum.each fn(file) ->
+      IO.puts "Compiled #{file}"
+      Code.load_file(file)
+    end
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)
     # compile all views
@@ -33,12 +40,6 @@ defmodule ApathyDrive do
       IO.puts "Done!"
     end
 
-    File.ls!("dynamic/commands")
-    |> Enum.each fn file ->
-         Code.load_file("dynamic/commands/#{file}")
-       end
-
-
     Systems.LairSpawning.initialize
 
     # start weber application
@@ -48,6 +49,27 @@ defmodule ApathyDrive do
 
   def stop(_state) do
     :ok
+  end
+
+  defp get_file_list(path, file_index \\ []) when is_binary(path) do
+    get_file_list([path], file_index)
+  end
+
+  defp get_file_list([], file_index) do
+    file_index
+  end
+
+  defp get_file_list([path | paths], file_index) do
+    updated_file_index = Enum.reduce Path.wildcard(path), file_index, fn(file_path, index)->
+      {:ok, file_info} = File.stat(file_path)
+      if file_info.type == :directory || Enum.member?(index, file_path) do
+        index
+      else
+        [file_path | index]
+      end
+    end
+
+    get_file_list(paths, updated_file_index)
   end
 
 end
