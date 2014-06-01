@@ -12,7 +12,7 @@ defmodule Systems.Room do
   end
 
   def shop(room) do
-    case Entity.has_component?(room, Components.Shop) do
+    case Entity.has_component?(room, Components.Shop) || Entity.has_component?(room, Components.Trainer) do
       true  -> "<p><br><em>Type 'list' to see a list of goods and services sold here.</em><br><br></p>"
       false -> ""
     end

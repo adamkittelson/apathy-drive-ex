@@ -63,12 +63,14 @@ defmodule Systems.Match do
     end
   end
 
+  def match_name("", _pid), do: false
   def match_name(string, pid) do
     String.downcase(string) == pid
                                |> Components.Name.value
                                |> String.downcase
   end
 
+  def match_keyword("", _pid), do: false
   def match_keyword(string, pid) do
     if pid |> Entity.list_components |> Enum.member?(Components.Keywords) do
       pid |> Components.Keywords.value
@@ -80,12 +82,14 @@ defmodule Systems.Match do
     end
   end
 
+  def name_starts_with("", _pid), do: false
   def name_starts_with(string, pid) do
     pid |> Components.Name.value
         |> String.downcase
         |> String.starts_with?(string |> String.downcase)
   end
 
+  def keyword_starts_with("", _pid), do: false
   def keyword_starts_with(string, pid) do
     if pid |> Entity.list_components |> Enum.member?(Components.Keywords) do
       pid |> Components.Keywords.value
@@ -97,6 +101,7 @@ defmodule Systems.Match do
     end
   end
 
+  def name_contains("", _pid), do: false
   def name_contains(string, pid) do
     pid |> Components.Name.value
         |> String.downcase
