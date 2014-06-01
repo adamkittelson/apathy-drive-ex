@@ -37,20 +37,24 @@ defmodule Systems.Shop do
   end
 
   def sell(character, room, item) do
-    case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
-      [match] ->
-        Components.Items.remove_item(character, match)
-        Entities.save!(character)
-        Components.Player.send_message(character, ["scroll", "<p>You just sold #{Components.Name.value(match)} for nothing.</p>"])
-        Entities.delete!(match)
-      [] ->
-        Components.Player.send_message(character, ["scroll", "<p>You don't have \"#{item}\" to sell!</p>"])
-      matches ->
-        match_names = matches |> Enum.map &(Components.Name.value(&1))
-        Components.Player.send_message(character, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
-        Enum.each match_names, fn(match_name) ->
-          Components.Player.send_message(character, ["scroll", "<p>-- #{match_name}</p>"])
-        end
+    if Entity.has_component?(room, Components.Shop) do
+      case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
+        [match] ->
+          Components.Items.remove_item(character, match)
+          Entities.save!(character)
+          Components.Player.send_message(character, ["scroll", "<p>You just sold #{Components.Name.value(match)} for nothing.</p>"])
+          Entities.delete!(match)
+        [] ->
+          Components.Player.send_message(character, ["scroll", "<p>You don't have \"#{item}\" to sell!</p>"])
+        matches ->
+          match_names = matches |> Enum.map &(Components.Name.value(&1))
+          Components.Player.send_message(character, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
+          Enum.each match_names, fn(match_name) ->
+            Components.Player.send_message(character, ["scroll", "<p>-- #{match_name}</p>"])
+          end
+      end
+    else
+      Components.Player.send_message(character, ["scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>"])
     end
   end
 end

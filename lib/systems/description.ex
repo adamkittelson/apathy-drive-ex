@@ -34,7 +34,6 @@ defmodule Systems.Description do
   def describe_character(character) do
     name        = Components.Name.get_name(character)
     race_name   = Components.Race.value(character)  |> Components.Name.get_name
-    class_name  = Components.Class.value(character) |> Components.Name.get_name
     eye_color   = Components.EyeColor.value(character)
     strength    = describe_stat(character, "strength")
     health      = describe_stat(character, "health")
@@ -44,7 +43,7 @@ defmodule Systems.Description do
     willpower   = describe_stat(character, "willpower")
     hair        = describe_hair(character)
     hp          = describe_hp(character)
-    "#{name} is a #{health}, #{strength} #{race_name} #{class_name} with #{hair} and #{eye_color} eyes. {{He/She}} moves #{agility}, and is #{charm} #{name} appears to be #{intellect} and #{willpower}. #{hp}"
+    "#{name} is a #{health}, #{strength} #{race_name} with #{hair} and #{eye_color} eyes. {{He/She}} moves #{agility}, and is #{charm} #{name} appears to be #{intellect} and #{willpower}. #{hp}"
   end
 
   def describe_hair(character) do

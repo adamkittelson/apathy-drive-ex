@@ -48,8 +48,7 @@ defmodule Components.Login do
     Enum.each(Characters.for_account(account), fn(character) ->
       name  = Components.Name.get_name(character)
       race  = Components.Race.value(character)  |> Components.Name.get_name
-      class = Components.Class.value(character) |> Components.Name.get_name
-      Players.send_message(player, ["scroll", "<p><span class='white'>#{name}</span> <span class='dark-green'>:</span> <span class='dark-yellow'>#{race} #{class}</span></p>"])
+      Players.send_message(player, ["scroll", "<p><span class='white'>#{name}</span> <span class='dark-green'>:</span> <span class='dark-yellow'>#{race}</span></p>"])
     end)
     Players.send_message(player, ["scroll", "\n\n\n\n<p><span class='dark-red'>N</span> <span class='dark-green'>:</span> <span class='dark-yellow'>New Character</span></p>"])
     Players.send_message(player, ["scroll", "<p><span class='dark-yellow'>Please enter your selection:</span> <input id='character' class='prompt'></input></p>"])
@@ -71,42 +70,11 @@ defmodule Components.Login do
     Players.send_message(player, ["focus", "#race"])
   end
 
-  def prompt_for_class(player) do
-    Players.send_message(player, ["scroll", "\n\n<p><span class='dark-green'>Please choose your class [ 'help &lt;class&gt;' for more info ]: </span><input id='class' class='prompt'></input></p>"])
-    Players.send_message(player, ["focus", "#class"])
-  end
-
-  def display_class_select(player) do
-    Entity.notify(player, :create_character_request_class)
-    Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a class from the following list:</span></p>"])
-    Enum.sort(Classes.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
-    |> Enum.each fn(class) ->
-      Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(class)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(class)}</p>"])
-    end
-    prompt_for_class(player)
-  end
-
   def create_character_set_race(player, race_number) do
     if Regex.match?(~r/^\d+$/, race_number) do
       {number, _} = Integer.parse(race_number)
       race = Races.find_by_number(number)
       if race do
-        Entity.notify(player, {:create_character_set_race, race})
-        display_class_select(player)
-      else
-        Players.send_message(player, ["scroll", "There is no race with that number."])
-      end
-    else
-      Components.Login.display_race_select(player)
-    end
-  end
-
-  def create_character_set_class(player, class_number) do
-    if Regex.match?(~r/^\d+$/, class_number) do
-      {number, _} = Integer.parse(class_number)
-      class = Classes.find_by_number(number)
-      if class do
-        race = get_race(player)
         {:ok, character} = Entity.init
         Entity.add_component(character, Components.Agility,   Components.Agility.value(race))
         Entity.add_component(character, Components.Charm,     Components.Charm.value(race))
@@ -115,7 +83,6 @@ defmodule Components.Login do
         Entity.add_component(character, Components.Strength,  Components.Strength.value(race))
         Entity.add_component(character, Components.Willpower, Components.Willpower.value(race))
         Entity.add_component(character, Components.CP, 100)
-        Entity.add_component(character, Components.Class, class)
         Entity.add_component(character, Components.Race, race)
         Entity.add_component(character, Components.Name, "")
         Entity.add_component(character, Components.Gender, nil)
@@ -123,7 +90,6 @@ defmodule Components.Login do
         Entity.add_component(character, Components.HairColor, nil)
         Entity.add_component(character, Components.HairLength, nil)
         Entity.add_component(character, Components.AccountID, Components.Login.get_account(player).id)
-        Entity.add_component(character, Components.HPRolls, [Components.MaxHPPerLevel.value(class)])
         Entity.add_component(character, Components.Level, 1)
         Entity.add_component(character, Components.HP, Systems.HP.max_hp(character))
         Entity.add_component(character, Components.Online, false)
@@ -131,10 +97,10 @@ defmodule Components.Login do
 
         Systems.Training.train_stats(player, character)
       else
-        Players.send_message(player, ["scroll", "There is no class with that number."])
+        Players.send_message(player, ["scroll", "There is no race with that number."])
       end
     else
-      Components.Login.display_class_select(player)
+      Components.Login.display_race_select(player)
     end
   end
 
@@ -175,10 +141,6 @@ defmodule Components.Login do
     password = :gen_event.call(player, Components.Login, :get_password)
     salt     = :gen_event.call(player, Components.Login, :get_salt)
     {:ok, password} == :bcrypt.hashpw(password_confirmation, salt)
-  end
-
-  def get_class(player) do
-    :gen_event.call(player, Components.Login, :get_class)
   end
 
   def get_race(player) do
@@ -325,10 +287,6 @@ defmodule Components.Login do
     {:ok, state[:stats][stat_name], state}
   end
 
-  def handle_call(:get_class, state) do
-    {:ok, state[:class], state}
-  end
-
   def handle_call(:get_hair_length, state) do
     {:ok, state[:hair_length], state}
   end
@@ -409,10 +367,6 @@ defmodule Components.Login do
 
   def handle_event(:create_character_request_race, state) do
     {:ok, [step: "create_character_request_race", account: state[:account]]}
-  end
-
-  def handle_event({:create_character_set_race, race}, state) do
-    {:ok, [step: "create_character_request_class", race: race, account: state[:account]]}
   end
 
   def handle_event({:training, character, stats}, _state) do

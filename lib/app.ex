@@ -10,7 +10,6 @@ defmodule ApathyDrive do
 
     Players.start_link
     Races.start_link
-    Classes.start_link
     Characters.start_link
     Monsters.start_link
     MonsterTemplates.start_link

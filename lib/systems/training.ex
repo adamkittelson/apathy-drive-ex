@@ -2,9 +2,7 @@ defmodule Systems.Training do
 
     def train_stats(player, character) do
       race       = Components.Race.value(character)
-      class      = Components.Class.value(character)
       race_name  = Components.Name.get_name(race)
-      class_name = Components.Name.get_name(class)
 
       str = Components.Strength.value(character)
       agi = Components.Agility.value(character)
@@ -34,8 +32,7 @@ defmodule Systems.Training do
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Given Name</span>   <input id="first-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │___\\_/  <span class="dark-grey">│</span> <span class="magenta">1st</span> <span class="dark-magenta">10 points:</span> <span class="magenta">1</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Family Name</span>  <input id="last-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">2nd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">2</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Race</span>         #{String.ljust(race_name, 19)}<span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">3rd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">3</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-  <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Class</span>        #{String.ljust(class_name, 19)}<span class="dark-red">«</span> │        <span class="dark-grey">│     ... and so on ...    │</span></div>
-  <div> │                                     │        <span class="dark-grey">│</span>                          <span class="dark-grey">│</span></div>
+  <div> │                                     │        <span class="dark-grey">│     ... and so on ...    │</span></div>
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Strength</span>   (#{String.rjust("#{str}", 4)} to <span id="max-strength">#{String.rjust("#{max_str}", 4)}</span>)   <input id="strength" class="field" maxlength="3" size="3" value="#{str}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">10</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">10</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Intellect</span>  (#{String.rjust("#{int}", 4)} to <span id="max-intellect">#{String.rjust("#{max_int}", 4)}</span>)   <input id="intellect" class="field" maxlength="3" size="3" value="#{int}"></input> <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="dark-magenta">+</span><span class="magenta">20</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">30</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></span></div>
   <div> │ <span class="dark-red">»</span> <span class="dark-cyan">Willpower</span>  (#{String.rjust("#{wil}", 4)} to <span id="max-willpower">#{String.rjust("#{max_wil}", 4)}</span>)   <input id="willpower" class="field" maxlength="3" size="3" value="#{wil}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">30</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">60</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
