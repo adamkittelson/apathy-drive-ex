@@ -57,17 +57,9 @@ defmodule ApathyDrive.Main do
         Players.send_message(player, ["disable", "##{event}"])
         case command do
           "help" ->
-            Systems.Command.help(player, arguments)
+            Commands.Help.execute({:player, player}, arguments)
             Components.Login.prompt_for_race(player)
           _other -> Components.Login.create_character_set_race(player, command)
-        end
-      "class" ->
-        Players.send_message(player, ["disable", "##{event}"])
-        case command do
-          "help" ->
-            Systems.Command.help(player, arguments)
-            Components.Login.prompt_for_class(player)
-          _other -> Components.Login.create_character_set_class(player, command)
         end
       "strength" ->
         if Components.Login.get_step(player) == "training" do
