@@ -23,6 +23,7 @@ defmodule ApathyDrive do
     Repo.start_link
     Commands.start_link
     Abilities.start_link
+    Skills.start_link
 
     get_file_list(["dynamic/**/*.ex"])
     |> Enum.each fn(file) ->
