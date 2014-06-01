@@ -10,6 +10,11 @@ defmodule Components.Trainer do
     Entity.notify(entity, {:set_trainer, new_value})
   end
 
+  def skills(entity) do
+    value(entity)
+    |> Enum.map &(Skills.all[&1])
+  end
+
   def serialize(entity) do
     %{"Trainer" => value(entity)}
   end

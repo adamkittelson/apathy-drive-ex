@@ -23,6 +23,33 @@ defmodule Systems.Trainer do
     Components.Player.send_message(character, ["scroll", "<p>#{footer}</p>"])
   end
 
+  def train(entity, _room, []) do
+    Components.Player.send_message(entity, ["scroll", "<p>Which skill would you like to train?</p>"])
+  end
+
+  def train(entity, room, args) do
+    args   = Enum.join(args, " ")
+    skills = Components.Trainer.skills(room)
+
+    case Systems.Match.all(skills, :keyword_starts_with, args) do
+      [] ->
+        Components.Player.send_message(entity, ["scroll", "<p>You cannot train #{args} here.</p>"])
+      [match] ->
+        train(entity, match)
+      matches ->
+        Components.Player.send_message(entity, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
+        Enum.each matches, fn(match) ->
+          Components.Player.send_message(entity, ["scroll", "<p>-- #{Components.Name.value(match)}</p>"])
+        end
+    end
+  end
+
+  def train(entity, skill) do
+    devs = devs(entity)
+    cost = cost(entity, skill)
+    Components.Skills.train(entity, skill, devs, cost)
+  end
+
   def devs(entity) do
     total_devs(entity) - (entity |> Components.Skills.value |> Map.values |> Enum.sum)
   end
