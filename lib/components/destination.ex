@@ -1,4 +1,5 @@
 defmodule Components.Destination do
+  use Systems.Reload
   use GenEvent.Behaviour
 
   ### Public API

@@ -1,4 +1,5 @@
 defmodule Rooms do
+  use Systems.Reload
   use GenServer.Behaviour
 
   # Public API

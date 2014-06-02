@@ -1,4 +1,5 @@
 defmodule MonsterTemplates do
+  use Systems.Reload
   use GenServer.Behaviour
 
   # Public API

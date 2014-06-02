@@ -1,4 +1,5 @@
 defmodule Components.Player do
+  use Systems.Reload
   use GenEvent.Behaviour
 
   ### Public API

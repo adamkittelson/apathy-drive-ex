@@ -1,4 +1,5 @@
 defmodule Systems.Command do
+  use Systems.Reload
 
   def execute(player, command, arguments) do
     character = Components.Login.get_character(player)
@@ -21,6 +22,7 @@ defmodule Systems.Command do
 
   defmacro __using__(_opts) do
     quote do
+      use Systems.Reload
       @after_compile Systems.Command
 
       def name do

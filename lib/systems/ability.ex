@@ -1,7 +1,9 @@
 defmodule Systems.Ability do
+  use Systems.Reload
 
   defmacro __using__(_opts) do
     quote do
+      use Systems.Reload
       @after_compile Systems.Ability
 
       def name do

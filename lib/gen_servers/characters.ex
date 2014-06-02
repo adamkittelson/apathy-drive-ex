@@ -1,4 +1,5 @@
 defmodule Characters do
+  use Systems.Reload
   use GenServer.Behaviour
 
   # Public API

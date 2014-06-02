@@ -1,4 +1,5 @@
 defmodule Systems.Description do
+  use Systems.Reload
   @attribute_descriptions [
     strength:  ["puny", "weak", "slightly built", "moderately built", "well built", "muscular", "powerfully built", "heroically proportioned", "Herculean", "physically Godlike"],
     health:    ["frail", "thin", "healthy", "stout", "solid", "massive", "gigantic", "colossal"],

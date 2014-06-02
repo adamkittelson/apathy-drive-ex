@@ -1,4 +1,5 @@
 defmodule Systems.Item do
+  use Systems.Reload
 
   def spawn_item(item) do
     {:ok, entity} = Entity.init

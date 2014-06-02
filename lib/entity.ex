@@ -1,4 +1,5 @@
 defmodule Entity do
+  use Systems.Reload
 
   ### Public API
   def init do

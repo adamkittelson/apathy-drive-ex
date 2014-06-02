@@ -1,4 +1,5 @@
 defmodule Skills do
+  use Systems.Reload
   use GenServer.Behaviour
 
   # Public API

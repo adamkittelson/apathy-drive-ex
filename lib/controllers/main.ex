@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Main do
-
+  use Systems.Reload
   use Weber.Controller
 
   layout false

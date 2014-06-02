@@ -1,4 +1,5 @@
 defmodule Systems.Limbs do
+  use Systems.Reload
 
   def equipped_items(character) when is_pid(character) do
     character |> Components.Limbs.value |> equipped_items

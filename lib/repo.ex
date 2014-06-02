@@ -1,4 +1,5 @@
 defmodule Repo do
+  use Systems.Reload
   use Ecto.Repo, adapter: Ecto.Adapters.Postgres
 
   def conf do

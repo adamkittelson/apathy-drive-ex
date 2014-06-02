@@ -1,4 +1,6 @@
 defmodule Systems.Match do
+  use Systems.Reload
+
   def all(pids, :match_name, string) do
     Enum.filter(pids, &(match_name(string, &1)))
   end

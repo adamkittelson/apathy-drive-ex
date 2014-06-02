@@ -1,4 +1,6 @@
 defmodule Systems.Trainer do
+  use Systems.Reload
+
   def list(character, room) do
     devs = devs(character)
     header = "<span class='blue'>-=-=-=-=-=-=-=-</span>  <span class='white'>Skill Listing</span>  <span class='blue'>-=-=-=-=-=-=-=-</span>"

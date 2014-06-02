@@ -1,6 +1,7 @@
 Code.ensure_compiled(Accounts)
 
 defmodule Components.Login do
+  use Systems.Reload
   use GenEvent.Behaviour
 
   ### Public API

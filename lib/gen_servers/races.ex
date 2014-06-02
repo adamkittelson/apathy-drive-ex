@@ -1,4 +1,5 @@
 defmodule Races do
+  use Systems.Reload
   use GenServer.Behaviour
 
   # Public API

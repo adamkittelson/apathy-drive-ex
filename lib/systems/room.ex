@@ -1,4 +1,6 @@
 defmodule Systems.Room do
+  use Systems.Reload
+
   def display_room_in_scroll(character, room_pid) do
     Components.Player.send_message(character, ["scroll", long_room_html(character, room_pid)])
   end

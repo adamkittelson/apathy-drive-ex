@@ -1,4 +1,5 @@
 defmodule Components.Race do
+  use Systems.Reload
   use GenEvent.Behaviour
 
   ### Public API

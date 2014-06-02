@@ -1,4 +1,5 @@
 defmodule Systems.Monster do
+  use Systems.Reload
 
   def spawn_monster(monster) do
     {:ok, entity} = Entity.init

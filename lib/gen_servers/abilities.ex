@@ -1,4 +1,5 @@
 defmodule Abilities do
+  use Systems.Reload
   use GenServer.Behaviour
 
   # Public API

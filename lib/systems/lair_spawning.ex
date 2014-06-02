@@ -1,4 +1,5 @@
 defmodule Systems.LairSpawning do
+  use Systems.Reload
   def initialize do
     :timer.apply_interval(10_000, Systems.LairSpawning, :spawn_lairs, [])
   end

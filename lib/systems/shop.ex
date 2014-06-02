@@ -1,4 +1,6 @@
 defmodule Systems.Shop do
+  use Systems.Reload
+
   def list(character, room) do
     Components.Player.send_message(character, ["scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span></p>"])
     Components.Player.send_message(character, ["scroll", "<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>"])
