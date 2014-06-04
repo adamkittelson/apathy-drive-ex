@@ -24,7 +24,7 @@ defmodule ApathyDrive do
     Abilities.start_link
     Skills.start_link
 
-    get_file_list(["dynamic/**/*.ex"])
+    get_file_list(["game/**/*.ex"])
     |> Enum.each fn(file) ->
       IO.puts "Compiled #{file}"
       Code.load_file(file)
