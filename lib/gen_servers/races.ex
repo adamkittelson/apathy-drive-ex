@@ -11,9 +11,9 @@ defmodule Races do
     :gen_server.call(:races, :all)
   end
 
-  def find_by_number(number) do
+  def find_by_name(name) do
     Enum.find(all, fn (race) ->
-      Components.Number.get_number(race) == number
+      Components.Name.value(race) == name
     end)
   end
 

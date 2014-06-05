@@ -1,18 +1,18 @@
-defmodule Components.Health do
+defmodule Components.Stats do
   use Systems.Reload
   use GenEvent.Behaviour
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Health, :value)
+    :gen_event.call(entity, Components.Stats, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_health, new_value})
+    Entity.notify(entity, {:set_stats, new_value})
   end
 
   def serialize(entity) do
-    %{"Health" => value(entity)}
+    %{"Stats" => value(entity)}
   end
 
   ### GenEvent API
@@ -24,8 +24,8 @@ defmodule Components.Health do
     {:ok, value, value}
   end
 
-  def handle_event({:set_health, value}, _value) do
-    {:ok, value }
+  def handle_event({:set_stats, new_value}, _value) do
+    {:ok, new_value }
   end
 
   def handle_event(_, current_value) do

@@ -5,24 +5,24 @@ defmodule Systems.Training do
     race       = Components.Race.value(character)
     race_name  = Components.Name.get_name(race)
 
-    str = Components.Strength.value(character)
-    agi = Components.Agility.value(character)
-    int = Components.Intellect.value(character)
-    wil = Components.Willpower.value(character)
-    hea = Components.Health.value(character)
-    cha = Components.Charm.value(character)
+    str = Components.Stats.value(character)["strength"]
+    agi = Components.Stats.value(character)["agility"]
+    int = Components.Stats.value(character)["intellect"]
+    wil = Components.Stats.value(character)["willpower"]
+    hea = Components.Stats.value(character)["health"]
+    cha = Components.Stats.value(character)["charm"]
     cp  = Components.CP.value(character)
 
     stats = [cp: cp, strength: str, agility: agi, intellect: int, willpower: wil, health: hea, charm: cha]
 
     Entity.notify(player, {:training, character, stats})
 
-    max_str = max_stat(player, character, "Strength")
-    max_agi = max_stat(player, character, "Agility")
-    max_int = max_stat(player, character, "Intellect")
-    max_wil = max_stat(player, character, "Willpower")
-    max_hea = max_stat(player, character, "Health")
-    max_cha = max_stat(player, character, "Charm")
+    max_str = max_stat(player, character, "strength")
+    max_agi = max_stat(player, character, "agility")
+    max_int = max_stat(player, character, "intellect")
+    max_wil = max_stat(player, character, "willpower")
+    max_hea = max_stat(player, character, "health")
+    max_cha = max_stat(player, character, "charm")
 
     Players.send_message(player, ["clear scroll"])
     Players.send_message(player, ["scroll",
@@ -57,15 +57,15 @@ defmodule Systems.Training do
 
   def set_stat(player, stat_name, stat) do
     character = Components.Login.get_character(player)
-    validate_stat(player, character, String.capitalize(stat_name), stat)
+    validate_stat(player, character, stat_name, stat)
   end
 
   def validate_stat(player, character, stat_name, stat) do
     valid  = true
     number = 0
-    min = :"Elixir.Components.#{stat_name}".value(character)
+    min = Components.Stats.value(character)[stat_name]
     max = max_stat(player, character, stat_name)
-    current = Components.Login.get_stat(player, binary_to_atom(String.downcase(stat_name)))
+    current = Components.Login.get_stat(player, binary_to_atom(stat_name))
     if Regex.match?(~r/^\d+$/, stat) do
       {number, _} = Integer.parse(stat)
       if number < min do
@@ -86,11 +86,10 @@ defmodule Systems.Training do
       current_cp = Components.Login.get_cp(player)
       new_cp     = current_cp - cp_change
       Components.Login.set_cp(player, new_cp)
-      Components.Login.set_stat(player, binary_to_atom(String.downcase(stat_name)), number)
+      Components.Login.set_stat(player, binary_to_atom(stat_name), number)
       Players.send_message(player, ["update", "#cp", String.rjust("#{new_cp}", 3)])
       update_max_values(player, character)
     else
-      stat_name = String.downcase(stat_name)
       old_stat = Components.Login.get_stat(player, binary_to_atom(stat_name))
       Players.send_message(player, ["set field", "##{stat_name}", old_stat])
       Players.send_message(player, ["focus", "##{stat_name}"])
@@ -115,7 +114,7 @@ defmodule Systems.Training do
 
   def racial_min_stat(character, stat) do
     race = Components.Race.value(character)
-    :"Elixir.Components.#{stat}".value(race)
+    Components.Stats.value(race)[stat]
   end
 
   def cp_cost(min, target) do
@@ -138,10 +137,10 @@ defmodule Systems.Training do
   end
 
   def update_max_values(player, character) do
-    stats = ["Strength", "Agility", "Intellect", "Willpower", "Health", "Charm"]
+    stats = ["strength", "agility", "intellect", "willpower", "health", "charm"]
     Enum.each(stats, fn(stat) ->
       max_value = max_stat(player, character, stat)
-      Players.send_message(player, ["update", "#max-#{String.downcase(stat)}", String.rjust("#{max_value}", 4)])
+      Players.send_message(player, ["update", "#max-#{stat}", String.rjust("#{max_value}", 4)])
     end)
   end
 
@@ -274,12 +273,14 @@ defmodule Systems.Training do
     Entity.add_component(character, Components.Limbs, character |> Components.Race.value |> Components.Limbs.value)
     Entity.add_component(character, Components.Skills, %{})
 
-    Components.Agility.value(character, Components.Login.get_stat(player, :agility))
-    Components.Charm.value(character, Components.Login.get_stat(player, :charm))
-    Components.Health.value(character, Components.Login.get_stat(player, :health))
-    Components.Intellect.value(character, Components.Login.get_stat(player, :intellect))
-    Components.Strength.value(character, Components.Login.get_stat(player, :strength))
-    Components.Willpower.value(character, Components.Login.get_stat(player, :willpower))
+    Components.Stats.value(character, %{
+      "agility" => Components.Login.get_stat(player, :agility),
+      "charm" => Components.Login.get_stat(player, :charm),
+      "health" => Components.Login.get_stat(player, :health),
+      "intellect" => Components.Login.get_stat(player, :intellect),
+      "strength" => Components.Login.get_stat(player, :strength),
+      "willpower" => Components.Login.get_stat(player, :willpower)
+    })
     Components.CP.value(character, Components.Login.get_cp(player))
     Components.Gender.value(character, Components.Login.get_gender(player))
     Components.EyeColor.value(character, Components.Login.get_eye_color(player))
