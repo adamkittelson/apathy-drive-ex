@@ -18,13 +18,13 @@ defmodule ApathyDrive do
     Rooms.start_link
     Exits.start_link
     Components.start_link
-    Systems.Help.start_link
+    Help.start_link
     Repo.start_link
     Commands.start_link
     Abilities.start_link
     Skills.start_link
 
-    get_file_list(["dynamic/**/*.ex"])
+    get_file_list(["game/**/*.ex"])
     |> Enum.each fn(file) ->
       IO.puts "Compiled #{file}"
       Code.load_file(file)

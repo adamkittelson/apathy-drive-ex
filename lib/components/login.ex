@@ -59,9 +59,9 @@ defmodule Components.Login do
   def display_race_select(player) do
     Entity.notify(player, :create_character_request_race)
     Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a race from the following list:</span></p>"])
-    Enum.sort(Races.all, &(Components.Number.get_number(&1) < Components.Number.get_number(&2)))
+    Enum.sort(Races.all, &(Components.Name.value(&1) < Components.Name.value(&2)))
     |> Enum.each fn(race) ->
-      Players.send_message(player, ["scroll", "<p><span class='dark-grey'>[</span><span class='white'>#{Components.Number.get_number(race)}</span><span class='dark-grey'>]</span> #{Components.Name.get_name(race)}</p>"])
+      Players.send_message(player, ["scroll", "<p>#{Components.Name.get_name(race)}</p>"])
     end
     prompt_for_race(player)
   end
@@ -71,18 +71,15 @@ defmodule Components.Login do
     Players.send_message(player, ["focus", "#race"])
   end
 
-  def create_character_set_race(player, race_number) do
-    if Regex.match?(~r/^\d+$/, race_number) do
-      {number, _} = Integer.parse(race_number)
-      race = Races.find_by_number(number)
-      if race do
+  def create_character_set_race(player, "") do
+    Components.Login.display_race_select(player)
+  end
+
+  def create_character_set_race(player, race_name) do
+    case Systems.Match.all(Races.all, :name_contains, race_name) do
+      [race] ->
         {:ok, character} = Entity.init
-        Entity.add_component(character, Components.Agility,   Components.Agility.value(race))
-        Entity.add_component(character, Components.Charm,     Components.Charm.value(race))
-        Entity.add_component(character, Components.Health,    Components.Health.value(race))
-        Entity.add_component(character, Components.Intellect, Components.Intellect.value(race))
-        Entity.add_component(character, Components.Strength,  Components.Strength.value(race))
-        Entity.add_component(character, Components.Willpower, Components.Willpower.value(race))
+        Entity.add_component(character, Components.Stats, Components.Stats.value(race))
         Entity.add_component(character, Components.CP, 100)
         Entity.add_component(character, Components.Race, race)
         Entity.add_component(character, Components.Name, "")
@@ -97,11 +94,14 @@ defmodule Components.Login do
         Entity.add_component(character, Components.Player, player)
 
         Systems.Training.train_stats(player, character)
-      else
-        Players.send_message(player, ["scroll", "There is no race with that number."])
-      end
-    else
-      Components.Login.display_race_select(player)
+      [] ->
+        Players.send_message(player, ["scroll", "There is no race by that name."])
+      matches ->
+        match_names = matches |> Enum.map &(Components.Name.value(&1))
+        Players.send_message(player, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
+        Enum.each match_names, fn(match_name) ->
+          Players.send_message(player, ["scroll", "<p>-- #{match_name}</p>"])
+        end
     end
   end
 

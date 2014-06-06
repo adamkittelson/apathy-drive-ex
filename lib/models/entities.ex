@@ -24,7 +24,7 @@ defmodule Entities do
     end
     Entity.add_to_type_collection(entity)
     if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do
-      Systems.Help.add(entity)
+      Help.add(entity)
     end
   end
 

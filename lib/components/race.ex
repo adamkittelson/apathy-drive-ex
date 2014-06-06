@@ -12,12 +12,12 @@ defmodule Components.Race do
   end
 
   def serialize(entity) do
-    %{"Race" => Components.Number.get_number(value(entity))}
+    %{"Race" => value(entity) |> Components.Name.value}
   end
 
   ### GenEvent API
-  def init(value) when is_number(value) do
-    race = Races.find_by_number(value)
+  def init(value) when is_binary(value) do
+    race = Races.find_by_name(value)
     {:ok, race}
   end
 
