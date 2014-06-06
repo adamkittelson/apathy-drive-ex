@@ -5,143 +5,30 @@ defmodule Systems.Training do
     race       = Components.Race.value(character)
     race_name  = Components.Name.get_name(race)
 
-    str = Components.Stats.value(character)["strength"]
-    agi = Components.Stats.value(character)["agility"]
-    int = Components.Stats.value(character)["intellect"]
-    wil = Components.Stats.value(character)["willpower"]
-    hea = Components.Stats.value(character)["health"]
-    cha = Components.Stats.value(character)["charm"]
-    cp  = Components.CP.value(character)
-
-    stats = [cp: cp, strength: str, agility: agi, intellect: int, willpower: wil, health: hea, charm: cha]
-
-    Entity.notify(player, {:training, character, stats})
-
-    max_str = max_stat(player, character, "strength")
-    max_agi = max_stat(player, character, "agility")
-    max_int = max_stat(player, character, "intellect")
-    max_wil = max_stat(player, character, "willpower")
-    max_hea = max_stat(player, character, "health")
-    max_cha = max_stat(player, character, "charm")
+    Entity.notify(player, {:training, character})
 
     Players.send_message(player, ["clear scroll"])
     Players.send_message(player, ["scroll",
 """
 <div>   .─────────────────────────────────────.──.</div>
-<div>  /  <span class="dark-grey">Apathy</span> <span class="dark-red">Drive</span> <span class="dark-cyan">Character Creation</span>    /    \\  <span class="dark-grey">┌─</span>    <span class="magenta">Point Cost Chart</span>    <span class="dark-grey">─┐</span></div>
-<div> │                                     ├──.   │ <span class="dark-grey">│</span>                          <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Given Name</span>   <input id="first-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │___\\_/  <span class="dark-grey">│</span> <span class="magenta">1st</span> <span class="dark-magenta">10 points:</span> <span class="magenta">1</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Family Name</span>  <input id="last-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">2nd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">2</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Race</span>         #{String.ljust(race_name, 19)}<span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="magenta">3rd</span> <span class="dark-magenta">10 points:</span> <span class="magenta">3</span> <span class="dark-magenta">CP each</span> <span class="dark-grey">│</span></div>
-<div> │                                     │        <span class="dark-grey">│     ... and so on ...    │</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Strength</span>   (#{String.rjust("#{str}", 4)} to <span id="max-strength">#{String.rjust("#{max_str}", 4)}</span>)   <input id="strength" class="field" maxlength="3" size="3" value="#{str}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">10</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">10</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Intellect</span>  (#{String.rjust("#{int}", 4)} to <span id="max-intellect">#{String.rjust("#{max_int}", 4)}</span>)   <input id="intellect" class="field" maxlength="3" size="3" value="#{int}"></input> <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="dark-magenta">+</span><span class="magenta">20</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">30</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Willpower</span>  (#{String.rjust("#{wil}", 4)} to <span id="max-willpower">#{String.rjust("#{max_wil}", 4)}</span>)   <input id="willpower" class="field" maxlength="3" size="3" value="#{wil}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">30</span> <span class="dark-magenta">to base stat:</span>  <span class="magenta">60</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Agility</span>    (#{String.rjust("#{agi}", 4)} to <span id="max-agility">#{String.rjust("#{max_agi}", 4)}</span>)   <input id="agility" class="field" maxlength="3" size="3" value="#{agi}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">40</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">100</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Health</span>     (#{String.rjust("#{hea}", 4)} to <span id="max-health">#{String.rjust("#{max_hea}", 4)}</span>)   <input id="health" class="field" maxlength="3" size="3" value="#{hea}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">│</span> <span class="dark-magenta">+</span><span class="magenta">50</span> <span class="dark-magenta">to base stat:</span> <span class="magenta">150</span> <span class="dark-magenta">CP</span> <span class="dark-grey">│</span></div>
-<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Charm</span>      (#{String.rjust("#{cha}", 4)} to <span id="max-charm">#{String.rjust("#{max_cha}", 4)}</span>)   <input id="charm" class="field" maxlength="3" size="3" value="#{cha}"></input> <span class="dark-red">«</span> │        <span class="dark-grey">└─    ... and so on ...   ─┘</span></div>
+<div>  /  <span class="dark-grey">Apathy</span> <span class="dark-red">Drive</span> <span class="dark-cyan">Character Creation</span>    /    \\</div>
+<div> │                                     ├──.   │
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Given Name</span>   <input id="first-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │___\\_/</div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Family Name</span>  <input id="last-name" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │</div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Race</span>         #{String.ljust(race_name, 19)}<span class="dark-red">«</span> │</div>
 <div> │                                     │</div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Gender</span>        <input id="gender" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">┌</span> <span class="cyan">Use the Space Bar to</span></div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Length</span>   <input id="hair_length" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="cyan">toggle between choices for</span></span></div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Hair Colour</span>   <input id="hair_color" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Eye Colour</span>    <input id="eye_color" class="field" maxlength="15" size="15"></input>  <span class="dark-red">«</span> │</div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Gender</span>       <input id="gender" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │        <span class="dark-grey">┌</span> <span class="cyan">Use the Space Bar to</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Hair Length</span>  <input id="hair_length" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀──────┤</span> <span class="cyan">toggle between choices for</span></span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Hair Colour</span>  <input id="hair_color" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │        <span class="dark-grey">└</span> <span class="cyan">your physical description</span></div>
+<div> │ <span class="dark-red">»</span> <span class="dark-cyan">Eye Colour</span>   <input id="eye_color" class="field" maxlength="18" size="18"></input> <span class="dark-red">«</span> │</div>
 <div> │                                     │</div>
-<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Exit:</span> <input type="button" id="save" class="field" value="SAVE"></input> <span class="red">«</span>  <span class="dark-red">»</span> <span class="dark-cyan">CP Left:</span>  <span id="cp">#{String.rjust("#{cp}", 3)}</span>  <span class="dark-red">«</span> │ <span class="arrow"><span class="dark-grey">◀───────</span> <span class="white">SAVE</span> <span class="cyan">your character or</span> <span class="white">EXIT</span></span></div>
+<div> │ <span class="dark-red">»</span>  <span class="dark-cyan">Exit:</span> <input type="button" id="save" class="field" value="SAVE"></input> <span class="dark-red">«</span>                     │</div>
 <div>┌┴───────────────────────────────.     │</div>
 <div>\\_________________________________\\___/</div>
 <div><span id="validation" class="red"></span></div>
 """
 ])
     Players.send_message(player, ["focus", "#first-name"])
-  end
-
-  def set_stat(player, stat_name, stat) do
-    character = Components.Login.get_character(player)
-    validate_stat(player, character, stat_name, stat)
-  end
-
-  def validate_stat(player, character, stat_name, stat) do
-    valid  = true
-    number = 0
-    min = Components.Stats.value(character)[stat_name]
-    max = max_stat(player, character, stat_name)
-    current = Components.Login.get_stat(player, binary_to_atom(stat_name))
-    if Regex.match?(~r/^\d+$/, stat) do
-      {number, _} = Integer.parse(stat)
-      if number < min do
-        Players.send_message(player, ["update", "#validation", "#{stat_name} may not be lower than #{min}."])
-        valid = false
-      end
-      if number > max && number > current do
-        Players.send_message(player, ["update", "#validation", "You only have enough CP to train #{stat_name} to #{max}."])
-        valid = false
-      end
-    else
-      Players.send_message(player, ["update", "#validation", "#{stat_name} must be a number."])
-      valid = false
-    end
-    if valid do
-      racial_min = racial_min_stat(character, stat_name)
-      cp_change  = calculate_cp_change(racial_min, current, number)
-      current_cp = Components.Login.get_cp(player)
-      new_cp     = current_cp - cp_change
-      Components.Login.set_cp(player, new_cp)
-      Components.Login.set_stat(player, binary_to_atom(stat_name), number)
-      Players.send_message(player, ["update", "#cp", String.rjust("#{new_cp}", 3)])
-      update_max_values(player, character)
-    else
-      old_stat = Components.Login.get_stat(player, binary_to_atom(stat_name))
-      Players.send_message(player, ["set field", "##{stat_name}", old_stat])
-      Players.send_message(player, ["focus", "##{stat_name}"])
-    end
-  end
-
-  def max_stat(player, character, stat) do
-    min = racial_min_stat(character, stat)
-    current = Components.Login.get_stat(player, binary_to_atom(String.downcase(stat)))
-    cp  = Components.Login.get_cp(player)
-    calculate_max(min, current, cp)
-  end
-
-  def calculate_max(min, amount, cp) do
-    cost = cp_cost(min, amount + 1)
-    if cost > cp do
-      amount
-    else
-      calculate_max(min, amount + 1, cp - cost)
-    end
-  end
-
-  def racial_min_stat(character, stat) do
-    race = Components.Race.value(character)
-    Components.Stats.value(race)[stat]
-  end
-
-  def cp_cost(min, target) do
-    Float.ceil((target - min) / 10.0)
-  end
-
-  def calculate_cp_change(min, current, new) do
-    lowest = Enum.min([current, new])
-    Enum.reduce(current..new, 0, fn(point, total) ->
-      if point == lowest do
-        total
-      else
-        if new > current do
-          total + cp_cost(min, point)
-        else
-          total - cp_cost(min, point)
-        end
-      end
-    end)
-  end
-
-  def update_max_values(player, character) do
-    stats = ["strength", "agility", "intellect", "willpower", "health", "charm"]
-    Enum.each(stats, fn(stat) ->
-      max_value = max_stat(player, character, stat)
-      Players.send_message(player, ["update", "#max-#{stat}", String.rjust("#{max_value}", 4)])
-    end)
   end
 
   def hair_lengths do
@@ -273,15 +160,6 @@ defmodule Systems.Training do
     Entity.add_component(character, Components.Limbs, character |> Components.Race.value |> Components.Limbs.value)
     Entity.add_component(character, Components.Skills, %{})
 
-    Components.Stats.value(character, %{
-      "agility" => Components.Login.get_stat(player, :agility),
-      "charm" => Components.Login.get_stat(player, :charm),
-      "health" => Components.Login.get_stat(player, :health),
-      "intellect" => Components.Login.get_stat(player, :intellect),
-      "strength" => Components.Login.get_stat(player, :strength),
-      "willpower" => Components.Login.get_stat(player, :willpower)
-    })
-    Components.CP.value(character, Components.Login.get_cp(player))
     Components.Gender.value(character, Components.Login.get_gender(player))
     Components.EyeColor.value(character, Components.Login.get_eye_color(player))
     Components.HairColor.value(character, Components.Login.get_hair_color(player))

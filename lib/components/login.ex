@@ -58,7 +58,7 @@ defmodule Components.Login do
 
   def display_race_select(player) do
     Entity.notify(player, :create_character_request_race)
-    Players.send_message(player, ["scroll", "<p><span class='white'>Please choose a race from the following list:</span></p>"])
+    Players.send_message(player, ["scroll", "\n\n<p><span class='white'>Please choose a race from the following list:</span></p>"])
     Enum.sort(Races.all, &(Components.Name.value(&1) < Components.Name.value(&2)))
     |> Enum.each fn(race) ->
       Players.send_message(player, ["scroll", "<p>#{Components.Name.get_name(race)}</p>"])
@@ -80,7 +80,6 @@ defmodule Components.Login do
       [race] ->
         {:ok, character} = Entity.init
         Entity.add_component(character, Components.Stats, Components.Stats.value(race))
-        Entity.add_component(character, Components.CP, 100)
         Entity.add_component(character, Components.Race, race)
         Entity.add_component(character, Components.Name, "")
         Entity.add_component(character, Components.Gender, nil)
@@ -95,13 +94,15 @@ defmodule Components.Login do
 
         Systems.Training.train_stats(player, character)
       [] ->
-        Players.send_message(player, ["scroll", "There is no race by that name."])
+        Players.send_message(player, ["scroll", "<p><span class='red'>There is no race by that name.</span></p>"])
+        Components.Login.display_race_select(player)
       matches ->
         match_names = matches |> Enum.map &(Components.Name.value(&1))
         Players.send_message(player, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
         Enum.each match_names, fn(match_name) ->
           Players.send_message(player, ["scroll", "<p>-- #{match_name}</p>"])
         end
+        Components.Login.display_race_select(player)
     end
   end
 
@@ -370,8 +371,8 @@ defmodule Components.Login do
     {:ok, [step: "create_character_request_race", account: state[:account]]}
   end
 
-  def handle_event({:training, character, stats}, _state) do
-    {:ok, [step: "training", character: character, stats: stats]}
+  def handle_event({:training, character}, _state) do
+    {:ok, [step: "training", character: character]}
   end
 
   def handle_event({:login, character}, _state) do
