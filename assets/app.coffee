@@ -71,6 +71,22 @@ $ ->
   disableField = (selector) ->
     $(selector).prop('disabled', true).removeAttr('id')
 
+  history_marker = null
+
+  command_history = (direction) ->
+    history = $('.prompt:disabled')
+    return if history.length == 0
+    if history_marker == null
+      history_marker = history.length
+
+    if direction == "up"
+      history_marker = Math.max(0, history_marker - 1)
+    else if direction == "down"
+      history_marker = Math.min(history.length - 1, history_marker + 1)
+
+    $("#command").val(history[history_marker].value)
+    setFocus("#command").select()
+
   $(document).on 'keydown', "input", (event) ->
     if event.which is 9 and !event.shiftKey # prevent tab, but not shift-tab
       event.preventDefault()
@@ -78,6 +94,7 @@ $ ->
   $(document).on 'keyup', "input", (event) ->
     event.preventDefault()
     if event.which is 13 or (event.which is 9 and !event.shiftKey) # enter key or (non-shift) tab
+      history_marker = null
       command = $(event.target).val()
       unless event.target.id is "command"
         $("#validation").html("")
@@ -86,21 +103,9 @@ $ ->
       params[event.target.id] = command
       webSocket.send JSON.stringify(params)
     else if event.which is 38
-      value = parseInt($(event.target).val())
-      unless isNaN value
-        $("#validation").html("")
-        $(event.target).val(value + 1)
-        params = {}
-        params[event.target.id] = "#{value + 1}"
-        webSocket.send JSON.stringify(params)
+      command_history("up")
     else if event.which is 40
-      value = parseInt($(event.target).val())
-      unless isNaN value
-        $("#validation").html("")
-        $(event.target).val(value - 1)
-        params = {}
-        params[event.target.id] = "#{value - 1}"
-        webSocket.send JSON.stringify(params)
+      command_history("down")
     else if event.which is 32
       params = {}
       params["cycle"] = event.target.id

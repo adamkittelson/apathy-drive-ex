@@ -1,7 +1,7 @@
 (function() {
 
   $(function() {
-    var addToScroll, adjustScrollTop, clearScroll, disableField, focus, focusNext, focusPrevious, setFocus, updateRoom, webSocket;
+    var addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, webSocket;
     focus = null;
     $('body').on('click', function(event) {
       return setFocus(focus);
@@ -84,15 +84,34 @@
     disableField = function(selector) {
       return $(selector).prop('disabled', true).removeAttr('id');
     };
+    history_marker = null;
+    command_history = function(direction) {
+      var history;
+      history = $('.prompt:disabled');
+      if (history.length === 0) {
+        return;
+      }
+      if (history_marker === null) {
+        history_marker = history.length;
+      }
+      if (direction === "up") {
+        history_marker = Math.max(0, history_marker - 1);
+      } else if (direction === "down") {
+        history_marker = Math.min(history.length - 1, history_marker + 1);
+      }
+      $("#command").val(history[history_marker].value);
+      return setFocus("#command").select();
+    };
     $(document).on('keydown', "input", function(event) {
       if (event.which === 9 && !event.shiftKey) {
         return event.preventDefault();
       }
     });
     return $(document).on('keyup', "input", function(event) {
-      var command, params, value;
+      var command, params;
       event.preventDefault();
       if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {
+        history_marker = null;
         command = $(event.target).val();
         if (event.target.id !== "command") {
           $("#validation").html("");
@@ -102,23 +121,9 @@
         params[event.target.id] = command;
         return webSocket.send(JSON.stringify(params));
       } else if (event.which === 38) {
-        value = parseInt($(event.target).val());
-        if (!isNaN(value)) {
-          $("#validation").html("");
-          $(event.target).val(value + 1);
-          params = {};
-          params[event.target.id] = "" + (value + 1);
-          return webSocket.send(JSON.stringify(params));
-        }
+        return command_history("up");
       } else if (event.which === 40) {
-        value = parseInt($(event.target).val());
-        if (!isNaN(value)) {
-          $("#validation").html("");
-          $(event.target).val(value - 1);
-          params = {};
-          params[event.target.id] = "" + (value - 1);
-          return webSocket.send(JSON.stringify(params));
-        }
+        return command_history("down");
       } else if (event.which === 32) {
         params = {};
         params["cycle"] = event.target.id;
