@@ -1,18 +1,18 @@
-defmodule Components.PreReqs do
+defmodule Components.Module do
   use Systems.Reload
   use GenEvent.Behaviour
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.PreReqs, :value)
+    :gen_event.call(entity, Components.Module, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_pre_reqs, new_value})
+    Entity.notify(entity, {:set_module, new_value})
   end
 
   def serialize(entity) do
-    %{"PreReqs" => value(entity)}
+    nil
   end
 
   ### GenEvent API
@@ -24,7 +24,7 @@ defmodule Components.PreReqs do
     {:ok, value, value}
   end
 
-  def handle_event({:set_pre_reqs, new_value}, _value) do
+  def handle_event({:set_module, new_value}, _value) do
     {:ok, new_value }
   end
 

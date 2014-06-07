@@ -17,14 +17,13 @@ defmodule Components.Skills do
   end
 
   def train(entity, skill, _devs, cost) do
-    skill_name = Components.Name.value(skill)
-    Entity.notify(entity, {:train, skill_name, cost})
+    Entity.notify(entity, {:train, skill.name, cost})
     rating = Systems.Trainer.rating(skill, entity)
     Components.Player.send_message(entity, ["scroll", "<p>You spend #{cost} development points to train two handed blade to #{rating}%</p>"])
-    modifier = Components.Cost.value(skill)
-    cost = Systems.Trainer.cost(modifier, rating)
+    cost = Systems.Trainer.cost(skill.cost, rating)
     Components.Player.send_message(entity, ["scroll", "<p>It will cost you #{cost} development points to advance this skill further.</p>"])
     Components.Player.send_message(entity, ["scroll", "<p>You have #{Systems.Trainer.devs(entity)} development points left.</p>"])
+    Entities.save!(entity)
   end
 
   def serialize(entity) do

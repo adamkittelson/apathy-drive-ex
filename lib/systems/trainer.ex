@@ -9,7 +9,7 @@ defmodule Systems.Trainer do
       row = "Level#{String.rjust("#{level}", 3)} -------------------- Cost ----- Rating"
       Components.Player.send_message(character, ["scroll", "<p><span class='blue'>#{row}</span></p>"])
       skills_by_level(room)[level] |> Enum.each fn skill ->
-        skill_name = Components.Name.value(skill) |> String.ljust(26)
+        skill_name = String.ljust(skill.name, 26)
         cost = cost(character, skill)
         if devs < cost do
           cost = "<span class='dark-red'>#{"#{cost}" |> String.ljust(8)}</span>"
@@ -37,7 +37,7 @@ defmodule Systems.Trainer do
       [] ->
         Components.Player.send_message(entity, ["scroll", "<p>You cannot train #{args} here.</p>"])
       [match] ->
-        train(entity, match)
+        train(entity, Components.Module.value(match))
       matches ->
         Components.Player.send_message(entity, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
         Enum.each matches, fn(match) ->
@@ -73,9 +73,8 @@ defmodule Systems.Trainer do
     1000 + devs
   end
 
-  def cost(entity, skill) when is_pid(skill) do
-    modifier = Components.Cost.value(skill)
-    cost(modifier, rating(skill, entity))
+  def cost(entity, skill) when is_atom(skill) do
+    cost(skill.cost, rating(skill, entity))
   end
 
   def cost(modifier, rating) when is_integer(rating) do
@@ -83,8 +82,7 @@ defmodule Systems.Trainer do
   end
 
   def rating(skill, entity) when is_pid(entity) do
-    modifier = Components.Cost.value(skill)
-    rating(modifier, devs_spent(entity, skill))
+    rating(skill.cost, devs_spent(entity, skill))
   end
 
   def rating(modifier, devs_spent) when is_integer(devs_spent) do
@@ -103,17 +101,16 @@ defmodule Systems.Trainer do
 
   def devs_spent(entity, skill) do
     Components.Skills.value(entity)
-    |> Map.get(Components.Name.value(skill), 0)
+    |> Map.get(skill.name, 0)
   end
 
   def skills_by_level(room) do
     room
     |> Components.Trainer.value
     |> Enum.reduce %{}, fn skill_name, skills ->
-         skill = Skills.all[skill_name]
-         level = Components.Level.value(skill)
-         skills = Map.put_new(skills, level, [])
-         Map.put(skills, level, [skill | skills[level]])
+         skill = Skills.find(skill_name)
+         skills = Map.put_new(skills, skill.level, [])
+         Map.put(skills, skill.level, [skill | skills[skill.level]])
        end
   end
 end

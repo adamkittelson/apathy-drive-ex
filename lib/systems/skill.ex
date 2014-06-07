@@ -18,6 +18,7 @@ defmodule Systems.Skill do
       def keywords do
         name |> String.split
       end
+
     end
   end
 
@@ -26,9 +27,7 @@ defmodule Systems.Skill do
       {:ok, skill} = Entity.init
       Entity.add_component(skill, Components.Keywords, __MODULE__.keywords)
       Entity.add_component(skill, Components.Name, __MODULE__.name)
-      Entity.add_component(skill, Components.PreReqs, __MODULE__.prereqs)
-      Entity.add_component(skill, Components.Cost, __MODULE__.cost)
-      Entity.add_component(skill, Components.Level, __MODULE__.level)
+      Entity.add_component(skill, Components.Module, __MODULE__)
       Skills.add(__MODULE__.name, skill)
     end
   end
