@@ -12,18 +12,15 @@ defmodule Commands.Skills do
   end
 
   defp display_skills(entity, [skill1, skill2]) do
-    skill1_rating = Skills.find(skill1)
-                    |> Systems.Trainer.rating(entity)
+    skill1_rating = Skills.find(skill1).base(entity)
 
-    skill2_rating = Skills.find(skill2)
-                    |> Systems.Trainer.rating(entity)
+    skill2_rating = Skills.find(skill2).base(entity)
     message = "#{String.ljust(skill1, 24)}#{String.rjust("#{skill1_rating}", 4)}%        #{String.ljust(skill2, 24)}#{String.rjust("#{skill2_rating}", 4)}%"
     Components.Player.send_message(entity, ["scroll", "<p>#{message}</p>"])
   end
 
   defp display_skills(entity, [skill]) do
-    skill_rating = Skills.find(skill)
-                   |> Systems.Trainer.rating(entity)
+    skill_rating = Skills.find(skill).base(entity)
     message = "#{String.ljust(skill, 24)}#{String.rjust("#{skill_rating}", 4)}%"
     Components.Player.send_message(entity, ["scroll", "<p>#{message}</p>"])
   end

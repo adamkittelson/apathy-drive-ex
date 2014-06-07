@@ -19,6 +19,10 @@ defmodule Systems.Skill do
         name |> String.split
       end
 
+      def base(entity) do
+        Systems.Trainer.rating(__MODULE__, entity)
+      end
+
     end
   end
 

@@ -18,7 +18,7 @@ defmodule Components.Skills do
 
   def train(entity, skill, _devs, cost) do
     Entity.notify(entity, {:train, skill.name, cost})
-    rating = Systems.Trainer.rating(skill, entity)
+    rating = skill.base(entity)
     Components.Player.send_message(entity, ["scroll", "<p>You spend #{cost} development points to train two handed blade to #{rating}%</p>"])
     cost = Systems.Trainer.cost(skill.cost, rating)
     Components.Player.send_message(entity, ["scroll", "<p>It will cost you #{cost} development points to advance this skill further.</p>"])
