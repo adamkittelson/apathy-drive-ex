@@ -13,7 +13,7 @@ defmodule Components.Trainer do
 
   def skills(entity) do
     value(entity)
-    |> Enum.map &(Skills.all[&1])
+    |> Enum.map &(Skills.value[&1])
   end
 
   def serialize(entity) do

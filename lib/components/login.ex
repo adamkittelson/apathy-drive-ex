@@ -81,6 +81,7 @@ defmodule Components.Login do
         {:ok, character} = Entity.init
         Entity.add_component(character, Components.Stats, Components.Stats.value(race))
         Entity.add_component(character, Components.Race, race)
+        Entity.add_component(character, Components.Experience, 0)
         Entity.add_component(character, Components.Name, "")
         Entity.add_component(character, Components.Gender, nil)
         Entity.add_component(character, Components.EyeColor, nil)

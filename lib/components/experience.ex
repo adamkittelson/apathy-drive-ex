@@ -1,18 +1,18 @@
-defmodule Components.Cost do
+defmodule Components.Experience do
   use Systems.Reload
   use GenEvent.Behaviour
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Cost, :value)
+    :gen_event.call(entity, Components.Experience, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_cost, new_value})
+    Entity.notify(entity, {:set_experience, new_value})
   end
 
   def serialize(entity) do
-    %{"Cost" => value(entity)}
+    %{"Experience" => value(entity)}
   end
 
   ### GenEvent API
@@ -24,11 +24,12 @@ defmodule Components.Cost do
     {:ok, value, value}
   end
 
-  def handle_event({:set_cost, new_value}, _value) do
+  def handle_event({:set_experience, new_value}, _value) do
     {:ok, new_value }
   end
 
   def handle_event(_, current_value) do
     {:ok, current_value}
   end
+
 end

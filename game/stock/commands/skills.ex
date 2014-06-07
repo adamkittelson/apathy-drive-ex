@@ -3,29 +3,39 @@ defmodule Commands.Skills do
 
   def keywords, do: ["skills"]
 
-  def execute(entity, _arguments) do
+  def execute(entity, arguments) do
+    arguments = Enum.join(arguments, " ")
     Components.Player.send_message(entity, ["scroll", "<p><span class='white'>Your skills are:</span></p>"])
     Components.Player.send_message(entity, ["scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>"])
     skill_names = Components.Skills.value(entity) |> Map.keys |> Enum.sort
     chunks = get_chunks(skill_names)
-    Enum.each chunks, &display_skills(entity, &1)
+    Enum.each chunks, &display_skills(entity, &1, arguments)
   end
 
-  defp display_skills(entity, [skill1, skill2]) do
-    skill1_rating = Skills.all[skill1]
-                    |> Systems.Trainer.rating(entity)
-
-    skill2_rating = Skills.all[skill2]
-                    |> Systems.Trainer.rating(entity)
-    message = "#{String.ljust(skill1, 24)}#{String.rjust("#{skill1_rating}", 4)}%        #{String.ljust(skill2, 24)}#{String.rjust("#{skill2_rating}", 4)}%"
-    Components.Player.send_message(entity, ["scroll", "<p>#{message}</p>"])
+  defp display_skills(entity, [skill1, skill2], arguments) do
+    Components.Player.send_message(entity, ["scroll", "<p>#{skilltext(entity, skill1, arguments)} #{skilltext(entity, skill2, arguments)}</p>"])
   end
 
-  defp display_skills(entity, [skill]) do
-    skill_rating = Skills.all[skill]
-                   |> Systems.Trainer.rating(entity)
-    message = "#{String.ljust(skill, 24)}#{String.rjust("#{skill_rating}", 4)}%"
-    Components.Player.send_message(entity, ["scroll", "<p>#{message}</p>"])
+  defp display_skills(entity, [skill], arguments) do
+    Components.Player.send_message(entity, ["scroll", "<p>#{skilltext(entity, skill, arguments)}</p>"])
+  end
+
+  defp skilltext(entity, skill, "base") do
+    base_skill_rating = Skills.find(skill).base(entity)
+    modified_skill_rating = Skills.find(skill).modified(entity)
+    skill_difference = modified_skill_rating - base_skill_rating
+    skill_mod = if skill_difference >= 0 do
+                   String.ljust("(+#{skill_difference})", 6)
+                 else
+                   String.ljust("(#{skill_difference})", 6)
+                 end
+
+    String.ljust("#{String.ljust(skill, 24)}#{String.rjust("#{base_skill_rating}", 4)}% #{skill_mod}", 36)
+  end
+
+  defp skilltext(entity, skill, _arguments) do
+    skill_rating = Skills.find(skill).modified(entity)
+    String.ljust("#{String.ljust(skill, 24)}#{String.rjust("#{skill_rating}", 4)}%", 36)
   end
 
   defp get_chunks([]), do: []
