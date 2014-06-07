@@ -23,6 +23,16 @@ defmodule Systems.Skill do
         Systems.Trainer.rating(__MODULE__, entity)
       end
 
+      def modified(entity) do
+        total = Map.keys(modifiers) |> Enum.reduce(0, fn(stat, total) ->
+                                         total + Components.Stats.value(entity)["#{stat}"]
+                                       end)
+
+        average = total / (Map.values(modifiers) |> Enum.sum)
+
+        round(base(entity) * (1 + (average - 40) * 0.02))
+      end
+
     end
   end
 
