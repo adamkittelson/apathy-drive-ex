@@ -48,7 +48,7 @@ defmodule Commands.Score do
   end
 
   defp stattext(entity, stat) do
-    stat_rating = Components.Stats.value(entity)[stat]
+    stat_rating = Systems.Stat.modified(entity, stat)
     String.ljust("<span class='dark-green'>#{String.ljust("#{String.capitalize(stat)}:", 10)}</span> <span class='dark-cyan'>#{String.ljust("#{stat_rating}", 7)}</span>", 18)
   end
 

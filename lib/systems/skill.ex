@@ -25,7 +25,7 @@ defmodule Systems.Skill do
 
       def modified(entity) do
         total = Map.keys(modifiers) |> Enum.reduce(0, fn(stat, total) ->
-                                         total + Components.Stats.value(entity)["#{stat}"]
+                                         total + Systems.Stat.modified(entity, "#{stat}") * modifiers[stat]
                                        end)
 
         average = total / (Map.values(modifiers) |> Enum.sum)
