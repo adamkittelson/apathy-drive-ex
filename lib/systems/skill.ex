@@ -42,7 +42,9 @@ defmodule Systems.Skill do
       Entity.add_component(skill, Components.Keywords, __MODULE__.keywords)
       Entity.add_component(skill, Components.Name, __MODULE__.name)
       Entity.add_component(skill, Components.Module, __MODULE__)
+      Entity.add_component(skill, Components.Help, __MODULE__.help)
       Skills.add(__MODULE__.name, skill)
+      Help.add(skill)
     end
   end
 

@@ -7,7 +7,7 @@ defmodule Commands.Help do
     keyword = Enum.join(arguments, " ")
     case Help.find(keyword) do
       [match] ->
-        Players.send_message(player, ["scroll", Components.Help.value(match)])
+        Players.send_message(player, ["scroll", "<p>#{Components.Help.value(match)}</p>"])
       [] ->
         Players.send_message(player, ["scroll", "<p>Sorry, no help is available for \"#{keyword}\".</p>"])
       matches ->
@@ -23,7 +23,7 @@ defmodule Commands.Help do
     keyword = Enum.join(arguments, " ")
     case Help.find(keyword) do
       [match] ->
-        Components.Player.send_message(entity, ["scroll", Components.Help.value(match)])
+        Components.Player.send_message(entity, ["scroll", "<p>#{Components.Help.value(match)}</p>"])
       [] ->
         Components.Player.send_message(entity, ["scroll", "<p>Sorry, no help is available for \"#{keyword}\".</p>"])
       matches ->
