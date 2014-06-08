@@ -158,7 +158,6 @@ defmodule Systems.Training do
     Entity.add_component(character, Components.LastName, Components.Login.get_last_name(player))
     Entity.add_component(character, Components.Items, [])
     Entity.add_component(character, Components.Limbs, character |> Components.Race.value |> Components.Limbs.value)
-    Entity.add_component(character, Components.Skills, %{})
 
     Components.Gender.value(character, Components.Login.get_gender(player))
     Components.EyeColor.value(character, Components.Login.get_eye_color(player))
