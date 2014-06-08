@@ -89,6 +89,7 @@ defmodule Components.Login do
         Entity.add_component(character, Components.HairLength, nil)
         Entity.add_component(character, Components.AccountID, Components.Login.get_account(player).id)
         Entity.add_component(character, Components.Level, 1)
+        Entity.add_component(character, Components.Skills, %{})
         Entity.add_component(character, Components.HP, Systems.HP.max_hp(character))
         Entity.add_component(character, Components.Online, false)
         Entity.add_component(character, Components.Player, player)

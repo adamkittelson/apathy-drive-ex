@@ -11,6 +11,10 @@ defmodule Components.HP do
     Entity.notify(entity, {:set_hp, new_value})
   end
 
+  def add(entity, amount) do
+    Entity.notify(entity, {:add_hp, amount, Systems.HP.max_hp(entity)})
+  end
+
   def serialize(entity) do
     %{"HP" => value(entity)}
   end
@@ -26,6 +30,10 @@ defmodule Components.HP do
 
   def handle_event({:set_hp, new_value}, _value) do
     {:ok, new_value }
+  end
+
+  def handle_event({:add_hp, amount, max}, value) do
+    {:ok, Enum.min([value + amount, max]) }
   end
 
   def handle_event(_, current_value) do
