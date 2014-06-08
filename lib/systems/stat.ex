@@ -1,8 +1,20 @@
 defmodule Systems.Stat do
   use Systems.Reload
 
+  def base(entity) do
+    Components.Stats.value(entity)
+  end
+
   def base(entity, stat) do
     Components.Stats.value(entity)[stat]
+  end
+
+  def modified(entity) do
+    base(entity)
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(stat, stats) ->
+         Map.put(stats, stat, modified(entity, stat))
+       end)
   end
 
   def modified(entity, stat) do

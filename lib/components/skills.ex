@@ -17,9 +17,21 @@ defmodule Components.Skills do
   end
 
   def train(entity, skill, _devs, cost) do
+    old_stats = Systems.Stat.modified(entity)
+
     Entity.notify(entity, {:train, skill.name, cost})
     rating = skill.base(entity)
     Components.Player.send_message(entity, ["scroll", "<p>You spend #{cost} development points to train two handed blade to #{rating}%</p>"])
+
+    new_stats = Systems.Stat.modified(entity)
+    new_stats |> Map.keys
+              |> Enum.each fn(stat) ->
+                   difference = new_stats[stat] - old_stats[stat]
+                   if difference > 0 do
+                     Components.Player.send_message(entity, ["scroll", "<p>Your #{stat} increases by #{difference}!</p>"])
+                   end
+                 end
+
     cost = Systems.Trainer.cost(skill.cost, rating)
     Components.Player.send_message(entity, ["scroll", "<p>It will cost you #{cost} development points to advance this skill further.</p>"])
     Components.Player.send_message(entity, ["scroll", "<p>You have #{Systems.Trainer.devs(entity)} development points left.</p>"])
