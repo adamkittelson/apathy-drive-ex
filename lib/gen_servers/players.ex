@@ -57,7 +57,9 @@ defmodule Players do
 
   def handle_cast({:send_message, player, message}, players) do
     connection = Components.Connection.get_connection(player)
-    send connection, Jazz.encode!(message)
+    if connection do
+      send connection, Jazz.encode!(message)
+    end
     {:noreply, players}
   end
 

@@ -3,6 +3,10 @@ defmodule Components.Connection do
   use GenEvent.Behaviour
 
   ### Public API
+  def value(nil) do
+    nil
+  end
+
   def value(entity) do
     :gen_event.call(entity, Components.Connection, :get_connection)
   end

@@ -50,6 +50,8 @@
           return $(message[1]).html(message[2]);
         case "set field":
           return $(message[1]).val(message[2]);
+        case "update prompt":
+          return $("#prompt").text(message[1]);
         default:
           return addToScroll("#scroll", message[1]);
       }

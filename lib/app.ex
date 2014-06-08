@@ -41,6 +41,7 @@ defmodule ApathyDrive do
     end
 
     Systems.LairSpawning.initialize
+    Systems.HPRegen.initialize
 
     # start weber application
     Weber.run_weber
