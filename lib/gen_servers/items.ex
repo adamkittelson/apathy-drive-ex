@@ -1,24 +1,24 @@
 defmodule Items do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(item) do
     id = Components.ID.value(item)
-    :gen_server.cast(:items, {:add, id, item})
+    GenServer.cast(:items, {:add, id, item})
   end
 
   def remove(item) do
     id = Components.ID.value(item)
-    :gen_server.cast(:items, {:remove, id})
+    GenServer.cast(:items, {:remove, id})
   end
 
   def all do
-    :gen_server.call(:items, :all)
+    GenServer.call(:items, :all)
   end
 
   def find_by_id(id) do
-    :gen_server.call(:items, {:get, id})
+    GenServer.call(:items, {:get, id})
   end
 
   def find_all_by_name(name) do
@@ -31,11 +31,11 @@ defmodule Items do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :items}, __MODULE__, [], [])
+    GenServer.start_link(Items, HashDict.new, name: :items)
   end
 
-  def init(_) do
-    {:ok, HashDict.new}
+  def init(items) do
+    {:ok, items}
   end
 
   def handle_cast({:add, id, item}, items) do

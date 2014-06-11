@@ -1,22 +1,22 @@
 defmodule Components do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(component, entity) do
-    :gen_server.cast(:components, {:add, component, entity, component.value(entity)})
+    GenServer.cast(:components, {:add, component, entity, component.value(entity)})
   end
 
   def remove(component, entity) do
-    :gen_server.cast(:components, {:remove, component, entity, component.value(entity)})
+    GenServer.cast(:components, {:remove, component, entity, component.value(entity)})
   end
 
   def all do
-    :gen_server.call(:components, :all)
+    GenServer.call(:components, :all)
   end
 
   def all(component) do
-    :gen_server.call(:components, {:all, component})
+    GenServer.call(:components, {:all, component})
   end
 
   def find_by(component, value) do
@@ -24,7 +24,7 @@ defmodule Components do
   end
 
   def find_all_by(component, value) do
-    :gen_server.call(:components, {:find_by, component, value})
+    GenServer.call(:components, {:find_by, component, value})
   end
 
   def find_by(components, component, value) do
@@ -42,11 +42,11 @@ defmodule Components do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :components}, __MODULE__, [], [])
+    GenServer.start_link(Components, HashDict.new, name: :components)
   end
 
-  def init(_) do
-    {:ok, HashDict.new}
+  def init(components) do
+    {:ok, components}
   end
 
   def handle_cast({:add, component, entity, value}, components) do

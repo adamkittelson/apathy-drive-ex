@@ -1,24 +1,24 @@
 defmodule ItemTemplates do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(item) do
     id = Components.ID.value(item)
-    :gen_server.cast(:item_templates, {:add, id, item})
+    GenServer.cast(:item_templates, {:add, id, item})
   end
 
   def remove(item) do
     id = Components.ID.value(item)
-    :gen_server.cast(:item_templates, {:remove, id})
+    GenServer.cast(:item_templates, {:remove, id})
   end
 
   def all do
-    :gen_server.call(:item_templates, :all)
+    GenServer.call(:item_templates, :all)
   end
 
   def find_by_id(id) do
-    :gen_server.call(:item_templates, {:get, id})
+    GenServer.call(:item_templates, {:get, id})
   end
 
   def find_all_by_name(name) do
@@ -31,11 +31,11 @@ defmodule ItemTemplates do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :item_templates}, __MODULE__, [], [])
+    GenServer.start_link(ItemTemplates, HashDict.new, name: :item_templates)
   end
 
-  def init(_) do
-    {:ok, HashDict.new}
+  def init(item_templates) do
+    {:ok, item_templates}
   end
 
   def handle_cast({:add, id, item}, item_templates) do

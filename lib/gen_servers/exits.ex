@@ -1,24 +1,24 @@
 defmodule Exits do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(exit_pid) do
     id = Components.ID.value(exit_pid)
-    :gen_server.cast(:exits, {:add, id, exit_pid})
+    GenServer.cast(:exits, {:add, id, exit_pid})
   end
 
   def remove(exit_pid) do
     id = Components.ID.value(exit_pid)
-    :gen_server.cast(:exits, {:remove, id})
+    GenServer.cast(:exits, {:remove, id})
   end
 
   def all do
-    :gen_server.call(:exits, :all)
+    GenServer.call(:exits, :all)
   end
 
   def find_by_id(id) do
-    :gen_server.call(:exits, {:get, id})
+    GenServer.call(:exits, {:get, id})
   end
 
   def find_all_by_name(name) do
@@ -31,11 +31,11 @@ defmodule Exits do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :exits}, __MODULE__, [], [])
+    GenServer.start_link(Exits, HashDict.new, name: :exits)
   end
 
-  def init(_) do
-    {:ok, HashDict.new}
+  def init(exits) do
+    {:ok, exits}
   end
 
   def handle_cast({:add, id, exit_pid}, exits) do

@@ -1,24 +1,24 @@
 defmodule MonsterTemplates do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(monster) do
     id = Components.ID.value(monster)
-    :gen_server.cast(:monster_templates, {:add, id, monster})
+    GenServer.cast(:monster_templates, {:add, id, monster})
   end
 
   def remove(monster_template) do
     id = Components.ID.value(monster_template)
-    :gen_server.cast(:monster_templates, {:remove, id})
+    GenServer.cast(:monster_templates, {:remove, id})
   end
 
   def all do
-    :gen_server.call(:monster_templates, :all)
+    GenServer.call(:monster_templates, :all)
   end
 
   def find_by_id(id) do
-    :gen_server.call(:monster_templates, {:get, id})
+    GenServer.call(:monster_templates, {:get, id})
   end
 
   def find_all_by_name(name) do
@@ -31,11 +31,11 @@ defmodule MonsterTemplates do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :monster_templates}, __MODULE__, [], [])
+    GenServer.start_link(MonsterTempaltes, HashDict.new, name: :monster_templates)
   end
 
-  def init(_) do
-    {:ok, HashDict.new}
+  def init(monster_templates) do
+    {:ok, monster_templates}
   end
 
   def handle_cast({:add, id, monster}, monster_templates) do

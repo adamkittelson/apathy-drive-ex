@@ -1,19 +1,19 @@
 defmodule Rooms do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(room) do
     id = Components.ID.value(room)
-    :gen_server.cast(:rooms, {:add, id, room})
+    GenServer.cast(:rooms, {:add, id, room})
   end
 
   def all do
-    :gen_server.call(:rooms, :all)
+    GenServer.call(:rooms, :all)
   end
 
   def find_by_id(id) do
-    :gen_server.call(:rooms, {:get, id})
+    GenServer.call(:rooms, {:get, id})
   end
 
   def find_all_by_name(name) do
@@ -26,11 +26,11 @@ defmodule Rooms do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :rooms}, __MODULE__, [], [])
+    GenServer.start_link(Rooms, HashDict.new, name: :rooms)
   end
 
-  def init(_) do
-    {:ok, HashDict.new}
+  def init(rooms) do
+    {:ok, rooms}
   end
 
   def handle_cast({:add, id, room}, rooms) do

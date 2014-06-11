@@ -1,10 +1,10 @@
 defmodule Players do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def connected(connection) do
-    :gen_server.cast(:players, {:connected, connection})
+    GenServer.cast(:players, {:connected, connection})
   end
 
   def disconnected(connection) do
@@ -14,29 +14,29 @@ defmodule Players do
       Components.Online.value(character, false)
       Components.Player.value(character, nil)
     end
-    :gen_server.cast(:players, {:disconnected, player})
+    GenServer.cast(:players, {:disconnected, player})
   end
 
   def send_message(player, message) do
-    :gen_server.cast(:players, {:send_message, player, message})
+    GenServer.cast(:players, {:send_message, player, message})
   end
 
   def find_by_connection(connection) do
-    :gen_server.call(:players, {:find_by_connection, connection})
+    GenServer.call(:players, {:find_by_connection, connection})
   end
 
   def all do
-    :gen_server.call(:players, :all)
+    GenServer.call(:players, :all)
   end
 
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :players}, __MODULE__, [], [])
+    GenServer.start_link(Players, [], name: :players)
   end
 
-  def init([]) do
-    {:ok, []}
+  def init(players) do
+    {:ok, players}
   end
 
   def handle_cast({:connected, connection}, players) do
