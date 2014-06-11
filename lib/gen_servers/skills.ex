@@ -20,7 +20,12 @@ defmodule Skills do
   end
 
   def find(key) do
-    value[key] |> Components.Module.value
+    skill = value[key]
+    if skill do
+      Components.Module.value(skill)
+    else
+       Skills.NotFound
+    end
   end
 
   # GenServer API

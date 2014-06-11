@@ -1,6 +1,30 @@
 defmodule Systems.Skill do
   use Systems.Reload
 
+  def base(entity) do
+    Components.Skills.value(entity)
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(skill, skills) ->
+         Map.put(skills, skill, base(entity, skill))
+       end)
+  end
+
+  def base(entity, skill) do
+    Skills.find(skill).base(entity)
+  end
+
+  def modified(entity) do
+    Components.Skills.value(entity)
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(skill, skills) ->
+         Map.put(skills, skill, modified(entity, skill))
+       end)
+  end
+
+  def modified(entity, skill) do
+    Skills.find(skill).modified(entity)
+  end
+
   defmacro __using__(_opts) do
     quote do
       use Systems.Reload
@@ -24,13 +48,18 @@ defmodule Systems.Skill do
       end
 
       def modified(entity) do
-        total = Map.keys(modifiers) |> Enum.reduce(0, fn(stat, total) ->
-                                         total + Systems.Stat.modified(entity, "#{stat}") * modifiers[stat]
-                                       end)
+        base = base(entity)
+        if base > 0 do
+          total = Map.keys(modifiers) |> Enum.reduce(0, fn(stat, total) ->
+                                           total + Systems.Stat.modified(entity, "#{stat}") * modifiers[stat]
+                                         end)
 
-        average = total / (Map.values(modifiers) |> Enum.sum)
+          average = total / (Map.values(modifiers) |> Enum.sum)
 
-        round(base(entity) * (1 + (average - 40) * 0.02))
+          round(base * (1 + (average - 40) * 0.02))
+        else
+          0
+        end
       end
 
     end
