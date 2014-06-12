@@ -1,14 +1,14 @@
 defmodule Abilities do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(ability_name, ability) do
-    :gen_server.cast(:abilities, {:add, ability_name, ability})
+    GenServer.cast(:abilities, {:add, ability_name, ability})
   end
 
   def value do
-    :gen_server.call(:abilities, :value)
+    GenServer.call(:abilities, :value)
   end
 
   def all do
@@ -28,11 +28,11 @@ defmodule Abilities do
 
   # GenServer API
   def start_link do
-    :gen_server.start_link({:local, :abilities}, __MODULE__, %{}, [])
+    GenServer.start_link(Abilities, %{}, name: :abilities)
   end
 
-  def init(%{}) do
-    {:ok, %{}}
+  def init(value) do
+    {:ok, value}
   end
 
   def handle_cast({:add, ability_name, ability}, abilities) do

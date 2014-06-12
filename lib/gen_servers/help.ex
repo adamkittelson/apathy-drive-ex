@@ -1,14 +1,14 @@
 defmodule Help do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(entity) do
-    :gen_server.cast(:help, {:add, entity})
+    GenServer.cast(:help, {:add, entity})
   end
 
   def all do
-    :gen_server.call(:help, :all)
+    GenServer.call(:help, :all)
   end
 
   def find(query) do
@@ -17,11 +17,11 @@ defmodule Help do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :help}, __MODULE__, [], [])
+    GenServer.start_link(Help, [], name: :help)
   end
 
-  def init([]) do
-    {:ok, []}
+  def init(help) do
+    {:ok, help}
   end
 
   def handle_cast({:add, entity}, help) do

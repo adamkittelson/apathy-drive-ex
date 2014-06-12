@@ -1,14 +1,14 @@
 defmodule Components.ID do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.ID, :value)
+    GenEvent.call(entity, Components.ID, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_id, new_value})
+    GenEvent.notify(entity, {:set_id, new_value})
   end
 
   def serialize(_entity) do

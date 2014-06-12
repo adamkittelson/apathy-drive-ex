@@ -1,14 +1,14 @@
 defmodule Components.Lair do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Lair, :value)
+    GenEvent.call(entity, Components.Lair, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_lair, new_value})
+    GenEvent.notify(entity, {:set_lair, new_value})
   end
 
   def size(entity) do
@@ -28,7 +28,7 @@ defmodule Components.Lair do
   end
 
   def set_last_spawned_at(entity) do
-    Entity.notify(entity, :set_last_spawned_at)
+    GenEvent.notify(entity, :set_last_spawned_at)
   end
 
   def monster_templates(entity) do

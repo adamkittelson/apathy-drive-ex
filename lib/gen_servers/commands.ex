@@ -1,23 +1,23 @@
 defmodule Commands do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(command) do
-    :gen_server.cast(:commands, {:add, command})
+    GenServer.cast(:commands, {:add, command})
   end
 
   def all do
-    :gen_server.call(:commands, :all)
+    GenServer.call(:commands, :all)
   end
 
   # GenServer API
   def start_link do
-    :gen_server.start_link({:local, :commands}, __MODULE__, [], [])
+    GenServer.start_link(Commands, [], name: :commands)
   end
 
-  def init([]) do
-    {:ok, []}
+  def init(commands) do
+    {:ok, commands}
   end
 
   def handle_cast({:add, command}, commands) do

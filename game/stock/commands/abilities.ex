@@ -3,8 +3,7 @@ defmodule Commands.Abilities do
 
   def keywords, do: ["abilities", "spells"]
 
-  def execute(entity, arguments) do
-    arguments = Enum.join(arguments, " ")
+  def execute(entity, _arguments) do
     Components.Player.send_message(entity, ["scroll", "<p><span class='white'>Your abilities are:</span></p>"])
     Components.Player.send_message(entity, ["scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>"])
     ability_names = Systems.Ability.abilities(entity) |> Enum.map &(Components.Name.value(&1))
@@ -13,14 +12,14 @@ defmodule Commands.Abilities do
   end
 
   defp display_abilities(entity, [ability1, ability2]) do
-    Components.Player.send_message(entity, ["scroll", "<p>#{abilitytext(entity, ability1)} #{abilitytext(entity, ability2)}</p>"])
+    Components.Player.send_message(entity, ["scroll", "<p>#{abilitytext(ability1)} #{abilitytext(ability2)}</p>"])
   end
 
   defp display_abilities(entity, [ability]) do
-    Components.Player.send_message(entity, ["scroll", "<p>#{abilitytext(entity, ability)}</p>"])
+    Components.Player.send_message(entity, ["scroll", "<p>#{abilitytext(ability)}</p>"])
   end
 
-  defp abilitytext(entity, ability) do
+  defp abilitytext(ability) do
     String.ljust("#{ability}", 36)
   end
 

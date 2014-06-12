@@ -1,14 +1,14 @@
 defmodule Components.Shop do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Shop, :value)
+    GenEvent.call(entity, Components.Shop, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_shop, new_value})
+    GenEvent.notify(entity, {:set_shop, new_value})
   end
 
   def items(entity) do

@@ -1,14 +1,14 @@
 defmodule Components.Experience do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Experience, :value)
+    GenEvent.call(entity, Components.Experience, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_experience, new_value})
+    GenEvent.notify(entity, {:set_experience, new_value})
   end
 
   def serialize(entity) do

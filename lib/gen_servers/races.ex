@@ -1,14 +1,14 @@
 defmodule Races do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(race) do
-    :gen_server.cast(:races, {:add, race})
+    GenServer.cast(:races, {:add, race})
   end
 
   def all do
-    :gen_server.call(:races, :all)
+    GenServer.call(:races, :all)
   end
 
   def find_by_name(name) do
@@ -19,11 +19,11 @@ defmodule Races do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :races}, __MODULE__, [], [])
+    GenServer.start_link(Races, [], name: :races)
   end
 
-  def init([]) do
-    {:ok, []}
+  def init(races) do
+    {:ok, races}
   end
 
   def handle_cast({:add, race}, races) do

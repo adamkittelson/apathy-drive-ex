@@ -1,18 +1,18 @@
 defmodule Characters do
   use Systems.Reload
-  use GenServer.Behaviour
+  use GenServer
 
   # Public API
   def add(character) do
-    :gen_server.cast(:characters, {:add, character})
+    GenServer.cast(:characters, {:add, character})
   end
 
   def remove(character) do
-    :gen_server.cast(:characters, {:remove, character})
+    GenServer.cast(:characters, {:remove, character})
   end
 
   def all do
-    :gen_server.call(:characters, :all)
+    GenServer.call(:characters, :all)
   end
 
   def name_taken?(name) do
@@ -39,18 +39,18 @@ defmodule Characters do
 
   # GenServer API
   def start_link() do
-    :gen_server.start_link({:local, :characters}, __MODULE__, [], [])
+    GenServer.start_link(Characters, [], name: :characters)
   end
 
-  def init([]) do
-    {:ok, []}
+  def init(value) do
+    {:ok, value}
   end
 
   def handle_cast({:add, character}, characters) do
     {:noreply, [character | characters] }
   end
 
-  def handle_cast({:remove, character}, characters) do
+  def handle_cast({:remove, character}, _characters) do
     {:noreply, List.delete(character) }
   end
 

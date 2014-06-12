@@ -1,18 +1,18 @@
 defmodule Components.Destination do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Destination, :value)
+    GenEvent.call(entity, Components.Destination, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_destination, new_value})
+    GenEvent.notify(entity, {:set_destination, new_value})
   end
 
   def get_destination(entity) do
-    :gen_event.call(entity, Components.Destination, :get_destination)
+    GenEvent.call(entity, Components.Destination, :get_destination)
   end
 
   def set_destination(entity, room_pid) do

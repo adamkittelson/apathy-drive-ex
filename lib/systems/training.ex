@@ -5,7 +5,7 @@ defmodule Systems.Training do
     race       = Components.Race.value(character)
     race_name  = Components.Name.get_name(race)
 
-    Entity.notify(player, {:training, character})
+    GenEvent.notify(player, {:training, character})
 
     Players.send_message(player, ["clear scroll"])
     Players.send_message(player, ["scroll",
