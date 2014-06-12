@@ -11,7 +11,7 @@ defmodule Components.Module do
     GenEvent.notify(entity, {:set_module, new_value})
   end
 
-  def serialize(entity) do
+  def serialize(_entity) do
     nil
   end
 

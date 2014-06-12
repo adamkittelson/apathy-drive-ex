@@ -50,7 +50,7 @@ defmodule Characters do
     {:noreply, [character | characters] }
   end
 
-  def handle_cast({:remove, character}, characters) do
+  def handle_cast({:remove, character}, _characters) do
     {:noreply, List.delete(character) }
   end
 
