@@ -1,10 +1,10 @@
 defmodule Components.StartRoom do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.StartRoom, :value)
+    GenEvent.call(entity, Components.StartRoom, :value)
   end
 
   def serialize(entity) do

@@ -1,14 +1,14 @@
 defmodule Components.Skills do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Skills, :value)
+    GenEvent.call(entity, Components.Skills, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_skills, new_value})
+    GenEvent.notify(entity, {:set_skills, new_value})
   end
 
   def train(entity, _skill, devs, cost) when devs < cost do
@@ -19,7 +19,7 @@ defmodule Components.Skills do
   def train(entity, skill, _devs, cost) do
     old_stats = Systems.Stat.modified(entity)
 
-    Entity.notify(entity, {:train, skill.name, cost})
+    GenEvent.notify(entity, {:train, skill.name, cost})
     rating = skill.base(entity)
     Components.Player.send_message(entity, ["scroll", "<p>You spend #{cost} development points to train two handed blade to #{rating}%</p>"])
 

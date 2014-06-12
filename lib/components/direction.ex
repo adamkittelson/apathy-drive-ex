@@ -1,18 +1,18 @@
 defmodule Components.Direction do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Direction, :get_direction)
+    GenEvent.call(entity, Components.Direction, :get_direction)
   end
-  
+
   def get_direction(entity) do
     value(entity)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_direction, new_value})
+    GenEvent.notify(entity, {:set_direction, new_value})
   end
 
   def serialize(entity) do

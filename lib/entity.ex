@@ -3,25 +3,21 @@ defmodule Entity do
 
   ### Public API
   def init do
-    :gen_event.start()
+    GenEvent.start
   end
 
   def add_component(pid, component, args) do
-    :gen_event.add_handler(pid, component, args)
+    GenEvent.add_handler(pid, component, args)
     Components.add(component, pid)
   end
 
   def remove_component(pid, component) do
-    :gen_event.delete_handler(pid, component, [])
+    GenEvent.remove_handler(pid, component, [])
     Components.remove(component, pid)
   end
 
-  def notify(pid, event) do
-    :gen_event.notify(pid, event)
-  end
-
   def list_components(entity) do
-    :gen_event.which_handlers(entity)
+    GenEvent.which_handlers(entity)
   end
 
   def has_component?(entity, component) do
@@ -40,7 +36,7 @@ defmodule Entity do
   end
 
   def add_to_type_collection(entity) do
-    if Enum.member?(:gen_event.which_handlers(entity), Components.Types) do
+    if Enum.member?(list_components(entity), Components.Types) do
       Enum.each(Components.Types.get_types(entity), fn(type) ->
         module = type |> Inflex.pluralize |> Inflex.camelize
         :"Elixir.#{module}".add(entity)
@@ -49,7 +45,7 @@ defmodule Entity do
   end
 
   def remove_from_type_collection(entity) do
-    if Enum.member?(:gen_event.which_handlers(entity), Components.Types) do
+    if Enum.member?(list_components(entity), Components.Types) do
       Enum.each(Components.Types.get_types(entity), fn(type) ->
         module = type |> Inflex.pluralize |> Inflex.camelize
         :"Elixir.#{module}".remove(entity)

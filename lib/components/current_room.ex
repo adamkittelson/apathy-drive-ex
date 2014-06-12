@@ -1,18 +1,18 @@
 defmodule Components.CurrentRoom do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.CurrentRoom, :value)
+    GenEvent.call(entity, Components.CurrentRoom, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_current_room, new_value})
+    GenEvent.notify(entity, {:set_current_room, new_value})
   end
 
   def get_current_room(entity) do
-    :gen_event.call(entity, Components.CurrentRoom, :get_current_room)
+    GenEvent.call(entity, Components.CurrentRoom, :get_current_room)
   end
 
   def set_current_room(entity, room_pid) do

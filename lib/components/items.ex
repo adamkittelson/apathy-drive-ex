@@ -1,10 +1,10 @@
 defmodule Components.Items do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Items, :value)
+    GenEvent.call(entity, Components.Items, :value)
   end
 
   def get_items(entity) do
@@ -12,15 +12,15 @@ defmodule Components.Items do
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_items, new_value})
+    GenEvent.notify(entity, {:set_items, new_value})
   end
 
   def add_item(entity, item) do
-    Entity.notify(entity, {:add_item, Components.ID.value(item)})
+    GenEvent.notify(entity, {:add_item, Components.ID.value(item)})
   end
 
   def remove_item(entity, item) do
-    Entity.notify(entity, {:remove_item, Components.ID.value(item)})
+    GenEvent.notify(entity, {:remove_item, Components.ID.value(item)})
   end
 
   def serialize(entity) do

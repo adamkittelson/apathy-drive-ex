@@ -1,6 +1,6 @@
 defmodule Components.Connection do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(nil) do
@@ -8,7 +8,7 @@ defmodule Components.Connection do
   end
 
   def value(entity) do
-    :gen_event.call(entity, Components.Connection, :get_connection)
+    GenEvent.call(entity, Components.Connection, :get_connection)
   end
 
   def get_connection(entity) do

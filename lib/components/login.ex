@@ -2,37 +2,37 @@ Code.ensure_compiled(Accounts)
 
 defmodule Components.Login do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(player) do
-    :gen_event.call(player, Components.Login, :value)
+    GenEvent.call(player, Components.Login, :value)
   end
 
   def get_step(player) do
-    :gen_event.call(player, Components.Login, :get_step)
+    GenEvent.call(player, Components.Login, :get_step)
   end
 
   def intro(player) do
-    Entity.notify(player, {:intro})
+    GenEvent.notify(player, {:intro})
     Players.send_message(player, ["scroll", "<p>Please enter your email address to log in or 'new' to create a new account: <input id='email' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#email"])
   end
 
   def create_account_request_email(player) do
-    Entity.notify(player, :create_account_request_email)
+    GenEvent.notify(player, :create_account_request_email)
     Players.send_message(player, ["scroll", "<p>Please enter the email address you would like to use: <input id='email' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#email"])
   end
 
   def sign_in_get_account(player, email) do
-    Entity.notify(player, {:sign_in_set_email, email})
+    GenEvent.notify(player, {:sign_in_set_email, email})
     Players.send_message(player, ["scroll", "<p>Please enter your password: <input id='password' type='password' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#password"])
   end
 
   def sign_in_check_password(player, password) do
-    email = :gen_event.call(player, Components.Login, :get_email)
+    email = GenEvent.call(player, Components.Login, :get_email)
     account = Accounts.find(email, password)
     if account do
       display_character_select(player, account)
@@ -44,7 +44,7 @@ defmodule Components.Login do
 
   def display_character_select(player, account) do
     Players.send_message(player, ["clear scroll"])
-    Entity.notify(player, {:sign_in_set_account, account})
+    GenEvent.notify(player, {:sign_in_set_account, account})
     Players.send_message(player, ["scroll", "\n<p><span class='dark-yellow underline'>Characters</span></p>\n\n"])
     Enum.each(Characters.for_account(account), fn(character) ->
       name  = Components.Name.get_name(character)
@@ -57,7 +57,7 @@ defmodule Components.Login do
   end
 
   def display_race_select(player) do
-    Entity.notify(player, :create_character_request_race)
+    GenEvent.notify(player, :create_character_request_race)
     Players.send_message(player, ["scroll", "\n\n<p><span class='white'>Please choose a race from the following list:</span></p>"])
     Enum.sort(Races.all, &(Components.Name.value(&1) < Components.Name.value(&2)))
     |> Enum.each fn(race) ->
@@ -113,14 +113,14 @@ defmodule Components.Login do
     if account do
       sign_in_get_account(player, email)
     else
-      Entity.notify(player, {:create_account_set_email, email})
+      GenEvent.notify(player, {:create_account_set_email, email})
       Players.send_message(player, ["scroll", "<p>Please enter the password you would like to use: <input id='password' type='password' class='prompt'></input></p>"])
       Players.send_message(player, ["focus", "#password"])
     end
   end
 
   def create_account_set_password(player, password) do
-    Entity.notify(player, {:create_account_set_password, password})
+    GenEvent.notify(player, {:create_account_set_password, password})
     Players.send_message(player, ["scroll", "<p>Please confirm your new password: <input id='password-confirmation' type='password' class='prompt'></input></p>"])
     Players.send_message(player, ["focus", "#password-confirmation"])
   end
@@ -128,103 +128,103 @@ defmodule Components.Login do
   def create_account_finish(player, password) do
     if password_confirmed?(player, password) do
       Players.send_message(player, ["scroll", "<p>Welcome!</p>"])
-      account = %Accounts{ :email    => :gen_event.call(player, Components.Login, :get_email),
-                           :password =>  "#{:gen_event.call(player, Components.Login, :get_password)}",
-                           :salt     =>  "#{:gen_event.call(player, Components.Login, :get_salt)}"
+      account = %Accounts{ :email    => GenEvent.call(player, Components.Login, :get_email),
+                           :password =>  "#{GenEvent.call(player, Components.Login, :get_password)}",
+                           :salt     =>  "#{GenEvent.call(player, Components.Login, :get_salt)}"
       }
       account = Repo.insert(account)
       display_character_select(player, account)
     else
       Players.send_message(player, ["scroll", "<p>Passwords did not match.</p>"])
-      email = :gen_event.call(player, Components.Login, :get_email)
+      email = GenEvent.call(player, Components.Login, :get_email)
       create_account_set_email(player, email)
     end
   end
 
   def password_confirmed?(player, password_confirmation) do
-    password = :gen_event.call(player, Components.Login, :get_password)
-    salt     = :gen_event.call(player, Components.Login, :get_salt)
+    password = GenEvent.call(player, Components.Login, :get_password)
+    salt     = GenEvent.call(player, Components.Login, :get_salt)
     {:ok, password} == :bcrypt.hashpw(password_confirmation, salt)
   end
 
   def get_race(player) do
-    :gen_event.call(player, Components.Login, :get_race)
+    GenEvent.call(player, Components.Login, :get_race)
   end
 
   def get_character(player) do
-    :gen_event.call(player, Components.Login, :get_character)
+    GenEvent.call(player, Components.Login, :get_character)
   end
 
   def get_cp(player) do
-    :gen_event.call(player, Components.Login, :get_cp)
+    GenEvent.call(player, Components.Login, :get_cp)
   end
 
   def get_stat(player, stat_name) do
-    :gen_event.call(player, Components.Login, {:get_stat, stat_name})
+    GenEvent.call(player, Components.Login, {:get_stat, stat_name})
   end
 
   def set_stat(player, stat_name, stat) do
-    Entity.notify(player, {:set_stat, stat_name, stat})
+    GenEvent.notify(player, {:set_stat, stat_name, stat})
   end
 
   def get_hair_length(player) do
-    :gen_event.call(player, Components.Login, :get_hair_length)
+    GenEvent.call(player, Components.Login, :get_hair_length)
   end
 
   def set_hair_length(player, hair_length) do
-    Entity.notify(player, {:set_hair_length, hair_length})
+    GenEvent.notify(player, {:set_hair_length, hair_length})
   end
 
   def get_hair_color(player) do
-    :gen_event.call(player, Components.Login, :get_hair_color)
+    GenEvent.call(player, Components.Login, :get_hair_color)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_login, new_value})
+    GenEvent.notify(entity, {:set_login, new_value})
   end
 
   def set_hair_color(player, hair_color) do
-    Entity.notify(player, {:set_hair_color, hair_color})
+    GenEvent.notify(player, {:set_hair_color, hair_color})
   end
 
   def get_eye_color(player) do
-    :gen_event.call(player, Components.Login, :get_eye_color)
+    GenEvent.call(player, Components.Login, :get_eye_color)
   end
 
   def set_eye_color(player, eye_color) do
-    Entity.notify(player, {:set_eye_color, eye_color})
+    GenEvent.notify(player, {:set_eye_color, eye_color})
   end
 
   def get_gender(player) do
-    :gen_event.call(player, Components.Login, :get_gender)
+    GenEvent.call(player, Components.Login, :get_gender)
   end
 
   def set_gender(player, gender) do
-    Entity.notify(player, {:set_gender, gender})
+    GenEvent.notify(player, {:set_gender, gender})
   end
 
   def get_name(player) do
-    :gen_event.call(player, Components.Login, :get_name)
+    GenEvent.call(player, Components.Login, :get_name)
   end
 
   def get_last_name(player) do
-    :gen_event.call(player, Components.Login, :get_last_name)
+    GenEvent.call(player, Components.Login, :get_last_name)
   end
 
   def get_account(player) do
-    :gen_event.call(player, Components.Login, :get_account)
+    GenEvent.call(player, Components.Login, :get_account)
   end
 
   def set_name(player, name) do
-    Entity.notify(player, {:set_name, name})
+    GenEvent.notify(player, {:set_name, name})
   end
 
   def set_last_name(player, name) do
-    Entity.notify(player, {:set_last_name, name})
+    GenEvent.notify(player, {:set_last_name, name})
   end
 
   def set_cp(player, cp) do
-    Entity.notify(player, {:set_cp, cp})
+    GenEvent.notify(player, {:set_cp, cp})
   end
 
   def select_character(player, character_name) do
@@ -238,7 +238,7 @@ defmodule Components.Login do
   end
 
   def login(player, character) do
-    Entity.notify(player, {:login, character})
+    GenEvent.notify(player, {:login, character})
     Components.Online.value(character, true)
     Components.Player.value(character, player)
     Components.Player.send_message(character, ["clear scroll"])

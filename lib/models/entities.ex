@@ -23,7 +23,7 @@ defmodule Entities do
       Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)
     end
     Entity.add_to_type_collection(entity)
-    if Enum.member?(:gen_event.which_handlers(entity), Components.Help) do
+    if Entity.has_component?(entity, Components.Help) do
       Help.add(entity)
     end
   end
@@ -53,7 +53,7 @@ defmodule Entities do
     end
     Entity.remove_from_type_collection(entity_pid)
     Entity.list_components(entity_pid) |> Enum.each(&(Entity.remove_component(entity_pid, &1)))
-    :gen_event.stop(entity_pid)
+    GenEvent.stop(entity_pid)
   end
 
 end

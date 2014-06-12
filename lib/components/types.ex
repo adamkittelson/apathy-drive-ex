@@ -1,10 +1,10 @@
 defmodule Components.Types do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Types, :get_types)
+    GenEvent.call(entity, Components.Types, :get_types)
   end
 
   def get_types(entity) do
@@ -12,7 +12,7 @@ defmodule Components.Types do
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_types, new_value})
+    GenEvent.notify(entity, {:set_types, new_value})
   end
 
   def serialize(entity) do

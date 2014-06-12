@@ -1,14 +1,14 @@
 defmodule Components.Slot do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.Slot, :get_slot)
+    GenEvent.call(entity, Components.Slot, :get_slot)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_slot, new_value})
+    GenEvent.notify(entity, {:set_slot, new_value})
   end
 
   def serialize(entity) do

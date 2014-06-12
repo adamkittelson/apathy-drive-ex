@@ -1,18 +1,18 @@
 defmodule Components.HP do
   use Systems.Reload
-  use GenEvent.Behaviour
+  use GenEvent
 
   ### Public API
   def value(entity) do
-    :gen_event.call(entity, Components.HP, :value)
+    GenEvent.call(entity, Components.HP, :value)
   end
 
   def value(entity, new_value) do
-    Entity.notify(entity, {:set_hp, new_value})
+    GenEvent.notify(entity, {:set_hp, new_value})
   end
 
   def add(entity, amount) do
-    Entity.notify(entity, {:add_hp, amount, Systems.HP.max_hp(entity)})
+    GenEvent.notify(entity, {:add_hp, amount, Systems.HP.max_hp(entity)})
   end
 
   def serialize(entity) do
