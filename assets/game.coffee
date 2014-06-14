@@ -101,9 +101,6 @@ $ ->
     if event.which is 13 or (event.which is 9 and !event.shiftKey) # enter key or (non-shift) tab
       history_marker = null
       command = $(event.target).val()
-      unless event.target.id is "command"
-        $("#validation").html("")
-        focusNext($(event.target))
       params = {}
       params[event.target.id] = command
       webSocket.send JSON.stringify(params)
@@ -111,7 +108,3 @@ $ ->
       command_history("up")
     else if event.which is 40
       command_history("down")
-    else if event.which is 32
-      params = {}
-      params["cycle"] = event.target.id
-      webSocket.send JSON.stringify(params)

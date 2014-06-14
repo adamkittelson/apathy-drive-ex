@@ -123,10 +123,6 @@
       if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {
         history_marker = null;
         command = $(event.target).val();
-        if (event.target.id !== "command") {
-          $("#validation").html("");
-          focusNext($(event.target));
-        }
         params = {};
         params[event.target.id] = command;
         return webSocket.send(JSON.stringify(params));
@@ -134,10 +130,6 @@
         return command_history("up");
       } else if (event.which === 40) {
         return command_history("down");
-      } else if (event.which === 32) {
-        params = {};
-        params["cycle"] = event.target.id;
-        return webSocket.send(JSON.stringify(params));
       }
     });
   });
