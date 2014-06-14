@@ -12,6 +12,7 @@ defmodule Systems.Login do
     Entity.add_component(character, Components.Items, [])
     Entity.add_component(character, Components.URL, Systems.URL.random)
     Entity.add_component(character, Components.Player, nil)
+    Entity.add_component(character, Components.Spirit, true)
     Entities.save!(character)
     Components.URL.value(character)
   end
