@@ -3,8 +3,17 @@ defmodule ApathyDrive.Main do
   use Weber.Controller
 
   layout false
-  def action([], _conn) do
+  def home(_, _conn) do
     {:render, [], []}
+  end
+
+  def game([id: id], _conn) do
+    {:render, [], []}
+  end
+
+  def game(_, _conn) do
+    url = Systems.Login.create
+    {:redirect, "/game/#{url}"}
   end
 
   def websocket_init(pid, _conn) do
@@ -60,30 +69,6 @@ defmodule ApathyDrive.Main do
             Commands.Help.execute({:player, player}, arguments)
             Components.Login.prompt_for_race(player)
           _other -> Components.Login.create_character_set_race(player, command)
-        end
-      "strength" ->
-        if Components.Login.get_step(player) == "training" do
-          Systems.Training.set_stat(player, "strength", command)
-        end
-      "agility" ->
-        if Components.Login.get_step(player) == "training" do
-          Systems.Training.set_stat(player, "agility", command)
-        end
-      "intellect" ->
-        if Components.Login.get_step(player) == "training" do
-          Systems.Training.set_stat(player, "intellect", command)
-        end
-      "willpower" ->
-        if Components.Login.get_step(player) == "training" do
-          Systems.Training.set_stat(player, "willpower", command)
-        end
-      "health" ->
-        if Components.Login.get_step(player) == "training" do
-          Systems.Training.set_stat(player, "health", command)
-        end
-      "charm" ->
-        if Components.Login.get_step(player) == "training" do
-          Systems.Training.set_stat(player, "charm", command)
         end
       "cycle" ->
         if Components.Login.get_step(player) == "training" do
