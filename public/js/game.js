@@ -32,7 +32,13 @@
     adjustScrollTop();
     webSocket = new WebSocket("" + (window.location.origin.replace('http', 'ws:')) + "/_ws");
     webSocket.onopen = function(event) {
-      return console.log("Connected!");
+      var pathparts, url;
+      console.log("Connected!");
+      pathparts = window.location.pathname.split("/");
+      url = pathparts[pathparts.length - 1];
+      return webSocket.send(JSON.stringify({
+        login: url
+      }));
     };
     webSocket.onmessage = function(event) {
       var message;

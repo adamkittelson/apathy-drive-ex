@@ -2,7 +2,7 @@ defmodule Systems.Command do
   use Systems.Reload
 
   def execute(player, command, arguments) do
-    character = Components.Login.get_character(player)
+    character = Characters.find_by_player(player)
     display_prompt(character)
 
     case Systems.Match.first(Commands.all, :keyword_starts_with, command) do
@@ -16,7 +16,11 @@ defmodule Systems.Command do
   def display_prompt(character) do
     Components.Player.send_message(character, ["disable", "#prompt"])
     Components.Player.send_message(character, ["disable", "#command"])
-    Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}]:</span><input id='command' class='prompt'></input></p>"])
+    if Entity.has_component?(character, Components.HP) do
+      Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}]:</span><input id='command' class='prompt'></input></p>"])
+    else
+      Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[DEVS=#{Systems.Trainer.total_devs(character)}]:</span><input id='command' class='prompt'></input></p>"])
+    end
     Components.Player.send_message(character, ["focus", "#command"])
   end
 

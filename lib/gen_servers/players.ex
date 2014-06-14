@@ -9,7 +9,7 @@ defmodule Players do
 
   def disconnected(connection) do
     player = find_by_connection(connection)
-    character = Components.Login.get_character(player)
+    character = Characters.find_by_player(player)
     if character do
       Components.Online.value(character, false)
       Components.Player.value(character, nil)
@@ -43,10 +43,6 @@ defmodule Players do
     {:ok, player} = Entity.init
 
     Entity.add_component(player, Components.Connection, connection)
-
-    Entity.add_component(player, Components.Login, nil)
-
-    Components.Login.intro(player)
 
     {:noreply, [player | players] }
   end

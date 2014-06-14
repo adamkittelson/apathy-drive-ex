@@ -33,6 +33,9 @@ $ ->
 
   webSocket.onopen = (event) ->
     console.log "Connected!"
+    pathparts = window.location.pathname.split("/")
+    url = pathparts[pathparts.length - 1]
+    webSocket.send JSON.stringify({login: url})
 
   webSocket.onmessage = (event) ->
     message = JSON.parse(event.data)

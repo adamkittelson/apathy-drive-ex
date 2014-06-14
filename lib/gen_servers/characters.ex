@@ -37,6 +37,14 @@ defmodule Characters do
     end
   end
 
+  def find_by_url(url) do
+    Enum.find(all, &(Components.URL.value(&1) == url))
+  end
+
+  def find_by_player(player) do
+    Enum.find(all, &(Components.Player.value(&1) == player))
+  end
+
   # GenServer API
   def start_link() do
     GenServer.start_link(Characters, [], name: :characters)
