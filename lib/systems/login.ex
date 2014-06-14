@@ -24,6 +24,8 @@ defmodule Systems.Login do
       Components.Player.send_message(character, ["clear scroll"])
       Systems.Room.display_room_in_scroll(character, Components.CurrentRoom.get_current_room(character))
       Systems.Command.display_prompt(character)
+    else
+      Players.send_message(player, ["redirect", "/"])
     end
   end
 end
