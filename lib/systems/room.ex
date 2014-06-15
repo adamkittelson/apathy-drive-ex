@@ -106,9 +106,11 @@ defmodule Systems.Room do
     destination = Components.Destination.get_destination(room_exit)
 
     Components.CurrentRoom.set_current_room(character, destination)
-    notify_character_left(character, current_room, destination)
+    if Components.Spirit.value(character) == false do
+      notify_character_left(character, current_room, destination)
+      notify_character_entered(character, current_room, destination)
+    end
     display_room_in_scroll(character, destination)
-    notify_character_entered(character, current_room, destination)
   end
 
   def notify_character_entered(character, entered_from, room) do
