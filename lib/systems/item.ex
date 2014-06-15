@@ -20,17 +20,20 @@ defmodule Systems.Item do
   end
 
   def display_inventory(character) do
-    limbs = Components.Limbs.value(character)
-    equipped_items = Systems.Limbs.equipped_items(limbs)
+    if Entity.has_component?(character, Components.Limbs) do
+      limbs = Components.Limbs.value(character)
+      equipped_items = Systems.Limbs.equipped_items(limbs)
 
-    if equipped_items |> Enum.count > 0 do
-      Components.Player.send_message(character, ["scroll", "<p><span class='dark-yellow'>You are equipped with:</span></p><br>"])
-      equipped_items |> Enum.each fn(item) ->
-        item_name = Components.Name.value(item)
-        item_limbs = Systems.Limbs.get_limb_names(limbs, item)
-        Components.Player.send_message(character, ["scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 20)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>"])
+      if equipped_items |> Enum.count > 0 do
+        Components.Player.send_message(character, ["scroll", "<p><span class='dark-yellow'>You are equipped with:</span></p><br>"])
+        equipped_items |> Enum.each fn(item) ->
+          item_name = Components.Name.value(item)
+          item_limbs = Systems.Limbs.get_limb_names(limbs, item)
+          Components.Player.send_message(character, ["scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 20)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>"])
+        end
       end
     end
+
     items = Components.Items.get_items(character) |> Enum.map(&(Components.Name.value(&1)))
     if items |> Enum.count > 0 do
       Components.Player.send_message(character, ["scroll", "<br><p>You are carrying #{Enum.join(items, ", ")}</p>"])
