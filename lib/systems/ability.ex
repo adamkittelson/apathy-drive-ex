@@ -4,7 +4,7 @@ defmodule Systems.Ability do
   def abilities(entity) do
     Abilities.all
     |> Enum.filter fn(ability) ->
-         Components.Module.value(ability).skill_prereqs_met?(entity)
+         Components.Module.value(ability).useable_by?(entity)
        end
   end
 
@@ -24,14 +24,6 @@ defmodule Systems.Ability do
 
       def keywords do
         name |> String.split
-      end
-
-      def skill_prereqs_met?(entity) do
-        skills
-        |> Map.keys
-        |> Enum.all? fn(skill) ->
-             Systems.Skill.base(entity, skill) >= skills[skill]
-           end
       end
     end
   end
