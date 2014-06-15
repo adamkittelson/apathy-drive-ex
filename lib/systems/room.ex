@@ -159,13 +159,13 @@ defmodule Systems.Room do
   end
 
   def entities_in_room(entities, room) do
-    Enum.filter(entities, fn(entity) ->
-      room == Components.CurrentRoom.get_current_room(entity)
-    end)
+    Enum.filter(entities, &(room == Components.CurrentRoom.get_current_room(&1)))
   end
 
   def characters_in_room(room) do
-    Characters.online |> entities_in_room(room)
+    Characters.online
+    |> entities_in_room(room)
+    |> Enum.reject(&(Components.Spirit.value(&1)))
   end
 
   def monsters_in_room(room) do
