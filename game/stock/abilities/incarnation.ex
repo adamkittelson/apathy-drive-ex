@@ -6,16 +6,19 @@ defmodule Abilities.Incarnation do
   end
 
   def execute(entity, nil) do
-    Components.Player.send_message(entity, ["scroll", "<p>\nIncarnate as what?\n\n`use incarnation at (sex) (race)`\n\n(`help races` for a list of possible races.).</p>"])
+    Components.Player.send_message(entity, ["scroll", "<p>\nIncarnate as what?\n\n`use incarnation at (name) (sex) (race)`\n\n(`help races` for a list of possible races.).</p>"])
   end
 
   def execute(entity, target) do
-    [sex | race] = String.split(target)
-    race = Enum.join(race, " ")
-    if !Enum.member?(genders, sex) do
-      Components.Player.send_message(entity, ["scroll", "You must choose #{Enum.join(genders, " or ")} for the sex of your mortal avatar."])
+    [name, sex | race] = String.split(target)
+    sex = Enum.find(genders, fn(gender) ->
+            (String.split(target, " #{gender} ") |> length) > 1
+          end)
+    if sex do
+      [name, race] = String.split(target, " #{sex} ")
+      incarnate(entity, name, sex, race)
     else
-      incarnate(entity, sex, race)
+      Components.Player.send_message(entity, ["scroll", "You must choose #{Enum.join(genders, " or ")} for the sex of your mortal avatar."])
     end
   end
 
@@ -30,9 +33,10 @@ Syntax: `use incarnation at (sex) (race)`
 """
   end
 
-  defp incarnate(entity, sex, race_name) do
+  defp incarnate(entity, name, sex, race_name) do
     case Systems.Match.all(Races.all, :name_contains, race_name) do
       [race] ->
+        Entity.add_component(entity, Components.Name, name)
         Entity.add_component(entity, Components.Race, race)
         Entity.add_component(entity, Components.Stats, Components.Stats.value(race))
         Entity.add_component(entity, Components.Gender, sex)

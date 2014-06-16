@@ -5,7 +5,7 @@ defmodule Commands.Score do
 
   def execute(entity, _arguments) do
     if Entity.has_component?(entity, Components.Name) do
-      Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{full_name(entity)}</span></p>"])
+      Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(entity)}</span></p>"])
     end
 
     exp = Components.Experience.value(entity)
@@ -37,14 +37,6 @@ defmodule Commands.Score do
       stat_names = Components.Stats.value(entity) |> Map.keys
       chunks = get_chunks(stat_names)
       Enum.each chunks, &display_stats(entity, &1)
-    end
-  end
-
-  defp full_name(entity) do
-    if Entity.has_component?(entity, Components.LastName) do
-      "#{Components.Name.value(entity)} #{Components.LastName.value(entity)}"
-    else
-      Components.Name.value(entity)
     end
   end
 
