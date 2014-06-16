@@ -26,6 +26,12 @@ defmodule Abilities do
     end
   end
 
+  def find_by_module(module) do
+    Enum.find(all, fn (ability) ->
+      Components.Module.value(ability) == module
+    end)
+  end
+
   # GenServer API
   def start_link do
     GenServer.start_link(Abilities, %{}, name: :abilities)

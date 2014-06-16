@@ -4,7 +4,7 @@ defmodule Help.Races do
   def keywords, do: ["races"]
 
   def help do
-    Races.all
+    races = Races.all
     |> Enum.sort(fn(race1, race2) ->
          Components.Module.value(race1).cost <= Components.Module.value(race2).cost
        end)
@@ -12,5 +12,6 @@ defmodule Help.Races do
          "#{String.ljust(Components.Name.value(race), 20)} Cost: #{Components.Module.value(race).cost}"
        end)
     |> Enum.join("\n")
+    "#{races}\n\n`help (race)` for more information on a particular race"
   end
 end
