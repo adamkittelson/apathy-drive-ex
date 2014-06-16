@@ -31,24 +31,6 @@ defmodule Systems.Training do
     Players.send_message(player, ["focus", "#first-name"])
   end
 
-  def hair_lengths do
-    ["short", "shoulder-length", "long", "waist-length", "ankle-length", "none"]
-  end
-
-  def hair_colors do
-    ["silver", "red", "brown", "dark-brown", "blonde", "green", "blue", "black", "white"]
-  end
-
-  def eye_colors do
-    ["yellow", "pale-blue", "sea-blue", "dark-blue", "grey-blue", "slate-grey",
-     "bright-green", "forest-green", "pale-green", "chesnut-brown", "dark-brown",
-     "hazel", "violet", "lavender", "golden", "black", "crimson"]
-  end
-
-  def genders do
-    ["female", "male"]
-  end
-
   def cycle_options(player, field) do
     case field do
       "hair_length" ->

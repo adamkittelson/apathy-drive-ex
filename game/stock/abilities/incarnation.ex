@@ -5,6 +5,20 @@ defmodule Abilities.Incarnation do
     Components.Spirit.value(entity) == true
   end
 
+  def execute(entity, nil) do
+    Components.Player.send_message(entity, ["scroll", "<p>\nIncarnate as what?\n\n`use incarnation at (sex) (race)`\n\n(`help races` for a list of possible races.).</p>"])
+  end
+
+  def execute(entity, target) do
+    [sex | race] = String.split(target)
+    race = Enum.join(race, " ")
+    if !Enum.member?(genders, sex) do
+      Components.Player.send_message(entity, ["scroll", "You must choose #{Enum.join(genders, " or ")} for the sex of your mortal avatar."])
+    else
+      incarnate(entity, sex, race)
+    end
+  end
+
   def help do
     """
 Incarnation allows you to become mortal as the race of your choosing.
@@ -15,4 +29,52 @@ Syntax: `use incarnation at (sex) (race)`
 `help races` to get a list of available races
 """
   end
+
+  defp incarnate(entity, sex, race_name) do
+    case Systems.Match.all(Races.all, :name_contains, race_name) do
+      [race] ->
+        Entity.add_component(entity, Components.Race, race)
+        Entity.add_component(entity, Components.Stats, Components.Stats.value(race))
+        Entity.add_component(entity, Components.Gender, sex)
+        Entity.add_component(entity, Components.EyeColor, select_random(eye_colors))
+        Entity.add_component(entity, Components.HairColor, select_random(hair_colors))
+        Entity.add_component(entity, Components.HairLength, select_random(hair_lengths))
+        Entity.add_component(entity, Components.HP, Systems.HP.max_hp(entity))
+        Entity.add_component(entity, Components.Limbs, entity |> Components.Race.value |> Components.Limbs.value)
+        Components.Spirit.value(entity, false)
+        Components.Player.send_message(entity, ["scroll", "<p>Your new body materializes around you.</p>"])
+      [] ->
+        Components.Player.send_message(entity, ["scroll", "<p><span class='red'>There is no race by that name.</span></p>"])
+      matches ->
+        match_names = matches |> Enum.map &(Components.Name.value(&1))
+        Components.Player.send_message(entity, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
+        Enum.each match_names, fn(match_name) ->
+          Components.Player.send_message(entity, ["scroll", "<p>-- #{match_name}</p>"])
+        end
+    end
+  end
+
+  defp select_random(list) do
+    :random.seed(:erlang.now)
+    list |> Enum.shuffle |> List.first
+  end
+
+  defp hair_lengths do
+    ["short", "shoulder-length", "long", "waist-length", "ankle-length", "none"]
+  end
+
+  defp hair_colors do
+    ["silver", "red", "brown", "dark-brown", "blonde", "green", "blue", "black", "white"]
+  end
+
+  defp eye_colors do
+    ["yellow", "pale-blue", "sea-blue", "dark-blue", "grey-blue", "slate-grey",
+     "bright-green", "forest-green", "pale-green", "chesnut-brown", "dark-brown",
+     "hazel", "violet", "lavender", "golden", "black", "crimson"]
+  end
+
+  defp genders do
+    ["female", "male"]
+  end
+
 end

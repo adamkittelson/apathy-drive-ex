@@ -4,9 +4,14 @@ defmodule Commands.Use do
   def keywords, do: ["use", "cast"]
 
   def execute(entity, arguments) do
-    [ability_name | target_name] = arguments
-                                   |> Enum.join(" ")
-                                   |> String.split(" at ")
+    arguments = Enum.join(arguments, " ")
+    if String.contains?(arguments, " at ") do
+      [ability_name, target_name] = arguments |> String.split(" at ")
+    else
+      ability_name = arguments
+      target_name = nil
+    end
+
     case Systems.Match.all(Abilities.all, :name_contains, ability_name) do
       [match] ->
         Components.Module.value(match).execute(entity, target_name)
