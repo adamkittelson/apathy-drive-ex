@@ -4,7 +4,11 @@ defmodule Components.Help do
 
   ### Public API
   def value(entity) do
-    GenEvent.call(entity, Components.Help, :value)
+    if module_help(entity) do
+      module_help(entity).help
+    else
+      GenEvent.call(entity, Components.Help, :value)
+    end
   end
 
   def value(entity, new_value) do
@@ -13,6 +17,14 @@ defmodule Components.Help do
 
   def serialize(entity) do
     %{"Help" => value(entity)}
+  end
+
+  defp module_help(entity) do
+    if Entity.has_component?(entity, Components.Module) && Components.Module.value(entity).module_info[:exports] |> Keyword.keys |> Enum.member?(:help) do
+      Components.Module.value(entity)
+    else
+      false
+    end
   end
 
   ### GenEvent API
