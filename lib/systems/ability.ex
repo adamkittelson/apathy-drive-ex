@@ -4,7 +4,7 @@ defmodule Systems.Ability do
   def abilities(entity) do
     Abilities.all
     |> Enum.filter fn(ability) ->
-         Components.Module.value(ability).skill_prereqs_met?(entity)
+         Components.Module.value(ability).useable_by?(entity)
        end
   end
 
@@ -25,26 +25,25 @@ defmodule Systems.Ability do
       def keywords do
         name |> String.split
       end
-
-      def skill_prereqs_met?(entity) do
-        skills
-        |> Map.keys
-        |> Enum.all? fn(skill) ->
-             Systems.Skill.base(entity, skill) >= skills[skill]
-           end
-      end
     end
   end
 
   defmacro __after_compile__(_env, _bytecode) do
     quote do
-      {:ok, ability} = Entity.init
-      Entity.add_component(ability, Components.Keywords, __MODULE__.keywords)
-      Entity.add_component(ability, Components.Name, __MODULE__.name)
-      Entity.add_component(ability, Components.Module, __MODULE__)
-      Entity.add_component(ability, Components.Help, __MODULE__.help)
-      Abilities.add(__MODULE__.name, ability)
-      Help.add(ability)
+      ability = Abilities.find_by_module(__MODULE__)
+      if ability do
+        Components.Keywords.value(ability, __MODULE__.keywords)
+        Components.Name.value(ability, __MODULE__.name)
+        Components.Help.value(ability, __MODULE__.help)
+      else
+        {:ok, ability} = Entity.init
+        Entity.add_component(ability, Components.Keywords, __MODULE__.keywords)
+        Entity.add_component(ability, Components.Name, __MODULE__.name)
+        Entity.add_component(ability, Components.Module, __MODULE__)
+        Entity.add_component(ability, Components.Help, __MODULE__.help)
+        Abilities.add(__MODULE__.name, ability)
+        Help.add(ability)
+      end
     end
   end
 

@@ -4,12 +4,16 @@ defmodule Commands.Skills do
   def keywords, do: ["skills"]
 
   def execute(entity, arguments) do
-    arguments = Enum.join(arguments, " ")
-    Components.Player.send_message(entity, ["scroll", "<p><span class='white'>Your skills are:</span></p>"])
-    Components.Player.send_message(entity, ["scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>"])
-    skill_names = Components.Skills.value(entity) |> Map.keys |> Enum.sort
-    chunks = get_chunks(skill_names)
-    Enum.each chunks, &display_skills(entity, &1, arguments)
+    if Components.Spirit.value(entity) do
+      Components.Player.send_message(entity, ["scroll", "<p>You need a body to do that.</p>"])
+    else
+      arguments = Enum.join(arguments, " ")
+      Components.Player.send_message(entity, ["scroll", "<p><span class='white'>Your skills are:</span></p>"])
+      Components.Player.send_message(entity, ["scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>"])
+      skill_names = Components.Skills.value(entity) |> Map.keys |> Enum.sort
+      chunks = get_chunks(skill_names)
+      Enum.each chunks, &display_skills(entity, &1, arguments)
+    end
   end
 
   defp display_skills(entity, [skill1, skill2], arguments) do

@@ -19,44 +19,50 @@ defmodule Systems.Shop do
   end
 
   def buy(character, room, item) do
-    if Entity.has_component?(room, Components.Shop) do
-      case Systems.Match.all(Components.Shop.items(room), :name_contains, item) do
-        [match] ->
-          Systems.Item.spawn_item(match, character)
-          Components.Player.send_message(character, ["scroll", "<p>You just bought #{Components.Name.value(match)} for nothing.</p>"])
-        [] ->
-          Components.Player.send_message(character, ["scroll", "<p>\"#{item}\" does not appear to be for sale here.</p>"])
-        matches ->
-          match_names = matches |> Enum.map &(Components.Name.value(&1))
-          Components.Player.send_message(character, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
-          Enum.each match_names, fn(match_name) ->
-            Components.Player.send_message(character, ["scroll", "<p>-- #{match_name}</p>"])
-          end
-      end
-    else
-      Components.Player.send_message(character, ["scroll", "<p><span class='red'>You cannot BUY if you are not in a shop!</span></p>"])
+    cond do
+      !Entity.has_component?(room, Components.Shop) ->
+        Components.Player.send_message(character, ["scroll", "<p><span class='red'>You cannot BUY if you are not in a shop!</span></p>"])
+      Components.Spirit.value(character) == true ->
+        Components.Player.send_message(character, ["scroll", "<p>You need a body to do that.</p>"])
+      true ->
+        case Systems.Match.all(Components.Shop.items(room), :name_contains, item) do
+          [match] ->
+            Systems.Item.spawn_item(match, character)
+            Components.Player.send_message(character, ["scroll", "<p>You just bought #{Components.Name.value(match)} for nothing.</p>"])
+          [] ->
+            Components.Player.send_message(character, ["scroll", "<p>\"#{item}\" does not appear to be for sale here.</p>"])
+          matches ->
+            match_names = matches |> Enum.map &(Components.Name.value(&1))
+            Components.Player.send_message(character, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
+            Enum.each match_names, fn(match_name) ->
+              Components.Player.send_message(character, ["scroll", "<p>-- #{match_name}</p>"])
+            end
+        end
     end
   end
 
   def sell(character, room, item) do
-    if Entity.has_component?(room, Components.Shop) do
-      case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
-        [match] ->
-          Components.Items.remove_item(character, match)
-          Entities.save!(character)
-          Components.Player.send_message(character, ["scroll", "<p>You just sold #{Components.Name.value(match)} for nothing.</p>"])
-          Entities.delete!(match)
-        [] ->
-          Components.Player.send_message(character, ["scroll", "<p>You don't have \"#{item}\" to sell!</p>"])
-        matches ->
-          match_names = matches |> Enum.map &(Components.Name.value(&1))
-          Components.Player.send_message(character, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
-          Enum.each match_names, fn(match_name) ->
-            Components.Player.send_message(character, ["scroll", "<p>-- #{match_name}</p>"])
-          end
-      end
-    else
-      Components.Player.send_message(character, ["scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>"])
+    cond do
+      !Entity.has_component?(room, Components.Shop) ->
+        Components.Player.send_message(character, ["scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>"])
+      Components.Spirit.value(character) == true ->
+        Components.Player.send_message(character, ["scroll", "<p>You need a body to do that.</p>"])
+      true ->
+        case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
+          [match] ->
+            Components.Items.remove_item(character, match)
+            Entities.save!(character)
+            Components.Player.send_message(character, ["scroll", "<p>You just sold #{Components.Name.value(match)} for nothing.</p>"])
+            Entities.delete!(match)
+          [] ->
+            Components.Player.send_message(character, ["scroll", "<p>You don't have \"#{item}\" to sell!</p>"])
+          matches ->
+            match_names = matches |> Enum.map &(Components.Name.value(&1))
+            Components.Player.send_message(character, ["scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"])
+            Enum.each match_names, fn(match_name) ->
+              Components.Player.send_message(character, ["scroll", "<p>-- #{match_name}</p>"])
+            end
+        end
     end
   end
 end

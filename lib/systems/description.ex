@@ -28,7 +28,7 @@ defmodule Systems.Description do
   end
 
   def add_character_description_to_scroll(character, target) do
-    Components.Player.send_message character, ["scroll", "<p><span class='cyan'>#{Components.Name.get_name(target)} #{Components.LastName.value(target)}</span></p>"]
+    Components.Player.send_message character, ["scroll", "<p><span class='cyan'>#{Components.Name.get_name(target)}</span></p>"]
     Components.Player.send_message character, ["scroll", "<p>#{describe_character(target) |> interpolate(target)}</span></p>"]
   end
 
@@ -80,9 +80,9 @@ defmodule Systems.Description do
   end
 
   def describe_stat(character, stat_name) do
-    stat = :"Elixir.Components.#{String.capitalize(stat_name)}".value(character)
+    stat = Systems.Stat.modified(character, stat_name)
     race = Components.Race.value(character)
-    starting_stat = :"Elixir.Components.#{String.capitalize(stat_name)}".value(race)
+    starting_stat = Systems.Stat.base(character, stat_name)
     difference = stat - starting_stat
     index = round(difference / 10)
     list_size = @attribute_descriptions[:"#{stat_name}"] |> Enum.count

@@ -32,7 +32,13 @@
     adjustScrollTop();
     webSocket = new WebSocket("" + (window.location.origin.replace('http', 'ws:')) + "/_ws");
     webSocket.onopen = function(event) {
-      return console.log("Connected!");
+      var pathparts, url;
+      console.log("Connected!");
+      pathparts = window.location.pathname.split("/");
+      url = pathparts[pathparts.length - 1];
+      return webSocket.send(JSON.stringify({
+        login: url
+      }));
     };
     webSocket.onmessage = function(event) {
       var message;
@@ -52,6 +58,8 @@
           return $(message[1]).val(message[2]);
         case "update prompt":
           return $("#prompt").text(message[1]);
+        case "redirect":
+          return window.location = "" + window.location.origin + message[1];
         default:
           return addToScroll("#scroll", message[1]);
       }
@@ -115,10 +123,6 @@
       if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {
         history_marker = null;
         command = $(event.target).val();
-        if (event.target.id !== "command") {
-          $("#validation").html("");
-          focusNext($(event.target));
-        }
         params = {};
         params[event.target.id] = command;
         return webSocket.send(JSON.stringify(params));
@@ -126,10 +130,6 @@
         return command_history("up");
       } else if (event.which === 40) {
         return command_history("down");
-      } else if (event.which === 32) {
-        params = {};
-        params["cycle"] = event.target.id;
-        return webSocket.send(JSON.stringify(params));
       }
     });
   });

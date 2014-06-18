@@ -33,6 +33,9 @@ $ ->
 
   webSocket.onopen = (event) ->
     console.log "Connected!"
+    pathparts = window.location.pathname.split("/")
+    url = pathparts[pathparts.length - 1]
+    webSocket.send JSON.stringify({login: url})
 
   webSocket.onmessage = (event) ->
     message = JSON.parse(event.data)
@@ -44,6 +47,7 @@ $ ->
       when "update" then $(message[1]).html(message[2])
       when "set field" then $(message[1]).val(message[2])
       when "update prompt" then $("#prompt").text(message[1])
+      when "redirect" then window.location = "#{window.location.origin}#{message[1]}"
       else addToScroll("#scroll", message[1])
 
   webSocket.onclose = (event) ->
@@ -97,9 +101,6 @@ $ ->
     if event.which is 13 or (event.which is 9 and !event.shiftKey) # enter key or (non-shift) tab
       history_marker = null
       command = $(event.target).val()
-      unless event.target.id is "command"
-        $("#validation").html("")
-        focusNext($(event.target))
       params = {}
       params[event.target.id] = command
       webSocket.send JSON.stringify(params)
@@ -107,7 +108,3 @@ $ ->
       command_history("up")
     else if event.which is 40
       command_history("down")
-    else if event.which is 32
-      params = {}
-      params["cycle"] = event.target.id
-      webSocket.send JSON.stringify(params)

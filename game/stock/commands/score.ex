@@ -4,38 +4,39 @@ defmodule Commands.Score do
   def keywords, do: ["score", "stats", "status"]
 
   def execute(entity, _arguments) do
-    Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{full_name(entity)}</span></p>"])
-    if Entity.has_component?(entity, Components.Race) && Entity.has_component?(entity, Components.Experience) do
-      race = entity
-             |> Components.Race.value
-             |> Components.Name.value
-             |> String.ljust(11)
-
-      exp = Components.Experience.value(entity)
-      Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>#{race}</span> <span class='dark-green'>Exp:</span>  <span class='dark-cyan'>#{exp}</span></p>"])
+    if Entity.has_component?(entity, Components.Name) do
+      Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(entity)}</span></p>"])
     end
 
-    if Entity.has_component?(entity, Components.Level) do
-      level = Components.Level.value(entity)
-              |> Integer.to_string
-              |> String.ljust(10)
-
-      devs  = Systems.Trainer.devs(entity)
-      Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Devs:</span> <span class='dark-cyan'>#{devs}</span></p>"])
+    exp = Components.Experience.value(entity)
+    cond do
+      Entity.has_component?(entity, Components.Race) ->
+        race = entity
+               |> Components.Race.value
+               |> Components.Name.value
+               |> String.ljust(11)
+        Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>#{race}</span> <span class='dark-green'>Exp:</span>  <span class='dark-cyan'>#{exp}</span></p>"])
+      Components.Spirit.value(entity) ->
+        Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>Spirit     </span> <span class='dark-green'>Exp:</span>  <span class='dark-cyan'>#{exp}</span></p>"])
     end
-    Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Hits:</span> <span class='dark-cyan'>#{Components.HP.value(entity)}/#{Systems.HP.max_hp(entity)}</span></p>"])
+
+    level = Components.Level.value(entity)
+            |> Integer.to_string
+            |> String.ljust(10)
+
+    devs  = Systems.Trainer.devs(entity)
+    Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Devs:</span> <span class='dark-cyan'>#{devs}</span></p>"])
+
+    if Entity.has_component?(entity, Components.HP) do
+      Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Hits:</span> <span class='dark-cyan'>#{Components.HP.value(entity)}/#{Systems.HP.max_hp(entity)}</span></p>"])
+    end
+
     Components.Player.send_message(entity, ["scroll", "\n"])
 
-    stat_names = Components.Stats.value(entity) |> Map.keys
-    chunks = get_chunks(stat_names)
-    Enum.each chunks, &display_stats(entity, &1)
-  end
-
-  defp full_name(entity) do
-    if Entity.has_component?(entity, Components.LastName) do
-      "#{Components.Name.value(entity)} #{Components.LastName.value(entity)}"
-    else
-      Components.Name.value(entity)
+    if Entity.has_component?(entity, Components.Stats) do
+      stat_names = Components.Stats.value(entity) |> Map.keys
+      chunks = get_chunks(stat_names)
+      Enum.each chunks, &display_stats(entity, &1)
     end
   end
 

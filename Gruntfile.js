@@ -5,7 +5,7 @@ module.exports = function(grunt) {
     coffee: {
       complie: {
         files: {
-          'public/js/app.js': 'assets/app.coffee'
+          'public/js/game.js': 'assets/game.coffee'
         }
       }
     },
@@ -13,7 +13,7 @@ module.exports = function(grunt) {
     sass: {
       dist: {
         files: {
-          'public/css/main.css': 'assets/main.scss'
+          'public/css/game.css': 'assets/game.scss'
         }
       }
     }

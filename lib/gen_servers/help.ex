@@ -15,6 +15,12 @@ defmodule Help do
     Systems.Match.all(all, :name_contains, query)
   end
 
+  def find_by_module(module) do
+    Enum.find(all, fn (help) ->
+      Components.Module.value(help) == module
+    end)
+  end
+
   # GenServer API
   def start_link() do
     GenServer.start_link(Help, [], name: :help)

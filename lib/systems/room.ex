@@ -106,9 +106,11 @@ defmodule Systems.Room do
     destination = Components.Destination.get_destination(room_exit)
 
     Components.CurrentRoom.set_current_room(character, destination)
-    notify_character_left(character, current_room, destination)
+    if Components.Spirit.value(character) == false do
+      notify_character_left(character, current_room, destination)
+      notify_character_entered(character, current_room, destination)
+    end
     display_room_in_scroll(character, destination)
-    notify_character_entered(character, current_room, destination)
   end
 
   def notify_character_entered(character, entered_from, room) do
@@ -159,13 +161,13 @@ defmodule Systems.Room do
   end
 
   def entities_in_room(entities, room) do
-    Enum.filter(entities, fn(entity) ->
-      room == Components.CurrentRoom.get_current_room(entity)
-    end)
+    Enum.filter(entities, &(room == Components.CurrentRoom.get_current_room(&1)))
   end
 
   def characters_in_room(room) do
-    Characters.online |> entities_in_room(room)
+    Characters.online
+    |> entities_in_room(room)
+    |> Enum.reject(&(Components.Spirit.value(&1)))
   end
 
   def monsters_in_room(room) do

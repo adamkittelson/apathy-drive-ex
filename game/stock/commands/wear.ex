@@ -4,6 +4,10 @@ defmodule Commands.Wear do
   def keywords, do: ["wear", "equip", "wield"]
 
   def execute(entity, arguments) do
-    Systems.Item.equip(entity, Enum.join(arguments, " "))
+    if Components.Spirit.value(entity) == true do
+      Components.Player.send_message(entity, ["scroll", "<p>You need a body to do that.</p>"])
+    else
+      Systems.Item.equip(entity, Enum.join(arguments, " "))
+    end
   end
 end
