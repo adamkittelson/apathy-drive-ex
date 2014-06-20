@@ -15,8 +15,10 @@ defmodule Systems.Login do
     Entity.add_component(character, Components.Spirit, true)
     Entity.add_component(character, Components.Skills, %{})
     Entity.add_component(character, Components.Idle, 0)
-    Entity.add_component(character, Components.Hints, %{
-      :movement => "To move from room to room simply type the direction in which you wish to travel. e.g. 'north' or 'south'. You may also abbreviate the directions e.g. 'nw' for 'northwest'."
+    Entity.add_component(character, Components.Hints, %Components.Hints{
+      :active => %{
+        "movement" => "To move from room to room simply type the direction in which you wish to travel. e.g. 'north' or 'south'. You may also abbreviate the directions e.g. 'nw' for 'northwest'."
+      }
     })
     Entities.save!(character)
     Components.URL.value(character)
