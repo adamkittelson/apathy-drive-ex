@@ -3,6 +3,7 @@ defmodule Systems.Command do
 
   def execute(player, command, arguments) do
     character = Characters.find_by_player(player)
+    Components.Idle.value(character, 0)
     display_prompt(character)
 
     case Systems.Match.first(Commands.all, :keyword_starts_with, command) do

@@ -7,12 +7,14 @@ defmodule Systems.Hints do
 
   def display_hint do
     Components.all(Components.Hints) |> Enum.each(fn(entity) ->
-      hint = Components.Hints.value(entity)
-             |> Map.values
-             |> Enum.shuffle
-             |> List.first
+      unless Systems.Idle.idle?(entity) do
+        hint = Components.Hints.value(entity)
+               |> Map.values
+               |> Enum.shuffle
+               |> List.first
 
-      Components.Player.send_message(entity, ["scroll", "<p><span class='yellow'>Hint:</span> #{hint}<p>"])
+        Components.Player.send_message(entity, ["scroll", "<p><span class='yellow'>Hint:</span> #{hint}<p>"])
+      end
     end)
   end
 end

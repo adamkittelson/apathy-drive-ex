@@ -14,6 +14,7 @@ defmodule Systems.Login do
     Entity.add_component(character, Components.Player, nil)
     Entity.add_component(character, Components.Spirit, true)
     Entity.add_component(character, Components.Skills, %{})
+    Entity.add_component(character, Components.Idle, 0)
     Entity.add_component(character, Components.Hints, %{
       :movement => "To move from room to room simply type the direction in which you wish to travel. e.g. 'north' or 'south'. You may also abbreviate the directions e.g. 'nw' for 'northwest'."
     })
@@ -26,6 +27,7 @@ defmodule Systems.Login do
     if character do
       Components.Online.value(character, true)
       Components.Player.value(character, player)
+      Components.Idle.value(character, 0)
       Components.Player.send_message(character, ["clear scroll"])
       Systems.Room.display_room_in_scroll(character, Components.CurrentRoom.get_current_room(character))
       Systems.Command.display_prompt(character)
