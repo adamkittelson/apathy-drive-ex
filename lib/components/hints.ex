@@ -13,6 +13,10 @@ defmodule Components.Hints do
     GenEvent.notify(entity, {:set_hints, new_value})
   end
 
+  def add(entity, name, value) do
+    GenEvent.notify(entity, {:add_hint, name, value})
+  end
+
   def deactivate(entity, hint) do
     GenEvent.notify(entity, {:deactivate_hint, hint})
   end
@@ -33,6 +37,13 @@ defmodule Components.Hints do
 
   def handle_event({:set_hints, new_value}, _value) do
     {:ok, new_value }
+  end
+
+  def handle_event({:add_hint, name, value}, hints) do
+    unless Enum.member?(hints.inactive, name) do
+      hints = put_in hints.active[name], value
+    end
+    {:ok, hints }
   end
 
   def handle_event({:deactivate_hint, hint}, hints) do

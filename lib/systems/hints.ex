@@ -13,7 +13,7 @@ defmodule Systems.Hints do
                |> Enum.shuffle
                |> List.first
         if hint do
-          Components.Player.send_message(entity, ["scroll", "<p><span class='yellow'>Hint:</span> #{hint}<p>"])
+          Components.Player.send_message(entity, ["scroll", "<p>\n<span class='yellow'>Hint:</span> <em>#{hint}</em>\n\n<p>"])
         end
       end
     end)

@@ -15,11 +15,7 @@ defmodule Systems.Login do
     Entity.add_component(character, Components.Spirit, true)
     Entity.add_component(character, Components.Skills, %{})
     Entity.add_component(character, Components.Idle, 0)
-    Entity.add_component(character, Components.Hints, %Components.Hints{
-      :active => %{
-        "movement" => "To move from room to room simply type the direction in which you wish to travel. e.g. 'north' or 'south'. You may also abbreviate the directions e.g. 'nw' for 'northwest'."
-      }
-    })
+    Entity.add_component(character, Components.Hints, %{})
     Entities.save!(character)
     Components.URL.value(character)
   end
@@ -27,6 +23,8 @@ defmodule Systems.Login do
   def login(player, url) do
     character = Characters.find_by_url(url)
     if character do
+      Components.Hints.add(character, "movement", "To move from room to room simply type the direction in which you wish to travel. e.g. 'north' or 'south'. You may also abbreviate the directions e.g. 'nw' for 'northwest'.")
+      Components.Hints.add(character, "name", "Many actions, such as communicating with other players or taking on a physical form, require you to name yourself. To choose the name by which you will be known in-game type 'set name (name)'.")
       Components.Online.value(character, true)
       Components.Player.value(character, player)
       Components.Idle.value(character, 0)
