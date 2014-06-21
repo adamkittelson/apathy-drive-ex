@@ -110,6 +110,7 @@ defmodule Systems.Room do
       notify_character_left(character, current_room, destination)
       notify_character_entered(character, current_room, destination)
     end
+    Components.Hints.deactivate(character, "movement")
     display_room_in_scroll(character, destination)
   end
 

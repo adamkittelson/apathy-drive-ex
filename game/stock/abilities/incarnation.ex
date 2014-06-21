@@ -6,19 +6,24 @@ defmodule Abilities.Incarnation do
   end
 
   def execute(entity, nil) do
-    Components.Player.send_message(entity, ["scroll", "<p>\nIncarnate as what?\n\n`use incarnation at (name) (sex) (race)`\n\n(`help races` for a list of possible races.).</p>"])
+    Components.Player.send_message(entity, ["scroll", "<p>\nIncarnate as what?\n\n'use incarnation at (sex) (race)'\n\n('help races' for a list of possible races.).</p>"])
   end
 
   def execute(entity, target) do
-    [name, sex | race] = String.split(target)
-    sex = Enum.find(genders, fn(gender) ->
-            (String.split(target, " #{gender} ") |> length) > 1
-          end)
-    if sex do
-      [name, race] = String.split(target, " #{sex} ")
-      incarnate(entity, name, sex, race)
+    if Entity.has_component?(entity, Components.Name) do
+      [_ | race] = String.split(target)
+      race = Enum.join(race, " ")
+      sex = Enum.find(genders, fn(gender) ->
+              (String.split(target, "#{gender} ") |> length) > 1
+            end)
+      if sex do
+        ["", race] = String.split(target, "#{sex} ")
+        incarnate(entity, sex, race)
+      else
+        Components.Player.send_message(entity, ["scroll", "<p>You must choose #{Enum.join(genders, " or ")} for the sex of your mortal avatar.</p>"])
+      end
     else
-      Components.Player.send_message(entity, ["scroll", "You must choose #{Enum.join(genders, " or ")} for the sex of your mortal avatar."])
+      Components.Player.send_message(entity, ["scroll", "<p>You must choose your name before you can incarnate. 'set name (name)'</p>"])
     end
   end
 
@@ -27,16 +32,15 @@ defmodule Abilities.Incarnation do
 Incarnation allows you to become mortal as the race of your choosing.
 More powerful races require a larger investment of power, leaving you less to spend on training in your mortal life.
 
-Syntax: `use incarnation at (sex) (race)`
+Syntax: 'use incarnation at (sex) (race)'
 
-`help races` to get a list of available races
+'help races' to get a list of available races
 """
   end
 
-  defp incarnate(entity, name, sex, race_name) do
+  defp incarnate(entity, sex, race_name) do
     case Systems.Match.all(Races.all, :name_contains, race_name) do
       [race] ->
-        Entity.add_component(entity, Components.Name, name)
         Entity.add_component(entity, Components.Race, race)
         Entity.add_component(entity, Components.Stats, Components.Stats.value(race))
         Entity.add_component(entity, Components.Gender, sex)
