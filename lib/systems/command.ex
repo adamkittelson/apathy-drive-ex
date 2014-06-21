@@ -18,7 +18,7 @@ defmodule Systems.Command do
     Components.Player.send_message(character, ["disable", "#prompt"])
     Components.Player.send_message(character, ["disable", "#command"])
     if Entity.has_component?(character, Components.HP) do
-      Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}]:</span><input id='command' size='50' class='prompt'></input></p>"])
+      Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}/MA=#{Components.Mana.value(character)}]:</span><input id='command' size='50' class='prompt'></input></p>"])
     else
       Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[#{Systems.Trainer.total_power(character)}]:</span><input id='command' size='50' class='prompt'></input></p>"])
     end

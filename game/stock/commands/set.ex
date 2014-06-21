@@ -17,6 +17,7 @@ defmodule Commands.Set do
             name = "#{String.capitalize(first)}#{rest}"
             Entity.add_component(entity, Components.Name, name)
             Components.Hints.deactivate(entity, "name")
+            Entities.save!(entity)
             Components.Player.send_message(entity, ["scroll", "<p>Your name has been set.</p>"])
           end
         end

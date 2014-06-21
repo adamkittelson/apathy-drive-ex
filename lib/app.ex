@@ -41,7 +41,7 @@ defmodule ApathyDrive do
     end
 
     Systems.LairSpawning.initialize
-    Systems.HPRegen.initialize
+    Systems.Regen.initialize
     Systems.Hints.initialize
     Systems.Idle.initialize
 

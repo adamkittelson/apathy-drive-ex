@@ -48,8 +48,10 @@ Syntax: 'use incarnation at (sex) (race)'
         Entity.add_component(entity, Components.HairColor, select_random(hair_colors))
         Entity.add_component(entity, Components.HairLength, select_random(hair_lengths))
         Entity.add_component(entity, Components.HP, Systems.HP.max_hp(entity))
+        Entity.add_component(entity, Components.Mana, Systems.Mana.max_mana(entity))
         Entity.add_component(entity, Components.Limbs, entity |> Components.Race.value |> Components.Limbs.value)
         Components.Spirit.value(entity, false)
+        Entities.save!(entity)
         Components.Player.send_message(entity, ["scroll", "<p>Your new body materializes around you.</p>"])
       [] ->
         Components.Player.send_message(entity, ["scroll", "<p><span class='red'>There is no race by that name.</span></p>"])

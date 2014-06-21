@@ -24,6 +24,10 @@ defmodule Entity do
     Enum.member?(list_components(entity), component)
   end
 
+  def has_components?(entity, components) do
+    Enum.all?(components, &(has_component?(entity, &1)))
+  end
+
   def serialize_components(entity) do
     Enum.reduce(list_components(entity), %{}, fn(component, components) ->
       component = component.serialize(entity)

@@ -53,7 +53,18 @@ defmodule Systems.Trainer do
   end
 
   def power(entity) do
-    total_power(entity) - (entity |> Components.Skills.value |> Map.values |> Enum.sum)
+    total_power(entity) - racial_power_cost(entity) - (entity |> Components.Skills.value |> Map.values |> Enum.sum)
+  end
+
+  def racial_power_cost(entity) do
+    if Entity.has_component?(entity, Components.Race) do
+      race = entity
+             |> Components.Race.value
+             |> Components.Module.value
+      race.cost
+    else
+      0
+    end
   end
 
   def total_power(entity) when is_pid(entity) do

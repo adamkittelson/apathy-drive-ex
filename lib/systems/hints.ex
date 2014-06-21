@@ -8,6 +8,7 @@ defmodule Systems.Hints do
   def display_hint do
     Components.all(Components.Hints) |> Enum.each(fn(entity) ->
       unless Systems.Idle.idle?(entity) do
+        :random.seed(:erlang.now)
         hint = Components.Hints.value(entity).active
                |> Map.values
                |> Enum.shuffle

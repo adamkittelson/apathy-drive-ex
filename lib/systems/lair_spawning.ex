@@ -28,6 +28,7 @@ defmodule Systems.LairSpawning do
   end
 
   def select_lair_monster(room) do
+    :random.seed(:erlang.now)
     room |> Components.Lair.monster_templates
          |> Enum.shuffle
          |> List.first
