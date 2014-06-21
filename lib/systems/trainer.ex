@@ -2,7 +2,7 @@ defmodule Systems.Trainer do
   use Systems.Reload
 
   def list(character, room) do
-    devs = devs(character)
+    power = power(character)
     header = "<span class='blue'>-=-=-=-=-=-=-=-</span>  <span class='white'>Skill Listing</span>  <span class='blue'>-=-=-=-=-=-=-=-</span>"
     Components.Player.send_message(character, ["scroll", "<p>#{header}</p>"])
     skills_by_level(room) |> Map.keys |> Enum.each fn level ->
@@ -11,7 +11,7 @@ defmodule Systems.Trainer do
       skills_by_level(room)[level] |> Enum.each fn skill ->
         skill_name = String.ljust(skill.name, 26)
         cost = cost(character, skill)
-        if devs < cost do
+        if power < cost do
           cost = "<span class='dark-red'>#{"#{cost}" |> String.ljust(8)}</span>"
         else
           cost = "<span class='green'>#{"#{cost}" |> String.ljust(8)}</span>"
@@ -47,30 +47,30 @@ defmodule Systems.Trainer do
   end
 
   def train(entity, skill) do
-    devs = devs(entity)
+    power = power(entity)
     cost = cost(entity, skill)
-    Components.Skills.train(entity, skill, devs, cost)
+    Components.Skills.train(entity, skill, power, cost)
   end
 
-  def devs(entity) do
-    total_devs(entity) - (entity |> Components.Skills.value |> Map.values |> Enum.sum)
+  def power(entity) do
+    total_power(entity) - (entity |> Components.Skills.value |> Map.values |> Enum.sum)
   end
 
-  def total_devs(entity) when is_pid(entity) do
+  def total_power(entity) when is_pid(entity) do
     level = Components.Level.value(entity)
-    total_devs(level)
+    total_power(level)
   end
 
-  def total_devs(level) when is_integer(level) do
-    total_devs(level, 0)
+  def total_power(level) when is_integer(level) do
+    total_power(level, 0)
   end
 
-  def total_devs(level, devs) when level > 0 do
-    total_devs(level - 1, devs + (100 * (level - 1)))
+  def total_power(level, power) when level > 0 do
+    total_power(level - 1, power + (100 * (level - 1)))
   end
 
-  def total_devs(0, devs) do
-    1000 + devs
+  def total_power(0, power) do
+    1000 + power
   end
 
   def cost(entity, skill) when is_atom(skill) do
@@ -82,24 +82,24 @@ defmodule Systems.Trainer do
   end
 
   def rating(skill, entity) when is_pid(entity) do
-    rating(skill.cost, devs_spent(entity, skill))
+    rating(skill.cost, power_spent(entity, skill))
   end
 
-  def rating(modifier, devs_spent) when is_integer(devs_spent) do
-    rating(0, modifier, cost(modifier, 0), devs_spent)
+  def rating(modifier, power_spent) when is_integer(power_spent) do
+    rating(0, modifier, cost(modifier, 0), power_spent)
   end
 
-  def rating(rating, modifier, cost, devs) when devs >= cost do
+  def rating(rating, modifier, cost, power) when power >= cost do
     new_rating = rating + 1
     new_cost = cost(modifier, new_rating)
-    rating(new_rating, modifier, new_cost, devs - cost)
+    rating(new_rating, modifier, new_cost, power - cost)
   end
 
-  def rating(rating, _modifier, cost, devs) when devs < cost do
+  def rating(rating, _modifier, cost, power) when power < cost do
     rating
   end
 
-  def devs_spent(entity, skill) do
+  def power_spent(entity, skill) do
     Components.Skills.value(entity)
     |> Map.get(skill.name, 0)
   end

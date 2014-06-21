@@ -11,17 +11,17 @@ defmodule Components.Skills do
     GenEvent.notify(entity, {:set_skills, new_value})
   end
 
-  def train(entity, _skill, devs, cost) when devs < cost do
-    Components.Player.send_message(entity, ["scroll", "<p>You need #{cost} development points to train that skill.</p>"])
-    Components.Player.send_message(entity, ["scroll", "<p>You only have #{devs}.</p>"])
+  def train(entity, _skill, power, cost) when power < cost do
+    Components.Player.send_message(entity, ["scroll", "<p>You need #{cost} power to train that skill.</p>"])
+    Components.Player.send_message(entity, ["scroll", "<p>You only have #{power}.</p>"])
   end
 
-  def train(entity, skill, _devs, cost) do
+  def train(entity, skill, _power, cost) do
     old_stats = Systems.Stat.modified(entity)
 
     GenEvent.notify(entity, {:train, skill.name, cost})
     rating = skill.base(entity)
-    Components.Player.send_message(entity, ["scroll", "<p>You spend #{cost} development points to train two handed blade to #{rating}%</p>"])
+    Components.Player.send_message(entity, ["scroll", "<p>You spend #{cost} power to train two handed blade to #{rating}%</p>"])
 
     new_stats = Systems.Stat.modified(entity)
     new_stats |> Map.keys
@@ -33,8 +33,8 @@ defmodule Components.Skills do
                  end
 
     cost = Systems.Trainer.cost(skill.cost, rating)
-    Components.Player.send_message(entity, ["scroll", "<p>It will cost you #{cost} development points to advance this skill further.</p>"])
-    Components.Player.send_message(entity, ["scroll", "<p>You have #{Systems.Trainer.devs(entity)} development points left.</p>"])
+    Components.Player.send_message(entity, ["scroll", "<p>It will cost you #{cost} power to advance this skill further.</p>"])
+    Components.Player.send_message(entity, ["scroll", "<p>You have #{Systems.Trainer.power(entity)} power left.</p>"])
     Entities.save!(entity)
   end
 

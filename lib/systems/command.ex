@@ -20,7 +20,7 @@ defmodule Systems.Command do
     if Entity.has_component?(character, Components.HP) do
       Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}]:</span><input id='command' size='50' class='prompt'></input></p>"])
     else
-      Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[DEVS=#{Systems.Trainer.total_devs(character)}]:</span><input id='command' size='50' class='prompt'></input></p>"])
+      Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[#{Systems.Trainer.total_power(character)}]:</span><input id='command' size='50' class='prompt'></input></p>"])
     end
     Components.Player.send_message(character, ["focus", "#command"])
   end

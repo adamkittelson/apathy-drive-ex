@@ -24,8 +24,8 @@ defmodule Commands.Score do
             |> Integer.to_string
             |> String.ljust(10)
 
-    devs  = Systems.Trainer.devs(entity)
-    Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Devs:</span> <span class='dark-cyan'>#{devs}</span></p>"])
+    power  = Systems.Trainer.power(entity)
+    Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>"])
 
     if Entity.has_component?(entity, Components.HP) do
       Components.Player.send_message(entity, ["scroll", "<p><span class='dark-green'>Hits:</span> <span class='dark-cyan'>#{Components.HP.value(entity)}/#{Systems.HP.max_hp(entity)}</span></p>"])
