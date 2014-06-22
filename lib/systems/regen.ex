@@ -31,13 +31,25 @@ defmodule Systems.Regen do
     end)
   end
 
+  def regen_rate(seed) when is_integer(seed) do
+    regen_rate(seed, 0)
+  end
+
+  def regen_rate(seed, rate) when seed > 0 do
+    regen_rate(seed - 1, rate + ((seed - 1) / 100))
+  end
+
+  def regen_rate(0, rate) do
+    Float.floor(rate)
+  end
+
   def hp_regen_per_second(entity) do
-    (Components.Level.value(entity) + 30) * Systems.Stat.modified(entity, "health") / 300
-    |> Float.floor
+    regen_rate(Systems.Stat.modified(entity, "health"))
   end
 
   def mana_regen_per_second(entity) do
-    (Components.Level.value(entity) + 30) * ((Systems.Stat.modified(entity, "intellect") + Systems.Stat.modified(entity, "willpower")) / 2) / 300
-    |> Float.floor
+    intellect = Systems.Stat.modified(entity, "intellect")
+    willpower = Systems.Stat.modified(entity, "willpower")
+    regen_rate(Float.floor((intellect + willpower * 2) / 3))
   end
 end
