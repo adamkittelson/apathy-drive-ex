@@ -1,6 +1,7 @@
 defmodule Systems.LairSpawning do
   use Systems.Reload
   def initialize do
+    :random.seed(:erlang.now)
     :timer.apply_interval(10_000, Systems.LairSpawning, :spawn_lairs, [])
   end
 
@@ -28,7 +29,6 @@ defmodule Systems.LairSpawning do
   end
 
   def select_lair_monster(room) do
-    :random.seed(:erlang.now)
     room |> Components.Lair.monster_templates
          |> Enum.shuffle
          |> List.first
