@@ -27,7 +27,7 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :now) do
     room = Components.CurrentRoom.get_current_room(entity)
-    target_entity = find_entity_in_room(room, target)
+    target_entity = find_target(ability, room, target)
     if target_entity do
       Systems.Room.characters_in_room(room) |> Enum.each(fn(character) ->
         cond do
@@ -63,10 +63,19 @@ defmodule Systems.Ability do
        end)
   end
 
-  defp find_entity_in_room(room, target) do
-    room
-    |> Systems.Room.entities_in_room
-    |> Systems.Match.first(:name_contains, target)
+  def find_target(ability, room, target) do
+    case ability.properties[:target] do
+      "character" ->
+        room
+        |> Systems.Room.characters_in_room
+        |> Systems.Match.first(:name_contains, target)
+      "living" ->
+        room
+        |> Systems.Room.living_in_room
+        |> Systems.Match.first(:name_contains, target)
+      other ->
+        nil
+    end
   end
 
   defmacro __using__(_opts) do
