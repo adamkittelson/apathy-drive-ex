@@ -21,34 +21,54 @@ defmodule Systems.Ability do
     if ability.properties[:casting_time] do
       delay_execution(ability, entity, target)
     else
-      execute(ability, entity, target, :now)
+      execute(ability, entity, target, :verify_target)
     end
   end
 
-  def execute(ability, entity, target, :now) do
+  def execute(ability, entity, target, :verify_target) do
     room = Components.CurrentRoom.get_current_room(entity)
     target_entity = find_target(ability, room, target)
     if target_entity do
-      Systems.Room.characters_in_room(room) |> Enum.each(fn(character) ->
-        cond do
-          character == entity ->
-            Components.Player.send_message(entity, ["scroll", interpolate(ability.properties[:user_message], entity, target_entity)])
-          character == target_entity ->
-            Components.Player.send_message(target_entity, ["scroll", interpolate(ability.properties[:target_message], entity, target_entity)])
-          true ->
-            Components.Player.send_message(target_entity, ["scroll", interpolate(ability.properties[:observer_message], entity, target_entity)])
-        end
-      end)
+      execute(ability, entity, target_entity, :mana)
     else
       Components.Player.send_message(entity, ["scroll", "<p><span class='cyan'>Can't find #{target} here!  Your spell fails.</span></p>"])
     end
+  end
+
+  def execute(ability, entity, target, :mana) do
+    if ability.properties[:mana_cost] do
+      case Components.Mana.subtract(entity, ability.properties[:mana_cost]) do
+        :ok ->
+          Systems.Prompt.update(entity)
+          execute(ability, entity, target, :execute)
+        :error ->
+          Components.Player.send_message(entity, ["scroll", "<p><span class='dark-cyan'>You don't have enough mana.</span></p>"])
+      end
+    else
+      execute(ability, entity, target, :execute)
+    end
+  end
+
+  def execute(ability, entity, target, :execute) do
+    Components.CurrentRoom.get_current_room(entity)
+    |> Systems.Room.characters_in_room
+    |> Enum.each(fn(character) ->
+      cond do
+        character == entity ->
+          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:user_message], entity, target)])
+        character == target ->
+          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:target_message], entity, target)])
+        true ->
+          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:observer_message], entity, target)])
+      end
+    end)
   end
 
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
     delay = Float.floor(ability.properties[:casting_time] * 1000)
-    :timer.apply_after(delay, __MODULE__, :execute, [ability, entity, target, :now])
+    :timer.apply_after(delay, __MODULE__, :execute, [ability, entity, target, :verify_target])
   end
 
   def display_precast_message(ability, entity) do
@@ -73,7 +93,7 @@ defmodule Systems.Ability do
         room
         |> Systems.Room.living_in_room
         |> Systems.Match.first(:name_contains, target)
-      other ->
+      _ ->
         nil
     end
   end

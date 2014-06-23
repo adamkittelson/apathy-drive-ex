@@ -15,6 +15,10 @@ defmodule Components.Mana do
     GenEvent.notify(entity, {:add_mana, amount, Systems.Mana.max_mana(entity)})
   end
 
+  def subtract(entity, amount) do
+    GenEvent.call(entity, Components.Mana, {:subtract, amount})
+  end
+
   def serialize(entity) do
     %{"Mana" => value(entity)}
   end
@@ -26,6 +30,15 @@ defmodule Components.Mana do
 
   def handle_call(:value, value) do
     {:ok, value, value}
+  end
+
+  def handle_call({:subtract, amount}, value) do
+    if value >= amount do
+      new_value = value - amount
+      {:ok, :ok, new_value}
+    else
+      {:ok, :error, value}
+    end
   end
 
   def handle_event({:set_mana, new_value}, _value) do

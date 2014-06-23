@@ -26,7 +26,7 @@ defmodule Systems.Regen do
   def update_prompt do
     Components.all(Components.Player) |> Enum.each(fn(entity) ->
       if Entity.has_components?(entity, [Components.HP, Components.Mana]) do
-        Components.Player.send_message(entity, ["update prompt", "[HP=#{Components.HP.value(entity)}/MA=#{Components.Mana.value(entity)}]:"])
+        Systems.Prompt.update(entity)
       end
     end)
   end
