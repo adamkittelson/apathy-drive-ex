@@ -1,5 +1,6 @@
 defmodule Systems.Ability do
   use Systems.Reload
+  import Systems.Text
 
   def abilities(entity) do
     Abilities.all
@@ -31,11 +32,11 @@ defmodule Systems.Ability do
       Systems.Room.characters_in_room(room) |> Enum.each(fn(character) ->
         cond do
           character == entity ->
-            Components.Player.send_message(entity, ["scroll", ability.properties[:user_message]])
+            Components.Player.send_message(entity, ["scroll", interpolate(ability.properties[:user_message], entity, target_entity)])
           character == target_entity ->
-            Components.Player.send_message(target_entity, ["scroll", ability.properties[:target_message]])
+            Components.Player.send_message(target_entity, ["scroll", interpolate(ability.properties[:target_message], entity, target_entity)])
           true ->
-            Components.Player.send_message(target_entity, ["scroll", ability.properties[:observer_message]])
+            Components.Player.send_message(target_entity, ["scroll", interpolate(ability.properties[:observer_message], entity, target_entity)])
         end
       end)
     else
@@ -71,6 +72,8 @@ defmodule Systems.Ability do
   defmacro __using__(_opts) do
     quote do
       use Systems.Reload
+      import Systems.Text
+
       @after_compile Systems.Ability
 
       def name do
