@@ -38,12 +38,11 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :mana) do
     if ability.properties[:mana_cost] do
-      case Components.Mana.subtract(entity, ability.properties[:mana_cost]) do
-        :ok ->
-          Systems.Prompt.update(entity)
-          execute(ability, entity, target, :execute)
-        :error ->
-          Components.Player.send_message(entity, ["scroll", "<p><span class='dark-cyan'>You don't have enough mana.</span></p>"])
+      if Components.Mana.subtract(entity, ability.properties[:mana_cost]) do
+        Systems.Prompt.update(entity)
+        execute(ability, entity, target, :execute)
+      else
+        Components.Player.send_message(entity, ["scroll", "<p><span class='dark-cyan'>You don't have enough mana.</span></p>"])
       end
     else
       execute(ability, entity, target, :execute)
@@ -51,6 +50,11 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :execute) do
+    display_cast_message(ability, entity, target)
+    do_damage(ability, entity, target)
+  end
+
+  def display_cast_message(ability, entity, target) do
     Components.CurrentRoom.get_current_room(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
@@ -61,6 +65,30 @@ defmodule Systems.Ability do
           Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:target_message], entity, target)])
         true ->
           Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:observer_message], entity, target)])
+      end
+    end)
+  end
+
+  def do_damage(ability, entity, target) do
+    if ability.properties[:damage] do
+      damage = ability.properties[:damage] |> Enum.into([]) |> Enum.shuffle |> List.first
+      if !Components.HP.subtract(target, damage) do
+        kill(entity, target)
+      end
+    end
+  end
+
+  def kill(entity, target) do
+    Components.CurrentRoom.get_current_room(entity)
+    |> Systems.Room.characters_in_room
+    |> Enum.each(fn(character) ->
+      cond do
+        character == entity ->
+          Components.Player.send_message(character, ["scroll", interpolate("<p>You just killed {{target}}!</p>", entity, target)])
+        character == target ->
+          Components.Player.send_message(character, ["scroll", interpolate("<p>{{user}} just killed you!</p>", entity, target)])
+        true ->
+          Components.Player.send_message(character, ["scroll", interpolate("<p>{{user}} just killed {{target}}!</p>", entity, target)])
       end
     end)
   end

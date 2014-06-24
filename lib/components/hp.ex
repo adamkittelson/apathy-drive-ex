@@ -15,6 +15,10 @@ defmodule Components.HP do
     GenEvent.notify(entity, {:add_hp, amount, Systems.HP.max_hp(entity)})
   end
 
+  def subtract(entity, amount) do
+    GenEvent.call(entity, Components.HP, {:subtract, amount})
+  end
+
   def serialize(entity) do
     %{"HP" => value(entity)}
   end
@@ -34,6 +38,15 @@ defmodule Components.HP do
 
   def handle_event({:add_hp, amount, max}, value) do
     {:ok, Enum.min([value + amount, max]) }
+  end
+
+  def handle_call({:subtract, amount}, value) do
+    if value >= amount do
+      new_value = value - amount
+      {:ok, true, new_value}
+    else
+      {:ok, false, value}
+    end
   end
 
   def handle_event(_, current_value) do
