@@ -1,8 +1,9 @@
 defmodule Systems.Regen do
   use Systems.Reload
+  import Utility
 
   def initialize do
-    :timer.apply_interval(1_000, Systems.Regen, :regen, [])
+    every 1, do: regen
   end
 
   def regen do

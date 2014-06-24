@@ -1,8 +1,9 @@
 defmodule Systems.Idle do
   use Systems.Reload
+  import Utility
 
   def initialize do
-    :timer.apply_interval(1_000, Systems.Idle, :increment, [])
+    every 1, do: increment
   end
 
   def increment do

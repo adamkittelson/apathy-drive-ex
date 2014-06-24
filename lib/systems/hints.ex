@@ -1,8 +1,9 @@
 defmodule Systems.Hints do
   use Systems.Reload
+  import Utility
 
   def initialize do
-    :timer.apply_interval(60_000, Systems.Hints, :display_hint, [])
+    every 60, do: display_hint
   end
 
   def display_hint do

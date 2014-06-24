@@ -1,6 +1,7 @@
 defmodule Systems.Ability do
   use Systems.Reload
   import Systems.Text
+  import Utility
 
   def abilities(entity) do
     Abilities.all
@@ -67,8 +68,9 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    delay = Float.floor(ability.properties[:casting_time] * 1000)
-    :timer.apply_after(delay, __MODULE__, :execute, [ability, entity, target, :verify_target])
+    delay(ability.properties[:casting_time]) do
+      execute(ability, entity, target, :verify_target)
+    end
   end
 
   def display_precast_message(ability, entity) do
@@ -102,6 +104,7 @@ defmodule Systems.Ability do
     quote do
       use Systems.Reload
       import Systems.Text
+      import Utility
 
       @after_compile Systems.Ability
 

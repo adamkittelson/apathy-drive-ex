@@ -1,8 +1,10 @@
 defmodule Systems.LairSpawning do
   use Systems.Reload
+  import Utility
+
   def initialize do
     :random.seed(:erlang.now)
-    :timer.apply_interval(10_000, Systems.LairSpawning, :spawn_lairs, [])
+    every 10, do: spawn_lairs
   end
 
   def spawn_lairs do
