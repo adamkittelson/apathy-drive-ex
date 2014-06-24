@@ -72,7 +72,9 @@ defmodule Systems.Ability do
   def do_damage(ability, entity, target) do
     if ability.properties[:damage] do
       damage = ability.properties[:damage] |> Enum.into([]) |> Enum.shuffle |> List.first
-      if !Components.HP.subtract(target, damage) do
+      if Components.HP.subtract(target, damage) do
+        Systems.Prompt.update(target)
+      else
         kill(entity, target)
       end
     end
