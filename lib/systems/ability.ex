@@ -51,7 +51,7 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :execute) do
     display_cast_message(ability, entity, target)
-    do_damage(ability, entity, target)
+    Systems.Damage.do_damage(ability, entity, target)
   end
 
   def display_cast_message(ability, entity, target) do
@@ -67,17 +67,6 @@ defmodule Systems.Ability do
           Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:observer_message], entity, target)])
       end
     end)
-  end
-
-  def do_damage(ability, entity, target) do
-    if ability.properties[:damage] do
-      damage = ability.properties[:damage] |> Enum.into([]) |> Enum.shuffle |> List.first
-      if Components.HP.subtract(target, damage) do
-        Systems.Prompt.update(target)
-      else
-        kill(entity, target)
-      end
-    end
   end
 
   def kill(entity, target) do
