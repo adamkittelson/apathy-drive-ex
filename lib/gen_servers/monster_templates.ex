@@ -3,8 +3,7 @@ defmodule MonsterTemplates do
   use GenServer
 
   # Public API
-  def add(monster) do
-    id = Components.ID.value(monster)
+  def add(id, monster) do
     GenServer.cast(:monster_templates, {:add, id, monster})
   end
 
@@ -26,6 +25,12 @@ defmodule MonsterTemplates do
       monster |> Components.Name.get_name
            |> String.downcase
            |> String.contains?(String.downcase(name))
+    end)
+  end
+
+  def find_by_module(module) do
+    Enum.find(all, fn (mt) ->
+      Components.Module.value(mt) == module
     end)
   end
 
