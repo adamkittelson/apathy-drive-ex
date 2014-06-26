@@ -24,11 +24,31 @@ defmodule ApathyDrive do
     Abilities.start_link
     Skills.start_link
 
-    get_file_list(["game/**/*.ex"])
+    get_file_list(["game/**/abilities/**/*.ex", "game/**/commands/**/*.ex", "game/**/races/**/*.ex", "game/**/skills/**/*.ex"])
     |> Enum.each fn(file) ->
       IO.puts "Compiled #{file}"
       Code.load_file(file)
     end
+
+    get_file_list(["lib/data/**/monsters/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+
+        module = :"Elixir.Monsters.#{module_name}"
+
+        {:ok, mt} = Entity.init
+        Entity.add_component(mt, Components.Keywords, module.keywords)
+        Entity.add_component(mt, Components.Name, module.name)
+        Entity.add_component(mt, Components.Module, module)
+
+        MonsterTemplates.add(file, mt)
+
+        IO.puts "file: #{file}"
+
+      end)
+
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)
     # compile all views
