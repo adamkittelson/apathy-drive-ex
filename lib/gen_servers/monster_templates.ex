@@ -31,7 +31,7 @@ defmodule MonsterTemplates do
 
   # GenServer API
   def start_link() do
-    GenServer.start_link(MonsterTempaltes, HashDict.new, name: :monster_templates)
+    GenServer.start_link(MonsterTemplates, HashDict.new, name: :monster_templates)
   end
 
   def init(monster_templates) do
