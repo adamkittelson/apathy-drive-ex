@@ -28,7 +28,6 @@ defmodule Systems.Command do
   defmacro __using__(_opts) do
     quote do
       use Systems.Reload
-      @after_compile Systems.Command
 
       def name do
         __MODULE__
@@ -37,15 +36,6 @@ defmodule Systems.Command do
         |> List.last
         |> Inflex.underscore
       end
-    end
-  end
-
-  defmacro __after_compile__(_env, _bytecode) do
-    quote do
-      {:ok, command} = Entity.init
-      Entity.add_component(command, Components.Keywords, __MODULE__.keywords)
-      Entity.add_component(command, Components.Name, __MODULE__.name)
-      Commands.add(command)
     end
   end
 

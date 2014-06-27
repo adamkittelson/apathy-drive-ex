@@ -1,4 +1,4 @@
-defmodule Commands.SouthEast do
+defmodule Commands.Southeast do
   use Systems.Command
 
   def keywords, do: ["se", "southeast"]
