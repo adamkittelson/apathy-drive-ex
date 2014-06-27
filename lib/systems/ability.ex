@@ -92,7 +92,7 @@ defmodule Systems.Ability do
     end
   end
 
-  def display_precast_message(ability, entity) do
+  def display_precast_message(_ability, entity) do
     Components.CurrentRoom.get_current_room(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
@@ -125,8 +125,6 @@ defmodule Systems.Ability do
       import Systems.Text
       import Utility
 
-      @after_compile Systems.Ability
-
       def name do
         __MODULE__
         |> Atom.to_string
@@ -138,25 +136,6 @@ defmodule Systems.Ability do
 
       def keywords do
         name |> String.split
-      end
-    end
-  end
-
-  defmacro __after_compile__(_env, _bytecode) do
-    quote do
-      ability = Abilities.find_by_module(__MODULE__)
-      if ability do
-        Components.Keywords.value(ability, __MODULE__.keywords)
-        Components.Name.value(ability, __MODULE__.name)
-        Components.Help.value(ability, __MODULE__.help)
-      else
-        {:ok, ability} = Entity.init
-        Entity.add_component(ability, Components.Keywords, __MODULE__.keywords)
-        Entity.add_component(ability, Components.Name, __MODULE__.name)
-        Entity.add_component(ability, Components.Module, __MODULE__)
-        Entity.add_component(ability, Components.Help, __MODULE__.help)
-        Abilities.add(__MODULE__.name, ability)
-        Help.add(ability)
       end
     end
   end

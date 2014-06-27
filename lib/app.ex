@@ -30,24 +30,8 @@ defmodule ApathyDrive do
       Code.load_file(file)
     end
 
-    get_file_list(["lib/data/**/monsters/**/*.ex"])
-    |> Enum.each(fn(file) ->
-         module_name = Path.basename(file)
-                       |> String.replace(".ex", "")
-                       |> Inflex.camelize
-
-        module = :"Elixir.Monsters.#{module_name}"
-
-        {:ok, mt} = Entity.init
-        Entity.add_component(mt, Components.Keywords, module.keywords)
-        Entity.add_component(mt, Components.Name, module.name)
-        Entity.add_component(mt, Components.Module, module)
-
-        MonsterTemplates.add(file, mt)
-
-        IO.puts "file: #{file}"
-
-      end)
+    index_monsters
+    index_abilities
 
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)
@@ -93,6 +77,44 @@ defmodule ApathyDrive do
     end
 
     get_file_list(paths, updated_file_index)
+  end
+
+  defp index_monsters do
+    get_file_list(["lib/data/**/monsters/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+
+        module = :"Elixir.Monsters.#{module_name}"
+
+        {:ok, mt} = Entity.init
+        Entity.add_component(mt, Components.Keywords, module.keywords)
+        Entity.add_component(mt, Components.Name, module.name)
+        Entity.add_component(mt, Components.Module, module)
+
+        MonsterTemplates.add(file, mt)
+      end)
+  end
+
+  defp index_abilities do
+    get_file_list(["lib/data/**/abilities/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+
+        module = :"Elixir.Abilities.#{module_name}"
+
+        {:ok, ability} = Entity.init
+        Entity.add_component(ability, Components.Keywords, module.keywords)
+        Entity.add_component(ability, Components.Name, module.name)
+        Entity.add_component(ability, Components.Module, module)
+        Entity.add_component(ability, Components.Help, module.help)
+        Abilities.add(module.name, ability)
+        Help.add(ability)
+
+      end)
   end
 
 end
