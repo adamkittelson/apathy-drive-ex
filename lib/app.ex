@@ -33,6 +33,7 @@ defmodule ApathyDrive do
     index_monsters
     index_abilities
     index_commands
+    index_races
 
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)
@@ -130,6 +131,26 @@ defmodule ApathyDrive do
         Entity.add_component(command, Components.Keywords, module.keywords)
         Entity.add_component(command, Components.Name, module.name)
         Commands.add(command)
+      end)
+  end
+
+  defp index_races do
+    get_file_list(["lib/data/**/races/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+        module = :"Elixir.Races.#{module_name}"
+
+        {:ok, race} = Entity.init
+        Entity.add_component(race, Components.Keywords, module.keywords)
+        Entity.add_component(race, Components.Name, module.name)
+        Entity.add_component(race, Components.Help, module.help)
+        Entity.add_component(race, Components.Limbs, module.limbs)
+        Entity.add_component(race, Components.Stats, module.stats)
+        Entity.add_component(race, Components.Module, module)
+        Races.add(race)
+        Help.add(race)
       end)
   end
 
