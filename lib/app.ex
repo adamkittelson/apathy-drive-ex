@@ -24,11 +24,20 @@ defmodule ApathyDrive do
     Abilities.start_link
     Skills.start_link
 
-    get_file_list(["game/**/*.ex"])
+    get_file_list(["game/**/abilities/**/*.ex", "game/**/commands/**/*.ex", "game/**/races/**/*.ex", "game/**/skills/**/*.ex"])
     |> Enum.each fn(file) ->
       IO.puts "Compiled #{file}"
       Code.load_file(file)
     end
+
+    index_items
+    index_monsters
+    index_abilities
+    index_commands
+    index_races
+    index_skills
+    index_help
+
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)
     # compile all views
@@ -73,6 +82,132 @@ defmodule ApathyDrive do
     end
 
     get_file_list(paths, updated_file_index)
+  end
+
+  defp index_items do
+    get_file_list(["lib/data/**/items/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+
+        module = :"Elixir.Items.#{module_name}"
+
+        {:ok, it} = Entity.init
+        Entity.add_component(it, Components.Keywords, module.keywords)
+        Entity.add_component(it, Components.Name, module.name)
+        Entity.add_component(it, Components.Module, module)
+
+        ItemTemplates.add(file, it)
+      end)
+  end
+
+  defp index_monsters do
+    get_file_list(["lib/data/**/monsters/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+
+        module = :"Elixir.Monsters.#{module_name}"
+
+        {:ok, mt} = Entity.init
+        Entity.add_component(mt, Components.Keywords, module.keywords)
+        Entity.add_component(mt, Components.Name, module.name)
+        Entity.add_component(mt, Components.Module, module)
+
+        MonsterTemplates.add(file, mt)
+      end)
+  end
+
+  defp index_abilities do
+    get_file_list(["lib/data/**/abilities/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+
+        module = :"Elixir.Abilities.#{module_name}"
+
+        {:ok, ability} = Entity.init
+        Entity.add_component(ability, Components.Keywords, module.keywords)
+        Entity.add_component(ability, Components.Name, module.name)
+        Entity.add_component(ability, Components.Module, module)
+        Entity.add_component(ability, Components.Help, module.help)
+        Abilities.add(module.name, ability)
+        Help.add(ability)
+
+      end)
+  end
+
+  defp index_commands do
+    get_file_list(["lib/data/**/commands/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+        module = :"Elixir.Commands.#{module_name}"
+
+        {:ok, command} = Entity.init
+        Entity.add_component(command, Components.Keywords, module.keywords)
+        Entity.add_component(command, Components.Name, module.name)
+        Commands.add(command)
+      end)
+  end
+
+  defp index_races do
+    get_file_list(["lib/data/**/races/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+        module = :"Elixir.Races.#{module_name}"
+
+        {:ok, race} = Entity.init
+        Entity.add_component(race, Components.Keywords, module.keywords)
+        Entity.add_component(race, Components.Name, module.name)
+        Entity.add_component(race, Components.Help, module.help)
+        Entity.add_component(race, Components.Limbs, module.limbs)
+        Entity.add_component(race, Components.Stats, module.stats)
+        Entity.add_component(race, Components.Module, module)
+        Races.add(race)
+        Help.add(race)
+      end)
+  end
+
+  defp index_skills do
+    get_file_list(["lib/data/**/skills/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+        module = :"Elixir.Skills.#{module_name}"
+
+        {:ok, skill} = Entity.init
+        Entity.add_component(skill, Components.Keywords, module.keywords)
+        Entity.add_component(skill, Components.Name, module.name)
+        Entity.add_component(skill, Components.Module, module)
+        Entity.add_component(skill, Components.Help, module.help)
+        Skills.add(module.name, skill)
+        Help.add(skill)
+      end)
+  end
+
+  defp index_help do
+    get_file_list(["lib/data/**/help/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+        module = :"Elixir.Help.#{module_name}"
+
+        {:ok, help} = Entity.init
+        Entity.add_component(help, Components.Keywords, module.keywords)
+        Entity.add_component(help, Components.Name, module.name)
+        Entity.add_component(help, Components.Module, module)
+        Entity.add_component(help, Components.Help, module.help)
+        Help.add(help)
+      end)
   end
 
 end

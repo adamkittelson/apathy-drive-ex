@@ -3,11 +3,11 @@ defmodule Systems.LairSpawning do
   import Utility
 
   def initialize do
-    :random.seed(:erlang.now)
     every 10, do: spawn_lairs
   end
 
   def spawn_lairs do
+    :random.seed(:erlang.now)
     Components.all(Components.Lair) |> Enum.each(fn(room) ->
       {mega, seconds, _} = :os.timestamp
       spawn_at = (mega * 1000000 + seconds) - Components.Lair.frequency(room) * 60

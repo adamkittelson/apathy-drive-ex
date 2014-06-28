@@ -3,8 +3,7 @@ defmodule ItemTemplates do
   use GenServer
 
   # Public API
-  def add(item) do
-    id = Components.ID.value(item)
+  def add(id, item) do
     GenServer.cast(:item_templates, {:add, id, item})
   end
 

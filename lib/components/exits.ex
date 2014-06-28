@@ -11,10 +11,6 @@ defmodule Components.Exits do
     GenEvent.notify(entity, {:set_exits, new_value})
   end
 
-  def get_exits(entity) do
-    GenEvent.call(entity, Components.Exits, :get_exits)
-  end
-
   def set_exits(entity, exits) do
     value(entity, Enum.map(exits, &(&1 |> Components.ID.value)))
   end
@@ -30,10 +26,6 @@ defmodule Components.Exits do
 
   def handle_call(:value, exit_ids) do
     {:ok, exit_ids, exit_ids}
-  end
-
-  def handle_call(:get_exits, exit_ids) do
-    {:ok, Enum.map(exit_ids, &(Components.find_by(Components.ID, &1))), exit_ids}
   end
 
   def handle_event({:set_exits, new_value}, _value) do

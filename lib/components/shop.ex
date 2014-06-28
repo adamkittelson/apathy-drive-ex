@@ -13,7 +13,7 @@ defmodule Components.Shop do
 
   def items(entity) do
     Enum.map(value(entity), fn(item_hash) ->
-      Components.find_by(Components.ID, item_hash["item"])
+      ItemTemplates.find_by_id(item_hash["item"])
     end)
   end
 

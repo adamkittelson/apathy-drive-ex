@@ -32,7 +32,7 @@ defmodule Components.Lair do
   end
 
   def monster_templates(entity) do
-    monster_ids(entity) |> Enum.map(&(Components.find_by(Components.ID, &1)))
+    monster_ids(entity) |> Enum.map(&(MonsterTemplates.find_by_id(&1)))
   end
 
   def monster_names(entity) do
@@ -54,6 +54,10 @@ defmodule Components.Lair do
 
   def handle_call(:value, lair) do
     {:ok, lair, lair}
+  end
+
+  def handle_event({:set_lair, new_value}, value) do
+    {:ok, new_value }
   end
 
   def handle_event(:set_last_spawned_at, value) do
