@@ -6,11 +6,13 @@ defmodule Systems.Room do
   end
 
   def long_room_html(character, room) do
-    "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(character, room)}#{exit_directions_html(room)}</div>"
+    directions = room |> exit_directions |> exit_directions_html
+    "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(character, room)}#{directions}</div>"
   end
 
   def short_room_html(room) do
-    "<div class='room'>#{name_html(room)}#{exit_directions_html(room)}</div>"
+    directions = room |> exit_directions |> exit_directions_html
+    "<div class='room'>#{name_html(room)}#{directions}</div>"
   end
 
   def shop(room) do
@@ -34,22 +36,19 @@ defmodule Systems.Room do
   end
 
   def exit_directions(room) do
-    exits(room) |> Enum.map fn (exit_pid) ->
-      Components.Direction.get_direction(exit_pid)
-    end
+    exits(room) |> Map.keys
   end
 
-  def exit_directions_html(room) do
-    directions = exit_directions(room)
-    if Enum.any? directions do
-      "<div class='exits'>Obvious exits: #{Enum.join(directions, ", ")}</div>"
-    else
-      "<div class='exits'>Obvious exits: NONE</div>"
-    end
+  def exit_directions_html([]) do
+    "<div class='exits'>Obvious exits: NONE</div>"
+  end
+
+  def exit_directions_html(directions) do
+    "<div class='exits'>Obvious exits: #{Enum.join(directions, ", ")}</div>"
   end
 
   def exits(room) do
-    Components.Exits.get_exits(room)
+    Components.Exits.value(room)
   end
 
   def description(room) do
@@ -103,7 +102,7 @@ defmodule Systems.Room do
   end
 
   def move(character, current_room, room_exit) do
-    destination = Components.Destination.get_destination(room_exit)
+    destination = Rooms.find_by_id(room_exit["destination"])
 
     Components.CurrentRoom.set_current_room(character, destination)
     if Components.Spirit.value(character) == false do
@@ -138,23 +137,17 @@ defmodule Systems.Room do
     end)
   end
 
-  def get_exit_by_destination(room, destination) do
-    exits(room) |> Enum.find fn (room_exit) ->
-      Components.Destination.get_destination(room_exit) == destination
-    end
-  end
-
   def get_direction_by_destination(room, destination) do
-    room_exit = get_exit_by_destination(room, destination)
-    if room_exit do
-      Components.Direction.get_direction(room_exit)
+    exits = exits(room)
+    exits
+    |> Map.keys
+    |> Enum.find fn(direction) ->
+      Rooms.find_by_id(exits["destination"]) == destination
     end
   end
 
   def get_exit_by_direction(room, direction) do
-    exits(room) |> Enum.find fn (room_exit) ->
-      Components.Direction.get_direction(room_exit) == direction
-    end
+    exits(room)[direction]
   end
 
   def living_in_room(room) do
