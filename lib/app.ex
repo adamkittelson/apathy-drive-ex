@@ -30,6 +30,7 @@ defmodule ApathyDrive do
       Code.load_file(file)
     end
 
+    index_items
     index_monsters
     index_abilities
     index_commands
@@ -81,6 +82,24 @@ defmodule ApathyDrive do
     end
 
     get_file_list(paths, updated_file_index)
+  end
+
+  defp index_items do
+    get_file_list(["lib/data/**/items/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+
+        module = :"Elixir.Items.#{module_name}"
+
+        {:ok, it} = Entity.init
+        Entity.add_component(it, Components.Keywords, module.keywords)
+        Entity.add_component(it, Components.Name, module.name)
+        Entity.add_component(it, Components.Module, module)
+
+        ItemTemplates.add(file, it)
+      end)
   end
 
   defp index_monsters do

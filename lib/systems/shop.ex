@@ -5,7 +5,7 @@ defmodule Systems.Shop do
     Components.Player.send_message(character, ["scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span></p>"])
     Components.Player.send_message(character, ["scroll", "<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>"])
     Enum.each(Components.Shop.value(room), fn(item_hash) ->
-      item_name = Components.find_by(Components.ID, item_hash["item"]) |> Components.Name.value
+      item_name = ItemTemplates.find_by_id(item_hash["item"]) |> Components.Name.value
       cost = case item_hash["cost"] do
         nil ->
           "Free"

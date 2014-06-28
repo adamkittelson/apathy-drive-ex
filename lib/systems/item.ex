@@ -8,6 +8,17 @@ defmodule Systems.Item do
     |> Enum.each fn(component) ->
       Entity.add_component(entity, component, component.value(item))
     end
+
+    template = Components.Module.value(item)
+
+    if template.properties[:worn_on] do
+      Entity.add_component(entity, Components.WornOn, template.properties[:worn_on])
+    end
+
+    if template.properties[:slot] do
+      Entity.add_component(entity, Components.Slot, template.properties[:slot])
+    end
+
     Components.Types.value(entity, ["item"])
     Entities.save!(entity)
     entity
