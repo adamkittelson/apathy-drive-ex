@@ -24,12 +24,7 @@ defmodule ApathyDrive do
     Abilities.start_link
     Skills.start_link
 
-    get_file_list(["game/**/abilities/**/*.ex", "game/**/commands/**/*.ex", "game/**/races/**/*.ex", "game/**/skills/**/*.ex"])
-    |> Enum.each fn(file) ->
-      IO.puts "Compiled #{file}"
-      Code.load_file(file)
-    end
-
+    IO.puts "Indexing..."
     index_items
     index_monsters
     index_abilities
@@ -37,6 +32,7 @@ defmodule ApathyDrive do
     index_races
     index_skills
     index_help
+    IO.puts "Done!"
 
     # Set resources
     Weber.Templates.ViewsLoader.set_up_resources(File.cwd!)

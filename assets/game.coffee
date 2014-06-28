@@ -6,7 +6,6 @@ $ ->
     setFocus(focus)
 
   updateRoom = (data) ->
-    console.log(data)
     $('#room .title').html(data['name'])
     $('#room .description').html(data['description'])
     if data['entities'].length > 0
@@ -32,7 +31,6 @@ $ ->
   webSocket = new WebSocket("#{window.location.origin.replace('http', 'ws:')}/_ws")
 
   webSocket.onopen = (event) ->
-    console.log "Connected!"
     pathparts = window.location.pathname.split("/")
     url = pathparts[pathparts.length - 1]
     webSocket.send JSON.stringify({login: url})
@@ -53,7 +51,7 @@ $ ->
   webSocket.onclose = (event) ->
     $("#scroll").append("<p>Disconnected from server.</p>")
     disableField("#command")
-    console.log "Connection closed!"
+    $('#scroll').scrollTop($('#scroll')[0].scrollHeight)
 
   addToScroll = (elem, text) ->
     $(elem).append(text)

@@ -7,7 +7,6 @@
       return setFocus(focus);
     });
     updateRoom = function(data) {
-      console.log(data);
       $('#room .title').html(data['name']);
       $('#room .description').html(data['description']);
       if (data['entities'].length > 0) {
@@ -33,7 +32,6 @@
     webSocket = new WebSocket("" + (window.location.origin.replace('http', 'ws:')) + "/_ws");
     webSocket.onopen = function(event) {
       var pathparts, url;
-      console.log("Connected!");
       pathparts = window.location.pathname.split("/");
       url = pathparts[pathparts.length - 1];
       return webSocket.send(JSON.stringify({
@@ -67,7 +65,7 @@
     webSocket.onclose = function(event) {
       $("#scroll").append("<p>Disconnected from server.</p>");
       disableField("#command");
-      return console.log("Connection closed!");
+      return $('#scroll').scrollTop($('#scroll')[0].scrollHeight);
     };
     addToScroll = function(elem, text) {
       $(elem).append(text);
