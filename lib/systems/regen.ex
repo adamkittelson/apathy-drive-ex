@@ -24,7 +24,24 @@ defmodule Systems.Regen do
     limbs = Components.Limbs.unsevered_limbs(entity)
     amount = Float.ceil(hp / length(limbs))
     limbs
-    |> Enum.each &(Components.Limbs.heal_limb(entity, &1, amount))
+    |> Enum.each &(heal_limb(entity, &1, amount))
+  end
+
+  def heal_limb(entity, limb, amount) do
+    crippled = Components.Limbs.crippled?(entity, limb)
+    Components.Limbs.heal_limb(entity, limb, amount)
+    if crippled && !Components.Limbs.crippled?(entity, limb) do
+      Components.CurrentRoom.get_current_room(entity)
+      |> Systems.Room.characters_in_room
+      |> Enum.each(fn(character) ->
+           cond do
+             character == entity ->
+               Components.Player.send_message(character, ["scroll", "<p>Your #{limb} no longer crippled!</p>"])
+              true ->
+               Components.Player.send_message(character, ["scroll", "<p>#{Components.Name.value(entity)}'s #{limb} is no longer crippled!</p>"])
+           end
+         end)
+    end
   end
 
   def regen_mana do
