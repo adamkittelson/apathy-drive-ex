@@ -23,11 +23,31 @@ defmodule Systems.Damage do
       damages = damages(entity, ability.properties[:damage])
       total = damages |> Map.values |> Enum.sum
 
+      damage_random_limb(target, total)
+
       if Components.HP.subtract(target, total) do
         Systems.Prompt.update(target)
       else
         Systems.Ability.kill(entity, target)
       end
+    end
+  end
+
+  def damage_random_limb(target, total) do
+    limb = Components.Limbs.random(target)
+    crippled = Components.Limbs.crippled?(target, limb)
+    Components.Limbs.damage_limb(target, limb, total)
+    if !crippled && Components.Limbs.crippled?(target, limb) do
+      Components.CurrentRoom.get_current_room(target)
+      |> Systems.Room.characters_in_room
+      |> Enum.each(fn(character) ->
+           cond do
+             character == target ->
+               Components.Player.send_message(character, ["scroll", "<p>Your #{limb} is crippled!</p>"])
+              true ->
+               Components.Player.send_message(character, ["scroll", "<p>#{Components.Name.value(target)}'s #{limb} is crippled!</p>"])
+           end
+         end)
     end
   end
 
