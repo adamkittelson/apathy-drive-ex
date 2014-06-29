@@ -14,8 +14,17 @@ defmodule Systems.Regen do
 
   def regen_hp do
     Components.all(Components.HP) |> Enum.each(fn(entity) ->
-      Components.HP.add(entity, hp_regen_per_second(entity))
+      hp = hp_regen_per_second(entity)
+      Components.HP.add(entity, hp)
+      heal_limbs(entity, hp)
     end)
+  end
+
+  def heal_limbs(entity, hp) do
+    limbs = Components.Limbs.unsevered_limbs(entity)
+    amount = Float.ceil(hp / length(limbs))
+    limbs
+    |> Enum.each &(Components.Limbs.heal_limb(entity, &1, amount))
   end
 
   def regen_mana do

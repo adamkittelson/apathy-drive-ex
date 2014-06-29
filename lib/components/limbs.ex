@@ -40,11 +40,15 @@ defmodule Components.Limbs do
     !!value(entity)[limb_name]["severed"]
   end
 
-  def random(entity) do
-    :random.seed(:os.timestamp)
+  def unsevered_limbs(entity) do
     value(entity)
     |> Map.keys
     |> Enum.filter(&(!severed?(entity, &1)))
+  end
+
+  def random(entity) do
+    :random.seed(:os.timestamp)
+    unsevered_limbs(entity)
     |> Enum.shuffle
     |> List.first
   end
