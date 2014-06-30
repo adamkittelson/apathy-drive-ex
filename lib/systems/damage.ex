@@ -27,9 +27,8 @@ defmodule Systems.Damage do
 
       if Components.HP.subtract(target, total) do
         Systems.Prompt.update(target)
-      else
-        Systems.Ability.kill(entity, target)
       end
+      total
     end
   end
 
@@ -56,6 +55,7 @@ defmodule Systems.Damage do
   end
 
   def raw_damage(range) do
+    :random.seed(:os.timestamp)
     range |> Enum.into([]) |> Enum.shuffle |> List.first
   end
 

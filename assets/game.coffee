@@ -46,6 +46,7 @@ $ ->
       when "set field" then $(message[1]).val(message[2])
       when "update prompt" then $("#prompt").text(message[1])
       when "redirect" then window.location = "#{window.location.origin}#{message[1]}"
+      when "up" then command_history("up")
       else addToScroll("#scroll", message[1])
 
   webSocket.onclose = (event) ->

@@ -58,6 +58,8 @@
           return $("#prompt").text(message[1]);
         case "redirect":
           return window.location = "" + window.location.origin + message[1];
+        case "up":
+          return command_history("up");
         default:
           return addToScroll("#scroll", message[1]);
       }

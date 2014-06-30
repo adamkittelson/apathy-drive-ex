@@ -1,7 +1,7 @@
 defmodule Systems.Text do
   use Systems.Reload
 
-  def interpolate(string, user, target \\ nil) do
+  def interpolate(string, user, target \\ nil, opts \\ %{}) do
     string = String.replace(string, ~r/\{\{user\}\}/,   Components.Name.value(user))
     string = String.replace(string, ~r/\{\{target\}\}/, Components.Name.value(target))
 
@@ -30,7 +30,12 @@ defmodule Systems.Text do
     else
       string = String.replace(string, ~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/, "\\3")
     end
-    string
+
+    opts
+    |> Map.keys
+    |> Enum.reduce(string, fn(interpolation, updated_string) ->
+         String.replace(string, ~r/\{\{#{interpolation}\}\}/, "#{opts[interpolation]}")
+       end)
   end
 
 end

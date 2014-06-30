@@ -50,21 +50,21 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :execute) do
-    display_cast_message(ability, entity, target)
-    Systems.Damage.do_damage(ability, entity, target)
+    damage = Systems.Damage.do_damage(ability, entity, target)
+    display_cast_message(ability, entity, target, %{"damage" => damage})
   end
 
-  def display_cast_message(ability, entity, target) do
+  def display_cast_message(ability, entity, target, opts \\ %{}) do
     Components.CurrentRoom.get_current_room(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
       cond do
         character == entity ->
-          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:user_message], entity, target)])
+          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:user_message], entity, target, opts)])
         character == target ->
-          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:target_message], entity, target)])
+          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:target_message], entity, target, opts)])
         true ->
-          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:observer_message], entity, target)])
+          Components.Player.send_message(character, ["scroll", interpolate(ability.properties[:observer_message], entity, target, opts)])
       end
     end)
   end

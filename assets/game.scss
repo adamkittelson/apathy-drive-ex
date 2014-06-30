@@ -105,6 +105,15 @@ code {
   display: inline;
 }
 
+.prompt::selection {
+  background-color: $dark-blue;
+  color: $white;
+}
+
+.prompt:disabled {
+  color: $dark-yellow;
+}
+
 .field {
   background-color: black;
   border: none;

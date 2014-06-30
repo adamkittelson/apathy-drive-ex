@@ -113,6 +113,13 @@ code {
   font-size: 12px;
   display: inline; }
 
+.prompt::selection {
+  background-color: #0000aa;
+  color: white; }
+
+.prompt:disabled {
+  color: olive; }
+
 .field {
   background-color: black;
   border: none;

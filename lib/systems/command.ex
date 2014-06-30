@@ -23,6 +23,7 @@ defmodule Systems.Command do
       Components.Player.send_message(character, ["scroll", "<p><span id='prompt'>[#{Systems.Trainer.total_power(character)}]:</span><input id='command' size='50' class='prompt'></input></p>"])
     end
     Components.Player.send_message(character, ["focus", "#command"])
+    Components.Player.send_message(character, ["up"])
   end
 
   defmacro __using__(_opts) do
