@@ -19,6 +19,56 @@ defmodule Components.Limbs do
     GenEvent.call(entity, Components.Limbs, {:unequip, item})
   end
 
+  def max_damage(entity, limb_name) do
+    max_hp = Systems.HP.max_hp(entity)
+    GenEvent.call(entity, Components.Limbs, {:max_damage, limb_name, max_hp})
+  end
+
+  def current_damage(entity, limb_name) do
+    GenEvent.call(entity, Components.Limbs, {:current_damage, limb_name})
+  end
+
+  def damage_limb(entity, limb_name, amount) do
+    GenEvent.notify(entity, {:damage_limb, limb_name, amount})
+  end
+
+  def heal_limb(entity, limb_name, amount) do
+    GenEvent.notify(entity, {:heal_limb, limb_name, amount})
+  end
+
+  def sever_limb(entity, limb_name) do
+    GenEvent.notify(entity, {:sever_limb, limb_name})
+  end
+
+  def crippled?(entity, limb_name) do
+    !fatal_if_severed?(entity, limb_name) && (current_damage(entity, limb_name) || 0) >= max_damage(entity, limb_name)
+  end
+
+  def fatal_if_severed?(entity, limb_name) do
+    !!value(entity)[limb_name]["fatal"]
+  end
+
+  def severed?(entity, limb_name) do
+    !!value(entity)[limb_name]["severed"]
+  end
+
+  def attached(entity, limb_name) do
+    value(entity)[limb_name]["attached"]
+  end
+
+  def unsevered_limbs(entity) do
+    value(entity)
+    |> Map.keys
+    |> Enum.filter(&(!severed?(entity, &1)))
+  end
+
+  def random_unsevered_limb(entity) do
+    :random.seed(:os.timestamp)
+    unsevered_limbs(entity)
+    |> Enum.shuffle
+    |> List.first
+  end
+
   def serialize(entity) do
     %{"Limbs" => value(entity)}
   end
@@ -182,9 +232,47 @@ defmodule Components.Limbs do
     end
   end
 
+  def handle_call({:max_damage, limb_name, max_hp}, value) do
+    if value[limb_name]["fatal"] do
+      {:ok, Float.floor(max_hp * 0.5), value}
+    else
+      {:ok, Float.floor(max_hp * 0.25), value}
+    end
+  end
+
   def handle_call({:unequip, item}, value) do
     value = unequip_items([item], value)
     {:ok, item, value}
+  end
+
+  def handle_call({:current_damage, limb}, value) do
+    {:ok, value[limb]["damage"], value}
+  end
+
+  def handle_event({:damage_limb, limb_name, amount}, value) do
+    value = update_in(value[limb_name]["damage"], fn(current_damage) ->
+      if current_damage do
+        current_damage + amount
+      else
+        amount
+      end
+    end)
+    {:ok, value}
+  end
+
+  def handle_event({:heal_limb, limb_name, amount}, value) do
+    value = update_in(value[limb_name]["damage"], fn(current_damage) ->
+      if current_damage do
+        Enum.max([current_damage - amount, 0])
+      else
+        0
+      end
+    end)
+    {:ok, value}
+  end
+
+  def handle_event({:sever_limb, limb}, value) do
+    {:ok, put_in(value[limb]["severed"], true)}
   end
 
   def handle_event({:set_limbs, value}, _value) do

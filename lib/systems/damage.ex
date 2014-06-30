@@ -23,11 +23,26 @@ defmodule Systems.Damage do
       damages = damages(entity, ability.properties[:damage])
       total = damages |> Map.values |> Enum.sum
 
+      damage_random_limb(target, total)
+
       if Components.HP.subtract(target, total) do
         Systems.Prompt.update(target)
       else
         Systems.Ability.kill(entity, target)
       end
+    end
+  end
+
+  def damage_random_limb(target, total) do
+    limb = Components.Limbs.random_unsevered_limb(target)
+    crippled = Components.Limbs.crippled?(target, limb)
+    Components.Limbs.damage_limb(target, limb, total)
+    cond do
+      Components.Limbs.current_damage(target, limb) >= (Components.Limbs.max_damage(target, limb) * 2) ->
+        Systems.Limbs.sever_limb(target, limb)
+      !crippled && Components.Limbs.crippled?(target, limb) ->
+        Systems.Limbs.cripple_limb(target, limb)
+      true ->
     end
   end
 
