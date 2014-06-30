@@ -40,4 +40,23 @@ defmodule Systems.Limbs do
     end
   end
 
+  def sever_limb(_entity, nil), do: nil
+
+  def sever_limb(entity, limb) do
+    unless Components.Limbs.severed?(entity, limb) do
+      Components.Limbs.sever_limb(entity, limb)
+      Components.CurrentRoom.get_current_room(entity)
+      |> Systems.Room.characters_in_room
+      |> Enum.each(fn(character) ->
+           cond do
+             character == entity ->
+               Components.Player.send_message(character, ["scroll", "<p>Your #{limb} has been severed!</p>"])
+              true ->
+               Components.Player.send_message(character, ["scroll", "<p>#{Components.Name.value(entity)}'s #{limb} has been severed!</p>"])
+           end
+         end)
+      sever_limb(entity, Components.Limbs.attached(entity, limb))
+    end
+  end
+
 end

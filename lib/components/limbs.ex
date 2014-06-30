@@ -36,6 +36,10 @@ defmodule Components.Limbs do
     GenEvent.notify(entity, {:heal_limb, limb_name, amount})
   end
 
+  def sever_limb(entity, limb_name) do
+    GenEvent.notify(entity, {:sever_limb, limb_name})
+  end
+
   def crippled?(entity, limb_name) do
     !fatal_if_severed?(entity, limb_name) && (current_damage(entity, limb_name) || 0) >= max_damage(entity, limb_name)
   end
@@ -58,7 +62,7 @@ defmodule Components.Limbs do
     |> Enum.filter(&(!severed?(entity, &1)))
   end
 
-  def random(entity) do
+  def random_unsevered_limb(entity) do
     :random.seed(:os.timestamp)
     unsevered_limbs(entity)
     |> Enum.shuffle
@@ -265,6 +269,10 @@ defmodule Components.Limbs do
       end
     end)
     {:ok, value}
+  end
+
+  def handle_event({:sever_limb, limb}, value) do
+    {:ok, put_in(value[limb]["severed"], true)}
   end
 
   def handle_event({:set_limbs, value}, _value) do
