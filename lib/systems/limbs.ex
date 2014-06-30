@@ -15,4 +15,29 @@ defmodule Systems.Limbs do
     end)
   end
 
+  def cripple_limb(_entity, nil), do: nil
+
+  def cripple_limb(entity, limb) do
+    unless Components.Limbs.severed?(entity, limb) do
+      limb_damage = Components.Limbs.current_damage(entity, limb)
+      max_damage = Components.Limbs.max_damage(entity, limb)
+      if limb_damage < max_damage do
+        amt = Float.ceil((max_damage * 1.45) - limb_damage)
+        Components.Limbs.damage_limb(entity, limb, amt)
+      end
+
+      Components.CurrentRoom.get_current_room(entity)
+      |> Systems.Room.characters_in_room
+      |> Enum.each(fn(character) ->
+           cond do
+             character == entity ->
+               Components.Player.send_message(character, ["scroll", "<p>Your #{limb} is crippled!</p>"])
+              true ->
+               Components.Player.send_message(character, ["scroll", "<p>#{Components.Name.value(entity)}'s #{limb} is crippled!</p>"])
+           end
+         end)
+      cripple_limb(entity, Components.Limbs.attached(entity, limb))
+    end
+  end
+
 end

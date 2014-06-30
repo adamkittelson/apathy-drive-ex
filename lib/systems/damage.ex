@@ -38,16 +38,7 @@ defmodule Systems.Damage do
     crippled = Components.Limbs.crippled?(target, limb)
     Components.Limbs.damage_limb(target, limb, total)
     if !crippled && Components.Limbs.crippled?(target, limb) do
-      Components.CurrentRoom.get_current_room(target)
-      |> Systems.Room.characters_in_room
-      |> Enum.each(fn(character) ->
-           cond do
-             character == target ->
-               Components.Player.send_message(character, ["scroll", "<p>Your #{limb} is crippled!</p>"])
-              true ->
-               Components.Player.send_message(character, ["scroll", "<p>#{Components.Name.value(target)}'s #{limb} is crippled!</p>"])
-           end
-         end)
+      Systems.Limbs.cripple_limb(target, limb)
     end
   end
 

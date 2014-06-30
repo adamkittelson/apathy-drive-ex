@@ -24,6 +24,10 @@ defmodule Components.Limbs do
     GenEvent.call(entity, Components.Limbs, {:max_damage, limb_name, max_hp})
   end
 
+  def current_damage(entity, limb_name) do
+    GenEvent.call(entity, Components.Limbs, {:current_damage, limb_name})
+  end
+
   def damage_limb(entity, limb_name, amount) do
     GenEvent.notify(entity, {:damage_limb, limb_name, amount})
   end
@@ -33,11 +37,19 @@ defmodule Components.Limbs do
   end
 
   def crippled?(entity, limb_name) do
-    (value(entity)[limb_name]["damage"] || 0) >= max_damage(entity, limb_name)
+    !fatal_if_severed?(entity, limb_name) && (current_damage(entity, limb_name) || 0) >= max_damage(entity, limb_name)
+  end
+
+  def fatal_if_severed?(entity, limb_name) do
+    !!value(entity)[limb_name]["fatal"]
   end
 
   def severed?(entity, limb_name) do
     !!value(entity)[limb_name]["severed"]
+  end
+
+  def attached(entity, limb_name) do
+    value(entity)[limb_name]["attached"]
   end
 
   def unsevered_limbs(entity) do
@@ -227,6 +239,10 @@ defmodule Components.Limbs do
   def handle_call({:unequip, item}, value) do
     value = unequip_items([item], value)
     {:ok, item, value}
+  end
+
+  def handle_call({:current_damage, limb}, value) do
+    {:ok, value[limb]["damage"], value}
   end
 
   def handle_event({:damage_limb, limb_name, amount}, value) do
