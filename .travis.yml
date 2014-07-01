@@ -7,7 +7,7 @@ notifications:
 before_install:
   - git clone https://github.com/elixir-lang/elixir
   - cd elixir 
-  - git reset 9cff61493e9e3626e8d243dfe8aec07230a7fe73 --hard
+  - git reset 44b04120425c83984c867ee6b06974b7c139ba52 --hard
   - make && cd ..
 before_script:
   - export PATH=`pwd`/elixir/bin:$PATH
