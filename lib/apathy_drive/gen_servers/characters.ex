@@ -32,7 +32,10 @@ defmodule Characters do
   def find_by_socket(socket) do
     Components.all(Components.Socket)
     |> HashSet.to_list
-    |> Enum.find(&(Components.Socket.value(&1).pid == socket.pid))
+    |> Enum.find(fn(character) ->
+         character_socket = Components.Socket.value(character)
+         character_socket && character_socket.pid == socket.pid
+       end)
   end
 
   # GenServer API
