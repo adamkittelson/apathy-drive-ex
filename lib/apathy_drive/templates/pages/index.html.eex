@@ -1,0 +1,3 @@
+<form name="play" action="game" method="post">
+  <input type="submit" value="Play!">
+</form>
