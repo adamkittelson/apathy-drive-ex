@@ -7,3 +7,5 @@ _build
 .zenflow-log
 /game/apotheosis
 /lib/data/apotheosis
+*.DS_Store
+*.ez
