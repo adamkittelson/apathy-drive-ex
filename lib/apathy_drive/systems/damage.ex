@@ -27,6 +27,7 @@ defmodule Systems.Damage do
 
       if Components.HP.subtract(target, total) do
         Systems.Prompt.update(target)
+        HPRegen.add(entity)
       end
       total
     end

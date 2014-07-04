@@ -30,6 +30,7 @@ defmodule Components.Limbs do
 
   def damage_limb(entity, limb_name, amount) do
     GenEvent.notify(entity, {:damage_limb, limb_name, amount})
+    HPRegen.add(entity)
   end
 
   def heal_limb(entity, limb_name, amount) do
@@ -42,6 +43,16 @@ defmodule Components.Limbs do
 
   def crippled?(entity, limb_name) do
     !fatal_if_severed?(entity, limb_name) && (current_damage(entity, limb_name) || 0) >= max_damage(entity, limb_name)
+  end
+
+  def injured?(entity, limb_name) do
+    !(current_damage(entity, limb_name) == 0)
+  end
+
+  def injured?(entity) do
+    entity
+    |> unsevered_limbs
+    |> Enum.any?(&(injured?(entity, &1)))
   end
 
   def fatal_if_severed?(entity, limb_name) do

@@ -36,6 +36,7 @@ defmodule ApathyDrive do
       IO.puts "Done!"
     end
 
+    HPRegen.start_link
     Systems.LairSpawning.initialize
     Systems.Regen.initialize
     Systems.Hints.initialize

@@ -13,13 +13,19 @@ defmodule Systems.Regen do
   end
 
   def regen_hp do
-    Components.all(Components.HP) |> Enum.each(fn(entity) ->
-      if Components.HP.value(entity) < Systems.HP.max_hp(entity) do
-        hp = hp_regen_per_second(entity)
-        Components.HP.add(entity, hp)
-        heal_limbs(entity, hp)
-      end
-    end)
+    HPRegen.all
+    |> Enum.each(fn(entity) ->
+         hp = hp_regen_per_second(entity)
+         Components.HP.add(entity, hp)
+         heal_limbs(entity, hp)
+         if fully_healed?(entity) do
+           HPRegen.remove(entity)
+         end
+       end)
+  end
+
+  def fully_healed?(entity) do
+    (Components.HP.value(entity) >= Systems.HP.max_hp(entity)) && !Components.Limbs.injured?(entity)
   end
 
   def heal_limbs(entity, hp) do
