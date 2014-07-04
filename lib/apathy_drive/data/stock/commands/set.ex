@@ -1,5 +1,6 @@
 defmodule Commands.Set do
   use Systems.Command
+  import Systems.Text
 
   def keywords, do: ["set"]
 
@@ -13,9 +14,7 @@ defmodule Commands.Set do
           if Regex.match?(~r/[^a-zA-Z]/, name) do
             send_message(entity, "scroll", "<p>Your name must consist only of upper or lower case letters.</p>")
           else
-            {first, rest} = String.split_at(name, 1)
-            name = "#{String.capitalize(first)}#{rest}"
-            Entity.add_component(entity, Components.Name, name)
+            Entity.add_component(entity, Components.Name, capitalize_first(name))
             Components.Hints.deactivate(entity, "name")
             Entities.save!(entity)
             send_message(entity, "scroll", "<p>Your name has been set.</p>")

@@ -17,6 +17,7 @@ defmodule Components.HP do
 
   def subtract(entity, amount) do
     GenEvent.call(entity, Components.HP, {:subtract, amount})
+    IO.puts "#{Components.Name.value(entity)}: #{value(entity)} hp remaining"
   end
 
   def serialize(entity) do

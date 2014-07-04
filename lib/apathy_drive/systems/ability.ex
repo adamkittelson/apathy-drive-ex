@@ -39,6 +39,7 @@ defmodule Systems.Ability do
   def execute(ability, entity, target, :mana) do
     if ability.properties[:mana_cost] do
       if Components.Mana.subtract(entity, ability.properties[:mana_cost]) do
+        ManaRegen.add(entity)
         Systems.Prompt.update(entity)
         execute(ability, entity, target, :execute)
       else
@@ -50,8 +51,9 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :execute) do
-    damage = Systems.Damage.do_damage(ability, entity, target)
+    damage = Systems.Damage.calculate_damage(ability, entity, target)
     display_cast_message(ability, entity, target, %{"damage" => damage})
+    Systems.Damage.do_damage(target, damage)
   end
 
   def display_cast_message(ability, entity, target, opts \\ %{}) do

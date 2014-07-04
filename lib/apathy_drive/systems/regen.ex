@@ -53,11 +53,13 @@ defmodule Systems.Regen do
   end
 
   def regen_mana do
-    Components.all(Components.Mana) |> Enum.each(fn(entity) ->
-      if Components.Mana.value(entity) < Systems.Mana.max_mana(entity) do
-        Components.Mana.add(entity, mana_regen_per_second(entity))
-      end
-    end)
+    ManaRegen.all
+    |> Enum.each(fn(entity) ->
+         Components.Mana.add(entity, mana_regen_per_second(entity))
+         if Components.Mana.value(entity) >= Systems.Mana.max_mana(entity) do
+           ManaRegen.remove(entity)
+         end
+       end)
   end
 
   def update_prompt do

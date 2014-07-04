@@ -18,18 +18,19 @@ defmodule Systems.Damage do
     vacuum: "magical",
   }
 
-  def do_damage(ability, entity, target) do
+  def calculate_damage(ability, entity, target) do
     if ability.properties[:damage] do
       damages = damages(entity, ability.properties[:damage])
-      total = damages |> Map.values |> Enum.sum
+      damages |> Map.values |> Enum.sum
+    end
+  end
 
-      damage_random_limb(target, total)
+  def do_damage(target, amount) do
+    damage_random_limb(target, amount)
 
-      if Components.HP.subtract(target, total) do
-        Systems.Prompt.update(target)
-        HPRegen.add(entity)
-      end
-      total
+    if Components.HP.subtract(target, amount) do
+      Systems.Prompt.update(target)
+      HPRegen.add(target)
     end
   end
 

@@ -38,4 +38,9 @@ defmodule Systems.Text do
        end)
   end
 
+  def capitalize_first(string) do
+    {first, rest} = String.split_at(string, 1)
+    name = "#{String.capitalize(first)}#{rest}"
+  end
+
 end

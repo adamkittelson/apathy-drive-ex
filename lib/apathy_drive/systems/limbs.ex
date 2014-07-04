@@ -1,6 +1,7 @@
 defmodule Systems.Limbs do
   use Systems.Reload
   import Utility
+  import Systems.Text
 
   def equipped_items(character) when is_pid(character) do
     character |> Components.Limbs.value |> equipped_items
@@ -34,7 +35,7 @@ defmodule Systems.Limbs do
              character == entity ->
                send_message(character, "scroll", "<p>Your #{limb} is crippled!</p>")
               true ->
-               send_message(character, "scroll", "<p>#{Components.Name.value(entity)}'s #{limb} is crippled!</p>")
+               send_message(character, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} is crippled!</p>")
            end
          end)
       cripple_limb(entity, Components.Limbs.attached(entity, limb))
@@ -53,7 +54,7 @@ defmodule Systems.Limbs do
              character == entity ->
                send_message(character, "scroll", "<p>Your #{limb} has been severed!</p>")
               true ->
-               send_message(character, "scroll", "<p>#{Components.Name.value(entity)}'s #{limb} has been severed!</p>")
+               send_message(character, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} has been severed!</p>")
            end
          end)
       sever_limb(entity, Components.Limbs.attached(entity, limb))
