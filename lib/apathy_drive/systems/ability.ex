@@ -87,7 +87,7 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    delay(ability.properties[:casting_time]) do
+    delay(ability.properties[:casting_time], ability.name) do
       execute(ability, entity, target, :verify_target)
     end
   end

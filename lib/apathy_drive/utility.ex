@@ -1,20 +1,20 @@
 defmodule Utility do
   use Systems.Reload
 
-  defmacro delay(time_in_seconds, body) do
+  defmacro delay(time_in_seconds, source \\ "unknown", body) do
     quote do
       function = fn -> unquote body[:do] end
 
-      {:ok, timer} = :timer.apply_after(seconds_to_ms(unquote(time_in_seconds)), Utility, :call, [function])
+      {:ok, timer} = :timer.apply_after(seconds_to_ms(unquote(time_in_seconds)), Utility, :call, [function, unquote(source)])
       timer
     end
   end
 
-  defmacro every(time_in_seconds, body) do
+  defmacro every(time_in_seconds, source \\ "unknown", body) do
     quote do
       function = fn -> unquote body[:do] end
 
-      {:ok, timer} = :timer.apply_interval(seconds_to_ms(unquote(time_in_seconds)), Utility, :call, [function])
+      {:ok, timer} = :timer.apply_interval(seconds_to_ms(unquote(time_in_seconds)), Utility, :call, [function, unquote(source)])
       timer
     end
   end
@@ -23,8 +23,14 @@ defmodule Utility do
     :timer.cancel(timer)
   end
 
-  def call(function) do
-    function.()
+  def call(function, source) do
+    try do
+      function.()
+    catch
+      kind, error ->
+        IO.puts "Error in calling delayed function #{inspect function} from #{source}"
+        IO.puts Exception.format(kind, error)
+    end
   end
 
   def seconds_to_ms(seconds) do
