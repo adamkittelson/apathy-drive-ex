@@ -15,6 +15,10 @@ defmodule Components.Monsters do
     GenEvent.notify(entity, {:add_monster, monster})
   end
 
+  def remove_monster(entity, monster) do
+    GenEvent.notify(entity, {:remove_monster, monster})
+  end
+
   def serialize(_entity) do
     %{"Monsters" => []}
   end

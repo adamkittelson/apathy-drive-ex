@@ -23,15 +23,6 @@ defmodule Systems.Room do
     end
   end
 
-  def room_data(room, character) do
-    [
-      name: name(room),
-      description: description(room),
-      exits: exit_directions(room),
-      entities: entities(character, room) |> Enum.map(&(&1 |> Components.Name.get_name))
-    ]
-  end
-
   def get_current_room(entity) do
     Components.CurrentRoom.get_current_room(entity)
   end

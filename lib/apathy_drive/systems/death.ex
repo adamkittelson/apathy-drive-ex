@@ -4,8 +4,9 @@ defmodule Systems.Death do
   import Systems.Text
 
   def kill(entity) do
-    entity
-    |> Components.CurrentRoom.get_current_room
+    room = Components.CurrentRoom.get_current_room(entity)
+
+    room
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
          if character == entity do
@@ -17,6 +18,38 @@ defmodule Systems.Death do
            end
          end
        end)
+
+    if Entity.has_component?(entity, Components.Spirit) do
+      kill_player(entity, room)
+    else
+      kill_monster(entity, room)
+    end
+  end
+
+  def kill_player(entity, room) do
+    HPRegen.remove(entity)
+    ManaRegen.remove(entity)
+    Entity.remove_component(entity, Components.Race)
+    Entity.remove_component(entity, Components.Stats)
+    Entity.remove_component(entity, Components.Gender)
+    Entity.remove_component(entity, Components.EyeColor)
+    Entity.remove_component(entity, Components.HairColor)
+    Entity.remove_component(entity, Components.HairLength)
+    Entity.remove_component(entity, Components.HP)
+    Entity.remove_component(entity, Components.Mana)
+    Entity.remove_component(entity, Components.Limbs)
+    Components.Skills.value(entity, %{})
+    Components.Spirit.value(entity, true)
+    Entities.save!(entity)
+    send_message(entity, "scroll", "<p>Your are a spirit once more.</p>")
+  end
+
+  def kill_monster(entity, room) do
+    HPRegen.remove(entity)
+    ManaRegen.remove(entity)
+    Components.Monsters.remove_monster(room, entity)
+    Entity.list_components(entity) |> Enum.each(&(Entity.remove_component(entity, &1)))
+    GenEvent.stop(entity)
   end
 
   def death_message(entity) do

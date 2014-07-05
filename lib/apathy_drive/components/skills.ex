@@ -52,6 +52,10 @@ defmodule Components.Skills do
     {:ok, value, value}
   end
 
+  def handle_event({:set_skills, new_value}, _value) do
+    {:ok, new_value}
+  end
+
   def handle_event({:train, skill_name, amount}, value) do
     skills = Map.put(value, skill_name, Map.get(value, skill_name, 0) + amount)
     {:ok, skills}
