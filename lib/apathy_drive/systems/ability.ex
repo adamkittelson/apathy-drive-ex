@@ -99,9 +99,9 @@ defmodule Systems.Ability do
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
          if character == entity do
-           send_message(entity, "scroll", "<p><span class='cyan'>You begin your casting.</span></p>")
+           send_message(entity, "scroll", "<p><span class='dark-cyan'>You begin your casting.</span></p>")
          else
-           send_message(entity, "scroll", "<p><span class='cyan'>#{Components.Name.value(entity)} begins casting a spell.</span></p>")
+           send_message(entity, "scroll", "<p><span class='dark-cyan'>#{Components.Name.value(entity)} begins casting a spell.</span></p>")
          end
        end)
   end

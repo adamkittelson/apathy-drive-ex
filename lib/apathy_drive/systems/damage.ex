@@ -31,6 +31,8 @@ defmodule Systems.Damage do
     if Components.HP.subtract(target, amount) do
       Systems.Prompt.update(target)
       HPRegen.add(target)
+    else
+      Systems.Death.kill(target)
     end
   end
 

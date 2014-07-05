@@ -11,6 +11,7 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).properties[:stats])
     Entity.add_component(entity, Components.HP, Systems.HP.max_hp(entity))
     Entity.add_component(entity, Components.Mana, Systems.Mana.max_mana(entity))
+    Entity.add_component(entity, Components.Module, Components.Module.value(monster))
     Entity.add_to_type_collection(entity)
     entity
   end

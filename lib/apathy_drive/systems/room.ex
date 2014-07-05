@@ -77,7 +77,7 @@ defmodule Systems.Room do
   end
 
   def entities(character, room) do
-    characters = characters_in_room(room, character)
+    characters = characters_in_room(room, character) |> Enum.reject(&(Components.Spirit.value(&1)))
     monsters   = monsters_in_room(room)
     Enum.concat(characters, monsters)
   end
@@ -162,7 +162,6 @@ defmodule Systems.Room do
   def characters_in_room(room) do
     Characters.online
     |> living_in_room(room)
-    |> Enum.reject(&(Components.Spirit.value(&1)))
   end
 
   def monsters_in_room(room) do
