@@ -92,6 +92,7 @@ defmodule Systems.Damage do
   end
 
   def resistance(stat) do
+    stat = abs(stat - 40)
     Float.floor(stat * (0.5 + (stat / 100)))
   end
 
