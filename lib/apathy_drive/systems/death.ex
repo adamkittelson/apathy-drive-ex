@@ -19,6 +19,8 @@ defmodule Systems.Death do
          end
        end)
 
+    create_corpse(entity, room)
+
     if Entity.has_component?(entity, Components.Spirit) do
       kill_player(entity, room)
     else
@@ -50,6 +52,21 @@ defmodule Systems.Death do
     Components.Monsters.remove_monster(room, entity)
     Entity.list_components(entity) |> Enum.each(&(Entity.remove_component(entity, &1)))
     GenEvent.stop(entity)
+  end
+
+  def create_corpse(entity, room) do
+    {:ok, corpse} = Entity.init
+    Entity.add_component(corpse, Components.Name,        "the corpse of #{Components.Name.value(entity)}")
+    Entity.add_component(corpse, Components.Description, "This is the dead body of #{Components.Name.value(entity)}")
+    if Entity.has_component?(entity, Components.Module) do
+      Entity.add_component(corpse, Components.Module, Components.Module.value(entity))
+    end
+    Entity.add_component(corpse, Components.Types, ["item"])
+
+    Entities.save!(corpse)
+
+    Components.Items.add_item(room, corpse)
+    Entities.save!(room)
   end
 
   def death_message(entity) do

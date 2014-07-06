@@ -59,12 +59,19 @@ defmodule Systems.Room do
     "<div class='title'>#{name(room)}</div>"
   end
 
-  def items(_room) do
-    []
+  def items(room) do
+    Components.Items.get_items(room) |> Enum.map(&(Components.Name.value(&1)))
   end
 
   def items_html(room) do
-    "<div class='items'>#{Enum.join(items(room), ", ")}</div>"
+    items = items(room)
+
+    case Enum.count(items) do
+      0 ->
+        ""
+      _ ->
+        "<div class='items'>You notice #{Enum.join(items(room), ", ")} here.</div>"
+    end
   end
 
   def entities(character, room) do
