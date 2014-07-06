@@ -1,5 +1,7 @@
 defmodule Systems.Monster do
   use Systems.Reload
+  import Systems.Text
+  import Utility
 
   def spawn_monster(monster) do
     {:ok, entity} = Entity.init
@@ -20,6 +22,51 @@ defmodule Systems.Monster do
     monster = spawn_monster(monster)
     Entity.add_component(monster, Components.CurrentRoom, Components.ID.value(room))
     Components.Monsters.add_monster(room, monster)
+
+    message = enter_message(monster)
+    opts = %{
+      "name" => Components.Name.value(monster),
+      "direction" => direction(room)
+    }
+
+    Systems.Room.characters_in_room(room)
+    |> Enum.each(fn(character) ->
+      send_message(character, "scroll", "<p><span class='yellow'>#{interpolate(message, opts)}</span></p>")
+    end)
+  end
+
+  def enter_message(entity) do
+    default = "{{name}} enters from {{direction}}."
+    if Entity.has_component?(entity, Components.Module) do
+      Components.Module.value(entity).properties[:enter_message] || default
+    else
+      default
+    end
+  end
+
+  def direction(room) do
+    :random.seed(:os.timestamp)
+
+    case Components.Exits.value(room) do
+      nil ->
+        "nowhere"
+      {:error, :bad_module} ->
+        "nowhere"
+      exits ->
+        direction = exits
+                    |> Map.keys
+                    |> Enum.shuffle
+                    |> List.first
+
+        case direction do
+          "up" ->
+            "above"
+          "down" ->
+            "below"
+           direction ->
+             "the #{direction}"
+        end
+    end
   end
 
 end
