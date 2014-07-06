@@ -1,6 +1,7 @@
 defmodule Systems.LairSpawning do
   use Systems.Reload
   import Utility
+  use Timex
 
   def initialize do
     every 10, do: spawn_lairs
@@ -9,14 +10,17 @@ defmodule Systems.LairSpawning do
   def spawn_lairs do
     :random.seed(:erlang.now)
     Components.all(Components.Lair) |> Enum.each(fn(room) ->
-      {mega, seconds, _} = :os.timestamp
-      spawn_at = (mega * 1000000 + seconds) - Components.Lair.frequency(room) * 60
-      case Components.Lair.last_spawned_at(room) do
-        nil ->
+      last_spawned_at = Components.Lair.last_spawned_at(room)
+      if last_spawned_at do
+        spawn_at = last_spawned_at
+                   |> Date.shift(mins: Components.Lair.frequency(room))
+                   |> Date.convert :secs
+
+        if spawn_at < Date.convert(Date.now, :secs) do
           spawn_lair(room)
-        {mega, seconds, _} when (mega * 1000000 + seconds) <= spawn_at ->
-          spawn_lair(room)
-        _ ->
+        end
+      else
+        spawn_lair(room)
       end
     end)
   end

@@ -25,9 +25,10 @@ defmodule ApathyDrive.Mixfile do
     [
       {:phoenix,  "0.3.0"},
       {:cowboy,   "~> 0.10.0", github: "extend/cowboy", optional: true},
-      {:ecto,     "~> 0.2.2" },
-      {:decimal,  "~> 0.2.2" },
-      {:postgrex, "~> 0.5.2" },
+      {:ecto,     "~> 0.2.2"},
+      {:decimal,  "~> 0.2.2"},
+      {:postgrex, "~> 0.5.2"},
+      {:timex,    "~> 0.9.0"}
     ]
   end
 end
