@@ -11,6 +11,10 @@ defmodule Components.Experience do
     GenEvent.notify(entity, {:set_experience, new_value})
   end
 
+  def add(entity, amount) do
+    GenEvent.notify(entity, {:add_exp, amount})
+  end
+
   def serialize(entity) do
     %{"Experience" => value(entity)}
   end
@@ -26,6 +30,10 @@ defmodule Components.Experience do
 
   def handle_event({:set_experience, new_value}, _value) do
     {:ok, new_value }
+  end
+
+  def handle_event({:add_exp, amount}, value) do
+    {:ok, value + amount}
   end
 
   def handle_event(_, current_value) do

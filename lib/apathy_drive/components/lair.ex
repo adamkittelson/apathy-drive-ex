@@ -1,6 +1,7 @@
 defmodule Components.Lair do
   use Systems.Reload
   use GenEvent
+  use Timex
 
   ### Public API
   def value(entity) do
@@ -44,12 +45,16 @@ defmodule Components.Lair do
   end
 
   def serialize(entity) do
-    %{"Lair" => value(entity)}
+    %{"Lair" => put_in(value(entity)["last_spawned_at"], Date.convert(value(entity)["last_spawned_at"], :secs))}
   end
 
   ### GenEvent API
   def init(value) do
-    {:ok, value}
+    if value["last_spawned_at"] do
+      {:ok, put_in(value["last_spawned_at"], Date.from(value["last_spawned_at"], :secs))}
+    else
+      {:ok, value}
+    end
   end
 
   def handle_call(:value, lair) do
@@ -61,7 +66,7 @@ defmodule Components.Lair do
   end
 
   def handle_event(:set_last_spawned_at, value) do
-    {:ok, Map.put(value, "last_spawned_at", :os.timestamp) }
+    {:ok, Map.put(value, "last_spawned_at", Date.now) }
   end
 
   def handle_event(_, current_value) do

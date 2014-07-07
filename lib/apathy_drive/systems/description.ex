@@ -31,7 +31,7 @@ defmodule Systems.Description do
 
   def add_character_description_to_scroll(character, target) do
     send_message character, "scroll", "<p><span class='cyan'>#{Components.Name.get_name(target)}</span></p>"
-    send_message character, "scroll", "<p>#{describe_character(target) |> interpolate(target)}</span></p>"
+    send_message character, "scroll", "<p>#{describe_character(target) |> interpolate(%{"user" => target})}</span></p>"
   end
 
   def describe_character(character) do

@@ -23,15 +23,6 @@ defmodule Systems.Room do
     end
   end
 
-  def room_data(room, character) do
-    [
-      name: name(room),
-      description: description(room),
-      exits: exit_directions(room),
-      entities: entities(character, room) |> Enum.map(&(&1 |> Components.Name.get_name))
-    ]
-  end
-
   def get_current_room(entity) do
     Components.CurrentRoom.get_current_room(entity)
   end
@@ -68,16 +59,23 @@ defmodule Systems.Room do
     "<div class='title'>#{name(room)}</div>"
   end
 
-  def items(_room) do
-    []
+  def items(room) do
+    Components.Items.get_items(room) |> Enum.map(&(Components.Name.value(&1)))
   end
 
   def items_html(room) do
-    "<div class='items'>#{Enum.join(items(room), ", ")}</div>"
+    items = items(room)
+
+    case Enum.count(items) do
+      0 ->
+        ""
+      _ ->
+        "<div class='items'>You notice #{Enum.join(items(room), ", ")} here.</div>"
+    end
   end
 
   def entities(character, room) do
-    characters = characters_in_room(room, character)
+    characters = characters_in_room(room, character) |> Enum.reject(&(Components.Spirit.value(&1)))
     monsters   = monsters_in_room(room)
     Enum.concat(characters, monsters)
   end
@@ -162,7 +160,6 @@ defmodule Systems.Room do
   def characters_in_room(room) do
     Characters.online
     |> living_in_room(room)
-    |> Enum.reject(&(Components.Spirit.value(&1)))
   end
 
   def monsters_in_room(room) do

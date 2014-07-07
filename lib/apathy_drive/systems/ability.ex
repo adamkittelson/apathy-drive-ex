@@ -57,31 +57,33 @@ defmodule Systems.Ability do
   end
 
   def display_cast_message(ability, entity, target, opts \\ %{}) do
+    opts = Map.merge(opts, %{"user" => entity, "target" => target})
     Components.CurrentRoom.get_current_room(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
       cond do
         character == entity ->
-          send_message(character, "scroll", interpolate(ability.properties[:user_message], entity, target, opts))
+          send_message(character, "scroll", interpolate(ability.properties[:user_message], opts))
         character == target ->
-          send_message(character, "scroll", interpolate(ability.properties[:target_message], entity, target, opts))
+          send_message(character, "scroll", interpolate(ability.properties[:target_message], opts))
         true ->
-          send_message(character, "scroll", interpolate(ability.properties[:observer_message], entity, target, opts))
+          send_message(character, "scroll", interpolate(ability.properties[:observer_message], opts))
       end
     end)
   end
 
   def kill(entity, target) do
+    opts = %{"user" => entity, "target" => target}
     Components.CurrentRoom.get_current_room(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
       cond do
         character == entity ->
-          send_message(character, "scroll", interpolate("<p>You just killed {{target}}!</p>", entity, target))
+          send_message(character, "scroll", interpolate("<p>You just killed {{target}}!</p>", opts))
         character == target ->
-          send_message(character, "scroll", interpolate("<p>{{user}} just killed you!</p>", entity, target))
+          send_message(character, "scroll", interpolate("<p>{{user}} just killed you!</p>", opts))
         true ->
-          send_message(character, "scroll", interpolate("<p>{{user}} just killed {{target}}!</p>", entity, target))
+          send_message(character, "scroll", interpolate("<p>{{user}} just killed {{target}}!</p>", opts))
       end
     end)
   end
@@ -99,9 +101,9 @@ defmodule Systems.Ability do
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
          if character == entity do
-           send_message(entity, "scroll", "<p><span class='cyan'>You begin your casting.</span></p>")
+           send_message(entity, "scroll", "<p><span class='dark-cyan'>You begin your casting.</span></p>")
          else
-           send_message(entity, "scroll", "<p><span class='cyan'>#{Components.Name.value(entity)} begins casting a spell.</span></p>")
+           send_message(entity, "scroll", "<p><span class='dark-cyan'>#{Components.Name.value(entity)} begins casting a spell.</span></p>")
          end
        end)
   end

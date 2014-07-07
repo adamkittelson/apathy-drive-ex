@@ -31,6 +31,8 @@ defmodule Systems.Damage do
     if Components.HP.subtract(target, amount) do
       Systems.Prompt.update(target)
       HPRegen.add(target)
+    else
+      Systems.Death.kill(target)
     end
   end
 
@@ -92,6 +94,7 @@ defmodule Systems.Damage do
   end
 
   def resistance(stat) do
+    stat = abs(stat - 40)
     Float.floor(stat * (0.5 + (stat / 100)))
   end
 

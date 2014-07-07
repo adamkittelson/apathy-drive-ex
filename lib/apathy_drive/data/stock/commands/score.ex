@@ -15,9 +15,9 @@ defmodule Commands.Score do
                |> Components.Race.value
                |> Components.Name.value
                |> String.ljust(11)
-        send_message(entity, "scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>#{race}</span> <span class='dark-green'>Exp:</span>  <span class='dark-cyan'>#{exp}</span></p>")
+        send_message(entity, "scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>#{race}</span> <span class='dark-green'>Exp:</span>   <span class='dark-cyan'>#{exp}</span></p>")
       Components.Spirit.value(entity) ->
-        send_message(entity, "scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>Spirit     </span> <span class='dark-green'>Exp:</span>  <span class='dark-cyan'>#{exp}</span></p>")
+        send_message(entity, "scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>Spirit     </span> <span class='dark-green'>Exp:</span>   <span class='dark-cyan'>#{exp}</span></p>")
     end
 
     level = Components.Level.value(entity)
@@ -30,7 +30,7 @@ defmodule Commands.Score do
     if Entity.has_component?(entity, Components.HP) && Entity.has_component?(entity, Components.Mana) do
       hp = String.ljust("#{Components.HP.value(entity)}/#{Systems.HP.max_hp(entity)}", 14)
       mana = "#{Components.Mana.value(entity)}/#{Systems.Mana.max_mana(entity)}"
-      send_message(entity, "scroll", "<p><span class='dark-green'>HP:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span> <span class='dark-cyan'>#{mana}</span></p>")
+      send_message(entity, "scroll", "<p><span class='dark-green'>HP:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span>  <span class='dark-cyan'>#{mana}</span></p>")
     end
 
     send_message(entity, "scroll", "\n")

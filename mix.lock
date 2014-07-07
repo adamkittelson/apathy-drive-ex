@@ -9,4 +9,5 @@
   "plug": {:package, "0.5.1"},
   "poolboy": {:package, "1.2.1"},
   "postgrex": {:package, "0.5.2"},
-  "ranch": {:git, "git://github.com/extend/ranch.git", "3189ef2d47843945efc96c224963380462c33d40", [ref: "0.10.0"]}}
+  "ranch": {:git, "git://github.com/extend/ranch.git", "3189ef2d47843945efc96c224963380462c33d40", [ref: "0.10.0"]},
+  "timex": {:package, "0.9.0"}}
