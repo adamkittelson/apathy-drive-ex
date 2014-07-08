@@ -2,6 +2,7 @@ defmodule Systems.Death do
   use Systems.Reload
   import Utility
   import Systems.Text
+  use Timex
 
   def kill(entity) do
     room = Components.CurrentRoom.get_current_room(entity)
@@ -61,11 +62,13 @@ defmodule Systems.Death do
     if Entity.has_component?(entity, Components.Module) do
       Entity.add_component(corpse, Components.Module, Components.Module.value(entity))
     end
-    Entity.add_component(corpse, Components.Types, ["item"])
-
+    Entity.add_component(corpse, Components.Types, ["item", "corpse"])
+    Entity.add_component(corpse, Components.Decay, %{"frequency" => 1, "decay_at" => Date.convert(Date.shift(Date.now, mins: 1), :secs)})
+    Entity.add_component(corpse, Components.CurrentRoom, Components.ID.value(room))
     Entities.save!(corpse)
 
     Components.Items.add_item(room, corpse)
+
     Entities.save!(room)
   end
 

@@ -19,6 +19,7 @@ defmodule ApathyDrive do
     Commands.start_link
     Abilities.start_link
     Skills.start_link
+    Corpses.start_link
 
     IO.puts "Indexing..."
     index_items
@@ -39,13 +40,14 @@ defmodule ApathyDrive do
     HPRegen.start_link
     ManaRegen.start_link
     Systems.LairSpawning.initialize
+    Systems.Decay.initialize
     Systems.Regen.initialize
     Systems.Hints.initialize
     Systems.Idle.initialize
 
     ApathyDrive.Supervisor.start_link
   end
-  
+
   defp get_file_list(path, file_index \\ []) when is_binary(path) do
     get_file_list([path], file_index)
   end
