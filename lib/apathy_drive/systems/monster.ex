@@ -20,7 +20,6 @@ defmodule Systems.Monster do
 
   def spawn_monster(monster, room) do
     monster = spawn_monster(monster)
-    Entity.add_component(monster, Components.CurrentRoom, Components.ID.value(room))
     Components.Monsters.add_monster(room, monster)
 
     message = enter_message(monster)

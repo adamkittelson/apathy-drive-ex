@@ -20,6 +20,7 @@ defmodule ApathyDrive do
     Abilities.start_link
     Skills.start_link
     Corpses.start_link
+    Parent.start_link
 
     IO.puts "Indexing..."
     index_items

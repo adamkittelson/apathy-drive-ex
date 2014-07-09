@@ -27,7 +27,7 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :verify_target) do
-    room = Components.CurrentRoom.get_current_room(entity)
+    room = Parent.of(entity)
     target_entity = find_target(ability, room, target)
     if target_entity do
       execute(ability, entity, target_entity, :mana)
@@ -58,7 +58,7 @@ defmodule Systems.Ability do
 
   def display_cast_message(ability, entity, target, opts \\ %{}) do
     opts = Map.merge(opts, %{"user" => entity, "target" => target})
-    Components.CurrentRoom.get_current_room(entity)
+    Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
       cond do
@@ -74,7 +74,7 @@ defmodule Systems.Ability do
 
   def kill(entity, target) do
     opts = %{"user" => entity, "target" => target}
-    Components.CurrentRoom.get_current_room(entity)
+    Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
       cond do
@@ -97,7 +97,7 @@ defmodule Systems.Ability do
   end
 
   def display_precast_message(_ability, entity) do
-    Components.CurrentRoom.get_current_room(entity)
+    Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
          if character == entity do

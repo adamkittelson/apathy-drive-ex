@@ -5,7 +5,7 @@ defmodule Systems.Death do
   use Timex
 
   def kill(entity) do
-    room = Components.CurrentRoom.get_current_room(entity)
+    room = Parent.of(entity)
 
     room
     |> Systems.Room.characters_in_room
@@ -64,7 +64,6 @@ defmodule Systems.Death do
     end
     Entity.add_component(corpse, Components.Types, ["item", "corpse"])
     Entity.add_component(corpse, Components.Decay, %{"frequency" => 1, "decay_at" => Date.convert(Date.shift(Date.now, mins: 1), :secs)})
-    Entity.add_component(corpse, Components.CurrentRoom, Components.ID.value(room))
     Entities.save!(corpse)
 
     Components.Items.add_item(room, corpse)

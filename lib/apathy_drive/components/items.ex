@@ -16,10 +16,12 @@ defmodule Components.Items do
   end
 
   def add_item(entity, item) do
+    Parent.set(item, entity)
     GenEvent.notify(entity, {:add_item, Components.ID.value(item)})
   end
 
   def remove_item(entity, item) do
+    Parent.set(item, nil)
     GenEvent.notify(entity, {:remove_item, Components.ID.value(item)})
   end
 

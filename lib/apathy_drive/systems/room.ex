@@ -24,7 +24,7 @@ defmodule Systems.Room do
   end
 
   def get_current_room(entity) do
-    Components.CurrentRoom.get_current_room(entity)
+    Parent.of(entity)
   end
 
   def exit_directions(room) do
@@ -91,7 +91,7 @@ defmodule Systems.Room do
   end
 
   def move(character, direction) do
-    current_room = Components.CurrentRoom.get_current_room(character)
+    current_room = Parent.of(character)
     room_exit = current_room |> get_exit_by_direction(direction)
     move(character, current_room, room_exit)
   end
@@ -103,7 +103,7 @@ defmodule Systems.Room do
   def move(character, current_room, room_exit) do
     destination = Rooms.find_by_id(room_exit["destination"])
 
-    Components.CurrentRoom.set_current_room(character, destination)
+    Components.Characters.add_character(destination, character)
     if Components.Spirit.value(character) == false do
       notify_character_left(character, current_room, destination)
       notify_character_entered(character, current_room, destination)
@@ -154,7 +154,7 @@ defmodule Systems.Room do
   end
 
   def living_in_room(entities, room) do
-    Enum.filter(entities, &(room == Components.CurrentRoom.get_current_room(&1)))
+    Enum.filter(entities, &(room == Parent.of(&1)))
   end
 
   def characters_in_room(room) do

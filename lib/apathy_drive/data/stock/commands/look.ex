@@ -4,7 +4,7 @@ defmodule Commands.Look do
   def keywords, do: ["look", "l"]
 
   def execute(entity, arguments) do
-    current_room = Components.CurrentRoom.get_current_room(entity)
+    current_room = Parent.of(entity)
 
     if Enum.any? arguments do
       if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do

@@ -4,8 +4,8 @@ defmodule Commands.Buy do
   def keywords, do: ["buy"]
 
   def execute(entity, arguments) do
-    current_room = Components.CurrentRoom.get_current_room(entity)
+    room = Parent.of(entity)
 
-    Systems.Shop.buy(entity, current_room, Enum.join(arguments, " "))
+    Systems.Shop.buy(entity, room, Enum.join(arguments, " "))
   end
 end

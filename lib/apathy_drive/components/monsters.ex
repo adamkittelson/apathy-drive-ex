@@ -12,10 +12,12 @@ defmodule Components.Monsters do
   end
 
   def add_monster(entity, monster) do
+    Parent.set(monster, entity)
     GenEvent.notify(entity, {:add_monster, monster})
   end
 
   def remove_monster(entity, monster) do
+    Parent.set(monster, nil)
     GenEvent.notify(entity, {:remove_monster, monster})
   end
 

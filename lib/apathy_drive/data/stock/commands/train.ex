@@ -4,7 +4,7 @@ defmodule Commands.Train do
   def keywords, do: ["train"]
 
   def execute(entity, arguments) do
-    current_room = Components.CurrentRoom.get_current_room(entity)
+    current_room = Parent.of(entity)
 
     cond do
       !Entity.has_component?(current_room, Components.Trainer) ->

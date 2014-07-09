@@ -39,7 +39,7 @@ defmodule Systems.Regen do
     crippled = Components.Limbs.crippled?(entity, limb)
     Components.Limbs.heal_limb(entity, limb, amount)
     if crippled && !Components.Limbs.crippled?(entity, limb) do
-      Components.CurrentRoom.get_current_room(entity)
+      Parent.of(entity)
       |> Systems.Room.characters_in_room
       |> Enum.each(fn(character) ->
            cond do

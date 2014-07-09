@@ -4,7 +4,7 @@ defmodule Commands.Sell do
   def keywords, do: ["sell"]
 
   def execute(entity, arguments) do
-    current_room = Components.CurrentRoom.get_current_room(entity)
+    current_room = Parent.of(entity)
     Systems.Shop.sell(entity, current_room, Enum.join(arguments, " "))
   end
 end

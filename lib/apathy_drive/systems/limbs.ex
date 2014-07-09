@@ -28,7 +28,7 @@ defmodule Systems.Limbs do
         Components.Limbs.damage_limb(entity, limb, amt)
       end
 
-      Components.CurrentRoom.get_current_room(entity)
+      Parent.of(entity)
       |> Systems.Room.characters_in_room
       |> Enum.each(fn(character) ->
            cond do
@@ -47,7 +47,7 @@ defmodule Systems.Limbs do
   def sever_limb(entity, limb) do
     unless Components.Limbs.severed?(entity, limb) do
       Components.Limbs.sever_limb(entity, limb)
-      Components.CurrentRoom.get_current_room(entity)
+      Parent.of(entity)
       |> Systems.Room.characters_in_room
       |> Enum.each(fn(character) ->
            cond do

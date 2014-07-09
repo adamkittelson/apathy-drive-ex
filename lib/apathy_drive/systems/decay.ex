@@ -25,7 +25,7 @@ defmodule Systems.Decay do
 
   def decay(corpse) do
     if Components.Decay.state(corpse) == "decayed" do
-      room = Components.CurrentRoom.get_current_room(corpse)
+      room = Parent.of(corpse)
       Components.Items.remove_item(room, corpse)
       Entities.save!(room)
       Entities.delete!(corpse)
