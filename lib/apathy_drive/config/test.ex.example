@@ -9,4 +9,8 @@ defmodule ApathyDrive.Config.Test do
   config :plugs, code_reload: true
 
   config :logger, level: :debug
+
+  config :mud, start_room: 1235, # database id of room new characters start in
+               db: "ecto://user:password@hostname/database_name" # ecto db connection string
+
 end

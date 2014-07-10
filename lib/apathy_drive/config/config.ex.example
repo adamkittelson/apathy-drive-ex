@@ -7,5 +7,6 @@ defmodule ApathyDrive.Config do
 
   config :logger, level: :error
 
-  config :mud, start_room: *database_id_of_start_room*
+  config :mud, start_room: 1235, # database id of room new characters start in
+               db: "ecto://user:password@hostname/database_name" # ecto db connection string
 end
