@@ -12,6 +12,7 @@ before_install:
 before_script:
   - export PATH=`pwd`/elixir/bin:$PATH
   - mix local.hex --force
+  - cp lib/apathy_drive/config/test.ex.example lib/apathy_drive/config/test.ex
   - MIX_ENV=test mix do deps.get, compile
 script:
   - mix test
