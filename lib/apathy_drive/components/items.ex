@@ -8,7 +8,7 @@ defmodule Components.Items do
   end
 
   def get_items(entity) do
-    value(entity) |> Enum.map(&(Components.find_by(Components.ID, &1)))
+    value(entity) |> Enum.map(&Items.find_by_id(&1))
   end
 
   def value(entity, new_value) do

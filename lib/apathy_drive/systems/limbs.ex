@@ -8,7 +8,7 @@ defmodule Systems.Limbs do
   end
 
   def equipped_items(limbs) do
-    Map.values(limbs) |> Enum.map(&(&1["items"])) |> List.flatten |> Enum.uniq |> Enum.map(&(Components.find_by(Components.ID, &1)))
+    Map.values(limbs) |> Enum.map(&(&1["items"])) |> List.flatten |> Enum.uniq |> Enum.map(&Items.find_by_id(&1))
   end
 
   def get_limb_names(limbs, item) do

@@ -8,7 +8,7 @@ defmodule Components.Characters do
   end
 
   def get_characters(entity) do
-    value(entity) |> Enum.map(&(Components.find_by(Components.ID, &1)))
+    value(entity) |> Enum.map(&Characters.find_by_id(&1))
   end
 
   def value(entity, new_value) do

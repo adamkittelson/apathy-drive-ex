@@ -20,7 +20,7 @@ defmodule Systems.Item do
       Entity.add_component(entity, Components.Slot, template.properties[:slot])
     end
 
-    Components.Types.value(entity, ["item"])
+    Entity.add_component(entity, Components.Types, ["item"])
     Entities.save!(entity)
     entity
   end

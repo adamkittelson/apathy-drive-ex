@@ -42,6 +42,10 @@ defmodule Characters do
     GenServer.call(:characters, :online)
   end
 
+  def find_by_id(id) do
+    GenServer.call(:characters, {:id, id})
+  end
+
   def find_by_url(url) do
     GenServer.call(:characters, {:url, url})
   end

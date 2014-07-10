@@ -99,7 +99,7 @@ defmodule Components.Limbs do
   defp open_limbs(worn_on, limbs, slot) do
     valid_limbs(worn_on, limbs) |> Enum.reject(fn(limb_name) ->
       limbs[limb_name]["items"] |> Enum.any?(fn(item) ->
-        (Components.find_by(Components.ID, item) |> Components.Slot.value) == slot
+        (Items.find_by_id(item) |> Components.Slot.value) == slot
       end)
     end) |> Enum.reduce(%{}, fn(open_limb_name, map) ->
               if Map.has_key?(map, open_limb_name) do
