@@ -4,11 +4,11 @@ defmodule Components do
 
   # Public API
   def add(component, entity) do
-    GenServer.cast(:components, {:add, component, entity, component.value(entity)})
+    GenServer.cast(:components, {:add, component, entity})
   end
 
   def remove(component, entity) do
-    GenServer.cast(:components, {:remove, component, entity, component.value(entity)})
+    GenServer.cast(:components, {:remove, component, entity})
   end
 
   def all do
@@ -17,27 +17,6 @@ defmodule Components do
 
   def all(component) do
     GenServer.call(:components, {:all, component})
-  end
-
-  def find_by(component, value) do
-    find_all_by(component, value) |> first
-  end
-
-  def find_all_by(component, value) do
-    GenServer.call(:components, {:find_by, component, value})
-  end
-
-  def find_by(components, component, value) do
-    find_all_by(components, component, value) |> first
-  end
-
-  def first(components) do
-    components |> HashSet.to_list |> List.first
-  end
-
-  def find_all_by(components, component, value) do
-    components = Enum.into(components, HashSet.new)
-    find_all_by(component, value) |> HashSet.intersection(components)
   end
 
   # GenServer API
@@ -49,20 +28,16 @@ defmodule Components do
     {:ok, components}
   end
 
-  def handle_cast({:add, component, entity, value}, components) do
-    current_hash = HashDict.get(components, component, HashDict.new)
-    current_pids = HashDict.get(current_hash, value, HashSet.new)
+  def handle_cast({:add, component, entity}, components) do
+    current_pids = HashDict.get(components, component, HashSet.new)
     new_pids = Set.put(current_pids, entity)
-    new_hash = HashDict.put(current_hash, value, new_pids)
-    {:noreply, HashDict.put(components, component, new_hash) }
+    {:noreply, HashDict.put(components, component, new_pids) }
   end
 
-  def handle_cast({:remove, component, entity, value}, components) do
-    current_hash = HashDict.get(components, component, HashDict.new)
-    current_pids = HashDict.get(current_hash, value, HashSet.new)
+  def handle_cast({:remove, component, entity}, components) do
+    current_pids = HashDict.get(components, component, HashSet.new)
     new_pids = Set.delete(current_pids, entity)
-    new_hash = HashDict.put(current_hash, value, new_pids)
-    {:noreply, HashDict.put(components, component, new_hash) }
+    {:noreply, HashDict.put(components, component, new_pids) }
   end
 
   def handle_call(:all, _from, components) do
@@ -70,21 +45,7 @@ defmodule Components do
   end
 
   def handle_call({:all, component}, _from, components) do
-    list = HashDict.get(components, component)
-    if list do
-      list = list |> HashDict.values
-                  |> List.flatten
-                  |> Enum.map(&(HashSet.to_list(&1)))
-                  |> List.flatten
-                  |> Enum.into HashSet.new
-    else
-      list = HashSet.new
-    end
-    {:reply, list, components}
-  end
-
-  def handle_call({:find_by, component, value}, _from, components) do
-    {:reply, HashDict.get(components, component, HashDict.new) |> HashDict.get(value, HashSet.new), components}
+    {:reply, HashDict.get(components, component, HashSet.new), components}
   end
 
 end
