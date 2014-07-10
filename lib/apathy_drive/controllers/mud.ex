@@ -10,7 +10,7 @@ defmodule ApathyDrive.MUD do
   def event(socket, "command", message) do
     [command | arguments] = String.split(message)
 
-    character = Characters.find_by_socket(socket)
+    character = Characters.find_by_socket(socket.pid)
 
     try do
       Systems.Command.execute(character, command, arguments)
@@ -28,7 +28,8 @@ defmodule ApathyDrive.MUD do
   end
 
   def leave(socket, message) do
-    character = Characters.find_by_socket(socket)
+    character = Characters.find_by_socket(socket.pid)
+    Characters.remove_socket(socket.pid)
     Components.Socket.value(character, nil)
     Components.Online.value(character, false)
     socket

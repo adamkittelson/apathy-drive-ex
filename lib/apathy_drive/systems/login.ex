@@ -9,13 +9,16 @@ defmodule Systems.Login do
     Entity.add_component(character, Components.Online, false)
     Entity.add_component(character, Components.Types, ["character"])
     Entity.add_component(character, Components.Items, [])
-    Entity.add_component(character, Components.URL, Systems.URL.random)
+    url = Systems.URL.random
+    Entity.add_component(character, Components.URL, url)
     Entity.add_component(character, Components.Socket, nil)
     Entity.add_component(character, Components.Spirit, true)
     Entity.add_component(character, Components.Skills, %{})
     Entity.add_component(character, Components.Idle, 0)
     Entity.add_component(character, Components.Hints, %{})
+    Characters.add(character, url: url)
     Entities.save!(character)
+    Characters.add(character, id: Components.ID.value(character))
     move_character_to_start_room(character)
 
     Components.URL.value(character)
@@ -24,6 +27,7 @@ defmodule Systems.Login do
   def login(socket, url) do
     character = Characters.find_by_url(url)
     if character do
+      Characters.add(character, socket: socket.pid)
       if !Parent.of(character) do
         move_character_to_start_room(character)
       end
