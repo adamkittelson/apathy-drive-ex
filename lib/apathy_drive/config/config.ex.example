@@ -6,6 +6,6 @@ defmodule ApathyDrive.Config do
   config :plugs, code_reload: false
 
   config :logger, level: :error
+
+  config :mud, start_room: *database_id_of_start_room*
 end
-
-

@@ -10,5 +10,3 @@ defmodule ApathyDrive.Config.Dev do
 
   config :logger, level: :debug
 end
-
-

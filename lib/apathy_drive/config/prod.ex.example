@@ -10,5 +10,3 @@ defmodule ApathyDrive.Config.Prod do
 
   config :logger, level: :error
 end
-
-
