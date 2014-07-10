@@ -39,21 +39,25 @@ defmodule LimbTest do
     Entity.add_component(club, Components.WornOn, %{"hand" => 1})
     Entity.add_component(club, Components.Slot, "weapon")
     Entity.add_component(club, Components.ID, "club")
+    Items.add(club)
 
     {:ok, sword } = Entity.init
     Entity.add_component(sword, Components.WornOn, %{"hand" => 1})
     Entity.add_component(sword, Components.Slot, "weapon")
     Entity.add_component(sword, Components.ID, "sword")
+    Items.add(sword)
 
     {:ok, staff } = Entity.init
     Entity.add_component(staff, Components.WornOn, %{"hand" => 2})
     Entity.add_component(staff, Components.Slot, "weapon")
     Entity.add_component(staff, Components.ID, "staff")
+    Items.add(staff)
 
     {:ok, gloves } = Entity.init
     Entity.add_component(gloves, Components.WornOn, %{"hand" => 2})
     Entity.add_component(gloves, Components.Slot, "gauntlets")
     Entity.add_component(gloves, Components.ID, "gloves")
+    Items.add(gloves)
 
     { :ok, %{character: character, club: club, sword: sword, staff: staff, gloves: gloves} }
   end
