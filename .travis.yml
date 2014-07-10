@@ -5,13 +5,12 @@ notifications:
   recipients:
     - adam@apathydrive.com
 before_install:
-  - git clone https://github.com/elixir-lang/elixir
-  - cd elixir 
-  - git reset 44b04120425c83984c867ee6b06974b7c139ba52 --hard
-  - make && cd ..
+  - wget https://github.com/elixir-lang/elixir/releases/download/v0.14.2/Precompiled.zip
+  - unzip -d elixir Precompiled.zip
 before_script:
   - export PATH=`pwd`/elixir/bin:$PATH
   - mix local.hex --force
+  - cp lib/apathy_drive/config/config.ex.example lib/apathy_drive/config/config.ex
   - cp lib/apathy_drive/config/test.ex.example lib/apathy_drive/config/test.ex
   - MIX_ENV=test mix do deps.get, compile
 script:
