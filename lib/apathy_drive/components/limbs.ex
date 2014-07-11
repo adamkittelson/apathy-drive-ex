@@ -15,6 +15,11 @@ defmodule Components.Limbs do
     GenEvent.call(entity, Components.Limbs, {:equip, item})
   end
 
+  def items(entity, limb) do
+    value(entity)[limb]["items"]
+    |> Enum.map(&Items.find_by_id(&1))
+  end
+
   def unequip(entity, item) do
     GenEvent.call(entity, Components.Limbs, {:unequip, item})
   end
