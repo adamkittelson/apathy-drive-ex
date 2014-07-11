@@ -51,9 +51,9 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :execute) do
-    damage = Systems.Damage.calculate_damage(ability, entity, target)
+    {limb, damage} = Systems.Damage.calculate_damage(ability, entity, target)
     display_cast_message(ability, entity, target, %{"damage" => damage})
-    Systems.Damage.do_damage(target, damage)
+    Systems.Damage.do_damage(target, limb, damage)
   end
 
   def display_cast_message(ability, entity, target, opts \\ %{}) do

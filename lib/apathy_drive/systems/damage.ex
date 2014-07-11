@@ -20,13 +20,17 @@ defmodule Systems.Damage do
 
   def calculate_damage(ability, entity, target) do
     if ability.properties[:damage] do
-      damages = damages(entity, ability.properties[:damage])
-      damages |> Map.values |> Enum.sum
+      limb = Components.Limbs.random_unsevered_limb(target)
+      damage_rolls = damages(entity, limb, ability.properties[:damage])
+      damage = damage_rolls |> Map.values |> Enum.sum
+      {limb, damage}
+    else
+      {nil, 0}
     end
   end
 
-  def do_damage(target, amount) do
-    damage_random_limb(target, amount)
+  def do_damage(target, limb, amount) do
+    damage_limb(target, limb, amount)
 
     if Components.HP.subtract(target, amount) do
       Systems.Prompt.update(target)
@@ -36,8 +40,7 @@ defmodule Systems.Damage do
     end
   end
 
-  def damage_random_limb(target, total) do
-    limb = Components.Limbs.random_unsevered_limb(target)
+  def damage_limb(target, limb, total) do
     crippled = Components.Limbs.crippled?(target, limb)
     Components.Limbs.damage_limb(target, limb, total)
     cond do
@@ -49,13 +52,27 @@ defmodule Systems.Damage do
     end
   end
 
-  def damages(entity, damages) do
+  def damages(entity, limb, damages) do
     damages
     |> Map.keys
-    |> Enum.reduce(%{}, fn(damage, map) ->
-        raw = raw_damage(damages[damage])
-        Map.put(map, damage, reduced_damage(entity, @damage_types[damage], raw))
+    |> Enum.reduce(%{}, fn(damage_type, map) ->
+        raw = raw_damage(damages[damage_type])
+        resistance = resistance(entity, @damage_types[damage_type])
+        ac = resistance(ac(entity, limb))
+        damage = Float.ceil(raw * damage_reduction(resistance, ac))
+        Map.put(map, damage_type, damage)
        end)
+  end
+
+  def damage_reduction(resistance, ac) do
+    (1 - resistance_reduction(resistance)) * (1 - resistance_reduction(ac))
+  end
+
+  def ac(entity, limb) do
+    entity
+    |> Components.Limbs.items(limb)
+    |> Enum.map(&Components.AC.value(&1))
+    |> Enum.sum
   end
 
   def raw_damage(range) do
@@ -63,16 +80,12 @@ defmodule Systems.Damage do
     range |> Enum.into([]) |> Enum.shuffle |> List.first
   end
 
-  def reduced_damage(entity, "physical", amount) do
-    entity
-    |> physical_resistance
-    |> reduced_damage(amount)
+  def resistance(entity, "physical") do
+    physical_resistance(entity)
   end
 
-  def reduced_damage(entity, "magical", amount) do
-    entity
-    |> magical_resistance
-    |> reduced_damage(amount)
+  def resistance(entity, "magical") do
+    magical_resistance(entity)
   end
 
   def reduced_damage(resistance, damage) do
@@ -83,18 +96,17 @@ defmodule Systems.Damage do
     strength = Systems.Stat.modified(entity, "strength")
     agility  = Systems.Stat.modified(entity, "agility")
 
-    resistance(((strength * 3) + agility) / 4)
+    resistance(abs((((strength * 3) + agility) / 4) - 40))
   end
 
   def magical_resistance(entity) do
     willpower = Systems.Stat.modified(entity, "willpower")
     intellect = Systems.Stat.modified(entity, "intellect")
 
-    resistance(((willpower * 3) + intellect) / 4)
+    resistance(abs((((willpower * 3) + intellect) / 4) - 40))
   end
 
   def resistance(stat) do
-    stat = abs(stat - 40)
     Float.floor(stat * (0.5 + (stat / 100)))
   end
 

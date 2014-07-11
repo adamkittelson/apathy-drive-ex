@@ -20,6 +20,10 @@ defmodule Systems.Item do
       Entity.add_component(entity, Components.Slot, template.properties[:slot])
     end
 
+    if template.properties[:ac] do
+      Entity.add_component(entity, Components.AC, template.properties[:ac] || 0)
+    end
+
     Entity.add_component(entity, Components.Types, ["item"])
     Entities.save!(entity)
     entity
