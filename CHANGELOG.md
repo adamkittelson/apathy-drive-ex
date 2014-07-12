@@ -5,3 +5,5 @@
 CHANGELOG
 =========
 
+---- 0.0.2 / 2014-07-12 / protection-command -----------------------------------
+* added protection command
