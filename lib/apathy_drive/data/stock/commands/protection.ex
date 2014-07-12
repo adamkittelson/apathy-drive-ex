@@ -39,20 +39,46 @@ defmodule Commands.Protection do
   def keywords, do: ["protection"]
 
   def execute(entity, arguments) do
+    protection(entity, Enum.join(arguments, " "))
+  end
 
-    if Enum.any? arguments do
-      requested_limb = Enum.join(arguments, " ")
-      limb = entity
-             |> Components.Limbs.unsevered_limbs
-             |> Enum.find(&(&1 == requested_limb))
-      if limb do
-        show_protection(entity, limb)
-      else
-        send_message(entity, "scroll", "<p>You don't have a #{requested_limb}!</p>")
-      end
+  def protection(entity, "limb") do
+    show_protection(entity, "limb")
+  end
+
+  def protection(entity, "") do
+    show_protection(entity)
+  end
+
+  def protection(entity, requested_limb) do
+    limb = entity
+           |> Components.Limbs.unsevered_limbs
+           |> Enum.find(&(&1 == requested_limb))
+    if limb do
+      show_protection(entity, limb)
     else
-      show_protection(entity)
+      send_message(entity, "scroll", "<p>You don't have a #{requested_limb}!</p>")
     end
+  end
+
+  defp show_protection(entity, "limb") do
+    title = "Average Protection by Limb"
+
+    send_message(entity, "scroll", "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
+    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
+    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Limb</span>            <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
+    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+
+    entity
+    |> Components.Limbs.unsevered_limbs
+    |> Enum.each(fn(limb) ->
+         {color, protection} = limb_protection_amount(entity, limb)
+                               |> protection_level
+         send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(limb, 16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+       end)
+
+    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end
 
   defp show_protection(entity, limb) do
@@ -104,6 +130,15 @@ defmodule Commands.Protection do
     total = entity
             |> Components.Limbs.unsevered_limbs
             |> Enum.map(&protection_amount(entity, &1, damage_type))
+            |> Enum.sum
+
+     total / Map.size(@damage_types)
+  end
+
+  defp limb_protection_amount(entity, limb) do
+    total = @damage_types
+            |> Map.keys
+            |> Enum.map(&protection_amount(entity, limb, &1))
             |> Enum.sum
 
      total / Map.size(@damage_types)
