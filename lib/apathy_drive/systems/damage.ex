@@ -57,15 +57,20 @@ defmodule Systems.Damage do
     |> Map.keys
     |> Enum.reduce(%{}, fn(damage_type, map) ->
         raw = raw_damage(damages[damage_type])
-        resistance = resistance(entity, @damage_types[damage_type])
-        ac = resistance(ac(entity, limb))
-        damage = Float.ceil(raw * damage_reduction(resistance, ac))
+        protection = protection(entity, limb, damage_type)
+        damage = Float.ceil(raw * protection)
         Map.put(map, damage_type, damage)
        end)
   end
 
-  def damage_reduction(resistance, ac) do
-    (1 - resistance_reduction(resistance)) * (1 - resistance_reduction(ac))
+  def damage_reduction(entity, limb, damage_type) do
+    1 - protection(entity, limb, damage_type)
+  end
+
+  def protection(entity, limb, damage_type) do
+    resistance = resistance(entity, @damage_types[damage_type])
+    ac = resistance(ac(entity, limb))
+    (1 - (resistance_reduction(resistance))) * (1 - (resistance_reduction(ac)))
   end
 
   def ac(entity, limb) do
