@@ -49,7 +49,9 @@ defmodule ApathyDrive do
     ApathyDrive.Supervisor.start_link
   end
 
-  defp get_file_list(path, file_index \\ []) when is_binary(path) do
+  defp get_file_list(path, file_index \\ [])
+
+  defp get_file_list(path, file_index) when is_binary(path) do
     get_file_list([path], file_index)
   end
 
