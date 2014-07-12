@@ -50,14 +50,38 @@ defmodule Commands.Protection do
     show_protection(entity)
   end
 
-  def protection(entity, requested_limb) do
+  def protection(entity, target) do
     limb = entity
            |> Components.Limbs.unsevered_limbs
-           |> Enum.find(&(&1 == requested_limb))
+           |> Enum.find(&(&1 == target))
     if limb do
       show_protection(entity, limb)
     else
-      send_message(entity, "scroll", "<p>You don't have a #{requested_limb}!</p>")
+      item_protection(entity, target)
+    end
+  end
+
+  defp item_protection(entity, target) do
+    shop_items = if Parent.of(entity) |> Entity.has_component?(Components.Shop) do
+       entity
+       |> Parent.of
+       |> Components.Shop.value
+       |> Enum.map(&ItemTemplates.find_by_id(&1["item"]))
+    else
+      []
+    end
+    equipped_items = Systems.Limbs.equipped_items(entity)
+    inventory_items = Components.Items.get_items(entity)
+    items = [shop_items, equipped_items, inventory_items]
+            |> List.flatten
+            |> Enum.uniq
+
+    item = Systems.Match.first(items, :name_contains, target)
+
+    if item do
+      show_protection(entity, item)
+    else
+      send_message(entity, "scroll", "<p>You don't have a #{target}!</p>")
     end
   end
 
@@ -78,6 +102,34 @@ defmodule Commands.Protection do
          send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(limb, 16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
 
+    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+  end
+
+  defp show_protection(entity, item) when is_pid item do
+
+    ac = cond do
+      Entity.has_component?(item, Components.AC) ->
+        Components.AC.value(item)
+      Entity.has_component?(item, Components.Module) ->
+        Components.Module.value(item).properties[:ac] || 0
+      true ->
+        0
+    end
+
+    title = "Protection for #{Components.Name.value(item)} by Damage Type"
+
+    send_message(entity, "scroll", "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
+    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
+    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
+    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    @damage_types
+    |> Map.keys
+    |> Enum.each(fn(damage_type) ->
+       {color, protection} = protection_amount(ac)
+                             |> protection_level
+       send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> Atom.to_string |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+       end)
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end
 
@@ -133,6 +185,10 @@ defmodule Commands.Protection do
             |> Enum.sum
 
      total / Map.size(@damage_types)
+  end
+
+  defp protection_amount(ac) do
+    Systems.Damage.resistance(ac) |> Systems.Damage.resistance_reduction
   end
 
   defp limb_protection_amount(entity, limb) do
