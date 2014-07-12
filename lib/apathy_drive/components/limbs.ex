@@ -250,9 +250,9 @@ defmodule Components.Limbs do
 
   def handle_call({:max_damage, limb_name, max_hp}, value) do
     if value[limb_name]["fatal"] do
-      {:ok, Float.floor(max_hp * 0.5), value}
+      {:ok, trunc(max_hp * 0.5), value}
     else
-      {:ok, Float.floor(max_hp * 0.25), value}
+      {:ok, trunc(max_hp * 0.25), value}
     end
   end
 

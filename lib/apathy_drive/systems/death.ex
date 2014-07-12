@@ -88,7 +88,7 @@ defmodule Systems.Death do
   end
 
   def experience_to_grant(stat_total) do
-    Float.floor(stat_total * (1 + (stat_total * 0.005)))
+    trunc(stat_total * (1 + (stat_total * 0.005)))
   end
 
   def reward_player(entity, deceased) do

@@ -34,7 +34,7 @@ defmodule Utility do
   end
 
   def seconds_to_ms(seconds) do
-    Float.floor(seconds * 1000)
+    trunc(seconds * 1000)
   end
 
   def send_message(entity, event, message \\ nil) do

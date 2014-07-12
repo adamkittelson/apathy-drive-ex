@@ -30,7 +30,7 @@ defmodule Systems.Regen do
 
   def heal_limbs(entity, hp) do
     limbs = Components.Limbs.unsevered_limbs(entity)
-    amount = Float.ceil(hp / length(limbs))
+    amount = Float.ceil(hp / length(limbs)) |> trunc
     limbs
     |> Enum.each &(heal_limb(entity, &1, amount))
   end
@@ -79,7 +79,7 @@ defmodule Systems.Regen do
   end
 
   def regen_rate(0, rate) do
-    Float.floor(rate)
+    trunc(rate)
   end
 
   def hp_regen_per_second(entity) do
@@ -89,6 +89,6 @@ defmodule Systems.Regen do
   def mana_regen_per_second(entity) do
     intellect = Systems.Stat.modified(entity, "intellect")
     willpower = Systems.Stat.modified(entity, "willpower")
-    regen_rate(Float.floor((intellect + willpower * 2) / 3))
+    regen_rate(trunc((intellect + willpower * 2) / 3))
   end
 end
