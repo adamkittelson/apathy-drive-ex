@@ -7,3 +7,6 @@ CHANGELOG
 
 ---- 0.0.2 / 2014-07-12 / protection-command -----------------------------------
 * added protection command
+
+---- 0.0.3 / 2014-07-12 / elixir-0-14-3 ----------------------------------------
+* update for elixir 0.14.3 and misc bug fixes
