@@ -32,6 +32,7 @@ defmodule ApathyDrive.MUD do
     Characters.remove_socket(socket.pid)
     Components.Socket.value(character, nil)
     Components.Online.value(character, false)
+    Entities.save!(character)
     socket
   end
 end

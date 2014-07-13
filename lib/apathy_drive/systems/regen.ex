@@ -18,7 +18,6 @@ defmodule Systems.Regen do
   def regen do
     regen_hp
     regen_mana
-    update_prompt
   end
 
   def regen_hp do
@@ -30,6 +29,7 @@ defmodule Systems.Regen do
          if fully_healed?(entity) do
            HPRegen.remove(entity)
          end
+         update_prompt(entity)
        end)
   end
 
@@ -68,15 +68,12 @@ defmodule Systems.Regen do
          if Components.Mana.value(entity) >= Systems.Mana.max(entity) do
            ManaRegen.remove(entity)
          end
+         update_prompt(entity)
        end)
   end
 
-  def update_prompt do
-    Components.all(Components.Socket) |> Enum.each(fn(entity) ->
-      if Entity.has_components?(entity, [Components.HP, Components.Mana]) do
-        Systems.Prompt.update(entity)
-      end
-    end)
+  def update_prompt(entity) do
+    Systems.Prompt.update(entity)
   end
 
   def regen_rate(seed) when is_integer(seed) do

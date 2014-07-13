@@ -107,6 +107,7 @@ defmodule Systems.Room do
     Components.Characters.add_character(destination, character)
     Entities.save!(destination)
     Entities.save!(current_room)
+    Entities.save!(character)
 
     if Components.Spirit.value(character) == false do
       notify_character_left(character, current_room, destination)
