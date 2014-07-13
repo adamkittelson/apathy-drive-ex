@@ -3,6 +3,15 @@ defmodule Systems.Regen do
   import Utility
 
   def initialize do
+    ["HP", "Mana"]
+    |> Enum.each(fn(type) ->
+         Components.all(:"Elixir.Components.#{type}")
+         |> Enum.each(fn(entity) ->
+              if :"Elixir.Components.#{type}".value(entity) < :"Elixir.Systems.#{type}".max(entity) do
+                :"Elixir.#{type}Regen".add(entity)
+              end
+            end)
+       end)
     every 1, do: regen
   end
 
@@ -25,7 +34,7 @@ defmodule Systems.Regen do
   end
 
   def fully_healed?(entity) do
-    (Components.HP.value(entity) >= Systems.HP.max_hp(entity)) && !Components.Limbs.injured?(entity)
+    (Components.HP.value(entity) >= Systems.HP.max(entity)) && !Components.Limbs.injured?(entity)
   end
 
   def heal_limbs(entity, hp) do
@@ -56,7 +65,7 @@ defmodule Systems.Regen do
     ManaRegen.all
     |> Enum.each(fn(entity) ->
          Components.Mana.add(entity, mana_regen_per_second(entity))
-         if Components.Mana.value(entity) >= Systems.Mana.max_mana(entity) do
+         if Components.Mana.value(entity) >= Systems.Mana.max(entity) do
            ManaRegen.remove(entity)
          end
        end)

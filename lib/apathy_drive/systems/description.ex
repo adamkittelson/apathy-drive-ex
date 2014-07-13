@@ -61,7 +61,7 @@ defmodule Systems.Description do
   end
 
   def describe_hp(character) do
-    percentage = round(100 * (Components.HP.value(character) / Systems.HP.max_hp(character)))
+    percentage = round(100 * (Components.HP.value(character) / Systems.HP.max(character)))
     description = case percentage do
       _ when percentage >= 100 ->
         "unwounded"

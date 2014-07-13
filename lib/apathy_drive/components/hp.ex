@@ -12,7 +12,7 @@ defmodule Components.HP do
   end
 
   def add(entity, amount) do
-    GenEvent.notify(entity, {:add_hp, amount, Systems.HP.max_hp(entity)})
+    GenEvent.notify(entity, {:add_hp, amount, Systems.HP.max(entity)})
   end
 
   def subtract(entity, amount) do

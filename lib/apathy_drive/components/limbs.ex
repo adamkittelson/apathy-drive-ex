@@ -25,7 +25,7 @@ defmodule Components.Limbs do
   end
 
   def max_damage(entity, limb_name) do
-    max_hp = Systems.HP.max_hp(entity)
+    max_hp = Systems.HP.max(entity)
     GenEvent.call(entity, Components.Limbs, {:max_damage, limb_name, max_hp})
   end
 

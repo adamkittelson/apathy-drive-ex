@@ -28,8 +28,8 @@ defmodule Commands.Score do
     send_message(entity, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
 
     if Entity.has_component?(entity, Components.HP) && Entity.has_component?(entity, Components.Mana) do
-      hp = String.ljust("#{Components.HP.value(entity)}/#{Systems.HP.max_hp(entity)}", 14)
-      mana = "#{Components.Mana.value(entity)}/#{Systems.Mana.max_mana(entity)}"
+      hp = String.ljust("#{Components.HP.value(entity)}/#{Systems.HP.max(entity)}", 14)
+      mana = "#{Components.Mana.value(entity)}/#{Systems.Mana.max(entity)}"
       send_message(entity, "scroll", "<p><span class='dark-green'>HP:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span>  <span class='dark-cyan'>#{mana}</span></p>")
     end
 

@@ -12,7 +12,7 @@ defmodule Components.Mana do
   end
 
   def add(entity, amount) do
-    GenEvent.notify(entity, {:add_mana, amount, Systems.Mana.max_mana(entity)})
+    GenEvent.notify(entity, {:add_mana, amount, Systems.Mana.max(entity)})
   end
 
   def subtract(entity, amount) do
