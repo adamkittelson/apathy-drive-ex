@@ -3,13 +3,21 @@ defmodule Systems.Regen do
   import Utility
 
   def initialize do
+    ["HP", "Mana"]
+    |> Enum.each(fn(type) ->
+         Components.all(:"Elixir.Components.#{type}")
+         |> Enum.each(fn(entity) ->
+              if :"Elixir.Components.#{type}".value(entity) < :"Elixir.Systems.#{type}".max(entity) do
+                :"Elixir.#{type}Regen".add(entity)
+              end
+            end)
+       end)
     every 1, do: regen
   end
 
   def regen do
     regen_hp
     regen_mana
-    update_prompt
   end
 
   def regen_hp do
@@ -21,16 +29,17 @@ defmodule Systems.Regen do
          if fully_healed?(entity) do
            HPRegen.remove(entity)
          end
+         update_prompt(entity)
        end)
   end
 
   def fully_healed?(entity) do
-    (Components.HP.value(entity) >= Systems.HP.max_hp(entity)) && !Components.Limbs.injured?(entity)
+    (Components.HP.value(entity) >= Systems.HP.max(entity)) && !Components.Limbs.injured?(entity)
   end
 
   def heal_limbs(entity, hp) do
     limbs = Components.Limbs.unsevered_limbs(entity)
-    amount = Float.ceil(hp / length(limbs))
+    amount = Float.ceil(hp / length(limbs)) |> trunc
     limbs
     |> Enum.each &(heal_limb(entity, &1, amount))
   end
@@ -56,18 +65,15 @@ defmodule Systems.Regen do
     ManaRegen.all
     |> Enum.each(fn(entity) ->
          Components.Mana.add(entity, mana_regen_per_second(entity))
-         if Components.Mana.value(entity) >= Systems.Mana.max_mana(entity) do
+         if Components.Mana.value(entity) >= Systems.Mana.max(entity) do
            ManaRegen.remove(entity)
          end
+         update_prompt(entity)
        end)
   end
 
-  def update_prompt do
-    Components.all(Components.Socket) |> Enum.each(fn(entity) ->
-      if Entity.has_components?(entity, [Components.HP, Components.Mana]) do
-        Systems.Prompt.update(entity)
-      end
-    end)
+  def update_prompt(entity) do
+    Systems.Prompt.update(entity)
   end
 
   def regen_rate(seed) when is_integer(seed) do
@@ -79,7 +85,7 @@ defmodule Systems.Regen do
   end
 
   def regen_rate(0, rate) do
-    Float.floor(rate)
+    trunc(rate)
   end
 
   def hp_regen_per_second(entity) do
@@ -89,6 +95,6 @@ defmodule Systems.Regen do
   def mana_regen_per_second(entity) do
     intellect = Systems.Stat.modified(entity, "intellect")
     willpower = Systems.Stat.modified(entity, "willpower")
-    regen_rate(Float.floor((intellect + willpower * 2) / 3))
+    regen_rate(trunc((intellect + willpower * 2) / 3))
   end
 end

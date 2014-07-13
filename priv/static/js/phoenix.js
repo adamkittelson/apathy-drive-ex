@@ -153,6 +153,7 @@
       if (typeof console.log === "function") {
         console.log("WS close: " + event);
       }
+      disconnected();
       // clearInterval(this.reconnectTimer);
       // return this.reconnectTimer = setInterval(((function(_this) {
       //   return function() {

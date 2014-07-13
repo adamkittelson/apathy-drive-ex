@@ -24,7 +24,7 @@ defmodule Systems.Limbs do
       limb_damage = Components.Limbs.current_damage(entity, limb)
       max_damage = Components.Limbs.max_damage(entity, limb)
       if limb_damage < max_damage do
-        amt = Float.ceil((max_damage * 1.45) - limb_damage)
+        amt = Float.ceil((max_damage * 1.45) - limb_damage) |> trunc
         Components.Limbs.damage_limb(entity, limb, amt)
       end
 

@@ -38,6 +38,8 @@ defmodule ApathyDrive do
       IO.puts "Done!"
     end
 
+    set_parents
+
     HPRegen.start_link
     ManaRegen.start_link
     Systems.LairSpawning.initialize
@@ -49,7 +51,25 @@ defmodule ApathyDrive do
     ApathyDrive.Supervisor.start_link
   end
 
-  defp get_file_list(path, file_index \\ []) when is_binary(path) do
+  defp set_parents do
+    ["Characters", "Items", "Monsters"]
+    |> Enum.each(fn(type) ->
+         :"Elixir.Components.#{type}"
+         |> Components.all
+         |> Enum.each(fn(parent) ->
+              parent
+              |> :"Elixir.Components.#{type}".value
+              |> Enum.each(fn(item_id) ->
+                   :"Elixir.#{type}".find_by_id(item_id)
+                   |> Parent.set(parent)
+                 end)
+            end)
+       end)
+  end
+
+  defp get_file_list(path, file_index \\ [])
+
+  defp get_file_list(path, file_index) when is_binary(path) do
     get_file_list([path], file_index)
   end
 

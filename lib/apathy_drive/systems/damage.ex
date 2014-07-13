@@ -58,7 +58,7 @@ defmodule Systems.Damage do
     |> Enum.reduce(%{}, fn(damage_type, map) ->
         raw = raw_damage(damages[damage_type])
         protection = protection(entity, limb, damage_type)
-        damage = Float.ceil(raw * protection)
+        damage = Float.ceil(raw * protection) |> trunc
         Map.put(map, damage_type, damage)
        end)
   end
@@ -94,7 +94,7 @@ defmodule Systems.Damage do
   end
 
   def reduced_damage(resistance, damage) do
-    Float.floor(damage * (1 - resistance_reduction(resistance)))
+    trunc(damage * (1 - resistance_reduction(resistance)))
   end
 
   def physical_resistance(entity) do
@@ -112,7 +112,7 @@ defmodule Systems.Damage do
   end
 
   def resistance(stat) do
-    Float.floor(stat * (0.5 + (stat / 100)))
+    trunc(stat * (0.5 + (stat / 100)))
   end
 
   def resistance_reduction(resistance) do

@@ -11,7 +11,7 @@ defmodule Commands.List do
       Entity.has_component?(room, Components.Trainer) ->
         Systems.Trainer.list(entity, room)
       true ->
-        send_message(entity, "scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
+        send_message(entity, "scroll", "<p><span class='red'>You cannot LIST if you are not in a shop!</span></p>")
     end
   end
 end

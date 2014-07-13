@@ -38,7 +38,7 @@ defmodule Systems.Stat do
                                                      |> Enum.sum)
          total_stat_modification + base * percentage
        end)
-    |> Float.floor
+    |> trunc
   end
 
 end
