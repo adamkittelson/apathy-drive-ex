@@ -54,4 +54,6 @@ defmodule Systems.Text do
     name = "#{String.capitalize(first)}#{rest}"
   end
 
+  def strip_tags(string), do: String.replace(string, ~r/<[^>]*>/, "")
+
 end
