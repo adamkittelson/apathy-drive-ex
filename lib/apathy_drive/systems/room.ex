@@ -103,7 +103,11 @@ defmodule Systems.Room do
   def move(character, current_room, room_exit) do
     destination = Rooms.find_by_id(room_exit["destination"])
 
+    Components.Characters.remove_character(current_room, character)
     Components.Characters.add_character(destination, character)
+    Entities.save!(destination)
+    Entities.save!(current_room)
+
     if Components.Spirit.value(character) == false do
       notify_character_left(character, current_room, destination)
       notify_character_entered(character, current_room, destination)
