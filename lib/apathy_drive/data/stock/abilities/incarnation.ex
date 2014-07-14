@@ -1,5 +1,6 @@
 defmodule Abilities.Incarnation do
   use Systems.Ability
+  use Timex
 
   def useable_by?(entity) do
     Components.Spirit.value(entity) == true
@@ -50,6 +51,8 @@ Syntax: 'use incarnation at (sex) (race)'
         Entity.add_component(entity, Components.HP, Systems.HP.max(entity))
         Entity.add_component(entity, Components.Mana, Systems.Mana.max(entity))
         Entity.add_component(entity, Components.Limbs, entity |> Components.Race.value |> Components.Limbs.value)
+        Entity.add_component(entity, Components.Hunting, [])
+        Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
         Components.Spirit.value(entity, false)
         Entities.save!(entity)
         send_message(entity, "scroll", "<p>Your new body materializes around you.</p>")

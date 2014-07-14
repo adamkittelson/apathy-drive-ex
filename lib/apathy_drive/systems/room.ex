@@ -155,7 +155,8 @@ defmodule Systems.Room do
   end
 
   def living_in_room(room) do
-    Enum.concat(monsters_in_room(room), characters_in_room(room))
+    characters = characters_in_room(room) |> Enum.reject(&(Components.Spirit.value(&1)))
+    Enum.concat(monsters_in_room(room), characters)
   end
 
   def living_in_room(entities, room) do

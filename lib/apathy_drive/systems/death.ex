@@ -41,6 +41,7 @@ defmodule Systems.Death do
     Entity.remove_component(entity, Components.HP)
     Entity.remove_component(entity, Components.Mana)
     Entity.remove_component(entity, Components.Limbs)
+    Entity.remove_component(entity, Components.Hunting)
     Components.Skills.value(entity, %{})
     Components.Spirit.value(entity, true)
     Entities.save!(entity)
