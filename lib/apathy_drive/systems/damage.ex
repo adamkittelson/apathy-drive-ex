@@ -77,6 +77,7 @@ defmodule Systems.Damage do
     entity
     |> Components.Limbs.items(limb)
     |> Enum.map(&Components.AC.value(&1))
+    |> Enum.filter(&is_number(&1))
     |> Enum.sum
   end
 

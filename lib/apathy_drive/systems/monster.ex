@@ -17,6 +17,8 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Hunting, [])
     Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
     Entity.add_component(entity, Components.Module, Components.Module.value(monster))
+    Entity.add_component(entity, Components.Attacks, %{})
+    Components.Attacks.reset_attacks(entity)
     Entity.add_to_type_collection(entity)
     entity
   end
