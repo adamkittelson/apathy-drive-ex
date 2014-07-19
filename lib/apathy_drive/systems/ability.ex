@@ -11,7 +11,7 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, nil) do
-    if ability.properties[:target] == "self" do
+    if ability.properties(entity)[:target] == "self" do
       execute(ability, entity, Components.Name.value(entity))
     else
       send_message(entity, "scroll", "<p><span class='cyan'>You must supply a target.</span></p>")
@@ -19,7 +19,7 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target) do
-    if ability.properties[:casting_time] do
+    if ability.properties(entity)[:casting_time] do
       delay_execution(ability, entity, target)
     else
       execute(ability, entity, target, :verify_target)
@@ -28,7 +28,7 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :verify_target) do
     room = Parent.of(entity)
-    target_entity = find_target(ability, room, target)
+    target_entity = find_target(ability, room, entity, target)
     if target_entity do
       execute(ability, entity, target_entity, :mana)
     else
@@ -37,8 +37,8 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :mana) do
-    if ability.properties[:mana_cost] do
-      if Components.Mana.subtract(entity, ability.properties[:mana_cost]) do
+    if ability.properties(entity)[:mana_cost] do
+      if Components.Mana.subtract(entity, ability.properties(entity)[:mana_cost]) do
         ManaRegen.add(entity)
         Systems.Prompt.update(entity)
         execute(ability, entity, target, :execute)
@@ -63,11 +63,11 @@ defmodule Systems.Ability do
     |> Enum.each(fn(character) ->
       cond do
         character == entity ->
-          send_message(character, "scroll", interpolate(ability.properties[:user_message], opts))
+          send_message(character, "scroll", interpolate(ability.properties(entity)[:user_message], opts))
         character == target ->
-          send_message(character, "scroll", interpolate(ability.properties[:target_message], opts))
+          send_message(character, "scroll", interpolate(ability.properties(entity)[:target_message], opts))
         true ->
-          send_message(character, "scroll", interpolate(ability.properties[:observer_message], opts))
+          send_message(character, "scroll", interpolate(ability.properties(entity)[:observer_message], opts))
       end
     end)
   end
@@ -91,7 +91,7 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    delay(ability.properties[:casting_time], ability.name) do
+    delay(ability.properties(entity)[:casting_time], ability.name) do
       execute(ability, entity, target, :verify_target)
     end
   end
@@ -108,8 +108,8 @@ defmodule Systems.Ability do
        end)
   end
 
-  def find_target(ability, room, target) do
-    case ability.properties[:target] do
+  def find_target(ability, room, entity, target) do
+    case ability.properties(entity)[:target] do
       "character" ->
         room
         |> Systems.Room.characters_in_room

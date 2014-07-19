@@ -29,7 +29,7 @@ defmodule Systems.Combat do
              |> Enum.shuffle
              |> List.first
 
-    send_message(entity, "scroll", "<p>Attacking #{Components.Name.value(target)}</p>")
+    Abilities.Attack.execute(entity, target)
     Components.Combat.set_break_at(entity)
     start(entity)
   end
