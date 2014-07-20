@@ -7,6 +7,13 @@ defmodule Systems.Limbs do
     character |> Components.Limbs.value |> equipped_items
   end
 
+  def wielding_weapon?(entity) do
+    equipped_items(entity)
+    |> Enum.any?(fn(item) ->
+         !(Components.Attacks.extract_attacks(item, entity) == [])
+       end)
+  end
+
   def equipped_items(limbs) do
     Map.values(limbs) |> Enum.map(&(&1["items"])) |> List.flatten |> Enum.uniq |> Enum.map(&Items.find_by_id(&1))
   end

@@ -42,8 +42,8 @@ defmodule Components.Attacks do
     attacks[key]
   end
 
-  def serialize(entity) do
-    %{"Attacks" => value(entity)}
+  def serialize(_entity) do
+    %{"Attacks" => %{}}
   end
 
   defp highest_key(attacks) do
@@ -57,7 +57,7 @@ defmodule Components.Attacks do
     if Entity.has_component?(entity, Components.Race) do
       entity
       |> Components.Race.value
-      |> extract_attacks
+      |> extract_attacks(entity)
     else
       []
     end
@@ -66,19 +66,19 @@ defmodule Components.Attacks do
   defp item_attacks(entity) do
     entity
     |> Systems.Limbs.equipped_items
-    |> Enum.map(&extract_attacks(&1))
+    |> Enum.map(&extract_attacks(&1, entity))
     |> List.flatten
   end
 
   defp monster_attacks(entity) do
-    extract_attacks(entity)
+    extract_attacks(entity, entity)
   end
 
-  defp extract_attacks(entity) do
+  def extract_attacks(entity, owner) do
     if Entity.has_component?(entity, Components.Module) do
       module = Components.Module.value(entity)
-      if function_exported?(module, :attacks, 0) do
-         module.attacks
+      if function_exported?(module, :attacks, 1) do
+         module.attacks(owner)
        else
          []
        end

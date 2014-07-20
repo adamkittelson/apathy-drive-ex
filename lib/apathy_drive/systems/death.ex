@@ -23,13 +23,13 @@ defmodule Systems.Death do
     create_corpse(entity, room)
 
     if Entity.has_component?(entity, Components.Spirit) do
-      kill_player(entity, room)
+      kill_player(entity)
     else
       kill_monster(entity, room)
     end
   end
 
-  def kill_player(entity, room) do
+  def kill_player(entity) do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Entity.remove_component(entity, Components.Race)
@@ -42,6 +42,7 @@ defmodule Systems.Death do
     Entity.remove_component(entity, Components.Mana)
     Entity.remove_component(entity, Components.Limbs)
     Entity.remove_component(entity, Components.Hunting)
+    Entity.remove_component(entity, Components.Attacks)
     Components.Skills.value(entity, %{})
     Components.Spirit.value(entity, true)
     Entities.save!(entity)

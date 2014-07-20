@@ -5,7 +5,7 @@ defmodule ApathyDrive.Controllers.Pages do
     render conn, "index"
   end
 
-  def game(conn, %{"id" => id}) do
+  def game(conn, %{"id" => _id}) do
     render conn, "game", []
   end
 

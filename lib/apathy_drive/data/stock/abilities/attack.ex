@@ -13,7 +13,7 @@ defmodule Abilities.Attack do
     }
   end
 
-  def useable_by?(entity) do
+  def useable_by?(_entity) do
     false
   end
 
@@ -32,7 +32,7 @@ defmodule Abilities.Attack do
   end
 
   def execute(entity, target) do
-    Systems.Ability.execute(__MODULE__, entity, target, :execute)
+    Systems.Ability.execute(properties(entity), entity, target, :execute)
   end
 
   def help do

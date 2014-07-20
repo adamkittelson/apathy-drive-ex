@@ -31,6 +31,9 @@ defmodule Systems.Login do
       if !Parent.of(character) do
         move_character_to_start_room(character)
       end
+      if Entity.has_component?(character, Components.Attacks) do
+        Components.Attacks.reset_attacks(character)
+      end
       Components.Hints.add(character, "movement", "To move from room to room simply type the direction in which you wish to travel. e.g. 'north' or 'south'. You may also abbreviate the directions e.g. 'nw' for 'northwest'.")
       Components.Hints.add(character, "name", "Many actions, such as communicating with other players or taking on a physical form, require you to name yourself. To choose the name by which you will be known in-game type 'set name (name)'.")
       Components.Online.value(character, true)

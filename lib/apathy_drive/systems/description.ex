@@ -83,7 +83,6 @@ defmodule Systems.Description do
 
   def describe_stat(character, stat_name) do
     stat = Systems.Stat.modified(character, stat_name)
-    race = Components.Race.value(character)
     starting_stat = Systems.Stat.base(character, stat_name)
     difference = stat - starting_stat
     index = round(difference / 10)

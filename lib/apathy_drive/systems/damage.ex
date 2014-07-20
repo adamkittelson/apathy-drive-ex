@@ -19,9 +19,9 @@ defmodule Systems.Damage do
   }
 
   def calculate_damage(ability, entity, target) do
-    if ability.properties(entity)[:damage] do
+    if ability[:damage] do
       limb = Components.Limbs.random_unsevered_limb(target)
-      damage_rolls = damages(entity, limb, ability.properties(entity)[:damage])
+      damage_rolls = damages(entity, limb, ability[:damage])
       damage = damage_rolls |> Map.values |> Enum.sum
       {limb, damage}
     else
