@@ -1,6 +1,7 @@
 defmodule Systems.Description do
   use Systems.Reload
   import Utility
+  import Systems.Text
 
   @attribute_descriptions [
     strength:  ["puny", "weak", "slightly built", "moderately built", "well built", "muscular", "powerfully built", "heroically proportioned", "Herculean", "physically Godlike"],
@@ -11,19 +12,13 @@ defmodule Systems.Description do
     willpower: ["selfish and hot-tempered", "sullen and impulsive", "a little naive", "looks fairly knowledgeable", "looks quite experienced and wise", "has a worldly air about him", "seems to possess a wisdom beyond his years", "seems to be in an enlightened state of mind", "looks like he is one with the Gods"]
   ]
 
-  def interpolate(string, character) do
-    case Components.Gender.value(character) do
-      "male"   ->
-        String.replace(string, ~r/\{\{(.+?)\/(.+?)\}\}/, "\\1")
-      "female" ->
-        String.replace(string, ~r/\{\{(.+?)\/(.+?)\}\}/, "\\2")
-    end
-  end
-
   def add_description_to_scroll(character, target) do
-    if Entity.list_components(target) |> Enum.member?(Components.Description) do
+    if Entity.has_component?(target, Components.Description) do
       send_message character, "scroll", "<p><span class='cyan'>#{Components.Name.value(target)}</span></p>"
       send_message character, "scroll", "<p>#{Components.Description.value(target)}</p>"
+      if Entity.has_component?(target, Components.HP) do
+        send_message character, "scroll", "<p>#{describe_hp(target) |> interpolate(%{"target" => target})}"
+      end
     else
       add_character_description_to_scroll(character, target)
     end
@@ -31,7 +26,7 @@ defmodule Systems.Description do
 
   def add_character_description_to_scroll(character, target) do
     send_message character, "scroll", "<p><span class='cyan'>#{Components.Name.get_name(target)}</span></p>"
-    send_message character, "scroll", "<p>#{describe_character(target) |> interpolate(%{"user" => target})}</span></p>"
+    send_message character, "scroll", "<p>#{describe_character(target) |> interpolate(%{"target" => target})}</span></p>"
   end
 
   def describe_character(character) do
@@ -78,7 +73,7 @@ defmodule Systems.Description do
       _ ->
         "very critically wounded"
     end
-    "{{He/She}} is #{description}."
+    "{{target:He/She/It}} is #{description}."
   end
 
   def describe_stat(character, stat_name) do
