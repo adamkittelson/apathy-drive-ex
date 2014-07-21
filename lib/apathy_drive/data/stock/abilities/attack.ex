@@ -4,13 +4,27 @@ defmodule Abilities.Attack do
   def properties(attacker) do
     attack = get_attack(attacker)
 
+    delay = attacker
+            |> Systems.Stat.modified("agility")
+            |> get_delay(attack["damage"])
+
     %{
       target:           "living",
       damage:           attack_damage(attacker, attack),
+      delay:            delay,
       user_message:     "<p><span class='red'>#{attack["message"]["attacker"]}</span></p>",
       target_message:   "<p><span class='red'>#{attack["message"]["target"]}</span></p>",
       observer_message: "<p><span class='red'>#{attack["message"]["spectator"]}</span></p>"
     }
+  end
+
+  def get_delay(agility, damage) do
+    base = damage
+           |> Map.values
+           |> Enum.sum
+
+    base = (base * 2) - ((agility - 40) / 50)
+    Enum.max([base, 0.5])
   end
 
   def useable_by?(_entity) do
@@ -32,7 +46,9 @@ defmodule Abilities.Attack do
   end
 
   def execute(entity, target) do
-    Systems.Ability.execute(properties(entity), entity, target, :execute)
+    attack = properties(entity)
+    Systems.Ability.execute(attack, entity, target, :execute)
+    attack[:delay]
   end
 
   def help do

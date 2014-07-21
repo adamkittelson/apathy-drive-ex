@@ -3,8 +3,8 @@ defmodule Systems.Combat do
   import Utility
   use Timex
 
-  def start(entity) do
-    Components.Combat.set_timer entity, delay(2, do: swing(entity))
+  def start(entity, time \\ 0.5) do
+    Components.Combat.set_timer entity, delay(time, do: swing(entity))
   end
 
   def attack(entity, target) do
@@ -36,9 +36,9 @@ defmodule Systems.Combat do
              |> Enum.shuffle
              |> List.first
 
-    Abilities.Attack.execute(entity, target)
+    delay = Abilities.Attack.execute(entity, target)
     Components.Combat.set_break_at(entity)
-    start(entity)
+    start(entity, delay)
   end
 
   def targets(entity) do
