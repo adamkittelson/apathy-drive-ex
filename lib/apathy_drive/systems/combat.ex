@@ -7,6 +7,13 @@ defmodule Systems.Combat do
     Components.Combat.set_timer entity, delay(2, do: swing(entity))
   end
 
+  def attack(entity, target) do
+    Components.Hunting.add(entity, target)
+    Components.Hunting.add(target, entity)
+    Systems.Combat.start(entity)
+    Systems.Combat.start(target)
+  end
+
   def swing(entity) do
     Components.Combat.stop_timer(entity)
     swing(entity, targets(entity))

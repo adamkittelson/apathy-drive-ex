@@ -32,6 +32,7 @@ defmodule Systems.Death do
   def kill_player(entity) do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
+    Components.Combat.stop_timer(entity)
     Entity.remove_component(entity, Components.Race)
     Entity.remove_component(entity, Components.Stats)
     Entity.remove_component(entity, Components.Gender)
@@ -53,6 +54,7 @@ defmodule Systems.Death do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Components.Monsters.remove_monster(room, entity)
+    Components.Combat.stop_timer(entity)
     Entity.list_components(entity) |> Enum.each(&(Entity.remove_component(entity, &1)))
     GenEvent.stop(entity)
   end

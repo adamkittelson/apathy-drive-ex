@@ -24,8 +24,7 @@ defmodule Commands.Attack do
 
   defp attack(entity, target) do
     send_message(entity, "scroll", "<p><span class='dark-yellow'>You move to attack #{Components.Name.value(target)}!</span></p>")
-    Components.Hunting.add(entity, target)
-    Systems.Combat.start(entity)
+    Systems.Combat.attack(entity, target)
   end
 
   defp find_entity_in_room(room, string) do

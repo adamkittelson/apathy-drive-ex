@@ -12,6 +12,10 @@ defmodule Components.Combat do
     GenEvent.notify(entity, {:set_combat, new_value})
   end
 
+  def in_combat?(entity) do
+    GenEvent.call(entity, Components.Combat, :in_combat?)
+  end
+
   def set_timer(entity, timer) do
     if value(entity)[:timer] do
       :timer.cancel(timer)
@@ -43,6 +47,10 @@ defmodule Components.Combat do
 
   def handle_call(:value, value) do
     {:ok, value, value}
+  end
+
+  def handle_call(:in_combat?, value) do
+    {:ok, !!value[:timer], value}
   end
 
   def handle_event({:set_combat, new_value}, _value) do
