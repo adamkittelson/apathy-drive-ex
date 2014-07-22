@@ -10,11 +10,13 @@ defmodule Abilities.Attack do
 
     %{
       target:           "living",
+      dodgeable:        true,
       damage:           attack_damage(attacker, attack),
       delay:            delay,
+      skill:            attack["skill"],
       user_message:     "<p><span class='red'>#{attack["message"]["attacker"]}</span></p>",
       target_message:   "<p><span class='red'>#{attack["message"]["target"]}</span></p>",
-      observer_message: "<p><span class='red'>#{attack["message"]["spectator"]}</span></p>"
+      spectator_message: "<p><span class='red'>#{attack["message"]["spectator"]}</span></p>"
     }
   end
 
@@ -47,7 +49,7 @@ defmodule Abilities.Attack do
 
   def execute(entity, target) do
     attack = properties(entity)
-    Systems.Ability.execute(attack, entity, target, :execute)
+    Systems.Ability.execute(attack, entity, target, :dodge)
     attack[:delay]
   end
 

@@ -41,9 +41,23 @@ defmodule Systems.Ability do
       if Components.Mana.subtract(entity, ability[:mana_cost]) do
         ManaRegen.add(entity)
         Systems.Prompt.update(entity)
-        execute(ability, entity, target, :execute)
+        execute(ability, entity, target, :dodge)
       else
         send_message(entity, "scroll", "<p><span class='dark-cyan'>You don't have enough mana.</span></p>")
+      end
+    else
+      execute(ability, entity, target, :dodge)
+    end
+  end
+
+  def execute(ability, entity, target, :dodge) do
+    if ability[:dodgeable] do
+      skill = Skills.find(ability[:skill]).modified(entity)
+
+      if Systems.Combat.dodge?(skill, target) do
+        display_dodge_message(ability, entity, target)
+      else
+        execute(ability, entity, target, :execute)
       end
     else
       execute(ability, entity, target, :execute)
@@ -67,7 +81,36 @@ defmodule Systems.Ability do
         character == target ->
           send_message(character, "scroll", interpolate(ability[:target_message], opts))
         true ->
-          send_message(character, "scroll", interpolate(ability[:observer_message], opts))
+          send_message(character, "scroll", interpolate(ability[:spectator_message], opts))
+      end
+    end)
+  end
+
+  def display_dodge_message(ability, entity, target) do
+    opts = %{"user" => entity, "target" => target}
+
+    user_dodge_message     = ability[:user_dodge_message]      || "{{target}} dodges your attack!"
+                             |> interpolate(opts)
+                             |> capitalize_first
+
+    target_dodge_message    = ability[:user_target_message]    || "You dodge {{user}}'s attack!"
+                              |> interpolate(opts)
+                              |> capitalize_first
+
+    spectator_dodge_message = ability[:user_spectator_message] || "{{target}} dodges {{user}}'s attack!"
+                              |> interpolate(opts)
+                              |> capitalize_first
+
+    Parent.of(entity)
+    |> Systems.Room.characters_in_room
+    |> Enum.each(fn(character) ->
+      cond do
+        character == entity ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{user_dodge_message}</span></p>")
+        character == target ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{target_dodge_message}</span></p>")
+        true ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{spectator_dodge_message}</span></p>")
       end
     end)
   end

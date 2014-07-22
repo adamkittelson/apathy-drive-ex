@@ -54,4 +54,26 @@ defmodule Systems.Combat do
     |> Enum.into([])
   end
 
+  def dodge?(accuracy, target) when is_pid(target) do
+    dodge_skill = Skills.Dodge.modified(target)
+    dodge?(accuracy, dodge_skill)
+  end
+
+  def dodge?(accuracy, dodge_skill) do
+    chance = 30
+    if dodge_skill > 0 do
+      difference = dodge_skill - accuracy
+      chance = if difference > 0 do
+        chance + difference * 0.2
+      else
+        chance + difference * 0.3
+      end
+
+      :random.seed(:os.timestamp)
+      :random.uniform(100) < trunc(chance)
+    else
+      false
+    end
+  end
+
 end
