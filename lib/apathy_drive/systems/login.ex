@@ -8,7 +8,6 @@ defmodule Systems.Login do
     Entity.add_component(character, Components.Level, 1)
     Entity.add_component(character, Components.Online, false)
     Entity.add_component(character, Components.Types, ["character"])
-    Entity.add_component(character, Components.Items, [])
     url = Systems.URL.random
     Entity.add_component(character, Components.URL, url)
     Entity.add_component(character, Components.Socket, nil)

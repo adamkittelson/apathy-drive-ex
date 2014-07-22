@@ -20,19 +20,35 @@ defmodule Systems.Death do
          end
        end)
 
-    create_corpse(entity, room)
+    corpse = create_corpse(entity, room)
 
     if Entity.has_component?(entity, Components.Spirit) do
-      kill_player(entity)
+      kill_player(entity, corpse)
     else
       kill_monster(entity, room)
     end
   end
 
-  def kill_player(entity) do
+  def kill_player(entity, corpse) do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Components.Combat.stop_timer(entity)
+
+    Systems.Limbs.equipped_items(entity)
+    |> Enum.each fn(item) ->
+         Components.Limbs.unequip(entity, item)
+         Components.Items.add_item(corpse, item)
+       end
+
+    Components.Items.get_items(entity)
+    |> Enum.each fn(item) ->
+         Components.Items.remove_item(entity, item)
+         Components.Items.add_item(corpse, item)
+       end
+
+    Entities.save!(corpse)
+
+    Entity.remove_component(entity, Components.Items)
     Entity.remove_component(entity, Components.Race)
     Entity.remove_component(entity, Components.Stats)
     Entity.remove_component(entity, Components.Gender)
@@ -67,12 +83,14 @@ defmodule Systems.Death do
       Entity.add_component(corpse, Components.Module, Components.Module.value(entity))
     end
     Entity.add_component(corpse, Components.Types, ["item", "corpse"])
+    Entity.add_component(corpse, Components.Items, [])
     Entity.add_component(corpse, Components.Decay, %{"frequency" => 1, "decay_at" => Date.convert(Date.shift(Date.now, mins: 1), :secs)})
     Entities.save!(corpse)
 
     Components.Items.add_item(room, corpse)
 
     Entities.save!(room)
+    corpse
   end
 
   def death_message(entity) do
