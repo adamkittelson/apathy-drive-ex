@@ -23,10 +23,18 @@ defmodule Systems.Damage do
       limb = Components.Limbs.random_unsevered_limb(target)
       damage_rolls = damages(entity, limb, ability[:damage])
       damage = damage_rolls |> Map.values |> Enum.sum
-      {limb, damage}
+      crit = get_crit(Map.keys(damage_rolls), damage, target)
+      {limb, damage, crit}
     else
-      {nil, 0}
+      {nil, 0, nil}
     end
+  end
+
+  def get_crit(damage_types, damage, target) do
+    :random.seed(:os.timestamp)
+    damage_type = damage_types |> Enum.shuffle |> List.first
+    chance = trunc((damage / Systems.HP.max(target)) * 100)
+    CritTables.find(damage_type).random(chance)
   end
 
   def do_damage(target, limb, amount) do

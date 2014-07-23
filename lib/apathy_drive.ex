@@ -21,6 +21,7 @@ defmodule ApathyDrive do
     Skills.start_link
     Corpses.start_link
     Parent.start_link
+    CritTables.start_link
 
     IO.puts "Indexing..."
     index_items
@@ -30,6 +31,7 @@ defmodule ApathyDrive do
     index_races
     index_skills
     index_help
+    index_crit_tables
     IO.puts "Done!"
 
     if Mix.env != :test do
@@ -213,6 +215,19 @@ defmodule ApathyDrive do
         Entity.add_component(help, Components.Module, module)
         Entity.add_component(help, Components.Help, module.help)
         Help.add(help)
+      end)
+  end
+
+  defp index_crit_tables do
+    get_file_list(["lib/apathy_drive/data/**/crit_tables/**/*.ex"])
+    |> Enum.each(fn(file) ->
+         module_name = Path.basename(file)
+                       |> String.replace(".ex", "")
+                       |> Inflex.camelize
+        module = :"Elixir.CritTables.#{module_name}"
+
+        CritTables.add(module.name, module)
+
       end)
   end
 end

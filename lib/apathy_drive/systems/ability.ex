@@ -79,9 +79,29 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :execute) do
-    {limb, damage} = Systems.Damage.calculate_damage(ability, entity, target)
+    {limb, damage, crit} = Systems.Damage.calculate_damage(ability, entity, target)
     display_cast_message(ability, entity, target, %{"damage" => damage})
+    display_crit_message(crit, entity, target)
     Systems.Damage.do_damage(target, limb, damage)
+  end
+
+  def display_crit_message(nil, _, _), do: nil
+
+  def display_crit_message(crit, entity, target) do
+    opts = %{"user" => entity, "target" => target}
+    Parent.of(entity)
+    |> Systems.Room.characters_in_room
+    |> Enum.each(fn(character) ->
+      cond do
+        character == entity ->
+          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:user_message], opts)}</span></p>")
+        character == target ->
+          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:target_message], opts)}</span></p>")
+        true ->
+          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:spectator_message], opts)}</span></p>")
+      end
+    end)
+
   end
 
   def display_cast_message(ability, entity, target, opts \\ %{}) do
