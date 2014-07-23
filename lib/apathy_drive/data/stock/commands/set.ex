@@ -20,7 +20,7 @@ defmodule Commands.Set do
             send_message(entity, "scroll", "<p>Your name has been set.</p>")
           end
         end
-      ["name" | args] ->
+      ["name" | _args] ->
         send_message(entity, "scroll", "<p>Your name must consist only of upper or lower case letters.</p>")
       _ ->
         send_message(entity, "scroll", "<p>I don't recognize that setting.</p>")

@@ -61,7 +61,7 @@ defmodule Components.Lair do
     {:ok, lair, lair}
   end
 
-  def handle_event({:set_lair, new_value}, value) do
+  def handle_event({:set_lair, new_value}, _value) do
     {:ok, new_value }
   end
 

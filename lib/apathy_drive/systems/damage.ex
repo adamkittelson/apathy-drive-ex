@@ -19,9 +19,9 @@ defmodule Systems.Damage do
   }
 
   def calculate_damage(ability, entity, target) do
-    if ability.properties[:damage] do
+    if ability[:damage] do
       limb = Components.Limbs.random_unsevered_limb(target)
-      damage_rolls = damages(entity, limb, ability.properties[:damage])
+      damage_rolls = damages(entity, limb, ability[:damage])
       damage = damage_rolls |> Map.values |> Enum.sum
       {limb, damage}
     else
@@ -77,6 +77,7 @@ defmodule Systems.Damage do
     entity
     |> Components.Limbs.items(limb)
     |> Enum.map(&Components.AC.value(&1))
+    |> Enum.filter(&is_number(&1))
     |> Enum.sum
   end
 
@@ -117,6 +118,19 @@ defmodule Systems.Damage do
 
   def resistance_reduction(resistance) do
     resistance / (250 + resistance)
+  end
+
+  def base_damage(seed) when is_integer(seed) do
+    seed = seed / 10
+    base = trunc(seed * (11 + (seed / 10)))
+    Range.new(trunc(base * 0.8), trunc(base * 1.2))
+  end
+
+  def base_damage(entity) do
+    agility   = Systems.Stat.modified(entity, "agility")
+    strength = Systems.Stat.modified(entity, "strength")
+
+    base_damage(trunc((strength * 2 + agility) / 3))
   end
 
 end

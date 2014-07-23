@@ -27,7 +27,7 @@ defmodule ApathyDrive.MUD do
     socket
   end
 
-  def leave(socket, message) do
+  def leave(socket, _message) do
     character = Characters.find_by_socket(socket.pid)
     Characters.remove_socket(socket.pid)
     Components.Socket.value(character, nil)

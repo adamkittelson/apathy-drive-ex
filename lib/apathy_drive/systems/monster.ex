@@ -2,6 +2,7 @@ defmodule Systems.Monster do
   use Systems.Reload
   import Systems.Text
   import Utility
+  use Timex
 
   def spawn_monster(monster) do
     {:ok, entity} = Entity.init
@@ -13,7 +14,11 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).properties[:stats])
     Entity.add_component(entity, Components.HP, Systems.HP.max(entity))
     Entity.add_component(entity, Components.Mana, Systems.Mana.max(entity))
+    Entity.add_component(entity, Components.Hunting, [])
+    Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
     Entity.add_component(entity, Components.Module, Components.Module.value(monster))
+    Entity.add_component(entity, Components.Attacks, %{})
+    Components.Attacks.reset_attacks(entity)
     Entity.add_to_type_collection(entity)
     entity
   end

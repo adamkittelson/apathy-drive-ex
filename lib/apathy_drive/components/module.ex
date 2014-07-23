@@ -11,12 +11,16 @@ defmodule Components.Module do
     GenEvent.notify(entity, {:set_module, new_value})
   end
 
-  def serialize(_entity) do
-    nil
+  def serialize(entity) do
+     %{"Module" => value(entity) |> Atom.to_string}
   end
 
   ### GenEvent API
-  def init(value) do
+  def init(value) when is_binary(value) do
+    {:ok, String.to_atom(value)}
+  end
+
+  def init(value) when is_atom(value) do
     {:ok, value}
   end
 

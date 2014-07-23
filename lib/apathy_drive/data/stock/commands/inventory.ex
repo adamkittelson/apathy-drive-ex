@@ -4,6 +4,10 @@ defmodule Commands.Inventory do
   def keywords, do: ["i", "inv", "inventory"]
 
   def execute(entity, _arguments) do
-    Systems.Item.display_inventory(entity)
+    if Components.Spirit.value(entity) do
+      send_message(entity, "scroll", "<p>You need a body to do that.</p>")
+    else
+      Systems.Item.display_inventory(entity)
+    end
   end
 end

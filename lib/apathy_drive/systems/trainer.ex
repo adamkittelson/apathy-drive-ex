@@ -90,7 +90,7 @@ defmodule Systems.Trainer do
   end
 
   def cost(modifier, rating) when is_integer(rating) do
-    [rating * modifier |> Float.ceil |> trunc, 1] |> Enum.max
+    [rating * modifier * 1.0 |> Float.ceil |> trunc, 1] |> Enum.max
   end
 
   def rating(skill, entity) when is_pid(entity) do

@@ -24,6 +24,8 @@ defmodule Systems.Item do
       Entity.add_component(entity, Components.AC, template.properties[:ac] || 0)
     end
 
+    Entity.add_component(entity, Components.Module, template)
+
     Entity.add_component(entity, Components.Types, ["item"])
     Entities.save!(entity)
     entity
@@ -71,12 +73,14 @@ defmodule Systems.Item do
             end)
             Components.Items.remove_item(character, match)
             send_message(character, "scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>")
+            Components.Attacks.reset_attacks(character)
             Entities.save!(character)
           %{"error" => message} ->
             send_message(character, "scroll", "<p>#{message}</p>")
           _ ->
             Components.Items.remove_item(character, match)
             send_message(character, "scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>")
+            Components.Attacks.reset_attacks(character)
             Entities.save!(character)
         end
     end
@@ -90,6 +94,7 @@ defmodule Systems.Item do
         Components.Limbs.unequip(character, match)
         Components.Items.add_item(character, match)
         send_message(character, "scroll", "<p>You remove #{Components.Name.value(match)}.</p>")
+        Components.Attacks.reset_attacks(character)
         Entities.save!(character)
     end
   end

@@ -10,3 +10,6 @@ CHANGELOG
 
 ---- 0.0.3 / 2014-07-12 / elixir-0-14-3 ----------------------------------------
 * update for elixir 0.14.3 and misc bug fixes
+
+---- 0.0.4 / 2014-07-22 / combat -----------------------------------------------
+* combat/attacks/dodge/parry

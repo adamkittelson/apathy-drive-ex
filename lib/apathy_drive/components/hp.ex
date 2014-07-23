@@ -28,6 +28,15 @@ defmodule Components.HP do
     {:ok, value}
   end
 
+  def handle_call({:subtract, amount}, value) do
+    if value >= amount do
+      new_value = value - amount
+      {:ok, true, new_value}
+    else
+      {:ok, false, value}
+    end
+  end
+
   def handle_call(:value, value) do
     {:ok, value, value}
   end
@@ -38,15 +47,6 @@ defmodule Components.HP do
 
   def handle_event({:add_hp, amount, max}, value) do
     {:ok, Enum.min([value + amount, max]) }
-  end
-
-  def handle_call({:subtract, amount}, value) do
-    if value >= amount do
-      new_value = value - amount
-      {:ok, true, new_value}
-    else
-      {:ok, false, value}
-    end
   end
 
   def handle_event(_, current_value) do

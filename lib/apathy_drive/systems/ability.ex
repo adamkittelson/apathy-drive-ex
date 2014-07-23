@@ -11,7 +11,7 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, nil) do
-    if ability.properties[:target] == "self" do
+    if ability[:target] == "self" do
       execute(ability, entity, Components.Name.value(entity))
     else
       send_message(entity, "scroll", "<p><span class='cyan'>You must supply a target.</span></p>")
@@ -19,7 +19,7 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target) do
-    if ability.properties[:casting_time] do
+    if ability[:casting_time] do
       delay_execution(ability, entity, target)
     else
       execute(ability, entity, target, :verify_target)
@@ -28,7 +28,7 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :verify_target) do
     room = Parent.of(entity)
-    target_entity = find_target(ability, room, target)
+    target_entity = find_target(ability, room, entity, target)
     if target_entity do
       execute(ability, entity, target_entity, :mana)
     else
@@ -37,13 +37,41 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :mana) do
-    if ability.properties[:mana_cost] do
-      if Components.Mana.subtract(entity, ability.properties[:mana_cost]) do
+    if ability[:mana_cost] do
+      if Components.Mana.subtract(entity, ability[:mana_cost]) do
         ManaRegen.add(entity)
         Systems.Prompt.update(entity)
-        execute(ability, entity, target, :execute)
+        execute(ability, entity, target, :dodge)
       else
         send_message(entity, "scroll", "<p><span class='dark-cyan'>You don't have enough mana.</span></p>")
+      end
+    else
+      execute(ability, entity, target, :dodge)
+    end
+  end
+
+  def execute(ability, entity, target, :dodge) do
+    if ability[:dodgeable] do
+      skill = Skills.find(ability[:skill]).modified(entity)
+
+      if Systems.Combat.dodge?(skill, target) do
+        display_dodge_message(ability, entity, target)
+      else
+        execute(ability, entity, target, :parry)
+      end
+    else
+      execute(ability, entity, target, :parry)
+    end
+  end
+
+  def execute(ability, entity, target, :parry) do
+    if ability[:parryable] && Systems.Limbs.wielding_weapon?(target) do
+      skill = Skills.find(ability[:skill]).modified(entity)
+
+      if Systems.Combat.parry?(skill, target) do
+        display_parry_message(ability, entity, target)
+      else
+        execute(ability, entity, target, :execute)
       end
     else
       execute(ability, entity, target, :execute)
@@ -63,11 +91,69 @@ defmodule Systems.Ability do
     |> Enum.each(fn(character) ->
       cond do
         character == entity ->
-          send_message(character, "scroll", interpolate(ability.properties[:user_message], opts))
+          send_message(character, "scroll", interpolate(ability[:user_message], opts))
         character == target ->
-          send_message(character, "scroll", interpolate(ability.properties[:target_message], opts))
+          send_message(character, "scroll", interpolate(ability[:target_message], opts))
         true ->
-          send_message(character, "scroll", interpolate(ability.properties[:observer_message], opts))
+          send_message(character, "scroll", interpolate(ability[:spectator_message], opts))
+      end
+    end)
+  end
+
+  def display_dodge_message(ability, entity, target) do
+    opts = %{"user" => entity, "target" => target}
+
+    user_dodge_message     = ability[:user_dodge_message]      || "{{target}} dodges your attack!"
+                             |> interpolate(opts)
+                             |> capitalize_first
+
+    target_dodge_message    = ability[:target_dodge_message]    || "You dodge {{user}}'s attack!"
+                              |> interpolate(opts)
+                              |> capitalize_first
+
+    spectator_dodge_message = ability[:spectator_dodge_message] || "{{target}} dodges {{user}}'s attack!"
+                              |> interpolate(opts)
+                              |> capitalize_first
+
+    Parent.of(entity)
+    |> Systems.Room.characters_in_room
+    |> Enum.each(fn(character) ->
+      cond do
+        character == entity ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{user_dodge_message}</span></p>")
+        character == target ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{target_dodge_message}</span></p>")
+        true ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{spectator_dodge_message}</span></p>")
+      end
+    end)
+  end
+
+  def display_parry_message(ability, entity, target) do
+    opts = %{"user" => entity, "target" => target}
+
+    user_parry_message     = ability[:user_parry_message]      || "{{target}} parries your attack!"
+                             |> interpolate(opts)
+                             |> capitalize_first
+
+    target_parry_message    = ability[:target_parry_message]    || "You parry {{user}}'s attack!"
+                              |> interpolate(opts)
+                              |> capitalize_first
+
+    spectator_parry_message = ability[:spectator_parry_message] || "{{target}} parries {{user}}'s attack!"
+                              |> interpolate(opts)
+                              |> capitalize_first
+
+    Parent.of(entity)
+    |> Systems.Room.characters_in_room
+    |> Enum.each(fn(character) ->
+      cond do
+        character == entity ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{user_parry_message}</span></p>")
+        character == target ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{target_parry_message}</span></p>")
+        true ->
+          send_message(character, "scroll", "<p><span class='dark-cyan'>#{spectator_parry_message}</span></p>")
       end
     end)
   end
@@ -91,7 +177,7 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    delay(ability.properties[:casting_time], ability.name) do
+    delay(ability[:casting_time], ability.name) do
       execute(ability, entity, target, :verify_target)
     end
   end
@@ -108,8 +194,8 @@ defmodule Systems.Ability do
        end)
   end
 
-  def find_target(ability, room, target) do
-    case ability.properties[:target] do
+  def find_target(ability, room, _entity, target) do
+    case ability[:target] do
       "character" ->
         room
         |> Systems.Room.characters_in_room
