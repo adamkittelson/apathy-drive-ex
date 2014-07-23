@@ -1,4 +1,5 @@
-%{"cowboy": {:git, "git://github.com/extend/cowboy.git", "1a71a733c37df70c15ebfd28157b10915cd738d1", []},
+%{"apex": {:package, "0.3.0"},
+  "cowboy": {:git, "git://github.com/extend/cowboy.git", "1a71a733c37df70c15ebfd28157b10915cd738d1", []},
   "cowlib": {:git, "git://github.com/extend/cowlib.git", "e2ffefe828b918486e2cd76e44c54ae9b62c616e", [ref: "0.6.2"]},
   "decimal": {:package, "0.2.2"},
   "ecto": {:package, "0.2.2"},

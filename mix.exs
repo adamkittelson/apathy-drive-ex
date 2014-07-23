@@ -28,7 +28,8 @@ defmodule ApathyDrive.Mixfile do
       {:ecto,     "~> 0.2.2"},
       {:decimal,  "~> 0.2.2"},
       {:postgrex, "~> 0.5.2"},
-      {:timex,    "~> 0.9.0"}
+      {:timex,    "~> 0.9.0"},
+      {:apex,     "~> 0.3.0"}
     ]
   end
 end
