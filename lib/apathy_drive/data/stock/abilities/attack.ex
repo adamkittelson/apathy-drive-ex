@@ -11,6 +11,7 @@ defmodule Abilities.Attack do
     %{
       target:           "living",
       dodgeable:        true,
+      parryable:        true,
       damage:           attack_damage(attacker, attack),
       delay:            delay,
       skill:            attack["skill"],
