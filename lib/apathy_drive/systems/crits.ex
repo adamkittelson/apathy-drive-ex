@@ -22,14 +22,12 @@ defmodule Systems.Crits do
         :random.seed(:os.timestamp)
         case :random.uniform(1_000_000) do
           roll when roll > crit_chance * 10_000 ->
-            nil
-          roll when roll > crit_chance * 5000 ->
             "A"
-          roll when roll > crit_chance * 2500 ->
+          roll when roll > crit_chance * 5000 ->
             "B"
-          roll when roll > crit_chance * 1250 ->
+          roll when roll > crit_chance * 2500 ->
             "C"
-          roll when roll > crit_chance * 625 ->
+          roll when roll > crit_chance * 1250 ->
             "D"
           _ ->
             "E"
