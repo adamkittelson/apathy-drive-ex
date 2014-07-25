@@ -1,23 +1,6 @@
 defmodule Commands.Protection do
   use Systems.Command
 
-  @damage_types %{
-    aether: "magical",
-    cold: "magical",
-    crushing: "physical",
-    cutting: "physical",
-    disruption: "magical",
-    electricity: "magical",
-    fire: "magical",
-    holy: "magical",
-    impact: "physical",
-    impaling: "physical",
-    infernal: "magical",
-    plasma: "magical",
-    strike: "physical",
-    vacuum: "magical",
-  }
-
   @protection_levels %{
      0 => {"grey", "none"},
      7 => {"dark-red", "very poor"},
@@ -123,7 +106,7 @@ defmodule Commands.Protection do
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
     send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-    @damage_types
+    CritTables.damage_types
     |> Map.keys
     |> Enum.each(fn(damage_type) ->
        {color, protection} = protection_amount(ac)
@@ -146,7 +129,7 @@ defmodule Commands.Protection do
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
     send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-    @damage_types
+    CritTables.damage_types
     |> Map.keys
     |> Enum.each(fn(damage_type) ->
        {color, protection} = protection_amount(entity, limb, damage_type)
@@ -164,7 +147,7 @@ defmodule Commands.Protection do
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
     send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-    @damage_types
+    CritTables.damage_types
     |> Map.keys
     |> Enum.each(fn(damage_type) ->
        {color, protection} = protection_amount(entity, damage_type)
@@ -184,7 +167,7 @@ defmodule Commands.Protection do
             |> Enum.map(&protection_amount(entity, &1, damage_type))
             |> Enum.sum
 
-     total / Map.size(@damage_types)
+     total / (CritTables.damage_types |> Map.size)
   end
 
   defp protection_amount(ac) do
@@ -192,12 +175,12 @@ defmodule Commands.Protection do
   end
 
   defp limb_protection_amount(entity, limb) do
-    total = @damage_types
+    total = CritTables.damage_types
             |> Map.keys
             |> Enum.map(&protection_amount(entity, limb, &1))
             |> Enum.sum
 
-     total / Map.size(@damage_types)
+     total / Map.size(CritTables.damage_types)
   end
 
   defp protection_level(protection_amount) do
