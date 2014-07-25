@@ -44,7 +44,7 @@ defmodule Abilities.Attack do
     attack["damage"]
     |> Map.keys
     |> Enum.reduce(%{}, fn(damage_type, damage) ->
-         Map.put(damage, String.to_atom(damage_type), (trunc(low * attack["damage"][damage_type]))..(trunc(high * attack["damage"][damage_type])))
+         Map.put(damage, damage_type, (trunc(low * attack["damage"][damage_type]))..(trunc(high * attack["damage"][damage_type])))
        end)
   end
 
