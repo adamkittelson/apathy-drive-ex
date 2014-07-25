@@ -10,7 +10,7 @@ defmodule Commands.Skills do
       arguments = Enum.join(arguments, " ")
       send_message(entity, "scroll", "<p><span class='white'>Your skills are:</span></p>")
       send_message(entity, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
-      skill_names = Components.Skills.value(entity) |> Map.keys |> Enum.sort
+      skill_names = Components.Skills.list(entity) |> Enum.sort
       chunks = get_chunks(skill_names)
       Enum.each chunks, &display_skills(entity, &1, arguments)
     end

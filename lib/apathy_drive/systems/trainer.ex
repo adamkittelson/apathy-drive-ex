@@ -54,7 +54,7 @@ defmodule Systems.Trainer do
   end
 
   def power(entity) do
-    total_power(entity) - racial_power_cost(entity) - (entity |> Components.Skills.value |> Map.values |> Enum.sum)
+    total_power(entity) - racial_power_cost(entity) - Components.Skills.power_spent(entity)
   end
 
   def racial_power_cost(entity) do
@@ -94,7 +94,7 @@ defmodule Systems.Trainer do
   end
 
   def rating(skill, entity) when is_pid(entity) do
-    rating(skill.cost, power_spent(entity, skill))
+    rating(skill.cost, Components.Skills.power_spent(entity, skill))
   end
 
   def rating(modifier, power_spent) when is_integer(power_spent) do
@@ -109,11 +109,6 @@ defmodule Systems.Trainer do
 
   def rating(rating, _modifier, cost, power) when power < cost do
     rating
-  end
-
-  def power_spent(entity, skill) do
-    Components.Skills.value(entity)
-    |> Map.get(skill.name, 0)
   end
 
   def skills_by_level(room) do

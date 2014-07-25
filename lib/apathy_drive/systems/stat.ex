@@ -23,8 +23,7 @@ defmodule Systems.Stat do
 
   def bonus(entity, stat) do
     entity
-    |> Components.Skills.value
-    |> Map.keys
+    |> Components.Skills.list
     |> Enum.map(&(Skills.find(&1)))
     |> Enum.filter(fn(skill) ->
          skill.modifiers

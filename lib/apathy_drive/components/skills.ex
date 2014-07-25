@@ -8,8 +8,31 @@ defmodule Components.Skills do
     GenEvent.call(entity, Components.Skills, :value)
   end
 
+  def list(entity) do
+    GenEvent.call(entity, Components.Skills, :list)
+  end
+
   def value(entity, new_value) do
     GenEvent.notify(entity, {:set_skills, new_value})
+  end
+
+  def trained(entity) do
+    GenEvent.call(entity, Components.Skills, :trained)
+  end
+
+  def power_spent(entity, skill) when is_atom(skill) do
+    power_spent(entity, skill.name)
+  end
+
+  def power_spent(entity, skill_name) do
+    GenEvent.call(entity, Components.Skills, {:power_spent, skill_name})
+  end
+
+  def power_spent(entity) do
+    entity
+    |> list
+    |> Enum.map(&power_spent(entity, &1))
+    |> Enum.sum
   end
 
   def train(entity, _skill, power, cost) when power < cost do
@@ -52,13 +75,26 @@ defmodule Components.Skills do
     {:ok, value, value}
   end
 
+  def handle_call(:list, value) do
+    {:ok, Map.keys(value), value}
+  end
+
+  def handle_call(:trained, value) do
+    {:ok, Map.get(value, "trained", %{}), value}
+  end
+
+  def handle_call({:power_spent, skill_name}, value) do
+    {:ok, get_in(value, [skill_name, "trained"]) || 0, value}
+  end
+
   def handle_event({:set_skills, new_value}, _value) do
     {:ok, new_value}
   end
 
   def handle_event({:train, skill_name, amount}, value) do
-    skills = Map.put(value, skill_name, Map.get(value, skill_name, 0) + amount)
-    {:ok, skills}
+    current = get_in(value, [skill_name, "trained"]) || 0
+    new = put_in value[skill_name]["trained"], current + amount
+    {:ok, new}
   end
 
   def handle_event(_, value) do

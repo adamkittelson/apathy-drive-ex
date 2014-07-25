@@ -2,8 +2,7 @@ defmodule Systems.Skill do
   use Systems.Reload
 
   def base(entity) do
-    Components.Skills.value(entity)
-    |> Map.keys
+    Components.Skills.list(entity)
     |> Enum.reduce(%{}, fn(skill, skills) ->
          Map.put(skills, skill, base(entity, skill))
        end)
@@ -14,8 +13,7 @@ defmodule Systems.Skill do
   end
 
   def modified(entity) do
-    Components.Skills.value(entity)
-    |> Map.keys
+    Components.Skills.list(entity)
     |> Enum.reduce(%{}, fn(skill, skills) ->
          Map.put(skills, skill, modified(entity, skill))
        end)
