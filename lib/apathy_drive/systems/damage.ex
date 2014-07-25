@@ -1,23 +1,6 @@
 defmodule Systems.Damage do
   use Systems.Reload
 
-  @damage_types %{
-    aether: "magical",
-    cold: "magical",
-    crushing: "physical",
-    cutting: "physical",
-    disruption: "magical",
-    electricity: "magical",
-    fire: "magical",
-    holy: "magical",
-    impact: "physical",
-    impaling: "physical",
-    infernal: "magical",
-    plasma: "magical",
-    strike: "physical",
-    vacuum: "magical",
-  }
-
   def calculate_damage(ability, entity, target) do
     limb = Components.Limbs.random_unsevered_limb(target)
 
@@ -83,7 +66,7 @@ defmodule Systems.Damage do
   end
 
   def protection(entity, limb, damage_type) do
-    resistance = resistance(entity, @damage_types[damage_type])
+    resistance = resistance(entity, CritTables.damage_types[damage_type])
     ac = resistance(ac(entity, limb))
     (1 - (resistance_reduction(resistance))) * (1 - (resistance_reduction(ac)))
   end

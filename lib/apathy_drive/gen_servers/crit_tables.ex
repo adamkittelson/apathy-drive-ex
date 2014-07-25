@@ -11,6 +11,14 @@ defmodule CritTables do
     GenServer.call(:crit_tables, :value)
   end
 
+  def damage_types do
+    value
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(table, map) ->
+         put_in map[table], value[table].damage_type
+       end)
+  end
+
   def find(key) when is_atom key do
     find(Atom.to_string(key))
   end
