@@ -42,7 +42,7 @@ defmodule Systems.Skill do
       end
 
       def base(entity) do
-        Systems.Trainer.rating(__MODULE__, entity)
+        Systems.Trainer.rating(__MODULE__, entity) + Components.Skills.base(entity, name)
       end
 
       def modified(entity) do

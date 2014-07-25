@@ -40,6 +40,10 @@ defmodule Components.Skills do
     GenEvent.notify(entity, {:set_base_skills, skills})
   end
 
+  def base(entity, skill_name) do
+    GenEvent.call(entity, Components.Skills, {:base_skill, skill_name})
+  end
+
   def train(entity, _skill, power, cost) when power < cost do
     send_message(entity, "scroll", "<p>You need #{cost} power to train that skill.</p>")
     send_message(entity, "scroll", "<p>You only have #{power}.</p>")
@@ -92,6 +96,10 @@ defmodule Components.Skills do
     {:ok, get_in(value, [skill_name, "trained"]) || 0, value}
   end
 
+  def handle_call({:base_skill, skill_name}, value) do
+    {:ok, get_in(value, [skill_name, "base"]) || 0, value}
+  end
+
   def handle_event({:set_skills, new_value}, _value) do
     {:ok, new_value}
   end
@@ -100,7 +108,7 @@ defmodule Components.Skills do
     new_value = base_skills
                 |> Map.keys
                 |> Enum.reduce(value, fn(skill_name, skills) ->
-                     put_in value[skill_name]["base"], base_skills[skill_name]
+                     put_in skills[skill_name]["base"], base_skills[skill_name]
                    end)
     {:ok, new_value}
   end
