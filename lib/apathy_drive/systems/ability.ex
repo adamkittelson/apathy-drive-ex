@@ -80,7 +80,7 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :execute) do
     {limb, damage, crit} = Systems.Damage.calculate_damage(ability, entity, target)
-    display_cast_message(ability, entity, target, %{"damage" => damage})
+    display_cast_message(ability, entity, target)
     display_crit_message(crit, entity, target)
     Systems.Damage.do_damage(target, limb, damage)
   end
@@ -94,11 +94,11 @@ defmodule Systems.Ability do
     |> Enum.each(fn(character) ->
       cond do
         character == entity ->
-          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:user_message], opts)}</span></p>")
+          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:user_message], opts) |> capitalize_first}</span></p>")
         character == target ->
-          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:target_message], opts)}</span></p>")
+          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:target_message], opts) |> capitalize_first}</span></p>")
         true ->
-          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:spectator_message], opts)}</span></p>")
+          send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:spectator_message], opts) |> capitalize_first}</span></p>")
       end
     end)
 

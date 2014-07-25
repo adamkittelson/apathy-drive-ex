@@ -19,14 +19,21 @@ defmodule Systems.Damage do
   }
 
   def calculate_damage(ability, entity, target) do
-    if ability[:damage] do
-      limb = Components.Limbs.random_unsevered_limb(target)
-      damage_rolls = damages(entity, limb, ability[:damage])
-      damage = damage_rolls |> Map.values |> Enum.sum
-      crit = get_crit(Map.keys(damage_rolls), damage, target)
-      {limb, damage, crit}
-    else
-      {nil, 0, nil}
+    limb = Components.Limbs.random_unsevered_limb(target)
+
+    case ability[:damage] do
+      %{} = damage ->
+        damage_rolls = damages(target, limb, damage)
+        damage = damage_rolls |> Map.values |> Enum.sum
+        crit = get_crit(Map.keys(damage_rolls), damage, target)
+        if crit[:damage] do
+          damage = damage * crit[:damage]
+        end
+        {limb, damage, crit}
+      damage when is_number damage ->
+        {limb, damage, nil}
+      _ ->
+        {nil, 0, nil}
     end
   end
 

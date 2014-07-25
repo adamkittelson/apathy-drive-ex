@@ -10,8 +10,9 @@ defmodule Systems.Combat do
   def attack(entity, target) do
     Components.Hunting.add(entity, target)
     Components.Hunting.add(target, entity)
+    :random.seed(:os.timestamp)
     Systems.Combat.start(entity)
-    Systems.Combat.start(target)
+    Systems.Combat.start(target, (:random.uniform(10) / 10) + 0.5)
   end
 
   def swing(entity) do
