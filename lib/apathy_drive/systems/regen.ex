@@ -77,7 +77,7 @@ defmodule Systems.Regen do
   end
 
   def regen_rate(seed) when is_integer(seed) do
-    regen_rate(seed, 0)
+    regen_rate(trunc(seed / 2), 0)
   end
 
   def regen_rate(seed, rate) when seed > 0 do
