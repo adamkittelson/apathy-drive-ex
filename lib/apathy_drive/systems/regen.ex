@@ -1,6 +1,7 @@
 defmodule Systems.Regen do
   use Systems.Reload
   import Utility
+  import Systems.Text
 
   def initialize do
     ["HP", "Mana"]
@@ -55,7 +56,7 @@ defmodule Systems.Regen do
              character == entity ->
                send_message(character, "scroll", "<p>Your #{limb} no longer crippled!</p>")
               true ->
-               send_message(character, "scroll", "<p>#{Components.Name.value(entity)}'s #{limb} is no longer crippled!</p>")
+               send_message(character, "scroll", "<p>#{Components.Name.value(entity) |> capitalize_first}'s #{limb} is no longer crippled!</p>")
            end
          end)
     end
