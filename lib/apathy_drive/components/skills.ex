@@ -65,7 +65,7 @@ defmodule Components.Skills do
                    end
                  end
 
-    cost = Systems.Trainer.cost(skill.cost, rating)
+    cost = Systems.Trainer.cost(skill.cost, skill.trained(entity))
     send_message(entity, "scroll", "<p>It will cost you #{cost} power to advance this skill further.</p>")
     send_message(entity, "scroll", "<p>You have #{Systems.Trainer.power(entity)} power left.</p>")
     Entities.save!(entity)

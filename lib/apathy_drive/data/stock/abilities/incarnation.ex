@@ -54,6 +54,7 @@ Syntax: 'use incarnation at (sex) (race)'
         Entity.add_component(entity, Components.Hunting, [])
         Entity.add_component(entity, Components.Attacks, %{})
         Entity.add_component(entity, Components.Items, [])
+        Components.Skills.set_base_skills(entity, Components.Module.value(race).skills)
         Components.Attacks.reset_attacks(entity)
         Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
         Components.Spirit.value(entity, false)

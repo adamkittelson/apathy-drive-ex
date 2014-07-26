@@ -31,7 +31,7 @@ defmodule Systems.Stat do
          |> Enum.member?(:"#{stat}")
        end)
     |> Enum.reduce(0, fn(skill, total_stat_modification) ->
-         base = skill.base(entity)
+         base = skill.trained(entity)
          percentage = skill.modifiers[:"#{stat}"] / (skill.modifiers
                                                      |> Map.values
                                                      |> Enum.sum)
