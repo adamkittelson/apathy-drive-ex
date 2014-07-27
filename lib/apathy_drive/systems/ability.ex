@@ -82,7 +82,18 @@ defmodule Systems.Ability do
     {limb, damage, crit} = Systems.Damage.calculate_damage(ability, entity, target)
     display_cast_message(ability, entity, target)
     display_crit_message(crit, entity, target)
-    Systems.Damage.do_damage(target, limb, damage)
+    if damage && damage > 0 do
+      damage_limb(target, limb, damage)
+    end
+  end
+
+  def damage_limb(target, limb, amount) do
+    case Systems.Damage.damage_limb(target, limb, amount) do
+      :fatal ->
+        Systems.Death.kill(target)
+      _ ->
+        Systems.Damage.do_damage(target, limb, amount)
+      end
   end
 
   def display_crit_message(nil, _, _), do: nil

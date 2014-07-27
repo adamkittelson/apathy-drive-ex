@@ -59,9 +59,17 @@ defmodule Systems.Limbs do
       |> Enum.each(fn(character) ->
            cond do
              character == entity ->
-               send_message(character, "scroll", "<p>Your #{limb} has been severed!</p>")
+               if "torso" = limb do
+                 send_message(character, "scroll", "<p>You've been dealt a mortal blow!</p>")
+               else
+                 send_message(character, "scroll", "<p>Your #{limb} has been severed!</p>")
+               end
               true ->
-               send_message(character, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} has been severed!</p>")
+                if "torso" = limb do
+                  send_message(character, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))} has been dealt a mortal blow!</p>")
+                else
+                  send_message(character, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} has been severed!</p>")
+                end
            end
          end)
       sever_limb(entity, Components.Limbs.attached(entity, limb))

@@ -28,8 +28,6 @@ defmodule Systems.Damage do
   end
 
   def do_damage(target, limb, amount) do
-    damage_limb(target, limb, amount)
-
     if Components.HP.subtract(target, amount) do
       Systems.Prompt.update(target)
       HPRegen.add(target)
@@ -44,6 +42,9 @@ defmodule Systems.Damage do
     cond do
       Components.Limbs.current_damage(target, limb) >= (Components.Limbs.max_damage(target, limb) * 2) ->
         Systems.Limbs.sever_limb(target, limb)
+        if Components.Limbs.fatal_if_severed?(target, limb) do
+          :fatal
+        end
       !crippled && Components.Limbs.crippled?(target, limb) ->
         Systems.Limbs.cripple_limb(target, limb)
       true ->
