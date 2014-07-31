@@ -1,7 +1,7 @@
 defmodule Systems.Damage do
   use Systems.Reload
 
-  def calculate_damage(ability, entity, target) do
+  def calculate_damage(ability, target) do
     limb = Components.Limbs.random_unsevered_limb(target)
 
     case ability[:damage] do
@@ -27,7 +27,7 @@ defmodule Systems.Damage do
     CritTables.find(damage_type).random(chance)
   end
 
-  def do_damage(target, limb, amount) do
+  def do_damage(target, amount) do
     if Components.HP.subtract(target, amount) do
       Systems.Prompt.update(target)
       HPRegen.add(target)

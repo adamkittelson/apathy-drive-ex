@@ -11,4 +11,5 @@
   "poolboy": {:package, "1.2.1"},
   "postgrex": {:package, "0.5.2"},
   "ranch": {:git, "git://github.com/extend/ranch.git", "3189ef2d47843945efc96c224963380462c33d40", [ref: "0.10.0"]},
+  "timer": {:git, "git://github.com/adamkittelson/timer.git", "eb653dac293c73e89edb1a99c7a099e6f9d951a0", [ref: "eb653dac293c73e89edb1a99c7a099e6f9d951a0"]},
   "timex": {:package, "0.9.0"}}

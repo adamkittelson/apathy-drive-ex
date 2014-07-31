@@ -1,9 +1,10 @@
 defmodule Systems.Hints do
   use Systems.Reload
   import Utility
+  import Timer, except: [start: 0]
 
   def initialize do
-    every 60, do: display_hint
+    apply_interval 1 |> minutes, do: display_hint
   end
 
   def display_hint do

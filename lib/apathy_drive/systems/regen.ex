@@ -1,6 +1,7 @@
 defmodule Systems.Regen do
   use Systems.Reload
   import Utility
+  import Timer, except: [start: 0]
   import Systems.Text
 
   def initialize do
@@ -13,7 +14,7 @@ defmodule Systems.Regen do
               end
             end)
        end)
-    every 1, do: regen
+    apply_interval 1 |> seconds, do: regen
   end
 
   def regen do

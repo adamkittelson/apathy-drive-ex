@@ -1,10 +1,11 @@
 defmodule Systems.Combat do
   use Systems.Reload
   import Utility
+  import Timer, except: [start: 0]
   use Timex
 
   def start(entity, time \\ 0.5) do
-    Components.Combat.set_timer entity, delay(time, "#{Components.Name.value(entity)} combat", do: swing(entity))
+    Components.Combat.set_timer entity, apply_after(time |> seconds, do: swing(entity))
   end
 
   def attack(entity, target) do

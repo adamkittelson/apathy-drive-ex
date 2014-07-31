@@ -1,13 +1,12 @@
 defmodule Systems.Crits do
   use Systems.Reload
-  import Systems.Text
-  import Utility
 
   defmacro __using__(_opts) do
     quote do
       use Systems.Reload
       import Systems.Text
       import Utility
+      import Timer, except: [start: 0]
 
       def get_crit(nil), do: nil
 

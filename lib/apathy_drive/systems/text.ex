@@ -11,7 +11,7 @@ defmodule Systems.Text do
                      String.replace(string, ~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/, "\\1")
                    "female" ->
                      String.replace(string, ~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/, "\\2")
-                   other ->
+                   _other ->
                      String.replace(string, ~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/, "\\3")
                  end
       else
@@ -29,7 +29,7 @@ defmodule Systems.Text do
                      String.replace(string, ~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/, "\\1")
                    "female" ->
                      String.replace(string, ~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/, "\\2")
-                   other ->
+                   _other ->
                      String.replace(string, ~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/, "\\3")
                  end
       else
@@ -51,7 +51,7 @@ defmodule Systems.Text do
 
   def capitalize_first(string) do
     {first, rest} = String.split_at(string, 1)
-    name = "#{String.capitalize(first)}#{rest}"
+    "#{String.capitalize(first)}#{rest}"
   end
 
   def strip_tags(string), do: String.replace(string, ~r/<[^>]*>/, "")

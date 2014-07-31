@@ -1,9 +1,9 @@
 defmodule Systems.Idle do
   use Systems.Reload
-  import Utility
+  import Timer, except: [start: 0]
 
   def initialize do
-    every 1, do: increment
+    apply_interval 1 |> seconds, do: increment
   end
 
   def increment do

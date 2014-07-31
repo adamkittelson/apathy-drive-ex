@@ -2,6 +2,7 @@ defmodule Systems.Ability do
   use Systems.Reload
   import Systems.Text
   import Utility
+  import Timer, except: [start: 0]
 
   def abilities(entity) do
     Abilities.all
@@ -79,7 +80,7 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :execute) do
-    {limb, damage, crit} = Systems.Damage.calculate_damage(ability, entity, target)
+    {limb, damage, crit} = Systems.Damage.calculate_damage(ability, target)
     display_cast_message(ability, entity, target)
     display_crit_message(crit, entity, target)
     if damage && damage > 0 do
@@ -92,7 +93,7 @@ defmodule Systems.Ability do
       :fatal ->
         Systems.Death.kill(target)
       _ ->
-        Systems.Damage.do_damage(target, limb, amount)
+        Systems.Damage.do_damage(target, amount)
       end
   end
 
@@ -208,7 +209,7 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    delay(ability[:casting_time], ability.name) do
+    apply_after(ability[:casting_time] |> seconds) do
       execute(ability, entity, target, :verify_target)
     end
   end
@@ -245,6 +246,7 @@ defmodule Systems.Ability do
       use Systems.Reload
       import Systems.Text
       import Utility
+      import Timer, except: [start: 0]
 
       def name do
         __MODULE__

@@ -35,7 +35,7 @@ defmodule Components.Skills do
     |> Enum.sum
   end
 
-  def set_base_skills(entity, nil), do: nil
+  def set_base_skills(_entity, nil), do: nil
   def set_base_skills(entity, skills) do
     GenEvent.notify(entity, {:set_base_skills, skills})
   end

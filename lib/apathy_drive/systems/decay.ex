@@ -1,10 +1,10 @@
 defmodule Systems.Decay do
   use Systems.Reload
-  import Utility
+  import Timer, except: [start: 0]
   use Timex
 
   def initialize do
-    every 10, do: decay
+    apply_interval 10 |> seconds, do: decay
   end
 
   def decay do

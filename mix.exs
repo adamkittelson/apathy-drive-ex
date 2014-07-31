@@ -29,7 +29,8 @@ defmodule ApathyDrive.Mixfile do
       {:decimal,  "~> 0.2.2"},
       {:postgrex, "~> 0.5.2"},
       {:timex,    "~> 0.9.0"},
-      {:apex,     "~> 0.3.0"}
+      {:apex,     "~> 0.3.0"},
+      {:timer,    github: "adamkittelson/timer", ref: "eb653dac293c73e89edb1a99c7a099e6f9d951a0"}
     ]
   end
 end

@@ -1,10 +1,10 @@
 defmodule Systems.LairSpawning do
   use Systems.Reload
-  import Utility
+  import Timer, except: [start: 0]
   use Timex
 
   def initialize do
-    every 10, do: spawn_lairs
+    apply_interval 10 |> seconds, do: spawn_lairs
   end
 
   def spawn_lairs do

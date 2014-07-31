@@ -146,7 +146,7 @@ defmodule Systems.Room do
     exits
     |> Map.keys
     |> Enum.find fn(direction) ->
-      Rooms.find_by_id(exits["destination"]) == destination
+      Rooms.find_by_id(exits[direction]["destination"]) == destination
     end
   end
 
