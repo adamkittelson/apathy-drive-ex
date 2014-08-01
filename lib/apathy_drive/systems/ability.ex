@@ -209,7 +209,7 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    apply_after(ability[:casting_time] |> seconds) do
+    apply_after(ability[:casting_time] |> seconds, ability[:env]) do
       execute(ability, entity, target, :verify_target)
     end
   end
