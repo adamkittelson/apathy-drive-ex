@@ -7,7 +7,7 @@ config :phoenix, ApathyDrive.Router,
   cookies: true,
   consider_all_requests_local: false,
   session_key: "_your_app_key",
-  session_secret: "super secret"
+  session_secret: "111111111111111111111111111111111111111111111111111111111111111111111111111"
 
 config :phoenix, :logger,
   level: :debug
