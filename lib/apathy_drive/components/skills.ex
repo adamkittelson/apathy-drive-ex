@@ -108,12 +108,14 @@ defmodule Components.Skills do
     new_value = base_skills
                 |> Map.keys
                 |> Enum.reduce(value, fn(skill_name, skills) ->
+                     skills = Map.put_new(skills, skill_name, %{})
                      put_in skills[skill_name]["base"], base_skills[skill_name]
                    end)
     {:ok, new_value}
   end
 
   def handle_event({:train, skill_name, amount}, value) do
+    value = Map.put_new(value, skill_name, %{})
     current = get_in(value, [skill_name, "trained"]) || 0
     new = put_in value[skill_name]["trained"], current + amount
     {:ok, new}

@@ -1,0 +1,18 @@
+use Mix.Config
+
+config :phoenix, ApathyDrive.Router,
+  port: System.get_env("PORT"),
+  ssl: false,
+  code_reload: false,
+  cookies: true,
+  consider_all_requests_local: false,
+  session_key: "_your_app_key",
+  session_secret: "super secret"
+
+config :phoenix, :logger,
+  level: :debug
+
+config :phoenix, :mud,
+  start_room: 1235, # database id of room new characters start in
+  db: "ecto://user:password@hostname/database_name" # ecto db connection string
+

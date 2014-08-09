@@ -4,7 +4,7 @@ defmodule ApathyDrive.Mixfile do
   def project do
     [ app: :apathy_drive,
       version: "0.0.1",
-      elixir: "~> 0.14.3",
+      elixir: "~> 0.15.0",
       deps: deps ]
   end
 
@@ -23,14 +23,13 @@ defmodule ApathyDrive.Mixfile do
   # { :barbat, "~> 0.1", github: "elixir-lang/barbat" }
   defp deps do
     [
-      {:phoenix,  "0.3.0"},
-      {:cowboy,   "~> 0.10.0", github: "extend/cowboy", optional: true},
-      {:ecto,     "~> 0.2.2"},
-      {:decimal,  "~> 0.2.2"},
-      {:postgrex, "~> 0.5.2"},
-      {:timex,    "~> 0.9.0"},
-      {:apex,     "~> 0.3.0"},
-      {:timer,    github: "adamkittelson/timer", ref: "1cb8e5f7fdb50d435716fee88ccac051ec7878e9"}
+      {:cowboy, "~> 1.0.0"},
+      {:phoenix,  github: "phoenixframework/phoenix", ref: "2a029dcd858fef17dd54bf3a435ae4fa15490edb"},
+      {:ecto,     "~> 0.2.3"},
+      {:decimal,  "~> 0.2.4"},
+      {:postgrex, "~> 0.5.4"},
+      {:timex,    "~> 0.11.0"},
+      {:timer,    github: "adamkittelson/timer", ref: "93ddb3cd46a5faef7fd6becc4224797df807936d"}
     ]
   end
 end
