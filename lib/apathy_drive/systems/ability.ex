@@ -83,6 +83,7 @@ defmodule Systems.Ability do
     {limb, damage, crit} = Systems.Damage.calculate_damage(ability, target)
     display_cast_message(ability, entity, target)
     display_crit_message(crit, entity, target)
+    Systems.Crits.add_crit_effects(damage, target, crit[:effects])
     if damage && damage > 0 do
       damage_limb(target, limb, damage)
     end

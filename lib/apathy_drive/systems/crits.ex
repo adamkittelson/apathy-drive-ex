@@ -1,5 +1,19 @@
 defmodule Systems.Crits do
   use Systems.Reload
+  alias Systems.Effect
+  use Timex
+
+  def add_crit_effects(damage, target, effects) do
+    add_stat_mod_effects(target, effects[:stat_mod])
+  end
+
+  def add_stat_mod_effects(target, nil), do: nil
+  def add_stat_mod_effects(target, []),  do: nil
+  def add_stat_mod_effects(target, stat_mods) do
+    Enum.each(stat_mods, fn(stat_mod) ->
+      Effect.add(target, Map.put(%{}, stat_mod[:stat], stat_mod[:amount]), stat_mod[:duration])
+    end)
+  end
 
   defmacro __using__(_opts) do
     quote do

@@ -5,7 +5,8 @@ defmodule Systems.Combat do
   use Timex
 
   def start(entity, time \\ 0.5) do
-    Components.Combat.set_timer entity, apply_after(time |> seconds, do: swing(entity))
+    {:ok, timer} = apply_after(time |> seconds, do: swing(entity))
+    Components.Combat.set_timer entity, timer
   end
 
   def attack(entity, target) do
