@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Controllers.Pages do
+defmodule ApathyDrive.PageController do
   use Phoenix.Controller
 
   def index(conn, _params) do

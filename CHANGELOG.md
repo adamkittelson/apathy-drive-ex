@@ -13,3 +13,6 @@ CHANGELOG
 
 ---- 0.0.4 / 2014-07-22 / combat -----------------------------------------------
 * combat/attacks/dodge/parry
+
+---- 0.0.5 / 2014-08-09 / elixir-0-15 ------------------------------------------
+* update to elixir 0.15.0 and phoenix master

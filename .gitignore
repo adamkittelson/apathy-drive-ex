@@ -8,4 +8,4 @@ _build
 /lib/apathy_drive/data/apotheosis
 *.DS_Store
 *.ez
-/lib/apathy_drive/config/*.ex
+/config/*.exs
