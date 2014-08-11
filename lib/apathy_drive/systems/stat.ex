@@ -18,10 +18,10 @@ defmodule Systems.Stat do
   end
 
   def modified(entity, stat) do
-    base(entity, stat) + bonus(entity, stat)
+    base(entity, stat) + skill_bonus(entity, stat) + effects_bonus(entity, stat)
   end
 
-  def bonus(entity, stat) do
+  def skill_bonus(entity, stat) do
     entity
     |> Components.Skills.list
     |> Enum.map(&(Skills.find(&1)))
@@ -38,6 +38,14 @@ defmodule Systems.Stat do
          total_stat_modification + base * percentage
        end)
     |> trunc
+  end
+
+  def effects_bonus(entity, stat) do
+    entity
+    |> Components.Effects.value
+    |> Map.values
+    |> Enum.map(&(&1[stat] || 0))
+    |> Enum.sum
   end
 
 end

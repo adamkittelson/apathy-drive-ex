@@ -11,6 +11,7 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Types, ["monster"])
     Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).properties[:limbs])
     Entity.add_component(entity, Components.Skills, %{})
+    Entity.add_component(entity, Components.Effects, %{})
     Components.Skills.set_base_skills(entity, Components.Module.value(monster).properties[:skills])
     Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).properties[:stats])
     Entity.add_component(entity, Components.HP, Systems.HP.max(entity))
@@ -19,7 +20,6 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
     Entity.add_component(entity, Components.Module, Components.Module.value(monster))
     Entity.add_component(entity, Components.Attacks, %{})
-    Entity.add_component(entity, Components.Effects, %{})
     Components.Attacks.reset_attacks(entity)
     Entity.add_to_type_collection(entity)
     entity
