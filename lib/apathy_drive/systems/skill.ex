@@ -51,7 +51,7 @@ defmodule Systems.Skill do
 
       def modified(entity) do
         base = base(entity)
-        if base > 0 do
+        modified = if base > 0 do
           total = Map.keys(modifiers) |> Enum.reduce(0, fn(stat, total) ->
                                            total + Systems.Stat.modified(entity, "#{stat}") * modifiers[stat]
                                          end)
@@ -62,7 +62,17 @@ defmodule Systems.Skill do
         else
           0
         end
+        modified + effects_bonus(entity)
       end
+
+      def effects_bonus(entity) do
+        entity
+        |> Components.Effects.value
+        |> Map.values
+        |> Enum.map(&(&1[__MODULE__.name] || 0))
+        |> Enum.sum
+      end
+
 
     end
   end

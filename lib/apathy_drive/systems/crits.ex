@@ -5,6 +5,7 @@ defmodule Systems.Crits do
 
   def add_crit_effects(damage, target, effects) do
     add_stat_mod_effects(target, effects[:stat_mod])
+    add_skill_mod_effects(target, effects[:skill_mod])
   end
 
   def add_stat_mod_effects(target, nil), do: nil
@@ -12,6 +13,14 @@ defmodule Systems.Crits do
   def add_stat_mod_effects(target, stat_mods) do
     Enum.each(stat_mods, fn(stat_mod) ->
       Effect.add(target, Map.put(%{}, stat_mod[:stat], stat_mod[:amount]), stat_mod[:duration])
+    end)
+  end
+
+  def add_skill_mod_effects(target, nil), do: nil
+  def add_skill_mod_effects(target, []),  do: nil
+  def add_skill_mod_effects(target, skill_mods) do
+    Enum.each(skill_mods, fn(skill_mod) ->
+      Effect.add(target, Map.put(%{}, skill_mod[:skill], skill_mod[:amount]), skill_mod[:duration])
     end)
   end
 
