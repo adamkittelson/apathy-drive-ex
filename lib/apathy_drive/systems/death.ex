@@ -103,7 +103,7 @@ defmodule Systems.Death do
   end
 
   def experience_to_grant(entity) when is_pid entity do
-    Systems.Stat.modified(entity)
+    Systems.Stat.pre_effects_bonus(entity)
     |> Map.values
     |> Enum.sum
     |> experience_to_grant

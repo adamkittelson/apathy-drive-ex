@@ -17,8 +17,20 @@ defmodule Systems.Stat do
        end)
   end
 
+  def pre_effects_bonus(entity) do
+    base(entity)
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(stat, stats) ->
+         Map.put(stats, stat, pre_effects_bonus(entity, stat))
+       end)
+  end
+
+  def pre_effects_bonus(entity, stat) do
+    base(entity, stat) + skill_bonus(entity, stat)
+  end
+
   def modified(entity, stat) do
-    base(entity, stat) + skill_bonus(entity, stat) + effects_bonus(entity, stat)
+    pre_effects_bonus(entity, stat) + effects_bonus(entity, stat)
   end
 
   def skill_bonus(entity, stat) do
