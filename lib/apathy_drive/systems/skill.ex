@@ -69,10 +69,14 @@ defmodule Systems.Skill do
         entity
         |> Components.Effects.value
         |> Map.values
-        |> Enum.map(&(&1[__MODULE__.name] || 0))
+        |> Enum.map(fn
+             (%{} = effect) ->
+               effect[__MODULE__.name] || 0
+             (_) ->
+               0
+           end)
         |> Enum.sum
       end
-
 
     end
   end

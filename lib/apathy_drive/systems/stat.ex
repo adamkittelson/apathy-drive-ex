@@ -56,7 +56,12 @@ defmodule Systems.Stat do
     entity
     |> Components.Effects.value
     |> Map.values
-    |> Enum.map(&(&1[stat] || 0))
+    |> Enum.map(fn
+         (%{} = effect) ->
+           effect[stat] || 0
+         (_) ->
+           0
+       end)
     |> Enum.sum
   end
 

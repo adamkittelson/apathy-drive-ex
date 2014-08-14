@@ -6,6 +6,12 @@ defmodule Systems.Crits do
   def add_crit_effects(damage, target, effects) do
     add_stat_mod_effects(target, effects[:stat_mod])
     add_skill_mod_effects(target, effects[:skill_mod])
+    add_stun_effect(target, effects[:stun])
+  end
+
+  def add_stun_effect(target, nil), do: nil
+  def add_stun_effect(target, duration) do
+    Effect.add(target, :stunned, duration)
   end
 
   def add_stat_mod_effects(target, nil), do: nil

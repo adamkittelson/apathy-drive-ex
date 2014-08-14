@@ -39,7 +39,13 @@ defmodule Systems.Combat do
              |> Enum.shuffle
              |> List.first
 
-    delay = Abilities.Attack.execute(entity, target)
+    delay = if stunned?(entity) do
+      send_message(entity, "scroll", "<p><span class='yellow'>You are stunned and cannot attack!</span></p>")
+      0.5
+    else
+      Abilities.Attack.execute(entity, target)
+    end
+
     Components.Combat.set_break_at(entity)
     start(entity, delay)
   end
@@ -57,9 +63,20 @@ defmodule Systems.Combat do
     |> Enum.into([])
   end
 
+  def stunned?(target) do
+    target
+    |> Components.Effects.value
+    |> Map.values
+    |> Enum.member? :stunned
+  end
+
   def dodge?(accuracy, target) when is_pid(target) do
-    dodge_skill = Skills.Dodge.modified(target)
-    dodge?(accuracy, dodge_skill)
+    if stunned?(target) do
+      false
+    else
+      dodge_skill = Skills.Dodge.modified(target)
+      dodge?(accuracy, dodge_skill)
+    end
   end
 
   def dodge?(accuracy, dodge_skill) do
@@ -80,8 +97,12 @@ defmodule Systems.Combat do
   end
 
   def parry?(accuracy, target) when is_pid(target) do
-    parry_skill = Skills.Parry.modified(target)
-    parry?(accuracy, parry_skill)
+    if stunned?(target) do
+      false
+    else
+      parry_skill = Skills.Parry.modified(target)
+      parry?(accuracy, parry_skill)
+    end
   end
 
   def parry?(accuracy, parry_skill) do
