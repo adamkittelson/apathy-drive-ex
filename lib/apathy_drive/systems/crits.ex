@@ -7,6 +7,41 @@ defmodule Systems.Crits do
     add_stat_mod_effects(target, effects[:stat_mod])
     add_skill_mod_effects(target, effects[:skill_mod])
     add_stun_effect(target, effects[:stun])
+    apply_limb_loss_effects(target, effects[:limb_loss])
+  end
+
+  def apply_limb_loss_effects(target, nil), do: nil
+  def apply_limb_loss_effects(target, []),  do: nil
+  def apply_limb_loss_effects(target, limb_loss) do
+    Enum.each(limb_loss, fn(limb_loss) ->
+      get_limb(target, limb_loss)
+      |> apply_limb_loss_effect(target, limb_loss[:kind])
+    end)
+  end
+
+  def apply_limb_loss_effect(nil, _target, _kind), do: nil
+  def apply_limb_loss_effect(limb_name, target, "cripple") do
+    Systems.Limbs.cripple_limb(target, limb_name)
+  end
+
+  def apply_limb_loss_effect(limb_name, target, "sever") do
+    Systems.Limbs.sever_limb(target, limb_name)
+  end
+
+  def get_limb(target, %{:kind => "cripple"} = limb_loss) do
+    random_limb(Components.Limbs.uncrippled_limbs(target, limb_loss[:limb]))
+  end
+
+  def get_limb(target, %{:kind => "sever"} = limb_loss) do
+    random_limb(Components.Limbs.unsevered_limbs(target, limb_loss[:limb]))
+  end
+
+  def random_limb([]), do: nil
+  def random_limb(limb_names) do
+    :random.seed(:os.timestamp)
+    limb_names
+    |> Enum.shuffle
+    |> List.first
   end
 
   def add_stun_effect(target, nil), do: nil

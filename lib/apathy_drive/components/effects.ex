@@ -12,13 +12,11 @@ defmodule Components.Effects do
   end
 
   def add(entity, key, effect) do
-    IO.puts "Adding effect: #{inspect effect}"
     GenEvent.notify(entity, {:add_effect, key, effect})
   end
 
   def remove(entity, key) do
     GenEvent.notify(entity, {:remove_effect, key})
-    IO.puts "Removed effect: #{inspect key}"
   end
 
   def serialize(_entity) do

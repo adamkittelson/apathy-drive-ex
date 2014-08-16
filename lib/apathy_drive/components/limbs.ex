@@ -78,11 +78,40 @@ defmodule Components.Limbs do
     |> Enum.filter(&(!severed?(entity, &1)))
   end
 
+  def unsevered_limbs(entity, "non_fatal") do
+    unsevered_limbs(entity)
+    |> Enum.filter(fn(limb_name) ->
+         !fatal_if_severed?(entity, limb_name)
+       end)
+  end
+
+  def unsevered_limbs(entity, partial_limb_name) do
+    unsevered_limbs(entity)
+    |> Enum.filter(fn(limb_name) ->
+         Regex.match?(~r/#{partial_limb_name}/, limb_name)
+       end)
+  end
+
   def random_unsevered_limb(entity) do
     :random.seed(:os.timestamp)
     unsevered_limbs(entity)
     |> Enum.shuffle
     |> List.first
+  end
+
+  def uncrippled_limbs(entity) do
+    unsevered_limbs(entity)
+    |> Enum.filter(&(!crippled?(entity, &1)))
+  end
+
+  def uncrippled_limbs(entity, "non_fatal") do
+    unsevered_limbs(entity, "non_fatal")
+    |> Enum.filter(&(!crippled?(entity, &1)))
+  end
+
+  def uncrippled_limbs(entity, partial_limb_name) do
+    unsevered_limbs(entity, partial_limb_name)
+    |> Enum.filter(&(!crippled?(entity, &1)))
   end
 
   def serialize(entity) do
