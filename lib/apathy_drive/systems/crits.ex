@@ -2,12 +2,24 @@ defmodule Systems.Crits do
   use Systems.Reload
   alias Systems.Effect
   use Timex
+  import Timer, except: [start: 0]
+  import Utility
 
   def add_crit_effects(damage, target, effects) do
+    add_damage_over_time_effect(target, damage, effects[:damage_over_time])
     add_stat_mod_effects(target, effects[:stat_mod])
     add_skill_mod_effects(target, effects[:skill_mod])
     add_stun_effect(target, effects[:stun])
     apply_limb_loss_effects(target, effects[:limb_loss])
+  end
+
+  def add_damage_over_time_effect(_target, _damage, nil), do: nil
+  def add_damage_over_time_effect(target, damage, damage_over_time) do
+    {:ok, timer} = apply_interval 1 |> seconds do
+      send_message(target, "scroll", "<p>You take damage from your wounds!</p>")
+      Systems.Damage.do_damage(target, damage * damage_over_time[:damage])
+    end
+    Effect.add(target, %{:timers => [timer]}, damage_over_time[:duration])
   end
 
   def apply_limb_loss_effects(target, nil), do: nil
@@ -46,7 +58,7 @@ defmodule Systems.Crits do
 
   def add_stun_effect(target, nil), do: nil
   def add_stun_effect(target, duration) do
-    Effect.add(target, :stunned, duration)
+    Effect.add(target, %{:stunned => true}, duration)
   end
 
   def add_stat_mod_effects(target, nil), do: nil

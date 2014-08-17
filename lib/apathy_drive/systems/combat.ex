@@ -67,7 +67,7 @@ defmodule Systems.Combat do
     target
     |> Components.Effects.value
     |> Map.values
-    |> Enum.member? :stunned
+    |> Enum.any? &(&1[:stunned])
   end
 
   def dodge?(accuracy, target) when is_pid(target) do

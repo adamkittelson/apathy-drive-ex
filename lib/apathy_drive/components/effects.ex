@@ -16,7 +16,20 @@ defmodule Components.Effects do
   end
 
   def remove(entity, key) do
+    case value(entity)[key] do
+      %{:timers => timers} ->
+        Enum.each(timers, fn(timer) ->
+          :timer.cancel(timer)
+        end)
+      _ ->
+    end
     GenEvent.notify(entity, {:remove_effect, key})
+  end
+
+  def remove(entity) do
+    value(entity)
+    |> Map.keys
+    |> Enum.each &remove(entity, &1)
   end
 
   def serialize(_entity) do

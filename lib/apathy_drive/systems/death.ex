@@ -33,6 +33,7 @@ defmodule Systems.Death do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Components.Combat.stop_timer(entity)
+    Components.Effects.remove(entity)
 
     Systems.Limbs.equipped_items(entity)
     |> Enum.each fn(item) ->
@@ -69,6 +70,7 @@ defmodule Systems.Death do
   def kill_monster(entity, room) do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
+    Components.Effects.remove(entity)
     Components.Monsters.remove_monster(room, entity)
     Components.Combat.stop_timer(entity)
     Entity.list_components(entity) |> Enum.each(&(Entity.remove_component(entity, &1)))
