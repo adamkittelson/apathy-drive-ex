@@ -1,6 +1,6 @@
 defmodule Systems.Idle do
   use Systems.Reload
-  import Timer, except: [start: 0]
+  import BlockTimer
 
   def initialize do
     apply_interval 1 |> seconds, do: increment

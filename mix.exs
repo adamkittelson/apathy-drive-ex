@@ -23,13 +23,13 @@ defmodule ApathyDrive.Mixfile do
   # { :barbat, "~> 0.1", github: "elixir-lang/barbat" }
   defp deps do
     [
-      {:cowboy, "~> 1.0.0"},
-      {:phoenix,  github: "phoenixframework/phoenix", ref: "2a029dcd858fef17dd54bf3a435ae4fa15490edb"},
-      {:ecto,     "~> 0.2.3"},
-      {:decimal,  "~> 0.2.4"},
-      {:postgrex, "~> 0.5.4"},
-      {:timex,    "~> 0.11.0"},
-      {:timer,    github: "adamkittelson/timer", ref: "93ddb3cd46a5faef7fd6becc4224797df807936d"}
+      {:cowboy,      "~> 1.0.0"},
+      {:phoenix,     github: "phoenixframework/phoenix", ref: "2a029dcd858fef17dd54bf3a435ae4fa15490edb"},
+      {:ecto,        "~> 0.2.3"},
+      {:decimal,     "~> 0.2.4"},
+      {:postgrex,    "~> 0.5.4"},
+      {:timex,       "~> 0.11.0"},
+      {:block_timer, github: "adamkittelson/block_timer", ref: "f57fae9ea39fc43366e51063c840d409746ed67d"}
     ]
   end
 end

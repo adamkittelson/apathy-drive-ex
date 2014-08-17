@@ -30,7 +30,7 @@ defmodule Systems.Command do
     quote do
       use Systems.Reload
       import Utility
-      import Timer, except: [start: 0]
+      import BlockTimer
 
       def name do
         __MODULE__
