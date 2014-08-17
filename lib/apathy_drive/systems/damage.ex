@@ -9,8 +9,8 @@ defmodule Systems.Damage do
         damage_rolls = damages(target, limb, damage)
         damage = damage_rolls |> Map.values |> Enum.sum
         crit = get_crit(Map.keys(damage_rolls), damage, target)
-        if crit[:damage] do
-          damage = damage * crit[:damage]
+        if crit && crit[:damage] do
+          damage = damage + (damage * crit[:damage])
         end
         {limb, damage, crit}
       damage when is_number damage ->
