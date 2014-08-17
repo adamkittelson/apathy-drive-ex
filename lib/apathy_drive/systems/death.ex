@@ -33,6 +33,7 @@ defmodule Systems.Death do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Components.Combat.stop_timer(entity)
+    Components.Effects.remove(entity)
 
     Systems.Limbs.equipped_items(entity)
     |> Enum.each fn(item) ->
@@ -69,6 +70,7 @@ defmodule Systems.Death do
   def kill_monster(entity, room) do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
+    Components.Effects.remove(entity)
     Components.Monsters.remove_monster(room, entity)
     Components.Combat.stop_timer(entity)
     Entity.list_components(entity) |> Enum.each(&(Entity.remove_component(entity, &1)))
@@ -103,7 +105,7 @@ defmodule Systems.Death do
   end
 
   def experience_to_grant(entity) when is_pid entity do
-    Systems.Stat.modified(entity)
+    Systems.Stat.pre_effects_bonus(entity)
     |> Map.values
     |> Enum.sum
     |> experience_to_grant

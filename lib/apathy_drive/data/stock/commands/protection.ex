@@ -152,7 +152,7 @@ defmodule Commands.Protection do
     |> Enum.each(fn(damage_type) ->
        {color, protection} = protection_amount(entity, damage_type)
                              |> protection_level
-       send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> Atom.to_string |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+       send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end

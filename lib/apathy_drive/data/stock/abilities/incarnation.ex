@@ -48,6 +48,7 @@ Syntax: 'use incarnation at (sex) (race)'
         Entity.add_component(entity, Components.EyeColor, select_random(eye_colors))
         Entity.add_component(entity, Components.HairColor, select_random(hair_colors))
         Entity.add_component(entity, Components.HairLength, select_random(hair_lengths))
+        Entity.add_component(entity, Components.Effects, %{})
         Entity.add_component(entity, Components.HP, Systems.HP.max(entity))
         Entity.add_component(entity, Components.Mana, Systems.Mana.max(entity))
         Entity.add_component(entity, Components.Limbs, entity |> Components.Race.value |> Components.Limbs.value)
