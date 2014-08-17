@@ -19,3 +19,6 @@ CHANGELOG
 
 ---- 0.0.6 / 2014-08-17 / effects ----------------------------------------------
 * implement crit effects
+
+---- 0.0.7 / 2014-08-17 / block_timer ------------------------------------------
+* update timer -> block_timer
