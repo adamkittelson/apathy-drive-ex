@@ -2,7 +2,7 @@ defmodule Systems.Crits do
   use Systems.Reload
   alias Systems.Effect
   use Timex
-  import Timer, except: [start: 0]
+  import BlockTimer
   import Utility
 
   def add_crit_effects(damage, target, effects) do
@@ -82,7 +82,7 @@ defmodule Systems.Crits do
       use Systems.Reload
       import Systems.Text
       import Utility
-      import Timer, except: [start: 0]
+      import BlockTimer
 
       def get_crit(nil), do: nil
 

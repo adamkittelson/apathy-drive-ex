@@ -1,7 +1,7 @@
 defmodule Systems.Combat do
   use Systems.Reload
   import Utility
-  import Timer, except: [start: 0]
+  import BlockTimer
   use Timex
 
   def start(entity, time \\ 0.5) do

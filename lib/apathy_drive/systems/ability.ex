@@ -2,7 +2,7 @@ defmodule Systems.Ability do
   use Systems.Reload
   import Systems.Text
   import Utility
-  import Timer, except: [start: 0]
+  import BlockTimer
 
   def abilities(entity) do
     Abilities.all
@@ -251,7 +251,7 @@ defmodule Systems.Ability do
       use Systems.Reload
       import Systems.Text
       import Utility
-      import Timer, except: [start: 0]
+      import BlockTimer
 
       def name do
         __MODULE__

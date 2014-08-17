@@ -1,6 +1,6 @@
 defmodule Systems.LairSpawning do
   use Systems.Reload
-  import Timer, except: [start: 0]
+  import BlockTimer
   use Timex
 
   def initialize do

@@ -1,7 +1,7 @@
 defmodule Systems.Hints do
   use Systems.Reload
   import Utility
-  import Timer, except: [start: 0]
+  import BlockTimer
 
   def initialize do
     apply_interval 1 |> minutes, do: display_hint

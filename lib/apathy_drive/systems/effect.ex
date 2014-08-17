@@ -1,6 +1,6 @@
 defmodule Systems.Effect do
   use Systems.Reload
-  import Timer, except: [start: 0]
+  import BlockTimer
   use Timex
 
   def add(entity, effect, duration) do
