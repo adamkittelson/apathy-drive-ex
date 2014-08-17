@@ -16,3 +16,6 @@ CHANGELOG
 
 ---- 0.0.5 / 2014-08-09 / elixir-0-15 ------------------------------------------
 * update to elixir 0.15.0 and phoenix master
+
+---- 0.0.6 / 2014-08-17 / effects ----------------------------------------------
+* implement crit effects
