@@ -7,8 +7,8 @@ defmodule Possession do
     GenServer.cast(:possession, {:possess, possessor, possessed})
   end
 
-  def unpossess(possessor, possessed) do
-    GenServer.cast(:possession, {:unpossess, possessor, possessed})
+  def unpossess(possessor) do
+    GenServer.cast(:possession, {:unpossess, possessor})
   end
 
   def possessor(possessed) do
@@ -21,7 +21,7 @@ defmodule Possession do
 
   # GenServer API
   def start_link() do
-    initial = %{:possessors => %{}, :possessions => %{}}
+    initial = %{:possessors => HashDict.new, :possessions => HashDict.new}
     initial = Enum.into(initial, HashDict.new)
     GenServer.start_link(__MODULE__, initial, name: :possession)
   end
@@ -37,11 +37,18 @@ defmodule Possession do
     {:noreply, possessions }
   end
 
-  def handle_cast({:unpossess, possessor, possessed}, possessions) do
-    possessions = possessions
-                  |> put_in([:possessors],  HashDict.delete(possessions[:possessors], possessed))
-                  |> put_in([:possessions], HashDict.delete(possessions[:possessions], possessor))
-    {:noreply, possessions }
+  def handle_cast({:unpossess, possessor}, possessions) do
+    possessed = possessions[:possessions][possessor]
+    if possessed do
+      possessions = possessions
+                    |> put_in([:possessors],  HashDict.delete(possessions[:possessors], possessed))
+                    |> put_in([:possessions], HashDict.delete(possessions[:possessions], possessor))
+      {:noreply, possessions }
+    else
+      possessions = possessions
+                    |> put_in([:possessions], HashDict.delete(possessions[:possessions], possessor))
+      {:noreply, possessions }
+    end
   end
 
   def handle_call({:possessor, possessed}, _from, possessions) do
