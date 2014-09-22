@@ -74,10 +74,8 @@ defmodule Systems.Room do
     end
   end
 
-  def entities(character, room) do
-    characters = characters_in_room(room, character) |> Enum.reject(&(Components.Spirit.value(&1)))
-    monsters   = monsters_in_room(room)
-    Enum.concat(characters, monsters)
+  def entities(entity, room) do
+    monsters_in_room(room) |> Enum.reject(&(entity == &1))
   end
 
   def entities_html(character, room) do

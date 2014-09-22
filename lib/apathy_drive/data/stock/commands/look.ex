@@ -3,7 +3,11 @@ defmodule Commands.Look do
 
   def keywords, do: ["look", "l"]
 
-  def execute(entity, arguments) do
+  def execute(spirit, arguments) do
+    monster = Possession.possessed(spirit)
+
+    entity = monster || spirit
+
     current_room = Parent.of(entity)
 
     if Enum.any? arguments do
