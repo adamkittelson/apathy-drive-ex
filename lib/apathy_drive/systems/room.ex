@@ -1,5 +1,6 @@
 defmodule Systems.Room do
   use Systems.Reload
+  alias Systems.Monster
   import Utility
 
   def display_room_in_scroll(character, room_pid) do
