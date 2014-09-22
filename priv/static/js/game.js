@@ -35,7 +35,7 @@ $(function() {
   socket.join("mud", "mud", {login: url}, function(chan){
 
     chan.on("room", function(message){
-      updateRoom(message);
+      updateRoom(message.html);
     });
 
     chan.on("clear scroll", function(message){
@@ -43,19 +43,19 @@ $(function() {
     });
 
     chan.on("focus", function(message){
-      setFocus(message).select();
+      setFocus(message.html).select();
     });
 
     chan.on("disable", function(message){
-      disableField(message);
+      disableField(message.html);
     });
 
     chan.on("update prompt", function(message){
-      $("#prompt").text(message);
+      $("#prompt").text(message.html);
     });
 
     chan.on("redirect", function(message){
-      window.location = "" + window.location.origin + message;
+      window.location = "" + window.location.origin + message.html;
     });
 
     chan.on("up", function(message){
@@ -63,7 +63,7 @@ $(function() {
     });
 
     chan.on("scroll", function(message){
-      addToScroll("#scroll", message);
+      addToScroll("#scroll", message.html);
     });
 
     send = function(event, message) {

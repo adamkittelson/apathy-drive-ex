@@ -4,7 +4,7 @@ defmodule ApathyDrive.Mixfile do
   def project do
     [ app: :apathy_drive,
       version: "0.0.1",
-      elixir: "~> 0.15.0",
+      elixir: "~> 1.0.0",
       deps: deps ]
   end
 
@@ -24,11 +24,11 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,      "~> 1.0.0"},
-      {:phoenix,     github: "phoenixframework/phoenix", ref: "2a029dcd858fef17dd54bf3a435ae4fa15490edb"},
-      {:ecto,        "~> 0.2.3"},
-      {:decimal,     "~> 0.2.4"},
-      {:postgrex,    "~> 0.5.4"},
-      {:timex,       "~> 0.11.0"},
+      {:phoenix,     "~> 0.4.1"},
+      {:ecto,        "~> 0.2.4"},
+      {:postgrex,    "~> 0.6.0"},
+      {:timex,       "~> 0.12.7"},
+      {:inflex,      "~> 0.2.8"},
       {:block_timer, github: "adamkittelson/block_timer", ref: "f57fae9ea39fc43366e51063c840d409746ed67d"}
     ]
   end

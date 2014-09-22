@@ -2,15 +2,16 @@ defmodule Systems.Command do
   use Systems.Reload
   import Utility
 
-  def execute(character, command, arguments) do
-    Components.Idle.value(character, 0)
-    display_prompt(character)
+  def execute(spirit, command, arguments) do
+    character = Possession.possessed(spirit)
+    Components.Idle.value(spirit, 0)
+    display_prompt(character || spirit)
 
     case Systems.Match.first(Commands.all, :keyword_starts_with, command) do
       nil ->
-        send_message(character, "scroll", "<p>What?</p>")
+        send_message(character || spirit, "scroll", "<p>What?</p>")
       match ->
-        :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(character, arguments)
+        :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(character || spirit, arguments)
     end
   end
 

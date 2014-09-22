@@ -100,45 +100,57 @@ defmodule Systems.Room do
     send_message(character, "scroll", "<p>There is no exit in that direction.</p>")
   end
 
-  def move(character, current_room, room_exit) do
-    destination = Rooms.find_by_id(room_exit["destination"])
+  def move(entity, current_room, room_exit) do
+    if Entity.has_component?(entity, Components.Spirit) do
+      move_spirit(entity, current_room, room_exit)
+    else
+      move_monster(entity, current_room, room_exit)
+    end
+  end
 
+  def move_spirit(spirit, current_room, room_exit) do
+    destination = Rooms.find_by_id(room_exit["destination"])
+    Components.Characters.remove_character(current_room, spirit)
+    Components.Characters.add_character(destination, spirit)
+    Entities.save!(destination)
+    Entities.save!(current_room)
+    Entities.save!(spirit)
+    Components.Hints.deactivate(spirit, "movement")
+    display_room_in_scroll(spirit, destination)
+  end
+
+  def move_monster(monster, current_room, room_exit) do
+    character = Possession.possessor(monster)
+    destination = Rooms.find_by_id(room_exit["destination"])
+    Components.Monsters.remove_monster(current_room, monster)
+    Components.Monsters.add_monster(destination, monster)
     Components.Characters.remove_character(current_room, character)
     Components.Characters.add_character(destination, character)
     Entities.save!(destination)
     Entities.save!(current_room)
     Entities.save!(character)
-
-    if Components.Spirit.value(character) == false do
-      notify_character_left(character, current_room, destination)
-      notify_character_entered(character, current_room, destination)
-    end
+    notify_monster_left(character, current_room, destination)
+    notify_monster_entered(character, current_room, destination)
     Components.Hints.deactivate(character, "movement")
-    display_room_in_scroll(character, destination)
+    display_room_in_scroll(monster, destination)
   end
 
-  def notify_character_entered(character, entered_from, room) do
+  def notify_monster_entered(monster, entered_from, room) do
     direction = get_direction_by_destination(room, entered_from)
-    name = Components.Name.get_name(character)
-    characters_in_room(room, character) |> Enum.each(fn(character_in_room) ->
-      if direction do
-        send_message(character_in_room, "scroll", "<p><span class='red'>#{name}</span> <span class='dark-green'>walks into the room from the #{direction}.</span></p>")
-      else
-        send_message(character_in_room, "scroll", "<p><span class='red'>#{name}</span> <span class='dark-green'>walks into the room.</span></p>")
-      end
-    end)
+    if direction do
+      Monster.display_enter_message(room, monster, direction)
+    else
+      Monster.display_enter_message(room, monster)
+    end
   end
 
-  def notify_character_left(character, room, left_to) do
+  def notify_monster_left(monster, room, left_to) do
     direction = get_direction_by_destination(room, left_to)
-    name = Components.Name.get_name(character)
-    characters_in_room(room, character) |> Enum.each(fn(character_in_room) ->
-      if direction do
-        send_message(character_in_room, "scroll", "<p><span class='red'>#{name}</span> <span class='dark-green'>walks out of the room to the #{direction}.</span></p>")
-      else
-        send_message(character_in_room, "scroll", "<p><span class='red'>#{name}</span> <span class='dark-green'>walks out of the room.</span></p>")
-      end
-    end)
+    if direction do
+      Monster.display_exit_message(room, monster, direction)
+    else
+      Monster.display_exit_message(room, monster)
+    end
   end
 
   def get_direction_by_destination(room, destination) do

@@ -1,6 +1,7 @@
 defmodule Components.Hints do
   use Systems.Reload
   use GenEvent
+  alias Poison, as: JSON
 
   defstruct active: %{}, inactive: []
 
@@ -27,7 +28,9 @@ defmodule Components.Hints do
 
   ### GenEvent API
   def init(value) do
-    value = Jazz.encode!(value) |> Jazz.decode!(as: Components.Hints)
+    value = JSON.encode!(value)
+            |> JSON.decode!(as: Components.Hints)
+            |> IO.iodata_to_binary
     {:ok, value}
   end
 
