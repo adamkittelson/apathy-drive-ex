@@ -29,10 +29,12 @@ defmodule ApathyDrive.MUD do
 
   def leave(socket, _message) do
     character = Characters.find_by_socket(socket.pid)
-    Characters.remove_socket(socket.pid)
-    Components.Socket.value(character, nil)
-    Components.Online.value(character, false)
-    Entities.save!(character)
+    if character do
+      Characters.remove_socket(socket.pid)
+      Components.Socket.value(character, nil)
+      Components.Online.value(character, false)
+      Entities.save!(character)
+    end
     socket
   end
 end

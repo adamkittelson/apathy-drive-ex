@@ -55,7 +55,7 @@ $(function() {
     });
 
     chan.on("redirect", function(message){
-      window.location = "" + window.location.origin + message.html;
+      window.location = "" + window.location.origin + message.url;
     });
 
     chan.on("up", function(message){

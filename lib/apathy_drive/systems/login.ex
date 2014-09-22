@@ -14,7 +14,7 @@ defmodule Systems.Login do
     Entity.add_component(character, Components.Spirit, true)
     Entity.add_component(character, Components.Skills, %{})
     Entity.add_component(character, Components.Idle, 0)
-    Entity.add_component(character, Components.Hints, %{})
+    Entity.add_component(character, Components.Hints, %{"active" => %{}, "inactive" => []})
     Characters.add(character, url: url)
     Entities.save!(character)
     Characters.add(character, id: Components.ID.value(character))
@@ -42,7 +42,7 @@ defmodule Systems.Login do
       Systems.Room.display_room_in_scroll(character, Parent.of(character))
       Systems.Command.display_prompt(character)
     else
-      Phoenix.Channel.reply socket, "redirect", "/"
+      Phoenix.Channel.reply socket, "redirect", %{:url => "/"}
     end
   end
 
