@@ -104,12 +104,13 @@ defmodule Systems.Monster do
   end
 
   def exit_message(entity) do
-    default = "{{name}} exits{{direction}}."
-    if Entity.has_component?(entity, Components.Module) do
+    default = "{{name}} exits {{direction}}."
+    message = if Entity.has_component?(entity, Components.Module) do
       Components.Module.value(entity).properties[:exit_message] || default
     else
       default
     end
+    String.replace(message, " .", ".")
   end
 
   def observers(room, monster) do
@@ -128,9 +129,9 @@ defmodule Systems.Monster do
     |> Enum.reject(&(!!Possession.possessed(&1)))
   end
 
-  def exit_direction("up"),      do: " upwards"
-  def exit_direction("down"),    do: " downwards"
-  def exit_direction(direction), do: " to the #{direction}"
+  def exit_direction("up"),      do: "upwards"
+  def exit_direction("down"),    do: "downwards"
+  def exit_direction(direction), do: "to the #{direction}"
 
   def enter_direction("up"),      do: "above"
   def enter_direction("down"),    do: "below"
