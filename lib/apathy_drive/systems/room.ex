@@ -128,8 +128,8 @@ defmodule Systems.Room do
     Entities.save!(destination)
     Entities.save!(current_room)
     Entities.save!(character)
-    notify_monster_left(character, current_room, destination)
-    notify_monster_entered(character, current_room, destination)
+    notify_monster_left(monster, current_room, destination)
+    notify_monster_entered(monster, current_room, destination)
     Components.Hints.deactivate(character, "movement")
     display_room_in_scroll(monster, destination)
   end

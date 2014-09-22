@@ -44,68 +44,88 @@ defmodule Systems.Monster do
   end
 
   def display_enter_message(room, monster) do
-    message = enter_message(monster)
-    opts = %{
-      "name" => Components.Name.value(monster),
-      "direction" => direction(room)
-    }
+    message = monster
+              |> enter_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster),
+                   "direction" => direction(room)
+                 })
+              |> capitalize_first
 
-    Components.Monsters.value(room)
-    |> Enum.reject(&(monster == &1))
-    |> Enum.each(fn(monster) ->
-      send_message(monster, "scroll", "<p><span class='yellow'>#{interpolate(message, opts)}</span></p>")
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer,"scroll", "<p><span class='yellow'>#{message}</span></p>")
     end)
   end
 
   def display_enter_message(room, monster, direction) do
-    message = enter_message(monster)
-    opts = %{
-      "name" => Components.Name.value(monster),
-      "direction" => enter_direction(direction)
-    }
+    message = monster
+              |> enter_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster),
+                   "direction" => enter_direction(direction)
+                 })
+              |> capitalize_first
 
-    Components.Monsters.value(room)
-    |> Enum.reject(&(monster == &1))
-    |> Enum.each(fn(monster) ->
-      send_message(monster, "scroll", "<p><span class='yellow'>#{interpolate(message, opts)}</span></p>")
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer,"scroll", "<p><span class='yellow'>#{message}</span></p>")
     end)
   end
 
   def display_exit_message(room, monster) do
-    message = exit_message(monster)
-    opts = %{
-      "name" => Components.Name.value(monster),
-      "direction" => ""
-    }
+    message = monster
+              |> exit_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster),
+                   "direction" => ""
+                 })
+              |> capitalize_first
 
-    Components.Monsters.value(room)
-    |> Enum.reject(&(monster == &1))
-    |> Enum.each(fn(monster) ->
-      send_message(monster, "scroll", "<p><span class='yellow'>#{interpolate(message, opts)}</span></p>")
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer, "scroll", "<p><span class='yellow'>#{message}</span></p>")
     end)
   end
 
   def display_exit_message(room, monster, direction) do
-    message = enter_message(monster)
-    opts = %{
-      "name" => Components.Name.value(monster),
-      "direction" => exit_direction(direction)
-    }
+    message = monster
+              |> exit_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster),
+                   "direction" => exit_direction(direction)
+                 })
+              |> capitalize_first
 
-    Components.Monsters.value(room)
-    |> Enum.reject(&(monster == &1))
-    |> Enum.each(fn(monster) ->
-      send_message(monster, "scroll", "<p><span class='yellow'>#{interpolate(message, opts)}</span></p>")
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer, "scroll", "<p><span class='yellow'>#{message}</span></p>")
     end)
   end
 
   def exit_message(entity) do
-    default = "{{name}} exits {{direction}}."
+    default = "{{name}} exits{{direction}}."
     if Entity.has_component?(entity, Components.Module) do
       Components.Module.value(entity).properties[:exit_message] || default
     else
       default
     end
+  end
+
+  def observers(room, monster) do
+    spirits_in_room(room) ++ monsters_in_room(room, monster)
+  end
+
+  def monsters_in_room(room, monster) do
+    room
+    |> Components.Monsters.value
+    |> Enum.reject(&(&1 == monster))
+  end
+
+  def spirits_in_room(room) do
+    Characters.online
+    |> Enum.filter(&(Parent.of(&1) == room))
+    |> Enum.reject(&(!!Possession.possessed(&1)))
   end
 
   def exit_direction("up"),      do: " upwards"
