@@ -6,7 +6,7 @@ defmodule Commands.Abilities do
   def execute(entity, _arguments) do
     send_message(entity, "scroll", "<p><span class='white'>Your abilities are:</span></p>")
     send_message(entity, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
-    ability_names = Systems.Ability.abilities(entity) |> Enum.map &(Components.Name.value(&1))
+    ability_names = abilities(entity) |> Enum.map &(Components.Name.value(&1))
     chunks = get_chunks(ability_names)
     Enum.each chunks, &display_abilities(entity, &1)
   end
@@ -33,4 +33,11 @@ defmodule Commands.Abilities do
       [[last_ability] | chunks |> Enum.reverse] |> Enum.reverse
     end
   end
+
+  defp abilities(entity) do
+    Systems.Ability.abilities(entity) ++ possessed_abilities(Possession.possessed(entity))
+  end
+
+  defp possessed_abilities(nil), do: []
+  defp possessed_abilities(possessed), do: Systems.Ability.abilities(possessed)
 end
