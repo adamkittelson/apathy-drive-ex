@@ -10,30 +10,31 @@ defmodule Systems.Death do
     room
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
-         if character == entity do
+
+         monster = Possession.possessed(character)
+
+         if monster == entity do
            send_message(character, "scroll", "<p><span class='red'>You have been killed!</span></p>")
          else
            send_message(character, "scroll", "<p>#{death_message(entity)}</p>")
-           if !Components.Spirit.value(character) do
-             reward_player(character, entity)
-           end
+           reward_player(monster, entity)
          end
        end)
 
     corpse = create_corpse(entity, room)
 
-    if Entity.has_component?(entity, Components.Spirit) do
-      kill_player(entity, corpse)
-    else
-      kill_monster(entity, room)
-    end
+    kill_monster(entity, corpse, room)
   end
 
-  def kill_player(entity, corpse) do
+  def kill_monster(entity, corpse, room) do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
-    Components.Combat.stop_timer(entity)
     Components.Effects.remove(entity)
+    possessor = Possession.possessor(entity)
+    if possessor do
+      Possession.unpossess(entity)
+      send_message(possessor, "scroll", "<p>Your are a spirit once more.</p>")
+    end
 
     Systems.Limbs.equipped_items(entity)
     |> Enum.each fn(item) ->
@@ -49,28 +50,6 @@ defmodule Systems.Death do
 
     Entities.save!(corpse)
 
-    Entity.remove_component(entity, Components.Items)
-    Entity.remove_component(entity, Components.Race)
-    Entity.remove_component(entity, Components.Stats)
-    Entity.remove_component(entity, Components.Gender)
-    Entity.remove_component(entity, Components.EyeColor)
-    Entity.remove_component(entity, Components.HairColor)
-    Entity.remove_component(entity, Components.HairLength)
-    Entity.remove_component(entity, Components.HP)
-    Entity.remove_component(entity, Components.Mana)
-    Entity.remove_component(entity, Components.Limbs)
-    Entity.remove_component(entity, Components.Hunting)
-    Entity.remove_component(entity, Components.Attacks)
-    Components.Skills.value(entity, %{})
-    Components.Spirit.value(entity, true)
-    Entities.save!(entity)
-    send_message(entity, "scroll", "<p>Your are a spirit once more.</p>")
-  end
-
-  def kill_monster(entity, room) do
-    HPRegen.remove(entity)
-    ManaRegen.remove(entity)
-    Components.Effects.remove(entity)
     Components.Monsters.remove_monster(room, entity)
     Components.Combat.stop_timer(entity)
     Entity.list_components(entity) |> Enum.each(&(Entity.remove_component(entity, &1)))

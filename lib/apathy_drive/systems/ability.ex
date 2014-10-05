@@ -109,10 +109,13 @@ defmodule Systems.Ability do
     Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
+
+      observer = Possession.possessed(character) || character
+
       cond do
-        character == entity ->
+        observer == entity ->
           send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:user_message], opts) |> capitalize_first}</span></p>")
-        character == target ->
+        observer == target ->
           send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:target_message], opts) |> capitalize_first}</span></p>")
         true ->
           send_message(character, "scroll", "<p><span class='red'>#{interpolate(crit[:spectator_message], opts) |> capitalize_first}</span></p>")
@@ -126,10 +129,13 @@ defmodule Systems.Ability do
     Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
+
+      observer = Possession.possessed(character) || character
+
       cond do
-        character == entity ->
+        observer == entity ->
           send_message(character, "scroll", interpolate(ability[:user_message], opts))
-        character == target ->
+        observer == target ->
           send_message(character, "scroll", interpolate(ability[:target_message], opts))
         true ->
           send_message(character, "scroll", interpolate(ability[:spectator_message], opts))
@@ -155,10 +161,13 @@ defmodule Systems.Ability do
     Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
+
+      observer = Possession.possessed(character) || character
+
       cond do
-        character == entity ->
+        observer == entity ->
           send_message(character, "scroll", "<p><span class='dark-cyan'>#{user_dodge_message}</span></p>")
-        character == target ->
+        observer == target ->
           send_message(character, "scroll", "<p><span class='dark-cyan'>#{target_dodge_message}</span></p>")
         true ->
           send_message(character, "scroll", "<p><span class='dark-cyan'>#{spectator_dodge_message}</span></p>")
@@ -184,10 +193,13 @@ defmodule Systems.Ability do
     Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
+
+      observer = Possession.possessed(character) || character
+
       cond do
-        character == entity ->
+        observer == entity ->
           send_message(character, "scroll", "<p><span class='dark-cyan'>#{user_parry_message}</span></p>")
-        character == target ->
+        observer == target ->
           send_message(character, "scroll", "<p><span class='dark-cyan'>#{target_parry_message}</span></p>")
         true ->
           send_message(character, "scroll", "<p><span class='dark-cyan'>#{spectator_parry_message}</span></p>")
@@ -200,10 +212,13 @@ defmodule Systems.Ability do
     Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
+
+      observer = Possession.possessed(character) || character
+
       cond do
-        character == entity ->
+        observer == entity ->
           send_message(character, "scroll", interpolate("<p>You just killed {{target}}!</p>", opts))
-        character == target ->
+        observer == target ->
           send_message(character, "scroll", interpolate("<p>{{user}} just killed you!</p>", opts))
         true ->
           send_message(character, "scroll", interpolate("<p>{{user}} just killed {{target}}!</p>", opts))

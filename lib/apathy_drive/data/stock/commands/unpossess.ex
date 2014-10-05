@@ -4,7 +4,7 @@ defmodule Commands.Unpossess do
   def keywords, do: ["unpossess"]
 
   def execute(entity, arguments) do
-    possessed = Possession.possessed(entity)
+    possessor = Possession.possessor(entity)
 
     if possessed do
       Possession.unpossess(entity)
