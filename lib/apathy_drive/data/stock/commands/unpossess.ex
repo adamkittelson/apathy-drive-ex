@@ -6,9 +6,9 @@ defmodule Commands.Unpossess do
   def execute(entity, arguments) do
     possessor = Possession.possessor(entity)
 
-    if possessed do
+    if possessor do
       Possession.unpossess(entity)
-      send_message(entity, "scroll", "<p>You leave the body of #{Components.Name.value(possessed)}.</p>")
+      send_message(entity, "scroll", "<p>You leave the body of #{Components.Name.value(entity)}.</p>")
     else
       send_message(entity, "scroll", "<p>You aren't possessing anything.</p>")
     end
