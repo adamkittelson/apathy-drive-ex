@@ -3,18 +3,19 @@ defmodule Commands.Possess do
 
   def keywords, do: ["possess"]
 
-  def execute(entity, arguments) do
-    current_room = Parent.of(entity)
+  def execute(spirit, _monster, []) do
+    send_message(spirit, "scroll", "<p>Possess what?.</p>")
+  end
 
-    if Enum.any? arguments do
-      if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do
-        Possession.possess(entity, target)
-        send_message(entity, "scroll", "<p>You possess #{Components.Name.value(target)}.")
-      else
-        send_message(entity, "scroll", "<p>You do not notice that here.</p>")
-      end
+  def execute(spirit, monster, arguments) do
+    current_room = Parent.of(spirit)
+
+    if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do
+      Possession.possess(spirit, target)
+      send_message(spirit, "scroll", "<p>You possess #{Components.Name.value(target)}.")
+      Systems.Prompt.update(spirit, Possession.possessed(spirit))
     else
-      send_message(entity, "scroll", "<p>Possess what?.</p>")
+      send_message(spirit, "scroll", "<p>You do not notice that here.</p>")
     end
   end
 

@@ -41,7 +41,9 @@ defmodule Systems.Ability do
     if ability[:mana_cost] do
       if Components.Mana.subtract(entity, ability[:mana_cost]) do
         ManaRegen.add(entity)
-        Systems.Prompt.update(entity)
+        entity
+        |> Possession.possessor
+        |> Systems.Prompt.update(entity)
         execute(ability, entity, target, :dodge)
       else
         send_message(entity, "scroll", "<p><span class='dark-cyan'>You don't have enough mana.</span></p>")

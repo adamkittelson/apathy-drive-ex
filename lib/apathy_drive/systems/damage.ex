@@ -29,7 +29,9 @@ defmodule Systems.Damage do
 
   def do_damage(target, amount) do
     if Components.HP.subtract(target, amount) do
-      Systems.Prompt.update(target)
+      target
+      |> Possession.possessor
+      |> Systems.Prompt.update(target)
       HPRegen.add(target)
     else
       Systems.Death.kill(target)

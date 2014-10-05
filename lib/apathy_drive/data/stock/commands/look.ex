@@ -3,21 +3,31 @@ defmodule Commands.Look do
 
   def keywords, do: ["look", "l"]
 
-  def execute(spirit, arguments) do
-    monster = Possession.possessed(spirit)
-
-    entity = monster || spirit
-
-    current_room = Parent.of(entity)
+  def execute(spirit, nil, arguments) do
+    current_room = Parent.of(spirit)
 
     if Enum.any? arguments do
       if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do
-        Systems.Description.add_description_to_scroll(entity, target)
+        Systems.Description.add_description_to_scroll(spirit, target)
       else
-        send_message(entity, "scroll", "<p>You do not notice that here.</p>")
+        send_message(spirit, "scroll", "<p>You do not notice that here.</p>")
       end
     else
-      Systems.Room.display_room_in_scroll(entity, current_room)
+      Systems.Room.display_room_in_scroll(spirit, current_room)
+    end
+  end
+
+  def execute(spirit, monster, arguments) do
+    current_room = Parent.of(monster)
+
+    if Enum.any? arguments do
+      if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do
+        Systems.Description.add_description_to_scroll(monster, target)
+      else
+        send_message(monster, "scroll", "<p>You do not notice that here.</p>")
+      end
+    else
+      Systems.Room.display_room_in_scroll(monster, current_room)
     end
   end
 

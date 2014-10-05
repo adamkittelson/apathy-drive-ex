@@ -89,25 +89,17 @@ defmodule Systems.Room do
     end
   end
 
-  def move(character, direction) do
-    current_room = Parent.of(character)
+  def move(spirit, monster, direction) do
+    current_room = Parent.of(spirit)
     room_exit = current_room |> get_exit_by_direction(direction)
-    move(character, current_room, room_exit)
+    move(spirit, monster, current_room, room_exit)
   end
 
-  def move(character, _current_room, nil) do
-    send_message(character, "scroll", "<p>There is no exit in that direction.</p>")
+  def move(spirit, monster, _current_room, nil) do
+    send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
   end
 
-  def move(entity, current_room, room_exit) do
-    if Entity.has_component?(entity, Components.Spirit) do
-      move_spirit(entity, current_room, room_exit)
-    else
-      move_monster(entity, current_room, room_exit)
-    end
-  end
-
-  def move_spirit(spirit, current_room, room_exit) do
+  def move(spirit, nil, current_room, room_exit) do
     destination = Rooms.find_by_id(room_exit["destination"])
     Components.Characters.remove_character(current_room, spirit)
     Components.Characters.add_character(destination, spirit)
@@ -118,19 +110,18 @@ defmodule Systems.Room do
     display_room_in_scroll(spirit, destination)
   end
 
-  def move_monster(monster, current_room, room_exit) do
-    character = Possession.possessor(monster)
+  def move(spirit, monster, current_room, room_exit) do
     destination = Rooms.find_by_id(room_exit["destination"])
     Components.Monsters.remove_monster(current_room, monster)
     Components.Monsters.add_monster(destination, monster)
-    Components.Characters.remove_character(current_room, character)
-    Components.Characters.add_character(destination, character)
+    Components.Characters.remove_character(current_room, spirit)
+    Components.Characters.add_character(destination, spirit)
     Entities.save!(destination)
     Entities.save!(current_room)
-    Entities.save!(character)
+    Entities.save!(spirit)
     notify_monster_left(monster, current_room, destination)
     notify_monster_entered(monster, current_room, destination)
-    Components.Hints.deactivate(character, "movement")
+    Components.Hints.deactivate(spirit, "movement")
     display_room_in_scroll(monster, destination)
   end
 

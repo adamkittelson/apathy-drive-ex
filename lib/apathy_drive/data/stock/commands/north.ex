@@ -3,7 +3,7 @@ defmodule Commands.North do
 
   def keywords, do: ["n", "north"]
 
-  def execute(entity, _arguments) do
-    Systems.Room.move(entity, "north")
+  def execute(spirit, monster, _arguments) do
+    Systems.Room.move(spirit, monster, "north")
   end
 end

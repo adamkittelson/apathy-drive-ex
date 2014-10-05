@@ -3,7 +3,7 @@ defmodule Commands.West do
 
   def keywords, do: ["w",  "west"]
 
-  def execute(entity, _arguments) do
-    Systems.Room.move(entity, "west")
+  def execute(spirit, monster, _arguments) do
+    Systems.Room.move(spirit, monster, "west")
   end
 end
