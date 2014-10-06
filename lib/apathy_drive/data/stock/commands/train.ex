@@ -3,16 +3,18 @@ defmodule Commands.Train do
 
   def keywords, do: ["train"]
 
-  def execute(entity, arguments) do
-    current_room = Parent.of(entity)
+  def execute(spirit, nil, arguments) do
+    send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
+  end
+
+  def execute(spirit, monster, arguments) do
+    current_room = Parent.of(spirit)
 
     cond do
       !Entity.has_component?(current_room, Components.Trainer) ->
-        send_message(entity, "scroll", "<p><span class='red'>You cannot TRAIN if you are not at a trainer!</span></p>")
-      Components.Spirit.value(entity) ->
-        send_message(entity, "scroll", "<p>You need a body to do that.</p>")
+        send_message(spirit, "scroll", "<p><span class='red'>You cannot TRAIN if you are not at a trainer!</span></p>")
       true ->
-        Systems.Trainer.train(entity, current_room, arguments)
+        Systems.Trainer.train(monster, current_room, arguments)
     end
   end
 end
