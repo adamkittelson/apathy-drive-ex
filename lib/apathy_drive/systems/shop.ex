@@ -44,8 +44,6 @@ defmodule Systems.Shop do
     cond do
       !Entity.has_component?(room, Components.Shop) ->
         send_message(character, "scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
-      Components.Spirit.value(character) == true ->
-        send_message(character, "scroll", "<p>You need a body to do that.</p>")
       true ->
         case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
           [match] ->

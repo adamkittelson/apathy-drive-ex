@@ -3,8 +3,12 @@ defmodule Commands.Sell do
 
   def keywords, do: ["sell"]
 
-  def execute(entity, arguments) do
-    current_room = Parent.of(entity)
-    Systems.Shop.sell(entity, current_room, Enum.join(arguments, " "))
+  def execute(spirit, nil, arguments) do
+    send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
+  end
+
+  def execute(spirit, monster, arguments) do
+    current_room = Parent.of(spirit)
+    Systems.Shop.sell(monster, current_room, Enum.join(arguments, " "))
   end
 end
