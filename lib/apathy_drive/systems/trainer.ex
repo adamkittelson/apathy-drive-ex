@@ -2,28 +2,32 @@ defmodule Systems.Trainer do
   use Systems.Reload
   import Utility
 
-  def list(character, room) do
-    power = power(character)
+  def list(spirit, nil, room) do
+    send_message(spirit, "scroll", "<p>You can learn nothing here.</p>")
+  end
+
+  def list(spirit, monster, room) do
+    power = power(monster)
     header = "<span class='blue'>-=-=-=-=-=-=-=-</span>  <span class='white'>Skill Listing</span>  <span class='blue'>-=-=-=-=-=-=-=-</span>"
-    send_message(character, "scroll", "<p>#{header}</p>")
+    send_message(spirit, "scroll", "<p>#{header}</p>")
     skills_by_level(room) |> Map.keys |> Enum.each fn level ->
       row = "Level#{String.rjust("#{level}", 3)} -------------------- Cost ----- Rating"
-      send_message(character, "scroll", "<p><span class='blue'>#{row}</span></p>")
+      send_message(spirit, "scroll", "<p><span class='blue'>#{row}</span></p>")
       skills_by_level(room)[level] |> Enum.each fn skill ->
         skill_name = String.ljust(skill.name, 26)
-        cost = cost(character, skill)
+        cost = cost(monster, skill)
         if power < cost do
           cost = "<span class='dark-red'>#{"#{cost}" |> String.ljust(8)}</span>"
         else
           cost = "<span class='green'>#{"#{cost}" |> String.ljust(8)}</span>"
         end
-        rating = "#{"#{rating(skill, character)}" |> String.rjust(4)}</span>"
+        rating = "#{"#{rating(skill, monster)}" |> String.rjust(4)}</span>"
         row = "    #{skill_name}#{cost}#{rating}%"
-        send_message(character, "scroll", "<p>#{row}</p>")
+        send_message(spirit, "scroll", "<p>#{row}</p>")
       end
     end
     footer = "<span class='blue'>-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</span>"
-    send_message(character, "scroll", "<p>#{footer}</p>")
+    send_message(spirit, "scroll", "<p>#{footer}</p>")
   end
 
   def train(entity, _room, []) do
