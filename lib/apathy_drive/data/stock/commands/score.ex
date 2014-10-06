@@ -3,7 +3,7 @@ defmodule Commands.Score do
 
   def keywords, do: ["score", "stats", "status"]
 
-  def display_score(spirit, nil) do
+  def execute(spirit, nil, _arguments) do
     if Entity.has_component?(spirit, Components.Name) do
       send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>None</span></p>")
     end
@@ -19,32 +19,30 @@ defmodule Commands.Score do
     send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
   end
 
-  def display_score(spirit, possessed) do
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>#{Components.Name.value(possessed)}</span></p>")
+  def execute(spirit, monster, _arguments) do
+    if Entity.has_component?(spirit, Components.Name) do
+      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>#{Components.Name.value(monster)}</span></p>")
+    end
 
-    exp = Components.Experience.value(possessed)
+    exp = Components.Experience.value(monster)
     send_message(spirit, "scroll", "<p><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{exp}</span></p>")
 
-    level = Components.Level.value(possessed)
+    level = Components.Level.value(monster)
             |> Integer.to_string
             |> String.ljust(11)
 
-    power  = Systems.Trainer.power(possessed)
+    power  = Systems.Trainer.power(monster)
     send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
 
-    hp = String.ljust("#{Components.HP.value(possessed)}/#{Systems.HP.max(possessed)}", 15)
-    mana = "#{Components.Mana.value(possessed)}/#{Systems.Mana.max(possessed)}"
+    hp = String.ljust("#{Components.HP.value(monster)}/#{Systems.HP.max(monster)}", 15)
+    mana = "#{Components.Mana.value(monster)}/#{Systems.Mana.max(monster)}"
     send_message(spirit, "scroll", "<p><span class='dark-green'>HP:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span>  <span class='dark-cyan'>#{mana}</span></p>")
 
     send_message(spirit, "scroll", "\n")
 
-    stat_names = Components.Stats.value(possessed) |> Map.keys
+    stat_names = Components.Stats.value(monster) |> Map.keys
     chunks = get_chunks(stat_names)
-    Enum.each chunks, &display_stats(possessed, &1)
-  end
-
-  def execute(entity, _arguments) do
-    display_score(entity, Possession.possessed(entity))
+    Enum.each chunks, &display_stats(monster, &1)
   end
 
   defp display_stats(entity, [stat1, stat2]) do
