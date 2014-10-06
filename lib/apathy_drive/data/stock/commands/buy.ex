@@ -3,9 +3,13 @@ defmodule Commands.Buy do
 
   def keywords, do: ["buy"]
 
-  def execute(entity, arguments) do
-    room = Parent.of(entity)
+  def execute(spirit, nil, arguments) do
+    send_message(spirit, "scroll", "<p>You need a body to purchase things from a shop.</p>")
+  end
 
-    Systems.Shop.buy(entity, room, Enum.join(arguments, " "))
+  def execute(spirit, monster, arguments) do
+    room = Parent.of(spirit)
+
+    Systems.Shop.buy(monster, room, Enum.join(arguments, " "))
   end
 end
