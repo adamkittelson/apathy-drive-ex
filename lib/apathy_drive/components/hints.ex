@@ -2,8 +2,6 @@ defmodule Components.Hints do
   use Systems.Reload
   use GenEvent
 
-  defstruct active: %{}, inactive: []
-
   ### Public API
   def value(entity) do
     GenEvent.call(entity, Components.Hints, :value)
@@ -27,7 +25,6 @@ defmodule Components.Hints do
 
   ### GenEvent API
   def init(value) do
-    value = Jazz.encode!(value) |> Jazz.decode!(as: Components.Hints)
     {:ok, value}
   end
 
@@ -40,16 +37,16 @@ defmodule Components.Hints do
   end
 
   def handle_event({:add_hint, name, value}, hints) do
-    unless Enum.member?(hints.inactive, name) do
-      hints = put_in hints.active[name], value
+    unless Enum.member?(hints["inactive"], name) do
+      hints = put_in hints, ["active", name], value
     end
     {:ok, hints }
   end
 
   def handle_event({:deactivate_hint, hint}, hints) do
-    if Map.has_key?(hints.active, hint) do
-      hints = update_in hints.active, &(Map.delete(&1, hint))
-      hints = update_in hints.inactive, &([hint | &1])
+    if Map.has_key?(hints["active"], hint) do
+      hints = update_in hints, ["active"], &(Map.delete(&1, hint))
+      hints = update_in hints, ["inactive"], &([hint | &1])
     end
     {:ok, hints }
   end

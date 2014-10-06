@@ -2,28 +2,39 @@ defmodule Systems.Command do
   use Systems.Reload
   import Utility
 
-  def execute(character, command, arguments) do
-    Components.Idle.value(character, 0)
-    display_prompt(character)
+  def execute(spirit, command, arguments) do
+    monster = Possession.possessed(spirit)
+
+    Components.Idle.value(spirit, 0)
+    display_prompt(spirit, monster)
 
     case Systems.Match.first(Commands.all, :keyword_starts_with, command) do
       nil ->
-        send_message(character, "scroll", "<p>What?</p>")
+        send_message(spirit, "scroll", "<p>What?</p>")
       match ->
-        :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(character, arguments)
+        :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(spirit, monster, arguments)
     end
   end
 
-  def display_prompt(character) do
-    send_message(character, "disable", "#prompt")
-    send_message(character, "disable", "#command")
-    if Entity.has_component?(character, Components.HP) do
-      send_message(character, "scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(character)}/MA=#{Components.Mana.value(character)}]:</span><input id='command' size='50' class='prompt'></input></p>")
-    else
-      send_message(character, "scroll", "<p><span id='prompt'>[#{Systems.Trainer.total_power(character)}]:</span><input id='command' size='50' class='prompt'></input></p>")
-    end
-    send_message(character, "focus", "#command")
-    send_message(character, "up")
+  def display_prompt(spirit) do
+    monster = Possession.possessed(spirit)
+    display_prompt(spirit, monster)
+  end
+
+  def display_prompt(spirit, nil) do
+    send_message(spirit, "disable", "#prompt")
+    send_message(spirit, "disable", "#command")
+    send_message(spirit, "scroll", "<p><span id='prompt'>[#{Systems.Trainer.total_power(spirit)}]:</span><input id='command' size='50' class='prompt'></input></p>")
+    send_message(spirit, "focus", "#command")
+    send_message(spirit, "up")
+  end
+
+  def display_prompt(spirit, monster) do
+    send_message(spirit, "disable", "#prompt")
+    send_message(spirit, "disable", "#command")
+    send_message(spirit, "scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(monster)}/MA=#{Components.Mana.value(monster)}]:</span><input id='command' size='50' class='prompt'></input></p>")
+    send_message(spirit, "focus", "#command")
+    send_message(spirit, "up")
   end
 
   defmacro __using__(_opts) do

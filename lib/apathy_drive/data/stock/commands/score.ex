@@ -3,43 +3,46 @@ defmodule Commands.Score do
 
   def keywords, do: ["score", "stats", "status"]
 
-  def execute(entity, _arguments) do
-    if Entity.has_component?(entity, Components.Name) do
-      send_message(entity, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(entity)}</span></p>")
+  def execute(spirit, nil, _arguments) do
+    if Entity.has_component?(spirit, Components.Name) do
+      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>None</span></p>")
     end
 
-    exp = Components.Experience.value(entity)
-    cond do
-      Entity.has_component?(entity, Components.Race) ->
-        race = entity
-               |> Components.Race.value
-               |> Components.Name.value
-               |> String.ljust(11)
-        send_message(entity, "scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>#{race}</span> <span class='dark-green'>Exp:</span>   <span class='dark-cyan'>#{exp}</span></p>")
-      Components.Spirit.value(entity) ->
-        send_message(entity, "scroll", "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>Spirit     </span> <span class='dark-green'>Exp:</span>   <span class='dark-cyan'>#{exp}</span></p>")
-    end
+    exp = Components.Experience.value(spirit)
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{exp}</span></p>")
 
-    level = Components.Level.value(entity)
+    level = Components.Level.value(spirit)
             |> Integer.to_string
-            |> String.ljust(10)
+            |> String.ljust(11)
 
-    power  = Systems.Trainer.power(entity)
-    send_message(entity, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
+    power  = Systems.Trainer.power(spirit)
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
+  end
 
-    if Entity.has_component?(entity, Components.HP) && Entity.has_component?(entity, Components.Mana) do
-      hp = String.ljust("#{Components.HP.value(entity)}/#{Systems.HP.max(entity)}", 14)
-      mana = "#{Components.Mana.value(entity)}/#{Systems.Mana.max(entity)}"
-      send_message(entity, "scroll", "<p><span class='dark-green'>HP:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span>  <span class='dark-cyan'>#{mana}</span></p>")
+  def execute(spirit, monster, _arguments) do
+    if Entity.has_component?(spirit, Components.Name) do
+      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>#{Components.Name.value(monster)}</span></p>")
     end
 
-    send_message(entity, "scroll", "\n")
+    exp = Components.Experience.value(monster)
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{exp}</span></p>")
 
-    if Entity.has_component?(entity, Components.Stats) do
-      stat_names = Components.Stats.value(entity) |> Map.keys
-      chunks = get_chunks(stat_names)
-      Enum.each chunks, &display_stats(entity, &1)
-    end
+    level = Components.Level.value(monster)
+            |> Integer.to_string
+            |> String.ljust(11)
+
+    power  = Systems.Trainer.power(monster)
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
+
+    hp = String.ljust("#{Components.HP.value(monster)}/#{Systems.HP.max(monster)}", 15)
+    mana = "#{Components.Mana.value(monster)}/#{Systems.Mana.max(monster)}"
+    send_message(spirit, "scroll", "<p><span class='dark-green'>HP:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span>  <span class='dark-cyan'>#{mana}</span></p>")
+
+    send_message(spirit, "scroll", "\n")
+
+    stat_names = Components.Stats.value(monster) |> Map.keys
+    chunks = get_chunks(stat_names)
+    Enum.each chunks, &display_stats(monster, &1)
   end
 
   defp display_stats(entity, [stat1, stat2]) do

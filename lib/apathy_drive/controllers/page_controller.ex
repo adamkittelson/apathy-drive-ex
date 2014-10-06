@@ -11,6 +11,6 @@ defmodule ApathyDrive.PageController do
 
   def game(conn, _params) do
     url = Systems.Login.create
-    redirect conn, ApathyDrive.Router.game_path(id: url)
+    redirect conn, ApathyDrive.Router.game_path(:game, url)
   end
 end

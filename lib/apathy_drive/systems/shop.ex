@@ -2,9 +2,9 @@ defmodule Systems.Shop do
   use Systems.Reload
   import Utility
 
-  def list(character, room) do
-    send_message(character, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span></p>")
-    send_message(character, "scroll", "<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>")
+  def list(spirit, monster, room) do
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>")
     Enum.each(Components.Shop.value(room), fn(item_hash) ->
       item_name = ItemTemplates.find_by_id(item_hash["item"]) |> Components.Name.value
       cost = case item_hash["cost"] do
@@ -15,7 +15,7 @@ defmodule Systems.Shop do
         amount ->
           "#{amount} #{item_hash["denomination"]}s"
       end
-      send_message(character, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
+      send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
     end)
   end
 
@@ -23,8 +23,6 @@ defmodule Systems.Shop do
     cond do
       !Entity.has_component?(room, Components.Shop) ->
         send_message(character, "scroll", "<p><span class='red'>You cannot BUY if you are not in a shop!</span></p>")
-      Components.Spirit.value(character) == true ->
-        send_message(character, "scroll", "<p>You need a body to do that.</p>")
       true ->
         case Systems.Match.all(Components.Shop.items(room), :name_contains, item) do
           [match] ->
@@ -46,8 +44,6 @@ defmodule Systems.Shop do
     cond do
       !Entity.has_component?(room, Components.Shop) ->
         send_message(character, "scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
-      Components.Spirit.value(character) == true ->
-        send_message(character, "scroll", "<p>You need a body to do that.</p>")
       true ->
         case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
           [match] ->

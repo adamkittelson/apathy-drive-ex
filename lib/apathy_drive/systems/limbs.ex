@@ -38,13 +38,16 @@ defmodule Systems.Limbs do
       Parent.of(entity)
       |> Systems.Room.characters_in_room
       |> Enum.each(fn(character) ->
-           cond do
-             character == entity ->
-               send_message(character, "scroll", "<p>Your #{limb} is crippled!</p>")
-              true ->
-               send_message(character, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} is crippled!</p>")
-           end
-         end)
+
+         observer = Possession.possessed(character) || character
+
+         cond do
+           observer == entity ->
+             send_message(observer, "scroll", "<p>Your #{limb} is crippled!</p>")
+            true ->
+             send_message(observer, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} is crippled!</p>")
+         end
+       end)
       cripple_limb(entity, Components.Limbs.attached(entity, limb))
     end
   end
@@ -57,21 +60,24 @@ defmodule Systems.Limbs do
       Parent.of(entity)
       |> Systems.Room.characters_in_room
       |> Enum.each(fn(character) ->
-           cond do
-             character == entity ->
-               if "torso" == limb do
-                 send_message(character, "scroll", "<p>You've been dealt a mortal blow!</p>")
-               else
-                 send_message(character, "scroll", "<p>Your #{limb} has been severed!</p>")
-               end
-              true ->
-                if "torso" == limb do
-                  send_message(character, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))} has been dealt a mortal blow!</p>")
-                else
-                  send_message(character, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} has been severed!</p>")
-                end
-           end
-         end)
+
+         observer = Possession.possessed(character) || character
+
+         cond do
+           observer == entity ->
+             if "torso" == limb do
+               send_message(observer, "scroll", "<p>You've been dealt a mortal blow!</p>")
+             else
+               send_message(observer, "scroll", "<p>Your #{limb} has been severed!</p>")
+             end
+            true ->
+              if "torso" == limb do
+                send_message(observer, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))} has been dealt a mortal blow!</p>")
+              else
+                send_message(observer, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} has been severed!</p>")
+              end
+         end
+       end)
       sever_limb(entity, Components.Limbs.attached(entity, limb))
     end
   end

@@ -3,15 +3,15 @@ defmodule Commands.Attack do
 
   def keywords, do: ["attack", "a", "kill", "k"]
 
-  def execute(entity, arguments) do
-    if Components.Spirit.value(entity) do
-      send_message(entity, "scroll", "<p>You need a body to do that.</p>")
-    else
-      current_room = Parent.of(entity)
+  def execute(spirit, nil, arguments) do
+    send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
+  end
 
-      target = current_room |> find_entity_in_room(Enum.join(arguments, " "))
-      attack(entity, target)
-    end
+  def execute(spirit, monster, arguments) do
+    current_room = Parent.of(monster)
+
+    target = current_room |> find_entity_in_room(Enum.join(arguments, " "))
+    attack(monster, target)
   end
 
   defp attack(entity, nil) do

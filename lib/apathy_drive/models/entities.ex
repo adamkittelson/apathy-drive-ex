@@ -2,6 +2,7 @@ defmodule Entities do
   use Systems.Reload
   use Ecto.Model
   import Ecto.Query, only: [from: 2]
+  alias Poison, as: JSON
 
   schema "entities" do
     field :components, :string
@@ -17,7 +18,7 @@ defmodule Entities do
   def load!(entity_record) do
     {:ok, entity} = Entity.init
     Entity.add_component(entity, Components.ID, entity_record.id)
-    components = Jazz.decode!(entity_record.components)
+    components = JSON.decode!(entity_record.components)
     Enum.each components, fn(component) ->
       {component_name, component_values} = component
       Entity.add_component(entity, :"Elixir.Components.#{component_name}", component_values)

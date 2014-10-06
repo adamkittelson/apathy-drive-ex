@@ -29,7 +29,9 @@ defmodule Systems.Damage do
 
   def do_damage(target, amount) do
     if Components.HP.subtract(target, amount) do
-      Systems.Prompt.update(target)
+      target
+      |> Possession.possessor
+      |> Systems.Prompt.update(target)
       HPRegen.add(target)
     else
       Systems.Death.kill(target)
@@ -67,7 +69,7 @@ defmodule Systems.Damage do
   end
 
   def protection(entity, limb, damage_type) do
-    resistance = resistance(entity, CritTables.damage_types[damage_type])
+    resistance = resistance(entity, CritTables.damage_types[to_string(damage_type)])
     ac = resistance(ac(entity, limb))
     (1 - (resistance_reduction(resistance))) * (1 - (resistance_reduction(ac)))
   end

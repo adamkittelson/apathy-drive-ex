@@ -75,7 +75,9 @@ defmodule Systems.Regen do
   end
 
   def update_prompt(entity) do
-    Systems.Prompt.update(entity)
+    entity
+    |> Possession.possessor
+    |> Systems.Prompt.update(entity)
   end
 
   def regen_rate(seed) when is_integer(seed) do

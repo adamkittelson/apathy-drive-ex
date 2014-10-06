@@ -1,5 +1,6 @@
 defmodule Entity do
   use Systems.Reload
+  alias Poison, as: JSON
 
   ### Public API
   def init do
@@ -36,7 +37,9 @@ defmodule Entity do
       else
         Map.merge(components, component)
       end
-    end) |> Jazz.encode!
+    end)
+    |> JSON.encode!
+    |> IO.iodata_to_binary
   end
 
   def add_to_type_collection(entity) do

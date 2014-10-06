@@ -22,6 +22,7 @@ defmodule ApathyDrive do
     Corpses.start_link
     Parent.start_link
     CritTables.start_link
+    Possession.start_link
 
     IO.puts "Indexing..."
     index_items

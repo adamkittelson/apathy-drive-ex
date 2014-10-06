@@ -3,11 +3,11 @@ defmodule Commands.Remove do
 
   def keywords, do: ["remove", "unequip", "unwield"]
 
-  def execute(entity, arguments) do
-    if Components.Spirit.value(entity) == true do
-      send_message(entity, "scroll", "<p>You need a body to do that.</p>")
-    else
-      Systems.Item.unequip(entity, Enum.join(arguments, " "))
-    end
+  def execute(spirit, nil, arguments) do
+    send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
+  end
+
+  def execute(spirit, monster, arguments) do
+    Systems.Item.unequip(monster, Enum.join(arguments, " "))
   end
 end

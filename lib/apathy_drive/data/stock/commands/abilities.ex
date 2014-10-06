@@ -3,12 +3,20 @@ defmodule Commands.Abilities do
 
   def keywords, do: ["abilities", "spells"]
 
-  def execute(entity, _arguments) do
-    send_message(entity, "scroll", "<p><span class='white'>Your abilities are:</span></p>")
-    send_message(entity, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
-    ability_names = Systems.Ability.abilities(entity) |> Enum.map &(Components.Name.value(&1))
+  def execute(spirit, nil, _arguments) do
+    send_message(spirit, "scroll", "<p><span class='white'>Your abilities are:</span></p>")
+    send_message(spirit, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
+    ability_names = abilities(spirit) |> Enum.map &(Components.Name.value(&1))
     chunks = get_chunks(ability_names)
-    Enum.each chunks, &display_abilities(entity, &1)
+    Enum.each chunks, &display_abilities(spirit, &1)
+  end
+
+  def execute(spirit, monster, _arguments) do
+    send_message(spirit, "scroll", "<p><span class='white'>Your abilities are:</span></p>")
+    send_message(spirit, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
+    ability_names = (abilities(spirit) ++ abilities(monster)) |> Enum.map &(Components.Name.value(&1))
+    chunks = get_chunks(ability_names)
+    Enum.each chunks, &display_abilities(spirit, &1)
   end
 
   defp display_abilities(entity, [ability1, ability2]) do
@@ -33,4 +41,9 @@ defmodule Commands.Abilities do
       [[last_ability] | chunks |> Enum.reverse] |> Enum.reverse
     end
   end
+
+  defp abilities(entity) do
+    Systems.Ability.abilities(entity)
+  end
+
 end

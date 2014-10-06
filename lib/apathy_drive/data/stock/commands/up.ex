@@ -3,7 +3,7 @@ defmodule Commands.Up do
 
   def keywords, do: ["u", "up"]
 
-  def execute(entity, _arguments) do
-    Systems.Room.move(entity, "up")
+  def execute(spirit, monster, _arguments) do
+    Systems.Room.move(spirit, monster, "up")
   end
 end

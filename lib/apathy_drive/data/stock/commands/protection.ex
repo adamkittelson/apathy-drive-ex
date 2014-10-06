@@ -21,8 +21,12 @@ defmodule Commands.Protection do
 
   def keywords, do: ["protection"]
 
-  def execute(entity, arguments) do
-    protection(entity, Enum.join(arguments, " "))
+  def execute(spirit, nil, arguments) do
+    send_message(spirit, "scroll", "<p>Spirits cannot be harmed.</p>")
+  end
+
+  def execute(_spirit, monster, arguments) do
+    protection(monster, Enum.join(arguments, " "))
   end
 
   def protection(entity, "limb") do
@@ -134,7 +138,7 @@ defmodule Commands.Protection do
     |> Enum.each(fn(damage_type) ->
        {color, protection} = protection_amount(entity, limb, damage_type)
                              |> protection_level
-       send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> Atom.to_string |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+       send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
     send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end

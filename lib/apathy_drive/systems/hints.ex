@@ -11,7 +11,7 @@ defmodule Systems.Hints do
     Components.all(Components.Hints) |> Enum.each(fn(entity) ->
       unless Systems.Idle.idle?(entity) do
         :random.seed(:erlang.now)
-        hint = Components.Hints.value(entity).active
+        hint = Components.Hints.value(entity)["active"]
                |> Map.values
                |> Enum.shuffle
                |> List.first

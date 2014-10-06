@@ -20,6 +20,9 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
     Entity.add_component(entity, Components.Module, Components.Module.value(monster))
     Entity.add_component(entity, Components.Attacks, %{})
+    Entity.add_component(entity, Components.Experience, 0)
+    Entity.add_component(entity, Components.Level, 1)
+    Entity.add_component(entity, Components.Items, [])
     Components.Attacks.reset_attacks(entity)
     Entity.add_to_type_collection(entity)
     entity
@@ -29,16 +32,7 @@ defmodule Systems.Monster do
     monster = spawn_monster(monster)
     Components.Monsters.add_monster(room, monster)
 
-    message = enter_message(monster)
-    opts = %{
-      "name" => Components.Name.value(monster),
-      "direction" => direction(room)
-    }
-
-    Systems.Room.characters_in_room(room)
-    |> Enum.each(fn(character) ->
-      send_message(character, "scroll", "<p><span class='yellow'>#{interpolate(message, opts)}</span></p>")
-    end)
+    display_enter_message(room, monster)
   end
 
   def enter_message(entity) do
@@ -50,6 +44,100 @@ defmodule Systems.Monster do
     end
   end
 
+  def display_enter_message(room, monster) do
+    message = monster
+              |> enter_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster),
+                   "direction" => direction(room)
+                 })
+              |> capitalize_first
+
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer,"scroll", "<p><span class='yellow'>#{message}</span></p>")
+    end)
+  end
+
+  def display_enter_message(room, monster, direction) do
+    message = monster
+              |> enter_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster),
+                   "direction" => enter_direction(direction)
+                 })
+              |> capitalize_first
+
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer,"scroll", "<p><span class='yellow'>#{message}</span></p>")
+    end)
+  end
+
+  def display_exit_message(room, monster) do
+    message = monster
+              |> exit_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster),
+                   "direction" => ""
+                 })
+              |> capitalize_first
+
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer, "scroll", "<p><span class='yellow'>#{message}</span></p>")
+    end)
+  end
+
+  def display_exit_message(room, monster, direction) do
+    message = monster
+              |> exit_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster),
+                   "direction" => exit_direction(direction)
+                 })
+              |> capitalize_first
+
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer, "scroll", "<p><span class='yellow'>#{message}</span></p>")
+    end)
+  end
+
+  def exit_message(entity) do
+    default = "{{name}} exits {{direction}}."
+    message = if Entity.has_component?(entity, Components.Module) do
+      Components.Module.value(entity).properties[:exit_message] || default
+    else
+      default
+    end
+    String.replace(message, " .", ".")
+  end
+
+  def observers(room, monster) do
+    spirits_in_room(room) ++ monsters_in_room(room, monster)
+  end
+
+  def monsters_in_room(room, monster) do
+    room
+    |> Components.Monsters.value
+    |> Enum.reject(&(&1 == monster))
+  end
+
+  def spirits_in_room(room) do
+    Characters.online
+    |> Enum.filter(&(Parent.of(&1) == room))
+    |> Enum.reject(&(!!Possession.possessed(&1)))
+  end
+
+  def exit_direction("up"),      do: "upwards"
+  def exit_direction("down"),    do: "downwards"
+  def exit_direction(direction), do: "to the #{direction}"
+
+  def enter_direction("up"),      do: "above"
+  def enter_direction("down"),    do: "below"
+  def enter_direction(direction), do: "the #{direction}"
+
   def direction(room) do
     :random.seed(:os.timestamp)
 
@@ -58,20 +146,15 @@ defmodule Systems.Monster do
         "nowhere"
       {:error, :bad_module} ->
         "nowhere"
+      {:error, :not_found} ->
+        "nowhere"
       exits ->
         direction = exits
                     |> Map.keys
                     |> Enum.shuffle
                     |> List.first
 
-        case direction do
-          "up" ->
-            "above"
-          "down" ->
-            "below"
-           direction ->
-             "the #{direction}"
-        end
+        enter_direction(direction)
     end
   end
 
