@@ -240,10 +240,14 @@ defmodule Systems.Ability do
     Parent.of(entity)
     |> Systems.Room.characters_in_room
     |> Enum.each(fn(character) ->
-         if character == entity do
+
+         observer = Possession.possessed(character) || character
+
+         if observer == entity do
            send_message(entity, "scroll", "<p><span class='dark-cyan'>You begin your casting.</span></p>")
          else
-           send_message(entity, "scroll", "<p><span class='dark-cyan'>#{Components.Name.value(entity)} begins casting a spell.</span></p>")
+           message = capitalize_first("#{Components.Name.value(entity)} begins casting a spell.") 
+           send_message(entity, "scroll", "<p><span class='dark-cyan'>#{message}</span></p>")
          end
        end)
   end

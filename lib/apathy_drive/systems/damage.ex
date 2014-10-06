@@ -69,7 +69,7 @@ defmodule Systems.Damage do
   end
 
   def protection(entity, limb, damage_type) do
-    resistance = resistance(entity, CritTables.damage_types[damage_type])
+    resistance = resistance(entity, CritTables.damage_types[to_string(damage_type)])
     ac = resistance(ac(entity, limb))
     (1 - (resistance_reduction(resistance))) * (1 - (resistance_reduction(ac)))
   end

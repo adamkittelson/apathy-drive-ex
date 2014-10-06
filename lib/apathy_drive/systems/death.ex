@@ -32,7 +32,8 @@ defmodule Systems.Death do
     Components.Effects.remove(entity)
     possessor = Possession.possessor(entity)
     if possessor do
-      Possession.unpossess(entity)
+      Possession.unpossess(possessor)
+      Systems.Prompt.update(spirit, nil)
       send_message(possessor, "scroll", "<p>Your are a spirit once more.</p>")
     end
 
