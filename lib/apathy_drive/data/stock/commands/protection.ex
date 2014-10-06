@@ -21,8 +21,12 @@ defmodule Commands.Protection do
 
   def keywords, do: ["protection"]
 
-  def execute(entity, arguments) do
-    protection(entity, Enum.join(arguments, " "))
+  def execute(spirit, nil, arguments) do
+    send_message(spirit, "scroll", "<p>Spirits cannot be harmed.</p>")
+  end
+
+  def execute(_spirit, monster, arguments) do
+    protection(monster, Enum.join(arguments, " "))
   end
 
   def protection(entity, "limb") do
