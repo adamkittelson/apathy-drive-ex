@@ -246,7 +246,7 @@ defmodule Systems.Ability do
          if observer == entity do
            send_message(entity, "scroll", "<p><span class='dark-cyan'>You begin your casting.</span></p>")
          else
-           message = capitalize_first("#{Components.Name.value(entity)} begins casting a spell.") 
+           message = capitalize_first("#{Components.Name.value(entity)} begins casting a spell.")
            send_message(entity, "scroll", "<p><span class='dark-cyan'>#{message}</span></p>")
          end
        end)
