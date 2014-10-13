@@ -83,7 +83,7 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :execute) do
     {limb, damage, crit} = Systems.Damage.calculate_damage(ability, target)
-    display_cast_message(ability, entity, target)
+    display_cast_message(ability, entity, target, %{"damage" => damage})
     display_crit_message(crit, entity, target)
     Systems.Crits.add_crit_effects(damage, target, crit[:effects])
     if crit[:effects][:kill] do
