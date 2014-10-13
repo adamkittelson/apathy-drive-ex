@@ -43,6 +43,8 @@ defmodule ApathyDrive do
 
     set_parents
 
+    Monsters.all |> Enum.each(&Components.Attacks.reset_attacks/1)
+
     HPRegen.start_link
     ManaRegen.start_link
     Systems.LairSpawning.initialize

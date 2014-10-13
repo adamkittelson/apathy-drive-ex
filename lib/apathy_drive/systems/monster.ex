@@ -25,6 +25,7 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Items, [])
     Components.Attacks.reset_attacks(entity)
     Entity.add_to_type_collection(entity)
+    Entities.save!(entity)
     entity
   end
 
@@ -120,7 +121,7 @@ defmodule Systems.Monster do
 
   def monsters_in_room(room, monster) do
     room
-    |> Components.Monsters.value
+    |> Components.Monsters.get_monsters
     |> Enum.reject(&(&1 == monster))
   end
 

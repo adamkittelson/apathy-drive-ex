@@ -61,7 +61,7 @@ defmodule Systems.Item do
   end
 
   def equip(character, item) do
-    case Systems.Match.first(Components.Items.get_items(character), :name_contains, item) do
+    case Systems.Match.one(Components.Items.get_items(character), :name_contains, item) do
       nil ->
         send_message(character, "scroll", "<p>You don't have \"#{item}\" left unequipped.</p>")
       match ->
@@ -87,7 +87,7 @@ defmodule Systems.Item do
   end
 
   def unequip(character, item) do
-    case Systems.Match.first(Systems.Limbs.equipped_items(character), :name_contains, item) do
+    case Systems.Match.one(Systems.Limbs.equipped_items(character), :name_contains, item) do
       nil ->
         send_message(character, "scroll", "<p>You are not wearing \"#{item}\".</p>")
       match ->

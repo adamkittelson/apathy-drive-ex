@@ -8,7 +8,7 @@ defmodule Systems.Command do
     Components.Idle.value(spirit, 0)
     display_prompt(spirit, monster)
 
-    case Systems.Match.first(Commands.all, :keyword_starts_with, command) do
+    case Systems.Match.one(Commands.all, :keyword_starts_with, command) do
       nil ->
         send_message(spirit, "scroll", "<p>What?</p>")
       match ->

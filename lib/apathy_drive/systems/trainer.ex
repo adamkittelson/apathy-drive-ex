@@ -58,7 +58,13 @@ defmodule Systems.Trainer do
   end
 
   def power(entity) do
-    total_power(entity) - racial_power_cost(entity) - Components.Skills.power_spent(entity)
+    power = total_power(entity) - Components.Skills.power_spent(entity)
+    spirit = Possession.possessor(entity)
+    if spirit do
+      power(spirit) - racial_power_cost(entity) + power
+    else
+      power
+    end
   end
 
   def racial_power_cost(entity) do
@@ -85,9 +91,7 @@ defmodule Systems.Trainer do
     total_power(level - 1, power + (100 * (level - 1)))
   end
 
-  def total_power(0, power) do
-    1000 + power
-  end
+  def total_power(0, power), do: power
 
   def cost(entity, skill) when is_atom(skill) do
     cost(skill.cost, rating(skill, entity))

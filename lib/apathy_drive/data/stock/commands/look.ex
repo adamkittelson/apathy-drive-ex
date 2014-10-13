@@ -34,7 +34,7 @@ defmodule Commands.Look do
   defp find_entity_in_room(room, string) do
     room
     |> Systems.Room.living_in_room
-    |> Systems.Match.first(:name_contains, string)
+    |> Systems.Match.one(:name_contains, string)
   end
 
 end

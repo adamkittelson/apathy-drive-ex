@@ -4,26 +4,22 @@ defmodule Systems.Death do
   import Systems.Text
   use Timex
 
-  def kill(entity) do
-    room = Parent.of(entity)
+  def kill(victim) do
+    room = Parent.of(victim)
+
+    send_message(victim, "scroll", "<p><span class='red'>You have been killed!</span></p>")
 
     room
-    |> Systems.Room.characters_in_room
-    |> Enum.each(fn(character) ->
-
-         monster = Possession.possessed(character)
-
-         if monster == entity do
-           send_message(character, "scroll", "<p><span class='red'>You have been killed!</span></p>")
-         else
-           send_message(character, "scroll", "<p>#{death_message(entity)}</p>")
-           reward_player(monster, entity)
-         end
+    |> Systems.Monster.monsters_in_room(victim)
+    |> Enum.each(fn(monster) ->
+         send_message(monster, "scroll", "<p>#{death_message(victim)}</p>")
+         reward_monster(monster, victim)
+         reward_spirit(Possession.possessor(monster), victim)
        end)
 
-    corpse = create_corpse(entity, room)
+    corpse = create_corpse(victim, room)
 
-    kill_monster(entity, corpse, room)
+    kill_monster(victim, corpse, room)
   end
 
   def kill_monster(entity, corpse, room) do
@@ -95,9 +91,15 @@ defmodule Systems.Death do
     trunc(stat_total * (1 + (stat_total * 0.005)))
   end
 
-  def reward_player(entity, deceased) do
-    exp = experience_to_grant(deceased)
-    Components.Experience.add(entity, exp)
-    send_message(entity, "scroll", "<p>You gain #{exp} experience.")
+  def reward_monster(monster, victim) do
+    exp = experience_to_grant(victim)
+    send_message(monster, "scroll", "<p>You gain #{exp} experience.</p>")
+    Components.Experience.add(monster, exp)
+  end
+
+  def reward_spirit(nil, victim), do: nil
+  def reward_spirit(spirit, victim) do
+    exp = experience_to_grant(victim)
+    Components.Experience.add(spirit, exp)
   end
 end

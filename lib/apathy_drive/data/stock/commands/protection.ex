@@ -63,7 +63,7 @@ defmodule Commands.Protection do
             |> List.flatten
             |> Enum.uniq
 
-    item = Systems.Match.first(items, :name_contains, target)
+    item = Systems.Match.one(items, :name_contains, target)
 
     if item do
       show_protection(entity, item)

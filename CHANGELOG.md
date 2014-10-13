@@ -25,3 +25,6 @@ CHANGELOG
 
 ---- 0.0.8 / 2014-10-06 / posession --------------------------------------------
 * possess monsters
+
+---- 0.0.9 / 2014-10-12 / level-up ---------------------------------------------
+* level up spirits and monsters when they get enough exp
