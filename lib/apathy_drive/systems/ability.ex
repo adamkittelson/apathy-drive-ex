@@ -257,11 +257,11 @@ defmodule Systems.Ability do
       "character" ->
         room
         |> Systems.Room.characters_in_room
-        |> Systems.Match.first(:name_contains, target)
+        |> Systems.Match.one(:name_contains, target)
       "living" ->
         room
         |> Systems.Room.living_in_room
-        |> Systems.Match.first(:name_contains, target)
+        |> Systems.Match.one(:name_contains, target)
       _ ->
         nil
     end

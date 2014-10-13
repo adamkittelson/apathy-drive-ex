@@ -26,29 +26,14 @@ defmodule Systems.Match do
     end
   end
 
-  def first(pids, :match_name, string) do
-    Enum.find(pids, &(match_name(string, &1)))
+  def one(pids, match_level, string) do
+    {string, number} = string_number(string)
+    one(pids, match_level, string, number)
   end
 
-  def first(pids, :match_keyword, string) do
-    case first(pids, :match_name, string) do
-      nil   -> Enum.find(pids, &(match_keyword(string, &1)))
-      value -> value
-    end
-  end
-
-  def first(pids, :keyword_starts_with, string) do
-    case first(pids, :match_keyword, string) do
-      nil   -> Enum.find(pids, &(keyword_starts_with(string, &1)))
-      value -> value
-    end
-  end
-
-  def first(pids, :name_contains, string) do
-    case first(pids, :keyword_starts_with, string) do
-      nil   -> Enum.find(pids, &(name_contains(string, &1)))
-      value -> value
-    end
+  def one(pids, match_level, string, number) do
+    all(pids, match_level, string)
+    |> Enum.at(number)
   end
 
   def match_name("", _pid), do: false
@@ -87,6 +72,29 @@ defmodule Systems.Match do
     pid |> Components.Name.value
         |> String.downcase
         |> String.contains?(string |> String.downcase)
+  end
+
+  def string_number(string) do
+    number = extract_number(Regex.run(~r/\d+$/, string))
+    string = remove_number_from_string(string, number)
+    number = indexify_number(number)
+    {string, number}
+  end
+
+  def extract_number([number]), do: number
+  def extract_number(nil),      do: nil
+
+  def remove_number_from_string(string, nil), do: string
+  def remove_number_from_string(string, number) do
+    String.replace(string, " #{number}", "")
+  end
+
+  def indexify_number(nil), do: 0
+  def indexify_number(number) do
+    number
+    |> String.to_integer
+    |> -(1)
+    |> max(0)
   end
 
 end
