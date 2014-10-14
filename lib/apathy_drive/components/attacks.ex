@@ -8,7 +8,7 @@ defmodule Components.Attacks do
   end
 
   def reset_attacks(entity) do
-    attacks = racial_attacks(entity) ++ item_attacks(entity) ++ monster_attacks(entity)
+    attacks = item_attacks(entity) ++ monster_attacks(entity)
               |> List.flatten
               |> Enum.reduce(%{}, fn(attack, map) ->
                     put_in(map[(highest_key(map) || 0) + attack["weight"]], attack)
@@ -53,25 +53,36 @@ defmodule Components.Attacks do
     |> List.last
   end
 
-  defp racial_attacks(entity) do
-    if Entity.has_component?(entity, Components.Race) do
-      entity
-      |> Components.Race.value
-      |> extract_attacks(entity)
-    else
-      []
-    end
-  end
-
-  defp item_attacks(entity) do
+  def item_attacks(entity) do
     entity
     |> Systems.Limbs.equipped_items
     |> Enum.map(&extract_attacks(&1, entity))
     |> List.flatten
   end
 
-  defp monster_attacks(entity) do
+  def monster_attacks(entity) do
+    damage_increases = entity
+                       |> Components.Effects.value
+                       |> Map.values
+                       |> damage_increases
+
     extract_attacks(entity, entity)
+    |> Enum.map(fn(attack) ->
+         damage_increases
+         |> Enum.reduce(attack, fn(damage_increase, attack) ->
+              update_in(attack, ["damage", damage_increase[:table]], &((&1 || 0) + damage_increase[:amount]))
+            end)
+       end)
+  end
+
+  def damage_increases(effects) do
+    effects
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :damage_increase)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :damage_increase)
+       end)
   end
 
   def extract_attacks(entity, owner) do

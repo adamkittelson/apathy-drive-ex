@@ -13,6 +13,7 @@ defmodule Components.Effects do
 
   def add(entity, key, effect) do
     GenEvent.notify(entity, {:add_effect, key, effect})
+    Components.Attacks.reset_attacks(entity)
   end
 
   def remove(entity, key) do
@@ -24,6 +25,7 @@ defmodule Components.Effects do
       _ ->
     end
     GenEvent.notify(entity, {:remove_effect, key})
+    Components.Attacks.reset_attacks(entity)
   end
 
   def remove(entity) do

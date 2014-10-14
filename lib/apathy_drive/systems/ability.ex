@@ -3,6 +3,7 @@ defmodule Systems.Ability do
   import Systems.Text
   import Utility
   import BlockTimer
+  alias Systems.Effect
 
   def abilities(entity) do
     Abilities.all
@@ -74,8 +75,20 @@ defmodule Systems.Ability do
       if Systems.Combat.parry?(skill, target) do
         display_parry_message(ability, entity, target)
       else
-        execute(ability, entity, target, :execute)
+        execute(ability, entity, target, :apply_effects)
       end
+    else
+      execute(ability, entity, target, :apply_effects)
+    end
+  end
+
+  def execute(ability, entity, target, :apply_effects) do
+    if ability[:effects] do
+      ability[:effects]
+      |> Enum.each(fn(effect) ->
+           Effect.add(target, effect, ability[:duration])
+         end)
+      execute(ability, entity, target, :execute)
     else
       execute(ability, entity, target, :execute)
     end
