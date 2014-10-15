@@ -6,7 +6,7 @@ defmodule Abilities.Attack do
 
     delay = attacker
             |> Systems.Stat.modified("agility")
-            |> get_delay(attack["damage"])
+            |> get_delay(attack)
 
     %{
       target:           "living",
@@ -21,10 +21,8 @@ defmodule Abilities.Attack do
     }
   end
 
-  def get_delay(agility, damage) do
-    base = damage
-           |> Map.values
-           |> Enum.sum
+  def get_delay(agility, attack) do
+    base = attack[:speed] || 1.0
 
     base = (base * 2) - ((agility - 40) / 50)
     Enum.max([base, 0.5])
