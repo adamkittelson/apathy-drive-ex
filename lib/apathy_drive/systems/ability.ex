@@ -12,14 +12,6 @@ defmodule Systems.Ability do
        end
   end
 
-  def execute(ability, entity, nil) do
-    if ability[:target] == "self" do
-      execute(ability, entity, Components.Name.value(entity))
-    else
-      send_message(entity, "scroll", "<p><span class='cyan'>You must supply a target.</span></p>")
-    end
-  end
-
   def execute(ability, entity, target) do
     if ability[:casting_time] do
       delay_execution(ability, entity, target)
@@ -265,7 +257,8 @@ defmodule Systems.Ability do
        end)
   end
 
-  def find_target(ability, room, _entity, target) do
+  def find_target(ability, room, entity, nil),   do: entity
+  def find_target(ability, room, entity, target) do
     case ability[:target] do
       "character" ->
         room

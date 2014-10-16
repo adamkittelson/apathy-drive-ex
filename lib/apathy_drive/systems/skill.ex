@@ -70,7 +70,7 @@ defmodule Systems.Skill do
         |> Map.values
         |> Enum.map(fn
              (%{} = effect) ->
-               effect[__MODULE__.name] || 0
+               effect[__MODULE__.name] || effect[__MODULE__.name |> String.to_atom] || 0
              (_) ->
                0
            end)
