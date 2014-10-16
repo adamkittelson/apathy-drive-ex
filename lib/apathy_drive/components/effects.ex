@@ -1,6 +1,7 @@
 defmodule Components.Effects do
   use Systems.Reload
   use GenEvent
+  import Utility
 
   ### Public API
   def value(entity) do
@@ -18,7 +19,8 @@ defmodule Components.Effects do
 
   def remove(entity, key) do
     case value(entity)[key] do
-      %{:timers => timers} ->
+      %{:timers => timers} = effect ->
+        send_message(entity, "scroll", "<p><span class='dark-cyan'>#{effect[:wear_message]}</span></p>") 
         Enum.each(timers, fn(timer) ->
           :timer.cancel(timer)
         end)
