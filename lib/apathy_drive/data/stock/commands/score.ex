@@ -43,6 +43,18 @@ defmodule Commands.Score do
     stat_names = Components.Stats.value(monster) |> Map.keys
     chunks = get_chunks(stat_names)
     Enum.each chunks, &display_stats(monster, &1)
+    display_effects(monster)
+  end
+
+  def display_effects(monster) do
+    monster
+    |> Components.Effects.value
+    |> Map.values
+    |> Enum.filter(&(Map.has_key?(&1, :effect_message)))
+    |> Enum.map(&(&1[:effect_message]))
+    |> Enum.each(fn(message) ->
+         send_message(monster, "scroll", "<p>#{message}</p>")
+       end)
   end
 
   defp display_stats(entity, [stat1, stat2]) do
