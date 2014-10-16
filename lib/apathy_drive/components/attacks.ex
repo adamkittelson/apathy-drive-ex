@@ -17,14 +17,6 @@ defmodule Components.Attacks do
     GenEvent.notify(entity, {:set_attacks, attacks})
   end
 
-  def add_attack(entity, attack) do
-    GenEvent.notify(entity, {:add_attack, attack})
-  end
-
-  def remove_attack(entity, attack) do
-    GenEvent.notify(entity, {:remove_attack, attack})
-  end
-
   def random(entity) do
     :random.seed(:os.timestamp)
 
@@ -109,14 +101,6 @@ defmodule Components.Attacks do
 
   def handle_event({:set_attacks, new_value}, _value) do
     {:ok, new_value }
-  end
-
-  def handle_event({:add_attack, attack}, value) do
-    {:ok, put_in(value[highest_key(value) + attack["weight"]], attack)}
-  end
-
-  def handle_event({:remove_character, character}, value) do
-    {:ok, List.delete(value, character) }
   end
 
   def handle_event(_, current_value) do

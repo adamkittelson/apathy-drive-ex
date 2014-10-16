@@ -44,6 +44,7 @@ defmodule ApathyDrive do
     set_parents
 
     Monsters.all |> Enum.each(&Components.Attacks.reset_attacks/1)
+    Monsters.all |> Enum.each(&Components.Abilities.reset_abilities/1)
 
     HPRegen.start_link
     ManaRegen.start_link

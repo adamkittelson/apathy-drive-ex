@@ -51,10 +51,11 @@ defmodule Components.Skills do
 
   def train(entity, skill, _power, cost) do
     old_stats = Systems.Stat.modified(entity)
+    old_abilities = Components.Abilities.names(entity)
 
     GenEvent.notify(entity, {:train, skill.name, cost})
     rating = skill.base(entity)
-    send_message(entity, "scroll", "<p>You spend #{cost} power to train two handed blade to #{rating}%</p>")
+    send_message(entity, "scroll", "<p>You spend #{cost} power to train #{skill.name} to #{rating}%</p>")
 
     new_stats = Systems.Stat.modified(entity)
     new_stats |> Map.keys
@@ -64,6 +65,16 @@ defmodule Components.Skills do
                      send_message(entity, "scroll", "<p>Your #{stat} increases by #{difference}!</p>")
                    end
                  end
+
+    Components.Abilities.reset_abilities(entity)
+    new_abilities = Components.Abilities.names(entity)
+
+    new_abilities
+    |> Enum.each(fn(ability) ->
+         if !Enum.member?(old_abilities, ability) do
+           send_message(entity, "scroll", "<p>You've learned #{ability}!</p>")
+         end
+       end)
 
     cost = Systems.Trainer.cost(skill.cost, skill.trained(entity))
     send_message(entity, "scroll", "<p>It will cost you #{cost} power to advance this skill further.</p>")

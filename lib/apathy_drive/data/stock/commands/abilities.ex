@@ -6,7 +6,7 @@ defmodule Commands.Abilities do
   def execute(spirit, nil, _arguments) do
     send_message(spirit, "scroll", "<p><span class='white'>Your abilities are:</span></p>")
     send_message(spirit, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
-    ability_names = abilities(spirit) |> Enum.map &(Components.Name.value(&1))
+    ability_names = Components.Abilities.names(spirit)
     chunks = get_chunks(ability_names)
     Enum.each chunks, &display_abilities(spirit, &1)
   end
@@ -14,7 +14,7 @@ defmodule Commands.Abilities do
   def execute(spirit, monster, _arguments) do
     send_message(spirit, "scroll", "<p><span class='white'>Your abilities are:</span></p>")
     send_message(spirit, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
-    ability_names = (abilities(spirit) ++ abilities(monster)) |> Enum.map &(Components.Name.value(&1))
+    ability_names = Components.Abilities.names(monster)
     chunks = get_chunks(ability_names)
     Enum.each chunks, &display_abilities(spirit, &1)
   end

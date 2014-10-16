@@ -28,10 +28,6 @@ defmodule Abilities.Attack do
     Enum.max([base, 0.5])
   end
 
-  def useable_by?(_entity) do
-    false
-  end
-
   def get_attack(entity) do
     Components.Attacks.random(entity)
   end

@@ -299,6 +299,12 @@ defmodule Systems.Ability do
       def keywords do
         name |> String.split
       end
+
+      def required_skills do
+        false
+      end
+
+      defoverridable [required_skills: 0]
     end
   end
 
