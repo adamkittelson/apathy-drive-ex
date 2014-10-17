@@ -67,20 +67,8 @@ defmodule Systems.Ability do
       if Systems.Combat.parry?(skill, target) do
         display_parry_message(ability, entity, target)
       else
-        execute(ability, entity, target, :apply_effects)
+        execute(ability, entity, target, :execute)
       end
-    else
-      execute(ability, entity, target, :apply_effects)
-    end
-  end
-
-  def execute(ability, entity, target, :apply_effects) do
-    if ability[:effects] do
-      ability[:effects]
-      |> Enum.each(fn(effect) ->
-           Effect.add(target, effect, ability[:duration])
-         end)
-      execute(ability, entity, target, :execute)
     else
       execute(ability, entity, target, :execute)
     end
@@ -97,6 +85,19 @@ defmodule Systems.Ability do
       if damage && damage > 0 do
         damage_limb(target, limb, damage)
       end
+    end
+    execute(ability, entity, target, :apply_effects)
+  end
+
+  def execute(ability, entity, target, :apply_effects) do
+    if ability[:effects] && Process.alive?(target) do
+      ability[:effects]
+      |> Enum.each(fn(effect) ->
+           Effect.add(target, effect, ability[:duration])
+           if effect[:effect_message] do
+             send_message(target, "scroll", "<p><span class='blue'>#{effect[:effect_message]}</span></p>")
+           end
+         end)
     end
   end
 
