@@ -25,14 +25,15 @@ defmodule ApathyDrive do
     Possession.start_link
 
     IO.puts "Indexing..."
-    index_items
-    index_monsters
-    index_abilities
-    index_commands
-    index_races
-    index_skills
-    index_help
-    index_crit_tables
+    [index_items,
+    index_monsters,
+    index_abilities,
+    index_commands,
+    index_races,
+    index_skills,
+    index_help,
+    index_crit_tables]
+    |> Enum.each(&(Task.await(&1, 30000)))
     IO.puts "Done!"
 
     if Mix.env != :test do
@@ -43,8 +44,10 @@ defmodule ApathyDrive do
 
     set_parents
 
-    Monsters.all |> Enum.each(&Components.Attacks.reset_attacks/1)
-    Monsters.all |> Enum.each(&Components.Abilities.reset_abilities/1)
+    Task.async fn ->
+      Monsters.all |> Enum.each(&Components.Attacks.reset_attacks/1)
+      Monsters.all |> Enum.each(&Components.Abilities.reset_abilities/1)
+    end
 
     HPRegen.start_link
     ManaRegen.start_link
@@ -97,6 +100,7 @@ defmodule ApathyDrive do
   end
 
   defp index_items do
+    Task.async fn ->
     get_file_list(["lib/apathy_drive/data/**/items/**/*.ex"])
     |> Enum.each(fn(file) ->
          module_name = Path.basename(file)
@@ -112,27 +116,31 @@ defmodule ApathyDrive do
 
         ItemTemplates.add(file, it)
       end)
+    end
   end
 
   defp index_monsters do
-    get_file_list(["lib/apathy_drive/data/**/monsters/**/*.ex"])
-    |> Enum.each(fn(file) ->
-         module_name = Path.basename(file)
-                       |> String.replace(".ex", "")
-                       |> Inflex.camelize
+    Task.async fn ->
+      get_file_list(["lib/apathy_drive/data/**/monsters/**/*.ex"])
+      |> Enum.each(fn(file) ->
+           module_name = Path.basename(file)
+                         |> String.replace(".ex", "")
+                         |> Inflex.camelize
 
-        module = :"Elixir.Monsters.#{module_name}"
+          module = :"Elixir.Monsters.#{module_name}"
 
-        {:ok, mt} = Entity.init
-        Entity.add_component(mt, Components.Keywords, module.keywords)
-        Entity.add_component(mt, Components.Name, module.name)
-        Entity.add_component(mt, Components.Module, module)
+          {:ok, mt} = Entity.init
+          Entity.add_component(mt, Components.Keywords, module.keywords)
+          Entity.add_component(mt, Components.Name, module.name)
+          Entity.add_component(mt, Components.Module, module)
 
-        MonsterTemplates.add(file, mt)
-      end)
+          MonsterTemplates.add(file, mt)
+        end)
+    end
   end
 
   defp index_abilities do
+    Task.async fn ->
     get_file_list(["lib/apathy_drive/data/**/abilities/**/*.ex"])
     |> Enum.each(fn(file) ->
          module_name = Path.basename(file)
@@ -150,9 +158,11 @@ defmodule ApathyDrive do
         Help.add(ability)
 
       end)
+    end
   end
 
   defp index_commands do
+    Task.async fn ->
     get_file_list(["lib/apathy_drive/data/**/commands/**/*.ex"])
     |> Enum.each(fn(file) ->
          module_name = Path.basename(file)
@@ -165,9 +175,11 @@ defmodule ApathyDrive do
         Entity.add_component(command, Components.Name, module.name)
         Commands.add(command)
       end)
+    end
   end
 
   defp index_races do
+    Task.async fn ->
     get_file_list(["lib/apathy_drive/data/**/races/**/*.ex"])
     |> Enum.each(fn(file) ->
          module_name = Path.basename(file)
@@ -185,9 +197,11 @@ defmodule ApathyDrive do
         Races.add(race)
         Help.add(race)
       end)
+    end
   end
 
   defp index_skills do
+    Task.async fn ->
     get_file_list(["lib/apathy_drive/data/**/skills/**/*.ex"])
     |> Enum.each(fn(file) ->
          module_name = Path.basename(file)
@@ -203,9 +217,11 @@ defmodule ApathyDrive do
         Skills.add(module.name, skill)
         Help.add(skill)
       end)
+    end
   end
 
   defp index_help do
+    Task.async fn ->
     get_file_list(["lib/apathy_drive/data/**/help/**/*.ex"])
     |> Enum.each(fn(file) ->
          module_name = Path.basename(file)
@@ -220,9 +236,11 @@ defmodule ApathyDrive do
         Entity.add_component(help, Components.Help, module.help)
         Help.add(help)
       end)
+    end
   end
 
   defp index_crit_tables do
+    Task.async fn ->
     get_file_list(["lib/apathy_drive/data/**/crit_tables/**/*.ex"])
     |> Enum.each(fn(file) ->
          module_name = Path.basename(file)
@@ -233,5 +251,6 @@ defmodule ApathyDrive do
         CritTables.add(module.name, module)
 
       end)
+    end
   end
 end

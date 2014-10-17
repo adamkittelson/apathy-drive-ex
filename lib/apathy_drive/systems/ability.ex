@@ -5,13 +5,6 @@ defmodule Systems.Ability do
   import BlockTimer
   alias Systems.Effect
 
-  def abilities(entity) do
-    Abilities.all
-    |> Enum.filter fn(ability) ->
-         Components.Module.value(ability).useable_by?(entity)
-       end
-  end
-
   def execute(ability, entity, target) do
     if ability[:casting_time] do
       delay_execution(ability, entity, target)
