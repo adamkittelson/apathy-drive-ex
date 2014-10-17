@@ -8,6 +8,28 @@ defmodule Systems.Command do
     Components.Idle.value(spirit, 0)
     display_prompt(spirit, monster)
 
+    execute(spirit, monster, command, arguments)
+  end
+
+  def execute(spirit, nil, command, arguments) do
+    execute_command(spirit, nil, command, arguments)
+  end
+
+  def execute(spirit, monster, command, arguments) do
+    ability = monster
+              |> Components.Abilities.value
+              |> Enum.find(fn(ability) ->
+                   Components.Module.value(ability).properties(monster)[:command] == String.downcase(command)
+                 end)
+
+    if ability do
+      Components.Module.value(ability).execute(monster, Enum.join(arguments, " "))
+    else
+      execute_command(spirit, monster, command, arguments)
+    end
+  end
+
+  def execute_command(spirit, monster, command, arguments) do
     case Systems.Match.one(Commands.all, :keyword_starts_with, command) do
       nil ->
         send_message(spirit, "scroll", "<p>What?</p>")

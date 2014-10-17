@@ -251,7 +251,8 @@ defmodule Systems.Ability do
        end)
   end
 
-  def find_target(ability, room, entity, nil),   do: entity
+  def find_target(ability, room, entity, nil),  do: entity
+  def find_target(ability, room, entity, ""),   do: entity
   def find_target(ability, room, entity, target) do
     case ability[:target] do
       "character" ->
