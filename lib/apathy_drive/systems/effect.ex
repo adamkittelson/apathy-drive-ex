@@ -18,4 +18,5 @@ defmodule Systems.Effect do
 
     Components.Effects.add(entity, key, effect)
   end
+
 end

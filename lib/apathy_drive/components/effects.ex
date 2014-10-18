@@ -8,32 +8,52 @@ defmodule Components.Effects do
     GenEvent.call(entity, Components.Effects, :value)
   end
 
-  def value(entity, new_value) do
-    GenEvent.notify(entity, {:set_effects, new_value})
-  end
-
   def add(entity, key, effect) do
-    GenEvent.notify(entity, {:add_effect, key, effect})
-    Components.Attacks.reset_attacks(entity)
+    case GenEvent.call(entity, __MODULE__, {:add_effect, key, effect}) do
+      :ok ->
+        Components.Attacks.reset_attacks(entity)
+      :max_stacks ->
+        remove_oldest_stack(entity, effect[:stack_key])
+        add(entity, key, effect)
+    end
   end
 
   def remove(entity, key) do
-    case value(entity)[key] do
-      %{:timers => timers} = effect ->
-        send_message(entity, "scroll", "<p><span class='dark-cyan'>#{effect[:wear_message]}</span></p>") 
-        Enum.each(timers, fn(timer) ->
-          :timer.cancel(timer)
-        end)
-      _ ->
+    case GenEvent.call(entity, __MODULE__, {:remove_effect, key}) do
+      nil ->
+        nil
+      message ->
+        send_message(entity, "scroll", "<p><span class='dark-cyan'>#{message}</span></p>")
     end
-    GenEvent.notify(entity, {:remove_effect, key})
     Components.Attacks.reset_attacks(entity)
+  end
+
+  def remove_oldest_stack(entity, stack_key) do
+    oldest = entity
+      |> value
+      |> stack(stack_key)
+      |> Enum.sort
+      |> List.first
+    remove(entity, oldest)
   end
 
   def remove(entity) do
     value(entity)
     |> Map.keys
     |> Enum.each &remove(entity, &1)
+  end
+
+  defp stack_count(value, stack_key) do
+    stack(value, stack_key)
+    |> length
+  end
+
+  defp stack(value, stack_key) do
+    value
+    |> Map.keys
+    |> Enum.filter(fn(key) ->
+         value[key][:stack_key] == stack_key
+       end)
   end
 
   def serialize(_entity) do
@@ -49,12 +69,25 @@ defmodule Components.Effects do
     {:ok, value, value}
   end
 
-  def handle_event({:add_effect, key, effect}, value) do
-    {:ok, Map.put(value, key, effect)}
+  def handle_call({:add_effect, key, %{stack_key: stack_key, stack_count: stack_count} = effect}, value) do
+    case stack_count(value, stack_key) do
+      count when count < stack_count ->
+        {:ok, :ok, Map.put(value, key, effect)}
+      count ->
+        {:ok, :max_stacks, value}
+    end
   end
 
-  def handle_event({:remove_effect, key}, value) do
-    {:ok, Map.delete(value, key)}
+  def handle_call({:remove_effect, key}, value) do
+    case value[key] do
+      %{:timers => timers} ->
+        Enum.each(timers, fn(timer) ->
+          :timer.cancel(timer)
+        end)
+      _ ->
+    end
+
+    {:ok, value[key][:wear_message], Map.delete(value, key)}
   end
 
   def handle_event(_, value) do

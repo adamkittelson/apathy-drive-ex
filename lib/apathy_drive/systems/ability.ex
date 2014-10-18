@@ -84,13 +84,10 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :apply_effects) do
     if ability[:effects] && Process.alive?(target) do
-      ability[:effects]
-      |> Enum.each(fn(effect) ->
-           Effect.add(target, effect, ability[:duration])
-           if effect[:effect_message] do
-             send_message(target, "scroll", "<p><span class='blue'>#{effect[:effect_message]}</span></p>")
-           end
-         end)
+      Effect.add(target, ability[:effects], ability[:duration])
+      if ability[:effects][:effect_message] do
+        send_message(target, "scroll", "<p><span class='blue'>#{ability[:effects][:effect_message]}</span></p>")
+      end
     end
   end
 
@@ -292,7 +289,15 @@ defmodule Systems.Ability do
         false
       end
 
-      defoverridable [required_skills: 0]
+      def stack_key do
+        name
+      end
+
+      def stack_count do
+        1
+      end
+
+      defoverridable [required_skills: 0, stack_key: 0, stack_count: 0]
     end
   end
 
