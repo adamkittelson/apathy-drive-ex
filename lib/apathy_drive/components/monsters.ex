@@ -8,9 +8,22 @@ defmodule Components.Monsters do
   end
 
   def get_monsters(entity) do
-    value(entity)
-    |> Enum.map(&Monsters.find_by_id(&1))
+    entity
+    |> value
+    |> Enum.map(&get_monster/1)
     |> Enum.filter(&(&1 != nil))
+  end
+
+  def get_monster(monster) when is_pid(monster), do: monster
+  def get_monster(monster) when is_number(monster) do
+    Monsters.find_by_id(monster)
+  end
+
+  def monster_ids(entity) do
+    value(entity)
+    |> Enum.filter(&is_pid/1)
+    |> Enum.filter(&(Entity.has_component?(&1, Components.ID)))
+    |> Enum.map(&(Components.ID.value(&1)))
   end
 
   def value(entity, new_value) do
@@ -19,16 +32,16 @@ defmodule Components.Monsters do
 
   def add_monster(entity, monster) do
     Parent.set(monster, entity)
-    GenEvent.notify(entity, {:add_monster, Components.ID.value(monster)})
+    GenEvent.notify(entity, {:add_monster, monster})
   end
 
   def remove_monster(entity, monster) do
     Parent.set(monster, nil)
-    GenEvent.notify(entity, {:remove_monster, Components.ID.value(monster)})
+    GenEvent.notify(entity, {:remove_monster, monster})
   end
 
   def serialize(entity) do
-    %{"Monsters" => value(entity)}
+    %{"Monsters" => monster_ids(entity)}
   end
 
   ### GenEvent API

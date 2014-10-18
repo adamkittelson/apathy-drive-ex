@@ -78,6 +78,10 @@ defmodule Components.Effects do
     end
   end
 
+  def handle_call({:add_effect, key, effect}, value) do
+    {:ok, :ok, Map.put(value, key, effect)}
+  end
+
   def handle_call({:remove_effect, key}, value) do
     case value[key] do
       %{:timers => timers} ->

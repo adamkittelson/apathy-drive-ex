@@ -27,7 +27,6 @@ defmodule Systems.Monster do
     Components.Attacks.reset_attacks(entity)
     Components.Abilities.reset_abilities(entity)
     Entity.add_to_type_collection(entity)
-    Entities.save!(entity)
     entity
   end
 
