@@ -40,7 +40,7 @@ defmodule Abilities do
        end)
   end
 
-  def meets_skill_requirements?(false, entity), do: false
+  def meets_skill_requirements?(nil, entity), do: false
   def meets_skill_requirements?(skills, entity) do
     skills
     |> Map.keys

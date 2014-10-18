@@ -62,7 +62,11 @@ defmodule Components.Attacks do
     |> Enum.map(fn(attack) ->
          damage_increases
          |> Enum.reduce(attack, fn(damage_increase, attack) ->
-              update_in(attack, ["damage", damage_increase[:table]], &((&1 || 0) + damage_increase[:amount]))
+              damage_increase
+              |> Map.keys
+              |> Enum.reduce(attack, fn(table, attack) ->
+                   update_in(attack, ["damage", table], &((&1 || 0) + damage_increase[table]))
+                 end)
             end)
        end)
   end

@@ -8,18 +8,20 @@ defmodule Abilities.Attack do
             |> Systems.Stat.modified("agility")
             |> get_delay(attack)
 
-    %{
-      target:           "living",
-      dodgeable:        true,
-      parryable:        true,
-      damage:           attack_damage(attacker, attack),
-      delay:            delay,
-      skill:            attack["skill"],
-      user_message:     "<p><span class='red'>#{attack["message"]["attacker"]}</span></p>",
-      target_message:   "<p><span class='red'>#{attack["message"]["target"]}</span></p>",
+    props = %{
+      damage:            attack_damage(attacker, attack),
+      delay:             delay,
+      skill:             attack["skill"],
+      user_message:      "<p><span class='red'>#{attack["message"]["attacker"]}</span></p>",
+      target_message:    "<p><span class='red'>#{attack["message"]["target"]}</span></p>",
       spectator_message: "<p><span class='red'>#{attack["message"]["spectator"]}</span></p>"
     }
+
+    Map.merge(super(attacker), props)
   end
+
+  def dodgeable, do: true
+  def parryable, do: true
 
   def get_delay(agility, attack) do
     base = attack[:speed] || 1.0

@@ -84,7 +84,8 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :apply_effects) do
     if ability[:effects] && Process.alive?(target) do
-      Effect.add(target, ability[:effects], ability[:duration])
+      IO.puts inspect(ability[:effects])
+      Effect.add(target, ability[:effects], ability[:effects][:duration])
       if ability[:effects][:effect_message] do
         send_message(target, "scroll", "<p><span class='blue'>#{ability[:effects][:effect_message]}</span></p>")
       end
@@ -282,22 +283,157 @@ defmodule Systems.Ability do
       end
 
       def keywords do
-        name |> String.split
+        (name |> String.split)
       end
 
-      def required_skills do
-        false
+      def properties(caster) do
+        %{
+          env:              __ENV__,
+        }
+        |> apply_property(:casting_time, caster)
+        |> apply_property(:target, caster)
+        |> apply_property(:mana_cost, caster)
+        |> apply_property(:damage, caster)
+        |> apply_property(:user_message, caster)
+        |> apply_property(:target_message, caster)
+        |> apply_property(:spectator_message, caster)
+        |> apply_property(:command, caster)
+        |> apply_property(:effects, caster)
+        |> apply_property(:dodgeable, caster)
+        |> apply_property(:parryable, caster)
       end
 
-      def stack_key do
-        name
+      def effects,        do: nil
+      def effects(caster) do
+        %{}
+        |> apply_property(:duration, caster)
+        |> apply_property(:damage_increase, caster)
+        |> apply_property(:wear_message, caster)
+        |> apply_property(:stack_key, caster)
+        |> apply_property(:stack_count, caster)
+        |> apply_property(:dodge, caster)
+        |> apply_property(:effect_message, caster)
+        |> finalize_effects
       end
 
-      def stack_count do
-        1
+      def finalize_effects(%{duration: _} = effects), do: effects
+      def finalize_effects(_), do: nil
+
+      def duration(entity \\ nil)
+      def duration(entity), do: nil
+
+      def dodgeable(entity \\ nil)
+      def dodgeable(entity), do: nil
+
+      def parryable(entity \\ nil)
+      def parryable(entity), do: nil
+
+      def dodge(entity \\ nil)
+      def dodge(entity), do: nil
+
+      def stack_key(entity \\ nil)
+      def stack_key(entity), do: name
+
+      def stack_count(entity \\ nil)
+      def stack_count(entity), do: 1
+
+      def effect_message(entity \\ nil)
+      def effect_message(entity), do: nil
+
+      def wear_message(entity \\ nil)
+      def wear_message(entity) do
+        "The effects of #{name} wear off."
       end
 
-      defoverridable [required_skills: 0, stack_key: 0, stack_count: 0]
+      def casting_time(entity \\ nil)
+      def casting_time(entity), do: nil
+
+      def target(entity \\ nil)
+      def target(entity) do
+        "living"
+      end
+
+      def mana_cost(entity \\ nil)
+      def mana_cost(entity), do: nil
+
+      def damage(entity \\ nil)
+      def damage(entity), do: nil
+
+      def damage_increase(entity \\ nil)
+      def damage_increase(entity), do: nil
+
+      def user_message(entity \\ nil)
+      def user_message(entity), do: nil
+
+      def target_message(entity \\ nil)
+      def target_message(entity), do: nil
+
+      def spectator_message(entity \\ nil)
+      def spectator_message(entity), do: nil
+
+      def required_skills(entity \\ nil)
+      def required_skills(entity), do: nil
+
+      def command(entity \\ nil)
+      def command(entity), do: nil
+
+      def duration(entity \\ nil)
+      def duration(entity), do: nil
+
+      def duration(entity \\ nil)
+      def duration(entity), do: nil
+
+      def execute(entity, target) do
+        Systems.Ability.execute(properties(entity), entity, target)
+      end
+
+      def apply_property(nil, _, _), do: nil
+      def apply_property(properties, property, caster) do
+        value = apply(__MODULE__, property, []) || apply(__MODULE__, property, [caster])
+        append_property properties, property, value
+      end
+
+      def append_property(properties, property, nil),   do: properties
+      def append_property(properties, property, value), do: Map.put(properties, property, value)
+
+      defoverridable [required_skills: 0,
+                      required_skills: 1,
+                      casting_time: 0,
+                      casting_time: 1,
+                      target: 0,
+                      target: 1,
+                      mana_cost: 0,
+                      mana_cost: 1,
+                      damage: 0,
+                      damage: 1,
+                      user_message: 0,
+                      user_message: 1,
+                      target_message: 0,
+                      target_message: 1,
+                      spectator_message: 0,
+                      spectator_message: 1,
+                      command: 0,
+                      command: 1,
+                      duration: 0,
+                      duration: 1,
+                      damage_increase: 0,
+                      damage_increase: 1,
+                      wear_message: 0,
+                      wear_message: 1,
+                      stack_key: 0,
+                      stack_key: 1,
+                      stack_count: 0,
+                      stack_count: 1,
+                      dodge: 0,
+                      dodge: 1,
+                      effect_message: 0,
+                      effect_message: 1,
+                      dodgeable: 0,
+                      dodgeable: 1,
+                      parryable: 0,
+                      parryable: 1,
+                      properties: 1,
+                      execute: 2]
     end
   end
 
