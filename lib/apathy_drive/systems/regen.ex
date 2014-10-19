@@ -94,11 +94,13 @@ defmodule Systems.Regen do
 
   def hp_regen_per_second(entity) do
     regen_rate(Systems.Stat.modified(entity, "health"))
+    |> max(1)
   end
 
   def mana_regen_per_second(entity) do
     intellect = Systems.Stat.modified(entity, "intellect")
     willpower = Systems.Stat.modified(entity, "willpower")
     regen_rate(trunc((intellect + willpower * 2) / 3))
+    |> max(1)
   end
 end

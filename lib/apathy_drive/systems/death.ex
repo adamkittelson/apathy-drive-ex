@@ -49,8 +49,7 @@ defmodule Systems.Death do
 
     Components.Monsters.remove_monster(room, entity)
     Components.Combat.stop_timer(entity)
-    Entity.list_components(entity) |> Enum.each(&(Entity.remove_component(entity, &1)))
-    GenEvent.stop(entity)
+    Entities.delete!(entity)
   end
 
   def create_corpse(entity, room) do
