@@ -35,7 +35,7 @@ defmodule Abilities.Attack do
   end
 
   def attack_damage(attacker, attack) do
-    low..high = Systems.Damage.base_damage(attacker)
+    low..high = Systems.Damage.base_attack_damage(attacker)
 
     attack["damage"]
     |> Map.keys

@@ -301,6 +301,8 @@ defmodule Systems.Ability do
         |> apply_property(:effects, caster)
         |> apply_property(:dodgeable, caster)
         |> apply_property(:parryable, caster)
+        |> apply_property(:magic_damage, caster)
+        |> apply_property(:attack_damage, caster)
       end
 
       def effects,        do: nil
@@ -356,6 +358,12 @@ defmodule Systems.Ability do
       def mana_cost(entity \\ nil)
       def mana_cost(entity), do: nil
 
+      def magic_damage(entity \\ nil)
+      def magic_damage(entity), do: nil
+
+      def attack_damage(entity \\ nil)
+      def attack_damage(entity), do: nil
+
       def damage(entity \\ nil)
       def damage(entity), do: nil
 
@@ -388,6 +396,38 @@ defmodule Systems.Ability do
       end
 
       def apply_property(nil, _, _), do: nil
+      def apply_property(properties, :magic_damage, caster) do
+        value = apply(__MODULE__, :magic_damage, []) || apply(__MODULE__, :magic_damage, [caster])
+        if value do
+          low..high = Systems.Damage.base_magic_damage(caster)
+
+          damage = value
+            |> Map.keys
+            |> Enum.reduce(%{}, fn(damage_type, damage) ->
+                 Map.put(damage, damage_type, (trunc(low * value[damage_type]))..(trunc(high * value[damage_type])))
+               end)
+
+          append_property(properties, :damage, damage)
+        else
+          properties
+        end
+      end
+      def apply_property(properties, :attack_damage, caster) do
+        value = apply(__MODULE__, :attack_damage, []) || apply(__MODULE__, :attack_damage, [caster])
+        if value do
+          low..high = Systems.Damage.base_attack_damage(caster)
+
+          damage = value
+            |> Map.keys
+            |> Enum.reduce(%{}, fn(damage_type, damage) ->
+                 Map.put(damage, damage_type, (trunc(low * value[damage_type]))..(trunc(high * value[damage_type])))
+               end)
+
+          append_property(properties, :damage, damage)
+        else
+          properties
+        end
+      end
       def apply_property(properties, property, caster) do
         value = apply(__MODULE__, property, []) || apply(__MODULE__, property, [caster])
         append_property properties, property, value
@@ -433,7 +473,11 @@ defmodule Systems.Ability do
                       parryable: 0,
                       parryable: 1,
                       properties: 1,
-                      execute: 2]
+                      execute: 2,
+                      magic_damage: 0,
+                      magic_damage: 1,
+                      attack_damage: 0,
+                      attack_damage: 1]
     end
   end
 

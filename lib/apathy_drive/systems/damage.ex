@@ -127,11 +127,18 @@ defmodule Systems.Damage do
     Range.new(trunc(base * 0.8), trunc(base * 1.2))
   end
 
-  def base_damage(entity) do
+  def base_attack_damage(entity) do
     agility   = Systems.Stat.modified(entity, "agility")
     strength = Systems.Stat.modified(entity, "strength")
 
     base_damage(trunc((strength * 2 + agility) / 3))
+  end
+
+  def base_magic_damage(entity) do
+    willpower = Systems.Stat.modified(entity, "willpower")
+    intellect = Systems.Stat.modified(entity, "intellect")
+
+    base_damage(trunc((intellect * 2 + willpower) / 3))
   end
 
 end
