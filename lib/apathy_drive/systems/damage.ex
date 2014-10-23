@@ -103,14 +103,14 @@ defmodule Systems.Damage do
     strength = Systems.Stat.modified(entity, "strength")
     agility  = Systems.Stat.modified(entity, "agility")
 
-    resistance(abs((((strength * 3) + agility) / 4) - 40))
+    resistance(abs((((strength * 3) + agility) / 4)))
   end
 
   def magical_resistance(entity) do
     willpower = Systems.Stat.modified(entity, "willpower")
     intellect = Systems.Stat.modified(entity, "intellect")
 
-    resistance(abs((((willpower * 3) + intellect) / 4) - 40))
+    resistance(abs((((willpower * 3) + intellect) / 4)))
   end
 
   def resistance(stat) do

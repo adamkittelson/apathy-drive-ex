@@ -8,7 +8,14 @@ defmodule Components.Attacks do
   end
 
   def reset_attacks(entity) do
-    attacks = item_attacks(entity) ++ monster_attacks(entity)
+    attacks = case item_attacks(entity) do
+                [] ->
+                  monster_attacks(entity)
+                item_attacks ->
+                  item_attacks
+              end
+
+    attacks = attacks
               |> List.flatten
               |> Enum.reduce(%{}, fn(attack, map) ->
                     put_in(map[(highest_key(map) || 0) + attack["weight"]], attack)

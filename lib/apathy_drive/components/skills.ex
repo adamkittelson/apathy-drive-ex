@@ -80,6 +80,8 @@ defmodule Components.Skills do
     send_message(entity, "scroll", "<p>It will cost you #{cost} power to advance this skill further.</p>")
     send_message(entity, "scroll", "<p>You have #{Systems.Trainer.power(entity)} power left.</p>")
     Entities.save!(entity)
+    HPRegen.add(entity)
+    ManaRegen.add(entity)
   end
 
   def serialize(entity) do

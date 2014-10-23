@@ -60,23 +60,38 @@ defmodule Systems.Ability do
       if Systems.Combat.parry?(skill, target) do
         display_parry_message(ability, entity, target)
       else
-        execute(ability, entity, target, :execute)
+        execute(ability, entity, target, :healing)
       end
     else
-      execute(ability, entity, target, :execute)
+      execute(ability, entity, target, :healing)
     end
   end
 
-  def execute(ability, entity, target, :execute) do
-    {limb, damage, crit} = Systems.Damage.calculate_damage(ability, target)
-    display_cast_message(ability, entity, target, %{"damage" => damage})
-    display_crit_message(crit, entity, target)
-    Systems.Crits.add_crit_effects(damage, target, crit[:effects])
-    if crit[:effects][:kill] do
-      Systems.Death.kill(target)
-    else
-      if damage && damage > 0 do
-        damage_limb(target, limb, damage)
+  def execute(ability, entity, target, :healing) do
+    if Map.has_key?(ability, :healing) do
+      :random.seed(:os.timestamp)
+      amount = ability[:healing] |> Enum.into([]) |> Enum.shuffle |> List.first
+      display_cast_message(ability, entity, target, %{"amount" => amount})
+      Components.HP.add(target, amount)
+      target
+      |> Possession.possessor
+      |> Systems.Prompt.update(target)
+    end
+    execute(ability, entity, target, :damage)
+  end
+
+  def execute(ability, entity, target, :damage) do
+    if Map.has_key?(ability, :damage) do
+      {limb, damage, crit} = Systems.Damage.calculate_damage(ability, target)
+      display_cast_message(ability, entity, target, %{"damage" => damage})
+      display_crit_message(crit, entity, target)
+      Systems.Crits.add_crit_effects(damage, target, crit[:effects])
+      if crit[:effects][:kill] do
+        Systems.Death.kill(target)
+      else
+        if damage && damage > 0 do
+          damage_limb(target, limb, damage)
+        end
       end
     end
     execute(ability, entity, target, :apply_effects)
@@ -84,7 +99,6 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :apply_effects) do
     if ability[:effects] && Process.alive?(target) do
-      IO.puts inspect(ability[:effects])
       Effect.add(target, ability[:effects], ability[:effects][:duration])
       if ability[:effects][:effect_message] do
         send_message(target, "scroll", "<p><span class='blue'>#{ability[:effects][:effect_message]}</span></p>")
@@ -303,6 +317,7 @@ defmodule Systems.Ability do
         |> apply_property(:parryable, caster)
         |> apply_property(:magic_damage, caster)
         |> apply_property(:attack_damage, caster)
+        |> apply_property(:magic_healing, caster)
       end
 
       def effects,        do: nil
@@ -360,6 +375,9 @@ defmodule Systems.Ability do
 
       def magic_damage(entity \\ nil)
       def magic_damage(entity), do: nil
+
+      def magic_healing(entity \\ nil)
+      def magic_healing(entity), do: nil
 
       def attack_damage(entity \\ nil)
       def attack_damage(entity), do: nil
@@ -428,6 +446,16 @@ defmodule Systems.Ability do
           properties
         end
       end
+      def apply_property(properties, :magic_healing, caster) do
+        value = apply(__MODULE__, :magic_healing, []) || apply(__MODULE__, :magic_healing, [caster])
+        if value do
+          low..high = Systems.Damage.base_magic_damage(caster)
+
+          append_property(properties, :healing, trunc(low * value)..trunc(high * value))
+        else
+          properties
+        end
+      end
       def apply_property(properties, property, caster) do
         value = apply(__MODULE__, property, []) || apply(__MODULE__, property, [caster])
         append_property properties, property, value
@@ -477,7 +505,9 @@ defmodule Systems.Ability do
                       magic_damage: 0,
                       magic_damage: 1,
                       attack_damage: 0,
-                      attack_damage: 1]
+                      attack_damage: 1,
+                      magic_healing: 0,
+                      magic_healing: 1,]
     end
   end
 
