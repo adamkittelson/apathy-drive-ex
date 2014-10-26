@@ -9,6 +9,7 @@ defmodule Systems.Combat do
     Components.Combat.set_timer entity, timer
   end
 
+  def attack(entity, target) when entity == target, do: nil
   def attack(entity, target) do
     Components.Hunting.add(entity, target)
     Components.Hunting.add(target, entity)
