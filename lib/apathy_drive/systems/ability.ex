@@ -93,6 +93,8 @@ defmodule Systems.Ability do
           damage_limb(target, limb, damage)
         end
       end
+    else
+      display_cast_message(ability, entity, target)
     end
     execute(ability, entity, target, :apply_effects)
   end

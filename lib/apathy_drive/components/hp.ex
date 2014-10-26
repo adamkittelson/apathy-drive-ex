@@ -29,7 +29,7 @@ defmodule Components.HP do
   end
 
   def handle_call({:subtract, amount}, value) do
-    if value >= amount do
+    if value > amount do
       new_value = value - amount
       {:ok, true, new_value}
     else
