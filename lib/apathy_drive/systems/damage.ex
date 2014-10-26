@@ -12,9 +12,9 @@ defmodule Systems.Damage do
         if crit && crit[:damage] do
           damage = damage + (damage * crit[:damage])
         end
-        {limb, damage, crit}
+        {limb, max(damage, 1), crit}
       damage when is_number damage ->
-        {limb, damage, nil}
+        {limb, max(damage, 1), nil}
       _ ->
         {nil, 0, nil}
     end
@@ -23,7 +23,9 @@ defmodule Systems.Damage do
   def get_crit(damage_types, damage, target) do
     :random.seed(:os.timestamp)
     damage_type = damage_types |> Enum.shuffle |> List.first
-    chance = trunc((damage / Systems.HP.max(target)) * 100)
+    #chance = trunc((damage / Systems.HP.max(target)) * 100)
+    chance = trunc((damage / Components.HP.value(target)) * 100)
+    
     CritTables.find(damage_type).random(chance)
   end
 

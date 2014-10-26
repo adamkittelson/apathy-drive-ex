@@ -5,7 +5,7 @@ defmodule Systems.Prompt do
   def update(nil, _), do: nil
 
   def update(spirit, nil) do
-    send_message(spirit, "update prompt", "[#{Systems.Trainer.total_power(spirit)}]:")
+    send_message(spirit, "update prompt", "[#{Systems.Trainer.spirit_power(spirit)}]:")
   end
 
   def update(spirit, monster) do

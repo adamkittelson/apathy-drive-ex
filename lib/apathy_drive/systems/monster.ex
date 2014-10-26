@@ -22,6 +22,7 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Attacks, %{})
     Entity.add_component(entity, Components.Abilities, [])
     Entity.add_component(entity, Components.Experience, 0)
+    Entity.add_component(entity, Components.Investments, %{})
     Entity.add_component(entity, Components.Level, 1)
     Entity.add_component(entity, Components.Items, [])
     Components.Attacks.reset_attacks(entity)

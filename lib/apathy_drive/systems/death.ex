@@ -47,6 +47,10 @@ defmodule Systems.Death do
 
     Entities.save!(corpse)
 
+    Components.Investments.list(entity)
+    |> Enum.map(&Characters.find_by_id/1)
+    |> Enum.each(&(Components.Investments.uninvest(&1, Components.ID.value(entity))))
+
     Components.Monsters.remove_monster(room, entity)
     Components.Combat.stop_timer(entity)
     Entities.delete!(entity)
@@ -92,13 +96,24 @@ defmodule Systems.Death do
 
   def reward_monster(monster, victim) do
     exp = experience_to_grant(victim)
-    send_message(monster, "scroll", "<p>You gain #{exp} experience.</p>")
+    old_power = Systems.Trainer.total_power(monster)
     Components.Experience.add(monster, exp)
+    new_power = Systems.Trainer.total_power(monster)
+    power_gain = new_power - old_power
+    if power_gain > 0 do
+      send_message(monster, "scroll", "<p>Your #{Components.Name.value(monster)} gains #{power_gain} power.</p>")
+    end
   end
 
   def reward_spirit(nil, victim), do: nil
   def reward_spirit(spirit, victim) do
     exp = experience_to_grant(victim)
+    old_power = Systems.Trainer.total_power(spirit)
     Components.Experience.add(spirit, exp)
+    new_power = Systems.Trainer.total_power(spirit)
+    power_gain = new_power - old_power
+    if power_gain > 0 do
+      send_message(spirit, "scroll", "<p>You gain #{power_gain} power.</p>")
+    end
   end
 end

@@ -14,6 +14,7 @@ defmodule Systems.Login do
     Entity.add_component(character, Components.Spirit, true)
     Entity.add_component(character, Components.Skills, %{})
     Entity.add_component(character, Components.Idle, 0)
+    Entity.add_component(character, Components.Investments, %{})
     Entity.add_component(character, Components.Hints, %{"active" => %{}, "inactive" => []})
     Characters.add(character, url: url)
     Entities.save!(character)

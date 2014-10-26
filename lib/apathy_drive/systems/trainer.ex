@@ -7,7 +7,7 @@ defmodule Systems.Trainer do
   end
 
   def list(spirit, monster, room) do
-    power = power(monster)
+    power = monster_power(monster) + spirit_power(spirit)
     header = "<span class='blue'>-=-=-=-=-=-=-=-</span>  <span class='white'>Skill Listing</span>  <span class='blue'>-=-=-=-=-=-=-=-</span>"
     send_message(spirit, "scroll", "<p>#{header}</p>")
     skills_by_level(room) |> Map.keys |> Enum.each fn level ->
@@ -52,35 +52,27 @@ defmodule Systems.Trainer do
   end
 
   def train(entity, skill) do
-    power = power(entity)
+    monster_power = monster_power(entity)
+    spirit_power = spirit_power(Possession.possessor(entity))
     cost = cost(entity, skill)
-    Components.Skills.train(entity, skill, power, cost)
+    Components.Skills.train(entity, skill, spirit_power, monster_power, cost)
   end
 
-  def power(entity) do
-    power = total_power(entity) - Components.Skills.power_spent(entity)
-    spirit = Possession.possessor(entity)
-    if spirit do
-      power(spirit) - racial_power_cost(entity) + power
-    else
-      power
-    end
+  def spirit_power(spirit) do
+    total_power(spirit) - Components.Investments.power_invested(spirit)
   end
 
-  def racial_power_cost(entity) do
-    if Entity.has_component?(entity, Components.Race) do
-      race = entity
-             |> Components.Race.value
-             |> Components.Module.value
-      race.cost
-    else
-      0
-    end
+  def monster_power(monster) do
+    total_power(monster) - Components.Skills.power_spent(monster) + Components.Investments.power_invested(monster)
   end
 
   def total_power(entity) when is_pid(entity) do
-    level = Components.Level.value(entity)
-    total_power(level)
+    level       = Components.Level.value(entity)
+    level_power = total_power(level)
+    exp         = Components.Experience.value(entity)
+    tolevel     = Systems.Level.exp_at_level(level + 1)
+    percent     = exp / tolevel
+    level_power + round(total_power(level + 1) * percent)
   end
 
   def total_power(level) when is_integer(level) do

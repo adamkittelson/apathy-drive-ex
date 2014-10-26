@@ -46,7 +46,7 @@ defmodule Systems.Command do
   def display_prompt(spirit, nil) do
     send_message(spirit, "disable", "#prompt")
     send_message(spirit, "disable", "#command")
-    send_message(spirit, "scroll", "<p><span id='prompt'>[#{Systems.Trainer.total_power(spirit)}]:</span><input id='command' size='50' class='prompt'></input></p>")
+    send_message(spirit, "scroll", "<p><span id='prompt'>[#{Systems.Trainer.spirit_power(spirit)}]:</span><input id='command' size='50' class='prompt'></input></p>")
     send_message(spirit, "focus", "#command")
     send_message(spirit, "up")
   end
