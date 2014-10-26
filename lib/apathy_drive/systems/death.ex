@@ -48,7 +48,7 @@ defmodule Systems.Death do
     Entities.save!(corpse)
 
     Components.Investments.list(entity)
-    |> Enum.map(&Characters.find_by_id/1)
+    |> Enum.map(&(&1 |> String.to_integer |> Characters.find_by_id))
     |> Enum.each(&(Components.Investments.uninvest(&1, Components.ID.value(entity))))
 
     Components.Monsters.remove_monster(room, entity)

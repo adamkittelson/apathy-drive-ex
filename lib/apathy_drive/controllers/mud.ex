@@ -7,6 +7,10 @@ defmodule ApathyDrive.MUD do
     {:ok, socket}
   end
 
+  def event(socket, "command", "") do
+    event(socket, "command", "l")
+  end
+
   def event(socket, "command", message) do
     [command | arguments] = String.split(message)
 
