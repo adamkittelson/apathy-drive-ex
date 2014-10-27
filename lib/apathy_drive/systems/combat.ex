@@ -5,8 +5,17 @@ defmodule Systems.Combat do
   use Timex
 
   def start(entity, time \\ 0.5) do
-    {:ok, timer} = apply_after(time |> seconds, do: swing(entity))
-    Components.Combat.set_timer entity, timer
+    if !Components.Combat.in_combat?(entity) do
+      {:ok, timer} = apply_after(time |> seconds, do: swing(entity))
+      Components.Combat.set_timer entity, timer
+    end
+  end
+
+  def enrage(entity, target) when entity == target, do: nil
+  def enrage(target, entity) do
+    Components.Hunting.add(entity, target)
+    Components.Hunting.add(target, entity)
+    Systems.Combat.start(target, (:random.uniform(10) / 10) + 0.5)
   end
 
   def attack(entity, target) when entity == target, do: nil

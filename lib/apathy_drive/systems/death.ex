@@ -26,6 +26,11 @@ defmodule Systems.Death do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Components.Effects.remove(entity)
+
+    Components.Investments.list(entity)
+    |> Enum.map(&(&1 |> String.to_integer |> Characters.find_by_id))
+    |> Enum.each(&(Components.Investments.uninvest(&1, Components.ID.value(entity))))
+
     possessor = Possession.possessor(entity)
     if possessor do
       Possession.unpossess(possessor)
@@ -47,10 +52,6 @@ defmodule Systems.Death do
        end
 
     Entities.save!(corpse)
-
-    Components.Investments.list(entity)
-    |> Enum.map(&(&1 |> String.to_integer |> Characters.find_by_id))
-    |> Enum.each(&(Components.Investments.uninvest(&1, Components.ID.value(entity))))
 
     Components.Monsters.remove_monster(room, entity)
     Components.Combat.stop_timer(entity)

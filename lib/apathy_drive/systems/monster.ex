@@ -211,7 +211,7 @@ defmodule Systems.Monster do
               "target"=>"The {{user}} punches you for {{damage}} damage!",
               "spectator"=>"The {{user}} punches {{target}} for {{damage}} damage!"
             },
-            "speed" => 1.0,
+            "speed" => 3.0,
             "damage" => %{
               "impact" => 1.0,
             }

@@ -24,7 +24,7 @@ defmodule Abilities.Attack do
   def parryable, do: true
 
   def get_delay(agility, attack) do
-    base = attack["speed"] || 1.0
+    base = attack["speed"] || 3.0
 
     base = (base * 2) - (agility / 50)
     Enum.max([base, 0.1])

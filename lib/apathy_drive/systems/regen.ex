@@ -14,18 +14,15 @@ defmodule Systems.Regen do
               end
             end)
        end)
-    apply_interval 1 |> seconds, do: regen
-  end
 
-  def regen do
-    regen_hp
-    regen_mana
+    apply_interval 5 |> seconds, do: regen_hp
+    apply_interval 5 |> seconds, do: regen_mana
   end
 
   def regen_hp do
     HPRegen.all
     |> Enum.each(fn(entity) ->
-         hp = hp_regen_per_second(entity)
+         hp = hp_regen_per_tick(entity)
          Components.HP.add(entity, hp)
          heal_limbs(entity, hp)
          if fully_healed?(entity) do
@@ -66,7 +63,7 @@ defmodule Systems.Regen do
   def regen_mana do
     ManaRegen.all
     |> Enum.each(fn(entity) ->
-         Components.Mana.add(entity, mana_regen_per_second(entity))
+         Components.Mana.add(entity, mana_regen_per_tick(entity))
          if Components.Mana.value(entity) >= Systems.Mana.max(entity) do
            ManaRegen.remove(entity)
          end
@@ -92,12 +89,12 @@ defmodule Systems.Regen do
     trunc(rate)
   end
 
-  def hp_regen_per_second(entity) do
+  def hp_regen_per_tick(entity) do
     regen_rate(Systems.Stat.modified(entity, "health"))
     |> max(1)
   end
 
-  def mana_regen_per_second(entity) do
+  def mana_regen_per_tick(entity) do
     intellect = Systems.Stat.modified(entity, "intellect")
     willpower = Systems.Stat.modified(entity, "willpower")
     regen_rate(trunc((intellect + willpower * 2) / 3))

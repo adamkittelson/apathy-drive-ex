@@ -82,7 +82,7 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :damage) do
     if Map.has_key?(ability, :damage) do
-      Systems.Combat.attack(entity, target)
+      Systems.Combat.enrage(target, entity)
       {limb, damage, crit} = Systems.Damage.calculate_damage(ability, target)
       display_cast_message(ability, entity, target, %{"damage" => damage})
       display_crit_message(crit, entity, target)
