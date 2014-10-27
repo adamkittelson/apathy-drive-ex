@@ -85,10 +85,10 @@ defmodule Components.Limbs do
        end)
   end
 
-  def unsevered_limbs(entity, partial_limb_name) do
+  def unsevered_limbs(entity, limb_type) do
     unsevered_limbs(entity)
     |> Enum.filter(fn(limb_name) ->
-         Regex.match?(~r/#{partial_limb_name}/, limb_name)
+         value(entity)[limb_name]["type"] == limb_type
        end)
   end
 
@@ -109,8 +109,8 @@ defmodule Components.Limbs do
     |> Enum.filter(&(!crippled?(entity, &1)))
   end
 
-  def uncrippled_limbs(entity, partial_limb_name) do
-    unsevered_limbs(entity, partial_limb_name)
+  def uncrippled_limbs(entity, limb_type) do
+    unsevered_limbs(entity, limb_type)
     |> Enum.filter(&(!crippled?(entity, &1)))
   end
 
@@ -125,7 +125,7 @@ defmodule Components.Limbs do
          worn_on
          |> Map.keys
          |> Enum.any?(fn(worn_on_limb) ->
-              Regex.match?(~r/#{worn_on_limb}/, limb_name)
+              limbs[limb_name]["type"] == worn_on_limb
             end)
        end)
   end
@@ -135,23 +135,16 @@ defmodule Components.Limbs do
       limbs[limb_name]["items"] |> Enum.any?(fn(item) ->
         (Items.find_by_id(item) |> Components.Slot.value) == slot
       end)
-    end) |> Enum.reduce(%{}, fn(open_limb_name, map) ->
-              if Map.has_key?(map, open_limb_name) do
-                Map.put(map, open_limb_name, Map.get(map, open_limb_name) + 1)
-              else
-                Map.put_new(map, open_limb_name, 1)
-              end
-            end)
+    end)
   end
 
-  defp limbs_needed(worn_on, open_limbs) do
-    Enum.reduce(Map.keys(open_limbs), worn_on, fn(open_limb, needed_limbs) ->
-      worn_on_key = Map.keys(needed_limbs) |> Enum.find(&(Regex.match?(~r/#{&1}/, open_limb)))
+  defp limbs_needed(worn_on, open_limbs, limbs) do
+    Enum.reduce(open_limbs, worn_on, fn(open_limb, needed_limbs) ->
+      worn_on_key = Map.keys(needed_limbs) |> Enum.find(&(&1 == limbs[open_limb]["type"]))
       if worn_on_key do
         needed      = Map.get(needed_limbs, worn_on_key)
-        open        = Map.get(open_limbs, open_limb)
-        if needed > open do
-          Map.put(needed_limbs, worn_on_key, needed - open)
+        if needed > 1 do
+          Map.put(needed_limbs, worn_on_key, needed - 1)
         else
           Map.delete(needed_limbs, worn_on_key)
         end
@@ -161,11 +154,11 @@ defmodule Components.Limbs do
     end)
   end
 
-  defp limbs_to_use(open_limbs, worn_on) do
-    Enum.reduce(Map.keys(open_limbs), [], fn(open_limb, limbs_to_use) ->
-      required_limb  = Map.keys(worn_on) |> Enum.find(&(Regex.match?(~r/#{&1}/, open_limb)))
+  defp limbs_to_use(open_limbs, worn_on, limbs) do
+    Enum.reduce(open_limbs, [], fn(open_limb, limbs_to_use) ->
+      required_limb  = Map.keys(worn_on) |> Enum.find(&(limbs[open_limb]["type"] == &1))
       required_count = Map.get(worn_on, required_limb)
-      filled_count = limbs_to_use |> Enum.count(&(Regex.match?(~r/#{required_limb}/, &1)))
+      filled_count = limbs_to_use |> Enum.count(&(limbs[&1]["type"] == required_limb))
       if required_count > filled_count do
         [open_limb | limbs_to_use]
       else
@@ -255,7 +248,7 @@ defmodule Components.Limbs do
       worn_on    = Components.WornOn.value(item)
       slot       = Components.Slot.value(item)
       open_limbs = open_limbs(worn_on, value, slot)
-      limbs_needed = limbs_needed(worn_on, open_limbs)
+      limbs_needed = limbs_needed(worn_on, open_limbs, value)
 
       if Map.keys(limbs_needed) |> Enum.count > 0 do
         items_to_remove = items_to_remove(limbs_needed, slot, value)
@@ -263,7 +256,7 @@ defmodule Components.Limbs do
         open_limbs = open_limbs(worn_on, value, slot)
       end
 
-      limbs_to_use = limbs_to_use(open_limbs, worn_on)
+      limbs_to_use = limbs_to_use(open_limbs, worn_on, value)
 
       value = equip_item(item, limbs_to_use, value)
 

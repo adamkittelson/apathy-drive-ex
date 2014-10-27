@@ -224,39 +224,49 @@ defmodule Systems.Monster do
       def humanoid do
         %{
           "head" => %{
+            "type" => "head",
             "fatal" => true,
             "items" => []
           },
           "torso" => %{
+            "type" => "torso",
             "fatal" => true,
             "items" => []
           },
           "right arm" => %{
+            "type" => "arm",
             "attached" => "right hand",
             "items"    => []
           },
           "right hand" => %{
+            "type" => "hand",
             "items"    => []
           },
           "left arm" => %{
+            "type" => "arm",
             "attached" => "left hand",
             "items"    => []
           },
           "left hand" => %{
+            "type" => "hand",
             "items"    => []
           },
           "right leg" => %{
+            "type" => "leg",
             "attached" => "right foot",
             "items"    => []
           },
           "right foot" => %{
+            "type" => "foot",
             "items"    => []
           },
           "left leg" => %{
+            "type" => "leg",
             "attached" => "left foot",
             "items"    => []
           },
           "left foot" => %{
+            "type" => "foot",
             "items"    => []
           }
         }
@@ -265,39 +275,49 @@ defmodule Systems.Monster do
       def beast do
         %{
           "head" => %{
+            "type" => "head",
             "fatal" => true,
             "items" => []
           },
           "torso" => %{
+            "type" => "torso",
             "fatal" => true,
             "items" => []
           },
           "right foreleg" => %{
+            "type" => "arm",
             "attached" => "right forepaw",
             "items"    => []
           },
           "right forepaw" => %{
+            "type" => "hand",
             "items"    => []
           },
           "left foreleg" => %{
+            "type" => "arm",
             "attached" => "left forepaw",
             "items"    => []
           },
           "left forepaw" => %{
+            "type" => "hand",
             "items"    => []
           },
           "right rear leg" => %{
+            "type" => "leg",
             "attached" => "right rear paw",
             "items"    => []
           },
           "right rear paw" => %{
+            "type" => "foot",
             "items"    => []
           },
           "left rear leg" => %{
+            "type" => "leg",
             "attached" => "left rear paw",
             "items"    => []
           },
           "left rear paw" => %{
+            "type" => "foot",
             "items"    => []
           }
         }
