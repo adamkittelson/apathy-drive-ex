@@ -7,13 +7,13 @@ defmodule Systems.Monster do
   def spawn_monster(monster) do
     {:ok, entity} = Entity.init
     Entity.add_component(entity, Components.Name,        Components.Name.get_name(monster))
-    Entity.add_component(entity, Components.Description, Components.Module.value(monster).properties[:description])
+    Entity.add_component(entity, Components.Description, Components.Module.value(monster).description)
     Entity.add_component(entity, Components.Types, ["monster"])
-    Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).properties[:limbs])
+    Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).limbs)
     Entity.add_component(entity, Components.Skills, %{})
     Entity.add_component(entity, Components.Effects, %{})
-    Components.Skills.set_base_skills(entity, Components.Module.value(monster).properties[:skills])
-    Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).properties[:stats])
+    Components.Skills.set_base_skills(entity, Components.Module.value(monster).skills)
+    Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).stats)
     Entity.add_component(entity, Components.HP, Systems.HP.max(entity))
     Entity.add_component(entity, Components.Mana, Systems.Mana.max(entity))
     Entity.add_component(entity, Components.Hunting, [])
@@ -41,7 +41,7 @@ defmodule Systems.Monster do
   def enter_message(entity) do
     default = "{{name}} enters from {{direction}}."
     if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).properties[:enter_message] || default
+      Components.Module.value(entity).enter_message || default
     else
       default
     end
@@ -110,7 +110,7 @@ defmodule Systems.Monster do
   def exit_message(entity) do
     default = "{{name}} exits {{direction}}."
     message = if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).properties[:exit_message] || default
+      Components.Module.value(entity).exit_message || default
     else
       default
     end
@@ -184,6 +184,7 @@ defmodule Systems.Monster do
       def description,   do: nil
       def death_message, do: nil
       def enter_message, do: nil
+      def exit_message,  do: nil
 
       def stats do
         %{"strength"  => 1,

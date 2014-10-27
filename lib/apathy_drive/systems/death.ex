@@ -31,6 +31,7 @@ defmodule Systems.Death do
       Possession.unpossess(possessor)
       Systems.Prompt.update(entity, nil)
       send_message(possessor, "scroll", "<p>Your are a spirit once more.</p>")
+      Systems.Prompt.update(possessor, nil)
     end
 
     Systems.Limbs.equipped_items(entity)
@@ -77,7 +78,7 @@ defmodule Systems.Death do
   def death_message(entity) do
     default = "#{capitalize_first(Components.Name.value(entity))} drops <span class='dark-red'>dead</span> before you."
     if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).properties[:death_message] || default
+      Components.Module.value(entity).death_message || default
     else
       default
     end

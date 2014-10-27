@@ -72,7 +72,7 @@ defmodule Systems.Trainer do
     exp         = Components.Experience.value(entity)
     tolevel     = Systems.Level.exp_at_level(level + 1)
     percent     = exp / tolevel
-    level_power + round(total_power(level + 1) * percent)
+    level_power + round((total_power(level + 1) - level_power) * percent)
   end
 
   def total_power(level) when is_integer(level) do
