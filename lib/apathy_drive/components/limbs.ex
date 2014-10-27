@@ -258,12 +258,16 @@ defmodule Components.Limbs do
 
       limbs_to_use = limbs_to_use(open_limbs, worn_on, value)
 
-      value = equip_item(item, limbs_to_use, value)
-
-      if items_to_remove do
-        {:ok, %{"removed" => items_to_remove}, value}
+      if limbs_to_use == [] do
+        {:ok, %{"error" => "You don't have the right limbs to equip that."}, value}
       else
-        {:ok, %{}, value}
+        value = equip_item(item, limbs_to_use, value)
+
+        if items_to_remove do
+          {:ok, %{"removed" => items_to_remove}, value}
+        else
+          {:ok, %{}, value}
+        end
       end
     else
       {:ok, %{"error" => "You can't wear that."}, value}
