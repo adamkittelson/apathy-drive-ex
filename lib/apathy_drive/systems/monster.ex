@@ -161,4 +161,155 @@ defmodule Systems.Monster do
     end
   end
 
+  defmacro __using__(_opts) do
+    quote do
+      use Systems.Reload
+      import Systems.Text
+      import Utility
+      import BlockTimer
+
+      def name do
+        __MODULE__
+        |> Atom.to_string
+        |> String.split(".")
+        |> List.last
+        |> Inflex.underscore
+        |> String.replace("_", " ")
+      end
+
+      def keywords do
+        String.split(name)
+      end
+
+      def description,   do: nil
+      def death_message, do: nil
+      def enter_message, do: nil
+
+      def stats do
+        %{"strength"  => 1,
+          "agility"   => 1,
+          "intellect" => 1,
+          "willpower" => 1,
+          "health"    => 1,
+          "charm"     => 1}
+      end
+
+      def skills do
+        %{
+          "melee" => 1,
+          "dodge" => 1
+         }
+      end
+
+      def attacks(entity) do
+        [
+          %{
+            "weight"=>1,
+            "message"=>%{
+              "attacker"=>"You punch {{target}} for {{damage}} damage!",
+              "target"=>"The {{user}} punches you for {{damage}} damage!",
+              "spectator"=>"The {{user}} punches {{target}} for {{damage}} damage!"
+            },
+            "speed" => 1.0,
+            "damage" => %{
+              "impact" => 1.0,
+            }
+          }
+        ]
+      end
+
+      def limbs, do: humanoid
+
+      def humanoid do
+        %{
+          "head" => %{
+            "fatal" => true,
+            "items" => []
+          },
+          "torso" => %{
+            "fatal" => true,
+            "items" => []
+          },
+          "right arm" => %{
+            "attached" => "right hand",
+            "items"    => []
+          },
+          "right hand" => %{
+            "items"    => []
+          },
+          "left arm" => %{
+            "attached" => "left hand",
+            "items"    => []
+          },
+          "left hand" => %{
+            "items"    => []
+          },
+          "right leg" => %{
+            "attached" => "right foot",
+            "items"    => []
+          },
+          "right foot" => %{
+            "items"    => []
+          },
+          "left leg" => %{
+            "attached" => "left foot",
+            "items"    => []
+          },
+          "left foot" => %{
+            "items"    => []
+          }
+        }
+      end
+
+      def beast do
+        %{
+          "head" => %{
+            "fatal" => true,
+            "items" => []
+          },
+          "torso" => %{
+            "fatal" => true,
+            "items" => []
+          },
+          "right foreleg" => %{
+            "attached" => "right forepaw",
+            "items"    => []
+          },
+          "right forepaw" => %{
+            "items"    => []
+          },
+          "left foreleg" => %{
+            "attached" => "left forepaw",
+            "items"    => []
+          },
+          "left forepaw" => %{
+            "items"    => []
+          },
+          "right rear leg" => %{
+            "attached" => "right rear paw",
+            "items"    => []
+          },
+          "right rear paw" => %{
+            "items"    => []
+          },
+          "left rear leg" => %{
+            "attached" => "left rear paw",
+            "items"    => []
+          },
+          "left rear paw" => %{
+            "items"    => []
+          }
+        }
+      end
+
+      defoverridable [description:   0,
+                      death_message: 0,
+                      enter_message: 0,
+                      stats:         0,
+                      skills:        0,
+                      attacks:       1,
+                      limbs:         0]
+    end
+  end
+
 end
