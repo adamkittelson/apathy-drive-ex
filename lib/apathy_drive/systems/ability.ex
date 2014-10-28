@@ -107,6 +107,32 @@ defmodule Systems.Ability do
         send_message(target, "scroll", "<p><span class='blue'>#{ability[:effects][:effect_message]}</span></p>")
       end
     end
+    execute(ability, entity, target, :cooldown)
+  end
+
+  def execute(ability, entity, target, :cooldown) do
+    if ability[:cooldown] do
+      {:ok, timer} = apply_interval 1 |> seconds do
+        Components.Effects.update(entity, fn(value) ->
+          key = value
+                |> Map.keys
+                |> Enum.find(fn(key) ->
+                     value[key][:cooldown] == ability[:name]
+                   end)
+
+          if key do
+            update_in(value, [key, :cooldown_remaining], &(&1 - 1))
+          else
+            value
+          end
+        end)
+      end
+      effect = %{:timers       => [timer],
+                 :cooldown     => ability[:name],
+                 :cooldown_remaining => ability[:cooldown],
+                 :wear_message => "You may now use \"#{ability[:name]}\" again."}
+      Effect.add(entity, effect, ability[:cooldown])
+    end
   end
 
   def damage_limb(target, limb, amount) do
@@ -290,6 +316,7 @@ defmodule Systems.Ability do
       import Utility
       import BlockTimer
 
+      def name(_caster), do: name
       def name do
         __MODULE__
         |> Atom.to_string
@@ -321,6 +348,8 @@ defmodule Systems.Ability do
         |> apply_property(:magic_damage, caster)
         |> apply_property(:attack_damage, caster)
         |> apply_property(:magic_healing, caster)
+        |> apply_property(:cooldown, caster)
+        |> apply_property(:name, caster)
       end
 
       def effects,        do: nil
@@ -341,6 +370,9 @@ defmodule Systems.Ability do
 
       def duration(entity \\ nil)
       def duration(entity), do: nil
+
+      def cooldown(entity \\ nil)
+      def cooldown(entity), do: nil
 
       def dodgeable(entity \\ nil)
       def dodgeable(entity), do: nil
@@ -405,9 +437,6 @@ defmodule Systems.Ability do
 
       def command(entity \\ nil)
       def command(entity), do: nil
-
-      def duration(entity \\ nil)
-      def duration(entity), do: nil
 
       def duration(entity \\ nil)
       def duration(entity), do: nil
@@ -510,7 +539,9 @@ defmodule Systems.Ability do
                       attack_damage: 0,
                       attack_damage: 1,
                       magic_healing: 0,
-                      magic_healing: 1,]
+                      magic_healing: 1,
+                      cooldown: 0,
+                      cooldown: 1]
     end
   end
 

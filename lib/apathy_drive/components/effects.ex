@@ -28,6 +28,10 @@ defmodule Components.Effects do
     Components.Attacks.reset_attacks(entity)
   end
 
+  def update(entity, fun) do
+    GenEvent.call(entity, __MODULE__, {:update_effect, fun})
+  end
+
   def remove_oldest_stack(entity, stack_key) do
     oldest = entity
       |> value
@@ -80,6 +84,10 @@ defmodule Components.Effects do
 
   def handle_call({:add_effect, key, effect}, value) do
     {:ok, :ok, Map.put(value, key, effect)}
+  end
+
+  def handle_call({:update_effect, fun}, value) do
+    {:ok, :ok, fun.(value)}
   end
 
   def handle_call({:remove_effect, key}, value) do
