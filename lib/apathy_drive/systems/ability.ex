@@ -6,10 +6,14 @@ defmodule Systems.Ability do
   alias Systems.Effect
 
   def execute(ability, entity, target) do
-    if ability[:casting_time] do
-      delay_execution(ability, entity, target)
+    if Systems.Cooldown.on_cooldown?(entity, ability[:name]) do
+      send_message(entity, "scroll", "<p><span class='dark-cyan'>You can't use #{ability[:name]} for another #{Systems.Cooldown.cooldown_remaining(entity, ability[:name])} seconds.</span></p>")
     else
-      execute(ability, entity, target, :verify_target)
+      if ability[:casting_time] do
+        delay_execution(ability, entity, target)
+      else
+        execute(ability, entity, target, :verify_target)
+      end
     end
   end
 
@@ -130,7 +134,7 @@ defmodule Systems.Ability do
       effect = %{:timers       => [timer],
                  :cooldown     => ability[:name],
                  :cooldown_remaining => ability[:cooldown],
-                 :wear_message => "You may now use \"#{ability[:name]}\" again."}
+                 :wear_message => "You may now use #{ability[:name]} again."}
       Effect.add(entity, effect, ability[:cooldown])
     end
   end
