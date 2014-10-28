@@ -8,9 +8,24 @@ defmodule Components.Abilities do
   end
 
   def reset_abilities(entity) do
-    abilities = Abilities.from_skills(entity)
+    abilities = Abilities.from_skills(entity) ++ from_module(entity)
 
     GenEvent.notify(entity, {:set_abilities, abilities})
+  end
+
+  def from_module(entity) do
+    if Entity.has_component?(entity, Components.Module) do
+      Components.Module.value(entity).abilities
+      |> Enum.map(fn(ability_name) ->
+           Abilities.find ability_name
+         end)
+      |> Enum.reject(fn(ability) -> ability == nil end)
+      |> Enum.map(fn(module) ->
+           Abilities.find_by_module(module)
+         end)
+    else
+      []
+    end
   end
 
   def names(entity) do

@@ -185,6 +185,7 @@ defmodule Systems.Monster do
       def death_message, do: nil
       def enter_message, do: nil
       def exit_message,  do: nil
+      def abilities,     do: []
 
       def stats do
         %{"strength"  => 1,
@@ -329,7 +330,8 @@ defmodule Systems.Monster do
                       stats:         0,
                       skills:        0,
                       attacks:       1,
-                      limbs:         0]
+                      limbs:         0,
+                      abilities:     0]
     end
   end
 
