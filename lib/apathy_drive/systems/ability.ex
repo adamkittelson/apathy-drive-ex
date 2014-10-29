@@ -351,6 +351,7 @@ defmodule Systems.Ability do
         |> apply_property(:parryable, caster)
         |> apply_property(:magic_damage, caster)
         |> apply_property(:attack_damage, caster)
+        |> apply_property(:melee_damage, caster)
         |> apply_property(:magic_healing, caster)
         |> apply_property(:cooldown, caster)
         |> apply_property(:name, caster)
@@ -421,6 +422,9 @@ defmodule Systems.Ability do
       def attack_damage(entity \\ nil)
       def attack_damage(entity), do: nil
 
+      def melee_damage(entity \\ nil)
+      def melee_damage(entity), do: nil
+
       def damage(entity \\ nil)
       def damage(entity), do: nil
 
@@ -469,6 +473,37 @@ defmodule Systems.Ability do
       def apply_property(properties, :attack_damage, caster) do
         value = apply(__MODULE__, :attack_damage, []) || apply(__MODULE__, :attack_damage, [caster])
         if value do
+          low..high = Systems.Damage.base_attack_damage(caster)
+
+          damage = value
+            |> Map.keys
+            |> Enum.reduce(%{}, fn(damage_type, damage) ->
+                 Map.put(damage, damage_type, (trunc(low * value[damage_type]))..(trunc(high * value[damage_type])))
+               end)
+
+          append_property(properties, :damage, damage)
+        else
+          properties
+        end
+      end
+      def apply_property(properties, :melee_damage, caster) do
+        value = apply(__MODULE__, :melee_damage, []) || apply(__MODULE__, :melee_damage, [caster])
+
+        if value do
+          damage_increases = caster
+                             |> Components.Effects.value
+                             |> Map.values
+                             |> Components.Attacks.damage_increases
+
+          value = damage_increases
+                  |> Enum.reduce(value, fn(damage_increase, attack) ->
+                       damage_increase
+                       |> Map.keys
+                       |> Enum.reduce(value, fn(table, value) ->
+                            update_in(value, [table], &((&1 || 0) + damage_increase[table]))
+                          end)
+                     end)
+
           low..high = Systems.Damage.base_attack_damage(caster)
 
           damage = value
@@ -542,6 +577,8 @@ defmodule Systems.Ability do
                       magic_damage: 1,
                       attack_damage: 0,
                       attack_damage: 1,
+                      melee_damage: 0,
+                      melee_damage: 1,
                       magic_healing: 0,
                       magic_healing: 1,
                       cooldown: 0,
