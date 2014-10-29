@@ -111,19 +111,23 @@ defmodule Systems.Room do
   end
 
   def move(spirit, monster, current_room, room_exit) do
-    destination = Rooms.find_by_id(room_exit["destination"])
-    Components.Monsters.remove_monster(current_room, monster)
-    Components.Monsters.add_monster(destination, monster)
-    Components.Characters.remove_character(current_room, spirit)
-    Components.Characters.add_character(destination, spirit)
-    Entities.save!(destination)
-    Entities.save!(current_room)
-    Entities.save!(spirit)
-    Entities.save!(monster)
-    notify_monster_left(monster, current_room, destination)
-    notify_monster_entered(monster, current_room, destination)
-    Components.Hints.deactivate(spirit, "movement")
-    display_room_in_scroll(monster, destination)
+    if Systems.Combat.stunned?(monster) do
+      send_message(monster, "scroll", "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
+    else
+      destination = Rooms.find_by_id(room_exit["destination"])
+      Components.Monsters.remove_monster(current_room, monster)
+      Components.Monsters.add_monster(destination, monster)
+      Components.Characters.remove_character(current_room, spirit)
+      Components.Characters.add_character(destination, spirit)
+      Entities.save!(destination)
+      Entities.save!(current_room)
+      Entities.save!(spirit)
+      Entities.save!(monster)
+      notify_monster_left(monster, current_room, destination)
+      notify_monster_entered(monster, current_room, destination)
+      Components.Hints.deactivate(spirit, "movement")
+      display_room_in_scroll(monster, destination)
+    end
   end
 
   def notify_monster_entered(monster, entered_from, room) do

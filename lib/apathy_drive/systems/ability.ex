@@ -19,11 +19,12 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :verify_target) do
     room = Parent.of(entity)
-    target_entity = find_target(ability, room, entity, target)
-    if target_entity do
-      execute(ability, entity, target_entity, :mana)
-    else
-      send_message(entity, "scroll", "<p><span class='cyan'>Can't find #{target} here!  Your spell fails.</span></p>")
+
+    case find_target(ability, room, entity, target) do
+      target_entity ->
+        execute(ability, entity, target_entity, :mana)
+      _ ->
+        send_message(entity, "scroll", "<p><span class='cyan'>Can't find #{target} here!  Your spell fails.</span></p>")
     end
   end
 
@@ -34,12 +35,12 @@ defmodule Systems.Ability do
         entity
         |> Possession.possessor
         |> Systems.Prompt.update(entity)
-        execute(ability, entity, target, :dodge)
+        execute(ability, entity, target, :cooldown)
       else
         send_message(entity, "scroll", "<p><span class='dark-cyan'>You don't have enough mana.</span></p>")
       end
     else
-      execute(ability, entity, target, :dodge)
+      execute(ability, entity, target, :cooldown)
     end
   end
 
@@ -111,7 +112,6 @@ defmodule Systems.Ability do
         send_message(target, "scroll", "<p><span class='blue'>#{ability[:effects][:effect_message]}</span></p>")
       end
     end
-    execute(ability, entity, target, :cooldown)
   end
 
   def execute(ability, entity, target, :cooldown) do
@@ -136,6 +136,17 @@ defmodule Systems.Ability do
                  :cooldown_remaining => ability[:cooldown],
                  :wear_message => "You may now use #{ability[:name]} again."}
       Effect.add(entity, effect, ability[:cooldown])
+    end
+
+    if is_list(target) do
+      display_area_cast_message(ability, entity)
+
+      target
+      |> Enum.each fn(target) ->
+        execute(ability, entity, target, :dodge)
+      end
+    else
+      execute(ability, entity, target, :dodge)
     end
   end
 
@@ -180,11 +191,26 @@ defmodule Systems.Ability do
 
       cond do
         observer == entity ->
-          send_message(character, "scroll", interpolate(ability[:user_message], opts))
+          send_message(character, "scroll", interpolate(ability[:user_message] || "", opts))
         observer == target ->
           send_message(character, "scroll", interpolate(ability[:target_message], opts))
         true ->
           send_message(character, "scroll", interpolate(ability[:spectator_message], opts))
+      end
+    end)
+  end
+
+  def display_area_cast_message(ability, entity, opts \\ %{}) do
+    opts = Map.merge(opts, %{"user" => entity})
+    Parent.of(entity)
+    |> Systems.Room.living_in_room
+    |> Enum.each(fn(monster) ->
+
+      cond do
+        monster == entity ->
+          send_message(monster, "scroll", interpolate(ability[:area_user_message] || "", opts))
+        true ->
+          send_message(monster, "scroll", interpolate(ability[:area_spectator_message], opts))
       end
     end)
   end
@@ -296,18 +322,20 @@ defmodule Systems.Ability do
        end)
   end
 
-  def find_target(ability, room, entity, nil),  do: entity
-  def find_target(ability, room, entity, ""),   do: entity
   def find_target(ability, room, entity, target) do
     case ability[:target] do
-      "character" ->
-        room
-        |> Systems.Room.characters_in_room
-        |> Systems.Match.one(:name_contains, target)
       "living" ->
+        if to_string(target) == "" do
+          entity
+        else
+          room
+          |> Systems.Room.living_in_room
+          |> Systems.Match.one(:name_contains, target)
+        end
+      "room" ->
         room
         |> Systems.Room.living_in_room
-        |> Systems.Match.one(:name_contains, target)
+        |> Enum.reject(&(&1 == entity))
       _ ->
         nil
     end
@@ -345,6 +373,8 @@ defmodule Systems.Ability do
         |> apply_property(:user_message, caster)
         |> apply_property(:target_message, caster)
         |> apply_property(:spectator_message, caster)
+        |> apply_property(:area_user_message, caster)
+        |> apply_property(:area_spectator_message, caster)
         |> apply_property(:command, caster)
         |> apply_property(:effects, caster)
         |> apply_property(:dodgeable, caster)
@@ -367,6 +397,7 @@ defmodule Systems.Ability do
         |> apply_property(:stack_count, caster)
         |> apply_property(:dodge, caster)
         |> apply_property(:effect_message, caster)
+        |> apply_property(:stun, caster)
         |> finalize_effects
       end
 
@@ -387,6 +418,9 @@ defmodule Systems.Ability do
 
       def dodge(entity \\ nil)
       def dodge(entity), do: nil
+
+      def stun(entity \\ nil)
+      def stun(entity), do: nil
 
       def stack_key(entity \\ nil)
       def stack_key(entity), do: name
@@ -439,6 +473,12 @@ defmodule Systems.Ability do
 
       def spectator_message(entity \\ nil)
       def spectator_message(entity), do: nil
+
+      def area_user_message(entity \\ nil)
+      def area_user_message(entity), do: nil
+
+      def area_spectator_message(entity \\ nil)
+      def area_spectator_message(entity), do: nil
 
       def required_skills(entity \\ nil)
       def required_skills(entity), do: nil
@@ -527,6 +567,10 @@ defmodule Systems.Ability do
           properties
         end
       end
+      def apply_property(properties, :stun, caster) do
+        value = apply(__MODULE__, :stun, []) || apply(__MODULE__, :stun, [caster])
+        append_property properties, :stunned, value
+      end
       def apply_property(properties, property, caster) do
         value = apply(__MODULE__, property, []) || apply(__MODULE__, property, [caster])
         append_property properties, property, value
@@ -551,6 +595,10 @@ defmodule Systems.Ability do
                       target_message: 1,
                       spectator_message: 0,
                       spectator_message: 1,
+                      area_user_message: 0,
+                      area_user_message: 1,
+                      area_spectator_message: 0,
+                      area_spectator_message: 1,
                       command: 0,
                       command: 1,
                       duration: 0,
@@ -582,7 +630,9 @@ defmodule Systems.Ability do
                       magic_healing: 0,
                       magic_healing: 1,
                       cooldown: 0,
-                      cooldown: 1]
+                      cooldown: 1,
+                      stun: 0,
+                      stun: 1]
     end
   end
 
