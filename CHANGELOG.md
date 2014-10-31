@@ -28,3 +28,6 @@ CHANGELOG
 
 ---- 0.0.9 / 2014-10-12 / level-up ---------------------------------------------
 * level up spirits and monsters when they get enough exp
+
+---- 0.0.10 / 2014-10-30 / ability-update --------------------------------------
+* ability updates
