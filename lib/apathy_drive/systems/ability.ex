@@ -398,6 +398,7 @@ defmodule Systems.Ability do
         |> apply_property(:dodge, caster)
         |> apply_property(:effect_message, caster)
         |> apply_property(:stun, caster)
+        |> apply_property(:increase_skills, caster)
         |> finalize_effects
       end
 
@@ -489,6 +490,9 @@ defmodule Systems.Ability do
       def duration(entity \\ nil)
       def duration(entity), do: nil
 
+      def increase_skills(entity \\ nil)
+      def increase_skills(entity), do: nil
+
       def execute(entity, target) do
         Systems.Ability.execute(properties(entity), entity, target)
       end
@@ -571,6 +575,20 @@ defmodule Systems.Ability do
         value = apply(__MODULE__, :stun, []) || apply(__MODULE__, :stun, [caster])
         append_property properties, :stunned, value
       end
+      def apply_property(properties, :increase_skills, caster) do
+        value = apply(__MODULE__, :increase_skills, []) || apply(__MODULE__, :increase_skills, [caster])
+
+        if value do
+          value
+          |> Map.keys
+          |> Enum.reduce(properties, fn(skill_name, properties) ->
+               append_property properties, skill_name, value[skill_name]
+             end)
+        else
+          properties
+        end
+
+      end
       def apply_property(properties, property, caster) do
         value = apply(__MODULE__, property, []) || apply(__MODULE__, property, [caster])
         append_property properties, property, value
@@ -632,7 +650,9 @@ defmodule Systems.Ability do
                       cooldown: 0,
                       cooldown: 1,
                       stun: 0,
-                      stun: 1]
+                      stun: 1,
+                      increase_skills: 0,
+                      increase_skills: 1]
     end
   end
 
