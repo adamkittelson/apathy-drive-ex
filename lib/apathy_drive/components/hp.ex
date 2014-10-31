@@ -12,11 +12,11 @@ defmodule Components.HP do
   end
 
   def add(entity, amount) do
-    GenEvent.notify(entity, {:add_hp, amount, Systems.HP.max(entity)})
+    GenEvent.notify(entity, {:add_hp, trunc(amount), Systems.HP.max(entity)})
   end
 
   def subtract(entity, amount) do
-    GenEvent.call(entity, Components.HP, {:subtract, amount})
+    GenEvent.call(entity, Components.HP, {:subtract, trunc(amount)})
   end
 
   def serialize(entity) do
@@ -29,7 +29,7 @@ defmodule Components.HP do
   end
 
   def handle_call({:subtract, amount}, value) do
-    if value >= amount do
+    if value > amount do
       new_value = value - amount
       {:ok, true, new_value}
     else

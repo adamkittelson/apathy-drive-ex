@@ -8,21 +8,20 @@ defmodule Components.Attacks do
   end
 
   def reset_attacks(entity) do
-    attacks = item_attacks(entity) ++ monster_attacks(entity)
+    attacks = case item_attacks(entity) do
+                [] ->
+                  monster_attacks(entity)
+                item_attacks ->
+                  item_attacks
+              end
+
+    attacks = attacks
               |> List.flatten
               |> Enum.reduce(%{}, fn(attack, map) ->
                     put_in(map[(highest_key(map) || 0) + attack["weight"]], attack)
                  end)
 
     GenEvent.notify(entity, {:set_attacks, attacks})
-  end
-
-  def add_attack(entity, attack) do
-    GenEvent.notify(entity, {:add_attack, attack})
-  end
-
-  def remove_attack(entity, attack) do
-    GenEvent.notify(entity, {:remove_attack, attack})
   end
 
   def random(entity) do
@@ -70,7 +69,11 @@ defmodule Components.Attacks do
     |> Enum.map(fn(attack) ->
          damage_increases
          |> Enum.reduce(attack, fn(damage_increase, attack) ->
-              update_in(attack, ["damage", damage_increase[:table]], &((&1 || 0) + damage_increase[:amount]))
+              damage_increase
+              |> Map.keys
+              |> Enum.reduce(attack, fn(table, attack) ->
+                   update_in(attack, ["damage", table], &((&1 || 0) + damage_increase[table]))
+                 end)
             end)
        end)
   end
@@ -109,14 +112,6 @@ defmodule Components.Attacks do
 
   def handle_event({:set_attacks, new_value}, _value) do
     {:ok, new_value }
-  end
-
-  def handle_event({:add_attack, attack}, value) do
-    {:ok, put_in(value[highest_key(value) + attack["weight"]], attack)}
-  end
-
-  def handle_event({:remove_character, character}, value) do
-    {:ok, List.delete(value, character) }
   end
 
   def handle_event(_, current_value) do

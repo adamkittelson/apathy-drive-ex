@@ -4,46 +4,40 @@ defmodule Commands.Abilities do
   def keywords, do: ["abilities", "spells"]
 
   def execute(spirit, nil, _arguments) do
-    send_message(spirit, "scroll", "<p><span class='white'>Your abilities are:</span></p>")
-    send_message(spirit, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
-    ability_names = abilities(spirit) |> Enum.map &(Components.Name.value(&1))
-    chunks = get_chunks(ability_names)
-    Enum.each chunks, &display_abilities(spirit, &1)
+    send_message(spirit, "scroll", "<p><span class='white'>You have the following abilities:</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-magenta'>Power  Command  Ability Name</span></p>")
+
+    display_abilities(spirit)
   end
 
   def execute(spirit, monster, _arguments) do
-    send_message(spirit, "scroll", "<p><span class='white'>Your abilities are:</span></p>")
-    send_message(spirit, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
-    ability_names = (abilities(spirit) ++ abilities(monster)) |> Enum.map &(Components.Name.value(&1))
-    chunks = get_chunks(ability_names)
-    Enum.each chunks, &display_abilities(spirit, &1)
+    send_message(spirit, "scroll", "<p><span class='white'>You have the following abilities:</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-magenta'>Mana   Command  Ability Name</span></p>")
+    display_abilities(monster)
   end
 
-  defp display_abilities(entity, [ability1, ability2]) do
-    send_message(entity, "scroll", "<p>#{abilitytext(ability1)} #{abilitytext(ability2)}</p>")
-  end
+  def display_abilities(entity) do
+    entity
+    |> Components.Abilities.value
+    |> Enum.map(fn(ability) ->
+         Components.Module.value(ability)
+       end)
+    |> Enum.filter(fn(module) ->
+         module.properties(entity)
+         |> Map.has_key?(:command)
+       end)
+    |> Enum.each(fn(module) ->
+         properties = module.properties(entity)
+         mana_cost = properties[:mana_cost]
+                     |> to_string
+                     |> String.ljust(6)
 
-  defp display_abilities(entity, [ability]) do
-    send_message(entity, "scroll", "<p>#{abilitytext(ability)}</p>")
-  end
+         command = properties[:command]
+                   |> to_string
+                   |> String.ljust(8)
 
-  defp abilitytext(ability) do
-    String.ljust("#{ability}", 36)
-  end
-
-  defp get_chunks([]), do: []
-  defp get_chunks(abilities) do
-    chunks = Enum.chunk(abilities, 2)
-    last_ability = abilities |> List.last
-    if List.flatten(chunks) |> Enum.member?(last_ability) do
-      chunks
-    else
-      [[last_ability] | chunks |> Enum.reverse] |> Enum.reverse
-    end
-  end
-
-  defp abilities(entity) do
-    Systems.Ability.abilities(entity)
+         send_message(entity, "scroll", "<p><span class='dark-cyan'>#{mana_cost} #{command} #{module.name}</span></p>")
+       end)
   end
 
 end

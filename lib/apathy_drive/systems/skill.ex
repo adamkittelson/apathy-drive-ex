@@ -57,7 +57,7 @@ defmodule Systems.Skill do
 
           average = total / (Map.values(modifiers) |> Enum.sum)
 
-          round(base * (1 + (average - 40) * 0.02))
+          round(base * (1 + average * 0.02))
         else
           0
         end
@@ -70,7 +70,7 @@ defmodule Systems.Skill do
         |> Map.values
         |> Enum.map(fn
              (%{} = effect) ->
-               effect[__MODULE__.name] || 0
+               effect[__MODULE__.name] || effect[__MODULE__.name |> String.to_atom] || 0
              (_) ->
                0
            end)

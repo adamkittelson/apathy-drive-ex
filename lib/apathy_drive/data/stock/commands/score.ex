@@ -5,34 +5,22 @@ defmodule Commands.Score do
 
   def execute(spirit, nil, _arguments) do
     if Entity.has_component?(spirit, Components.Name) do
-      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>None</span></p>")
+      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit) |> String.ljust(12)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>None</span></p>")
     end
 
-    exp = Components.Experience.value(spirit)
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{exp}</span></p>")
-
-    level = Components.Level.value(spirit)
-            |> Integer.to_string
-            |> String.ljust(11)
-
-    power  = Systems.Trainer.power(spirit)
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
+    power  = Systems.Trainer.spirit_power(spirit)
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
   end
 
   def execute(spirit, monster, _arguments) do
     if Entity.has_component?(spirit, Components.Name) do
-      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>#{Components.Name.value(monster)}</span></p>")
+      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit) |> String.ljust(12)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>#{Components.Name.value(monster)}</span></p>")
     end
 
-    exp = Components.Experience.value(monster)
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{exp}</span></p>")
+    spirit_power  = Systems.Trainer.spirit_power(spirit) |> to_string |> String.ljust(12)
+    monster_power = Systems.Trainer.monster_power(monster)
 
-    level = Components.Level.value(monster)
-            |> Integer.to_string
-            |> String.ljust(11)
-
-    power  = Systems.Trainer.power(monster)
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Power:</span> <span class='dark-cyan'>#{spirit_power}</span><span class='dark-green'>Power:</span> <span class='dark-cyan'>#{monster_power}</span></p>")
 
     hp = String.ljust("#{Components.HP.value(monster)}/#{Systems.HP.max(monster)}", 15)
     mana = "#{Components.Mana.value(monster)}/#{Systems.Mana.max(monster)}"
@@ -43,6 +31,18 @@ defmodule Commands.Score do
     stat_names = Components.Stats.value(monster) |> Map.keys
     chunks = get_chunks(stat_names)
     Enum.each chunks, &display_stats(monster, &1)
+    display_effects(monster)
+  end
+
+  def display_effects(monster) do
+    monster
+    |> Components.Effects.value
+    |> Map.values
+    |> Enum.filter(&(Map.has_key?(&1, :effect_message)))
+    |> Enum.map(&(&1[:effect_message]))
+    |> Enum.each(fn(message) ->
+         send_message(monster, "scroll", "<p>#{message}</p>")
+       end)
   end
 
   defp display_stats(entity, [stat1, stat2]) do

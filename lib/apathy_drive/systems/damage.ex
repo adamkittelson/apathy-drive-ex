@@ -12,9 +12,9 @@ defmodule Systems.Damage do
         if crit && crit[:damage] do
           damage = damage + (damage * crit[:damage])
         end
-        {limb, damage, crit}
+        {limb, max(damage, 1), crit}
       damage when is_number damage ->
-        {limb, damage, nil}
+        {limb, max(damage, 1), nil}
       _ ->
         {nil, 0, nil}
     end
@@ -23,7 +23,9 @@ defmodule Systems.Damage do
   def get_crit(damage_types, damage, target) do
     :random.seed(:os.timestamp)
     damage_type = damage_types |> Enum.shuffle |> List.first
-    chance = trunc((damage / Systems.HP.max(target)) * 100)
+    #chance = trunc((damage / Systems.HP.max(target)) * 100)
+    chance = trunc((damage / Components.HP.value(target)) * 100)
+    
     CritTables.find(damage_type).random(chance)
   end
 
@@ -103,14 +105,14 @@ defmodule Systems.Damage do
     strength = Systems.Stat.modified(entity, "strength")
     agility  = Systems.Stat.modified(entity, "agility")
 
-    resistance(abs((((strength * 3) + agility) / 4) - 40))
+    resistance(abs((((strength * 3) + agility) / 4)))
   end
 
   def magical_resistance(entity) do
     willpower = Systems.Stat.modified(entity, "willpower")
     intellect = Systems.Stat.modified(entity, "intellect")
 
-    resistance(abs((((willpower * 3) + intellect) / 4) - 40))
+    resistance(abs((((willpower * 3) + intellect) / 4)))
   end
 
   def resistance(stat) do
@@ -127,11 +129,18 @@ defmodule Systems.Damage do
     Range.new(trunc(base * 0.8), trunc(base * 1.2))
   end
 
-  def base_damage(entity) do
+  def base_attack_damage(entity) do
     agility   = Systems.Stat.modified(entity, "agility")
     strength = Systems.Stat.modified(entity, "strength")
 
     base_damage(trunc((strength * 2 + agility) / 3))
+  end
+
+  def base_magic_damage(entity) do
+    willpower = Systems.Stat.modified(entity, "willpower")
+    intellect = Systems.Stat.modified(entity, "intellect")
+
+    base_damage(trunc((intellect * 2 + willpower) / 3))
   end
 
 end

@@ -7,25 +7,27 @@ defmodule Systems.Monster do
   def spawn_monster(monster) do
     {:ok, entity} = Entity.init
     Entity.add_component(entity, Components.Name,        Components.Name.get_name(monster))
-    Entity.add_component(entity, Components.Description, Components.Module.value(monster).properties[:description])
+    Entity.add_component(entity, Components.Description, Components.Module.value(monster).description)
     Entity.add_component(entity, Components.Types, ["monster"])
-    Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).properties[:limbs])
+    Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).limbs)
     Entity.add_component(entity, Components.Skills, %{})
     Entity.add_component(entity, Components.Effects, %{})
-    Components.Skills.set_base_skills(entity, Components.Module.value(monster).properties[:skills])
-    Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).properties[:stats])
+    Components.Skills.set_base_skills(entity, Components.Module.value(monster).skills)
+    Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).stats)
     Entity.add_component(entity, Components.HP, Systems.HP.max(entity))
     Entity.add_component(entity, Components.Mana, Systems.Mana.max(entity))
     Entity.add_component(entity, Components.Hunting, [])
     Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
     Entity.add_component(entity, Components.Module, Components.Module.value(monster))
     Entity.add_component(entity, Components.Attacks, %{})
+    Entity.add_component(entity, Components.Abilities, [])
     Entity.add_component(entity, Components.Experience, 0)
+    Entity.add_component(entity, Components.Investments, %{})
     Entity.add_component(entity, Components.Level, 1)
     Entity.add_component(entity, Components.Items, [])
     Components.Attacks.reset_attacks(entity)
+    Components.Abilities.reset_abilities(entity)
     Entity.add_to_type_collection(entity)
-    Entities.save!(entity)
     entity
   end
 
@@ -39,7 +41,7 @@ defmodule Systems.Monster do
   def enter_message(entity) do
     default = "{{name}} enters from {{direction}}."
     if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).properties[:enter_message] || default
+      Components.Module.value(entity).enter_message || default
     else
       default
     end
@@ -108,7 +110,7 @@ defmodule Systems.Monster do
   def exit_message(entity) do
     default = "{{name}} exits {{direction}}."
     message = if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).properties[:exit_message] || default
+      Components.Module.value(entity).exit_message || default
     else
       default
     end
@@ -156,6 +158,180 @@ defmodule Systems.Monster do
                     |> List.first
 
         enter_direction(direction)
+    end
+  end
+
+  defmacro __using__(_opts) do
+    quote do
+      use Systems.Reload
+      import Systems.Text
+      import Utility
+      import BlockTimer
+
+      def name do
+        __MODULE__
+        |> Atom.to_string
+        |> String.split(".")
+        |> List.last
+        |> Inflex.underscore
+        |> String.replace("_", " ")
+      end
+
+      def keywords do
+        String.split(name)
+      end
+
+      def description,   do: nil
+      def death_message, do: nil
+      def enter_message, do: nil
+      def exit_message,  do: nil
+      def abilities,     do: []
+
+      def stats do
+        %{"strength"  => 1,
+          "agility"   => 1,
+          "intellect" => 1,
+          "willpower" => 1,
+          "health"    => 1,
+          "charm"     => 1}
+      end
+
+      def skills do
+        %{
+          "melee" => 1,
+          "dodge" => 1
+         }
+      end
+
+      def attacks(entity) do
+        [
+          %{
+            "weight"=>1,
+            "message"=>%{
+              "attacker"=>"You punch {{target}} for {{damage}} damage!",
+              "target"=>"The {{user}} punches you for {{damage}} damage!",
+              "spectator"=>"The {{user}} punches {{target}} for {{damage}} damage!"
+            },
+            "speed" => 3.0,
+            "damage" => %{
+              "impact" => 1.0,
+            }
+          }
+        ]
+      end
+
+      def limbs, do: humanoid
+
+      def humanoid do
+        %{
+          "head" => %{
+            "type" => "head",
+            "fatal" => true,
+            "items" => []
+          },
+          "torso" => %{
+            "type" => "torso",
+            "fatal" => true,
+            "items" => []
+          },
+          "right arm" => %{
+            "type" => "arm",
+            "attached" => "right hand",
+            "items"    => []
+          },
+          "right hand" => %{
+            "type" => "hand",
+            "items"    => []
+          },
+          "left arm" => %{
+            "type" => "arm",
+            "attached" => "left hand",
+            "items"    => []
+          },
+          "left hand" => %{
+            "type" => "hand",
+            "items"    => []
+          },
+          "right leg" => %{
+            "type" => "leg",
+            "attached" => "right foot",
+            "items"    => []
+          },
+          "right foot" => %{
+            "type" => "foot",
+            "items"    => []
+          },
+          "left leg" => %{
+            "type" => "leg",
+            "attached" => "left foot",
+            "items"    => []
+          },
+          "left foot" => %{
+            "type" => "foot",
+            "items"    => []
+          }
+        }
+      end
+
+      def beast do
+        %{
+          "head" => %{
+            "type" => "head",
+            "fatal" => true,
+            "items" => []
+          },
+          "torso" => %{
+            "type" => "torso",
+            "fatal" => true,
+            "items" => []
+          },
+          "right foreleg" => %{
+            "type" => "arm",
+            "attached" => "right forepaw",
+            "items"    => []
+          },
+          "right forepaw" => %{
+            "type" => "hand",
+            "items"    => []
+          },
+          "left foreleg" => %{
+            "type" => "arm",
+            "attached" => "left forepaw",
+            "items"    => []
+          },
+          "left forepaw" => %{
+            "type" => "hand",
+            "items"    => []
+          },
+          "right rear leg" => %{
+            "type" => "leg",
+            "attached" => "right rear paw",
+            "items"    => []
+          },
+          "right rear paw" => %{
+            "type" => "foot",
+            "items"    => []
+          },
+          "left rear leg" => %{
+            "type" => "leg",
+            "attached" => "left rear paw",
+            "items"    => []
+          },
+          "left rear paw" => %{
+            "type" => "foot",
+            "items"    => []
+          }
+        }
+      end
+
+      defoverridable [description:   0,
+                      death_message: 0,
+                      enter_message: 0,
+                      stats:         0,
+                      skills:        0,
+                      attacks:       1,
+                      limbs:         0,
+                      abilities:     0]
     end
   end
 

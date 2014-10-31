@@ -32,6 +32,23 @@ defmodule Abilities do
     end)
   end
 
+  def from_skills(entity) do
+    all
+    |> Enum.filter(fn(ability) ->
+         Components.Module.value(ability).required_skills
+         |> meets_skill_requirements?(entity)
+       end)
+  end
+
+  def meets_skill_requirements?(nil, entity), do: false
+  def meets_skill_requirements?(skills, entity) do
+    skills
+    |> Map.keys
+    |> Enum.all?(fn(skill_name) ->
+         Systems.Skill.base(entity, skill_name) >= skills[skill_name]
+       end)
+  end
+
   # GenServer API
   def start_link do
     GenServer.start_link(Abilities, %{}, name: :abilities)

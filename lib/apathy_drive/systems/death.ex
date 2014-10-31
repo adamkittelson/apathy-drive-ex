@@ -26,11 +26,17 @@ defmodule Systems.Death do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Components.Effects.remove(entity)
+
+    Components.Investments.list(entity)
+    |> Enum.map(&(&1 |> String.to_integer |> Characters.find_by_id))
+    |> Enum.each(&(Components.Investments.uninvest(&1, Components.ID.value(entity))))
+
     possessor = Possession.possessor(entity)
     if possessor do
       Possession.unpossess(possessor)
       Systems.Prompt.update(entity, nil)
       send_message(possessor, "scroll", "<p>Your are a spirit once more.</p>")
+      Systems.Prompt.update(possessor, nil)
     end
 
     Systems.Limbs.equipped_items(entity)
@@ -49,8 +55,7 @@ defmodule Systems.Death do
 
     Components.Monsters.remove_monster(room, entity)
     Components.Combat.stop_timer(entity)
-    Entity.list_components(entity) |> Enum.each(&(Entity.remove_component(entity, &1)))
-    GenEvent.stop(entity)
+    Entities.delete!(entity)
   end
 
   def create_corpse(entity, room) do
@@ -74,7 +79,7 @@ defmodule Systems.Death do
   def death_message(entity) do
     default = "#{capitalize_first(Components.Name.value(entity))} drops <span class='dark-red'>dead</span> before you."
     if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).properties[:death_message] || default
+      Components.Module.value(entity).death_message || default
     else
       default
     end
@@ -93,13 +98,24 @@ defmodule Systems.Death do
 
   def reward_monster(monster, victim) do
     exp = experience_to_grant(victim)
-    send_message(monster, "scroll", "<p>You gain #{exp} experience.</p>")
+    old_power = Systems.Trainer.total_power(monster)
     Components.Experience.add(monster, exp)
+    new_power = Systems.Trainer.total_power(monster)
+    power_gain = new_power - old_power
+    if power_gain > 0 do
+      send_message(monster, "scroll", "<p>Your #{Components.Name.value(monster)} gains #{power_gain} power.</p>")
+    end
   end
 
   def reward_spirit(nil, victim), do: nil
   def reward_spirit(spirit, victim) do
     exp = experience_to_grant(victim)
+    old_power = Systems.Trainer.total_power(spirit)
     Components.Experience.add(spirit, exp)
+    new_power = Systems.Trainer.total_power(spirit)
+    power_gain = new_power - old_power
+    if power_gain > 0 do
+      send_message(spirit, "scroll", "<p>You gain #{power_gain} power.</p>")
+    end
   end
 end
