@@ -12,17 +12,15 @@ defmodule Systems.Item do
 
     template = Components.Module.value(item)
 
-    if template.properties[:worn_on] do
-      Entity.add_component(entity, Components.WornOn, template.properties[:worn_on])
+    if template.worn_on do
+      Entity.add_component(entity, Components.WornOn, template.worn_on)
     end
 
-    if template.properties[:slot] do
-      Entity.add_component(entity, Components.Slot, template.properties[:slot])
+    if template.slot do
+      Entity.add_component(entity, Components.Slot, template.slot)
     end
 
-    if template.properties[:ac] do
-      Entity.add_component(entity, Components.AC, template.properties[:ac] || 0)
-    end
+    Entity.add_component(entity, Components.AC, template.ac)
 
     Entity.add_component(entity, Components.Module, template)
 
@@ -98,4 +96,49 @@ defmodule Systems.Item do
         Entities.save!(character)
     end
   end
+
+  defmacro __using__(_opts) do
+    quote do
+      use Systems.Reload
+      import Systems.Text
+      import Utility
+      import BlockTimer
+
+      def name do
+        __MODULE__
+        |> Atom.to_string
+        |> String.split(".")
+        |> List.last
+        |> Inflex.underscore
+        |> String.replace("_", " ")
+      end
+
+      def keywords do
+        (name |> String.split)
+      end
+
+      def description,     do: nil
+      def slot,            do: nil
+      def worn_on,         do: nil
+      def hit_verbs,       do: nil
+      def damage,          do: nil
+      def required_skills, do: nil
+      def speed,           do: nil
+      def ac,              do: 0
+
+
+      defoverridable [name: 0,
+                      keywords: 0,
+                      description: 0,
+                      slot: 0,
+                      worn_on: 0,
+                      hit_verbs: 0,
+                      damage: 0,
+                      required_skills: 0,
+                      speed: 0,
+                      ac: 0]
+    end
+  end
+
+
 end
