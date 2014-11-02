@@ -45,7 +45,6 @@ defmodule ApathyDrive do
     set_parents
 
     Task.async fn ->
-      Monsters.all |> Enum.each(&Components.Attacks.reset_attacks/1)
       Monsters.all |> Enum.each(&Components.Abilities.reset_abilities/1)
     end
 

@@ -71,14 +71,12 @@ defmodule Systems.Item do
             end)
             Components.Items.remove_item(character, match)
             send_message(character, "scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>")
-            Components.Attacks.reset_attacks(character)
             Entities.save!(character)
           %{"error" => message} ->
             send_message(character, "scroll", "<p>#{message}</p>")
           _ ->
             Components.Items.remove_item(character, match)
             send_message(character, "scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>")
-            Components.Attacks.reset_attacks(character)
             Entities.save!(character)
         end
     end
@@ -92,7 +90,6 @@ defmodule Systems.Item do
         Components.Limbs.unequip(character, match)
         Components.Items.add_item(character, match)
         send_message(character, "scroll", "<p>You remove #{Components.Name.value(match)}.</p>")
-        Components.Attacks.reset_attacks(character)
         Entities.save!(character)
     end
   end
@@ -125,6 +122,8 @@ defmodule Systems.Item do
       def required_skills, do: nil
       def speed,           do: nil
       def ac,              do: 0
+
+      def weapon?, do: slot == "weapon" and !!hit_verbs
 
 
       defoverridable [name: 0,

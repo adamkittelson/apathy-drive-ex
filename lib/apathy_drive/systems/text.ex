@@ -8,33 +8,57 @@ defmodule Systems.Text do
       if Entity.has_component?(user, Components.Gender) do
         string = case Components.Gender.value(user) do
                    "male"   ->
-                     String.replace(string, ~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/, "\\1")
+                     string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                            string, fn(_, m, _, _) -> m end)
+                     string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                            string, fn(_, m, _, _) -> capitalize_first(m) end)
                    "female" ->
-                     String.replace(string, ~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/, "\\2")
+                     string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                             string, fn(_, _, f, _) -> f end)
+                     string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                             string, fn(_, _, f, _) -> capitalize_first(f) end)
                    _other ->
-                     String.replace(string, ~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/, "\\3")
+                     string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                             string, fn(_, _, _, o) -> o end)
+                     string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                             string, fn(_, _, _, o) -> capitalize_first(o) end)
                  end
       else
-        string = String.replace(string, ~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/, "\\3")
+        string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                string, fn(_, _, _, o) -> o end)
+        string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                string, fn(_, _, _, o) -> capitalize_first(o) end)
       end
     end
 
 
     if opts["target"] do
       target = opts["target"]
-      string = String.replace(string, ~r/\{\{target\}\}/, Components.Name.value(target))
-      if Entity.has_component?(target, Components.Gender) do
-        string = case Components.Gender.value(target) do
+      if Entity.has_component?(user, Components.Gender) do
+        string = case Components.Gender.value(user) do
                    "male"   ->
-                     String.replace(string, ~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/, "\\1")
+                     string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                            string, fn(_, m, _, _) -> m end)
+                     string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                            string, fn(_, m, _, _) -> capitalize_first(m) end)
                    "female" ->
-                     String.replace(string, ~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/, "\\2")
+                     string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                             string, fn(_, _, f, _) -> f end)
+                     string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                             string, fn(_, _, f, _) -> capitalize_first(f) end)
                    _other ->
-                     String.replace(string, ~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/, "\\3")
+                     string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                             string, fn(_, _, _, o) -> o end)
+                     string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                             string, fn(_, _, _, o) -> capitalize_first(o) end)
                  end
       else
-        string = String.replace(string, ~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/, "\\3")
+        string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                string, fn(_, _, _, o) -> o end)
+        string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                string, fn(_, _, _, o) -> capitalize_first(o) end)
       end
+      
     end
 
     opts
@@ -45,7 +69,9 @@ defmodule Systems.Text do
          else
            opts[interpolation]
          end
-         String.replace(updated_string, ~r/\{\{#{interpolation}\}\}/, "#{value}")
+         updated_string
+         |> String.replace(~r/\{\{#{capitalize_first(interpolation)}\}\}/, "#{capitalize_first(to_string(value))}")
+         |> String.replace(~r/\{\{#{interpolation}\}\}/, "#{value}")
        end)
   end
 

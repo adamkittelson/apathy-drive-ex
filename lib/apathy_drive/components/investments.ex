@@ -26,9 +26,28 @@ defmodule Components.Investments do
 
   def power_invested(spirit) do
     spirit
+    |> cleanup
     |> list
     |> Enum.map(&power_invested(spirit, &1))
     |> Enum.sum
+  end
+
+  def cleanup(entity) do
+    entity
+    |> list
+    |> Enum.reject(fn(id) ->
+         id
+         |> String.to_integer
+         |> exists?
+       end)
+    |> Enum.each(fn(id) ->
+         uninvest(entity, id)
+       end)
+    entity
+  end
+
+  def exists?(id) do
+    !!(Characters.find_by_id(id) || Monsters.find_by_id(id))
   end
 
   def serialize(entity) do
