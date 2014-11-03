@@ -2,7 +2,7 @@ defmodule Systems.Shop do
   use Systems.Reload
   import Utility
 
-  def list(spirit, monster, room) do
+  def list(spirit, nil, room) do
     send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span></p>")
     send_message(spirit, "scroll", "<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>")
     Enum.each(Components.Shop.value(room), fn(item_hash) ->
@@ -15,7 +15,32 @@ defmodule Systems.Shop do
         amount ->
           "#{amount} #{item_hash["denomination"]}s"
       end
-      send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
+      send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{String.ljust(cost, 30)}</span></p>")
+    end)
+  end
+
+  def list(spirit, monster, room) do
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span>                    <span class='dark-cyan'>Skill too low</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-cyan'>───────────────────────────────────────────────────────────────────────────</span></p>")
+    Enum.each(Components.Shop.value(room), fn(item_hash) ->
+      it = ItemTemplates.find_by_id(item_hash["item"])
+      item_name = it |> Components.Name.value
+      cost = case item_hash["cost"] do
+        nil ->
+          "Free"
+        amount when amount == 1 ->
+          "#{amount} #{item_hash["denomination"]}"
+        amount ->
+          "#{amount} #{item_hash["denomination"]}s"
+      end
+
+      skill_too_low = Systems.Item.skill_too_low(monster, it)
+
+      if skill_too_low do
+        send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{String.ljust(cost, 25)}</span><span class='dark-cyan'>#{skill_too_low}</span></p>")
+      else
+        send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
+      end
     end)
   end
 

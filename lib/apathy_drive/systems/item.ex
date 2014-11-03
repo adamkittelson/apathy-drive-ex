@@ -24,6 +24,8 @@ defmodule Systems.Item do
 
     Entity.add_component(entity, Components.Module, template)
 
+    Entity.add_component(entity, Components.Effects, %{})
+
     Entity.add_component(entity, Components.Types, ["item"])
     Entities.save!(entity)
     entity
@@ -33,6 +35,16 @@ defmodule Systems.Item do
     item = spawn_item(item)
     Components.Items.add_item(entity, item)
     Entities.save!(entity)
+  end
+
+  def skill_too_low(monster, item) do
+    skills = Components.Module.value(item).required_skills
+
+    skills
+    |> Map.keys
+    |> Enum.find(fn(skill) ->
+         Systems.Skill.base(monster, skill) < skills[skill]
+       end)
   end
 
   def display_inventory(character) do
@@ -63,23 +75,31 @@ defmodule Systems.Item do
       nil ->
         send_message(character, "scroll", "<p>You don't have \"#{item}\" left unequipped.</p>")
       match ->
-        case Components.Limbs.equip(character, match) do
-          %{"removed" => items_removed} ->
-            Enum.each(items_removed, fn(item_removed) ->
-              Components.Items.add_item(character, item_removed)
-              send_message(character, "scroll", "<p>You remove #{Components.Name.value(item_removed)}.</p>")
-            end)
-            Components.Items.remove_item(character, match)
-            send_message(character, "scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>")
-            Entities.save!(character)
-          %{"error" => message} ->
-            send_message(character, "scroll", "<p>#{message}</p>")
-          _ ->
-            Components.Items.remove_item(character, match)
-            send_message(character, "scroll", "<p>You are now wearing #{Components.Name.value(match)}.</p>")
-            Entities.save!(character)
-        end
+        equip(character, match, skill_too_low(character, match))
     end
+  end
+
+  def equip(monster, item, nil) do
+    case Components.Limbs.equip(monster, item) do
+      %{"removed" => items_removed} ->
+        Enum.each(items_removed, fn(item_removed) ->
+          Components.Items.add_item(monster, item_removed)
+          send_message(monster, "scroll", "<p>You remove #{Components.Name.value(item_removed)}.</p>")
+        end)
+        Components.Items.remove_item(monster, item)
+        send_message(monster, "scroll", "<p>You are now wearing #{Components.Name.value(item)}.</p>")
+        Entities.save!(monster)
+      %{"error" => message} ->
+        send_message(monster, "scroll", "<p>#{message}</p>")
+      _ ->
+        Components.Items.remove_item(monster, item)
+        send_message(monster, "scroll", "<p>You are now wearing #{Components.Name.value(item)}.</p>")
+        Entities.save!(monster)
+    end
+  end
+
+  def equip(monster, item, skill) do
+    send_message(monster, "scroll", "<p>You don't have enough #{skill} skill to equip that.</p>")
   end
 
   def unequip(character, item) do
