@@ -19,13 +19,11 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Hunting, [])
     Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
     Entity.add_component(entity, Components.Module, Components.Module.value(monster))
-    Entity.add_component(entity, Components.Attacks, %{})
     Entity.add_component(entity, Components.Abilities, [])
     Entity.add_component(entity, Components.Experience, 0)
     Entity.add_component(entity, Components.Investments, %{})
     Entity.add_component(entity, Components.Level, 1)
     Entity.add_component(entity, Components.Items, [])
-    Components.Attacks.reset_attacks(entity)
     Components.Abilities.reset_abilities(entity)
     Entity.add_to_type_collection(entity)
     entity
@@ -203,22 +201,7 @@ defmodule Systems.Monster do
          }
       end
 
-      def attacks(entity) do
-        [
-          %{
-            "weight"=>1,
-            "message"=>%{
-              "attacker"=>"You punch {{target}} for {{damage}} damage!",
-              "target"=>"The {{user}} punches you for {{damage}} damage!",
-              "spectator"=>"The {{user}} punches {{target}} for {{damage}} damage!"
-            },
-            "speed" => 3.0,
-            "damage" => %{
-              "impact" => 1.0,
-            }
-          }
-        ]
-      end
+      def hit_verbs, do: ["attack", "assault", "strike"]
 
       def limbs, do: humanoid
 
@@ -327,11 +310,12 @@ defmodule Systems.Monster do
       defoverridable [description:   0,
                       death_message: 0,
                       enter_message: 0,
+                      exit_message:  0,
                       stats:         0,
                       skills:        0,
-                      attacks:       1,
                       limbs:         0,
-                      abilities:     0]
+                      abilities:     0,
+                      hit_verbs:     0]
     end
   end
 

@@ -11,11 +11,18 @@ defmodule Systems.Limbs do
     Map.values(limbs) |> Enum.map(&(&1["items"])) |> List.flatten |> Enum.uniq |> Enum.map(&Items.find_by_id(&1))
   end
 
-  def wielding_weapon?(entity) do
-    equipped_items(entity)
-    |> Enum.any?(fn(item) ->
-         !(Components.Attacks.extract_attacks(item, entity) == [])
+  def equipped_weapons(monster) do
+    monster
+    |> equipped_items
+    |> Enum.filter(fn(item) ->
+         Components.Module.value(item).weapon?
        end)
+  end
+
+  def wielding_weapon?(entity) do
+    entity
+    |> equipped_weapons
+    |> Enum.any?
   end
 
   def get_limb_names(limbs, item) do

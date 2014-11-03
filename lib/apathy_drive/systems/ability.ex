@@ -534,10 +534,7 @@ defmodule Systems.Ability do
         value = apply(__MODULE__, :melee_damage, []) || apply(__MODULE__, :melee_damage, [caster])
 
         if value do
-          damage_increases = caster
-                             |> Components.Effects.value
-                             |> Map.values
-                             |> Components.Attacks.damage_increases
+          damage_increases = Components.Effects.damage_increases(caster)
 
           value = damage_increases
                   |> Enum.reduce(value, fn(damage_increase, attack) ->

@@ -10,8 +10,7 @@ defmodule Components.Effects do
 
   def add(entity, key, effect) do
     case GenEvent.call(entity, __MODULE__, {:add_effect, key, effect}) do
-      :ok ->
-        Components.Attacks.reset_attacks(entity)
+      :ok -> :ok
       :max_stacks ->
         remove_oldest_stack(entity, effect[:stack_key])
         add(entity, key, effect)
@@ -25,7 +24,18 @@ defmodule Components.Effects do
       message ->
         send_message(entity, "scroll", "<p><span class='dark-cyan'>#{message}</span></p>")
     end
-    Components.Attacks.reset_attacks(entity)
+  end
+
+  def damage_increases(entity) do
+    entity
+    |> value
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :damage_increase)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :damage_increase)
+       end)
   end
 
   def update(entity, fun) do

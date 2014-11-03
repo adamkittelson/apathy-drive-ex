@@ -31,3 +31,6 @@ CHANGELOG
 
 ---- 0.0.10 / 2014-10-30 / ability-update --------------------------------------
 * ability updates
+
+---- 0.0.11 / 2014-11-02 / item-re-export --------------------------------------
+* skill requirements for armour/weapons,  power requirements for monster possession

@@ -29,7 +29,7 @@ defmodule ApathyDrive.Mixfile do
       {:postgrex,    "~> 0.6.0"},
       {:timex,       "~> 0.12.7"},
       {:inflex,      "~> 0.2.8"},
-      {:block_timer, github: "adamkittelson/block_timer", ref: "f57fae9ea39fc43366e51063c840d409746ed67d"}
+      {:block_timer, "~> 0.0.1"}
     ]
   end
 end
