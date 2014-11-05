@@ -34,8 +34,8 @@ defmodule Systems.Text do
 
     if opts["target"] do
       target = opts["target"]
-      if Entity.has_component?(user, Components.Gender) do
-        string = case Components.Gender.value(user) do
+      if Entity.has_component?(target, Components.Gender) do
+        string = case Components.Gender.value(target) do
                    "male"   ->
                      string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
                                             string, fn(_, m, _, _) -> m end)

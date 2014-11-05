@@ -27,7 +27,6 @@ defmodule Systems.Item do
     Entity.add_component(entity, Components.Effects, %{})
 
     Entity.add_component(entity, Components.Types, ["item"])
-    Entities.save!(entity)
     entity
   end
 
@@ -71,6 +70,7 @@ defmodule Systems.Item do
   end
 
   def equip(character, item) do
+    IO.puts "equipping #{Components.Name.value(character)} with #{item}"
     case Systems.Match.one(Components.Items.get_items(character), :name_contains, item) do
       nil ->
         send_message(character, "scroll", "<p>You don't have \"#{item}\" left unequipped.</p>")

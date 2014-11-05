@@ -114,8 +114,25 @@ defmodule Components.Limbs do
     |> Enum.filter(&(!crippled?(entity, &1)))
   end
 
+  def limbs_with_item_ids(entity) do
+    limbs = value(entity)
+
+    limbs
+    |> Map.keys
+    |> Enum.reduce(limbs, fn(limb_name, limbs) ->
+         update_in(limbs, [limb_name, "items"], &item_ids/1)
+       end)
+  end
+
+  def item_ids(items) do
+    items
+    |> Enum.filter(&is_pid/1)
+    |> Enum.filter(&(Entity.has_component?(&1, Components.ID)))
+    |> Enum.map(&(Components.ID.value(&1)))
+  end
+
   def serialize(entity) do
-    %{"Limbs" => value(entity)}
+    %{"Limbs" => limbs_with_item_ids(entity)}
   end
 
   defp valid_limbs(worn_on, limbs) do
@@ -216,7 +233,8 @@ defmodule Components.Limbs do
     Enum.reduce(limbs_to_use, limbs, fn(limb_name, limbs) ->
       limb = limbs[limb_name]
       items = limb["items"]
-      items = [Components.ID.value(item) | items] |> Enum.uniq
+
+      items = [item | items] |> Enum.uniq
       limb = Map.put(limb, "items", items)
       Map.put(limbs, limb_name, limb)
     end)
