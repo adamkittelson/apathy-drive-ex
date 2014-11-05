@@ -29,7 +29,6 @@ defmodule ApathyDrive do
     index_monsters,
     index_abilities,
     index_commands,
-    index_races,
     index_skills,
     index_help,
     index_crit_tables]
@@ -113,7 +112,7 @@ defmodule ApathyDrive do
         Entity.add_component(it, Components.Name, module.name)
         Entity.add_component(it, Components.Module, module)
 
-        ItemTemplates.add(file, it)
+        ItemTemplates.add(module.name, it)
       end)
     end
   end
@@ -133,7 +132,7 @@ defmodule ApathyDrive do
           Entity.add_component(mt, Components.Name, module.name)
           Entity.add_component(mt, Components.Module, module)
 
-          MonsterTemplates.add(file, mt)
+          MonsterTemplates.add(module.name, mt)
         end)
     end
   end
@@ -173,28 +172,6 @@ defmodule ApathyDrive do
         Entity.add_component(command, Components.Keywords, module.keywords)
         Entity.add_component(command, Components.Name, module.name)
         Commands.add(command)
-      end)
-    end
-  end
-
-  defp index_races do
-    Task.async fn ->
-    get_file_list(["lib/apathy_drive/data/**/races/**/*.ex"])
-    |> Enum.each(fn(file) ->
-         module_name = Path.basename(file)
-                       |> String.replace(".ex", "")
-                       |> Inflex.camelize
-        module = :"Elixir.Races.#{module_name}"
-
-        {:ok, race} = Entity.init
-        Entity.add_component(race, Components.Keywords, module.keywords)
-        Entity.add_component(race, Components.Name, module.name)
-        Entity.add_component(race, Components.Help, module.help)
-        Entity.add_component(race, Components.Limbs, module.limbs)
-        Entity.add_component(race, Components.Stats, module.stats)
-        Entity.add_component(race, Components.Module, module)
-        Races.add(race)
-        Help.add(race)
       end)
     end
   end

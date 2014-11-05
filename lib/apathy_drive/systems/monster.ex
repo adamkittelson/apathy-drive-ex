@@ -315,7 +315,8 @@ defmodule Systems.Monster do
                       skills:        0,
                       limbs:         0,
                       abilities:     0,
-                      hit_verbs:     0]
+                      hit_verbs:     0,
+                      name:          0]
     end
   end
 
