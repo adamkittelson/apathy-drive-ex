@@ -8,9 +8,22 @@ defmodule Components.Items do
   end
 
   def get_items(entity) do
-    value(entity)
-    |> Enum.map(&Items.find_by_id(&1))
+    entity
+    |> value
+    |> Enum.map(&get_item/1)
     |> Enum.filter(&(&1 != nil))
+  end
+
+  def get_item(item) when is_pid(item), do: item
+  def get_item(item) when is_number(item) do
+    Items.find_by_id(item)
+  end
+
+  def item_ids(entity) do
+    value(entity)
+    |> Enum.filter(&is_pid/1)
+    |> Enum.filter(&(Entity.has_component?(&1, Components.ID)))
+    |> Enum.map(&(Components.ID.value(&1)))
   end
 
   def value(entity, new_value) do
@@ -19,16 +32,16 @@ defmodule Components.Items do
 
   def add_item(entity, item) do
     Parent.set(item, entity)
-    GenEvent.notify(entity, {:add_item, Components.ID.value(item)})
+    GenEvent.notify(entity, {:add_item, item})
   end
 
   def remove_item(entity, item) do
     Parent.set(item, nil)
-    GenEvent.notify(entity, {:remove_item, Components.ID.value(item)})
+    GenEvent.notify(entity, {:remove_item, item})
   end
 
   def serialize(entity) do
-    %{"Items" => value(entity)}
+    %{"Items" => item_ids(entity)}
   end
 
   ### GenEvent API
