@@ -7,7 +7,7 @@ defmodule Commands.Inventory do
     send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
   end
 
-  def execute(spirit, monster, _arguments) do
+  def execute(_spirit, monster, _arguments) do
     Systems.Item.display_inventory(monster)
   end
 end

@@ -20,7 +20,7 @@ defmodule Components.Monsters do
   def get_monster(monster) do
     mt = MonsterTemplates.find_by_id(monster)
     if mt do
-      new_monster = Systems.Monster.spawn_monster(mt)
+      Systems.Monster.spawn_monster(mt)
     end
   end
 

@@ -3,7 +3,7 @@ defmodule Commands.Buy do
 
   def keywords, do: ["buy"]
 
-  def execute(spirit, nil, arguments) do
+  def execute(spirit, nil, _arguments) do
     send_message(spirit, "scroll", "<p>You need a body to purchase things from a shop.</p>")
   end
 

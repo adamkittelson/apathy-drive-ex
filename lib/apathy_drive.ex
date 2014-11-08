@@ -24,18 +24,19 @@ defmodule ApathyDrive do
     CritTables.start_link
     Possession.start_link
 
-    IO.puts "Indexing..."
-    [index_items,
-    index_monsters,
-    index_abilities,
-    index_commands,
-    index_skills,
-    index_help,
-    index_crit_tables]
-    |> Enum.each(&(Task.await(&1, 30000)))
-    IO.puts "Done!"
 
     if Mix.env != :test do
+      IO.puts "Indexing..."
+      [index_items,
+      index_monsters,
+      index_abilities,
+      index_commands,
+      index_skills,
+      index_help,
+      index_crit_tables]
+      |> Enum.each(&(Task.await(&1, 30000)))
+      IO.puts "Done!"
+
       IO.puts "Loading Entities..."
       Entities.load!
       IO.puts "Done!"

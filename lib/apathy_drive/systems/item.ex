@@ -70,7 +70,6 @@ defmodule Systems.Item do
   end
 
   def equip(character, item) do
-    IO.puts "equipping #{Components.Name.value(character)} with #{item}"
     case Systems.Match.one(Components.Items.get_items(character), :name_contains, item) do
       nil ->
         send_message(character, "scroll", "<p>You don't have \"#{item}\" left unequipped.</p>")
@@ -139,7 +138,7 @@ defmodule Systems.Item do
       def worn_on,         do: nil
       def hit_verbs,       do: nil
       def damage,          do: nil
-      def required_skills, do: nil
+      def required_skills, do: %{}
       def speed,           do: nil
       def ac,              do: 0
 

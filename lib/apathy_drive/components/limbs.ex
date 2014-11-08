@@ -4,6 +4,7 @@ defmodule Components.Limbs do
 
   ### Public API
   def value(entity) do
+    get_items(entity)
     GenEvent.call(entity, Components.Limbs, :value)
   end
 
@@ -173,7 +174,7 @@ defmodule Components.Limbs do
   defp open_limbs(worn_on, limbs, slot) do
     valid_limbs(worn_on, limbs) |> Enum.reject(fn(limb_name) ->
       limbs[limb_name]["items"] |> Enum.any?(fn(item) ->
-        (Items.find_by_id(item) |> Components.Slot.value) == slot
+        (get_item(item) |> Components.Slot.value) == slot
       end)
     end)
   end
@@ -267,7 +268,7 @@ defmodule Components.Limbs do
     Enum.reduce(Map.keys(limbs), limbs, fn(limb_name, limbs) ->
       limb = limbs[limb_name]
       items = Enum.reduce(items_to_remove, limb["items"], fn(item_to_remove, items) ->
-        List.delete(items, Components.ID.value(item_to_remove))
+        List.delete(items, get_item(item_to_remove))
       end)
       limb = Map.put(limb, "items", items)
       Map.put(limbs, limb_name, limb)
