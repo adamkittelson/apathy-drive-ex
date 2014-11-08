@@ -196,6 +196,7 @@ defmodule Systems.Monster do
       def enter_message, do: nil
       def exit_message,  do: nil
       def abilities,     do: []
+      def greeting,      do: "The #{name} completely ignores you."
 
       def stats do
         %{"strength"  => 1,
@@ -331,7 +332,8 @@ defmodule Systems.Monster do
                       abilities:     0,
                       hit_verbs:     0,
                       name:          0,
-                      items:         0]
+                      items:         0,
+                      greeting:      0]
     end
   end
 

@@ -64,6 +64,7 @@ defmodule Systems.Command do
       use Systems.Reload
       import Utility
       import BlockTimer
+      import Systems.Text
 
       def name do
         __MODULE__
