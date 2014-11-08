@@ -487,9 +487,6 @@ defmodule Systems.Ability do
       def command(entity \\ nil)
       def command(entity), do: nil
 
-      def duration(entity \\ nil)
-      def duration(entity), do: nil
-
       def increase_skills(entity \\ nil)
       def increase_skills(entity), do: nil
 

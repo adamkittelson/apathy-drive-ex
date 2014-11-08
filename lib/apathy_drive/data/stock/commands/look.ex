@@ -17,7 +17,7 @@ defmodule Commands.Look do
     end
   end
 
-  def execute(spirit, monster, arguments) do
+  def execute(_spirit, monster, arguments) do
     current_room = Parent.of(monster)
 
     if Enum.any? arguments do

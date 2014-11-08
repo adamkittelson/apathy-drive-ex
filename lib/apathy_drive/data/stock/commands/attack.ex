@@ -3,11 +3,11 @@ defmodule Commands.Attack do
 
   def keywords, do: ["attack", "a", "kill", "k"]
 
-  def execute(spirit, nil, arguments) do
+  def execute(spirit, nil, _arguments) do
     send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
+  def execute(_spirit, monster, arguments) do
     current_room = Parent.of(monster)
 
     target = current_room |> find_entity_in_room(Enum.join(arguments, " "))

@@ -7,7 +7,7 @@ defmodule Commands.Possess do
     send_message(spirit, "scroll", "<p>Possess what?.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
+  def execute(spirit, _monster, arguments) do
     current_room = Parent.of(spirit)
 
     if target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) do

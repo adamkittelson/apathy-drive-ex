@@ -29,6 +29,17 @@ defmodule Entities do
     end
   end
 
+  def save(entity_pid) do
+    if Mix.env != :test do
+      if Enum.member?(Entity.list_components(entity_pid), Components.ID) do
+        id = Components.ID.value(entity_pid)
+        entity = Repo.get(Entities, id)
+        entity = %{ entity | components: Entity.serialize_components(entity_pid)}
+        Repo.update(entity)
+      end
+    end
+  end
+
   def save!(entity_pid) do
     if Mix.env != :test do
       if Enum.member?(Entity.list_components(entity_pid), Components.ID) do

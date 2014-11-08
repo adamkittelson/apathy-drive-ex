@@ -73,7 +73,7 @@ defmodule Systems.Shop do
         case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
           [match] ->
             Components.Items.remove_item(character, match)
-            Entities.save!(character)
+            Entities.save(character)
             send_message(character, "scroll", "<p>You just sold #{Components.Name.value(match)} for nothing.</p>")
             Entities.delete!(match)
           [] ->

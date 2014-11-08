@@ -27,14 +27,13 @@ defmodule Systems.Item do
     Entity.add_component(entity, Components.Effects, %{})
 
     Entity.add_component(entity, Components.Types, ["item"])
-    Entities.save!(entity)
     entity
   end
 
   def spawn_item(item, entity) do
     item = spawn_item(item)
     Components.Items.add_item(entity, item)
-    Entities.save!(entity)
+    Entities.save(entity)
   end
 
   def skill_too_low(monster, item) do
@@ -50,7 +49,7 @@ defmodule Systems.Item do
   def display_inventory(character) do
     if Entity.has_component?(character, Components.Limbs) do
       limbs = Components.Limbs.value(character)
-      equipped_items = Systems.Limbs.equipped_items(limbs)
+      equipped_items = Systems.Limbs.equipped_items(character)
 
       if equipped_items |> Enum.count > 0 do
         send_message(character, "scroll", "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
@@ -88,13 +87,13 @@ defmodule Systems.Item do
         end)
         Components.Items.remove_item(monster, item)
         send_message(monster, "scroll", "<p>You are now wearing #{Components.Name.value(item)}.</p>")
-        Entities.save!(monster)
+        Entities.save(monster)
       %{"error" => message} ->
         send_message(monster, "scroll", "<p>#{message}</p>")
       _ ->
         Components.Items.remove_item(monster, item)
         send_message(monster, "scroll", "<p>You are now wearing #{Components.Name.value(item)}.</p>")
-        Entities.save!(monster)
+        Entities.save(monster)
     end
   end
 
@@ -110,7 +109,7 @@ defmodule Systems.Item do
         Components.Limbs.unequip(character, match)
         Components.Items.add_item(character, match)
         send_message(character, "scroll", "<p>You remove #{Components.Name.value(match)}.</p>")
-        Entities.save!(character)
+        Entities.save(character)
     end
   end
 
@@ -139,7 +138,7 @@ defmodule Systems.Item do
       def worn_on,         do: nil
       def hit_verbs,       do: nil
       def damage,          do: nil
-      def required_skills, do: nil
+      def required_skills, do: %{}
       def speed,           do: nil
       def ac,              do: 0
 

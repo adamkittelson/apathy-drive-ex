@@ -4,11 +4,21 @@ defmodule Components.Limbs do
 
   ### Public API
   def value(entity) do
+    get_items(entity)
     GenEvent.call(entity, Components.Limbs, :value)
   end
 
   def value(entity, new_value) do
     GenEvent.notify(entity, {:set_limbs, new_value})
+  end
+
+  def get_items(entity) do
+    GenEvent.call(entity, Components.Limbs, :get_items)
+  end
+
+  def get_item(item) when is_pid(item), do: item
+  def get_item(item) when is_number(item) do
+    Items.find_by_id(item)
   end
 
   def equip(entity, item) do
@@ -17,7 +27,7 @@ defmodule Components.Limbs do
 
   def items(entity, limb) do
     value(entity)[limb]["items"]
-    |> Enum.map(&Items.find_by_id(&1))
+    |> Enum.map(&get_item/1)
   end
 
   def unequip(entity, item) do
@@ -114,8 +124,39 @@ defmodule Components.Limbs do
     |> Enum.filter(&(!crippled?(entity, &1)))
   end
 
+  def limbs_with_item_ids(entity) do
+    limbs = value(entity)
+
+    limbs
+    |> Map.keys
+    |> Enum.reduce(limbs, fn(limb_name, limbs) ->
+         update_in(limbs, [limb_name, "items"], &item_ids/1)
+       end)
+  end
+
+  def item_ids(items) do
+    items
+    |> Enum.map(fn(item) ->
+         cond do
+           is_pid(item) ->
+             cond do
+               Entity.has_component?(item, Components.ID) ->
+                 Components.ID.value(item)
+               true ->
+                 Entities.save!(item)
+                 Components.ID.value(item)
+             end
+           is_integer(item) ->
+             if Items.find_by_id(item) do
+               item
+             end
+         end
+       end)
+    |> Enum.filter(&(&1 != nil))
+  end
+
   def serialize(entity) do
-    %{"Limbs" => value(entity)}
+    %{"Limbs" => limbs_with_item_ids(entity)}
   end
 
   defp valid_limbs(worn_on, limbs) do
@@ -133,7 +174,7 @@ defmodule Components.Limbs do
   defp open_limbs(worn_on, limbs, slot) do
     valid_limbs(worn_on, limbs) |> Enum.reject(fn(limb_name) ->
       limbs[limb_name]["items"] |> Enum.any?(fn(item) ->
-        (Items.find_by_id(item) |> Components.Slot.value) == slot
+        (get_item(item) |> Components.Slot.value) == slot
       end)
     end)
   end
@@ -216,7 +257,8 @@ defmodule Components.Limbs do
     Enum.reduce(limbs_to_use, limbs, fn(limb_name, limbs) ->
       limb = limbs[limb_name]
       items = limb["items"]
-      items = [Components.ID.value(item) | items] |> Enum.uniq
+
+      items = [item | items] |> Enum.uniq
       limb = Map.put(limb, "items", items)
       Map.put(limbs, limb_name, limb)
     end)
@@ -226,7 +268,7 @@ defmodule Components.Limbs do
     Enum.reduce(Map.keys(limbs), limbs, fn(limb_name, limbs) ->
       limb = limbs[limb_name]
       items = Enum.reduce(items_to_remove, limb["items"], fn(item_to_remove, items) ->
-        List.delete(items, Components.ID.value(item_to_remove))
+        List.delete(items, get_item(item_to_remove))
       end)
       limb = Map.put(limb, "items", items)
       Map.put(limbs, limb_name, limb)
@@ -241,6 +283,26 @@ defmodule Components.Limbs do
 
   def handle_call(:value, value) do
     {:ok, value, value}
+  end
+
+  def handle_call(:get_items, limbs) do
+    limbs = limbs
+            |> Map.keys
+            |> Enum.reduce(limbs, fn(limb_name, updated_limbs) ->
+                 update_in(updated_limbs, [limb_name, "items"], fn(items) ->
+                   items
+                   |> Enum.map(&get_item/1)
+                   |> Enum.filter(&(&1 != nil))
+                 end)
+               end)
+
+    items = limbs
+            |> Map.values
+            |> Enum.map(&(&1["items"]))
+            |> List.flatten
+            |> Enum.uniq
+
+    {:ok, items, limbs}
   end
 
   def handle_call({:equip, item}, value) do

@@ -165,7 +165,7 @@ defmodule Commands.Protection do
     Systems.Damage.damage_reduction(entity, limb, damage_type)
   end
 
-  defp protection_amount(entity, damage_type) do
+  def protection_amount(entity, damage_type) do
     total = entity
             |> Components.Limbs.unsevered_limbs
             |> Enum.map(&protection_amount(entity, &1, damage_type))

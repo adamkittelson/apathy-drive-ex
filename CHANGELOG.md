@@ -34,3 +34,6 @@ CHANGELOG
 
 ---- 0.0.11 / 2014-11-02 / item-re-export --------------------------------------
 * skill requirements for armour/weapons,  power requirements for monster possession
+
+---- 0.0.12 / 2014-11-08 / spawn-monsters-with-gear-equipped -------------------
+* specify equipment monsters should spawn with

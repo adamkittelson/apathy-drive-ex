@@ -24,6 +24,7 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Investments, %{})
     Entity.add_component(entity, Components.Level, 1)
     Entity.add_component(entity, Components.Items, [])
+    equip_monster(entity)
     Components.Abilities.reset_abilities(entity)
     Entity.add_to_type_collection(entity)
     entity
@@ -34,6 +35,17 @@ defmodule Systems.Monster do
     Components.Monsters.add_monster(room, monster)
 
     display_enter_message(room, monster)
+  end
+
+  def equip_monster(monster) do
+    Components.Module.value(monster).items
+    |> Enum.each(fn(item_name) ->
+         item_name
+         |> ItemTemplates.find_by_id
+         |> Systems.Item.spawn_item(monster)
+
+         Systems.Item.equip(monster, item_name)
+       end)
   end
 
   def enter_message(entity) do
@@ -307,6 +319,8 @@ defmodule Systems.Monster do
         }
       end
 
+      def items, do: []
+
       defoverridable [description:   0,
                       death_message: 0,
                       enter_message: 0,
@@ -315,7 +329,9 @@ defmodule Systems.Monster do
                       skills:        0,
                       limbs:         0,
                       abilities:     0,
-                      hit_verbs:     0]
+                      hit_verbs:     0,
+                      name:          0,
+                      items:         0]
     end
   end
 
