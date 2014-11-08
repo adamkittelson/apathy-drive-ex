@@ -8,22 +8,44 @@ defmodule Components.Monsters do
   end
 
   def get_monsters(entity) do
-    entity
-    |> value
-    |> Enum.map(&get_monster/1)
-    |> Enum.filter(&(&1 != nil))
+    monsters = GenEvent.call(entity, Components.Monsters, :get_monsters)
+    Enum.each(monsters, &Parent.set(&1, entity))
+    monsters
   end
 
   def get_monster(monster) when is_pid(monster), do: monster
   def get_monster(monster) when is_number(monster) do
     Monsters.find_by_id(monster)
   end
+  def get_monster(monster) do
+    mt = MonsterTemplates.find_by_id(monster)
+    if mt do
+      new_monster = Systems.Monster.spawn_monster(mt)
+    end
+  end
 
   def monster_ids(entity) do
     value(entity)
-    |> Enum.filter(&is_pid/1)
-    |> Enum.filter(&(Entity.has_component?(&1, Components.ID)))
-    |> Enum.map(&(Components.ID.value(&1)))
+    |> Enum.map(fn(monster) ->
+         cond do
+           is_pid(monster) ->
+             cond do
+               Entity.has_component?(monster, Components.ID) ->
+                 Components.ID.value(monster)
+               true ->
+                 Components.Name.value(monster)
+             end
+           is_integer(monster) ->
+             if Monsters.find_by_id(monster) do
+               monster
+             end
+           is_binary(monster) ->
+              if MonsterTemplates.find_by_id(monster) do
+                monster
+              end
+         end
+       end)
+    |> Enum.filter(&(&1 != nil))
   end
 
   def value(entity, new_value) do
@@ -50,6 +72,14 @@ defmodule Components.Monsters do
   end
 
   def handle_call(:value, monsters) do
+    {:ok, monsters, monsters}
+  end
+
+  def handle_call(:get_monsters, monsters) do
+    monsters = monsters
+               |> Enum.map(&get_monster/1)
+               |> Enum.filter(&(&1 != nil))
+
     {:ok, monsters, monsters}
   end
 

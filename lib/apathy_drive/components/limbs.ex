@@ -11,13 +11,22 @@ defmodule Components.Limbs do
     GenEvent.notify(entity, {:set_limbs, new_value})
   end
 
+  def get_items(entity) do
+    GenEvent.call(entity, Components.Limbs, :get_items)
+  end
+
+  def get_item(item) when is_pid(item), do: item
+  def get_item(item) when is_number(item) do
+    Items.find_by_id(item)
+  end
+
   def equip(entity, item) do
     GenEvent.call(entity, Components.Limbs, {:equip, item})
   end
 
   def items(entity, limb) do
     value(entity)[limb]["items"]
-    |> Enum.map(&Items.find_by_id(&1))
+    |> Enum.map(&get_item/1)
   end
 
   def unequip(entity, item) do
@@ -126,9 +135,23 @@ defmodule Components.Limbs do
 
   def item_ids(items) do
     items
-    |> Enum.filter(&is_pid/1)
-    |> Enum.filter(&(Entity.has_component?(&1, Components.ID)))
-    |> Enum.map(&(Components.ID.value(&1)))
+    |> Enum.map(fn(item) ->
+         cond do
+           is_pid(item) ->
+             cond do
+               Entity.has_component?(item, Components.ID) ->
+                 Components.ID.value(item)
+               true ->
+                 Entities.save!(item)
+                 Components.ID.value(item)
+             end
+           is_integer(item) ->
+             if Items.find_by_id(item) do
+               item
+             end
+         end
+       end)
+    |> Enum.filter(&(&1 != nil))
   end
 
   def serialize(entity) do
@@ -259,6 +282,26 @@ defmodule Components.Limbs do
 
   def handle_call(:value, value) do
     {:ok, value, value}
+  end
+
+  def handle_call(:get_items, limbs) do
+    limbs = limbs
+            |> Map.keys
+            |> Enum.reduce(limbs, fn(limb_name, updated_limbs) ->
+                 update_in(updated_limbs, [limb_name, "items"], fn(items) ->
+                   items
+                   |> Enum.map(&get_item/1)
+                   |> Enum.filter(&(&1 != nil))
+                 end)
+               end)
+
+    items = limbs
+            |> Map.values
+            |> Enum.map(&(&1["items"]))
+            |> List.flatten
+            |> Enum.uniq
+
+    {:ok, items, limbs}
   end
 
   def handle_call({:equip, item}, value) do

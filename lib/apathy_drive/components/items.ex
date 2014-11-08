@@ -8,22 +8,42 @@ defmodule Components.Items do
   end
 
   def get_items(entity) do
-    entity
-    |> value
-    |> Enum.map(&get_item/1)
-    |> Enum.filter(&(&1 != nil))
+    GenEvent.call(entity, Components.Items, :get_items)
   end
 
   def get_item(item) when is_pid(item), do: item
   def get_item(item) when is_number(item) do
     Items.find_by_id(item)
   end
+  def get_item(item) do
+    it = ItemTemplates.find_by_id(item)
+    if it do
+      Systems.Item.spawn_item(it)
+    end
+  end
 
   def item_ids(entity) do
     value(entity)
-    |> Enum.filter(&is_pid/1)
-    |> Enum.filter(&(Entity.has_component?(&1, Components.ID)))
-    |> Enum.map(&(Components.ID.value(&1)))
+    |> Enum.map(fn(item) ->
+         cond do
+           is_pid(item) ->
+             cond do
+               Entity.has_component?(item, Components.ID) ->
+                 Components.ID.value(item)
+               true ->
+                 Components.Name.value(item)
+             end
+           is_integer(item) ->
+             if Items.find_by_id(item) do
+               item
+             end
+           is_binary(item) ->
+              if ItemTemplates.find_by_id(item) do
+                item
+              end
+         end
+       end)
+    |> Enum.filter(&(&1 != nil))
   end
 
   def value(entity, new_value) do
@@ -50,6 +70,14 @@ defmodule Components.Items do
   end
 
   def handle_call(:value, items) do
+    {:ok, items, items}
+  end
+
+  def handle_call(:get_items, items) do
+    items = items
+            |> Enum.map(&get_item/1)
+            |> Enum.filter(&(&1 != nil))
+
     {:ok, items, items}
   end
 

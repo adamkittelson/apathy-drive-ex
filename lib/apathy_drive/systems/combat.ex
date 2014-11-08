@@ -66,7 +66,7 @@ defmodule Systems.Combat do
 
     present = entity
               |> Parent.of
-              |> Systems.Room.living_in_room
+              |> Systems.Room.monsters_in_room
               |> Enum.into(HashSet.new)
 
     HashSet.intersection(hunted, present)

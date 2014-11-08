@@ -62,8 +62,12 @@ defmodule Components.Skills do
 
     spirit = Possession.possessor(entity)
 
+    Entities.save!(spirit)
+    Entities.save!(entity)
     Components.Investments.invest(spirit, Components.ID.value(entity), spirit_spent)
     Components.Investments.invest(entity, Components.ID.value(spirit), spirit_spent)
+    Entities.save!(spirit)
+    Entities.save!(entity)
 
     new_spirit_power  = Systems.Trainer.spirit_power(spirit)
 

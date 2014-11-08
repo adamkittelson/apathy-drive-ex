@@ -4,7 +4,7 @@ defmodule Systems.Limbs do
   import Systems.Text
 
   def equipped_items(character) when is_pid(character) do
-    character |> Components.Limbs.value |> equipped_items
+    character |> Components.Limbs.get_items
   end
 
   def equipped_items(limbs) do
@@ -27,7 +27,9 @@ defmodule Systems.Limbs do
 
   def get_limb_names(limbs, item) do
     Map.keys(limbs) |> Enum.filter(fn(limb_name) ->
-      limbs[limb_name]["items"] |> Enum.member?(item)
+      items = limbs[limb_name]["items"]
+      "#{inspect items} - #{inspect item}"
+      items |> Enum.member?(item)
     end)
   end
 

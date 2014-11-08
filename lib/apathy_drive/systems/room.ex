@@ -122,7 +122,7 @@ defmodule Systems.Room do
       Entities.save!(destination)
       Entities.save!(current_room)
       Entities.save!(spirit)
-      Entities.save!(monster)
+      Entities.save(monster)
       notify_monster_left(monster, current_room, destination)
       notify_monster_entered(monster, current_room, destination)
       Components.Hints.deactivate(spirit, "movement")
