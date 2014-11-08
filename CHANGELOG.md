@@ -37,3 +37,6 @@ CHANGELOG
 
 ---- 0.0.12 / 2014-11-08 / spawn-monsters-with-gear-equipped -------------------
 * specify equipment monsters should spawn with
+
+---- 0.0.13 / 2014-11-08 / greetings -------------------------------------------
+* greet monsters for some flavor text
