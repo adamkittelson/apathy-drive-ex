@@ -19,6 +19,8 @@ defmodule Systems.Script do
 
   def execute_script([], _monster), do: true
 
+  def execute_script(instruction, monster), do: execute_instruction(instruction, monster, [])
+
   ########
 
   def execute_instruction(%{message: message}, monster, script) do
