@@ -40,3 +40,6 @@ CHANGELOG
 
 ---- 0.0.13 / 2014-11-08 / greetings -------------------------------------------
 * greet monsters for some flavor text
+
+---- 0.0.14 / 2014-11-09 / ask -------------------------------------------------
+* implement "ask" command / start on scripts
