@@ -21,7 +21,7 @@ defmodule Commands.Protection do
 
   def keywords, do: ["protection"]
 
-  def execute(spirit, nil, arguments) do
+  def execute(spirit, nil, _arguments) do
     send_message(spirit, "scroll", "<p>Spirits cannot be harmed.</p>")
   end
 

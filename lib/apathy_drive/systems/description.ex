@@ -17,7 +17,21 @@ defmodule Systems.Description do
       send_message character, "scroll", "<p><span class='cyan'>#{Components.Name.value(target)}</span></p>"
       send_message character, "scroll", "<p>#{Components.Description.value(target)}</p>"
       if Entity.has_component?(target, Components.HP) do
-        send_message character, "scroll", "<p>#{describe_hp(target) |> interpolate(%{"target" => target})}"
+        send_message character, "scroll", "<p>#{describe_hp(target) |> interpolate(%{"target" => target})}</p>"
+      end
+      if Entity.has_component?(target, Components.Limbs) do
+        limbs = Components.Limbs.value(target)
+        equipped_items = Systems.Limbs.equipped_items(target)
+
+        if equipped_items |> Enum.count > 0 do
+          msg = "<p>\n<span class='dark-yellow'>{{target:He/She/It}} is equipped with:</span></p>" |> interpolate(%{"target" => target})
+          send_message(character, "scroll", "#{msg}<br>")
+          equipped_items |> Enum.each fn(item) ->
+            item_name = Components.Name.value(item)
+            item_limbs = Systems.Limbs.get_limb_names(limbs, item)
+            send_message(character, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 20)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>")
+          end
+        end
       end
     else
       add_character_description_to_scroll(character, target)
@@ -73,7 +87,7 @@ defmodule Systems.Description do
       _ ->
         "very critically wounded"
     end
-    "{{target:He/She/It}} is #{description}."
+    "{{target:He/She/It}} appears to be #{description}."
   end
 
   def describe_stat(character, stat_name) do

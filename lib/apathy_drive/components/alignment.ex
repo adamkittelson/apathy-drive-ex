@@ -1,11 +1,21 @@
 defmodule Components.Alignment do
   use Systems.Reload
   use GenEvent
-  import Utility
 
   ### Public API
   def value(monster) do
     GenEvent.call(monster, Components.Alignment, :value)
+  end
+
+  def get_alignment(monster) do
+    cond do
+      good?(monster) ->
+        "good"
+      evil?(monster) ->
+        "evil"
+      neutral?(monster) ->
+        "neutral"
+    end
   end
 
   def good?(monster) do

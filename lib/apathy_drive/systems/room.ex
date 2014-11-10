@@ -149,6 +149,7 @@ defmodule Systems.Room do
     else
       Monster.display_enter_message(room, monster)
     end
+    Systems.Aggression.monster_entered(monster, room)
   end
 
   def notify_monster_left(monster, room, left_to) do
