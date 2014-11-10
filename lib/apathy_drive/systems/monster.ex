@@ -11,6 +11,7 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Types, ["monster"])
     Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).limbs)
     Entity.add_component(entity, Components.Skills, %{})
+    Entity.add_component(entity, Components.Flags, %{})
     Entity.add_component(entity, Components.Effects, %{})
     Components.Skills.set_base_skills(entity, Components.Module.value(monster).skills)
     Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).stats)
