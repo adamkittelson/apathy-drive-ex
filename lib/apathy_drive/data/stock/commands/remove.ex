@@ -3,11 +3,11 @@ defmodule Commands.Remove do
 
   def keywords, do: ["remove", "unequip", "unwield"]
 
-  def execute(spirit, nil, arguments) do
+  def execute(spirit, nil, _arguments) do
     send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
+  def execute(_spirit, monster, arguments) do
     Systems.Item.unequip(monster, Enum.join(arguments, " "))
   end
 end

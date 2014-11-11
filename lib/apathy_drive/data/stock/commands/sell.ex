@@ -3,7 +3,7 @@ defmodule Commands.Sell do
 
   def keywords, do: ["sell"]
 
-  def execute(spirit, nil, arguments) do
+  def execute(spirit, nil, _arguments) do
     send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
   end
 

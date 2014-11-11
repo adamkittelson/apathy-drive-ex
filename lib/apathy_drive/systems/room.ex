@@ -80,12 +80,24 @@ defmodule Systems.Room do
   end
 
   def entities_html(character, room) do
-    entities = entities(character, room) |> Enum.map(&(&1 |> Components.Name.get_name))
+    entities = entities(character, room)
     case Enum.count(entities) do
       0 ->
         ""
       _ ->
-        "<div class='entities'><span class='dark-magenta'>Also here:</span> <span class='magenta'>#{Enum.join(entities, ", ")}</span><span class='dark-magenta'>.</span></div>"
+        entities = entities
+                   |> Enum.map(fn(entity) ->
+                        cond do
+                          Components.Alignment.evil?(entity) ->
+                            "<span class='magenta'>#{Components.Name.value(entity)}</span>"
+                          Components.Alignment.good?(entity) ->
+                            "<span class='grey'>#{Components.Name.value(entity)}</span>"
+                          Components.Alignment.neutral?(entity) ->
+                            "<span class='dark-cyan'>#{Components.Name.value(entity)}</span>"
+                        end
+                      end)
+                   |> Enum.join("<span class='magenta'>, </span>")
+        "<div class='entities'><span class='dark-magenta'>Also here:</span> #{entities}<span class='dark-magenta'>.</span></div>"
     end
   end
 
@@ -137,6 +149,7 @@ defmodule Systems.Room do
     else
       Monster.display_enter_message(room, monster)
     end
+    Systems.Aggression.monster_entered(monster, room)
   end
 
   def notify_monster_left(monster, room, left_to) do

@@ -36,6 +36,12 @@ defmodule Systems.Item do
     Entities.save(entity)
   end
 
+  def has_item?(monster, item_name) do
+    Components.Items.get_items(monster)
+    |> Enum.map(&Components.Name.value/1)
+    |> Enum.member?(item_name)
+  end
+
   def skill_too_low(monster, item) do
     skills = Components.Module.value(item).required_skills
 
