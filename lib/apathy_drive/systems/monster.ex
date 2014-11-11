@@ -27,11 +27,11 @@ defmodule Systems.Monster do
     Entity.add_component(entity, Components.Items, [])
     case Components.Module.value(monster).alignment do
       "good" ->
-        Entity.add_component(entity, Components.Alignment, -75)
+        Entity.add_component(entity, Components.Alignment, -75.0)
       "neutral" ->
-        Entity.add_component(entity, Components.Alignment, 0)
+        Entity.add_component(entity, Components.Alignment, 0.0)
       "evil" ->
-        Entity.add_component(entity, Components.Alignment, 75)
+        Entity.add_component(entity, Components.Alignment, 75.0)
     end
     equip_monster(entity)
     Components.Abilities.reset_abilities(entity)

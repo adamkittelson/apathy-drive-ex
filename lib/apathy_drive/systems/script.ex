@@ -42,8 +42,28 @@ defmodule Systems.Script do
     execute_script(script, monster)
   end
 
+  def execute_instruction(%{flag_equals: %{flag: flag, value: value}}, monster, script) do
+    if Components.Flags.flag_equals?(monster, flag, value) do
+      execute_script(script, monster)
+    end
+  end
+
+  def execute_instruction(%{flag_at_least: %{flag: flag, value: value}}, monster, script) do
+    if Components.Flags.flag_at_least?(monster, flag, value) do
+      execute_script(script, monster)
+    end
+  end
+
   def execute_instruction(%{script_link: new_script}, monster, script) do
     execute_script([new_script | script], monster)
+  end
+
+  def execute_instruction(%{max_evil_points: %{failure_message: message, amount: amount}}, monster, script) do
+    if Components.Alignment.value(monster) <= amount do
+      execute_script(script, monster)
+    else
+      send_message(monster, "scroll", "<p><span class='dark-green'>#{message}</p>")
+    end
   end
 
   def execute_instruction(instruction, monster, _script) do

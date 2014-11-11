@@ -8,6 +8,14 @@ defmodule Components.Flags do
     GenEvent.call(monster, Components.Flags, :value)
   end
 
+  def flag_equals?(monster, flag, value) do
+    GenEvent.call(monster, Components.Flags, {:flag_equals?, flag, value})
+  end
+
+  def flag_at_least?(monster, flag, value) do
+    GenEvent.call(monster, Components.Flags, {:flag_at_least?, flag, value})
+  end
+
   def add_flag(monster, flag, amount_to_add) do
     GenEvent.notify(monster, {:add_flag, flag, amount_to_add})
   end
@@ -36,6 +44,14 @@ defmodule Components.Flags do
 
   def handle_call(:value, value) do
     {:ok, value, value}
+  end
+
+  def handle_call({:flag_equals?, flag, value}, flags) do
+    {:ok, flags[flag] == value, flags}
+  end
+
+  def handle_call({:flag_at_least?, flag, value}, flags) do
+    {:ok, flags[flag] >= value, flags}
   end
 
   def handle_event({:add_flag, flag, amount}, flags) do
