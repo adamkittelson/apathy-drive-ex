@@ -7,27 +7,32 @@ defmodule Components.Alignment do
     GenEvent.call(monster, Components.Alignment, :value)
   end
 
+  def alter_alignment(monster, "good") do
+    add_evil_points(monster, 2)
+  end
+
+  def alter_alignment(monster, "neutral") do
+    add_evil_points(monster, 1)
+  end
+
+  def alter_alignment(monster, "evil") do
+    add_evil_points(monster, -0.1)
+  end
+
   def get_alignment(monster) do
-    cond do
-      good?(monster) ->
-        "good"
-      evil?(monster) ->
-        "evil"
-      neutral?(monster) ->
-        "neutral"
-    end
+    GenEvent.call(monster, Components.Alignment, :get_alignment)
   end
 
   def good?(monster) do
-    value(monster) < -50
+    GenEvent.call(monster, Components.Alignment, :good?)
   end
 
   def evil?(monster) do
-    value(monster) > 50
+    GenEvent.call(monster, Components.Alignment, :evil?)
   end
 
   def neutral?(monster) do
-    !good?(monster) and !evil?(monster)
+    GenEvent.call(monster, Components.Alignment, :neutral?)
   end
 
   def add_evil_points(monster, amount_to_add) do
@@ -47,10 +52,36 @@ defmodule Components.Alignment do
     {:ok, value, value}
   end
 
+  def handle_call(:good?, value) do
+    {:ok, value < -50, value}
+  end
+
+  def handle_call(:neutral?, value) do
+    {:ok, value >= -50 and value <= 50, value}
+  end
+
+  def handle_call(:evil?, value) do
+    {:ok, value > 50, value}
+  end
+
+  def handle_call(:get_alignment, value) do
+    alignment = cond do
+      value < -50 ->
+        "good"
+      value > 50 ->
+        "evil"
+      value >= -50 and value <= 50 ->
+        "neutral"
+    end
+
+    {:ok, alignment, value}
+  end
+
   def handle_event({:add_evil_points, amount}, value) do
     value = (value + amount)
             |> min(300)
             |> max(-200)
+            |> Float.round(1)
 
     {:ok, value}
   end

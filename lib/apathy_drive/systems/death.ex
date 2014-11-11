@@ -105,6 +105,7 @@ defmodule Systems.Death do
     if power_gain > 0 do
       send_message(monster, "scroll", "<p>Your #{Components.Name.value(monster)} gains #{power_gain} power.</p>")
     end
+    Components.Alignment.alter_alignment(monster, Components.Alignment.get_alignment(victim))
   end
 
   def reward_spirit(nil, victim), do: nil
