@@ -28,7 +28,7 @@ defmodule Components.Monsters do
     value(entity)
     |> Enum.map(fn(monster) ->
          cond do
-           is_pid(monster) ->
+           is_pid(monster) and Process.alive?(monster) ->
              cond do
                Entity.has_component?(monster, Components.ID) ->
                  Components.ID.value(monster)

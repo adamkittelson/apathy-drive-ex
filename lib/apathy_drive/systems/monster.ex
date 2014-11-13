@@ -126,6 +126,19 @@ defmodule Systems.Monster do
     end)
   end
 
+  def pursue(room, monster, direction) do
+    :random.seed(:os.timestamp)
+    room
+    |> monsters_in_room(monster)
+    |> Enum.each fn(observer) ->
+         if !Possession.possessor(observer) and (Components.Hunting.value(observer) |> Enum.member?(monster)) do
+           if :random.uniform(100) < Components.Module.value(observer).chance_to_follow do
+             Systems.Room.move(nil, observer, room, Components.Exits.value(room)[direction])
+           end
+         end
+       end
+  end
+
   def exit_message(entity) do
     default = "{{name}} exits {{direction}}."
     message = if Entity.has_component?(entity, Components.Module) do
@@ -331,18 +344,26 @@ defmodule Systems.Monster do
 
       def items, do: []
 
-      defoverridable [description:   0,
-                      death_message: 0,
-                      enter_message: 0,
-                      exit_message:  0,
-                      stats:         0,
-                      skills:        0,
-                      limbs:         0,
-                      abilities:     0,
-                      hit_verbs:     0,
-                      name:          0,
-                      items:         0,
-                      greeting:      0]
+      def chance_to_follow, do: 0
+
+      def damage do
+        %{"impact"=>1.0}
+      end
+
+      defoverridable [description:      0,
+                      death_message:    0,
+                      enter_message:    0,
+                      exit_message:     0,
+                      stats:            0,
+                      skills:           0,
+                      limbs:            0,
+                      abilities:        0,
+                      hit_verbs:        0,
+                      name:             0,
+                      items:            0,
+                      greeting:         0,
+                      chance_to_follow: 0,
+                      damage:           0]
     end
   end
 

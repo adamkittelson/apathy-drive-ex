@@ -122,6 +122,22 @@ defmodule Systems.Room do
     display_room_in_scroll(spirit, destination)
   end
 
+  def move(nil, monster, current_room, room_exit) do
+    if Systems.Combat.stunned?(monster) do
+      send_message(monster, "scroll", "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
+    else
+      destination = Rooms.find_by_id(room_exit["destination"])
+      Components.Monsters.remove_monster(current_room, monster)
+      Components.Monsters.add_monster(destination, monster)
+      Entities.save!(destination)
+      Entities.save!(current_room)
+      Entities.save(monster)
+      notify_monster_left(monster, current_room, destination)
+      notify_monster_entered(monster, current_room, destination)
+      display_room_in_scroll(monster, destination)
+    end
+  end
+
   def move(spirit, monster, current_room, room_exit) do
     if Systems.Combat.stunned?(monster) do
       send_message(monster, "scroll", "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
@@ -156,6 +172,7 @@ defmodule Systems.Room do
     direction = get_direction_by_destination(room, left_to)
     if direction do
       Monster.display_exit_message(room, monster, direction)
+      Monster.pursue(room, monster, direction)
     else
       Monster.display_exit_message(room, monster)
     end
