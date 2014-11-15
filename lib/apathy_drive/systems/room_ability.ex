@@ -21,9 +21,9 @@ defmodule Systems.RoomAbility do
   def use_ability(monster, ability_name) do
     case Abilities.find(ability_name) do
       nil ->
-        send_message(monster, "scroll", "<p><span class='red'>Not Implmented: #{ability_name}</span></p>")
+        send_message(monster, "scroll", "<p><span class='red'>Not Implemented: #{ability_name}</span></p>")
       ability ->
-        ability.execute(monster)
+        ability.execute(monster, nil)
     end
   end
 end
