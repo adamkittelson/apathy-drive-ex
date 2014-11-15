@@ -112,6 +112,13 @@ defmodule Systems.Ability do
         send_message(target, "scroll", "<p><span class='blue'>#{ability[:effects][:effect_message]}</span></p>")
       end
     end
+    execute(ability, entity, target, :script)
+  end
+
+  def execute(ability, entity, target, :script) do
+    if ability[:script] do
+      Systems.Script.execute(ability[:script], entity)
+    end
   end
 
   def execute(ability, entity, target, :cooldown) do
@@ -385,6 +392,7 @@ defmodule Systems.Ability do
         |> apply_property(:magic_healing, caster)
         |> apply_property(:cooldown, caster)
         |> apply_property(:name, caster)
+        |> apply_property(:script, caster)
       end
 
       def effects,        do: nil
@@ -467,19 +475,19 @@ defmodule Systems.Ability do
       def damage_increase(entity), do: nil
 
       def user_message(entity \\ nil)
-      def user_message(entity), do: nil
+      def user_message(entity), do: ""
 
       def target_message(entity \\ nil)
-      def target_message(entity), do: nil
+      def target_message(entity), do: ""
 
       def spectator_message(entity \\ nil)
-      def spectator_message(entity), do: nil
+      def spectator_message(entity), do: ""
 
       def area_user_message(entity \\ nil)
-      def area_user_message(entity), do: nil
+      def area_user_message(entity), do: ""
 
       def area_spectator_message(entity \\ nil)
-      def area_spectator_message(entity), do: nil
+      def area_spectator_message(entity), do: ""
 
       def required_skills(entity \\ nil)
       def required_skills(entity), do: nil
@@ -489,6 +497,9 @@ defmodule Systems.Ability do
 
       def increase_skills(entity \\ nil)
       def increase_skills(entity), do: nil
+
+      def script(entity \\ nil)
+      def script(entity), do: nil
 
       def execute(entity, target) do
         Systems.Ability.execute(properties(entity), entity, target)
@@ -648,7 +659,9 @@ defmodule Systems.Ability do
                       stun: 1,
                       increase_skills: 0,
                       increase_skills: 1,
-                      help: 0]
+                      help: 0,
+                      script: 0,
+                      script: 1]
     end
   end
 

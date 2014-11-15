@@ -19,9 +19,10 @@ defmodule Systems.Script do
     execute_instruction(instruction, monster, script)
   end
 
-  def execute_script([], _monster), do: true
+  def execute_script([], _monster),  do: true
+  def execute_script(nil, _monster), do: false
 
-  def execute_script(instruction, monster), do: execute_instruction(instruction, monster, [])
+  def execute_script(instruction, monster), do: execute_instruction(instruction, monster, nil)
 
   def execute_instruction(%{message: message}, monster, script) do
     send_message(monster, "scroll", "<p>#{message}</p>")
@@ -120,6 +121,30 @@ defmodule Systems.Script do
     if power_gain > 0 do
       send_message(monster, "scroll", "<p>Your #{Components.Name.value(monster)} gains #{power_gain} power.</p>")
     end
+    execute_script(script, monster)
+  end
+
+  def execute_instruction(%{cast_ability: ability_name}, monster, script) do
+    case Abilities.find(ability_name) do
+      nil ->
+        send_message(monster, "scroll", "<p><span class='red'>Not Implemented: #{ability_name}</span></p>")
+      ability ->
+        ability.execute(monster, nil)
+    end
+    execute_script(script, monster)
+  end
+
+  def execute_instruction(%{random: scripts}, monster, script) do
+    :random.seed(:os.timestamp)
+    roll = :random.uniform(100)
+
+    number = scripts
+            |> Map.keys
+            |> Enum.sort
+            |> Enum.find(&(&1 >= roll))
+
+    execute_script(scripts[number], monster)
+
     execute_script(script, monster)
   end
 

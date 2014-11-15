@@ -23,10 +23,13 @@ defmodule Systems.Damage do
   def get_crit(damage_types, damage, target) do
     :random.seed(:os.timestamp)
     damage_type = damage_types |> Enum.shuffle |> List.first
-    #chance = trunc((damage / Systems.HP.max(target)) * 100)
     chance = trunc((damage / Components.HP.value(target)) * 100)
-    
-    CritTables.find(damage_type).random(chance)
+
+    if CritTables.find(damage_type) do
+      CritTables.find(damage_type).random(chance)
+    else
+      nil
+    end
   end
 
   def do_damage(target, amount) do
@@ -87,6 +90,10 @@ defmodule Systems.Damage do
   def raw_damage(range) do
     :random.seed(:os.timestamp)
     range |> Enum.into([]) |> Enum.shuffle |> List.first
+  end
+
+  def resistance(entity, nil) do
+    0
   end
 
   def resistance(entity, "physical") do
