@@ -55,6 +55,7 @@ defmodule ApathyDrive do
     Systems.Regen.initialize
     Systems.Hints.initialize
     Systems.Idle.initialize
+    Systems.RoomAbility.initialize
 
     ApathyDrive.Supervisor.start_link
   end
@@ -154,7 +155,9 @@ defmodule ApathyDrive do
         Entity.add_component(ability, Components.Module, module)
         Entity.add_component(ability, Components.Help, module.help)
         Abilities.add(module.name, ability)
-        Help.add(ability)
+        if module.help do
+          Help.add(ability)
+        end
 
       end)
     end

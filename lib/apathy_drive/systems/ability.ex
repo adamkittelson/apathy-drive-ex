@@ -590,6 +590,7 @@ defmodule Systems.Ability do
 
       def append_property(properties, property, nil),   do: properties
       def append_property(properties, property, value), do: Map.put(properties, property, value)
+      def help, do: nil
 
       defoverridable [required_skills: 0,
                       required_skills: 1,
@@ -646,7 +647,8 @@ defmodule Systems.Ability do
                       stun: 0,
                       stun: 1,
                       increase_skills: 0,
-                      increase_skills: 1]
+                      increase_skills: 1,
+                      help: 0]
     end
   end
 
