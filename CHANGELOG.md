@@ -46,3 +46,6 @@ CHANGELOG
 
 ---- 0.0.15 / 2014-11-10 / alignment -------------------------------------------
 * implement monster alignment
+
+---- 0.0.16 / 2014-11-15 / ability-export --------------------------------------
+* export abilities with scripts
