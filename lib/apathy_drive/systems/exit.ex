@@ -2,6 +2,33 @@ defmodule Systems.Exit do
   use Systems.Reload
   import Utility
 
+  def direction(direction) do
+    case direction do
+      "n" ->
+        "north"
+      "ne" ->
+        "northeast"
+      "e" ->
+        "east"
+      "se" ->
+        "southeast"
+      "s" ->
+        "south"
+      "sw" ->
+        "southwest"
+      "w" ->
+        "west"
+      "nw" ->
+        "northwest"
+      "u" ->
+        "up"
+      "d" ->
+        "down"
+      direction ->
+        direction
+    end
+  end
+
   def move(spirit, monster, direction) do
     current_room = Parent.of(spirit)
     room_exit = current_room |> get_exit_by_direction(direction)
@@ -17,7 +44,18 @@ defmodule Systems.Exit do
   end
 
   def get_exit_by_direction(room, direction) do
-    Components.Exits.value(room)[direction]
+    Components.Exits.direction(room, direction)
+  end
+
+  def direction_description(direction) do
+    case direction do
+    "up" ->
+      "above you"
+    "down" ->
+      "below you"
+    direction ->
+      "to the #{direction}"
+    end
   end
 
   defmacro __using__(_opts) do
@@ -27,6 +65,11 @@ defmodule Systems.Exit do
       import Utility
       import BlockTimer
       alias Systems.Monster
+      alias Systems.Exit
+
+      def display_direction(_room, room_exit) do
+        room_exit["direction"]
+      end
 
       def move(spirit, nil, current_room, room_exit) do
         destination = Rooms.find_by_id(room_exit["destination"])
@@ -97,14 +140,16 @@ defmodule Systems.Exit do
 
       def get_direction_by_destination(room, destination) do
         exits = Components.Exits.value(room)
-        exits
-        |> Map.keys
-        |> Enum.find fn(direction) ->
-          Rooms.find_by_id(exits[direction]["destination"]) == destination
-        end
+        exit_to_destination = exits
+                              |> Enum.find fn(room_exit) ->
+                                   other_room = Rooms.find_by_id(room_exit["destination"])
+                                   other_room == destination
+                                 end
+        exit_to_destination["direction"]
       end
 
-      #defoverridable [required_skills: 0]
+      defoverridable [move: 4,
+                      display_direction: 2]
     end
   end
 

@@ -29,7 +29,10 @@ defmodule Systems.Room do
   end
 
   def exit_directions(room) do
-    exits(room) |> Map.keys
+    exits(room)
+    |> Enum.map(fn(room_exit) ->
+         :"Elixir.Systems.Exits.#{room_exit["kind"]}".display_direction(room, room_exit)
+       end)
   end
 
   def exit_directions_html([]) do

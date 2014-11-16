@@ -133,7 +133,7 @@ defmodule Systems.Monster do
     |> Enum.each fn(observer) ->
          if !Possession.possessor(observer) and (Components.Hunting.value(observer) |> Enum.member?(monster)) do
            if :random.uniform(100) < Components.Module.value(observer).chance_to_follow do
-             Systems.Room.move(nil, observer, room, Components.Exits.value(room)[direction])
+             Systems.Room.move(nil, observer, direction)
            end
          end
        end
@@ -185,7 +185,7 @@ defmodule Systems.Monster do
         "nowhere"
       exits ->
         direction = exits
-                    |> Map.keys
+                    |> Enum.map(&(&1["direction"]))
                     |> Enum.shuffle
                     |> List.first
 
