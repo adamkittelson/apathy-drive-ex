@@ -36,24 +36,24 @@ defmodule Systems.Exits.Door do
     end
   end
 
-  def open(character, room, room_exit) do
+  def open(monster, room, room_exit) do
     cond do
       locked?(room, room_exit) ->
-        send_message(character, "scroll", "<p>The #{name} is locked.</p>")
+        send_message(monster, "scroll", "<p>The #{name} is locked.</p>")
       open?(room, room_exit) ->
-        send_message(character, "scroll", "<p>The #{name} was already open.</p>")
+        send_message(monster, "scroll", "<p>The #{name} was already open.</p>")
       true ->
         open!(room, room_exit["direction"])
-        send_message(character, "scroll", "<p>The #{name} is now open.</p>")
+        send_message(monster, "scroll", "<p>The #{name} is now open.</p>")
 
-        msg = "You see #{Components.Name.value(character)} open the #{name} #{Exit.direction_description(room_exit["direction"])}."
+        msg = "You see #{Components.Name.value(monster)} open the #{name} #{Exit.direction_description(room_exit["direction"])}."
         room
         |> Systems.Room.characters_in_room
         |> Enum.each(fn(character) ->
              observer = Possession.possessed(character) || character
 
-             if observer != character do
-               send_message(character, "scroll", "<p>#{msg}</p>")
+             if observer != monster do
+               send_message(observer, "scroll", "<p>#{msg}</p>")
              end
            end)
 
