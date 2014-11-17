@@ -62,22 +62,11 @@ defmodule Systems.Exits.Door do
   end
 
   def open!(room, direction) do
-    # if open_duration_in_seconds.present?
-    #   exit = self
-    #   reactor.add_timer(exit, :open_timer) do
-    #     reactor.instance_eval {
-    #       EventMachine::Timer.new(exit.open_duration_in_seconds) do
-    #         reactor.cancel_timer(exit, :open_timer)
-    #         reactor.cancel_timer(exit, :unlocked_timer)
-    #         reactor.characters_in_room(exit.room).each do |char|
-    #           char.send_message :scroll, "The #{name} #{Exit.direction_description(exit.direction)} just opened."
-    #         end
-    #       end
-    #     }
-    #   end
-    # else
+    if Components.Exits.get_open_duration(room, direction) do
+      Systems.Effect.add(room, %{open: direction}, Components.Exits.get_open_duration(room, direction))
+    else
       Components.Exits.open_door(room, direction)
-    # end
+    end
   end
 
   def locked?(room, room_exit), do: false
@@ -105,8 +94,16 @@ defmodule Systems.Exits.Door do
   end
 
   def temporarily_open?(room, room_exit) do
-    false
-    #!!reactor.timer(self, :open_timer)
+    room
+    |> Components.Effects.value
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :open)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :open)
+       end)
+    |> Enum.member?(room_exit["direction"])
   end
 
   def opened_remotely?(room, room_exit) do

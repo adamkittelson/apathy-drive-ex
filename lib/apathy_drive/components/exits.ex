@@ -19,6 +19,10 @@ defmodule Components.Exits do
     GenEvent.call(entity, Components.Exits, {:open_door, direction})
   end
 
+  def get_open_duration(entity, direction) do
+    direction(entity, direction)["open_duration_in_seconds"]
+  end
+
   def serialize(entity) do
     %{"Exits" => value(entity)}
   end
