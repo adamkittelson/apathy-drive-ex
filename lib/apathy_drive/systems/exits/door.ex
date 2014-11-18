@@ -69,6 +69,43 @@ defmodule Systems.Exits.Door do
     end
   end
 
+  def close(monster, room, room_exit) do
+    if open?(room, room_exit) do
+      close!(room, room_exit["direction"])
+      send_message(monster, "scroll", "<p>The #{name} is now closed.</p>")
+
+      msg = "You see #{Components.Name.value(monster)} close the #{name} #{Exit.direction_description(room_exit["direction"])}."
+      room
+      |> Systems.Room.characters_in_room
+      |> Enum.each(fn(character) ->
+           observer = Possession.possessed(character) || character
+
+           if observer != monster do
+             send_message(observer, "scroll", "<p>#{msg}</p>")
+           end
+         end)
+      #mirror_close(reactor)
+    else
+      msg = "<p><span class='red'>That #{name} is already closed.</span></p>"
+      send_message(monster, "scroll", msg)
+    end
+  end
+
+  def close!(room, direction) do
+    effects = room
+              |> Components.Effects.value
+
+    effects
+    |> Map.keys
+    |> Enum.filter(fn(key) ->
+         effects[key][:open] == direction
+       end)
+    |> Enum.each(&(Components.Effects.remove(room, &1)))
+
+    Components.Exits.close_door(room, direction)
+    #unlock!(reactor)
+  end
+
   def locked?(room, room_exit), do: false
 
   def open?(room, room_exit) do

@@ -19,6 +19,10 @@ defmodule Components.Exits do
     GenEvent.call(entity, Components.Exits, {:open_door, direction})
   end
 
+  def close_door(entity, direction) do
+    GenEvent.call(entity, Components.Exits, {:close_door, direction})
+  end
+
   def get_open_duration(entity, direction) do
     direction(entity, direction)["open_duration_in_seconds"]
   end
@@ -45,6 +49,18 @@ defmodule Components.Exits do
             |> Enum.map(fn(room_exit) ->
                  if room_exit["direction"] == direction do
                    Map.put(room_exit, :open, true)
+                 else
+                   room_exit
+                 end
+               end)
+    {:ok, exits, exits}
+  end
+
+  def handle_call({:close_door, direction}, exits) do
+    exits = exits
+            |> Enum.map(fn(room_exit) ->
+                 if room_exit["direction"] == direction do
+                   Map.delete(room_exit, :open)
                  else
                    room_exit
                  end
