@@ -57,7 +57,21 @@ defmodule Systems.Exits.Door do
              end
            end)
 
-        #mirror_open(reactor)
+        mirror_open(room, room_exit)
+    end
+  end
+
+  def mirror_open(room, room_exit) do
+    {mirror_room, mirror_exit} = mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
+      open!(mirror_room, mirror_exit["direction"])
+
+      mirror_room
+      |> Systems.Room.characters_in_room
+      |> Enum.each(fn(character) ->
+           send_message(character, "scroll", "<p>The #{name} #{Exit.direction_description(mirror_exit["direction"])} just opened.</p>")
+         end)
     end
   end
 
@@ -84,10 +98,24 @@ defmodule Systems.Exits.Door do
              send_message(observer, "scroll", "<p>#{msg}</p>")
            end
          end)
-      #mirror_close(reactor)
+      mirror_close(room, room_exit)
     else
       msg = "<p><span class='red'>That #{name} is already closed.</span></p>"
       send_message(monster, "scroll", msg)
+    end
+  end
+
+  def mirror_close(room, room_exit) do
+    {mirror_room, mirror_exit} = mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] and open?(mirror_room, mirror_exit) do
+      close!(mirror_room, mirror_exit["direction"])
+
+      mirror_room
+      |> Systems.Room.characters_in_room
+      |> Enum.each(fn(character) ->
+           send_message(character, "scroll", "<p>The #{name} #{Exit.direction_description(mirror_exit["direction"])} just closed.</p>")
+         end)
     end
   end
 

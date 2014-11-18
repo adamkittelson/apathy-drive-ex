@@ -148,6 +148,15 @@ defmodule Systems.Exit do
         exit_to_destination["direction"]
       end
 
+      def mirror(room, room_exit) do
+        mirror_room = Rooms.find_by_id(room_exit["destination"])
+        room_exit = Components.Exits.value(mirror_room)
+                    |> Enum.find(fn(room_exit) ->
+                         room_exit["destination"] == Components.ID.value(room)
+                       end)
+        {mirror_room, room_exit}
+      end
+
       defoverridable [move: 4,
                       display_direction: 2]
     end
