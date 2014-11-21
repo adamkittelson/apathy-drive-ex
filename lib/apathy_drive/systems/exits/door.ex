@@ -114,6 +114,26 @@ defmodule Systems.Exits.Door do
     end
   end
 
+  def pick(monster, room, room_exit) do
+    cond do
+      open?(room, room_exit) ->
+        send_message(monster, "scroll", "<p>The #{name} is already open.</p>")
+      !locked?(room, room_exit) ->
+        send_message(monster, "scroll", "<p>The #{name} is already unlocked.</p>")
+      true ->
+        :random.seed(:os.timestamp)
+        skill = (Skills.Stealth.modified(monster) + Skills.Perception.modified(monster)) / 3
+
+        if (skill + room_exit["difficulty"] >= :random.uniform(100)) do
+          unlock!(room, room_exit["direction"])
+          send_message(monster, "scroll", "<p>You successfully unlocked the #{name}.</p>")
+          mirror_unlock(room, room_exit)
+        else
+          send_message(monster, "scroll", "<p>Your skill fails you this time.</p>")
+        end
+    end
+  end
+
   def mirror_bash(room, room_exit) do
     {mirror_room, mirror_exit} = mirror(room, room_exit)
 
@@ -125,6 +145,14 @@ defmodule Systems.Exits.Door do
       |> Enum.each(fn(character) ->
            send_message(character, "scroll", "<p>The #{name} #{Exit.direction_description(mirror_exit["direction"])} just flew open!</p>")
          end)
+    end
+  end
+
+  def mirror_unlock(room, room_exit) do
+    {mirror_room, mirror_exit} = mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
+      unlock!(mirror_room, mirror_exit["direction"])
     end
   end
 
