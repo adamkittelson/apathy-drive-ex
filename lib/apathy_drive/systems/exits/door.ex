@@ -214,6 +214,57 @@ defmodule Systems.Exits.Door do
     end
   end
 
+  def lock(monster, room, room_exit) do
+    cond do
+      locked?(room, room_exit) ->
+        send_message(monster, "scroll", "<p>The #{name} is already locked.</p>")
+      open?(room, room_exit) ->
+        send_message(monster, "scroll", "<p>You must close the #{name} before you may lock it.</p>")
+      true ->
+        lock!(room, room_exit["direction"])
+        send_message(monster, "scroll", "<p>The #{name} is now locked.</p>")
+
+        msg = "You see #{Components.Name.value(monster)} lock the #{name} #{Exit.direction_description(room_exit["direction"])}."
+        room
+        |> Systems.Room.characters_in_room
+        |> Enum.each(fn(character) ->
+             observer = Possession.possessed(character) || character
+
+             if observer != monster do
+               send_message(observer, "scroll", "<p>#{msg}</p>")
+             end
+           end)
+
+        mirror_lock(room, room_exit)
+    end
+  end
+
+  def mirror_lock(room, room_exit) do
+    {mirror_room, mirror_exit} = mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
+      lock!(mirror_room, mirror_exit["direction"])
+
+      mirror_room
+      |> Systems.Room.characters_in_room
+      |> Enum.each(fn(character) ->
+           send_message(character, "scroll", "<p>The #{name} #{Exit.direction_description(mirror_exit["direction"])} just locked!</p>")
+         end)
+    end
+  end
+
+  def lock!(room, direction) do
+    effects = room
+              |> Components.Effects.value
+
+    effects
+    |> Map.keys
+    |> Enum.filter(fn(key) ->
+         effects[key][:unlocked] == direction
+       end)
+    |> Enum.each(&(Components.Effects.remove(room, &1)))
+  end
+
   def mirror_close(room, room_exit) do
     {mirror_room, mirror_exit} = mirror(room, room_exit)
 
