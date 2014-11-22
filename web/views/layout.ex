@@ -1,4 +1,4 @@
 defmodule ApathyDrive.LayoutView do
-  use ApathyDrive.Views
+  use ApathyDrive.View
 
 end

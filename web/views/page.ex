@@ -1,4 +1,4 @@
 defmodule ApathyDrive.PageView do
-  use ApathyDrive.Views
+  use ApathyDrive.View
 
 end

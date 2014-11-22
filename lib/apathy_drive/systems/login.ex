@@ -45,7 +45,7 @@ defmodule Systems.Login do
   end
 
   defp move_character_to_start_room(character) do
-    start_room = Phoenix.Config.get([:mud, :start_room])
+    start_room = ApathyDrive.Config.get(:start_room)
                  |> Rooms.find_by_id
     Components.Characters.add_character(start_room, character)
   end
