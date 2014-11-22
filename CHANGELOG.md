@@ -49,3 +49,6 @@ CHANGELOG
 
 ---- 0.0.16 / 2014-11-15 / ability-export --------------------------------------
 * export abilities with scripts
+
+---- 0.0.17 / 2014-11-22 / exits -----------------------------------------------
+* begin implementing exit types
