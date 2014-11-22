@@ -2,7 +2,6 @@ defmodule Systems.RoomAbility do
   use Systems.Reload
   import Utility
   import BlockTimer
-  import Systems.Text
 
   def initialize do
     apply_interval 5 |> seconds do

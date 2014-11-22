@@ -15,7 +15,6 @@ defmodule ApathyDrive do
     Exits.start_link
     Components.start_link
     Help.start_link
-    Repo.start_link
     Commands.start_link
     Abilities.start_link
     Skills.start_link
@@ -26,6 +25,7 @@ defmodule ApathyDrive do
 
 
     if Mix.env != :test do
+      Repo.start_link
       IO.puts "Indexing..."
       [index_items,
       index_monsters,

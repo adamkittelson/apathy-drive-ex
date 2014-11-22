@@ -4,7 +4,9 @@ defmodule ApathyDrive.Mixfile do
   def project do
     [ app: :apathy_drive,
       version: "0.0.1",
-      elixir: "~> 1.0.0",
+      elixir: "~> 1.0.2",
+      elixirc_paths: ["lib", "web"],
+      compilers: [:phoenix] ++ Mix.compilers,
       deps: deps ]
   end
 
@@ -12,19 +14,14 @@ defmodule ApathyDrive.Mixfile do
   def application do
     [
       mod: { ApathyDrive, [] },
-      applications: [:phoenix]
+      applications: [:phoenix, :cowboy, :logger]
     ]
   end
 
-  # Returns the list of dependencies in the format:
-  # { :foobar, git: "https://github.com/elixir-lang/foobar.git", tag: "0.1" }
-  #
-  # To specify particular versions, regardless of the tag, do:
-  # { :barbat, "~> 0.1", github: "elixir-lang/barbat" }
   defp deps do
     [
       {:cowboy,      "~> 1.0.0"},
-      {:phoenix,     "~> 0.4.1"},
+      {:phoenix,     "~> 0.6.0"},
       {:ecto,        "~> 0.2.4"},
       {:postgrex,    "~> 0.6.0"},
       {:timex,       "~> 0.12.7"},

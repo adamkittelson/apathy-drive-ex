@@ -3,7 +3,7 @@ defmodule Repo do
   use Ecto.Repo, adapter: Ecto.Adapters.Postgres
 
   def conf do
-    Phoenix.Config.get([:mud, :db])
+    ApathyDrive.Config.get(:db)
     |> parse_url
   end
 
