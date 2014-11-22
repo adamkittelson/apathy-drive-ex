@@ -52,3 +52,6 @@ CHANGELOG
 
 ---- 0.0.17 / 2014-11-22 / exits -----------------------------------------------
 * begin implementing exit types
+
+---- 0.0.18 / 2014-11-22 / upgrade-phoenix -------------------------------------
+* upgrade phoenix
