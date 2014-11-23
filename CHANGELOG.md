@@ -55,3 +55,6 @@ CHANGELOG
 
 ---- 0.0.18 / 2014-11-22 / upgrade-phoenix -------------------------------------
 * upgrade phoenix
+
+---- 0.0.19 / 2014-11-23 / keys ------------------------------------------------
+* implement using keys on doors
