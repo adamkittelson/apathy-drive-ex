@@ -1,6 +1,10 @@
 defmodule Commands.Look do
   use Systems.Command
 
+  @directions ["n", "north", "ne", "northeast", "e", "east",
+              "se", "southeast", "s", "south", "sw", "southwest",
+               "w", "west", "nw", "northwest", "u", "up", "d", "down"]
+
   def keywords, do: ["look", "l"]
 
   def execute(spirit, nil, arguments) do
@@ -8,6 +12,8 @@ defmodule Commands.Look do
 
     if Enum.any? arguments do
       cond do
+        Enum.member?(@directions, Enum.join(arguments, " ")) ->
+          Systems.Exit.look(spirit, nil, Enum.join(arguments, " "))
         target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(spirit, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
@@ -20,11 +26,13 @@ defmodule Commands.Look do
     end
   end
 
-  def execute(_spirit, monster, arguments) do
+  def execute(spirit, monster, arguments) do
     current_room = Parent.of(monster)
 
     if Enum.any? arguments do
       cond do
+        Enum.member?(@directions, Enum.join(arguments, " ")) ->
+          Systems.Exit.look(spirit, monster, Enum.join(arguments, " "))
         target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(monster, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->

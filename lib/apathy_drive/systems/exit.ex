@@ -29,6 +29,20 @@ defmodule Systems.Exit do
     end
   end
 
+  def look(spirit, monster, direction) do
+    current_room = Parent.of(spirit)
+    room_exit = current_room |> get_exit_by_direction(direction)
+    look(spirit, monster, current_room, room_exit)
+  end
+
+  def look(spirit, monster, _current_room, nil) do
+    send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
+  end
+
+  def look(spirit, monster, current_room, room_exit) do
+    :"Elixir.Systems.Exits.#{room_exit["kind"]}".look(spirit, monster, current_room, room_exit)
+  end
+
   def move(spirit, monster, direction) do
     current_room = Parent.of(spirit)
     room_exit = current_room |> get_exit_by_direction(direction)
@@ -44,7 +58,7 @@ defmodule Systems.Exit do
   end
 
   def get_exit_by_direction(room, direction) do
-    Components.Exits.direction(room, direction)
+    Components.Exits.direction(room, direction(direction))
   end
 
   def direction_description(direction) do
@@ -118,6 +132,24 @@ defmodule Systems.Exit do
         end
       end
 
+      def look(spirit, monster, current_room, room_exit) do
+        {mirror_room, mirror_exit} = mirror(current_room, room_exit)
+
+        Systems.Room.display_room_in_scroll(spirit, mirror_room)
+
+        if monster && mirror_exit do
+
+          mirror_room
+          |> Systems.Room.characters_in_room
+          |> Enum.each(fn(character) ->
+               message = "#{Components.Name.value(monster)} peeks in from #{Systems.Monster.enter_direction(mirror_exit["direction"])}!"
+                         |> capitalize_first
+
+               send_message(character, "scroll", "<p><span class='dark-magenta'>#{message}</span></p>")
+             end)
+        end
+      end
+
       def notify_monster_entered(monster, entered_from, room) do
         direction = get_direction_by_destination(room, entered_from)
         if direction do
@@ -158,6 +190,7 @@ defmodule Systems.Exit do
       end
 
       defoverridable [move: 4,
+                      look: 4,
                       display_direction: 2]
     end
   end

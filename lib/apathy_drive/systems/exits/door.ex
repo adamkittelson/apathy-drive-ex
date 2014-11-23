@@ -12,6 +12,14 @@ defmodule Systems.Exits.Door do
     end
   end
 
+  def look(spirit, monster, current_room, room_exit) do
+    if open?(current_room, room_exit) do
+      super(spirit, monster, current_room, room_exit)
+    else
+      send_message(spirit, "scroll", "<p>The #{name} is closed in that direction!</p>")
+    end
+  end
+
   def move(spirit, nil, current_room, room_exit) do
     destination = Rooms.find_by_id(room_exit["destination"])
     Components.Characters.remove_character(current_room, spirit)
@@ -142,7 +150,7 @@ defmodule Systems.Exits.Door do
         send_message(monster, "scroll", "<p>The #{name} is already unlocked.</p>")
       true ->
         key = monster
-              |> Components.Items.value
+              |> Components.Items.get_items
               |> Enum.find(fn(item) ->
                    Components.Name.value(item) == room_exit["key"]
                  end)
