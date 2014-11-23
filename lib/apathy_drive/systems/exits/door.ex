@@ -134,6 +134,30 @@ defmodule Systems.Exits.Door do
     end
   end
 
+  def unlock(monster, room, room_exit) do
+    cond do
+      open?(room, room_exit) ->
+        send_message(monster, "scroll", "<p>The #{name} is already open.</p>")
+      !locked?(room, room_exit) ->
+        send_message(monster, "scroll", "<p>The #{name} is already unlocked.</p>")
+      true ->
+        key = monster
+              |> Components.Items.value
+              |> Enum.find(fn(item) ->
+                   Components.Name.value(item) == room_exit["key"]
+                 end)
+
+        if key do
+          unlock!(room, room_exit["direction"])
+          send_message(monster, "scroll", "<p>You unlocked the #{name} with your #{Components.Name.value(key)}.</p>")
+          Components.Uses.use!(key, monster)
+          mirror_unlock(room, room_exit)
+        else
+          send_message(monster, "scroll", "<p>None of your keys seem to fit this lock.</p>")
+        end
+    end
+  end
+
   def mirror_bash(room, room_exit) do
     {mirror_room, mirror_exit} = mirror(room, room_exit)
 

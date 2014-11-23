@@ -26,6 +26,8 @@ defmodule Systems.Item do
 
     Entity.add_component(entity, Components.Effects, %{})
 
+    Entity.add_component(entity, Components.Uses, template.uses)
+
     Entity.add_component(entity, Components.Types, ["item"])
     entity
   end
@@ -147,6 +149,7 @@ defmodule Systems.Item do
       def required_skills, do: %{}
       def speed,           do: nil
       def ac,              do: 0
+      def uses,            do: nil
 
       def weapon?, do: slot == "weapon" and !!hit_verbs
 
@@ -160,7 +163,8 @@ defmodule Systems.Item do
                       damage: 0,
                       required_skills: 0,
                       speed: 0,
-                      ac: 0]
+                      ac: 0,
+                      uses: 0]
     end
   end
 
