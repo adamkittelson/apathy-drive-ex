@@ -30,11 +30,22 @@ defmodule Systems.Command do
   end
 
   def execute_command(spirit, monster, command, arguments) do
-    case Systems.Match.one(Commands.all, :keyword_starts_with, command) do
-      nil ->
-        send_message(spirit, "scroll", "<p>What?</p>")
-      match ->
-        :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(spirit, monster, arguments)
+    command_exit = spirit
+                   |> Parent.of
+                   |> Components.Exits.value
+                   |> Enum.find(fn(ex) ->
+                        ex["kind"] == "Command" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
+                      end)
+
+    if command_exit do
+      Systems.Exits.Command.move_via_command(spirit, monster, Parent.of(spirit), command_exit)
+    else
+      case Systems.Match.one(Commands.all, :keyword_starts_with, command) do
+        nil ->
+          send_message(spirit, "scroll", "<p>What?</p>")
+        match ->
+          :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(spirit, monster, arguments)
+      end
     end
   end
 
