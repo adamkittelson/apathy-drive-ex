@@ -22,6 +22,10 @@ defmodule Commands.Open do
           send_message(monster, "scroll", "<p>There is no exit in that direction!</p>")
         %{"kind" => "Door"} ->
           Systems.Exits.Door.open(monster, current_room, room_exit)
+        %{"kind" => "Gate"} ->
+          Systems.Exits.Gate.open(monster, current_room, room_exit)
+        %{"kind" => "Key"} ->
+          Systems.Exits.Key.open(monster, current_room, room_exit)
         _ ->
           send_message(monster, "scroll", "<p>That exit has no door.</p>")
       end
