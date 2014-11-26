@@ -43,6 +43,12 @@ defmodule Systems.Exit do
     :"Elixir.Systems.Exits.#{room_exit["kind"]}".look(spirit, monster, current_room, room_exit)
   end
 
+  def move(nil, monster, direction) do
+    current_room = Parent.of(monster)
+    room_exit = current_room |> get_exit_by_direction(direction)
+    move(nil, monster, current_room, room_exit)
+  end
+
   def move(spirit, monster, direction) do
     current_room = Parent.of(spirit)
     room_exit = current_room |> get_exit_by_direction(direction)
@@ -50,7 +56,7 @@ defmodule Systems.Exit do
   end
 
   def move(spirit, monster, _current_room, nil) do
-    send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
+    send_message(spirit || monster, "scroll", "<p>There is no exit in that direction.</p>")
   end
 
   def move(spirit, monster, current_room, room_exit) do
@@ -97,9 +103,7 @@ defmodule Systems.Exit do
       end
 
       def move(nil, monster, current_room, room_exit) do
-        if Systems.Combat.stunned?(monster) do
-          send_message(monster, "scroll", "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
-        else
+        if !Systems.Combat.stunned?(monster) do
           destination = Rooms.find_by_id(room_exit["destination"])
           Components.Monsters.remove_monster(current_room, monster)
           Components.Monsters.add_monster(destination, monster)
@@ -108,7 +112,6 @@ defmodule Systems.Exit do
           Entities.save(monster)
           notify_monster_left(monster, current_room, destination)
           notify_monster_entered(monster, current_room, destination)
-          Systems.Room.display_room_in_scroll(monster, destination)
         end
       end
 
