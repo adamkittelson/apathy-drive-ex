@@ -5,6 +5,7 @@ defmodule Systems.LairSpawning do
 
   def initialize do
     apply_interval 10 |> seconds, do: spawn_lairs
+    apply_interval 10 |> seconds, do: spawn_permanent_npcs
   end
 
   def spawn_lairs do
@@ -23,6 +24,25 @@ defmodule Systems.LairSpawning do
         spawn_lair(room)
       end
     end)
+  end
+
+  def spawn_permanent_npcs do
+    Components.all(Components.PermanentNPC) |> Enum.each(fn(room) ->
+      if !permanent_npc_present?(room) do
+        monster = MonsterTemplates.find_by_id(Components.PermanentNPC.value(room))
+        if monster do
+          Systems.Monster.spawn_monster(monster, room)
+        end
+      end
+    end)
+  end
+
+  def permanent_npc_present?(room) do
+    Systems.Room.monsters_in_room(room)
+    |> Enum.map(fn(monster) ->
+         Components.Name.value(monster)
+       end)
+    |> Enum.member?(Components.PermanentNPC.value(room))
   end
 
   def spawn_lair(room) do
