@@ -141,18 +141,19 @@ defmodule Systems.Item do
         (name |> String.split)
       end
 
-      def description,     do: nil
-      def slot,            do: nil
-      def worn_on,         do: nil
-      def hit_verbs,       do: nil
-      def damage,          do: nil
-      def required_skills, do: %{}
-      def speed,           do: nil
-      def ac,              do: 0
-      def uses,            do: nil
+      def description,           do: nil
+      def slot,                  do: nil
+      def worn_on,               do: nil
+      def hit_verbs,             do: nil
+      def damage,                do: nil
+      def required_skills,       do: %{}
+      def speed,                 do: nil
+      def ac,                    do: 0
+      def uses,                  do: nil
+      def destruct_message,      do: nil
+      def room_destruct_message, do: nil
 
       def weapon?, do: slot == "weapon" and !!hit_verbs
-
 
       defoverridable [name: 0,
                       keywords: 0,
@@ -164,7 +165,9 @@ defmodule Systems.Item do
                       required_skills: 0,
                       speed: 0,
                       ac: 0,
-                      uses: 0]
+                      uses: 0,
+                      destruct_message: 0,
+                      room_destruct_message: 0]
     end
   end
 

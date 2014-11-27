@@ -2,6 +2,7 @@ defmodule Components.Uses do
   use Systems.Reload
   use GenEvent
   import Utility
+  import Systems.Text
 
   ### Public API
   def value(entity) do
@@ -17,18 +18,24 @@ defmodule Components.Uses do
       nil ->
         nil
       uses when uses < 1 ->
-        send_message(monster, "scroll", "<p>The #{Components.Name.value(item)} breaks and crumbles apart.</p>")
+        template = Components.Module.value(item)
 
-        monster
-        |> Parent.of
-        |> Systems.Room.characters_in_room
-        |> Enum.each(fn(spirit) ->
-             observer = Possession.possessed(spirit) || spirit
+        if template.destruct_message do
+          send_message(monster, "scroll", "<p>#{template.destruct_message}</p>")
+        end
 
-             if observer != monster do
-               send_message(monster, "scroll", "<p>#{Components.Name.value(monster)}'s #{Components.Name.value(item)} breaks and crumbles apart.</p>")
-             end
-           end)
+        if template.room_destruct_message do
+          monster
+          |> Parent.of
+          |> Systems.Room.characters_in_room
+          |> Enum.each(fn(spirit) ->
+               observer = Possession.possessed(spirit) || spirit
+
+               if observer != monster do
+                 send_message(monster, "scroll", "<p>#{template.room_destruct_message |> interpolate(%{"user" => monster})}</p>")
+               end
+             end)
+        end
 
         Components.Items.remove_item(monster, item)
         Entities.save(monster)
