@@ -51,14 +51,23 @@ defmodule Systems.Exits.Hidden do
   end
 
   def all_remote_actions_triggered?(room, room_exit) do
-    false
-    # if remote_action_exit_ids.present?
-    #   remote_action_exit_ids.map do |exit_id|
-    #     Exit.find(exit_id)
-    #   end.all? do |exit|
-    #     exit.remote_action_triggered?(reactor)
-    #   end
-    # end
+    if room_exit["remote_action_exits"] do
+      room_exit["remote_action_exits"]
+      |> Enum.all?(fn(remote_exit) ->
+           Rooms.find_by_id(remote_exit["room"])
+           |> Components.Effects.value
+           |> Map.values
+           |> Enum.filter(fn(effect) ->
+                Map.has_key?(effect, :triggered)
+              end)
+           |> Enum.map(fn(effect) ->
+                Map.get(effect, :triggered)
+              end)
+           |> Enum.member?(remote_exit["direction"])
+         end)
+    else
+      false
+    end
   end
 
   def searched?(room, room_exit) do

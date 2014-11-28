@@ -25,7 +25,7 @@ defmodule Systems.Exits.Doors do
         Components.Hints.deactivate(spirit, "movement")
 
         if !open?(current_room, room_exit) do
-          send_message(spirit, "scroll", "<p><span class='dark-green'>You pass right through the door.</span></p>")
+          send_message(spirit, "scroll", "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
         end
 
         Systems.Room.display_room_in_scroll(spirit, destination)
@@ -350,14 +350,23 @@ defmodule Systems.Exits.Doors do
       end
 
       def all_remote_actions_triggered?(room, room_exit) do
-        false
-        # if remote_action_exit_ids.present?
-        #   remote_action_exit_ids.map do |exit_id|
-        #     Exit.find(exit_id)
-        #   end.all? do |exit|
-        #     exit.remote_action_triggered?(reactor)
-        #   end
-        # end
+        if room_exit["remote_action_exits"] do
+          room_exit["remote_action_exits"]
+          |> Enum.all?(fn(remote_exit) ->
+               Rooms.find_by_id(remote_exit["room"])
+               |> Components.Effects.value
+               |> Map.values
+               |> Enum.filter(fn(effect) ->
+                    Map.has_key?(effect, :triggered)
+                  end)
+               |> Enum.map(fn(effect) ->
+                    Map.get(effect, :triggered)
+                  end)
+               |> Enum.member?(remote_exit["direction"])
+             end)
+        else
+          false
+        end
       end
 
       def temporarily_open?(room, room_exit) do
