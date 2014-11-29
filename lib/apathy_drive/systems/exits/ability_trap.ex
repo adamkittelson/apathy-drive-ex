@@ -1,4 +1,4 @@
-defmodule Systems.Exits.Trap do
+defmodule Systems.Exits.AbilityTrap do
   use Systems.Exit
 
   def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
@@ -22,7 +22,6 @@ defmodule Systems.Exits.Trap do
       else
         spring_trap!(monster, current_room, destination, room_exit)
       end
-      Monster.pursue(current_room, monster, room_exit["direction"])
     end
   end
 
@@ -68,26 +67,32 @@ defmodule Systems.Exits.Trap do
 
   def spring_trap!(monster, current_room, destination, room_exit) do
     send_message(monster, "scroll", "<p><span class='red'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
+    if room_exit["ability"] do
+      case Abilities.find(room_exit["ability"]) do
+        nil ->
+          send_message(monster, "scroll", "<p><span class='red'>Not Implemented: #{room_exit["ability"]}</span></p>")
+        ability ->
+          ability.execute(monster, nil)
+      end
+    end
 
-    Systems.Monster.observers(current_room, monster)
-    |> Enum.each(fn(observer) ->
-      send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
-    end)
+    if room_exit["from_message"] do
+      Systems.Monster.observers(current_room, monster)
+      |> Enum.each(fn(observer) ->
+        send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
+      end)
+    end
 
-    Systems.Monster.observers(destination, monster)
-    |> Enum.each(fn(observer) ->
-      send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
-    end)
-
-    amount = monster
-             |> Systems.Damage.base_attack_damage
-             |> Systems.Damage.raw_damage
-
-    Systems.Damage.do_damage(monster, amount * room_exit["damage"])
+    if room_exit["to_message"] do
+      Systems.Monster.observers(destination, monster)
+      |> Enum.each(fn(observer) ->
+        send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
+      end)
+    end
   end
 
-  def modifier(room_exit) do
-    room_exit["damage"] * 20
+  def modifier(_room_exit) do
+    200
   end
 
   def detect?(monster, room_exit) do
@@ -103,3 +108,11 @@ defmodule Systems.Exits.Trap do
   end
 
 end
+
+%{"ability" => "poison darts",
+  "destination" => 41355,
+  "direction" => "north",
+  "from_message" => "A volley of blow darts sink into {{user}}!",
+  "kind" => "AbilityTrap",
+  "mover_message" => "Blow darts shoot out from the walls, piercing you!",
+  "to_message" => ""}

@@ -22,13 +22,15 @@ defmodule Systems.Regen do
   def regen_hp do
     HPRegen.all
     |> Enum.each(fn(entity) ->
-         hp = hp_regen_per_tick(entity)
-         Components.HP.add(entity, hp)
-         heal_limbs(entity, hp)
-         if fully_healed?(entity) do
-           HPRegen.remove(entity)
+         if Process.alive?(entity) do
+           hp = hp_regen_per_tick(entity)
+           Components.HP.add(entity, hp)
+           heal_limbs(entity, hp)
+           if fully_healed?(entity) do
+             HPRegen.remove(entity)
+           end
+           update_prompt(entity)
          end
-         update_prompt(entity)
        end)
   end
 
@@ -63,11 +65,13 @@ defmodule Systems.Regen do
   def regen_mana do
     ManaRegen.all
     |> Enum.each(fn(entity) ->
-         Components.Mana.add(entity, mana_regen_per_tick(entity))
-         if Components.Mana.value(entity) >= Systems.Mana.max(entity) do
-           ManaRegen.remove(entity)
+         if Process.alive?(entity) do
+           Components.Mana.add(entity, mana_regen_per_tick(entity))
+           if Components.Mana.value(entity) >= Systems.Mana.max(entity) do
+             ManaRegen.remove(entity)
+           end
+           update_prompt(entity)
          end
-         update_prompt(entity)
        end)
   end
 
