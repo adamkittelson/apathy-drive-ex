@@ -58,3 +58,6 @@ CHANGELOG
 
 ---- 0.0.19 / 2014-11-23 / keys ------------------------------------------------
 * implement using keys on doors
+
+---- 0.0.20 / 2014-11-29 / traps -----------------------------------------------
+* implement trap exits / spawn placed items

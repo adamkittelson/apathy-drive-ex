@@ -33,6 +33,7 @@ defmodule Systems.Exits.Action do
 
       Components.Hints.deactivate(spirit, "movement")
       Systems.Room.display_room_in_scroll(monster, destination)
+      Monster.pursue(current_room, monster, room_exit["direction"])
     end
   end
 

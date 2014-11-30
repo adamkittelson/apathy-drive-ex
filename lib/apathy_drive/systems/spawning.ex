@@ -1,4 +1,4 @@
-defmodule Systems.LairSpawning do
+defmodule Systems.Spawning do
   use Systems.Reload
   import BlockTimer
   use Timex
@@ -6,6 +6,7 @@ defmodule Systems.LairSpawning do
   def initialize do
     apply_interval 10 |> seconds, do: spawn_lairs
     apply_interval 10 |> seconds, do: spawn_permanent_npcs
+    apply_interval 10 |> seconds, do: spawn_placed_items
   end
 
   def spawn_lairs do
@@ -43,6 +44,27 @@ defmodule Systems.LairSpawning do
          Components.Name.value(monster)
        end)
     |> Enum.member?(Components.PermanentNPC.value(room))
+  end
+
+  def spawn_placed_items do
+    Components.all(Components.PlacedItems) |> Enum.each(fn(room) ->
+      Components.PlacedItems.value(room)
+      |> Enum.each(fn(item_name) ->
+           if !placed_item_present?(room, item_name) do
+             item = ItemTemplates.find_by_id(item_name)
+             if item do
+               Systems.Item.spawn_item(item, room)
+             end
+           end
+         end)
+    end)
+  end
+
+  def placed_item_present?(room, item_name) do
+    Components.Items.get_items(room)
+    |> Enum.any?(fn(item) ->
+         Components.Name.value(item) == item_name
+       end)
   end
 
   def spawn_lair(room) do
