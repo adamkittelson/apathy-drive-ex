@@ -45,7 +45,12 @@ defmodule Components.Lair do
   end
 
   def serialize(entity) do
-    %{"Lair" => put_in(value(entity)["last_spawned_at"], Date.convert(value(entity)["last_spawned_at"], :secs))}
+    value = value(entity)
+    if value["last_spawned_at"] do
+      %{"Lair" => put_in(value(entity)["last_spawned_at"], Date.convert(value(entity)["last_spawned_at"], :secs))}
+    else
+      %{"Lair" => value}
+    end
   end
 
   ### GenEvent API

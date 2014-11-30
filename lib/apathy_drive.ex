@@ -50,7 +50,7 @@ defmodule ApathyDrive do
 
     HPRegen.start_link
     ManaRegen.start_link
-    Systems.LairSpawning.initialize
+    Systems.Spawning.initialize
     Systems.Decay.initialize
     Systems.Regen.initialize
     Systems.Hints.initialize
