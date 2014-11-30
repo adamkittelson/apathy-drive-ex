@@ -69,7 +69,7 @@ defmodule Systems.Spawning do
 
   def spawn_lair(room) do
     Components.Lair.set_last_spawned_at(room)
-    if (Systems.Room.monsters_in_room(room) |> Enum.count) < Components.Lair.size(room) do
+    if (Systems.Room.monsters_in_room(room) |> Enum.count) < Components.Lair.size(room) and Enum.any?(eligible_monsters(room)) do
       room |> select_lair_monster
            |> Systems.Monster.spawn_monster(room)
       spawn_lair(room)
@@ -77,9 +77,19 @@ defmodule Systems.Spawning do
   end
 
   def select_lair_monster(room) do
-    room |> Components.Lair.monster_templates
+    room |> eligible_monsters
          |> Enum.shuffle
          |> List.first
+  end
+
+  def eligible_monsters(room) do
+    room
+    |> Components.Lair.monster_templates
+    |> Enum.reject(fn(mt) ->
+         monster_name = Components.Name.value(mt)
+         limit = Components.Module.value(mt).limit
+         Systems.Monster.limit_reached?(monster_name, limit)
+       end)
   end
 
 end

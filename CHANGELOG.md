@@ -61,3 +61,6 @@ CHANGELOG
 
 ---- 0.0.20 / 2014-11-29 / traps -----------------------------------------------
 * implement trap exits / spawn placed items
+
+---- 0.0.21 / 2014-11-30 / special-snowflakes ----------------------------------
+* limited monsters (e.g. bosses)

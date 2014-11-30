@@ -8,7 +8,9 @@ defmodule Components.Items do
   end
 
   def get_items(entity) do
-    GenEvent.call(entity, Components.Items, :get_items)
+    items = GenEvent.call(entity, Components.Items, :get_items)
+    Enum.each(items, &Parent.set(&1, entity))
+    items
   end
 
   def get_item(item) when is_pid(item), do: item
