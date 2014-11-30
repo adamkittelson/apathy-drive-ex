@@ -14,8 +14,13 @@ defmodule Monsters do
   end
 
   def remove(monster) do
-    id = Components.ID.value(monster)
-    GenServer.cast(:monsters, {:remove, id})
+    name = Components.Name.value(monster)
+    if Entity.has_component?(monster, Components.ID) do
+      id = Components.ID.value(monster)
+      GenServer.cast(:monsters, {:remove, %{"id" => id, "name" => name, "monster" => monster}})
+    else
+      GenServer.cast(:monsters, {:remove, %{"name" => name, "monster" => monster}})
+    end
   end
 
   def all do
@@ -67,8 +72,27 @@ defmodule Monsters do
     {:noreply,  monsters}
   end
 
-  def handle_cast({:remove, id}, monsters) do
-    {:noreply, HashDict.delete(monsters, id) }
+  def handle_cast({:remove, %{"id" => id, "name" => name, "monster" => monster}}, monsters) do
+    monsters = monsters
+               |> HashDict.delete(id)
+               |> update_in([name], fn(list) ->
+                                      list = list || []
+                                      Enum.reject(list, fn(i) ->
+                                        i == monster
+                                      end)
+                                    end)
+    {:noreply,  monsters}
+  end
+
+  def handle_cast({:remove, %{"name" => name, "monster" => monster}}, monsters) do
+    monsters = monsters
+               |> update_in([name], fn(list) ->
+                                      list = list || []
+                                      Enum.reject(list, fn(i) ->
+                                         i == monster
+                                      end)
+                                    end)
+    {:noreply,  monsters}
   end
 
   def handle_call(:all, _from, monsters) do

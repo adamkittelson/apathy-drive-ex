@@ -29,6 +29,9 @@ defmodule Systems.Item do
     Entity.add_component(entity, Components.Uses, template.uses)
 
     Entity.add_component(entity, Components.Types, ["item"])
+
+    Entity.add_to_type_collection(entity)
+
     entity
   end
 
