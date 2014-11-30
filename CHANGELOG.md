@@ -64,3 +64,6 @@ CHANGELOG
 
 ---- 0.0.21 / 2014-11-30 / special-snowflakes ----------------------------------
 * limited monsters (e.g. bosses)
+
+---- 0.0.22 / 2014-11-30 / upgrade-phoenix -------------------------------------
+* update phoenix
