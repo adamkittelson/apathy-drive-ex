@@ -4,8 +4,13 @@ defmodule Monsters do
 
   # Public API
   def add(monster) do
-    id = Components.ID.value(monster)
-    GenServer.cast(:monsters, {:add, id, monster})
+    name = Components.Name.value(monster)
+    if Entity.has_component?(monster, Components.ID) do
+      id = Components.ID.value(monster)
+      GenServer.cast(:monsters, {:add, %{"id" => id, "name" => name, "monster" => monster}})
+    else
+      GenServer.cast(:monsters, {:add, %{"name" => name, "monster" => monster}})
+    end
   end
 
   def remove(monster) do
@@ -19,6 +24,17 @@ defmodule Monsters do
 
   def find_by_id(id) do
     GenServer.call(:monsters, {:get, id})
+  end
+
+  def count(name) when is_binary(name) do
+    name
+    |> find_by_id
+    |> count
+  end
+
+  def count(nil), do: 0
+  def count(monsters) when is_list(monsters) do
+    length(monsters)
   end
 
   def find_all_by_name(name) do
@@ -38,8 +54,17 @@ defmodule Monsters do
     {:ok, monsters}
   end
 
-  def handle_cast({:add, id, monster}, monsters) do
-    {:noreply, HashDict.put_new(monsters, id, monster) }
+  def handle_cast({:add, %{"id" => id, "name" => name, "monster" => monster}}, monsters) do
+    monsters = monsters
+               |> HashDict.put_new(id, monster)
+               |> update_in([name], &([monster | &1 || []]))
+    {:noreply,  monsters}
+  end
+
+  def handle_cast({:add, %{"name" => name, "monster" => monster}}, monsters) do
+    monsters = monsters
+               |> update_in([name], &([monster | &1 || []]))
+    {:noreply,  monsters}
   end
 
   def handle_cast({:remove, id}, monsters) do
@@ -47,7 +72,12 @@ defmodule Monsters do
   end
 
   def handle_call(:all, _from, monsters) do
-    {:reply, HashDict.values(monsters), monsters}
+    all = monsters
+          |> HashDict.values
+          |> List.flatten
+          |> Enum.uniq
+
+    {:reply, all, monsters}
   end
 
   def handle_call({:get, id}, _from, monsters) do

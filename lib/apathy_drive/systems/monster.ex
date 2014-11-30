@@ -5,45 +5,58 @@ defmodule Systems.Monster do
   use Timex
 
   def spawn_monster(monster) do
-    {:ok, entity} = Entity.init
-    Entity.add_component(entity, Components.Name,        Components.Name.get_name(monster))
-    Entity.add_component(entity, Components.Description, Components.Module.value(monster).description)
-    Entity.add_component(entity, Components.Types, ["monster"])
-    Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).limbs)
-    Entity.add_component(entity, Components.Skills, %{})
-    Entity.add_component(entity, Components.Flags, %{})
-    Entity.add_component(entity, Components.Effects, %{})
-    Components.Skills.set_base_skills(entity, Components.Module.value(monster).skills)
-    Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).stats)
-    Entity.add_component(entity, Components.HP, Systems.HP.max(entity))
-    Entity.add_component(entity, Components.Mana, Systems.Mana.max(entity))
-    Entity.add_component(entity, Components.Hunting, [])
-    Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
-    Entity.add_component(entity, Components.Module, Components.Module.value(monster))
-    Entity.add_component(entity, Components.Abilities, [])
-    Entity.add_component(entity, Components.Experience, 0)
-    Entity.add_component(entity, Components.Investments, %{})
-    Entity.add_component(entity, Components.Level, 1)
-    Entity.add_component(entity, Components.Items, [])
-    case Components.Module.value(monster).alignment do
-      "good" ->
-        Entity.add_component(entity, Components.Alignment, -75.0)
-      "neutral" ->
-        Entity.add_component(entity, Components.Alignment, 0.0)
-      "evil" ->
-        Entity.add_component(entity, Components.Alignment, 75.0)
+    limit = Components.Module.value(monster).limit
+    monster_name = Components.Name.value(monster)
+
+    if !limit_reached?(monster_name, limit) do
+      {:ok, entity} = Entity.init
+      Entity.add_component(entity, Components.Name,        Components.Name.get_name(monster))
+      Entity.add_component(entity, Components.Description, Components.Module.value(monster).description)
+      Entity.add_component(entity, Components.Types, ["monster"])
+      Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).limbs)
+      Entity.add_component(entity, Components.Skills, %{})
+      Entity.add_component(entity, Components.Flags, %{})
+      Entity.add_component(entity, Components.Effects, %{})
+      Components.Skills.set_base_skills(entity, Components.Module.value(monster).skills)
+      Entity.add_component(entity, Components.Stats,  Components.Module.value(monster).stats)
+      Entity.add_component(entity, Components.HP, Systems.HP.max(entity))
+      Entity.add_component(entity, Components.Mana, Systems.Mana.max(entity))
+      Entity.add_component(entity, Components.Hunting, [])
+      Entity.add_component(entity, Components.Combat, %{"break_at" => Date.convert(Date.now, :secs)})
+      Entity.add_component(entity, Components.Module, Components.Module.value(monster))
+      Entity.add_component(entity, Components.Abilities, [])
+      Entity.add_component(entity, Components.Experience, 0)
+      Entity.add_component(entity, Components.Investments, %{})
+      Entity.add_component(entity, Components.Level, 1)
+      Entity.add_component(entity, Components.Items, [])
+      Entity.add_component(entity, Components.Gender, Components.Module.value(monster).gender)
+      case Components.Module.value(monster).alignment do
+        "good" ->
+          Entity.add_component(entity, Components.Alignment, -75.0)
+        "neutral" ->
+          Entity.add_component(entity, Components.Alignment, 0.0)
+        "evil" ->
+          Entity.add_component(entity, Components.Alignment, 75.0)
+      end
+      equip_monster(entity)
+      Components.Abilities.reset_abilities(entity)
+      Entity.add_to_type_collection(entity)
+      entity
     end
-    equip_monster(entity)
-    Components.Abilities.reset_abilities(entity)
-    Entity.add_to_type_collection(entity)
-    entity
   end
 
   def spawn_monster(monster, room) do
     monster = spawn_monster(monster)
-    Components.Monsters.add_monster(room, monster)
+    if monster do
+      Components.Monsters.add_monster(room, monster)
 
-    display_enter_message(room, monster)
+      display_enter_message(room, monster)
+    end
+  end
+
+  def limit_reached?(monster, nil), do: false
+  def limit_reached?(monster, limit) do
+    limit <= Monsters.count(monster)
   end
 
   def equip_monster(monster) do
@@ -219,6 +232,8 @@ defmodule Systems.Monster do
       def exit_message,  do: nil
       def abilities,     do: []
       def greeting,      do: "The #{name} completely ignores you."
+      def gender,        do: nil
+      def limit,         do: nil
 
       def stats do
         %{"strength"  => 1,
@@ -363,7 +378,9 @@ defmodule Systems.Monster do
                       items:            0,
                       greeting:         0,
                       chance_to_follow: 0,
-                      damage:           0]
+                      damage:           0,
+                      gender:           0,
+                      limit:            0]
     end
   end
 
