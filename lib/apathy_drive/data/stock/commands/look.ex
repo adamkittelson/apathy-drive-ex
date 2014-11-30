@@ -14,7 +14,7 @@ defmodule Commands.Look do
       cond do
         Enum.member?(@directions, Enum.join(arguments, " ")) ->
           Systems.Exit.look(spirit, nil, Enum.join(arguments, " "))
-        target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) ->
+        target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(spirit, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
           send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
@@ -33,7 +33,7 @@ defmodule Commands.Look do
       cond do
         Enum.member?(@directions, Enum.join(arguments, " ")) ->
           Systems.Exit.look(spirit, monster, Enum.join(arguments, " "))
-        target = current_room |> find_entity_in_room(Enum.join(arguments, " ")) ->
+        target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(monster, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
           send_message monster, "scroll", "<p>#{Components.Description.value(target)}</p>"
@@ -45,7 +45,7 @@ defmodule Commands.Look do
     end
   end
 
-  defp find_entity_in_room(room, string) do
+  defp find_monster_in_room(room, string) do
     room
     |> Systems.Room.living_in_room
     |> Systems.Match.one(:name_contains, string)
