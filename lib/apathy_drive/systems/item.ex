@@ -155,6 +155,8 @@ defmodule Systems.Item do
       def uses,                  do: nil
       def destruct_message,      do: nil
       def room_destruct_message, do: nil
+      def can_pick_up?,          do: true
+      def value,                 do: 0
 
       def weapon?, do: slot == "weapon" and !!hit_verbs
 
@@ -170,7 +172,9 @@ defmodule Systems.Item do
                       ac: 0,
                       uses: 0,
                       destruct_message: 0,
-                      room_destruct_message: 0]
+                      room_destruct_message: 0,
+                      can_pick_up?: 0,
+                      value: 0]
     end
   end
 
