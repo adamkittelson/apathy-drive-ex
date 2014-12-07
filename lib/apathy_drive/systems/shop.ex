@@ -3,35 +3,34 @@ defmodule Systems.Shop do
   import Utility
 
   def list(spirit, nil, room) do
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span></p>")
     send_message(spirit, "scroll", "<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>")
     Enum.each(Components.Shop.value(room), fn(item_hash) ->
-      item_name = ItemTemplates.find_by_id(item_hash["item"]) |> Components.Name.value
-      cost = case item_hash["cost"] do
-        nil ->
+      it = ItemTemplates.find_by_id(item_hash["item"])
+      item_name = Components.Name.value(it)
+      value = Components.Module.value(it).value
+      cost = case value do
+        0 ->
           "Free"
-        amount when amount == 1 ->
-          "#{amount} #{item_hash["denomination"]}"
         amount ->
-          "#{amount} #{item_hash["denomination"]}s"
+          amount
       end
-      send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{String.ljust(cost, 30)}</span></p>")
+      send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
     end)
   end
 
   def list(spirit, monster, room) do
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price</span>                    <span class='dark-cyan'>Skill too low</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span>                    <span class='dark-cyan'>Skill too low</span></p>")
     send_message(spirit, "scroll", "<p><span class='dark-cyan'>───────────────────────────────────────────────────────────────────────────</span></p>")
     Enum.each(Components.Shop.value(room), fn(item_hash) ->
       it = ItemTemplates.find_by_id(item_hash["item"])
       item_name = it |> Components.Name.value
-      cost = case item_hash["cost"] do
-        nil ->
+      value = Components.Module.value(it).value
+      cost = case value do
+        0 ->
           "Free"
-        amount when amount == 1 ->
-          "#{amount} #{item_hash["denomination"]}"
         amount ->
-          "#{amount} #{item_hash["denomination"]}s"
+          amount
       end
 
       skill_too_low = Systems.Item.skill_too_low(monster, it)
