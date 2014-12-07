@@ -67,3 +67,6 @@ CHANGELOG
 
 ---- 0.0.22 / 2014-11-30 / upgrade-phoenix -------------------------------------
 * update phoenix
+
+---- 0.0.23 / 2014-12-06 / get-drop-look-items ---------------------------------
+* pick up / drop / look at items
