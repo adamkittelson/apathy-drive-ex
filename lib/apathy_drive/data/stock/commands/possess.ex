@@ -18,7 +18,7 @@ defmodule Commands.Possess do
   end
 
   def possess(spirit, target) do
-    if Systems.Trainer.total_power(spirit) >= Components.Module.value(target).required_power do
+    if Components.Level.value(spirit) >= Components.Module.value(target).possession_level do
       Possession.possess(spirit, target)
       send_message(spirit, "scroll", "<p>You possess #{Components.Name.value(target)}.")
       Systems.Prompt.update(spirit, Possession.possessed(spirit))
