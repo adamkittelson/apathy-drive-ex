@@ -18,6 +18,8 @@ defmodule Commands.Look do
           Systems.Description.add_description_to_scroll(spirit, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
           send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
+        target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
+          send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
       true ->
         send_message(spirit, "scroll", "<p>You do not notice that here.</p>")
       end
@@ -36,7 +38,11 @@ defmodule Commands.Look do
         target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(monster, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
-          send_message monster, "scroll", "<p>#{Components.Description.value(target)}</p>"
+          send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
+        target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
+          send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
+        target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
+          send_message monster, "scroll", "<p>#{Components.Module.value(target).description}</p>"
       true ->
         send_message(monster, "scroll", "<p>You do not notice that here.</p>")
       end
@@ -48,6 +54,17 @@ defmodule Commands.Look do
   defp find_monster_in_room(room, string) do
     room
     |> Systems.Room.living_in_room
+    |> Systems.Match.one(:name_contains, string)
+  end
+
+  defp find_item_in_room(room, string) do
+    room
+    |> Components.Items.get_items
+    |> Systems.Match.one(:name_contains, string)
+  end
+
+  defp find_item_on_monster(monster, string) do
+    (Systems.Limbs.equipped_items(monster) ++ Components.Items.get_items(monster))
     |> Systems.Match.one(:name_contains, string)
   end
 
