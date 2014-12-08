@@ -6,13 +6,23 @@ defmodule Commands.Score do
   def execute(spirit, nil, _arguments) do
     if Entity.has_component?(spirit, Components.Name) do
       send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit) |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(spirit)}</span></p>")
+    else
+      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{"Anonymous" |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(spirit)}</span></p>")
     end
 
     send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{Components.Level.value(spirit)}</span></p>")
   end
 
   def execute(spirit, monster, _arguments) do
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(monster) |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(monster)}</span></p>")
+    if Entity.has_component?(spirit, Components.Name) do
+      send_message(spirit, "scroll", "<p><span class='dark-cyan'>#{Components.Name.value(spirit)}</span></p>")
+    else
+      send_message(spirit, "scroll", "<p><span class='dark-cyan'>Spirit</span></p>")
+    end
+
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{Components.Level.value(spirit) |> to_string |> String.ljust(11)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(spirit)}</span>\n\n</p>")
+
+    send_message(spirit, "scroll", "<p><span class='dark-cyan'>#{Components.Name.value(monster) |> String.ljust(18)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(monster)}</span></p>")
 
     monster_level = Components.Level.value(monster) |> to_string |> String.ljust(12)
     monster_power = Systems.Trainer.monster_power(monster)
