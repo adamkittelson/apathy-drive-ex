@@ -50,11 +50,14 @@ defmodule Systems.Item do
   def skill_too_low(monster, item) do
     skills = Components.Module.value(item).required_skills
 
-    skills
-    |> Map.keys
-    |> Enum.find(fn(skill) ->
-         Systems.Skill.base(monster, skill) < skills[skill]
-       end)
+    skill = skills
+            |> Map.keys
+            |> Enum.find(fn(skill) ->
+                 Systems.Skill.base(monster, skill) < skills[skill]
+               end)
+    if skill do
+      {skill, skills[skill]}
+    end
   end
 
   def display_inventory(character) do
@@ -108,8 +111,8 @@ defmodule Systems.Item do
     end
   end
 
-  def equip(monster, item, skill) do
-    send_message(monster, "scroll", "<p>You don't have enough #{skill} skill to equip that.</p>")
+  def equip(monster, item, {skill, req}) do
+    send_message(monster, "scroll", "<p>You need at least #{req} #{skill} skill to equip that.</p>")
   end
 
   def unequip(character, item) do

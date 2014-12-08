@@ -20,7 +20,7 @@ defmodule Systems.Shop do
   end
 
   def list(spirit, monster, room) do
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span>                    <span class='dark-cyan'>Skill too low</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span>       <span class='dark-cyan'>Required Skill</span></p>")
     send_message(spirit, "scroll", "<p><span class='dark-cyan'>───────────────────────────────────────────────────────────────────────────</span></p>")
     Enum.each(Components.Shop.value(room), fn(item_hash) ->
       it = ItemTemplates.find_by_id(item_hash["item"])
@@ -33,12 +33,11 @@ defmodule Systems.Shop do
           amount
       end
 
-      skill_too_low = Systems.Item.skill_too_low(monster, it)
-
-      if skill_too_low do
-        send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{String.ljust(cost, 25)}</span><span class='dark-cyan'>#{skill_too_low}</span></p>")
-      else
-        send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
+      case Systems.Item.skill_too_low(monster, it) do
+        {skill_name, requirement} ->
+          send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(to_string(item_name), 30)}</span><span class='dark-cyan'>#{String.ljust(to_string(cost), 25)}</span><span class='dark-cyan'>#{requirement} #{skill_name}</span></p>")
+        _ ->
+          send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
       end
     end)
   end
