@@ -2,7 +2,7 @@ defmodule Systems.Trainer do
   use Systems.Reload
   import Utility
 
-  def list(spirit, nil, room) do
+  def list(spirit, nil, _room) do
     send_message(spirit, "scroll", "<p>You can learn nothing here.</p>")
   end
 
@@ -51,11 +51,10 @@ defmodule Systems.Trainer do
     end
   end
 
-  def train(entity, skill) do
-    monster_power = monster_power(entity)
-    spirit_power = spirit_power(Possession.possessor(entity))
-    cost = cost(entity, skill)
-    Components.Skills.train(entity, skill, spirit_power, monster_power, cost)
+  def train(monster, skill) do
+    devs = monster_power(monster)
+    cost = cost(monster, skill)
+    Components.Skills.train(monster, skill, devs, cost)
   end
 
   def spirit_power(spirit) do
