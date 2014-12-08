@@ -38,7 +38,7 @@ defmodule Systems.Login do
       Components.Idle.value(character, 0)
       send_message(character, "clear scroll")
       Systems.Room.display_room_in_scroll(character, Parent.of(character))
-      Systems.Command.display_prompt(character)
+      Systems.Prompt.display(character, nil)
     else
       Phoenix.Channel.reply socket, "redirect", %{:url => "/"}
     end

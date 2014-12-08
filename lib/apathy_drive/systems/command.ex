@@ -6,7 +6,7 @@ defmodule Systems.Command do
     monster = Possession.possessed(spirit)
 
     Components.Idle.value(spirit, 0)
-    display_prompt(spirit, monster)
+    Systems.Prompt.display(spirit, monster)
 
     execute(spirit, monster, command, arguments)
   end
@@ -61,23 +61,7 @@ defmodule Systems.Command do
 
   def display_prompt(spirit) do
     monster = Possession.possessed(spirit)
-    display_prompt(spirit, monster)
-  end
-
-  def display_prompt(spirit, nil) do
-    send_message(spirit, "disable", "#prompt")
-    send_message(spirit, "disable", "#command")
-    send_message(spirit, "scroll", "<p><span id='prompt'>[#{Systems.Trainer.spirit_power(spirit)}]:</span><input id='command' size='50' class='prompt'></input></p>")
-    send_message(spirit, "focus", "#command")
-    send_message(spirit, "up")
-  end
-
-  def display_prompt(spirit, monster) do
-    send_message(spirit, "disable", "#prompt")
-    send_message(spirit, "disable", "#command")
-    send_message(spirit, "scroll", "<p><span id='prompt'>[HP=#{Components.HP.value(monster)}/MA=#{Components.Mana.value(monster)}]:</span><input id='command' size='50' class='prompt'></input></p>")
-    send_message(spirit, "focus", "#command")
-    send_message(spirit, "up")
+    Systems.Prompt.display(spirit, monster)
   end
 
   defmacro __using__(_opts) do
