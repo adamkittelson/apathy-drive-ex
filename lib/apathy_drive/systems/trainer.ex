@@ -13,7 +13,7 @@ defmodule Systems.Trainer do
     skills_by_level(room) |> Map.keys |> Enum.each fn level ->
       row = "Level#{String.rjust("#{level}", 3)} -------------------- Cost ----- Rating"
       send_message(spirit, "scroll", "<p><span class='blue'>#{row}</span></p>")
-      skills_by_level(room)[level] |> Enum.each fn skill ->
+      skills_by_level(room)[level] |> Enum.sort |> Enum.each fn skill ->
         skill_name = String.ljust(skill.name, 26)
         cost = cost(monster, skill)
         if power < cost do
