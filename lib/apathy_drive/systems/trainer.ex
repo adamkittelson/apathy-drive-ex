@@ -7,7 +7,7 @@ defmodule Systems.Trainer do
   end
 
   def list(spirit, monster, room) do
-    power = monster_power(monster) + spirit_power(spirit)
+    devs = monster_power(monster)
     header = "<span class='blue'>-=-=-=-=-=-=-=-</span>  <span class='white'>Skill Listing</span>  <span class='blue'>-=-=-=-=-=-=-=-</span>"
     send_message(spirit, "scroll", "<p>#{header}</p>")
     skills_by_level(room) |> Map.keys |> Enum.each fn level ->
@@ -16,7 +16,7 @@ defmodule Systems.Trainer do
       skills_by_level(room)[level] |> Enum.sort |> Enum.each fn skill ->
         skill_name = String.ljust(skill.name, 26)
         cost = cost(monster, skill)
-        if power < cost do
+        if devs < cost do
           cost = "<span class='dark-red'>#{"#{cost}" |> String.ljust(8)}</span>"
         else
           cost = "<span class='green'>#{"#{cost}" |> String.ljust(8)}</span>"
@@ -57,12 +57,8 @@ defmodule Systems.Trainer do
     Components.Skills.train(monster, skill, devs, cost)
   end
 
-  def spirit_power(spirit) do
-    total_power(spirit) - Components.Investments.power_invested(spirit)
-  end
-
   def monster_power(monster) do
-    total_power(monster) - Components.Skills.power_spent(monster) + Components.Investments.power_invested(monster)
+    total_power(monster) - Components.Skills.power_spent(monster)
   end
 
   def total_power(entity) when is_pid(entity) do

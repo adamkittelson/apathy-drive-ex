@@ -63,24 +63,31 @@ defmodule Systems.Shop do
     end
   end
 
-  def sell(character, room, item) do
+  def sell(monster, room, item) do
     cond do
       !Entity.has_component?(room, Components.Shop) ->
-        send_message(character, "scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
+        send_message(monster, "scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
       true ->
-        case Systems.Match.all(Components.Items.get_items(character), :name_contains, item) do
+        case Systems.Match.all(Components.Items.get_items(monster), :name_contains, item) do
           [match] ->
-            Components.Items.remove_item(character, match)
-            Entities.save(character)
-            send_message(character, "scroll", "<p>You just sold #{Components.Name.value(match)} for nothing.</p>")
+            spirit = Possession.possessor(monster)
+
+            if spirit do
+              exp = trunc(Components.Module.value(match).value / 10)
+              Components.Experience.add(spirit, exp)
+              Entities.save!(spirit)
+              send_message(spirit, "scroll", "<p>You just sold #{Components.Name.value(match)} for #{exp} experience.</p>")
+            end
+            Components.Items.remove_item(monster, match)
+            Entities.save!(monster)
             Entities.delete!(match)
           [] ->
-            send_message(character, "scroll", "<p>You don't have \"#{item}\" to sell!</p>")
+            send_message(monster, "scroll", "<p>You don't have \"#{item}\" to sell!</p>")
           matches ->
             match_names = matches |> Enum.map &(Components.Name.value(&1))
-            send_message(character, "scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
+            send_message(monster, "scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
             Enum.each match_names, fn(match_name) ->
-              send_message(character, "scroll", "<p>-- #{match_name}</p>")
+              send_message(monster, "scroll", "<p>-- #{match_name}</p>")
             end
         end
     end

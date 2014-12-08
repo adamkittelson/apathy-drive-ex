@@ -13,8 +13,8 @@ defmodule Systems.Death do
     |> Systems.Monster.monsters_in_room(victim)
     |> Enum.each(fn(monster) ->
          send_message(monster, "scroll", "<p>#{death_message(victim)}</p>")
-         reward_monster(monster, victim)
          reward_spirit(Possession.possessor(monster), victim)
+         reward_monster(monster, victim)
        end)
 
     corpse = create_corpse(victim, room)
@@ -26,10 +26,6 @@ defmodule Systems.Death do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Components.Effects.remove(entity)
-
-    Components.Investments.list(entity)
-    |> Enum.map(&(&1 |> String.to_integer |> Characters.find_by_id))
-    |> Enum.each(&(Components.Investments.uninvest(&1, Components.ID.value(entity))))
 
     possessor = Possession.possessor(entity)
     if possessor do
@@ -103,7 +99,7 @@ defmodule Systems.Death do
     new_power = Systems.Trainer.total_power(monster)
     power_gain = new_power - old_power
     if power_gain > 0 do
-      send_message(monster, "scroll", "<p>Your #{Components.Name.value(monster)} gains #{power_gain} power.</p>")
+      send_message(monster, "scroll", "<p>You gain #{power_gain} development points.</p>")
     end
     Components.Alignment.alter_alignment(monster, Components.Alignment.get_alignment(victim))
   end
@@ -111,12 +107,7 @@ defmodule Systems.Death do
   def reward_spirit(nil, victim), do: nil
   def reward_spirit(spirit, victim) do
     exp = experience_to_grant(victim)
-    old_power = Systems.Trainer.total_power(spirit)
     Components.Experience.add(spirit, exp)
-    new_power = Systems.Trainer.total_power(spirit)
-    power_gain = new_power - old_power
-    if power_gain > 0 do
-      send_message(spirit, "scroll", "<p>You gain #{power_gain} power.</p>")
-    end
+    send_message(spirit, "scroll", "<p>You gain #{exp} experience.</p>")
   end
 end
