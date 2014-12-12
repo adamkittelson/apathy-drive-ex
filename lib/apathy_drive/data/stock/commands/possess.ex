@@ -23,7 +23,7 @@ defmodule Commands.Possess do
       send_message(spirit, "scroll", "<p>You possess #{Components.Name.value(target)}.")
       Systems.Prompt.update(spirit, Possession.possessed(spirit))
     else
-      send_message(spirit, "scroll", "<p>You aren't yet powerful enough to possess #{Components.Name.value(target)}.")
+      send_message(spirit, "scroll", "<p>You must be at least level #{Components.Module.value(target).possession_level} to possess #{Components.Name.value(target)}.")
     end
   end
 

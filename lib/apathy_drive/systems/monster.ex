@@ -26,7 +26,6 @@ defmodule Systems.Monster do
       Entity.add_component(entity, Components.Module, Components.Module.value(monster))
       Entity.add_component(entity, Components.Abilities, [])
       Entity.add_component(entity, Components.Experience, 0)
-      Entity.add_component(entity, Components.Investments, %{})
       Entity.add_component(entity, Components.Level, 1)
       Entity.add_component(entity, Components.Items, [])
       Entity.add_component(entity, Components.Gender, Components.Module.value(monster).gender)

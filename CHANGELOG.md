@@ -70,3 +70,6 @@ CHANGELOG
 
 ---- 0.0.23 / 2014-12-06 / get-drop-look-items ---------------------------------
 * pick up / drop / look at items
+
+---- 0.0.24 / 2014-12-12 / exp-dev-work ----------------------------------------
+* monsters train with development points, spirits can give exp to monsters / buy and sell items for exp

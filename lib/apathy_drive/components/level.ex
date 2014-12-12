@@ -12,7 +12,7 @@ defmodule Components.Level do
   end
 
   def advance(entity) do
-    GenEvent.notify(entity, {:add_level, 1})
+    GenEvent.call(entity, Components.Level, {:add_level, 1})
   end
 
   def serialize(entity) do
@@ -28,12 +28,13 @@ defmodule Components.Level do
     {:ok, value, value}
   end
 
-  def handle_event({:set_level, new_value}, _value) do
-    {:ok, new_value }
+  def handle_call({:add_level, amount}, value) do
+    new_level = value + amount
+    {:ok, new_level, new_level}
   end
 
-  def handle_event({:add_level, amount}, value) do
-    {:ok, value + amount }
+  def handle_event({:set_level, new_value}, _value) do
+    {:ok, new_value }
   end
 
   def handle_event(_, current_value) do

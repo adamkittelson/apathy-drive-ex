@@ -5,22 +5,29 @@ defmodule Commands.Score do
 
   def execute(spirit, nil, _arguments) do
     if Entity.has_component?(spirit, Components.Name) do
-      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit) |> String.ljust(12)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>None</span></p>")
+      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit) |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(spirit)}</span></p>")
+    else
+      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{"Anonymous" |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(spirit)}</span></p>")
     end
 
-    power  = Systems.Trainer.spirit_power(spirit)
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Power:</span> <span class='dark-cyan'>#{power}</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{Components.Level.value(spirit)}</span></p>")
   end
 
   def execute(spirit, monster, _arguments) do
     if Entity.has_component?(spirit, Components.Name) do
-      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit) |> String.ljust(12)}</span> <span class='dark-green'>Possessing:</span> <span class='dark-cyan'>#{Components.Name.value(monster)}</span></p>")
+      send_message(spirit, "scroll", "<p><span class='dark-cyan'>#{Components.Name.value(spirit)}</span></p>")
+    else
+      send_message(spirit, "scroll", "<p><span class='dark-cyan'>Spirit</span></p>")
     end
 
-    spirit_power  = Systems.Trainer.spirit_power(spirit) |> to_string |> String.ljust(12)
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{Components.Level.value(spirit) |> to_string |> String.ljust(11)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(spirit)}</span>\n\n</p>")
+
+    send_message(spirit, "scroll", "<p><span class='dark-cyan'>#{Components.Name.value(monster) |> String.ljust(18)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(monster)}</span></p>")
+
+    monster_level = Components.Level.value(monster) |> to_string |> String.ljust(12)
     monster_power = Systems.Trainer.monster_power(monster)
 
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Power:</span> <span class='dark-cyan'>#{spirit_power}</span><span class='dark-green'>Power:</span> <span class='dark-cyan'>#{monster_power}</span></p>")
+    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{monster_level}</span><span class='dark-green'>Devs:</span> <span class='dark-cyan'>#{monster_power}</span></p>")
 
     hp = String.ljust("#{Components.HP.value(monster)}/#{Systems.HP.max(monster)}", 15)
     mana = "#{Components.Mana.value(monster)}/#{Systems.Mana.max(monster)}"

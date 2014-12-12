@@ -44,67 +44,50 @@ defmodule Components.Skills do
     GenEvent.call(entity, Components.Skills, {:base_skill, skill_name})
   end
 
-  def train(entity, _skill, spirit_power, monster_power, cost) when (spirit_power + monster_power) < cost do
-    send_message(entity, "scroll", "<p>You need #{cost} power to train that skill.</p>")
-    send_message(entity, "scroll", "<p>You only have #{spirit_power + monster_power}.</p>")
+  def train(entity, _skill, devs, cost) when devs < cost do
+    send_message(entity, "scroll", "<p>You need #{cost} development points to train that skill.</p>")
+    send_message(entity, "scroll", "<p>You only have #{devs}.</p>")
   end
 
-  def train(entity, skill, spirit_power, monster_power, cost) do
-    old_stats = Systems.Stat.modified(entity)
-    old_abilities = Components.Abilities.names(entity)
+  def train(monster, skill, devs, cost) do
+    old_stats = Systems.Stat.modified(monster)
+    old_abilities = Components.Abilities.names(monster)
 
-    GenEvent.notify(entity, {:train, skill.name, cost})
-    rating = skill.base(entity)
+    GenEvent.notify(monster, {:train, skill.name, cost})
+    rating = skill.base(monster)
 
-    new_monster_power = max(0, monster_power - cost)
-    monster_spent = monster_power - new_monster_power
-    spirit_spent = cost - monster_spent
+    new_devs = max(0, devs - cost)
+    spent = devs - new_devs
 
-    spirit = Possession.possessor(entity)
+    Entities.save!(monster)
 
-    Entities.save!(spirit)
-    Entities.save!(entity)
-    Components.Investments.invest(spirit, Components.ID.value(entity), spirit_spent)
-    Components.Investments.invest(entity, Components.ID.value(spirit), spirit_spent)
-    Entities.save!(spirit)
-    Entities.save!(entity)
+    send_message(monster, "scroll", "<p>You spend #{spent} development points to train #{skill.name} to #{rating}%</p>")
 
-    new_spirit_power  = Systems.Trainer.spirit_power(spirit)
-
-    cond do
-      spirit_spent > 0 && monster_spent > 0 ->
-        send_message(entity, "scroll", "<p>You use #{monster_spent} of #{Components.Name.value(entity)}'s power and invest #{spirit_spent} of your own to increase #{Components.Name.value(entity)}'s #{skill.name} to #{rating}%</p>")
-      monster_spent > 0 ->
-        send_message(entity, "scroll", "<p>You use #{monster_spent} of #{Components.Name.value(entity)}'s power to increase its #{skill.name} to #{rating}%</p>")
-      spirit_spent > 0 ->
-        send_message(entity, "scroll", "<p>You invest #{spirit_spent} of your own power to increase #{Components.Name.value(entity)}'s #{skill.name} to #{rating}%</p>")
-    end
-
-    new_stats = Systems.Stat.modified(entity)
+    new_stats = Systems.Stat.modified(monster)
     new_stats |> Map.keys
               |> Enum.each fn(stat) ->
                    difference = new_stats[stat] - old_stats[stat]
                    if difference > 0 do
-                     send_message(entity, "scroll", "<p>Your #{Components.Name.value(entity)}'s #{stat} increases by #{difference}!</p>")
+                     send_message(monster, "scroll", "<p>Your #{stat} increases by #{difference}!</p>")
                    end
                  end
 
-    Components.Abilities.reset_abilities(entity)
-    new_abilities = Components.Abilities.names(entity)
+    Components.Abilities.reset_abilities(monster)
+    new_abilities = Components.Abilities.names(monster)
 
     new_abilities
     |> Enum.each(fn(ability) ->
          if !Enum.member?(old_abilities, ability) do
-           send_message(entity, "scroll", "<p>Your #{Components.Name.value(entity)} has learned #{ability}!</p>")
+           send_message(monster, "scroll", "<p><span class='dark-cyan'>You learn #{ability}!</span></p>")
          end
        end)
 
-    cost = Systems.Trainer.cost(skill.cost, skill.trained(entity))
-    send_message(entity, "scroll", "<p>It will cost you #{cost} power to advance this skill further.</p>")
-    send_message(entity, "scroll", "<p>Remaining power - #{Components.Name.value(entity)}: #{new_monster_power}, You: #{new_spirit_power}</p>")
-    Entities.save!(entity)
-    HPRegen.add(entity)
-    ManaRegen.add(entity)
+    cost = Systems.Trainer.cost(skill.cost, skill.trained(monster))
+    send_message(monster, "scroll", "<p>It will cost you #{cost} development points to advance this skill further.</p>")
+    send_message(monster, "scroll", "<p>You have #{new_devs} development points left.</p>")
+    Entities.save!(monster)
+    HPRegen.add(monster)
+    ManaRegen.add(monster)
   end
 
   def serialize(entity) do

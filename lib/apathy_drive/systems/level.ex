@@ -26,7 +26,12 @@ defmodule Systems.Level do
   end
 
   def advance(entity, exp_tnl) when exp_tnl < 1 do
-    Components.Level.advance(entity)
+    new_level = Components.Level.advance(entity)
+    if Possession.possessor(entity) do
+      send_message(entity, "scroll", "<p>Your #{Components.Name.value(entity)} has advanced to level #{new_level}!</p>")
+    else
+      send_message(entity, "scroll", "<p>You've advanced to level #{new_level}!</p>")
+    end
   end
   def advance(_, _), do: nil
 
