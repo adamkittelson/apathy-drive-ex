@@ -1,6 +1,7 @@
 defmodule Systems.Shop do
   use Systems.Reload
   import Utility
+  import Systems.Text
 
   def list(spirit, nil, room) do
     send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span></p>")
@@ -49,8 +50,17 @@ defmodule Systems.Shop do
       true ->
         case Systems.Match.all(Components.Shop.items(room), :name_contains, item) do
           [match] ->
-            Systems.Item.spawn_item(match, character)
-            send_message(character, "scroll", "<p>You just bought #{Components.Name.value(match)} for nothing.</p>")
+            spirit = Possession.possessor(character)
+            value  = Components.Module.value(match).value
+            exp    = Components.Experience.value(spirit)
+
+            if value > exp do
+              send_message(character, "scroll", "<p>#{Components.Name.value(match) |> capitalize_first} costs #{value} experience, you only have #{exp}.</p>")
+            else
+              Components.Experience.add(spirit, -value)
+              Systems.Item.spawn_item(match, character)
+              send_message(character, "scroll", "<p>You purchase #{Components.Name.value(match)} for #{value} experience.</p>")
+            end
           [] ->
             send_message(character, "scroll", "<p>\"#{item}\" does not appear to be for sale here.</p>")
           matches ->
