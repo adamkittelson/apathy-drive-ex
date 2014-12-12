@@ -9,10 +9,11 @@ defmodule Systems.Death do
 
     send_message(victim, "scroll", "<p><span class='red'>You have been killed!</span></p>")
 
+    Systems.Monster.display_death_message(room, victim)
+
     room
     |> Systems.Monster.monsters_in_room(victim)
     |> Enum.each(fn(monster) ->
-         send_message(monster, "scroll", "<p>#{death_message(victim)}</p>")
          reward_spirit(Possession.possessor(monster), victim)
          reward_monster(monster, victim)
        end)
@@ -70,15 +71,6 @@ defmodule Systems.Death do
 
     Entities.save!(room)
     corpse
-  end
-
-  def death_message(entity) do
-    default = "#{capitalize_first(Components.Name.value(entity))} drops <span class='dark-red'>dead</span> before you."
-    if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).death_message || default
-    else
-      default
-    end
   end
 
   def experience_to_grant(entity) when is_pid entity do

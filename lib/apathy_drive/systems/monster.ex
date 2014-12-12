@@ -69,18 +69,8 @@ defmodule Systems.Monster do
        end)
   end
 
-  def enter_message(entity) do
-    default = "{{name}} enters from {{direction}}."
-    if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).enter_message || default
-    else
-      default
-    end
-  end
-
   def display_enter_message(room, monster) do
-    message = monster
-              |> enter_message
+    message = Components.Module.value(monster).enter_message
               |> interpolate(%{
                    "name" => Components.Name.value(monster),
                    "direction" => direction(room)
@@ -94,8 +84,7 @@ defmodule Systems.Monster do
   end
 
   def display_enter_message(room, monster, direction) do
-    message = monster
-              |> enter_message
+    message = Components.Module.value(monster).enter_message
               |> interpolate(%{
                    "name" => Components.Name.value(monster),
                    "direction" => enter_direction(direction)
@@ -109,8 +98,7 @@ defmodule Systems.Monster do
   end
 
   def display_exit_message(room, monster) do
-    message = monster
-              |> exit_message
+    message = Components.Module.value(monster).exit_message
               |> interpolate(%{
                    "name" => Components.Name.value(monster),
                    "direction" => ""
@@ -124,8 +112,7 @@ defmodule Systems.Monster do
   end
 
   def display_exit_message(room, monster, direction) do
-    message = monster
-              |> exit_message
+    message = Components.Module.value(monster).exit_message
               |> interpolate(%{
                    "name" => Components.Name.value(monster),
                    "direction" => exit_direction(direction)
@@ -135,6 +122,19 @@ defmodule Systems.Monster do
     observers(room, monster)
     |> Enum.each(fn(observer) ->
       send_message(observer, "scroll", "<p><span class='yellow'>#{message}</span></p>")
+    end)
+  end
+
+  def display_death_message(room, monster) do
+    message = Components.Module.value(monster).death_message
+              |> interpolate(%{
+                   "name" => Components.Name.value(monster)
+                 })
+              |> capitalize_first
+
+    observers(room, monster)
+    |> Enum.each(fn(observer) ->
+      send_message(observer, "scroll", "<p>#{message}</p>")
     end)
   end
 
@@ -149,16 +149,6 @@ defmodule Systems.Monster do
            end
          end
        end
-  end
-
-  def exit_message(entity) do
-    default = "{{name}} exits {{direction}}."
-    message = if Entity.has_component?(entity, Components.Module) do
-      Components.Module.value(entity).exit_message || default
-    else
-      default
-    end
-    String.replace(message, " .", ".")
   end
 
   def observers(room, monster) do
@@ -226,9 +216,9 @@ defmodule Systems.Monster do
       end
 
       def description,   do: nil
-      def death_message, do: nil
-      def enter_message, do: nil
-      def exit_message,  do: nil
+      def death_message, do: ~s({{name}} drops dead before you.)
+      def enter_message, do: ~s({{name}} walks in from {{direction}}.)
+      def exit_message,  do: ~s(A {{name}} walks off to %s.)
       def abilities,     do: []
       def greeting,      do: "The #{name} completely ignores you."
       def gender,        do: nil
