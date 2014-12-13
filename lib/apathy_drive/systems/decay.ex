@@ -26,13 +26,20 @@ defmodule Systems.Decay do
   def decay(corpse) do
     if Components.Decay.state(corpse) == "decayed" do
       room = Parent.of(corpse)
-      Components.Items.remove_item(room, corpse)
-      Components.Items.get_items(corpse)
-      |> Enum.each(fn(item) ->
-           Components.Items.remove_item(corpse, item)
-           Components.Items.add_item(room, item)
-         end)
-      Entities.save!(room)
+      if room do
+        Components.Items.remove_item(room, corpse)
+        Components.Items.get_items(corpse)
+        |> Enum.each(fn(item) ->
+             Components.Items.remove_item(corpse, item)
+             Components.Items.add_item(room, item)
+           end)
+        Entities.save!(room)
+      else
+        Components.Items.get_items(corpse)
+        |> Enum.each(fn(item) ->
+             Entities.delete!(item)
+           end)
+      end
       Entities.delete!(corpse)
     else
       Components.Decay.decay(corpse)

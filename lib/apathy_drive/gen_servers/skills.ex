@@ -28,6 +28,13 @@ defmodule Skills do
     end
   end
 
+  def universal do
+    all |> Enum.filter(fn(skill) ->
+             Components.Module.value(skill).universal?
+           end)
+        |> Enum.map(&Components.Name.value/1)
+  end
+
   # GenServer API
   def start_link do
     GenServer.start_link(Skills, %{}, name: :skills)

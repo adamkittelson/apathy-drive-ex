@@ -77,6 +77,10 @@ defmodule Systems.Skill do
         |> Enum.sum
       end
 
+      def universal?, do: true
+
+      defoverridable [universal?: 0]
+
     end
   end
 

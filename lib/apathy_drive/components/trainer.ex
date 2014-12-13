@@ -12,7 +12,7 @@ defmodule Components.Trainer do
   end
 
   def skills(entity) do
-    value(entity)
+    (Skills.universal ++ value(entity))
     |> Enum.map &(Skills.value[&1])
   end
 
