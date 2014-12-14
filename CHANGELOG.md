@@ -73,3 +73,6 @@ CHANGELOG
 
 ---- 0.0.24 / 2014-12-12 / exp-dev-work ----------------------------------------
 * monsters train with development points, spirits can give exp to monsters / buy and sell items for exp
+
+---- 0.0.25 / 2014-12-13 / dynamic-skill-list ----------------------------------
+* dynamic skill lists at trainers
