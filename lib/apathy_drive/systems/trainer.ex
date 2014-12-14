@@ -107,8 +107,7 @@ defmodule Systems.Trainer do
   end
 
   def skills_by_level(room) do
-    room
-    |> Components.Trainer.value
+    (Skills.universal ++ Components.Trainer.value(room))
     |> Enum.reduce %{}, fn skill_name, skills ->
          skill = Skills.find(skill_name)
          skills = Map.put_new(skills, skill.level, [])

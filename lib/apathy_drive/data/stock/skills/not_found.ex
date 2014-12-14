@@ -6,4 +6,6 @@ defmodule Skills.NotFound do
   def level,   do: 1
   def modifiers, do: %{}
   def help, do: nil
+
+  def universal?, do: false
 end

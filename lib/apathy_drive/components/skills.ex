@@ -88,6 +88,7 @@ defmodule Components.Skills do
     Entities.save!(monster)
     HPRegen.add(monster)
     ManaRegen.add(monster)
+    Entities.save!(Parent.of(monster))
   end
 
   def serialize(entity) do
