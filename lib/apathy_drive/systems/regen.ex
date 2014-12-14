@@ -51,12 +51,14 @@ defmodule Systems.Regen do
     if crippled && !Components.Limbs.crippled?(entity, limb) do
       Parent.of(entity)
       |> Systems.Room.characters_in_room
-      |> Enum.each(fn(character) ->
+      |> Enum.each(fn(spirit) ->
+           observer = Possession.possessed(spirit) || spirit
+
            cond do
-             character == entity ->
-               send_message(character, "scroll", "<p>Your #{limb} no longer crippled!</p>")
+             observer == entity ->
+               send_message(observer, "scroll", "<p>Your #{limb} no longer crippled!</p>")
               true ->
-               send_message(character, "scroll", "<p>#{Components.Name.value(entity) |> capitalize_first}'s #{limb} is no longer crippled!</p>")
+               send_message(observer, "scroll", "<p>#{Components.Name.value(entity) |> capitalize_first}'s #{limb} is no longer crippled!</p>")
            end
          end)
     end

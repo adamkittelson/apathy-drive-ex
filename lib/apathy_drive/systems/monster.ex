@@ -2,6 +2,7 @@ defmodule Systems.Monster do
   use Systems.Reload
   import Systems.Text
   import Utility
+  import BlockTimer
   use Timex
 
   def spawn_monster(monster) do
@@ -40,6 +41,13 @@ defmodule Systems.Monster do
       equip_monster(entity)
       Components.Abilities.reset_abilities(entity)
       Entity.add_to_type_collection(entity)
+
+      {:ok, ai_timer} = apply_interval 60 |> seconds do
+        Systems.AI.think(entity)
+      end
+
+      Systems.Effect.add(entity, %{timers: [ai_timer]})
+
       entity
     end
   end

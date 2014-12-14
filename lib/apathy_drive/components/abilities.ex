@@ -7,6 +7,37 @@ defmodule Components.Abilities do
     GenEvent.call(entity, Components.Abilities, :value)
   end
 
+  def heals(entity) do
+    entity
+    |> value
+    |> useable(entity)
+    |> Enum.filter(fn(ability) ->
+         Components.Module.value(ability).properties(entity)
+         |> Map.keys
+         |> Enum.member?(:healing)
+       end)
+  end
+
+  def useable(abilities, entity) do
+    if casting?(entity) do
+      []
+    else
+      mana = Components.Mana.value(entity)
+      Enum.filter(abilities, fn(ability) ->
+        Components.Module.value(ability).mana_cost <= mana
+      end)
+    end
+  end
+
+  def casting?(monster) do
+    monster
+    |> Components.Effects.value
+    |> Map.values
+    |> Enum.any?(fn(effect) ->
+         effect[:stack_key] == :cast_timer
+       end)
+  end
+
   def reset_abilities(entity) do
     abilities = Abilities.from_skills(entity) ++ from_module(entity)
 

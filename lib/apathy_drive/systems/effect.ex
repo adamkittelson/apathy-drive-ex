@@ -3,6 +3,12 @@ defmodule Systems.Effect do
   import BlockTimer
   use Timex
 
+  def add(entity, effect) do
+    key = Time.now(:msecs) * 1000 |> trunc
+
+    Components.Effects.add(entity, key, effect)
+  end
+
   def add(entity, effect, duration) do
     key = Time.now(:msecs) * 1000 |> trunc
 

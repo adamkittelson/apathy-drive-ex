@@ -48,6 +48,10 @@ defmodule Components.Effects do
       |> stack(stack_key)
       |> Enum.sort
       |> List.first
+
+    if stack_key == :cast_timer do
+      send_message(entity, "scroll", "<p><span class='dark-red'>You interrupt your other ability.</span></p>")
+    end
     remove(entity, oldest)
   end
 
