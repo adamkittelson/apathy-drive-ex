@@ -55,11 +55,13 @@ defmodule Components.Monsters do
   def add_monster(entity, monster) do
     Parent.set(monster, entity)
     GenEvent.notify(entity, {:add_monster, monster})
+    Entities.save!(entity)
   end
 
   def remove_monster(entity, monster) do
     Parent.set(monster, nil)
     GenEvent.notify(entity, {:remove_monster, monster})
+    Entities.save!(entity)
   end
 
   def serialize(entity) do
