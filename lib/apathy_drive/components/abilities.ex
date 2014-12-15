@@ -12,10 +12,24 @@ defmodule Components.Abilities do
     |> value
     |> useable(entity)
     |> Enum.filter(fn(ability) ->
-         Components.Module.value(ability).properties(entity)
-         |> Map.keys
-         |> Enum.member?(:healing)
+         heal?(entity, ability)
        end)
+  end
+
+  def blessings(entity) do
+    entity
+    |> value
+    |> useable(entity)
+    |> Enum.filter(fn(ability) ->
+         !heal?(entity, ability) and
+           Enum.member?(["self", "self or monster"], ability.properties(entity).target)
+       end)
+  end
+
+  def heal?(entity, ability) do
+    ability.properties(entity)
+     |> Map.keys
+     |> Enum.member?(:healing)
   end
 
   def useable(abilities, entity) do
@@ -23,9 +37,17 @@ defmodule Components.Abilities do
       []
     else
       mana = Components.Mana.value(entity)
-      Enum.filter(abilities, fn(ability) ->
-        Components.Module.value(ability).mana_cost <= mana
-      end)
+      abilities
+      |> Enum.map(fn(ability) ->
+           Components.Module.value(ability)
+         end)
+      |> Enum.filter(fn(ability) ->
+           ability.mana_cost <= mana
+         end)
+      |> Enum.filter(fn(ability) ->
+           stack = %{stack_key: ability.stack_key, stack_count: ability.stack_count}
+           !Components.Effects.max_stacks?(entity, stack)
+         end)
     end
   end
 

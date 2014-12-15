@@ -2,13 +2,11 @@ defmodule Systems.AI do
   use Systems.Reload
 
   def think(monster) do
-    if Components.Combat.in_combat?(monster) do
-      use_ability?(monster)
-    end
+    use_ability?(monster)
   end
 
   def use_ability?(monster) do
-    heal(monster)
+    heal(monster) || bless(monster)
   end
 
   def heal(monster) do
@@ -21,18 +19,34 @@ defmodule Systems.AI do
     roll = :random.uniform(100)
 
     if chance > roll do
-      ability = case Components.Abilities.heals(monster) do
-        [heal] ->
-          heal
-        [] ->
-          nil
-        heals ->
-          heals |> Enum.shuffle |> List.first
-      end
-
+      ability = monster
+                |> Components.Abilities.heals
+                |> random_ability
       if ability do
-        Components.Module.value(ability).execute(monster, "")
+        ability.execute(monster)
       end
+    end
+  end
+
+  def bless(monster) do
+    ability = monster
+              |> Components.Abilities.blessings
+              |> random_ability
+
+    if ability do
+      ability.execute(monster)
+    end
+  end
+
+  def random_ability(abilities) do
+    case abilities do
+      [ability] ->
+        ability
+      [] ->
+        nil
+      abilities ->
+        :random.seed(:os.timestamp)
+        abilities |> Enum.shuffle |> List.first
     end
   end
 

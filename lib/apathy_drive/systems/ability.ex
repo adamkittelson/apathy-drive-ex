@@ -21,10 +21,10 @@ defmodule Systems.Ability do
     room = Parent.of(entity)
 
     case find_target(ability, room, entity, target) do
+      nil ->
+        send_message(entity, "scroll", "<p><span class='cyan'>Can't find #{target} here!  Your spell fails.</span></p>")
       target_entity ->
         execute(ability, entity, target_entity, :mana)
-      _ ->
-        send_message(entity, "scroll", "<p><span class='cyan'>Can't find #{target} here!  Your spell fails.</span></p>")
     end
   end
 
@@ -335,14 +335,22 @@ defmodule Systems.Ability do
 
   def find_target(ability, room, entity, target) do
     case ability[:target] do
-      "living" ->
+      "self" ->
+        entity
+      "self or monster" ->
         if to_string(target) == "" do
           entity
         else
           room
           |> Systems.Room.living_in_room
+          |> Enum.reject(&(&1 == entity))
           |> Systems.Match.one(:name_contains, target)
         end
+      "monster" ->
+        room
+        |> Systems.Room.living_in_room
+        |> Enum.reject(&(&1 == entity))
+        |> Systems.Match.one(:name_contains, target)
       "room" ->
         room
         |> Systems.Room.living_in_room
@@ -454,7 +462,7 @@ defmodule Systems.Ability do
 
       def target(entity \\ nil)
       def target(entity) do
-        "living"
+        "self"
       end
 
       def mana_cost(entity \\ 0)
@@ -505,7 +513,7 @@ defmodule Systems.Ability do
       def script(entity \\ nil)
       def script(entity), do: nil
 
-      def execute(entity, target) do
+      def execute(entity, target \\ nil) do
         Systems.Ability.execute(properties(entity), entity, target)
       end
 
