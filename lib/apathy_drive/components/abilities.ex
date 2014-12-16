@@ -7,6 +7,15 @@ defmodule Components.Abilities do
     GenEvent.call(entity, Components.Abilities, :value)
   end
 
+  def attacks(entity) do
+    entity
+    |> value
+    |> useable(entity)
+    |> Enum.filter(fn(ability) ->
+         attack?(entity, ability)
+       end)
+  end
+
   def heals(entity) do
     entity
     |> value
@@ -30,6 +39,12 @@ defmodule Components.Abilities do
     ability.properties(entity)
      |> Map.keys
      |> Enum.member?(:healing)
+  end
+
+  def attack?(entity, ability) do
+    ability.properties(entity)
+     |> Map.keys
+     |> Enum.member?(:damage)
   end
 
   def useable(abilities, entity) do

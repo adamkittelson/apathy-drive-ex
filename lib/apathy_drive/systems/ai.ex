@@ -6,7 +6,7 @@ defmodule Systems.AI do
   end
 
   def use_ability?(monster) do
-    heal(monster) || bless(monster)
+    heal(monster) || bless(monster) || attack(monster)
   end
 
   def heal(monster) do
@@ -35,6 +35,28 @@ defmodule Systems.AI do
 
     if ability do
       ability.execute(monster)
+    end
+  end
+
+  def attack(monster) do
+    :random.seed(:os.timestamp)
+
+    roll = :random.uniform(100)
+
+    if roll > 50 do
+      ability = monster
+                |> Components.Abilities.attacks
+                |> random_ability
+
+      if ability do
+        target = Systems.Combat.targets(monster)
+                 |> Enum.shuffle
+                 |> List.first
+
+        if target do
+          ability.execute(monster, Components.Name.value(target))
+        end
+      end
     end
   end
 
