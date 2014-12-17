@@ -5,20 +5,24 @@ defmodule Systems.AI do
     Characters.online
     |> Enum.map(&Parent.of/1)
     |> Enum.uniq
-    |> Enum.reduce([], fn(room, rooms) ->
-         [room | adjacent_rooms(room) ++ rooms]
-       end)
-    |> Enum.uniq
+    |> adjacent_rooms
+    |> adjacent_rooms
+    |> adjacent_rooms
     |> Enum.map(&Components.Monsters.get_monsters/1)
     |> List.flatten
     |> Enum.uniq
   end
 
-  def adjacent_rooms(room) do
-    room
-    |> Components.Exits.value
-    |> Enum.map(&(Map.get(&1, "destination")))
-    |> Enum.map(&Rooms.find_by_id/1)
+  def adjacent_rooms(rooms_with_spirits) do
+    Enum.reduce(rooms_with_spirits, [], fn(room, rooms) ->
+      adjacent = room
+                 |> Components.Exits.value
+                 |> Enum.map(&(Map.get(&1, "destination")))
+                 |> Enum.map(&Rooms.find_by_id/1)
+
+      [room | adjacent ++ rooms]
+    end)
+    |> Enum.uniq
   end
 
   def think do
