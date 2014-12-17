@@ -42,12 +42,6 @@ defmodule Systems.Monster do
       Components.Abilities.reset_abilities(entity)
       Entity.add_to_type_collection(entity)
 
-      {:ok, ai_timer} = apply_interval 60 |> seconds do
-        Systems.AI.think(entity)
-      end
-
-      Systems.Effect.add(entity, %{timers: [ai_timer]})
-
       entity
     end
   end

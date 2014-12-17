@@ -6,7 +6,9 @@ defmodule ApathyDrive.Supervisor do
   end
 
   def init([]) do
-    children = []
+    children = [
+      worker(Task, [Systems.AI, :think, []])
+    ]
 
     # See http://elixir-lang.org/docs/stable/Supervisor.Behaviour.html
     # for other strategies and supported options
