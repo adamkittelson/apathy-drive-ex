@@ -31,6 +31,12 @@ defmodule Systems.Exits.Doors do
         Systems.Room.display_room_in_scroll(spirit, destination)
       end
 
+      def move(nil, monster, current_room, room_exit) do
+        if open?(current_room, room_exit) do
+          super(nil, monster, current_room, room_exit)
+        end
+      end
+
       def move(spirit, monster, current_room, room_exit) do
         if open?(current_room, room_exit) do
           super(spirit, monster, current_room, room_exit)
