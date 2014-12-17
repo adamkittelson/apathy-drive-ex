@@ -58,6 +58,13 @@ defmodule Systems.Monster do
       Components.Monsters.add_monster(room, monster)
 
       display_enter_message(room, monster)
+
+      Systems.Monster.monsters_in_room(room, monster)
+      |> Enum.each(fn(monster_in_room) ->
+           Systems.Aggression.monster_entered(monster_in_room, room)
+         end)
+
+      Systems.Aggression.monster_entered(monster, room)
     end
   end
 
