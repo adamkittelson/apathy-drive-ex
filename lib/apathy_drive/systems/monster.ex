@@ -227,7 +227,7 @@ defmodule Systems.Monster do
       def description,   do: nil
       def death_message, do: ~s({{name}} drops dead before you.)
       def enter_message, do: ~s({{name}} walks in from {{direction}}.)
-      def exit_message,  do: ~s(A {{name}} walks off to %s.)
+      def exit_message,  do: ~s({{name}} walks off to {{direction}}.)
       def abilities,     do: []
       def greeting,      do: "The #{name} completely ignores you."
       def gender,        do: nil

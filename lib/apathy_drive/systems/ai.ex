@@ -40,7 +40,7 @@ defmodule Systems.AI do
   end
 
   def use_ability?(monster) do
-    heal(monster) || bless(monster) || attack(monster)
+    heal(monster) || bless(monster) || attack(monster) || move(monster)
   end
 
   def heal(monster) do
@@ -105,6 +105,31 @@ defmodule Systems.AI do
       abilities ->
         :random.seed(:os.timestamp)
         abilities |> Enum.shuffle |> List.first
+    end
+  end
+
+  def move(monster) do
+    if !Components.Combat.in_combat?(monster) do
+      :random.seed(:os.timestamp)
+
+      roll = :random.uniform(100)
+
+      if roll > 90 do
+        room = Parent.of(monster)
+        if !Entity.has_component?(room, Components.PermanentNPC) or
+          (Components.PermanentNPC.value(room) != Components.Name.value(monster)) do
+
+            direction = room
+                        |> Components.Exits.value
+                        |> Enum.map(&(Map.get(&1, "direction")))
+                        |> Enum.shuffle
+                        |> List.first
+
+            if direction do
+              Systems.Room.move(nil, monster, direction)
+            end
+        end
+      end
     end
   end
 
