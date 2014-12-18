@@ -79,14 +79,14 @@ defmodule Systems.Exits.AbilityTrap do
     if room_exit["from_message"] do
       Systems.Monster.observers(current_room, monster)
       |> Enum.each(fn(observer) ->
-        send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
+        send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
       end)
     end
 
     if room_exit["to_message"] do
       Systems.Monster.observers(destination, monster)
       |> Enum.each(fn(observer) ->
-        send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
+        send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
       end)
     end
   end

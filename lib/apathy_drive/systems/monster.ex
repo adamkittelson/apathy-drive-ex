@@ -53,12 +53,14 @@ defmodule Systems.Monster do
 
       display_enter_message(room, monster)
 
-      Systems.Monster.monsters_in_room(room, monster)
-      |> Enum.each(fn(monster_in_room) ->
-           Systems.Aggression.monster_entered(monster_in_room, room)
-         end)
+      if Components.Characters.get_characters(room) |> Enum.any? do
+        Systems.Monster.monsters_in_room(room, monster)
+        |> Enum.each(fn(monster_in_room) ->
+             Systems.Aggression.monster_entered(monster_in_room, room)
+           end)
 
-      Systems.Aggression.monster_entered(monster, room)
+        Systems.Aggression.monster_entered(monster, room)
+      end
     end
   end
 
@@ -88,7 +90,7 @@ defmodule Systems.Monster do
 
     observers(room, monster)
     |> Enum.each(fn(observer) ->
-      send_message(observer,"scroll", "<p><span class='yellow'>#{message}</span></p>")
+      send_message(observer,"scroll", "<p><span class='dark-green'>#{message}</span></p>")
     end)
   end
 
@@ -102,7 +104,7 @@ defmodule Systems.Monster do
 
     observers(room, monster)
     |> Enum.each(fn(observer) ->
-      send_message(observer,"scroll", "<p><span class='yellow'>#{message}</span></p>")
+      send_message(observer,"scroll", "<p><span class='dark-green'>#{message}</span></p>")
     end)
   end
 
@@ -116,7 +118,7 @@ defmodule Systems.Monster do
 
     observers(room, monster)
     |> Enum.each(fn(observer) ->
-      send_message(observer, "scroll", "<p><span class='yellow'>#{message}</span></p>")
+      send_message(observer, "scroll", "<p><span class='dark-green'>#{message}</span></p>")
     end)
   end
 
@@ -130,7 +132,7 @@ defmodule Systems.Monster do
 
     observers(room, monster)
     |> Enum.each(fn(observer) ->
-      send_message(observer, "scroll", "<p><span class='yellow'>#{message}</span></p>")
+      send_message(observer, "scroll", "<p><span class='dark-green'>#{message}</span></p>")
     end)
   end
 
@@ -226,8 +228,8 @@ defmodule Systems.Monster do
 
       def description,   do: nil
       def death_message, do: ~s({{name}} drops dead before you.)
-      def enter_message, do: ~s({{name}} walks in from {{direction}}.)
-      def exit_message,  do: ~s({{name}} walks off to {{direction}}.)
+      def enter_message, do: ~s(<span class='yellow'>{{name}}</span> walks in from {{direction}}.)
+      def exit_message,  do: ~s(<span class='yellow'>{{name}}</span> walks off to {{direction}}.)
       def abilities,     do: []
       def greeting,      do: "The #{name} completely ignores you."
       def gender,        do: nil

@@ -26,7 +26,7 @@ defmodule Systems.Exits.RemoteAction do
       send_message(monster, "scroll", "<p>#{room_exit["message"]}</p>")
       Systems.Monster.observers(room, monster)
       |> Enum.each(fn(observer) ->
-        send_message(observer, "scroll", "<p>#{interpolate(room_exit["room_message"], %{"user" => monster})}</p>")
+        send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["room_message"], %{"user" => monster})}</span></p>")
       end)
 
       if :"Elixir.Systems.Exits.#{remote_exit["kind"]}".open?(remote_room, remote_exit) do

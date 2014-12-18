@@ -34,13 +34,9 @@ defmodule Systems.AI do
   end
 
   def think(monster) do
-    if Process.alive?(monster) do
-      use_ability?(monster)
+    unless Possession.possessor(monster) do
+      heal(monster) || bless(monster) || attack(monster) || move(monster)
     end
-  end
-
-  def use_ability?(monster) do
-    heal(monster) || bless(monster) || attack(monster) || move(monster)
   end
 
   def heal(monster) do

@@ -23,12 +23,12 @@ defmodule Systems.Exits.Item do
 
         Systems.Monster.observers(current_room, monster)
         |> Enum.each(fn(observer) ->
-          send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
+          send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
         end)
 
         Systems.Monster.observers(destination, monster)
         |> Enum.each(fn(observer) ->
-          send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
+          send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
         end)
 
         Systems.Aggression.monster_entered(monster, destination)
@@ -64,12 +64,12 @@ defmodule Systems.Exits.Item do
 
         Systems.Monster.observers(current_room, monster)
         |> Enum.each(fn(observer) ->
-          send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
+          send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
         end)
 
         Systems.Monster.observers(destination, monster)
         |> Enum.each(fn(observer) ->
-          send_message(observer, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
+          send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
         end)
 
         Systems.Aggression.monster_entered(monster, destination)
