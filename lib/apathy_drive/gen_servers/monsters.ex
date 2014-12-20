@@ -1,6 +1,7 @@
 defmodule Monsters do
   use Systems.Reload
   use GenServer
+  import BlockTimer
 
   # Public API
   def add(monster) do

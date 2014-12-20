@@ -30,6 +30,7 @@ defmodule Systems.Combat do
   def swing(entity) do
     Components.Combat.stop_timer(entity)
     swing(entity, targets(entity))
+    Systems.AI.think(entity)
   end
 
   def swing(entity, []) do

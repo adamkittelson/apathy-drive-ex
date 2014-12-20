@@ -3,6 +3,7 @@ defmodule Components.ID do
   use GenEvent
 
   ### Public API
+  def value(nil), do: raise "wtf"
   def value(entity) do
     GenEvent.call(entity, Components.ID, :value)
   end

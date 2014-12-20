@@ -48,6 +48,10 @@ defmodule Components.Effects do
       |> stack(stack_key)
       |> Enum.sort
       |> List.first
+
+    if stack_key == :cast_timer do
+      send_message(entity, "scroll", "<p><span class='dark-red'>You interrupt your other ability.</span></p>")
+    end
     remove(entity, oldest)
   end
 
@@ -56,6 +60,11 @@ defmodule Components.Effects do
     |> Map.keys
     |> Enum.each &remove(entity, &1)
   end
+
+  def max_stacks?(entity, %{stack_key: stack_key, stack_count: stack_count}) do
+    stack_count(value(entity), stack_key) >= stack_count
+  end
+  def max_stacks?(entity, _), do: false
 
   defp stack_count(value, stack_key) do
     stack(value, stack_key)

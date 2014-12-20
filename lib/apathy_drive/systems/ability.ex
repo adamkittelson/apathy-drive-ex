@@ -21,10 +21,10 @@ defmodule Systems.Ability do
     room = Parent.of(entity)
 
     case find_target(ability, room, entity, target) do
+      nil ->
+        send_message(entity, "scroll", "<p><span class='cyan'>Can't find #{target} here!  Your spell fails.</span></p>")
       target_entity ->
         execute(ability, entity, target_entity, :mana)
-      _ ->
-        send_message(entity, "scroll", "<p><span class='cyan'>Can't find #{target} here!  Your spell fails.</span></p>")
     end
   end
 
@@ -100,7 +100,9 @@ defmodule Systems.Ability do
         end
       end
     else
-      display_cast_message(ability, entity, target)
+      if !Map.has_key?(ability, :healing) do
+        display_cast_message(ability, entity, target)
+      end
     end
     execute(ability, entity, target, :apply_effects)
   end
@@ -308,9 +310,11 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    apply_after(ability[:casting_time] |> seconds, ability[:env]) do
+    {:ok, cast_timer} = apply_after(ability[:casting_time] |> seconds, ability[:env]) do
       execute(ability, entity, target, :verify_target)
     end
+
+    Systems.Effect.add(entity, %{:stack_key => :cast_timer, :stack_count => 1, timers: [cast_timer]}, ability[:casting_time])
   end
 
   def display_precast_message(_ability, entity) do
@@ -331,14 +335,22 @@ defmodule Systems.Ability do
 
   def find_target(ability, room, entity, target) do
     case ability[:target] do
-      "living" ->
+      "self" ->
+        entity
+      "self or monster" ->
         if to_string(target) == "" do
           entity
         else
           room
           |> Systems.Room.living_in_room
+          |> Enum.reject(&(&1 == entity))
           |> Systems.Match.one(:name_contains, target)
         end
+      "monster" ->
+        room
+        |> Systems.Room.living_in_room
+        |> Enum.reject(&(&1 == entity))
+        |> Systems.Match.one(:name_contains, target)
       "room" ->
         room
         |> Systems.Room.living_in_room
@@ -450,11 +462,11 @@ defmodule Systems.Ability do
 
       def target(entity \\ nil)
       def target(entity) do
-        "living"
+        "self"
       end
 
-      def mana_cost(entity \\ nil)
-      def mana_cost(entity), do: nil
+      def mana_cost(entity \\ 0)
+      def mana_cost(entity), do: 0
 
       def magic_damage(entity \\ nil)
       def magic_damage(entity), do: nil
@@ -501,7 +513,7 @@ defmodule Systems.Ability do
       def script(entity \\ nil)
       def script(entity), do: nil
 
-      def execute(entity, target) do
+      def execute(entity, target \\ nil) do
         Systems.Ability.execute(properties(entity), entity, target)
       end
 

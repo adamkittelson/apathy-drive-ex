@@ -76,3 +76,6 @@ CHANGELOG
 
 ---- 0.0.25 / 2014-12-13 / dynamic-skill-list ----------------------------------
 * dynamic skill lists at trainers
+
+---- 0.0.26 / 2014-12-20 / basic-monster-ai ------------------------------------
+* basic monster ai

@@ -48,8 +48,10 @@ defmodule Systems.Shop do
       !Entity.has_component?(room, Components.Shop) ->
         send_message(character, "scroll", "<p><span class='red'>You cannot BUY if you are not in a shop!</span></p>")
       true ->
-        case Systems.Match.all(Components.Shop.items(room), :name_contains, item) do
-          [match] ->
+        case Systems.Match.one(Components.Shop.items(room), :name_contains, item) do
+          nil ->
+            send_message(character, "scroll", "<p>\"#{item}\" does not appear to be for sale here.</p>")
+          match ->
             spirit = Possession.possessor(character)
             value  = Components.Module.value(match).value
             exp    = Components.Experience.value(spirit)
@@ -61,14 +63,6 @@ defmodule Systems.Shop do
               Systems.Item.spawn_item(match, character)
               send_message(character, "scroll", "<p>You purchase #{Components.Name.value(match)} for #{value} experience.</p>")
             end
-          [] ->
-            send_message(character, "scroll", "<p>\"#{item}\" does not appear to be for sale here.</p>")
-          matches ->
-            match_names = matches |> Enum.map &(Components.Name.value(&1))
-            send_message(character, "scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
-            Enum.each match_names, fn(match_name) ->
-              send_message(character, "scroll", "<p>-- #{match_name}</p>")
-            end
         end
     end
   end
@@ -78,8 +72,10 @@ defmodule Systems.Shop do
       !Entity.has_component?(room, Components.Shop) ->
         send_message(monster, "scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
       true ->
-        case Systems.Match.all(Components.Items.get_items(monster), :name_contains, item) do
-          [match] ->
+        case Systems.Match.one(Components.Items.get_items(monster), :name_contains, item) do
+          nil ->
+            send_message(monster, "scroll", "<p>You don't have \"#{item}\" to sell!</p>")
+          match ->
             spirit = Possession.possessor(monster)
 
             if spirit do
@@ -91,14 +87,6 @@ defmodule Systems.Shop do
             Components.Items.remove_item(monster, match)
             Entities.save!(monster)
             Entities.delete!(match)
-          [] ->
-            send_message(monster, "scroll", "<p>You don't have \"#{item}\" to sell!</p>")
-          matches ->
-            match_names = matches |> Enum.map &(Components.Name.value(&1))
-            send_message(monster, "scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
-            Enum.each match_names, fn(match_name) ->
-              send_message(monster, "scroll", "<p>-- #{match_name}</p>")
-            end
         end
     end
   end
