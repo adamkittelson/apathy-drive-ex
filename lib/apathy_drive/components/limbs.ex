@@ -227,7 +227,7 @@ defmodule Components.Limbs do
     map = Enum.reduce(needed_limb_names, initial, fn(needed_limb, map) ->
       if Map.get(map, :limbs_needed) |> Map.get(needed_limb) > 0 do
         item = Map.get(map, :equipped_items) |> Enum.find(fn(equipped_item) ->
-          Components.WornOn.value(equipped_item) |> Map.keys |> Enum.member?(needed_limb)
+          Components.Module.value(equipped_item).worn_on |> Map.keys |> Enum.member?(needed_limb)
         end)
 
         if item do
@@ -235,7 +235,7 @@ defmodule Components.Limbs do
           map = Map.put(map, :equipped_items, List.delete(Map.get(map, :equipped_items), item))
           limbs_needed = Map.get(map, :limbs_needed)
           limbs_needed = Enum.reduce(Map.keys(limbs_needed), limbs_needed, fn(needed_limb, map) ->
-            worn_on = Components.WornOn.value(item)
+            worn_on = Components.Module.value(item).worn_on
             if worn_on |> Map.has_key?(needed_limb) do
               Map.put(map, needed_limb, Map.get(map, needed_limb) - Map.get(worn_on, needed_limb))
             else
@@ -306,8 +306,8 @@ defmodule Components.Limbs do
   end
 
   def handle_call({:equip, item}, value) do
-    if Entity.has_component?(item, Components.WornOn) && Entity.has_component?(item, Components.Slot) do
-      worn_on    = Components.WornOn.value(item)
+    if Entity.has_component?(item, Components.Slot) && Components.Module.value(item).worn_on do
+      worn_on    = Components.Module.value(item).worn_on
       slot       = Components.Slot.value(item)
       open_limbs = open_limbs(worn_on, value, slot)
       limbs_needed = limbs_needed(worn_on, open_limbs, value)

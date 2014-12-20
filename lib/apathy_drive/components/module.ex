@@ -20,7 +20,7 @@ defmodule Components.Module do
     {:ok, String.to_atom(value)}
   end
 
-  def init(value) when is_atom(value) do
+  def init(value) do
     {:ok, value}
   end
 

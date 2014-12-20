@@ -12,10 +12,6 @@ defmodule Systems.Item do
 
     template = Components.Module.value(item)
 
-    if template.worn_on do
-      Entity.add_component(entity, Components.WornOn, template.worn_on)
-    end
-
     if template.slot do
       Entity.add_component(entity, Components.Slot, template.slot)
     end
