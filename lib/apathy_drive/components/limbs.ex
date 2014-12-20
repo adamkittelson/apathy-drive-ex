@@ -174,7 +174,7 @@ defmodule Components.Limbs do
   defp open_limbs(worn_on, limbs, slot) do
     valid_limbs(worn_on, limbs) |> Enum.reject(fn(limb_name) ->
       limbs[limb_name]["items"] |> Enum.any?(fn(item) ->
-        (get_item(item) |> Components.Slot.value) == slot
+        (Components.Module.value(get_item(item)).slot) == slot
       end)
     end)
   end
@@ -210,7 +210,7 @@ defmodule Components.Limbs do
 
   defp items_to_remove(limbs_needed, slot, limbs) do
     equipped_items = Systems.Limbs.equipped_items(limbs)
-                     |> Enum.filter(&(slot == Components.Slot.value(&1)))
+                     |> Enum.filter(&(slot == Components.Module.value(&1).slot))
     initial = %{
       :limbs_needed => limbs_needed,
       :items_to_remove => [],
@@ -306,9 +306,11 @@ defmodule Components.Limbs do
   end
 
   def handle_call({:equip, item}, value) do
-    if Entity.has_component?(item, Components.Slot) && Components.Module.value(item).worn_on do
-      worn_on    = Components.Module.value(item).worn_on
-      slot       = Components.Slot.value(item)
+    module = Components.Module.value(item)
+
+    if module.worn_on && module.slot do
+      worn_on    = module.worn_on
+      slot       = module.slot
       open_limbs = open_limbs(worn_on, value, slot)
       limbs_needed = limbs_needed(worn_on, open_limbs, value)
 

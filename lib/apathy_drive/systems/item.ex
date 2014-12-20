@@ -12,10 +12,6 @@ defmodule Systems.Item do
 
     template = Components.Module.value(item)
 
-    if template.slot do
-      Entity.add_component(entity, Components.Slot, template.slot)
-    end
-
     Entity.add_component(entity, Components.AC, template.ac)
 
     Entity.add_component(entity, Components.Module, template)
