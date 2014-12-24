@@ -55,8 +55,9 @@ defmodule Systems.Exit do
     move(spirit, monster, current_room, room_exit)
   end
 
+  def move(nil,    monster, _current_room, nil), do: nil
   def move(spirit, monster, _current_room, nil) do
-    send_message(spirit || monster, "scroll", "<p>There is no exit in that direction.</p>")
+    send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
   end
 
   def move(spirit, monster, current_room, room_exit) do

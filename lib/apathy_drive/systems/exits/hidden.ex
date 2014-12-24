@@ -35,7 +35,9 @@ defmodule Systems.Exits.Hidden do
     if open?(current_room, room_exit) do
       super(spirit, monster, current_room, room_exit)
     else
-      send_message(spirit, "scroll", "<p>There is no exit in that direction!</p>")
+      if spirit do
+        send_message(spirit, "scroll", "<p>There is no exit in that direction!</p>")
+      end
     end
   end
 

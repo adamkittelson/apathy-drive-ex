@@ -25,16 +25,18 @@ defmodule Systems.AI do
     |> Enum.uniq
   end
 
-  def think do
-    observable_monsters
-    |> Enum.each(fn(monster) ->
-         think(monster)
-       end)
-    :timer.sleep 5000
-  end
+  # def think do
+  #   observable_monsters
+  #   |> Enum.each(fn(monster) ->
+  #        think(monster)
+  #      end)
+  #   :timer.sleep 5000
+  # end
 
   def think(monster) do
-    heal(monster) || bless(monster) || attack(monster) || move(monster)
+    if Process.alive?(monster) do
+      heal(monster) || bless(monster) || attack(monster) || move(monster)
+    end
   end
 
   def heal(monster) do
@@ -106,10 +108,11 @@ defmodule Systems.AI do
     if !Components.Combat.in_combat?(monster) do
       :random.seed(:os.timestamp)
 
+      room = Parent.of(monster)
       roll = :random.uniform(100)
 
-      if roll > 90 do
-        room = Parent.of(monster)
+      if room && (roll > 90) do
+
         if !Entity.has_component?(room, Components.PermanentNPC) or
           (Components.PermanentNPC.value(room) != Components.Name.value(monster)) do
 
@@ -120,7 +123,7 @@ defmodule Systems.AI do
                         |> List.first
 
             if direction do
-              Systems.Room.move(nil, monster, direction)
+              Systems.Room.move(Possession.possessor(monster), monster, direction)
             end
         end
       end

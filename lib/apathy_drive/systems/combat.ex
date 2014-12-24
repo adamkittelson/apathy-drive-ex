@@ -5,7 +5,7 @@ defmodule Systems.Combat do
   use Timex
 
   def start(entity, time \\ 0.5) do
-    if !Components.Combat.in_combat?(entity) do
+    if Process.alive?(entity) and !Components.Combat.in_combat?(entity) do
       {:ok, timer} = apply_after(time |> seconds, do: swing(entity))
       Components.Combat.set_timer entity, timer
     end
@@ -30,7 +30,7 @@ defmodule Systems.Combat do
   def swing(entity) do
     Components.Combat.stop_timer(entity)
     swing(entity, targets(entity))
-    Systems.AI.think(entity)
+    #Systems.AI.think(entity)
   end
 
   def swing(entity, []) do

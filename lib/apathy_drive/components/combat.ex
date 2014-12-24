@@ -17,18 +17,11 @@ defmodule Components.Combat do
   end
 
   def set_timer(entity, timer) do
-    if value(entity)[:timer] do
-      :timer.cancel(timer)
-    else
-      GenEvent.notify(entity, {:set_combat_timer, timer})
-    end
+    GenEvent.notify(entity, {:set_combat_timer, timer})
   end
 
   def stop_timer(entity) do
-    if value(entity)[:timer] do
-      :timer.cancel(value(entity)[:timer])
-      GenEvent.notify(entity, :stop_combat_timer)
-    end
+    GenEvent.notify(entity, :stop_combat_timer)
   end
 
   def set_break_at(entity) do
@@ -58,10 +51,19 @@ defmodule Components.Combat do
   end
 
   def handle_event({:set_combat_timer, timer}, value) do
-    {:ok, put_in(value[:timer], timer) }
+    if value && value[:timer] do
+      :timer.cancel(timer)
+      {:ok, value }
+    else
+      {:ok, put_in(value[:timer], timer) }
+    end
   end
 
   def handle_event(:stop_combat_timer, value) do
+    if value && value[:timer] do
+      :timer.cancel(value[:timer])
+    end
+
     {:ok, Map.delete(value, :timer) }
   end
 

@@ -108,11 +108,3 @@ defmodule Systems.Exits.AbilityTrap do
   end
 
 end
-
-%{"ability" => "poison darts",
-  "destination" => 41355,
-  "direction" => "north",
-  "from_message" => "A volley of blow darts sink into {{user}}!",
-  "kind" => "AbilityTrap",
-  "mover_message" => "Blow darts shoot out from the walls, piercing you!",
-  "to_message" => ""}

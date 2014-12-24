@@ -65,7 +65,11 @@ defmodule Components.Monsters do
   end
 
   def serialize(entity) do
-    %{"Monsters" => monster_ids(entity)}
+    monsters = entity
+               |> monster_ids
+               |> Enum.filter(&(is_integer(&1)))
+
+    %{"Monsters" => monsters}
   end
 
   ### GenEvent API

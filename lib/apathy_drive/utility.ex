@@ -10,8 +10,6 @@ defmodule Utility do
           Phoenix.Channel.reply socket, event, %{:html => message}
         end
       end
-    else
-      IO.puts "Dead entity received - entity: #{inspect entity}, observer: #{inspect observer}, message: #{inspect message}"
     end
   end
 

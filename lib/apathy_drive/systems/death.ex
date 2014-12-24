@@ -26,6 +26,7 @@ defmodule Systems.Death do
   def kill_monster(entity, corpse, room) do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
+    Components.Brain.kill(entity)
     Components.Effects.remove(entity)
 
     possessor = Possession.possessor(entity)

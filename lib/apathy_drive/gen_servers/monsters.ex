@@ -12,6 +12,7 @@ defmodule Monsters do
     else
       GenServer.cast(:monsters, {:add, %{"name" => name, "monster" => monster}})
     end
+    initialize_ai(monster)
   end
 
   def remove(monster) do
@@ -22,6 +23,14 @@ defmodule Monsters do
     else
       GenServer.cast(:monsters, {:remove, %{"name" => name, "monster" => monster}})
     end
+  end
+
+  def initialize_ai(monster) do
+    {:ok, brain} = Task.start fn ->
+      Components.Brain.think(monster)
+    end
+
+    Entity.add_component(monster, Components.Brain, brain)
   end
 
   def all do
