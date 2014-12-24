@@ -34,9 +34,7 @@ defmodule Systems.AI do
   end
 
   def think(monster) do
-    unless Possession.possessor(monster) do
-      heal(monster) || bless(monster) || attack(monster) || move(monster)
-    end
+    heal(monster) || bless(monster) || attack(monster) || move(monster)
   end
 
   def heal(monster) do
