@@ -56,13 +56,13 @@ body {
 
 #main, #prompt {
   font-family: "Andale Mono", "Courier New", Monospace;
-  font-size: 12px;
+  font-size: 14px;
   color: silver;
-  line-height: 7px; }
+  line-height: 9px; }
 
 .room {
   width: 620px;
-  line-height: 15px; }
+  line-height: 19px; }
   .room .title {
     color: cyan; }
   .room .description {
@@ -98,7 +98,7 @@ code {
   width: 620px;
   white-space: pre-wrap; }
   #scroll p {
-    line-height: 15px;
+    line-height: 19px;
     margin-bottom: 0px; }
 
 #scroll:hover {
@@ -110,7 +110,7 @@ code {
   border: none;
   color: silver;
   outline: none;
-  font-size: 12px;
+  font-size: 14px;
   display: inline; }
 
 .prompt::selection {
@@ -125,7 +125,7 @@ code {
   border: none;
   color: white;
   outline: none;
-  font-size: 12px;
+  font-size: 14px;
   height: 14px;
   padding: 0px;
   margin-bottom: -10px;
