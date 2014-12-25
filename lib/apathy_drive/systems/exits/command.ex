@@ -35,8 +35,10 @@ defmodule Systems.Exits.Command do
       destination = Rooms.find_by_id(room_exit["destination"])
       Components.Monsters.remove_monster(current_room, monster)
       Components.Monsters.add_monster(destination, monster)
-      Entities.save!(destination)
-      Entities.save!(current_room)
+      if Entity.has_component?(monster, Components.ID) do
+        Entities.save!(destination)
+        Entities.save!(current_room)
+      end
       Entities.save(monster)
 
       if room_exit["from_message"] do

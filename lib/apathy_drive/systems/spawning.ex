@@ -69,9 +69,12 @@ defmodule Systems.Spawning do
 
   def spawn_lair(room) do
     Components.Lair.set_last_spawned_at(room)
-    if (Systems.Room.monsters_in_room(room) |> Enum.count) < Components.Lair.size(room) and Enum.any?(eligible_monsters(room)) do
-      room |> select_lair_monster
-           |> Systems.Monster.spawn_monster(room)
+    if Components.Lair.spawned_count(room) < Components.Lair.size(room) and Enum.any?(eligible_monsters(room)) do
+      monster = room
+                |> select_lair_monster
+                |> Systems.Monster.spawn_monster(room)
+
+      Components.Lair.spawn_monster(room, monster)
       spawn_lair(room)
     end
   end

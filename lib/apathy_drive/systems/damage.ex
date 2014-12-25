@@ -33,13 +33,15 @@ defmodule Systems.Damage do
   end
 
   def do_damage(target, amount) do
-    if Components.HP.subtract(target, amount) do
-      target
-      |> Possession.possessor
-      |> Systems.Prompt.update(target)
-      HPRegen.add(target)
-    else
-      Systems.Death.kill(target)
+    if Process.alive?(target) do
+      if Components.HP.subtract(target, amount) do
+        target
+        |> Possession.possessor
+        |> Systems.Prompt.update(target)
+        HPRegen.add(target)
+      else
+        Systems.Death.kill(target)
+      end
     end
   end
 

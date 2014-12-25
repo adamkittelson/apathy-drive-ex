@@ -5,22 +5,24 @@ defmodule Systems.Death do
   use Timex
 
   def kill(victim) do
-    room = Parent.of(victim)
+    if Process.alive?(victim) do
+      room = Parent.of(victim)
 
-    send_message(victim, "scroll", "<p><span class='red'>You have been killed!</span></p>")
+      send_message(victim, "scroll", "<p><span class='red'>You have been killed!</span></p>")
 
-    Systems.Monster.display_death_message(room, victim)
+      Systems.Monster.display_death_message(room, victim)
 
-    room
-    |> Systems.Monster.monsters_in_room(victim)
-    |> Enum.each(fn(monster) ->
-         reward_spirit(Possession.possessor(monster), victim)
-         reward_monster(monster, victim)
-       end)
+      room
+      |> Systems.Monster.monsters_in_room(victim)
+      |> Enum.each(fn(monster) ->
+           reward_spirit(Possession.possessor(monster), victim)
+           reward_monster(monster, victim)
+         end)
 
-    corpse = create_corpse(victim, room)
+      corpse = create_corpse(victim, room)
 
-    kill_monster(victim, corpse, room)
+      kill_monster(victim, corpse, room)
+    end
   end
 
   def kill_monster(entity, corpse, room) do

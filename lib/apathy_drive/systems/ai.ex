@@ -111,7 +111,7 @@ defmodule Systems.AI do
       room = Parent.of(monster)
       roll = :random.uniform(100)
 
-      if room && (roll > 90) do
+      if room && (roll < trunc(Components.Module.value(monster).chance_to_follow / 5)) do
 
         if !Entity.has_component?(room, Components.PermanentNPC) or
           (Components.PermanentNPC.value(room) != Components.Name.value(monster)) do

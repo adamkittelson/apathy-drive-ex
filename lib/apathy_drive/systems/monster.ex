@@ -62,6 +62,8 @@ defmodule Systems.Monster do
         Systems.Aggression.monster_entered(monster, room)
       end
     end
+
+    monster
   end
 
   def limit_reached?(monster, nil), do: false

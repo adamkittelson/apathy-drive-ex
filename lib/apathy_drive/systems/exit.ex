@@ -35,7 +35,7 @@ defmodule Systems.Exit do
     look(spirit, monster, current_room, room_exit)
   end
 
-  def look(spirit, monster, _current_room, nil) do
+  def look(spirit, _monster, _current_room, nil) do
     send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
   end
 
@@ -55,8 +55,8 @@ defmodule Systems.Exit do
     move(spirit, monster, current_room, room_exit)
   end
 
-  def move(nil,    monster, _current_room, nil), do: nil
-  def move(spirit, monster, _current_room, nil) do
+  def move(nil,    _monster, _current_room, nil), do: nil
+  def move(spirit, _monster, _current_room, nil) do
     send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
   end
 
@@ -108,8 +108,10 @@ defmodule Systems.Exit do
           destination = Rooms.find_by_id(room_exit["destination"])
           Components.Monsters.remove_monster(current_room, monster)
           Components.Monsters.add_monster(destination, monster)
-          Entities.save!(destination)
-          Entities.save!(current_room)
+          if Entity.has_component?(monster, Components.ID) do
+            Entities.save!(destination)
+            Entities.save!(current_room)
+          end
           Entities.save(monster)
           notify_monster_left(monster, current_room, destination)
           notify_monster_entered(monster, current_room, destination)

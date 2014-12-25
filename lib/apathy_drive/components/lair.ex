@@ -12,6 +12,19 @@ defmodule Components.Lair do
     GenEvent.notify(entity, {:set_lair, new_value})
   end
 
+  def spawn_monster(entity, monster) do
+    GenEvent.call(entity, Components.Lair, {:spawn_monster, monster})
+  end
+
+  def spawned(entity) do
+    (value(entity)["spawned"] || [])
+    |> Enum.filter(&Process.alive?/1)
+  end
+
+  def spawned_count(entity) do
+    entity |> spawned |> length
+  end
+
   def size(entity) do
     value(entity)["size"]
   end
@@ -46,11 +59,15 @@ defmodule Components.Lair do
 
   def serialize(entity) do
     value = value(entity)
-    if value["last_spawned_at"] do
-      %{"Lair" => put_in(value(entity)["last_spawned_at"], Date.convert(value(entity)["last_spawned_at"], :secs))}
+            |> Map.put("spawned", [])
+
+    value = if value["last_spawned_at"] do
+      put_in(value["last_spawned_at"], Date.convert(value["last_spawned_at"], :secs))
     else
-      %{"Lair" => value}
+      value
     end
+
+    %{"Lair" => value}
   end
 
   ### GenEvent API
@@ -63,6 +80,13 @@ defmodule Components.Lair do
   end
 
   def handle_call(:value, lair) do
+    {:ok, lair, lair}
+  end
+
+  def handle_call({:spawn_monster, monster}, lair) do
+    spawned = (lair["spawned"] || [])
+
+    lair = put_in(lair, ["spawned"], [monster | spawned])
     {:ok, lair, lair}
   end
 

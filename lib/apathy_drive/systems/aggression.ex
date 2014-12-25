@@ -63,14 +63,6 @@ defmodule Systems.Aggression do
     attack(monster, intruder)
   end
 
-  def react(%{monster: monster, disposition: "chaotic", alignment: "evil"}, %{intruder: intruder, alignment: "evil"}) do
-    :random.seed(:os.timestamp)
-
-    if :random.uniform(10) == 10 do
-      attack(monster, intruder)
-    end
-  end
-
   def react(_, _), do: nil
 
   def attack(monster, intruder), do: Systems.Combat.enrage(monster, intruder)

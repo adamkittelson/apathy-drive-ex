@@ -28,9 +28,11 @@ defmodule Systems.Combat do
   end
 
   def swing(entity) do
-    Components.Combat.stop_timer(entity)
-    swing(entity, targets(entity))
-    #Systems.AI.think(entity)
+    if Process.alive?(entity) do
+      Components.Combat.stop_timer(entity)
+      swing(entity, targets(entity))
+      Systems.AI.think(entity)
+    end
   end
 
   def swing(entity, []) do
@@ -72,6 +74,9 @@ defmodule Systems.Combat do
 
     HashSet.intersection(hunted, present)
     |> Enum.into([])
+    |> Enum.filter(fn(monster) ->
+         Process.alive?(monster)
+       end)
   end
 
   def stunned?(target) do
