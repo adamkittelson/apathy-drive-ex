@@ -27,6 +27,7 @@ defmodule Systems.Item do
     entity
   end
 
+  def spawn_item(nil, entity), do: nil
   def spawn_item(item, entity) do
     item = spawn_item(item)
     Components.Items.add_item(entity, item)
