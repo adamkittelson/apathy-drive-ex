@@ -46,7 +46,7 @@ defmodule Systems.Item do
     skill = skills
             |> Map.keys
             |> Enum.find(fn(skill) ->
-                 Systems.Skill.base(monster, skill) < skills[skill]
+                 Systems.Skill.modified(monster, skill) < skills[skill]
                end)
     if skill do
       {skill, skills[skill]}
