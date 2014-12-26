@@ -19,7 +19,11 @@ defmodule Commands.Look do
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
           send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
         target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
-          send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
+          if Entity.has_component?(target, Components.Description) do
+            send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
+          else
+            send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
+          end
       true ->
         send_message(spirit, "scroll", "<p>You do not notice that here.</p>")
       end
@@ -40,9 +44,17 @@ defmodule Commands.Look do
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
           send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
         target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
-          send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
+          if Entity.has_component?(target, Components.Description) do
+            send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
+          else
+            send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
+          end
         target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
-          send_message monster, "scroll", "<p>#{Components.Module.value(target).description}</p>"
+          if Entity.has_component?(target, Components.Description) do
+            send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
+          else
+            send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
+          end
       true ->
         send_message(monster, "scroll", "<p>You do not notice that here.</p>")
       end
