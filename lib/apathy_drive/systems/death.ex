@@ -19,61 +19,39 @@ defmodule Systems.Death do
            reward_monster(monster, victim)
          end)
 
-      corpse = create_corpse(victim, room)
-
-      kill_monster(victim, corpse, room)
+      kill_monster(victim, room)
     end
   end
 
-  def kill_monster(entity, corpse, room) do
+  def kill_monster(entity, room) do
     HPRegen.remove(entity)
     ManaRegen.remove(entity)
     Components.Brain.kill(entity)
     Components.Effects.remove(entity)
+    Components.Combat.stop_timer(entity)
 
     possessor = Possession.possessor(entity)
     if possessor do
       Possession.unpossess(possessor)
       Systems.Prompt.update(entity, nil)
-      send_message(possessor, "scroll", "<p>Your are a spirit once more.</p>")
+      send_message(possessor, "scroll", "<p>You are ejected from #{Components.Name.value(entity)}'s body.</p>")
       Systems.Prompt.update(possessor, nil)
     end
 
     Systems.Limbs.equipped_items(entity)
     |> Enum.each fn(item) ->
          Components.Limbs.unequip(entity, item)
-         Components.Items.add_item(corpse, item)
+         Components.Items.add_item(room, item)
        end
 
     Components.Items.get_items(entity)
     |> Enum.each fn(item) ->
          Components.Items.remove_item(entity, item)
-         Components.Items.add_item(corpse, item)
+         Components.Items.add_item(room, item)
        end
 
-    Entities.save!(corpse)
-
     Components.Monsters.remove_monster(room, entity)
-    Components.Combat.stop_timer(entity)
     Entities.delete!(entity)
-  end
-
-  def create_corpse(entity, room) do
-    {:ok, corpse} = Entity.init
-    Entity.add_component(corpse, Components.Name,        "the corpse of #{Components.Name.value(entity)}")
-    Entity.add_component(corpse, Components.Description, "This is the dead body of #{Components.Name.value(entity)}")
-    if Entity.has_component?(entity, Components.Module) do
-      Entity.add_component(corpse, Components.Module, Components.Module.value(entity))
-    end
-    Entity.add_component(corpse, Components.Types, ["item", "corpse"])
-    Entity.add_component(corpse, Components.Items, [])
-    Entity.add_component(corpse, Components.Decay, %{"frequency" => 1, "decay_at" => Date.convert(Date.shift(Date.now, mins: 1), :secs)})
-    Entities.save!(corpse)
-
-    Components.Items.add_item(room, corpse)
-
-    Entities.save!(room)
-    corpse
   end
 
   def experience_to_grant(entity) when is_pid entity do

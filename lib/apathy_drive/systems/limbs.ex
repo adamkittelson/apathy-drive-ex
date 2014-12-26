@@ -2,6 +2,7 @@ defmodule Systems.Limbs do
   use Systems.Reload
   import Utility
   import Systems.Text
+  use Timex
 
   def equipped_items(character) when is_pid(character) do
     character |> Components.Limbs.get_items
@@ -66,27 +67,43 @@ defmodule Systems.Limbs do
   def sever_limb(entity, limb) do
     unless Components.Limbs.severed?(entity, limb) do
       Components.Limbs.sever_limb(entity, limb)
-      Parent.of(entity)
+      room = Parent.of(entity)
+
+      room
       |> Systems.Room.characters_in_room
       |> Enum.each(fn(character) ->
 
-         observer = Possession.possessed(character) || character
+          observer = Possession.possessed(character) || character
 
-         cond do
-           observer == entity ->
-             if "torso" == limb do
-               send_message(observer, "scroll", "<p>You've been dealt a mortal blow!</p>")
-             else
-               send_message(observer, "scroll", "<p>Your #{limb} has been severed!</p>")
-             end
+          cond do
+            observer == entity ->
+              if "torso" == limb do
+                send_message(observer, "scroll", "<p>You've been dealt a mortal blow!</p>")
+              else
+                send_message(observer, "scroll", "<p>Your #{limb} has been severed!</p>")
+              end
             true ->
               if "torso" == limb do
                 send_message(observer, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))} has been dealt a mortal blow!</p>")
               else
                 send_message(observer, "scroll", "<p>#{capitalize_first(Components.Name.value(entity))}'s #{limb} has been severed!</p>")
               end
-         end
-       end)
+          end
+        end)
+
+        {:ok, corpse} = Entity.init
+        Entity.add_component(corpse, Components.Name,        "the #{limb} of #{Components.Name.value(entity)}")
+        Entity.add_component(corpse, Components.Description, "This is the severed #{limb} of #{Components.Name.value(entity)}.")
+        Entity.add_component(corpse, Components.Keywords, String.split(limb))
+        Entity.add_component(corpse, Components.Module, Items.SeveredLimb)
+        Entity.add_component(corpse, Components.Types, ["item", "corpse"])
+        Entity.add_component(corpse, Components.Decay, %{"frequency" => 1, "decay_at" => Date.convert(Date.shift(Date.now, mins: 60), :secs)})
+        Entities.save!(corpse)
+
+        Components.Items.add_item(room, corpse)
+
+        Entities.save!(room)
+
       sever_limb(entity, Components.Limbs.attached(entity, limb))
     end
   end

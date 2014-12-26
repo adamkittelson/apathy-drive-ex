@@ -79,3 +79,6 @@ CHANGELOG
 
 ---- 0.0.26 / 2014-12-20 / basic-monster-ai ------------------------------------
 * basic monster ai
+
+---- 0.0.27 / 2014-12-26 / ditch-corpses ---------------------------------------
+* remove corpses / drop items to ground on death / create severed limbs when limbs are severed

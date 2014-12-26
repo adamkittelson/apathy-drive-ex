@@ -27,6 +27,7 @@ defmodule Systems.Item do
     entity
   end
 
+  def spawn_item(nil, entity), do: nil
   def spawn_item(item, entity) do
     item = spawn_item(item)
     Components.Items.add_item(entity, item)
@@ -45,7 +46,7 @@ defmodule Systems.Item do
     skill = skills
             |> Map.keys
             |> Enum.find(fn(skill) ->
-                 Systems.Skill.base(monster, skill) < skills[skill]
+                 Systems.Skill.modified(monster, skill) < skills[skill]
                end)
     if skill do
       {skill, skills[skill]}

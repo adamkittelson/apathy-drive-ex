@@ -21,7 +21,7 @@ defmodule Systems.Trainer do
         else
           cost = "<span class='green'>#{"#{cost}" |> String.ljust(8)}</span>"
         end
-        rating = "#{"#{rating(skill, monster)}" |> String.rjust(4)}</span>"
+        rating = "#{"#{skill.modified(monster)}" |> String.rjust(4)}</span>"
         row = "    #{skill_name}#{cost}#{rating}%"
         send_message(spirit, "scroll", "<p>#{row}</p>")
       end

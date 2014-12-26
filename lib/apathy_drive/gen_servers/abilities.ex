@@ -45,7 +45,7 @@ defmodule Abilities do
     skills
     |> Map.keys
     |> Enum.all?(fn(skill_name) ->
-         Systems.Skill.base(entity, skill_name) >= skills[skill_name]
+         Systems.Skill.modified(entity, skill_name) >= skills[skill_name]
        end)
   end
 
