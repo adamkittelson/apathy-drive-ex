@@ -54,7 +54,7 @@ defmodule Components.Skills do
     old_abilities = Components.Abilities.names(monster)
 
     GenEvent.notify(monster, {:train, skill.name, cost})
-    rating = skill.base(monster)
+    rating = skill.modified(monster)
 
     new_devs = max(0, devs - cost)
     spent = devs - new_devs
