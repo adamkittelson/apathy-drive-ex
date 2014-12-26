@@ -28,17 +28,7 @@ defmodule Systems.Decay do
       room = Parent.of(corpse)
       if room do
         Components.Items.remove_item(room, corpse)
-        Components.Items.get_items(corpse)
-        |> Enum.each(fn(item) ->
-             Components.Items.remove_item(corpse, item)
-             Components.Items.add_item(room, item)
-           end)
         Entities.save!(room)
-      else
-        Components.Items.get_items(corpse)
-        |> Enum.each(fn(item) ->
-             Entities.delete!(item)
-           end)
       end
       Entities.delete!(corpse)
     else
