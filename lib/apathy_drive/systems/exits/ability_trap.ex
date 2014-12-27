@@ -58,11 +58,7 @@ defmodule Systems.Exits.AbilityTrap do
           spring_trap!(monster, current_room, destination, room_exit)
       end
 
-      if Process.alive?(monster) do
-        Systems.Room.display_room_in_scroll(monster, destination)
-      else
-        Systems.Room.display_room_in_scroll(spirit, destination)
-      end
+      Systems.Room.display_room_in_scroll(spirit, monster, destination)
       Monster.pursue(current_room, monster, room_exit["direction"])
     end
   end

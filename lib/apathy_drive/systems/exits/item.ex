@@ -77,7 +77,7 @@ defmodule Systems.Exits.Item do
         Systems.Aggression.monster_entered(monster, destination)
 
         Components.Hints.deactivate(spirit, "movement")
-        Systems.Room.display_room_in_scroll(monster, destination)
+        Systems.Room.display_room_in_scroll(spirit, monster, destination)
         Monster.pursue(current_room, monster, room_exit["direction"])
       true ->
         send_message(monster, "scroll", "<p><span class='yellow'>#{room_exit["failure_message"]}</span></p>")

@@ -51,7 +51,6 @@ defmodule Systems.Exits.Cast do
 
       Systems.Aggression.monster_entered(monster, destination)
 
-      Systems.Room.display_room_in_scroll(monster, destination)
       Monster.pursue(current_room, monster, room_exit["direction"])
     end
   end
@@ -111,7 +110,7 @@ defmodule Systems.Exits.Cast do
       Systems.Aggression.monster_entered(monster, destination)
 
       Components.Hints.deactivate(spirit, "movement")
-      Systems.Room.display_room_in_scroll(monster, destination)
+      Systems.Room.display_room_in_scroll(spirit, monster, destination)
       Monster.pursue(current_room, monster, room_exit["direction"])
     end
   end

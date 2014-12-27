@@ -27,7 +27,7 @@ defmodule Systems.Exits.Command do
     Entities.save!(spirit)
 
     Components.Hints.deactivate(spirit, "movement")
-    Systems.Room.display_room_in_scroll(spirit, destination)
+    Systems.Room.display_room_in_scroll(spirit, nil, destination)
   end
 
   def move_via_command(nil, monster, current_room, room_exit) do
@@ -60,8 +60,6 @@ defmodule Systems.Exits.Command do
       end
 
       Systems.Aggression.monster_entered(monster, destination)
-
-      Systems.Room.display_room_in_scroll(monster, destination)
     end
   end
 
@@ -102,7 +100,7 @@ defmodule Systems.Exits.Command do
       Systems.Aggression.monster_entered(monster, destination)
 
       Components.Hints.deactivate(spirit, "movement")
-      Systems.Room.display_room_in_scroll(monster, destination)
+      Systems.Room.display_room_in_scroll(spirit, monster, destination)
     end
   end
 

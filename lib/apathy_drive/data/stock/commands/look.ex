@@ -28,7 +28,7 @@ defmodule Commands.Look do
         send_message(spirit, "scroll", "<p>You do not notice that here.</p>")
       end
     else
-      Systems.Room.display_room_in_scroll(spirit, current_room)
+      Systems.Room.display_room_in_scroll(spirit, nil, current_room)
     end
   end
 
@@ -59,7 +59,7 @@ defmodule Commands.Look do
         send_message(monster, "scroll", "<p>You do not notice that here.</p>")
       end
     else
-      Systems.Room.display_room_in_scroll(monster, current_room)
+      Systems.Room.display_room_in_scroll(spirit, monster, current_room)
     end
   end
 

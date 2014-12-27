@@ -100,7 +100,7 @@ defmodule Systems.Exit do
         Entities.save!(current_room)
         Entities.save!(spirit)
         Components.Hints.deactivate(spirit, "movement")
-        Systems.Room.display_room_in_scroll(spirit, destination)
+        Systems.Room.display_room_in_scroll(spirit, nil, destination)
       end
 
       def move(nil, monster, current_room, room_exit) do
@@ -134,14 +134,14 @@ defmodule Systems.Exit do
           notify_monster_left(monster, current_room, destination)
           notify_monster_entered(monster, current_room, destination)
           Components.Hints.deactivate(spirit, "movement")
-          Systems.Room.display_room_in_scroll(monster, destination)
+          Systems.Room.display_room_in_scroll(spirit, monster, destination)
         end
       end
 
       def look(spirit, monster, current_room, room_exit) do
         {mirror_room, mirror_exit} = mirror(current_room, room_exit)
 
-        Systems.Room.display_room_in_scroll(spirit, mirror_room)
+        Systems.Room.display_room_in_scroll(spirit, monster, mirror_room)
 
         if monster && mirror_exit do
 
