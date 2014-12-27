@@ -57,10 +57,14 @@ defmodule Systems.Death do
   end
 
   def experience_to_grant(entity) when is_pid entity do
-    Systems.Stat.pre_effects_bonus(entity)
-    |> Map.values
-    |> Enum.sum
-    |> experience_to_grant
+    if Process.alive?(entity) do
+      Systems.Stat.pre_effects_bonus(entity)
+      |> Map.values
+      |> Enum.sum
+      |> experience_to_grant
+    else
+      0
+    end
   end
 
   def experience_to_grant(stat_total) do
