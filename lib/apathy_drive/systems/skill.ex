@@ -78,11 +78,23 @@ defmodule Systems.Skill do
         |> Enum.sum
       end
 
-      def room_light_modifier(light_level) when light_level <= -300, do: 40
-      def room_light_modifier(light_level) when light_level <= -200, do: 30
-      def room_light_modifier(light_level) when light_level <= -100, do: 20
-      def room_light_modifier(light_level) when light_level <= -25,  do: 10
-      def room_light_modifier(light_level),                          do:  0
+      def room_light_modifier(light_level)
+        when light_level <= -300 or
+             light_level >= 300,
+        do: 40
+      def room_light_modifier(light_level)
+        when light_level <= -200 or
+             light_level >= 200,
+        do: 30
+      def room_light_modifier(light_level)
+        when light_level <= -100 or
+             light_level >= 100,
+        do: 20
+      def room_light_modifier(light_level)
+          when light_level <= -25 or
+               light_level >= 25,
+          do: 10
+      def room_light_modifier(light_level), do:  0
 
       def modify_for_room_light(skill_value, light_level) do
         mod = room_light_modifier(light_level)

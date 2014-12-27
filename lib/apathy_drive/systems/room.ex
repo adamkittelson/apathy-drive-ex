@@ -95,7 +95,12 @@ defmodule Systems.Room do
   def light(light_level)  when light_level <= -300, do: "<p>The room is pitch black - you can't see anything</p>"
   def light(light_level)  when light_level <= -200, do: "<p>The room is very dark - you can't see anything</p>"
   def light(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
-  def light(light_level)  when light_level <= -25,  do: "<p>The room is dimly lit</p>"
+  def light(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
+  def light(light_level)  when light_level >=   25, do: "<p>The room is brightly lit</p>"
+  def light(light_level)  when light_level >= 100,  do: "<p>The room is dazzlingly bright</p>"
+  def light(light_level)  when light_level >= 200,  do: "<p>The room is painfully bright - you can't see anything</p>"
+  def light(light_level)  when light_level >= 300,  do: "<p>The room is blindingly bright - you can't see anything</p>"
+
   def light(light_level), do: nil
 
   def light(room, character) do
