@@ -103,6 +103,7 @@ defmodule Systems.Room do
     |> light
   end
 
+  def light_level(nil, _character), do: 0
   def light_level(room, _character) do
     Components.Light.value(room)
   end

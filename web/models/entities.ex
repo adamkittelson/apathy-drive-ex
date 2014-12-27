@@ -58,15 +58,17 @@ defmodule Entities do
   end
 
   def delete!(entity_pid) do
-    if Enum.member?(Entity.list_components(entity_pid), Components.ID) do
-      id = Components.ID.value(entity_pid)
-      entity = Repo.get(Entities, id)
-      Repo.delete(entity)
+    if Process.alive?(entity_pid) do
+      if Enum.member?(Entity.list_components(entity_pid), Components.ID) do
+        id = Components.ID.value(entity_pid)
+        entity = Repo.get(Entities, id)
+        Repo.delete(entity)
+      end
+      Entity.remove_from_type_collection(entity_pid)
+      Entity.list_components(entity_pid) |> Enum.each(&(Entity.remove_component(entity_pid, &1)))
+      Parent.set(entity_pid, nil)
+      GenEvent.stop(entity_pid)
     end
-    Entity.remove_from_type_collection(entity_pid)
-    Entity.list_components(entity_pid) |> Enum.each(&(Entity.remove_component(entity_pid, &1)))
-    Parent.set(entity_pid, nil)
-    GenEvent.stop(entity_pid)
   end
 
 end

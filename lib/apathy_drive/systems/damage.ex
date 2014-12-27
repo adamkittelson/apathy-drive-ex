@@ -46,17 +46,19 @@ defmodule Systems.Damage do
   end
 
   def damage_limb(target, limb, total) do
-    crippled = Components.Limbs.crippled?(target, limb)
-    Components.Limbs.damage_limb(target, limb, total)
-    cond do
-      Components.Limbs.current_damage(target, limb) >= (Components.Limbs.max_damage(target, limb) * 2) ->
-        Systems.Limbs.sever_limb(target, limb)
-        if Components.Limbs.fatal_if_severed?(target, limb) do
-          :fatal
-        end
-      !crippled && Components.Limbs.crippled?(target, limb) ->
-        Systems.Limbs.cripple_limb(target, limb)
-      true ->
+    if Process.alive?(target) do
+      crippled = Components.Limbs.crippled?(target, limb)
+      Components.Limbs.damage_limb(target, limb, total)
+      cond do
+        Components.Limbs.current_damage(target, limb) >= (Components.Limbs.max_damage(target, limb) * 2) ->
+          Systems.Limbs.sever_limb(target, limb)
+          if Components.Limbs.fatal_if_severed?(target, limb) do
+            :fatal
+          end
+        !crippled && Components.Limbs.crippled?(target, limb) ->
+          Systems.Limbs.cripple_limb(target, limb)
+        true ->
+      end
     end
   end
 
