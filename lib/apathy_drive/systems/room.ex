@@ -97,20 +97,30 @@ defmodule Systems.Room do
   def light(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
   def light(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
   def light(light_level)  when light_level >=   25, do: "<p>The room is brightly lit</p>"
-  def light(light_level)  when light_level >= 100,  do: "<p>The room is dazzlingly bright</p>"
-  def light(light_level)  when light_level >= 200,  do: "<p>The room is painfully bright - you can't see anything</p>"
-  def light(light_level)  when light_level >= 300,  do: "<p>The room is blindingly bright - you can't see anything</p>"
+  def light(light_level)  when light_level >=  100, do: "<p>The room is dazzlingly bright</p>"
+  def light(light_level)  when light_level >=  200, do: "<p>The room is painfully bright - you can't see anything</p>"
+  def light(light_level)  when light_level >=  300, do: "<p>The room is blindingly bright - you can't see anything</p>"
 
   def light(light_level), do: nil
 
-  def light(room, character) do
-    light_level(room, character)
+  def light(room, monster) do
+    light_level(room, monster)
     |> light
   end
 
-  def light_level(nil, _character), do: 0
-  def light_level(room, _character) do
-    Components.Light.value(room)
+  def light_level(nil, monster), do: 0
+  def light_level(room, monster) do
+    alignment = Components.Alignment.value(monster)
+    light     = Components.Light.value(room)
+
+    cond do
+      alignment > 0 and light < 0 ->
+        min(0, light + alignment)
+      alignment < 0 and light > 0 ->
+        max(0, light + alignment)
+      true ->
+        light
+    end
   end
 
   def entities(entity, room) do
