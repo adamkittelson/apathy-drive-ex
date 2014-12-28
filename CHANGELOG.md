@@ -82,3 +82,6 @@ CHANGELOG
 
 ---- 0.0.27 / 2014-12-26 / ditch-corpses ---------------------------------------
 * remove corpses / drop items to ground on death / create severed limbs when limbs are severed
+
+---- 0.0.28 / 2014-12-27 / darkness --------------------------------------------
+* room darkness, alignment affects visibility (evil can see better in the dark, good in the light)
