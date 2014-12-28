@@ -85,3 +85,6 @@ CHANGELOG
 
 ---- 0.0.28 / 2014-12-27 / darkness --------------------------------------------
 * room darkness, alignment affects visibility (evil can see better in the dark, good in the light)
+
+---- 0.0.29 / 2014-12-28 / monster-adjectives ----------------------------------
+* monster adjectives for name variety
