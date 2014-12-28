@@ -43,7 +43,9 @@ defmodule Systems.Spawning do
     |> Enum.map(fn(monster) ->
          Components.Name.value(monster)
        end)
-    |> Enum.member?(Components.PermanentNPC.value(room))
+    |> Enum.any?(fn(monster_name) ->
+         String.contains?(monster_name, Components.PermanentNPC.value(room))
+       end)
   end
 
   def spawn_placed_items do
