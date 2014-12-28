@@ -12,8 +12,15 @@ defmodule Systems.Match do
     end
   end
 
-  def all(pids, :keyword_starts_with, string) do
+  def all(pids, :name_starts_with, string) do
     case all(pids, :match_keyword, string) do
+      []    -> Enum.filter(pids, &(name_starts_with(string, &1)))
+      value -> value
+    end
+  end
+
+  def all(pids, :keyword_starts_with, string) do
+    case all(pids, :name_starts_with, string) do
       []    -> Enum.filter(pids, &(keyword_starts_with(string, &1)))
       value -> value
     end
@@ -65,6 +72,13 @@ defmodule Systems.Match do
     else
       false
     end
+  end
+
+  def name_starts_with("", _pid), do: false
+  def name_starts_with(string, pid) do
+    pid |> Components.Name.value
+        |> String.downcase
+        |> String.starts_with?(string |> String.downcase)
   end
 
   def name_contains("", _pid), do: false
