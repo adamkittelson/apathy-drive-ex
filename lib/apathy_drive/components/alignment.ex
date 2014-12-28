@@ -83,8 +83,8 @@ defmodule Components.Alignment do
 
   def handle_event({:add_evil_points, amount}, value) do
     value = (value + amount)
-            |> min(300)
-            |> max(-200)
+            |> min(300.0)
+            |> max(-200.0)
             |> Float.round(1)
 
     {:ok, value}
