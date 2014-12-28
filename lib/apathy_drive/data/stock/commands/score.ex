@@ -1,7 +1,7 @@
 defmodule Commands.Score do
   use Systems.Command
 
-  def keywords, do: ["score", "stats", "status"]
+  def keywords, do: ["score", "stats", "status", "st"]
 
   def execute(spirit, nil, _arguments) do
     if Entity.has_component?(spirit, Components.Name) do

@@ -114,7 +114,7 @@ defmodule Systems.AI do
       if room && (roll < trunc(Components.Module.value(monster).chance_to_follow / 5)) do
 
         if !Entity.has_component?(room, Components.PermanentNPC) or
-          (Components.PermanentNPC.value(room) != Components.Name.value(monster)) do
+          !String.contains?(Components.Name.value(monster), Components.PermanentNPC.value(room)) do
 
             direction = room
                         |> Components.Exits.value

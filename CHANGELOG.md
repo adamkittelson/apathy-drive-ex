@@ -88,3 +88,6 @@ CHANGELOG
 
 ---- 0.0.29 / 2014-12-28 / monster-adjectives ----------------------------------
 * monster adjectives for name variety
+
+---- 0.0.30 / 2014-12-28 / add-monsters-and-items-to-where-search --------------
+* '\''where'\'' now searches for monsters and items
