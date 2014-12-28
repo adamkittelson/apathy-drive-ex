@@ -8,19 +8,38 @@ defmodule Components.Monsters do
   end
 
   def get_monsters(entity) do
-    monsters = GenEvent.call(entity, Components.Monsters, :get_monsters)
-    Enum.each(monsters, &Parent.set(&1, entity))
-    monsters
+    GenEvent.call(entity, Components.Monsters, :get_monsters)
+    |> Enum.reject(&(&1 == nil))
   end
 
-  def get_monster(monster) when is_pid(monster), do: monster
-  def get_monster(monster) when is_number(monster) do
-    Monsters.find_by_id(monster)
+  def get_monster(monster, entity \\ nil)
+  def get_monster(monster, _entity) when is_pid(monster), do: monster
+  def get_monster(monster, entity) when is_number(monster) do
+    monster = Monsters.find_by_id(monster)
+    Parent.set(monster, entity)
+    monster
   end
-  def get_monster(monster) do
+  def get_monster(monster, room) do
     mt = MonsterTemplates.find_by_id(monster)
     if mt do
-      Systems.Monster.spawn_monster(mt)
+      monster = Systems.Monster.spawn_monster(mt)
+      if room do
+        alignment = Components.Alignment.value(monster)
+        light     = Components.Light.value(room)
+
+        cond do
+          alignment > 0 and light < 0 ->
+            new_alignment = min(abs(light), 300)
+            Components.Alignment.value(monster, new_alignment)
+          alignment < 0 and light > 0 ->
+            new_alignment = max(light, -200)
+            Components.Alignment.value(monster, new_alignment)
+          true ->
+            nil
+        end
+      end
+      Parent.set(monster, room)
+      monster
     end
   end
 
@@ -53,6 +72,20 @@ defmodule Components.Monsters do
   end
 
   def add_monster(entity, monster) do
+    alignment = Components.Alignment.value(monster)
+    light     = Components.Light.value(entity)
+
+    cond do
+      alignment > 0 and light < 0 ->
+        new_alignment = min(abs(light), 300)
+        Components.Alignment.value(monster, new_alignment)
+      alignment < 0 and light > 0 ->
+        new_alignment = max(light, -200)
+        Components.Alignment.value(monster, new_alignment)
+      true ->
+        nil
+    end
+
     Parent.set(monster, entity)
     GenEvent.notify(entity, {:add_monster, monster})
     Entities.save!(entity)

@@ -59,26 +59,22 @@ defmodule Systems.Exits.Trap do
           spring_trap!(monster, current_room, destination, room_exit)
       end
 
-      if Process.alive?(monster) do
-        Systems.Room.display_room_in_scroll(monster, destination)
-      else
-        Systems.Room.display_room_in_scroll(spirit, destination)
-      end
+      Systems.Room.display_room_in_scroll(spirit, monster, destination)
       Monster.pursue(current_room, monster, room_exit["direction"])
     end
   end
 
   def spring_trap!(monster, current_room, destination, room_exit) do
-    send_message(monster, "scroll", "<p><span class='red'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
+    send_message(monster, "scroll", "<p><span class='red'>#{interpolate(room_exit["mover_message"] |> to_string, %{"user" => monster})}</span></p>")
 
     Systems.Monster.observers(current_room, monster)
     |> Enum.each(fn(observer) ->
-      send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
+      send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["from_message"] |> to_string, %{"user" => monster})}</span></p>")
     end)
 
     Systems.Monster.observers(destination, monster)
     |> Enum.each(fn(observer) ->
-      send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
+      send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["to_message"] |> to_string, %{"user" => monster})}</span></p>")
     end)
 
     amount = monster

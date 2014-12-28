@@ -7,6 +7,10 @@ defmodule Components.Alignment do
     GenEvent.call(monster, Components.Alignment, :value)
   end
 
+  def value(entity, new_value) do
+    GenEvent.notify(entity, {:set_alignment, new_value})
+  end
+
   def alter_alignment(monster, "good") do
     add_evil_points(monster, 2)
   end
@@ -79,11 +83,15 @@ defmodule Components.Alignment do
 
   def handle_event({:add_evil_points, amount}, value) do
     value = (value + amount)
-            |> min(300)
-            |> max(-200)
+            |> min(300.0)
+            |> max(-200.0)
             |> Float.round(1)
 
     {:ok, value}
+  end
+
+  def handle_event({:set_alignment, new_value}, _value) do
+    {:ok, new_value / 1}
   end
 
   def handle_event(_, value) do

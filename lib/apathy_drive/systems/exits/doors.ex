@@ -28,7 +28,7 @@ defmodule Systems.Exits.Doors do
           send_message(spirit, "scroll", "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
         end
 
-        Systems.Room.display_room_in_scroll(spirit, destination)
+        Systems.Room.display_room_in_scroll(spirit, nil, destination)
       end
 
       def move(nil, monster, current_room, room_exit) do

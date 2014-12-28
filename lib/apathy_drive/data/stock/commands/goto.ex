@@ -17,7 +17,7 @@ defmodule Commands.Goto do
     Entities.save!(destination)
     Entities.save!(current_room)
     Entities.save!(spirit)
-    Systems.Room.display_room_in_scroll(spirit, destination)
+    Systems.Room.display_room_in_scroll(spirit, nil, destination)
   end
 
   def execute(spirit, monster, arguments) do
@@ -36,7 +36,7 @@ defmodule Commands.Goto do
     Entities.save!(current_room)
     Entities.save!(spirit)
     Entities.save(monster)
-    Systems.Room.display_room_in_scroll(monster, destination)
+    Systems.Room.display_room_in_scroll(spirit, monster, destination)
   end
 
 end

@@ -2,18 +2,31 @@ defmodule Systems.Room do
   use Systems.Reload
   import Utility
 
-  def display_room_in_scroll(character, room_pid) do
-    send_message(character, "scroll", long_room_html(character, room_pid))
+  def display_room_in_scroll(spirit, monster, room_pid) do
+    send_message(spirit, "scroll", long_room_html(spirit, monster, room_pid))
   end
 
-  def long_room_html(character, room) do
+  def long_room_html(spirit, nil, room) do
     directions = room |> exit_directions |> exit_directions_html
-    "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(character, room)}#{directions}</div>"
+    "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(spirit, room)}#{directions}</div>"
   end
 
-  def short_room_html(room) do
-    directions = room |> exit_directions |> exit_directions_html
-    "<div class='room'>#{name_html(room)}#{directions}</div>"
+  def long_room_html(spirit, monster, room) do
+    if light_level(room, monster) > -200 do
+      directions = room |> exit_directions |> exit_directions_html
+      "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(monster, room)}#{directions}#{light(room, monster)}</div>"
+    else
+      "<div class='room'>#{light(room, monster)}</div>"
+    end
+  end
+
+  def short_room_html(character, room) do
+    if light_level(room, character) > -200 do
+      directions = room |> exit_directions |> exit_directions_html
+      "<div class='room'>#{name_html(room)}#{directions}</div>"
+    else
+      "<div class='room'>#{light(room, character)}</div>"
+    end
   end
 
   def shop(room) do
@@ -75,6 +88,38 @@ defmodule Systems.Room do
         ""
       _ ->
         "<div class='items'>You notice #{Enum.join(items(room), ", ")} here.</div>"
+    end
+  end
+
+  def light(light_level)  when light_level < -1000, do: "<p>You are blind.</p>"
+  def light(light_level)  when light_level <= -300, do: "<p>The room is pitch black - you can't see anything</p>"
+  def light(light_level)  when light_level <= -200, do: "<p>The room is very dark - you can't see anything</p>"
+  def light(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
+  def light(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
+  def light(light_level)  when light_level >=   25, do: "<p>The room is brightly lit</p>"
+  def light(light_level)  when light_level >=  100, do: "<p>The room is dazzlingly bright</p>"
+  def light(light_level)  when light_level >=  200, do: "<p>The room is painfully bright - you can't see anything</p>"
+  def light(light_level)  when light_level >=  300, do: "<p>The room is blindingly bright - you can't see anything</p>"
+
+  def light(light_level), do: nil
+
+  def light(room, monster) do
+    light_level(room, monster)
+    |> light
+  end
+
+  def light_level(nil, monster), do: 0
+  def light_level(room, monster) do
+    alignment = Components.Alignment.value(monster)
+    light     = Components.Light.value(room)
+
+    cond do
+      alignment > 0 and light < 0 ->
+        min(0, light + alignment)
+      alignment < 0 and light > 0 ->
+        max(0, light + alignment)
+      true ->
+        light
     end
   end
 

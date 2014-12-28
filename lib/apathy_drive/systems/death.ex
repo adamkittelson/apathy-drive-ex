@@ -8,18 +8,20 @@ defmodule Systems.Death do
     if Process.alive?(victim) do
       room = Parent.of(victim)
 
-      send_message(victim, "scroll", "<p><span class='red'>You have been killed!</span></p>")
+      if room do
+        send_message(victim, "scroll", "<p><span class='red'>You have been killed!</span></p>")
 
-      Systems.Monster.display_death_message(room, victim)
+        Systems.Monster.display_death_message(room, victim)
 
-      room
-      |> Systems.Monster.monsters_in_room(victim)
-      |> Enum.each(fn(monster) ->
-           reward_spirit(Possession.possessor(monster), victim)
-           reward_monster(monster, victim)
-         end)
+        room
+        |> Systems.Monster.monsters_in_room(victim)
+        |> Enum.each(fn(monster) ->
+             reward_spirit(Possession.possessor(monster), victim)
+             reward_monster(monster, victim)
+           end)
 
-      kill_monster(victim, room)
+        kill_monster(victim, room)
+      end
     end
   end
 
@@ -55,10 +57,14 @@ defmodule Systems.Death do
   end
 
   def experience_to_grant(entity) when is_pid entity do
-    Systems.Stat.pre_effects_bonus(entity)
-    |> Map.values
-    |> Enum.sum
-    |> experience_to_grant
+    if Process.alive?(entity) do
+      Systems.Stat.pre_effects_bonus(entity)
+      |> Map.values
+      |> Enum.sum
+      |> experience_to_grant
+    else
+      0
+    end
   end
 
   def experience_to_grant(stat_total) do
