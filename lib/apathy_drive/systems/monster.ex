@@ -5,13 +5,27 @@ defmodule Systems.Monster do
   import BlockTimer
   use Timex
 
+  def name_with_adjective(monster, name) do
+    adjective = [nil | Components.Module.value(monster).adjectives]
+                |> Enum.shuffle
+                |> List.first
+
+    if adjective do
+      "#{adjective} #{name}"
+    else
+      name
+    end
+  end
+
   def spawn_monster(monster) do
     limit = Components.Module.value(monster).limit
     monster_name = Components.Name.value(monster)
 
     if !limit_reached?(monster_name, limit) do
       {:ok, entity} = Entity.init
-      Entity.add_component(entity, Components.Name,        Components.Name.get_name(monster))
+      name = name_with_adjective(monster, monster_name)
+      Entity.add_component(entity, Components.Name, name)
+      Entity.add_component(entity, Components.Keywords, String.split(name))
       Entity.add_component(entity, Components.Description, Components.Module.value(monster).description)
       Entity.add_component(entity, Components.Types, ["monster"])
       Entity.add_component(entity, Components.Limbs,  Components.Module.value(monster).limbs)
@@ -236,6 +250,7 @@ defmodule Systems.Monster do
       def greeting,      do: "The #{name} completely ignores you."
       def gender,        do: nil
       def limit,         do: nil
+      def adjectives,    do: []
 
       def stats do
         %{"strength"  => 1,
@@ -382,7 +397,8 @@ defmodule Systems.Monster do
                       chance_to_follow: 0,
                       damage:           0,
                       gender:           0,
-                      limit:            0]
+                      limit:            0,
+                      adjectives:       0]
     end
   end
 
