@@ -29,7 +29,7 @@ defmodule Systems.Description do
           equipped_items |> Enum.each fn(item) ->
             item_name = Components.Name.value(item)
             item_limbs = Systems.Limbs.get_limb_names(limbs, item)
-            send_message(character, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 20)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>")
+            send_message(character, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 23)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>")
           end
         end
       end
