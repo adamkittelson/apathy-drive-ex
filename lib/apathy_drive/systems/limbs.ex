@@ -97,7 +97,7 @@ defmodule Systems.Limbs do
         Entity.add_component(corpse, Components.Keywords, String.split(limb))
         Entity.add_component(corpse, Components.Module, Items.SeveredLimb)
         Entity.add_component(corpse, Components.Types, ["item", "corpse"])
-        Entity.add_component(corpse, Components.Decay, %{"frequency" => 1, "decay_at" => Date.convert(Date.shift(Date.now, mins: 60), :secs)})
+        Entity.add_component(corpse, Components.Decay, %{"frequency" => 1, "decay_at" => Date.convert(Date.shift(Date.now, mins: 5), :secs)})
         Entities.save!(corpse)
 
         Components.Items.add_item(room, corpse)
