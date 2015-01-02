@@ -26,6 +26,18 @@ defmodule Components.Effects do
     end
   end
 
+  def lights(entity) do
+    entity
+    |> value
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :light)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :light)
+       end)
+  end
+
   def damage_increases(entity) do
     entity
     |> value

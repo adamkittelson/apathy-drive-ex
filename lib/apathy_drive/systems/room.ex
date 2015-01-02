@@ -12,7 +12,8 @@ defmodule Systems.Room do
   end
 
   def long_room_html(spirit, monster, room) do
-    if light_level(room, monster) > -200 do
+    light = light_level(room, monster)
+    if light > -200 and light < 200 do
       directions = room |> exit_directions |> exit_directions_html
       "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(monster, room)}#{directions}#{light(room, monster)}</div>"
     else
@@ -96,11 +97,10 @@ defmodule Systems.Room do
   def light(light_level)  when light_level <= -200, do: "<p>The room is very dark - you can't see anything</p>"
   def light(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
   def light(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
-  def light(light_level)  when light_level >=   25, do: "<p>The room is brightly lit</p>"
-  def light(light_level)  when light_level >=  100, do: "<p>The room is dazzlingly bright</p>"
-  def light(light_level)  when light_level >=  200, do: "<p>The room is painfully bright - you can't see anything</p>"
   def light(light_level)  when light_level >=  300, do: "<p>The room is blindingly bright - you can't see anything</p>"
-
+  def light(light_level)  when light_level >=  200, do: "<p>The room is painfully bright - you can't see anything</p>"
+  def light(light_level)  when light_level >=  100, do: "<p>The room is dazzlingly bright</p>"
+  def light(light_level)  when light_level >=   25, do: "<p>The room is brightly lit</p>"
   def light(light_level), do: nil
 
   def light(room, monster) do
@@ -111,7 +111,7 @@ defmodule Systems.Room do
   def light_level(nil, monster), do: 0
   def light_level(room, monster) do
     alignment = Components.Alignment.value(monster)
-    light     = Components.Light.value(room)
+    light     = Components.Light.value(room) + light_in_room(room) + light_on_monsters(room)
 
     cond do
       alignment > 0 and light < 0 ->
@@ -121,6 +121,33 @@ defmodule Systems.Room do
       true ->
         light
     end
+  end
+
+  def lights(items) do
+    items
+    |> Enum.filter(&(Entity.has_component?(&1, Components.Effects)))
+    |> Enum.map(fn(item) ->
+         item
+         |> Components.Effects.lights
+         |> Enum.sum
+       end)
+    |> Enum.sum
+  end
+
+  def light_in_room(room) do
+    room
+    |> Components.Items.get_items
+    |> lights
+  end
+
+  def light_on_monsters(room) do
+    room
+    |> Systems.Room.living_in_room
+    |> Enum.map(fn(monster) ->
+         Systems.Limbs.equipped_items(monster) ++ Components.Items.get_items(monster)
+       end)
+    |> List.flatten
+    |> lights
   end
 
   def entities(entity, room) do
