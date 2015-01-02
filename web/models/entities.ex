@@ -67,6 +67,10 @@ defmodule Entities do
       if Entity.has_component?(entity_pid, Components.Effects) do
         Components.Effects.remove(entity_pid)
       end
+      if Entity.has_component?(entity_pid, Components.TimerManager) do
+        Components.TimerManager.value(entity_pid)
+        |> Process.exit(:kill)
+      end
       Entity.remove_from_type_collection(entity_pid)
       Entity.list_components(entity_pid) |> Enum.each(&(Entity.remove_component(entity_pid, &1)))
       Parent.set(entity_pid, nil)
