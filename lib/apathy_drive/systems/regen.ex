@@ -4,34 +4,25 @@ defmodule Systems.Regen do
   import BlockTimer
   import Systems.Text
 
-  def initialize do
-    ["HP", "Mana"]
-    |> Enum.each(fn(type) ->
-         Components.all(:"Elixir.Components.#{type}")
-         |> Enum.each(fn(entity) ->
-              if :"Elixir.Components.#{type}".value(entity) < :"Elixir.Systems.#{type}".max(entity) do
-                :"Elixir.#{type}Regen".add(entity)
-              end
-            end)
-       end)
+  def initialize_regen(monster) do
+    if !Components.Regenerating.value(monster) do
+      Components.Regenerating.value(monster, true)
 
-    apply_interval 5 |> seconds, do: regen_hp
-    apply_interval 5 |> seconds, do: regen_mana
-  end
+      Components.TimerManager.call_after(monster, 5000, fn ->
+        hp = hp_regen_per_tick(monster)
+        Components.HP.add(monster, hp)
+        heal_limbs(monster, hp)
+        update_prompt(monster)
 
-  def regen_hp do
-    HPRegen.all
-    |> Enum.each(fn(entity) ->
-         if Process.alive?(entity) do
-           hp = hp_regen_per_tick(entity)
-           Components.HP.add(entity, hp)
-           heal_limbs(entity, hp)
-           if fully_healed?(entity) do
-             HPRegen.remove(entity)
-           end
-           update_prompt(entity)
-         end
-       end)
+        Components.Mana.add(monster, mana_regen_per_tick(monster))
+
+        Components.Regenerating.value(monster, false)
+
+        if !fully_healed?(monster) or Components.Mana.value(monster) < Systems.Mana.max(monster) do
+          initialize_regen(monster)
+        end
+      end)
+    end
   end
 
   def fully_healed?(entity) do
@@ -62,19 +53,6 @@ defmodule Systems.Regen do
            end
          end)
     end
-  end
-
-  def regen_mana do
-    ManaRegen.all
-    |> Enum.each(fn(entity) ->
-         if Process.alive?(entity) do
-           Components.Mana.add(entity, mana_regen_per_tick(entity))
-           if Components.Mana.value(entity) >= Systems.Mana.max(entity) do
-             ManaRegen.remove(entity)
-           end
-           update_prompt(entity)
-         end
-       end)
   end
 
   def update_prompt(entity) do

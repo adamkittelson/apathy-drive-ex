@@ -45,7 +45,7 @@ defmodule Components.Limbs do
 
   def damage_limb(entity, limb_name, amount) do
     GenEvent.notify(entity, {:damage_limb, limb_name, amount})
-    HPRegen.add(entity)
+    Systems.Regen.initialize_regen(entity)
   end
 
   def heal_limb(entity, limb_name, amount) do

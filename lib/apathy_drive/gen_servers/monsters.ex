@@ -13,6 +13,7 @@ defmodule Monsters do
       GenServer.cast(:monsters, {:add, %{"name" => name, "monster" => monster}})
     end
     initialize_ai(monster)
+    Systems.Regen.initialize_regen(monster)
   end
 
   def remove(monster) do

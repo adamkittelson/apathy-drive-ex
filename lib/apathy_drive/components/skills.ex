@@ -86,8 +86,7 @@ defmodule Components.Skills do
     send_message(monster, "scroll", "<p>It will cost you #{cost} development points to advance this skill further.</p>")
     send_message(monster, "scroll", "<p>You have #{new_devs} development points left.</p>")
     Entities.save!(monster)
-    HPRegen.add(monster)
-    ManaRegen.add(monster)
+    Systems.Regen.initialize_regen(monster)
     Entities.save!(Parent.of(monster))
   end
 

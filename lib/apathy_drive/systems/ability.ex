@@ -29,9 +29,9 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :mana) do
-    if ability[:mana_cost] do
+    if ability[:mana_cost] && ability[:mana_cost] > 0 do
       if Components.Mana.subtract(entity, ability[:mana_cost]) do
-        ManaRegen.add(entity)
+        Systems.Regen.initialize_regen(entity)
         entity
         |> Possession.possessor
         |> Systems.Prompt.update(entity)

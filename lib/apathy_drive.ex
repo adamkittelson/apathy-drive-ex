@@ -48,11 +48,8 @@ defmodule ApathyDrive do
       Monsters.all |> Enum.each(&Components.Abilities.reset_abilities/1)
     end
 
-    HPRegen.start_link
-    ManaRegen.start_link
     Systems.Spawning.initialize
     Systems.Decay.initialize
-    Systems.Regen.initialize
     Systems.Hints.initialize
     Systems.Idle.initialize
     Systems.RoomAbility.initialize
