@@ -12,7 +12,7 @@ defmodule Components.Abilities do
     |> value
     |> useable(entity)
     |> Enum.filter(fn(ability) ->
-         attack?(entity, ability)
+         ability.type == "attack"
        end)
   end
 
@@ -21,7 +21,7 @@ defmodule Components.Abilities do
     |> value
     |> useable(entity)
     |> Enum.filter(fn(ability) ->
-         heal?(entity, ability)
+         ability.type == "heal"
        end)
   end
 
@@ -30,21 +30,8 @@ defmodule Components.Abilities do
     |> value
     |> useable(entity)
     |> Enum.filter(fn(ability) ->
-         !heal?(entity, ability) and
-           Enum.member?(["self", "self or monster"], ability.properties(entity).target)
+         ability.type == "blessing"
        end)
-  end
-
-  def heal?(entity, ability) do
-    ability.properties(entity)
-     |> Map.keys
-     |> Enum.member?(:healing)
-  end
-
-  def attack?(entity, ability) do
-    ability.properties(entity)
-     |> Map.keys
-     |> Enum.member?(:damage)
   end
 
   def useable(abilities, entity) do

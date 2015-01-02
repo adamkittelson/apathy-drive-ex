@@ -513,6 +513,9 @@ defmodule Systems.Ability do
       def script(entity \\ nil)
       def script(entity), do: nil
 
+      def type(entity \\ nil)
+      def type(entity), do: nil
+
       def execute(entity, target \\ nil) do
         Systems.Ability.execute(properties(entity), entity, target)
       end
@@ -673,7 +676,9 @@ defmodule Systems.Ability do
                       increase_skills: 1,
                       help: 0,
                       script: 0,
-                      script: 1]
+                      script: 1,
+                      type: 0,
+                      type: 1]
     end
   end
 
