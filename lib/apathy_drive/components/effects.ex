@@ -113,7 +113,7 @@ defmodule Components.Effects do
     case value[key] do
       %{:timers => timers} ->
         Enum.each(timers, fn(timer) ->
-          :timer.cancel(timer)
+          :erlang.cancel_timer(timer)
         end)
       _ ->
     end

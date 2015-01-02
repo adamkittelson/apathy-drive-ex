@@ -15,10 +15,10 @@ defmodule Systems.Crits do
 
   def add_damage_over_time_effect(_target, _damage, nil), do: nil
   def add_damage_over_time_effect(target, damage, damage_over_time) do
-    {:ok, timer} = apply_interval 1 |> seconds do
+    timer = Components.TimerManager.call_every(target, 1 |> seconds, fn ->
       send_message(target, "scroll", "<p>You take damage from your wounds!</p>")
       Systems.Damage.do_damage(target, damage * damage_over_time[:damage])
-    end
+    end)
     Effect.add(target, %{:timers => [timer]}, damage_over_time[:duration])
   end
 

@@ -125,7 +125,7 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :cooldown) do
     if ability[:cooldown] do
-      {:ok, timer} = apply_interval 1 |> seconds do
+      timer = Components.TimerManager.call_every(entity, 1 |> seconds, fn ->
         Components.Effects.update(entity, fn(value) ->
           key = value
                 |> Map.keys
@@ -139,7 +139,7 @@ defmodule Systems.Ability do
             value
           end
         end)
-      end
+      end)
       effect = %{:timers       => [timer],
                  :cooldown     => ability[:name],
                  :cooldown_remaining => ability[:cooldown],
@@ -310,9 +310,9 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    {:ok, cast_timer} = apply_after(ability[:casting_time] |> seconds, ability[:env]) do
+    cast_timer = Components.TimerManager.call_after(entity, ability[:casting_time] |> seconds, fn ->
       execute(ability, entity, target, :verify_target)
-    end
+    end)
 
     Systems.Effect.add(entity, %{:stack_key => :cast_timer, :stack_count => 1, timers: [cast_timer]}, ability[:casting_time])
   end

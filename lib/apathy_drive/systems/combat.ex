@@ -6,7 +6,7 @@ defmodule Systems.Combat do
 
   def start(entity, time \\ 0.5) do
     if Process.alive?(entity) and !Components.Combat.in_combat?(entity) do
-      {:ok, timer} = apply_after(time |> seconds, do: swing(entity))
+      timer = Components.TimerManager.call_after(entity, time |> seconds, fn -> swing(entity) end)
       Components.Combat.set_timer entity, timer
     end
   end

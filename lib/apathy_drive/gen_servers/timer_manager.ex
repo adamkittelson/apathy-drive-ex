@@ -17,9 +17,25 @@ defmodule TimerManager do
     GenServer.cast(timer_manager, {:cancel, ref})
   end
 
+  defp execute_function(function) do
+    try do
+      function.()
+    catch
+      kind, error ->
+        IO.puts Exception.format(kind, error)
+        # {fun, arity} = env.function
+        # IO.puts """
+        # ** BlockTimer apply error, originating from:
+        #      #{env.file}:#{env.line} in #{fun}/#{arity}
+        #    error:
+        #      #{Exception.format(kind, error)}
+        # """
+    end
+  end
+
   # GenServer API
-  def start_link() do
-    GenServer.start_link(__MODULE__, HashDict.new)
+  def start do
+    GenServer.start(__MODULE__, HashDict.new)
   end
 
   def init(value) do
@@ -46,7 +62,7 @@ defmodule TimerManager do
     if key do
       new_ref = :erlang.start_timer(time, self, {time, function})
 
-      function.()
+      execute_function(function)
 
       {:noreply, HashDict.put(refs, key, new_ref)}
     else
@@ -55,7 +71,7 @@ defmodule TimerManager do
   end
 
   def handle_info({:timeout, ref, function}, refs) do
-    function.()
+    execute_function(function)
     {:noreply, refs}
   end
 

@@ -26,9 +26,13 @@ defmodule Systems.Item do
     if template.light do
       if template.light_duration do
         Entity.add_component(entity, Components.Uses, template.light_duration)
-        {:ok, timer} = apply_interval 1 |> seconds do
+
+        {:ok, tm} = TimerManager.start
+        Entity.add_component(entity, Components.TimerManager, tm)
+
+        timer = Components.TimerManager.call_every(entity, 1 |> seconds, fn ->
           Components.Uses.use!(entity)
-        end
+        end)
         Systems.Effect.add(entity, %{light: template.light, timers: [timer]})
       else
         Systems.Effect.add(entity, %{light: template.light})
