@@ -64,6 +64,9 @@ defmodule Entities do
         entity = Repo.get(Entities, id)
         Repo.delete(entity)
       end
+      if Entity.has_component?(entity_pid, Components.Effects) do
+        Components.Effects.remove(entity_pid)
+      end
       Entity.remove_from_type_collection(entity_pid)
       Entity.list_components(entity_pid) |> Enum.each(&(Entity.remove_component(entity_pid, &1)))
       Parent.set(entity_pid, nil)

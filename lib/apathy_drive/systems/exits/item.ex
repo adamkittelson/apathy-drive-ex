@@ -20,7 +20,7 @@ defmodule Systems.Exits.Item do
           Entities.save!(destination)
           Entities.save!(current_room)
         end
-        Components.Uses.use!(item, monster)
+        Components.Uses.use!(item)
         Entities.save(monster)
 
         Systems.Monster.observers(current_room, monster)
@@ -60,7 +60,7 @@ defmodule Systems.Exits.Item do
         Entities.save!(destination)
         Entities.save!(current_room)
         send_message(monster, "scroll", "<p><span class='yellow'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
-        Components.Uses.use!(item, monster)
+        Components.Uses.use!(item)
         Entities.save!(spirit)
         Entities.save(monster)
 

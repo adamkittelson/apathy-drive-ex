@@ -1,6 +1,7 @@
 defmodule Systems.Item do
   use Systems.Reload
   import Utility
+  import BlockTimer
 
   def spawn_item(item) do
     {:ok, entity} = Entity.init
@@ -18,7 +19,21 @@ defmodule Systems.Item do
 
     Entity.add_component(entity, Components.Effects, %{})
 
-    Entity.add_component(entity, Components.Uses, template.uses)
+    if template.uses do
+      Entity.add_component(entity, Components.Uses, template.uses)
+    end
+
+    if template.light do
+      if template.light_duration do
+        Entity.add_component(entity, Components.Uses, template.light_duration)
+        {:ok, timer} = apply_interval 1 |> seconds do
+          Components.Uses.use!(entity)
+        end
+        Systems.Effect.add(entity, %{light: template.light, timers: [timer]})
+      else
+        Systems.Effect.add(entity, %{light: template.light})
+      end
+    end
 
     Entity.add_component(entity, Components.Types, ["item"])
 
@@ -27,7 +42,7 @@ defmodule Systems.Item do
     entity
   end
 
-  def spawn_item(nil, entity), do: nil
+  def spawn_item(nil, _entity), do: nil
   def spawn_item(item, entity) do
     item = spawn_item(item)
     Components.Items.add_item(entity, item)
@@ -104,7 +119,7 @@ defmodule Systems.Item do
     end
   end
 
-  def equip(monster, item, {skill, req}) do
+  def equip(monster, _item, {skill, req}) do
     send_message(monster, "scroll", "<p>You need at least #{req} #{skill} skill to equip that.</p>")
   end
 
@@ -153,6 +168,8 @@ defmodule Systems.Item do
       def room_destruct_message, do: nil
       def can_pick_up?,          do: true
       def value,                 do: 0
+      def light,                 do: nil
+      def light_duration,        do: nil
 
       def weapon?, do: slot == "weapon" and !!hit_verbs
 
@@ -170,7 +187,9 @@ defmodule Systems.Item do
                       destruct_message: 0,
                       room_destruct_message: 0,
                       can_pick_up?: 0,
-                      value: 0]
+                      value: 0,
+                      light: 0,
+                      light_duration: 0]
     end
   end
 

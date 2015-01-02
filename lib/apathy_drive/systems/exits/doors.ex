@@ -159,7 +159,7 @@ defmodule Systems.Exits.Doors do
             if key do
               unlock!(room, room_exit["direction"])
               send_message(monster, "scroll", "<p>You unlocked the #{name} with your #{Components.Name.value(key)}.</p>")
-              Components.Uses.use!(key, monster)
+              Components.Uses.use!(key)
               mirror_unlock(room, room_exit)
             else
               send_message(monster, "scroll", "<p>None of your keys seem to fit this lock.</p>")

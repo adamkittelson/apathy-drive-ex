@@ -13,42 +13,55 @@ defmodule Components.Uses do
     GenEvent.notify(entity, {:set_uses, new_value})
   end
 
-  def use!(item, monster) do
+  def use!(item) do
+    parent = Parent.of(item)
+
     case GenEvent.call(item, Components.Uses, :decrement) do
       nil ->
         nil
       uses when uses < 1 ->
         template = Components.Module.value(item)
 
-        if template.destruct_message do
-          send_message(monster, "scroll", "<p>#{template.destruct_message}</p>")
+        if template.destruct_message && monster?(parent) do
+          send_message(parent, "scroll", "<p>#{template.destruct_message}</p>")
         end
 
         if template.room_destruct_message do
-          monster
-          |> Parent.of
+          room = if room?(parent), do: parent, else: Parent.of(parent)
+
+          room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(spirit) ->
                observer = Possession.possessed(spirit) || spirit
 
-               if observer != monster do
-                 send_message(monster, "scroll", "<p>#{template.room_destruct_message |> interpolate(%{"user" => monster})}</p>")
+               if observer != parent do
+                 send_message(parent, "scroll", "<p>#{template.room_destruct_message |> interpolate(%{"user" => parent})}</p>")
                end
              end)
         end
 
-        Components.Items.remove_item(monster, item)
-        Entities.save(monster)
+        Components.Items.remove_item(parent, item)
+        Entities.save(parent)
         Entities.delete!(item)
       _uses ->
         Entities.save!(item)
-        Entities.save!(monster)
-        Entities.save!(Parent.of(monster))
+        Entities.save(parent)
+        if monster?(parent) do
+          Entities.save!(Parent.of(parent))
+        end
     end
   end
 
   def serialize(entity) do
     %{"Uses" => value(entity)}
+  end
+
+  defp room?(entity) do
+    Entity.has_component?(entity, Components.Exits)
+  end
+
+  defp monster?(entity) do
+    !room?(entity)
   end
 
   ### GenEvent API
