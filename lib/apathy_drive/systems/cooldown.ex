@@ -1,24 +1,19 @@
 defmodule Systems.Cooldown do
+  use Systems.Reload
 
   def on_cooldown?(entity, ability_name) do
     entity
-    |> Components.Effects.value
-    |> Map.values
-    |> Enum.any?(fn(effect) ->
-         effect[:cooldown] == ability_name
-       end)
+    |> Components.TimerManager.value
+    |> TimerManager.timers
+    |> Enum.member? {:cooldown, ability_name}
   end
 
   def cooldown_remaining(entity, ability_name) do
-    effect = entity
-             |> Components.Effects.value
-             |> Map.values
-             |> Enum.find(fn(effect) ->
-                  effect[:cooldown] == ability_name
-                end)
-    case effect do
-      nil -> 0
-      effect -> effect[:cooldown_remaining]
-    end
+    remaining = entity
+                |> Components.TimerManager.value
+                |> TimerManager.time_remaining({:cooldown, ability_name})
+
+    Float.ceil(remaining / 1000)
+    |> trunc
   end
 end

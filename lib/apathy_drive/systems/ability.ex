@@ -125,26 +125,9 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :cooldown) do
     if ability[:cooldown] do
-      timer = Components.TimerManager.call_every(entity, {:cooldown, 1 |> seconds, fn ->
-        Components.Effects.update(entity, fn(value) ->
-          key = value
-                |> Map.keys
-                |> Enum.find(fn(key) ->
-                     value[key][:cooldown] == ability[:name]
-                   end)
-
-          if key do
-            update_in(value, [key, :cooldown_remaining], &(&1 - 1))
-          else
-            value
-          end
-        end)
+      Components.TimerManager.call_after(entity, {{:cooldown, ability[:name]}, ability[:cooldown] |> seconds, fn ->
+        send_message(entity, "scroll", "<p><span class='dark-cyan'>You may now use #{ability[:name]} again.</span></p>")
       end})
-      effect = %{:timers       => [timer],
-                 :cooldown     => ability[:name],
-                 :cooldown_remaining => ability[:cooldown],
-                 :wear_message => "You may now use #{ability[:name]} again."}
-      Effect.add(entity, effect, ability[:cooldown])
     end
 
     if is_list(target) do

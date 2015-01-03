@@ -15,6 +15,14 @@ defmodule TimerManager do
     ref
   end
 
+  def timers(timer_manager) do
+    GenServer.call(timer_manager, :get_timers)
+  end
+
+  def time_remaining(timer_manager, name) do
+    GenServer.call(timer_manager, {:time_remaining, name})
+  end
+
   def cancel(timer_manager, name) do
     GenServer.cast(timer_manager, {:cancel, name})
   end
@@ -55,6 +63,18 @@ defmodule TimerManager do
     {:noreply, HashDict.delete(refs, name) }
   end
 
+  def handle_call(:get_timers, _from, refs) do
+    {:reply, HashDict.keys(refs), refs}
+  end
+
+  def handle_call({:time_remaining, name}, _from, refs) do
+    if ref = HashDict.get(refs, name) do
+      {:reply, :erlang.read_timer(ref), refs}
+    else
+      {:reply, nil, refs}
+    end
+  end
+
   def handle_info({:timeout, ref, {name, time, function}}, refs) do
     new_ref = :erlang.start_timer(time, self, {name, time, function})
 
@@ -63,9 +83,9 @@ defmodule TimerManager do
     {:noreply, HashDict.put(refs, name, new_ref)}
   end
 
-  def handle_info({:timeout, ref, {_name, function}}, refs) do
+  def handle_info({:timeout, ref, {name, function}}, refs) do
     execute_function(function)
-    {:noreply, refs}
+    {:noreply, HashDict.delete(refs, name)}
   end
 
 end
