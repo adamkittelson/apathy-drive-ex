@@ -11,16 +11,16 @@ defmodule Components.TimerManager do
     GenEvent.notify(entity, {:set_timer_manager, new_value})
   end
 
-  def call_after(entity, time, function) do
+  def call_after(entity, {name, time, function}) do
     entity
     |> value
-    |> TimerManager.call_after time, function
+    |> TimerManager.call_after {name, time, function}
   end
 
-  def call_every(entity, time, function) do
+  def call_every(entity, {name, time, function}) do
     entity
     |> value
-    |> TimerManager.call_every time, function
+    |> TimerManager.call_every {name, time, function}
   end
 
   def serialize(_entity) do

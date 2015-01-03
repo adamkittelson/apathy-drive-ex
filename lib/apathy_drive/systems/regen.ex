@@ -8,7 +8,7 @@ defmodule Systems.Regen do
     if !Components.Regenerating.value(monster) do
       Components.Regenerating.value(monster, true)
 
-      Components.TimerManager.call_after(monster, 5000, fn ->
+      Components.TimerManager.call_after(monster, {:regen, 5000, fn ->
         hp = hp_regen_per_tick(monster)
         Components.HP.add(monster, hp)
         heal_limbs(monster, hp)
@@ -21,7 +21,7 @@ defmodule Systems.Regen do
         if !fully_healed?(monster) or Components.Mana.value(monster) < Systems.Mana.max(monster) do
           initialize_regen(monster)
         end
-      end)
+      end})
     end
   end
 

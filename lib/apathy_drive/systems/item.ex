@@ -30,9 +30,9 @@ defmodule Systems.Item do
         {:ok, tm} = TimerManager.start
         Entity.add_component(entity, Components.TimerManager, tm)
 
-        timer = Components.TimerManager.call_every(entity, 1 |> seconds, fn ->
+        timer = Components.TimerManager.call_every(entity, {:light, 1 |> seconds, fn ->
           Components.Uses.use!(entity)
-        end)
+        end})
         Systems.Effect.add(entity, %{light: template.light, timers: [timer]})
       else
         Systems.Effect.add(entity, %{light: template.light})
