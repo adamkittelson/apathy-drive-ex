@@ -5,25 +5,25 @@ defmodule LimbTest do
     {:ok, character } = Entity.init
 
     {:ok, club } = Entity.init
-    Entity.add_component(club, Components.Module, %{worn_on: %{"hand" => 1}, slot: "weapon"})
+    Entity.add_component(club, Components.Module, %{worn_on: %{"hand" => 1}, slot: "weapon", light: nil})
     Entity.add_component(club, Components.ID, 1)
     Entity.add_component(club, Components.Name, "club")
     Items.add(club)
 
     {:ok, sword } = Entity.init
-    Entity.add_component(sword, Components.Module, %{worn_on: %{"hand" => 1}, slot: "weapon"})
+    Entity.add_component(sword, Components.Module, %{worn_on: %{"hand" => 1}, slot: "weapon", light: nil})
     Entity.add_component(club, Components.ID, 2)
     Entity.add_component(club, Components.Name, "shortsword")
     Items.add(sword)
 
     {:ok, staff } = Entity.init
-    Entity.add_component(staff, Components.Module, %{worn_on: %{"hand" => 2}, slot: "weapon"})
+    Entity.add_component(staff, Components.Module, %{worn_on: %{"hand" => 2}, slot: "weapon", light: nil})
     Entity.add_component(club, Components.ID, 3)
     Entity.add_component(club, Components.Name, "quarterstaff")
     Items.add(staff)
 
     {:ok, gloves } = Entity.init
-    Entity.add_component(gloves, Components.Module, %{worn_on: %{"hand" => 2}, slot: "gauntlets"})
+    Entity.add_component(gloves, Components.Module, %{worn_on: %{"hand" => 2}, slot: "gauntlets", light: nil})
     Entity.add_component(club, Components.ID, 4)
     Entity.add_component(club, Components.Name, "padded gloves")
     Items.add(gloves)
