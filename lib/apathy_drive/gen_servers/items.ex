@@ -11,6 +11,14 @@ defmodule Items do
     else
       GenServer.cast(:items, {:add, %{"name" => name, "item" => item}})
     end
+    light(item)
+  end
+
+  def light(item) do
+    template = Components.Module.value(item)
+    if template.light && template.always_lit do
+      Systems.Light.light(item)
+    end
   end
 
   def remove(item) do

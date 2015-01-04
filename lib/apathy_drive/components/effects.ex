@@ -18,7 +18,8 @@ defmodule Components.Effects do
   end
 
   def remove(entity, key) do
-    case GenEvent.call(entity, __MODULE__, {:remove_effect, key}) do
+    timer_manager = Components.TimerManager.value(entity)
+    case GenEvent.call(entity, __MODULE__, {:remove_effect, key, timer_manager}) do
       nil ->
         nil
       message ->
@@ -121,11 +122,11 @@ defmodule Components.Effects do
     {:ok, :ok, fun.(value)}
   end
 
-  def handle_call({:remove_effect, key}, value) do
+  def handle_call({:remove_effect, key, timer_manager}, value) do
     case value[key] do
       %{:timers => timers} ->
-        Enum.each(timers, fn(timer) ->
-          :erlang.cancel_timer(timer)
+        Enum.each(timers, fn(timer_name) ->
+          TimerManager.cancel(timer_manager, timer_name)
         end)
       _ ->
     end

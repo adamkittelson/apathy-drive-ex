@@ -88,4 +88,9 @@ defmodule TimerManager do
     {:noreply, HashDict.delete(refs, name)}
   end
 
+  def handle_info(info, refs) do
+    IO.puts "Unexpected TimerManger info: #{inspect(info)}"
+    {:noreply, refs}
+  end
+
 end

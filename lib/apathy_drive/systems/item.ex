@@ -23,20 +23,8 @@ defmodule Systems.Item do
       Entity.add_component(entity, Components.Uses, template.uses)
     end
 
-    if template.light do
-      if template.light_duration do
-        Entity.add_component(entity, Components.Uses, template.light_duration)
-
-        {:ok, tm} = TimerManager.start
-        Entity.add_component(entity, Components.TimerManager, tm)
-
-        timer = Components.TimerManager.call_every(entity, {:light, 1 |> seconds, fn ->
-          Components.Uses.use!(entity)
-        end})
-        Systems.Effect.add(entity, %{light: template.light, timers: [timer]})
-      else
-        Systems.Effect.add(entity, %{light: template.light})
-      end
+    if template.light_duration do
+      Entity.add_component(entity, Components.Uses, template.light_duration)
     end
 
     Entity.add_component(entity, Components.Types, ["item"])
@@ -87,11 +75,22 @@ defmodule Systems.Item do
       end
     end
 
-    items = Components.Items.get_items(character) |> Enum.map(&(Components.Name.value(&1)))
+    items = Components.Items.get_items(character) |> Enum.map(&item_name/1)
     if items |> Enum.count > 0 do
       send_message(character, "scroll", "<br><p>You are carrying #{Enum.join(items, ", ")}</p>")
     else
       send_message(character, "scroll", "<br><p>You are carrying nothing.</p>")
+    end
+  end
+
+  def item_name(item) do
+    name = GenEvent.call(item, Components.Name, :get_name)
+
+    template = Components.Module.value(item)
+    if template.light && !template.always_lit && Systems.Light.lit?(item) do
+      "#{name} (lit)"
+    else
+      name
     end
   end
 
@@ -174,6 +173,7 @@ defmodule Systems.Item do
       def value,                 do: 0
       def light,                 do: nil
       def light_duration,        do: nil
+      def always_lit,            do: false
 
       def weapon?, do: slot == "weapon" and !!hit_verbs
 
@@ -193,7 +193,8 @@ defmodule Systems.Item do
                       can_pick_up?: 0,
                       value: 0,
                       light: 0,
-                      light_duration: 0]
+                      light_duration: 0,
+                      always_lit: 0]
     end
   end
 

@@ -78,7 +78,7 @@ defmodule Systems.Room do
   end
 
   def items(room) do
-    Components.Items.get_items(room) |> Enum.map(&(Components.Name.value(&1)))
+    Components.Items.get_items(room) |> Enum.map(&Systems.Item.item_name/1)
   end
 
   def items_html(room) do
@@ -121,6 +121,7 @@ defmodule Systems.Room do
       true ->
         light
     end
+    
   end
 
   def lights(items) do

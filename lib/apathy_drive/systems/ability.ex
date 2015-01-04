@@ -293,11 +293,11 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    cast_timer = Components.TimerManager.call_after(entity, {:cast_timer, ability[:casting_time] |> seconds, fn ->
+    Components.TimerManager.call_after(entity, {:cast_timer, ability[:casting_time] |> seconds, fn ->
       execute(ability, entity, target, :verify_target)
     end})
 
-    Systems.Effect.add(entity, %{:stack_key => :cast_timer, :stack_count => 1, timers: [cast_timer]}, ability[:casting_time])
+    Systems.Effect.add(entity, %{:stack_key => :cast_timer, :stack_count => 1, timers: [:cast_timer]}, ability[:casting_time])
   end
 
   def display_precast_message(_ability, entity) do
