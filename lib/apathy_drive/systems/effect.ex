@@ -12,14 +12,14 @@ defmodule Systems.Effect do
   def add(entity, effect, duration) do
     key = Time.now(:msecs) * 1000 |> trunc
 
-    {:ok, timer} = apply_after duration |> seconds do
+    Components.TimerManager.call_after(entity, {{:effect, key}, duration |> seconds, fn ->
       Components.Effects.remove(entity, key)
-    end
+    end})
 
     effect = if effect && effect[:timers] do
-      Map.put(effect, :timers, [timer | effect[:timers]])
+      Map.put(effect, :timers, [{:effect, key} | effect[:timers]])
     else
-      Map.put(effect, :timers, [timer])
+      Map.put(effect, :timers, [{:effect, key}])
     end
 
     Components.Effects.add(entity, key, effect)

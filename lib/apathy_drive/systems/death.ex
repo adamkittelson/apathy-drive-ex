@@ -26,8 +26,6 @@ defmodule Systems.Death do
   end
 
   def kill_monster(entity, room) do
-    HPRegen.remove(entity)
-    ManaRegen.remove(entity)
     Components.Brain.kill(entity)
     Components.Effects.remove(entity)
     Components.Combat.stop_timer(entity)

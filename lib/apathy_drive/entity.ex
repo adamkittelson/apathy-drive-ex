@@ -43,6 +43,11 @@ defmodule Entity do
   end
 
   def add_to_type_collection(entity) do
+    unless Entity.has_component?(entity, Components.TimerManager) do
+      {:ok, tm} = TimerManager.start
+      Entity.add_component(entity, Components.TimerManager, tm)
+    end
+
     if Enum.member?(list_components(entity), Components.Types) do
       Enum.each(Components.Types.get_types(entity), fn(type) ->
         module = type |> Inflex.pluralize |> Inflex.camelize

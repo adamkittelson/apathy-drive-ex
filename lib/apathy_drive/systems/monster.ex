@@ -43,6 +43,7 @@ defmodule Systems.Monster do
       Entity.add_component(entity, Components.Experience, 0)
       Entity.add_component(entity, Components.Level, 1)
       Entity.add_component(entity, Components.Items, [])
+      Entity.add_component(entity, Components.Regenerating, false)
       Entity.add_component(entity, Components.Gender, Components.Module.value(monster).gender)
       case Components.Module.value(monster).alignment do
         "good" ->

@@ -116,7 +116,7 @@ defmodule Components.Monsters do
 
   def handle_call(:get_monsters, monsters) do
     monsters = monsters
-               |> Enum.map(&get_monster/1)
+               |> Enum.map(&get_monster(&1, self))
                |> Enum.filter(&(&1 != nil))
 
     {:ok, monsters, monsters}

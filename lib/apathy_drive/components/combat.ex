@@ -52,7 +52,7 @@ defmodule Components.Combat do
 
   def handle_event({:set_combat_timer, timer}, value) do
     if value && value[:timer] do
-      :timer.cancel(timer)
+      :erlang.cancel_timer(timer)
       {:ok, value }
     else
       {:ok, put_in(value[:timer], timer) }
@@ -61,7 +61,7 @@ defmodule Components.Combat do
 
   def handle_event(:stop_combat_timer, value) do
     if value && value[:timer] do
-      :timer.cancel(value[:timer])
+      :erlang.cancel_timer(value[:timer])
     end
 
     {:ok, Map.delete(value, :timer) }

@@ -91,3 +91,6 @@ CHANGELOG
 
 ---- 0.0.30 / 2014-12-28 / add-monsters-and-items-to-where-search --------------
 * '\''where'\'' now searches for monsters and items
+
+---- 0.0.31 / 2015-01-04 / timer-refactor --------------------------------------
+* refactor timers to use :erlang.start_timer, light / extinguish light sources

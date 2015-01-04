@@ -18,12 +18,25 @@ defmodule Components.Effects do
   end
 
   def remove(entity, key) do
-    case GenEvent.call(entity, __MODULE__, {:remove_effect, key}) do
+    timer_manager = Components.TimerManager.value(entity)
+    case GenEvent.call(entity, __MODULE__, {:remove_effect, key, timer_manager}) do
       nil ->
         nil
       message ->
         send_message(entity, "scroll", "<p><span class='dark-cyan'>#{message}</span></p>")
     end
+  end
+
+  def lights(entity) do
+    entity
+    |> value
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :light)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :light)
+       end)
   end
 
   def damage_increases(entity) do
@@ -109,11 +122,11 @@ defmodule Components.Effects do
     {:ok, :ok, fun.(value)}
   end
 
-  def handle_call({:remove_effect, key}, value) do
+  def handle_call({:remove_effect, key, timer_manager}, value) do
     case value[key] do
       %{:timers => timers} ->
-        Enum.each(timers, fn(timer) ->
-          :timer.cancel(timer)
+        Enum.each(timers, fn(timer_name) ->
+          TimerManager.cancel(timer_manager, timer_name)
         end)
       _ ->
     end

@@ -29,9 +29,9 @@ defmodule Systems.Ability do
   end
 
   def execute(ability, entity, target, :mana) do
-    if ability[:mana_cost] do
+    if ability[:mana_cost] && ability[:mana_cost] > 0 do
       if Components.Mana.subtract(entity, ability[:mana_cost]) do
-        ManaRegen.add(entity)
+        Systems.Regen.initialize_regen(entity)
         entity
         |> Possession.possessor
         |> Systems.Prompt.update(entity)
@@ -125,26 +125,9 @@ defmodule Systems.Ability do
 
   def execute(ability, entity, target, :cooldown) do
     if ability[:cooldown] do
-      {:ok, timer} = apply_interval 1 |> seconds do
-        Components.Effects.update(entity, fn(value) ->
-          key = value
-                |> Map.keys
-                |> Enum.find(fn(key) ->
-                     value[key][:cooldown] == ability[:name]
-                   end)
-
-          if key do
-            update_in(value, [key, :cooldown_remaining], &(&1 - 1))
-          else
-            value
-          end
-        end)
-      end
-      effect = %{:timers       => [timer],
-                 :cooldown     => ability[:name],
-                 :cooldown_remaining => ability[:cooldown],
-                 :wear_message => "You may now use #{ability[:name]} again."}
-      Effect.add(entity, effect, ability[:cooldown])
+      Components.TimerManager.call_after(entity, {{:cooldown, ability[:name]}, ability[:cooldown] |> seconds, fn ->
+        send_message(entity, "scroll", "<p><span class='dark-cyan'>You may now use #{ability[:name]} again.</span></p>")
+      end})
     end
 
     if is_list(target) do
@@ -310,11 +293,11 @@ defmodule Systems.Ability do
   def delay_execution(ability, entity, target) do
     display_precast_message(ability, entity)
 
-    {:ok, cast_timer} = apply_after(ability[:casting_time] |> seconds, ability[:env]) do
+    Components.TimerManager.call_after(entity, {:cast_timer, ability[:casting_time] |> seconds, fn ->
       execute(ability, entity, target, :verify_target)
-    end
+    end})
 
-    Systems.Effect.add(entity, %{:stack_key => :cast_timer, :stack_count => 1, timers: [cast_timer]}, ability[:casting_time])
+    Systems.Effect.add(entity, %{:stack_key => :cast_timer, :stack_count => 1, timers: [:cast_timer]}, ability[:casting_time])
   end
 
   def display_precast_message(_ability, entity) do
@@ -513,6 +496,9 @@ defmodule Systems.Ability do
       def script(entity \\ nil)
       def script(entity), do: nil
 
+      def type(entity \\ nil)
+      def type(entity), do: nil
+
       def execute(entity, target \\ nil) do
         Systems.Ability.execute(properties(entity), entity, target)
       end
@@ -673,7 +659,9 @@ defmodule Systems.Ability do
                       increase_skills: 1,
                       help: 0,
                       script: 0,
-                      script: 1]
+                      script: 1,
+                      type: 0,
+                      type: 1]
     end
   end
 

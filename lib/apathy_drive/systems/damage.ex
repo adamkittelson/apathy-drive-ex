@@ -38,7 +38,7 @@ defmodule Systems.Damage do
         target
         |> Possession.possessor
         |> Systems.Prompt.update(target)
-        HPRegen.add(target)
+        Systems.Regen.initialize_regen(target)
       else
         Systems.Death.kill(target)
       end
