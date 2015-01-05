@@ -4,6 +4,7 @@ defmodule ApathyDrive do
   # See http://elixir-lang.org/docs/stable/Application.Behaviour.html
   # for more information on OTP Applications
   def start(_type, _args) do
+    import Supervisor.Spec, warn: false
 
     Races.start_link
     Characters.start_link
@@ -54,7 +55,22 @@ defmodule ApathyDrive do
     Systems.Idle.initialize
     Systems.RoomAbility.initialize
 
-    ApathyDrive.Supervisor.start_link
+    children = [
+      # Define workers and child supervisors to be supervised
+      # worker(PhoenixUpgrade.Worker, [arg1, arg2, arg3])
+    ]
+
+    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: ApathyDrive.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+
+  # Tell Phoenix to update the endpoint configuration
+  # whenever the application is updated.
+  def config_change(changed, _new, removed) do
+    ApathyDrive.Endpoint.config_change(changed, removed)
+    :ok
   end
 
   defp set_parents do

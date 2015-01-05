@@ -6,7 +6,6 @@ defmodule ApathyDrive.View do
   using do
     quote do
       # Import common functionality
-      import ApathyDrive.I18n
       import ApathyDrive.Router.Helpers
 
       # Use Phoenix.HTML to import all HTML functions (forms, tags, etc)

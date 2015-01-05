@@ -11,12 +11,12 @@ defmodule ApathyDrive.Router do
     plug :accepts, ~w(json)
   end
 
-  scope "/" do
+  scope "/", ApathyDrive do
     pipe_through :browser # Use the default browser stack
 
-    get "/", ApathyDrive.PageController, :index
-    get  "/game/:id", ApathyDrive.PageController, :game, as: :game
-    post "/game",     ApathyDrive.PageController, :game, as: :game_create
+    get "/", PageController, :index
+    get  "/game/:id", PageController, :game, as: :game
+    post "/game",     PageController, :game, as: :game_create
   end
 
   channel "mud", ApathyDrive.MUD

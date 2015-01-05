@@ -94,3 +94,6 @@ CHANGELOG
 
 ---- 0.0.31 / 2015-01-04 / timer-refactor --------------------------------------
 * refactor timers to use :erlang.start_timer, light / extinguish light sources
+
+---- 0.0.32 / 2015-01-04 / upgrade-phoenix -------------------------------------
+* upgrade phoenix to 0.7.2
