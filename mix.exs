@@ -22,7 +22,7 @@ defmodule ApathyDrive.Mixfile do
     [
       {:cowboy,      "~> 1.0.0"},
       {:phoenix,     "~> 0.7.2"},
-      {:ecto,        "~> 0.2.4"},
+      {:ecto,        "~> 0.4.0"},
       {:postgrex,    "~> 0.6.0"},
       {:timex,       "~> 0.12.7"},
       {:inflex,      "~> 0.2.8"},
