@@ -32,14 +32,14 @@ defmodule Systems.Command do
   def execute_command(spirit, monster, command, arguments) do
     command_exit = spirit
                    |> Parent.of
-                   |> Components.Exits.value
+                   |> Room.exits
                    |> Enum.find(fn(ex) ->
                         ex["kind"] == "Command" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
                       end)
 
     remote_action_exit = spirit
                          |> Parent.of
-                         |> Components.Exits.value
+                         |> Room.exits
                          |> Enum.find(fn(ex) ->
                               ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
                             end)

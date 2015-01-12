@@ -65,7 +65,9 @@ defmodule Systems.Exit do
   end
 
   def get_exit_by_direction(room, direction) do
-    Components.Exits.direction(room, direction(direction))
+    room
+    |> Room.exits
+    |> Enum.find(&(&1.direction == direction(direction)))
   end
 
   def direction_description(direction) do
@@ -188,9 +190,10 @@ defmodule Systems.Exit do
 
       def mirror(room, room_exit) do
         mirror_room = Rooms.find_by_id(room_exit.destination)
-        room_exit = Components.Exits.value(mirror_room)
+        room_exit = mirror_room
+                    |> Room.exits
                     |> Enum.find(fn(room_exit) ->
-                         room_exit.destination == Components.ID.value(room)
+                         room_exit.destination == Room.value(room).id
                        end)
         {mirror_room, room_exit}
       end

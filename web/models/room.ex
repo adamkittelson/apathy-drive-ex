@@ -30,6 +30,8 @@ defmodule Room do
     GenServer.call(room, :value)
   end
 
+  def exits(room), do: value(room).exits
+
   def shop?(room),    do: !!Room.value(room).shop_items
   def trainer?(room), do: !!Room.value(room).trainable_skills
 
