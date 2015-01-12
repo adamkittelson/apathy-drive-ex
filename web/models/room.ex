@@ -39,6 +39,10 @@ defmodule Room do
     GenServer.call(room, {:add_spirit, spirit})
   end
 
+  def remove_spirit(room, spirit) do
+    GenServer.call(room, {:remove_spirit, spirit})
+  end
+
   def start_room_id do
     query = from r in Room,
             where: r.start_room == true,
@@ -67,6 +71,12 @@ defmodule Room do
   def handle_call({:add_spirit, spirit}, _from, room) do
     Parent.set(spirit, self)
     room = Map.put(room, :spirits, [spirit | room.spirits] |> Enum.uniq)
+    {:reply, room, room}
+  end
+
+  def handle_call({:remove_spirit, spirit}, _from, room) do
+    Parent.set(spirit, nil)
+    room = Map.put(room, :spirits, List.delete(room.spirits, spirit))
     {:reply, room, room}
   end
 

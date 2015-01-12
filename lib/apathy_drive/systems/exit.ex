@@ -96,11 +96,9 @@ defmodule Systems.Exit do
 
       def move(spirit, nil, current_room, room_exit) do
         destination = Rooms.find_by_id(room_exit.destination)
-        Components.Characters.remove_character(current_room, spirit)
-        Components.Characters.add_character(destination, spirit)
-        Entities.save!(destination)
-        Entities.save!(current_room)
-        Entities.save!(spirit)
+        Room.remove_spirit(current_room, spirit)
+        Room.add_spirit(destination, spirit)
+        #Entities.save!(spirit)
         Components.Hints.deactivate(spirit, "movement")
         Systems.Room.display_room_in_scroll(spirit, nil, destination)
       end
