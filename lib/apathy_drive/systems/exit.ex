@@ -40,7 +40,7 @@ defmodule Systems.Exit do
   end
 
   def look(spirit, monster, current_room, room_exit) do
-    :"Elixir.Systems.Exits.#{room_exit["kind"]}".look(spirit, monster, current_room, room_exit)
+    :"Elixir.Systems.Exits.#{room_exit.kind}".look(spirit, monster, current_room, room_exit)
   end
 
   def move(nil, monster, direction) do
@@ -61,7 +61,7 @@ defmodule Systems.Exit do
   end
 
   def move(spirit, monster, current_room, room_exit) do
-    :"Elixir.Systems.Exits.#{room_exit["kind"]}".move(spirit, monster, current_room, room_exit)
+    :"Elixir.Systems.Exits.#{room_exit.kind}".move(spirit, monster, current_room, room_exit)
   end
 
   def get_exit_by_direction(room, direction) do
@@ -89,11 +89,11 @@ defmodule Systems.Exit do
       alias Systems.Exit
 
       def display_direction(_room, room_exit) do
-        room_exit["direction"]
+        room_exit.direction
       end
 
       def move(spirit, nil, current_room, room_exit) do
-        destination = Rooms.find_by_id(room_exit["destination"])
+        destination = Rooms.find_by_id(room_exit.destination)
         Components.Characters.remove_character(current_room, spirit)
         Components.Characters.add_character(destination, spirit)
         Entities.save!(destination)
@@ -105,7 +105,7 @@ defmodule Systems.Exit do
 
       def move(nil, monster, current_room, room_exit) do
         if !Systems.Combat.stunned?(monster) do
-          destination = Rooms.find_by_id(room_exit["destination"])
+          destination = Rooms.find_by_id(room_exit.destination)
           Components.Monsters.remove_monster(current_room, monster)
           Components.Monsters.add_monster(destination, monster)
           if Entity.has_component?(monster, Components.ID) do
@@ -122,7 +122,7 @@ defmodule Systems.Exit do
         if Systems.Combat.stunned?(monster) do
           send_message(monster, "scroll", "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
         else
-          destination = Rooms.find_by_id(room_exit["destination"])
+          destination = Rooms.find_by_id(room_exit.destination)
           Components.Monsters.remove_monster(current_room, monster)
           Components.Monsters.add_monster(destination, monster)
           Components.Characters.remove_character(current_room, spirit)
@@ -148,7 +148,7 @@ defmodule Systems.Exit do
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               message = "#{Components.Name.value(monster)} peeks in from #{Systems.Monster.enter_direction(mirror_exit["direction"])}!"
+               message = "#{Components.Name.value(monster)} peeks in from #{Systems.Monster.enter_direction(mirror_exit.direction)}!"
                          |> capitalize_first
 
                send_message(character, "scroll", "<p><span class='dark-magenta'>#{message}</span></p>")
@@ -180,17 +180,17 @@ defmodule Systems.Exit do
         exits = Components.Exits.value(room)
         exit_to_destination = exits
                               |> Enum.find fn(room_exit) ->
-                                   other_room = Rooms.find_by_id(room_exit["destination"])
+                                   other_room = Rooms.find_by_id(room_exit.destination)
                                    other_room == destination
                                  end
-        exit_to_destination["direction"]
+        exit_to_destination.direction
       end
 
       def mirror(room, room_exit) do
-        mirror_room = Rooms.find_by_id(room_exit["destination"])
+        mirror_room = Rooms.find_by_id(room_exit.destination)
         room_exit = Components.Exits.value(mirror_room)
                     |> Enum.find(fn(room_exit) ->
-                         room_exit["destination"] == Components.ID.value(room)
+                         room_exit.destination == Components.ID.value(room)
                        end)
         {mirror_room, room_exit}
       end

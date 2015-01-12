@@ -1,4 +1,4 @@
-defmodule Repo do
+defmodule ApathyDrive.Repo do
   use Systems.Reload
   use Ecto.Repo, adapter: Ecto.Adapters.Postgres
 

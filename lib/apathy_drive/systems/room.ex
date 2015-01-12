@@ -31,9 +31,10 @@ defmodule Systems.Room do
   end
 
   def shop(room) do
-    case Entity.has_component?(room, Components.Shop) || Entity.has_component?(room, Components.Trainer) do
-      true  -> "<p><br><em>Type 'list' to see a list of goods and services sold here.</em><br><br></p>"
-      false -> ""
+    if Room.shop?(room) or Room.trainer?(room) do
+      "<p><br><em>Type 'list' to see a list of goods and services sold here.</em><br><br></p>"
+    else
+      ""
     end
   end
 
@@ -44,7 +45,7 @@ defmodule Systems.Room do
   def exit_directions(room) do
     exits(room)
     |> Enum.map(fn(room_exit) ->
-         :"Elixir.Systems.Exits.#{room_exit["kind"]}".display_direction(room, room_exit)
+         :"Elixir.Systems.Exits.#{room_exit.kind}".display_direction(room, room_exit)
        end)
     |> Enum.reject(&(&1 == nil))
   end
@@ -58,11 +59,11 @@ defmodule Systems.Room do
   end
 
   def exits(room) do
-    Components.Exits.value(room)
+    Room.value(room).exits
   end
 
   def description(room) do
-    Components.Description.get_description(room)
+    Room.value(room).description
   end
 
   def description_html(room) do
@@ -70,7 +71,7 @@ defmodule Systems.Room do
   end
 
   def name(room) do
-    Components.Name.get_name(room)
+    Room.value(room).name
   end
 
   def name_html(room) do
@@ -78,7 +79,7 @@ defmodule Systems.Room do
   end
 
   def items(room) do
-    Components.Items.get_items(room) |> Enum.map(&Systems.Item.item_name/1)
+    Room.value(room).items |> Enum.map(&Systems.Item.item_name/1)
   end
 
   def items_html(room) do
@@ -111,7 +112,7 @@ defmodule Systems.Room do
   def light_level(nil, monster), do: 0
   def light_level(room, monster) do
     alignment = Components.Alignment.value(monster)
-    light     = Components.Light.value(room) + light_in_room(room) + light_on_monsters(room)
+    light     = Room.value(room).light + light_in_room(room) + light_on_monsters(room)
 
     cond do
       alignment > 0 and light < 0 ->
@@ -136,8 +137,7 @@ defmodule Systems.Room do
   end
 
   def light_in_room(room) do
-    room
-    |> Components.Items.get_items
+    Room.value(room).items
     |> lights
   end
 
@@ -196,7 +196,7 @@ defmodule Systems.Room do
   end
 
   def monsters_in_room(room) do
-    Components.Monsters.get_monsters(room)
+    Room.value(room).monsters
   end
 
   def characters_in_room(room, character_to_exclude) do

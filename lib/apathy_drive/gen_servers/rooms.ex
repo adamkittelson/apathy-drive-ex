@@ -47,7 +47,12 @@ defmodule Rooms do
   end
 
   def handle_call({:get, id}, _from, rooms) do
-    {:reply, HashDict.get(rooms, id), rooms}
+    if room = HashDict.get(rooms, id) do
+      {:reply, room, rooms}
+    else
+      {:ok, room} = Room.load(id)
+      {:reply, room, HashDict.put_new(rooms, id, room)}
+    end
   end
 
 end

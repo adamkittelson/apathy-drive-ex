@@ -12,7 +12,6 @@ defmodule ApathyDrive do
     MonsterTemplates.start_link
     Items.start_link
     ItemTemplates.start_link
-    Rooms.start_link
     Exits.start_link
     Components.start_link
     Help.start_link
@@ -24,9 +23,18 @@ defmodule ApathyDrive do
     CritTables.start_link
     Possession.start_link
 
+    children = [
+      worker(ApathyDrive.Repo, []),
+      supervisor(ApathyDrive.RoomSupervisor,  [[name: :room_supervisor,  strategy: :one_for_one]]),
+      worker(Rooms, [])
+    ]
+
+    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
+    # for other strategies and supported options
+    opts = [strategy: :one_for_one, name: ApathyDrive.Supervisor]
+    supervisor = Supervisor.start_link(children, opts)
 
     if Mix.env != :test do
-      Repo.start_link
       IO.puts "Indexing..."
       [index_items,
       index_monsters,
@@ -54,16 +62,7 @@ defmodule ApathyDrive do
     Systems.Hints.initialize
     Systems.Idle.initialize
     Systems.RoomAbility.initialize
-
-    children = [
-      # Define workers and child supervisors to be supervised
-      # worker(PhoenixUpgrade.Worker, [arg1, arg2, arg3])
-    ]
-
-    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
-    # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: ApathyDrive.Supervisor]
-    Supervisor.start_link(children, opts)
+    supervisor
   end
 
   # Tell Phoenix to update the endpoint configuration

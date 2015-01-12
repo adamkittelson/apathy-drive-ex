@@ -44,9 +44,9 @@ defmodule Systems.Login do
     end
   end
 
-  defp move_character_to_start_room(character) do
-    start_room = ApathyDrive.Config.get(:start_room)
+  defp move_character_to_start_room(spirit) do
+    start_room = Room.start_room_id
                  |> Rooms.find_by_id
-    Components.Characters.add_character(start_room, character)
+    Room.add_spirit(start_room, spirit)
   end
 end

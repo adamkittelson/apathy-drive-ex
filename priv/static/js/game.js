@@ -63,6 +63,7 @@ $(function() {
     });
 
     chan.on("scroll", function(message){
+      console.log("message: " + message.html);
       addToScroll("#scroll", message.html);
     });
 

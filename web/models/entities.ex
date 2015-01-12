@@ -3,6 +3,7 @@ defmodule Entities do
   use Ecto.Model
   import Ecto.Query, only: [from: 2]
   alias Poison, as: JSON
+  alias ApathyDrive.Repo
 
   schema "entities" do
     field :components, :string
