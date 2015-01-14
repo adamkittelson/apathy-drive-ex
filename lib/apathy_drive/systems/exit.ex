@@ -98,7 +98,7 @@ defmodule Systems.Exit do
         destination = Rooms.find_by_id(room_exit.destination)
         Room.remove_spirit(current_room, spirit)
         Room.add_spirit(destination, spirit)
-        #Entities.save!(spirit)
+        Spirit.set_room_id(spirit, room_exit.destination)
         Components.Hints.deactivate(spirit, "movement")
         Systems.Room.display_room_in_scroll(spirit, nil, destination)
       end

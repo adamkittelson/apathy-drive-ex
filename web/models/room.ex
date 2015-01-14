@@ -80,8 +80,4 @@ defmodule Room do
     {:reply, room, room}
   end
 
-  def handle_call(:name, _from, room) do
-    {:reply, room.name, room}
-  end
-
 end

@@ -31,7 +31,8 @@ defmodule Systems.Prompt do
   end
 
   def prompt(spirit, nil) do
-    "[Level=#{Components.Level.value(spirit)}/Exp=#{Components.Experience.value(spirit)}]:"
+    spirit = Spirit.value(spirit)
+    "[Level=#{spirit.level}/Exp=#{spirit.experience}]:"
   end
 
   def prompt(spirit, monster) do

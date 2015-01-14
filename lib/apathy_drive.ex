@@ -25,8 +25,10 @@ defmodule ApathyDrive do
 
     children = [
       worker(ApathyDrive.Repo, []),
-      supervisor(ApathyDrive.RoomSupervisor,  [[name: :room_supervisor,  strategy: :one_for_one]]),
-      worker(Rooms, [])
+      supervisor(ApathyDrive.RoomSupervisor,    [[name: :room_supervisor, strategy: :one_for_one]]),
+      worker(Rooms, []),
+      supervisor(ApathyDrive.SpiritSupervisor,  [[name: :spirit_supervisor, strategy: :one_for_one]]),
+      worker(Spirits, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
