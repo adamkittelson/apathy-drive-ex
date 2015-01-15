@@ -7,13 +7,12 @@ defmodule Systems.Idle do
   end
 
   def increment do
-    Components.all(Components.Idle)
-    |> Enum.filter(&(Components.Online.value(&1)))
-    |> Enum.each(&(Components.Idle.add(&1, 1)))
+    Spirits.all
+    |> Enum.each(&Spirit.increment_idle/1)
   end
 
-  def idle?(entity) do
-    Components.Idle.value(entity) >= 60
+  def idle?(spirit) do
+    Spirit.idle(spirit) >= 60
   end
 
 end

@@ -32,6 +32,18 @@ defmodule Spirit do
     GenServer.cast(spirit, {:set_room_id, room_id})
   end
 
+  def idle(spirit) do
+    GenServer.call(spirit, :idle)
+  end
+
+  def increment_idle(spirit) do
+    GenServer.cast(spirit, :increment_idle)
+  end
+
+  def reset_idle(spirit) do
+    GenServer.cast(spirit, :reset_idle)
+  end
+
   def find_by_url(url) do
     query = from s in Spirit,
               where: s.url == ^url
@@ -56,10 +68,22 @@ defmodule Spirit do
     {:reply, spirit, spirit}
   end
 
+  def handle_call(:idle, _from, spirit) do
+    {:reply, spirit.idle, spirit}
+  end
+
   def handle_cast({:set_room_id, room_id}, spirit) do
     spirit = Map.put(spirit, :room_id, room_id)
     save(spirit)
     {:noreply, spirit}
+  end
+
+  def handle_cast(:increment_idle, spirit) do
+    {:noreply, Map.put(spirit, :idle, spirit.idle + 1)}
+  end
+
+  def handle_cast(:reset_idle, spirit) do
+    {:noreply, Map.put(spirit, :idle, 0)}
   end
 
 end

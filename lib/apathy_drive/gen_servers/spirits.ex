@@ -38,8 +38,8 @@ defmodule Spirits do
     {:reply, spirit_pid, HashDict.put_new(spirits, spirit.id, spirit_pid)}
   end
 
-  def handle_call(:all, _from, characters) do
-    {:reply, characters, characters}
+  def handle_call(:all, _from, spirits) do
+    {:reply, HashDict.values(spirits), spirits}
   end
 
   def handle_cast({:remove, spirit}, spirits) do

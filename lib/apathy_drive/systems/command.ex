@@ -5,7 +5,7 @@ defmodule Systems.Command do
   def execute(spirit, command, arguments) do
     monster = Possession.possessed(spirit)
 
-    Components.Idle.value(spirit, 0)
+    Spirit.reset_idle(spirit)
     Systems.Prompt.display(spirit, monster)
 
     execute(spirit, monster, command, arguments)
