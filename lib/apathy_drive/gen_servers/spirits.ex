@@ -49,6 +49,4 @@ defmodule Spirits do
     {:noreply, HashDict.delete(spirits, spirit.id)}
   end
 
-
-
 end

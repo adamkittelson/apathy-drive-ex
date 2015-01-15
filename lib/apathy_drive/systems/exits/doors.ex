@@ -22,7 +22,7 @@ defmodule Systems.Exits.Doors do
         Entities.save!(destination)
         Entities.save!(current_room)
         Entities.save!(spirit)
-        Components.Hints.deactivate(spirit, "movement")
+        Spirit.deactivate_hint(spirit, "movement")
 
         if !open?(current_room, room_exit) do
           send_message(spirit, "scroll", "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")

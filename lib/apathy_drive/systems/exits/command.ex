@@ -26,7 +26,7 @@ defmodule Systems.Exits.Command do
     send_message(spirit, "scroll", "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
     Entities.save!(spirit)
 
-    Components.Hints.deactivate(spirit, "movement")
+    Spirit.deactivate_hint(spirit, "movement")
     Systems.Room.display_room_in_scroll(spirit, nil, destination)
   end
 
@@ -99,7 +99,7 @@ defmodule Systems.Exits.Command do
 
       Systems.Aggression.monster_entered(monster, destination)
 
-      Components.Hints.deactivate(spirit, "movement")
+      Spirit.deactivate_hint(spirit, "movement")
       Systems.Room.display_room_in_scroll(spirit, monster, destination)
     end
   end

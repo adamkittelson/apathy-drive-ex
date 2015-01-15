@@ -12,7 +12,8 @@ defmodule Spirit do
     field :url,               :string
     field :socket,            :any, virtual: true
     field :idle,              :integer, default: 0, virtual: true
-    field :hints,             :string, default: ~s({\"active\": {}, \"inactive\": []}) #json
+    field :hints,             {:array, :string}, default: []
+    field :disabled_hints,    {:array, :string}, default: []
     field :created_at,        :datetime
     field :updated_at,        :datetime
   end
@@ -24,13 +25,17 @@ defmodule Spirit do
 
   def save(spirit_struct) do
     spirit_struct
-    |> Map.put(:hints, Poison.encode!(spirit_struct.hints))
     |> Repo.update
   end
 
   def set_room_id(spirit, room_id) do
     GenServer.cast(spirit, {:set_room_id, room_id})
   end
+
+
+  #############
+  # Idle
+  #############
 
   def idle(spirit) do
     GenServer.call(spirit, :idle)
@@ -44,20 +49,27 @@ defmodule Spirit do
     GenServer.cast(spirit, :reset_idle)
   end
 
+  ##############
+  # Hints
+  ##############
+
+  def hints(spirit) do
+    GenServer.call(spirit, :hints)
+  end
+
+  def activate_hint(spirit, hint) do
+    GenServer.cast(spirit, {:activate_hint, hint})
+  end
+
+  def deactivate_hint(spirit, hint) do
+    GenServer.cast(spirit, {:deactivate_hint, hint})
+  end
+
   def find_by_url(url) do
     query = from s in Spirit,
               where: s.url == ^url
 
-    spirit = Repo.one(query)
-
-    if spirit do
-      spirit
-      |> parse_json(:hints)
-    end
-  end
-
-  defp parse_json(spirit, attribute) do
-    Map.put(spirit, attribute, Poison.decode!(Map.get(spirit, attribute), keys: :atoms))
+    Repo.one(query)
   end
 
   def value(spirit) do
@@ -72,6 +84,10 @@ defmodule Spirit do
     {:reply, spirit.idle, spirit}
   end
 
+  def handle_call(:hints, _from, spirit) do
+    {:reply, spirit.hints, spirit}
+  end
+
   def handle_cast({:set_room_id, room_id}, spirit) do
     spirit = Map.put(spirit, :room_id, room_id)
     save(spirit)
@@ -84,6 +100,26 @@ defmodule Spirit do
 
   def handle_cast(:reset_idle, spirit) do
     {:noreply, Map.put(spirit, :idle, 0)}
+  end
+
+  def handle_cast({:activate_hint, hint}, spirit) do
+    if hint in spirit.disabled_hints do
+      {:noreply, spirit}
+    else
+      spirit = spirit
+               |> Map.put(:hints, [hint | spirit.hints] |> Enum.uniq)
+               |> save
+      {:noreply, spirit}
+    end
+  end
+
+  def handle_cast({:deactivate_hint, hint}, spirit) do
+    spirit = spirit
+             |> Map.put(:hints, List.delete(spirit.hints, hint))
+             |> Map.put(:disabled_hints, [hint | spirit.disabled_hints] |> Enum.uniq)
+             |> save
+
+    {:noreply, spirit}
   end
 
 end

@@ -43,7 +43,7 @@ defmodule Systems.Exits.AbilityTrap do
 
       Systems.Aggression.monster_entered(monster, destination)
 
-      Components.Hints.deactivate(spirit, "movement")
+      Spirit.deactivate_hint(spirit, "movement")
 
       detected = detect?(monster, room_exit)
       dodged   = dodge?(monster, room_exit)

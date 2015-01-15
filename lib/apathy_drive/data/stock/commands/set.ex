@@ -15,7 +15,7 @@ defmodule Commands.Set do
             send_message(spirit, "scroll", "<p>Your name must consist only of upper or lower case letters.</p>")
           else
             Entity.add_component(spirit, Components.Name, capitalize_first(name))
-            Components.Hints.deactivate(spirit, "name")
+            Spirit.deactivate_hint(spirit, "name")
             Entities.save!(spirit)
             send_message(spirit, "scroll", "<p>Your name has been set.</p>")
           end

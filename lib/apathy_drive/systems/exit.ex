@@ -99,7 +99,7 @@ defmodule Systems.Exit do
         Room.remove_spirit(current_room, spirit)
         Room.add_spirit(destination, spirit)
         Spirit.set_room_id(spirit, room_exit.destination)
-        Components.Hints.deactivate(spirit, "movement")
+        Spirit.deactivate_hint(spirit, "movement")
         Systems.Room.display_room_in_scroll(spirit, nil, destination)
       end
 
@@ -133,7 +133,7 @@ defmodule Systems.Exit do
           Entities.save(monster)
           notify_monster_left(monster, current_room, destination)
           notify_monster_entered(monster, current_room, destination)
-          Components.Hints.deactivate(spirit, "movement")
+          Spirit.deactivate_hint(spirit, "movement")
           Systems.Room.display_room_in_scroll(spirit, monster, destination)
         end
       end

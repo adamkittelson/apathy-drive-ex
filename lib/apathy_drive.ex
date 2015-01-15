@@ -28,7 +28,8 @@ defmodule ApathyDrive do
       supervisor(ApathyDrive.RoomSupervisor,    [[name: :room_supervisor, strategy: :one_for_one]]),
       worker(Rooms, []),
       supervisor(ApathyDrive.SpiritSupervisor,  [[name: :spirit_supervisor, strategy: :one_for_one]]),
-      worker(Spirits, [])
+      worker(Spirits, []),
+      worker(Systems.Hints, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
@@ -61,7 +62,6 @@ defmodule ApathyDrive do
 
     Systems.Spawning.initialize
     Systems.Decay.initialize
-    Systems.Hints.initialize
     Systems.Idle.initialize
     Systems.RoomAbility.initialize
     supervisor
