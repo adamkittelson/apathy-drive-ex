@@ -1,6 +1,8 @@
 language: erlang
 otp_release:
   - 17.0
+addons:
+  postgresql: "9.4"
 notifications:
   recipients:
     - adam@apathydrive.com
@@ -13,6 +15,7 @@ before_script:
   - cp config/config.exs.example config/config.exs
   - cp config/test.exs.example config/test.exs
   - MIX_ENV=test mix do deps.get, compile
+  - psql -c 'create database travis_ci_test;' -U postgres
 script:
   - mix test
 env:
