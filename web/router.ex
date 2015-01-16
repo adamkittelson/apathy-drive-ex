@@ -1,10 +1,11 @@
 defmodule ApathyDrive.Router do
   use Phoenix.Router
-  use Phoenix.Router.Socket, mount: "/ws"
 
   pipeline :browser do
     plug :accepts, ~w(html)
     plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
   end
 
   pipeline :api do
@@ -19,6 +20,8 @@ defmodule ApathyDrive.Router do
     post "/game",     PageController, :game, as: :game_create
   end
 
-  channel "mud", ApathyDrive.MUD
+  socket "/ws", ApathyDrive do
+    channel "mud", MUD
+  end
 end
 

@@ -3,7 +3,7 @@ defmodule ApathyDrive.MUD do
   use Systems.Reload
   import Utility
 
-  def join(socket, "mud", message) do
+  def join("mud", message, socket) do
     if spirit = Systems.Login.login(socket, message["login"]) do
       send_message(spirit, "clear scroll")
       Systems.Room.display_room_in_scroll(spirit, nil, Parent.of(spirit))
@@ -17,11 +17,16 @@ defmodule ApathyDrive.MUD do
     end
   end
 
-  def event(socket, "command", "") do
-    event(socket, "command", "l")
+  def handle_in("new:msg", message, socket) do
+      broadcast socket, "new:msg", message
+      {:ok, socket}
+    end
+
+  def handle_in("command", "", socket) do
+    handle_in("command", "l", socket)
   end
 
-  def event(socket, "command", message) do
+  def handle_in("command", message, socket) do
     [command | arguments] = String.split(message)
 
     spirit = socket.assigns[:spirit]
@@ -38,10 +43,10 @@ defmodule ApathyDrive.MUD do
         IO.puts Exception.format(kind, error)
     end
 
-    socket
+    {:ok, socket}
   end
 
-  def leave(socket, _message) do
+  def leave(_message, socket) do
     spirit = socket.assigns[:spirit]
     if spirit do
       spirit
@@ -49,6 +54,6 @@ defmodule ApathyDrive.MUD do
       |> Spirit.save
       |> Spirits.remove
     end
-    socket
+    {:ok, socket}
   end
 end

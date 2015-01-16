@@ -29,7 +29,8 @@ defmodule ApathyDrive do
       worker(Rooms, []),
       supervisor(ApathyDrive.SpiritSupervisor,  [[name: :spirit_supervisor, strategy: :one_for_one]]),
       worker(Spirits, []),
-      worker(Systems.Hints, [])
+      worker(Systems.Hints, []),
+      worker(ApathyDrive.Endpoint, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

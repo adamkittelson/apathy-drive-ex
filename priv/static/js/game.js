@@ -32,7 +32,7 @@ $(function() {
   pathparts = window.location.pathname.split("/");
   url = pathparts[pathparts.length - 1];
   socket = new Phoenix.Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
-  socket.join("mud", "mud", {login: url}, function(chan){
+  socket.join("mud", {login: url}, function(chan){
 
     chan.on("room", function(message){
       updateRoom(message.html);

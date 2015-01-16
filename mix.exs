@@ -21,7 +21,7 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,      "~> 1.0.0"},
-      {:phoenix,     "~> 0.7.2"},
+      {:phoenix,     "~> 0.8.0"},
       {:ecto,        "~> 0.4.0"},
       {:postgrex,    "~> 0.6.0"},
       {:timex,       "~> 0.12.7"},
