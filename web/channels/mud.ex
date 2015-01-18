@@ -6,7 +6,7 @@ defmodule ApathyDrive.MUD do
   def join("mud", message, socket) do
     if spirit = Systems.Login.login(socket, message["login"]) do
       send_message(spirit, "clear scroll")
-      Systems.Room.display_room_in_scroll(spirit, nil, Parent.of(spirit))
+      Systems.Room.display_room_in_scroll(spirit, nil)
       Systems.Prompt.display(spirit, nil)
 
       socket = Phoenix.Socket.assign(socket, :spirit, spirit)

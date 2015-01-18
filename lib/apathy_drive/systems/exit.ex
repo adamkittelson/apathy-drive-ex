@@ -50,7 +50,7 @@ defmodule Systems.Exit do
   end
 
   def move(spirit, monster, direction) do
-    current_room = Parent.of(spirit)
+    current_room = Spirit.room(spirit)
     room_exit = current_room |> get_exit_by_direction(direction)
     move(spirit, monster, current_room, room_exit)
   end
@@ -65,8 +65,7 @@ defmodule Systems.Exit do
   end
 
   def get_exit_by_direction(room, direction) do
-    room
-    |> Room.exits
+    room.exits
     |> Enum.find(&(&1.direction == direction(direction)))
   end
 
@@ -95,12 +94,9 @@ defmodule Systems.Exit do
       end
 
       def move(spirit, nil, current_room, room_exit) do
-        destination = Rooms.find_by_id(room_exit.destination)
-        Room.remove_spirit(current_room, spirit)
-        Room.add_spirit(destination, spirit)
         Spirit.set_room_id(spirit, room_exit.destination)
         Spirit.deactivate_hint(spirit, "movement")
-        Systems.Room.display_room_in_scroll(spirit, nil, destination)
+        Systems.Room.display_room_in_scroll(spirit, nil)
       end
 
       def move(nil, monster, current_room, room_exit) do

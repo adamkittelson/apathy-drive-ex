@@ -1,6 +1,5 @@
 defmodule Room do
   use Ecto.Model
-  use GenServer
   use Systems.Reload
   alias ApathyDrive.Repo
 
@@ -10,7 +9,6 @@ defmodule Room do
     field :description,       :string
     field :monsters,          :any, default: [], virtual: true
     field :items,             :any, default: [], virtual: true
-    field :spirits,           :any, default: [], virtual: true
     field :light,             :integer
     field :item_descriptions, :string #json
     field :placed_items,      {:array, :string}
@@ -26,14 +24,8 @@ defmodule Room do
     field :updated_at,        :datetime
   end
 
-  def value(room) do
-    GenServer.call(room, :value)
-  end
-
-  def exits(room), do: value(room).exits
-
-  def shop?(room),    do: !!Room.value(room).shop_items
-  def trainer?(room), do: !!Room.value(room).trainable_skills
+  def shop?(room),    do: !!room.shop_items
+  def trainer?(room), do: !!room.trainable_skills
 
   def add_spirit(room, spirit) do
     GenServer.call(room, {:add_spirit, spirit})
@@ -52,12 +44,10 @@ defmodule Room do
   end
 
   def load(id) do
-    room = Repo.get(Room, id)
-           |> parse_json(:item_descriptions)
-           |> parse_json(:lair)
-           |> parse_json(:exits)
-
-    Supervisor.start_child(:room_supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room]}, :permanent, 5000, :worker, [Room]})
+    Repo.get(Room, id)
+    |> parse_json(:item_descriptions)
+    |> parse_json(:lair)
+    |> parse_json(:exits)
   end
 
   defp parse_json(room, attribute) do
@@ -65,18 +55,6 @@ defmodule Room do
   end
 
   def handle_call(:value, _from, room) do
-    {:reply, room, room}
-  end
-
-  def handle_call({:add_spirit, spirit}, _from, room) do
-    Parent.set(spirit, self)
-    room = Map.put(room, :spirits, [spirit | room.spirits] |> Enum.uniq)
-    {:reply, room, room}
-  end
-
-  def handle_call({:remove_spirit, spirit}, _from, room) do
-    Parent.set(spirit, nil)
-    room = Map.put(room, :spirits, List.delete(room.spirits, spirit))
     {:reply, room, room}
   end
 

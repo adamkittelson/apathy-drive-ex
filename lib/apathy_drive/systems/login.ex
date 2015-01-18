@@ -17,14 +17,6 @@ defmodule Systems.Login do
 
       spirit = Spirit.login(spirit)
 
-      if !Parent.of(spirit) do
-
-        room = Spirit.value(spirit).room_id
-               |> Rooms.find_by_id
-
-        Room.add_spirit(room, spirit)
-      end
-
       Spirit.activate_hint(spirit, "movement")
       Spirit.activate_hint(spirit, "name")
       Possession.unpossess(spirit)
@@ -32,9 +24,4 @@ defmodule Systems.Login do
     end
   end
 
-  defp move_character_to_start_room(spirit) do
-    start_room = Room.start_room_id
-                 |> Rooms.find_by_id
-    Room.add_spirit(start_room, spirit)
-  end
 end

@@ -58,6 +58,10 @@ defmodule Spirit do
     PubSub.subscribers("spirits:online")
   end
 
+  def room(spirit) do
+    GenServer.call(spirit, :room)
+  end
+
 
   #############
   # Idle
@@ -118,7 +122,13 @@ defmodule Spirit do
     {:reply, spirit.hints, spirit}
   end
 
+  def handle_call(:room, _from, spirit) do
+    {:reply, Room.load(spirit.room_id), spirit}
+  end
+
   def handle_cast({:set_room_id, room_id}, spirit) do
+    PubSub.unsubscribe(self, "rooms:#{spirit.room_id}")
+    PubSub.subscribe(self, "rooms:#{room_id}")
     spirit = Map.put(spirit, :room_id, room_id)
     save(spirit)
     {:noreply, spirit}
