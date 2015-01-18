@@ -7,7 +7,6 @@ defmodule ApathyDrive do
     import Supervisor.Spec, warn: false
 
     Races.start_link
-    Characters.start_link
     Monsters.start_link
     MonsterTemplates.start_link
     Items.start_link
@@ -74,7 +73,7 @@ defmodule ApathyDrive do
   end
 
   defp set_parents do
-    ["Characters", "Items", "Monsters"]
+    ["Items", "Monsters"]
     |> Enum.each(fn(type) ->
          :"Elixir.Components.#{type}"
          |> Components.all

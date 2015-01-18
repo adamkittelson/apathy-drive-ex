@@ -190,7 +190,7 @@ defmodule Systems.Monster do
   end
 
   def spirits_in_room(room) do
-    Characters.online
+    Spirit.online
     |> Enum.filter(&(Parent.of(&1) == room))
     |> Enum.reject(&(!!Possession.possessed(&1)))
   end

@@ -51,12 +51,7 @@ defmodule Entity do
     if Enum.member?(list_components(entity), Components.Types) do
       Enum.each(Components.Types.get_types(entity), fn(type) ->
         module = type |> Inflex.pluralize |> Inflex.camelize
-        if :"Elixir.#{module}" == Characters do
-          Characters.add(entity, id:  Components.ID.value(entity))
-          Characters.add(entity, url: Components.URL.value(entity))
-        else
-          :"Elixir.#{module}".add(entity)
-        end
+        :"Elixir.#{module}".add(entity)
       end)
     end
   end

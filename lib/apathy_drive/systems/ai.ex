@@ -2,7 +2,7 @@ defmodule Systems.AI do
   use Systems.Reload
 
   def observable_monsters do
-    Characters.online
+    Spirit.online
     |> Enum.map(&Parent.of/1)
     |> Enum.uniq
     |> adjacent_rooms
