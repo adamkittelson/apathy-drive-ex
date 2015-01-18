@@ -15,8 +15,7 @@ defmodule Systems.Login do
     if spirit do
       spirit = Map.put(spirit, :socket, socket)
 
-      Spirits.remove(spirit)
-      spirit = Spirits.add(spirit)
+      spirit = Spirit.login(spirit)
 
       if !Parent.of(spirit) do
 

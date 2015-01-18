@@ -24,12 +24,11 @@ defmodule ApathyDrive do
     Possession.start_link
 
     children = [
-      worker(ApathyDrive.Repo, []),
       supervisor(ApathyDrive.RoomSupervisor,    [[name: :room_supervisor, strategy: :one_for_one]]),
-      worker(Rooms, []),
       supervisor(ApathyDrive.SpiritSupervisor,  [[name: :spirit_supervisor, strategy: :one_for_one]]),
-      worker(Spirits, []),
-      worker(Systems.Hints, []),
+      worker(ApathyDrive.Repo, []),
+      worker(Rooms, []),
+      worker(ApathyDrive.Ticks, []),
       worker(ApathyDrive.Endpoint, [])
     ]
 
@@ -63,7 +62,6 @@ defmodule ApathyDrive do
 
     Systems.Spawning.initialize
     Systems.Decay.initialize
-    Systems.Idle.initialize
     Systems.RoomAbility.initialize
     supervisor
   end

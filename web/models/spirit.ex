@@ -2,7 +2,11 @@ defmodule Spirit do
   use Ecto.Model
   use GenServer
   use Systems.Reload
+  require Logger
   alias ApathyDrive.Repo
+  alias Phoenix.PubSub
+
+  @idle_threshold 60
 
   schema "spirits" do
     belongs_to :room, Room
@@ -23,13 +27,35 @@ defmodule Spirit do
     Repo.insert(spirit)
   end
 
-  def save(spirit_struct) do
-    spirit_struct
-    |> Repo.update
+  def save(spirit) when is_pid(spirit), do: spirit |> value |> save
+  def save(spirit) do
+    Repo.update(spirit)
   end
 
   def set_room_id(spirit, room_id) do
     GenServer.cast(spirit, {:set_room_id, room_id})
+  end
+
+  def login(spirit_struct) do
+    {:ok, spirit} = Supervisor.start_child(:spirit_supervisor, {:"spirit_#{spirit_struct.id}", {Spirit, :start_link, [spirit_struct]}, :permanent, 5000, :worker, [Spirit]})
+    PubSub.subscribe(spirit, "spirits:online")
+    PubSub.subscribe(spirit, "spirits:hints")
+    spirit
+  end
+
+  def logout(spirit) do
+    save(spirit)
+    spirit_to_kill = :"spirit_#{value(spirit).id}"
+    Supervisor.terminate_child(:spirit_supervisor, spirit_to_kill)
+    Supervisor.delete_child(:spirit_supervisor, spirit_to_kill)
+  end
+
+  def start_link(spirit_struct) do
+    GenServer.start_link(Spirit, spirit_struct)
+  end
+
+  def online do
+    PubSub.subscribers("spirits:online")
   end
 
 
@@ -41,12 +67,12 @@ defmodule Spirit do
     GenServer.call(spirit, :idle)
   end
 
-  def increment_idle(spirit) do
-    GenServer.cast(spirit, :increment_idle)
-  end
-
   def reset_idle(spirit) do
     GenServer.cast(spirit, :reset_idle)
+  end
+
+  def idle?(spirit) do
+    GenServer.call(spirit, :idle?)
   end
 
   ##############
@@ -84,6 +110,10 @@ defmodule Spirit do
     {:reply, spirit.idle, spirit}
   end
 
+  def handle_call(:idle?, _from, spirit) do
+    {:reply, spirit.idle >= @idle_threshold, spirit}
+  end
+
   def handle_call(:hints, _from, spirit) do
     {:reply, spirit.hints, spirit}
   end
@@ -92,10 +122,6 @@ defmodule Spirit do
     spirit = Map.put(spirit, :room_id, room_id)
     save(spirit)
     {:noreply, spirit}
-  end
-
-  def handle_cast(:increment_idle, spirit) do
-    {:noreply, Map.put(spirit, :idle, spirit.idle + 1)}
   end
 
   def handle_cast(:reset_idle, spirit) do
@@ -119,6 +145,26 @@ defmodule Spirit do
              |> Map.put(:disabled_hints, [hint | spirit.disabled_hints] |> Enum.uniq)
              |> save
 
+    {:noreply, spirit}
+  end
+
+  def handle_info(:increment_idle, spirit) do
+    {:noreply, Map.put(spirit, :idle, spirit.idle + 1)}
+  end
+
+  def handle_info(:display_hint, %{idle: idle} = spirit) when idle >= @idle_threshold, do: {:noreply, spirit}
+  def handle_info(:display_hint, %{hints: []}  = spirit), do: {:noreply, spirit}
+  def handle_info(:display_hint, spirit) do
+
+    hint = Hint.random(spirit.hints)
+
+    Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>\n<span class='yellow'>Hint:</span> <em>#{hint}</em>\n\n<p>"}
+
+    {:noreply, spirit}
+  end
+
+  def handle_info(message, spirit) do
+    Logger.warn("#{spirit.name} received unexpected message: #{inspect message}")
     {:noreply, spirit}
   end
 

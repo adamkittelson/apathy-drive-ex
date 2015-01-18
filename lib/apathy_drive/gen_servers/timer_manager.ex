@@ -48,6 +48,10 @@ defmodule TimerManager do
     GenServer.start(__MODULE__, HashDict.new)
   end
 
+  def start_link do
+    GenServer.start_link(__MODULE__, HashDict.new)
+  end
+
   def init(value) do
     {:ok, value}
   end

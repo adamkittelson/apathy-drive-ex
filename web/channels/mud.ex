@@ -49,10 +49,7 @@ defmodule ApathyDrive.MUD do
   def leave(_message, socket) do
     spirit = socket.assigns[:spirit]
     if spirit do
-      spirit
-      |> Spirit.value
-      |> Spirit.save
-      |> Spirits.remove
+      Spirit.logout(spirit)
     end
     {:ok, socket}
   end
