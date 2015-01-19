@@ -12,7 +12,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateRooms do
       item_descriptions jsonb, \
       placed_items text[], \
       lair jsonb, \
-      permanent_npc text, \
+      permanent_npc integer, \
       room_ability text, \
       start_room boolean, \
       shop_items text[], \
