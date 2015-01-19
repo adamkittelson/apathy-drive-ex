@@ -12,7 +12,7 @@ defmodule Systems.Exits.RemoteAction do
   end
 
   def trigger_remote_action(spirit, monster, room, room_exit) do
-    remote_room = Rooms.find_by_id(room_exit["destination"])
+    remote_room = Room.find(room_exit["destination"])
     remote_exit = Components.Exits.value(remote_room)
                   |> Enum.find(fn(remote_exit) ->
                        remote_exit["remote_action_exits"] && Enum.member?(remote_exit["remote_action_exits"],
@@ -48,7 +48,7 @@ defmodule Systems.Exits.RemoteAction do
     |> Enum.filter(&triggered?/1)
     |> Enum.all?(fn(ra_exit) ->
          remote_action_order = ra_exit["room"]
-                             |> Rooms.find_by_id
+                             |> Room.find
                              |> Components.Exits.value
                              |> Enum.find(fn(other_remote_exit) ->
                                             other_remote_exit["direction"] == ra_exit["direction"]
@@ -64,7 +64,7 @@ defmodule Systems.Exits.RemoteAction do
     remote_exit["remote_action_exits"]
     |> Enum.each(fn(map) ->
          room = map["room"]
-                |> Rooms.find_by_id
+                |> Room.find
 
          effects = room
                    |> Components.Effects.value
@@ -80,7 +80,7 @@ defmodule Systems.Exits.RemoteAction do
 
   def triggered?(room_direction) do
     room = room_direction["room"]
-           |> Rooms.find_by_id
+           |> Room.find
 
     effects = room
               |> Components.Effects.value

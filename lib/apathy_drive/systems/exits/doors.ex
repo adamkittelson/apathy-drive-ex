@@ -16,7 +16,7 @@ defmodule Systems.Exits.Doors do
       end
 
       def move(spirit, nil, current_room, room_exit) do
-        destination = Rooms.find_by_id(room_exit["destination"])
+        destination = Room.find(room_exit["destination"])
         Components.Characters.remove_character(current_room, spirit)
         Components.Characters.add_character(destination, spirit)
         Entities.save!(destination)
@@ -359,7 +359,7 @@ defmodule Systems.Exits.Doors do
         if room_exit["remote_action_exits"] do
           room_exit["remote_action_exits"]
           |> Enum.all?(fn(remote_exit) ->
-               Rooms.find_by_id(remote_exit["room"])
+               Room.find(remote_exit["room"])
                |> Components.Effects.value
                |> Map.values
                |> Enum.filter(fn(effect) ->

@@ -2,21 +2,19 @@ defmodule Systems.Room do
   use Systems.Reload
   import Utility
 
-  def display_room_in_scroll(spirit, monster) do
-    send_message(spirit, "scroll", long_room_html(spirit, monster))
+  def display_room_in_scroll(spirit, monster, room) do
+    send_message(spirit, "scroll", long_room_html(spirit, monster, room))
   end
 
-  def long_room_html(spirit, nil) do
-    room = Spirit.room(spirit)
-    directions = room |> exit_directions |> exit_directions_html
+  def long_room_html(spirit, nil, room) do
+    directions = room |> Room.exit_directions |> exit_directions_html
     "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(spirit, room)}#{directions}</div>"
   end
 
-  def long_room_html(spirit, monster) do
-    room = Spirit.room(spirit)
+  def long_room_html(spirit, monster, room) do
     light = light_level(monster)
     if light > -200 and light < 200 do
-      directions = room |> exit_directions |> exit_directions_html
+      directions = Room.exit_directions(room) |> exit_directions_html
       "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(monster, room)}#{directions}#{light(monster)}</div>"
     else
       "<div class='room'>#{light(monster)}</div>"
@@ -25,7 +23,7 @@ defmodule Systems.Room do
 
   def short_room_html(character, room) do
     if light_level(character) > -200 do
-      directions = room |> exit_directions |> exit_directions_html
+      directions = Room.exit_directions(room) |> exit_directions_html
       "<div class='room'>#{name_html(room)}#{directions}</div>"
     else
       "<div class='room'>#{light(character)}</div>"
@@ -40,18 +38,6 @@ defmodule Systems.Room do
     end
   end
 
-  def get_current_room(entity) do
-    Parent.of(entity)
-  end
-
-  def exit_directions(room) do
-    exits(room)
-    |> Enum.map(fn(room_exit) ->
-         :"Elixir.Systems.Exits.#{room_exit.kind}".display_direction(room, room_exit)
-       end)
-    |> Enum.reject(&(&1 == nil))
-  end
-
   def exit_directions_html([]) do
     "<div class='exits'>Obvious exits: NONE</div>"
   end
@@ -60,20 +46,16 @@ defmodule Systems.Room do
     "<div class='exits'>Obvious exits: #{Enum.join(directions, ", ")}</div>"
   end
 
-  def exits(room) do
-    room.exits
-  end
-
   def description_html(room) do
-    "<div class='description'>#{room.description}</div>"
+    "<div class='description'>#{Room.description(room)}</div>"
   end
 
   def name_html(room) do
-    "<div class='title'>#{room.name}</div>"
+    "<div class='title'>#{Room.name(room)}</div>"
   end
 
   def items(room) do
-    room.items |> Enum.map(&Systems.Item.item_name/1)
+    Room.items(room) |> Enum.map(&Systems.Item.item_name/1)
   end
 
   def items_html(room) do
@@ -132,7 +114,7 @@ defmodule Systems.Room do
   end
 
   def light_in_room(room) do
-    Room.value(room).items
+    Room.items(room)
     |> lights
   end
 
@@ -147,7 +129,7 @@ defmodule Systems.Room do
   end
 
   def entities(entity, room) do
-    monsters_in_room(room) |> Enum.reject(&(entity == &1))
+    Room.monsters(room) |> Enum.reject(&(entity == &1))
   end
 
   def entities_html(spirit, room) do
@@ -178,7 +160,7 @@ defmodule Systems.Room do
 
   def living_in_room(room) do
     characters = characters_in_room(room) |> Enum.reject(&(Components.Spirit.value(&1)))
-    Enum.concat(monsters_in_room(room), characters)
+    Enum.concat(Room.monsters(room), characters)
   end
 
   def living_in_room(entities, room) do
@@ -188,10 +170,6 @@ defmodule Systems.Room do
   def characters_in_room(room) do
     Spirit.online
     |> living_in_room(room)
-  end
-
-  def monsters_in_room(room) do
-    room.monsters
   end
 
   def characters_in_room(room, character_to_exclude) do

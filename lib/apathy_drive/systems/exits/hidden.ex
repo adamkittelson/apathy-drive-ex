@@ -56,7 +56,7 @@ defmodule Systems.Exits.Hidden do
     if room_exit["remote_action_exits"] do
       room_exit["remote_action_exits"]
       |> Enum.all?(fn(remote_exit) ->
-           Rooms.find_by_id(remote_exit["room"])
+           Room.find(remote_exit["room"])
            |> Components.Effects.value
            |> Map.values
            |> Enum.filter(fn(effect) ->

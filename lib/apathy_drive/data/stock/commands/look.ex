@@ -8,7 +8,7 @@ defmodule Commands.Look do
   def keywords, do: ["look", "l"]
 
   def execute(spirit, nil, arguments) do
-    current_room = Parent.of(spirit)
+    current_room = Spirit.room(spirit)
 
     if Enum.any? arguments do
       cond do
@@ -28,12 +28,12 @@ defmodule Commands.Look do
         send_message(spirit, "scroll", "<p>You do not notice that here.</p>")
       end
     else
-      Systems.Room.display_room_in_scroll(spirit, nil)
+      Systems.Room.display_room_in_scroll(spirit, nil, current_room)
     end
   end
 
   def execute(spirit, monster, arguments) do
-    current_room = Parent.of(monster)
+    current_room = Spirit.room(spirit)
 
     if Enum.any? arguments do
       cond do
@@ -59,7 +59,7 @@ defmodule Commands.Look do
         send_message(monster, "scroll", "<p>You do not notice that here.</p>")
       end
     else
-      Systems.Room.display_room_in_scroll(spirit, monster)
+      Systems.Room.display_room_in_scroll(spirit, monster, current_room)
     end
   end
 

@@ -4,7 +4,7 @@ defmodule Systems.Exits.Trap do
   def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
   def move(nil, monster, current_room, room_exit) do
     if !Systems.Combat.stunned?(monster) do
-      destination = Rooms.find_by_id(room_exit["destination"])
+      destination = Room.find(room_exit["destination"])
       Components.Monsters.remove_monster(current_room, monster)
       Components.Monsters.add_monster(destination, monster)
       if Entity.has_component?(monster, Components.ID) do
@@ -32,7 +32,7 @@ defmodule Systems.Exits.Trap do
     if Systems.Combat.stunned?(monster) do
       send_message(monster, "scroll", "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
     else
-      destination = Rooms.find_by_id(room_exit["destination"])
+      destination = Room.find(room_exit["destination"])
       Components.Monsters.remove_monster(current_room, monster)
       Components.Monsters.add_monster(destination, monster)
       Components.Characters.remove_character(current_room, spirit)

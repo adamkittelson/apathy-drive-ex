@@ -18,7 +18,7 @@ defmodule Systems.AI do
       adjacent = room
                  |> Components.Exits.value
                  |> Enum.map(&(Map.get(&1, "destination")))
-                 |> Enum.map(&Rooms.find_by_id/1)
+                 |> Enum.map(&Room.find/1)
 
       [room | adjacent ++ rooms]
     end)

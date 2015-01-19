@@ -9,7 +9,7 @@ defmodule Commands.Where do
       send_message(spirit, "scroll", "<p>searching...</p>")
       if Enum.any?(arguments) do
         query = Enum.join(arguments, " ")
-        matches = Enum.filter(Rooms.all, fn(room) ->
+        matches = Enum.filter(Room.all, fn(room) ->
                     room_matches?(room, query) or
                     monster_matches?(room, query) or
                     item_matches?(room, query)

@@ -123,7 +123,7 @@ defmodule Spirit do
   end
 
   def handle_call(:room, _from, spirit) do
-    {:reply, Room.load(spirit.room_id), spirit}
+    {:reply, Room.find(spirit.room_id), spirit}
   end
 
   def handle_cast({:set_room_id, room_id}, spirit) do

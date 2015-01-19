@@ -6,7 +6,6 @@ defmodule ApathyDrive do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    Races.start_link
     Monsters.start_link
     MonsterTemplates.start_link
     Items.start_link
@@ -26,7 +25,6 @@ defmodule ApathyDrive do
       supervisor(ApathyDrive.RoomSupervisor,    [[name: :room_supervisor, strategy: :one_for_one]]),
       supervisor(ApathyDrive.SpiritSupervisor,  [[name: :spirit_supervisor, strategy: :one_for_one]]),
       worker(ApathyDrive.Repo, []),
-      worker(Rooms, []),
       worker(ApathyDrive.Ticks, []),
       worker(ApathyDrive.Endpoint, [])
     ]
@@ -39,7 +37,6 @@ defmodule ApathyDrive do
     if Mix.env != :test do
       IO.puts "Indexing..."
       [index_items,
-      index_monsters,
       index_abilities,
       index_commands,
       index_skills,
@@ -128,26 +125,6 @@ defmodule ApathyDrive do
 
         ItemTemplates.add(module.name, it)
       end)
-    end
-  end
-
-  defp index_monsters do
-    Task.async fn ->
-      get_file_list(["lib/apathy_drive/data/**/monsters/**/*.ex"])
-      |> Enum.each(fn(file) ->
-           module_name = Path.basename(file)
-                         |> String.replace(".ex", "")
-                         |> Inflex.camelize
-
-          module = :"Elixir.Monsters.#{module_name}"
-
-          {:ok, mt} = Entity.init
-          Entity.add_component(mt, Components.Keywords, module.keywords)
-          Entity.add_component(mt, Components.Name, module.name)
-          Entity.add_component(mt, Components.Module, module)
-
-          MonsterTemplates.add(module.name, mt)
-        end)
     end
   end
 

@@ -10,7 +10,7 @@ defmodule Commands.Goto do
     destination = arguments
                   |> Enum.join
                   |> String.to_integer
-                  |> Rooms.find_by_id
+                  |> Room.find
 
     Components.Characters.remove_character(current_room, spirit)
     Components.Characters.add_character(destination, spirit)
@@ -26,7 +26,7 @@ defmodule Commands.Goto do
     destination = arguments
                   |> Enum.join
                   |> String.to_integer
-                  |> Rooms.find_by_id
+                  |> Room.find
 
     Components.Monsters.remove_monster(current_room, monster)
     Components.Monsters.add_monster(destination, monster)

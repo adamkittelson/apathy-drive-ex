@@ -13,7 +13,7 @@ defmodule Systems.Exits.Cast do
         end
       end
 
-      destination = Rooms.find_by_id(room_exit["destination"])
+      destination = Room.find(room_exit["destination"])
       Components.Monsters.remove_monster(current_room, monster)
       Components.Monsters.add_monster(destination, monster)
       if Entity.has_component?(monster, Components.ID) do
@@ -69,7 +69,7 @@ defmodule Systems.Exits.Cast do
         end
       end
 
-      destination = Rooms.find_by_id(room_exit["destination"])
+      destination = Room.find(room_exit["destination"])
       Components.Monsters.remove_monster(current_room, monster)
       Components.Monsters.add_monster(destination, monster)
       Components.Characters.remove_character(current_room, spirit)

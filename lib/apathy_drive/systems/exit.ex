@@ -30,7 +30,7 @@ defmodule Systems.Exit do
   end
 
   def look(spirit, monster, direction) do
-    current_room = Parent.of(spirit)
+    current_room = Spirit.room(spirit)
     room_exit = current_room |> get_exit_by_direction(direction)
     look(spirit, monster, current_room, room_exit)
   end
@@ -65,7 +65,7 @@ defmodule Systems.Exit do
   end
 
   def get_exit_by_direction(room, direction) do
-    room.exits
+    Room.exits(room)
     |> Enum.find(&(&1.direction == direction(direction)))
   end
 
@@ -96,12 +96,12 @@ defmodule Systems.Exit do
       def move(spirit, nil, current_room, room_exit) do
         Spirit.set_room_id(spirit, room_exit.destination)
         Spirit.deactivate_hint(spirit, "movement")
-        Systems.Room.display_room_in_scroll(spirit, nil)
+        Systems.Room.display_room_in_scroll(spirit, nil, Spirit.room(spirit))
       end
 
       def move(nil, monster, current_room, room_exit) do
         if !Systems.Combat.stunned?(monster) do
-          destination = Rooms.find_by_id(room_exit.destination)
+          destination = Room.find(room_exit.destination)
           Components.Monsters.remove_monster(current_room, monster)
           Components.Monsters.add_monster(destination, monster)
           if Entity.has_component?(monster, Components.ID) do
@@ -118,7 +118,7 @@ defmodule Systems.Exit do
         if Systems.Combat.stunned?(monster) do
           send_message(monster, "scroll", "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
         else
-          destination = Rooms.find_by_id(room_exit.destination)
+          destination = Room.find(room_exit.destination)
           Components.Monsters.remove_monster(current_room, monster)
           Components.Monsters.add_monster(destination, monster)
           Components.Characters.remove_character(current_room, spirit)
@@ -176,18 +176,18 @@ defmodule Systems.Exit do
         exits = Components.Exits.value(room)
         exit_to_destination = exits
                               |> Enum.find fn(room_exit) ->
-                                   other_room = Rooms.find_by_id(room_exit.destination)
+                                   other_room = Room.find(room_exit.destination)
                                    other_room == destination
                                  end
         exit_to_destination.direction
       end
 
       def mirror(room, room_exit) do
-        mirror_room = Rooms.find_by_id(room_exit.destination)
+        mirror_room = Room.find(room_exit.destination)
         room_exit = mirror_room
                     |> Room.exits
                     |> Enum.find(fn(room_exit) ->
-                         room_exit.destination == Room.value(room).id
+                         room_exit.destination == Room.id(room)
                        end)
         {mirror_room, room_exit}
       end
