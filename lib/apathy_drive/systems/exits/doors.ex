@@ -9,26 +9,21 @@ defmodule Systems.Exits.Doors do
       def display_direction(room, room_exit) do
         case open?(room, room_exit) do
           true ->
-            "open #{name} #{room_exit["direction"]}"
+            "open #{name} #{room_exit.direction}"
           false ->
-            "closed #{name} #{room_exit["direction"]}"
+            "closed #{name} #{room_exit.direction}"
         end
       end
 
       def move(spirit, nil, current_room, room_exit) do
-        destination = Room.find(room_exit["destination"])
-        Components.Characters.remove_character(current_room, spirit)
-        Components.Characters.add_character(destination, spirit)
-        Entities.save!(destination)
-        Entities.save!(current_room)
-        Entities.save!(spirit)
+        Spirit.set_room_id(spirit, room_exit.destination)
         Spirit.deactivate_hint(spirit, "movement")
 
         if !open?(current_room, room_exit) do
           send_message(spirit, "scroll", "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
         end
 
-        Systems.Room.display_room_in_scroll(spirit, nil, destination)
+        Systems.Room.display_room_in_scroll(spirit, nil, Spirit.room(spirit))
       end
 
       def move(nil, monster, current_room, room_exit) do
@@ -47,7 +42,7 @@ defmodule Systems.Exits.Doors do
 
       def bash?(monster, room_exit) do
         :random.seed(:os.timestamp)
-        Systems.Stat.modified(monster, "strength") + room_exit["difficulty"] >= :random.uniform(100)
+        Systems.Stat.modified(monster, "strength") + room_exit.difficulty >= :random.uniform(100)
       end
 
       def damage(monster) do
@@ -64,10 +59,10 @@ defmodule Systems.Exits.Doors do
           open?(room, room_exit) ->
             send_message(monster, "scroll", "<p>The #{name} is already open.</p>")
           bash?(monster, room_exit) ->
-            open!(room, room_exit["direction"])
+            open!(room, room_exit.direction)
             send_message(monster, "scroll", "<p>You bashed the #{name} open.</p>")
 
-            msg = "You see #{Components.Name.value(monster)} bash open the #{name} #{Systems.Exit.direction_description(room_exit["direction"])}."
+            msg = "You see #{Components.Name.value(monster)} bash open the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -81,7 +76,7 @@ defmodule Systems.Exits.Doors do
             mirror_bash(room, room_exit)
           true ->
             send_message(monster, "scroll", "<p>Your attempts to bash through fail!</p>")
-            msg = "You see #{Components.Name.value(monster)} attempt to bash open the #{name} #{Systems.Exit.direction_description(room_exit["direction"])}."
+            msg = "You see #{Components.Name.value(monster)} attempt to bash open the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -105,10 +100,10 @@ defmodule Systems.Exits.Doors do
           open?(room, room_exit) ->
             send_message(monster, "scroll", "<p>The #{name} was already open.</p>")
           true ->
-            open!(room, room_exit["direction"])
+            open!(room, room_exit.direction)
             send_message(monster, "scroll", "<p>The #{name} is now open.</p>")
 
-            msg = "You see #{Components.Name.value(monster)} open the #{name} #{Systems.Exit.direction_description(room_exit["direction"])}."
+            msg = "You see #{Components.Name.value(monster)} open the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -133,8 +128,8 @@ defmodule Systems.Exits.Doors do
             :random.seed(:os.timestamp)
             skill = (Skills.Stealth.modified(monster) + Skills.Perception.modified(monster)) / 3
 
-            if (skill + room_exit["difficulty"] >= :random.uniform(100)) do
-              unlock!(room, room_exit["direction"])
+            if (skill + room_exit.difficulty >= :random.uniform(100)) do
+              unlock!(room, room_exit.direction)
               send_message(monster, "scroll", "<p>You successfully unlocked the #{name}.</p>")
               mirror_unlock(room, room_exit)
             else
@@ -153,11 +148,11 @@ defmodule Systems.Exits.Doors do
             key = monster
                   |> Components.Items.get_items
                   |> Enum.find(fn(item) ->
-                       Components.Name.value(item) == room_exit["key"]
+                       Components.Name.value(item) == room_exit.key
                      end)
 
             if key do
-              unlock!(room, room_exit["direction"])
+              unlock!(room, room_exit.direction)
               send_message(monster, "scroll", "<p>You unlocked the #{name} with your #{Components.Name.value(key)}.</p>")
               Components.Uses.use!(key)
               mirror_unlock(room, room_exit)
@@ -170,13 +165,13 @@ defmodule Systems.Exits.Doors do
       def mirror_bash(room, room_exit) do
         {mirror_room, mirror_exit} = mirror(room, room_exit)
 
-        if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
-          open!(mirror_room, mirror_exit["direction"])
+        if mirror_exit.kind == room_exit.kind and !open?(mirror_room, mirror_exit) do
+          open!(mirror_room, mirror_exit.direction)
 
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit["direction"])} just flew open!</p>")
+               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit.direction)} just flew open!</p>")
              end)
         end
       end
@@ -184,21 +179,21 @@ defmodule Systems.Exits.Doors do
       def mirror_unlock(room, room_exit) do
         {mirror_room, mirror_exit} = mirror(room, room_exit)
 
-        if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
-          unlock!(mirror_room, mirror_exit["direction"])
+        if mirror_exit.kind == room_exit.kind and !open?(mirror_room, mirror_exit) do
+          unlock!(mirror_room, mirror_exit.direction)
         end
       end
 
       def mirror_open(room, room_exit) do
         {mirror_room, mirror_exit} = mirror(room, room_exit)
 
-        if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
-          open!(mirror_room, mirror_exit["direction"])
+        if mirror_exit.kind == room_exit.kind and !open?(mirror_room, mirror_exit) do
+          open!(mirror_room, mirror_exit.direction)
 
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit["direction"])} just opened.</p>")
+               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit.direction)} just opened.</p>")
              end)
         end
       end
@@ -227,10 +222,10 @@ defmodule Systems.Exits.Doors do
 
       def close(monster, room, room_exit) do
         if open?(room, room_exit) do
-          close!(room, room_exit["direction"])
+          close!(room, room_exit.direction)
           send_message(monster, "scroll", "<p>The #{name} is now closed.</p>")
 
-          msg = "You see #{Components.Name.value(monster)} close the #{name} #{Systems.Exit.direction_description(room_exit["direction"])}."
+          msg = "You see #{Components.Name.value(monster)} close the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
           room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
@@ -254,10 +249,10 @@ defmodule Systems.Exits.Doors do
           open?(room, room_exit) ->
             send_message(monster, "scroll", "<p>You must close the #{name} before you may lock it.</p>")
           true ->
-            lock!(room, room_exit["direction"])
+            lock!(room, room_exit.direction)
             send_message(monster, "scroll", "<p>The #{name} is now locked.</p>")
 
-            msg = "You see #{Components.Name.value(monster)} lock the #{name} #{Systems.Exit.direction_description(room_exit["direction"])}."
+            msg = "You see #{Components.Name.value(monster)} lock the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -275,20 +270,19 @@ defmodule Systems.Exits.Doors do
       def mirror_lock(room, room_exit) do
         {mirror_room, mirror_exit} = mirror(room, room_exit)
 
-        if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
-          lock!(mirror_room, mirror_exit["direction"])
+        if mirror_exit.kind == room_exit.kind and !open?(mirror_room, mirror_exit) do
+          lock!(mirror_room, mirror_exit.direction)
 
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit["direction"])} just locked!</p>")
+               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit.direction)} just locked!</p>")
              end)
         end
       end
 
       def lock!(room, direction) do
-        effects = room
-                  |> Components.Effects.value
+        effects = Room.effects(room)
 
         effects
         |> Map.keys
@@ -301,20 +295,19 @@ defmodule Systems.Exits.Doors do
       def mirror_close(room, room_exit) do
         {mirror_room, mirror_exit} = mirror(room, room_exit)
 
-        if mirror_exit["kind"] == room_exit["kind"] and open?(mirror_room, mirror_exit) do
-          close!(mirror_room, mirror_exit["direction"])
+        if mirror_exit.kind == room_exit.kind and open?(mirror_room, mirror_exit) do
+          close!(mirror_room, mirror_exit.direction)
 
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit["direction"])} just closed.</p>")
+               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit.direction)} just closed.</p>")
              end)
         end
       end
 
       def close!(room, direction) do
-        effects = room
-                  |> Components.Effects.value
+        effects = Room.effects(room)
 
         effects
         |> Map.keys
@@ -332,8 +325,7 @@ defmodule Systems.Exits.Doors do
       end
 
       def unlocked?(room, room_exit) do
-        room
-        |> Components.Effects.value
+        Room.effects(room)
         |> Map.values
         |> Enum.filter(fn(effect) ->
              Map.has_key?(effect, :unlocked)
@@ -341,7 +333,7 @@ defmodule Systems.Exits.Doors do
         |> Enum.map(fn(effect) ->
              Map.get(effect, :unlocked)
            end)
-        |> Enum.member?(room_exit["direction"])
+        |> Enum.member?(room_exit.direction)
       end
 
       def open?(room, room_exit) do
@@ -356,11 +348,11 @@ defmodule Systems.Exits.Doors do
       end
 
       def all_remote_actions_triggered?(room, room_exit) do
-        if room_exit["remote_action_exits"] do
-          room_exit["remote_action_exits"]
+        if room_exit[:remote_action_exits] do
+          room_exit.remote_action_exits
           |> Enum.all?(fn(remote_exit) ->
-               Room.find(remote_exit["room"])
-               |> Components.Effects.value
+               Room.find(remote_exit.room)
+               |> Room.effects
                |> Map.values
                |> Enum.filter(fn(effect) ->
                     Map.has_key?(effect, :triggered)
@@ -368,7 +360,7 @@ defmodule Systems.Exits.Doors do
                |> Enum.map(fn(effect) ->
                     Map.get(effect, :triggered)
                   end)
-               |> Enum.member?(remote_exit["direction"])
+               |> Enum.member?(remote_exit.direction)
              end)
         else
           false
@@ -377,7 +369,7 @@ defmodule Systems.Exits.Doors do
 
       def temporarily_open?(room, room_exit) do
         room
-        |> Components.Effects.value
+        |> Room.effects
         |> Map.values
         |> Enum.filter(fn(effect) ->
              Map.has_key?(effect, :open)
@@ -385,7 +377,7 @@ defmodule Systems.Exits.Doors do
         |> Enum.map(fn(effect) ->
              Map.get(effect, :open)
            end)
-        |> Enum.member?(room_exit["direction"])
+        |> Enum.member?(room_exit.direction)
       end
 
       def opened_remotely?(room, room_exit) do

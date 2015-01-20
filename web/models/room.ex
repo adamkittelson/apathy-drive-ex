@@ -9,6 +9,7 @@ defmodule Room do
     field :name,              :string
     field :keywords,          {:array, :string}
     field :description,       :string
+    field :effects,           :any, virtual: true, default: %{}
     field :light,             :integer
     field :item_descriptions, :string #json
     field :placed_items,      {:array, :string}
@@ -75,15 +76,19 @@ defmodule Room do
     Map.put(room, attribute, Poison.decode!(Map.get(room, attribute), keys: :atoms))
   end
 
-  @ecto_fields |> Enum.each(fn({name, _type, _opts}) ->
-    def unquote(name)(room) do
-      GenServer.call(room, unquote(name))
+  # Generate functions from Ecto schema
+
+  fields = Keyword.keys(@assign_fields)
+
+  Enum.each(fields, fn(field) ->
+    def unquote(field)(room) do
+      GenServer.call(room, unquote(field))
     end
   end)
 
-  @ecto_fields |> Enum.each(fn({name, _type, _opts}) ->
-    def handle_call(unquote(name), _from, room) do
-      {:reply, Map.get(room, unquote(name)), room}
+  Enum.each(fields, fn(field) ->
+    def handle_call(unquote(field), _from, room) do
+      {:reply, Map.get(room, unquote(field)), room}
     end
   end)
 

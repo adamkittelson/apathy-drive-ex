@@ -67,10 +67,6 @@ defmodule Spirit do
   # Idle
   #############
 
-  def idle(spirit) do
-    GenServer.call(spirit, :idle)
-  end
-
   def reset_idle(spirit) do
     GenServer.cast(spirit, :reset_idle)
   end
@@ -82,10 +78,6 @@ defmodule Spirit do
   ##############
   # Hints
   ##############
-
-  def hints(spirit) do
-    GenServer.call(spirit, :hints)
-  end
 
   def activate_hint(spirit, hint) do
     GenServer.cast(spirit, {:activate_hint, hint})
@@ -106,20 +98,29 @@ defmodule Spirit do
     GenServer.call(spirit, :value)
   end
 
+
+  # Generate functions from Ecto schema
+
+  fields = Keyword.keys(@assign_fields)
+
+  Enum.each(fields, fn(field) ->
+    def unquote(field)(spirit) do
+      GenServer.call(spirit, unquote(field))
+    end
+  end)
+
+  Enum.each(fields, fn(field) ->
+    def handle_call(unquote(field), _from, spirit) do
+      {:reply, Map.get(spirit, unquote(field)), spirit}
+    end
+  end)
+
   def handle_call(:value, _from, spirit) do
     {:reply, spirit, spirit}
   end
 
-  def handle_call(:idle, _from, spirit) do
-    {:reply, spirit.idle, spirit}
-  end
-
   def handle_call(:idle?, _from, spirit) do
     {:reply, spirit.idle >= @idle_threshold, spirit}
-  end
-
-  def handle_call(:hints, _from, spirit) do
-    {:reply, spirit.hints, spirit}
   end
 
   def handle_call(:room, _from, spirit) do
