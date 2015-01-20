@@ -29,10 +29,21 @@ defmodule MonsterTemplate do
     field :questions,         :string #json
   end
 
-  def find_by_url(url) do
-    query = from s in Spirit,
-              where: s.url == ^url
 
-    Repo.one(query)
-  end
+  # Generate functions from Ecto schema
+
+  fields = Keyword.keys(@assign_fields)
+
+  Enum.each(fields, fn(field) ->
+    def unquote(field)(monster_template) do
+      GenServer.call(monster_template, unquote(field))
+    end
+  end)
+
+  Enum.each(fields, fn(field) ->
+    def handle_call(unquote(field), _from, monster_template) do
+      {:reply, Map.get(monster_template, unquote(field)), monster_template}
+    end
+  end)
+
 end
