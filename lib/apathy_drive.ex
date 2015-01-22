@@ -36,8 +36,7 @@ defmodule ApathyDrive do
 
     if Mix.env != :test do
       IO.puts "Indexing..."
-      [index_items,
-      index_abilities,
+      [index_abilities,
       index_commands,
       index_skills,
       index_help,
@@ -106,26 +105,6 @@ defmodule ApathyDrive do
     end
 
     get_file_list(paths, updated_file_index)
-  end
-
-  defp index_items do
-    Task.async fn ->
-    get_file_list(["lib/apathy_drive/data/**/items/**/*.ex"])
-    |> Enum.each(fn(file) ->
-         module_name = Path.basename(file)
-                       |> String.replace(".ex", "")
-                       |> Inflex.camelize
-
-        module = :"Elixir.Items.#{module_name}"
-
-        {:ok, it} = Entity.init
-        Entity.add_component(it, Components.Keywords, module.keywords)
-        Entity.add_component(it, Components.Name, module.name)
-        Entity.add_component(it, Components.Module, module)
-
-        ItemTemplates.add(module.name, it)
-      end)
-    end
   end
 
   defp index_abilities do

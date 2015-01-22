@@ -4,27 +4,8 @@ defmodule Systems.Spawning do
   use Timex
 
   def initialize do
-    apply_interval 10 |> seconds, do: spawn_lairs
     apply_interval 10 |> seconds, do: spawn_permanent_npcs
     apply_interval 10 |> seconds, do: spawn_placed_items
-  end
-
-  def spawn_lairs do
-    :random.seed(:erlang.now)
-    Components.all(Components.Lair) |> Enum.each(fn(room) ->
-      last_spawned_at = Components.Lair.last_spawned_at(room)
-      if last_spawned_at do
-        spawn_at = last_spawned_at
-                   |> Date.shift(mins: Components.Lair.frequency(room))
-                   |> Date.convert :secs
-
-        if spawn_at < Date.convert(Date.now, :secs) do
-          spawn_lair(room)
-        end
-      else
-        spawn_lair(room)
-      end
-    end)
   end
 
   def spawn_permanent_npcs do
@@ -66,34 +47,6 @@ defmodule Systems.Spawning do
     Components.Items.get_items(room)
     |> Enum.any?(fn(item) ->
          Components.Name.value(item) == item_name
-       end)
-  end
-
-  def spawn_lair(room) do
-    Components.Lair.set_last_spawned_at(room)
-    if Components.Lair.spawned_count(room) < Components.Lair.size(room) and Enum.any?(eligible_monsters(room)) do
-      monster = room
-                |> select_lair_monster
-                |> Systems.Monster.spawn_monster(room)
-
-      Components.Lair.spawn_monster(room, monster)
-      spawn_lair(room)
-    end
-  end
-
-  def select_lair_monster(room) do
-    room |> eligible_monsters
-         |> Enum.shuffle
-         |> List.first
-  end
-
-  def eligible_monsters(room) do
-    room
-    |> Components.Lair.monster_templates
-    |> Enum.reject(fn(mt) ->
-         monster_name = Components.Name.value(mt)
-         limit = Components.Module.value(mt).limit
-         Systems.Monster.limit_reached?(monster_name, limit)
        end)
   end
 

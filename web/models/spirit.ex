@@ -40,6 +40,7 @@ defmodule Spirit do
     {:ok, spirit} = Supervisor.start_child(:spirit_supervisor, {:"spirit_#{spirit_struct.id}", {Spirit, :start_link, [spirit_struct]}, :permanent, 5000, :worker, [Spirit]})
     PubSub.subscribe(spirit, "spirits:online")
     PubSub.subscribe(spirit, "spirits:hints")
+    PubSub.subscribe(spirit, "rooms:#{spirit_struct.id}")
     spirit
   end
 
@@ -100,18 +101,25 @@ defmodule Spirit do
 
 
   # Generate functions from Ecto schema
-
   fields = Keyword.keys(@assign_fields)
 
   Enum.each(fields, fn(field) ->
-    def unquote(field)(spirit) do
-      GenServer.call(spirit, unquote(field))
+    def unquote(field)(pid) do
+      GenServer.call(pid, unquote(field))
+    end
+
+    def unquote(field)(pid, new_value) do
+      GenServer.call(pid, {unquote(field), new_value})
     end
   end)
 
   Enum.each(fields, fn(field) ->
-    def handle_call(unquote(field), _from, spirit) do
-      {:reply, Map.get(spirit, unquote(field)), spirit}
+    def handle_call(unquote(field), _from, state) do
+      {:reply, Map.get(state, unquote(field)), state}
+    end
+
+    def handle_call({unquote(field), new_value}, _from, state) do
+      {:reply, new_value, Map.put(state, unquote(field), new_value)}
     end
   end)
 
@@ -174,8 +182,13 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info({:socket_broadcast, message}, spirit) do
+    Phoenix.Channel.reply spirit.socket, message.event, message.payload
+
+    {:noreply, spirit}
+  end
+
   def handle_info(message, spirit) do
-    Logger.warn("#{spirit.name} received unexpected message: #{inspect message}")
     {:noreply, spirit}
   end
 
