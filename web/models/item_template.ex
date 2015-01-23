@@ -12,7 +12,7 @@ defmodule ItemTemplate do
     field :hit_verbs,             {:array, :string}, default: []
     field :damage,                :string #json
     field :required_skills,       :string #json
-    field :speed,                 :float
+    field :speed,                 :decimal
     field :accuracy_skill,        :string
     field :ac,                    :integer
     field :uses,                  :integer
