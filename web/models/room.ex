@@ -29,23 +29,6 @@ defmodule Room do
     field :updated_at,            :datetime
   end
 
-  def exit_directions(room) do
-    room
-    |> exits
-    |> Enum.map(fn(room_exit) ->
-         :"Elixir.Systems.Exits.#{room_exit.kind}".display_direction(room, room_exit)
-       end)
-    |> Enum.reject(&(&1 == nil))
-  end
-
-  def shop?(room),    do: !!shop_items(room)
-  def trainer?(room), do: !!trainable_skills(room)
-
-  def items(room),            do: PubSub.subscribers("rooms:#{id(room)}:items")
-  def monsters(room),         do: PubSub.subscribers("rooms:#{id(room)}:monsters")
-  def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
-  def spawned_monsters(room), do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
-
   def start_room_id do
     query = from r in Room,
             where: r.start_room == true,
@@ -82,6 +65,10 @@ defmodule Room do
     PubSub.subscribers("rooms")
   end
 
+  def value(spirit) do
+    GenServer.call(spirit, :value)
+  end
+
   def exit_direction("up"),      do: "upwards"
   def exit_direction("down"),    do: "downwards"
   def exit_direction(direction), do: "to the #{direction}"
@@ -90,6 +77,25 @@ defmodule Room do
   def enter_direction("up"),      do: "above"
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
+
+  # GenServer functions
+  def shop?(room),    do: !!shop_items(room)
+  def trainer?(room), do: !!trainable_skills(room)
+
+  def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
+  def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
+
+  # Value functions
+  def items(%Room{} = room),    do: PubSub.subscribers("rooms:#{room.id}:items")
+  def monsters(%Room{} = room), do: PubSub.subscribers("rooms:#{room.id}:monsters")
+
+  def exit_directions(%Room{} = room) do
+    room.exits
+    |> Enum.map(fn(room_exit) ->
+         :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".display_direction(room, room_exit)
+       end)
+    |> Enum.reject(&(&1 == nil))
+  end
 
   def random_direction(%Room{} = room) do
     :random.seed(:os.timestamp)
@@ -105,12 +111,56 @@ defmodule Room do
     end
   end
 
-  defp parse_json(room, attribute) do
+  def parse_json(%Room{} = room, attribute) do
     Map.put(room, attribute, Poison.decode!(Map.get(room, attribute), keys: :atoms))
   end
 
-  # Generate functions from Ecto schema
+  def look(%Room{} = room, %Spirit{} = spirit) do
+    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room)}#{look_directions(room)}</div>)
 
+    Phoenix.Channel.reply spirit.socket, "scroll", %{:html => html}
+  end
+
+  def look_shop_hint(%Room{shop_items: [], trainable_skills: []}), do: nil
+  def look_shop_hint(%Room{}) do
+    "<p><br><em>Type 'list' to see a list of goods and services sold here.</em><br><br></p>"
+  end
+
+  def look_items(%Room{} = room) do
+    items = items(room)
+            |> Enum.map(&Systems.Item.item_name/1)
+
+    case Enum.count(items) do
+      0 ->
+        ""
+      _ ->
+        "<div class='items'>You notice #{Enum.join(items, ", ")} here.</div>"
+    end
+  end
+
+  def look_monsters(%Room{} = room) do
+    monsters = monsters(room)
+               |> Enum.map(&Monster.look_name/1)
+               |> Enum.join("<span class='magenta'>, </span>")
+
+    case(monsters) do
+      "" ->
+        ""
+      monsters ->
+        "<div class='monsters'><span class='dark-magenta'>Also here:</span> #{monsters}<span class='dark-magenta'>.</span></div>"
+    end
+  end
+
+  def look_directions(%Room{} = room) do
+    case exit_directions(room) do
+      [] ->
+        "<div class='exits'>Obvious exits: NONE</div>"
+      directions ->
+        "<div class='exits'>Obvious exits: #{Enum.join(directions, ", ")}</div>"
+    end
+  end
+
+  # Generate functions from Ecto schema
   fields = Keyword.keys(@assign_fields)
 
   Enum.each(fields, fn(field) ->
@@ -133,6 +183,11 @@ defmodule Room do
     end
   end)
 
+  def handle_call(:value, _from, spirit) do
+    {:reply, spirit, spirit}
+  end
+
+  # GenServer callbacks
   def handle_info({:spawn_monsters, time},
                  %{:lair_next_spawn_at => lair_next_spawn_at} = room)
                  when time >= lair_next_spawn_at do

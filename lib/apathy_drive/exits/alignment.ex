@@ -1,5 +1,5 @@
-defmodule Systems.Exits.Alignment do
-  use Systems.Exit
+defmodule ApathyDrive.Exits.Alignment do
+  use ApathyDrive.Exit
 
   def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
   def move(nil, monster, current_room, room_exit), do: super(nil, monster, current_room, room_exit)

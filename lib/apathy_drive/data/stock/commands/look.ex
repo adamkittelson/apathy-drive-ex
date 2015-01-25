@@ -7,13 +7,15 @@ defmodule Commands.Look do
 
   def keywords, do: ["look", "l"]
 
-  def execute(spirit, nil, arguments) do
-    current_room = Spirit.room(spirit)
+  def execute(%Spirit{} = spirit, arguments) do
+    current_room = spirit.room_id
+                   |> Room.find
+                   |> Room.value
 
     if Enum.any? arguments do
       cond do
         Enum.member?(@directions, Enum.join(arguments, " ")) ->
-          Systems.Exit.look(spirit, nil, Enum.join(arguments, " "))
+          ApathyDrive.Exit.look(spirit, Enum.join(arguments, " "))
         target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(spirit, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
@@ -28,7 +30,7 @@ defmodule Commands.Look do
         send_message(spirit, "scroll", "<p>You do not notice that here.</p>")
       end
     else
-      Systems.Room.display_room_in_scroll(spirit, nil, current_room)
+      Room.look(current_room, spirit)
     end
   end
 
@@ -38,7 +40,7 @@ defmodule Commands.Look do
     if Enum.any? arguments do
       cond do
         Enum.member?(@directions, Enum.join(arguments, " ")) ->
-          Systems.Exit.look(spirit, monster, Enum.join(arguments, " "))
+          ApathyDrive.Exit.look(spirit, monster, Enum.join(arguments, " "))
         target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(monster, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->

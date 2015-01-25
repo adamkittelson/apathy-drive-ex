@@ -2,56 +2,60 @@ defmodule Systems.Command do
   use Systems.Reload
   import Utility
 
-  def execute(spirit, command, arguments) do
+  def execute(spirit, command, arguments) when is_pid(spirit) do
     monster = Possession.possessed(spirit)
 
     Spirit.reset_idle(spirit)
     Systems.Prompt.display(spirit, monster)
 
-    execute(spirit, monster, command, arguments)
+    spirit
+    |> Spirit.value
+    |> execute(command, arguments)
   end
 
-  def execute(spirit, nil, command, arguments) do
-    execute_command(spirit, nil, command, arguments)
+  def execute(%Spirit{} = spirit, command, arguments) do
+    execute_command(spirit, command, arguments)
   end
 
-  def execute(spirit, monster, command, arguments) do
-    ability = monster
-              |> Components.Abilities.value
+  def execute(%Monster{} = monster, command, arguments) do
+    ability = monster.abilities
               |> Enum.find(fn(ability) ->
-                   Components.Module.value(ability).properties(monster)[:command] == String.downcase(command)
+                   ability.properties(monster)[:command] == String.downcase(command)
                  end)
 
     if ability do
       Components.Module.value(ability).execute(monster, Enum.join(arguments, " "))
     else
-      execute_command(spirit, monster, command, arguments)
+      execute_command(monster, command, arguments)
     end
   end
 
-  def execute_command(spirit, monster, command, arguments) do
-    room = Spirit.room(spirit)
-    command_exit = Room.exits(room)
+  def execute_command(%Spirit{} = spirit, command, arguments) do
+    room = spirit.room_id
+           |> Room.find
+           |> Room.value
+
+    command_exit = room.exits
                    |> Enum.find(fn(ex) ->
                         ex.kind == "Command" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
                       end)
 
-    remote_action_exit = Room.exits(room)
+    remote_action_exit = room.exits
                          |> Enum.find(fn(ex) ->
                               ex.kind == "RemoteAction" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
                             end)
 
     cond do
       command_exit ->
-        Systems.Exits.Command.move_via_command(spirit, monster, Parent.of(spirit), command_exit)
+        ApathyDrive.Exits.Command.move_via_command(spirit, room, command_exit)
       remote_action_exit ->
-        Systems.Exits.RemoteAction.trigger_remote_action(spirit, monster, Parent.of(spirit), remote_action_exit)
+        ApathyDrive.Exits.RemoteAction.trigger_remote_action(spirit, room, remote_action_exit)
       true ->
         case Systems.Match.one(Commands.all, :keyword_starts_with, command) do
           nil ->
-            send_message(spirit, "scroll", "<p>What?</p>")
+            send_message(spirit.pid, "scroll", "<p>What?</p>")
           match ->
-            :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(spirit, monster, arguments)
+            :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(spirit, arguments)
         end
     end
   end

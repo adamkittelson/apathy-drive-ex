@@ -1,5 +1,5 @@
-defmodule Systems.Exits.Command do
-  use Systems.Exit
+defmodule ApathyDrive.Exits.Command do
+  use ApathyDrive.Exit
 
   def display_direction(_room, room_exit) do
     room_exit[:name]
@@ -98,8 +98,12 @@ defmodule Systems.Exits.Command do
     end
   end
 
-  def look(spirit, _monster, _current_room, _room_exit) do
-    send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
+  def look(%Spirit{} = spirit, %Room{} = current_room, room_exit) do
+    Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
+  end
+
+  def look(%Monster{} = monster, %Room{} = current_room, room_exit) do
+    Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
   end
 
 end

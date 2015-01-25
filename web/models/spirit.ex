@@ -15,11 +15,16 @@ defmodule Spirit do
     field :level,             :integer, default: 1
     field :url,               :string
     field :socket,            :any, virtual: true
+    field :pid,               :any, virtual: true
     field :idle,              :integer, default: 0, virtual: true
     field :hints,             {:array, :string}, default: []
     field :disabled_hints,    {:array, :string}, default: []
     field :created_at,        :datetime
     field :updated_at,        :datetime
+  end
+
+  def init(spirit) do
+    {:ok, Map.put(spirit, :pid, self)}
   end
 
   def create(url) do
@@ -36,12 +41,18 @@ defmodule Spirit do
     GenServer.cast(spirit, {:set_room_id, room_id})
   end
 
-  def login(spirit_struct) do
-    {:ok, spirit} = Supervisor.start_child(:spirit_supervisor, {:"spirit_#{spirit_struct.id}", {Spirit, :start_link, [spirit_struct]}, :permanent, 5000, :worker, [Spirit]})
-    PubSub.subscribe(spirit, "spirits:online")
-    PubSub.subscribe(spirit, "spirits:hints")
-    PubSub.subscribe(spirit, "rooms:#{spirit_struct.room_id}")
-    spirit
+  def login(%Spirit{} = spirit) do
+    {:ok, pid} = Supervisor.start_child(:spirit_supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
+    PubSub.subscribe(pid, "spirits:online")
+    PubSub.subscribe(pid, "spirits:hints")
+    PubSub.subscribe(pid, "rooms:#{spirit.room_id}")
+    pid
+  end
+
+  def find_room(%Spirit{room_id: room_id} = spirit) do
+    room_id
+    |> Room.find
+    |> Room.value
   end
 
   def logout(spirit) do
@@ -188,7 +199,7 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info(message, spirit) do
+  def handle_info(_message, spirit) do
     {:noreply, spirit}
   end
 

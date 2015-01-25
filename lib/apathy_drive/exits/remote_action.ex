@@ -1,5 +1,5 @@
-defmodule Systems.Exits.RemoteAction do
-  use Systems.Exit
+defmodule ApathyDrive.Exits.RemoteAction do
+  use ApathyDrive.Exit
 
   def display_direction(_room, room_exit), do: nil
 
@@ -29,7 +29,7 @@ defmodule Systems.Exits.RemoteAction do
         send_message(observer, "scroll", "<p><span class='dark-green'>#{interpolate(room_exit["room_message"], %{"user" => monster})}</span></p>")
       end)
 
-      if :"Elixir.Systems.Exits.#{remote_exit["kind"]}".open?(remote_room, remote_exit) do
+      if :"Elixir.ApathyDrive.Exits.#{remote_exit["kind"]}".open?(remote_room, remote_exit) do
         if remote_exit["message_when_revealed"] do
           Systems.Monster.observers(remote_room, nil)
           |> Enum.each(fn(observer) ->

@@ -39,6 +39,7 @@ defmodule Monster do
     field :damage,              :any,     virtual: true
     field :possession_level,    :integer, virtual: true
     field :questions,           :any,     virtual: true
+    field :spirit,              :any,     virtual: true
   end
 
   def init(monster) do
@@ -49,17 +50,20 @@ defmodule Monster do
     {:ok, monster}
   end
 
-  def good?(monster) do
-    alignment(monster) < -50
+  def look_name(%Monster{} = monster) do
+    cond do
+      evil?(monster) ->
+        "<span class='magenta'>#{monster.name}</span>"
+      good?(monster) ->
+        "<span class='grey'>#{monster.name}</span>"
+      neutral?(monster) ->
+        "<span class='dark-cyan'>#{monster.name}</span>"
+    end
   end
 
-  def neutral?(monster) do
-    alignment(monster) >= -50 and alignment(monster) <= 50
-  end
-
-  def evil?(monster) do
-    alignment(monster) > 50
-  end
+  def good?(%Monster{alignment: alignment}) when alignment < -50, do: true
+  def evil?(%Monster{alignment: alignment}) when alignment < -50, do: true
+  def neutral?(%Monster{}), do: true
 
   def display_enter_message(%Room{} = room, monster) do
     display_enter_message(room, monster, Room.random_direction(room))

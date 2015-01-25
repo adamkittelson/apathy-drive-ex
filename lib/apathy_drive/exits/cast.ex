@@ -1,5 +1,5 @@
-defmodule Systems.Exits.Cast do
-  use Systems.Exit
+defmodule ApathyDrive.Exits.Cast do
+  use ApathyDrive.Exit
 
   def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
   def move(nil, monster, current_room, room_exit) do
@@ -115,11 +115,19 @@ defmodule Systems.Exits.Cast do
     end
   end
 
-  def look(spirit, monster, current_room, room_exit) do
-    if room_exit["look_message"] do
-      send_message(spirit, "scroll", "<p>#{room_exit["look_message"]}</p>")
+  def look(%Spirit{} = spirit, %Room{} = current_room, room_exit) do
+    if room_exit.look_message do
+      Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>#{room_exit.look_message}</p>"}
     else
-      super(spirit, monster, current_room, room_exit)
+      super(spirit, current_room, room_exit)
+    end
+  end
+
+  def look(%Monster{} = monster, %Room{} = current_room, room_exit) do
+    if room_exit.look_message do
+      Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>#{room_exit.look_message}</p>"}
+    else
+      super(monster, current_room, room_exit)
     end
   end
 

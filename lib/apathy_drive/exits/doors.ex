@@ -1,12 +1,12 @@
-defmodule Systems.Exits.Doors do
+defmodule ApathyDrive.Exits.Doors do
 
   defmacro __using__(_opts) do
     quote do
-      use Systems.Exit
+      use ApathyDrive.Exit
 
       def name, do: "door"
 
-      def display_direction(room, room_exit) do
+      def display_direction(%Room{} = room, room_exit) do
         case open?(room, room_exit) do
           true ->
             "open #{name} #{room_exit.direction}"
@@ -63,7 +63,7 @@ defmodule Systems.Exits.Doors do
             open!(room, room_exit.direction)
             send_message(monster, "scroll", "<p>You bashed the #{name} open.</p>")
 
-            msg = "You see #{Components.Name.value(monster)} bash open the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
+            msg = "You see #{Components.Name.value(monster)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit.direction)}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -77,7 +77,7 @@ defmodule Systems.Exits.Doors do
             mirror_bash(room, room_exit)
           true ->
             send_message(monster, "scroll", "<p>Your attempts to bash through fail!</p>")
-            msg = "You see #{Components.Name.value(monster)} attempt to bash open the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
+            msg = "You see #{Components.Name.value(monster)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit.direction)}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -104,7 +104,7 @@ defmodule Systems.Exits.Doors do
             open!(room, room_exit.direction)
             send_message(monster, "scroll", "<p>The #{name} is now open.</p>")
 
-            msg = "You see #{Components.Name.value(monster)} open the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
+            msg = "You see #{Components.Name.value(monster)} open the #{name} #{ApathyDrive.Exit.direction_description(room_exit.direction)}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -172,7 +172,7 @@ defmodule Systems.Exits.Doors do
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit.direction)} just flew open!</p>")
+               send_message(character, "scroll", "<p>The #{name} #{ApathyDrive.Exit.direction_description(mirror_exit.direction)} just flew open!</p>")
              end)
         end
       end
@@ -194,7 +194,7 @@ defmodule Systems.Exits.Doors do
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit.direction)} just opened.</p>")
+               send_message(character, "scroll", "<p>The #{name} #{ApathyDrive.Exit.direction_description(mirror_exit.direction)} just opened.</p>")
              end)
         end
       end
@@ -203,7 +203,7 @@ defmodule Systems.Exits.Doors do
         if Components.Exits.get_open_duration(room, direction) do
           Systems.Effect.add(room, %{open: direction}, Components.Exits.get_open_duration(room, direction))
           # todo: tell players in the room when it re-locks
-          #"The #{name} #{Systems.Exit.direction_description(exit.direction)} just locked!"
+          #"The #{name} #{ApathyDrive.Exit.direction_description(exit.direction)} just locked!"
         else
           Components.Exits.open_door(room, direction)
         end
@@ -218,7 +218,7 @@ defmodule Systems.Exits.Doors do
 
         Systems.Effect.add(room, %{unlocked: direction}, unlock_duration)
         # todo: tell players in the room when it re-locks
-        #"The #{name} #{Systems.Exit.direction_description(exit.direction)} just locked!"
+        #"The #{name} #{ApathyDrive.Exit.direction_description(exit.direction)} just locked!"
       end
 
       def close(monster, room, room_exit) do
@@ -226,7 +226,7 @@ defmodule Systems.Exits.Doors do
           close!(room, room_exit.direction)
           send_message(monster, "scroll", "<p>The #{name} is now closed.</p>")
 
-          msg = "You see #{Components.Name.value(monster)} close the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
+          msg = "You see #{Components.Name.value(monster)} close the #{name} #{ApathyDrive.Exit.direction_description(room_exit.direction)}."
           room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
@@ -253,7 +253,7 @@ defmodule Systems.Exits.Doors do
             lock!(room, room_exit.direction)
             send_message(monster, "scroll", "<p>The #{name} is now locked.</p>")
 
-            msg = "You see #{Components.Name.value(monster)} lock the #{name} #{Systems.Exit.direction_description(room_exit.direction)}."
+            msg = "You see #{Components.Name.value(monster)} lock the #{name} #{ApathyDrive.Exit.direction_description(room_exit.direction)}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -277,7 +277,7 @@ defmodule Systems.Exits.Doors do
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit.direction)} just locked!</p>")
+               send_message(character, "scroll", "<p>The #{name} #{ApathyDrive.Exit.direction_description(mirror_exit.direction)} just locked!</p>")
              end)
         end
       end
@@ -302,7 +302,7 @@ defmodule Systems.Exits.Doors do
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{Systems.Exit.direction_description(mirror_exit.direction)} just closed.</p>")
+               send_message(character, "scroll", "<p>The #{name} #{ApathyDrive.Exit.direction_description(mirror_exit.direction)} just closed.</p>")
              end)
         end
       end

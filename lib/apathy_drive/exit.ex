@@ -1,4 +1,4 @@
-defmodule Systems.Exit do
+defmodule ApathyDrive.Exit do
   use Systems.Reload
   import Utility
 
@@ -29,18 +29,33 @@ defmodule Systems.Exit do
     end
   end
 
-  def look(spirit, monster, direction) do
-    current_room = Spirit.room(spirit)
+  def look(%Spirit{} = spirit, direction) do
+    current_room = Spirit.find_room(spirit)
     room_exit = current_room |> get_exit_by_direction(direction)
-    look(spirit, monster, current_room, room_exit)
+    look(current_room, spirit, room_exit)
   end
 
-  def look(spirit, _monster, _current_room, nil) do
-    send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
+  def look(%Monster{spirit: spirit} = monster, direction) do
+    spirit = Spirit.value(spirit)
+    current_room = Spirit.find_room(spirit)
+    room_exit = current_room |> get_exit_by_direction(direction)
+    look(current_room, monster, room_exit)
   end
 
-  def look(spirit, monster, current_room, room_exit) do
-    :"Elixir.Systems.Exits.#{room_exit.kind}".look(spirit, monster, current_room, room_exit)
+  def look(_current_room, %Spirit{} = spirit, nil) do
+    Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
+  end
+
+  def look(_current_room, %Monster{} = monster, nil) do
+    Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
+  end
+
+  def look(%Room{} = current_room, %Spirit{} = spirit, room_exit) do
+    :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".look(current_room, spirit, room_exit)
+  end
+
+  def look(%Room{} = current_room, %Monster{} = monster, room_exit) do
+    :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".look(current_room, monster, room_exit)
   end
 
   def move(nil, monster, direction) do
@@ -61,12 +76,11 @@ defmodule Systems.Exit do
   end
 
   def move(spirit, monster, current_room, room_exit) do
-    :"Elixir.Systems.Exits.#{room_exit.kind}".move(spirit, monster, current_room, room_exit)
+    :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".move(spirit, monster, current_room, room_exit)
   end
 
-  def get_exit_by_direction(room, direction) do
-    Room.exits(room)
-    |> Enum.find(&(&1.direction == direction(direction)))
+  def get_exit_by_direction(%Room{exits: exits} = room, direction) do
+    Enum.find(exits, &(&1.direction == direction(direction)))
   end
 
   def direction_description(direction) do
@@ -86,8 +100,7 @@ defmodule Systems.Exit do
       import Systems.Text
       import Utility
       import BlockTimer
-      alias Systems.Monster
-      alias Systems.Exit
+      alias ApathyDrive.Exit
 
       def display_direction(_room, room_exit) do
         room_exit.direction
@@ -134,30 +147,31 @@ defmodule Systems.Exit do
         end
       end
 
-      def look(spirit, monster, current_room, room_exit) do
-        {mirror_room, mirror_exit} = mirror(current_room, room_exit)
+      def look(%Room{} = room, %Spirit{} = spirit, room_exit) do
+        {mirror_room, mirror_exit} = mirror(room, room_exit)
 
-        Systems.Room.display_room_in_scroll(spirit, monster, mirror_room)
+        Room.look(mirror_room, spirit)
+      end
 
-        if monster && mirror_exit do
+      def look(%Room{} = room, %Monster{} = monster, room_exit) do
+        {mirror_room, mirror_exit} = mirror(room, room_exit)
 
-          mirror_room
-          |> Systems.Room.characters_in_room
-          |> Enum.each(fn(character) ->
-               message = "#{Components.Name.value(monster)} peeks in from #{Systems.Monster.enter_direction(mirror_exit.direction)}!"
-                         |> capitalize_first
+        Room.look(mirror_room, monster)
 
-               send_message(character, "scroll", "<p><span class='dark-magenta'>#{message}</span></p>")
-             end)
+        if mirror_exit do
+          message = "#{monster.name} peeks in from #{Room.enter_direction(mirror_exit.direction)}!"
+                     |> capitalize_first
+
+          Phoenix.Channel.broadcast "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-magenta'>#{message}</span></p>"}
         end
       end
 
       def notify_monster_entered(monster, entered_from, room) do
         direction = get_direction_by_destination(room, entered_from)
         if direction do
-          Monster.display_enter_message(room, monster, direction)
+          Systems.Monster.display_enter_message(room, monster, direction)
         else
-          Monster.display_enter_message(room, monster)
+          Systems.Monster.display_enter_message(room, monster)
         end
         Systems.Aggression.monster_entered(monster, room)
       end
@@ -165,10 +179,10 @@ defmodule Systems.Exit do
       def notify_monster_left(monster, room, left_to) do
         direction = get_direction_by_destination(room, left_to)
         if direction do
-          Monster.display_exit_message(room, monster, direction)
-          Monster.pursue(room, monster, direction)
+          Systems.Monster.display_exit_message(room, monster, direction)
+          Systems.Monster.pursue(room, monster, direction)
         else
-          Monster.display_exit_message(room, monster)
+          Systems.Monster.display_exit_message(room, monster)
         end
       end
 
@@ -182,18 +196,19 @@ defmodule Systems.Exit do
         exit_to_destination.direction
       end
 
-      def mirror(room, room_exit) do
-        mirror_room = Room.find(room_exit.destination)
-        room_exit = mirror_room
-                    |> Room.exits
-                    |> Enum.find(fn(room_exit) ->
-                         room_exit.destination == Room.id(room)
+      def mirror(%Room{exits: exits, id: id} = room, %{destination: destination}) do
+        mirror_room = Room.find(destination)
+                      |> Room.value
+
+        room_exit = exits
+                    |> Enum.find(fn(%{destination: destination}) ->
+                         destination == id
                        end)
         {mirror_room, room_exit}
       end
 
       defoverridable [move: 4,
-                      look: 4,
+                      look: 3,
                       display_direction: 2]
     end
   end

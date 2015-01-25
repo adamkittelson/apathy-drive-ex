@@ -1,5 +1,5 @@
-defmodule Systems.Exits.Race do
-  use Systems.Exit
+defmodule ApathyDrive.Exits.Race do
+  use ApathyDrive.Exit
 
   def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
   def move(nil, monster, current_room, room_exit) do

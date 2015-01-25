@@ -1,5 +1,5 @@
-defmodule Systems.Exits.Hidden do
-  use Systems.Exit
+defmodule ApathyDrive.Exits.Hidden do
+  use ApathyDrive.Exit
 
   def display_direction(room, room_exit) do
     if open?(room, room_exit) do
@@ -7,11 +7,19 @@ defmodule Systems.Exits.Hidden do
     end
   end
 
-  def look(spirit, monster, current_room, room_exit) do
-    if open?(current_room, room_exit) or room_exit["passable_while_hidden"] do
-      super(spirit, monster, current_room, room_exit)
+  def look(%Spirit{} = spirit, %Room{} = current_room, room_exit) do
+    if open?(current_room, room_exit) or room_exit.passable_while_hidden do
+      super(spirit, current_room, room_exit)
     else
-      send_message(spirit, "scroll", "<p>There is no exit in that direction!</p>")
+      Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction!</p>"}
+    end
+  end
+
+  def look(%Monster{} = monster, %Room{} = current_room, room_exit) do
+    if open?(current_room, room_exit) or room_exit.passable_while_hidden do
+      super(monster, current_room, room_exit)
+    else
+      Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction!</p>"}
     end
   end
 

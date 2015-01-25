@@ -13,17 +13,17 @@ defmodule Commands.Search do
     if Enum.any? arguments do
       direction = arguments
                   |> Enum.join(" ")
-                  |> Systems.Exit.direction
+                  |> ApathyDrive.Exit.direction
 
-      room_exit = Systems.Exit.get_exit_by_direction(current_room, direction)
+      room_exit = ApathyDrive.Exit.get_exit_by_direction(current_room, direction)
 
       case room_exit do
         nil ->
           send_message(monster, "scroll", "<p>There is no exit in that direction!</p>")
         %{"kind" => "Hidden"} ->
-          Systems.Exits.Hidden.search(monster, current_room, room_exit)
+          ApathyDrive.Exits.Hidden.search(monster, current_room, room_exit)
         %{"direction" => direction} ->
-          send_message(monster, "scroll", "<p>You notice nothing different #{Systems.Exit.direction_description(direction)}.</p>")
+          send_message(monster, "scroll", "<p>You notice nothing different #{ApathyDrive.Exit.direction_description(direction)}.</p>")
       end
     else
       send_message(monster, "scroll", "<p>Your search revealed nothing.</p>")
