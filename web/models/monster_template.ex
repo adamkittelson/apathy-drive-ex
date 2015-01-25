@@ -41,10 +41,10 @@ defmodule MonsterTemplate do
 
   def load(id) do
     monster_template = Repo.get(MonsterTemplate, id)
-                       |> parse_json(:skills)
-                       |> parse_json(:limbs)
                        |> parse_json(:damage)
                        |> parse_json(:questions)
+                       |> parse_json(:skills)
+                       |> parse_json(:limbs)
 
     {:ok, pid} = Supervisor.start_child(:monster_template_supervisor, {:"monster_template_#{id}", {GenServer, :start_link, [MonsterTemplate, monster_template, [name: {:global, :"monster_template_#{id}"}]]}, :permanent, 5000, :worker, [MonsterTemplate]})
 
@@ -55,14 +55,18 @@ defmodule MonsterTemplate do
     Map.put(room, attribute, Poison.decode!(Map.get(room, attribute), keys: :atoms))
   end
 
-  def spawn_monster(monster_template_id) when is_integer(monster_template_id) do
+  def spawn_monster(monster_template_id, room) when is_integer(monster_template_id) do
     monster_template_id
     |> find
-    |> spawn_monster
+    |> spawn_monster(room)
   end
 
-  def spawn_monster(monster_template) do
-    GenServer.call(monster_template, {:spawn_monster, count(monster_template)})
+  def spawn_monster(monster_template, room) do
+    GenServer.call(monster_template, {:spawn_monster, room})
+  end
+
+  def limit_reached?(monster_template) do
+    count(monster_template) >= game_limit(monster_template)
   end
 
   def count(monster_template) do
@@ -88,7 +92,7 @@ defmodule MonsterTemplate do
   end
 
   def alignment(alignment) do
-    case alignment do
+    alignment = case alignment do
       "good" ->
         -75.0
       "neutral" ->
@@ -96,6 +100,7 @@ defmodule MonsterTemplate do
       "evil" ->
         75.0
     end
+    Decimal.new(alignment)
   end
 
   # Generate functions from Ecto schema
@@ -103,22 +108,26 @@ defmodule MonsterTemplate do
   fields = Keyword.keys(@assign_fields)
 
   Enum.each(fields, fn(field) ->
-    def unquote(field)(monster_template) do
-      GenServer.call(monster_template, unquote(field))
+    def unquote(field)(pid) do
+      GenServer.call(pid, unquote(field))
+    end
+
+    def unquote(field)(pid, new_value) do
+      GenServer.call(pid, {unquote(field), new_value})
     end
   end)
 
   Enum.each(fields, fn(field) ->
-    def handle_call(unquote(field), _from, monster_template) do
-      {:reply, Map.get(monster_template, unquote(field)), monster_template}
+    def handle_call(unquote(field), _from, state) do
+      {:reply, Map.get(state, unquote(field)), state}
+    end
+
+    def handle_call({unquote(field), new_value}, _from, state) do
+      {:reply, new_value, Map.put(state, unquote(field), new_value)}
     end
   end)
 
-  def handle_call({:spawn_monster, count}, _from, %MonsterTemplate{game_limit: game_limit} = monster_template) when count >= game_limit do
-    {:reply, nil, monster_template}
-  end
-
-  def handle_call({:spawn_monster, count}, _from, monster_template) do
+  def handle_call({:spawn_monster, room}, _from, monster_template) do
     values = monster_template
              |> Map.from_struct
              |> Enum.into(Keyword.new)
@@ -128,10 +137,13 @@ defmodule MonsterTemplate do
               |> Map.put(:monster_template_id, monster_template.id)
               |> Map.put(:id, nil)
               |> Map.put(:alignment, alignment(monster_template.alignment))
+              |> Map.put(:room_id, room.id)
 
+    worker_id = :"monster_#{Systems.URL.random}"
 
+    {:ok, pid} = Supervisor.start_child(:monster_supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :permanent, 5000, :worker, [Monster]})
 
-    {:reply, monster, monster_template}
+    {:reply, pid, monster_template}
   end
 
 end

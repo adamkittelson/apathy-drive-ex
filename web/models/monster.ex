@@ -2,7 +2,9 @@ defmodule Monster do
   use Ecto.Model
   use GenServer
   use Systems.Reload
+  import Systems.Text
   alias ApathyDrive.Repo
+  alias Phoenix.PubSub
 
   schema "monsters" do
     field :name,                :string
@@ -13,6 +15,7 @@ defmodule Monster do
     field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
     field :alignment,           :decimal
+    field :lair_id,             :integer, virtual: true
     field :hp,                  :integer, virtual: true
     field :mana,                :integer, virtual: true
     field :hunting,             :any,     virtual: true, default: []
@@ -38,20 +41,64 @@ defmodule Monster do
     field :questions,           :any,     virtual: true
   end
 
-  # Generate functions from Ecto schema
+  def init(monster) do
+    if monster.room_id do
+      PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters")
+    end
 
+    {:ok, monster}
+  end
+
+  def good?(monster) do
+    alignment(monster) < -50
+  end
+
+  def neutral?(monster) do
+    alignment(monster) >= -50 and alignment(monster) <= 50
+  end
+
+  def evil?(monster) do
+    alignment(monster) > 50
+  end
+
+  def display_enter_message(%Room{} = room, monster) do
+    display_enter_message(room, monster, Room.random_direction(room))
+  end
+
+  def display_enter_message(%Room{} = room, monster, direction) do
+    message = monster
+              |> enter_message
+              |> interpolate(%{
+                   "name" => name(monster),
+                   "direction" => Room.enter_direction(direction)
+                 })
+              |> capitalize_first
+
+    Phoenix.Channel.broadcast "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
+  end
+
+  # Generate functions from Ecto schema
   fields = Keyword.keys(@assign_fields)
 
   Enum.each(fields, fn(field) ->
-    def unquote(field)(monster_template) do
-      GenServer.call(monster_template, unquote(field))
+    def unquote(field)(pid) do
+      GenServer.call(pid, unquote(field))
+    end
+
+    def unquote(field)(pid, new_value) do
+      GenServer.call(pid, {unquote(field), new_value})
     end
   end)
 
   Enum.each(fields, fn(field) ->
-    def handle_call(unquote(field), _from, monster_template) do
-      {:reply, Map.get(monster_template, unquote(field)), monster_template}
+    def handle_call(unquote(field), _from, state) do
+      {:reply, Map.get(state, unquote(field)), state}
+    end
+
+    def handle_call({unquote(field), new_value}, _from, state) do
+      {:reply, new_value, Map.put(state, unquote(field), new_value)}
     end
   end)
+
 
 end

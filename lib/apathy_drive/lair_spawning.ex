@@ -1,15 +1,20 @@
 defmodule ApathyDrive.LairSpawning do
+  use Systems.Reload
 
   def spawn_lair(room) do
-    monster_ids = eligible_monsters(room)
-    if Enum.any?(monster_ids) do
-      monster_id = select_lair_monster(monster_ids)
-      Phoenix.Channel.broadcast "rooms:#{room.id}", "scroll", %{:html => "<p>spawning monster #{monster_id} <p>"}
+    if room.lair_size > (room.id |> Room.spawned_monsters |> length) do
+      monster_template_ids = eligible_monsters(room)
+      if Enum.any?(monster_template_ids) do
+        monster_template = select_lair_monster(monster_template_ids)
 
-      #           |> Systems.Monster.spawn_monster(room)
-      #
-      # Components.Lair.spawn_monster(room, monster)
-      # spawn_lair(room)
+        monster = MonsterTemplate.spawn_monster(monster_template, room)
+
+        Monster.lair_id(monster, room.id)
+
+        Phoenix.PubSub.subscribe(monster, "rooms:#{room.id}:spawned_monsters")
+        Monster.display_enter_message(room, monster)
+        spawn_lair(room)
+      end
     end
   end
 
@@ -22,8 +27,9 @@ defmodule ApathyDrive.LairSpawning do
   end
 
   def eligible_monsters(room) do
-    # todo check monster limit here
     room.lair_monsters
+    |> Enum.map(&MonsterTemplate.find/1)
+    |> Enum.reject(&MonsterTemplate.limit_reached?/1)
   end
 
 end

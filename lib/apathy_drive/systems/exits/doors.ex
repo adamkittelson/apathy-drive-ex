@@ -16,14 +16,15 @@ defmodule Systems.Exits.Doors do
       end
 
       def move(spirit, nil, current_room, room_exit) do
-        Spirit.set_room_id(spirit, room_exit.destination)
         Spirit.deactivate_hint(spirit, "movement")
 
         if !open?(current_room, room_exit) do
           send_message(spirit, "scroll", "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
         end
 
-        Systems.Room.display_room_in_scroll(spirit, nil, Spirit.room(spirit))
+        Systems.Room.display_room_in_scroll(spirit, nil, Room.find(room_exit.destination))
+
+        Spirit.set_room_id(spirit, room_exit.destination)
       end
 
       def move(nil, monster, current_room, room_exit) do

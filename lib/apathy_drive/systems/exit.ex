@@ -94,9 +94,9 @@ defmodule Systems.Exit do
       end
 
       def move(spirit, nil, current_room, room_exit) do
+        Systems.Room.display_room_in_scroll(spirit, nil, Room.find(room_exit.destination))
         Spirit.set_room_id(spirit, room_exit.destination)
         Spirit.deactivate_hint(spirit, "movement")
-        Systems.Room.display_room_in_scroll(spirit, nil, Spirit.room(spirit))
       end
 
       def move(nil, monster, current_room, room_exit) do

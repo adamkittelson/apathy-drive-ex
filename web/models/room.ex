@@ -17,7 +17,6 @@ defmodule Room do
     field :lair_size,             :integer
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
-    field :lair_spawned_monsters, :any, virtual: true, default: []
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :permanent_npc,         :string
     field :room_ability,          :string
@@ -42,8 +41,10 @@ defmodule Room do
   def shop?(room),    do: !!shop_items(room)
   def trainer?(room), do: !!trainable_skills(room)
 
-  def items(room),    do: Phoenix.PubSub.subscribers("rooms:#{id(room)}:items")
-  def monsters(room), do: Phoenix.PubSub.subscribers("rooms:#{id(room)}:monsters")
+  def items(room),            do: PubSub.subscribers("rooms:#{id(room)}:items")
+  def monsters(room),         do: PubSub.subscribers("rooms:#{id(room)}:monsters")
+  def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
+  def spawned_monsters(room), do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
 
   def start_room_id do
     query = from r in Room,
@@ -69,13 +70,39 @@ defmodule Room do
 
     {:ok, pid} = Supervisor.start_child(:room_supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
     PubSub.subscribe(pid, "rooms")
-    if room.lair_monsters, do: PubSub.subscribe(pid, "rooms:lairs")
+    if room.lair_monsters do
+      PubSub.subscribe(pid, "rooms:lairs")
+      send(pid, {:spawn_monsters, Date.now |> Date.convert(:secs)})
+    end
 
     pid
   end
 
   def all do
     PubSub.subscribers("rooms")
+  end
+
+  def exit_direction("up"),      do: "upwards"
+  def exit_direction("down"),    do: "downwards"
+  def exit_direction(direction), do: "to the #{direction}"
+
+  def enter_direction(nil),       do: "nowhere"
+  def enter_direction("up"),      do: "above"
+  def enter_direction("down"),    do: "below"
+  def enter_direction(direction), do: "the #{direction}"
+
+  def random_direction(%Room{} = room) do
+    :random.seed(:os.timestamp)
+
+    case room.exits do
+      nil ->
+        nil
+      exits ->
+        exits
+        |> Enum.map(&(&1.direction))
+        |> Enum.shuffle
+        |> List.first
+    end
   end
 
   defp parse_json(room, attribute) do
@@ -107,15 +134,17 @@ defmodule Room do
   end)
 
   def handle_info({:spawn_monsters, time},
-                 %{:lair_next_spawn_at => lair_next_spawn_at,
-                   :lair_size => lair_size,
-                   :lair_spawned_monsters => lair_spawned_monsters} = room)
-                 when time >= lair_next_spawn_at
-                 and  lair_size > length(lair_spawned_monsters) do
+                 %{:lair_next_spawn_at => lair_next_spawn_at} = room)
+                 when time >= lair_next_spawn_at do
 
     ApathyDrive.LairSpawning.spawn_lair(room)
 
-    {:noreply, Map.put(room, :lair_next_spawn_at, Date.now |> Date.shift(mins: room.lair_frequency) |> Date.convert(:secs))}
+    room = room
+           |> Map.put(:lair_next_spawn_at, Date.now
+                                           |> Date.shift(mins: room.lair_frequency)
+                                           |> Date.convert(:secs))
+
+    {:noreply, room}
   end
 
   def handle_info(_message, spirit) do

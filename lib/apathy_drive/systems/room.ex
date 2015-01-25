@@ -8,14 +8,14 @@ defmodule Systems.Room do
 
   def long_room_html(spirit, nil, room) do
     directions = room |> Room.exit_directions |> exit_directions_html
-    "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(spirit, room)}#{directions}</div>"
+    "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{monsters_html(spirit, room)}#{directions}</div>"
   end
 
   def long_room_html(spirit, monster, room) do
     light = light_level(monster)
     if light > -200 and light < 200 do
       directions = Room.exit_directions(room) |> exit_directions_html
-      "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{entities_html(monster, room)}#{directions}#{light(monster)}</div>"
+      "<div class='room'>#{name_html(room)}#{description_html(room)}#{shop(room)}#{items_html(room)}#{monsters_html(monster, room)}#{directions}#{light(monster)}</div>"
     else
       "<div class='room'>#{light(monster)}</div>"
     end
@@ -132,48 +132,30 @@ defmodule Systems.Room do
     Room.monsters(room) |> Enum.reject(&(entity == &1))
   end
 
-  def entities_html(spirit, room) do
-    entities = entities(spirit, room)
-    case Enum.count(entities) do
+  def monsters_html(spirit, room) do
+    monsters = Room.monsters(room)
+    case Enum.count(monsters) do
       0 ->
         ""
       _ ->
-        entities = entities
-                   |> Enum.map(fn(entity) ->
+        monsters = monsters
+                   |> Enum.map(fn(monster) ->
                         cond do
-                          Components.Alignment.evil?(entity) ->
-                            "<span class='magenta'>#{Components.Name.value(entity)}</span>"
-                          Components.Alignment.good?(entity) ->
-                            "<span class='grey'>#{Components.Name.value(entity)}</span>"
-                          Components.Alignment.neutral?(entity) ->
-                            "<span class='dark-cyan'>#{Components.Name.value(entity)}</span>"
+                          Monster.evil?(monster) ->
+                            "<span class='magenta'>#{Monster.name(monster)}</span>"
+                          Monster.good?(monster) ->
+                            "<span class='grey'>#{Monster.name(monster)}</span>"
+                          Monster.neutral?(monster) ->
+                            "<span class='dark-cyan'>#{Monster.name(monster)}</span>"
                         end
                       end)
                    |> Enum.join("<span class='magenta'>, </span>")
-        "<div class='entities'><span class='dark-magenta'>Also here:</span> #{entities}<span class='dark-magenta'>.</span></div>"
+        "<div class='entities'><span class='dark-magenta'>Also here:</span> #{monsters}<span class='dark-magenta'>.</span></div>"
     end
   end
 
   def move(spirit, monster, direction) do
     Systems.Exit.move(spirit, monster, direction)
-  end
-
-  def living_in_room(room) do
-    characters = characters_in_room(room) |> Enum.reject(&(Components.Spirit.value(&1)))
-    Enum.concat(Room.monsters(room), characters)
-  end
-
-  def living_in_room(entities, room) do
-    Enum.filter(entities, &(room == Parent.of(&1)))
-  end
-
-  def characters_in_room(room) do
-    Spirit.online
-    |> living_in_room(room)
-  end
-
-  def characters_in_room(room, character_to_exclude) do
-    characters_in_room(room) |> Enum.reject(&(&1 == character_to_exclude))
   end
 
 end

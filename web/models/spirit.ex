@@ -40,7 +40,7 @@ defmodule Spirit do
     {:ok, spirit} = Supervisor.start_child(:spirit_supervisor, {:"spirit_#{spirit_struct.id}", {Spirit, :start_link, [spirit_struct]}, :permanent, 5000, :worker, [Spirit]})
     PubSub.subscribe(spirit, "spirits:online")
     PubSub.subscribe(spirit, "spirits:hints")
-    PubSub.subscribe(spirit, "rooms:#{spirit_struct.id}")
+    PubSub.subscribe(spirit, "rooms:#{spirit_struct.room_id}")
     spirit
   end
 
