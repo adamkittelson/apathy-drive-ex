@@ -100,7 +100,7 @@ defmodule MonsterTemplate do
       "evil" ->
         75.0
     end
-    Decimal.new(alignment)
+    alignment
   end
 
   # Generate functions from Ecto schema

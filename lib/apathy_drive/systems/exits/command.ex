@@ -2,7 +2,7 @@ defmodule Systems.Exits.Command do
   use Systems.Exit
 
   def display_direction(_room, room_exit) do
-    room_exit["name"]
+    room_exit[:name]
   end
 
   def move(spirit, nil, _current_room, _room_exit)  do
@@ -18,16 +18,10 @@ defmodule Systems.Exits.Command do
   end
 
   def move_via_command(spirit, nil, current_room, room_exit) do
-    destination = Room.find(room_exit["destination"])
-    Components.Characters.remove_character(current_room, spirit)
-    Components.Characters.add_character(destination, spirit)
-    Entities.save!(destination)
-    Entities.save!(current_room)
-    send_message(spirit, "scroll", "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
-    Entities.save!(spirit)
-
+    send_message(spirit, "scroll", "<p><span class='yellow'>#{room_exit.mover_message}</span></p>")
+    Systems.Room.display_room_in_scroll(spirit, nil, Room.find(room_exit.destination))
+    Spirit.set_room_id(spirit, room_exit.destination)
     Spirit.deactivate_hint(spirit, "movement")
-    Systems.Room.display_room_in_scroll(spirit, nil, destination)
   end
 
   def move_via_command(nil, monster, current_room, room_exit) do

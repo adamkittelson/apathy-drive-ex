@@ -14,7 +14,7 @@ defmodule Monster do
     field :room_id,             :integer
     field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
-    field :alignment,           :decimal
+    field :alignment,           :float
     field :lair_id,             :integer, virtual: true
     field :hp,                  :integer, virtual: true
     field :mana,                :integer, virtual: true

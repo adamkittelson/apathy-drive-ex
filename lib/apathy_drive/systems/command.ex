@@ -33,12 +33,12 @@ defmodule Systems.Command do
     room = Spirit.room(spirit)
     command_exit = Room.exits(room)
                    |> Enum.find(fn(ex) ->
-                        ex["kind"] == "Command" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
+                        ex.kind == "Command" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
                       end)
 
     remote_action_exit = Room.exits(room)
                          |> Enum.find(fn(ex) ->
-                              ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
+                              ex.kind == "RemoteAction" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
                             end)
 
     cond do
