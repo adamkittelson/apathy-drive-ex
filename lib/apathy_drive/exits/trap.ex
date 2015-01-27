@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Exits.Trap do
   use ApathyDrive.Exit
 
-  def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
+  def move(current_room, %Spirit{} = spirit, room_exit), do: super(current_room, spirit, room_exit)
   def move(nil, monster, current_room, room_exit) do
     if !Systems.Combat.stunned?(monster) do
       destination = Room.find(room_exit["destination"])

@@ -35,9 +35,8 @@ defmodule ApathyDrive.Exit do
     look(current_room, spirit, room_exit)
   end
 
-  def look(%Monster{spirit: spirit} = monster, direction) do
-    spirit = Spirit.value(spirit)
-    current_room = Spirit.find_room(spirit)
+  def look(%Monster{} = monster, direction) do
+    current_room = Monster.find_room(monster)
     room_exit = current_room |> get_exit_by_direction(direction)
     look(current_room, monster, room_exit)
   end
@@ -58,25 +57,32 @@ defmodule ApathyDrive.Exit do
     :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".look(current_room, monster, room_exit)
   end
 
-  def move(nil, monster, direction) do
-    current_room = Parent.of(monster)
+  def move(%Spirit{} = spirit, direction) do
+    current_room = Spirit.find_room(spirit)
     room_exit = current_room |> get_exit_by_direction(direction)
-    move(nil, monster, current_room, room_exit)
+    move(current_room, spirit, room_exit)
   end
 
-  def move(spirit, monster, direction) do
-    current_room = Spirit.room(spirit)
+  def move(%Monster{} = monster, direction) do
+    current_room = Monster.find_room(monster)
     room_exit = current_room |> get_exit_by_direction(direction)
-    move(spirit, monster, current_room, room_exit)
+    move(current_room, monster, room_exit)
   end
 
-  def move(nil,    _monster, _current_room, nil), do: nil
-  def move(spirit, _monster, _current_room, nil) do
-    send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
+  def move(_current_room, %Spirit{} = spirit, nil) do
+    Spirit.send_html(spirit, "<p>There is no exit in that direction.</p>")
   end
 
-  def move(spirit, monster, current_room, room_exit) do
-    :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".move(spirit, monster, current_room, room_exit)
+  def move(_current_room, %Monster{} = monster, nil) do
+    Monster.send_html(monster, "<p>There is no exit in that direction.</p>")
+  end
+
+  def move(current_room, spirit_or_monster, room_exit) do
+    IO.puts "room exit kind: #{room_exit.kind}"
+    IO.puts "current_room: #{inspect current_room}"
+    IO.puts "spirit_or_monster: #{inspect spirit_or_monster}"
+    IO.puts "room_exit: #{inspect room_exit}"
+    :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".move(current_room, spirit_or_monster, room_exit)
   end
 
   def get_exit_by_direction(%Room{exits: exits} = room, direction) do
@@ -106,10 +112,13 @@ defmodule ApathyDrive.Exit do
         room_exit.direction
       end
 
-      def move(spirit, nil, current_room, room_exit) do
-        Systems.Room.display_room_in_scroll(spirit, nil, Room.find(room_exit.destination))
-        Spirit.set_room_id(spirit, room_exit.destination)
-        Spirit.deactivate_hint(spirit, "movement")
+      def move(current_room, %Spirit{} = spirit, room_exit) do
+        new_room = Room.find(room_exit.destination)
+                   |> Room.value
+
+        Room.look(new_room, spirit)
+        send(spirit.pid, {:set_room_id, room_exit.destination})
+        send(spirit.pid, {:deactivate_hint, "movement"})
       end
 
       def move(nil, monster, current_room, room_exit) do
@@ -207,7 +216,7 @@ defmodule ApathyDrive.Exit do
         {mirror_room, room_exit}
       end
 
-      defoverridable [move: 4,
+      defoverridable [move: 3,
                       look: 3,
                       display_direction: 2]
     end

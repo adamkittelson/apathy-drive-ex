@@ -35,16 +35,16 @@ defmodule ApathyDrive.Exits.Hidden do
     end
   end
 
-  def move(spirit, nil, current_room, room_exit) do
-    super(spirit, nil, current_room, room_exit)
+  def move(current_room, %Spirit{} = spirit, room_exit) do
+    super(current_room, spirit, room_exit)
   end
 
-  def move(spirit, monster, current_room, room_exit) do
+  def move(current_room, %Monster{} = monster, room_exit) do
     if open?(current_room, room_exit) do
-      super(spirit, monster, current_room, room_exit)
+      super(current_room, monster, room_exit)
     else
-      if spirit do
-        send_message(spirit, "scroll", "<p>There is no exit in that direction!</p>")
+      if monster do
+        send_message(monster, "scroll", "<p>There is no exit in that direction!</p>")
       end
     end
   end
@@ -80,9 +80,8 @@ defmodule ApathyDrive.Exits.Hidden do
     end
   end
 
-  def searched?(room, room_exit) do
-    room
-    |> Components.Effects.value
+  def searched?(%Room{} = room, room_exit) do
+    room.effects
     |> Map.values
     |> Enum.filter(fn(effect) ->
          Map.has_key?(effect, :searched)

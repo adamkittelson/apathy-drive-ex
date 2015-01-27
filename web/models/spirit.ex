@@ -37,10 +37,6 @@ defmodule Spirit do
     Repo.update(spirit)
   end
 
-  def set_room_id(spirit, room_id) do
-    GenServer.cast(spirit, {:set_room_id, room_id})
-  end
-
   def login(%Spirit{} = spirit) do
     {:ok, pid} = Supervisor.start_child(:spirit_supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
     PubSub.subscribe(pid, "spirits:online")
@@ -53,6 +49,10 @@ defmodule Spirit do
     room_id
     |> Room.find
     |> Room.value
+  end
+
+  def send_html(%Spirit{socket: socket} = spirit, html) do
+    Phoenix.Channel.reply socket, "scroll", %{:html => html}
   end
 
   def logout(spirit) do
@@ -93,10 +93,6 @@ defmodule Spirit do
 
   def activate_hint(spirit, hint) do
     GenServer.cast(spirit, {:activate_hint, hint})
-  end
-
-  def deactivate_hint(spirit, hint) do
-    GenServer.cast(spirit, {:deactivate_hint, hint})
   end
 
   def find_by_url(url) do
@@ -146,14 +142,6 @@ defmodule Spirit do
     {:reply, Room.find(spirit.room_id), spirit}
   end
 
-  def handle_cast({:set_room_id, room_id}, spirit) do
-    PubSub.unsubscribe(self, "rooms:#{spirit.room_id}")
-    PubSub.subscribe(self, "rooms:#{room_id}")
-    spirit = Map.put(spirit, :room_id, room_id)
-    save(spirit)
-    {:noreply, spirit}
-  end
-
   def handle_cast(:reset_idle, spirit) do
     {:noreply, Map.put(spirit, :idle, 0)}
   end
@@ -169,12 +157,20 @@ defmodule Spirit do
     end
   end
 
-  def handle_cast({:deactivate_hint, hint}, spirit) do
+  def handle_info({:deactivate_hint, hint}, spirit) do
     spirit = spirit
              |> Map.put(:hints, List.delete(spirit.hints, hint))
              |> Map.put(:disabled_hints, [hint | spirit.disabled_hints] |> Enum.uniq)
              |> save
 
+    {:noreply, spirit}
+  end
+
+  def handle_info({:set_room_id, room_id}, spirit) do
+    PubSub.unsubscribe(self, "rooms:#{spirit.room_id}")
+    PubSub.subscribe(self, "rooms:#{room_id}")
+    spirit = Map.put(spirit, :room_id, room_id)
+    save(spirit)
     {:noreply, spirit}
   end
 

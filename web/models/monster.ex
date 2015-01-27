@@ -39,7 +39,6 @@ defmodule Monster do
     field :damage,              :any,     virtual: true
     field :possession_level,    :integer, virtual: true
     field :questions,           :any,     virtual: true
-    field :spirit,              :any,     virtual: true
   end
 
   def init(monster) do
@@ -48,6 +47,20 @@ defmodule Monster do
     end
 
     {:ok, monster}
+  end
+
+  def value(monster) do
+    GenServer.call(monster, :value)
+  end
+
+  def find_room(%Monster{room_id: room_id}) do
+    room_id
+    |> Room.find
+    |> Room.value
+  end
+
+  def send_html(%Monster{id: id} = monster, html) do
+    Phoenix.Channel.broadcast "monsters:#{id}", "scroll", %{:html => html}
   end
 
   def look_name(%Monster{} = monster) do
@@ -62,7 +75,7 @@ defmodule Monster do
   end
 
   def good?(%Monster{alignment: alignment}) when alignment < -50, do: true
-  def evil?(%Monster{alignment: alignment}) when alignment < -50, do: true
+  def evil?(%Monster{alignment: alignment}) when alignment > 50,  do: true
   def neutral?(%Monster{}), do: true
 
   def display_enter_message(%Room{} = room, monster) do
@@ -104,5 +117,8 @@ defmodule Monster do
     end
   end)
 
+  def handle_call(:value, _from, monster) do
+    {:reply, monster, monster}
+  end
 
 end

@@ -3,7 +3,7 @@ defmodule Commands.Up do
 
   def keywords, do: ["u", "up"]
 
-  def execute(spirit, monster, _arguments) do
-    Systems.Room.move(spirit, monster, "up")
+  def execute(spirit_or_monster_struct, _arguments) do
+    ApathyDrive.Exit.move(spirit_or_monster_struct, "up")
   end
 end

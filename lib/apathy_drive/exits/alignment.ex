@@ -1,10 +1,8 @@
 defmodule ApathyDrive.Exits.Alignment do
   use ApathyDrive.Exit
 
-  def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
-  def move(nil, monster, current_room, room_exit), do: super(nil, monster, current_room, room_exit)
-
-  def move(spirit, monster, current_room, room_exit) do
+  def move(current_room, %Spirit{} = spirit, room_exit),  do: super(current_room, spirit, room_exit)
+  def move(current_room, %Monster{} = monster, room_exit) do
     min = room_exit["min"]
     max = room_exit["max"]
     case Components.Alignment.value(monster) do
@@ -13,7 +11,7 @@ defmodule ApathyDrive.Exits.Alignment do
       alignment when alignment > max ->
         send_message(monster, "scroll", "<p>You are too evil to use this exit.</p>")
       _ ->
-        super(spirit, monster, current_room, room_exit)
+        super(current_room, monster, room_exit)
     end
   end
 end

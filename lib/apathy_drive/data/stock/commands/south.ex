@@ -3,7 +3,7 @@ defmodule Commands.South do
 
   def keywords, do: ["s",  "south"]
 
-  def execute(spirit, monster, _arguments) do
-    Systems.Room.move(spirit, monster, "south")
+  def execute(spirit_or_monster_struct, _arguments) do
+    ApathyDrive.Exit.move(spirit_or_monster_struct, "south")
   end
 end

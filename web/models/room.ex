@@ -65,8 +65,8 @@ defmodule Room do
     PubSub.subscribers("rooms")
   end
 
-  def value(spirit) do
-    GenServer.call(spirit, :value)
+  def value(room) do
+    GenServer.call(room, :value)
   end
 
   def exit_direction("up"),      do: "upwards"
@@ -121,7 +121,7 @@ defmodule Room do
     Phoenix.Channel.reply spirit.socket, "scroll", %{:html => html}
   end
 
-  def look_shop_hint(%Room{shop_items: [], trainable_skills: []}), do: nil
+  def look_shop_hint(%Room{shop_items: nil, trainable_skills: nil}), do: nil
   def look_shop_hint(%Room{}) do
     "<p><br><em>Type 'list' to see a list of goods and services sold here.</em><br><br></p>"
   end
@@ -140,6 +140,7 @@ defmodule Room do
 
   def look_monsters(%Room{} = room) do
     monsters = monsters(room)
+               |> Enum.map(&Monster.value/1)
                |> Enum.map(&Monster.look_name/1)
                |> Enum.join("<span class='magenta'>, </span>")
 

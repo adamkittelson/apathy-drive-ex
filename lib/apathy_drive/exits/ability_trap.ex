@@ -1,49 +1,19 @@
 defmodule ApathyDrive.Exits.AbilityTrap do
   use ApathyDrive.Exit
 
-  def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
-  def move(nil, monster, current_room, room_exit) do
-    if !Systems.Combat.stunned?(monster) do
-      destination = Room.find(room_exit["destination"])
-      Components.Monsters.remove_monster(current_room, monster)
-      Components.Monsters.add_monster(destination, monster)
-      if Entity.has_component?(monster, Components.ID) do
-        Entities.save!(destination)
-        Entities.save!(current_room)
-      end
-      Entities.save(monster)
-
-      Systems.Aggression.monster_entered(monster, destination)
-
-      detected = detect?(monster, room_exit)
-      dodged   = dodge?(monster, room_exit)
-
-      if (detected and dodged) do
-        notify_monster_left(monster, current_room, destination)
-        notify_monster_entered(monster, current_room, destination)
-      else
-        spring_trap!(monster, current_room, destination, room_exit)
-      end
-    end
-  end
-
-  def move(spirit, monster, current_room, room_exit) do
+  def move(current_room, %Spirit{} = spirit, room_exit),  do: super(current_room, spirit, room_exit)
+  def move(current_room, %Monster{} = monster, room_exit) do
     if Systems.Combat.stunned?(monster) do
       send_message(monster, "scroll", "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
     else
       destination = Room.find(room_exit["destination"])
       Components.Monsters.remove_monster(current_room, monster)
       Components.Monsters.add_monster(destination, monster)
-      Components.Characters.remove_character(current_room, spirit)
-      Components.Characters.add_character(destination, spirit)
       Entities.save!(destination)
       Entities.save!(current_room)
-      Entities.save!(spirit)
       Entities.save(monster)
 
       Systems.Aggression.monster_entered(monster, destination)
-
-      Spirit.deactivate_hint(spirit, "movement")
 
       detected = detect?(monster, room_exit)
       dodged   = dodge?(monster, room_exit)
@@ -58,7 +28,7 @@ defmodule ApathyDrive.Exits.AbilityTrap do
           spring_trap!(monster, current_room, destination, room_exit)
       end
 
-      Systems.Room.display_room_in_scroll(spirit, monster, destination)
+      #Systems.Room.display_room_in_scroll(spirit, monster, destination)
       Monster.pursue(current_room, monster, room_exit["direction"])
     end
   end

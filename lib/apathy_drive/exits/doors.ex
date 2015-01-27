@@ -15,29 +15,24 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def move(spirit, nil, current_room, room_exit) do
-        Spirit.deactivate_hint(spirit, "movement")
+      def move(current_room, %Spirit{} = spirit, room_exit) do
+        new_room = Room.find(room_exit.destination)
+                   |> Room.value
 
         if !open?(current_room, room_exit) do
-          send_message(spirit, "scroll", "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
+          Spirit.send_html(spirit, "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
         end
 
-        Systems.Room.display_room_in_scroll(spirit, nil, Room.find(room_exit.destination))
-
-        Spirit.set_room_id(spirit, room_exit.destination)
+        Room.look(new_room, spirit)
+        send(spirit.pid, {:set_room_id, room_exit.destination})
+        send(spirit.pid, {:deactivate_hint, "movement"})
       end
 
-      def move(nil, monster, current_room, room_exit) do
+      def move(current_room, %Monster{} = monster, room_exit) do
         if open?(current_room, room_exit) do
-          super(nil, monster, current_room, room_exit)
-        end
-      end
-
-      def move(spirit, monster, current_room, room_exit) do
-        if open?(current_room, room_exit) do
-          super(spirit, monster, current_room, room_exit)
+          super(current_room, monster, room_exit)
         else
-          send_message(spirit, "scroll", "<p><span class='red'>The #{name} is closed!</span></p>")
+          send_message(monster, "scroll", "<p><span class='red'>The #{name} is closed!</span></p>")
         end
       end
 
@@ -337,7 +332,7 @@ defmodule ApathyDrive.Exits.Doors do
         |> Enum.member?(room_exit.direction)
       end
 
-      def open?(room, room_exit) do
+      def open?(%Room{} = room, room_exit) do
         permanently_open?(room, room_exit) or
         all_remote_actions_triggered?(room, room_exit) or
         temporarily_open?(room, room_exit) or
@@ -368,9 +363,8 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def temporarily_open?(room, room_exit) do
-        room
-        |> Room.effects
+      def temporarily_open?(%Room{} = room, room_exit) do
+        room.effects
         |> Map.values
         |> Enum.filter(fn(effect) ->
              Map.has_key?(effect, :open)

@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Exits.Door do
   use ApathyDrive.Exits.Doors
 
-  def look(%Spirit{} = spirit, %Room{} = current_room, room_exit) do
+  def look(%Room{} = current_room, %Spirit{} = spirit, room_exit) do
     if open?(current_room, room_exit) do
       super(spirit, current_room, room_exit)
     else
@@ -9,7 +9,7 @@ defmodule ApathyDrive.Exits.Door do
     end
   end
 
-  def look(%Monster{} = monster, %Room{} = current_room, room_exit) do
+  def look(%Room{} = current_room, %Monster{} = monster, room_exit) do
     if open?(current_room, room_exit) do
       super(monster, current_room, room_exit)
     else

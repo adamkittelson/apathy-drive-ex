@@ -5,16 +5,18 @@ defmodule ApathyDrive.Exits.Command do
     room_exit[:name]
   end
 
-  def move(spirit, nil, _current_room, _room_exit)  do
+  def move(_current_room, %Spirit{} = spirit, _room_exit)  do
     send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
   end
 
-  def move(nil, monster, current_room, room_exit) do
+  #unpossessed monster
+  def move(current_room, %Monster{} = monster, room_exit) do
     move_via_command(nil, monster, current_room, room_exit)
   end
 
-  def move(spirit, _monster, _current_room, _room_exit) do
-    send_message(spirit, "scroll", "<p>There is no exit in that direction.</p>")
+  #posssessed monster
+  def move(current_room, %Monster{} = monster, room_exit) do
+    send_message(monster, "scroll", "<p>There is no exit in that direction.</p>")
   end
 
   def move_via_command(spirit, nil, current_room, room_exit) do

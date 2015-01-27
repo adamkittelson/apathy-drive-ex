@@ -1,13 +1,13 @@
 defmodule ApathyDrive.Exits.Race do
   use ApathyDrive.Exit
 
-  def move(spirit, nil, current_room, room_exit),  do: super(spirit, nil, current_room, room_exit)
-  def move(nil, monster, current_room, room_exit) do
+  def move(current_room, %Spirit{} = spirit, room_exit), do: super(current_room, spirit, room_exit)
+  def move(current_room, monster, room_exit) do
     race = String.downcase(room_exit["race"])
     name = Components.Name.value(monster) |> String.downcase
 
     if String.contains?(name, race) do
-      super(nil, monster, current_room, room_exit)
+      super(current_room, monster, room_exit)
     else
       send_message(monster, "scroll", "<p>Only #{Inflex.pluralize(room_exit["race"])} may go #{room_exit["direction"]} here.</p>")
       Systems.Monster.observers(current_room, monster)
@@ -17,12 +17,12 @@ defmodule ApathyDrive.Exits.Race do
     end
   end
 
-  def move(spirit, monster, current_room, room_exit) do
+  def move(current_room, monster, room_exit) do
     race = String.downcase(room_exit["race"])
     name = Components.Name.value(monster) |> String.downcase
 
     if String.contains?(name, race) do
-      super(spirit, monster, current_room, room_exit)
+      super(current_room, monster, room_exit)
     else
       send_message(monster, "scroll", "<p>Only #{Inflex.pluralize(room_exit["race"])} may go #{room_exit["direction"]} here.</p>")
       Systems.Monster.observers(current_room, monster)
