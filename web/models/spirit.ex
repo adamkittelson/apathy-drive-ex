@@ -37,6 +37,10 @@ defmodule Spirit do
     Repo.update(spirit)
   end
 
+  def execute_command(spirit, command, arguments) do
+    GenServer.cast(spirit, {:execute_command, command, arguments})
+  end
+
   def login(%Spirit{} = spirit) do
     {:ok, pid} = Supervisor.start_child(:spirit_supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
     PubSub.subscribe(pid, "spirits:online")
@@ -51,8 +55,24 @@ defmodule Spirit do
     |> Room.value
   end
 
-  def send_html(%Spirit{socket: socket} = spirit, html) do
+  def send_disable(%Spirit{socket: socket} = spirit, elem) do
+    Phoenix.Channel.reply socket, "disable", %{:html => elem}
+    spirit
+  end
+
+  def send_focus(%Spirit{socket: socket} = spirit, elem) do
+    Phoenix.Channel.reply socket, "focus", %{:html => elem}
+    spirit
+  end
+
+  def send_up(%Spirit{socket: socket} = spirit) do
+    Phoenix.Channel.reply socket, "up", %{}
+    spirit
+  end
+
+  def send_scroll(%Spirit{socket: socket} = spirit, html) do
     Phoenix.Channel.reply socket, "scroll", %{:html => html}
+    spirit
   end
 
   def logout(spirit) do
@@ -140,6 +160,11 @@ defmodule Spirit do
 
   def handle_call(:room, _from, spirit) do
     {:reply, Room.find(spirit.room_id), spirit}
+  end
+
+  def handle_cast({:execute_command, command, arguments}, spirit) do
+    spirit = ApathyDrive.Command.execute(spirit, command, arguments)
+    {:noreply, spirit}
   end
 
   def handle_cast(:reset_idle, spirit) do

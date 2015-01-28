@@ -2,14 +2,13 @@ defmodule Systems.Prompt do
   use Systems.Reload
   import Utility
 
-  def display(nil, _), do: nil
-
-  def display(spirit, nil) do
-    send_message(spirit, "disable", "#prompt")
-    send_message(spirit, "disable", "#command")
-    send_message(spirit, "scroll", "<p><span id='prompt'>#{prompt(spirit, nil)}</span><input id='command' size='50' class='prompt'></input></p>")
-    send_message(spirit, "focus", "#command")
-    send_message(spirit, "up")
+  def display(%Spirit{} = spirit) do
+    spirit
+    |> Spirit.send_disable("#prompt")
+    |> Spirit.send_disable("#command")
+    |> Spirit.send_scroll("<p><span id='prompt'>#{prompt(spirit)}</span><input id='command' size='50' class='prompt'></input></p>")
+    |> Spirit.send_focus("#command")
+    |> Spirit.send_up
   end
 
   def display(spirit, monster) do
@@ -30,8 +29,7 @@ defmodule Systems.Prompt do
     send_message(spirit, "update prompt", prompt(spirit, monster))
   end
 
-  def prompt(spirit, nil) do
-    spirit = Spirit.value(spirit)
+  def prompt(%Spirit{} = spirit) do
     "[Level=#{spirit.level}/Exp=#{spirit.experience}]:"
   end
 

@@ -135,7 +135,7 @@ defmodule ApathyDrive do
 
   defp index_commands do
     Task.async fn ->
-    get_file_list(["lib/apathy_drive/data/**/commands/**/*.ex"])
+    get_file_list(["lib/apathy_drive/commands/*.ex"])
     |> Enum.each(fn(file) ->
          module_name = Path.basename(file)
                        |> String.replace(".ex", "")
