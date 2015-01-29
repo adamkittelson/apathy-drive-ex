@@ -70,18 +70,14 @@ defmodule ApathyDrive.Exit do
   end
 
   def move(_current_room, %Spirit{} = spirit, nil) do
-    Spirit.send_html(spirit, "<p>There is no exit in that direction.</p>")
+    Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
   end
 
   def move(_current_room, %Monster{} = monster, nil) do
-    Monster.send_html(monster, "<p>There is no exit in that direction.</p>")
+    Monster.send_scroll(monster, "<p>There is no exit in that direction.</p>")
   end
 
   def move(current_room, spirit_or_monster, room_exit) do
-    IO.puts "room exit kind: #{room_exit.kind}"
-    IO.puts "current_room: #{inspect current_room}"
-    IO.puts "spirit_or_monster: #{inspect spirit_or_monster}"
-    IO.puts "room_exit: #{inspect room_exit}"
     :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".move(current_room, spirit_or_monster, room_exit)
   end
 
@@ -117,8 +113,11 @@ defmodule ApathyDrive.Exit do
                    |> Room.value
 
         Room.look(new_room, spirit)
-        send(spirit.pid, {:set_room_id, room_exit.destination})
-        send(spirit.pid, {:deactivate_hint, "movement"})
+
+        spirit
+        |> Spirit.set_room_id(room_exit.destination)
+        |> Spirit.deactivate_hint("movement")
+        |> Spirit.save
       end
 
       def move(nil, monster, current_room, room_exit) do

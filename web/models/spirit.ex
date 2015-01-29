@@ -49,6 +49,18 @@ defmodule Spirit do
     pid
   end
 
+  def deactivate_hint(%Spirit{} = spirit, hint) do
+    spirit
+    |> Map.put(:hints, List.delete(spirit.hints, hint))
+    |> Map.put(:disabled_hints, [hint | spirit.disabled_hints] |> Enum.uniq)
+  end
+
+  def set_room_id(%Spirit{} = spirit, room_id) do
+    PubSub.unsubscribe(self, "rooms:#{spirit.room_id}")
+    PubSub.subscribe(self, "rooms:#{room_id}")
+    Map.put(spirit, :room_id, room_id)
+  end
+
   def find_room(%Spirit{room_id: room_id} = spirit) do
     room_id
     |> Room.find
@@ -180,23 +192,6 @@ defmodule Spirit do
                |> save
       {:noreply, spirit}
     end
-  end
-
-  def handle_info({:deactivate_hint, hint}, spirit) do
-    spirit = spirit
-             |> Map.put(:hints, List.delete(spirit.hints, hint))
-             |> Map.put(:disabled_hints, [hint | spirit.disabled_hints] |> Enum.uniq)
-             |> save
-
-    {:noreply, spirit}
-  end
-
-  def handle_info({:set_room_id, room_id}, spirit) do
-    PubSub.unsubscribe(self, "rooms:#{spirit.room_id}")
-    PubSub.subscribe(self, "rooms:#{room_id}")
-    spirit = Map.put(spirit, :room_id, room_id)
-    save(spirit)
-    {:noreply, spirit}
   end
 
   def handle_info(:increment_idle, spirit) do

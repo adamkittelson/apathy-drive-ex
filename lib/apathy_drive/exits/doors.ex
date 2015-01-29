@@ -20,12 +20,15 @@ defmodule ApathyDrive.Exits.Doors do
                    |> Room.value
 
         if !open?(current_room, room_exit) do
-          Spirit.send_html(spirit, "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
+          Spirit.send_scroll(spirit, "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
         end
 
         Room.look(new_room, spirit)
-        send(spirit.pid, {:set_room_id, room_exit.destination})
-        send(spirit.pid, {:deactivate_hint, "movement"})
+
+        spirit
+        |> Spirit.set_room_id(room_exit.destination)
+        |> Spirit.deactivate_hint("movement")
+        |> Spirit.save
       end
 
       def move(current_room, %Monster{} = monster, room_exit) do

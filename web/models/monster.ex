@@ -59,7 +59,7 @@ defmodule Monster do
     |> Room.value
   end
 
-  def send_html(%Monster{id: id} = monster, html) do
+  def send_scroll(%Monster{id: id} = monster, html) do
     Phoenix.Channel.broadcast "monsters:#{id}", "scroll", %{:html => html}
   end
 

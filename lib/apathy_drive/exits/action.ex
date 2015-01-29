@@ -1,7 +1,19 @@
 defmodule ApathyDrive.Exits.Action do
   use ApathyDrive.Exit
 
-  def move(current_room, %Spirit{} = spirit, room_exit),  do: super(current_room, spirit, room_exit)
+  def move(current_room, %Spirit{} = spirit, room_exit) do
+    new_room = Room.find(room_exit.destination)
+               |> Room.value
+
+    Spirit.send_scroll(spirit, "<p><span class='yellow'>#{interpolate(room_exit.mover_message, %{"user" => spirit})}</span></p>")
+
+    Room.look(new_room, spirit)
+
+    spirit
+    |> Spirit.set_room_id(room_exit.destination)
+    |> Spirit.deactivate_hint("movement")
+    |> Spirit.save
+  end
 
   def move(current_room, %Monster{} = monster, room_exit) do
     if Systems.Combat.stunned?(monster) do

@@ -21,9 +21,9 @@ defmodule ApathyDrive.Command do
 
     cond do
       command_exit ->
-        ApathyDrive.Exits.Command.move_via_command(spirit, room, command_exit)
+        ApathyDrive.Exits.Command.move_via_command(room, spirit, command_exit)
       remote_action_exit ->
-        ApathyDrive.Exits.RemoteAction.trigger_remote_action(spirit, room, remote_action_exit)
+        ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, spirit, remote_action_exit)
       true ->
         case Systems.Match.one(Commands.all, :keyword_starts_with, command) do
           nil ->
