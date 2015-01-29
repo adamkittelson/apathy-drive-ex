@@ -3,11 +3,9 @@ defmodule Commands.Abilities do
 
   def keywords, do: ["abilities", "spells"]
 
-  def execute(spirit, nil, _arguments) do
-    send_message(spirit, "scroll", "<p><span class='white'>You have the following abilities:</span></p>")
-    send_message(spirit, "scroll", "<p><span class='dark-magenta'>Power  Command  Ability Name</span></p>")
-
-    display_abilities(spirit)
+  def execute(%Spirit{} = spirit, _arguments) do
+    spirit
+    |> Spirit.send_scroll("<p>You must be possessing a monster to have abilities.</p>")
   end
 
   def execute(spirit, monster, _arguments) do

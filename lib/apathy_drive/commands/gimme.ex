@@ -3,9 +3,9 @@ defmodule Commands.Gimme do
 
   def keywords, do: ["gimme"]
 
-
-  def execute(spirit, nil, arguments) do
-    send_message(spirit, "scroll", "<p>You need a body to do that.</p>")
+  def execute(%Spirit{} = spirit, _arguments) do
+    spirit
+    |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
   def execute(spirit, monster, arguments) do

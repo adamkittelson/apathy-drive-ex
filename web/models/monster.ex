@@ -75,8 +75,12 @@ defmodule Monster do
   end
 
   def good?(%Monster{alignment: alignment}) when alignment < -50, do: true
+  def good?(%Monster{}), do: false
+
   def evil?(%Monster{alignment: alignment}) when alignment > 50,  do: true
-  def neutral?(%Monster{}), do: true
+  def evil?(%Monster{}), do: false
+
+  def neutral?(%Monster{} = monster), do: !good?(monster) and !evil?(monster)
 
   def display_enter_message(%Room{} = room, monster) do
     display_enter_message(room, monster, Room.random_direction(room))

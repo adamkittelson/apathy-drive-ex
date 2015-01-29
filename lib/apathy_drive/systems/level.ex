@@ -4,7 +4,7 @@ defmodule Systems.Level do
   import Utility
 
   def exp_to_next_level(entity) do
-    exp_at_level(Components.Level.value(entity) + 1) - Components.Experience.value(entity)
+    exp_at_level(entity.level + 1) - entity.experience
   end
 
   def exp_for_level(1), do: 0

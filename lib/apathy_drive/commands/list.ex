@@ -3,13 +3,12 @@ defmodule Commands.List do
 
   def keywords, do: ["list"]
 
-  def execute(spirit, monster, _arguments) do
-    room = Parent.of(spirit)
-    cond do
-      Entity.has_component?(room, Components.Shop) ->
-        Systems.Shop.list(spirit, monster, room)
-      Entity.has_component?(room, Components.Trainer) ->
-        Systems.Trainer.list(spirit, monster, room)
+  def execute(%Spirit{} = spirit, _arguments) do
+    case Spirit.find_room(spirit) do
+      %Room{shop_items: shop_items} = room when is_list(shop_items) ->
+        Systems.Shop.list(spirit, nil, room)
+      %Room{trainable_skills: skills} = room when is_list(skills) ->
+        Systems.Trainer.list(spirit, nil, room)
       true ->
         send_message(spirit, "scroll", "<p><span class='red'>You cannot LIST if you are not in a shop!</span></p>")
     end

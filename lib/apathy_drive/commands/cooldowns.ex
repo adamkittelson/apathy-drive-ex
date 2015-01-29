@@ -3,9 +3,9 @@ defmodule Commands.Cooldowns do
 
   def keywords, do: ["cooldowns", "cd"]
 
-  def execute(spirit, nil, _arguments) do
-    send_message(spirit, "scroll", "<p><span class='white'>The following abilities are on cooldown:</span></p>")
-    send_message(spirit, "scroll", "<p><span class='dark-magenta'>Ability Name    Remaining</span></p>")
+  def execute(%Spirit{} = spirit, _arguments) do
+    spirit
+    |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
   def execute(spirit, monster, _arguments) do

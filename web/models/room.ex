@@ -47,18 +47,23 @@ defmodule Room do
   end
 
   def load(id) do
-    room = Repo.get(Room, id)
-           |> parse_json(:item_descriptions)
-           |> parse_json(:exits)
+    case Repo.get(Room, id) do
+      %Room{} = room ->
+        room = room
+               |> parse_json(:item_descriptions)
+               |> parse_json(:exits)
 
-    {:ok, pid} = Supervisor.start_child(:room_supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
-    PubSub.subscribe(pid, "rooms")
-    if room.lair_monsters do
-      PubSub.subscribe(pid, "rooms:lairs")
-      send(pid, {:spawn_monsters, Date.now |> Date.convert(:secs)})
+        {:ok, pid} = Supervisor.start_child(:room_supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
+        PubSub.subscribe(pid, "rooms")
+        if room.lair_monsters do
+          PubSub.subscribe(pid, "rooms:lairs")
+          send(pid, {:spawn_monsters, Date.now |> Date.convert(:secs)})
+        end
+
+        pid
+      nil ->
+        nil
     end
-
-    pid
   end
 
   def all do
