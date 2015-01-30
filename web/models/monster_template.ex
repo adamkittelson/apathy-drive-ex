@@ -46,7 +46,7 @@ defmodule MonsterTemplate do
                        |> parse_json(:skills)
                        |> parse_json(:limbs)
 
-    {:ok, pid} = Supervisor.start_child(:monster_template_supervisor, {:"monster_template_#{id}", {GenServer, :start_link, [MonsterTemplate, monster_template, [name: {:global, :"monster_template_#{id}"}]]}, :permanent, 5000, :worker, [MonsterTemplate]})
+    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_template_#{id}", {GenServer, :start_link, [MonsterTemplate, monster_template, [name: {:global, :"monster_template_#{id}"}]]}, :permanent, 5000, :worker, [MonsterTemplate]})
 
     pid
   end
@@ -141,7 +141,7 @@ defmodule MonsterTemplate do
 
     worker_id = :"monster_#{Systems.URL.random}"
 
-    {:ok, pid} = Supervisor.start_child(:monster_supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :permanent, 5000, :worker, [Monster]})
+    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :permanent, 5000, :worker, [Monster]})
 
     {:reply, pid, monster_template}
   end

@@ -42,7 +42,7 @@ defmodule Spirit do
   end
 
   def login(%Spirit{} = spirit) do
-    {:ok, pid} = Supervisor.start_child(:spirit_supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
+    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
     PubSub.subscribe(pid, "spirits:online")
     PubSub.subscribe(pid, "spirits:hints")
     PubSub.subscribe(pid, "rooms:#{spirit.room_id}")
@@ -90,8 +90,8 @@ defmodule Spirit do
   def logout(spirit) do
     save(spirit)
     spirit_to_kill = :"spirit_#{value(spirit).id}"
-    Supervisor.terminate_child(:spirit_supervisor, spirit_to_kill)
-    Supervisor.delete_child(:spirit_supervisor, spirit_to_kill)
+    Supervisor.terminate_child(ApathyDrive.Supervisor, spirit_to_kill)
+    Supervisor.delete_child(ApathyDrive.Supervisor, spirit_to_kill)
   end
 
   def start_link(spirit_struct) do

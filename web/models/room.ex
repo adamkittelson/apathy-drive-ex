@@ -53,7 +53,7 @@ defmodule Room do
                |> parse_json(:item_descriptions)
                |> parse_json(:exits)
 
-        {:ok, pid} = Supervisor.start_child(:room_supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
+        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
         PubSub.subscribe(pid, "rooms")
         if room.lair_monsters do
           PubSub.subscribe(pid, "rooms:lairs")
@@ -189,8 +189,8 @@ defmodule Room do
     end
   end)
 
-  def handle_call(:value, _from, spirit) do
-    {:reply, spirit, spirit}
+  def handle_call(:value, _from, room) do
+    {:reply, room, room}
   end
 
   # GenServer callbacks

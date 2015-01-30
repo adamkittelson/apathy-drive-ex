@@ -3,21 +3,18 @@ defmodule Systems.Shop do
   import Utility
   import Systems.Text
 
-  def list(spirit, nil, room) do
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span></p>")
-    send_message(spirit, "scroll", "<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>")
-    Enum.each(Components.Shop.value(room), fn(item_hash) ->
-      it = ItemTemplates.find_by_id(item_hash["item"])
-      item_name = Components.Name.value(it)
-      value = Components.Module.value(it).value
-      cost = case value do
-        0 ->
-          "Free"
-        amount ->
-          amount
-      end
-      send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
+  def list(%Spirit{} = spirit, %Room{shop_items: item_template_ids}) do
+    spirit
+    |> Spirit.send_scroll("<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span></p>")
+    |> Spirit.send_scroll("<p><span class='dark-cyan'>─────────────────────────────────────────────────────────────────</span></p>")
+
+    item_template_ids
+    |> Enum.map(&ItemTemplate.find/1)
+    |> Enum.map(&ItemTemplate.value/1)
+    |> Enum.each(fn(%ItemTemplate{name: name, cost: cost}) ->
+      Spirit.send_scroll(spirit, "<p><span class='dark-green'>#{String.ljust(name, 30)}</span><span class='dark-cyan'>#{cost || "Free"}</span></p>")
     end)
+    spirit
   end
 
   def list(spirit, monster, room) do

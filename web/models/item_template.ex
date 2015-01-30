@@ -1,7 +1,9 @@
 defmodule ItemTemplate do
   use Ecto.Model
   use Systems.Reload
+  use GenServer
   alias ApathyDrive.Repo
+  alias Phoenix.PubSub
 
   schema "item_templates" do
     field :name,                  :string
@@ -19,10 +21,45 @@ defmodule ItemTemplate do
     field :destruct_message,      :string
     field :room_destruct_message, :string
     field :can_pick_up,           :boolean
-    field :value,                 :integer
+    field :cost,                  :integer
     field :light,                 :integer
     field :light_duration,        :integer
     field :always_lit,            :boolean
+  end
+
+  def value(item_template) do
+    GenServer.call(item_template, :value)
+  end
+
+  def find(id) do
+    case :global.whereis_name(:"item_template_#{id}") do
+      :undefined ->
+        load(id)
+      item_template ->
+        item_template
+    end
+  end
+
+  def load(id) do
+    case Repo.get(ItemTemplate, id) do
+      %ItemTemplate{} = item_template ->
+        item_template = item_template
+                        |> parse_json(:worn_on)
+                        |> parse_json(:damage)
+                        |> parse_json(:required_skills)
+
+        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_template_#{id}", {GenServer, :start_link, [ItemTemplate, item_template, [name: {:global, :"item_template_#{id}"}]]}, :permanent, 5000, :worker, [ItemTemplate]})
+
+        PubSub.subscribe(pid, "item_templates")
+
+        pid
+      nil ->
+        nil
+    end
+  end
+
+  def parse_json(%ItemTemplate{} = item_template, attribute) do
+    Map.put(item_template, attribute, Poison.decode!(Map.get(item_template, attribute), keys: :atoms))
   end
 
 
@@ -41,4 +78,8 @@ defmodule ItemTemplate do
       {:reply, Map.get(item_template, unquote(field)), item_template}
     end
   end)
+
+  def handle_call(:value, _from, item_template) do
+    {:reply, item_template, item_template}
+  end
 end

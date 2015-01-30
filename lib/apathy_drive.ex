@@ -22,10 +22,6 @@ defmodule ApathyDrive do
     Possession.start_link
 
     children = [
-      supervisor(ApathyDrive.SpiritSupervisor,  [[name: :spirit_supervisor, strategy: :one_for_one]]),
-      supervisor(ApathyDrive.RoomSupervisor,    [[name: :room_supervisor, strategy: :one_for_one]]),
-      supervisor(ApathyDrive.MonsterTemplateSupervisor, [[name: :monster_template_supervisor, strategy: :one_for_one]]),
-      supervisor(ApathyDrive.MonsterSupervisor, [[name: :monster_supervisor, strategy: :one_for_one]]),
       worker(ApathyDrive.Repo, []),
       worker(ApathyDrive.Ticks, []),
       worker(ApathyDrive.Endpoint, [])

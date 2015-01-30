@@ -2,8 +2,9 @@ defmodule Systems.Trainer do
   use Systems.Reload
   import Utility
 
-  def list(spirit, nil, _room) do
-    send_message(spirit, "scroll", "<p>You can learn nothing here.</p>")
+  def list(%Spirit{} = spirit, %Room{}) do
+    spirit
+    |> Spirit.send_scroll("<p>You can learn nothing here.</p>")
   end
 
   def list(spirit, monster, room) do
