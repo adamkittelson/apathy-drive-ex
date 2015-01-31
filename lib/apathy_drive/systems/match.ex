@@ -44,48 +44,53 @@ defmodule Systems.Match do
   end
 
   def match_name("", _pid), do: false
-  def match_name(string, pid) do
-    String.downcase(string) == pid
-                               |> Components.Name.value
-                               |> String.downcase
+  def match_name(string, pid) when is_pid(pid) do
+    match_name(string, %{name: GenServer.call(pid, :name)})
+  end
+  def match_name(string, %{name: name}) do
+    String.downcase(string) == String.downcase(name)
   end
 
   def match_keyword("", _pid), do: false
-  def match_keyword(string, pid) do
-    if pid |> Entity.list_components |> Enum.member?(Components.Keywords) do
-      pid |> Components.Keywords.value
-          |> Enum.any?(fn (keyword) ->
-               String.downcase(string) == String.downcase(keyword)
-             end)
-    else
-      false
-    end
+  def match_keyword(string, pid) when is_pid(pid) do
+    match_keyword(string, %{keywords: GenServer.call(pid, :keywords)})
+  end
+  def match_keyword(string, %{keywords: keywords}) do
+    keywords
+    |> Enum.any?(fn (keyword) ->
+         String.downcase(string) == String.downcase(keyword)
+       end)
   end
 
   def keyword_starts_with("", _pid), do: false
-  def keyword_starts_with(string, pid) do
-    if pid |> Entity.list_components |> Enum.member?(Components.Keywords) do
-      pid |> Components.Keywords.value
-          |> Enum.any?(fn (keyword) ->
-               String.downcase(keyword) |> String.starts_with?(string |> String.downcase)
-             end)
-    else
-      false
-    end
+  def keyword_starts_with(string, pid) when is_pid(pid) do
+    keyword_starts_with(string, %{keywords: GenServer.call(pid, :keywords)})
+  end
+  def keyword_starts_with(string, %{keywords: keywords}) do
+    keywords
+    |> Enum.any?(fn (keyword) ->
+      String.downcase(keyword) |> String.starts_with?(string |> String.downcase)
+    end)
   end
 
   def name_starts_with("", _pid), do: false
-  def name_starts_with(string, pid) do
-    pid |> Components.Name.value
-        |> String.downcase
-        |> String.starts_with?(string |> String.downcase)
+  def name_starts_with(string, pid) when is_pid(pid) do
+    name_starts_with(string, %{name: GenServer.call(pid, :name)})
+  end
+  def name_starts_with(string, %{name: name}) do
+    name
+    |> String.downcase
+    |> String.starts_with?(string |> String.downcase)
   end
 
   def name_contains("", _pid), do: false
-  def name_contains(string, pid) do
-    pid |> Components.Name.value
-        |> String.downcase
-        |> String.contains?(string |> String.downcase)
+  def name_contains(string, pid) when is_pid(pid) do
+    name_contains(string, %{name: GenServer.call(pid, :name)})
+  end
+  def name_contains(string, %{name: name}) do
+    name
+    |> String.downcase
+    |> String.contains?(string |> String.downcase)
   end
 
   def string_number(string) do

@@ -1,6 +1,14 @@
 defmodule ApathyDrive.Command do
+  defstruct name: nil, keywords: nil, module: nil
   use Systems.Reload
   import Utility
+
+  def all do
+    :code.all_loaded
+    |> Enum.map(fn{module, _} -> to_string(module) end)
+    |> Enum.filter(&(String.starts_with?(&1, "Elixir.Commands.")))
+    |> Enum.map(&String.to_atom/1)
+  end
 
   def execute(%Spirit{} = spirit, command, arguments) do
     spirit
@@ -25,12 +33,12 @@ defmodule ApathyDrive.Command do
       remote_action_exit ->
         ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, spirit, remote_action_exit)
       true ->
-        case Systems.Match.one(Commands.all, :keyword_starts_with, command) do
+        case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
           nil ->
             Spirit.send_scroll(spirit, "<p>What?</p>")
             spirit
           match ->
-            :"Elixir.Commands.#{Inflex.camelize(Components.Name.value(match))}".execute(spirit, arguments)
+            match.module.execute(spirit, arguments)
         end
     end
   end
@@ -61,6 +69,10 @@ defmodule ApathyDrive.Command do
         |> String.split(".")
         |> List.last
         |> Inflex.underscore
+      end
+
+      def to_struct do
+        %ApathyDrive.Command{name: name, keywords: keywords, module: __MODULE__}
       end
     end
   end

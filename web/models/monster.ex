@@ -125,4 +125,8 @@ defmodule Monster do
     {:reply, monster, monster}
   end
 
+  def handle_call(:keywords, _from, monster) do
+    {:reply, String.split(monster.name), monster}
+  end
+
 end

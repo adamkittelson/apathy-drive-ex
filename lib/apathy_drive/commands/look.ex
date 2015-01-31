@@ -1,5 +1,6 @@
 defmodule Commands.Look do
   use ApathyDrive.Command
+  alias Phoenix.PubSub
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -9,7 +10,6 @@ defmodule Commands.Look do
 
   def execute(%Spirit{} = spirit, arguments) do
     current_room = Spirit.find_room(spirit)
-
     if Enum.any? arguments do
       cond do
         Enum.member?(@directions, Enum.join(arguments, " ")) ->
@@ -65,8 +65,7 @@ defmodule Commands.Look do
   end
 
   defp find_monster_in_room(room, string) do
-    room
-    |> Systems.Room.living_in_room
+    PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Systems.Match.one(:name_contains, string)
   end
 

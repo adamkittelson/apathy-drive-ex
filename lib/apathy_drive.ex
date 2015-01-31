@@ -13,7 +13,6 @@ defmodule ApathyDrive do
     Exits.start_link
     Components.start_link
     Help.start_link
-    Commands.start_link
     Abilities.start_link
     Skills.start_link
     Corpses.start_link
@@ -35,7 +34,6 @@ defmodule ApathyDrive do
     if Mix.env != :test do
       IO.puts "Indexing..."
       [index_abilities,
-      index_commands,
       index_skills,
       index_help,
       index_crit_tables]
@@ -125,23 +123,6 @@ defmodule ApathyDrive do
           Help.add(ability)
         end
 
-      end)
-    end
-  end
-
-  defp index_commands do
-    Task.async fn ->
-    get_file_list(["lib/apathy_drive/commands/*.ex"])
-    |> Enum.each(fn(file) ->
-         module_name = Path.basename(file)
-                       |> String.replace(".ex", "")
-                       |> Inflex.camelize
-        module = :"Elixir.Commands.#{module_name}"
-
-        {:ok, command} = Entity.init
-        Entity.add_component(command, Components.Keywords, module.keywords)
-        Entity.add_component(command, Components.Name, module.name)
-        Commands.add(command)
       end)
     end
   end
