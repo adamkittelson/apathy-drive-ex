@@ -9,6 +9,8 @@ defmodule Systems.HP do
     health   = Systems.Stat.modified(entity, "health")
     strength = Systems.Stat.modified(entity, "strength")
 
-    max trunc((health * 2 + strength) / 3)
+    seed = trunc((health * 2 + strength) / 3)
+
+    trunc(seed * (11 + (seed / 10)))
   end
 end

@@ -11,4 +11,5 @@
   "poolboy": {:hex, :poolboy, "1.4.2"},
   "postgrex": {:hex, :postgrex, "0.6.0"},
   "ranch": {:hex, :ranch, "1.0.0"},
+  "shouldi": {:hex, :shouldi, "0.2.1"},
   "timex": {:hex, :timex, "0.12.7"}}

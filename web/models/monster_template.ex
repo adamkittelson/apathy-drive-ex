@@ -138,6 +138,7 @@ defmodule MonsterTemplate do
               |> Map.put(:id, nil)
               |> Map.put(:alignment, alignment(monster_template.alignment))
               |> Map.put(:room_id, room.id)
+              |> Map.put(:skills, %{base: Map.get(monster_template, :skills, %{}), trained: %{}})
 
     worker_id = :"monster_#{Systems.URL.random}"
 

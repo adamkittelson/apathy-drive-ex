@@ -8,7 +8,7 @@ defmodule Monster do
 
   schema "monsters" do
     field :name,                :string
-    field :skills,              :string #json
+    field :skills,              :string, default: %{base: %{}, trained: %{}} #json
     field :limbs,               :string #json
     field :monster_template_id, :integer
     field :room_id,             :integer
@@ -30,10 +30,10 @@ defmodule Monster do
     field :abilities,           :any,     virtual: true, default: []
     field :greeting,            :string,  virtual: true
     field :gender,              :string,  virtual: true
-    field :strength,            :integer, virtual: true
-    field :agility,             :integer, virtual: true
-    field :intelligence,        :integer, virtual: true
-    field :health,              :integer, virtual: true
+    field :strength,            :integer, virtual: true, default: 0
+    field :agility,             :integer, virtual: true, default: 0
+    field :intelligence,        :integer, virtual: true, default: 0
+    field :health,              :integer, virtual: true, default: 0
     field :hit_verbs,           :any,     virtual: true
     field :chance_to_follow,    :integer, virtual: true
     field :damage,              :any,     virtual: true
@@ -46,6 +46,8 @@ defmodule Monster do
       PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters")
     end
 
+    PubSub.subscribe(self, "monsters")
+
     {:ok, monster}
   end
 
@@ -57,6 +59,98 @@ defmodule Monster do
     room_id
     |> Room.find
     |> Room.value
+  end
+
+  def max_hp(%Monster{} = monster) do
+    health   = modified_stat(monster, :health)
+    strength = modified_stat(monster, :strength)
+
+    seed = trunc((health * 2 + strength) / 3)
+
+    trunc(seed * (11 + (seed / 10)))
+  end
+
+  def modified_stat(%Monster{} = monster, stat_name) do
+    Map.get(monster, stat_name, 0) +
+    stat_skill_bonus(monster, stat_name) +
+    effect_bonus(monster, stat_name)
+  end
+
+  def stat_skill_bonus(%Monster{skills: %{trained: skills}} = monster, stat_name) do
+    skills
+    |> Map.keys
+    |> Enum.map(&(Systems.Skill.find(to_string(&1))))
+    |> Enum.filter(fn(skill) ->
+         skill.modifiers
+         |> Map.keys
+         |> Enum.member?(stat_name)
+       end)
+    |> Enum.reduce(0, fn(skill, total_stat_modification) ->
+         base = skill_from_training(monster, skill.name |> String.to_atom)
+         percentage = skill.modifiers[stat_name] / (skill.modifiers
+                                                    |> Map.values
+                                                    |> Enum.sum)
+         total_stat_modification + base * percentage
+       end)
+    |> trunc
+  end
+
+  def effect_bonus(%Monster{effects: effects} = monster, name) do
+    effects
+    |> Map.values
+    |> Enum.map(fn
+         (%{} = effect) ->
+           Map.get(effect, name, 0)
+         (_) ->
+           0
+       end)
+    |> Enum.sum
+  end
+
+  def base_skill(%Monster{skills: %{base: base}} = monster, skill_name) do
+    Map.get(base, skill_name, 0) + skill_from_training(monster, skill_name)
+  end
+
+  def modified_skill(%Monster{} = monster, skill_name) do
+    skill = Systems.Skill.find(skill_name)
+
+    base = base_skill(monster, skill_name)
+
+    modified = if base > 0 do
+      total = Map.keys(skill.modifiers) |> Enum.reduce(0, fn(stat, total) ->
+                                       total + modified_stat(monster, stat) * Map.get(skill.modifiers, stat, 0)
+                                     end)
+      average = total / (Map.values(skill.modifiers) |> Enum.sum)
+
+      round(base * (1 + average * 0.005))
+    else
+      0
+    end
+    (modified + effect_bonus(monster, skill_name))
+  end
+
+  def skill_from_training(%Monster{skills: %{base: base, trained: skills}}, skill_name) do
+    skill = Systems.Skill.find(skill_name)
+
+    power_spent = Map.get(skills, skill_name, 0)
+    modifier = skill.cost
+
+    skill_from_training(modifier, power_spent)
+  end
+  def skill_from_training(modifier, power_spent) do
+    skill_from_training(0, modifier, cost(modifier, 0), power_spent)
+  end
+  def skill_from_training(rating, modifier, cost, power) when power >= cost do
+    new_rating = rating + 1
+    new_cost = cost(modifier, new_rating)
+    skill_from_training(new_rating, modifier, new_cost, power - cost)
+  end
+  def skill_from_training(rating, _modifier, cost, power) when power < cost do
+    rating
+  end
+
+  def cost(modifier, rating) do
+    [rating * modifier * 1.0 |> Float.ceil |> trunc, 1] |> Enum.max
   end
 
   def send_scroll(%Monster{id: id} = monster, html) do

@@ -1,5 +1,22 @@
 defmodule Systems.Skill do
+  defstruct name: nil, keywords: nil, module: nil
   use Systems.Reload
+
+  def all do
+    :code.all_loaded
+    |> Enum.map(fn{module, _} -> to_string(module) end)
+    |> Enum.filter(&(String.starts_with?(&1, "Elixir.Skills.")))
+    |> Enum.map(&String.to_atom/1)
+  end
+
+  def find(skill_name) do
+    case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, to_string(skill_name)) do
+      nil ->
+        nil
+      match ->
+        match.module
+    end
+  end
 
   def base(entity) do
     Components.Skills.list(entity)
@@ -34,6 +51,10 @@ defmodule Systems.Skill do
         |> List.last
         |> Inflex.underscore
         |> String.replace("_", " ")
+      end
+
+      def to_struct do
+        %Systems.Skill{name: name, keywords: keywords, module: __MODULE__}
       end
 
       def keywords do

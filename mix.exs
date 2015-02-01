@@ -26,7 +26,8 @@ defmodule ApathyDrive.Mixfile do
       {:postgrex,    "~> 0.6.0"},
       {:timex,       "~> 0.12.7"},
       {:inflex,      "~> 0.2.8"},
-      {:block_timer, "~> 0.0.1"}
+      {:block_timer, "~> 0.0.1"},
+      {:shouldi, only: :test}
     ]
   end
 end
