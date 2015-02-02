@@ -140,6 +140,9 @@ defmodule MonsterTemplate do
               |> Map.put(:room_id, room.id)
               |> Map.put(:skills, %{base: Map.get(monster_template, :skills, %{}), trained: %{}})
 
+    monster = monster
+              |> Map.put(:hp, Monster.max_hp(monster))
+
     worker_id = :"monster_#{Systems.URL.random}"
 
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :permanent, 5000, :worker, [Monster]})

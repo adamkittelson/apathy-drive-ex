@@ -19,9 +19,7 @@ defmodule Systems.Description do
     spirit
     |> Spirit.send_scroll("<p><span class='cyan'>#{monster.name}</span></p>")
     |> Spirit.send_scroll("<p>#{monster.description}</p>")
-    # if Entity.has_component?(target, Components.HP) do
-    #   send_message character, "scroll", "<p>#{describe_hp(target) |> interpolate(%{"target" => target})}</p>"
-    # end
+    |> Spirit.send_scroll("<p>#{describe_hp(monster) |> interpolate(%{"target" => monster})}</p>")
     # if Entity.has_component?(target, Components.Limbs) do
     #   limbs = Components.Limbs.value(target)
     #   equipped_items = Systems.Limbs.equipped_items(target)
@@ -69,8 +67,8 @@ defmodule Systems.Description do
     end
   end
 
-  def describe_hp(character) do
-    percentage = round(100 * (Components.HP.value(character) / Systems.HP.max(character)))
+  def describe_hp(%Monster{} = monster) do
+    percentage = round(100 * (monster.hp / Monster.max_hp(monster)))
     description = case percentage do
       _ when percentage >= 100 ->
         "unwounded"
