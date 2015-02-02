@@ -4,27 +4,31 @@ defmodule Commands.Set do
 
   def keywords, do: ["set"]
 
-  def execute(spirit, monster, arguments) do
+  def execute(%Spirit{name: name} = spirit, ["name", name]) do
+    spirit
+    |> Spirit.send_scroll("<p>Not so fast, #{name}, you already have a name.</p>")
+  end
 
-    case arguments do
-      ["name", name] ->
-        if Entity.has_component?(spirit, Components.Name) do
-          send_message(spirit, "scroll", "<p>Not so fast, #{Components.Name.value(spirit)}, you already have a name.</p>")
-        else
-          if Regex.match?(~r/[^a-zA-Z]/, name) do
-            send_message(spirit, "scroll", "<p>Your name must consist only of upper or lower case letters.</p>")
-          else
-            Entity.add_component(spirit, Components.Name, capitalize_first(name))
-            #Spirit.deactivate_hint(spirit, "name")
-            Entities.save!(spirit)
-            send_message(spirit, "scroll", "<p>Your name has been set.</p>")
-          end
-        end
-      ["name" | _args] ->
-        send_message(spirit, "scroll", "<p>Your name must consist only of upper or lower case letters.</p>")
-      _ ->
-        send_message(spirit, "scroll", "<p>I don't recognize that setting.</p>")
+  def execute(%Spirit{name: nil} = spirit, ["name", name]) do
+    if Regex.match?(~r/[^a-zA-Z]/, name) do
+      Spirit.send_scroll(spirit, "<p>Your name must consist only of upper or lower case letters.</p>")
+    else
+      spirit
+      |> Map.put(:name, capitalize_first(name))
+      |> Spirit.deactivate_hint("name")
+      |> Spirit.save
+      |> Spirit.send_scroll("<p>Your name has been set.</p>")
     end
+  end
+
+  def execute(%Spirit{name: nil} = spirit, ["name" | _args]) do
+    spirit
+    |> Spirit.send_scroll("<p>Your name must consist only of upper or lower case letters.</p>")
+  end
+
+  def execute(%Spirit{name: nil} = spirit, _args) do
+    spirit
+    |> Spirit.send_scroll("<p>I don't recognize that setting.</p>")
   end
 
 end

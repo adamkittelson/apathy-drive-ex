@@ -3,14 +3,16 @@ defmodule Commands.Score do
 
   def keywords, do: ["score", "stats", "status", "st"]
 
-  def execute(spirit, nil, _arguments) do
-    if Entity.has_component?(spirit, Components.Name) do
-      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{Components.Name.value(spirit) |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(spirit)}</span></p>")
-    else
-      send_message(spirit, "scroll", "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{"Anonymous" |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{Components.Experience.value(spirit)}</span></p>")
-    end
+  def execute(%Spirit{name: nil} = spirit, _arguments) do
+    spirit
+    |> Spirit.send_scroll("<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{"Anonymous" |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{spirit.experience}</span></p>")
+    |> Spirit.send_scroll("<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{spirit.level}</span></p>")
+  end
 
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{Components.Level.value(spirit)}</span></p>")
+  def execute(%Spirit{name: name} = spirit, _arguments) do
+    spirit
+    |> Spirit.send_scroll("<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{name |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{spirit.level}</span></p>")
+    |> Spirit.send_scroll("<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{spirit.level}</span></p>")
   end
 
   def execute(spirit, monster, _arguments) do
