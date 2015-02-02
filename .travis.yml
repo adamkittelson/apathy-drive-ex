@@ -18,7 +18,7 @@ before_script:
   - cp config/test.exs.example config/test.exs
   - MIX_ENV=test mix do deps.get, compile
   - psql -c 'create database travis_ci_test;' -U postgres
-  - mix ecto.gen.migrate ApathyDrive.Repo
+  - mix ecto.migrate ApathyDrive.Repo
 script:
   - mix test
 env:
