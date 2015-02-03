@@ -6,7 +6,7 @@ defmodule ApathyDrive.Command do
   def all do
     :code.all_loaded
     |> Enum.map(fn{module, _} -> to_string(module) end)
-    |> Enum.filter(&(String.starts_with?(&1, "Elixir.Commands.")))
+    |> Enum.filter(&(String.starts_with?(&1, "Elixir.Commands.") and !String.ends_with?(&1, "Test")))
     |> Enum.map(&String.to_atom/1)
   end
 

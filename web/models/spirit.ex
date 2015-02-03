@@ -33,9 +33,10 @@ defmodule Spirit do
   end
 
   def save(spirit) when is_pid(spirit), do: spirit |> value |> save
-  def save(spirit) do
+  def save(%Spirit{id: id} = spirit) when is_integer(id) do
     Repo.update(spirit)
   end
+  def save(%Spirit{} = spirit), do: spirit
 
   def execute_command(spirit, command, arguments) do
     GenServer.cast(spirit, {:execute_command, command, arguments})
