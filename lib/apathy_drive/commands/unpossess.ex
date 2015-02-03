@@ -3,8 +3,9 @@ defmodule Commands.Unpossess do
 
   def keywords, do: ["unpossess"]
 
-  def execute(spirit, nil, arguments) do
-    send_message(spirit, "scroll", "<p>You aren't possessing anything.</p>")
+  def execute(%Spirit{} = spirit, _arguments) do
+    spirit
+    |> Spirit.send_scroll("<p>You aren't possessing anything.</p>")
   end
 
   def execute(spirit, monster, arguments) do

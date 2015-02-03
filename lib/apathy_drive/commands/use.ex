@@ -3,6 +3,11 @@ defmodule Commands.Use do
 
   def keywords, do: ["use", "cast"]
 
+  def execute(%Spirit{} = spirit, _arguments) do
+    spirit
+    |> Spirit.send_scroll("<p>You need a body to do that.</p>")
+  end
+
   def execute(spirit, monster, arguments) do
     arguments = Enum.join(arguments, " ")
     if String.contains?(arguments, " at ") do
