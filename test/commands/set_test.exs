@@ -23,19 +23,19 @@ defmodule Commands.SetTest do
 
     should "not set the name if the new name is invalid", context do
       spirit = Commands.Set.execute(context.spirit, ["name", "$ephiroth"])
-      adds_to_scroll "<p>Your name must consist only of upper or lower case letters.</p>"
+      assert_adds_to_scroll "<p>Your name must consist only of upper or lower case letters.</p>"
       assert spirit.name == nil
     end
 
     should "set the name if the new name is valid", context do
       spirit = Commands.Set.execute(context.spirit, ["name", "Adam"])
-      adds_to_scroll "<p>Your name has been set.</p>"
+      assert_adds_to_scroll "<p>Your name has been set.</p>"
       assert spirit.name == "Adam"
     end
 
     should "capitalize the new name if it's lower case", context do
       spirit = Commands.Set.execute(context.spirit, ["name", "adam"])
-      adds_to_scroll "<p>Your name has been set.</p>"
+      assert_adds_to_scroll "<p>Your name has been set.</p>"
       assert spirit.name == "Adam"
     end
 

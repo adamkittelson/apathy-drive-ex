@@ -14,8 +14,8 @@ defmodule Commands.ScoreTest do
     should("display anonymous status", context) do
       Commands.Score.execute(context.spirit, [])
 
-      adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Anonymous   </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>1234</span></p>"
-      adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>1</span></p>"
+      assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Anonymous   </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>1234</span></p>"
+      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>1</span></p>"
     end
   end
 
@@ -30,8 +30,8 @@ defmodule Commands.ScoreTest do
     should("display status with a name", context) do
       Commands.Score.execute(context.spirit, [])
 
-      adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>5</span></p>"
-      adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5</span></p>"
+      assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>5</span></p>"
+      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5</span></p>"
     end
   end
 
