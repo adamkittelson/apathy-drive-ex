@@ -5,7 +5,7 @@ defmodule ApathyDrive.Mixfile do
     [ app: :apathy_drive,
       version: "0.0.1",
       elixir: "~> 1.0.2",
-      elixirc_paths: ["lib", "web"],
+      elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
       deps: deps ]
   end
@@ -30,4 +30,7 @@ defmodule ApathyDrive.Mixfile do
       {:shouldi, only: :test}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "web", "test/matchers"]
+  defp elixirc_paths(_), do: ["lib", "web"]
 end
