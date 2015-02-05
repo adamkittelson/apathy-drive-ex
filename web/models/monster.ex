@@ -14,7 +14,7 @@ defmodule Monster do
     field :room_id,             :integer
     field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
-    field :alignment,           :float
+    field :alignment,           :decimal
     field :lair_id,             :integer, virtual: true
     field :hp,                  :integer, virtual: true
     field :mana,                :integer, virtual: true
@@ -39,6 +39,7 @@ defmodule Monster do
     field :damage,              :any,     virtual: true
     field :possession_level,    :integer, virtual: true
     field :questions,           :any,     virtual: true
+    field :pid,                 :any,     virtual: true
   end
 
   def init(monster) do
@@ -48,8 +49,19 @@ defmodule Monster do
 
     PubSub.subscribe(self, "monsters")
 
-    {:ok, monster}
+    {:ok, Map.put(monster, :pid, self)}
   end
+
+  def insert(%Monster{id: nil} = monster) do
+    monster
+    |> Map.put(:skills, Poison.encode!(monster.skills))
+    |> Map.put(:limbs,  Poison.encode!(monster.limbs))
+    |> ApathyDrive.Repo.insert
+    |> Map.put(:skills, monster.skills)
+    |> Map.put(:limbs,  monster.limbs)
+  end
+
+  def insert(%Monster{} = monster), do: monster
 
   def value(monster) do
     GenServer.call(monster, :value)
@@ -168,11 +180,23 @@ defmodule Monster do
     end
   end
 
-  def good?(%Monster{alignment: alignment}) when alignment < -50, do: true
-  def good?(%Monster{}), do: false
+  def good?(%Monster{alignment: alignment}) do
+    case Decimal.min(alignment, Decimal.new(-50)) do
+      ^alignment ->
+        true
+      _ ->
+        false
+    end
+  end
 
-  def evil?(%Monster{alignment: alignment}) when alignment > 50,  do: true
-  def evil?(%Monster{}), do: false
+  def evil?(%Monster{alignment: alignment}) do
+    case Decimal.max(alignment, Decimal.new(50)) do
+      ^alignment ->
+        true
+      _ ->
+        false
+    end
+  end
 
   def neutral?(%Monster{} = monster), do: !good?(monster) and !evil?(monster)
 

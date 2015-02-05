@@ -19,6 +19,7 @@ defmodule Spirit do
     field :idle,              :integer, default: 0, virtual: true
     field :hints,             {:array, :string}, default: []
     field :disabled_hints,    {:array, :string}, default: []
+    field :monster,           :any, virtual: true
     field :created_at,        :datetime
     field :updated_at,        :datetime
   end
@@ -85,6 +86,11 @@ defmodule Spirit do
 
   def send_scroll(%Spirit{socket: socket} = spirit, html) do
     Phoenix.Channel.reply socket, "scroll", %{:html => html}
+    spirit
+  end
+
+  def send_update_prompt(%Spirit{socket: socket} = spirit, html) do
+    Phoenix.Channel.reply socket, "update prompt", %{:html => html}
     spirit
   end
 
