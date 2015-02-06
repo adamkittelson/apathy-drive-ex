@@ -1,4 +1,5 @@
 defmodule Monster do
+  require Logger
   use Ecto.Model
   use GenServer
   use Systems.Reload
@@ -52,19 +53,22 @@ defmodule Monster do
     {:ok, Map.put(monster, :pid, self)}
   end
 
-  def insert(%Monster{id: nil} = monster) do
-    monster
-    |> Map.put(:skills, Poison.encode!(monster.skills))
-    |> Map.put(:limbs,  Poison.encode!(monster.limbs))
-    |> ApathyDrive.Repo.insert
-    |> Map.put(:skills, monster.skills)
-    |> Map.put(:limbs,  monster.limbs)
+  def execute_command(monster, command, arguments) do
+    GenServer.cast(monster, {:execute_command, command, arguments})
   end
-
-  def insert(%Monster{} = monster), do: monster
 
   def value(monster) do
     GenServer.call(monster, :value)
+  end
+
+  def insert(monster) do
+    GenServer.call(monster, :insert)
+  end
+
+  def find_room(%Monster{room_id: room_id} ) do
+    room_id
+    |> Room.find
+    |> Room.value
   end
 
   def find_room(%Monster{room_id: room_id}) do
@@ -167,6 +171,7 @@ defmodule Monster do
 
   def send_scroll(%Monster{id: id} = monster, html) do
     Phoenix.Channel.broadcast "monsters:#{id}", "scroll", %{:html => html}
+    monster
   end
 
   def look_name(%Monster{} = monster) do
@@ -245,6 +250,25 @@ defmodule Monster do
 
   def handle_call(:keywords, _from, monster) do
     {:reply, String.split(monster.name), monster}
+  end
+
+  def handle_call(:insert, _from, %Monster{id: nil} = monster) do
+    monster = monster
+              |> Map.put(:skills, Poison.encode!(monster.skills))
+              |> Map.put(:limbs,  Poison.encode!(monster.limbs))
+              |> ApathyDrive.Repo.insert
+              |> Map.put(:skills, monster.skills)
+              |> Map.put(:limbs,  monster.limbs)
+
+    {:reply, monster, monster}
+  end
+  def handle_call(:insert, _from, monster) do
+    {:reply, monster, monster}
+  end
+
+  def handle_cast({:execute_command, command, arguments}, monster) do
+    monster = ApathyDrive.Command.execute(monster, command, arguments)
+    {:noreply, monster}
   end
 
 end

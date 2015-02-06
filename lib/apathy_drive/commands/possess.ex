@@ -26,7 +26,7 @@ defmodule Commands.Possess do
   end
 
   def possess(%Spirit{} = spirit, %Monster{} = monster) do
-    monster = Monster.insert(monster)
+    monster = Monster.insert(monster.pid)
 
     Phoenix.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
 

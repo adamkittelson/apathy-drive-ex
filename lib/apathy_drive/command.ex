@@ -10,7 +10,7 @@ defmodule ApathyDrive.Command do
     |> Enum.map(&String.to_atom/1)
   end
 
-  def execute(%Spirit{} = spirit, command, arguments) do
+  def execute(%Spirit{monster: nil} = spirit, command, arguments) do
     spirit
     |> Map.put(:idle, 0)
     |> Systems.Prompt.display
@@ -43,6 +43,14 @@ defmodule ApathyDrive.Command do
     end
   end
 
+  def execute(%Spirit{monster: monster} = spirit, command, arguments) do
+    Monster.execute_command(monster, command, arguments)
+
+    spirit
+    |> Map.put(:idle, 0)
+    |> Systems.Prompt.display
+  end
+
   def execute(%Monster{} = monster, command, arguments) do
     ability = monster.abilities
               |> Enum.find(fn(ability) ->
@@ -52,7 +60,32 @@ defmodule ApathyDrive.Command do
     if ability do
       Components.Module.value(ability).execute(monster, Enum.join(arguments, " "))
     else
-      #execute_command(monster, command, arguments)
+      room = Monster.find_room(monster)
+
+      command_exit = room.exits
+                     |> Enum.find(fn(ex) ->
+                          ex.kind == "Command" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
+                        end)
+
+      remote_action_exit = room.exits
+                           |> Enum.find(fn(ex) ->
+                                ex.kind == "RemoteAction" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
+                              end)
+
+      cond do
+        command_exit ->
+          ApathyDrive.Exits.Command.move_via_command(room, monster, command_exit)
+        remote_action_exit ->
+          ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, monster, remote_action_exit)
+        true ->
+          case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
+            nil ->
+              Monster.send_scroll(monster, "<p>What?</p>")
+              monster
+            match ->
+              match.module.execute(monster, arguments)
+          end
+      end
     end
   end
 

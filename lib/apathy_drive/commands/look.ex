@@ -1,4 +1,5 @@
 defmodule Commands.Look do
+  require Logger
   use ApathyDrive.Command
   alias Phoenix.PubSub
 
@@ -25,7 +26,7 @@ defmodule Commands.Look do
             Spirit.send_scroll "<p>#{Components.Module.value(target).description}</p>"
           end
       true ->
-        send_message(spirit, "scroll", "<p>You do not notice that here.</p>")
+        Spirit.send_scroll(spirit, "<p>You do not notice that here.</p>")
       end
     else
       Room.look(current_room, spirit)
@@ -33,35 +34,29 @@ defmodule Commands.Look do
     spirit
   end
 
-  def execute(spirit, monster, arguments) do
-    current_room = Spirit.room(spirit)
-
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
     if Enum.any? arguments do
       cond do
         Enum.member?(@directions, Enum.join(arguments, " ")) ->
-          ApathyDrive.Exit.look(spirit, monster, Enum.join(arguments, " "))
+          ApathyDrive.Exit.look(monster, Enum.join(arguments, " "))
         target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(monster, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
-          send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
+          Monster.send_scroll "<p>#{Components.Description.value(target)}</p>"
         target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
           if Entity.has_component?(target, Components.Description) do
-            send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
+            Monster.send_scroll "<p>#{Components.Description.value(target)}</p>"
           else
-            send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
-          end
-        target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
-          if Entity.has_component?(target, Components.Description) do
-            send_message spirit, "scroll", "<p>#{Components.Description.value(target)}</p>"
-          else
-            send_message spirit, "scroll", "<p>#{Components.Module.value(target).description}</p>"
+            Monster.send_scroll "<p>#{Components.Module.value(target).description}</p>"
           end
       true ->
-        send_message(monster, "scroll", "<p>You do not notice that here.</p>")
+        Monster.send_scroll(monster, "<p>You do not notice that here.</p>")
       end
     else
-      Systems.Room.display_room_in_scroll(spirit, monster, current_room)
+      Room.look(current_room, monster)
     end
+    monster
   end
 
   defp find_monster_in_room(room, string) do

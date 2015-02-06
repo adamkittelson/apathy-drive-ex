@@ -1,4 +1,5 @@
 defmodule Room do
+  require Logger
   use Ecto.Model
   use Systems.Reload
   use GenServer
@@ -92,7 +93,10 @@ defmodule Room do
 
   # Value functions
   def items(%Room{} = room),    do: PubSub.subscribers("rooms:#{room.id}:items")
-  def monsters(%Room{} = room), do: PubSub.subscribers("rooms:#{room.id}:monsters")
+  def monsters(%Room{} = room, monster \\ nil) do
+    PubSub.subscribers("rooms:#{room.id}:monsters")
+    |> Enum.reject(&(&1 == monster))
+  end
 
   def exit_directions(%Room{} = room) do
     room.exits
@@ -123,7 +127,13 @@ defmodule Room do
   def look(%Room{} = room, %Spirit{} = spirit) do
     html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room)}#{look_directions(room)}</div>)
 
-    Phoenix.Channel.reply spirit.socket, "scroll", %{:html => html}
+    Spirit.send_scroll spirit, html
+  end
+
+  def look(%Room{} = room, %Monster{} = monster) do
+    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster.pid)}#{look_directions(room)}</div>)
+
+    Monster.send_scroll(monster, html)
   end
 
   def look_shop_hint(%Room{shop_items: nil, trainable_skills: nil}), do: nil
@@ -143,8 +153,8 @@ defmodule Room do
     end
   end
 
-  def look_monsters(%Room{} = room) do
-    monsters = monsters(room)
+  def look_monsters(%Room{} = room, monster \\ nil) do
+    monsters = monsters(room, monster)
                |> Enum.map(&Monster.value/1)
                |> Enum.map(&Monster.look_name/1)
                |> Enum.join("<span class='magenta'>, </span>")

@@ -24,11 +24,6 @@ defmodule ApathyDrive.MUD do
     end
   end
 
-  def handle_in("new:msg", message, socket) do
-      broadcast socket, "new:msg", message
-      {:ok, socket}
-    end
-
   def handle_in("command", "", socket) do
     handle_in("command", "l", socket)
   end
