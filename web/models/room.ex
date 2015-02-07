@@ -28,6 +28,8 @@ defmodule Room do
     field :legacy_id,             :string
     field :created_at,            :datetime
     field :updated_at,            :datetime
+
+    has_many :monsters, Monster
   end
 
   def start_room_id do
@@ -58,6 +60,7 @@ defmodule Room do
         PubSub.subscribe(pid, "rooms")
         if room.lair_monsters do
           PubSub.subscribe(pid, "rooms:lairs")
+          send(pid, :load_monsters)
           send(pid, {:spawn_monsters, Date.now |> Date.convert(:secs)})
         end
 
@@ -214,6 +217,18 @@ defmodule Room do
            |> Map.put(:lair_next_spawn_at, Date.now
                                            |> Date.shift(mins: room.lair_frequency)
                                            |> Date.convert(:secs))
+
+    {:noreply, room}
+  end
+
+  def handle_info(:load_monsters, room) do
+    query = from m in assoc(room, :monsters), select: m.id
+
+    query
+    |> ApathyDrive.Repo.all
+    |> Enum.each(fn(monster_id) ->
+         Monster.find(monster_id)
+       end)
 
     {:noreply, room}
   end

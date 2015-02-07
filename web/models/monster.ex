@@ -12,7 +12,6 @@ defmodule Monster do
     field :skills,              :string, default: %{base: %{}, trained: %{}} #json
     field :limbs,               :string #json
     field :monster_template_id, :integer
-    field :room_id,             :integer
     field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
     field :alignment,           :decimal
@@ -41,6 +40,8 @@ defmodule Monster do
     field :possession_level,    :integer, virtual: true
     field :questions,           :any,     virtual: true
     field :pid,                 :any,     virtual: true
+
+    belongs_to :room, Room
   end
 
   def init(monster) do
@@ -63,6 +64,40 @@ defmodule Monster do
 
   def insert(monster) do
     GenServer.call(monster, :insert)
+  end
+
+  def find(id) do
+    case :global.whereis_name(:"monster_#{id}") do
+      :undefined ->
+        load(id)
+      monster ->
+        monster
+    end
+  end
+
+  def load(id) do
+    IO.puts "loading monster #{id}"
+    case Repo.get(Monster, id) do
+      %Monster{} = monster ->
+        monster = monster
+               |> parse_json(:limbs)
+               |> parse_json(:skills)
+
+        monster = monster
+                  |> Map.put(:hp, Monster.max_hp(monster))
+
+        IO.puts "loading monster #{monster.name}"
+
+        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :permanent, 5000, :worker, [Monster]})
+
+        pid
+      nil ->
+        nil
+    end
+  end
+
+  def parse_json(monster, attribute) do
+    Map.put(monster, attribute, Poison.decode!(Map.get(monster, attribute), keys: :atoms))
   end
 
   def find_room(%Monster{room_id: room_id} ) do

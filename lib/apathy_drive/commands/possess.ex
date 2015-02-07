@@ -28,6 +28,8 @@ defmodule Commands.Possess do
   def possess(%Spirit{} = spirit, %Monster{} = monster) do
     monster = Monster.insert(monster.pid)
 
+    :global.register_name(:"monster_#{monster.id}", monster.pid)
+
     Phoenix.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
 
     spirit
