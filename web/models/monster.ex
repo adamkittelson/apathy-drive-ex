@@ -97,6 +97,7 @@ defmodule Monster do
 
         monster = monster
                   |> Map.put(:hp, Monster.max_hp(monster))
+                  |> Map.put(:mana, Monster.max_mana(monster))
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :permanent, 5000, :worker, [Monster]})
 
@@ -129,6 +130,14 @@ defmodule Monster do
     seed = trunc((health * 2 + strength) / 3)
 
     trunc(seed * (11 + (seed / 10)))
+  end
+
+  def max_mana(%Monster{} = monster) do
+    intelligence = modified_stat(monster, :intelligence)
+
+    x = trunc(intelligence * (0.5 + (intelligence / 100)))
+    y = x / (125 + x)
+    trunc((x / 10) + (x * (1 - y)))
   end
 
   def modified_stat(%Monster{} = monster, stat_name) do

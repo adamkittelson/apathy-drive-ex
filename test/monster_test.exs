@@ -166,4 +166,34 @@ defmodule MonsterTest do
     end
   end
 
+  with "a monster with intelligence" do
+    setup context do
+      Dict.put context, :monster, %Monster{intelligence: 3}
+    end
+
+    should("have 1 max mana", context) do
+      assert Monster.max_mana(context.monster) == 1
+    end
+  end
+
+  with "a monster with 50 intelligence" do
+    setup context do
+      Dict.put context, :monster, %Monster{intelligence: 50}
+    end
+
+    should("have 40 max mana", context) do
+      assert Monster.max_mana(context.monster) == 40
+    end
+  end
+
+  with "a monster with 100 intelligence" do
+    setup context do
+      Dict.put context, :monster, %Monster{intelligence: 100}
+    end
+
+    should("have 83 max mana", context) do
+      assert Monster.max_mana(context.monster) == 83
+    end
+  end
+
 end
