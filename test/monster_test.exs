@@ -46,7 +46,11 @@ defmodule MonsterTest do
     setup context do
       Dict.put context, :monster, %Monster{skills:  %{base:     %{dodge: 10},
                                                       trained:  %{dodge: 10}},
-                                           effects: %{some_key: %{dodge: 10}}}
+                                           effects: %{some_key: %{dodge: 10}},
+                                           strength: 0,
+                                           agility:  0,
+                                           intelligence: 0,
+                                           health: 0}
     end
 
     should("have 13 base dodge", context) do

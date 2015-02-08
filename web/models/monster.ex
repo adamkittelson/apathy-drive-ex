@@ -27,13 +27,13 @@ defmodule Monster do
     field :death_message,       :string,  virtual: true
     field :enter_message,       :string,  virtual: true
     field :exit_message,        :string,  virtual: true
-    field :abilities,           :any,     virtual: true, default: []
+    field :abilities,           :any,     virtual: true
     field :greeting,            :string,  virtual: true
     field :gender,              :string,  virtual: true
-    field :strength,            :integer, virtual: true, default: 0
-    field :agility,             :integer, virtual: true, default: 0
-    field :intelligence,        :integer, virtual: true, default: 0
-    field :health,              :integer, virtual: true, default: 0
+    field :strength,            :integer, virtual: true
+    field :agility,             :integer, virtual: true
+    field :intelligence,        :integer, virtual: true
+    field :health,              :integer, virtual: true
     field :hit_verbs,           :any,     virtual: true
     field :chance_to_follow,    :integer, virtual: true
     field :damage,              :any,     virtual: true
@@ -76,17 +76,27 @@ defmodule Monster do
   end
 
   def load(id) do
-    IO.puts "loading monster #{id}"
     case Repo.get(Monster, id) do
       %Monster{} = monster ->
+
         monster = monster
                |> parse_json(:limbs)
                |> parse_json(:skills)
 
+        mt = monster.monster_template_id
+             |> MonsterTemplate.find
+             |> MonsterTemplate.value
+
+        monster = Map.merge(mt, monster, fn(key, mt_val, monster_val) ->
+                    monster_val || mt_val
+                  end)
+                  |> Map.from_struct
+                  |> Enum.into(Keyword.new)
+
+        monster = struct(Monster, monster)
+
         monster = monster
                   |> Map.put(:hp, Monster.max_hp(monster))
-
-        IO.puts "loading monster #{monster.name}"
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :permanent, 5000, :worker, [Monster]})
 
@@ -294,6 +304,8 @@ defmodule Monster do
               |> ApathyDrive.Repo.insert
               |> Map.put(:skills, monster.skills)
               |> Map.put(:limbs,  monster.limbs)
+
+    :global.register_name(:"monster_#{monster.id}", monster.pid)
 
     {:reply, monster, monster}
   end

@@ -103,6 +103,10 @@ defmodule MonsterTemplate do
     alignment
   end
 
+  def value(monster) do
+    GenServer.call(monster, :value)
+  end
+
   # Generate functions from Ecto schema
 
   fields = Keyword.keys(@assign_fields)
@@ -148,6 +152,10 @@ defmodule MonsterTemplate do
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :permanent, 5000, :worker, [Monster]})
 
     {:reply, pid, monster_template}
+  end
+
+  def handle_call(:value, _from, monster_template) do
+    {:reply, monster_template, monster_template}
   end
 
 end

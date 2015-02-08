@@ -8,10 +8,9 @@ defmodule Commands.Unpossess do
     |> Spirit.send_scroll("<p>You aren't possessing anything.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
-    Possession.unpossess(spirit)
-    send_message(spirit, "scroll", "<p>You leave the body of #{Components.Name.value(monster)}.</p>")
-    Systems.Prompt.update(spirit, nil)
+  def execute(%Monster{} = monster, _arguments) do
+    Phoenix.PubSub.broadcast("monsters:#{monster.id}", :unpossess)
+    monster
   end
 
 end

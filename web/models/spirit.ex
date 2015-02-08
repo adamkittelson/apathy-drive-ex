@@ -222,6 +222,19 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info(:unpossess, spirit) do
+    monster = spirit.monster
+
+    spirit = spirit
+             |> Map.put(:monster, nil)
+             |> Spirit.send_scroll("<p>You leave the body of #{Monster.name(monster)}.</p>")
+             |> Systems.Prompt.update
+
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{Monster.id(monster)}")
+
+    {:noreply, spirit}
+  end
+
   def handle_info(_message, spirit) do
     {:noreply, spirit}
   end
