@@ -147,6 +147,7 @@ defmodule MonsterTemplate do
     monster = monster
               |> Map.put(:hp, Monster.max_hp(monster))
               |> Map.put(:mana, Monster.max_mana(monster))
+              |> Map.put(:keywords, String.split(monster.name))
 
     worker_id = :"monster_#{Systems.URL.random}"
 

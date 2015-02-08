@@ -40,6 +40,7 @@ defmodule Monster do
     field :possession_level,    :integer, virtual: true
     field :questions,           :any,     virtual: true
     field :pid,                 :any,     virtual: true
+    field :keywords,            {:array, :string}, virtual: true
 
     belongs_to :room, Room
   end
@@ -98,6 +99,7 @@ defmodule Monster do
         monster = monster
                   |> Map.put(:hp, Monster.max_hp(monster))
                   |> Map.put(:mana, Monster.max_mana(monster))
+                  |> Map.put(:keywords, String.split(monster.name))
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :permanent, 5000, :worker, [Monster]})
 
@@ -300,10 +302,6 @@ defmodule Monster do
 
   def handle_call(:value, _from, monster) do
     {:reply, monster, monster}
-  end
-
-  def handle_call(:keywords, _from, monster) do
-    {:reply, String.split(monster.name), monster}
   end
 
   def handle_call(:insert, _from, %Monster{id: nil} = monster) do

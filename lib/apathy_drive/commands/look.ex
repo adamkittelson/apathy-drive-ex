@@ -40,7 +40,7 @@ defmodule Commands.Look do
       cond do
         Enum.member?(@directions, Enum.join(arguments, " ")) ->
           ApathyDrive.Exit.look(monster, Enum.join(arguments, " "))
-        target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
+        target = current_room |> find_monster_in_room(Enum.join(arguments, " "), monster) ->
           Systems.Description.add_description_to_scroll(monster, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
           Monster.send_scroll "<p>#{Components.Description.value(target)}</p>"
@@ -61,6 +61,18 @@ defmodule Commands.Look do
 
   defp find_monster_in_room(room, string) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
+    |> Systems.Match.one(:name_contains, string)
+  end
+
+  defp find_monster_in_room(room, string, %Monster{pid: pid} = monster) do
+    PubSub.subscribers("rooms:#{room.id}:monsters")
+    |> Enum.map(fn(monster_pid) ->
+         if monster_pid == pid do
+           monster
+         else
+           monster_pid
+         end
+       end)
     |> Systems.Match.one(:name_contains, string)
   end
 
