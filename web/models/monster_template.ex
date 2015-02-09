@@ -28,6 +28,8 @@ defmodule MonsterTemplate do
     field :alignment,         :string
     field :possession_level,  :integer
     field :questions,         ApathyDrive.JSONB
+
+    timestamps
   end
 
   def find(id) do

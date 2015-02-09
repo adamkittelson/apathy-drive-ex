@@ -2,31 +2,32 @@ defmodule ApathyDrive.Repo.Migrations.CreateItemTemplates do
   use Ecto.Migration
 
   def up do
-    ["CREATE TABLE IF NOT EXISTS item_templates( \
-      id serial primary key, \
-      name text, \
-      keywords text[], \
-      description text, \
-      slot text, \
-      worn_on jsonb, \
-      hit_verbs text[], \
-      damage jsonb, \
-      required_skills jsonb, \
-      speed decimal(8,2), \
-      accuracy_skill text, \
-      ac integer, \
-      uses integer, \
-      destruct_message text, \
-      room_destruct_message text, \
-      can_pick_up boolean, \
-      value integer, \
-      light integer, \
-      light_duration integer, \
-      always_lit boolean \
-    )"]
+    create table(:item_templates) do
+      add :name,                  :text
+      add :keywords,              {:array, :string}
+      add :description,           :text
+      add :slot,                  :text
+      add :worn_on,               :jsonb
+      add :hit_verbs,             {:array, :string}
+      add :damage,                :jsonb
+      add :required_skills,       :jsonb
+      add :speed,                 :decimal
+      add :accuracy_skill,        :text
+      add :ac,                    :integer
+      add :uses,                  :integer
+      add :destruct_message,      :text
+      add :room_destruct_message, :text
+      add :can_pick_up,           :boolean
+      add :cost,                  :integer
+      add :light,                 :integer
+      add :light_duration,        :integer
+      add :always_lit,            :boolean
+
+      timestamps
+    end
   end
 
   def down do
-    "DROP TABLE item_templates"
+    drop table(:item_templates)
   end
 end

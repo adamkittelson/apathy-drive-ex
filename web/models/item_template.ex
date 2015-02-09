@@ -25,6 +25,8 @@ defmodule ItemTemplate do
     field :light,                 :integer
     field :light_duration,        :integer
     field :always_lit,            :boolean
+
+    timestamps
   end
 
   def value(item_template) do

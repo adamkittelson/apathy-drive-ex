@@ -26,8 +26,8 @@ defmodule Room do
     field :trainable_skills,      {:array, :string}
     field :exits,                 ApathyDrive.JSONB
     field :legacy_id,             :string
-    field :created_at,            :datetime
-    field :updated_at,            :datetime
+
+    timestamps
 
     has_many :monsters, Monster
   end

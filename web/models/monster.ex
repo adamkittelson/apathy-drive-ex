@@ -42,6 +42,8 @@ defmodule Monster do
     field :pid,                 :any,     virtual: true
     field :keywords,            {:array, :string}, virtual: true
 
+    timestamps
+
     belongs_to :room, Room
   end
 

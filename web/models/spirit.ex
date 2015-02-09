@@ -20,8 +20,8 @@ defmodule Spirit do
     field :hints,             {:array, :string}, default: []
     field :disabled_hints,    {:array, :string}, default: []
     field :monster,           :any, virtual: true
-    field :created_at,        :datetime
-    field :updated_at,        :datetime
+
+    timestamps
   end
 
   def init(spirit) do
@@ -29,7 +29,7 @@ defmodule Spirit do
   end
 
   def create(url) do
-    spirit = %Spirit{url: url, room_id: Room.start_room_id, created_at: Ecto.DateTime.utc, updated_at: Ecto.DateTime.utc}
+    spirit = %Spirit{url: url, room_id: Room.start_room_id}
     Repo.insert(spirit)
   end
 

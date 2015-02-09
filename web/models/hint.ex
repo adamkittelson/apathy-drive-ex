@@ -6,6 +6,8 @@ defmodule Hint do
   schema "hints" do
     field :name,       :string
     field :body,       :string
+
+    timestamps
   end
 
   def create(name, body) do

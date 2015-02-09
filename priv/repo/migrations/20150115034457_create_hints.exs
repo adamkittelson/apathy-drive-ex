@@ -2,14 +2,17 @@ defmodule ApathyDrive.Repo.Migrations.CreateHints do
   use Ecto.Migration
 
   def up do
-    ["CREATE TABLE IF NOT EXISTS hints( \
-      id serial primary key, \
-      name text, \
-      body text)",
-    "CREATE INDEX hints_name_index ON hints (name)"]
+    create table(:hints) do
+      add :name, :text
+      add :body, :text
+
+      timestamps
+    end
+
+    create index(:hints, [:name])
   end
 
   def down do
-    "DROP TABLE hints"
+    drop table(:hints)
   end
 end

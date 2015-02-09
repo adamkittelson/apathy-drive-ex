@@ -2,19 +2,24 @@ defmodule ApathyDrive.Repo.Migrations.CreateSpirits do
   use Ecto.Migration
 
   def up do
-    "CREATE TABLE IF NOT EXISTS spirits( \
-      id serial primary key, \
-      name text, \
-      experience integer, \
-      level integer, \
-      url text, \
-      hints jsonb, \
-      room_id integer, \
-      created_at timestamp, \
-      updated_at timestamp)"
+    create table(:spirits) do
+      add :legacy_id,         :text
+      add :name,              :text
+      add :experience,        :integer
+      add :level,             :integer
+      add :url,               :text
+      add :hints,             {:array, :string}
+      add :disabled_hints,    {:array, :string}
+      add :room_id,           references(:rooms)
+
+      timestamps
+    end
+
+    create index(:spirits, [:room_id])
   end
 
   def down do
-    "DROP TABLE spirits"
+    drop table(:spirits)
   end
+
 end
