@@ -7,9 +7,8 @@ defmodule Skills.Dodge do
 
   def modifiers do
     %{
-      :agility => 3,
-      :health  => 1,
-      :charm   => 1
+      "agility" => 3,
+      "health"  => 1
      }
   end
 

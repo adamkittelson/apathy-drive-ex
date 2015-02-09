@@ -7,8 +7,8 @@ defmodule Skills.Armour do
 
   def modifiers do
     %{
-      :strength  => 1,
-      :health    => 1
+      "strength"  => 1,
+      "health"    => 1
      }
   end
 

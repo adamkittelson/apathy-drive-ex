@@ -7,8 +7,7 @@ defmodule Skills.Perception do
 
   def modifiers do
     %{
-      :intellect => 1,
-      :charm     => 1
+      "intelligence" => 1
      }
   end
 

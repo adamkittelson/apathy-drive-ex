@@ -30,10 +30,12 @@ defmodule Commands.Possess do
 
     Phoenix.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
 
+    spirit = spirit
+             |> Map.put(:monster, monster.pid)
+             |> Spirit.send_scroll("<p>You possess #{monster.name}.")
+
+    Systems.Prompt.update(monster)
     spirit
-    |> Map.put(:monster, monster.pid)
-    |> Spirit.send_scroll("<p>You possess #{monster.name}.")
-    |> Systems.Prompt.update(monster)
   end
 
 end

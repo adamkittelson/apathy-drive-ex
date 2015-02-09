@@ -7,10 +7,9 @@ defmodule Skills.Parry do
 
   def modifiers do
     %{
-      :strength  => 1,
-      :agility   => 2,
-      :health    => 1,
-      :charm     => 1
+      "strength"  => 1,
+      "agility"   => 2,
+      "health"    => 1
      }
   end
 

@@ -2,7 +2,7 @@ defmodule ApathyDrive.Exits.Action do
   use ApathyDrive.Exit
 
   def move(current_room, %Spirit{} = spirit, room_exit) do
-    new_room = Room.find(room_exit.destination)
+    new_room = Room.find(room_exit["destination"])
                |> Room.value
 
     Spirit.send_scroll(spirit, "<p><span class='yellow'>#{interpolate(room_exit.mover_message, %{"user" => spirit})}</span></p>")
@@ -10,7 +10,7 @@ defmodule ApathyDrive.Exits.Action do
     Room.look(new_room, spirit)
 
     spirit
-    |> Spirit.set_room_id(room_exit.destination)
+    |> Spirit.set_room_id(room_exit["destination"])
     |> Spirit.deactivate_hint("movement")
     |> Spirit.save
   end

@@ -4,3 +4,9 @@ config :apathy_drive, ApathyDrive.Endpoint,
   http: [port: System.get_env("PORT") || 4001],
   debug_errors: true,
   db: "ecto://postgres:@localhost/travis_ci_test"
+
+config :apathy_drive, ApathyDrive.Repo,
+  database: "travis_ci_test",
+  username: "postgres",
+  password: "",
+  hostname: "localhost"

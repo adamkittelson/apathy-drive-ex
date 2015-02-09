@@ -7,9 +7,9 @@ defmodule Skills.Blade do
 
   def modifiers do
     %{
-      :strength  => 2,
-      :agility   => 2,
-      :health    => 1
+      "strength"  => 2,
+      "agility"   => 2,
+      "health"    => 1
      }
   end
 

@@ -2,6 +2,7 @@ defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   use Systems.Reload
   import Utility
+  require Logger
 
   def all do
     :code.all_loaded
@@ -19,12 +20,12 @@ defmodule ApathyDrive.Command do
 
     command_exit = room.exits
                    |> Enum.find(fn(ex) ->
-                        ex.kind == "Command" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
+                        ex["kind"] == "Command" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
                       end)
 
     remote_action_exit = room.exits
                          |> Enum.find(fn(ex) ->
-                              ex.kind == "RemoteAction" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
+                              ex["kind"] == "RemoteAction" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
                             end)
 
     cond do
@@ -48,10 +49,11 @@ defmodule ApathyDrive.Command do
 
     spirit
     |> Map.put(:idle, 0)
-    |> Systems.Prompt.display
   end
 
   def execute(%Monster{} = monster, command, arguments) do
+    Systems.Prompt.display(monster)
+
     ability = monster.abilities
               |> Enum.find(fn(ability) ->
                    ability.properties(monster)[:command] == String.downcase(command)
@@ -64,12 +66,12 @@ defmodule ApathyDrive.Command do
 
       command_exit = room.exits
                      |> Enum.find(fn(ex) ->
-                          ex.kind == "Command" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
+                          ex["kind"] == "Command" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
                         end)
 
       remote_action_exit = room.exits
                            |> Enum.find(fn(ex) ->
-                                ex.kind == "RemoteAction" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
+                                ex["kind"] == "RemoteAction" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
                               end)
 
       cond do

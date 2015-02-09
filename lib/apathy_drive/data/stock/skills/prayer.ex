@@ -7,9 +7,9 @@ defmodule Skills.Prayer do
 
   def modifiers do
     %{
-      :willpower => 3,
-      :intellect => 1,
-      :charm     => 1
+      "intelligence" => 2,
+      "health"       => 1,
+      "strength"     => 1
      }
   end
 

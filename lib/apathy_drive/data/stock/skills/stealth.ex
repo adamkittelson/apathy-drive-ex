@@ -7,8 +7,8 @@ defmodule Skills.Stealth do
 
   def modifiers do
     %{
-      :agility   => 3,
-      :charm     => 1
+      "agility"      => 3,
+      "intelligence" => 1
      }
   end
 

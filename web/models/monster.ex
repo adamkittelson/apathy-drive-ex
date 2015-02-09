@@ -9,8 +9,8 @@ defmodule Monster do
 
   schema "monsters" do
     field :name,                :string
-    field :skills,              :string, default: %{base: %{}, trained: %{}} #json
-    field :limbs,               :string #json
+    field :skills,              ApathyDrive.JSONB, default: %{"base" => %{}, "trained" => %{}}
+    field :limbs,               ApathyDrive.JSONB
     field :monster_template_id, :integer
     field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
@@ -80,10 +80,6 @@ defmodule Monster do
     case Repo.get(Monster, id) do
       %Monster{} = monster ->
 
-        monster = monster
-               |> parse_json(:limbs)
-               |> parse_json(:skills)
-
         mt = monster.monster_template_id
              |> MonsterTemplate.find
              |> MonsterTemplate.value
@@ -109,10 +105,6 @@ defmodule Monster do
     end
   end
 
-  def parse_json(monster, attribute) do
-    Map.put(monster, attribute, Poison.decode!(Map.get(monster, attribute), keys: :atoms))
-  end
-
   def find_room(%Monster{room_id: room_id} ) do
     room_id
     |> Room.find
@@ -126,8 +118,8 @@ defmodule Monster do
   end
 
   def max_hp(%Monster{} = monster) do
-    health   = modified_stat(monster, :health)
-    strength = modified_stat(monster, :strength)
+    health   = modified_stat(monster, "health")
+    strength = modified_stat(monster, "strength")
 
     seed = trunc((health * 2 + strength) / 3)
 
@@ -135,7 +127,7 @@ defmodule Monster do
   end
 
   def max_mana(%Monster{} = monster) do
-    intelligence = modified_stat(monster, :intelligence)
+    intelligence = modified_stat(monster, "intelligence")
 
     x = trunc(intelligence * (0.5 + (intelligence / 100)))
     y = x / (125 + x)
@@ -143,12 +135,12 @@ defmodule Monster do
   end
 
   def modified_stat(%Monster{} = monster, stat_name) do
-    Map.get(monster, stat_name, 0) +
+    Map.get(monster, String.to_atom(stat_name), 0) +
     stat_skill_bonus(monster, stat_name) +
     effect_bonus(monster, stat_name)
   end
 
-  def stat_skill_bonus(%Monster{skills: %{trained: skills}} = monster, stat_name) do
+  def stat_skill_bonus(%Monster{skills: %{"trained" => skills}} = monster, stat_name) do
     skills
     |> Map.keys
     |> Enum.map(&(Systems.Skill.find(to_string(&1))))
@@ -158,7 +150,7 @@ defmodule Monster do
          |> Enum.member?(stat_name)
        end)
     |> Enum.reduce(0, fn(skill, total_stat_modification) ->
-         base = skill_from_training(monster, skill.name |> String.to_atom)
+         base = skill_from_training(monster, skill.name)
          percentage = skill.modifiers[stat_name] / (skill.modifiers
                                                     |> Map.values
                                                     |> Enum.sum)
@@ -179,7 +171,7 @@ defmodule Monster do
     |> Enum.sum
   end
 
-  def base_skill(%Monster{skills: %{base: base}} = monster, skill_name) do
+  def base_skill(%Monster{skills: %{"base" => base}} = monster, skill_name) do
     Map.get(base, skill_name, 0) + skill_from_training(monster, skill_name)
   end
 
@@ -201,7 +193,7 @@ defmodule Monster do
     (modified + effect_bonus(monster, skill_name))
   end
 
-  def skill_from_training(%Monster{skills: %{base: base, trained: skills}}, skill_name) do
+  def skill_from_training(%Monster{skills: %{"base" => base, "trained" => skills}}, skill_name) do
     skill = Systems.Skill.find(skill_name)
 
     power_spent = Map.get(skills, skill_name, 0)
@@ -227,6 +219,26 @@ defmodule Monster do
 
   def send_scroll(%Monster{id: id} = monster, html) do
     Phoenix.Channel.broadcast "monsters:#{id}", "scroll", %{:html => html}
+    monster
+  end
+
+  def send_disable(%Monster{id: id} = monster, elem) do
+    Phoenix.Channel.broadcast "monsters:#{id}", "disable", %{:html => elem}
+    monster
+  end
+
+  def send_focus(%Monster{id: id} = monster, elem) do
+    Phoenix.Channel.broadcast "monsters:#{id}", "focus", %{:html => elem}
+    monster
+  end
+
+  def send_up(%Monster{id: id} = monster) do
+    Phoenix.Channel.broadcast "monsters:#{id}", "up", %{}
+    monster
+  end
+
+  def send_update_prompt(%Monster{id: id} = monster, html) do
+    Phoenix.Channel.broadcast "monsters:#{id}", "update prompt", %{:html => html}
     monster
   end
 
@@ -278,7 +290,7 @@ defmodule Monster do
   end
 
   # Generate functions from Ecto schema
-  fields = Keyword.keys(@assign_fields)
+  fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
   Enum.each(fields, fn(field) ->
     def unquote(field)(pid) do
@@ -305,12 +317,7 @@ defmodule Monster do
   end
 
   def handle_call(:insert, _from, %Monster{id: nil} = monster) do
-    monster = monster
-              |> Map.put(:skills, Poison.encode!(monster.skills))
-              |> Map.put(:limbs,  Poison.encode!(monster.limbs))
-              |> ApathyDrive.Repo.insert
-              |> Map.put(:skills, monster.skills)
-              |> Map.put(:limbs,  monster.limbs)
+    monster = ApathyDrive.Repo.insert(monster)
 
     :global.register_name(:"monster_#{monster.id}", monster.pid)
 

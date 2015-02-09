@@ -7,9 +7,8 @@ defmodule Skills.NatureMagic do
 
   def modifiers do
     %{
-      :intellect => 2,
-      :willpower => 2,
-      :charm     => 1
+      "intelligence" => 2,
+      "health"       => 1
      }
   end
 

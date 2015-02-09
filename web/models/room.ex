@@ -13,18 +13,18 @@ defmodule Room do
     field :description,           :string
     field :effects,               :any, virtual: true, default: %{}
     field :light,                 :integer
-    field :item_descriptions,     :string #json
+    field :item_descriptions,     ApathyDrive.JSONB
     field :placed_items,          {:array, :string}
     field :lair_size,             :integer
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
-    field :permanent_npc,         :string
+    field :permanent_npc,         :integer
     field :room_ability,          :string
     field :start_room,            :boolean, default: false
-    field :shop_items,            {:array, :string}
+    field :shop_items,            {:array, :integer}
     field :trainable_skills,      {:array, :string}
-    field :exits,                 :string #json
+    field :exits,                 ApathyDrive.JSONB
     field :legacy_id,             :string
     field :created_at,            :datetime
     field :updated_at,            :datetime
@@ -52,9 +52,6 @@ defmodule Room do
   def load(id) do
     case Repo.get(Room, id) do
       %Room{} = room ->
-        room = room
-               |> parse_json(:item_descriptions)
-               |> parse_json(:exits)
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
         PubSub.subscribe(pid, "rooms")
@@ -104,7 +101,7 @@ defmodule Room do
   def exit_directions(%Room{} = room) do
     room.exits
     |> Enum.map(fn(room_exit) ->
-         :"Elixir.ApathyDrive.Exits.#{room_exit.kind}".display_direction(room, room_exit)
+         :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".display_direction(room, room_exit)
        end)
     |> Enum.reject(&(&1 == nil))
   end
@@ -117,14 +114,10 @@ defmodule Room do
         nil
       exits ->
         exits
-        |> Enum.map(&(&1.direction))
+        |> Enum.map(&(&1["direction"]))
         |> Enum.shuffle
         |> List.first
     end
-  end
-
-  def parse_json(%Room{} = room, attribute) do
-    Map.put(room, attribute, Poison.decode!(Map.get(room, attribute), keys: :atoms))
   end
 
   def look(%Room{} = room, %Spirit{} = spirit) do
@@ -179,8 +172,10 @@ defmodule Room do
     end
   end
 
+
+
   # Generate functions from Ecto schema
-  fields = Keyword.keys(@assign_fields)
+  fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
   Enum.each(fields, fn(field) ->
     def unquote(field)(pid) do

@@ -147,7 +147,7 @@ defmodule Spirit do
 
 
   # Generate functions from Ecto schema
-  fields = Keyword.keys(@assign_fields)
+  fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
   Enum.each(fields, fn(field) ->
     def unquote(field)(pid) do

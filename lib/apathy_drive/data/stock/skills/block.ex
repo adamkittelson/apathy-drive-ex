@@ -7,9 +7,8 @@ defmodule Skills.Block do
 
   def modifiers do
     %{
-      :strength  => 2,
-      :health    => 2,
-      :charm     => 1
+      "strength"  => 2,
+      "health"    => 2
      }
   end
 

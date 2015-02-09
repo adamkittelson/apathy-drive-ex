@@ -7,10 +7,9 @@ defmodule Skills.TwoHandedBlunt do
 
   def modifiers do
     %{
-      :strength  => 2,
-      :agility   => 1,
-      :health    => 1,
-      :charm     => 1
+      "strength"  => 2,
+      "agility"   => 1,
+      "health"    => 1
      }
   end
 

@@ -22,13 +22,13 @@ defmodule ApathyDrive.Exits.Command do
   def move_via_command(current_room, %Spirit{} = spirit, room_exit) do
     Spirit.send_scroll(spirit, "<p><span class='yellow'>#{room_exit.mover_message}</span></p>")
 
-    new_room = Room.find(room_exit.destination)
+    new_room = Room.find(room_exit["destination"])
                |> Room.value
 
     Room.look(new_room, spirit)
 
     spirit
-    |> Spirit.set_room_id(room_exit.destination)
+    |> Spirit.set_room_id(room_exit["destination"])
     |> Spirit.deactivate_hint("movement")
     |> Spirit.save
   end

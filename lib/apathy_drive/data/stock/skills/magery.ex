@@ -7,9 +7,8 @@ defmodule Skills.Magery do
 
   def modifiers do
     %{
-      :intellect => 3,
-      :willpower => 1,
-      :charm     => 1
+      "intelligence" => 3,
+      "agility"      => 1
      }
   end
 

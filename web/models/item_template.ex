@@ -10,10 +10,10 @@ defmodule ItemTemplate do
     field :keywords,              {:array, :string}, default: []
     field :description,           :string
     field :slot,                  :string
-    field :worn_on,               :string #json
+    field :worn_on,               ApathyDrive.JSONB
     field :hit_verbs,             {:array, :string}, default: []
-    field :damage,                :string #json
-    field :required_skills,       :string #json
+    field :damage,                ApathyDrive.JSONB
+    field :required_skills,       ApathyDrive.JSONB
     field :speed,                 :decimal
     field :accuracy_skill,        :string
     field :ac,                    :integer
@@ -43,10 +43,6 @@ defmodule ItemTemplate do
   def load(id) do
     case Repo.get(ItemTemplate, id) do
       %ItemTemplate{} = item_template ->
-        item_template = item_template
-                        |> parse_json(:worn_on)
-                        |> parse_json(:damage)
-                        |> parse_json(:required_skills)
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_template_#{id}", {GenServer, :start_link, [ItemTemplate, item_template, [name: {:global, :"item_template_#{id}"}]]}, :permanent, 5000, :worker, [ItemTemplate]})
 
@@ -58,14 +54,9 @@ defmodule ItemTemplate do
     end
   end
 
-  def parse_json(%ItemTemplate{} = item_template, attribute) do
-    Map.put(item_template, attribute, Poison.decode!(Map.get(item_template, attribute), keys: :atoms))
-  end
-
 
   # Generate functions from Ecto schema
-
-  fields = Keyword.keys(@assign_fields)
+  fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
   Enum.each(fields, fn(field) ->
     def unquote(field)(item_template) do

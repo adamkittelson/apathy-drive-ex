@@ -19,15 +19,15 @@ defmodule MonsterTemplate do
     field :agility,           :integer
     field :intelligence,      :integer
     field :health,            :integer
-    field :skills,            :string #json
+    field :skills,            ApathyDrive.JSONB
     field :hit_verbs,         {:array, :string}, default: ["attack", "assault", "strike"]
-    field :limbs,             :string #json
+    field :limbs,             ApathyDrive.JSONB
     field :chance_to_follow,  :integer
-    field :damage,            :string #json
+    field :damage,            ApathyDrive.JSONB
     field :disposition,       :string
     field :alignment,         :string
     field :possession_level,  :integer
-    field :questions,         :string #json
+    field :questions,         ApathyDrive.JSONB
   end
 
   def find(id) do
@@ -41,18 +41,10 @@ defmodule MonsterTemplate do
 
   def load(id) do
     monster_template = Repo.get(MonsterTemplate, id)
-                       |> parse_json(:damage)
-                       |> parse_json(:questions)
-                       |> parse_json(:skills)
-                       |> parse_json(:limbs)
 
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_template_#{id}", {GenServer, :start_link, [MonsterTemplate, monster_template, [name: {:global, :"monster_template_#{id}"}]]}, :permanent, 5000, :worker, [MonsterTemplate]})
 
     pid
-  end
-
-  def parse_json(room, attribute) do
-    Map.put(room, attribute, Poison.decode!(Map.get(room, attribute), keys: :atoms))
   end
 
   def spawn_monster(monster_template_id, room) when is_integer(monster_template_id) do
@@ -108,8 +100,7 @@ defmodule MonsterTemplate do
   end
 
   # Generate functions from Ecto schema
-
-  fields = Keyword.keys(@assign_fields)
+  fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
   Enum.each(fields, fn(field) ->
     def unquote(field)(pid) do
@@ -142,7 +133,7 @@ defmodule MonsterTemplate do
               |> Map.put(:id, nil)
               |> Map.put(:alignment, alignment(monster_template.alignment))
               |> Map.put(:room_id, room.id)
-              |> Map.put(:skills, %{base: Map.get(monster_template, :skills, %{}), trained: %{}})
+              |> Map.put(:skills, %{"base" => Map.get(monster_template, :skills, %{}), "trained" => %{}})
 
     monster = monster
               |> Map.put(:hp, Monster.max_hp(monster))
