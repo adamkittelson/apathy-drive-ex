@@ -129,13 +129,21 @@ defmodule MonsterTemplate do
              |> Map.from_struct
              |> Enum.into(Keyword.new)
 
+    skills = Map.get(monster_template, :skills, %{})
+
+    skills = skills
+             |> Map.keys
+             |> Enum.reduce(%{}, fn(skill_name, monster_skills) ->
+                  Map.put(monster_skills, skill_name, %{"base" => skills[skill_name]})
+                end)
+
     monster = struct(Monster, values)
               |> Map.put(:name, name_with_adjective(monster_template.name, monster_template.adjectives))
               |> Map.put(:monster_template_id, monster_template.id)
               |> Map.put(:id, nil)
               |> Map.put(:alignment, alignment(monster_template.alignment))
               |> Map.put(:room_id, room.id)
-              |> Map.put(:skills, %{"base" => Map.get(monster_template, :skills, %{}), "trained" => %{}})
+              |> Map.put(:skills, skills)
 
     monster = monster
               |> Map.put(:hp, Monster.max_hp(monster))

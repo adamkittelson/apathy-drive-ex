@@ -8,26 +8,34 @@ defmodule Commands.Skills do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
+  def execute(%Monster{skills: skills} = monster, arguments) do
     arguments = Enum.join(arguments, " ")
-    send_message(spirit, "scroll", "<p><span class='white'>Your skills are:</span></p>")
-    send_message(spirit, "scroll", "<p><span class='blue'>---------------------------------------------------------------------------</span></p>")
-    skill_names = Components.Skills.list(monster) |> Enum.sort
+    monster
+    |> Monster.send_scroll("<p><span class='white'>Your skills are:</span></p>")
+    |> Monster.send_scroll("<p><span class='blue'>------------------------------------------------------------------------</span></p>")
+
+    skill_names = skills
+                  |> Map.keys
+                  |> Enum.sort
+
     chunks = get_chunks(skill_names)
     Enum.each chunks, &display_skills(monster, &1, arguments)
+    monster
   end
 
-  defp display_skills(entity, [skill1, skill2], arguments) do
-    send_message(entity, "scroll", "<p>#{skilltext(entity, skill1, arguments)} #{skilltext(entity, skill2, arguments)}</p>")
+  defp display_skills(%Monster{} = monster, [skill1, skill2], arguments) do
+    monster
+    |> Monster.send_scroll("<p>#{skilltext(monster, skill1, arguments)} #{skilltext(monster, skill2, arguments)}</p>")
   end
 
-  defp display_skills(entity, [skill], arguments) do
-    send_message(entity, "scroll", "<p>#{skilltext(entity, skill, arguments)}</p>")
+  defp display_skills(%Monster{} = monster, [skill], arguments) do
+    monster
+    |> Monster.send_scroll("<p>#{skilltext(monster, skill, arguments)}</p>")
   end
 
-  defp skilltext(entity, skill, "base") do
-    base_skill_rating = Skills.find(skill).base(entity)
-    modified_skill_rating = Skills.find(skill).modified(entity)
+  defp skilltext(%Monster{} = monster, skill_name, "base") do
+    base_skill_rating     = Monster.base_skill(monster, skill_name)
+    modified_skill_rating = Monster.modified_skill(monster, skill_name)
     skill_difference = modified_skill_rating - base_skill_rating
     skill_mod = if skill_difference >= 0 do
                    String.ljust("(+#{skill_difference})", 6)
@@ -35,12 +43,12 @@ defmodule Commands.Skills do
                    String.ljust("(#{skill_difference})", 6)
                  end
 
-    String.ljust("#{String.ljust(skill, 24)}#{String.rjust("#{base_skill_rating}", 4)}% #{skill_mod}", 36)
+    String.ljust("#{String.ljust(skill_name, 24)}#{String.rjust("#{base_skill_rating}", 4)}% #{skill_mod}", 36)
   end
 
-  defp skilltext(entity, skill, _arguments) do
-    skill_rating = Skills.find(skill).modified(entity)
-    String.ljust("#{String.ljust(skill, 24)}#{String.rjust("#{skill_rating}", 4)}%", 36)
+  defp skilltext(%Monster{} = monster, skill_name, _arguments) do
+    skill_rating = Monster.modified_skill(monster, skill_name)
+    String.ljust("#{String.ljust(skill_name, 24)}#{String.rjust("#{skill_rating}", 4)}%", 36)
   end
 
   defp get_chunks([]), do: []

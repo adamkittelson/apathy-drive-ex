@@ -4,17 +4,25 @@ defmodule MonsterTest do
 
   with "a monster with no base dodge and no trained dodge" do
     setup context do
-      Dict.put context, :monster, %Monster{skills: %{"base" => %{}, "trained" => %{}}}
+      Dict.put context, :monster, %Monster{skills: %{}}
     end
 
     should("have 0 dodge", context) do
       assert Monster.base_skill(context.monster, "dodge") == 0
     end
+
+    should("have no trained skills", context) do
+      assert Monster.trained_skills(context.monster) == []
+    end
   end
 
   with "a monster with 10 base dodge and no trained dodge" do
     setup context do
-      Dict.put context, :monster, %Monster{skills: %{"base" => %{"dodge" => 10}, "trained" => %{}}}
+      Dict.put context, :monster, %Monster{skills: %{"dodge" => %{"base" => 10}}}
+    end
+
+    should("have no trained skills", context) do
+      assert Monster.trained_skills(context.monster) == []
     end
 
     should("have 10 dodge", context) do
@@ -24,7 +32,11 @@ defmodule MonsterTest do
 
   with "a monster with no base dodge and 10 power invested in dodge" do
     setup context do
-      Dict.put context, :monster, %Monster{skills: %{"base" => %{}, "trained" => %{"dodge" => 10}}}
+      Dict.put context, :monster, %Monster{skills: %{"dodge" => %{"trained" => 10}}}
+    end
+
+    should("have trained dodge", context) do
+      assert Monster.trained_skills(context.monster) == ["dodge"]
     end
 
     should("have 3 dodge", context) do
@@ -34,7 +46,11 @@ defmodule MonsterTest do
 
   with "a monster with 10 base dodge and 10 power invested in dodge" do
     setup context do
-      Dict.put context, :monster, %Monster{skills: %{"base" => %{"dodge" => 10}, "trained" => %{"dodge" => 10}}}
+      Dict.put context, :monster, %Monster{skills: %{"dodge" => %{"base" => 10, "trained" => 10}}}
+    end
+
+    should("have trained dodge", context) do
+      assert Monster.trained_skills(context.monster) == ["dodge"]
     end
 
     should("have 13 dodge", context) do
@@ -44,13 +60,16 @@ defmodule MonsterTest do
 
   with "a monster with 10 base dodge and 10 power invested in dodge and 10 dodge from effects" do
     setup context do
-      Dict.put context, :monster, %Monster{skills:  %{"base" =>     %{"dodge" => 10},
-                                                      "trained" =>  %{"dodge" => 10}},
+      Dict.put context, :monster, %Monster{skills:  %{"dodge" => %{"base" => 10, "trained" => 10}},
                                            effects: %{"some_key" => %{"dodge" => 10}},
                                            strength: 0,
                                            agility:  0,
                                            intelligence: 0,
                                            health: 0}
+    end
+
+    should("have trained dodge", context) do
+      assert Monster.trained_skills(context.monster) == ["dodge"]
     end
 
     should("have 13 base dodge", context) do
@@ -65,8 +84,11 @@ defmodule MonsterTest do
   with "a monster with 10 strength and no skills" do
     setup context do
       Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"base" => %{},
-                                                     "trained" => %{}}}
+                                           skills: %{}}
+    end
+
+    should("have no trained skills", context) do
+      assert Monster.trained_skills(context.monster) == []
     end
 
     should("have 10 strength", context) do
@@ -77,8 +99,11 @@ defmodule MonsterTest do
   with "a monster with 10 strength and 100 devs spent on armour" do
     setup context do
       Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"base" => %{},
-                                                     "trained" => %{"armour" => 100}}}
+                                           skills: %{"armour" => %{"trained" => 100}}}
+    end
+
+    should("have trained armour", context) do
+      assert Monster.trained_skills(context.monster) == ["armour"]
     end
 
     should("have 14 armour", context) do
@@ -93,8 +118,11 @@ defmodule MonsterTest do
   with "a monster with 10 strength and 14 armour" do
     setup context do
       Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"base" => %{"armour" => 14},
-                                                     "trained" => %{}}}
+                                           skills: %{"armour" => %{"base" => 14}}}
+    end
+
+    should("have no trained skills", context) do
+      assert Monster.trained_skills(context.monster) == []
     end
 
     should("have 14 armour", context) do
@@ -109,9 +137,13 @@ defmodule MonsterTest do
   with "a monster with 10 strength and 5 strength from effects" do
     setup context do
       Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"base" => %{}, "trained" => %{}},
+                                           skills: %{},
                                            effects: %{"some_key" => %{"strength" => 2},
                                                       "some_other_key" => %{"strength" => 3}}}
+    end
+
+    should("have no trained skills", context) do
+      assert Monster.trained_skills(context.monster) == []
     end
 
     should("have 15 strength", context) do
@@ -122,9 +154,13 @@ defmodule MonsterTest do
   with "a monster with 10 strength and 10 armour, and 5 strength from effects" do
     setup context do
       Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"base" => %{"armour" => 10}, "trained" => %{"armour" => 100}},
+                                           skills: %{"armour" => %{"base" => 10, "trained" => 100}},
                                            effects: %{"some_key" => %{"strength" => 2},
                                                       "some_other_key" => %{"strength" => 3}}}
+    end
+
+    should("have trained armour", context) do
+      assert Monster.trained_skills(context.monster) == ["armour"]
     end
 
     should("have 24 armour", context) do

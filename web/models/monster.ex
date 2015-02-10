@@ -9,7 +9,7 @@ defmodule Monster do
 
   schema "monsters" do
     field :name,                :string
-    field :skills,              ApathyDrive.JSONB, default: %{"base" => %{}, "trained" => %{}}
+    field :skills,              ApathyDrive.JSONB, default: %{}
     field :limbs,               ApathyDrive.JSONB
     field :monster_template_id, :integer
     field :experience,          :integer, default: 0
@@ -142,9 +142,9 @@ defmodule Monster do
     effect_bonus(monster, stat_name)
   end
 
-  def stat_skill_bonus(%Monster{skills: %{"trained" => skills}} = monster, stat_name) do
-    skills
-    |> Map.keys
+  def stat_skill_bonus(%Monster{} = monster, stat_name) do
+    monster
+    |> trained_skills
     |> Enum.map(&(Systems.Skill.find(to_string(&1))))
     |> Enum.filter(fn(skill) ->
          skill.modifiers
@@ -161,6 +161,17 @@ defmodule Monster do
     |> trunc
   end
 
+  def trained_skills(%Monster{skills: skills}) do
+    skills
+    |> Map.keys
+    |> Enum.filter(fn(skill_name) ->
+         trained = skills
+                   |> Map.get(skill_name)
+                   |> Map.get("trained", 0)
+         trained > 0
+       end)
+  end
+
   def effect_bonus(%Monster{effects: effects} = monster, name) do
     effects
     |> Map.values
@@ -173,8 +184,12 @@ defmodule Monster do
     |> Enum.sum
   end
 
-  def base_skill(%Monster{skills: %{"base" => base}} = monster, skill_name) do
-    Map.get(base, skill_name, 0) + skill_from_training(monster, skill_name)
+  def base_skill(%Monster{skills: skills} = monster, skill_name) do
+    base = skills
+           |> Map.get(skill_name, %{})
+           |> Map.get("base", 0)
+
+    base + skill_from_training(monster, skill_name)
   end
 
   def modified_skill(%Monster{} = monster, skill_name) do
@@ -195,10 +210,13 @@ defmodule Monster do
     (modified + effect_bonus(monster, skill_name))
   end
 
-  def skill_from_training(%Monster{skills: %{"base" => base, "trained" => skills}}, skill_name) do
+  def skill_from_training(%Monster{skills: skills}, skill_name) do
     skill = Systems.Skill.find(skill_name)
 
-    power_spent = Map.get(skills, skill_name, 0)
+    power_spent = skills
+                  |> Map.get(skill_name, %{})
+                  |> Map.get("trained", 0)
+
     modifier = skill.cost
 
     skill_from_training(modifier, power_spent)
