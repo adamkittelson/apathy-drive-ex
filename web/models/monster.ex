@@ -69,6 +69,12 @@ defmodule Monster do
     GenServer.call(monster, :insert)
   end
 
+  def save(monster) when is_pid(monster), do: monster |> value |> save
+  def save(%Monster{id: id} = monster) when is_integer(id) do
+    Repo.update(monster)
+  end
+  def save(%Monster{} = monster), do: monster
+
   def find(id) do
     case :global.whereis_name(:"monster_#{id}") do
       :undefined ->
@@ -117,6 +123,14 @@ defmodule Monster do
     room_id
     |> Room.find
     |> Room.value
+  end
+
+  def set_room_id(%Monster{} = monster, room_id) do
+    PubSub.unsubscribe(self, "rooms:#{monster.room_id}")
+    PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters")
+    PubSub.subscribe(self, "rooms:#{room_id}")
+    PubSub.subscribe(self, "rooms:#{room_id}:monsters")
+    Map.put(monster, :room_id, room_id)
   end
 
   def max_hp(%Monster{} = monster) do
@@ -293,16 +307,42 @@ defmodule Monster do
 
   def neutral?(%Monster{} = monster), do: !good?(monster) and !evil?(monster)
 
-  def display_enter_message(%Room{} = room, monster) do
+  def display_enter_message(%Room{} = room, monster) when is_pid(monster) do
+    display_enter_message(%Room{} = room, Monster.value(monster))
+  end
+  def display_enter_message(%Room{} = room, %Monster{} = monster) do
     display_enter_message(room, monster, Room.random_direction(room))
   end
 
-  def display_enter_message(%Room{} = room, monster, direction) do
-    message = monster
-              |> enter_message
+  def display_enter_message(%Room{} = room, monster, direction)  when is_pid(monster) do
+    display_enter_message(room, Monster.value(monster), Room.random_direction(room))
+  end
+  def display_enter_message(%Room{} = room, %Monster{enter_message: enter_message, name: name}, direction) do
+    message = enter_message
               |> interpolate(%{
-                   "name" => name(monster),
+                   "name" => name,
                    "direction" => Room.enter_direction(direction)
+                 })
+              |> capitalize_first
+
+    Phoenix.Channel.broadcast "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
+  end
+
+  def display_exit_message(%Room{} = room, monster) when is_pid(monster) do
+    display_exit_message(%Room{} = room, Monster.value(monster))
+  end
+  def display_exit_message(%Room{} = room, %Monster{} = monster) do
+    display_exit_message(room, monster, Room.random_direction(room))
+  end
+
+  def display_exit_message(%Room{} = room, monster, direction)  when is_pid(monster) do
+    display_exit_message(room, Monster.value(monster), Room.random_direction(room))
+  end
+  def display_exit_message(%Room{} = room, %Monster{exit_message: exit_message, name: name} = monster, direction) do
+    message = exit_message
+              |> interpolate(%{
+                   "name" => name,
+                   "direction" => Room.exit_direction(direction)
                  })
               |> capitalize_first
 

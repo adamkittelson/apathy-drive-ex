@@ -29,6 +29,7 @@ defmodule Commands.Possess do
     monster = Monster.insert(monster.pid)
 
     Phoenix.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
+    Phoenix.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
 
     spirit = spirit
              |> Map.put(:monster, monster.pid)

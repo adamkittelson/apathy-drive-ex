@@ -79,9 +79,8 @@ defmodule Systems.Combat do
        end)
   end
 
-  def stunned?(target) do
-    target
-    |> Components.Effects.value
+  def stunned?(%Monster{} = monster) do
+    monster.effects
     |> Map.values
     |> Enum.any? &(&1[:stunned])
   end

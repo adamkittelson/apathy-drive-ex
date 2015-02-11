@@ -224,9 +224,11 @@ defmodule Spirit do
 
   def handle_info(:unpossess, spirit) do
     monster = spirit.monster
+    room_id = Monster.room_id(monster)
 
     spirit = spirit
              |> Map.put(:monster, nil)
+             |> set_room_id(room_id)
              |> Spirit.send_scroll("<p>You leave the body of #{Monster.name(monster)}.</p>")
              |> Systems.Prompt.update
 
