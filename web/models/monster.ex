@@ -113,12 +113,6 @@ defmodule Monster do
     end
   end
 
-  def find_room(%Monster{room_id: room_id} ) do
-    room_id
-    |> Room.find
-    |> Room.value
-  end
-
   def find_room(%Monster{room_id: room_id}) do
     room_id
     |> Room.find

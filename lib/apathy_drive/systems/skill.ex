@@ -9,6 +9,13 @@ defmodule Systems.Skill do
     |> Enum.map(&String.to_atom/1)
   end
 
+  def universal do
+    all |> Enum.filter(fn(skill) ->
+             skill.universal?
+           end)
+        |> Enum.map(&(&1.name))
+  end
+
   def find(skill_name) do
     case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, to_string(skill_name)) do
       nil ->

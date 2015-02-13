@@ -7,13 +7,13 @@ defmodule Systems.Trainer do
     |> Spirit.send_scroll("<p>You can learn nothing here.</p>")
   end
 
-  def list(spirit, monster, room) do
+  def list(%Monster{} = monster, room) do
     devs = monster_power(monster)
-    header = "<span class='blue'>-=-=-=-=-=-=-=-</span>  <span class='white'>Skill Listing</span>  <span class='blue'>-=-=-=-=-=-=-=-</span>"
-    send_message(spirit, "scroll", "<p>#{header}</p>")
+
+    Monster.send_scroll(monster, "<p><span class='blue'>-=-=-=-=-=-=-=-</span>  <span class='white'>Skill Listing</span>  <span class='blue'>-=-=-=-=-=-=-=-</span></p>")
     skills_by_level(room) |> Map.keys |> Enum.each fn level ->
       row = "Level#{String.rjust("#{level}", 3)} -------------------- Cost ----- Rating"
-      send_message(spirit, "scroll", "<p><span class='blue'>#{row}</span></p>")
+      Monster.send_scroll(monster, "<p><span class='blue'>#{row}</span></p>")
       skills_by_level(room)[level] |> Enum.sort |> Enum.each fn skill ->
         skill_name = String.ljust(skill.name, 26)
         cost = cost(monster, skill)
@@ -22,13 +22,13 @@ defmodule Systems.Trainer do
         else
           cost = "<span class='green'>#{"#{cost}" |> String.ljust(8)}</span>"
         end
-        rating = "#{"#{skill.modified(monster)}" |> String.rjust(4)}</span>"
+        rating = "#{"#{Monster.modified_skill(monster, skill.name)}" |> String.rjust(4)}</span>"
         row = "    #{skill_name}#{cost}#{rating}%"
-        send_message(spirit, "scroll", "<p>#{row}</p>")
+        Monster.send_scroll(monster, "<p>#{row}</p>")
       end
     end
     footer = "<span class='blue'>-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</span>"
-    send_message(spirit, "scroll", "<p>#{footer}</p>")
+    Monster.send_scroll(monster, "<p>#{footer}</p>")
   end
 
   def train(entity, _room, []) do
@@ -59,13 +59,22 @@ defmodule Systems.Trainer do
   end
 
   def monster_power(monster) do
-    total_power(monster) - Components.Skills.power_spent(monster)
+    total_power(monster) - power_spent(monster)
   end
 
-  def total_power(entity) when is_pid(entity) do
-    level       = Components.Level.value(entity)
+  def power_spent(%Monster{skills: skills} = monster) do
+    skills
+    |> Map.keys
+    |> Enum.map(&power_spent(monster, &1))
+    |> Enum.sum
+  end
+
+  def power_spent(%Monster{skills: skills} = monster, skill_name) do
+    get_in(skills, [skill_name, "trained"]) || 0
+  end
+
+  def total_power(%Monster{level: level, experience: exp}) do
     level_power = total_power(level)
-    exp         = Components.Experience.value(entity)
     tolevel     = Systems.Level.exp_at_level(level + 1)
     percent     = exp / tolevel
     100 + level_power + round((total_power(level + 1) - level_power) * percent)
@@ -81,16 +90,16 @@ defmodule Systems.Trainer do
 
   def total_power(0, power), do: power
 
-  def cost(entity, skill) when is_atom(skill) do
-    cost(skill.cost, rating(skill, entity))
+  def cost(%Monster{} = monster, skill) do
+    cost(skill.cost, rating(skill, monster))
   end
 
   def cost(modifier, rating) when is_integer(rating) do
     [rating * modifier * 1.0 |> Float.ceil |> trunc, 1] |> Enum.max
   end
 
-  def rating(skill, entity) when is_pid(entity) do
-    rating(skill.cost, Components.Skills.power_spent(entity, skill))
+  def rating(skill, %Monster{} = monster) do
+    rating(skill.cost, power_spent(monster, skill.name))
   end
 
   def rating(modifier, power_spent) when is_integer(power_spent) do
@@ -107,10 +116,10 @@ defmodule Systems.Trainer do
     rating
   end
 
-  def skills_by_level(room) do
-    (Skills.universal ++ Components.Trainer.value(room))
+  def skills_by_level(%Room{trainable_skills: trainable_skills}) do
+    (Skills.universal ++ trainable_skills)
     |> Enum.reduce %{}, fn skill_name, skills ->
-         skill = Skills.find(skill_name)
+         skill = Systems.Skill.find(skill_name)
          skills = Map.put_new(skills, skill.level, [])
          Map.put(skills, skill.level, [skill | skills[skill.level]])
        end
