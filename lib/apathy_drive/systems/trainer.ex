@@ -117,9 +117,9 @@ defmodule Systems.Trainer do
   end
 
   def skills_by_level(%Room{trainable_skills: trainable_skills}) do
-    (Skills.universal ++ trainable_skills)
+    (Skill.universal ++ trainable_skills)
     |> Enum.reduce %{}, fn skill_name, skills ->
-         skill = Systems.Skill.find(skill_name)
+         skill = Skill.find(skill_name)
          skills = Map.put_new(skills, skill.level, [])
          Map.put(skills, skill.level, [skill | skills[skill.level]])
        end

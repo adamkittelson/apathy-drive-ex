@@ -151,19 +151,10 @@ defmodule Monster do
   end
 
   def stat_skill_bonus(%Monster{} = monster, stat_name) do
-    monster
-    |> trained_skills
-    |> Enum.map(&(Systems.Skill.find(to_string(&1))))
-    |> Enum.filter(fn(skill) ->
-         skill.modifiers
-         |> Map.keys
-         |> Enum.member?(stat_name)
-       end)
+    Skill.with_modifier(stat_name, trained_skills(monster))
     |> Enum.reduce(0, fn(skill, total_stat_modification) ->
          base = skill_from_training(monster, skill.name)
-         percentage = skill.modifiers[stat_name] / (skill.modifiers
-                                                    |> Map.values
-                                                    |> Enum.sum)
+         percentage = Skill.modifier_percentage(skill, stat_name)
          total_stat_modification + base * percentage
        end)
     |> trunc
@@ -201,15 +192,17 @@ defmodule Monster do
   end
 
   def modified_skill(%Monster{} = monster, skill_name) do
-    skill = Systems.Skill.find(skill_name)
+    skill = Skill.find(skill_name)
 
     base = base_skill(monster, skill_name)
 
     modified = if base > 0 do
-      total = Map.keys(skill.modifiers) |> Enum.reduce(0, fn(stat, total) ->
-                                       total + modified_stat(monster, stat) * Map.get(skill.modifiers, stat, 0)
-                                     end)
-      average = total / (Map.values(skill.modifiers) |> Enum.sum)
+      total = ["strength", "intelligence", "agility", "health"]
+              |> Enum.reduce(0, fn(stat, total) ->
+                   total + modified_stat(monster, stat) * Map.get(skill, stat, 0)
+                 end)
+
+      average = total / Skill.modifier_total(skill)
 
       round(base * (1 + average * 0.005))
     else
@@ -219,7 +212,7 @@ defmodule Monster do
   end
 
   def skill_from_training(%Monster{skills: skills}, skill_name) do
-    skill = Systems.Skill.find(skill_name)
+    skill = Skill.find(skill_name)
 
     power_spent = skills
                   |> Map.get(skill_name, %{})

@@ -65,13 +65,13 @@ defmodule ApathyDrive.Exits.AbilityTrap do
 
   def detect?(monster, room_exit) do
     :random.seed(:os.timestamp)
-    perception = Systems.Skill.modified(monster, "perception") - modifier(room_exit)
+    perception = Monster.modified_skill(monster, "perception") - modifier(room_exit)
     perception >= :random.uniform(100)
   end
 
   def dodge?(monster, room_exit) do
     :random.seed(:os.timestamp)
-    dodge = Systems.Skill.modified(monster, "dodge") - modifier(room_exit)
+    dodge = Monster.modified_skill(monster, "dodge") - modifier(room_exit)
     dodge >= :random.uniform(100)
   end
 
