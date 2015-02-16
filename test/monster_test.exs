@@ -39,8 +39,8 @@ defmodule MonsterTest do
       assert Monster.trained_skills(context.monster) == ["dodge"]
     end
 
-    should("have 3 dodge", context) do
-      assert Monster.base_skill(context.monster, "dodge") == 3
+    should("have 4 dodge", context) do
+      assert Monster.base_skill(context.monster, "dodge") == 4
     end
   end
 
@@ -53,8 +53,8 @@ defmodule MonsterTest do
       assert Monster.trained_skills(context.monster) == ["dodge"]
     end
 
-    should("have 13 dodge", context) do
-      assert Monster.base_skill(context.monster, "dodge") == 13
+    should("have 14 dodge", context) do
+      assert Monster.base_skill(context.monster, "dodge") == 14
     end
   end
 
@@ -72,12 +72,12 @@ defmodule MonsterTest do
       assert Monster.trained_skills(context.monster) == ["dodge"]
     end
 
-    should("have 13 base dodge", context) do
-      assert Monster.base_skill(context.monster, "dodge") == 13
+    should("have 14 base dodge", context) do
+      assert Monster.base_skill(context.monster, "dodge") == 14
     end
 
-    should("have 23 modified dodge", context) do
-      assert Monster.modified_skill(context.monster, "dodge") == 23
+    should("have 24 modified dodge", context) do
+      assert Monster.modified_skill(context.monster, "dodge") == 24
     end
   end
 
