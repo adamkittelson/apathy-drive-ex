@@ -31,34 +31,102 @@ defmodule Systems.Trainer do
     Monster.send_scroll(monster, "<p>#{footer}</p>")
   end
 
-  def train(entity, _room, []) do
-    send_message(entity, "scroll", "<p>Which skill would you like to train?</p>")
+  def train(%Monster{} = monster, _room, []) do
+    Monster.send_scroll(monster, "<p>Which skill would you like to train?</p>")
   end
 
-  def train(entity, room, args) do
+  def train(%Monster{} = monster, room, args) do
     args   = Enum.join(args, " ")
-    skills = Components.Trainer.skills(room)
+    skills = Skill.all(room)
 
     case Systems.Match.all(skills, :keyword_starts_with, args) do
       [] ->
-        send_message(entity, "scroll", "<p>You cannot train #{args} here.</p>")
+        Monster.send_scroll(monster, "<p>You cannot train #{args} here.</p>")
       [match] ->
-        train(entity, Components.Module.value(match))
+        train(monster, match)
       matches ->
-        send_message(entity, "scroll", "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
+        Monster.send_scroll(monster, "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
         Enum.each matches, fn(match) ->
-          send_message(entity, "scroll", "<p>-- #{Components.Name.value(match)}</p>")
+          Monster.send_scroll(monster, "scroll", "<p>-- #{match.name}</p>")
         end
     end
   end
 
-  def train(monster, skill) do
+  def train(%Monster{} = monster, %Skill{} = skill) do
     devs = monster_power(monster)
     cost = cost(monster, skill)
-    Components.Skills.train(monster, skill, devs, cost)
+
+    if devs < cost do
+      Monster.send_scroll(monster, "<p>You need #{cost} development points to train that skill.</p>")
+      Monster.send_scroll(monster, "<p>You only have #{devs}.</p>")
+    else
+      old_strength     = Monster.modified_stat(monster, "strength")
+      old_agility      = Monster.modified_stat(monster, "agility")
+      old_intelligence = Monster.modified_stat(monster, "intelligence")
+      old_health       = Monster.modified_stat(monster, "health")
+
+      # old_abilities = Components.Abilities.names(monster)
+
+
+      skills = Map.put_new(monster.skills, skill.name, %{})
+      current = get_in(skills, [skill.name, "trained"]) || 0
+      new = put_in skills[skill.name]["trained"], current + cost
+      monster = Map.put(monster, :skills, new)
+
+      rating = Monster.modified_skill(monster, skill.name)
+
+      new_devs = max(0, devs - cost)
+      spent = devs - new_devs
+
+      monster = Monster.save(monster)
+
+      Monster.send_scroll(monster, "<p>You spend #{spent} development points to train #{skill.name} to #{rating}%</p>")
+
+      new_strength     = Monster.modified_stat(monster, "strength")
+      new_agility      = Monster.modified_stat(monster, "agility")
+      new_intelligence = Monster.modified_stat(monster, "intelligence")
+      new_health       = Monster.modified_stat(monster, "health")
+
+      difference = new_strength - old_strength
+      if difference > 0 do
+        Monster.send_scroll(monster, "<p>Your strength increases by #{difference}!</p>")
+      end
+
+      difference = new_agility - old_agility
+      if difference > 0 do
+        Monster.send_scroll(monster, "<p>Your agility increases by #{difference}!</p>")
+      end
+
+      difference = new_intelligence - old_intelligence
+      if difference > 0 do
+        Monster.send_scroll(monster, "<p>Your intelligence increases by #{difference}!</p>")
+      end
+
+      difference = new_health - old_health
+      if difference > 0 do
+        Monster.send_scroll(monster, "<p>Your health increases by #{difference}!</p>")
+      end
+
+      # Components.Abilities.reset_abilities(monster)
+      # new_abilities = Components.Abilities.names(monster)
+      #
+      # new_abilities
+      # |> Enum.each(fn(ability) ->
+      #      if !Enum.member?(old_abilities, ability) do
+      #        send_message(monster, "scroll", "<p><span class='dark-cyan'>You learn #{ability}!</span></p>")
+      #      end
+      #    end)
+
+      cost = cost(monster, skill)
+
+      monster
+      |> Monster.send_scroll("<p>It will cost you #{cost} development points to advance this skill further.</p>")
+      |> Monster.send_scroll("<p>You have #{new_devs} development points left.</p>")
+      |> Monster.save
+    end
   end
 
-  def monster_power(monster) do
+  def monster_power(%Monster{} = monster) do
     total_power(monster) - power_spent(monster)
   end
 
@@ -116,10 +184,9 @@ defmodule Systems.Trainer do
     rating
   end
 
-  def skills_by_level(%Room{trainable_skills: trainable_skills}) do
-    (Skill.universal ++ trainable_skills)
-    |> Enum.reduce %{}, fn skill_name, skills ->
-         skill = Skill.find(skill_name)
+  def skills_by_level(%Room{} = room) do
+    Skill.all(room)
+    |> Enum.reduce %{}, fn skill, skills ->
          skills = Map.put_new(skills, skill.level, [])
          Map.put(skills, skill.level, [skill | skills[skill.level]])
        end

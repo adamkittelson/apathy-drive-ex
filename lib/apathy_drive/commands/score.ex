@@ -32,6 +32,7 @@ defmodule Commands.Score do
     chunks = get_chunks(stat_names)
     Enum.each chunks, &display_stats(monster, &1)
     display_effects(monster)
+    monster
   end
 
   def display_effects(%Monster{} = monster) do

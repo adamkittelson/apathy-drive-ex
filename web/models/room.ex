@@ -55,9 +55,11 @@ defmodule Room do
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
         PubSub.subscribe(pid, "rooms")
+
+        send(pid, :load_monsters)
+
         if room.lair_monsters do
           PubSub.subscribe(pid, "rooms:lairs")
-          send(pid, :load_monsters)
           send(pid, {:spawn_monsters, Date.now |> Date.convert(:secs)})
         end
 
@@ -84,10 +86,6 @@ defmodule Room do
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
 
-  # GenServer functions
-  def shop?(room),    do: !!shop_items(room)
-  def trainer?(room), do: !!trainable_skills(room)
-
   def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
 
@@ -97,6 +95,11 @@ defmodule Room do
     PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.reject(&(&1 == monster))
   end
+
+  def shop?(%Room{shop_items: nil}),          do: false
+  def shop?(%Room{shop_items: _}),            do: true
+  def trainer?(%Room{trainable_skills: nil}), do: false
+  def trainer?(%Room{trainable_skills: _}),   do: true
 
   def exit_directions(%Room{} = room) do
     room.exits

@@ -8,14 +8,13 @@ defmodule Commands.Train do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
-    current_room = Parent.of(spirit)
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
 
-    cond do
-      !Entity.has_component?(current_room, Components.Trainer) ->
-        send_message(spirit, "scroll", "<p><span class='red'>You cannot TRAIN if you are not at a trainer!</span></p>")
-      true ->
-        Systems.Trainer.train(monster, current_room, arguments)
+    if Room.trainer?(current_room) do
+      Systems.Trainer.train(monster, current_room, arguments)
+    else
+      Monster.send_scroll(monster, "<p><span class='red'>You cannot TRAIN if you are not at a trainer!</span></p>")
     end
   end
 end
