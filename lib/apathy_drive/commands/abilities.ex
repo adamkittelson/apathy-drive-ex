@@ -19,11 +19,11 @@ defmodule Commands.Abilities do
 
   def display_abilities(%Monster{} = monster) do
     monster.abilities
-    |>  Enum.filter(fn(%Ability{command: nil}) ->
-                         false
-                       (%Ability{command: _}) ->
-                         true
-        end)
+    |> Enum.filter(fn(%Ability{command: nil}) ->
+                       false
+                     (%Ability{command: _}) ->
+                       true
+       end)
     |> Enum.each(fn(%Ability{name: name, command: command, properties: properties}) ->
          mana_cost = properties["mana_cost"]
                      |> to_string

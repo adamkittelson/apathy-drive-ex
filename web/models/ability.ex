@@ -19,4 +19,9 @@ defmodule Ability do
     Map.put(ability, :keywords, String.split(name))
   end
 
+  def trainable do
+    query = from a in Ability, where: not is_nil(a.required_skills), select: a
+    Repo.all(query)
+  end
+
 end

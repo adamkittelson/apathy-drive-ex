@@ -62,13 +62,31 @@ defmodule Monster do
   end
 
   def set_abilities(%Monster{} = monster) do
+    abilities = monster_template_abilities(monster) ++
+                abilities_from_skills(monster)
     monster
-    |> Map.put(:abilities, monster_template_abilities(monster))
+    |> Map.put(:abilities, abilities)
   end
 
   def monster_template_abilities(%Monster{} = monster) do
     monster.monster_template.abilities
     |> Enum.map(&(Repo.get(Ability, &1)))
+  end
+
+  def abilities_from_skills(monster) do
+    base_skills = base_skills(monster)
+
+    Ability.trainable
+    |> Enum.filter(fn(%Ability{} = ability) ->
+         ability.required_skills
+         |> Map.keys
+         |> Enum.all?(fn(required_skill) ->
+              monster_skill  = Map.get(base_skills, required_skill, 0)
+              required_skill = Map.get(ability.required_skills, required_skill, 0)
+
+              monster_skill >= required_skill
+            end)
+       end)
   end
 
   def execute_command(monster, command, arguments) do
@@ -195,6 +213,14 @@ defmodule Monster do
            0
        end)
     |> Enum.sum
+  end
+
+  def base_skills(%Monster{skills: skills} = monster) do
+    skills
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
+         Map.put(base_skills, skill_name, base_skill(monster, skill_name))
+       end)
   end
 
   def base_skill(%Monster{skills: skills} = monster, skill_name) do

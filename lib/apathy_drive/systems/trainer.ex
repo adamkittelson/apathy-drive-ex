@@ -65,7 +65,7 @@ defmodule Systems.Trainer do
       old_intelligence = Monster.modified_stat(monster, "intelligence")
       old_health       = Monster.modified_stat(monster, "health")
 
-      # old_abilities = Components.Abilities.names(monster)
+      old_abilities = monster.abilities |> Enum.map(&(&1.name))
 
 
       skills = Map.put_new(monster.skills, skill.name, %{})
@@ -107,15 +107,16 @@ defmodule Systems.Trainer do
         Monster.send_scroll(monster, "<p>Your health increases by #{difference}!</p>")
       end
 
-      # Components.Abilities.reset_abilities(monster)
-      # new_abilities = Components.Abilities.names(monster)
-      #
-      # new_abilities
-      # |> Enum.each(fn(ability) ->
-      #      if !Enum.member?(old_abilities, ability) do
-      #        send_message(monster, "scroll", "<p><span class='dark-cyan'>You learn #{ability}!</span></p>")
-      #      end
-      #    end)
+      monster = Monster.set_abilities(monster)
+
+      new_abilities = monster.abilities |> Enum.map(&(&1.name))
+
+      new_abilities
+      |> Enum.each(fn(ability) ->
+           if !Enum.member?(old_abilities, ability) do
+             Monster.send_scroll(monster, "<p><span class='dark-cyan'>You learn #{ability}!</span></p>")
+           end
+         end)
 
       cost = cost(monster, skill)
 

@@ -55,8 +55,8 @@ defmodule ApathyDrive.Command do
     Systems.Prompt.display(monster)
 
     ability = monster.abilities
-              |> Enum.find(fn(ability) ->
-                   ability.properties(monster)[:command] == String.downcase(command)
+              |> Enum.find(fn(%Ability{command: cmd}) ->
+                   cmd == String.downcase(command)
                  end)
 
     if ability do
