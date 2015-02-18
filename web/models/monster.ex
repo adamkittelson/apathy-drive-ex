@@ -11,7 +11,6 @@ defmodule Monster do
     field :name,                :string
     field :skills,              ApathyDrive.JSONB, default: %{}
     field :limbs,               ApathyDrive.JSONB
-    field :monster_template_id, :integer
     field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
     field :alignment,           :decimal
@@ -45,16 +44,31 @@ defmodule Monster do
     timestamps
 
     belongs_to :room, Room
+    belongs_to :monster_template, MonsterTemplate
   end
 
-  def init(monster) do
+  def init(%Monster{} = monster) do
     if monster.room_id do
       PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters")
     end
 
     PubSub.subscribe(self, "monsters")
 
-    {:ok, Map.put(monster, :pid, self)}
+    monster = monster
+              |> Map.put(:pid, self)
+              |> set_abilities
+
+    {:ok, monster}
+  end
+
+  def set_abilities(%Monster{} = monster) do
+    monster
+    |> Map.put(:abilities, monster_template_abilities(monster))
+  end
+
+  def monster_template_abilities(%Monster{} = monster) do
+    monster.monster_template.abilities
+    |> Enum.map(&(Repo.get(Ability, &1)))
   end
 
   def execute_command(monster, command, arguments) do
@@ -85,7 +99,7 @@ defmodule Monster do
   end
 
   def load(id) do
-    case Repo.get(Monster, id) do
+    case Repo.one from m in Monster, where: m.id == ^id, preload: [:monster_template] do
       %Monster{} = monster ->
 
         mt = monster.monster_template_id

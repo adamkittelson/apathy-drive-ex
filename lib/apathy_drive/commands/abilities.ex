@@ -13,30 +13,28 @@ defmodule Commands.Abilities do
     |> Monster.send_scroll("<p><span class='white'>You have the following abilities:</span></p>")
     |> Monster.send_scroll("<p><span class='dark-magenta'>Mana   Command  Ability Name</span></p>")
     |> display_abilities
+
+    monster
   end
 
   def display_abilities(%Monster{} = monster) do
-    monster
-    # |> Components.Abilities.value
-    # |> Enum.map(fn(ability) ->
-    #      Components.Module.value(ability)
-    #    end)
-    # |> Enum.filter(fn(module) ->
-    #      module.properties(entity)
-    #      |> Map.has_key?(:command)
-    #    end)
-    # |> Enum.each(fn(module) ->
-    #      properties = module.properties(entity)
-    #      mana_cost = properties[:mana_cost]
-    #                  |> to_string
-    #                  |> String.ljust(6)
-    #
-    #      command = properties[:command]
-    #                |> to_string
-    #                |> String.ljust(8)
-    #
-    #      send_message(entity, "scroll", "<p><span class='dark-cyan'>#{mana_cost} #{command} #{module.name}</span></p>")
-    #    end)
+    monster.abilities
+    |>  Enum.filter(fn(%Ability{command: nil}) ->
+                         false
+                       (%Ability{command: _}) ->
+                         true
+        end)
+    |> Enum.each(fn(%Ability{name: name, command: command, properties: properties}) ->
+         mana_cost = properties["mana_cost"]
+                     |> to_string
+                     |> String.ljust(6)
+
+         command = command
+                   |> to_string
+                   |> String.ljust(8)
+
+         Monster.send_scroll(monster, "<p><span class='dark-cyan'>#{mana_cost} #{command} #{name}</span></p>")
+       end)
   end
 
 end
