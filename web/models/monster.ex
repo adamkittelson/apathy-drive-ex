@@ -49,6 +49,7 @@ defmodule Monster do
 
   def init(%Monster{} = monster) do
     if monster.room_id do
+      PubSub.subscribe(self, "rooms:#{monster.room_id}")
       PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters")
     end
 
@@ -417,6 +418,31 @@ defmodule Monster do
 
   def handle_cast({:execute_command, command, arguments}, monster) do
     monster = ApathyDrive.Command.execute(monster, command, arguments)
+    {:noreply, monster}
+  end
+
+  def handle_info({:greet, %{greeter: %Monster{pid: greeter_pid} = greeter,
+                             greeted: %Monster{pid: _greeted_pid} = greeted}},
+                             %Monster{pid: monster_pid} = monster)
+                             when greeter_pid == monster_pid do
+    send_scroll(monster, "<p><span class='dark-green'>#{greeted.greeting}</span></p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:greet, %{greeter: %Monster{pid: _greeter_pid} = greeter,
+                             greeted: %Monster{pid: greeted_pid} = greeted}},
+                             %Monster{pid: monster_pid} = monster)
+                             when greeted_pid == monster_pid do
+    send_scroll(monster, "<p><span class='dark-green'>#{greeter.name |> capitalize_first} greets you.</span></p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:greet, %{greeter: greeter, greeted: greeted}}, monster) do
+    send_scroll(monster, "<p><span class='dark-green'>#{greeter |> capitalize_first} greets #{greeted}.</span></p>")
+    {:noreply, monster}
+  end
+
+  def handle_info(_message, monster) do
     {:noreply, monster}
   end
 

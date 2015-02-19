@@ -1,5 +1,6 @@
 defmodule Commands.Greet do
   use ApathyDrive.Command
+  alias Phoenix.PubSub
 
   def keywords, do: ["greet"]
 
@@ -8,47 +9,44 @@ defmodule Commands.Greet do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(_spirit, monster, arguments) do
-    current_room = Parent.of(monster)
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
 
     if Enum.any? arguments do
-      target = current_room |> find_entity_in_room(Enum.join(arguments, " "))
-      if target do
-        if target == monster do
-          send_message(monster, "scroll", "<p>Greet yourself?</p>")
-        else
-          greet(monster, target, current_room)
-        end
-      else
-        send_message(monster, "scroll", "<p>Greet whom?</p>")
-      end
+      target = current_room |> find_monster_in_room(Enum.join(arguments, " "), monster)
+      greet(monster, target, current_room)
     else
-      send_message(monster, "scroll", "<p>Greet whom?</p>")
+      Monster.send_scroll(monster, "<p>Greet whom?</p>")
     end
   end
 
-  defp find_entity_in_room(room, string) do
-    room
-    |> Systems.Room.living_in_room
-    |> Systems.Match.one(:name_contains, string)
+  def greet(%Monster{} = monster, nil, %Room{} = room) do
+    Monster.send_scroll(monster, "<p>Greet whom?</p>")
   end
 
-  defp greet(monster, target, room) do
-    room
-    |> Systems.Room.characters_in_room
-    |> Enum.each(fn(character) ->
+  def greet(%Monster{} = monster, target, %Room{} = room) when is_pid(target) do
+    greet(monster, Monster.value(target), room)
+  end
 
-      observer = Possession.possessed(character) || character
+  def greet(%Monster{} = monster, %Monster{} = target, %Room{} = room) when monster == target do
+    Monster.send_scroll(monster, "<p>Greet yourself?</p>")
+  end
 
-      cond do
-        observer == monster ->
-          send_message(character, "scroll", "<p><span class='dark-green'>#{Components.Module.value(target).greeting}</span></p>")
-        observer == target ->
-          send_message(character, "scroll", "<p><span class='dark-green'>#{Components.Name.value(monster) |> capitalize_first} greets you.</span></p>")
-        true ->
-          send_message(character, "scroll", "<p><span class='dark-green'>#{Components.Name.value(monster) |> capitalize_first} greets #{Components.Name.value(target)}.</span></p>")
-      end
-    end)
+  def greet(%Monster{} = monster, %Monster{} = target, %Room{} = room) do
+    PubSub.broadcast "rooms:#{room.id}", {:greet, %{greeter: monster, greeted: target}}
+    monster
+  end
+
+  defp find_monster_in_room(%Room{} = room, string, %Monster{pid: pid} = monster) do
+    PubSub.subscribers("rooms:#{room.id}:monsters")
+    |> Enum.map(fn(monster_pid) ->
+         if monster_pid == pid do
+           monster
+         else
+           monster_pid
+         end
+       end)
+    |> Systems.Match.one(:name_contains, string)
   end
 
 end

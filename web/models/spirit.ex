@@ -3,6 +3,7 @@ defmodule Spirit do
   use GenServer
   use Systems.Reload
   require Logger
+  import Systems.Text
   alias ApathyDrive.Repo
   alias Phoenix.PubSub
 
@@ -234,6 +235,11 @@ defmodule Spirit do
 
     Phoenix.PubSub.unsubscribe(self, "monsters:#{Monster.id(monster)}")
 
+    {:noreply, spirit}
+  end
+
+  def handle_info({:greet, %{greeter: greeter, greeted: greeted}}, spirit) do
+    send_scroll(spirit, "<p><span class='dark-green'>#{greeter.name |> capitalize_first} greets #{greeted.name}.</span></p>")
     {:noreply, spirit}
   end
 
