@@ -1,5 +1,6 @@
 defmodule Commands.Ask do
   use ApathyDrive.Command
+  alias Phoenix.PubSub
 
   def keywords, do: ["ask"]
 
@@ -8,33 +9,45 @@ defmodule Commands.Ask do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(_spirit, monster, []),          do: send_message(monster, "scroll", "<p>Ask whom?</p>")
-  def execute(_spirit, monster, [_question]), do: send_message(monster, "scroll", "<p>Ask what?</p>")
+  def execute(%Monster{} = monster, []),          do: Monster.send_scroll(monster, "<p>Ask whom?</p>")
+  def execute(%Monster{} = monster, [_question]), do: Monster.send_scroll(monster, "<p>Ask what?</p>")
 
-  def execute(_spirit, monster, arguments) do
-    current_room = Parent.of(monster)
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
 
     [target | question] = arguments
 
-    target = current_room |> find_entity_in_room(target)
+    target = current_room |> find_monster_in_room(target, monster)
 
     ask(monster, target, Enum.join(question, " "))
   end
 
-  def ask(monster, nil, _question), do: send_message(monster, "scroll", "<p>Ask whom?</p>")
-  def ask(monster, target, question) do
-    questions = Components.Module.value(target).questions
+  def ask(%Monster{} = monster, nil, _question) do
+    send_message(monster, "scroll", "<p>Ask whom?</p>")
+  end
 
-    if questions |> Map.keys |> Enum.member?(question) do
-      Systems.Script.execute(questions[question], monster)
+  def ask(%Monster{} = monster, target, question) when is_pid(target) do
+    ask(monster, Monster.value(target), question)
+  end
+
+  def ask(%Monster{} = monster, %Monster{} = target, question) do
+    if monster.questions |> Map.keys |> Enum.member?(question) do
+      Systems.Script.execute(monster.questions[question], monster)
+      monster
     else
-      send_message(monster, "scroll", "<p><span class='dark-green'>#{Components.Name.value(target)} has nothing to tell you!</span></p>")
+      Monster.send_scroll(monster, "<p><span class='dark-green'>#{target.name} has nothing to tell you!</span></p>")
     end
   end
 
-  defp find_entity_in_room(room, string) do
-    room
-    |> Systems.Room.living_in_room
+  defp find_monster_in_room(%Room{} = room, string, %Monster{pid: pid} = monster) do
+    PubSub.subscribers("rooms:#{room.id}:monsters")
+    |> Enum.map(fn(monster_pid) ->
+         if monster_pid == pid do
+           monster
+         else
+           monster_pid
+         end
+       end)
     |> Systems.Match.one(:name_contains, string)
   end
 

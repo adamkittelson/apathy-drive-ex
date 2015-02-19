@@ -1,6 +1,4 @@
 defmodule Systems.Script do
-  import Utility
-  use Systems.Reload
 
   def execute(scripts, monster) do
     scripts
@@ -24,58 +22,58 @@ defmodule Systems.Script do
 
   def execute_script(instruction, monster), do: execute_instruction(instruction, monster, nil)
 
-  def execute_instruction(%{message: message}, monster, script) do
-    send_message(monster, "scroll", "<p>#{message}</p>")
+  def execute_instruction(%{"message" => message}, monster, script) do
+    Monster.send_scroll(monster, "<p>#{message}</p>")
     execute_script(script, monster)
   end
 
-  def execute_instruction(%{fail_flag: %{failure_message: message, flag: flag}}, monster, script) do
+  def execute_instruction(%{"fail_flag" => %{"failure_message" => message, "flag" => flag}}, monster, script) do
     if Components.Flags.has_flag?(monster, flag) do
-      send_message(monster, "scroll", "<p><span class='dark-green'>#{message}</p>")
+      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     else
       execute_script(script, monster)
     end
   end
 
-  def execute_instruction(%{give_flag: %{flag: flag, value: value}}, monster, script) do
+  def execute_instruction(%{"give_flag" => %{"flag" => flag, "value" => value}}, monster, script) do
     Components.Flags.set_flag(monster, flag, value)
     Entities.save!(monster)
     execute_script(script, monster)
   end
 
-  def execute_instruction(%{flag_equals: %{flag: flag, value: value}}, monster, script) do
+  def execute_instruction(%{"flag_equals" => %{"flag" => flag, "value" => value}}, monster, script) do
     if Components.Flags.flag_equals?(monster, flag, value) do
       execute_script(script, monster)
     end
   end
 
-  def execute_instruction(%{flag_at_least: %{flag: flag, value: value}}, monster, script) do
+  def execute_instruction(%{"flag_at_least" => %{"flag" => flag, "value" => value}}, monster, script) do
     if Components.Flags.flag_at_least?(monster, flag, value) do
       execute_script(script, monster)
     end
   end
 
-  def execute_instruction(%{script_link: new_script}, monster, script) do
+  def execute_instruction(%{"script_link" => new_script}, monster, script) do
     execute_script([new_script | script], monster)
   end
 
-  def execute_instruction(%{max_evil_points: %{failure_message: message, amount: amount}}, monster, script) do
+  def execute_instruction(%{"max_evil_points" => %{"failure_message" => message, "amount" => amount}}, monster, script) do
     if Components.Alignment.value(monster) <= amount do
       execute_script(script, monster)
     else
-      send_message(monster, "scroll", "<p><span class='dark-green'>#{message}</p>")
+      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     end
   end
 
-  def execute_instruction(%{min_level: %{failure_message: message, level: level}}, monster, script) do
+  def execute_instruction(%{"min_level" => %{"failure_message" => message, "level" => level}}, monster, script) do
     if Components.Level.value(monster) < level do
-      send_message(monster, "scroll", "<p><span class='dark-green'>#{message}</p>")
+      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     else
       execute_script(script, monster)
     end
   end
 
-  def execute_instruction(%{give_item: item}, monster, script) do
+  def execute_instruction(%{"give_item" => item}, monster, script) do
     it = ItemTemplates.find_by_id(item)
     if it do
       Systems.Item.spawn_item(it, monster)
@@ -83,23 +81,23 @@ defmodule Systems.Script do
     execute_script(script, monster)
   end
 
-  def execute_instruction(%{fail_item: %{failure_message: message, item: item}}, monster, script) do
+  def execute_instruction(%{"fail_item" => %{"failure_message" => message, "item" => item}}, monster, script) do
     if Systems.Item.has_item?(monster, item) do
-      send_message(monster, "scroll", "<p><span class='dark-green'>#{message}</p>")
+      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     else
       execute_script(script, monster)
     end
   end
 
-  def execute_instruction(%{check_item: %{failure_message: message, item: item}}, monster, script) do
+  def execute_instruction(%{"check_item" => %{"failure_message" => message, "item" => item}}, monster, script) do
     if Systems.Item.has_item?(monster, item) do
       execute_script(script, monster)
     else
-      send_message(monster, "scroll", "<p><span class='dark-green'>#{message}</p>")
+      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     end
   end
 
-  def execute_instruction(%{take_item: %{failure_message: message, item: item}}, monster, script) do
+  def execute_instruction(%{"take_item" => %{"failure_message" => message, "item" => item}}, monster, script) do
     i = Components.Items.get_items(monster)
         |> Enum.find(fn(i) ->
              Components.Name.value(i) == item
@@ -109,32 +107,32 @@ defmodule Systems.Script do
       Entities.delete!(i)
       execute_script(script, monster)
     else
-      send_message(monster, "scroll", "<p><span class='dark-green'>#{message}</p>")
+      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     end
   end
 
-  def execute_instruction(%{add_experience: experience}, monster, script) do
+  def execute_instruction(%{"add_experience" => experience}, monster, script) do
     old_power = Systems.Trainer.total_power(monster)
     Components.Experience.add(monster, experience)
     new_power = Systems.Trainer.total_power(monster)
     power_gain = new_power - old_power
     if power_gain > 0 do
-      send_message(monster, "scroll", "<p>Your #{Components.Name.value(monster)} gains #{power_gain} power.</p>")
+      Monster.send_scroll(monster, "<p>Your #{Components.Name.value(monster)} gains #{power_gain} power.</p>")
     end
     execute_script(script, monster)
   end
 
-  def execute_instruction(%{cast_ability: ability_name}, monster, script) do
+  def execute_instruction(%{"cast_ability" => ability_name}, monster, script) do
     case Abilities.find(ability_name) do
       nil ->
-        send_message(monster, "scroll", "<p><span class='red'>Not Implemented: #{ability_name}</span></p>")
+        Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: #{ability_name}</span></p>")
       ability ->
         ability.execute(monster, nil)
     end
     execute_script(script, monster)
   end
 
-  def execute_instruction(%{random: scripts}, monster, script) do
+  def execute_instruction(%{"random" => scripts}, monster, script) do
     :random.seed(:os.timestamp)
     roll = :random.uniform(100)
 
@@ -149,7 +147,7 @@ defmodule Systems.Script do
   end
 
   def execute_instruction(instruction, monster, _script) do
-    send_message(monster, "scroll", "<p><span class='red'>Not Implemented: #{inspect instruction}</span></p>")
+    Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: #{inspect instruction}</span></p>")
     false
   end
 
