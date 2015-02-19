@@ -126,7 +126,7 @@ defmodule MonsterTemplate do
     end
   end)
 
-  def handle_call({:spawn_monster, room}, _from, monster_template) do
+  def handle_call({:spawn_monster, %Room{} = room}, _from, monster_template) do
     values = monster_template
              |> Map.from_struct
              |> Enum.into(Keyword.new)

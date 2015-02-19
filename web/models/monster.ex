@@ -53,6 +53,7 @@ defmodule Monster do
     end
 
     PubSub.subscribe(self, "monsters")
+    PubSub.subscribe(self, "monster_template:#{monster.monster_template_id}")
 
     monster = monster
               |> Map.put(:pid, self)

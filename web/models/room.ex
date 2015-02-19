@@ -63,6 +63,11 @@ defmodule Room do
           send(pid, {:spawn_monsters, Date.now |> Date.convert(:secs)})
         end
 
+        if room.permanent_npc do
+          PubSub.subscribe(pid, "rooms:permanent_npcs")
+          send(pid, :spawn_permanent_npc)
+        end
+
         pid
       nil ->
         nil
@@ -215,6 +220,19 @@ defmodule Room do
            |> Map.put(:lair_next_spawn_at, Date.now
                                            |> Date.shift(mins: room.lair_frequency)
                                            |> Date.convert(:secs))
+
+    {:noreply, room}
+  end
+
+  def handle_info(:spawn_permanent_npc, room) do
+
+    mt = MonsterTemplate.find(room.permanent_npc)
+
+    unless MonsterTemplate.limit_reached?(mt) do
+      monster = MonsterTemplate.spawn_monster(mt, room)
+
+      Monster.display_enter_message(room, monster)
+    end
 
     {:noreply, room}
   end

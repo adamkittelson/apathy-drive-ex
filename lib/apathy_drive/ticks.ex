@@ -9,7 +9,7 @@ defmodule ApathyDrive.Ticks do
 
     TimerManager.call_every(tm, {:idle, 1_000, &idle/0})
     TimerManager.call_every(tm, {:hints, 60_000, &hints/0})
-    TimerManager.call_every(tm, {:lair_spawning, 60_000, &lair_spawning/0})
+    TimerManager.call_every(tm, {:monster_spawning, 60_000, &monster_spawning/0})
 
     {:ok, tm}
   end
@@ -22,7 +22,8 @@ defmodule ApathyDrive.Ticks do
     PubSub.broadcast("spirits:hints",  :display_hint)
   end
 
-  def lair_spawning do
-    PubSub.broadcast("rooms:lairs",  {:spawn_monsters, Date.now |> Date.convert(:secs)})
+  def monster_spawning do
+    PubSub.broadcast("rooms:lairs", {:spawn_monsters, Date.now |> Date.convert(:secs)})
+    PubSub.broadcast("rooms:permanent_npcs", :spawn_permanent_npc)
   end
 end

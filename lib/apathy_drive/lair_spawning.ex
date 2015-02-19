@@ -3,16 +3,16 @@ defmodule ApathyDrive.LairSpawning do
 
   def spawn_lair(room) do
     if room.lair_size > (room.id |> Room.spawned_monsters |> length) do
-      monster_template_ids = eligible_monsters(room)
-      if Enum.any?(monster_template_ids) do
-        monster_template = select_lair_monster(monster_template_ids)
+      monster_templates = eligible_monsters(room)
+      if Enum.any?(monster_templates) do
+        monster_template = select_lair_monster(monster_templates)
 
         monster = MonsterTemplate.spawn_monster(monster_template, room)
 
         Monster.lair_id(monster, room.id)
 
         Phoenix.PubSub.subscribe(monster, "rooms:#{room.id}:spawned_monsters")
-        Phoenix.PubSub.subscribe(monster, "monster_template:#{MonsterTemplate.id(monster_template)}")
+
         Monster.display_enter_message(room, monster)
         spawn_lair(room)
       end
