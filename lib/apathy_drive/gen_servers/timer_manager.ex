@@ -1,33 +1,34 @@
 defmodule TimerManager do
-  use Systems.Reload
-  use GenServer
 
-  # Public API
-  def call_after(timer_manager, {name, time, function}) do
-    ref = :erlang.start_timer(time, timer_manager, {name, function})
-    GenServer.cast(timer_manager, {:add_timer, name, ref})
-    ref
+  def call_after(%{timers: _timers} = entity, {name, time, function}) do
+    ref = :erlang.start_timer(time, self, {name, function})
+
+    put_in entity, [:timers, name], ref
   end
 
-  def call_every(timer_manager, {name, time, function}) do
-    ref = :erlang.start_timer(time, timer_manager, {name, time, function})
-    GenServer.cast(timer_manager, {:add_timer, name, ref})
-    ref
+  def call_every(%{timers: _timers} = entity, {name, time, function}) do
+    ref = :erlang.start_timer(time, self, {name, time, function})
+
+    put_in entity, [:timers, name], ref
   end
 
-  def timers(timer_manager) do
-    GenServer.call(timer_manager, :get_timers)
+  def timers(%{timers: timers}) do
+    Map.keys(timers)
   end
 
-  def time_remaining(timer_manager, name) do
-    GenServer.call(timer_manager, {:time_remaining, name})
+  def time_remaining(%{timers: timers} = entity, name) do
+    if ref = Map.get(timers, name) do
+      :erlang.read_timer(ref)
+    end
   end
 
-  def cancel(timer_manager, name) do
-    GenServer.cast(timer_manager, {:cancel, name})
+  def cancel(%{timers: timers} = entity, name) do
+    if ref = Map.get(timers, name) do
+      :erlang.cancel_timer(ref)
+    end
   end
 
-  defp execute_function(function) do
+  def execute_function(function) do
     try do
       function.()
     catch
@@ -42,59 +43,4 @@ defmodule TimerManager do
         # """
     end
   end
-
-  # GenServer API
-  def start do
-    GenServer.start(__MODULE__, HashDict.new)
-  end
-
-  def start_link do
-    GenServer.start_link(__MODULE__, HashDict.new)
-  end
-
-  def init(value) do
-    {:ok, value}
-  end
-
-  def handle_cast({:add_timer, name, ref}, refs) do
-    {:noreply, HashDict.put(refs, name, ref) }
-  end
-
-  def handle_cast({:cancel, name}, refs) do
-    if ref = HashDict.get(refs, name) do
-      :erlang.cancel_timer(ref)
-    end
-    {:noreply, HashDict.delete(refs, name) }
-  end
-
-  def handle_call(:get_timers, _from, refs) do
-    {:reply, HashDict.keys(refs), refs}
-  end
-
-  def handle_call({:time_remaining, name}, _from, refs) do
-    if ref = HashDict.get(refs, name) do
-      {:reply, :erlang.read_timer(ref), refs}
-    else
-      {:reply, nil, refs}
-    end
-  end
-
-  def handle_info({:timeout, ref, {name, time, function}}, refs) do
-    new_ref = :erlang.start_timer(time, self, {name, time, function})
-
-    execute_function(function)
-
-    {:noreply, HashDict.put(refs, name, new_ref)}
-  end
-
-  def handle_info({:timeout, ref, {name, function}}, refs) do
-    execute_function(function)
-    {:noreply, HashDict.delete(refs, name)}
-  end
-
-  def handle_info(info, refs) do
-    IO.puts "Unexpected TimerManger info: #{inspect(info)}"
-    {:noreply, refs}
-  end
-
 end

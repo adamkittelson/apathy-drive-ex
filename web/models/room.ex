@@ -26,10 +26,29 @@ defmodule Room do
     field :trainable_skills,      {:array, :string}
     field :exits,                 ApathyDrive.JSONB
     field :legacy_id,             :string
+    field :timers,                :any, virtual: true, default: %{}
 
     timestamps
 
     has_many :monsters, Monster
+  end
+
+  def init(%Room{} = room) do
+    PubSub.subscribe(self, "rooms")
+    PubSub.subscribe(self, "rooms:#{room.id}")
+    send(self, :load_monsters)
+
+    if room.lair_monsters do
+      PubSub.subscribe(self, "rooms:lairs")
+      send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)})
+    end
+
+    if room.permanent_npc do
+      PubSub.subscribe(self, "rooms:permanent_npcs")
+      send(self, :spawn_permanent_npc)
+    end
+
+    {:ok, room}
   end
 
   def start_room_id do
@@ -54,19 +73,6 @@ defmodule Room do
       %Room{} = room ->
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
-        PubSub.subscribe(pid, "rooms")
-
-        send(pid, :load_monsters)
-
-        if room.lair_monsters do
-          PubSub.subscribe(pid, "rooms:lairs")
-          send(pid, {:spawn_monsters, Date.now |> Date.convert(:secs)})
-        end
-
-        if room.permanent_npc do
-          PubSub.subscribe(pid, "rooms:permanent_npcs")
-          send(pid, :spawn_permanent_npc)
-        end
 
         pid
       nil ->
@@ -180,7 +186,23 @@ defmodule Room do
     end
   end
 
-
+  defp open!(%Room{} = room, direction) do
+    if open_duration = ApathyDrive.Exit.open_duration(room, direction) do
+      Systems.Effect.add(room, %{open: direction}, open_duration)
+      # todo: tell players in the room when it re-locks
+      #"The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
+    else
+      exits = room.exits
+              |> Enum.map(fn(room_exit) ->
+                   if room_exit["direction"] == direction do
+                     Map.put(room_exit, :open, true)
+                   else
+                     room_exit
+                   end
+                 end)
+      Map.put(room, :exits, exits)
+    end
+  end
 
   # Generate functions from Ecto schema
   fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
@@ -249,8 +271,41 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info(_message, spirit) do
-    {:noreply, spirit}
+  def handle_info({:door_bashed_open, %{basher: monster, direction: direction}}, room) do
+    room = open!(room, direction)
+
+    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+
+    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_bash, mirror_exit})
+    end
+
+    {:noreply, room}
+  end
+
+  def handle_info({:mirror_bash, room_exit}, room) do
+    room = open!(room, room_exit["direction"])
+    {:noreply, room}
+  end
+
+  def handle_info({:timeout, _ref, {name, time, function}}, refs) do
+    new_ref = :erlang.start_timer(time, self, {name, time, function})
+
+    TimerManager.execute_function(function)
+
+    {:noreply, HashDict.put(refs, name, new_ref)}
+  end
+
+  def handle_info({:timeout, _ref, {name, function}}, refs) do
+    TimerManager.execute_function(function)
+
+    {:noreply, HashDict.delete(refs, name)}
+  end
+
+  def handle_info(_message, room) do
+    {:noreply, room}
   end
 
 end

@@ -2,7 +2,7 @@ defmodule ApathyDrive.Exits.Command do
   use ApathyDrive.Exit
 
   def display_direction(_room, room_exit) do
-    room_exit[:name]
+    room_exit["name"]
   end
 
   def move(_current_room, %Spirit{} = spirit, _room_exit)  do
@@ -20,7 +20,7 @@ defmodule ApathyDrive.Exits.Command do
   end
 
   def move_via_command(current_room, %Spirit{} = spirit, room_exit) do
-    Spirit.send_scroll(spirit, "<p><span class='yellow'>#{room_exit.mover_message}</span></p>")
+    Spirit.send_scroll(spirit, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
 
     new_room = Room.find(room_exit["destination"])
                |> Room.value

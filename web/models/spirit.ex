@@ -243,6 +243,20 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info({:door_bashed_open, %{basher: %Monster{pid: basher_pid} = basher,
+                                        direction: direction,
+                                        type: type}},
+                                        spirit) do
+
+    send_scroll(spirit, "<p>You see #{basher.name} bash open the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:mirror_bash, room_exit}, spirit) do
+    send_scroll(spirit, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} just flew open!</p>")
+    {:noreply, spirit}
+  end
+
   def handle_info(_message, spirit) do
     {:noreply, spirit}
   end

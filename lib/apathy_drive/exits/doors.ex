@@ -35,13 +35,13 @@ defmodule ApathyDrive.Exits.Doors do
         if open?(current_room, room_exit) do
           super(current_room, monster, room_exit)
         else
-          send_message(monster, "scroll", "<p><span class='red'>The #{name} is closed!</span></p>")
+          Monster.send_scroll(monster, "<p><span class='red'>The #{name} is closed!</span></p>")
         end
       end
 
-      def bash?(monster, room_exit) do
+      def bash?(%Monster{} = monster, room_exit) do
         :random.seed(:os.timestamp)
-        Systems.Stat.modified(monster, "strength") + room_exit.difficulty >= :random.uniform(100)
+        Monster.modified_stat(monster, "strength") + room_exit["difficulty"] >= :random.uniform(100)
       end
 
       def damage(monster) do
@@ -53,56 +53,47 @@ defmodule ApathyDrive.Exits.Doors do
         Systems.Damage.do_damage(monster, amount)
       end
 
-      def bash(monster, room, room_exit) do
+      def bash(%Monster{} = monster, %Room{} = room, room_exit) do
         cond do
           open?(room, room_exit) ->
-            send_message(monster, "scroll", "<p>The #{name} is already open.</p>")
+            Monster.send_scroll(monster, "<p>The #{name} is already open.</p>")
           bash?(monster, room_exit) ->
-            open!(room, room_exit["direction"])
-            send_message(monster, "scroll", "<p>You bashed the #{name} open.</p>")
-
-            msg = "You see #{Components.Name.value(monster)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}."
-            room
-            |> Systems.Room.characters_in_room
-            |> Enum.each(fn(character) ->
-                 observer = Possession.possessed(character) || character
-
-                 if observer != monster do
-                   send_message(observer, "scroll", "<p>#{msg}</p>")
-                 end
-               end)
-
-            mirror_bash(room, room_exit)
+            Phoenix.PubSub.broadcast("rooms:#{room.id}",
+                                     {:door_bashed_open, %{basher: monster,
+                                                           direction: room_exit["direction"],
+                                                           type: name }})
+            monster
+            # mirror_bash(room, room_exit)
           true ->
-            send_message(monster, "scroll", "<p>Your attempts to bash through fail!</p>")
-            msg = "You see #{Components.Name.value(monster)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}."
-            room
-            |> Systems.Room.characters_in_room
-            |> Enum.each(fn(character) ->
-                 observer = Possession.possessed(character) || character
-
-                 if observer != monster do
-                   send_message(observer, "scroll", "<p>#{msg}</p>")
-                 end
-               end)
-            :random.seed(:os.timestamp)
-            if :random.uniform(3) == 3 do
-              damage(monster)
-            end
+            Monster.send_scroll(monster, "<p>Your attempts to bash through fail!</p>")
+            # msg = "You see #{Components.Name.value(monster)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}."
+            # room
+            # |> Systems.Room.characters_in_room
+            # |> Enum.each(fn(character) ->
+            #      observer = Possession.possessed(character) || character
+            # 
+            #      if observer != monster do
+            #        send_message(observer, "scroll", "<p>#{msg}</p>")
+            #      end
+            #    end)
+            # :random.seed(:os.timestamp)
+            # if :random.uniform(3) == 3 do
+            #   damage(monster)
+            # end
         end
       end
 
-      def open(monster, room, room_exit) do
+      def open(%Monster{} = monster, %Room{} = room, room_exit) do
         cond do
           locked?(room, room_exit) ->
-            send_message(monster, "scroll", "<p>The #{name} is locked.</p>")
+            Monster.send_scroll(monster, "<p>The #{name} is locked.</p>")
           open?(room, room_exit) ->
-            send_message(monster, "scroll", "<p>The #{name} was already open.</p>")
+            Monster.send_scroll(monster, "<p>The #{name} was already open.</p>")
           true ->
-            open!(room, room_exit["direction"])
-            send_message(monster, "scroll", "<p>The #{name} is now open.</p>")
+            #open!(room, room_exit["direction"])
+            Monster.send_scroll(monster, "<p>The #{name} is now open.</p>")
 
-            msg = "You see #{Components.Name.value(monster)} open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}."
+            msg = "You see #{monster.name} open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}."
             room
             |> Systems.Room.characters_in_room
             |> Enum.each(fn(character) ->
@@ -165,7 +156,7 @@ defmodule ApathyDrive.Exits.Doors do
         {mirror_room, mirror_exit} = mirror(room, room_exit)
 
         if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
-          open!(mirror_room, mirror_exit["direction"])
+          #open!(mirror_room, mirror_exit["direction"])
 
           mirror_room
           |> Systems.Room.characters_in_room
@@ -187,23 +178,13 @@ defmodule ApathyDrive.Exits.Doors do
         {mirror_room, mirror_exit} = mirror(room, room_exit)
 
         if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
-          open!(mirror_room, mirror_exit["direction"])
+          #open!(mirror_room, mirror_exit["direction"])
 
           mirror_room
           |> Systems.Room.characters_in_room
           |> Enum.each(fn(character) ->
                send_message(character, "scroll", "<p>The #{name} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just opened.</p>")
              end)
-        end
-      end
-
-      def open!(room, direction) do
-        if Components.Exits.get_open_duration(room, direction) do
-          Systems.Effect.add(room, %{open: direction}, Components.Exits.get_open_duration(room, direction))
-          # todo: tell players in the room when it re-locks
-          #"The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
-        else
-          Components.Exits.open_door(room, direction)
         end
       end
 
@@ -319,12 +300,12 @@ defmodule ApathyDrive.Exits.Doors do
         unlock!(room, direction)
       end
 
-      def locked?(room, room_exit) do
+      def locked?(%Room{} = room, room_exit) do
         !open?(room, room_exit) and !unlocked?(room, room_exit)
       end
 
-      def unlocked?(room, room_exit) do
-        Room.effects(room)
+      def unlocked?(%Room{effects: effects} = room, room_exit) do
+        effects
         |> Map.values
         |> Enum.filter(fn(effect) ->
              Map.has_key?(effect, :unlocked)

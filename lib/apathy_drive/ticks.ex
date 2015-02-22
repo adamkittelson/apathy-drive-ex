@@ -1,17 +1,22 @@
 defmodule ApathyDrive.Ticks do
   use Systems.Reload
   use Timex
+  use GenServer
   alias Phoenix.PubSub
 
+  def start_link(state) do
+    GenServer.start_link(__MODULE__, state)
+  end
 
-  def start_link do
-    {:ok, tm} = TimerManager.start_link
+  def init(state) do
+    IO.puts "tick state: #{inspect state}"
 
-    TimerManager.call_every(tm, {:idle, 1_000, &idle/0})
-    TimerManager.call_every(tm, {:hints, 60_000, &hints/0})
-    TimerManager.call_every(tm, {:monster_spawning, 60_000, &monster_spawning/0})
+    state = state
+            |> TimerManager.call_every({:idle, 1_000, &idle/0})
+            |> TimerManager.call_every({:hints, 60_000, &hints/0})
+            |> TimerManager.call_every({:monster_spawning, 60_000, &monster_spawning/0})
 
-    {:ok, tm}
+    {:ok, state}
   end
 
   def idle do

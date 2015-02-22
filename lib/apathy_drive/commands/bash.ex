@@ -8,8 +8,8 @@ defmodule Commands.Bash do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(_spirit, monster, arguments) do
-    current_room = Parent.of(monster)
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
 
     if Enum.any? arguments do
       direction = arguments
@@ -20,7 +20,7 @@ defmodule Commands.Bash do
 
       case room_exit do
         nil ->
-          send_message(monster, "scroll", "<p>There is no exit in that direction!</p>")
+          Monster.send_scroll(monster, "<p>There is no exit in that direction!</p>")
         %{"kind" => "Door"} ->
           ApathyDrive.Exits.Door.bash(monster, current_room, room_exit)
         %{"kind" => "Gate"} ->
@@ -28,10 +28,10 @@ defmodule Commands.Bash do
         %{"kind" => "Key"} ->
           ApathyDrive.Exits.Key.bash(monster, current_room, room_exit)
         _ ->
-          send_message(monster, "scroll", "<p>That exit has no door.</p>")
+          Monster.send_scroll(monster, "<p>That exit has no door.</p>")
       end
     else
-      send_message(monster, "scroll", "<p>Bash what?</p>")
+      Monster.send_scroll(monster, "<p>Bash what?</p>")
     end
   end
 

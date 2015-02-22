@@ -438,7 +438,31 @@ defmodule Monster do
   end
 
   def handle_info({:greet, %{greeter: greeter, greeted: greeted}}, monster) do
-    send_scroll(monster, "<p><span class='dark-green'>#{greeter |> capitalize_first} greets #{greeted}.</span></p>")
+    send_scroll(monster, "<p><span class='dark-green'>#{greeter.name |> capitalize_first} greets #{greeted}.</span></p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:door_bashed_open, %{basher: %Monster{pid: basher_pid} = basher,
+                                        direction: direction,
+                                        type: type}},
+                                        %Monster{pid: monster_pid} = monster)
+                                        when basher_pid == monster_pid do
+
+    send_scroll(monster, "<p>You bashed the #{type} open.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:door_bashed_open, %{basher: %Monster{pid: basher_pid} = basher,
+                                        direction: direction,
+                                        type: type}},
+                                        %Monster{pid: monster_pid} = monster) do
+
+    send_scroll(monster, "<p>You see #{basher.name} bash open the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:mirror_bash, room_exit}, monster) do
+    send_scroll(monster, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} just flew open!</p>")
     {:noreply, monster}
   end
 

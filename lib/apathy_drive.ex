@@ -22,7 +22,7 @@ defmodule ApathyDrive do
 
     children = [
       worker(ApathyDrive.Repo, []),
-      worker(ApathyDrive.Ticks, []),
+      worker(ApathyDrive.Ticks, [%{timers: %{}}]),
       worker(ApathyDrive.Endpoint, [])
     ]
 
@@ -33,15 +33,9 @@ defmodule ApathyDrive do
 
     if Mix.env != :test do
       IO.puts "Indexing..."
-      [index_abilities,
-      index_skills,
-      index_help,
+      [index_help,
       index_crit_tables]
       |> Enum.each(&(Task.await(&1, 30000)))
-      IO.puts "Done!"
-
-      IO.puts "Loading Entities..."
-      Entities.load!
       IO.puts "Done!"
     end
 
@@ -101,50 +95,6 @@ defmodule ApathyDrive do
     end
 
     get_file_list(paths, updated_file_index)
-  end
-
-  defp index_abilities do
-    Task.async fn ->
-    get_file_list(["lib/apathy_drive/data/**/abilities/**/*.ex"])
-    |> Enum.each(fn(file) ->
-         module_name = Path.basename(file)
-                       |> String.replace(".ex", "")
-                       |> Inflex.camelize
-
-        module = :"Elixir.Abilities.#{module_name}"
-
-        {:ok, ability} = Entity.init
-        Entity.add_component(ability, Components.Keywords, module.keywords)
-        Entity.add_component(ability, Components.Name, module.name)
-        Entity.add_component(ability, Components.Module, module)
-        Entity.add_component(ability, Components.Help, module.help)
-        Abilities.add(module.name, ability)
-        if module.help do
-          Help.add(ability)
-        end
-
-      end)
-    end
-  end
-
-  defp index_skills do
-    Task.async fn ->
-    get_file_list(["lib/apathy_drive/data/**/skills/**/*.ex"])
-    |> Enum.each(fn(file) ->
-         module_name = Path.basename(file)
-                       |> String.replace(".ex", "")
-                       |> Inflex.camelize
-        module = :"Elixir.Skills.#{module_name}"
-
-        {:ok, skill} = Entity.init
-        Entity.add_component(skill, Components.Keywords, module.keywords)
-        Entity.add_component(skill, Components.Name, module.name)
-        Entity.add_component(skill, Components.Module, module)
-        Entity.add_component(skill, Components.Help, module.help)
-        Skills.add(module.name, skill)
-        Help.add(skill)
-      end)
-    end
   end
 
   defp index_help do

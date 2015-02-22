@@ -96,6 +96,21 @@ defmodule ApathyDrive.Exit do
     end
   end
 
+  def open_duration(%Room{} = room, direction) do
+    get_exit_by_direction(room, direction)["open_duration_in_seconds"]
+  end
+
+  def mirror(%Room{exits: exits, id: id} = room, %{"destination" => destination}) do
+    mirror_room = Room.find(destination)
+                  |> Room.value
+
+    room_exit = mirror_room.exits
+                |> Enum.find(fn(%{"destination" => destination}) ->
+                     destination == id
+                   end)
+    {mirror_room, room_exit}
+  end
+
   defmacro __using__(_opts) do
     quote do
       use Systems.Reload
