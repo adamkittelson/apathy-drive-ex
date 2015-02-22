@@ -9,8 +9,6 @@ defmodule ApathyDrive.Ticks do
   end
 
   def init(state) do
-    IO.puts "tick state: #{inspect state}"
-
     state = state
             |> TimerManager.call_every({:idle, 1_000, &idle/0})
             |> TimerManager.call_every({:hints, 60_000, &hints/0})

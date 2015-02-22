@@ -290,6 +290,18 @@ defmodule Room do
     {:noreply, room}
   end
 
+  def handle_info({:door_bash_failed, %{basher: monster, direction: direction}}, room) do
+    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+
+    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_bash_failed, mirror_exit})
+    end
+
+    {:noreply, room}
+  end
+
   def handle_info({:timeout, _ref, {name, time, function}}, refs) do
     new_ref = :erlang.start_timer(time, self, {name, time, function})
 

@@ -63,23 +63,15 @@ defmodule ApathyDrive.Exits.Doors do
                                                            direction: room_exit["direction"],
                                                            type: name }})
             monster
-            # mirror_bash(room, room_exit)
           true ->
-            Monster.send_scroll(monster, "<p>Your attempts to bash through fail!</p>")
-            # msg = "You see #{Components.Name.value(monster)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}."
-            # room
-            # |> Systems.Room.characters_in_room
-            # |> Enum.each(fn(character) ->
-            #      observer = Possession.possessed(character) || character
-            # 
-            #      if observer != monster do
-            #        send_message(observer, "scroll", "<p>#{msg}</p>")
-            #      end
-            #    end)
-            # :random.seed(:os.timestamp)
+            Phoenix.PubSub.broadcast("rooms:#{room.id}",
+                                     {:door_bash_failed, %{basher: monster,
+                                                           direction: room_exit["direction"],
+                                                           type: name }})
             # if :random.uniform(3) == 3 do
             #   damage(monster)
             # end
+            monster
         end
       end
 

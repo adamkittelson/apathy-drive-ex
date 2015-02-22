@@ -466,6 +466,29 @@ defmodule Monster do
     {:noreply, monster}
   end
 
+  def handle_info({:door_bash_failed, %{basher: %Monster{pid: basher_pid} = basher,
+                                        direction: direction}},
+                                        %Monster{pid: monster_pid} = monster)
+                                        when basher_pid == monster_pid do
+
+    send_scroll(monster, "<p>Your attempts to bash through fail!</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:door_bash_failed, %{basher: %Monster{pid: basher_pid} = basher,
+                                        direction: direction,
+                                        type: type}},
+                                        monster) do
+
+    send_scroll(monster, "<p>You see #{basher.name} attempt to bash open the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:mirror_bash_failed, room_exit}, monster) do
+    send_scroll(monster, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} shudders from an impact, but it holds!</p>")
+    {:noreply, monster}
+  end
+
   def handle_info(_message, monster) do
     {:noreply, monster}
   end

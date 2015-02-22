@@ -103,7 +103,7 @@ defmodule Spirit do
   end
 
   def start_link(spirit_struct) do
-    GenServer.start_link(Spirit, spirit_struct)
+    GenServer.start_link(Spirit, spirit_struct, [name: {:global, :"spirit_#{spirit_struct.id}"}])
   end
 
   def online do
@@ -254,6 +254,20 @@ defmodule Spirit do
 
   def handle_info({:mirror_bash, room_exit}, spirit) do
     send_scroll(spirit, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} just flew open!</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:door_bash_failed, %{basher: %Monster{pid: basher_pid} = basher,
+                                        direction: direction,
+                                        type: type}},
+                                        spirit) do
+
+    send_scroll(spirit, "<p>You see #{basher.name} attempt to bash open the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:mirror_bash_failed, room_exit}, spirit) do
+    send_scroll(spirit, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} shudders from an impact, but it holds!</p>")
     {:noreply, spirit}
   end
 

@@ -12,15 +12,21 @@ defmodule Systems.Login do
 
   def login(socket, url) do
     spirit = Spirit.find_by_url(url)
+
     if spirit do
-      spirit = Map.put(spirit, :socket, socket)
+      case :global.whereis_name(:"spirit_#{spirit.id}") do
+        :undefined ->
+          spirit = Map.put(spirit, :socket, socket)
 
-      spirit = Spirit.login(spirit)
+          spirit = Spirit.login(spirit)
 
-      Spirit.activate_hint(spirit, "movement")
-      Spirit.activate_hint(spirit, "name")
-      Possession.unpossess(spirit)
-      spirit
+          Spirit.activate_hint(spirit, "movement")
+          Spirit.activate_hint(spirit, "name")
+          Possession.unpossess(spirit)
+          spirit
+        spirit ->
+          Spirit.socket(spirit, socket)
+      end
     end
   end
 
