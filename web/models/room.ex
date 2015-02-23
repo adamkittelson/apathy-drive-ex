@@ -228,11 +228,11 @@ defmodule Room do
     unlock!(room, direction)
   end
 
-  def unlock!(%Room{effects: effects} = room, direction) do
+  defp unlock!(%Room{effects: effects} = room, direction) do
     unlock_duration = if open_duration = ApathyDrive.Exit.open_duration(room, direction) do
       open_duration
     else
-      300
+      10#300
     end
 
     Systems.Effect.add(room, %{unlocked: direction}, unlock_duration)
@@ -407,18 +407,27 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:timeout, _ref, {name, time, function}}, refs) do
+  def handle_info({:timeout, _ref, {name, time, function}}, %Room{timers: timers} = room) do
     new_ref = :erlang.start_timer(time, self, {name, time, function})
 
+    timers = Map.put(timers, name, new_ref)
+
     TimerManager.execute_function(function)
 
-    {:noreply, HashDict.put(refs, name, new_ref)}
+    {:noreply, Map.put(room, :timers, timers)}
   end
 
-  def handle_info({:timeout, _ref, {name, function}}, refs) do
+  def handle_info({:timeout, _ref, {name, function}}, %Room{timers: timers} = room) do
     TimerManager.execute_function(function)
 
-    {:noreply, HashDict.delete(refs, name)}
+    timers = Map.delete(timers, name)
+
+    {:noreply, Map.put(room, :timers, timers)}
+  end
+
+  def handle_info({:remove_effect, key}, room) do
+    room = Systems.Effect.remove(room, key)
+    {:noreply, room}
   end
 
   def handle_info(_message, room) do

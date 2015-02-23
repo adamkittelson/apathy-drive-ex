@@ -11,8 +11,8 @@ defmodule Systems.Effect do
   def add(%{effects: _effects} = entity, effect, duration) do
     key = Time.now(:msecs) * 1000 |> trunc
 
-    TimerManager.call_after(entity, {{:effect, key}, duration |> seconds, fn ->
-      remove(entity, key)
+    entity = TimerManager.call_after(entity, {{:effect, key}, duration |> seconds, fn ->
+      send(self, {:remove_effect, key})
     end})
 
     effect = if effect && effect[:timers] do
@@ -58,14 +58,15 @@ defmodule Systems.Effect do
       %{:timers => timers, :wear_message => wear_message} ->
         send_scroll(entity, "<p><span class='dark-cyan'>#{wear_message}</span></p>")
 
-        Enum.reduce(timers, entity, fn(timer_name, entity) ->
+        Enum.each(timers, fn(timer_name) ->
           TimerManager.cancel(entity, timer_name)
         end)
         Map.put entity, :effects, Map.delete(effects, key)
       %{:timers => timers} ->
-        Enum.reduce(timers, entity, fn(timer_name, entity) ->
+        Enum.each(timers, fn(timer_name) ->
           TimerManager.cancel(entity, timer_name)
         end)
+
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->
         entity
