@@ -195,13 +195,49 @@ defmodule Room do
       exits = room.exits
               |> Enum.map(fn(room_exit) ->
                    if room_exit["direction"] == direction do
-                     Map.put(room_exit, :open, true)
+                     Map.put(room_exit, "open", true)
                    else
                      room_exit
                    end
                  end)
       Map.put(room, :exits, exits)
     end
+  end
+
+  defp close!(%Room{effects: effects} = room, direction) do
+    room = effects
+           |> Map.keys
+           |> Enum.filter(fn(key) ->
+                effects[key][:open] == direction
+              end)
+           |> Enum.reduce(room, fn(room, key) ->
+                Systems.Effect.remove(room, key)
+              end)
+
+    exits = room.exits
+            |> Enum.map(fn(room_exit) ->
+                 if room_exit["direction"] == direction do
+                   Map.delete(room_exit, "open")
+                 else
+                   room_exit
+                 end
+               end)
+
+    room = Map.put(room, :exits, exits)
+
+    unlock!(room, direction)
+  end
+
+  def unlock!(%Room{effects: effects} = room, direction) do
+    unlock_duration = if open_duration = ApathyDrive.Exit.open_duration(room, direction) do
+      open_duration
+    else
+      300
+    end
+
+    Systems.Effect.add(room, %{unlocked: direction}, unlock_duration)
+    # todo: tell players in the room when it re-locks
+    #"The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
   end
 
   # Generate functions from Ecto schema
@@ -297,6 +333,75 @@ defmodule Room do
 
     if mirror_exit["kind"] == room_exit["kind"] do
       Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_bash_failed, mirror_exit})
+    end
+
+    {:noreply, room}
+  end
+
+  def handle_info({:door_opened, %{opener: monster, direction: direction}}, room) do
+    room = open!(room, direction)
+
+    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+
+    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_open, mirror_exit})
+    end
+
+    {:noreply, room}
+  end
+
+  def handle_info({:mirror_open, room_exit}, room) do
+    room = open!(room, room_exit["direction"])
+    {:noreply, room}
+  end
+
+  def handle_info({:door_closed, %{closer: monster, direction: direction}}, room) do
+    room = close!(room, direction)
+
+    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+
+    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_close, mirror_exit})
+    end
+
+    {:noreply, room}
+  end
+
+  def handle_info({:mirror_close, room_exit}, room) do
+    room = close!(room, room_exit["direction"])
+    {:noreply, room}
+  end
+
+  def handle_info({:door_picked, %{picker: monster, direction: direction}}, room) do
+    room = unlock!(room, direction)
+
+    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+
+    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_pick, mirror_exit})
+    end
+
+    {:noreply, room}
+  end
+
+  def handle_info({:mirror_pick, room_exit}, room) do
+    room = unlock!(room, room_exit["direction"])
+    {:noreply, room}
+  end
+
+  def handle_info({:door_pick_failed, %{picker: monster, direction: direction}}, room) do
+    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+
+    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_pick_failed, mirror_exit})
     end
 
     {:noreply, room}

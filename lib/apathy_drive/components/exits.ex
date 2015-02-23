@@ -50,14 +50,6 @@ defmodule Components.Exits do
   end
 
   def handle_call({:close_door, direction}, exits) do
-    exits = exits
-            |> Enum.map(fn(room_exit) ->
-                 if room_exit["direction"] == direction do
-                   Map.delete(room_exit, :open)
-                 else
-                   room_exit
-                 end
-               end)
     {:ok, exits, exits}
   end
 

@@ -5,7 +5,7 @@ defmodule ApathyDrive.MUD do
 
   def join("mud", message, socket) do
     if spirit = Systems.Login.login(socket, message["login"]) do
-      send_message(spirit, "clear scroll")
+      #send_message(spirit, "clear scroll")
 
       spirit_struct = Spirit.value(spirit)
 

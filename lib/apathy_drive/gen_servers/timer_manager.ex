@@ -1,15 +1,19 @@
 defmodule TimerManager do
 
-  def call_after(%{timers: _timers} = entity, {name, time, function}) do
+  def call_after(%{timers: timers} = entity, {name, time, function}) do
     ref = :erlang.start_timer(time, self, {name, function})
 
-    put_in entity, [:timers, name], ref
+    timers = Map.put(timers, name, ref)
+
+    Map.put(entity, :timers, timers)
   end
 
-  def call_every(%{timers: _timers} = entity, {name, time, function}) do
+  def call_every(%{timers: timers} = entity, {name, time, function}) do
     ref = :erlang.start_timer(time, self, {name, time, function})
 
-    put_in entity, [:timers, name], ref
+    timers = Map.put(timers, name, ref)
+
+    Map.put(entity, :timers, timers)
   end
 
   def timers(%{timers: timers}) do

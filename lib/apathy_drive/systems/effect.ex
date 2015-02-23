@@ -24,10 +24,11 @@ defmodule Systems.Effect do
     add_effect(entity, key, effect)
   end
 
-  def add_effect(%{effects: _effects} = entity, key, %{stack_key: stack_key, stack_count: stack_count} = effect) do
+  def add_effect(%{effects: effects} = entity, key, %{stack_key: stack_key, stack_count: stack_count} = effect) do
     case stack_count(entity, stack_key) do
       count when count < stack_count ->
-        put_in entity, [:timers, key], effect
+        effects = Map.put(effects, key, effect)
+        Map.put(entity, :effects, effects)
       count ->
         entity
         |> remove_oldest_stack(effect[:stack_key])
@@ -35,8 +36,9 @@ defmodule Systems.Effect do
     end
   end
 
-  def handle_call(%{effects: _effects} = entity, key, effect) do
-    put_in entity, [:effects, key], effect
+  def add_effect(%{effects: effects} = entity, key, effect) do
+    effects = Map.put(effects, key, effect)
+    Map.put(entity, :effects, effects)
   end
 
   def remove_oldest_stack(%{effects: effects} = entity, stack_key) do
@@ -59,10 +61,12 @@ defmodule Systems.Effect do
         Enum.reduce(timers, entity, fn(timer_name, entity) ->
           TimerManager.cancel(entity, timer_name)
         end)
+        Map.put entity, :effects, Map.delete(effects, key)
       %{:timers => timers} ->
         Enum.reduce(timers, entity, fn(timer_name, entity) ->
           TimerManager.cancel(entity, timer_name)
         end)
+        Map.put entity, :effects, Map.delete(effects, key)
       _ ->
         entity
     end

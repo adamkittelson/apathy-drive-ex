@@ -26,6 +26,7 @@ defmodule Systems.Login do
           spirit
         spirit ->
           Spirit.socket(spirit, socket)
+          spirit
       end
     end
   end

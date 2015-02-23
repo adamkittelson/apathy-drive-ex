@@ -271,6 +271,62 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info({:door_opened, %{opener: %Monster{} = opener,
+                                   direction: direction,
+                                   type: type}},
+                                   spirit) do
+
+    send_scroll(spirit, "<p>You see #{opener.name} open the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:mirror_open, room_exit}, spirit) do
+    send_scroll(spirit, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} just opened.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:door_closed, %{closer: %Monster{} = closer,
+                                   direction: direction,
+                                   type: type}},
+                                   spirit) do
+
+    send_scroll(spirit, "<p>You see #{closer.name} close the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:mirror_close, room_exit}, spirit) do
+    send_scroll(spirit, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} just closed.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:door_picked, %{picker: %Monster{pid: picker_pid} = picker,
+                                   direction: direction,
+                                   type: type}},
+                                   spirit) do
+
+    send_scroll(spirit, "<p>You see #{picker.name} pick the lock on the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:mirror_pick, room_exit}, spirit) do
+    send_scroll(spirit, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} unlocks with a click.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:door_pick_failed, %{picker: %Monster{pid: picker_pid} = picker,
+                                        direction: direction,
+                                        type: type}},
+                                        spirit) do
+
+    send_scroll(spirit, "<p>You see #{picker.name} attempt to pick the lock on the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:mirror_pick_failed, room_exit}, spirit) do
+    send_scroll(spirit, "<p>You hear a scratching sound in the lock on the #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")
+    {:noreply, spirit}
+  end
+
   def handle_info(_message, spirit) do
     {:noreply, spirit}
   end
