@@ -5,6 +5,7 @@ defmodule Ability do
   schema "abilities" do
     field :name,            :string
     field :command,         :string
+    field :kind,            :string
     field :description,     :string
     field :required_skills, ApathyDrive.JSONB
     field :properties,      ApathyDrive.JSONB
