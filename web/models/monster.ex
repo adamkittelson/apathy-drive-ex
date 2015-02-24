@@ -378,6 +378,28 @@ defmodule Monster do
     Phoenix.Channel.broadcast "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
   end
 
+  defp regen_rate(seed) when is_integer(seed) do
+    regen_rate(trunc(seed / 2), 0)
+  end
+
+  defp regen_rate(seed, rate) when seed > 0 do
+    regen_rate(seed - 1, rate + ((seed - 1) / 100))
+  end
+
+  defp regen_rate(0, rate) do
+    trunc(rate)
+  end
+
+  def hp_regen_per_tick(%Monster{} = monster) do
+    regen_rate(modified_stat(monster, "health"))
+    |> max(1)
+  end
+
+  def mana_regen_per_tick(%Monster{} = monster) do
+    regen_rate(modified_stat(monster, "intelligence"))
+    |> max(1)
+  end
+
   # Generate functions from Ecto schema
   fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
@@ -581,6 +603,18 @@ defmodule Monster do
 
   def handle_info({:mirror_pick_failed, room_exit}, monster) do
     send_scroll(monster, "<p>You hear a scratching sound in the lock on the #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info(:regen, %Monster{hp: hp, mana: mana} = monster) do
+    max_hp   = max_hp(monster)
+    max_mana = max_mana(monster)
+
+    monster = monster
+              |> Map.put(:hp,   min(  hp + hp_regen_per_tick(monster),   max_hp))
+              |> Map.put(:mana, min(mana + mana_regen_per_tick(monster), max_mana))
+              |> Systems.Prompt.update
+
     {:noreply, monster}
   end
 
