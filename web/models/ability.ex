@@ -48,6 +48,18 @@ defmodule Ability do
     }
   end
 
+  def find_monster_in_room(room, string, %Monster{pid: pid} = monster) do
+    PubSub.subscribers("rooms:#{room.id}:monsters")
+    |> Enum.map(fn(monster_pid) ->
+         if monster_pid == pid do
+           monster
+         else
+           monster_pid
+         end
+       end)
+    |> Systems.Match.one(:name_contains, string)
+  end
+
   def execute(%Monster{mana: mana} = monster,
               %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
     monster
@@ -56,6 +68,23 @@ defmodule Ability do
 
   def execute(%Monster{} = monster, %Ability{} = ability, "") do
     execute(monster, ability, monster)
+  end
+
+  def execute(%Monster{} = monster, %Ability{} = ability, target) when is_binary(target) do
+    target_monster = monster
+                     |> Monster.find_room
+                     |> find_monster_in_room(target, monster)
+
+    case target_monster do
+      nil ->
+        Monster.send_scroll(monster, "<p><span class='red'>You don't see #{target} here.</span></p>")
+      target ->
+        execute(monster, ability, target_monster)
+      end
+  end
+
+  def execute(%Monster{} = monster, %Ability{} = ability, target) when is_pid(target) do
+    execute(monster, ability, Monster.value(target))
   end
 
   def execute(%Monster{} = monster, %Ability{} = ability, %Monster{} = target) do
