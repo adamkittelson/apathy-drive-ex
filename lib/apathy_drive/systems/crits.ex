@@ -21,7 +21,7 @@ defmodule Systems.Crits do
       send_message(target, "scroll", "<p>You take damage from your wounds!</p>")
       Systems.Damage.do_damage(target, damage * damage_over_time[:damage])
     end})
-    Effect.add(target, %{:timers => [timer]}, damage_over_time[:duration])
+    Effect.add(target, %{"timers" => [timer]}, damage_over_time[:duration])
   end
 
   def apply_limb_loss_effects(target, nil), do: nil

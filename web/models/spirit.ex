@@ -327,6 +327,16 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info({:cast_message, messages: messages,
+                                  user: %Monster{pid: user_pid} = user,
+                                  target: %Monster{pid: target_pid} = target},
+                  %Spirit{pid: pid} = spirit) do
+
+    send_scroll(spirit, messages["spectator"])
+
+    {:noreply, spirit}
+  end
+
   def handle_info(_message, spirit) do
     {:noreply, spirit}
   end

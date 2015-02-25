@@ -21,6 +21,7 @@ defmodule Monster do
     field :combat,              :any,     virtual: true, default: %{"break_at" => 0}
     field :flags,               :any,     virtual: true, default: %{}
     field :effects,             :any,     virtual: true, default: %{}
+    field :timers,              :any,     virtual: true, default: %{}
     field :disposition,         :string,  virtual: true
     field :description,         :string,  virtual: true
     field :death_message,       :string,  virtual: true
@@ -614,6 +615,84 @@ defmodule Monster do
               |> Map.put(:hp,   min(  hp + hp_regen_per_tick(monster),   max_hp))
               |> Map.put(:mana, min(mana + mana_regen_per_tick(monster), max_mana))
               |> Systems.Prompt.update
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:timeout, _ref, {name, time, function}}, %Monster{timers: timers} = monster) do
+    new_ref = :erlang.start_timer(time, self, {name, time, function})
+
+    timers = Map.put(timers, name, new_ref)
+
+    TimerManager.execute_function(function)
+
+    {:noreply, Map.put(monster, :timers, timers)}
+  end
+
+  def handle_info({:timeout, _ref, {name, function}}, %Monster{timers: timers} = monster) do
+    TimerManager.execute_function(function)
+
+    timers = Map.delete(timers, name)
+
+    {:noreply, Map.put(monster, :timers, timers)}
+  end
+
+  def handle_info({:remove_effect, key}, room) do
+    room = Systems.Effect.remove(room, key)
+    {:noreply, room}
+  end
+
+  # {
+  #   "expiration_message" : "The effects of blur wear off.",
+  #   "cast_message" : {
+  #     "target" : "{{user}} casts blur upon you!",
+  #     "user" : "You cast blur on {{target}}!",
+  #     "spectator" : "{{user}} casts blur on {{target}}!"
+  #   },
+  #   "effect_message" : "You are blurred!",
+  #   "dodge" : 5,
+  #   "mana_cost" : 4,
+  #   "duration" : 210
+  # }
+  #
+  def handle_info({:ability_target, %Ability{} = ability}, monster) do
+    send_scroll(monster, "<p><span class='#{Ability.color(ability)}'>#{ability.properties["effect_message"]}</span></p>")
+
+    monster = Systems.Effect.add(monster,
+                                 ability.properties["effects"],
+                                 ability.properties["duration"])
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:cast_message, messages: messages,
+                                  user: %Monster{pid: user_pid} = user,
+                                  target: %Monster{pid: target_pid} = target},
+                  %Monster{pid: pid} = monster)
+                  when pid == user_pid do
+
+    send_scroll(monster, messages["user"])
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:cast_message, messages: messages,
+                                  user: %Monster{pid: user_pid} = user,
+                                  target: %Monster{pid: target_pid} = target},
+                  %Monster{pid: pid} = monster)
+                  when pid == target_pid do
+
+    send_scroll(monster, messages["target"])
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:cast_message, messages: messages,
+                                  user: %Monster{pid: user_pid} = user,
+                                  target: %Monster{pid: target_pid} = target},
+                  %Monster{pid: pid} = monster) do
+
+    send_scroll(monster, messages["spectator"])
 
     {:noreply, monster}
   end

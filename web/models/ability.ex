@@ -1,6 +1,8 @@
 defmodule Ability do
   use Ecto.Model
+  import Systems.Text
   alias ApathyDrive.Repo
+  alias Phoenix.PubSub
 
   schema "abilities" do
     field :name,            :string
@@ -23,6 +25,43 @@ defmodule Ability do
   def trainable do
     query = from a in Ability, where: not is_nil(a.required_skills), select: a
     Repo.all(query)
+  end
+
+  def color(%Ability{kind: "attack"}),      do: "red"
+  def color(%Ability{kind: "curse"}),       do: "red"
+  def color(%Ability{kind: "area attack"}), do: "red"
+  def color(%Ability{kind: "area curse"}),  do: "red"
+  def color(%Ability{kind: _}), do: "blue"
+
+  def prep_message(message, %Ability{} = ability, %Monster{} = user, %Monster{} = target) do
+    message = message
+              |> interpolate(%{"user" => user, "target" => target})
+              |> capitalize_first
+    "<p><span class='#{color(ability)}'>#{message}</span></p>"
+  end
+
+  def cast_messages(%Ability{} = ability, %Monster{} = user, %Monster{} = target) do
+    %{
+      "user"      => prep_message(ability.properties["cast_message"]["user"],      ability, user, target),
+      "target"    => prep_message(ability.properties["cast_message"]["target"],    ability, user, target),
+      "spectator" => prep_message(ability.properties["cast_message"]["spectator"], ability, user, target)
+    }
+  end
+
+  def execute(%Monster{} = monster, %Ability{} = ability, "") do
+    execute(monster, ability, monster)
+  end
+
+  def execute(%Monster{} = monster, %Ability{} = ability, %Monster{} = target) do
+    PubSub.broadcast("rooms:#{monster.room_id}", {:cast_message,
+                                                   messages: cast_messages(ability,
+                                                                           monster,
+                                                                           target),
+                                                   user: monster,
+                                                   target: target})
+
+    send(target.pid, {:ability_target, ability})
+    Map.put(monster, :mana, monster.mana - ability.properties["mana_cost"])
   end
 
 end

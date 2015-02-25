@@ -60,7 +60,7 @@ defmodule ApathyDrive.Command do
                  end)
 
     if ability do
-      Components.Module.value(ability).execute(monster, Enum.join(arguments, " "))
+      Ability.execute(monster, ability, Enum.join(arguments, " "))
     else
       room = Monster.find_room(monster)
 
