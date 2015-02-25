@@ -48,6 +48,12 @@ defmodule Ability do
     }
   end
 
+  def execute(%Monster{mana: mana} = monster,
+              %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
+    monster
+    |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+  end
+
   def execute(%Monster{} = monster, %Ability{} = ability, "") do
     execute(monster, ability, monster)
   end
@@ -61,7 +67,10 @@ defmodule Ability do
                                                    target: target})
 
     send(target.pid, {:ability_target, ability})
-    Map.put(monster, :mana, monster.mana - ability.properties["mana_cost"])
+
+    monster
+    |> Map.put(:mana, monster.mana - ability.properties["mana_cost"])
+    |> Systems.Prompt.update
   end
 
 end
