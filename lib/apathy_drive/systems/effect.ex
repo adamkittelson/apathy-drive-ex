@@ -24,14 +24,14 @@ defmodule Systems.Effect do
     add_effect(entity, key, effect)
   end
 
-  def add_effect(%{effects: effects} = entity, key, %{stack_key: stack_key, stack_count: stack_count} = effect) do
+  def add_effect(%{effects: effects} = entity, key, %{"stack_key" => stack_key, "stack_count" => stack_count} = effect) do
     case stack_count(entity, stack_key) do
       count when count < stack_count ->
         effects = Map.put(effects, key, effect)
         Map.put(entity, :effects, effects)
-      count ->
+      _count ->
         entity
-        |> remove_oldest_stack(effect[:stack_key])
+        |> remove_oldest_stack(effect["stack_key"])
         |> add_effect(key, effect)
     end
   end
@@ -42,7 +42,7 @@ defmodule Systems.Effect do
   end
 
   def remove_oldest_stack(%{effects: effects} = entity, stack_key) do
-    oldest = effects
+    oldest = entity
              |> stack(stack_key)
              |> Enum.sort
              |> List.first
@@ -82,7 +82,7 @@ defmodule Systems.Effect do
     effects
     |> Map.keys
     |> Enum.filter(fn(key) ->
-         effects[key][:stack_key] == stack_key
+         effects[key]["stack_key"] == stack_key
        end)
   end
 
