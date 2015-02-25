@@ -38,8 +38,8 @@ defmodule Commands.Score do
   def display_effects(%Monster{} = monster) do
     monster.effects
     |> Map.values
-    |> Enum.filter(&(Map.has_key?(&1, :effect_message)))
-    |> Enum.map(&(&1[:effect_message]))
+    |> Enum.filter(&(Map.has_key?(&1, "effect_message")))
+    |> Enum.map(&(&1["effect_message"]))
     |> Enum.each(fn(message) ->
          Monster.send_scroll(monster, "<p>#{message}</p>")
        end)

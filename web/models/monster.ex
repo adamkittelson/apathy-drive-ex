@@ -656,7 +656,7 @@ defmodule Monster do
   # }
   #
   def handle_info({:ability_target, %Ability{} = ability}, monster) do
-    send_scroll(monster, "<p><span class='#{Ability.color(ability)}'>#{ability.properties["effect_message"]}</span></p>")
+    send_scroll(monster, "<p><span class='#{Ability.color(ability)}'>#{ability.properties["effects"]["effect_message"]}</span></p>")
 
     monster = Systems.Effect.add(monster,
                                  ability.properties["effects"],
