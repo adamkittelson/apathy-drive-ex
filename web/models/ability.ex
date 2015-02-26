@@ -33,18 +33,21 @@ defmodule Ability do
   def color(%Ability{kind: "area curse"}),  do: "red"
   def color(%Ability{kind: _}), do: "blue"
 
-  def prep_message(message, %Ability{} = ability, %Monster{} = user, %Monster{} = target) do
+  def prep_message(message, %Ability{} = ability, %Monster{} = user, %Monster{} = target, interpolations) do
     message = message
-              |> interpolate(%{"user" => user, "target" => target})
+              |> interpolate(Map.merge(%{"user" => user, "target" => target}, interpolations))
               |> capitalize_first
     "<p><span class='#{color(ability)}'>#{message}</span></p>"
   end
 
-  def cast_messages(%Ability{} = ability, %Monster{} = user, %Monster{} = target) do
+  def cast_messages(%Ability{} = ability,
+                    %Monster{} = user,
+                    %Monster{} = target,
+                    interpolations \\ %{}) do
     %{
-      "user"      => prep_message(ability.properties["cast_message"]["user"],      ability, user, target),
-      "target"    => prep_message(ability.properties["cast_message"]["target"],    ability, user, target),
-      "spectator" => prep_message(ability.properties["cast_message"]["spectator"], ability, user, target)
+      "user"      => prep_message(ability.properties["cast_message"]["user"],      ability, user, target, interpolations),
+      "target"    => prep_message(ability.properties["cast_message"]["target"],    ability, user, target, interpolations),
+      "spectator" => prep_message(ability.properties["cast_message"]["spectator"], ability, user, target, interpolations)
     }
   end
 
@@ -55,7 +58,7 @@ defmodule Ability do
   end
 
   def scale_duration_effects(%Monster{} = monster,
-                             %Ability{properties: %{"duration_effects": effects}} = ability) do
+                             %Ability{properties: %{"duration_effects" => effects}} = ability) do
     effects = scale_effects(monster, effects)
 
     properties = Map.put(ability.properties, "duration_effects", effects)
@@ -67,7 +70,7 @@ defmodule Ability do
   end
 
   def scale_instant_effects(%Monster{} = monster,
-                            %Ability{properties: %{"instant_effects": effects}} = ability) do
+                            %Ability{properties: %{"instant_effects" => effects}} = ability) do
     effects = scale_effects(monster, effects)
 
     properties = Map.put(ability.properties, "instant_effects", effects)
@@ -206,18 +209,82 @@ defmodule Ability do
   end
 
   def execute(%Monster{} = monster, %Ability{} = ability, %Monster{} = target) do
-    PubSub.broadcast("rooms:#{monster.room_id}", {:cast_message,
-                                                   messages: cast_messages(ability,
-                                                                           monster,
-                                                                           target),
-                                                   user: monster,
-                                                   target: target})
-
-    send(target.pid, {:ability_target, scale_ability(monster, ability)})
+    send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
 
     monster
     |> Map.put(:mana, monster.mana - ability.properties["mana_cost"])
     |> Systems.Prompt.update
   end
+
+  def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
+    monster
+    |> display_cast_message(ability, ability_user)
+    |> add_duration_effects(ability)
+  end
+
+  def display_cast_message(%Monster{} = monster,
+                           %Ability{properties:
+                             %{"instant_effects" => %{"damage" => damage}}} = ability,
+                           %Monster{} = ability_user) do
+
+    cast_messages = cast_messages(ability, ability_user, monster, %{"amount" => damage})
+
+    PubSub.broadcast_from(self, "rooms:#{monster.room_id}",
+                                {:cast_message,
+                                  messages: cast_messages,
+                                  user: ability_user,
+                                  target: monster})
+
+    Monster.send_scroll(monster, cast_messages["target"])
+  end
+
+  def display_cast_message(%Monster{} = monster,
+                           %Ability{} = ability,
+                           %Monster{} = ability_user) do
+
+    cast_messages = cast_messages(ability, ability_user, monster)
+
+    PubSub.broadcast_from(self, "rooms:#{monster.room_id}",
+                                {:cast_message,
+                                  messages: cast_messages,
+                                  user: ability_user,
+                                  target: monster})
+
+    Monster.send_scroll(monster, cast_messages["target"])
+  end
+
+  def add_duration_effects(%Monster{} = monster,
+                           %Ability{
+                             properties: %{
+                               "duration_effects" => %{
+                                 "stack_key"   => _stack_key,
+                                 "stack_count" => _stack_count
+                               }
+                             }
+                           } = ability) do
+
+     monster
+     |> Systems.Effect.add(ability.properties["duration_effects"],
+                           ability.properties["duration"])
+     |> Monster.send_scroll("<p><span class='#{Ability.color(ability)}'>#{ability.properties["duration_effects"]["effect_message"]}</span></p>")
+  end
+  def add_duration_effects(%Monster{} = monster,
+                           %Ability{
+                             properties: %{
+                               "duration_effects" => effects
+                             }
+                           } = ability) do
+
+    effects = effects
+              |> Map.put("stack_key",   ability.name)
+              |> Map.put("stack_count", 1)
+
+    properties = Map.put(ability.properties, "duration_effects", effects)
+
+    ability = Map.put(ability, :properties, properties)
+
+    add_duration_effects(monster, ability)
+  end
+  def add_duration_effects(%Monster{} = monster, %Ability{}), do: monster
 
 end

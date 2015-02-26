@@ -644,31 +644,10 @@ defmodule Monster do
     {:noreply, room}
   end
 
-  def handle_info({:ability_target, %Ability{properties:
-                                             %{"duration_effects" =>
-                                               %{"stack_key"   => _stack_key,
-                                                 "stack_count" => _stack_count}}} = ability}, monster) do
-    monster = Systems.Effect.add(monster,
-                                 ability.properties["duration_effects"],
-                                 ability.properties["duration"])
-
-    send_scroll(monster, "<p><span class='#{Ability.color(ability)}'>#{ability.properties["duration_effects"]["effect_message"]}</span></p>")
+  def handle_info({:apply_ability, %Ability{} = ability, %Monster{} = ability_user}, monster) do
+    monster = Ability.apply_ability(monster, ability, ability_user)
 
     {:noreply, monster}
-  end
-
-  def handle_info({:ability_target, %Ability{properties:
-                                             %{"duration_effects" => effects}} = ability}, monster) do
-
-    effects = effects
-              |> Map.put("stack_key",   ability.name)
-              |> Map.put("stack_count", 1)
-
-    properties = Map.put(ability.properties, "duration_effects", effects)
-
-    ability = Map.put(ability, :properties, properties)
-
-    handle_info({:ability_target, ability}, monster)
   end
 
   def handle_info({:cast_message, messages: messages,
