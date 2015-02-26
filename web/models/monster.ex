@@ -49,6 +49,8 @@ defmodule Monster do
   end
 
   def init(%Monster{} = monster) do
+    :random.seed(:os.timestamp)
+
     if monster.room_id do
       PubSub.subscribe(self, "rooms:#{monster.room_id}")
       PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters")

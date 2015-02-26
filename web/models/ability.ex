@@ -48,6 +48,64 @@ defmodule Ability do
     }
   end
 
+  def scale_ability(%Monster{} = monster, %Ability{} = ability) do
+    if Map.has_key?(ability.properties, "effects") do
+      effects = scale_effects(monster, ability.properties["effects"])
+      properties = Map.put(ability.properties, "effects", effects)
+
+      Map.put(ability, :properties, properties)
+    else
+      ability
+    end
+  end
+
+  def scale_effects(%Monster{} = monster, effects) do
+    effects
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(effect_name, scaled_effects) ->
+         scaled_effect = scale_effect(monster, effects[effect_name])
+         Map.put(scaled_effects, effect_name, scaled_effect)
+       end)
+  end
+
+  def scale_effect(%Monster{} = _monster, value) when is_number(value), do: value
+  def scale_effect(%Monster{} = _monster, value) when is_binary(value), do: value
+
+  def scale_effect(%Monster{} = monster, %{"scaling" => scaling} = effect) do
+    cap_min = Map.get(effect, "cap_min", :infinity)
+    cap_max = Map.get(effect, "cap_max", :infinity)
+
+    effect = scaling
+             |> Map.keys
+             |> Enum.reduce(effect, fn(skill_name, effect) ->
+                  skill = Monster.modified_skill(monster, skill_name)
+
+                  min = if scaling["min_every"] do
+                    trunc(skill / scaling["min_every"]) * scaling["min_increase"]
+                  else
+                    0
+                  end
+
+                  max = if scaling["max_every"] do
+                    trunc(skill / scaling["max_every"]) * scaling["max_increase"]
+                  else
+                    0
+                  end
+
+                  effect
+                  |> update_in(["base_min"], fn(base_min) -> min(base_min + min, cap_min) end)
+                  |> update_in(["base_max"], fn(base_max) -> min(base_max + max, cap_max) end)
+                end)
+             |> Map.drop("scaling")
+    scale_effect(monster, effect)
+  end
+
+  def scale_effect(%Monster{} = monster, %{"base_min" => base_min, "base_max" => base_max} = effect) do
+    base_min..base_max
+    |> Enum.shuffle
+    |> List.first
+  end
+
   def find_monster_in_room(room, string, %Monster{pid: pid} = monster) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.map(fn(monster_pid) ->
@@ -95,7 +153,7 @@ defmodule Ability do
                                                    user: monster,
                                                    target: target})
 
-    send(target.pid, {:ability_target, ability})
+    send(target.pid, {:ability_target, scale_ability(monster, ability)})
 
     monster
     |> Map.put(:mana, monster.mana - ability.properties["mana_cost"])
