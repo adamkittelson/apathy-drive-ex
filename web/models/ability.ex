@@ -116,12 +116,6 @@ defmodule Ability do
     ability
   end
 
-  def scale_effect(%Monster{} = monster, %{"base_min" => base_min, "base_max" => base_max} = effect) do
-    base_min..base_max
-    |> Enum.shuffle
-    |> List.first
-  end
-
   def scale_effects(%Monster{} = monster, effects) do
     effects
     |> Map.keys
@@ -235,7 +229,11 @@ defmodule Ability do
                                   user: ability_user,
                                   target: monster})
 
-    Monster.send_scroll(monster, cast_messages["target"])
+    if ability_user.pid == self do
+      Monster.send_scroll(monster, cast_messages["user"])
+    else
+      Monster.send_scroll(monster, cast_messages["target"])
+    end
   end
 
   def display_cast_message(%Monster{} = monster,
@@ -250,7 +248,11 @@ defmodule Ability do
                                   user: ability_user,
                                   target: monster})
 
-    Monster.send_scroll(monster, cast_messages["target"])
+    if ability_user.pid == self do
+      Monster.send_scroll(monster, cast_messages["user"])
+    else
+      Monster.send_scroll(monster, cast_messages["target"])
+    end
   end
 
   def add_duration_effects(%Monster{} = monster,
