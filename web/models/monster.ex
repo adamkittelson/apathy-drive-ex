@@ -645,26 +645,26 @@ defmodule Monster do
   end
 
   def handle_info({:ability_target, %Ability{properties:
-                                             %{"effects" =>
+                                             %{"duration_effects" =>
                                                %{"stack_key"   => _stack_key,
                                                  "stack_count" => _stack_count}}} = ability}, monster) do
     monster = Systems.Effect.add(monster,
-                                 ability.properties["effects"],
+                                 ability.properties["duration_effects"],
                                  ability.properties["duration"])
 
-    send_scroll(monster, "<p><span class='#{Ability.color(ability)}'>#{ability.properties["effects"]["effect_message"]}</span></p>")
+    send_scroll(monster, "<p><span class='#{Ability.color(ability)}'>#{ability.properties["duration_effects"]["effect_message"]}</span></p>")
 
     {:noreply, monster}
   end
 
   def handle_info({:ability_target, %Ability{properties:
-                                             %{"effects" => effects}} = ability}, monster) do
+                                             %{"duration_effects" => effects}} = ability}, monster) do
 
     effects = effects
               |> Map.put("stack_key",   ability.name)
               |> Map.put("stack_count", 1)
 
-    properties = Map.put(ability.properties, "effects", effects)
+    properties = Map.put(ability.properties, "duration_effects", effects)
 
     ability = Map.put(ability, :properties, properties)
 
