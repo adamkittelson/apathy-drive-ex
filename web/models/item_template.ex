@@ -56,6 +56,17 @@ defmodule ItemTemplate do
     end
   end
 
+  def skill_too_low?(%Monster{} = monster, %ItemTemplate{required_skills: required_skills}) do
+    skill = required_skills
+            |> Map.keys
+            |> Enum.find(fn(skill) ->
+                 Monster.modified_skill(monster, skill) < required_skills[skill]
+               end)
+
+    if skill do
+      {skill, required_skills[skill]}
+    end
+  end
 
   # Generate functions from Ecto schema
   fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)

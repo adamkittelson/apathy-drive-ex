@@ -17,27 +17,23 @@ defmodule Systems.Shop do
     spirit
   end
 
-  def list(spirit, monster, room) do
-    send_message(spirit, "scroll", "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span>       <span class='dark-cyan'>Required Skill</span></p>")
-    send_message(spirit, "scroll", "<p><span class='dark-cyan'>───────────────────────────────────────────────────────────────────────────</span></p>")
-    Enum.each(Components.Shop.value(room), fn(item_hash) ->
-      it = ItemTemplates.find_by_id(item_hash["item"])
-      item_name = it |> Components.Name.value
-      value = Components.Module.value(it).value
-      cost = case value do
-        0 ->
-          "Free"
-        amount ->
-          amount
-      end
+  def list(%Monster{} = monster, %Room{shop_items: item_template_ids}) do
+    monster
+    |> Monster.send_scroll("<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Price (Experience)</span>       <span class='dark-cyan'>Required Skill</span></p>")
+    |> Monster.send_scroll("<p><span class='dark-cyan'>───────────────────────────────────────────────────────────────────────────</span></p>")
 
-      case Systems.Item.skill_too_low(monster, it) do
+    item_template_ids
+    |> Enum.map(&ItemTemplate.find/1)
+    |> Enum.map(&ItemTemplate.value/1)
+    |> Enum.each(fn(%ItemTemplate{name: name, cost: cost} = it) ->
+      case ItemTemplate.skill_too_low?(monster, it) do
         {skill_name, requirement} ->
-          send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(to_string(item_name), 30)}</span><span class='dark-cyan'>#{String.ljust(to_string(cost), 25)}</span><span class='dark-cyan'>#{requirement} #{skill_name}</span></p>")
+          Monster.send_scroll(monster, "<p><span class='dark-green'>#{String.ljust(name, 30)}</span><span class='dark-cyan'>#{String.ljust(to_string(cost || "Free"), 25)}</span><span class='dark-cyan'>#{requirement} #{skill_name}</span></p>")
         _ ->
-          send_message(spirit, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 30)}</span><span class='dark-cyan'>#{cost}</span></p>")
+          Monster.send_scroll(monster, "<p><span class='dark-green'>#{String.ljust(name, 30)}</span><span class='dark-cyan'>#{cost || "Free"}</span></p>")
       end
     end)
+    monster
   end
 
   def buy(character, room, item) do
