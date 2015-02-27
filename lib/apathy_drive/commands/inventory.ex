@@ -8,7 +8,7 @@ defmodule Commands.Inventory do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(_spirit, monster, _arguments) do
-    Systems.Item.display_inventory(monster)
+  def execute(%Monster{} = monster, _arguments) do
+    Monster.display_inventory(monster)
   end
 end

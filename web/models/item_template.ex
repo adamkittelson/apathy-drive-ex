@@ -56,7 +56,18 @@ defmodule ItemTemplate do
     end
   end
 
-  def skill_too_low?(%Monster{} = monster, %ItemTemplate{required_skills: required_skills}) do
+  def spawn_item(item_template_id, %Monster{} = monster) when is_integer(item_template_id) do
+    item_template_id
+    |> find
+    |> spawn_item(monster)
+  end
+
+  def spawn_item(item_template, %Monster{} = monster) do
+    GenServer.call(item_template, {:spawn_item, monster})
+  end
+
+  def skill_too_low?(%Monster{} = monster, %ItemTemplate{required_skills: nil}), do: false
+  def skill_too_low?(%Monster{} = monster, %ItemTemplate{required_skills: %{} = required_skills}) do
     skill = required_skills
             |> Map.keys
             |> Enum.find(fn(skill) ->
@@ -82,6 +93,24 @@ defmodule ItemTemplate do
       {:reply, Map.get(item_template, unquote(field)), item_template}
     end
   end)
+
+  def handle_call({:spawn_item, %Monster{} = monster}, _from, item_template) do
+    values = item_template
+             |> Map.from_struct
+             |> Enum.into(Keyword.new)
+
+    item = struct(Item, values)
+           |> Map.put(:item_template_id, item_template.id)
+           |> Map.put(:item_template, item_template)
+           |> Map.put(:id, nil)
+           |> Map.put(:monster_id, monster.id)
+
+    worker_id = :"item_#{Systems.URL.random}"
+
+    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Item, item, []]}, :permanent, 5000, :worker, [Item]})
+
+    {:reply, pid, item_template}
+  end
 
   def handle_call(:value, _from, item_template) do
     {:reply, item_template, item_template}

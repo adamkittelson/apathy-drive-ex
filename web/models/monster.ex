@@ -164,6 +164,29 @@ defmodule Monster do
     Map.put(monster, :room_id, room_id)
   end
 
+  def display_inventory(%Monster{id: id} = monster) do
+    # if Entity.has_component?(character, Components.Limbs) do
+    #   limbs = Components.Limbs.value(character)
+    #   equipped_items = Systems.Limbs.equipped_items(character)
+    # 
+    #   if equipped_items |> Enum.count > 0 do
+    #     send_message(character, "scroll", "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
+    #     equipped_items |> Enum.each fn(item) ->
+    #       item_name = Components.Name.value(item)
+    #       item_limbs = Systems.Limbs.get_limb_names(limbs, item)
+    #       send_message(character, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 23)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>")
+    #     end
+    #   end
+    # end
+
+    items = PubSub.subscribers("monsters:#{id}:items") |> Enum.map(&Item.name/1)
+    if items |> Enum.count > 0 do
+      send_scroll(monster, "<p>You are carrying #{Enum.join(items, ", ")}</p>")
+    else
+      send_scroll(monster, "<p>You are carrying nothing.</p>")
+    end
+  end
+
   def max_hp(%Monster{} = monster) do
     health   = modified_stat(monster, "health")
     strength = modified_stat(monster, "strength")
