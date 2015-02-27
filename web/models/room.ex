@@ -31,6 +31,7 @@ defmodule Room do
     timestamps
 
     has_many :monsters, Monster
+    has_many :items, Item
   end
 
   def init(%Room{} = room) do

@@ -46,6 +46,7 @@ defmodule Monster do
 
     belongs_to :room, Room
     belongs_to :monster_template, MonsterTemplate
+    has_many   :items, Item
   end
 
   def init(%Monster{} = monster) do
@@ -142,12 +143,20 @@ defmodule Monster do
                   |> Map.put(:mana, Monster.max_mana(monster))
                   |> Map.put(:keywords, String.split(monster.name))
 
+        monster
+        |> item_ids
+        |> Enum.each(&Item.find/1)
+
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :permanent, 5000, :worker, [Monster]})
 
         pid
       nil ->
         nil
     end
+  end
+
+  def item_ids(%Monster{} = monster) do
+    Repo.all(from i in assoc(monster, :items), select: i.id)
   end
 
   def find_room(%Monster{room_id: room_id}) do
@@ -168,7 +177,7 @@ defmodule Monster do
     # if Entity.has_component?(character, Components.Limbs) do
     #   limbs = Components.Limbs.value(character)
     #   equipped_items = Systems.Limbs.equipped_items(character)
-    # 
+    #
     #   if equipped_items |> Enum.count > 0 do
     #     send_message(character, "scroll", "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
     #     equipped_items |> Enum.each fn(item) ->
