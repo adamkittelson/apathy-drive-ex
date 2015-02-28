@@ -9,8 +9,7 @@ defmodule ItemTemplate do
     field :name,                  :string
     field :keywords,              {:array, :string}, default: []
     field :description,           :string
-    field :slot,                  :string
-    field :worn_on,               ApathyDrive.JSONB
+    field :worn_on,               :string
     field :hit_verbs,             {:array, :string}, default: []
     field :damage,                ApathyDrive.JSONB
     field :required_skills,       ApathyDrive.JSONB
@@ -66,8 +65,8 @@ defmodule ItemTemplate do
     GenServer.call(item_template, {:spawn_item, monster})
   end
 
-  def skill_too_low?(%Monster{} = monster, %ItemTemplate{required_skills: nil}), do: false
-  def skill_too_low?(%Monster{} = monster, %ItemTemplate{required_skills: %{} = required_skills}) do
+  def skill_too_low?(%Monster{} = monster, %{required_skills: nil}), do: false
+  def skill_too_low?(%Monster{} = monster, %{required_skills: %{} = required_skills}) do
     skill = required_skills
             |> Map.keys
             |> Enum.find(fn(skill) ->

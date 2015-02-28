@@ -6,11 +6,15 @@ defmodule Item do
   alias Phoenix.PubSub
 
   schema "items" do
-    field :name,                :string, virtual: true
+    field :name,                :string,  virtual: true
     field :keywords,            {:array, :string}, virtual: true
-    field :pid,                 :any, virtual: true
-    field :effects,             :any, virtual: true, default: %{}
-    field :timers,              :any, virtual: true, default: %{}
+    field :equipped,            :boolean, default: false
+    field :worn_on,             :string,  virtual: true
+    field :required_skills,     :any,     virtual: true, default: nil
+    field :item,                :string,  virtual: true
+    field :pid,                 :any,     virtual: true
+    field :effects,             :any,     virtual: true, default: %{}
+    field :timers,              :any,     virtual: true, default: %{}
 
     timestamps
 
@@ -30,6 +34,13 @@ defmodule Item do
     if item.monster_id do
       PubSub.subscribe(self, "monsters:#{item.monster_id}")
       PubSub.subscribe(self, "monsters:#{item.monster_id}:items")
+
+      if item.equipped do
+        Phoenix.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items")
+        Phoenix.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+      else
+        Phoenix.PubSub.subscribe(self, "monsters:#{item.monster_id}:inventory")
+      end
     end
 
     PubSub.subscribe(self, "items")
@@ -102,7 +113,6 @@ defmodule Item do
     Map.put(item, :room_id, room_id)
   end
 
-
   # Generate functions from Ecto schema
   fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
@@ -166,6 +176,32 @@ defmodule Item do
 
   def handle_info({:apply_ability, %Ability{} = ability, %Monster{} = ability_user}, item) do
     item = Ability.apply_ability(item, ability, ability_user)
+
+    {:noreply, item}
+  end
+
+  def handle_info(:equip, item) do
+    Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:#{item.worn_on}", :unequip)
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
+    Phoenix.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items")
+    Phoenix.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+    send(Monster.find(item.monster_id), {:item_equipped, item})
+    item = item
+           |> Map.put(:equipped, true)
+           |> save
+
+    {:noreply, item}
+  end
+
+  def handle_info(:unequip, item) do
+    Phoenix.PubSub.subscribe(self, "monsters:#{item.monster_id}:inventory")
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items")
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+    send(Monster.find(item.monster_id), {:item_unequipped, item})
+
+    item = item
+           |> Map.put(:equipped, false)
+           |> save
 
     {:noreply, item}
   end

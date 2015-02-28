@@ -173,27 +173,40 @@ defmodule Monster do
     Map.put(monster, :room_id, room_id)
   end
 
-  def display_inventory(%Monster{id: id} = monster) do
-    # if Entity.has_component?(character, Components.Limbs) do
-    #   limbs = Components.Limbs.value(character)
-    #   equipped_items = Systems.Limbs.equipped_items(character)
-    #
-    #   if equipped_items |> Enum.count > 0 do
-    #     send_message(character, "scroll", "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
-    #     equipped_items |> Enum.each fn(item) ->
-    #       item_name = Components.Name.value(item)
-    #       item_limbs = Systems.Limbs.get_limb_names(limbs, item)
-    #       send_message(character, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 23)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>")
-    #     end
-    #   end
-    # end
+  def inventory(%Monster{id: id} = monster) do
+    PubSub.subscribers("monsters:#{id}:inventory")
+    |> Enum.map(&Item.value/1)
+  end
 
-    items = PubSub.subscribers("monsters:#{id}:items") |> Enum.map(&Item.name/1)
+  def equipped_items(%Monster{id: id} = monster) do
+    PubSub.subscribers("monsters:#{id}:equipped_items")
+    |> Enum.map(&Item.value/1)
+  end
+
+  def display_inventory(%Monster{id: id} = monster) do
+    if Enum.any?(equipment = equipped_items(monster)) do
+      Monster.send_scroll(monster, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
+      Enum.each equipment, fn(item) ->
+        send_scroll(monster, "<p><span class='dark-green'>#{String.ljust(item.name, 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
+      end
+      send_scroll(monster, "<br>")
+    end
+
+    items = inventory(monster) |> Enum.map(&(&1.name))
     if items |> Enum.count > 0 do
       send_scroll(monster, "<p>You are carrying #{Enum.join(items, ", ")}</p>")
     else
       send_scroll(monster, "<p>You are carrying nothing.</p>")
     end
+  end
+
+  def equip_item(%Monster{} = monster, %Item{} = item, nil) do
+    send(item.pid, :equip)
+    monster
+  end
+
+  def equip_item(%Monster{} = monster, %Item{}, {skill, req}) do
+    Monster.send_scroll(monster, "<p>You need at least #{req} #{skill} skill to equip that.</p>")
   end
 
   def max_hp(%Monster{} = monster) do
@@ -711,6 +724,16 @@ defmodule Monster do
 
     send_scroll(monster, messages["spectator"])
 
+    {:noreply, monster}
+  end
+
+  def handle_info({:item_equipped, %Item{} = item}, monster) do
+    send_scroll(monster, "<p>You are now wearing #{item.name}.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:item_unequipped, %Item{} = item}, monster) do
+    send_scroll(monster, "<p>You remove #{item.name}.</p>")
     {:noreply, monster}
   end
 
