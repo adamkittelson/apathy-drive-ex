@@ -147,7 +147,7 @@ defmodule Monster do
         |> item_ids
         |> Enum.each(&Item.find/1)
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :permanent, 5000, :worker, [Monster]})
+        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :transient, 5000, :worker, [Monster]})
 
         pid
       nil ->
@@ -690,7 +690,11 @@ defmodule Monster do
   end
 
   def handle_info({:apply_ability, %Ability{} = ability, %Monster{} = ability_user}, monster) do
-    monster = Ability.apply_ability(monster, ability, ability_user)
+    monster = monster
+              |> Ability.apply_ability(ability, ability_user)
+              |> Systems.Prompt.update
+
+    if monster.hp < 0, do: Systems.Death.kill(monster)
 
     {:noreply, monster}
   end
@@ -734,6 +738,16 @@ defmodule Monster do
 
   def handle_info({:item_unequipped, %Item{} = item}, monster) do
     send_scroll(monster, "<p>You remove #{item.name}.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:monster_died, %Monster{} = deceased}, monster) do
+    message = deceased.death_message
+              |> interpolate(%{"name" => deceased.name})
+              |> capitalize_first
+
+    Monster.send_scroll(monster, "<p>#{message}</p>")
+
     {:noreply, monster}
   end
 

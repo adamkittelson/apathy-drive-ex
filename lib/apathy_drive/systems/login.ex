@@ -22,7 +22,6 @@ defmodule Systems.Login do
 
           Spirit.activate_hint(spirit, "movement")
           Spirit.activate_hint(spirit, "name")
-          Possession.unpossess(spirit)
           spirit
         spirit ->
           Spirit.socket(spirit, socket)

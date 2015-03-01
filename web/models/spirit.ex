@@ -238,6 +238,26 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info({:possessed_monster_died, %Monster{} = monster}, spirit) do
+    room_id = monster.room_id
+
+    spirit = spirit
+             |> Map.put(:monster, nil)
+             |> set_room_id(room_id)
+             |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
+             |> Systems.Prompt.update
+
+    message = monster.death_message
+              |> interpolate(%{"name" => monster.name})
+              |> capitalize_first
+
+    Spirit.send_scroll(spirit, "<p>#{message}</p>")
+
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{monster.id}")
+
+    {:noreply, spirit}
+  end
+
   def handle_info({:greet, %{greeter: greeter, greeted: greeted}}, spirit) do
     send_scroll(spirit, "<p><span class='dark-green'>#{greeter.name |> capitalize_first} greets #{greeted.name}.</span></p>")
     {:noreply, spirit}
@@ -333,6 +353,16 @@ defmodule Spirit do
                   %Spirit{pid: pid} = spirit) do
 
     send_scroll(spirit, messages["spectator"])
+
+    {:noreply, spirit}
+  end
+
+  def handle_info({:monster_died, %Monster{} = deceased}, spirit) do
+    message = deceased.death_message
+              |> interpolate(%{"name" => deceased.name})
+              |> capitalize_first
+
+    Spirit.send_scroll(spirit, "<p>#{message}</p>")
 
     {:noreply, spirit}
   end

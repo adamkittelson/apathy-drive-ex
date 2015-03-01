@@ -213,7 +213,16 @@ defmodule Ability do
   def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
     monster
     |> display_cast_message(ability, ability_user)
+    |> apply_instant_effects(ability.properties["instant_effects"])
     |> add_duration_effects(ability)
+  end
+
+  def apply_instant_effects(%Monster{} = monster, nil), do: monster
+  def apply_instant_effects(%Monster{} = monster, %{} = effects) when map_size(effects) == 0, do: monster
+  def apply_instant_effects(%Monster{} = monster, %{"damage" => damage} = effects) do
+    monster = put_in(monster.hp, monster.hp - damage)
+
+    apply_instant_effects(monster, Map.delete(effects, "damage"))
   end
 
   def display_cast_message(%Monster{} = monster,

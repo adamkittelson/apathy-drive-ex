@@ -4,29 +4,26 @@ defmodule Systems.Death do
   import Systems.Text
   use Timex
 
-  def kill(victim) do
-    if Process.alive?(victim) do
-      room = Parent.of(victim)
+  def kill(%Monster{} = monster) do
+    room = Monster.find_room(monster)
 
-      if room do
-        send_message(victim, "scroll", "<p><span class='red'>You have been killed!</span></p>")
+    Phoenix.PubSub.broadcast("monsters:#{monster.id}", {:possessed_monster_died, monster})
+    Phoenix.PubSub.broadcast("rooms:#{room.id}", {:monster_died, monster})
 
-        Systems.Monster.display_death_message(room, victim)
-
-        room
-        |> Systems.Monster.monsters_in_room(victim)
-        |> Enum.each(fn(monster) ->
-             reward_spirit(Possession.possessor(monster), victim)
-             reward_monster(monster, victim)
-           end)
-
-        kill_monster(victim, room)
-      end
-    end
+    # room
+    # |> Systems.Monster.monsters_in_room(victim)
+    # |> Enum.each(fn(monster) ->
+    #      reward_spirit(Possession.possessor(monster), victim)
+    #      reward_monster(monster, victim)
+    #    end)
+    # 
+    # kill_monster(victim, room)
+    ApathyDrive.Repo.delete(monster)
+    Process.exit(self, :normal)
   end
 
   def kill_monster(entity, room) do
-    Components.Brain.kill(entity)
+    Components.Brain.kill(entity) 
     Components.Effects.remove(entity)
     Components.Combat.stop_timer(entity)
 

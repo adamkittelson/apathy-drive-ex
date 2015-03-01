@@ -66,12 +66,12 @@ defmodule ApathyDrive.Command do
 
       command_exit = room.exits
                      |> Enum.find(fn(ex) ->
-                          ex["kind"] == "Command" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
+                          ex["kind"] == "Command" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
                         end)
 
       remote_action_exit = room.exits
                            |> Enum.find(fn(ex) ->
-                                ex["kind"] == "RemoteAction" and Enum.member?(ex.commands, [command | arguments] |> Enum.join(" "))
+                                ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
                               end)
 
       cond do
