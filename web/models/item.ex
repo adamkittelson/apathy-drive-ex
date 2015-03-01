@@ -11,7 +11,7 @@ defmodule Item do
     field :equipped,            :boolean, default: false
     field :worn_on,             :string,  virtual: true
     field :required_skills,     :any,     virtual: true, default: nil
-    field :item,                :string,  virtual: true
+    field :cost,                :integer, virtual: true
     field :pid,                 :any,     virtual: true
     field :effects,             :any,     virtual: true, default: %{}
     field :timers,              :any,     virtual: true, default: %{}
@@ -66,6 +66,8 @@ defmodule Item do
   end
   def save(%Item{} = item), do: item
 
+  def delete(%Item{} = item), do: Repo.delete(item)
+
   def find(id) do
     case :global.whereis_name(:"item_#{id}") do
       :undefined ->
@@ -91,7 +93,7 @@ defmodule Item do
 
         item = struct(Item, item)
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_#{item.id}", {GenServer, :start_link, [Item, item, [name: {:global, :"item_#{id}"}]]}, :permanent, 5000, :worker, [Item]})
+        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_#{item.id}", {GenServer, :start_link, [Item, item, [name: {:global, :"item_#{id}"}]]}, :transient, 5000, :worker, [Item]})
 
         pid
       nil ->
@@ -203,6 +205,13 @@ defmodule Item do
            |> Map.put(:equipped, false)
            |> save
 
+    {:noreply, item}
+  end
+
+  def handle_info(:delete, item) do
+    delete(item)
+
+    Process.exit(self, :normal)
     {:noreply, item}
   end
 

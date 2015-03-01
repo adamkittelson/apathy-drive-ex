@@ -8,8 +8,9 @@ defmodule Commands.Sell do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
-    current_room = Parent.of(spirit)
-    Systems.Shop.sell(monster, current_room, Enum.join(arguments, " "))
+  def execute(%Monster{} = monster, arguments) do
+    room = Monster.find_room(monster)
+
+    Systems.Shop.sell(monster, room, Enum.join(arguments, " "))
   end
 end

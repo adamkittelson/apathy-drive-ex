@@ -155,7 +155,7 @@ defmodule MonsterTemplate do
 
     worker_id = :"monster_#{Systems.URL.random}"
 
-    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :permanent, 5000, :worker, [Monster]})
+    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
 
     {:reply, pid, monster_template}
   end

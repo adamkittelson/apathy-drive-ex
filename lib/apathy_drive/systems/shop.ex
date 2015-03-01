@@ -59,31 +59,30 @@ defmodule Systems.Shop do
     end
   end
 
-  def buy(%Monster{} = monster, %Room{shop_items: item_template_ids}, item) do
+  def buy(%Monster{} = monster, %Room{}, item) do
     Monster.send_scroll(monster, "<p><span class='red'>You cannot BUY if you are not in a shop!</span></p>")
   end
 
-  def sell(monster, room, item) do
-    cond do
-      !Entity.has_component?(room, Components.Shop) ->
-        send_message(monster, "scroll", "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
-      true ->
-        case Systems.Match.one(Components.Items.get_items(monster), :name_contains, item) do
-          nil ->
-            send_message(monster, "scroll", "<p>You don't have \"#{item}\" to sell!</p>")
-          match ->
-            spirit = Possession.possessor(monster)
+  def sell(%Monster{experience: exp} = monster, %Room{shop_items: item_template_ids}, item) do
+    case Systems.Match.one(Monster.inventory(monster), :name_contains, item) do
+      nil ->
+        Monster.send_scroll(monster, "<p>You don't have \"#{item}\" to sell!</p>")
+      %Item{} = item ->
 
-            if spirit do
-              exp = trunc(Components.Module.value(match).value / 10)
-              Components.Experience.add(spirit, exp)
-              Entities.save!(spirit)
-              send_message(spirit, "scroll", "<p>You just sold #{Components.Name.value(match)} for #{exp} experience.</p>")
-            end
-            Components.Items.remove_item(monster, match)
-            Entities.save!(monster)
-            Entities.delete!(match)
-        end
+        value = trunc(item.cost / 10)
+
+        monster = monster
+                  |> Map.put(:experience, monster.experience + value)
+                  |> Monster.save
+                  |> Monster.send_scroll("<p>You just sold #{item.name} for #{value} experience.</p>")
+
+        send(item.pid, :delete)
+
+        monster
     end
+  end
+
+  def sell(%Monster{} = monster, %Room{}, item) do
+    Monster.send_scroll(monster, "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
   end
 end

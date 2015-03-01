@@ -106,7 +106,7 @@ defmodule ItemTemplate do
 
     worker_id = :"item_#{Systems.URL.random}"
 
-    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Item, item, []]}, :permanent, 5000, :worker, [Item]})
+    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Item, item, []]}, :transient, 5000, :worker, [Item]})
 
     {:reply, pid, item_template}
   end
