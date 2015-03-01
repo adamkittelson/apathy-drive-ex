@@ -5,7 +5,7 @@ defmodule Commands.Possess do
 
   def execute(%Spirit{} = spirit, []) do
     spirit
-    |> Spirit.send_scroll("<p>Possess what?.</p>")
+    |> Spirit.send_scroll("<p>Possess what?</p>")
   end
 
   def execute(%Spirit{room_id: room_id} = spirit, arguments) do
@@ -26,8 +26,6 @@ defmodule Commands.Possess do
   end
 
   def possess(%Spirit{} = spirit, %Monster{} = monster) do
-    monster = Monster.insert(monster.pid)
-
     Phoenix.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
     Phoenix.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
 

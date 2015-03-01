@@ -251,8 +251,6 @@ defmodule Spirit do
               |> interpolate(%{"name" => monster.name})
               |> capitalize_first
 
-    Spirit.send_scroll(spirit, "<p>#{message}</p>")
-
     Phoenix.PubSub.unsubscribe(self, "monsters:#{monster.id}")
 
     {:noreply, spirit}
@@ -357,12 +355,19 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info({:monster_died, %Monster{} = deceased}, spirit) do
+  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: _exp}, spirit) do
     message = deceased.death_message
               |> interpolate(%{"name" => deceased.name})
               |> capitalize_first
 
     Spirit.send_scroll(spirit, "<p>#{message}</p>")
+
+    {:noreply, spirit}
+  end
+
+  def handle_info({:reward_possessor, exp}, spirit) do
+    spirit = spirit
+             |> Map.put(:experience, spirit.experience + exp)
 
     {:noreply, spirit}
   end

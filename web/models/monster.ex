@@ -14,7 +14,7 @@ defmodule Monster do
     field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
     field :alignment,           :decimal
-    field :lair_id,             :integer, virtual: true
+    field :lair_id,             :integer
     field :hp,                  :integer, virtual: true
     field :mana,                :integer, virtual: true
     field :hunting,             :any,     virtual: true, default: []
@@ -103,9 +103,10 @@ defmodule Monster do
     GenServer.call(monster, :value)
   end
 
-  def insert(monster) do
-    GenServer.call(monster, :insert)
+  def insert(%Monster{id: nil} = monster) do
+    ApathyDrive.Repo.insert(monster)
   end
+  def insert(%Monster{} = monster), do: monster
 
   def save(monster) when is_pid(monster), do: monster |> value |> save
   def save(%Monster{id: id} = monster) when is_integer(id) do
@@ -146,6 +147,10 @@ defmodule Monster do
         monster
         |> item_ids
         |> Enum.each(&Item.find/1)
+
+        if monster.lair_id do
+          Phoenix.PubSub.subscribe(monster, "rooms:#{monster.lair_id}:spawned_monsters")
+        end
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :transient, 5000, :worker, [Monster]})
 
@@ -226,9 +231,13 @@ defmodule Monster do
     trunc((x / 10) + (x * (1 - y)))
   end
 
-  def modified_stat(%Monster{} = monster, stat_name) do
+  def pre_effect_bonus_stat(%Monster{} = monster, stat_name) do
     Map.get(monster, String.to_atom(stat_name), 0) +
-    stat_skill_bonus(monster, stat_name) +
+    stat_skill_bonus(monster, stat_name)
+  end
+
+  def modified_stat(%Monster{} = monster, stat_name) do
+    pre_effect_bonus_stat(monster, stat_name) +
     effect_bonus(monster, stat_name)
   end
 
@@ -472,17 +481,6 @@ defmodule Monster do
   end)
 
   def handle_call(:value, _from, monster) do
-    {:reply, monster, monster}
-  end
-
-  def handle_call(:insert, _from, %Monster{id: nil} = monster) do
-    monster = ApathyDrive.Repo.insert(monster)
-
-    :global.register_name(:"monster_#{monster.id}", monster.pid)
-
-    {:reply, monster, monster}
-  end
-  def handle_call(:insert, _from, monster) do
     {:reply, monster, monster}
   end
 
@@ -741,12 +739,27 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:monster_died, %Monster{} = deceased}, monster) do
+  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, monster) do
     message = deceased.death_message
               |> interpolate(%{"name" => deceased.name})
               |> capitalize_first
 
-    Monster.send_scroll(monster, "<p>#{message}</p>")
+    old_power = Systems.Trainer.total_power(monster)
+
+    monster = monster
+              |> send_scroll("<p>#{message}</p>")
+              |> send_scroll("<p>You gain #{exp} experience.</p>")
+              |> Map.put(:experience, monster.experience + exp)
+
+    new_power = Systems.Trainer.total_power(monster)
+
+    power_gain = new_power - old_power
+
+    if power_gain > 0 do
+      send_scroll(monster, "<p>You gain #{power_gain} development points.</p>")
+    end
+
+    PubSub.broadcast("monsters:#{monster.id}", {:reward_possessor, exp})
 
     {:noreply, monster}
   end

@@ -8,7 +8,7 @@ defmodule Systems.Death do
     room = Monster.find_room(monster)
 
     Phoenix.PubSub.broadcast("monsters:#{monster.id}", {:possessed_monster_died, monster})
-    Phoenix.PubSub.broadcast("rooms:#{room.id}", {:monster_died, monster})
+    Phoenix.PubSub.broadcast("rooms:#{room.id}", {:monster_died, monster: monster, reward: experience_to_grant(monster)})
 
     # room
     # |> Systems.Monster.monsters_in_room(victim)
@@ -51,15 +51,12 @@ defmodule Systems.Death do
     Entities.delete!(entity)
   end
 
-  def experience_to_grant(entity) when is_pid entity do
-    if Process.alive?(entity) do
-      Systems.Stat.pre_effects_bonus(entity)
-      |> Map.values
-      |> Enum.sum
-      |> experience_to_grant
-    else
-      0
-    end
+  def experience_to_grant(%Monster{} = monster) do
+    ["strength", "intelligence", "agility", "health"]
+    |> Enum.reduce(0, fn(stat, total) ->
+         total + Monster.pre_effect_bonus_stat(monster, stat)
+       end)
+    |> experience_to_grant
   end
 
   def experience_to_grant(stat_total) do

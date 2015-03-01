@@ -11,6 +11,8 @@ defmodule ApathyDrive.LairSpawning do
 
         Monster.lair_id(monster, room.id)
 
+        Monster.save(monster)
+
         Phoenix.PubSub.subscribe(monster, "rooms:#{room.id}:spawned_monsters")
 
         Monster.display_enter_message(room, monster)

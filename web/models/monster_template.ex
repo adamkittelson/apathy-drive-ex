@@ -152,8 +152,9 @@ defmodule MonsterTemplate do
               |> Map.put(:hp, Monster.max_hp(monster))
               |> Map.put(:mana, Monster.max_mana(monster))
               |> Map.put(:keywords, String.split(monster.name))
+              |> Monster.insert
 
-    worker_id = :"monster_#{Systems.URL.random}"
+    worker_id = :"monster_#{monster.id}"
 
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
 
