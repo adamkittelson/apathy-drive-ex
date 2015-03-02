@@ -64,9 +64,14 @@ defmodule Monster do
               |> Map.put(:pid, self)
               |> set_abilities
 
+    :global.register_name(:"monster_#{monster.id}", self)
+
     {:ok, monster}
   end
 
+  def set_abilities(%Monster{monster_template_id: nil} = monster) do
+    monster
+  end
   def set_abilities(%Monster{} = monster) do
     abilities = monster_template_abilities(monster) ++
                 abilities_from_skills(monster)
@@ -152,7 +157,7 @@ defmodule Monster do
           Phoenix.PubSub.subscribe(monster, "rooms:#{monster.lair_id}:spawned_monsters")
         end
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, [name: {:global, :"monster_#{id}"}]]}, :transient, 5000, :worker, [Monster]})
+        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
 
         pid
       nil ->

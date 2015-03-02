@@ -183,7 +183,20 @@ defmodule Item do
   end
 
   def handle_info(:equip, item) do
-    Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:#{item.worn_on}", :unequip)
+    case item.worn_on do
+      "Weapon Hand" ->
+        Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:Weapon Hand", :unequip)
+        Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
+      "Two Handed" ->
+        Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:Weapon Hand", :unequip)
+        Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
+        Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:Off-Hand", :unequip)
+      "Off-Hand" ->
+        Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
+        Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:Off-Hand", :unequip)
+      _ ->
+        Phoenix.PubSub.broadcast("monsters:#{item.monster_id}:equipped_items:#{item.worn_on}", :unequip)
+    end
     Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
     Phoenix.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items")
     Phoenix.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
