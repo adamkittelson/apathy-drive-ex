@@ -24,6 +24,7 @@ defmodule Commands.Abilities do
                      (%Ability{command: _}) ->
                        true
        end)
+    |> Enum.sort(&(skill_level(&1) < skill_level(&2) ))
     |> Enum.each(fn(%Ability{name: name, command: command, properties: properties}) ->
          mana_cost = properties["mana_cost"]
                      |> to_string
@@ -35,6 +36,12 @@ defmodule Commands.Abilities do
 
          Monster.send_scroll(monster, "<p><span class='dark-cyan'>#{mana_cost} #{command} #{name}</span></p>")
        end)
+  end
+
+  defp skill_level(%Ability{required_skills: required_skills}) do
+    required_skills
+    |> Map.values
+    |> Enum.sum
   end
 
 end
