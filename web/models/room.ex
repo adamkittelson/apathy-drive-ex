@@ -142,10 +142,45 @@ defmodule Room do
   end
 
   def look(%Room{} = room, %Monster{} = monster) do
-    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster.pid)}#{look_directions(room)}</div>)
+    light = light_level(room, monster)
+
+    html = if light > -200 and light < 200 do
+      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster.pid)}#{look_directions(room)}#{light(room, monster)}</div>)
+    else
+      "<div class='room'>#{light(room, monster)}</div>"
+    end
 
     Monster.send_scroll(monster, html)
   end
+
+  def light(%Room{} = room, %Monster{} = monster) do
+    light_level(room, monster)
+    |> light_desc
+  end
+
+  def light_level(%Room{light: light} = room, %Monster{alignment: alignment} = monster) do
+    #light = light + light_in_room(room) + light_on_monsters(room)
+
+    cond do
+      alignment > 0 and light < 0 ->
+        min(0, light + alignment)
+      alignment < 0 and light > 0 ->
+        max(0, light + alignment)
+      true ->
+        light
+    end
+  end
+
+  def light_desc(light_level)  when light_level < -1000, do: "<p>You are blind.</p>"
+  def light_desc(light_level)  when light_level <= -300, do: "<p>The room is pitch black - you can't see anything</p>"
+  def light_desc(light_level)  when light_level <= -200, do: "<p>The room is very dark - you can't see anything</p>"
+  def light_desc(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
+  def light_desc(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
+  def light_desc(light_level)  when light_level >=  300, do: "<p>The room is blindingly bright - you can't see anything</p>"
+  def light_desc(light_level)  when light_level >=  200, do: "<p>The room is painfully bright - you can't see anything</p>"
+  def light_desc(light_level)  when light_level >=  100, do: "<p>The room is dazzlingly bright</p>"
+  def light_desc(light_level)  when light_level >=   25, do: "<p>The room is brightly lit</p>"
+  def light_desc(_light_level), do: nil
 
   def look_shop_hint(%Room{shop_items: nil, trainable_skills: nil}), do: nil
   def look_shop_hint(%Room{}) do

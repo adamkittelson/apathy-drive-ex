@@ -13,7 +13,7 @@ defmodule Monster do
     field :limbs,               ApathyDrive.JSONB
     field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
-    field :alignment,           :decimal
+    field :alignment,           :integer
     field :lair_id,             :integer
     field :hp,                  :integer, virtual: true
     field :mana,                :integer, virtual: true
@@ -55,6 +55,10 @@ defmodule Monster do
     if monster.room_id do
       PubSub.subscribe(self, "rooms:#{monster.room_id}")
       PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters")
+    end
+
+    if monster.lair_id do
+      PubSub.subscribe(self, "rooms:#{monster.lair_id}:spawned_monsters")
     end
 
     PubSub.subscribe(self, "monsters")
@@ -152,10 +156,6 @@ defmodule Monster do
         monster
         |> item_ids
         |> Enum.each(&Item.find/1)
-
-        if monster.lair_id do
-          Phoenix.PubSub.subscribe(monster, "rooms:#{monster.lair_id}:spawned_monsters")
-        end
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
 
@@ -378,24 +378,10 @@ defmodule Monster do
     end
   end
 
-  def good?(%Monster{alignment: alignment}) do
-    case Decimal.min(alignment, Decimal.new(-50)) do
-      ^alignment ->
-        true
-      _ ->
-        false
-    end
-  end
-
-  def evil?(%Monster{alignment: alignment}) do
-    case Decimal.max(alignment, Decimal.new(50)) do
-      ^alignment ->
-        true
-      _ ->
-        false
-    end
-  end
-
+  def good?(%Monster{alignment: alignment}) when alignment < -50, do: true
+  def good?(%Monster{}), do: false
+  def evil?(%Monster{alignment: alignment}) when alignment > 50,  do: true
+  def evil?(%Monster{}), do: false
   def neutral?(%Monster{} = monster), do: !good?(monster) and !evil?(monster)
 
   def display_enter_message(%Room{} = room, monster) when is_pid(monster) do
