@@ -54,7 +54,6 @@ defmodule Systems.Shop do
                     |> Monster.send_scroll("<p>You purchase #{name} for #{cost} experience.</p>")
 
           ItemTemplate.spawn_item(id, monster)
-          |> Item.insert
           monster
     end
   end

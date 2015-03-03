@@ -163,6 +163,8 @@ defmodule Ability do
     |> List.first
   end
 
+  def scale_effect(%Monster{} = monster, effect), do: effect
+
   def find_monster_in_room(room, string, %Monster{pid: pid} = monster) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.map(fn(monster_pid) ->
@@ -223,6 +225,11 @@ defmodule Ability do
     monster = put_in(monster.hp, monster.hp - damage)
 
     apply_instant_effects(monster, Map.delete(effects, "damage"))
+  end
+  def apply_instant_effects(%Monster{} = monster, %{"script" => script} = effects) do
+    monster = Systems.Script.execute(script, monster)
+
+    apply_instant_effects(monster, Map.delete(effects, "script"))
   end
 
   def display_cast_message(%Monster{} = monster,

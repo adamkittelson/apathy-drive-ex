@@ -56,9 +56,10 @@ defmodule Item do
     GenServer.call(item, :value)
   end
 
-  def insert(item) do
-    GenServer.call(item, :insert)
+  def insert(%Item{id: nil} = item) do
+    ApathyDrive.Repo.insert(item)
   end
+  def insert(%Item{} = item), do: item
 
   def save(item) when is_pid(item), do: item |> value |> save
   def save(%Item{id: id} = item) when is_integer(id) do
@@ -140,17 +141,6 @@ defmodule Item do
 
   def handle_call(:value, _from, monster) do
     {:reply, monster, monster}
-  end
-
-  def handle_call(:insert, _from, %Item{id: nil} = item) do
-    item = ApathyDrive.Repo.insert(item)
-
-    :global.register_name(:"item_#{item.id}", item.pid)
-
-    {:reply, item, item}
-  end
-  def handle_call(:insert, _from, item) do
-    {:reply, item, item}
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %Item{timers: timers} = item) do

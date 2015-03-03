@@ -5,6 +5,7 @@ defmodule Systems.Script do
     |> Enum.any?(fn(script) ->
          execute_script(script, monster)
        end)
+    monster
   end
 
   def execute_script([instruction | rest], monster) when is_list(instruction) do
@@ -74,9 +75,9 @@ defmodule Systems.Script do
   end
 
   def execute_instruction(%{"give_item" => item}, monster, script) do
-    it = ItemTemplates.find_by_id(item)
+    it = ItemTemplate.find(item)
     if it do
-      Systems.Item.spawn_item(it, monster)
+      ItemTemplate.spawn_item(it, monster)
     end
     execute_script(script, monster)
   end

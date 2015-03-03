@@ -103,8 +103,9 @@ defmodule ItemTemplate do
            |> Map.put(:item_template, item_template)
            |> Map.put(:id, nil)
            |> Map.put(:monster_id, monster.id)
+           |> Item.insert
 
-    worker_id = :"item_#{Systems.URL.random}"
+    worker_id = :"item_#{item.id}"
 
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Item, item, []]}, :transient, 5000, :worker, [Item]})
 
