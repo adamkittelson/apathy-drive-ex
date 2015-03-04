@@ -13,6 +13,8 @@ defmodule Commands.Wear do
     case Systems.Match.one(Monster.inventory(monster), :name_contains, item) do
       nil ->
         Monster.send_scroll(monster, "<p>You don't have \"#{item}\" left unequipped.</p>")
+      %Item{worn_on: nil, name: name} ->
+        Monster.send_scroll(monster, "<p><span class='red'>#{capitalize_first(name)} may not be worn!</span></p>")
       match ->
         Monster.equip_item(monster, match, ItemTemplate.skill_too_low?(monster, match))
     end

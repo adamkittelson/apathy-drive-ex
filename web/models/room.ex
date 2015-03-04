@@ -159,7 +159,7 @@ defmodule Room do
   end
 
   def light_level(%Room{light: light} = room, %Monster{alignment: alignment} = monster) do
-    #light = light + light_in_room(room) + light_on_monsters(room)
+    light = light + light_in_room(room) + light_on_monsters(room, monster)
 
     cond do
       alignment > 0 and light < 0 ->
@@ -169,6 +169,40 @@ defmodule Room do
       true ->
         light
     end
+  end
+
+  def lights(items) do
+    items
+    |> Enum.map(fn(%Item{effects: effects}) ->
+         effects
+         |> Map.values
+         |> Enum.reduce(0, fn(effect, total) ->
+              total + Map.get(effect, "light", 0)
+            end)
+       end)
+    |> Enum.sum
+  end
+
+  def light_in_room(%Room{id: id}) do
+    PubSub.subscribers("rooms:#{id}:items")
+    |> Enum.map(&Item.value/1)
+    |> lights
+  end
+
+  def light_on_monsters(%Room{id: id}, %Monster{} = monster) do
+    PubSub.subscribers("rooms:#{id}:monsters")
+    |> Enum.map(fn(monster_pid) ->
+         if monster_pid == self do
+           monster
+         else
+           Monster.value(monster_pid)
+         end
+       end)
+    |> Enum.map(fn(%Monster{} = monster) ->
+         Monster.equipped_items(monster) ++ Monster.inventory(monster)
+       end)
+    |> List.flatten
+    |> lights
   end
 
   def light_desc(light_level)  when light_level < -1000, do: "<p>You are blind.</p>"
