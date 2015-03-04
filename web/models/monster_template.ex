@@ -90,11 +90,11 @@ defmodule MonsterTemplate do
   def alignment(alignment) do
     alignment = case alignment do
       "good" ->
-        Decimal.new(-75)
+        -75
       "neutral" ->
-        Decimal.new(0)
+        0
       "evil" ->
-        Decimal.new(75)
+        75
     end
     alignment
   end
