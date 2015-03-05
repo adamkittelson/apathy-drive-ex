@@ -17,7 +17,7 @@ defmodule Item do
     field :timers,              :any,     virtual: true, default: %{}
     field :light,               :integer, virtual: true
     field :always_lit,          :boolean, virtual: true
-    field :uses,                :integer, virtual: true
+    field :uses,                :integer
     field :destruct_message,      :string, virtual: true
     field :room_destruct_message, :string, virtual: true
 
@@ -101,6 +101,10 @@ defmodule Item do
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_#{item.id}", {GenServer, :start_link, [Item, item, [name: {:global, :"item_#{id}"}]]}, :transient, 5000, :worker, [Item]})
 
+        if item.always_lit do
+          Item.light(pid)
+        end
+
         pid
       nil ->
         nil
@@ -147,7 +151,7 @@ defmodule Item do
         {:reply, :not_a_light, item}
       lit?(item) ->
         {:reply, :already_lit, item}
-      !item.always_lit ->
+      !!item.uses ->
         TimerManager.call_every(item, {:light, 1000, fn ->
           send(self, :use)
         end})

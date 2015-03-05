@@ -108,6 +108,10 @@ defmodule ItemTemplate do
 
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Item, item, []]}, :transient, 5000, :worker, [Item]})
 
+    if item_template.always_lit do
+      Item.light(pid)
+    end
+
     {:reply, pid, item_template}
   end
 

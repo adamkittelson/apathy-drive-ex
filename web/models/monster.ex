@@ -308,7 +308,12 @@ defmodule Monster do
 
       average = total / Skill.modifier_total(skill)
 
+      light_level = monster
+                    |> find_room
+                    |> Room.light_level(monster)
+
       round(base * (1 + average * 0.005))
+      |> Skill.modify_for_room_light(light_level)
     else
       0
     end
