@@ -142,11 +142,11 @@ defmodule ApathyDrive.Exit do
           destination = Room.find(room_exit["destination"])
                         |> Room.value
 
-          Room.look(destination, monster)
-
           monster = monster
                     |> Monster.set_room_id(room_exit["destination"])
                     |> Monster.save
+
+          Room.look(destination, monster)
 
           notify_monster_left(monster, current_room, destination)
           notify_monster_entered(monster, current_room, destination)

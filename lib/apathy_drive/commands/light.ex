@@ -8,30 +8,30 @@ defmodule Commands.Light do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
-    current_room = Parent.of(monster)
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
 
     if Enum.any? arguments do
       cond do
         target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
-          case Systems.Light.light(target) do
+          case Item.light(target.pid) do
             :not_a_light ->
-              send_message(monster, "scroll", "<p>You can't light a #{Components.Name.value(target)}!</p>")
+              Monster.send_scroll(monster, "<p>You can't light a #{target.name}!</p>")
             :already_lit ->
-              send_message(monster, "scroll", "<p>The #{Components.Name.value(target)} is already lit!</p>")
+              Monster.send_scroll(monster, "<p>The #{target.name} is already lit!</p>")
             _ ->
-              send_message(monster, "scroll", "<p>You light the #{Components.Name.value(target)}.</p>")
+              Monster.send_scroll(monster, "<p>You light the #{target.name}.</p>")
           end
       true ->
-        send_message(monster, "scroll", "<p>You aren't carrying that.</p>")
+        Monster.send_scroll(monster, "<p>You aren't carrying that.</p>")
       end
     else
-      send_message(monster, "scroll", "<p>Light what?</p>")
+      Monster.send_scroll(monster, "<p>Light what?</p>")
     end
   end
 
-  defp find_item_on_monster(monster, string) do
-    (Systems.Limbs.equipped_items(monster) ++ Components.Items.get_items(monster))
+  def find_item_on_monster(%Monster{} = monster, string) do
+    (Monster.equipped_items(monster) ++ Monster.inventory(monster))
     |> Systems.Match.one(:name_contains, string)
   end
 

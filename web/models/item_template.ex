@@ -22,7 +22,6 @@ defmodule ItemTemplate do
     field :can_pick_up,           :boolean
     field :cost,                  :integer
     field :light,                 :integer
-    field :light_duration,        :integer
     field :always_lit,            :boolean
 
     timestamps

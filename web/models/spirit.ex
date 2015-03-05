@@ -372,6 +372,12 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info({:room_item_destroyed, %Item{} = item, %Monster{} = holder}, spirit) do
+    Spirit.send_scroll(spirit, "<p>#{item.room_destruct_message |> interpolate(%{"user" => holder})}</p>")
+
+    {:noreply, spirit}
+  end
+
   def handle_info(_message, spirit) do
     {:noreply, spirit}
   end

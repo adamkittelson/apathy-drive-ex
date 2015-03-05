@@ -755,6 +755,25 @@ defmodule Monster do
     {:noreply, monster}
   end
 
+  def handle_info({:item_destroyed, %Item{room_destruct_message: nil} = item}, monster) do
+    Monster.send_scroll(monster, "<p>#{item.destruct_message}</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:item_destroyed, %Item{} = item}, monster) do
+    Monster.send_scroll(monster, "<p>#{item.destruct_message}</p>")
+
+    PubSub.broadcast_from(self, "rooms:#{item.room_id}", {:room_item_destroyed, item, monster})
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:room_item_destroyed, %Item{} = item, %Monster{} = holder}, monster) do
+    Monster.send_scroll(monster, "<p>#{item.room_destruct_message |> interpolate(%{"user" => holder})}</p>")
+
+    {:noreply, monster}
+  end
+
   def handle_info(_message, monster) do
     {:noreply, monster}
   end

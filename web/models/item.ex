@@ -15,6 +15,11 @@ defmodule Item do
     field :pid,                 :any,     virtual: true
     field :effects,             :any,     virtual: true, default: %{}
     field :timers,              :any,     virtual: true, default: %{}
+    field :light,               :integer, virtual: true
+    field :always_lit,          :boolean, virtual: true
+    field :uses,                :integer, virtual: true
+    field :destruct_message,      :string, virtual: true
+    field :room_destruct_message, :string, virtual: true
 
     timestamps
 
@@ -116,31 +121,79 @@ defmodule Item do
     Map.put(item, :room_id, room_id)
   end
 
-  # Generate functions from Ecto schema
-  fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
+  def light(item) do
+    GenServer.call(item, :light)
+  end
 
-  Enum.each(fields, fn(field) ->
-    def unquote(field)(pid) do
-      GenServer.call(pid, unquote(field))
-    end
+  def extinguish(item) do
+    GenServer.call(item, :extinguish)
+  end
 
-    def unquote(field)(pid, new_value) do
-      GenServer.call(pid, {unquote(field), new_value})
-    end
-  end)
-
-  Enum.each(fields, fn(field) ->
-    def handle_call(unquote(field), _from, state) do
-      {:reply, Map.get(state, unquote(field)), state}
-    end
-
-    def handle_call({unquote(field), new_value}, _from, state) do
-      {:reply, new_value, Map.put(state, unquote(field), new_value)}
-    end
-  end)
+  def lit?(%Item{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(fn(effect) ->
+         Map.has_key?(effect, "light")
+       end)
+  end
 
   def handle_call(:value, _from, monster) do
     {:reply, monster, monster}
+  end
+
+  def handle_call(:light, _from, item) do
+    cond do
+      !item.light ->
+        {:reply, :not_a_light, item}
+      lit?(item) ->
+        {:reply, :already_lit, item}
+      !item.always_lit ->
+        TimerManager.call_every(item, {:light, 1000, fn ->
+          send(self, :use)
+        end})
+        item = Systems.Effect.add(item, %{"light" => item.light, timers: [:light]})
+        {:reply, item, item}
+      true ->
+        item = Systems.Effect.add(item, %{"light" => item.light})
+        {:reply, item, item}
+    end
+  end
+
+  def handle_call(:extinguish, _from, item) do
+    cond do
+      !item.light ->
+        {:reply, :not_a_light, item}
+      !lit?(item) ->
+        {:reply, :not_lit, item}
+      item.always_lit ->
+        {:reply, :always_lit, item}
+      true ->
+        item = System.Effect.remove(item, :light)
+        {:reply, item, item}
+    end
+  end
+
+  def handle_info(:use, %Item{uses: 0, monster_id: nil} = item) do
+    send(self, :delete)
+
+    {:noreply, item}
+  end
+
+  def handle_info(:use, %Item{uses: 0, room_id: nil} = item) do
+    monster = Monster.find(item.monster_id)
+
+    send(monster, {:item_destroyed, item})
+    send(self, :delete)
+
+    {:noreply, item}
+  end
+
+  def handle_info(:use, %Item{uses: uses} = item) do
+    item = item
+           |> Map.put(:uses, uses - 1)
+           |> save
+
+    {:noreply, item}
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %Item{timers: timers} = item) do
