@@ -84,7 +84,11 @@ defmodule Monster do
   end
 
   def monster_template_abilities(%Monster{} = monster) do
-    monster.monster_template.abilities
+    mt = monster.monster_template_id
+         |> MonsterTemplate.find
+         |> MonsterTemplate.value
+
+    mt.abilities
     |> Enum.map(&(Repo.get(Ability, &1)))
   end
 
@@ -133,7 +137,7 @@ defmodule Monster do
   end
 
   def load(id) do
-    case Repo.one from m in Monster, where: m.id == ^id, preload: [:monster_template] do
+    case Repo.one from m in Monster, where: m.id == ^id do
       %Monster{} = monster ->
 
         mt = monster.monster_template_id

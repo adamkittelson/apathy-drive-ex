@@ -69,7 +69,17 @@ defmodule Systems.Effect do
 
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->
-        entity
+        found_key = effects
+                    |> Map.keys
+                    |> Enum.find(fn(existing_key) ->
+                         effects[existing_key]["timers"] == [key]
+                       end)
+
+        if found_key do
+          remove(entity, found_key)
+        else
+          entity
+        end
     end
   end
 

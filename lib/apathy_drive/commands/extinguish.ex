@@ -8,32 +8,32 @@ defmodule Commands.Extinguish do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(spirit, monster, arguments) do
-    current_room = Parent.of(monster)
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
 
     if Enum.any? arguments do
       cond do
         target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
-          case Systems.Light.extinguish(target) do
+          case Item.extinguish(target.pid) do
             :not_a_light ->
-              send_message(monster, "scroll", "<p>You can't extinguish a #{Components.Name.value(target)}!</p>")
+              Monster.send_scroll(monster, "<p>You can't extinguish a #{target.name}!</p>")
             :not_lit ->
-              send_message(monster, "scroll", "<p>The #{Components.Name.value(target)} isn't lit!</p>")
+              Monster.send_scroll(monster, "<p>The #{target.name} isn't lit!</p>")
             :always_lit ->
-              send_message(monster, "scroll", "<p>The #{Components.Name.value(target)}'s light can not be extinguished!</p>")
+              Monster.send_scroll(monster, "<p>The #{target.name}'s light can not be extinguished!</p>")
             _ ->
-              send_message(monster, "scroll", "<p>You extinguish the #{Components.Name.value(target)}.</p>")
+              Monster.send_scroll(monster, "<p>You extinguish the #{target.name}.</p>")
           end
       true ->
-        send_message(monster, "scroll", "<p>You aren't carrying that.</p>")
+        Monster.send_scroll(monster, "<p>You aren't carrying that.</p>")
       end
     else
-      send_message(monster, "scroll", "<p>Extinguish what?</p>")
+      Monster.send_scroll(monster, "<p>Extinguish what?</p>")
     end
   end
 
-  defp find_item_on_monster(monster, string) do
-    (Systems.Limbs.equipped_items(monster) ++ Components.Items.get_items(monster))
+  def find_item_on_monster(%Monster{} = monster, string) do
+    (Monster.equipped_items(monster) ++ Monster.inventory(monster))
     |> Systems.Match.one(:name_contains, string)
   end
 

@@ -54,6 +54,8 @@ defmodule Item do
     item = item
            |> Map.put(:pid, self)
 
+    :global.register_name(:"item_#{item.id}", self)
+
     {:ok, item}
   end
 
@@ -84,7 +86,7 @@ defmodule Item do
   end
 
   def load(id) do
-    case Repo.one from i in Item, where: i.id == ^id, preload: [:item_template] do
+    case Repo.one from i in Item, where: i.id == ^id do
       %Item{} = item ->
 
         it = item.item_template_id
@@ -99,7 +101,7 @@ defmodule Item do
 
         item = struct(Item, item)
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_#{item.id}", {GenServer, :start_link, [Item, item, [name: {:global, :"item_#{id}"}]]}, :transient, 5000, :worker, [Item]})
+        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_#{item.id}", {GenServer, :start_link, [Item, item, []]}, :transient, 5000, :worker, [Item]})
 
         if item.always_lit do
           Item.light(pid)
@@ -155,7 +157,7 @@ defmodule Item do
         TimerManager.call_every(item, {:light, 1000, fn ->
           send(self, :use)
         end})
-        item = Systems.Effect.add(item, %{"light" => item.light, timers: [:light]})
+        item = Systems.Effect.add(item, %{"light" => item.light, "timers" => [:light]})
         {:reply, item, item}
       true ->
         item = Systems.Effect.add(item, %{"light" => item.light})
@@ -170,9 +172,18 @@ defmodule Item do
       !lit?(item) ->
         {:reply, :not_lit, item}
       item.always_lit ->
-        {:reply, :always_lit, item}
+        if !!item.destruct_message do
+          monster = Monster.find(item.monster_id)
+
+          send(monster, {:item_destroyed, item})
+          send(self, :delete)
+
+          {:reply, item, item}
+        else
+          {:reply, :always_lit, item}
+        end
       true ->
-        item = System.Effect.remove(item, :light)
+        item = Systems.Effect.remove(item, :light)
         {:reply, item, item}
     end
   end
