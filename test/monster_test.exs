@@ -60,12 +60,15 @@ defmodule MonsterTest do
 
   with "a monster with 10 base dodge and 10 power invested in dodge and 10 dodge from effects" do
     setup context do
+      GenServer.start_link(Room, %Room{id: 1, light: 0}, [name: {:global, :room_1}])
+
       Dict.put context, :monster, %Monster{skills:  %{"dodge" => %{"base" => 10, "trained" => 10}},
                                            effects: %{"some_key" => %{"dodge" => 10}},
                                            strength: 0,
                                            agility:  0,
                                            intelligence: 0,
-                                           health: 0}
+                                           health: 0,
+                                           room_id: 1}
     end
 
     should("have trained dodge", context) do
