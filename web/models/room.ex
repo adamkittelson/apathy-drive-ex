@@ -14,7 +14,7 @@ defmodule Room do
     field :effects,               :any, virtual: true, default: %{}
     field :light,                 :integer
     field :item_descriptions,     ApathyDrive.JSONB
-    field :placed_items,          {:array, :string}, default: []
+    field :placed_items,          {:array, :integer}, default: []
     field :lair_size,             :integer
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
@@ -38,6 +38,7 @@ defmodule Room do
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
     send(self, :load_monsters)
+    send(self, :load_items)
 
     if room.lair_monsters do
       PubSub.subscribe(self, "rooms:lairs")
@@ -107,7 +108,11 @@ defmodule Room do
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
 
   # Value functions
-  def items(%Room{} = room),    do: PubSub.subscribers("rooms:#{room.id}:items")
+  def items(%Room{} = room) do
+    PubSub.subscribers("rooms:#{room.id}:items")
+    |> Enum.map(&value/1)
+  end
+
   def monsters(%Room{} = room, monster \\ nil) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.reject(&(&1 == monster))
@@ -240,7 +245,7 @@ defmodule Room do
 
   def look_items(%Room{} = room) do
     items = items(room)
-            |> Enum.map(&(Item.value(&1).name))
+            |> Enum.map(&(&1.name))
 
     case Enum.count(items) do
       0 ->
@@ -400,6 +405,18 @@ defmodule Room do
     |> ApathyDrive.Repo.all
     |> Enum.each(fn(monster_id) ->
          Monster.find(monster_id)
+       end)
+
+    {:noreply, room}
+  end
+
+  def handle_info(:load_items, room) do
+    query = from i in assoc(room, :items), select: i.id
+
+    query
+    |> ApathyDrive.Repo.all
+    |> Enum.each(fn(item_id) ->
+         Item.find(item_id)
        end)
 
     {:noreply, room}

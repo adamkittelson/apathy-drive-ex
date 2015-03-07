@@ -6,20 +6,21 @@ defmodule Item do
   alias Phoenix.PubSub
 
   schema "items" do
-    field :name,                :string,  virtual: true
-    field :keywords,            {:array, :string}, virtual: true
-    field :equipped,            :boolean, default: false
-    field :worn_on,             :string,  virtual: true
-    field :required_skills,     :any,     virtual: true, default: nil
-    field :cost,                :integer, virtual: true
-    field :pid,                 :any,     virtual: true
-    field :effects,             :any,     virtual: true, default: %{}
-    field :timers,              :any,     virtual: true, default: %{}
-    field :light,               :integer, virtual: true
-    field :always_lit,          :boolean, virtual: true
-    field :uses,                :integer
-    field :destruct_message,      :string, virtual: true
-    field :room_destruct_message, :string, virtual: true
+    field :name,                  :string,  virtual: true
+    field :keywords,              {:array, :string}, virtual: true
+    field :equipped,              :boolean, default: false
+    field :worn_on,               :string,  virtual: true
+    field :required_skills,       :any,     virtual: true, default: nil
+    field :cost,                  :integer, virtual: true
+    field :pid,                   :any,     virtual: true
+    field :effects,               :any,     virtual: true, default: %{}
+    field :timers,                :any,     virtual: true, default: %{}
+    field :light,                 :integer, virtual: true
+    field :always_lit,            :boolean, virtual: true
+    field :uses,                  :integer
+    field :destruct_message,      :string,  virtual: true
+    field :room_destruct_message, :string,  virtual: true
+    field :can_pick_up,           :boolean, virtual: true
 
     timestamps
 
