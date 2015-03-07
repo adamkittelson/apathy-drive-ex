@@ -9,7 +9,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateRooms do
       add :description,       :text
       add :light,             :integer
       add :item_descriptions, :jsonb
-      add :placed_items,      {:array, :string}
+      add :placed_items,      {:array, :integer}
       add :lair_size,         :integer
       add :lair_monsters,     {:array, :integer}
       add :lair_frequency,    :integer
