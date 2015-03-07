@@ -8,23 +8,20 @@ defmodule Commands.Drop do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(_spirit, monster, arguments) do
-    current_room = Parent.of(monster)
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
 
     if Enum.any? arguments do
       item = Enum.join(arguments, " ")
-      case Systems.Match.one(Components.Items.get_items(monster), :name_contains, item) do
+      case Systems.Match.one(Monster.inventory(monster), :name_contains, item) do
         nil ->
-          send_message(monster, "scroll", "<p>You don't have \"#{item}\" to drop!</p>")
-        match ->
-          Components.Items.remove_item(monster, match)
-          Components.Items.add_item(current_room, match)
-          Entities.save!(monster)
-          Entities.save(current_room)
-          send_message(monster, "scroll", "<p>You drop #{Components.Name.value(match)}.</p>")
+          Monster.send_scroll(monster, "<p>You don't have \"#{item}\" to drop!</p>")
+        %Item{} = match ->
+          Item.to_room(match.pid, current_room)
+          Monster.send_scroll(monster, "<p>You drop #{match.name}.</p>")
       end
     else
-      send_message(monster, "scroll", "<p>Drop what?</p>")
+      Monster.send_scroll(monster, "<p>Drop what?</p>")
     end
   end
 end
