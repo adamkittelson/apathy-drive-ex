@@ -66,9 +66,10 @@ defmodule Monster do
 
     monster = monster
               |> Map.put(:pid, self)
-              |> set_abilities
 
     :global.register_name(:"monster_#{monster.id}", self)
+
+    send(self, :set_abilities)
 
     {:ok, monster}
   end
@@ -781,6 +782,10 @@ defmodule Monster do
     Monster.send_scroll(monster, "<p>#{item.room_destruct_message |> interpolate(%{"user" => holder})}</p>")
 
     {:noreply, monster}
+  end
+
+  def handle_info(:set_abilities, monster) do
+    {:noreply, set_abilities(monster) }
   end
 
   def handle_info(_message, monster) do

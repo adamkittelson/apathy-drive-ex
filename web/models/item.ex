@@ -63,6 +63,14 @@ defmodule Item do
     GenServer.call(item, :value)
   end
 
+  def to_monster_inventory(item, %Monster{} = monster) do
+    GenServer.call(item, {:to_monster_inventory, monster})
+  end
+
+  def to_room(item, %Room{} = room) do
+    GenServer.call(item, {:to_room, room})
+  end
+
   def insert(%Item{id: nil} = item) do
     ApathyDrive.Repo.insert(item)
   end
@@ -186,6 +194,38 @@ defmodule Item do
         item = Systems.Effect.remove(item, :light)
         {:reply, item, item}
     end
+  end
+
+  def handle_call({:to_monster_inventory, %Monster{} = monster}, _from, item) do
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items")
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+    Phoenix.PubSub.unsubscribe(self, "rooms:#{item.room_id}:items")
+
+    Phoenix.PubSub.subscribe(self, "monsters:#{monster.id}:inventory")
+
+    item = item
+           |> Map.put(:monster_id, monster.id)
+           |> Map.put(:room_id, nil)
+           |> save
+
+    {:reply, self, item}
+  end
+
+  def handle_call({:to_room, %Room{} = room}, _from, item) do
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items")
+    Phoenix.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+    Phoenix.PubSub.unsubscribe(self, "rooms:#{item.room_id}:items")
+
+    Phoenix.PubSub.subscribe(self, "rooms:#{room.id}:items")
+
+    item = item
+           |> Map.put(:monster_id, nil)
+           |> Map.put(:room_id, room.id)
+           |> save
+
+    {:reply, self, item}
   end
 
   def handle_info(:use, %Item{uses: 0, monster_id: nil} = item) do

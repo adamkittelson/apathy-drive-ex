@@ -49,6 +49,11 @@ defmodule Room do
       send(self, :spawn_permanent_npc)
     end
 
+    if room.placed_items |> Enum.any? do
+      PubSub.subscribe(self, "rooms:placed_items")
+      send(self, :spawn_placed_items)
+    end
+
     {:ok, room}
   end
 
@@ -221,9 +226,21 @@ defmodule Room do
     "<p><br><em>Type 'list' to see a list of goods and services sold here.</em><br><br></p>"
   end
 
+  def permanent_npc_present?(%Room{} = room) do
+    PubSub.subscribers("rooms:#{room.id}:monsters")
+    |> Enum.map(&(Monster.value(&1).monster_template_id))
+    |> Enum.member?(room.permanent_npc)
+  end
+
+  def placed_item_present?(%Room{} = room, item_template_id) do
+    PubSub.subscribers("rooms:#{room.id}:items")
+    |> Enum.map(&(Item.value(&1).item_template_id))
+    |> Enum.member?(item_template_id)
+  end
+
   def look_items(%Room{} = room) do
     items = items(room)
-            |> Enum.map(&Systems.Item.item_name/1)
+            |> Enum.map(&(Item.value(&1).name))
 
     case Enum.count(items) do
       0 ->
@@ -353,14 +370,25 @@ defmodule Room do
   end
 
   def handle_info(:spawn_permanent_npc, room) do
-
     mt = MonsterTemplate.find(room.permanent_npc)
 
-    unless MonsterTemplate.limit_reached?(mt) do
+    unless MonsterTemplate.limit_reached?(mt) || permanent_npc_present?(room) do
       monster = MonsterTemplate.spawn_monster(mt, room)
 
       Monster.display_enter_message(room, monster)
     end
+
+    {:noreply, room}
+  end
+
+  def handle_info(:spawn_placed_items, room) do
+    room.placed_items
+    |> Enum.reject(&(placed_item_present?(room, &1)))
+    |> Enum.each(fn(item_template_id) ->
+         it = ItemTemplate.find(item_template_id)
+
+         ItemTemplate.spawn_item(it, room)
+       end)
 
     {:noreply, room}
   end

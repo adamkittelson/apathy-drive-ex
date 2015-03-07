@@ -61,7 +61,13 @@ defmodule ItemTemplate do
   end
 
   def spawn_item(item_template, %Monster{} = monster) do
-    GenServer.call(item_template, {:spawn_item, monster})
+    GenServer.call(item_template, :spawn_item)
+    |> Item.to_monster_inventory(monster)
+  end
+
+  def spawn_item(item_template, %Room{} = room) do
+    GenServer.call(item_template, :spawn_item)
+    |> Item.to_room(room)
   end
 
   def skill_too_low?(%Monster{} = monster, %{required_skills: nil}), do: false
@@ -92,16 +98,14 @@ defmodule ItemTemplate do
     end
   end)
 
-  def handle_call({:spawn_item, %Monster{} = monster}, _from, item_template) do
+  def handle_call(:spawn_item, _from, item_template) do
     values = item_template
              |> Map.from_struct
              |> Enum.into(Keyword.new)
 
     item = struct(Item, values)
            |> Map.put(:item_template_id, item_template.id)
-           |> Map.put(:item_template, item_template)
            |> Map.put(:id, nil)
-           |> Map.put(:monster_id, monster.id)
            |> Item.insert
 
     worker_id = :"item_#{item.id}"

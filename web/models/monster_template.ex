@@ -142,7 +142,6 @@ defmodule MonsterTemplate do
     monster = struct(Monster, values)
               |> Map.put(:name, name_with_adjective(monster_template.name, monster_template.adjectives))
               |> Map.put(:monster_template_id, monster_template.id)
-              |> Map.put(:monster_template, monster_template)
               |> Map.put(:id, nil)
               |> Map.put(:alignment, alignment(monster_template.alignment))
               |> Map.put(:room_id, room.id)
