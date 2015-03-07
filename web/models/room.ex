@@ -14,7 +14,7 @@ defmodule Room do
     field :effects,               :any, virtual: true, default: %{}
     field :light,                 :integer
     field :item_descriptions,     ApathyDrive.JSONB
-    field :placed_items,          {:array, :string}
+    field :placed_items,          {:array, :string}, default: []
     field :lair_size,             :integer
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
