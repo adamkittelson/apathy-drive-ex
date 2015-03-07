@@ -1,5 +1,5 @@
 defmodule Entities do
-  use Systems.Reload
+
   use Ecto.Model
   import Ecto.Query, only: [from: 2]
   alias Poison, as: JSON

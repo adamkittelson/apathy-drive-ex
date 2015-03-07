@@ -23,7 +23,7 @@ defmodule Commands.Ask do
   end
 
   def ask(%Monster{} = monster, nil, _question) do
-    send_message(monster, "scroll", "<p>Ask whom?</p>")
+    Monster.send_scroll(monster, "<p>Ask whom?</p>")
   end
 
   def ask(%Monster{} = monster, target, question) when is_pid(target) do

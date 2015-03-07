@@ -1,7 +1,5 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
-  use Systems.Reload
-  import Utility
   require Logger
 
   def all do
@@ -93,8 +91,6 @@ defmodule ApathyDrive.Command do
 
   defmacro __using__(_opts) do
     quote do
-      use Systems.Reload
-      import Utility
       import BlockTimer
       import Systems.Text
 

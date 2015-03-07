@@ -1,6 +1,4 @@
 defmodule ApathyDrive.Exit do
-  use Systems.Reload
-  import Utility
 
   def direction(direction) do
     case direction do
@@ -81,7 +79,7 @@ defmodule ApathyDrive.Exit do
     :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".move(current_room, spirit_or_monster, room_exit)
   end
 
-  def get_exit_by_direction(%Room{exits: exits} = room, direction) do
+  def get_exit_by_direction(%Room{exits: exits}, direction) do
     Enum.find(exits, &(&1["direction"] == direction(direction)))
   end
 
@@ -100,7 +98,7 @@ defmodule ApathyDrive.Exit do
     get_exit_by_direction(room, direction)["open_duration_in_seconds"]
   end
 
-  def mirror(%Room{exits: exits, id: id} = room, %{"destination" => destination}) do
+  def mirror(%Room{id: id}, %{"destination" => destination}) do
     mirror_room = Room.find(destination)
                   |> Room.value
 
@@ -113,9 +111,9 @@ defmodule ApathyDrive.Exit do
 
   defmacro __using__(_opts) do
     quote do
-      use Systems.Reload
+    
       import Systems.Text
-      import Utility
+    
       import BlockTimer
       alias ApathyDrive.Exit
 
@@ -136,22 +134,18 @@ defmodule ApathyDrive.Exit do
       end
 
       def move(%Room{} = current_room, %Monster{} = monster, room_exit) do
-        if Systems.Combat.stunned?(monster) do
-          Monster.send_scroll(monster, "<p><span class='yellow'>You are stunned and cannot move!</span></p>")
-        else
-          destination = Room.find(room_exit["destination"])
-                        |> Room.value
+        destination = Room.find(room_exit["destination"])
+                      |> Room.value
 
-          monster = monster
-                    |> Monster.set_room_id(room_exit["destination"])
-                    |> Monster.save
+        monster = monster
+                  |> Monster.set_room_id(room_exit["destination"])
+                  |> Monster.save
 
-          Room.look(destination, monster)
+        Room.look(destination, monster)
 
-          notify_monster_left(monster, current_room, destination)
-          notify_monster_entered(monster, current_room, destination)
-          monster
-        end
+        notify_monster_left(monster, current_room, destination)
+        notify_monster_entered(monster, current_room, destination)
+        monster
       end
 
       def look(%Room{} = room, %Spirit{} = spirit, room_exit) do

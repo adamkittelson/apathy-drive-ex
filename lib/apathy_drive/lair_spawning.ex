@@ -1,5 +1,5 @@
 defmodule ApathyDrive.LairSpawning do
-  use Systems.Reload
+
 
   def spawn_lair(room) do
     if room.lair_size > (room.id |> Room.spawned_monsters |> length) do
@@ -32,6 +32,7 @@ defmodule ApathyDrive.LairSpawning do
   def eligible_monsters(room) do
     room.lair_monsters
     |> Enum.map(&MonsterTemplate.find/1)
+    |> Enum.map(&MonsterTemplate.value/1)
     |> Enum.reject(&MonsterTemplate.limit_reached?/1)
   end
 

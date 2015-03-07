@@ -1,7 +1,7 @@
 defmodule Room do
   require Logger
   use Ecto.Model
-  use Systems.Reload
+
   use GenServer
   use Timex
   alias ApathyDrive.Repo
@@ -320,7 +320,7 @@ defmodule Room do
     unlock!(room, direction)
   end
 
-  defp unlock!(%Room{effects: effects} = room, direction) do
+  defp unlock!(%Room{} = room, direction) do
     unlock_duration = if open_duration = ApathyDrive.Exit.open_duration(room, direction) do
       open_duration
     else
@@ -377,7 +377,7 @@ defmodule Room do
   def handle_info(:spawn_permanent_npc, room) do
     mt = MonsterTemplate.find(room.permanent_npc)
 
-    unless MonsterTemplate.limit_reached?(mt) || permanent_npc_present?(room) do
+    unless MonsterTemplate.limit_reached?(MonsterTemplate.value(mt)) || permanent_npc_present?(room) do
       monster = MonsterTemplate.spawn_monster(mt, room)
 
       Monster.display_enter_message(room, monster)
@@ -422,7 +422,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:door_bashed_open, %{basher: monster, direction: direction}}, room) do
+  def handle_info({:door_bashed_open, %{direction: direction}}, room) do
     room = open!(room, direction)
 
     room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
@@ -441,7 +441,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:door_bash_failed, %{basher: monster, direction: direction}}, room) do
+  def handle_info({:door_bash_failed, %{direction: direction}}, room) do
     room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
 
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
@@ -453,7 +453,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:door_opened, %{opener: monster, direction: direction}}, room) do
+  def handle_info({:door_opened, %{direction: direction}}, room) do
     room = open!(room, direction)
 
     room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
@@ -472,7 +472,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:door_closed, %{closer: monster, direction: direction}}, room) do
+  def handle_info({:door_closed, %{direction: direction}}, room) do
     room = close!(room, direction)
 
     room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
@@ -491,7 +491,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:door_picked, %{picker: monster, direction: direction}}, room) do
+  def handle_info({:door_picked, %{direction: direction}}, room) do
     room = unlock!(room, direction)
 
     room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
@@ -510,7 +510,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:door_pick_failed, %{picker: monster, direction: direction}}, room) do
+  def handle_info({:door_pick_failed, %{direction: direction}}, room) do
     room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
 
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)

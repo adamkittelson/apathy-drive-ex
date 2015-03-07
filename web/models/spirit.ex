@@ -1,7 +1,7 @@
 defmodule Spirit do
   use Ecto.Model
   use GenServer
-  use Systems.Reload
+
   require Logger
   import Systems.Text
   alias ApathyDrive.Repo
@@ -64,7 +64,7 @@ defmodule Spirit do
     Map.put(spirit, :room_id, room_id)
   end
 
-  def find_room(%Spirit{room_id: room_id} = spirit) do
+  def find_room(%Spirit{room_id: room_id}) do
     room_id
     |> Room.find
     |> Room.value
@@ -247,10 +247,6 @@ defmodule Spirit do
              |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
              |> Systems.Prompt.update
 
-    message = monster.death_message
-              |> interpolate(%{"name" => monster.name})
-              |> capitalize_first
-
     Phoenix.PubSub.unsubscribe(self, "monsters:#{monster.id}")
 
     {:noreply, spirit}
@@ -261,7 +257,7 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info({:door_bashed_open, %{basher: %Monster{pid: basher_pid} = basher,
+  def handle_info({:door_bashed_open, %{basher: %Monster{} = basher,
                                         direction: direction,
                                         type: type}},
                                         spirit) do
@@ -275,7 +271,7 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info({:door_bash_failed, %{basher: %Monster{pid: basher_pid} = basher,
+  def handle_info({:door_bash_failed, %{basher: %Monster{} = basher,
                                         direction: direction,
                                         type: type}},
                                         spirit) do
@@ -317,7 +313,7 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info({:door_picked, %{picker: %Monster{pid: picker_pid} = picker,
+  def handle_info({:door_picked, %{picker: %Monster{} = picker,
                                    direction: direction,
                                    type: type}},
                                    spirit) do
@@ -331,7 +327,7 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info({:door_pick_failed, %{picker: %Monster{pid: picker_pid} = picker,
+  def handle_info({:door_pick_failed, %{picker: %Monster{} = picker,
                                         direction: direction,
                                         type: type}},
                                         spirit) do
@@ -346,9 +342,9 @@ defmodule Spirit do
   end
 
   def handle_info({:cast_message, messages: messages,
-                                  user: %Monster{pid: user_pid} = user,
-                                  target: %Monster{pid: target_pid} = target},
-                  %Spirit{pid: pid} = spirit) do
+                                  user: %Monster{},
+                                  target: %Monster{}},
+                  %Spirit{} = spirit) do
 
     send_scroll(spirit, messages["spectator"])
 

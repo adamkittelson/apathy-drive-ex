@@ -3,6 +3,10 @@ defmodule Commands.Possess do
 
   def keywords, do: ["possess"]
 
+  def execute(%Monster{} = monster, _arguments) do
+    Monster.send_scroll(monster, "<p>You must unpossess #{monster.name} first.</p>")
+  end
+
   def execute(%Spirit{} = spirit, []) do
     spirit
     |> Spirit.send_scroll("<p>Possess what?</p>")
@@ -35,10 +39,6 @@ defmodule Commands.Possess do
 
     Systems.Prompt.update(monster)
     spirit
-  end
-
-  def execute(%Monster{} = monster, _arguments) do
-    Monster.send_scroll(monster, "<p>You must unpossess #{monster.name} first.</p>")
   end
 
 end

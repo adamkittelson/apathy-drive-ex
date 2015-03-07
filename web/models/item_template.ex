@@ -1,6 +1,6 @@
 defmodule ItemTemplate do
   use Ecto.Model
-  use Systems.Reload
+
   use GenServer
   alias ApathyDrive.Repo
   alias Phoenix.PubSub
@@ -70,7 +70,7 @@ defmodule ItemTemplate do
     |> Item.to_room(room)
   end
 
-  def skill_too_low?(%Monster{} = monster, %{required_skills: nil}), do: false
+  def skill_too_low?(%Monster{}, %{required_skills: nil}), do: false
   def skill_too_low?(%Monster{} = monster, %{required_skills: %{} = required_skills}) do
     skill = required_skills
             |> Map.keys

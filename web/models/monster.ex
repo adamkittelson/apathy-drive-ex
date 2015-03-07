@@ -2,7 +2,7 @@ defmodule Monster do
   require Logger
   use Ecto.Model
   use GenServer
-  use Systems.Reload
+
   import Systems.Text
   alias ApathyDrive.Repo
   alias Phoenix.PubSub
@@ -145,7 +145,7 @@ defmodule Monster do
              |> MonsterTemplate.find
              |> MonsterTemplate.value
 
-        monster = Map.merge(mt, monster, fn(key, mt_val, monster_val) ->
+        monster = Map.merge(mt, monster, fn(_key, mt_val, monster_val) ->
                     monster_val || mt_val
                   end)
                   |> Map.from_struct
@@ -188,17 +188,17 @@ defmodule Monster do
     Map.put(monster, :room_id, room_id)
   end
 
-  def inventory(%Monster{id: id} = monster) do
+  def inventory(%Monster{id: id}) do
     PubSub.subscribers("monsters:#{id}:inventory")
     |> Enum.map(&Item.value/1)
   end
 
-  def equipped_items(%Monster{id: id} = monster) do
+  def equipped_items(%Monster{id: id}) do
     PubSub.subscribers("monsters:#{id}:equipped_items")
     |> Enum.map(&Item.value/1)
   end
 
-  def display_inventory(%Monster{id: id} = monster) do
+  def display_inventory(%Monster{} = monster) do
     if Enum.any?(equipment = equipped_items(monster)) do
       Monster.send_scroll(monster, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
       Enum.each equipment, fn(item) ->
@@ -272,7 +272,7 @@ defmodule Monster do
        end)
   end
 
-  def effect_bonus(%Monster{effects: effects} = monster, name) do
+  def effect_bonus(%Monster{effects: effects}, name) do
     effects
     |> Map.values
     |> Enum.map(fn
@@ -401,7 +401,7 @@ defmodule Monster do
     display_enter_message(room, monster, Room.random_direction(room))
   end
 
-  def display_enter_message(%Room{} = room, monster, direction)  when is_pid(monster) do
+  def display_enter_message(%Room{} = room, monster, _direction)  when is_pid(monster) do
     display_enter_message(room, Monster.value(monster), Room.random_direction(room))
   end
   def display_enter_message(%Room{} = room, %Monster{enter_message: enter_message, name: name}, direction) do
@@ -422,10 +422,10 @@ defmodule Monster do
     display_exit_message(room, monster, Room.random_direction(room))
   end
 
-  def display_exit_message(%Room{} = room, monster, direction)  when is_pid(monster) do
+  def display_exit_message(%Room{} = room, monster, _direction)  when is_pid(monster) do
     display_exit_message(room, Monster.value(monster), Room.random_direction(room))
   end
-  def display_exit_message(%Room{} = room, %Monster{exit_message: exit_message, name: name} = monster, direction) do
+  def display_exit_message(%Room{} = room, %Monster{exit_message: exit_message, name: name}, direction) do
     message = exit_message
               |> interpolate(%{
                    "name" => name,
@@ -490,7 +490,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:greet, %{greeter: %Monster{pid: greeter_pid} = greeter,
+  def handle_info({:greet, %{greeter: %Monster{pid: greeter_pid},
                              greeted: %Monster{pid: _greeted_pid} = greeted}},
                              %Monster{pid: monster_pid} = monster)
                              when greeter_pid == monster_pid do
@@ -499,7 +499,7 @@ defmodule Monster do
   end
 
   def handle_info({:greet, %{greeter: %Monster{pid: _greeter_pid} = greeter,
-                             greeted: %Monster{pid: greeted_pid} = greeted}},
+                             greeted: %Monster{pid: greeted_pid}}},
                              %Monster{pid: monster_pid} = monster)
                              when greeted_pid == monster_pid do
     send_scroll(monster, "<p><span class='dark-green'>#{greeter.name |> capitalize_first} greets you.</span></p>")
@@ -511,8 +511,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_bashed_open, %{basher: %Monster{pid: basher_pid} = basher,
-                                        direction: direction,
+  def handle_info({:door_bashed_open, %{basher: %Monster{pid: basher_pid},
                                         type: type}},
                                         %Monster{pid: monster_pid} = monster)
                                         when basher_pid == monster_pid do
@@ -521,10 +520,10 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_bashed_open, %{basher: %Monster{pid: basher_pid} = basher,
+  def handle_info({:door_bashed_open, %{basher: %Monster{} = basher,
                                         direction: direction,
                                         type: type}},
-                                        %Monster{pid: monster_pid} = monster) do
+                                        %Monster{} = monster) do
 
     send_scroll(monster, "<p>You see #{basher.name} bash open the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
     {:noreply, monster}
@@ -535,8 +534,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_bash_failed, %{basher: %Monster{pid: basher_pid} = basher,
-                                        direction: direction}},
+  def handle_info({:door_bash_failed, %{basher: %Monster{pid: basher_pid}}},
                                         %Monster{pid: monster_pid} = monster)
                                         when basher_pid == monster_pid do
 
@@ -544,7 +542,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_bash_failed, %{basher: %Monster{pid: basher_pid} = basher,
+  def handle_info({:door_bash_failed, %{basher: %Monster{} = basher,
                                         direction: direction,
                                         type: type}},
                                         monster) do
@@ -558,8 +556,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_opened, %{opener: %Monster{pid: opener_pid} = opener,
-                                   direction: direction,
+  def handle_info({:door_opened, %{opener: %Monster{pid: opener_pid},
                                    type: type}},
                                    %Monster{pid: monster_pid} = monster)
                                    when opener_pid == monster_pid do
@@ -568,10 +565,10 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_opened, %{opener: %Monster{pid: basher_pid} = opener,
+  def handle_info({:door_opened, %{opener: %Monster{} = opener,
                                    direction: direction,
                                    type: type}},
-                                   %Monster{pid: monster_pid} = monster) do
+                                   %Monster{} = monster) do
 
     send_scroll(monster, "<p>You see #{opener.name} open the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
     {:noreply, monster}
@@ -582,8 +579,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_closed, %{closer: %Monster{pid: closer_pid} = closer,
-                                   direction: direction,
+  def handle_info({:door_closed, %{closer: %Monster{pid: closer_pid},
                                    type: type}},
                                    %Monster{pid: monster_pid} = monster)
                                    when closer_pid == monster_pid do
@@ -592,10 +588,10 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_closed, %{closer: %Monster{pid: closer_pid} = closer,
+  def handle_info({:door_closed, %{closer: %Monster{} = closer,
                                    direction: direction,
                                    type: type}},
-                                   %Monster{pid: monster_pid} = monster) do
+                                   %Monster{} = monster) do
 
     send_scroll(monster, "<p>You see #{closer.name} close the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
     {:noreply, monster}
@@ -606,8 +602,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_picked, %{picker: %Monster{pid: picker_pid} = picker,
-                                   direction: direction,
+  def handle_info({:door_picked, %{picker: %Monster{pid: picker_pid},
                                    type: type}},
                                    %Monster{pid: monster_pid} = monster)
                                    when picker_pid == monster_pid do
@@ -616,10 +611,10 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_picked, %{basher: %Monster{pid: picker_pid} = picker,
+  def handle_info({:door_picked, %{basher: %Monster{} = picker,
                                    direction: direction,
                                    type: type}},
-                                   %Monster{pid: monster_pid} = monster) do
+                                   %Monster{} = monster) do
 
     send_scroll(monster, "<p>You see #{picker.name} pick the lock on the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
     {:noreply, monster}
@@ -630,8 +625,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_pick_failed, %{picker: %Monster{pid: picker_pid} = picker,
-                                        direction: direction}},
+  def handle_info({:door_pick_failed, %{picker: %Monster{pid: picker_pid}}},
                                         %Monster{pid: monster_pid} = monster)
                                         when picker_pid == monster_pid do
 
@@ -639,7 +633,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_pick_failed, %{picker: %Monster{pid: picker_pid} = picker,
+  def handle_info({:door_pick_failed, %{picker: %Monster{} = picker,
                                         direction: direction,
                                         type: type}},
                                         monster) do
@@ -699,8 +693,8 @@ defmodule Monster do
   end
 
   def handle_info({:cast_message, messages: messages,
-                                  user: %Monster{pid: user_pid} = user,
-                                  target: %Monster{pid: target_pid} = target},
+                                  user: %Monster{pid: user_pid},
+                                  target: %Monster{}},
                   %Monster{pid: pid} = monster)
                   when pid == user_pid do
 
@@ -710,8 +704,8 @@ defmodule Monster do
   end
 
   def handle_info({:cast_message, messages: messages,
-                                  user: %Monster{pid: user_pid} = user,
-                                  target: %Monster{pid: target_pid} = target},
+                                  user: %Monster{},
+                                  target: %Monster{pid: target_pid}},
                   %Monster{pid: pid} = monster)
                   when pid == target_pid do
 
@@ -721,9 +715,9 @@ defmodule Monster do
   end
 
   def handle_info({:cast_message, messages: messages,
-                                  user: %Monster{pid: user_pid} = user,
-                                  target: %Monster{pid: target_pid} = target},
-                  %Monster{pid: pid} = monster) do
+                                  user: %Monster{},
+                                  target: %Monster{}},
+                  %Monster{} = monster) do
 
     send_scroll(monster, messages["spectator"])
 

@@ -25,10 +25,10 @@ defmodule ApathyDrive.Exits.Hidden do
 
   def search(monster, room, room_exit) do
     if searched?(room, room_exit) || :random.uniform(100) > Skills.Perception.modified(monster) do
-      send_message(monster, "scroll", "<p>You notice nothing different #{Exit.direction_description(room_exit["direction"])}.</p>")
+      Monster.send_scroll(monster, "<p>You notice nothing different #{Exit.direction_description(room_exit["direction"])}.</p>")
     else
       if room_exit["message_when_revealed"] do
-        send_message(monster, "scroll", "<p>#{room_exit["message_when_revealed"]}</p>")
+        Monster.send_scroll(monster, "<p>#{room_exit["message_when_revealed"]}</p>")
       end
 
       Systems.Effect.add(room, %{searched: room_exit["direction"]}, 300)
@@ -44,23 +44,23 @@ defmodule ApathyDrive.Exits.Hidden do
       super(current_room, monster, room_exit)
     else
       if monster do
-        send_message(monster, "scroll", "<p>There is no exit in that direction!</p>")
+        Monster.send_scroll(monster, "<p>There is no exit in that direction!</p>")
       end
     end
   end
 
   def open?(room, room_exit) do
-    permanently_open?(room, room_exit) or
-    all_remote_actions_triggered?(room, room_exit) or
+    permanently_open?(room_exit) or
+    all_remote_actions_triggered?(room_exit) or
     searched?(room, room_exit) or
     opened_remotely?(room, room_exit)
   end
 
-  def permanently_open?(room, room_exit) do
+  def permanently_open?(room_exit) do
     !!room_exit[:open]
   end
 
-  def all_remote_actions_triggered?(room, room_exit) do
+  def all_remote_actions_triggered?(room_exit) do
     if room_exit["remote_action_exits"] do
       room_exit["remote_action_exits"]
       |> Enum.all?(fn(remote_exit) ->
@@ -92,7 +92,7 @@ defmodule ApathyDrive.Exits.Hidden do
     |> Enum.member?(room_exit["direction"])
   end
 
-  def opened_remotely?(room, room_exit) do
+  def opened_remotely?(_room, _room_exit) do
     false
     #!!reactor.timer(self, :opened_remotely)
   end

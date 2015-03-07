@@ -1,5 +1,5 @@
 defmodule Systems.Aggression do
-  use Systems.Reload
+
 
   def monster_entered(intruder, room) do
     Systems.Monster.monsters_in_room(room, intruder)

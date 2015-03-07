@@ -20,7 +20,7 @@ defmodule Commands.Greet do
     end
   end
 
-  def greet(%Monster{} = monster, nil, %Room{} = room) do
+  def greet(%Monster{} = monster, nil, %Room{}) do
     Monster.send_scroll(monster, "<p>Greet whom?</p>")
   end
 
@@ -28,7 +28,7 @@ defmodule Commands.Greet do
     greet(monster, Monster.value(target), room)
   end
 
-  def greet(%Monster{} = monster, %Monster{} = target, %Room{} = room) when monster == target do
+  def greet(%Monster{} = monster, %Monster{} = target, %Room{}) when monster == target do
     Monster.send_scroll(monster, "<p>Greet yourself?</p>")
   end
 

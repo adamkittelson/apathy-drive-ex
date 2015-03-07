@@ -8,9 +8,9 @@ defmodule ApathyDrive.Exits.Flag do
     max = room_exit["max"]
     case Components.Flags.value(monster)[room_exit["name"]] do
       nil ->
-        send_message(monster, "scroll", "<p>#{failure_message}</p>")
+        Monster.send_scroll(monster, "<p>#{failure_message}</p>")
       value when value >= min and value <= max ->
-        send_message(monster, "scroll", "<p>#{failure_message}</p>")
+        Monster.send_scroll(monster, "<p>#{failure_message}</p>")
       _ ->
         super(current_room, monster, room_exit)
     end

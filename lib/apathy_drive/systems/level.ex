@@ -1,7 +1,4 @@
 defmodule Systems.Level do
-  import Systems.Text
-  use Systems.Reload
-  import Utility
 
   def exp_to_next_level(entity) do
     exp_at_level(entity.level + 1) - entity.experience
@@ -28,9 +25,9 @@ defmodule Systems.Level do
   def advance(entity, exp_tnl) when exp_tnl < 1 do
     new_level = Components.Level.advance(entity)
     if Possession.possessor(entity) do
-      send_message(entity, "scroll", "<p>Your #{Components.Name.value(entity)} has advanced to level #{new_level}!</p>")
+      Monster.send_scroll(entity, "<p>Your #{Components.Name.value(entity)} has advanced to level #{new_level}!</p>")
     else
-      send_message(entity, "scroll", "<p>You've advanced to level #{new_level}!</p>")
+      Spirit.send_scroll(entity, "<p>You've advanced to level #{new_level}!</p>")
     end
   end
   def advance(_, _), do: nil

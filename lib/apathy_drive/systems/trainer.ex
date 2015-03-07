@@ -1,6 +1,6 @@
 defmodule Systems.Trainer do
-  use Systems.Reload
-  import Utility
+
+
 
   def list(%Spirit{} = spirit, %Room{}) do
     spirit
@@ -138,7 +138,7 @@ defmodule Systems.Trainer do
     |> Enum.sum
   end
 
-  def power_spent(%Monster{skills: skills} = monster, skill_name) do
+  def power_spent(%Monster{skills: skills}, skill_name) do
     get_in(skills, [skill_name, "trained"]) || 0
   end
 

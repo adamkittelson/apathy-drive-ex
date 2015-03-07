@@ -1,7 +1,4 @@
 defmodule Systems.Death do
-  use Systems.Reload
-  import Utility
-  import Systems.Text
   use Timex
 
   def kill(%Monster{} = monster) do

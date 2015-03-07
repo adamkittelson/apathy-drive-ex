@@ -49,7 +49,7 @@ defmodule ApathyDrive.Exits.Doors do
                  |> Systems.Damage.base_attack_damage
                  |> Systems.Damage.raw_damage
 
-        send_message(monster, "scroll", "<p>You take #{amount} damage for bashing the #{name}!</p>")
+        Monster.send_scroll(monster, "<p>You take #{amount} damage for bashing the #{name}!</p>")
         Systems.Damage.do_damage(monster, amount)
       end
 
@@ -120,9 +120,9 @@ defmodule ApathyDrive.Exits.Doors do
       def unlock(monster, room, room_exit) do
         cond do
           open?(room, room_exit) ->
-            send_message(monster, "scroll", "<p>The #{name} is already open.</p>")
+            Monster.send_scroll(monster, "<p>The #{name} is already open.</p>")
           !locked?(room, room_exit) ->
-            send_message(monster, "scroll", "<p>The #{name} is already unlocked.</p>")
+            Monster.send_scroll(monster, "<p>The #{name} is already unlocked.</p>")
           true ->
             key = monster
                   |> Components.Items.get_items
@@ -132,11 +132,11 @@ defmodule ApathyDrive.Exits.Doors do
 
             if key do
               #unlock!(room, room_exit["direction"])
-              send_message(monster, "scroll", "<p>You unlocked the #{name} with your #{Components.Name.value(key)}.</p>")
+              Monster.send_scroll(monster, "<p>You unlocked the #{name} with your #{Components.Name.value(key)}.</p>")
               Components.Uses.use!(key)
               #mirror_unlock(room, room_exit)
             else
-              send_message(monster, "scroll", "<p>None of your keys seem to fit this lock.</p>")
+              Monster.send_scroll(monster, "<p>None of your keys seem to fit this lock.</p>")
             end
         end
       end
@@ -156,12 +156,12 @@ defmodule ApathyDrive.Exits.Doors do
       def lock(monster, room, room_exit) do
         cond do
           locked?(room, room_exit) ->
-            send_message(monster, "scroll", "<p>The #{name} is already locked.</p>")
+            Monster.send_scroll(monster, "<p>The #{name} is already locked.</p>")
           open?(room, room_exit) ->
-            send_message(monster, "scroll", "<p>You must close the #{name} before you may lock it.</p>")
+            Monster.send_scroll(monster, "<p>You must close the #{name} before you may lock it.</p>")
           true ->
             lock!(room, room_exit["direction"])
-            send_message(monster, "scroll", "<p>The #{name} is now locked.</p>")
+            Monster.send_scroll(monster, "<p>The #{name} is now locked.</p>")
 
             msg = "You see #{Components.Name.value(monster)} lock the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}."
             room
@@ -170,7 +170,7 @@ defmodule ApathyDrive.Exits.Doors do
                  observer = Possession.possessed(character) || character
 
                  if observer != monster do
-                   send_message(observer, "scroll", "<p>#{msg}</p>")
+                   Monster.send_scroll(observer, "<p>#{msg}</p>")
                  end
                end)
 
@@ -186,8 +186,8 @@ defmodule ApathyDrive.Exits.Doors do
 
           mirror_room
           |> Systems.Room.characters_in_room
-          |> Enum.each(fn(character) ->
-               send_message(character, "scroll", "<p>The #{name} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>")
+          |> Enum.each(fn(monster) ->
+               Monster.send_scroll(monster, "<p>The #{name} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>")
              end)
         end
       end

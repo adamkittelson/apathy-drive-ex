@@ -1,7 +1,7 @@
 defmodule MonsterTemplate do
   use Ecto.Model
   use GenServer
-  use Systems.Reload
+
   alias ApathyDrive.Repo
 
   schema "monster_templates" do
@@ -61,18 +61,18 @@ defmodule MonsterTemplate do
     GenServer.call(monster_template, {:spawn_monster, room})
   end
 
-  def limit_reached?(monster_template) do
-    count(monster_template) >= game_limit(monster_template)
+  def limit_reached?(%MonsterTemplate{game_limit: game_limit} = monster_template) do
+    count(monster_template) >= game_limit
   end
 
-  def count(monster_template) do
+  def count(%MonsterTemplate{} = monster_template) do
     monster_template
     |> monsters
     |> length
   end
 
-  def monsters(monster_template) do
-    Phoenix.PubSub.subscribers("monster_template:#{id(monster_template)}")
+  def monsters(%MonsterTemplate{id: id}) do
+    Phoenix.PubSub.subscribers("monster_template:#{id}")
   end
 
   def name_with_adjective(name, nil), do: name
@@ -102,29 +102,6 @@ defmodule MonsterTemplate do
   def value(monster) do
     GenServer.call(monster, :value)
   end
-
-  # Generate functions from Ecto schema
-  fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
-
-  Enum.each(fields, fn(field) ->
-    def unquote(field)(pid) do
-      GenServer.call(pid, unquote(field))
-    end
-
-    def unquote(field)(pid, new_value) do
-      GenServer.call(pid, {unquote(field), new_value})
-    end
-  end)
-
-  Enum.each(fields, fn(field) ->
-    def handle_call(unquote(field), _from, state) do
-      {:reply, Map.get(state, unquote(field)), state}
-    end
-
-    def handle_call({unquote(field), new_value}, _from, state) do
-      {:reply, new_value, Map.put(state, unquote(field), new_value)}
-    end
-  end)
 
   def handle_call({:spawn_monster, %Room{} = room}, _from, monster_template) do
     values = monster_template

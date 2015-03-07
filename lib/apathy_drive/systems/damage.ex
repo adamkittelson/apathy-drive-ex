@@ -1,5 +1,5 @@
 defmodule Systems.Damage do
-  use Systems.Reload
+
 
   def calculate_damage(ability, target) do
     limb = Components.Limbs.random_unsevered_limb(target)
@@ -96,7 +96,7 @@ defmodule Systems.Damage do
     range |> Enum.into([]) |> Enum.shuffle |> List.first
   end
 
-  def resistance(entity, nil) do
+  def resistance(_entity, nil) do
     0
   end
 

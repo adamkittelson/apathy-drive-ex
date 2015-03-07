@@ -69,28 +69,29 @@ defmodule Commands.Protection do
     if item do
       show_protection(entity, item)
     else
-      send_message(entity, "scroll", "<p>You don't have a #{target}!</p>")
+      Monster.send_scroll(entity, "<p>You don't have a #{target}!</p>")
     end
   end
 
   defp show_protection(entity, "limb") do
     title = "Average Protection by Limb"
 
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Limb</span>            <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    entity
+    |> Monster.send_scroll("<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
+    |> Monster.send_scroll("<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
+    |> Monster.send_scroll("<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    |> Monster.send_scroll("<p><span class='dark-blue'>|</span> <span class='yellow'>Limb</span>            <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
+    |> Monster.send_scroll("<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
 
     entity
     |> Components.Limbs.unsevered_limbs
     |> Enum.each(fn(limb) ->
          {color, protection} = limb_protection_amount(entity, limb)
                                |> protection_level
-         send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(limb, 16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+         Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(limb, 16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
 
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end
 
   defp show_protection(entity, item) when is_pid item do
@@ -106,19 +107,19 @@ defmodule Commands.Protection do
 
     title = "Protection for #{Components.Name.value(item)} by Damage Type"
 
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
     CritTables.damage_types
     |> Map.keys
     |> Enum.each(fn(damage_type) ->
        {color, protection} = protection_amount(ac)
                              |> protection_level
-       send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> Atom.to_string |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+       Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> Atom.to_string |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end
 
   defp show_protection(entity, limb) do
@@ -129,37 +130,37 @@ defmodule Commands.Protection do
 
     title = "Protection for #{titleized_limb} by Damage Type"
 
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
     CritTables.damage_types
     |> Map.keys
     |> Enum.each(fn(damage_type) ->
        {color, protection} = protection_amount(entity, limb, damage_type)
                              |> protection_level
-       send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+       Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end
 
   defp show_protection(entity) do
     title = "Average Protection by Damage Type"
 
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
     CritTables.damage_types
     |> Map.keys
     |> Enum.each(fn(damage_type) ->
        {color, protection} = protection_amount(entity, damage_type)
                              |> protection_level
-       send_message(entity, "scroll", "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+       Monster.send_scroll(entity, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
-    send_message(entity, "scroll", "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Monster.send_scroll(entity, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end
 
   defp protection_amount(entity, limb, damage_type) do

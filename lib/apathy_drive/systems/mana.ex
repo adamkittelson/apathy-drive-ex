@@ -1,5 +1,5 @@
 defmodule Systems.Mana do
-  use Systems.Reload
+
 
   def max(seed) when is_integer(seed) do
     x = trunc(seed * (0.5 + (seed / 100)))

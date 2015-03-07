@@ -5,6 +5,8 @@ defmodule Commands.Goto do
 
   def execute(%Spirit{} = spirit, arguments) do
     case find_room(arguments) do
+      nil ->
+        Spirit.send_scroll("<p>There is no room with that id.</p>")
       room ->
         room = Room.value(room)
 
@@ -14,8 +16,6 @@ defmodule Commands.Goto do
         |> Spirit.set_room_id(room.id)
         |> Spirit.deactivate_hint("movement")
         |> Spirit.save
-      nil ->
-        Spirit.send_scroll("<p>There is no room with that id.</p>")
     end
   end
 

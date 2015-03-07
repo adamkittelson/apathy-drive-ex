@@ -45,13 +45,11 @@ defmodule Commands.Look do
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
           Monster.send_scroll "<p>#{Components.Description.value(target)}</p>"
         target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
-          if Entity.has_component?(target, Components.Description) do
-            Monster.send_scroll "<p>#{Components.Description.value(target)}</p>"
-          else
-            Monster.send_scroll "<p>#{Components.Module.value(target).description}</p>"
-          end
-      true ->
-        Monster.send_scroll(monster, "<p>You do not notice that here.</p>")
+          Monster.send_scroll "<p>#{target.description}</p>"
+        target = find_item_on_monster(current_room, Enum.join(arguments, " ")) ->
+          Monster.send_scroll "<p>#{target.description}</p>"
+        true ->
+          Monster.send_scroll(monster, "<p>You do not notice that here.</p>")
       end
     else
       Room.look(current_room, monster)
@@ -59,12 +57,12 @@ defmodule Commands.Look do
     monster
   end
 
-  defp find_monster_in_room(room, string) do
+  defp find_monster_in_room(%Room{} = room, string) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Systems.Match.one(:name_contains, string)
   end
 
-  defp find_monster_in_room(room, string, %Monster{pid: pid} = monster) do
+  defp find_monster_in_room(%Room{} = room, string, %Monster{pid: pid} = monster) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.map(fn(monster_pid) ->
          if monster_pid == pid do
@@ -76,14 +74,14 @@ defmodule Commands.Look do
     |> Systems.Match.one(:name_contains, string)
   end
 
-  defp find_item_in_room(room, string) do
+  defp find_item_in_room(%Room{} = room, string) do
     room
-    |> Components.Items.get_items
+    |> Room.items
     |> Systems.Match.one(:name_contains, string)
   end
 
-  defp find_item_on_monster(monster, string) do
-    (Systems.Limbs.equipped_items(monster) ++ Components.Items.get_items(monster))
+  defp find_item_on_monster(%Monster{} = monster, string) do
+    (Monster.equipped_items(monster) ++ Monster.inventory(monster))
     |> Systems.Match.one(:name_contains, string)
   end
 

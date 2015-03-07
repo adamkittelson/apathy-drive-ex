@@ -1,5 +1,5 @@
 defmodule Systems.AI do
-  use Systems.Reload
+
 
   def observable_monsters do
     Spirit.online

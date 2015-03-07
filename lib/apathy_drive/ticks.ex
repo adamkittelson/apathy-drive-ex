@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Ticks do
-  use Systems.Reload
+
   use Timex
   use GenServer
   alias Phoenix.PubSub

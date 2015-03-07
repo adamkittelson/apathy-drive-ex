@@ -31,7 +31,7 @@ defmodule Skill do
     Repo.all from s in Skill, select: s
   end
 
-  def all(%Room{trainable_skills: nil} = room) do
+  def all(%Room{trainable_skills: nil}) do
     universal
   end
 
@@ -92,7 +92,7 @@ defmodule Skill do
       when light_level <= -25 or
            light_level >= 25,
       do: 10
-  def room_light_modifier(light_level), do:  0
+  def room_light_modifier(_light_level), do:  0
 
   def modify_for_room_light(skill_value, light_level) do
     mod = room_light_modifier(light_level)

@@ -1,5 +1,5 @@
 defmodule Entity do
-  use Systems.Reload
+
   alias Poison, as: JSON
 
   ### Public API

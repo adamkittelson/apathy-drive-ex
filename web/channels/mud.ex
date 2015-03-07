@@ -1,7 +1,7 @@
 defmodule ApathyDrive.MUD do
   use Phoenix.Channel
-  use Systems.Reload
-  import Utility
+
+
 
   def join("mud", message, socket) do
     if spirit = Systems.Login.login(socket, message["login"]) do

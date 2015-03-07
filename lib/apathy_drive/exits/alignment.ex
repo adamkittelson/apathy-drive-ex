@@ -7,9 +7,9 @@ defmodule ApathyDrive.Exits.Alignment do
     max = room_exit["max"]
     case Components.Alignment.value(monster) do
       alignment when alignment < min ->
-        send_message(monster, "scroll", "<p>You are not evil enough to use this exit.</p>")
+        Monster.send_scroll(monster, "<p>You are not evil enough to use this exit.</p>")
       alignment when alignment > max ->
-        send_message(monster, "scroll", "<p>You are too evil to use this exit.</p>")
+        Monster.send_scroll(monster, "<p>You are too evil to use this exit.</p>")
       _ ->
         super(current_room, monster, room_exit)
     end

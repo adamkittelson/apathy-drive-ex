@@ -1,6 +1,6 @@
 defmodule Systems.Prompt do
-  use Systems.Reload
-  import Utility
+
+
 
   def display(%Spirit{} = spirit) do
     spirit

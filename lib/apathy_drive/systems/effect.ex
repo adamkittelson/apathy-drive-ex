@@ -41,7 +41,7 @@ defmodule Systems.Effect do
     Map.put(entity, :effects, effects)
   end
 
-  def remove_oldest_stack(%{effects: effects} = entity, stack_key) do
+  def remove_oldest_stack(%{effects: _effects} = entity, stack_key) do
     oldest = entity
              |> stack(stack_key)
              |> Enum.sort

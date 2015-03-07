@@ -19,15 +19,15 @@ defmodule Commands.Grant do
     execute(spirit, monster, total, exp)
   end
 
-  def execute(spirit, monster, total, nil) do
-    send_message(spirit, "scroll", "<p>Grant how much of your experience to #{Components.Name.value(monster)}?</p>")
+  def execute(spirit, monster, _total, nil) do
+    Spirit.send_scroll(spirit, "<p>Grant how much of your experience to #{Components.Name.value(monster)}?</p>")
   end
 
   def execute(spirit, _monster, total, exp) when exp > total do
-    send_message(spirit, "scroll", "<p>You don't have #{exp} experience, you only have #{total}!</p>")
+    Spirit.send_scroll(spirit, "<p>You don't have #{exp} experience, you only have #{total}!</p>")
   end
 
-  def execute(spirit, monster, total, exp) do
+  def execute(spirit, monster, _total, exp) do
 
     old_devs = Systems.Trainer.total_power(monster)
 
@@ -39,10 +39,10 @@ defmodule Commands.Grant do
     new_devs = Systems.Trainer.total_power(monster)
     dev_gain = new_devs - old_devs
 
-    send_message(spirit, "scroll", "<p>You grant #{Components.Name.value(monster)} #{exp} experience.</p>")
+    Spirit.send_scroll(spirit, "<p>You grant #{Components.Name.value(monster)} #{exp} experience.</p>")
 
     if dev_gain > 0 do
-      send_message(monster, "scroll", "<p>You gain #{dev_gain} development points.</p>")
+      Spirit.send_scroll(spirit, "<p>You gain #{dev_gain} development points.</p>")
     end
   end
 

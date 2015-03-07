@@ -1,6 +1,6 @@
 defmodule Systems.Login do
-  use Systems.Reload
-  import Utility
+
+
 
   def create do
     url = Systems.URL.random

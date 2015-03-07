@@ -102,7 +102,7 @@ defmodule Item do
              |> ItemTemplate.find
              |> ItemTemplate.value
 
-        item = Map.merge(it, item, fn(key, it_val, item_val) ->
+        item = Map.merge(it, item, fn(_key, it_val, item_val) ->
                     item_val || it_val
                   end)
                   |> Map.from_struct

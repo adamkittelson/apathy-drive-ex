@@ -20,7 +20,7 @@ defmodule Commands.Unlock do
 
       case room_exit do
         nil ->
-          send_message(monster, "scroll", "<p>There is no exit in that direction!</p>")
+          Monster.send_scroll(monster, "<p>There is no exit in that direction!</p>")
         %{"kind" => "Door"} ->
           ApathyDrive.Exits.Door.unlock(monster, current_room, room_exit)
         %{"kind" => "Gate"} ->
@@ -28,10 +28,10 @@ defmodule Commands.Unlock do
         %{"kind" => "Key"} ->
           ApathyDrive.Exits.Key.unlock(monster, current_room, room_exit)
         _ ->
-          send_message(monster, "scroll", "<p>That exit has no door.</p>")
+          Monster.send_scroll(monster, "<p>That exit has no door.</p>")
       end
     else
-      send_message(monster, "scroll", "<p>Unlock what?</p>")
+      Monster.send_scroll(monster, "<p>Unlock what?</p>")
     end
   end
 

@@ -1,5 +1,5 @@
 defmodule Systems.Stat do
-  use Systems.Reload
+
 
   def base(entity) do
     Components.Stats.value(entity)

@@ -1,6 +1,6 @@
 defmodule Hint do
   use Ecto.Model
-  use Systems.Reload
+
   alias ApathyDrive.Repo
 
   schema "hints" do

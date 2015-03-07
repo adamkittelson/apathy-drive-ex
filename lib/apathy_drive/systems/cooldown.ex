@@ -1,5 +1,5 @@
 defmodule Systems.Cooldown do
-  use Systems.Reload
+
 
   def on_cooldown?(entity, ability_name) do
     entity

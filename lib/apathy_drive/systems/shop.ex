@@ -1,6 +1,4 @@
 defmodule Systems.Shop do
-  use Systems.Reload
-  import Utility
   import Systems.Text
 
   def list(%Spirit{} = spirit, %Room{shop_items: item_template_ids}) do
@@ -58,11 +56,11 @@ defmodule Systems.Shop do
     end
   end
 
-  def buy(%Monster{} = monster, %Room{}, item) do
+  def buy(%Monster{} = monster, %Room{}, _item) do
     Monster.send_scroll(monster, "<p><span class='red'>You cannot BUY if you are not in a shop!</span></p>")
   end
 
-  def sell(%Monster{experience: exp} = monster, %Room{shop_items: item_template_ids}, item) do
+  def sell(%Monster{experience: _exp} = monster, %Room{shop_items: _item_template_ids}, item) do
     case Systems.Match.one(Monster.inventory(monster), :name_contains, item) do
       nil ->
         Monster.send_scroll(monster, "<p>You don't have \"#{item}\" to sell!</p>")
@@ -81,7 +79,7 @@ defmodule Systems.Shop do
     end
   end
 
-  def sell(%Monster{} = monster, %Room{}, item) do
+  def sell(%Monster{} = monster, %Room{}, _item) do
     Monster.send_scroll(monster, "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>")
   end
 end

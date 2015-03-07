@@ -1,5 +1,5 @@
 defmodule Systems.URL do
-  use Systems.Reload
+
 
   def random(length \\ 5) do
     :random.seed(:os.timestamp)

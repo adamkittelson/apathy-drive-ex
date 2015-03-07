@@ -20,14 +20,14 @@ defmodule Commands.Search do
 
       case room_exit do
         nil ->
-          send_message(monster, "scroll", "<p>There is no exit in that direction!</p>")
+          Monster.send_scroll(monster, "<p>There is no exit in that direction!</p>")
         %{"kind" => "Hidden"} ->
           ApathyDrive.Exits.Hidden.search(monster, current_room, room_exit)
         %{"direction" => direction} ->
-          send_message(monster, "scroll", "<p>You notice nothing different #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+          Monster.send_scroll(monster, "<p>You notice nothing different #{ApathyDrive.Exit.direction_description(direction)}.</p>")
       end
     else
-      send_message(monster, "scroll", "<p>Your search revealed nothing.</p>")
+      Monster.send_scroll(monster, "<p>Your search revealed nothing.</p>")
     end
   end
 

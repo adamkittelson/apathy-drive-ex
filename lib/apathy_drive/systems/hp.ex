@@ -1,5 +1,5 @@
 defmodule Systems.HP do
-  use Systems.Reload
+
 
   def max(seed) when is_integer(seed) do
     trunc(seed * (11 + (seed / 10)))

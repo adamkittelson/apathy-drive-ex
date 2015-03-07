@@ -65,7 +65,7 @@ defmodule Ability do
 
     Map.put(ability, :properties, properties)
   end
-  def scale_duration_effects(%Monster{} = monster, %Ability{} = ability) do
+  def scale_duration_effects(%Monster{}, %Ability{} = ability) do
     ability
   end
 
@@ -77,11 +77,11 @@ defmodule Ability do
 
     Map.put(ability, :properties, properties)
   end
-  def scale_instant_effects(%Monster{} = monster, %Ability{} = ability) do
+  def scale_instant_effects(%Monster{}, %Ability{} = ability) do
     ability
   end
 
-  def scale_duration(%Monster{} = monster,
+  def scale_duration(%Monster{},
                      %Ability{properties: %{"duration" => duration}} = ability)
                      when is_integer(duration) do
     ability
@@ -157,13 +157,13 @@ defmodule Ability do
     scale_effect(monster, effect)
   end
 
-  def scale_effect(%Monster{} = monster, %{"base_min" => base_min, "base_max" => base_max} = effect) do
+  def scale_effect(%Monster{}, %{"base_min" => base_min, "base_max" => base_max}) do
     base_min..base_max
     |> Enum.shuffle
     |> List.first
   end
 
-  def scale_effect(%Monster{} = monster, effect), do: effect
+  def scale_effect(%Monster{}, effect), do: effect
 
   def find_monster_in_room(room, string, %Monster{pid: pid} = monster) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
@@ -196,7 +196,7 @@ defmodule Ability do
       nil ->
         Monster.send_scroll(monster, "<p><span class='red'>You don't see #{target} here.</span></p>")
       target ->
-        execute(monster, ability, target_monster)
+        execute(monster, ability, target)
     end
   end
 

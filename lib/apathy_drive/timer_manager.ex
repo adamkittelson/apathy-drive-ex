@@ -20,13 +20,13 @@ defmodule TimerManager do
     Map.keys(timers)
   end
 
-  def time_remaining(%{timers: timers} = entity, name) do
+  def time_remaining(%{timers: timers}, name) do
     if ref = Map.get(timers, name) do
       :erlang.read_timer(ref)
     end
   end
 
-  def cancel(%{timers: timers} = entity, name) do
+  def cancel(%{timers: timers}, name) do
     if ref = Map.get(timers, name) do
       :erlang.cancel_timer(ref)
     end

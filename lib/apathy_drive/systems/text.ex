@@ -1,7 +1,7 @@
 defmodule Systems.Text do
-  use Systems.Reload
 
-  def interpolate(nil, opts), do: nil
+
+  def interpolate(nil, _opts), do: nil
   def interpolate(string, opts) do
 
     if opts["user"] do
@@ -21,8 +21,8 @@ defmodule Systems.Text do
                    _other ->
                      string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
                                              string, fn(_, _, _, o) -> o end)
-                     string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, _, o) -> capitalize_first(o) end)
+                     Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                   string, fn(_, _, _, o) -> capitalize_first(o) end)
                  end
       else
         string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
@@ -50,8 +50,8 @@ defmodule Systems.Text do
                    _other ->
                      string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
                                              string, fn(_, _, _, o) -> o end)
-                     string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, _, o) -> capitalize_first(o) end)
+                     Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                   string, fn(_, _, _, o) -> capitalize_first(o) end)
                  end
       else
         string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,

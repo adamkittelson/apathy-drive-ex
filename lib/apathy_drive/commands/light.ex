@@ -9,8 +9,6 @@ defmodule Commands.Light do
   end
 
   def execute(%Monster{} = monster, arguments) do
-    current_room = Monster.find_room(monster)
-
     if Enum.any? arguments do
       cond do
         target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->

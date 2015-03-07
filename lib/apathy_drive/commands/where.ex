@@ -4,9 +4,9 @@ defmodule Commands.Where do
 
   def keywords, do: ["where"]
 
-  def execute(spirit, monster, arguments) do
+  def execute(spirit, _monster, arguments) do
     Task.start fn ->
-      send_message(spirit, "scroll", "<p>searching...</p>")
+      Spirit.send_scroll(spirit, "<p>searching...</p>")
       if Enum.any?(arguments) do
         query = Enum.join(arguments, " ")
         matches = Enum.filter(Room.all, fn(room) ->
@@ -16,7 +16,7 @@ defmodule Commands.Where do
                   end)
         case matches  do
           [] ->
-            send_message(spirit, "scroll", "<p>no matches found</p>")
+            Spirit.send_scroll(spirit, "<p>no matches found</p>")
           matches ->
             Enum.each(matches, &(display_room(&1, spirit)))
         end
@@ -64,9 +64,9 @@ defmodule Commands.Where do
                  |> Room.exit_directions_html
 
 
-    send_message(spirit, "scroll", "<br>")
-    send_message(spirit, "scroll", "<p><span class='white'>Room ##{Components.ID.value(room)}</span></p>")
-    send_message(spirit, "scroll", "<div class='room'><div class='title'>#{Components.Name.value(room)}</div>#{Room.items_html(room)}#{Room.entities_html(spirit, room)}#{directions}</div>")
+    Spirit.send_scroll(spirit, "<br>")
+    Spirit.send_scroll(spirit, "<p><span class='white'>Room ##{Components.ID.value(room)}</span></p>")
+    Spirit.send_scroll(spirit, "<div class='room'><div class='title'>#{Components.Name.value(room)}</div>#{Room.items_html(room)}#{Room.entities_html(spirit, room)}#{directions}</div>")
   end
 
 end
