@@ -37,4 +37,8 @@ defmodule Commands.Possess do
     spirit
   end
 
+  def execute(%Monster{} = monster, _arguments) do
+    Monster.send_scroll(monster, "<p>You must unpossess #{monster.name} first.</p>")
+  end
+
 end
