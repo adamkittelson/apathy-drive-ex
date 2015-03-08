@@ -6,7 +6,7 @@ defmodule Commands.Goto do
   def execute(%Spirit{} = spirit, arguments) do
     case find_room(arguments) do
       nil ->
-        Spirit.send_scroll("<p>There is no room with that id.</p>")
+        Spirit.send_scroll(spirit, "<p>There is no room with that id.</p>")
       room ->
         room = Room.value(room)
 
@@ -19,39 +19,23 @@ defmodule Commands.Goto do
     end
   end
 
-  def execute(spirit, nil, arguments) do
-    current_room = Parent.of(spirit)
+  def execute(%Monster{} = monster, arguments) do
+    case find_room(arguments) do
+      nil ->
+        Monster.send_scroll(monster, "<p>There is no room with that id.</p>")
+      room ->
+        room = Room.value(room)
 
-    destination = arguments
-                  |> Enum.join
-                  |> String.to_integer
-                  |> Room.find
+        Room.look(room, monster)
 
-    Components.Characters.remove_character(current_room, spirit)
-    Components.Characters.add_character(destination, spirit)
-    Entities.save!(destination)
-    Entities.save!(current_room)
-    Entities.save!(spirit)
-    Systems.Room.display_room_in_scroll(spirit, nil, destination)
-  end
+        monster = monster
+                  |> Monster.set_room_id(room.id)
+                  |> Monster.save
 
-  def execute(spirit, monster, arguments) do
-    current_room = Parent.of(spirit)
+        Room.look(room, monster)
 
-    destination = arguments
-                  |> Enum.join
-                  |> String.to_integer
-                  |> Room.find
-
-    Components.Monsters.remove_monster(current_room, monster)
-    Components.Monsters.add_monster(destination, monster)
-    Components.Characters.remove_character(current_room, spirit)
-    Components.Characters.add_character(destination, spirit)
-    Entities.save!(destination)
-    Entities.save!(current_room)
-    Entities.save!(spirit)
-    Entities.save(monster)
-    Systems.Room.display_room_in_scroll(spirit, monster, destination)
+        monster
+    end
   end
 
   def find_room(arguments) do
