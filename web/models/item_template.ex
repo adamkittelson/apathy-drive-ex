@@ -31,6 +31,7 @@ defmodule ItemTemplate do
     GenServer.call(item_template, :value)
   end
 
+  def find(nil), do: nil
   def find(id) do
     case :global.whereis_name(:"item_template_#{id}") do
       :undefined ->
@@ -38,6 +39,14 @@ defmodule ItemTemplate do
       item_template ->
         item_template
     end
+  end
+
+  def find_by_name(name) do
+    search_string = "%#{name}%"
+    query = from it in ItemTemplate, where: like(it.name, ^search_string),
+                                     limit: 1,
+                                     select: it.id
+    Repo.one(query)
   end
 
   def load(id) do
