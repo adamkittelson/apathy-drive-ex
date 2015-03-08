@@ -3,7 +3,7 @@ defmodule ItemTemplate do
 
   use GenServer
   alias ApathyDrive.Repo
-  alias Phoenix.PubSub
+  alias ApathyDrive.PubSub
 
   schema "item_templates" do
     field :name,                  :string
@@ -55,7 +55,7 @@ defmodule ItemTemplate do
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_template_#{id}", {GenServer, :start_link, [ItemTemplate, item_template, [name: {:global, :"item_template_#{id}"}]]}, :permanent, 5000, :worker, [ItemTemplate]})
 
-        PubSub.subscribe(ApathyDrive.PubSub, pid, "item_templates")
+        PubSub.subscribe(pid, "item_templates")
 
         pid
       nil ->

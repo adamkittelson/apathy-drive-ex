@@ -1,6 +1,6 @@
 defmodule Commands.Ask do
   use ApathyDrive.Command
-  alias Phoenix.PubSub
+  alias ApathyDrive.PubSub
 
   def keywords, do: ["ask"]
 
@@ -40,7 +40,7 @@ defmodule Commands.Ask do
   end
 
   defp find_monster_in_room(%Room{} = room, string, %Monster{pid: pid} = monster) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:monsters")
+    PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.map(fn(monster_pid) ->
          if monster_pid == pid do
            monster

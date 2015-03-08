@@ -37,7 +37,7 @@ defmodule EquipmentTest do
     should("equip a sword", context) do
       Monster.equip_item(context.monster, context.sword, nil)
 
-      :timer.sleep(100)
+      :timer.sleep(300)
 
       assert_lists_match Monster.inventory(context.monster), [context.shield, context.staff]
       assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.sword.pid)]
@@ -46,7 +46,7 @@ defmodule EquipmentTest do
     should("equip a staff", context) do
       Monster.equip_item(context.monster, context.staff, nil)
 
-      :timer.sleep(100)
+      :timer.sleep(300)
 
       assert_lists_match Monster.inventory(context.monster), [context.sword, context.shield]
       assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.staff.pid)]
@@ -55,7 +55,7 @@ defmodule EquipmentTest do
     should("equip a shield", context) do
       Monster.equip_item(context.monster, context.shield, nil)
 
-      :timer.sleep(100)
+      :timer.sleep(300)
 
       assert_lists_match Monster.inventory(context.monster), [context.sword, context.staff]
       assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.shield.pid)]
@@ -98,7 +98,7 @@ defmodule EquipmentTest do
     should("remove the sword and shield when equipping a staff", context) do
       Monster.equip_item(context.monster, context.staff, nil)
 
-      :timer.sleep(100)
+      :timer.sleep(300)
 
       assert_lists_match Monster.inventory(context.monster), [Item.value(context.sword.pid), Item.value(context.shield.pid)]
       assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.staff.pid)]
@@ -140,7 +140,7 @@ defmodule EquipmentTest do
     should("remove the staff when equipping a sword", context) do
       Monster.equip_item(context.monster, context.sword, nil)
 
-      :timer.sleep(100)
+      :timer.sleep(300)
 
       assert_lists_match Monster.inventory(context.monster), [Item.value(context.staff.pid), Item.value(context.shield.pid)]
       assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.sword.pid)]
@@ -149,7 +149,7 @@ defmodule EquipmentTest do
     should("remove the staff when equipping a shield", context) do
       Monster.equip_item(context.monster, context.shield, nil)
 
-      :timer.sleep(100)
+      :timer.sleep(300)
 
       assert_lists_match Monster.inventory(context.monster), [Item.value(context.sword.pid), Item.value(context.staff.pid)]
       assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.shield.pid)]

@@ -58,13 +58,13 @@ defmodule ApathyDrive.Exits.Doors do
           open?(room, room_exit) ->
             Monster.send_scroll(monster, "<p>The #{name} is already open.</p>")
           bash?(monster, room_exit) ->
-            Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{room.id}",
+            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
                                      {:door_bashed_open, %{basher: monster,
                                                            direction: room_exit["direction"],
                                                            type: name }})
             monster
           true ->
-            Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{room.id}",
+            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
                                      {:door_bash_failed, %{basher: monster,
                                                            direction: room_exit["direction"],
                                                            type: name }})
@@ -82,7 +82,7 @@ defmodule ApathyDrive.Exits.Doors do
           open?(room, room_exit) ->
             Monster.send_scroll(monster, "<p>The #{name} was already open.</p>")
           true ->
-            Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{room.id}",
+            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
                                      {:door_opened, %{opener: monster,
                                                       direction: room_exit["direction"],
                                                       type: name }})
@@ -102,13 +102,13 @@ defmodule ApathyDrive.Exits.Doors do
                      Monster.modified_skill(monster, "perception")) / 3
 
             if (skill + room_exit["difficulty"] >= :random.uniform(100)) do
-              Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{room.id}",
+              ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
                                        {:door_picked, %{picker: monster,
                                                         direction: room_exit["direction"],
                                                         type: name }})
               monster
             else
-              Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{room.id}",
+              ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
                                        {:door_pick_failed, %{picker: monster,
                                                              direction: room_exit["direction"],
                                                              type: name }})
@@ -143,7 +143,7 @@ defmodule ApathyDrive.Exits.Doors do
 
       def close(monster, room, room_exit) do
         if open?(room, room_exit) do
-          Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{room.id}",
+          ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
                                    {:door_closed, %{closer: monster,
                                                     direction: room_exit["direction"],
                                                     type: name }})
@@ -160,7 +160,7 @@ defmodule ApathyDrive.Exits.Doors do
           open?(room, room_exit) ->
             Monster.send_scroll(monster, "<p>You must close the #{name} before you may lock it.</p>")
           true ->
-            Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{room.id}",
+            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
                                      {:door_locked, %{locker: monster,
                                                       direction: room_exit["direction"],
                                                       type: name }})

@@ -1,7 +1,7 @@
 defmodule Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias Phoenix.PubSub
+  alias ApathyDrive.PubSub
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -58,12 +58,12 @@ defmodule Commands.Look do
   end
 
   defp find_monster_in_room(%Room{} = room, string) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:monsters")
+    PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Systems.Match.one(:name_contains, string)
   end
 
   defp find_monster_in_room(%Room{} = room, string, %Monster{pid: pid} = monster) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:monsters")
+    PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.map(fn(monster_pid) ->
          if monster_pid == pid do
            monster

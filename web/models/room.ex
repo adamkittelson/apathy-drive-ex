@@ -5,7 +5,7 @@ defmodule Room do
   use GenServer
   use Timex
   alias ApathyDrive.Repo
-  alias Phoenix.PubSub
+  alias ApathyDrive.PubSub
 
   schema "rooms" do
     field :name,                  :string
@@ -35,23 +35,23 @@ defmodule Room do
   end
 
   def init(%Room{} = room) do
-    PubSub.subscribe(ApathyDrive.PubSub, self, "rooms")
-    PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{room.id}")
+    PubSub.subscribe(self, "rooms")
+    PubSub.subscribe(self, "rooms:#{room.id}")
     send(self, :load_monsters)
     send(self, :load_items)
 
     if room.lair_monsters do
-      PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:lairs")
+      PubSub.subscribe(self, "rooms:lairs")
       send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)})
     end
 
     if room.permanent_npc do
-      PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:permanent_npcs")
+      PubSub.subscribe(self, "rooms:permanent_npcs")
       send(self, :spawn_permanent_npc)
     end
 
     if room.placed_items |> Enum.any? do
-      PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:placed_items")
+      PubSub.subscribe(self, "rooms:placed_items")
       send(self, :spawn_placed_items)
     end
 
@@ -88,7 +88,7 @@ defmodule Room do
   end
 
   def all do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms")
+    PubSub.subscribers("rooms")
   end
 
   def value(room) do
@@ -104,17 +104,17 @@ defmodule Room do
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
 
-  def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room_id}:spawned_monsters")
-  def spawned_monsters(room),   do: PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{id(room)}:spawned_monsters")
+  def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
+  def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
 
   # Value functions
   def items(%Room{} = room) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:items")
+    PubSub.subscribers("rooms:#{room.id}:items")
     |> Enum.map(&value/1)
   end
 
   def monsters(%Room{} = room, monster \\ nil) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:monsters")
+    PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.reject(&(&1 == monster))
   end
 
@@ -194,13 +194,13 @@ defmodule Room do
   end
 
   def light_in_room(%Room{id: id}) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{id}:items")
+    PubSub.subscribers("rooms:#{id}:items")
     |> Enum.map(&Item.value/1)
     |> lights
   end
 
   def light_on_monsters(%Room{id: id}, %Monster{} = monster) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{id}:monsters")
+    PubSub.subscribers("rooms:#{id}:monsters")
     |> Enum.map(fn(monster_pid) ->
          if monster_pid == self do
            monster
@@ -232,13 +232,13 @@ defmodule Room do
   end
 
   def permanent_npc_present?(%Room{} = room) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:monsters")
+    PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.map(&(Monster.value(&1).monster_template_id))
     |> Enum.member?(room.permanent_npc)
   end
 
   def placed_item_present?(%Room{} = room, item_template_id) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:items")
+    PubSub.subscribers("rooms:#{room.id}:items")
     |> Enum.map(&(Item.value(&1).item_template_id))
     |> Enum.member?(item_template_id)
   end
@@ -441,7 +441,7 @@ defmodule Room do
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{mirror_room.id}", {:mirror_bash, mirror_exit})
+      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_bash, mirror_exit})
     end
 
     {:noreply, room}
@@ -458,7 +458,7 @@ defmodule Room do
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{mirror_room.id}", {:mirror_bash_failed, mirror_exit})
+      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_bash_failed, mirror_exit})
     end
 
     {:noreply, room}
@@ -472,7 +472,7 @@ defmodule Room do
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{mirror_room.id}", {:mirror_open, mirror_exit})
+      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_open, mirror_exit})
     end
 
     {:noreply, room}
@@ -491,7 +491,7 @@ defmodule Room do
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{mirror_room.id}", {:mirror_close, mirror_exit})
+      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_close, mirror_exit})
     end
 
     {:noreply, room}
@@ -510,7 +510,7 @@ defmodule Room do
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{mirror_room.id}", {:mirror_pick, mirror_exit})
+      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_pick, mirror_exit})
     end
 
     {:noreply, room}
@@ -527,7 +527,7 @@ defmodule Room do
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{mirror_room.id}", {:mirror_pick_failed, mirror_exit})
+      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_pick_failed, mirror_exit})
     end
 
     {:noreply, room}
@@ -541,7 +541,7 @@ defmodule Room do
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{mirror_room.id}", {:mirror_lock, mirror_exit})
+      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_lock, mirror_exit})
     end
 
     {:noreply, room}

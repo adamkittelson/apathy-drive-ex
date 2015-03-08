@@ -68,11 +68,11 @@ defmodule MonsterTemplate do
   def count(%MonsterTemplate{} = monster_template) do
     monster_template
     |> monsters
-    |> HashSet.size
+    |> length
   end
 
   def monsters(%MonsterTemplate{id: id}) do
-    Phoenix.PubSub.subscribers(ApathyDrive.PubSub , "monster_template:#{id}")
+    ApathyDrive.PubSub.subscribers("monster_template:#{id}")
   end
 
   def name_with_adjective(name, nil), do: name

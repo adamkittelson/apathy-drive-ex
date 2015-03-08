@@ -5,7 +5,7 @@ defmodule Monster do
 
   import Systems.Text
   alias ApathyDrive.Repo
-  alias Phoenix.PubSub
+  alias ApathyDrive.PubSub
 
   schema "monsters" do
     field :name,                :string
@@ -53,16 +53,16 @@ defmodule Monster do
     :random.seed(:os.timestamp)
 
     if monster.room_id do
-      PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{monster.room_id}")
-      PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{monster.room_id}:monsters")
+      PubSub.subscribe(self, "rooms:#{monster.room_id}")
+      PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters")
     end
 
     if monster.lair_id do
-      PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{monster.lair_id}:spawned_monsters")
+      PubSub.subscribe(self, "rooms:#{monster.lair_id}:spawned_monsters")
     end
 
-    PubSub.subscribe(ApathyDrive.PubSub, self, "monsters")
-    PubSub.subscribe(ApathyDrive.PubSub, self, "monster_template:#{monster.monster_template_id}")
+    PubSub.subscribe(self, "monsters")
+    PubSub.subscribe(self, "monster_template:#{monster.monster_template_id}")
 
     monster = monster
               |> Map.put(:pid, self)
@@ -181,20 +181,20 @@ defmodule Monster do
   end
 
   def set_room_id(%Monster{} = monster, room_id) do
-    PubSub.unsubscribe(ApathyDrive.PubSub, self, "rooms:#{monster.room_id}")
-    PubSub.unsubscribe(ApathyDrive.PubSub, self, "rooms:#{monster.room_id}:monsters")
-    PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{room_id}")
-    PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{room_id}:monsters")
+    PubSub.unsubscribe(self, "rooms:#{monster.room_id}")
+    PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters")
+    PubSub.subscribe(self, "rooms:#{room_id}")
+    PubSub.subscribe(self, "rooms:#{room_id}:monsters")
     Map.put(monster, :room_id, room_id)
   end
 
   def inventory(%Monster{id: id}) do
-    PubSub.subscribers(ApathyDrive.PubSub, "monsters:#{id}:inventory")
+    PubSub.subscribers("monsters:#{id}:inventory")
     |> Enum.map(&Item.value/1)
   end
 
   def equipped_items(%Monster{id: id}) do
-    PubSub.subscribers(ApathyDrive.PubSub, "monsters:#{id}:equipped_items")
+    PubSub.subscribers("monsters:#{id}:equipped_items")
     |> Enum.map(&Item.value/1)
   end
 
@@ -777,7 +777,7 @@ defmodule Monster do
       send_scroll(monster, "<p>You gain #{power_gain} development points.</p>")
     end
 
-    PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{monster.id}", {:reward_possessor, exp})
+    PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
 
     {:noreply, monster}
   end
@@ -790,7 +790,7 @@ defmodule Monster do
   def handle_info({:item_destroyed, %Item{} = item}, monster) do
     Monster.send_scroll(monster, "<p>#{item.destruct_message}</p>")
 
-    PubSub.broadcast_from!(ApathyDrive.PubSub, self, "rooms:#{item.room_id}", {:room_item_destroyed, item, monster})
+    PubSub.broadcast_from!(self, "rooms:#{item.room_id}", {:room_item_destroyed, item, monster})
 
     {:noreply, monster}
   end

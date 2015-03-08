@@ -1,5 +1,5 @@
 defmodule ApathyDrive.PageController do
-  use Phoenix.Controller
+  use ApathyDrive.Web, :controller
 
   plug :action
 

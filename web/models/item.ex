@@ -3,7 +3,7 @@ defmodule Item do
   use Ecto.Model
   use GenServer
   alias ApathyDrive.Repo
-  alias Phoenix.PubSub
+  alias ApathyDrive.PubSub
 
   schema "items" do
     field :name,                  :string,  virtual: true
@@ -34,24 +34,24 @@ defmodule Item do
     :random.seed(:os.timestamp)
 
     if item.room_id do
-      PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{item.room_id}")
-      PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{item.room_id}:items")
+      PubSub.subscribe(self, "rooms:#{item.room_id}")
+      PubSub.subscribe(self, "rooms:#{item.room_id}:items")
     end
 
     if item.monster_id do
-      PubSub.subscribe(ApathyDrive.PubSub, self, "monsters:#{item.monster_id}")
-      PubSub.subscribe(ApathyDrive.PubSub, self, "monsters:#{item.monster_id}:items")
+      PubSub.subscribe(self, "monsters:#{item.monster_id}")
+      PubSub.subscribe(self, "monsters:#{item.monster_id}:items")
 
       if item.equipped do
-        Phoenix.PubSub.subscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items")
-        Phoenix.PubSub.subscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+        ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items")
+        ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
       else
-        Phoenix.PubSub.subscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:inventory")
+        ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:inventory")
       end
     end
 
-    PubSub.subscribe(ApathyDrive.PubSub, self, "items")
-    PubSub.subscribe(ApathyDrive.PubSub, self, "item_template:#{item.item_template_id}")
+    PubSub.subscribe(self, "items")
+    PubSub.subscribe(self, "item_template:#{item.item_template_id}")
 
     item = item
            |> Map.put(:pid, self)
@@ -130,10 +130,10 @@ defmodule Item do
   end
 
   def set_room_id(%Item{} = item, room_id) do
-    PubSub.unsubscribe(ApathyDrive.PubSub, self, "rooms:#{item.room_id}")
-    PubSub.unsubscribe(ApathyDrive.PubSub, self, "rooms:#{item.room_id}:items")
-    PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{room_id}")
-    PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{room_id}:items")
+    PubSub.unsubscribe(self, "rooms:#{item.room_id}")
+    PubSub.unsubscribe(self, "rooms:#{item.room_id}:items")
+    PubSub.subscribe(self, "rooms:#{room_id}")
+    PubSub.subscribe(self, "rooms:#{room_id}:items")
     Map.put(item, :room_id, room_id)
   end
 
@@ -199,12 +199,12 @@ defmodule Item do
   end
 
   def handle_call({:to_monster_inventory, %Monster{} = monster}, _from, item) do
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:inventory")
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items")
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "rooms:#{item.room_id}:items")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+    ApathyDrive.PubSub.unsubscribe(self, "rooms:#{item.room_id}:items")
 
-    Phoenix.PubSub.subscribe(ApathyDrive.PubSub , self, "monsters:#{monster.id}:inventory")
+    ApathyDrive.PubSub.subscribe(self, "monsters:#{monster.id}:inventory")
 
     item = item
            |> Map.put(:monster_id, monster.id)
@@ -215,12 +215,12 @@ defmodule Item do
   end
 
   def handle_call({:to_room, %Room{} = room}, _from, item) do
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:inventory")
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items")
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "rooms:#{item.room_id}:items")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+    ApathyDrive.PubSub.unsubscribe(self, "rooms:#{item.room_id}:items")
 
-    Phoenix.PubSub.subscribe(ApathyDrive.PubSub , self, "rooms:#{room.id}:items")
+    ApathyDrive.PubSub.subscribe(self, "rooms:#{room.id}:items")
 
     item = item
            |> Map.put(:monster_id, nil)
@@ -285,21 +285,21 @@ defmodule Item do
   def handle_info(:equip, item) do
     case item.worn_on do
       "Weapon Hand" ->
-        Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{item.monster_id}:equipped_items:Weapon Hand", :unequip)
-        Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
+        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Weapon Hand", :unequip)
+        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
       "Two Handed" ->
-        Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{item.monster_id}:equipped_items:Weapon Hand", :unequip)
-        Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
-        Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{item.monster_id}:equipped_items:Off-Hand", :unequip)
+        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Weapon Hand", :unequip)
+        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
+        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Off-Hand", :unequip)
       "Off-Hand" ->
-        Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
-        Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{item.monster_id}:equipped_items:Off-Hand", :unequip)
+        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
+        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Off-Hand", :unequip)
       _ ->
-        Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}", :unequip)
+        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:#{item.worn_on}", :unequip)
     end
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:inventory")
-    Phoenix.PubSub.subscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items")
-    Phoenix.PubSub.subscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
+    ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items")
+    ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
     send(Monster.find(item.monster_id), {:item_equipped, item})
     item = item
            |> Map.put(:equipped, true)
@@ -309,9 +309,9 @@ defmodule Item do
   end
 
   def handle_info(:unequip, item) do
-    Phoenix.PubSub.subscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:inventory")
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items")
-    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
+    ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:inventory")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
     send(Monster.find(item.monster_id), {:item_unequipped, item})
 
     item = item

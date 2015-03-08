@@ -2,7 +2,7 @@ defmodule Ability do
   use Ecto.Model
   import Systems.Text
   alias ApathyDrive.Repo
-  alias Phoenix.PubSub
+  alias ApathyDrive.PubSub
 
   schema "abilities" do
     field :name,            :string
@@ -166,7 +166,7 @@ defmodule Ability do
   def scale_effect(%Monster{}, effect), do: effect
 
   def find_monster_in_room(room, string, %Monster{pid: pid} = monster) do
-    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:monsters")
+    PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.map(fn(monster_pid) ->
          if monster_pid == pid do
            monster
@@ -239,7 +239,7 @@ defmodule Ability do
 
     cast_messages = cast_messages(ability, ability_user, monster, %{"amount" => damage})
 
-    PubSub.broadcast_from!(ApathyDrive.PubSub, self, "rooms:#{monster.room_id}",
+    PubSub.broadcast_from!(self, "rooms:#{monster.room_id}",
                                 {:cast_message,
                                   messages: cast_messages,
                                   user: ability_user,
@@ -258,7 +258,7 @@ defmodule Ability do
 
     cast_messages = cast_messages(ability, ability_user, monster)
 
-    PubSub.broadcast_from!(ApathyDrive.PubSub, self, "rooms:#{monster.room_id}",
+    PubSub.broadcast_from!(self, "rooms:#{monster.room_id}",
                                 {:cast_message,
                                   messages: cast_messages,
                                   user: ability_user,

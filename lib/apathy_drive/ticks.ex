@@ -2,7 +2,7 @@ defmodule ApathyDrive.Ticks do
 
   use Timex
   use GenServer
-  alias Phoenix.PubSub
+  alias ApathyDrive.PubSub
 
   def start_link(state) do
     GenServer.start_link(__MODULE__, state)
@@ -19,21 +19,21 @@ defmodule ApathyDrive.Ticks do
   end
 
   def idle do
-    PubSub.broadcast!(ApathyDrive.PubSub, "spirits:online", :increment_idle)
+    PubSub.broadcast!("spirits:online", :increment_idle)
   end
 
   def hints do
-    PubSub.broadcast!(ApathyDrive.PubSub, "spirits:hints",  :display_hint)
+    PubSub.broadcast!("spirits:hints",  :display_hint)
   end
 
   def spawning do
-    PubSub.broadcast!(ApathyDrive.PubSub, "rooms:lairs", {:spawn_monsters, Date.now |> Date.convert(:secs)})
-    PubSub.broadcast!(ApathyDrive.PubSub, "rooms:permanent_npcs", :spawn_permanent_npc)
-    PubSub.broadcast!(ApathyDrive.PubSub, "rooms:placed_items", :spawn_placed_items)
+    PubSub.broadcast!("rooms:lairs", {:spawn_monsters, Date.now |> Date.convert(:secs)})
+    PubSub.broadcast!("rooms:permanent_npcs", :spawn_permanent_npc)
+    PubSub.broadcast!("rooms:placed_items", :spawn_placed_items)
   end
 
   def monster_regen do
-    PubSub.broadcast!(ApathyDrive.PubSub, "monsters", :regen)
+    PubSub.broadcast!("monsters", :regen)
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %{timers: timers} = state) do

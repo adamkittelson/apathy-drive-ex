@@ -9,7 +9,7 @@ defmodule Commands.Unpossess do
   end
 
   def execute(%Monster{} = monster, _arguments) do
-    Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{monster.id}", :unpossess)
+    ApathyDrive.PubSub.broadcast!("monsters:#{monster.id}", :unpossess)
     monster
   end
 
