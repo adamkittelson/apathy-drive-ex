@@ -1,7 +1,7 @@
 defmodule Commands.DropTest do
   use ExUnit.Case
   use ShouldI
-  import ApathyDrive.Matchers.Socket
+  import ApathyDrive.Matchers
 
   with "a spirit" do
     setup context do

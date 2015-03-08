@@ -1,7 +1,7 @@
 defmodule Commands.ExperienceTest do
   use ExUnit.Case
   use ShouldI
-  import ApathyDrive.Matchers.Socket
+  import ApathyDrive.Matchers
 
   with "a level 1 spirit with no experience" do
     setup context do

@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Matchers.Socket do
+defmodule ApathyDrive.Matchers do
   import ExUnit.Assertions
   import ShouldI.Matcher
 
@@ -23,6 +23,12 @@ defmodule ApathyDrive.Matchers.Socket do
                                                payload: %{
                                                  html: unquote(string)},
                                                  topic: nil}}
+    end
+  end
+
+  defmacro assert_lists_match(list1, list2) do
+    quote do
+      assert Enum.sort(unquote(list1)) == Enum.sort(unquote(list2))
     end
   end
 end

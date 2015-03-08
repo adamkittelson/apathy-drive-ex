@@ -1,7 +1,7 @@
 defmodule Commands.SetTest do
   use ExUnit.Case
   use ShouldI
-  import ApathyDrive.Matchers.Socket
+  import ApathyDrive.Matchers
 
   with "a spirit that already has a name" do
     setup context do

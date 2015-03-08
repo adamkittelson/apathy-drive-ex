@@ -13,7 +13,7 @@ defmodule Commands.Possess do
   end
 
   def execute(%Spirit{room_id: room_id} = spirit, arguments) do
-    monsters = Phoenix.PubSub.subscribers("rooms:#{room_id}:monsters")
+    monsters = Phoenix.PubSub.subscribers(ApathyDrive.PubSub , "rooms:#{room_id}:monsters")
 
     case Systems.Match.one(monsters, :name_contains, Enum.join(arguments, " ")) do
       nil ->
@@ -30,8 +30,8 @@ defmodule Commands.Possess do
   end
 
   def possess(%Spirit{} = spirit, %Monster{} = monster) do
-    Phoenix.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
-    Phoenix.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
+    Phoenix.PubSub.subscribe(ApathyDrive.PubSub , spirit.pid, "monsters:#{monster.id}")
+    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , spirit.pid, "rooms:#{spirit.room_id}")
 
     spirit = spirit
              |> Map.put(:monster, monster.pid)

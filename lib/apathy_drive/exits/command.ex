@@ -99,7 +99,7 @@ defmodule ApathyDrive.Exits.Command do
   end
 
   def look(%Monster{} = monster, %Room{}, _room_exit) do
-    Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
+    ApathyDrive.Endpoint.broadcast! "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
   end
 
 end

@@ -46,9 +46,9 @@ defmodule Spirit do
 
   def login(%Spirit{} = spirit) do
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
-    PubSub.subscribe(pid, "spirits:online")
-    PubSub.subscribe(pid, "spirits:hints")
-    PubSub.subscribe(pid, "rooms:#{spirit.room_id}")
+    PubSub.subscribe(ApathyDrive.PubSub, pid, "spirits:online")
+    PubSub.subscribe(ApathyDrive.PubSub, pid, "spirits:hints")
+    PubSub.subscribe(ApathyDrive.PubSub, pid, "rooms:#{spirit.room_id}")
     pid
   end
 
@@ -59,8 +59,8 @@ defmodule Spirit do
   end
 
   def set_room_id(%Spirit{} = spirit, room_id) do
-    PubSub.unsubscribe(self, "rooms:#{spirit.room_id}")
-    PubSub.subscribe(self, "rooms:#{room_id}")
+    PubSub.unsubscribe(ApathyDrive.PubSub, self, "rooms:#{spirit.room_id}")
+    PubSub.subscribe(ApathyDrive.PubSub, self, "rooms:#{room_id}")
     Map.put(spirit, :room_id, room_id)
   end
 
@@ -107,7 +107,7 @@ defmodule Spirit do
   end
 
   def online do
-    PubSub.subscribers("spirits:online")
+    PubSub.subscribers(ApathyDrive.PubSub, "spirits:online")
   end
 
   def room(spirit) do
@@ -233,7 +233,7 @@ defmodule Spirit do
              |> Spirit.send_scroll("<p>You leave the body of #{Monster.name(monster)}.</p>")
              |> Systems.Prompt.update
 
-    Phoenix.PubSub.unsubscribe(self, "monsters:#{Monster.id(monster)}")
+    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{Monster.id(monster)}")
 
     {:noreply, spirit}
   end
@@ -247,7 +247,7 @@ defmodule Spirit do
              |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
              |> Systems.Prompt.update
 
-    Phoenix.PubSub.unsubscribe(self, "monsters:#{monster.id}")
+    Phoenix.PubSub.unsubscribe(ApathyDrive.PubSub , self, "monsters:#{monster.id}")
 
     {:noreply, spirit}
   end

@@ -60,7 +60,7 @@ defmodule ApathyDrive.Exits.Cast do
 
   def look(%Monster{} = monster, %Room{} = current_room, room_exit) do
     if room_exit.look_message do
-      Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>#{room_exit.look_message}</p>"}
+      ApathyDrive.Endpoint.broadcast! "monsters:#{monster.id}", "scroll", %{:html => "<p>#{room_exit.look_message}</p>"}
     else
       super(monster, current_room, room_exit)
     end

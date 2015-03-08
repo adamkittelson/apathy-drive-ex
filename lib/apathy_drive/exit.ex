@@ -44,7 +44,7 @@ defmodule ApathyDrive.Exit do
   end
 
   def look(_current_room, %Monster{} = monster, nil) do
-    Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
+    ApathyDrive.Endpoint.broadcast! "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
   end
 
   def look(%Room{} = current_room, %Spirit{} = spirit, room_exit) do
@@ -163,7 +163,7 @@ defmodule ApathyDrive.Exit do
           message = "#{monster.name} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
                      |> capitalize_first
 
-          Phoenix.Channel.broadcast "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-magenta'>#{message}</span></p>"}
+          ApathyDrive.Endpoint.broadcast! "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-magenta'>#{message}</span></p>"}
         end
       end
 

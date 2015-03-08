@@ -13,7 +13,7 @@ defmodule ApathyDrive.Exits.Key do
     if open?(current_room, room_exit) do
       super(monster, current_room, room_exit)
     else
-      Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>The #{name} is closed in that direction!</p>"}
+      ApathyDrive.Endpoint.broadcast! "monsters:#{monster.id}", "scroll", %{:html => "<p>The #{name} is closed in that direction!</p>"}
     end
   end
 

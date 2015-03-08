@@ -19,7 +19,7 @@ defmodule ApathyDrive.Exits.Hidden do
     if open?(current_room, room_exit) or room_exit.passable_while_hidden do
       super(monster, current_room, room_exit)
     else
-      Phoenix.Channel.broadcast "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction!</p>"}
+      ApathyDrive.Endpoint.broadcast! "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction!</p>"}
     end
   end
 

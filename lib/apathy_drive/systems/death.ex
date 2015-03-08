@@ -4,8 +4,8 @@ defmodule Systems.Death do
   def kill(%Monster{} = monster) do
     room = Monster.find_room(monster)
 
-    Phoenix.PubSub.broadcast("monsters:#{monster.id}", {:possessed_monster_died, monster})
-    Phoenix.PubSub.broadcast("rooms:#{room.id}", {:monster_died, monster: monster, reward: experience_to_grant(monster)})
+    Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "monsters:#{monster.id}", {:possessed_monster_died, monster})
+    Phoenix.PubSub.broadcast!(ApathyDrive.PubSub, "rooms:#{room.id}", {:monster_died, monster: monster, reward: experience_to_grant(monster)})
 
     ApathyDrive.Repo.delete(monster)
     Process.exit(self, :normal)

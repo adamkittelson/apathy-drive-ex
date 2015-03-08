@@ -1,7 +1,7 @@
 defmodule Commands.ScoreTest do
   use ExUnit.Case
   use ShouldI
-  import ApathyDrive.Matchers.Socket
+  import ApathyDrive.Matchers
 
   with "a spirit with no name" do
     setup context do

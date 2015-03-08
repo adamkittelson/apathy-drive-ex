@@ -1,14 +1,7 @@
 defmodule EquipmentTest do
   use ExUnit.Case
   use ShouldI
-
-  # setup data do
-  #   {:ok, monster } = GenServer.start_link(Monster, %Monster{id: 1})
-  #
-
-  #
-  #   { :ok, %{monster: monster, sword: sword, staff: staff, shield: shield} }
-  # end
+  import ApathyDrive.Matchers
 
   with "a monster with a sword, a staff, and a shield" do
     setup context do
@@ -34,11 +27,11 @@ defmodule EquipmentTest do
     end
 
     should("have a sword, a staff, and a shield", context) do
-      assert Monster.inventory(context.monster) == [context.sword, context.staff, context.shield]
+      assert_lists_match Monster.inventory(context.monster), [context.shield, context.staff, context.sword]
     end
 
     should("have nothing equipped", context) do
-      assert Monster.equipped_items(context.monster) == []
+      assert_lists_match Monster.equipped_items(context.monster), []
     end
 
     should("equip a sword", context) do
@@ -46,8 +39,8 @@ defmodule EquipmentTest do
 
       :timer.sleep(100)
 
-      assert Monster.inventory(context.monster) == [context.staff, context.shield]
-      assert Monster.equipped_items(context.monster) == [Item.value(context.sword.pid)]
+      assert_lists_match Monster.inventory(context.monster), [context.shield, context.staff]
+      assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.sword.pid)]
     end
 
     should("equip a staff", context) do
@@ -55,8 +48,8 @@ defmodule EquipmentTest do
 
       :timer.sleep(100)
 
-      assert Monster.inventory(context.monster) == [context.sword, context.shield]
-      assert Monster.equipped_items(context.monster) == [Item.value(context.staff.pid)]
+      assert_lists_match Monster.inventory(context.monster), [context.sword, context.shield]
+      assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.staff.pid)]
     end
 
     should("equip a shield", context) do
@@ -64,8 +57,8 @@ defmodule EquipmentTest do
 
       :timer.sleep(100)
 
-      assert Monster.inventory(context.monster) == [context.sword, context.staff]
-      assert Monster.equipped_items(context.monster) == [Item.value(context.shield.pid)]
+      assert_lists_match Monster.inventory(context.monster), [context.sword, context.staff]
+      assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.shield.pid)]
     end
   end
 
@@ -95,11 +88,11 @@ defmodule EquipmentTest do
     end
 
     should("have a staff in its inventory", context) do
-      assert Monster.inventory(context.monster) == [context.staff]
+      assert_lists_match Monster.inventory(context.monster), [context.staff]
     end
 
     should("have a sword and shield equipped", context) do
-      assert Monster.equipped_items(context.monster) == [context.sword, context.shield]
+      assert_lists_match Monster.equipped_items(context.monster), [context.sword, context.shield]
     end
 
     should("remove the sword and shield when equipping a staff", context) do
@@ -107,8 +100,8 @@ defmodule EquipmentTest do
 
       :timer.sleep(100)
 
-      assert Monster.inventory(context.monster) == [Item.value(context.sword.pid), Item.value(context.shield.pid)]
-      assert Monster.equipped_items(context.monster) == [Item.value(context.staff.pid)]
+      assert_lists_match Monster.inventory(context.monster), [Item.value(context.sword.pid), Item.value(context.shield.pid)]
+      assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.staff.pid)]
     end
   end
 
@@ -137,11 +130,11 @@ defmodule EquipmentTest do
     end
 
     should("have a sword and shield in its inventory", context) do
-      assert Monster.inventory(context.monster) == [context.sword, context.shield]
+      assert_lists_match Monster.inventory(context.monster), [context.shield, context.sword]
     end
 
     should("have a staff equipped", context) do
-      assert Monster.equipped_items(context.monster) == [context.staff]
+      assert_lists_match Monster.equipped_items(context.monster), [context.staff]
     end
 
     should("remove the staff when equipping a sword", context) do
@@ -149,8 +142,8 @@ defmodule EquipmentTest do
 
       :timer.sleep(100)
 
-      assert Monster.inventory(context.monster) == [Item.value(context.staff.pid), Item.value(context.shield.pid)]
-      assert Monster.equipped_items(context.monster) == [Item.value(context.sword.pid)]
+      assert_lists_match Monster.inventory(context.monster), [Item.value(context.staff.pid), Item.value(context.shield.pid)]
+      assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.sword.pid)]
     end
 
     should("remove the staff when equipping a shield", context) do
@@ -158,8 +151,8 @@ defmodule EquipmentTest do
 
       :timer.sleep(100)
 
-      assert Monster.inventory(context.monster) == [Item.value(context.sword.pid), Item.value(context.staff.pid)]
-      assert Monster.equipped_items(context.monster) == [Item.value(context.shield.pid)]
+      assert_lists_match Monster.inventory(context.monster), [Item.value(context.sword.pid), Item.value(context.staff.pid)]
+      assert_lists_match Monster.equipped_items(context.monster), [Item.value(context.shield.pid)]
     end
   end
 end

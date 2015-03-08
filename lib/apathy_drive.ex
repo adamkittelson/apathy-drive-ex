@@ -7,9 +7,9 @@ defmodule ApathyDrive do
     import Supervisor.Spec, warn: false
 
     children = [
+      worker(ApathyDrive.Endpoint, []),
       worker(ApathyDrive.Repo, []),
-      worker(ApathyDrive.Ticks, [%{timers: %{}}]),
-      worker(ApathyDrive.Endpoint, [])
+      worker(ApathyDrive.Ticks, [%{timers: %{}}])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

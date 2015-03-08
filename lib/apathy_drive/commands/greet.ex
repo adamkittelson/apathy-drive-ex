@@ -38,7 +38,7 @@ defmodule Commands.Greet do
   end
 
   defp find_monster_in_room(%Room{} = room, string, %Monster{pid: pid} = monster) do
-    PubSub.subscribers("rooms:#{room.id}:monsters")
+    PubSub.subscribers(ApathyDrive.PubSub, "rooms:#{room.id}:monsters")
     |> Enum.map(fn(monster_pid) ->
          if monster_pid == pid do
            monster
