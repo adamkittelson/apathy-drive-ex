@@ -32,8 +32,11 @@ defmodule ApathyDrive.LairSpawning do
   def eligible_monsters(room) do
     room.lair_monsters
     |> Enum.map(&MonsterTemplate.find/1)
-    |> Enum.map(&MonsterTemplate.value/1)
-    |> Enum.reject(&MonsterTemplate.limit_reached?/1)
+    |> Enum.reject(fn(mt) ->
+         mt
+         |> MonsterTemplate.value
+         |> MonsterTemplate.limit_reached?
+       end)
   end
 
 end

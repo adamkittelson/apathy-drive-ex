@@ -7,6 +7,7 @@ defmodule Item do
 
   schema "items" do
     field :name,                  :string,  virtual: true
+    field :description,           :string,  virtual: true
     field :keywords,              {:array, :string}, virtual: true
     field :equipped,              :boolean, default: false
     field :worn_on,               :string,  virtual: true

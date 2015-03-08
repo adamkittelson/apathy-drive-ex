@@ -43,11 +43,11 @@ defmodule Commands.Look do
         target = current_room |> find_monster_in_room(Enum.join(arguments, " "), monster) ->
           Systems.Description.add_description_to_scroll(monster, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
-          Monster.send_scroll "<p>#{Components.Description.value(target)}</p>"
+          Monster.send_scroll monster, "<p>#{target}</p>"
         target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
-          Monster.send_scroll "<p>#{target.description}</p>"
-        target = find_item_on_monster(current_room, Enum.join(arguments, " ")) ->
-          Monster.send_scroll "<p>#{target.description}</p>"
+          Monster.send_scroll monster, "<p>#{target.description}</p>"
+        target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
+          Monster.send_scroll monster, "<p>#{target.description}</p>"
         true ->
           Monster.send_scroll(monster, "<p>You do not notice that here.</p>")
       end
@@ -85,10 +85,12 @@ defmodule Commands.Look do
     |> Systems.Match.one(:name_contains, string)
   end
 
-  defp find_hidden_item_in_room(room, string) do
-    room
-    |> Components.ItemDescriptions.get_item_descriptions
-    |> Systems.Match.one(:name_contains, string)
+  defp find_hidden_item_in_room(%Room{item_descriptions: item_descriptions}, string) do
+    key = item_descriptions
+          |> Map.keys
+          |> Enum.find(&(&1 == string))
+
+    item_descriptions[key]
   end
 
 end
