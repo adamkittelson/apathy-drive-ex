@@ -160,47 +160,12 @@ defmodule ApathyDrive.Exits.Doors do
           open?(room, room_exit) ->
             Monster.send_scroll(monster, "<p>You must close the #{name} before you may lock it.</p>")
           true ->
-            lock!(room, room_exit["direction"])
-            Monster.send_scroll(monster, "<p>The #{name} is now locked.</p>")
-
-            msg = "You see #{Components.Name.value(monster)} lock the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}."
-            room
-            |> Systems.Room.characters_in_room
-            |> Enum.each(fn(character) ->
-                 observer = Possession.possessed(character) || character
-
-                 if observer != monster do
-                   Monster.send_scroll(observer, "<p>#{msg}</p>")
-                 end
-               end)
-
-            mirror_lock(room, room_exit)
+            Phoenix.PubSub.broadcast("rooms:#{room.id}",
+                                     {:door_locked, %{locker: monster,
+                                                      direction: room_exit["direction"],
+                                                      type: name }})
+            monster
         end
-      end
-
-      def mirror_lock(room, room_exit) do
-        {mirror_room, mirror_exit} = mirror(room, room_exit)
-
-        if mirror_exit["kind"] == room_exit["kind"] and !open?(mirror_room, mirror_exit) do
-          lock!(mirror_room, mirror_exit["direction"])
-
-          mirror_room
-          |> Systems.Room.characters_in_room
-          |> Enum.each(fn(monster) ->
-               Monster.send_scroll(monster, "<p>The #{name} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>")
-             end)
-        end
-      end
-
-      def lock!(room, direction) do
-        effects = Room.effects(room)
-
-        effects
-        |> Map.keys
-        |> Enum.filter(fn(key) ->
-             effects[key][:unlocked] == direction
-           end)
-        |> Enum.each(&(Components.Effects.remove(room, &1)))
       end
 
       def locked?(%Room{} = room, room_exit) do

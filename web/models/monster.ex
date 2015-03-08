@@ -647,6 +647,29 @@ defmodule Monster do
     {:noreply, monster}
   end
 
+  def handle_info({:door_locked, %{locker: %Monster{pid: locker_pid},
+                                   type: type}},
+                                   %Monster{pid: monster_pid} = monster)
+                                   when locker_pid == monster_pid do
+
+    send_scroll(monster, "<p>The #{type} is now locked.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:door_locked, %{locker: %Monster{} = locker,
+                                   direction: direction,
+                                   type: type}},
+                                   %Monster{} = monster) do
+
+    send_scroll(monster, "<p>You see #{locker.name} lock the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:mirror_lock, room_exit}, monster) do
+    send_scroll(monster, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} just locked!</p>")
+    {:noreply, monster}
+  end
+
   def handle_info(:regen, %Monster{hp: hp, mana: mana} = monster) do
     max_hp   = max_hp(monster)
     max_mana = max_mana(monster)

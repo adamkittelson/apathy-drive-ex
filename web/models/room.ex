@@ -332,6 +332,17 @@ defmodule Room do
     #"The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
   end
 
+  defp lock!(%Room{effects: effects} = room, direction) do
+    effects
+    |> Map.keys
+    |> Enum.filter(fn(key) ->
+         effects[key][:unlocked] == direction
+       end)
+    |> Enum.reduce(room, fn(key, room) ->
+         Systems.Effect.remove(room, key)
+       end)
+  end
+
   # Generate functions from Ecto schema
   fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
@@ -519,6 +530,25 @@ defmodule Room do
       Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_pick_failed, mirror_exit})
     end
 
+    {:noreply, room}
+  end
+
+  def handle_info({:door_locked, %{direction: direction}}, room) do
+    room = lock!(room, direction)
+
+    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+
+    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      Phoenix.PubSub.broadcast("rooms:#{mirror_room.id}", {:mirror_lock, mirror_exit})
+    end
+
+    {:noreply, room}
+  end
+
+  def handle_info({:mirror_lock, room_exit}, room) do
+    room = lock!(room, room_exit["direction"])
     {:noreply, room}
   end
 

@@ -341,6 +341,20 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info({:door_locked, %{locker: %Monster{} = locker,
+                                   direction: direction,
+                                   type: type}},
+                                   spirit) do
+
+    send_scroll(spirit, "<p>You see #{locker.name} lock the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:mirror_lock, room_exit}, spirit) do
+    send_scroll(spirit, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} just locked!</p>")
+    {:noreply, spirit}
+  end
+
   def handle_info({:cast_message, messages: messages,
                                   user: %Monster{},
                                   target: %Monster{}},
