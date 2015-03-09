@@ -22,6 +22,7 @@ defmodule Item do
     field :destruct_message,      :string,  virtual: true
     field :room_destruct_message, :string,  virtual: true
     field :can_pick_up,           :boolean, virtual: true
+    field :ac,                    :integer, virtual: true
 
     timestamps
 

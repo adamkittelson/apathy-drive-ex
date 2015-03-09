@@ -458,6 +458,29 @@ defmodule Monster do
     |> max(1)
   end
 
+  def ac(%Monster{} = monster) do
+    monster
+    |> equipped_items
+    |> Enum.map(&(&1.ac || 0))
+    |> Enum.sum
+  end
+
+  def protection(%Monster{} = monster, damage_type) do
+    resistance = 0 #resistance(entity, CritTables.damage_types[to_string(damage_type)])
+    ac = monster
+         |> ac
+         |> resistance
+    (1 - (resistance_reduction(resistance))) * (1 - (resistance_reduction(ac)))
+  end
+
+  def resistance(stat) do
+    trunc(stat * (0.5 + (stat / 100)))
+  end
+
+  def resistance_reduction(resistance) do
+    resistance / (250 + resistance)
+  end
+
   # Generate functions from Ecto schema
   fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 

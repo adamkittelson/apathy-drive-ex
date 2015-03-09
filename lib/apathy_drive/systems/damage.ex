@@ -1,6 +1,5 @@
 defmodule Systems.Damage do
 
-
   def calculate_damage(ability, target) do
     limb = Components.Limbs.random_unsevered_limb(target)
 
