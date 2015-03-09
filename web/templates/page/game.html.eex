@@ -27,7 +27,6 @@
 <!-- Bootstrap core JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
-<script src="/js/vendor/jquery-1.10.2.min.js"></script>
-<script src="/js/vendor/bootstrap.min.js"></script>
-<script src="/js/phoenix.js"></script>
-<script src="/js/game.js"></script>
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/app")</script>
+
