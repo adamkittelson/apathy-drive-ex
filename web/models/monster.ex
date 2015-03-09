@@ -224,6 +224,11 @@ defmodule Monster do
     Monster.send_scroll(monster, "<p>You need at least #{req} #{skill} skill to equip that.</p>")
   end
 
+  def unequip_item(%Monster{} = monster, %Item{} = item) do
+    send(item.pid, :unequip)
+    monster
+  end
+
   def max_hp(%Monster{} = monster) do
     health   = modified_stat(monster, "health")
     strength = modified_stat(monster, "strength")
