@@ -9,3 +9,4 @@ _build
 *.DS_Store
 *.ez
 /config/*.exs
+/node_modules
