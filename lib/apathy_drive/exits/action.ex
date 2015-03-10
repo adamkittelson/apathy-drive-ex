@@ -15,29 +15,22 @@ defmodule ApathyDrive.Exits.Action do
     |> Spirit.save
   end
 
-  def move(current_room, %Monster{} = monster, room_exit) do
+  def move(%Room{} = room, %Monster{} = monster, room_exit) do
     destination = Room.find(room_exit["destination"])
-    Components.Monsters.remove_monster(current_room, monster)
-    Components.Monsters.add_monster(destination, monster)
-    Entities.save!(destination)
-    Entities.save!(current_room)
+                  |> Room.value
+
+    Room.send_scroll(destination, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
+
+    monster = monster
+              |> Monster.set_room_id(room_exit["destination"])
+              |> Monster.save
+
     Monster.send_scroll(monster, "<p><span class='yellow'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
-    Entities.save(monster)
 
-    Systems.Monster.observers(current_room, monster)
-    |> Enum.each(fn(observer) ->
-      Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
-    end)
+    Room.look(destination, monster)
 
-    Systems.Monster.observers(destination, monster)
-    |> Enum.each(fn(observer) ->
-      Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
-    end)
-
-    Systems.Aggression.monster_entered(monster, destination)
-
-    #Systems.Room.display_room_in_scroll(spirit, monster, destination)
-    Monster.pursue(current_room, monster, room_exit["direction"])
+    Room.send_scroll(room, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
+    monster
   end
 
 end

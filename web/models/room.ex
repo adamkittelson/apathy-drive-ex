@@ -278,6 +278,10 @@ defmodule Room do
     end
   end
 
+  def send_scroll(%Room{id: id} = room, html) do
+    ApathyDrive.Endpoint.broadcast! "rooms:#{id}", "scroll", %{:html => html}
+  end
+
   defp open!(%Room{} = room, direction) do
     if open_duration = ApathyDrive.Exit.open_duration(room, direction) do
       Systems.Effect.add(room, %{open: direction}, open_duration)
