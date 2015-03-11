@@ -3,7 +3,6 @@ defmodule ApathyDrive.Repo.Migrations.CreateSpirits do
 
   def up do
     create table(:spirits) do
-      add :legacy_id,         :text
       add :name,              :text
       add :experience,        :integer
       add :level,             :integer

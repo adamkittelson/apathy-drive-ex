@@ -313,7 +313,7 @@ defmodule Monster do
     modified = if base > 0 do
       total = ["strength", "intelligence", "agility", "health"]
               |> Enum.reduce(0, fn(stat, total) ->
-                   total + modified_stat(monster, stat) * Map.get(skill, stat, 0)
+                   total + modified_stat(monster, stat) * Map.get(skill, String.to_atom(stat), 0)
                  end)
 
       average = total / Skill.modifier_total(skill)
