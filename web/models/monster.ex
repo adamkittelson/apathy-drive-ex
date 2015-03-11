@@ -475,7 +475,7 @@ defmodule Monster do
     ac = monster
          |> ac
          |> resistance
-    (1 - (resistance_reduction(resistance))) * (1 - (resistance_reduction(ac)))
+    1 - ((1 - resistance_reduction(resistance)) * (1 - resistance_reduction(ac)))
   end
 
   def resistance(stat) do
@@ -484,6 +484,11 @@ defmodule Monster do
 
   def resistance_reduction(resistance) do
     resistance / (250 + resistance)
+  end
+
+  def reduce_damage(%Monster{} = monster, damage, damage_type) do
+    (damage * (1 - protection(monster, damage_type)))
+    |> round
   end
 
   # Generate functions from Ecto schema

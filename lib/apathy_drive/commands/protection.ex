@@ -38,15 +38,11 @@ defmodule Commands.Protection do
 
     ["ice", "fire", "stone", "lightning", "normal", "water", "poison"]
     |> Enum.each(fn(damage_type) ->
-       {color, protection} = protection_amount(monster, damage_type)
+       {color, protection} = Monster.protection(monster, damage_type)
                              |> protection_level
        Monster.send_scroll(monster, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
     Monster.send_scroll(monster, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-  end
-
-  defp protection_amount(%Monster{} = monster, damage_type) do
-    1 - Monster.protection(monster, damage_type)
   end
 
   defp protection_level(protection_amount) do

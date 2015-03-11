@@ -153,7 +153,7 @@ defmodule Ability do
                   |> update_in(["base_min"], fn(base_min) -> min(base_min + min, cap_min) end)
                   |> update_in(["base_max"], fn(base_max) -> min(base_max + max, cap_max) end)
                 end)
-             |> Map.drop("scaling")
+             |> Map.drop(["scaling"])
     scale_effect(monster, effect)
   end
 
@@ -213,10 +213,22 @@ defmodule Ability do
   end
 
   def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
+    ability = reduce_damage(ability, monster)
+
     monster
     |> display_cast_message(ability, ability_user)
     |> apply_instant_effects(ability.properties["instant_effects"])
     |> add_duration_effects(ability)
+  end
+
+  def reduce_damage(%Ability{properties:
+                             %{"damage_type" => damage_type,
+                               "instant_effects" => %{"damage" => damage}}} = ability,
+                    %Monster{} = monster) do
+
+    damage = Monster.reduce_damage(monster, damage, damage_type)
+
+    put_in(ability.properties["instant_effects"]["damage"], damage)
   end
 
   def apply_instant_effects(%Monster{} = monster, nil), do: monster

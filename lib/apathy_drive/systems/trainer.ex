@@ -1,7 +1,5 @@
 defmodule Systems.Trainer do
 
-
-
   def list(%Spirit{} = spirit, %Room{}) do
     spirit
     |> Spirit.send_scroll("<p>You can learn nothing here.</p>")
@@ -22,7 +20,7 @@ defmodule Systems.Trainer do
         else
           cost = "<span class='green'>#{"#{cost}" |> String.ljust(8)}</span>"
         end
-        rating = "#{"#{Monster.modified_skill(monster, skill.name)}" |> String.rjust(4)}</span>"
+        rating = "#{"#{Monster.base_skill(monster, skill.name)}" |> String.rjust(4)}</span>"
         row = "    #{skill_name}#{cost}#{rating}%"
         Monster.send_scroll(monster, "<p>#{row}</p>")
       end
@@ -73,7 +71,7 @@ defmodule Systems.Trainer do
       new = put_in skills[skill.name]["trained"], current + cost
       monster = Map.put(monster, :skills, new)
 
-      rating = Monster.modified_skill(monster, skill.name)
+      rating = Monster.base_skill(monster, skill.name)
 
       new_devs = max(0, devs - cost)
       spent = devs - new_devs
