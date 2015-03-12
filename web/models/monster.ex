@@ -475,7 +475,11 @@ defmodule Monster do
     ac = monster
          |> ac
          |> resistance
-    1 - ((1 - resistance_reduction(resistance)) * (1 - resistance_reduction(ac)))
+
+    elemental_resistance = monster.effects |> Map.values |> Enum.reduce(0, fn(effect, total) -> total + Map.get(effect, "#{damage_type} resistance", 0) end)
+    elemental_resistance = min(elemental_resistance, 100) / 100.0
+
+    1 - ((1 - resistance_reduction(resistance)) * (1 - resistance_reduction(ac)) * (1 -elemental_resistance))
   end
 
   def resistance(stat) do

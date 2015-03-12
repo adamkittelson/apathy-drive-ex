@@ -3,19 +3,19 @@ defmodule Commands.Protection do
 
   @protection_levels %{
      0 => {"grey", "none"},
-     7 => {"dark-red", "very poor"},
-    20 => {"red", "poor"},
-    32 => {"dark-blue", "low"},
-    44 => {"blue", "below average"},
-    54 => {"dark-cyan", "average"},
-    63 => {"cyan", "above average"},
-    71 => {"dark-magenta", "good"},
-    78 => {"magenta", "very good"},
-    84 => {"dark-green", "extremely good"},
-    89 => {"green", "superb"},
-    93 => {"dark-yellow", "excellent"},
-    96 => {"yellow", "awesome"},
-    98 => {"dark-red", "god awesome"},
+     1 => {"dark-red", "very poor"},
+    10 => {"red", "poor"},
+    21 => {"dark-blue", "low"},
+    32 => {"blue", "below average"},
+    43 => {"dark-cyan", "average"},
+    53 => {"cyan", "above average"},
+    62 => {"dark-magenta", "good"},
+    70 => {"magenta", "very good"},
+    77 => {"dark-green", "extremely good"},
+    83 => {"green", "superb"},
+    88 => {"dark-yellow", "excellent"},
+    92 => {"yellow", "awesome"},
+    95 => {"dark-red", "god awesome"},
     99 => {"red", "IMPREGNABLE!"}
   }
 

@@ -230,6 +230,7 @@ defmodule Ability do
 
     put_in(ability.properties["instant_effects"]["damage"], damage)
   end
+  def reduce_damage(%Ability{} = ability, monster), do: ability
 
   def apply_instant_effects(%Monster{} = monster, nil), do: monster
   def apply_instant_effects(%Monster{} = monster, %{} = effects) when map_size(effects) == 0, do: monster
