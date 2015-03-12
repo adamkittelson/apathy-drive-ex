@@ -464,6 +464,10 @@ defmodule Monster do
   end
 
   def ac(%Monster{} = monster) do
+    ac_from_equipment(monster) + effect_bonus(monster, "ac")
+  end
+
+  def ac_from_equipment(%Monster{} = monster) do
     monster
     |> equipped_items
     |> Enum.map(&(&1.ac || 0))
@@ -476,7 +480,7 @@ defmodule Monster do
          |> ac
          |> resistance
 
-    elemental_resistance = monster.effects |> Map.values |> Enum.reduce(0, fn(effect, total) -> total + Map.get(effect, "#{damage_type} resistance", 0) end)
+    elemental_resistance = effect_bonus(monster, "#{damage_type} resistance")
     elemental_resistance = min(elemental_resistance, 100) / 100.0
 
     1 - ((1 - resistance_reduction(resistance)) * (1 - resistance_reduction(ac)) * (1 -elemental_resistance))

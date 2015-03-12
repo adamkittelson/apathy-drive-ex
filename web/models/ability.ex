@@ -120,7 +120,7 @@ defmodule Ability do
     effects
     |> Map.keys
     |> Enum.reduce(%{}, fn(effect_name, scaled_effects) ->
-         scaled_effect = scale_effect(monster, effects[effect_name])
+         scaled_effect = scale_effect(monster, effect_name, effects[effect_name])
          Map.put(scaled_effects, effect_name, scaled_effect)
        end)
   end
@@ -157,13 +157,20 @@ defmodule Ability do
     scale_effect(monster, effect)
   end
 
-  def scale_effect(%Monster{}, %{"base_min" => base_min, "base_max" => base_max}) do
+  def scale_effect(%Monster{} = monster, "damage", %{"base_min" => base_min, "base_max" => base_max}) do
+    base_max = base_max + Monster.effect_bonus(monster, "increase max damage")
     base_min..base_max
     |> Enum.shuffle
     |> List.first
   end
 
-  def scale_effect(%Monster{}, effect), do: effect
+  def scale_effect(%Monster{}, _effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
+    base_min..base_max
+    |> Enum.shuffle
+    |> List.first
+  end
+
+  def scale_effect(%Monster{}, _effect_name, effect), do: effect
 
   def find_monster_in_room(room, string, %Monster{pid: pid} = monster) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
