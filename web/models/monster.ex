@@ -19,7 +19,6 @@ defmodule Monster do
     field :mana,                :integer, virtual: true
     field :hunting,             :any,     virtual: true, default: []
     field :combat,              :any,     virtual: true, default: %{"break_at" => 0}
-    field :flags,               :any,     virtual: true, default: %{}
     field :effects,             :any,     virtual: true, default: %{}
     field :timers,              :any,     virtual: true, default: %{}
     field :disposition,         :string,  virtual: true
@@ -41,6 +40,7 @@ defmodule Monster do
     field :questions,           :any,     virtual: true
     field :pid,                 :any,     virtual: true
     field :keywords,            {:array, :string}, virtual: true
+    field :flags,               {:array, :string}, virtual: true
 
     timestamps
 
@@ -759,11 +759,16 @@ defmodule Monster do
   end
 
   def handle_info({:apply_ability, %Ability{} = ability, %Monster{} = ability_user}, monster) do
-    monster = monster
-              |> Ability.apply_ability(ability, ability_user)
-              |> Systems.Prompt.update
+    if Ability.affects_target?(monster, ability) do
+      monster = monster
+                |> Ability.apply_ability(ability, ability_user)
+                |> Systems.Prompt.update
 
-    if monster.hp < 0, do: Systems.Death.kill(monster)
+      if monster.hp < 0, do: Systems.Death.kill(monster)
+    else
+      message = "#{monster.name} is not affected by that ability." |> capitalize_first
+      Monster.send_scroll(ability_user, "<p><span class='dark-cyan'>#{message}</span></p>")
+    end
 
     {:noreply, monster}
   end

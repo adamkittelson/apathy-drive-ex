@@ -28,6 +28,7 @@ defmodule MonsterTemplate do
     field :alignment,         :string
     field :possession_level,  :integer
     field :questions,         ApathyDrive.JSONB
+    field :flags,             {:array, :string}, default: []
 
     has_many :monsters, Monster
 
