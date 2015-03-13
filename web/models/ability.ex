@@ -247,10 +247,35 @@ defmodule Ability do
 
     apply_instant_effects(monster, Map.delete(effects, "damage"))
   end
+  def apply_instant_effects(%Monster{} = monster, %{"heal" => heal} = effects) do
+    monster = put_in(monster.hp, min(Monster.max_hp(monster), monster.hp + heal))
+
+    apply_instant_effects(monster, Map.delete(effects, "heal"))
+  end
   def apply_instant_effects(%Monster{} = monster, %{"script" => script} = effects) do
     monster = Systems.Script.execute(script, monster)
 
     apply_instant_effects(monster, Map.delete(effects, "script"))
+  end
+
+  def display_cast_message(%Monster{} = monster,
+                           %Ability{properties:
+                             %{"instant_effects" => %{"heal" => heal}}} = ability,
+                           %Monster{} = ability_user) do
+
+    cast_messages = cast_messages(ability, ability_user, monster, %{"amount" => heal})
+
+    PubSub.broadcast_from!(self, "rooms:#{monster.room_id}",
+                                {:cast_message,
+                                  messages: cast_messages,
+                                  user: ability_user,
+                                  target: monster})
+
+    if ability_user.pid == self do
+      Monster.send_scroll(monster, cast_messages["user"])
+    else
+      Monster.send_scroll(monster, cast_messages["target"])
+    end
   end
 
   def display_cast_message(%Monster{} = monster,
