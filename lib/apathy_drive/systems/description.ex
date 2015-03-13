@@ -1,54 +1,52 @@
 defmodule Systems.Description do
-
-
   import Systems.Text
 
   def add_description_to_scroll(%Spirit{} = spirit, monster) when is_pid(monster) do
     add_description_to_scroll(spirit, Monster.value(monster))
   end
   def add_description_to_scroll(%Spirit{} = spirit, %Monster{} = monster) do
+    if description = Monster.effect_description(monster) do
+      Spirit.send_scroll(spirit, "<p>#{description}</p>")
+    else
+      spirit
+      |> Spirit.send_scroll("<p><span class='cyan'>#{monster.name}</span></p>")
+      |> Spirit.send_scroll("<p>#{monster.description}</p>")
+      |> Spirit.send_scroll("<p>#{describe_hp(monster) |> interpolate(%{"target" => monster})}</p>")
+
+      if Enum.any?(equipment = Monster.equipped_items(monster)) do
+        Spirit.send_scroll(spirit, "<p><br><span class='dark-yellow'>#{"{{target:He/She/It}} is equipped with:" |> interpolate(%{"target" => monster})}</span></p><br>")
+        Enum.each equipment, fn(item) ->
+          Spirit.send_scroll(spirit, "<p><span class='dark-green'>#{String.ljust(item.name, 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
+        end
+        Spirit.send_scroll(spirit, "<br>")
+      end
+    end
+
     spirit
-    |> Spirit.send_scroll("<p><span class='cyan'>#{monster.name}</span></p>")
-    |> Spirit.send_scroll("<p>#{monster.description}</p>")
-    |> Spirit.send_scroll("<p>#{describe_hp(monster) |> interpolate(%{"target" => monster})}</p>")
-    # if Entity.has_component?(target, Components.Limbs) do
-    #   limbs = Components.Limbs.value(target)
-    #   equipped_items = Systems.Limbs.equipped_items(target)
-    #
-    #   if equipped_items |> Enum.count > 0 do
-    #     msg = "<p>\n<span class='dark-yellow'>{{target:He/She/It}} is equipped with:</span></p>" |> interpolate(%{"target" => target})
-    #     send_message(character, "scroll", "#{msg}<br>")
-    #     equipped_items |> Enum.each fn(item) ->
-    #       item_name = Components.Name.value(item)
-    #       item_limbs = Systems.Limbs.get_limb_names(limbs, item)
-    #       send_message(character, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 23)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>")
-    #     end
-    #   end
-    # end
   end
 
   def add_description_to_scroll(%Monster{} = monster, target) when is_pid(target) do
     add_description_to_scroll(monster, Monster.value(target))
   end
   def add_description_to_scroll(%Monster{} = monster, %Monster{} = target) do
+    if description = Monster.effect_description(target) do
+      Monster.send_scroll(monster, "<p>#{description}</p>")
+    else
+      monster
+      |> Monster.send_scroll("<p><span class='cyan'>#{target.name}</span></p>")
+      |> Monster.send_scroll("<p>#{target.description}</p>")
+      |> Monster.send_scroll("<p>#{describe_hp(target) |> interpolate(%{"target" => target})}</p>")
+
+      if Enum.any?(equipment = Monster.equipped_items(target)) do
+        Monster.send_scroll(monster, "<p><br><span class='dark-yellow'>#{"{{target:He/She/It}} is equipped with:" |> interpolate(%{"target" => target})}</span></p><br>")
+        Enum.each equipment, fn(item) ->
+          Monster.send_scroll(monster, "<p><span class='dark-green'>#{String.ljust(item.name, 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
+        end
+        Monster.send_scroll(monster, "<br>")
+      end
+    end
+
     monster
-    |> Monster.send_scroll("<p><span class='cyan'>#{target.name}</span></p>")
-    |> Monster.send_scroll("<p>#{target.description}</p>")
-    |> Monster.send_scroll("<p>#{describe_hp(target) |> interpolate(%{"target" => target})}</p>")
-    # if Entity.has_component?(target, Components.Limbs) do
-    #   limbs = Components.Limbs.value(target)
-    #   equipped_items = Systems.Limbs.equipped_items(target)
-    #
-    #   if equipped_items |> Enum.count > 0 do
-    #     msg = "<p>\n<span class='dark-yellow'>{{target:He/She/It}} is equipped with:</span></p>" |> interpolate(%{"target" => target})
-    #     send_message(character, "scroll", "#{msg}<br>")
-    #     equipped_items |> Enum.each fn(item) ->
-    #       item_name = Components.Name.value(item)
-    #       item_limbs = Systems.Limbs.get_limb_names(limbs, item)
-    #       send_message(character, "scroll", "<p><span class='dark-green'>#{String.ljust(item_name, 23)}</span><span class='dark-cyan'>(#{Enum.join(item_limbs, ", ")})</span></p>")
-    #     end
-    #   end
-    # end
   end
 
   def describe_hp(%Monster{} = monster) do

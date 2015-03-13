@@ -215,6 +215,18 @@ defmodule Monster do
     end
   end
 
+  def effect_description(%Monster{effects: effects} = monster) do
+    effects
+    |> Map.values
+    |> Enum.find(fn(effect) ->
+         Map.has_key?(effect, "description")
+       end)
+    |> effect_description
+  end
+
+  def effect_description(nil), do: nil
+  def effect_description(%{"description" => description}), do: description
+
   def equip_item(%Monster{} = monster, %Item{} = item, nil) do
     send(item.pid, :equip)
     monster
