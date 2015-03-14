@@ -216,7 +216,7 @@ defmodule Ability do
     send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
 
     monster
-    |> Map.put(:mana, monster.mana - ability.properties["mana_cost"])
+    |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
     |> Systems.Prompt.update
   end
 

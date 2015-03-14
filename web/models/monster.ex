@@ -79,7 +79,8 @@ defmodule Monster do
   end
   def set_abilities(%Monster{} = monster) do
     abilities = monster_template_abilities(monster) ++
-                abilities_from_skills(monster)
+                abilities_from_skills(monster) ++
+                abilities_from_equipment(monster)
     monster
     |> Map.put(:abilities, abilities)
   end
@@ -107,6 +108,37 @@ defmodule Monster do
               monster_skill >= required_skill
             end)
        end)
+  end
+
+  def abilities_from_equipment(%Monster{} = monster) do
+    monster
+    |> equipped_items
+    |> Enum.find(&(Enum.member?(["Weapon Hand", "Two Handed"], &1.worn_on)))
+    |> abilities_from_weapon
+  end
+
+  def abilities_from_weapon(nil), do: []
+  def abilities_from_weapon(%Item{} = weapon) do
+    Enum.map(weapon.hit_verbs, fn(verb) ->
+      %Ability{
+        name:    verb,
+        command: verb,
+        kind:    "attack",
+        required_skills: weapon.required_skills,
+        flags: [],
+        properties: %{
+          "instant_effects" => %{
+            "damage" => weapon.properties["damage"]
+          },
+          "cast_message" => %{
+            "target" => "{{user}} #{Inflex.pluralize(verb)} you with {{user:his/her/its}} #{weapon.name} for {{amount}} damage!",
+            "user" => "You #{verb} {{target}} with your #{weapon.name} for {{amount}} damage!",
+            "spectator" => "{{user}} #{Inflex.pluralize(verb)} {{target}} with {{user:his/her/its}} #{weapon.name} for {{amount}} damage!"
+          },
+          "damage_type" => "normal"
+        }
+      }
+    end)
   end
 
   def execute_command(monster, command, arguments) do
@@ -807,11 +839,13 @@ defmodule Monster do
 
   def handle_info({:item_equipped, %Item{} = item}, monster) do
     send_scroll(monster, "<p>You are now wearing #{item.name}.</p>")
+    send(self, :set_abilities)
     {:noreply, monster}
   end
 
   def handle_info({:item_unequipped, %Item{} = item}, monster) do
     send_scroll(monster, "<p>You remove #{item.name}.</p>")
+    send(self, :set_abilities)
     {:noreply, monster}
   end
 

@@ -11,7 +11,7 @@ defmodule ItemTemplate do
     field :description,           :string
     field :worn_on,               :string
     field :hit_verbs,             {:array, :string}, default: []
-    field :damage,                ApathyDrive.JSONB
+    field :properties,            ApathyDrive.JSONB
     field :required_skills,       ApathyDrive.JSONB
     field :speed,                 :float
     field :accuracy_skill,        :string

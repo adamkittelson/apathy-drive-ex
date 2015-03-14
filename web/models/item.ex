@@ -23,6 +23,8 @@ defmodule Item do
     field :room_destruct_message, :string,  virtual: true
     field :can_pick_up,           :boolean, virtual: true
     field :ac,                    :integer, virtual: true
+    field :properties,            :any,     virtual: true
+    field :hit_verbs,             {:array, :string}, virtual: true
 
     timestamps
 
