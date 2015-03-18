@@ -53,9 +53,11 @@ defmodule ApathyDrive.Command do
     Systems.Prompt.display(monster)
 
     ability = monster.abilities
-              |> Enum.find(fn(%Ability{command: cmd}) ->
+              |> Enum.filter(fn(%Ability{command: cmd}) ->
                    cmd == String.downcase(command)
                  end)
+              |> Enum.shuffle
+              |> List.first
 
     if ability do
       Ability.execute(monster, ability, Enum.join(arguments, " "))

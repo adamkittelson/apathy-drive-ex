@@ -72,6 +72,7 @@ defmodule Ability do
 
   def scale_instant_effects(%Monster{} = monster,
                             %Ability{properties: %{"instant_effects" => effects}} = ability) do
+
     effects = scale_effects(monster, effects)
 
     properties = Map.put(ability.properties, "instant_effects", effects)
@@ -129,7 +130,7 @@ defmodule Ability do
   def scale_effect(%Monster{} = _monster, value) when is_number(value), do: value
   def scale_effect(%Monster{} = _monster, value) when is_binary(value), do: value
 
-  def scale_effect(%Monster{} = monster, %{"scaling" => scaling} = effect) do
+  def scale_effect(%Monster{} = monster, effect_name, %{"scaling" => scaling} = effect) do
     cap_min = Map.get(effect, "cap_min", :infinity)
     cap_max = Map.get(effect, "cap_max", :infinity)
 
@@ -138,14 +139,14 @@ defmodule Ability do
              |> Enum.reduce(effect, fn(skill_name, effect) ->
                   skill = Monster.modified_skill(monster, skill_name)
 
-                  min = if scaling["min_every"] do
-                    trunc(skill / scaling["min_every"]) * scaling["min_increase"]
+                  min = if scaling[skill_name]["min_every"] do
+                    trunc(skill / scaling[skill_name]["min_every"]) * scaling[skill_name]["min_increase"]
                   else
                     0
                   end
 
-                  max = if scaling["max_every"] do
-                    trunc(skill / scaling["max_every"]) * scaling["max_increase"]
+                  max = if scaling[skill_name]["max_every"] do
+                    trunc(skill / scaling[skill_name]["max_every"]) * scaling[skill_name]["max_increase"]
                   else
                     0
                   end
@@ -155,7 +156,7 @@ defmodule Ability do
                   |> update_in(["base_max"], fn(base_max) -> min(base_max + max, cap_max) end)
                 end)
              |> Map.drop(["scaling"])
-    scale_effect(monster, effect)
+    scale_effect(monster, effect_name, effect)
   end
 
   def scale_effect(%Monster{} = monster, "damage", %{"base_min" => base_min, "base_max" => base_max}) do

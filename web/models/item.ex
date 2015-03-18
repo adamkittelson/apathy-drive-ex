@@ -25,6 +25,7 @@ defmodule Item do
     field :ac,                    :integer, virtual: true
     field :properties,            :any,     virtual: true
     field :hit_verbs,             {:array, :string}, virtual: true
+    field :accuracy_skill,        :string, virtual: true
 
     timestamps
 

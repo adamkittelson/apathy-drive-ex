@@ -24,6 +24,7 @@ defmodule Commands.Abilities do
                      (%Ability{command: _}) ->
                        true
        end)
+    |> Enum.uniq(&(&1.command))
     |> Enum.sort(&(skill_level(&1) < skill_level(&2) ))
     |> Enum.each(fn(%Ability{name: name, command: command, properties: properties}) ->
          mana_cost = properties["mana_cost"]

@@ -120,9 +120,17 @@ defmodule Monster do
   def abilities_from_weapon(nil), do: []
   def abilities_from_weapon(%Item{} = weapon) do
     Enum.map(weapon.hit_verbs, fn(verb) ->
+      weapon = put_in(weapon.properties["damage"]["scaling"],
+                      Map.put(%{},
+                              weapon.accuracy_skill,
+                              %{"max_every"    => 20,
+                                "max_increase" => 1,
+                                "min_every"    => 25,
+                                "min_increase" => 1}))
+
       %Ability{
-        name:    verb,
-        command: verb,
+        name:    "attack",
+        command: "attack",
         kind:    "attack",
         required_skills: weapon.required_skills,
         flags: [],
