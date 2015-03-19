@@ -85,6 +85,18 @@ defmodule Monster do
     |> Map.put(:abilities, abilities)
   end
 
+  def heal_abilities(%Monster{abilities: abilities} = monster) do
+    abilities
+    |> Enum.filter(&(&1.kind == "heal"))
+    |> Ability.useable(monster)
+  end
+
+  def bless_abilities(%Monster{abilities: abilities} = monster) do
+    abilities
+    |> Enum.filter(&(&1.kind == "blessing"))
+    |> Ability.useable(monster)
+  end
+
   def monster_template_abilities(%Monster{} = monster) do
     mt = monster.monster_template_id
          |> MonsterTemplate.find
@@ -897,6 +909,16 @@ defmodule Monster do
 
   def handle_info({:room_item_destroyed, %Item{} = item, %Monster{} = holder}, monster) do
     Monster.send_scroll(monster, "<p>#{item.room_destruct_message |> interpolate(%{"user" => holder})}</p>")
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:execute_ability, ability}, monster) do
+    {:noreply, Ability.execute(monster, ability, monster)}
+  end
+
+  def handle_info(:think, monster) do
+    Systems.AI.think(monster)
 
     {:noreply, monster}
   end

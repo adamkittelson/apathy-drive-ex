@@ -1,70 +1,34 @@
 defmodule Systems.AI do
 
-
-  def observable_monsters do
-    Spirit.online
-    |> Enum.map(&Parent.of/1)
-    |> Enum.uniq
-    |> adjacent_rooms
-    |> adjacent_rooms
-    |> adjacent_rooms
-    |> Enum.map(&Components.Monsters.get_monsters/1)
-    |> List.flatten
-    |> Enum.uniq
+  def think(%Monster{} = monster) do
+    heal(monster) || bless(monster)# || attack(monster) || move(monster)
   end
 
-  def adjacent_rooms(rooms_with_spirits) do
-    Enum.reduce(rooms_with_spirits, [], fn(room, rooms) ->
-      adjacent = room
-                 |> Components.Exits.value
-                 |> Enum.map(&(Map.get(&1, "destination")))
-                 |> Enum.map(&Room.find/1)
+  def heal(%Monster{hp: hp} = monster) do
+    max_hp  = Monster.max_hp(monster)
 
-      [room | adjacent ++ rooms]
-    end)
-    |> Enum.uniq
-  end
-
-  # def think do
-  #   observable_monsters
-  #   |> Enum.each(fn(monster) ->
-  #        think(monster)
-  #      end)
-  #   :timer.sleep 5000
-  # end
-
-  def think(monster) do
-    if Process.alive?(monster) do
-      heal(monster) || bless(monster) || attack(monster) || move(monster)
-    end
-  end
-
-  def heal(monster) do
-    max_hp  = Systems.HP.max(monster)
-    current = Components.HP.value(monster)
-
-    chance = trunc((max_hp - current) / max_hp * 100)
-    :random.seed(:os.timestamp)
+    chance = trunc((max_hp - hp) / max_hp * 100)
 
     roll = :random.uniform(100)
 
     if chance > roll do
       ability = monster
-                |> Components.Abilities.heals
+                |> Monster.heal_abilities
                 |> random_ability
+
       if ability do
-        ability.execute(monster)
+        send(self, {:execute_ability, ability})
       end
     end
   end
 
-  def bless(monster) do
+  def bless(%Monster{} = monster) do
     ability = monster
-              |> Components.Abilities.blessings
+              |> Monster.bless_abilities
               |> random_ability
 
     if ability do
-      ability.execute(monster)
+      send(self, {:execute_ability, ability})
     end
   end
 
@@ -99,7 +63,6 @@ defmodule Systems.AI do
       [] ->
         nil
       abilities ->
-        :random.seed(:os.timestamp)
         abilities |> Enum.shuffle |> List.first
     end
   end

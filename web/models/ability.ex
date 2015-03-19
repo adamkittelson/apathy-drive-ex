@@ -28,6 +28,16 @@ defmodule Ability do
     Repo.all(query)
   end
 
+  def useable(abilities, %Monster{mana: mana} = monster) do
+    abilities
+    |> Enum.filter(fn(ability) ->
+         ability.properties["mana_cost"] && ability.properties["mana_cost"] <= mana
+       end)
+    |> Enum.reject(fn(ability) ->
+         Systems.Effect.max_stacks?(monster, ability)
+       end)
+  end
+
   def color(%Ability{kind: "attack"}),      do: "red"
   def color(%Ability{kind: "curse"}),       do: "red"
   def color(%Ability{kind: "area attack"}), do: "red"
