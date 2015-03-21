@@ -78,9 +78,12 @@ defmodule Monster do
     monster
   end
   def set_abilities(%Monster{} = monster) do
-    abilities = monster_template_abilities(monster) ++
-                abilities_from_skills(monster) ++
-                abilities_from_equipment(monster)
+    abilities = monster_template_abilities(monster)
+
+    abilities = abilities ++
+                abilities_from_equipment(monster, abilities) ++
+                abilities_from_skills(monster)
+
     monster
     |> Map.put(:abilities, abilities)
   end
@@ -122,15 +125,59 @@ defmodule Monster do
        end)
   end
 
-  def abilities_from_equipment(%Monster{} = monster) do
+  def abilities_from_equipment(%Monster{} = monster, abilities) do
     monster
     |> equipped_items
     |> Enum.find(&(Enum.member?(["Weapon Hand", "Two Handed"], &1.worn_on)))
-    |> abilities_from_weapon
+    |> abilities_from_weapon(abilities)
   end
 
-  def abilities_from_weapon(nil), do: []
-  def abilities_from_weapon(%Item{} = weapon) do
+  def abilities_from_weapon(nil, []) do
+    [
+      %Ability{
+        name:    "attack",
+        command: "attack",
+        kind:    "attack",
+        required_skills: %{"melee" => 0},
+        flags: [],
+        properties: %{
+          "instant_effects" => %{
+            "damage" => %{
+              "scaling" => %{
+                "melee" => %{
+                  "max_every"    => 20,
+                  "max_increase" => 1,
+                  "min_every"    => 25,
+                  "min_increase" => 1
+                }
+              },
+              "base_min" => 2,
+              "base_max" => 6
+            }
+          },
+          "cast_message" => %{
+            "target" => "{{user}} hits you for {{amount}} damage!",
+            "user" => "You hit {{target}} for {{amount}} damage!",
+            "spectator" => "{{user}} hits {{target}} for {{amount}} damage!"
+          },
+          "damage_type" => "normal"
+        }
+      }
+    ]
+  end
+
+  def abilities_from_weapon(nil, abilities) do
+    attacks = abilities
+              |> Enum.filter(&(&1.kind == "attack"))
+
+    if Enum.any?(attacks) do
+      []
+    else
+      abilities_from_weapon(nil, [])
+    end
+  end
+
+  def abilities_from_weapon(%Item{} = weapon, _abilities) do
     Enum.map(weapon.hit_verbs, fn(verb) ->
       weapon = put_in(weapon.properties["damage"]["scaling"],
                       Map.put(%{},
