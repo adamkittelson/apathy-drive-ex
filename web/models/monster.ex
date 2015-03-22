@@ -1018,6 +1018,21 @@ defmodule Monster do
     {:noreply, monster}
   end
 
+  def handle_info(:calm_down, %Monster{hate: hate} = monster) do
+    hate = hate
+           |> HashDict.keys
+           |> Enum.reduce(hate, fn(enemy, new_hate) ->
+                current = HashDict.fetch!(new_hate, enemy)
+                if current > 10 do
+                  HashDict.put(new_hate, enemy, current - 10)
+                else
+                  HashDict.delete(new_hate, enemy)
+                end
+              end)
+
+    {:noreply, put_in(monster.hate, hate)}
+  end
+
   def handle_info(:set_abilities, monster) do
     {:noreply, set_abilities(monster) }
   end

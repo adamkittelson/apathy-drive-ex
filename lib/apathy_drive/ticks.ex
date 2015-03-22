@@ -14,6 +14,7 @@ defmodule ApathyDrive.Ticks do
             |> TimerManager.call_every({:spawning, 60_000, &spawning/0})
             |> TimerManager.call_every({:monster_regen, 5_000, &monster_regen/0})
             |> TimerManager.call_every({:monster_ai, 5_000, &monster_ai/0})
+            |> TimerManager.call_every({:increase_da_peace, 10_000, &increase_da_peace/0})
 
     {:ok, state}
   end
@@ -38,6 +39,10 @@ defmodule ApathyDrive.Ticks do
 
   def monster_ai do
     PubSub.broadcast!("monsters", :think)
+  end
+
+  def increase_da_peace do
+    PubSub.broadcast!("monsters", :calm_down)
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %{timers: timers} = state) do
