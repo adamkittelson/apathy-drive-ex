@@ -12,7 +12,7 @@ defmodule Commands.Light do
     if Enum.any? arguments do
       cond do
         target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
-          case Item.light(target.pid) do
+          case Item.light(target.pid, monster.room_id) do
             :not_a_light ->
               Monster.send_scroll(monster, "<p>You can't light a #{target.name}!</p>")
             :already_lit ->

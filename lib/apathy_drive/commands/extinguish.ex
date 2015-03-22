@@ -12,7 +12,7 @@ defmodule Commands.Extinguish do
     if Enum.any? arguments do
       cond do
         target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
-          case Item.extinguish(target.pid) do
+          case Item.extinguish(target.pid, monster.room_id) do
             :not_a_light ->
               Monster.send_scroll(monster, "<p>You can't extinguish a #{target.name}!</p>")
             :not_lit ->

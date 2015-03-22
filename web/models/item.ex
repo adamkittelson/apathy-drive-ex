@@ -118,7 +118,16 @@ defmodule Item do
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_#{item.id}", {GenServer, :start_link, [Item, item, []]}, :transient, 5000, :worker, [Item]})
 
         if item.always_lit do
-          Item.light(pid)
+          room_id = if item.room_id do
+            item.room_id
+          else
+            monster = item.monster_id
+                      |> Monster.find
+                      |> Monster.value
+            monster.room_id
+          end
+
+          Item.light(pid, room_id)
         end
 
         pid
@@ -141,12 +150,12 @@ defmodule Item do
     Map.put(item, :room_id, room_id)
   end
 
-  def light(item) do
-    GenServer.call(item, :light)
+  def light(item, room_id \\ nil) do
+    GenServer.call(item, {:light, room_id})
   end
 
-  def extinguish(item) do
-    GenServer.call(item, :extinguish)
+  def extinguish(item, room_id \\ nil) do
+    GenServer.call(item, {:extinguish, room_id})
   end
 
   def lit?(%Item{effects: effects}) do
@@ -161,7 +170,7 @@ defmodule Item do
     {:reply, monster, monster}
   end
 
-  def handle_call(:light, _from, item) do
+  def handle_call({:light, room_id}, from, item) do
     cond do
       !item.light ->
         {:reply, :not_a_light, item}
@@ -172,6 +181,11 @@ defmodule Item do
           send(self, :use)
         end})
         item = Systems.Effect.add(item, %{"light" => item.light, "timers" => [:light]})
+
+        if room_id do
+          ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:lights")
+        end
+
         {:reply, item, item}
       true ->
         item = Systems.Effect.add(item, %{"light" => item.light})
@@ -179,7 +193,7 @@ defmodule Item do
     end
   end
 
-  def handle_call(:extinguish, _from, item) do
+  def handle_call({:extinguish, room_id}, _from, item) do
     cond do
       !item.light ->
         {:reply, :not_a_light, item}
@@ -198,6 +212,9 @@ defmodule Item do
         end
       true ->
         item = Systems.Effect.remove(item, :light)
+        if room_id do
+          ApathyDrive.PubSub.unsubscribe(self, "rooms:#{room_id}:lights")
+        end
         {:reply, item, item}
     end
   end
@@ -208,7 +225,12 @@ defmodule Item do
     ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
     ApathyDrive.PubSub.unsubscribe(self, "rooms:#{item.room_id}:items")
 
+    ApathyDrive.PubSub.subscribe(self, "monsters:#{monster.id}:items")
     ApathyDrive.PubSub.subscribe(self, "monsters:#{monster.id}:inventory")
+
+    if lit?(item) do
+      ApathyDrive.PubSub.subscribe(self, "rooms:#{monster.room_id}:lights")
+    end
 
     item = item
            |> Map.put(:monster_id, monster.id)
@@ -219,6 +241,7 @@ defmodule Item do
   end
 
   def handle_call({:to_room, %Room{} = room}, _from, item) do
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:items")
     ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
     ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items")
     ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")

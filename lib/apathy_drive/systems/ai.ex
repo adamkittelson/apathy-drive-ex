@@ -1,7 +1,7 @@
 defmodule Systems.AI do
 
   def think(%Monster{} = monster) do
-    heal(monster) || bless(monster)# || attack(monster) || move(monster)
+    heal(monster) || bless(monster) || attack(monster)# || move(monster)
   end
 
   def heal(%Monster{hp: hp} = monster) do
@@ -33,26 +33,12 @@ defmodule Systems.AI do
   end
 
   def attack(monster) do
-    if Components.Combat.in_combat?(monster) do
-      :random.seed(:os.timestamp)
+    if target = Monster.aggro_target(monster) do
+      attack = monster
+               |> Monster.attack_abilities
+               |> random_ability
 
-      roll = :random.uniform(100)
-
-      if roll > 50 do
-        ability = monster
-                  |> Components.Abilities.attacks
-                  |> random_ability
-
-        if ability do
-          target = Systems.Combat.targets(monster)
-                   |> Enum.shuffle
-                   |> List.first
-
-          if target do
-            ability.execute(monster, Components.Name.value(target))
-          end
-        end
-      end
+      send(self, {:execute_ability, attack, target})
     end
   end
 

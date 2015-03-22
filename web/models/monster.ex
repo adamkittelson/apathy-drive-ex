@@ -41,6 +41,7 @@ defmodule Monster do
     field :pid,                 :any,     virtual: true
     field :keywords,            {:array, :string}, virtual: true
     field :flags,               {:array, :string}, virtual: true
+    field :hate,                :any, virtual: true, default: HashDict.new
 
     timestamps
 
@@ -97,6 +98,12 @@ defmodule Monster do
   def bless_abilities(%Monster{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1.kind == "blessing"))
+    |> Ability.useable(monster)
+  end
+
+  def attack_abilities(%Monster{abilities: abilities} = monster) do
+    abilities
+    |> Enum.filter(&(&1.kind == "attack"))
     |> Ability.useable(monster)
   end
 
@@ -282,6 +289,16 @@ defmodule Monster do
   def set_room_id(%Monster{} = monster, room_id) do
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}")
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters")
+
+    PubSub.subscribers("monsters:#{monster.id}:items")
+    |> Enum.each(fn(item) ->
+         ApathyDrive.PubSub.unsubscribe(item, "rooms:#{monster.room_id}:lights")
+         item = Item.value(item)
+         if Item.lit?(item) do
+           ApathyDrive.PubSub.subscribe(item.pid, "rooms:#{room_id}:lights")
+         end
+       end)
+
     PubSub.subscribe(self, "rooms:#{room_id}")
     PubSub.subscribe(self, "rooms:#{room_id}:monsters")
     Map.put(monster, :room_id, room_id)
@@ -584,6 +601,33 @@ defmodule Monster do
     |> Enum.map(&(&1.ac || 0))
     |> Enum.sum
   end
+
+  def aggro_targets(%Monster{hate: hate, pid: pid} = monster) do
+    monster
+    |> find_room
+    |> Room.monsters(pid)
+    |> Enum.reduce(%{}, fn(potential_target, targets) ->
+         threat = HashDict.get(hate, potential_target, 0)
+         if threat > 0 do
+           Map.put(targets, threat, potential_target)
+         else
+           targets
+         end
+       end)
+  end
+
+  def aggro_target(%Monster{} = monster) do
+    targets = aggro_targets(monster)
+
+    top_threat = targets
+                 |> Map.keys
+                 |> top_threat
+
+    Map.get(targets, top_threat)
+  end
+
+  def top_threat([]),      do: nil
+  def top_threat(targets), do: Enum.max(targets)
 
   def protection(%Monster{} = monster, damage_type) do
     resistance = 0 #resistance(entity, CritTables.damage_types[to_string(damage_type)])
@@ -962,6 +1006,10 @@ defmodule Monster do
 
   def handle_info({:execute_ability, ability}, monster) do
     {:noreply, Ability.execute(monster, ability, monster)}
+  end
+
+  def handle_info({:execute_ability, ability, target}, monster) do
+    {:noreply, Ability.execute(monster, ability, target)}
   end
 
   def handle_info(:think, monster) do

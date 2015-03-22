@@ -169,7 +169,7 @@ defmodule Room do
   end
 
   def light_level(%Room{light: light} = room, %Monster{alignment: alignment} = monster) do
-    light = light + light_in_room(room) + light_on_monsters(room, monster)
+    light = light + light_in_room(room)
 
     cond do
       alignment > 0 and light < 0 ->
@@ -194,24 +194,8 @@ defmodule Room do
   end
 
   def light_in_room(%Room{id: id}) do
-    PubSub.subscribers("rooms:#{id}:items")
+    PubSub.subscribers("rooms:#{id}:lights")
     |> Enum.map(&Item.value/1)
-    |> lights
-  end
-
-  def light_on_monsters(%Room{id: id}, %Monster{} = monster) do
-    PubSub.subscribers("rooms:#{id}:monsters")
-    |> Enum.map(fn(monster_pid) ->
-         if monster_pid == self do
-           monster
-         else
-           Monster.value(monster_pid)
-         end
-       end)
-    |> Enum.map(fn(%Monster{} = monster) ->
-         Monster.equipped_items(monster) ++ Monster.inventory(monster)
-       end)
-    |> List.flatten
     |> lights
   end
 

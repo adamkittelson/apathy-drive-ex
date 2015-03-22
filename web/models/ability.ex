@@ -30,8 +30,8 @@ defmodule Ability do
 
   def useable(abilities, %Monster{mana: mana} = monster) do
     abilities
-    |> Enum.filter(fn(ability) ->
-         ability.properties["mana_cost"] && ability.properties["mana_cost"] <= mana
+    |> Enum.reject(fn(ability) ->
+         ability.properties["mana_cost"] && ability.properties["mana_cost"] > mana
        end)
     |> Enum.reject(fn(ability) ->
          Systems.Effect.max_stacks?(monster, ability)
@@ -236,7 +236,7 @@ defmodule Ability do
 
     monster
     |> display_cast_message(ability, ability_user)
-    |> apply_instant_effects(ability.properties["instant_effects"])
+    |> apply_instant_effects(ability.properties["instant_effects"], ability_user)
     |> add_duration_effects(ability)
   end
 
@@ -249,24 +249,25 @@ defmodule Ability do
 
     put_in(ability.properties["instant_effects"]["damage"], damage)
   end
-  def reduce_damage(%Ability{} = ability, monster), do: ability
+  def reduce_damage(%Ability{} = ability, _monster), do: ability
 
-  def apply_instant_effects(%Monster{} = monster, nil), do: monster
-  def apply_instant_effects(%Monster{} = monster, %{} = effects) when map_size(effects) == 0, do: monster
-  def apply_instant_effects(%Monster{} = monster, %{"damage" => damage} = effects) do
+  def apply_instant_effects(%Monster{} = monster, nil, _ability_user), do: monster
+  def apply_instant_effects(%Monster{} = monster, %{} = effects, _ability_user) when map_size(effects) == 0, do: monster
+  def apply_instant_effects(%Monster{} = monster, %{"damage" => damage} = effects, %Monster{} = ability_user) do
     monster = put_in(monster.hp, monster.hp - damage)
+    monster = put_in(monster.hate, HashDict.update(monster.hate, ability_user.pid, damage, fn(hate) -> hate + damage end))
 
-    apply_instant_effects(monster, Map.delete(effects, "damage"))
+    apply_instant_effects(monster, Map.delete(effects, "damage"), ability_user)
   end
-  def apply_instant_effects(%Monster{} = monster, %{"heal" => heal} = effects) do
+  def apply_instant_effects(%Monster{} = monster, %{"heal" => heal} = effects, ability_user) do
     monster = put_in(monster.hp, min(Monster.max_hp(monster), monster.hp + heal))
 
-    apply_instant_effects(monster, Map.delete(effects, "heal"))
+    apply_instant_effects(monster, Map.delete(effects, "heal"), ability_user)
   end
-  def apply_instant_effects(%Monster{} = monster, %{"script" => script} = effects) do
+  def apply_instant_effects(%Monster{} = monster, %{"script" => script} = effects, ability_user) do
     monster = Systems.Script.execute(script, monster)
 
-    apply_instant_effects(monster, Map.delete(effects, "script"))
+    apply_instant_effects(monster, Map.delete(effects, "script"), ability_user)
   end
 
   def display_cast_message(%Monster{} = monster,
