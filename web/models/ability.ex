@@ -225,6 +225,7 @@ defmodule Ability do
 
   def execute(%Monster{} = monster, %Ability{} = ability, %Monster{} = target) do
     send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
+    send(self, :think)
 
     monster
     |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
