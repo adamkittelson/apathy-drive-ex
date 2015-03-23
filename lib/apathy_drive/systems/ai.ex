@@ -2,9 +2,9 @@ defmodule Systems.AI do
 
   def think(%Monster{} = monster) do
     if Monster.on_global_cooldown?(monster) do
-      heal(monster) || bless(monster) || attack(monster)# || move(monster)
-    else
       #move(monster)
+    else
+      heal(monster) || bless(monster) || attack(monster)# || move(monster)
     end
   end
 

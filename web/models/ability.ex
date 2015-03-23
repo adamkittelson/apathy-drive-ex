@@ -240,6 +240,8 @@ defmodule Ability do
   def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
     ability = reduce_damage(ability, monster)
 
+    :erlang.send_after(1000, self, :think)
+
     monster
     |> display_cast_message(ability, ability_user)
     |> apply_instant_effects(ability.properties["instant_effects"], ability_user)
