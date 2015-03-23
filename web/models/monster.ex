@@ -215,6 +215,12 @@ defmodule Monster do
     end)
   end
 
+  def on_global_cooldown?(%Monster{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(&1["cooldown"] == :global))
+  end
+
   def execute_command(monster, command, arguments) do
     GenServer.cast(monster, {:execute_command, command, arguments})
   end

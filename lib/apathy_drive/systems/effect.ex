@@ -61,12 +61,13 @@ defmodule Systems.Effect do
         Enum.each(timers, fn(timer_name) ->
           TimerManager.cancel(entity, timer_name)
         end)
+        send(self, :think)
         Map.put entity, :effects, Map.delete(effects, key)
       %{"timers" => timers} ->
         Enum.each(timers, fn(timer_name) ->
           TimerManager.cancel(entity, timer_name)
         end)
-
+        send(self, :think)
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->
         found_key = effects

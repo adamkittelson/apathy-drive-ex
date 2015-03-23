@@ -28,7 +28,7 @@ defmodule Ability do
     Repo.all(query)
   end
 
-  def useable(abilities, %Monster{mana: mana} = monster) do
+  def useable(abilities, %Monster{effects: effects, mana: mana} = monster) do
     abilities
     |> Enum.reject(fn(ability) ->
          ability.properties["mana_cost"] && ability.properties["mana_cost"] > mana
@@ -224,12 +224,17 @@ defmodule Ability do
   end
 
   def execute(%Monster{} = monster, %Ability{} = ability, %Monster{} = target) do
-    send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
-    send(self, :think)
+    if Monster.on_global_cooldown?(monster) do
+      Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
+    else
+      send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
+      send(self, :think)
 
-    monster
-    |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
-    |> Systems.Prompt.update
+      monster
+      |> Systems.Effect.add(%{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, 3)
+      |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
+      |> Systems.Prompt.update
+    end
   end
 
   def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
