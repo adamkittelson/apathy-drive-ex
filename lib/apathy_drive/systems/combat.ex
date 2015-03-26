@@ -5,22 +5,7 @@ defmodule Systems.Combat do
     dodge?(accuracy, dodge_skill)
   end
 
-  def dodge?(accuracy, dodge_skill) do
-    chance = 30
-    if dodge_skill > 0 do
-      difference = dodge_skill - accuracy
-      chance = if difference > 0 do
-        chance + difference * 0.2
-      else
-        chance + difference * 0.3
-      end
-
-      :random.seed(:os.timestamp)
-      :random.uniform(100) < trunc(chance)
-    else
-      false
-    end
-  end
+  
 
   def parry?(accuracy, target) when is_pid(target) do
     parry_skill = Skills.Parry.modified(target)

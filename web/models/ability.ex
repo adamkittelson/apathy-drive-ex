@@ -29,7 +29,7 @@ defmodule Ability do
     Repo.all(query)
   end
 
-  def useable(abilities, %Monster{effects: effects, mana: mana} = monster) do
+  def useable(abilities, %Monster{mana: mana} = monster) do
     abilities
     |> Enum.reject(fn(ability) ->
          ability.properties["mana_cost"] && ability.properties["mana_cost"] > mana
@@ -245,9 +245,39 @@ defmodule Ability do
 
     4 / (1000.0 / round(cost * ((trunc(trunc(Monster.current_encumbrance(monster) / Monster.max_encumbrance(monster)) * 100) / 2) + 75) / 100.0))
   end
-  def global_cooldown(%Ability{global_cooldown: nil}, %Monster{} = monster), do: 4
-  def global_cooldown(%Ability{global_cooldown: gc}, %Monster{} = monster), do: gc
+  def global_cooldown(%Ability{global_cooldown: nil}, %Monster{}), do: 4
+  def global_cooldown(%Ability{global_cooldown: gc}, %Monster{}), do: gc
 
+  def dodged?(%Monster{} = monster, %Ability{properties: %{"accuracy_skill" => accuracy_skill}}, %Monster{} = attacker) do
+    dodge = Monster.modified_skill(monster, "dodge")
+    accuracy = Monster.modified_skill(attacker, accuracy_skill)
+
+    chance = 30
+    if dodge > 0 do
+      difference = dodge - accuracy
+      chance = if difference > 0 do
+        chance + difference * 0.2
+      else
+        chance + difference * 0.3
+      end
+
+      :random.uniform(100) < trunc(chance)
+    else
+      false
+    end
+  end
+
+  def apply_ability(%Monster{} = monster, %Ability{properties: %{"dodgeable" => true}} = ability, %Monster{} = ability_user) do
+    if dodged?(monster, ability, ability_user) do
+      ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_dodged, messages: ability.properties["dodge_message"],
+                                                                                  user: ability_user,
+                                                                                  target: monster})
+      monster
+    else
+      ability = put_in(ability.properties["dodgeable"], false)
+      apply_ability(monster, ability, ability_user)
+    end
+  end
   def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
     ability = reduce_damage(ability, monster)
 

@@ -149,6 +149,13 @@ defmodule Monster do
         global_cooldown: 4,
         flags: [],
         properties: %{
+          "dodgeable" => true,
+          "accuracy_skill" => "melee",
+          "dodge_message" => %{
+            "target" => "You dodge {{user}}'s attack!",
+            "user" => "{{Target}} dodges your attack!",
+            "spectator" => "{{Target}} dodges {{user}}'s attack!"
+          },
           "instant_effects" => %{
             "damage" => %{
               "scaling" => %{
@@ -203,6 +210,13 @@ defmodule Monster do
         flags: [],
         global_cooldown: :weapon_speed,
         properties: %{
+          "dodgeable" => true,
+          "accuracy_skill" => weapon.accuracy_skill,
+          "dodge_message" => %{
+            "target" => "{{user}} swings at you with {{user:his/her/its}} #{weapon.name}, but you dodge!",
+            "user" => "You swing at {{target}} with your #{weapon.name}, but {{target:he/she/it}} dodges!",
+            "spectator" => "{{user}} swings at {{target}} with {{user:his/her/its}} #{weapon.name}, but they dodge!"
+          },
           "instant_effects" => %{
             "damage" => weapon.properties["damage"]
           },
@@ -987,6 +1001,41 @@ defmodule Monster do
                   %Monster{} = monster) do
 
     send_scroll(monster, messages["spectator"])
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:monster_dodged, messages: messages,
+                                    user: %Monster{pid: user_pid} = user,
+                                    target: %Monster{} = target},
+                  %Monster{pid: pid} = monster)
+                  when pid == user_pid do
+
+    message = interpolate(messages["user"], %{"user" => user, "target" => target}) 
+    send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:monster_dodged, messages: messages,
+                                    user: %Monster{} = user,
+                                    target: %Monster{pid: target_pid} = target},
+                  %Monster{pid: pid} = monster)
+                  when pid == target_pid do
+
+    message = interpolate(messages["target"], %{"user" => user, "target" => target}) 
+    send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:monster_dodged, messages: messages,
+                                    user: %Monster{} = user,
+                                    target: %Monster{} = target},
+                  %Monster{} = monster) do
+
+    message = interpolate(messages["spectator"], %{"user" => user, "target" => target}) 
+    send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
 
     {:noreply, monster}
   end
