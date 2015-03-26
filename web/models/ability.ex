@@ -272,7 +272,7 @@ defmodule Ability do
       ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_dodged, messages: ability.properties["dodge_message"],
                                                                                   user: ability_user,
                                                                                   target: monster})
-      monster
+      monster = put_in(monster.hate, HashDict.update(monster.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
     else
       ability = put_in(ability.properties["dodgeable"], false)
       apply_ability(monster, ability, ability_user)

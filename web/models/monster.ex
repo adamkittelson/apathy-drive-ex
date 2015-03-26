@@ -1011,7 +1011,7 @@ defmodule Monster do
                   %Monster{pid: pid} = monster)
                   when pid == user_pid do
 
-    message = interpolate(messages["user"], %{"user" => user, "target" => target}) 
+    message = interpolate(messages["user"], %{"user" => user, "target" => target})
     send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
 
     {:noreply, monster}
@@ -1023,7 +1023,7 @@ defmodule Monster do
                   %Monster{pid: pid} = monster)
                   when pid == target_pid do
 
-    message = interpolate(messages["target"], %{"user" => user, "target" => target}) 
+    message = interpolate(messages["target"], %{"user" => user, "target" => target})
     send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
 
     {:noreply, monster}
@@ -1034,7 +1034,7 @@ defmodule Monster do
                                     target: %Monster{} = target},
                   %Monster{} = monster) do
 
-    message = interpolate(messages["spectator"], %{"user" => user, "target" => target}) 
+    message = interpolate(messages["spectator"], %{"user" => user, "target" => target})
     send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
 
     {:noreply, monster}
@@ -1111,8 +1111,13 @@ defmodule Monster do
   end
 
   def handle_info(:calm_down, %Monster{hate: hate} = monster) do
+    monsters_in_room = ApathyDrive.PubSub.subscribers("rooms:#{monster.room_id}:monsters")
+                       |> Enum.into(HashSet.new)
+
     hate = hate
            |> HashDict.keys
+           |> Enum.into(HashSet.new)
+           |> HashSet.difference(monsters_in_room)
            |> Enum.reduce(hate, fn(enemy, new_hate) ->
                 current = HashDict.fetch!(new_hate, enemy)
                 if current > 10 do
