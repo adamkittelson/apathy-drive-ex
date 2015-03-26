@@ -46,13 +46,17 @@ defmodule Systems.Shop do
         Monster.send_scroll(monster, "<p>\"#{item}\" does not appear to be for sale here.</p>")
       %ItemTemplate{name: name, cost: cost} when cost > exp ->
           Monster.send_scroll(monster, "<p>#{name |> capitalize_first} costs #{cost} experience, you only have #{exp}.</p>")
-      %ItemTemplate{id: id, name: name, cost: cost} ->
-          monster = monster
-                    |> Map.put(:experience, monster.experience - cost)
-                    |> Monster.send_scroll("<p>You purchase #{name} for #{cost} experience.</p>")
+      %ItemTemplate{id: id, name: name, cost: cost, weight: weight} ->
+          if Monster.remaining_encumbrance(monster) >= weight do
+            monster = monster
+                      |> Map.put(:experience, monster.experience - cost)
+                      |> Monster.send_scroll("<p>You purchase #{name} for #{cost} experience.</p>")
 
-          ItemTemplate.spawn_item(id, monster)
-          monster
+            ItemTemplate.spawn_item(id, monster)
+            monster
+          else
+            Monster.send_scroll(monster, "<p>You don't have enough room in your inventory to carry #{name}.</p>")
+          end
     end
   end
 
