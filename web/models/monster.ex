@@ -146,6 +146,7 @@ defmodule Monster do
         command: "attack",
         kind:    "attack",
         required_skills: %{"melee" => 0},
+        global_cooldown: 1.2,
         flags: [],
         properties: %{
           "instant_effects" => %{
@@ -200,6 +201,7 @@ defmodule Monster do
         kind:    "attack",
         required_skills: weapon.required_skills,
         flags: [],
+        global_cooldown: weapon.speed,
         properties: %{
           "instant_effects" => %{
             "damage" => weapon.properties["damage"]

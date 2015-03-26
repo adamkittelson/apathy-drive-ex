@@ -13,6 +13,7 @@ defmodule Ability do
     field :properties,      ApathyDrive.JSONB
     field :keywords,        {:array, :string}, virtual: true
     field :flags,           {:array, :string}
+    field :global_cooldown, :any, virtual: true, default: 4
 
     timestamps
   end
@@ -231,7 +232,7 @@ defmodule Ability do
       send(self, :think)
 
       monster
-      |> Systems.Effect.add(%{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, 3)
+      |> Systems.Effect.add(%{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, ability.global_cooldown)
       |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
       |> Systems.Prompt.update
     end
