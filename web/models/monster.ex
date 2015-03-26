@@ -146,7 +146,7 @@ defmodule Monster do
         command: "attack",
         kind:    "attack",
         required_skills: %{"melee" => 0},
-        global_cooldown: 1.2,
+        global_cooldown: 4,
         flags: [],
         properties: %{
           "instant_effects" => %{
@@ -201,7 +201,7 @@ defmodule Monster do
         kind:    "attack",
         required_skills: weapon.required_skills,
         flags: [],
-        global_cooldown: weapon.speed,
+        global_cooldown: :weapon_speed,
         properties: %{
           "instant_effects" => %{
             "damage" => weapon.properties["damage"]
@@ -211,7 +211,8 @@ defmodule Monster do
             "user" => "You #{verb} {{target}} with your #{weapon.name} for {{amount}} damage!",
             "spectator" => "{{user}} #{Inflex.pluralize(verb)} {{target}} with {{user:his/her/its}} #{weapon.name} for {{amount}} damage!"
           },
-          "damage_type" => "normal"
+          "damage_type" => "normal",
+          "weapon_speed" => weapon.speed || 1150
         }
       }
     end)

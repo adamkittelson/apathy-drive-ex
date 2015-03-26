@@ -231,12 +231,22 @@ defmodule Ability do
       send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
       send(self, :think)
 
+      gc = global_cooldown(ability, monster)
+
       monster
-      |> Systems.Effect.add(%{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, ability.global_cooldown)
+      |> Systems.Effect.add(%{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
       |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
       |> Systems.Prompt.update
     end
   end
+
+  def global_cooldown(%Ability{global_cooldown: :weapon_speed} = ability, %Monster{} = monster) do
+    cost = (ability.properties["weapon_speed"] * 1000) / (((((monster.level * 5) + 45) * (Monster.modified_stat(monster, "agility") + 150)) * 1500) / 9000.0)
+
+    4 / (1000.0 / round(cost * ((trunc(trunc(Monster.current_encumbrance(monster) / Monster.max_encumbrance(monster)) * 100) / 2) + 75) / 100.0))
+  end
+  def global_cooldown(%Ability{global_cooldown: nil}, %Monster{} = monster), do: 4
+  def global_cooldown(%Ability{global_cooldown: gc}, %Monster{} = monster), do: gc
 
   def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
     ability = reduce_damage(ability, monster)

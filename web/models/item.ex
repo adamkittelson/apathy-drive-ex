@@ -27,6 +27,7 @@ defmodule Item do
     field :hit_verbs,             {:array, :string}, virtual: true
     field :accuracy_skill,        :string,  virtual: true
     field :weight,                :integer, virtual: true
+    field :speed,                 :integer, virtual: true
 
     timestamps
 

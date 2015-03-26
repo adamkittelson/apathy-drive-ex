@@ -13,7 +13,7 @@ defmodule ItemTemplate do
     field :hit_verbs,             {:array, :string}, default: []
     field :properties,            ApathyDrive.JSONB
     field :required_skills,       ApathyDrive.JSONB
-    field :speed,                 :float
+    field :speed,                 :integer
     field :accuracy_skill,        :string
     field :ac,                    :integer
     field :uses,                  :integer
