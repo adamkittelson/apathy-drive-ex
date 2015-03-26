@@ -175,33 +175,33 @@ defmodule MonsterTest do
     end
   end
 
-  with "a monster with 3 strength and 3 health" do
+  with "a level 1 monster with 3 health" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 3, health: 3}
+      Dict.put context, :monster, %Monster{level: 1, health: 3}
     end
 
-    should("have 33 max hp", context) do
-      assert Monster.max_hp(context.monster) == 33
+    should("have 9 max hp", context) do
+      assert Monster.max_hp(context.monster) == 9
     end
   end
 
-  with "a monster with 50 strength and 100 health" do
+  with "a level 20 monster with 100 health" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 50, health: 100}
+      Dict.put context, :monster, %Monster{level: 20, health: 100}
     end
 
-    should("have 1601 max hp", context) do
-      assert Monster.max_hp(context.monster) == 1601
+    should("have 313 max hp", context) do
+      assert Monster.max_hp(context.monster) == 313
     end
   end
 
-  with "a monster with 100 strength and 50 health" do
+  with "a level 50 monster with 200 health" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 100, health: 50}
+      Dict.put context, :monster, %Monster{level: 50, health: 200}
     end
 
-    should("have 1161 max hp", context) do
-      assert Monster.max_hp(context.monster) == 1161
+    should("have 1069 max hp", context) do
+      assert Monster.max_hp(context.monster) == 1069
     end
   end
 
