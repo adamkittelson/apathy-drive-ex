@@ -23,6 +23,7 @@ defmodule ItemTemplate do
     field :cost,                  :integer
     field :light,                 :integer
     field :always_lit,            :boolean
+    field :weight,                :integer
 
     timestamps
   end

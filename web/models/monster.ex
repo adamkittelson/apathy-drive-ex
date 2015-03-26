@@ -223,6 +223,17 @@ defmodule Monster do
     |> Enum.any?(&(&1["cooldown"] == :global))
   end
 
+  def max_encumbrance(%Monster{} = monster) do
+    modified_stat(monster, "strength") * 48
+  end
+
+  def current_encumbrance(%Monster{id: id}) do
+    ApathyDrive.PubSub.subscribers("monsters:#{id}:items")
+    |> Enum.reduce(0, fn(item, encumbrance) ->
+        encumbrance + Item.value(item).weight
+       end)
+  end
+
   def execute_command(monster, command, arguments) do
     GenServer.cast(monster, {:execute_command, command, arguments})
   end
@@ -337,6 +348,28 @@ defmodule Monster do
     else
       send_scroll(monster, "<p>You are carrying nothing.</p>")
     end
+
+    display_encumbrance(monster)
+  end
+
+  def display_encumbrance(%Monster{} = monster) do
+    current = current_encumbrance(monster)
+    max = max_encumbrance(monster)
+    percent = trunc(current / max) * 100
+
+    display_encumbrance(monster, current, max, percent)
+  end
+  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 17 do
+    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> None [#{percent}%]</p>")
+  end
+  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 34 do
+    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-green'>Light [#{percent}%]</span></p>")
+  end
+  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 67 do
+    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-yellow'>Medium [#{percent}%]</span></p>")
+  end
+  def display_encumbrance(%Monster{} = monster, current, max, percent) do
+    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-red'>Heavy [#{percent}%]</span></p>")
   end
 
   def effect_description(%Monster{effects: effects} = monster) do
