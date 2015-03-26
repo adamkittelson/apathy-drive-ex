@@ -404,12 +404,9 @@ defmodule Monster do
   end
 
   def max_hp(%Monster{} = monster) do
-    health   = modified_stat(monster, "health")
-    strength = modified_stat(monster, "strength")
+    health = modified_stat(monster, "health")
 
-    seed = trunc((health * 2 + strength) / 3)
-
-    trunc(seed * (11 + (seed / 10)))
+    round((health / 2) + (monster.level * 10) + ((health - 50) * monster.level) / 16.0)
   end
 
   def max_mana(%Monster{} = monster) do
