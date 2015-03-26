@@ -374,7 +374,7 @@ defmodule Monster do
   def display_encumbrance(%Monster{} = monster) do
     current = current_encumbrance(monster)
     max = max_encumbrance(monster)
-    percent = trunc(current / max) * 100
+    percent = trunc((current / max) * 100)
 
     display_encumbrance(monster, current, max, percent)
   end
