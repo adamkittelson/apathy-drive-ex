@@ -234,6 +234,10 @@ defmodule Monster do
        end)
   end
 
+  def remaining_encumbrance(%Monster{} = monster) do
+    max_encumbrance(monster) - current_encumbrance(monster)
+  end
+
   def execute_command(monster, command, arguments) do
     GenServer.cast(monster, {:execute_command, command, arguments})
   end

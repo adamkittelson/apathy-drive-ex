@@ -17,8 +17,12 @@ defmodule Commands.Get do
         nil ->
           Monster.send_scroll(monster, "<p>You don't see \"#{item}\" here.</p>")
         %Item{can_pick_up: true} = match ->
-          Item.to_monster_inventory(match.pid, monster)
-          Monster.send_scroll(monster, "<p>You get #{match.name}.</p>")
+          if Monster.remaining_encumbrance(monster) >= match.weight do
+            Item.to_monster_inventory(match.pid, monster)
+            Monster.send_scroll(monster, "<p>You get #{match.name}.</p>")
+          else
+            Monster.send_scroll(monster, "<p>#{capitalize_first(match.name)} is too heavy.</p>")
+          end
         %Item{} = match ->
           Monster.send_scroll(monster, "<p>#{match.name |> capitalize_first} cannot be picked up.</p>")
       end
