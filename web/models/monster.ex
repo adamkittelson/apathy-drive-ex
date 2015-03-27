@@ -143,7 +143,7 @@ defmodule Monster do
     [
       %Ability{
         name:    "attack",
-        command: "attack",
+        command: "a",
         kind:    "attack",
         required_skills: %{"melee" => 0},
         global_cooldown: 4,
@@ -204,7 +204,7 @@ defmodule Monster do
 
       %Ability{
         name:    "attack",
-        command: "attack",
+        command: "a",
         kind:    "attack",
         required_skills: weapon.required_skills,
         flags: [],
@@ -661,8 +661,7 @@ defmodule Monster do
 
   def aggro_targets(%Monster{hate: hate, pid: pid} = monster) do
     monster
-    |> find_room
-    |> Room.monsters(pid)
+    |> Room.monsters
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
          threat = HashDict.get(hate, potential_target, 0)
          if threat > 0 do
@@ -1071,6 +1070,10 @@ defmodule Monster do
     if power_gain > 0 do
       send_scroll(monster, "<p>You gain #{power_gain} development points.</p>")
     end
+
+    monster = monster
+              |> Systems.Level.advance
+              |> Monster.save
 
     PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
 

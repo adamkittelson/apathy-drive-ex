@@ -378,6 +378,8 @@ defmodule Spirit do
   def handle_info({:reward_possessor, exp}, spirit) do
     spirit = spirit
              |> Map.put(:experience, spirit.experience + exp)
+             |> Systems.Level.advance
+             |> Spirit.save
 
     {:noreply, spirit}
   end

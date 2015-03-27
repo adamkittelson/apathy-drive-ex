@@ -113,6 +113,11 @@ defmodule Room do
     |> Enum.map(&value/1)
   end
 
+  def monsters(%Monster{room_id: room_id, pid: pid}) do
+    PubSub.subscribers("rooms:#{room_id}:monsters")
+    |> Enum.reject(&(&1 == pid))
+  end
+
   def monsters(%Room{} = room, monster \\ nil) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.reject(&(&1 == monster))
