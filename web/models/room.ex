@@ -151,7 +151,7 @@ defmodule Room do
   end
 
   def look(%Room{} = room, %Spirit{} = spirit) do
-    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room)}#{look_directions(room)}</div>)
+    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}</div>)
 
     Spirit.send_scroll spirit, html
   end
@@ -160,7 +160,7 @@ defmodule Room do
     light = light_level(room, monster)
 
     html = if light > -200 and light < 200 do
-      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster.pid)}#{look_directions(room)}#{light(room, monster)}</div>)
+      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light(room, monster)}</div>)
     else
       "<div class='room'>#{light(room, monster)}</div>"
     end
@@ -244,8 +244,22 @@ defmodule Room do
     end
   end
 
-  def look_monsters(%Room{} = room, monster \\ nil) do
-    monsters = monsters(room, monster)
+  def look_monsters(%Room{} = room, %Monster{} = monster) do
+    monsters = monsters(monster)
+               |> Enum.map(&Monster.value/1)
+               |> Enum.map(&Monster.look_name/1)
+               |> Enum.join("<span class='magenta'>, </span>")
+
+    case(monsters) do
+      "" ->
+        ""
+      monsters ->
+        "<div class='monsters'><span class='dark-magenta'>Also here:</span> #{monsters}<span class='dark-magenta'>.</span></div>"
+    end
+  end
+
+  def look_monsters(%Room{} = room, nil) do
+    monsters = monsters(room, nil)
                |> Enum.map(&Monster.value/1)
                |> Enum.map(&Monster.look_name/1)
                |> Enum.join("<span class='magenta'>, </span>")
