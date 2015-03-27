@@ -9,7 +9,7 @@ defmodule Commands.List do
         Systems.Shop.list(spirit, room)
       %Room{trainable_skills: skills} = room when is_list(skills) ->
         Systems.Trainer.list(spirit, room)
-      true ->
+      _ ->
         Spirit.send_scroll(spirit, "<p><span class='red'>You cannot LIST if you are not in a shop!</span></p>")
     end
   end
@@ -20,7 +20,7 @@ defmodule Commands.List do
         Systems.Shop.list(monster, room)
       %Room{trainable_skills: skills} = room when is_list(skills) ->
         Systems.Trainer.list(monster, room)
-      true ->
+      _ ->
         Monster.send_scroll(monster, "<p><span class='red'>You cannot LIST if you are not in a shop!</span></p>")
     end
   end
