@@ -69,8 +69,13 @@ defmodule Monster do
               |> Map.put(:pid, self)
 
     :global.register_name(:"monster_#{monster.id}", self)
+    Process.register(self, :"monster_#{monster.id}")
 
     send(self, :set_abilities)
+
+    :ets.new(:"monster_#{monster.id}", [:named_table, :set, :public])
+
+    :ets.insert(:"monster_#{monster.id}", {self, monster})
 
     {:ok, monster}
   end
@@ -257,8 +262,11 @@ defmodule Monster do
     GenServer.cast(monster, {:execute_command, command, arguments})
   end
 
-  def value(monster) do
-    GenServer.call(monster, :value)
+  def value(monster_pid) do
+    {:registered_name, table} = Process.info(monster_pid, :registered_name)
+
+    [{^monster_pid, %Monster{} = monster}] = :ets.lookup(table, monster_pid)
+    monster
   end
 
   def insert(%Monster{id: nil} = monster) do
@@ -266,9 +274,10 @@ defmodule Monster do
   end
   def insert(%Monster{} = monster), do: monster
 
-  def save(monster) when is_pid(monster), do: monster |> value |> save
   def save(%Monster{id: id} = monster) when is_integer(id) do
-    Repo.update(monster)
+    monster = Repo.update(monster)
+    :ets.insert(:"monster_#{id}", {self, monster})
+    monster
   end
   def save(%Monster{} = monster), do: monster
 
