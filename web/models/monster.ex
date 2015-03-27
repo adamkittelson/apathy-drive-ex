@@ -602,7 +602,7 @@ defmodule Monster do
                  })
               |> capitalize_first
 
-    ApathyDrive.Endpoint.broadcast! "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
   end
 
   def display_exit_message(%Room{} = room, monster) when is_pid(monster) do
@@ -623,7 +623,7 @@ defmodule Monster do
                  })
               |> capitalize_first
 
-    ApathyDrive.Endpoint.broadcast! "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
   end
 
   defp regen_rate(seed) when is_integer(seed) do
@@ -1135,6 +1135,12 @@ defmodule Monster do
 
   def handle_info(:set_abilities, monster) do
     {:noreply, set_abilities(monster) }
+  end
+
+  def handle_info({:socket_broadcast, message}, monster) do
+    Monster.send_scroll(monster, message.payload.html)
+
+    {:noreply, monster}
   end
 
   def handle_info(_message, monster) do
