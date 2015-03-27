@@ -593,6 +593,17 @@ defmodule Monster do
   def evil?(%Monster{}), do: false
   def neutral?(%Monster{} = monster), do: !good?(monster) and !evil?(monster)
 
+  def get_alignment(%Monster{} = monster) do
+    cond do
+      good?(monster) ->
+        "good"
+      evil?(monster) ->
+        "evil"
+      true ->
+        "neutral"
+    end
+  end
+
   def display_enter_message(%Room{} = room, monster) when is_pid(monster) do
     display_enter_message(%Room{} = room, Monster.value(monster))
   end
@@ -1148,6 +1159,16 @@ defmodule Monster do
 
   def handle_info({:socket_broadcast, message}, monster) do
     Monster.send_scroll(monster, message.payload.html)
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:monster_entered, intruder, intruder_alignment}, monster) do
+    monster = Systems.Aggression.react(%{monster: monster, alignment: Monster.get_alignment(monster)}, %{intruder: intruder, alignment: intruder_alignment})
+
+    2000
+    |> :random.uniform
+    |> :erlang.send_after(self, :think)
 
     {:noreply, monster}
   end

@@ -1,6 +1,5 @@
 defmodule ApathyDrive.LairSpawning do
 
-
   def spawn_lair(room) do
     if room.lair_size > (room.id |> Room.spawned_monsters |> length) do
       monster_templates = eligible_monsters(room)
@@ -8,8 +7,6 @@ defmodule ApathyDrive.LairSpawning do
         monster_template = select_lair_monster(monster_templates)
 
         monster = MonsterTemplate.spawn_monster(monster_template, room)
-
-        Monster.lair_id(monster, room.id)
 
         ApathyDrive.PubSub.subscribe(monster, "rooms:#{room.id}:spawned_monsters")
 

@@ -123,6 +123,7 @@ defmodule MonsterTemplate do
               |> Map.put(:id, nil)
               |> Map.put(:alignment, alignment(monster_template.alignment))
               |> Map.put(:room_id, room.id)
+              |> Map.put(:lair_id, room.id)
               |> Map.put(:skills, skills)
 
     monster = monster
