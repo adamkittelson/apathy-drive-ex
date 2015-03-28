@@ -20,18 +20,19 @@ defmodule Room do
     field :lair_frequency,        :integer
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :permanent_npc,         :integer
-    field :room_ability,          :string
     field :start_room,            :boolean, default: false
     field :shop_items,            {:array, :integer}
     field :trainable_skills,      {:array, :string}
     field :exits,                 ApathyDrive.JSONB
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
+    field :room_ability,          :any, virtual: true
 
     timestamps
 
-    has_many :monsters, Monster
-    has_many :items, Item
+    has_many   :monsters, Monster
+    has_many   :items,    Item
+    belongs_to :ability,  Ability
   end
 
   def init(%Room{} = room) do
@@ -53,6 +54,14 @@ defmodule Room do
     if room.placed_items |> Enum.any? do
       PubSub.subscribe(self, "rooms:placed_items")
       send(self, :spawn_placed_items)
+    end
+
+    room = if room.ability_id do
+      PubSub.subscribe(self, "rooms:abilities")
+
+      Map.put(room, :room_ability, ApathyDrive.Repo.get(Ability, room.ability_id))
+    else
+      room
     end
 
     {:ok, room}
@@ -556,6 +565,18 @@ defmodule Room do
 
   def handle_info({:mirror_lock, room_exit}, room) do
     room = lock!(room, room_exit["direction"])
+    {:noreply, room}
+  end
+
+  def handle_info(:execute_room_ability, %Room{room_ability: nil} = room) do
+    ApathyDrive.PubSub.unsubscribe(self, "rooms:abilities")
+    
+    {:noreply, room}
+  end
+  
+  def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
+    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:monsters", {:execute_room_ability, ability})
+
     {:noreply, room}
   end
 

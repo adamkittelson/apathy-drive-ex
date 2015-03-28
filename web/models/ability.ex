@@ -15,6 +15,8 @@ defmodule Ability do
     field :flags,           {:array, :string}
     field :global_cooldown, :any, virtual: true, default: 4
 
+    has_many :rooms, Room
+
     timestamps
   end
 
@@ -233,10 +235,12 @@ defmodule Ability do
 
       gc = global_cooldown(ability, monster)
 
-      monster
-      |> Systems.Effect.add(%{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
-      |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
-      |> Systems.Prompt.update
+      if gc do
+        Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
+      else
+        monster
+      end |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
+          |> Systems.Prompt.update
     end
   end
 
@@ -245,7 +249,6 @@ defmodule Ability do
 
     4 / (1000.0 / round(cost * ((trunc(trunc(Monster.current_encumbrance(monster) / Monster.max_encumbrance(monster)) * 100) / 2) + 75) / 100.0))
   end
-  def global_cooldown(%Ability{global_cooldown: nil}, %Monster{}), do: 4
   def global_cooldown(%Ability{global_cooldown: gc}, %Monster{}), do: gc
 
   def dodged?(%Monster{} = monster, %Ability{properties: %{"accuracy_skill" => accuracy_skill}}, %Monster{} = attacker) do
@@ -362,7 +365,7 @@ defmodule Ability do
   end
 
   def display_cast_message(%Monster{} = monster,
-                           %Ability{} = ability,
+                           %Ability{properties: %{"cast_message" => _}} = ability,
                            %Monster{} = ability_user) do
 
     cast_messages = cast_messages(ability, ability_user, monster)
@@ -379,6 +382,8 @@ defmodule Ability do
       Monster.send_scroll(monster, cast_messages["target"])
     end
   end
+
+  def display_cast_message(%Monster{} = monster, %Ability{}, %Monster{}), do: monster
 
   def add_duration_effects(%Monster{} = monster,
                            %Ability{

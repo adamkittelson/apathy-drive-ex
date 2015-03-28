@@ -112,14 +112,28 @@ defmodule Systems.Script do
     end
   end
 
-  def execute_instruction(%{"add_experience" => experience}, monster, script) do
+  def execute_instruction(%{"add_experience" => exp}, monster, script) do
     old_power = Systems.Trainer.total_power(monster)
-    Components.Experience.add(monster, experience)
+
+    monster = monster
+              |> Map.put(:experience, monster.experience + exp)
+
     new_power = Systems.Trainer.total_power(monster)
+
     power_gain = new_power - old_power
-    if power_gain > 0 do
-      Monster.send_scroll(monster, "<p>Your #{Components.Name.value(monster)} gains #{power_gain} power.</p>")
+
+    if exp > 0 do
+      Monster.send_scroll(monster, "<p>You gain #{exp} experience.</p>")
     end
+
+    if power_gain > 0 do
+      Monster.send_scroll(monster, "<p>You gain #{power_gain} development points.</p>")
+    end
+
+    monster = monster
+              |> Systems.Level.advance
+              |> Monster.save
+
     execute_script(script, monster)
   end
 
@@ -134,15 +148,15 @@ defmodule Systems.Script do
   end
 
   def execute_instruction(%{"random" => scripts}, monster, script) do
-    :random.seed(:os.timestamp)
     roll = :random.uniform(100)
 
     number = scripts
             |> Map.keys
+            |> Enum.map(&String.to_integer/1)
             |> Enum.sort
             |> Enum.find(&(&1 >= roll))
 
-    execute_script(scripts[number], monster)
+    execute_script(scripts["#{number}"], monster)
 
     execute_script(script, monster)
   end

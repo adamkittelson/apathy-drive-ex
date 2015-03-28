@@ -1142,6 +1142,12 @@ defmodule Monster do
     {:noreply, monster}
   end
 
+  def handle_info({:execute_room_ability, ability}, monster) do
+    ability = Map.put(ability, :global_cooldown, nil)
+
+    {:noreply, Ability.execute(monster, ability, monster)}
+  end
+
   def handle_info({:execute_ability, ability}, monster) do
     {:noreply, Ability.execute(monster, ability, monster)}
   end
