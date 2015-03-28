@@ -283,7 +283,9 @@ defmodule Item do
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %Item{timers: timers} = item) do
-    new_ref = :erlang.start_timer(time, self, {name, time, function})
+    jitter = trunc(time / 2) + :random.uniform(time)
+
+    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
 
     timers = Map.put(timers, name, new_ref)
 

@@ -58,7 +58,7 @@ defmodule Systems.AI do
   end
 
   def move(monster) do
-    if !Monster.aggro_target(monster) do
+    if !Monster.on_ai_move_cooldown?(monster) && !Monster.aggro_target(monster) do
 
       room = Monster.find_room(monster)
       roll = :random.uniform(100)

@@ -11,11 +11,6 @@ defmodule ApathyDrive.Ticks do
     state = state
             |> TimerManager.call_every({:idle, 1_000, &idle/0})
             |> TimerManager.call_every({:hints, 60_000, &hints/0})
-            |> TimerManager.call_every({:spawning, 60_000, &spawning/0})
-            |> TimerManager.call_every({:monster_regen, 5_000, &monster_regen/0})
-            |> TimerManager.call_every({:monster_ai, 5_000, &monster_ai/0})
-            |> TimerManager.call_every({:increase_da_peace, 10_000, &increase_da_peace/0})
-            |> TimerManager.call_every({:trigger_room_abilities, 5_000, &trigger_room_abilities/0})
 
     {:ok, state}
   end
@@ -28,30 +23,10 @@ defmodule ApathyDrive.Ticks do
     PubSub.broadcast!("spirits:hints",  :display_hint)
   end
 
-  def spawning do
-    PubSub.broadcast!("rooms:lairs", {:spawn_monsters, Date.now |> Date.convert(:secs)})
-    PubSub.broadcast!("rooms:permanent_npcs", :spawn_permanent_npc)
-    PubSub.broadcast!("rooms:placed_items", :spawn_placed_items)
-  end
-
-  def monster_regen do
-    PubSub.broadcast!("monsters", :regen)
-  end
-
-  def monster_ai do
-    PubSub.broadcast!("monsters", :think)
-  end
-
-  def increase_da_peace do
-    PubSub.broadcast!("monsters", :calm_down)
-  end
-
-  def trigger_room_abilities do
-    PubSub.broadcast!("rooms:abilities", :execute_room_ability)
-  end
-
   def handle_info({:timeout, _ref, {name, time, function}}, %{timers: timers} = state) do
-    new_ref = :erlang.start_timer(time, self, {name, time, function})
+    jitter = trunc(time / 2) + :random.uniform(time)
+
+    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
 
     timers = Map.put(timers, name, new_ref)
 

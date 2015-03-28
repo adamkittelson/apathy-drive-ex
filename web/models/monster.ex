@@ -77,6 +77,11 @@ defmodule Monster do
 
     :ets.insert(:"monster_#{monster.id}", {self, monster})
 
+    monster = monster
+              |> TimerManager.call_every({:monster_ai,    5_000, fn -> send(self, :think) end})
+              |> TimerManager.call_every({:monster_regen, 5_000, fn -> send(self, :regen) end})
+              |> TimerManager.call_every({:calm_down,    10_000, fn -> send(self, :calm_down) end})
+
     {:ok, monster}
   end
 
@@ -243,6 +248,12 @@ defmodule Monster do
     |> Enum.any?(&(&1["cooldown"] == :global))
   end
 
+  def on_ai_move_cooldown?(%Monster{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(&1["cooldown"] == :ai_movement))
+  end
+
   def max_encumbrance(%Monster{} = monster) do
     modified_stat(monster, "strength") * 48
   end
@@ -348,7 +359,9 @@ defmodule Monster do
 
     PubSub.subscribe(self, "rooms:#{room_id}")
     PubSub.subscribe(self, "rooms:#{room_id}:monsters")
-    Map.put(monster, :room_id, room_id)
+    monster
+    |> Map.put(:room_id, room_id)
+    |> Systems.Effect.add(%{"cooldown" => :ai_movement}, 30)
   end
 
   def inventory(%Monster{id: id}) do
@@ -978,7 +991,9 @@ defmodule Monster do
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %Monster{timers: timers} = monster) do
-    new_ref = :erlang.start_timer(time, self, {name, time, function})
+    jitter = trunc(time / 2) + :random.uniform(time)
+
+    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
 
     timers = Map.put(timers, name, new_ref)
 

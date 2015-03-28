@@ -41,25 +41,36 @@ defmodule Room do
     send(self, :load_monsters)
     send(self, :load_items)
 
-    if room.lair_monsters do
+    room = if room.lair_monsters do
       PubSub.subscribe(self, "rooms:lairs")
       send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)})
+      TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)}) end})
+    else
+      room
     end
 
-    if room.permanent_npc do
+    room = if room.permanent_npc do
       PubSub.subscribe(self, "rooms:permanent_npcs")
       send(self, :spawn_permanent_npc)
+      TimerManager.call_every(room, {:spawn_permanent_npc, 60_000, fn -> send(self, :spawn_permanent_npc) end})
+    else
+      room
     end
 
-    if room.placed_items |> Enum.any? do
+    room = if room.placed_items |> Enum.any? do
       PubSub.subscribe(self, "rooms:placed_items")
       send(self, :spawn_placed_items)
+      TimerManager.call_every(room, {:spawn_placed_items, 60_000, fn -> send(self, :spawn_placed_items) end})
+    else
+      room
     end
 
     room = if room.ability_id do
       PubSub.subscribe(self, "rooms:abilities")
 
-      Map.put(room, :room_ability, ApathyDrive.Repo.get(Ability, room.ability_id))
+      room
+      |> Map.put(:room_ability, ApathyDrive.Repo.get(Ability, room.ability_id))
+      |> TimerManager.call_every({:execute_room_ability, 5_000, fn -> send(self, :execute_room_ability) end})
     else
       room
     end
@@ -570,10 +581,10 @@ defmodule Room do
 
   def handle_info(:execute_room_ability, %Room{room_ability: nil} = room) do
     ApathyDrive.PubSub.unsubscribe(self, "rooms:abilities")
-    
+
     {:noreply, room}
   end
-  
+
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
     ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:monsters", {:execute_room_ability, ability})
 
@@ -581,7 +592,9 @@ defmodule Room do
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %Room{timers: timers} = room) do
-    new_ref = :erlang.start_timer(time, self, {name, time, function})
+    jitter = trunc(time / 2) + :random.uniform(time)
+
+    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
 
     timers = Map.put(timers, name, new_ref)
 
