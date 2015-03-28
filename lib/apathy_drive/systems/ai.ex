@@ -2,9 +2,9 @@ defmodule Systems.AI do
 
   def think(%Monster{} = monster) do
     if Monster.on_global_cooldown?(monster) do
-      #move(monster)
+      move(monster)
     else
-      heal(monster) || bless(monster) || attack(monster)# || move(monster)
+      heal(monster) || bless(monster) || attack(monster) || move(monster)
     end
   end
 
@@ -58,26 +58,16 @@ defmodule Systems.AI do
   end
 
   def move(monster) do
-    if !Components.Combat.in_combat?(monster) do
-      :random.seed(:os.timestamp)
+    if !Monster.aggro_target(monster) do
 
-      room = Parent.of(monster)
+      room = Monster.find_room(monster)
       roll = :random.uniform(100)
 
-      if room && (roll < trunc(Components.Module.value(monster).chance_to_follow / 5)) do
+      if room && (roll < trunc(monster.chance_to_follow / 5)) do
+        direction = Room.random_direction(room)
 
-        if !Entity.has_component?(room, Components.PermanentNPC) or
-          !String.contains?(Components.Name.value(monster), Components.PermanentNPC.value(room)) do
-
-            direction = room
-                        |> Components.Exits.value
-                        |> Enum.map(&(Map.get(&1, "direction")))
-                        |> Enum.shuffle
-                        |> List.first
-
-            if direction do
-              Systems.Room.move(Possession.possessor(monster), monster, direction)
-            end
+        if direction do
+          Monster.execute_command(self, direction, [])
         end
       end
     end
