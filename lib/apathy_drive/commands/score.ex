@@ -11,7 +11,7 @@ defmodule Commands.Score do
 
   def execute(%Spirit{name: name} = spirit, _arguments) do
     spirit
-    |> Spirit.send_scroll("<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{name |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{spirit.level}</span></p>")
+    |> Spirit.send_scroll("<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{name |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{spirit.experience}</span></p>")
     |> Spirit.send_scroll("<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{spirit.level}</span></p>")
   end
 
