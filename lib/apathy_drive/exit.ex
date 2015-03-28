@@ -181,7 +181,7 @@ defmodule ApathyDrive.Exit do
         direction = get_direction_by_destination(room, left_to)
         if direction do
           Monster.display_exit_message(room, monster, direction)
-          #Systems.Monster.pursue(room, monster, direction)
+          ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room.id}:monsters", {:monster_left, self, direction}
         else
           Monster.display_exit_message(room, monster)
         end

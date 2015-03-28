@@ -679,7 +679,7 @@ defmodule Monster do
     |> Enum.sum
   end
 
-  def aggro_targets(%Monster{hate: hate, pid: pid} = monster) do
+  def local_hated_targets(%Monster{hate: hate, pid: pid} = monster) do
     monster
     |> Room.monsters
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
@@ -692,8 +692,31 @@ defmodule Monster do
        end)
   end
 
+  def global_hated_targets(%Monster{hate: hate, pid: pid} = monster) do
+    hate
+    |> HashDict.keys
+    |> Enum.reduce(%{}, fn(potential_target, targets) ->
+         threat = HashDict.get(hate, potential_target, 0)
+         if threat > 0 do
+           Map.put(targets, threat, potential_target)
+         else
+           targets
+         end
+       end)
+  end
+
   def aggro_target(%Monster{} = monster) do
-    targets = aggro_targets(monster)
+    targets = local_hated_targets(monster)
+
+    top_threat = targets
+                 |> Map.keys
+                 |> top_threat
+
+    Map.get(targets, top_threat)
+  end
+
+  def most_hated_target(%Monster{} = monster) do
+    targets = global_hated_targets(monster)
 
     top_threat = targets
                  |> Map.keys
@@ -1171,6 +1194,15 @@ defmodule Monster do
     |> :erlang.send_after(self, :think)
 
     {:noreply, monster}
+  end
+
+  def handle_info({:monster_left, coward, direction}, monster) do
+    if Monster.most_hated_target(monster) == coward and :random.uniform(100) < monster.chance_to_follow do
+      monster = ApathyDrive.Exit.move(monster, direction)
+      {:noreply, monster}
+    else
+      {:noreply, monster}
+    end
   end
 
   def handle_info(_message, monster) do
