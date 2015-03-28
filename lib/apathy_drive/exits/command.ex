@@ -53,11 +53,11 @@ defmodule ApathyDrive.Exits.Command do
     monster
   end
 
-  def look(%Spirit{} = spirit, %Room{}, _room_exit) do
+  def look(%Room{}, %Spirit{} = spirit, _room_exit) do
     Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
   end
 
-  def look(%Monster{} = monster, %Room{}, _room_exit) do
+  def look(%Room{}, %Monster{} = monster, _room_exit) do
     Monster.send_scroll(monster, "<p>There is no exit in that direction.</p>")
   end
 

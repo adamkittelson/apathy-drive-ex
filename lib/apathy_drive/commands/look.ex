@@ -18,13 +18,9 @@ defmodule Commands.Look do
         target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(spirit, target)
         target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
-          Spirit.send_scroll "<p>#{Components.Description.value(target)}</p>"
+          Spirit.send_scroll spirit, "<p>#{target}</p>"
         target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
-          if Entity.has_component?(target, Components.Description) do
-            Spirit.send_scroll "<p>#{Components.Description.value(target)}</p>"
-          else
-            Spirit.send_scroll "<p>#{Components.Module.value(target).description}</p>"
-          end
+          Spirit.send_scroll spirit, "<p>#{target.description}</p>"
       true ->
         Spirit.send_scroll(spirit, "<p>You do not notice that here.</p>")
       end
