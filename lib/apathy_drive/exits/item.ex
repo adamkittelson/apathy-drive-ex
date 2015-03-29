@@ -1,83 +1,38 @@
 defmodule ApathyDrive.Exits.Item do
   use ApathyDrive.Exit
 
-  def move(current_room, %Spirit{} = spirit, room_exit),  do: super(current_room, spirit, room_exit)
-  def move(nil, monster, current_room, room_exit) do
-    cond do
-      Systems.Item.has_item?(monster, room_exit["item"]) ->
-        item = monster
-              |> Components.Items.get_items
-              |> Enum.find(fn(item) ->
-                   Components.Name.value(item) == room_exit["item"]
-                 end)
+  def move(%Room{} = room, %Spirit{} = spirit, room_exit),  do: super(room, spirit, room_exit)
+  def move(%Room{} = room, %Monster{} = monster, %{"item" => item_template_id} = room_exit) do
+    if item = get_item(monster, item_template_id) do
+      #send(item.pid, :use)
 
-        destination = Room.find(room_exit["destination"])
-        Components.Monsters.remove_monster(current_room, monster)
-        Components.Monsters.add_monster(destination, monster)
-        if Entity.has_component?(monster, Components.ID) do
-          Entities.save!(destination)
-          Entities.save!(current_room)
-        end
-        Components.Uses.use!(item)
-        Entities.save(monster)
+      destination = Room.find(room_exit["destination"])
+                    |> Room.value
 
-        Systems.Monster.observers(current_room, monster)
-        |> Enum.each(fn(observer) ->
-          Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
-        end)
+      Room.send_scroll(destination, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
 
-        Systems.Monster.observers(destination, monster)
-        |> Enum.each(fn(observer) ->
-          Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
-        end)
+      monster = monster
+                |> Monster.set_room_id(room_exit["destination"])
+                |> Monster.save
 
-        Systems.Aggression.monster_entered(monster, destination)
+      Monster.send_scroll(monster, "<p><span class='yellow'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
 
-        Monster.pursue(current_room, monster, room_exit["direction"])
-      true ->
-        Monster.send_scroll(monster, "<p><span class='yellow'>#{room_exit["failure_message"]}</span></p>")
+      Room.look(destination, monster)
+
+      Room.send_scroll(room, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
+      monster
+    else
+      Monster.send_scroll(monster, "<p><span class='yellow'>#{room_exit["failure_message"]}</span></p>")
     end
+
   end
 
-  def move(spirit, monster, current_room, room_exit) do
-    cond do
-      Systems.Item.has_item?(monster, room_exit["item"]) ->
-        item = monster
-              |> Components.Items.get_items
-              |> Enum.find(fn(item) ->
-                   Components.Name.value(item) == room_exit["item"]
-                 end)
-
-        destination = Room.find(room_exit["destination"])
-        Components.Monsters.remove_monster(current_room, monster)
-        Components.Monsters.add_monster(destination, monster)
-        Components.Characters.remove_character(current_room, spirit)
-        Components.Characters.add_character(destination, spirit)
-        Entities.save!(destination)
-        Entities.save!(current_room)
-        Monster.send_scroll(monster, "<p><span class='yellow'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
-        Components.Uses.use!(item)
-        Entities.save!(spirit)
-        Entities.save(monster)
-
-        Systems.Monster.observers(current_room, monster)
-        |> Enum.each(fn(observer) ->
-          Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
-        end)
-
-        Systems.Monster.observers(destination, monster)
-        |> Enum.each(fn(observer) ->
-          Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
-        end)
-
-        Systems.Aggression.monster_entered(monster, destination)
-
-        Spirit.deactivate_hint(spirit, "movement")
-        Systems.Room.display_room_in_scroll(spirit, monster, destination)
-        Monster.pursue(current_room, monster, room_exit["direction"])
-      true ->
-        Monster.send_scroll(monster, "<p><span class='yellow'>#{room_exit["failure_message"]}</span></p>")
-    end
+  def get_item(%Monster{id: id}, item_template_id) do
+    ApathyDrive.PubSub.subscribers("monsters:#{id}:items")
+    |> Enum.map(&Item.value/1)
+    |> Enum.find(fn(%Item{} = item) ->
+         item.item_template_id == item_template_id
+       end)
   end
 
 end

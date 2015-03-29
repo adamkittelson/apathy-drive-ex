@@ -68,7 +68,9 @@ defmodule Item do
   end
 
   def value(item) do
-    GenServer.call(item, :value)
+    if Process.alive?(item) do
+      GenServer.call(item, :value)
+    end
   end
 
   def to_monster_inventory(item, %Monster{} = monster) do
