@@ -27,6 +27,7 @@ defmodule Room do
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
+    field :items_on_floor,        :any, virtual: true, default: []
 
     timestamps
 
@@ -129,8 +130,7 @@ defmodule Room do
 
   # Value functions
   def items(%Room{} = room) do
-    PubSub.subscribers("rooms:#{room.id}:items")
-    |> Enum.map(&value/1)
+    room.items_on_floor
   end
 
   def monsters(%Monster{room_id: room_id, pid: pid}) do
@@ -247,8 +247,8 @@ defmodule Room do
   end
 
   def placed_item_present?(%Room{} = room, item_template_id) do
-    PubSub.subscribers("rooms:#{room.id}:items")
-    |> Enum.map(&(Item.value(&1).item_template_id))
+    room.items_on_floor
+    |> Enum.map(&(&1.item_template_id))
     |> Enum.member?(item_template_id)
   end
 
@@ -425,13 +425,24 @@ defmodule Room do
   end
 
   def handle_info(:spawn_placed_items, room) do
-    room.placed_items
-    |> Enum.reject(&(placed_item_present?(room, &1)))
-    |> Enum.each(fn(item_template_id) ->
-         it = ItemTemplate.find(item_template_id)
+    room = room.placed_items
+           |> Enum.reject(&(placed_item_present?(room, &1)))
+           |> Enum.reduce(room, fn(item_template_id, updated_room) ->
+                item = item_template_id
+                       |> ItemTemplate.find
+                       |> ItemTemplate.spawn_item
 
-         ItemTemplate.spawn_item(it, room)
-       end)
+                if item do
+
+                  item = item
+                         |> Map.put(:room_id, room.id)
+                         |> Item.save
+
+                  put_in(updated_room.items_on_floor, [item | updated_room.items_on_floor])
+                else
+                  updated_room
+                end
+              end)
 
     {:noreply, room}
   end
@@ -451,13 +462,14 @@ defmodule Room do
   def handle_info(:load_items, room) do
     query = from i in assoc(room, :items), select: i.id
 
-    query
-    |> ApathyDrive.Repo.all
-    |> Enum.each(fn(item_id) ->
-         Item.find(item_id)
-       end)
+    items = query
+            |> ApathyDrive.Repo.all
+            |> Enum.map(fn(item_id) ->
+                 Item.load(item_id)
+               end)
+            |> Enum.reject(&(&1 == nil))
 
-    {:noreply, room}
+    {:noreply, put_in(room.items_on_floor, items)}
   end
 
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do

@@ -10,7 +10,7 @@ defmodule Commands.Remove do
 
   def execute(%Monster{} = monster, arguments) do
     item = Enum.join(arguments, " ")
-    case Systems.Match.one(Monster.equipped_items(monster), :name_contains, item) do
+    case Systems.Match.one(monster.equipment |> Map.values, :name_contains, item) do
       nil ->
         Monster.send_scroll(monster, "<p>You don't have \"#{item}\" equipped.</p>")
       match ->

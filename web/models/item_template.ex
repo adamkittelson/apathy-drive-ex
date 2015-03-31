@@ -64,12 +64,6 @@ defmodule ItemTemplate do
     end
   end
 
-  def spawn_item(item_template_id, %Monster{} = monster) when is_integer(item_template_id) do
-    item_template_id
-    |> find
-    |> spawn_item(monster)
-  end
-
   def spawn_item(item_template, %Monster{} = monster) do
     GenServer.call(item_template, :spawn_item)
     |> Item.to_monster_inventory(monster)
@@ -78,6 +72,16 @@ defmodule ItemTemplate do
   def spawn_item(item_template, %Room{} = room) do
     GenServer.call(item_template, :spawn_item)
     |> Item.to_room(room)
+  end
+
+  def spawn_item(item_template_id) when is_integer(item_template_id) do
+    item_template_id
+    |> find
+    |> spawn_item
+  end
+
+  def spawn_item(item_template) do
+    GenServer.call(item_template, :spawn_item)
   end
 
   def skill_too_low?(%Monster{}, %{required_skills: nil}), do: false
@@ -118,15 +122,11 @@ defmodule ItemTemplate do
            |> Map.put(:id, nil)
            |> Item.insert
 
-    worker_id = :"item_#{item.id}"
+    # if item_template.always_lit do
+    #   Item.light(pid)
+    # end
 
-    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Item, item, []]}, :transient, 5000, :worker, [Item]})
-
-    if item_template.always_lit do
-      Item.light(pid)
-    end
-
-    {:reply, pid, item_template}
+    {:reply, item, item_template}
   end
 
   def handle_call(:value, _from, item_template) do

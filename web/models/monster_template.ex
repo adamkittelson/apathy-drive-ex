@@ -68,12 +68,9 @@ defmodule MonsterTemplate do
 
   def count(%MonsterTemplate{} = monster_template) do
     monster_template
-    |> monsters
-    |> length
-  end
-
-  def monsters(%MonsterTemplate{id: id}) do
-    ApathyDrive.PubSub.subscribers("monster_template:#{id}")
+    |> assoc(:monsters)
+    |> Repo.all
+    |> Enum.count
   end
 
   def name_with_adjective(name, nil), do: name

@@ -10,7 +10,7 @@ defmodule Commands.Wear do
 
   def execute(%Monster{} = monster, arguments) do
     item = Enum.join(arguments, " ")
-    case Systems.Match.one(Monster.inventory(monster), :name_contains, item) do
+    case Systems.Match.one(monster.inventory, :name_contains, item) do
       nil ->
         Monster.send_scroll(monster, "<p>You don't have \"#{item}\" left unequipped.</p>")
       %Item{worn_on: nil, name: name} ->

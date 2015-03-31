@@ -52,8 +52,11 @@ defmodule Systems.Shop do
                       |> Map.put(:experience, monster.experience - cost)
                       |> Monster.send_scroll("<p>You purchase #{name} for #{cost} experience.</p>")
 
-            ItemTemplate.spawn_item(id, monster)
-            monster
+            item = ItemTemplate.spawn_item(id)
+                   |> Map.put(:monster_id, monster.id)
+                   |> Item.save
+
+            put_in monster.inventory, [item | monster.inventory]
           else
             Monster.send_scroll(monster, "<p>You don't have enough room in your inventory to carry #{name}.</p>")
           end

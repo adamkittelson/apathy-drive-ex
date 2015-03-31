@@ -1,7 +1,6 @@
 defmodule Item do
   require Logger
   use Ecto.Model
-  use GenServer
   alias ApathyDrive.Repo
   alias ApathyDrive.PubSub
 
@@ -36,43 +35,6 @@ defmodule Item do
     belongs_to :item_template, ItemTemplate
   end
 
-  def init(%Item{} = item) do
-    :random.seed(:os.timestamp)
-
-    if item.room_id do
-      PubSub.subscribe(self, "rooms:#{item.room_id}")
-      PubSub.subscribe(self, "rooms:#{item.room_id}:items")
-    end
-
-    if item.monster_id do
-      PubSub.subscribe(self, "monsters:#{item.monster_id}")
-      PubSub.subscribe(self, "monsters:#{item.monster_id}:items")
-
-      if item.equipped do
-        ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items")
-        ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
-      else
-        ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:inventory")
-      end
-    end
-
-    PubSub.subscribe(self, "items")
-    PubSub.subscribe(self, "item_template:#{item.item_template_id}")
-
-    item = item
-           |> Map.put(:pid, self)
-
-    :global.register_name(:"item_#{item.id}", self)
-
-    {:ok, item}
-  end
-
-  def value(item) do
-    if Process.alive?(item) do
-      GenServer.call(item, :value)
-    end
-  end
-
   def to_monster_inventory(item, %Monster{} = monster) do
     GenServer.call(item, {:to_monster_inventory, monster})
   end
@@ -86,22 +48,12 @@ defmodule Item do
   end
   def insert(%Item{} = item), do: item
 
-  def save(item) when is_pid(item), do: item |> value |> save
   def save(%Item{id: id} = item) when is_integer(id) do
     Repo.update(item)
   end
   def save(%Item{} = item), do: item
 
   def delete(%Item{} = item), do: Repo.delete(item)
-
-  def find(id) do
-    case :global.whereis_name(:"item_#{id}") do
-      :undefined ->
-        load(id)
-      item ->
-        item
-    end
-  end
 
   def load(id) do
     case Repo.one from i in Item, where: i.id == ^id do
@@ -119,22 +71,20 @@ defmodule Item do
 
         item = struct(Item, item)
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"item_#{item.id}", {GenServer, :start_link, [Item, item, []]}, :transient, 5000, :worker, [Item]})
+        # if item.always_lit do
+        #   room_id = if item.room_id do
+        #     item.room_id
+        #   else
+        #     monster = item.monster_id
+        #               |> Monster.find
+        #               |> Monster.value
+        #     monster.room_id
+        #   end
+        # 
+        #   Item.light(pid, room_id)
+        # end
 
-        if item.always_lit do
-          room_id = if item.room_id do
-            item.room_id
-          else
-            monster = item.monster_id
-                      |> Monster.find
-                      |> Monster.value
-            monster.room_id
-          end
-
-          Item.light(pid, room_id)
-        end
-
-        pid
+        item
       nil ->
         nil
     end
@@ -311,45 +261,6 @@ defmodule Item do
 
   def handle_info({:apply_ability, %Ability{} = ability, %Monster{} = ability_user}, item) do
     item = Ability.apply_ability(item, ability, ability_user)
-
-    {:noreply, item}
-  end
-
-  def handle_info(:equip, item) do
-    case item.worn_on do
-      "Weapon Hand" ->
-        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Weapon Hand", :unequip)
-        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
-      "Two Handed" ->
-        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Weapon Hand", :unequip)
-        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
-        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Off-Hand", :unequip)
-      "Off-Hand" ->
-        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Two Handed", :unequip)
-        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:Off-Hand", :unequip)
-      _ ->
-        ApathyDrive.PubSub.broadcast!("monsters:#{item.monster_id}:equipped_items:#{item.worn_on}", :unequip)
-    end
-    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:inventory")
-    ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items")
-    ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
-    send(Monster.find(item.monster_id), {:item_equipped, item})
-    item = item
-           |> Map.put(:equipped, true)
-           |> save
-
-    {:noreply, item}
-  end
-
-  def handle_info(:unequip, item) do
-    ApathyDrive.PubSub.subscribe(self, "monsters:#{item.monster_id}:inventory")
-    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items")
-    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{item.monster_id}:equipped_items:#{item.worn_on}")
-    send(Monster.find(item.monster_id), {:item_unequipped, item})
-
-    item = item
-           |> Map.put(:equipped, false)
-           |> save
 
     {:noreply, item}
   end

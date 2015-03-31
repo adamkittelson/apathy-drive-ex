@@ -42,6 +42,8 @@ defmodule Monster do
     field :keywords,            {:array, :string}, virtual: true
     field :flags,               {:array, :string}, virtual: true
     field :hate,                :any, virtual: true, default: HashDict.new
+    field :inventory,           :any, virtual: true, default: []
+    field :equipment,           :any, virtual: true, default: %{}
 
     timestamps
 
@@ -143,8 +145,8 @@ defmodule Monster do
   end
 
   def abilities_from_equipment(%Monster{} = monster, abilities) do
-    monster
-    |> equipped_items
+    monster.equipment
+    |> Map.values
     |> Enum.find(&(Enum.member?(["Weapon Hand", "Two Handed"], &1.worn_on)))
     |> abilities_from_weapon(abilities)
   end
@@ -258,10 +260,10 @@ defmodule Monster do
     modified_stat(monster, "strength") * 48
   end
 
-  def current_encumbrance(%Monster{id: id}) do
-    ApathyDrive.PubSub.subscribers("monsters:#{id}:items")
+  def current_encumbrance(%Monster{inventory: inventory}) do
+    inventory
     |> Enum.reduce(0, fn(item, encumbrance) ->
-        encumbrance + Item.value(item).weight
+        encumbrance + item.weight
        end)
   end
 
@@ -322,9 +324,16 @@ defmodule Monster do
                   |> Map.put(:mana, Monster.max_mana(monster))
                   |> Map.put(:keywords, String.split(monster.name))
 
-        monster
-        |> item_ids
-        |> Enum.each(&Item.find/1)
+        monster = monster
+                  |> item_ids
+                  |> Enum.map(&Item.load/1)
+                  |> Enum.reduce(monster, fn(item, mon) ->
+                       if item.equipped do
+                         equip_item(mon, item, nil)
+                       else
+                         put_in(mon.inventory, [item | mon.inventory])
+                       end
+                     end)
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
 
@@ -364,26 +373,18 @@ defmodule Monster do
     |> Systems.Effect.add(%{"cooldown" => :ai_movement}, 30)
   end
 
-  def inventory(%Monster{id: id}) do
-    PubSub.subscribers("monsters:#{id}:inventory")
-    |> Enum.map(&Item.value/1)
-  end
-
-  def equipped_items(%Monster{id: id}) do
-    PubSub.subscribers("monsters:#{id}:equipped_items")
-    |> Enum.map(&Item.value/1)
-  end
-
   def display_inventory(%Monster{} = monster) do
-    if Enum.any?(equipment = equipped_items(monster)) do
+    if monster.equipment |> Map.values |> Enum.any? do
       Monster.send_scroll(monster, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
-      Enum.each equipment, fn(item) ->
+      monster.equipment
+      |> Map.values
+      |> Enum.each fn(item) ->
         send_scroll(monster, "<p><span class='dark-green'>#{String.ljust(item.name, 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
       end
       send_scroll(monster, "<br>")
     end
 
-    items = inventory(monster) |> Enum.map(&(&1.name))
+    items = monster.inventory |> Enum.map(&(&1.name))
     if items |> Enum.count > 0 do
       send_scroll(monster, "<p>You are carrying #{Enum.join(items, ", ")}</p>")
     else
@@ -426,17 +427,45 @@ defmodule Monster do
   def effect_description(%{"description" => description}), do: description
 
   def equip_item(%Monster{} = monster, %Item{} = item, nil) do
-    send(item.pid, :equip)
-    monster
+    item = item
+           |> Map.put(:equipped, true)
+           |> Item.save
+
+    monster = case item.worn_on do
+      "Weapon Hand" ->
+        unequip_item(monster, monster.equipment["Weapon Hand"])
+        unequip_item(monster, monster.equipment["Two Handed"])
+      "Two Handed" ->
+        unequip_item(monster, monster.equipment["Weapon Hand"])
+        unequip_item(monster, monster.equipment["Two Handed"])
+        unequip_item(monster, monster.equipment["Off-Hand"])
+      "Off-Hand" ->
+        unequip_item(monster, monster.equipment["Two Handed"])
+        unequip_item(monster, monster.equipment["Off-Hand"])
+      _ ->
+        unequip_item(monster, monster.equipment[item.worn_on])
+    end
+
+    monster = put_in(monster.inventory, List.delete(monster.inventory, item))
+    put_in(monster.equipment[item.worn_on], item)
+    |> set_abilities
+    |> send_scroll("<p>You are now wearing #{item.name}.</p>")
   end
 
   def equip_item(%Monster{} = monster, %Item{}, {skill, req}) do
     Monster.send_scroll(monster, "<p>You need at least #{req} #{skill} skill to equip that.</p>")
   end
 
+  def unequip_item(%Monster{} = monster, nil), do: monster
   def unequip_item(%Monster{} = monster, %Item{} = item) do
-    send(item.pid, :unequip)
-    monster
+    item = item
+           |> Map.put(:equipped, false)
+           |> Item.save
+
+    monster = put_in(monster.equipment[item.worn_on], nil)
+    put_in(monster.inventory, [item | monster.inventory])
+    |> set_abilities
+    |> send_scroll("<p>You remove #{item.name}.</p>")
   end
 
   def max_hp(%Monster{} = monster) do
@@ -686,8 +715,8 @@ defmodule Monster do
   end
 
   def ac_from_equipment(%Monster{} = monster) do
-    monster
-    |> equipped_items
+    monster.equipment
+    |> Map.values
     |> Enum.map(&(&1.ac || 0))
     |> Enum.sum
   end
@@ -1094,18 +1123,6 @@ defmodule Monster do
     message = interpolate(messages["spectator"], %{"user" => user, "target" => target})
     send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
 
-    {:noreply, monster}
-  end
-
-  def handle_info({:item_equipped, %Item{} = item}, monster) do
-    send_scroll(monster, "<p>You are now wearing #{item.name}.</p>")
-    send(self, :set_abilities)
-    {:noreply, monster}
-  end
-
-  def handle_info({:item_unequipped, %Item{} = item}, monster) do
-    send_scroll(monster, "<p>You remove #{item.name}.</p>")
-    send(self, :set_abilities)
     {:noreply, monster}
   end
 

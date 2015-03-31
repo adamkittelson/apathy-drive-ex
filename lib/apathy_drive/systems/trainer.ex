@@ -121,7 +121,6 @@ defmodule Systems.Trainer do
       monster
       |> Monster.send_scroll("<p>It will cost you #{cost} development points to advance this skill further.</p>")
       |> Monster.send_scroll("<p>You have #{new_devs} development points left.</p>")
-      |> Monster.save
     end
   end
 
