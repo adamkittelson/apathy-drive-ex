@@ -13,13 +13,14 @@ defmodule Commands.Get do
 
     if Enum.any? arguments do
       item = Enum.join(arguments, " ")
-      case Systems.Match.one(Room.items(current_room), :name_contains, item) do
+      case Systems.Match.one(current_room.items_on_floor, :name_contains, item) do
         nil ->
           Monster.send_scroll(monster, "<p>You don't see \"#{item}\" here.</p>")
         %Item{can_pick_up: true} = match ->
           if Monster.remaining_encumbrance(monster) >= match.weight do
-            Item.to_monster_inventory(match.pid, monster)
-            Monster.send_scroll(monster, "<p>You get #{match.name}.</p>")
+            monster
+            |> Monster.get_item(match)
+            |> Monster.send_scroll("<p>You get #{match.name}.</p>")
           else
             Monster.send_scroll(monster, "<p>#{capitalize_first(match.name)} is too heavy.</p>")
           end

@@ -482,6 +482,10 @@ defmodule Room do
     {:noreply, put_in(room.items_on_floor, [item | room.items_on_floor])}
   end
 
+  def handle_info({:remove_item, %Item{} = item}, room) do
+    {:noreply, put_in(room.items_on_floor, Enum.reject(room.items_on_floor, &(&1.id == item.id)))}
+  end
+
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do
     room = open!(room, direction)
 

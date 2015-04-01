@@ -477,6 +477,21 @@ defmodule Monster do
     |> set_abilities
   end
 
+  def get_item(%Monster{} = monster, %Item{} = item) do
+    item = item
+           |> Map.put(:monster_id, monster.id)
+           |> Map.put(:equipped, false)
+           |> Map.put(:room_id, nil)
+           |> Item.save
+
+   monster.room_id
+   |> Room.find
+   |> send({:remove_item, item})
+
+    put_in(monster.inventory, [item | monster.inventory])
+    |> set_abilities
+  end
+
   def max_hp(%Monster{} = monster) do
     health = modified_stat(monster, "health")
 
