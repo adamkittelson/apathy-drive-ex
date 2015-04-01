@@ -13,12 +13,13 @@ defmodule Commands.Drop do
 
     if Enum.any? arguments do
       item = Enum.join(arguments, " ")
-      case Systems.Match.one(Monster.inventory(monster), :name_contains, item) do
+      case Systems.Match.one(monster.inventory, :name_contains, item) do
         nil ->
           Monster.send_scroll(monster, "<p>You don't have \"#{item}\" to drop!</p>")
         %Item{} = match ->
-          Item.to_room(match.pid, current_room)
-          Monster.send_scroll(monster, "<p>You drop #{match.name}.</p>")
+          monster
+          |> Monster.send_scroll("<p>You drop #{match.name}.</p>")
+          |> Monster.drop_item(match)
       end
     else
       Monster.send_scroll(monster, "<p>Drop what?</p>")

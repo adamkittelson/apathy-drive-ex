@@ -35,14 +35,6 @@ defmodule Item do
     belongs_to :item_template, ItemTemplate
   end
 
-  def to_monster_inventory(item, %Monster{} = monster) do
-    GenServer.call(item, {:to_monster_inventory, monster})
-  end
-
-  def to_room(item, %Room{} = room) do
-    GenServer.call(item, {:to_room, room})
-  end
-
   def insert(%Item{id: nil} = item) do
     ApathyDrive.Repo.insert(item)
   end

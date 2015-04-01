@@ -446,7 +446,7 @@ defmodule Monster do
         unequip_item(monster, monster.equipment[item.worn_on])
     end
 
-    monster = put_in(monster.inventory, List.delete(monster.inventory, item))
+    monster = put_in(monster.inventory, Enum.reject(monster.inventory, &(&1.id == item.id)))
     put_in(monster.equipment[item.worn_on], item)
     |> set_abilities
     |> send_scroll("<p>You are now wearing #{item.name}.</p>")
@@ -466,6 +466,15 @@ defmodule Monster do
     put_in(monster.inventory, [item | monster.inventory])
     |> set_abilities
     |> send_scroll("<p>You remove #{item.name}.</p>")
+  end
+
+  def drop_item(%Monster{} = monster, %Item{} = item) do
+    monster.room_id
+    |> Room.find
+    |> send({:add_item, item})
+
+    put_in(monster.inventory, Enum.reject(monster.inventory, &(&1.id == item.id)))
+    |> set_abilities
   end
 
   def max_hp(%Monster{} = monster) do

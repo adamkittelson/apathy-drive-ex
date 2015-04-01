@@ -472,6 +472,16 @@ defmodule Room do
     {:noreply, put_in(room.items_on_floor, items)}
   end
 
+  def handle_info({:add_item, %Item{} = item}, room) do
+    item = item
+           |> Map.put(:monster_id, nil)
+           |> Map.put(:equipped, false)
+           |> Map.put(:room_id, room.id)
+           |> Item.save
+
+    {:noreply, put_in(room.items_on_floor, [item | room.items_on_floor])}
+  end
+
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do
     room = open!(room, direction)
 
