@@ -433,15 +433,18 @@ defmodule Monster do
 
     monster = case item.worn_on do
       "Weapon Hand" ->
-        unequip_item(monster, monster.equipment["Weapon Hand"])
-        unequip_item(monster, monster.equipment["Two Handed"])
+        monster
+        |> unequip_item(monster.equipment["Weapon Hand"])
+        |> unequip_item(monster.equipment["Two Handed"])
       "Two Handed" ->
-        unequip_item(monster, monster.equipment["Weapon Hand"])
-        unequip_item(monster, monster.equipment["Two Handed"])
-        unequip_item(monster, monster.equipment["Off-Hand"])
+        monster
+        |> unequip_item(monster.equipment["Weapon Hand"])
+        |> unequip_item(monster.equipment["Two Handed"])
+        |> unequip_item(monster.equipment["Off-Hand"])
       "Off-Hand" ->
-        unequip_item(monster, monster.equipment["Two Handed"])
-        unequip_item(monster, monster.equipment["Off-Hand"])
+        monster
+        |> unequip_item(monster.equipment["Two Handed"])
+        |> unequip_item(monster.equipment["Off-Hand"])
       _ ->
         unequip_item(monster, monster.equipment[item.worn_on])
     end
@@ -462,7 +465,7 @@ defmodule Monster do
            |> Map.put(:equipped, false)
            |> Item.save
 
-    monster = put_in(monster.equipment[item.worn_on], nil)
+    monster = put_in(monster.equipment, Map.delete(monster.equipment, item.worn_on))
     put_in(monster.inventory, [item | monster.inventory])
     |> set_abilities
     |> send_scroll("<p>You remove #{item.name}.</p>")

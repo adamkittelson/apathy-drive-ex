@@ -28,7 +28,14 @@ defmodule ApathyDrive.Matchers do
 
   defmacro assert_lists_match(list1, list2) do
     quote do
-      assert Enum.sort(unquote(list1)) == Enum.sort(unquote(list2))
+      list1 = unquote(list1)
+              |> Enum.map(&(&1.id))
+              |> Enum.sort
+
+      list2 = unquote(list2)
+              |> Enum.map(&(&1.id))
+              |> Enum.sort
+      assert list1 == list2
     end
   end
 end
