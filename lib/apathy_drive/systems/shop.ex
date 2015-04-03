@@ -68,7 +68,7 @@ defmodule Systems.Shop do
   end
 
   def sell(%Monster{experience: _exp} = monster, %Room{shop_items: _item_template_ids}, item) do
-    case Systems.Match.one(Monster.inventory(monster), :name_contains, item) do
+    case Systems.Match.one(monster.inventory, :name_contains, item) do
       nil ->
         Monster.send_scroll(monster, "<p>You don't have \"#{item}\" to sell!</p>")
       %Item{} = item ->
@@ -80,9 +80,11 @@ defmodule Systems.Shop do
                   |> Monster.save
                   |> Monster.send_scroll("<p>You just sold #{item.name} for #{value} experience.</p>")
 
-        send(item.pid, :delete)
+        item
+        |> Item.delete
 
-        monster
+        put_in(monster.inventory, Enum.reject(monster.inventory, &(&1.id == item.id)))
+        |> Monster.set_abilities
     end
   end
 
