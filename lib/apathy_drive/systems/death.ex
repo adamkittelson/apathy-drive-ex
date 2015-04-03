@@ -2,13 +2,18 @@ defmodule Systems.Death do
   use Timex
 
   def kill(%Monster{} = monster) do
-    room = Monster.find_room(monster)
+    room = Room.find(monster.room_id)
 
     ApathyDrive.PubSub.broadcast!("monsters:#{monster.id}", {:possessed_monster_died, monster})
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}", {:monster_died, monster: monster, reward: experience_to_grant(monster)})
+    ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_died, monster: monster, reward: experience_to_grant(monster)})
 
-    ApathyDrive.PubSub.subscribers("monsters:#{monster.id}:items")
-    |> Enum.each(&(Item.to_room(&1, room)))
+    Map.values(monster.equipment) ++ monster.inventory
+    |> Enum.each(fn(%Item{} = item) ->
+         Map.put(item, :monster_id, nil)
+         |> Item.save
+
+         send(room, {:add_item, item})
+       end)
 
     ApathyDrive.Repo.delete(monster)
     Process.exit(self, :normal)
