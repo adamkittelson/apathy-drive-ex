@@ -44,7 +44,6 @@ defmodule Monster do
     field :flags,               {:array, :string}, virtual: true
     field :hate,                :any, virtual: true, default: HashDict.new
     field :attacks,             :any, virtual: true
-    field :ac,                  :integer, virtual: true
 
     timestamps
 
@@ -263,6 +262,7 @@ defmodule Monster do
                   |> Map.put(:hp, monster.max_hp)
                   |> Map.put(:mana, Monster.max_mana(monster))
                   |> Map.put(:keywords, String.split(monster.name))
+                  |> Map.put(:effects, %{"monster_template" => mt.effects})
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
 
@@ -537,8 +537,8 @@ defmodule Monster do
     |> max(1)
   end
 
-  def ac(%Monster{ac: ac} = monster) do
-    ac + effect_bonus(monster, "ac")
+  def ac(%Monster{} = monster) do
+    effect_bonus(monster, "ac")
   end
 
   def local_hated_targets(%Monster{hate: hate, pid: pid} = monster) do
