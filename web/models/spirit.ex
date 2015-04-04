@@ -384,6 +384,17 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
+  def handle_info({:monster_dodged, messages: messages,
+                                    user: %Monster{} = user,
+                                    target: %Monster{} = target},
+                  spirit) do
+
+    message = interpolate(messages["spectator"], %{"user" => user, "target" => target})
+    send_scroll(spirit, "<p><span class='dark-cyan'>#{message}</span></p>")
+
+    {:noreply, spirit}
+  end
+
   def handle_info(_message, spirit) do
     {:noreply, spirit}
   end

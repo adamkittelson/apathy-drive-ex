@@ -45,6 +45,7 @@ defmodule Monster do
     field :hate,                :any, virtual: true, default: HashDict.new
     field :inventory,           :any, virtual: true, default: []
     field :equipment,           :any, virtual: true, default: %{}
+    field :attacks,             :any, virtual: true
 
     timestamps
 
@@ -94,7 +95,7 @@ defmodule Monster do
     abilities = monster_template_abilities(monster)
 
     abilities = abilities ++
-                abilities_from_equipment(monster, abilities) ++
+                abilities_from_attacks(monster) ++
                 abilities_from_skills(monster)
 
     monster
@@ -144,14 +145,7 @@ defmodule Monster do
        end)
   end
 
-  def abilities_from_equipment(%Monster{} = monster, abilities) do
-    monster.equipment
-    |> Map.values
-    |> Enum.find(&(Enum.member?(["Weapon Hand", "Two Handed"], &1.worn_on)))
-    |> abilities_from_weapon(abilities)
-  end
-
-  def abilities_from_weapon(nil, []) do
+  def abilities_from_attacks(%Monster{attacks: []}) do
     [
       %Ability{
         name:    "attack",
@@ -192,16 +186,18 @@ defmodule Monster do
       }
     ]
   end
-
-  def abilities_from_weapon(nil, abilities) do
-    attacks = abilities
-              |> Enum.filter(&(&1.kind == "attack"))
-
-    if Enum.any?(attacks) do
-      []
-    else
-      abilities_from_weapon(nil, [])
-    end
+  def abilities_from_attacks(%Monster{attacks: attacks}) do
+    Enum.map(attacks, fn(attack) ->
+      %Ability{
+        name:    attack["name"],
+        command: attack["command"],
+        kind:    attack["kind"],
+        required_skills: attack["required_skills"],
+        global_cooldown: attack["global_cooldown"],
+        flags: attack["flags"],
+        properties: attack["properties"]
+      }
+    end)
   end
 
   def on_global_cooldown?(%Monster{effects: effects}) do
