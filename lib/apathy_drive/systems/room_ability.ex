@@ -1,6 +1,5 @@
 defmodule Systems.RoomAbility do
-  use Systems.Reload
-  import Utility
+
   import BlockTimer
 
   def initialize do
@@ -20,7 +19,7 @@ defmodule Systems.RoomAbility do
   def use_ability(monster, ability_name) do
     case Abilities.find(ability_name) do
       nil ->
-        send_message(monster, "scroll", "<p><span class='red'>Not Implemented: #{ability_name}</span></p>")
+        Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: #{ability_name}</span></p>")
       ability ->
         ability.execute(monster, nil)
     end

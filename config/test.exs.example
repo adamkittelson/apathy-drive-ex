@@ -1,17 +1,12 @@
 use Mix.Config
 
-config :phoenix, ApathyDrive.Router,
-  port: 4001,
-  ssl: false,
-  code_reload: false,
-  cookies: true,
-  consider_all_requests_local: false,
-  session_key: "_your_app_key",
-  session_secret: "111111111111111111111111111111111111111111111111111111111111111111111111111"
+config :apathy_drive, ApathyDrive.Endpoint,
+  http: [port: System.get_env("PORT") || 4001],
+  debug_errors: true,
+  db: "ecto://postgres:@localhost/travis_ci_test"
 
-config :phoenix, :logger,
-  level: :debug
-
-config :phoenix, :mud,
-  start_room: 1235, # database id of room new characters start in
-  db: "ecto://user:password@hostname/database_name" # ecto db connection string
+config :apathy_drive, ApathyDrive.Repo,
+  database: "travis_ci_test",
+  username: "postgres",
+  password: "",
+  hostname: "localhost"

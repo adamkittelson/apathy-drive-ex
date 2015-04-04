@@ -1,94 +1,48 @@
 defmodule Systems.AI do
-  use Systems.Reload
 
-  def observable_monsters do
-    Characters.online
-    |> Enum.map(&Parent.of/1)
-    |> Enum.uniq
-    |> adjacent_rooms
-    |> adjacent_rooms
-    |> adjacent_rooms
-    |> Enum.map(&Components.Monsters.get_monsters/1)
-    |> List.flatten
-    |> Enum.uniq
-  end
-
-  def adjacent_rooms(rooms_with_spirits) do
-    Enum.reduce(rooms_with_spirits, [], fn(room, rooms) ->
-      adjacent = room
-                 |> Components.Exits.value
-                 |> Enum.map(&(Map.get(&1, "destination")))
-                 |> Enum.map(&Rooms.find_by_id/1)
-
-      [room | adjacent ++ rooms]
-    end)
-    |> Enum.uniq
-  end
-
-  # def think do
-  #   observable_monsters
-  #   |> Enum.each(fn(monster) ->
-  #        think(monster)
-  #      end)
-  #   :timer.sleep 5000
-  # end
-
-  def think(monster) do
-    if Process.alive?(monster) do
+  def think(%Monster{} = monster) do
+    if Monster.on_global_cooldown?(monster) do
+      move(monster)
+    else
       heal(monster) || bless(monster) || attack(monster) || move(monster)
     end
   end
 
-  def heal(monster) do
-    max_hp  = Systems.HP.max(monster)
-    current = Components.HP.value(monster)
+  def heal(%Monster{hp: hp} = monster) do
+    max_hp  = Monster.max_hp(monster)
 
-    chance = trunc((max_hp - current) / max_hp * 100)
-    :random.seed(:os.timestamp)
+    chance = trunc((max_hp - hp) / max_hp * 100)
 
     roll = :random.uniform(100)
 
     if chance > roll do
       ability = monster
-                |> Components.Abilities.heals
+                |> Monster.heal_abilities
                 |> random_ability
+
       if ability do
-        ability.execute(monster)
+        send(self, {:execute_ability, ability})
       end
     end
   end
 
-  def bless(monster) do
+  def bless(%Monster{} = monster) do
     ability = monster
-              |> Components.Abilities.blessings
+              |> Monster.bless_abilities
               |> random_ability
 
     if ability do
-      ability.execute(monster)
+      send(self, {:execute_ability, ability})
     end
   end
 
   def attack(monster) do
-    if Components.Combat.in_combat?(monster) do
-      :random.seed(:os.timestamp)
+    if target = Monster.aggro_target(monster) do
+      attack = monster
+               |> Monster.attack_abilities
+               |> random_ability
 
-      roll = :random.uniform(100)
-
-      if roll > 50 do
-        ability = monster
-                  |> Components.Abilities.attacks
-                  |> random_ability
-
-        if ability do
-          target = Systems.Combat.targets(monster)
-                   |> Enum.shuffle
-                   |> List.first
-
-          if target do
-            ability.execute(monster, Components.Name.value(target))
-          end
-        end
-      end
+      send(self, {:execute_ability, attack, target})
     end
   end
 
@@ -99,32 +53,21 @@ defmodule Systems.AI do
       [] ->
         nil
       abilities ->
-        :random.seed(:os.timestamp)
         abilities |> Enum.shuffle |> List.first
     end
   end
 
   def move(monster) do
-    if !Components.Combat.in_combat?(monster) do
-      :random.seed(:os.timestamp)
+    if !Monster.on_ai_move_cooldown?(monster) && !Monster.aggro_target(monster) do
 
-      room = Parent.of(monster)
+      room = Monster.find_room(monster)
       roll = :random.uniform(100)
 
-      if room && (roll < trunc(Components.Module.value(monster).chance_to_follow / 5)) do
+      if room && (roll < trunc(monster.chance_to_follow / 5)) do
+        direction = Room.random_direction(room)
 
-        if !Entity.has_component?(room, Components.PermanentNPC) or
-          !String.contains?(Components.Name.value(monster), Components.PermanentNPC.value(room)) do
-
-            direction = room
-                        |> Components.Exits.value
-                        |> Enum.map(&(Map.get(&1, "direction")))
-                        |> Enum.shuffle
-                        |> List.first
-
-            if direction do
-              Systems.Room.move(Possession.possessor(monster), monster, direction)
-            end
+        if direction do
+          Monster.execute_command(self, direction, [])
         end
       end
     end

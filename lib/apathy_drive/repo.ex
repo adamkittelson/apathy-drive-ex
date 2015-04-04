@@ -1,13 +1,6 @@
-defmodule Repo do
-  use Systems.Reload
-  use Ecto.Repo, adapter: Ecto.Adapters.Postgres
+defmodule ApathyDrive.Repo do
 
-  def conf do
-    ApathyDrive.Config.get(:db)
-    |> parse_url
-  end
+  use Ecto.Repo, otp_app: :apathy_drive,
+                 adapter: Ecto.Adapters.Postgres
 
-  def priv do
-    app_dir(:apathy_drive, "priv/repo")
-  end
 end

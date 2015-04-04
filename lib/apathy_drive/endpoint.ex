@@ -2,7 +2,8 @@ defmodule ApathyDrive.Endpoint do
   use Phoenix.Endpoint, otp_app: :apathy_drive
 
   plug Plug.Static,
-    at: "/", from: :apathy_drive
+    at: "/", from: :apathy_drive,
+    only: ~w(css images js favicon.ico robots.txt)
 
   plug Plug.Logger
 

@@ -5,7 +5,7 @@ defmodule ApathyDrive.Mixfile do
     [ app: :apathy_drive,
       version: "0.0.1",
       elixir: "~> 1.0.2",
-      elixirc_paths: ["lib", "web"],
+      elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
       deps: deps ]
   end
@@ -21,12 +21,17 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,      "~> 1.0.0"},
-      {:phoenix,     "~> 0.7.2"},
-      {:ecto,        "~> 0.2.4"},
-      {:postgrex,    "~> 0.6.0"},
+      {:phoenix,     "~> 0.10.0"},
+      {:ecto,        "~> 0.8.1"},
+      {:decimal,     "~> 1.1.0"},
+      {:postgrex,    "~> 0.7.0"},
       {:timex,       "~> 0.12.7"},
       {:inflex,      "~> 0.2.8"},
-      {:block_timer, "~> 0.0.1"}
+      {:block_timer, "~> 0.0.1"},
+      {:shouldi, only: :test}
     ]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "web", "test/matchers"]
+  defp elixirc_paths(_), do: ["lib", "web"]
 end

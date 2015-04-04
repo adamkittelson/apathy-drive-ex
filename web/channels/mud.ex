@@ -1,44 +1,46 @@
 defmodule ApathyDrive.MUD do
   use Phoenix.Channel
-  import Utility
 
-  def join(socket, "mud", message) do
-    Systems.Login.login(socket, message["login"])
+  def join("mud", message, socket) do
+    if spirit = Systems.Login.login(socket, message["login"]) do
+      #send_message(spirit, "clear scroll")
+
+      spirit_struct = Spirit.value(spirit)
+
+      room = spirit_struct.room_id
+             |> Room.find
+             |> Room.value
+
+      Room.look(room, spirit_struct)
+      Systems.Prompt.display(spirit_struct)
+
+      socket = Phoenix.Socket.assign(socket, :spirit, spirit)
+
+      {:ok, socket}
+    else
+      Phoenix.Channel.reply socket, "redirect", %{:url => "/"}
+    end
+  end
+
+  def handle_in("command", "", socket) do
+    handle_in("command", "l", socket)
+  end
+
+  def handle_in("command", message, socket) do
+    [command | arguments] = String.split(message)
+
+    spirit = socket.assigns[:spirit]
+
+    Spirit.execute_command(spirit, command, arguments)
+
     {:ok, socket}
   end
 
-  def event(socket, "command", "") do
-    event(socket, "command", "l")
-  end
-
-  def event(socket, "command", message) do
-    [command | arguments] = String.split(message)
-
-    character = Characters.find_by_socket(socket.pid)
-
-    try do
-      Systems.Command.execute(character, command, arguments)
-    catch
-      kind, error ->
-        send_message(character, "scroll", "<p><span class='red'>Something went wrong.</span></p>")
-        IO.puts "Error while processing command: '#{command}' with arguments: #{inspect arguments}"
-        if Entity.has_component?(character, Components.Name) do
-          IO.puts "Character: #{Components.Name.value(character)}"
-        end
-        IO.puts Exception.format(kind, error)
+  def leave(_message, socket) do
+    spirit = socket.assigns[:spirit]
+    if spirit do
+      Spirit.logout(spirit)
     end
-
-    socket
-  end
-
-  def leave(socket, _message) do
-    character = Characters.find_by_socket(socket.pid)
-    if character do
-      Characters.remove_socket(socket.pid)
-      Components.Socket.value(character, nil)
-      Components.Online.value(character, false)
-      Entities.save!(character)
-    end
-    socket
+    {:ok, socket}
   end
 end

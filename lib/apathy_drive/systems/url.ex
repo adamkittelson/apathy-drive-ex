@@ -1,8 +1,8 @@
 defmodule Systems.URL do
-  use Systems.Reload
+
 
   def random(length \\ 5) do
-    :random.seed(:erlang.now)
+    :random.seed(:os.timestamp)
     (1..length)
     |> Enum.reduce([], fn(_, codepoints) ->
          [random_alphanumeric | codepoints]

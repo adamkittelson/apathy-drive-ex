@@ -1,12 +1,13 @@
 defmodule Systems.Text do
-  use Systems.Reload
 
+
+  def interpolate(nil, _opts), do: nil
   def interpolate(string, opts) do
 
     if opts["user"] do
       user = opts["user"]
-      if Entity.has_component?(user, Components.Gender) do
-        string = case Components.Gender.value(user) do
+      if Map.has_key?(user, :gender) do
+        string = case user.gender do
                    "male"   ->
                      string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
                                             string, fn(_, m, _, _) -> m end)
@@ -20,8 +21,8 @@ defmodule Systems.Text do
                    _other ->
                      string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
                                              string, fn(_, _, _, o) -> o end)
-                     string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, _, o) -> capitalize_first(o) end)
+                     Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                   string, fn(_, _, _, o) -> capitalize_first(o) end)
                  end
       else
         string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
@@ -34,8 +35,8 @@ defmodule Systems.Text do
 
     if opts["target"] do
       target = opts["target"]
-      if Entity.has_component?(target, Components.Gender) do
-        string = case Components.Gender.value(target) do
+      if Map.has_key?(target, :gender) do
+        string = case target.gender do
                    "male"   ->
                      string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
                                             string, fn(_, m, _, _) -> m end)
@@ -49,8 +50,8 @@ defmodule Systems.Text do
                    _other ->
                      string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
                                              string, fn(_, _, _, o) -> o end)
-                     string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, _, o) -> capitalize_first(o) end)
+                     Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                   string, fn(_, _, _, o) -> capitalize_first(o) end)
                  end
       else
         string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
@@ -58,14 +59,14 @@ defmodule Systems.Text do
         string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
                                 string, fn(_, _, _, o) -> capitalize_first(o) end)
       end
-      
+
     end
 
     opts
     |> Map.keys
     |> Enum.reduce(string, fn(interpolation, updated_string) ->
-         value = if is_pid opts[interpolation] do
-           Components.Name.value(opts[interpolation])
+         value = if is_map opts[interpolation] do
+           opts[interpolation].name
          else
            opts[interpolation]
          end

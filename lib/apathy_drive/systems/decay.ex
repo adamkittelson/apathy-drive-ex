@@ -1,5 +1,5 @@
 defmodule Systems.Decay do
-  use Systems.Reload
+
   import BlockTimer
   use Timex
 
