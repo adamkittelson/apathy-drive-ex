@@ -31,6 +31,7 @@ defmodule MonsterTemplate do
     field :flags,             {:array, :string}, default: []
     field :max_hp,            :integer
     field :attacks,           ApathyDrive.JSONB
+    field :ac,                :integer
 
     has_many :monsters, Monster
 

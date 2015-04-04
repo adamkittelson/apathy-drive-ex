@@ -43,9 +43,8 @@ defmodule Monster do
     field :keywords,            {:array, :string}, virtual: true
     field :flags,               {:array, :string}, virtual: true
     field :hate,                :any, virtual: true, default: HashDict.new
-    field :inventory,           :any, virtual: true, default: []
-    field :equipment,           :any, virtual: true, default: %{}
     field :attacks,             :any, virtual: true
+    field :ac,                  :integer, virtual: true
 
     timestamps
 
@@ -538,15 +537,8 @@ defmodule Monster do
     |> max(1)
   end
 
-  def ac(%Monster{} = monster) do
-    ac_from_equipment(monster) + effect_bonus(monster, "ac")
-  end
-
-  def ac_from_equipment(%Monster{} = monster) do
-    monster.equipment
-    |> Map.values
-    |> Enum.map(&(&1.ac || 0))
-    |> Enum.sum
+  def ac(%Monster{ac: ac} = monster) do
+    ac + effect_bonus(monster, "ac")
   end
 
   def local_hated_targets(%Monster{hate: hate, pid: pid} = monster) do
