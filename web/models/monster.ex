@@ -15,6 +15,7 @@ defmodule Monster do
     field :level,               :integer, default: 1
     field :alignment,           :integer
     field :lair_id,             :integer
+    field :max_hp,              :integer, virtual: true
     field :hp,                  :integer, virtual: true
     field :mana,                :integer, virtual: true
     field :hunting,             :any,     virtual: true, default: []
@@ -264,7 +265,7 @@ defmodule Monster do
         monster = struct(Monster, monster)
 
         monster = monster
-                  |> Map.put(:hp, Monster.max_hp(monster))
+                  |> Map.put(:hp, monster.max_hp)
                   |> Map.put(:mana, Monster.max_mana(monster))
                   |> Map.put(:keywords, String.split(monster.name))
 
@@ -304,12 +305,6 @@ defmodule Monster do
 
   def effect_description(nil), do: nil
   def effect_description(%{"description" => description}), do: description
-
-  def max_hp(%Monster{} = monster) do
-    health = modified_stat(monster, "health")
-
-    round((health / 2) + (monster.level * 10) + ((health - 50) * monster.level) / 16.0)
-  end
 
   def max_mana(%Monster{} = monster) do
     intelligence = modified_stat(monster, "intelligence")
@@ -844,8 +839,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info(:regen, %Monster{hp: hp, mana: mana} = monster) do
-    max_hp   = max_hp(monster)
+  def handle_info(:regen, %Monster{hp: hp, max_hp: max_hp, mana: mana} = monster) do
     max_mana = max_mana(monster)
 
     monster = monster

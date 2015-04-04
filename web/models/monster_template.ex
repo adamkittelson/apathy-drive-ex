@@ -29,6 +29,7 @@ defmodule MonsterTemplate do
     field :possession_level,  :integer
     field :questions,         ApathyDrive.JSONB
     field :flags,             {:array, :string}, default: []
+    field :max_hp,            :integer
 
     has_many :monsters, Monster
 
@@ -124,7 +125,7 @@ defmodule MonsterTemplate do
               |> Map.put(:skills, skills)
 
     monster = monster
-              |> Map.put(:hp, Monster.max_hp(monster))
+              |> Map.put(:hp, monster_template.max_hp)
               |> Map.put(:mana, Monster.max_mana(monster))
               |> Map.put(:keywords, String.split(monster.name))
               |> Monster.insert

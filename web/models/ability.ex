@@ -314,7 +314,7 @@ defmodule Ability do
     apply_instant_effects(monster, Map.delete(effects, "damage"), ability_user)
   end
   def apply_instant_effects(%Monster{} = monster, %{"heal" => heal} = effects, ability_user) do
-    monster = put_in(monster.hp, min(Monster.max_hp(monster), monster.hp + heal))
+    monster = put_in(monster.hp, min(monster.max_hp, monster.hp + heal))
 
     apply_instant_effects(monster, Map.delete(effects, "heal"), ability_user)
   end

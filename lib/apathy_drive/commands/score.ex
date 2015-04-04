@@ -24,7 +24,7 @@ defmodule Commands.Score do
 
     Monster.send_scroll(monster, "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{monster_level}</span><span class='dark-green'>Devs:</span> <span class='dark-cyan'>#{monster_power}</span></p>")
 
-    hp = String.ljust("#{monster.hp}/#{Monster.max_hp(monster)}", 15)
+    hp = String.ljust("#{monster.hp}/#{monster.max_hp}", 15)
     mana = "#{monster.mana}/#{Monster.max_mana(monster)}"
     Monster.send_scroll(monster, "<p><span class='dark-green'>HP:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span>  <span class='dark-cyan'>#{mana}</span></p>\n")
 

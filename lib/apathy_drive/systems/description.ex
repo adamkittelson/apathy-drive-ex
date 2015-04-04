@@ -30,7 +30,7 @@ defmodule Systems.Description do
   end
 
   def describe_hp(%Monster{} = monster) do
-    percentage = round(100 * (monster.hp / Monster.max_hp(monster)))
+    percentage = round(100 * (monster.hp / monster.max_hp))
     description = case percentage do
       _ when percentage >= 100 ->
         "unwounded"
