@@ -49,7 +49,6 @@ defmodule Monster do
 
     belongs_to :room, Room
     belongs_to :monster_template, MonsterTemplate
-    has_many   :items, Item
   end
 
   def init(%Monster{} = monster) do
@@ -204,46 +203,6 @@ defmodule Monster do
     end
   end
 
-  def abilities_from_weapon(%Item{} = weapon, _abilities) do
-    Enum.map(weapon.hit_verbs, fn(verb) ->
-      weapon = put_in(weapon.properties["damage"]["scaling"],
-                      Map.put(%{},
-                              weapon.accuracy_skill,
-                              %{"max_every"    => 20,
-                                "max_increase" => 1,
-                                "min_every"    => 25,
-                                "min_increase" => 1}))
-
-      %Ability{
-        name:    "attack",
-        command: "a",
-        kind:    "attack",
-        required_skills: weapon.required_skills,
-        flags: [],
-        global_cooldown: :weapon_speed,
-        properties: %{
-          "dodgeable" => true,
-          "accuracy_skill" => weapon.accuracy_skill,
-          "dodge_message" => %{
-            "target" => "{{user}} swings at you with {{user:his/her/its}} #{weapon.name}, but you dodge!",
-            "user" => "You swing at {{target}} with your #{weapon.name}, but {{target:he/she/it}} dodges!",
-            "spectator" => "{{user}} swings at {{target}} with {{user:his/her/its}} #{weapon.name}, but they dodge!"
-          },
-          "instant_effects" => %{
-            "damage" => weapon.properties["damage"]
-          },
-          "cast_message" => %{
-            "target" => "{{user}} #{Inflex.pluralize(verb)} you with {{user:his/her/its}} #{weapon.name} for {{amount}} damage!",
-            "user" => "You #{verb} {{target}} with your #{weapon.name} for {{amount}} damage!",
-            "spectator" => "{{user}} #{Inflex.pluralize(verb)} {{target}} with {{user:his/her/its}} #{weapon.name} for {{amount}} damage!"
-          },
-          "damage_type" => "normal",
-          "weapon_speed" => weapon.speed || 1150
-        }
-      }
-    end)
-  end
-
   def on_global_cooldown?(%Monster{effects: effects}) do
     effects
     |> Map.values
@@ -254,21 +213,6 @@ defmodule Monster do
     effects
     |> Map.values
     |> Enum.any?(&(&1["cooldown"] == :ai_movement))
-  end
-
-  def max_encumbrance(%Monster{} = monster) do
-    modified_stat(monster, "strength") * 48
-  end
-
-  def current_encumbrance(%Monster{inventory: inventory}) do
-    inventory
-    |> Enum.reduce(0, fn(item, encumbrance) ->
-        encumbrance + item.weight
-       end)
-  end
-
-  def remaining_encumbrance(%Monster{} = monster) do
-    max_encumbrance(monster) - current_encumbrance(monster)
   end
 
   def execute_command(monster, command, arguments) do
@@ -324,27 +268,12 @@ defmodule Monster do
                   |> Map.put(:mana, Monster.max_mana(monster))
                   |> Map.put(:keywords, String.split(monster.name))
 
-        monster = monster
-                  |> item_ids
-                  |> Enum.map(&Item.load/1)
-                  |> Enum.reduce(monster, fn(item, mon) ->
-                       if item.equipped do
-                         equip_item(mon, item, nil)
-                       else
-                         put_in(mon.inventory, [item | mon.inventory])
-                       end
-                     end)
-
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
 
         pid
       nil ->
         nil
     end
-  end
-
-  def item_ids(%Monster{} = monster) do
-    Repo.all(from i in assoc(monster, :items), select: i.id)
   end
 
   def find_room(%Monster{room_id: room_id}) do
@@ -357,61 +286,11 @@ defmodule Monster do
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}")
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters")
 
-    PubSub.subscribers("monsters:#{monster.id}:items")
-    |> Enum.each(fn(item) ->
-         ApathyDrive.PubSub.unsubscribe(item, "rooms:#{monster.room_id}:lights")
-         item = Item.value(item)
-         if Item.lit?(item) do
-           ApathyDrive.PubSub.subscribe(item.pid, "rooms:#{room_id}:lights")
-         end
-       end)
-
     PubSub.subscribe(self, "rooms:#{room_id}")
     PubSub.subscribe(self, "rooms:#{room_id}:monsters")
     monster
     |> Map.put(:room_id, room_id)
     |> Systems.Effect.add(%{"cooldown" => :ai_movement}, 30)
-  end
-
-  def display_inventory(%Monster{} = monster) do
-    if monster.equipment |> Map.values |> Enum.any? do
-      Monster.send_scroll(monster, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
-      monster.equipment
-      |> Map.values
-      |> Enum.each fn(item) ->
-        send_scroll(monster, "<p><span class='dark-green'>#{String.ljust(item.name, 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
-      end
-      send_scroll(monster, "<br>")
-    end
-
-    items = monster.inventory |> Enum.map(&(&1.name))
-    if items |> Enum.count > 0 do
-      send_scroll(monster, "<p>You are carrying #{Enum.join(items, ", ")}</p>")
-    else
-      send_scroll(monster, "<p>You are carrying nothing.</p>")
-    end
-
-    display_encumbrance(monster)
-  end
-
-  def display_encumbrance(%Monster{} = monster) do
-    current = current_encumbrance(monster)
-    max = max_encumbrance(monster)
-    percent = trunc((current / max) * 100)
-
-    display_encumbrance(monster, current, max, percent)
-  end
-  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 17 do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> None [#{percent}%]</p>")
-  end
-  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 34 do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-green'>Light [#{percent}%]</span></p>")
-  end
-  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 67 do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-yellow'>Medium [#{percent}%]</span></p>")
-  end
-  def display_encumbrance(%Monster{} = monster, current, max, percent) do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-red'>Heavy [#{percent}%]</span></p>")
   end
 
   def effect_description(%Monster{effects: effects} = monster) do
@@ -425,75 +304,6 @@ defmodule Monster do
 
   def effect_description(nil), do: nil
   def effect_description(%{"description" => description}), do: description
-
-  def equip_item(%Monster{} = monster, %Item{} = item, nil) do
-    item = item
-           |> Map.put(:equipped, true)
-           |> Item.save
-
-    monster = case item.worn_on do
-      "Weapon Hand" ->
-        monster
-        |> unequip_item(monster.equipment["Weapon Hand"])
-        |> unequip_item(monster.equipment["Two Handed"])
-      "Two Handed" ->
-        monster
-        |> unequip_item(monster.equipment["Weapon Hand"])
-        |> unequip_item(monster.equipment["Two Handed"])
-        |> unequip_item(monster.equipment["Off-Hand"])
-      "Off-Hand" ->
-        monster
-        |> unequip_item(monster.equipment["Two Handed"])
-        |> unequip_item(monster.equipment["Off-Hand"])
-      _ ->
-        unequip_item(monster, monster.equipment[item.worn_on])
-    end
-
-    monster = put_in(monster.inventory, Enum.reject(monster.inventory, &(&1.id == item.id)))
-    put_in(monster.equipment[item.worn_on], item)
-    |> set_abilities
-    |> send_scroll("<p>You are now wearing #{item.name}.</p>")
-  end
-
-  def equip_item(%Monster{} = monster, %Item{}, {skill, req}) do
-    Monster.send_scroll(monster, "<p>You need at least #{req} #{skill} skill to equip that.</p>")
-  end
-
-  def unequip_item(%Monster{} = monster, nil), do: monster
-  def unequip_item(%Monster{} = monster, %Item{} = item) do
-    item = item
-           |> Map.put(:equipped, false)
-           |> Item.save
-
-    monster = put_in(monster.equipment, Map.delete(monster.equipment, item.worn_on))
-    put_in(monster.inventory, [item | monster.inventory])
-    |> set_abilities
-    |> send_scroll("<p>You remove #{item.name}.</p>")
-  end
-
-  def drop_item(%Monster{} = monster, %Item{} = item) do
-    monster.room_id
-    |> Room.find
-    |> send({:add_item, item})
-
-    put_in(monster.inventory, Enum.reject(monster.inventory, &(&1.id == item.id)))
-    |> set_abilities
-  end
-
-  def get_item(%Monster{} = monster, %Item{} = item) do
-    item = item
-           |> Map.put(:monster_id, monster.id)
-           |> Map.put(:equipped, false)
-           |> Map.put(:room_id, nil)
-           |> Item.save
-
-   monster.room_id
-   |> Room.find
-   |> send({:remove_item, item})
-
-    put_in(monster.inventory, [item | monster.inventory])
-    |> set_abilities
-  end
 
   def max_hp(%Monster{} = monster) do
     health = modified_stat(monster, "health")
@@ -1178,25 +988,6 @@ defmodule Monster do
               |> Monster.save
 
     PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
-
-    {:noreply, monster}
-  end
-
-  def handle_info({:item_destroyed, %Item{room_destruct_message: nil} = item}, monster) do
-    Monster.send_scroll(monster, "<p>#{item.destruct_message}</p>")
-    {:noreply, monster}
-  end
-
-  def handle_info({:item_destroyed, %Item{} = item}, monster) do
-    Monster.send_scroll(monster, "<p>#{item.destruct_message}</p>")
-
-    PubSub.broadcast_from!(self, "rooms:#{item.room_id}", {:room_item_destroyed, item, monster})
-
-    {:noreply, monster}
-  end
-
-  def handle_info({:room_item_destroyed, %Item{} = item, %Monster{} = holder}, monster) do
-    Monster.send_scroll(monster, "<p>#{item.room_destruct_message |> interpolate(%{"user" => holder})}</p>")
 
     {:noreply, monster}
   end

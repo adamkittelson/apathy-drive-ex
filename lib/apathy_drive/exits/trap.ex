@@ -71,11 +71,8 @@ defmodule ApathyDrive.Exits.Trap do
       Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"] |> to_string, %{"user" => monster})}</span></p>")
     end)
 
-    amount = monster
-             |> Systems.Damage.base_attack_damage
-             |> Systems.Damage.raw_damage
-
-    Systems.Damage.do_damage(monster, amount * room_exit["damage"])
+    # todo: damage monster
+    monster
   end
 
   def modifier(room_exit) do

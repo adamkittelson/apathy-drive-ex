@@ -14,25 +14,21 @@ defmodule Room do
     field :effects,               :any, virtual: true, default: %{}
     field :light,                 :integer
     field :item_descriptions,     ApathyDrive.JSONB
-    field :placed_items,          {:array, :integer}, default: []
     field :lair_size,             :integer
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :permanent_npc,         :integer
     field :start_room,            :boolean, default: false
-    field :shop_items,            {:array, :integer}
     field :trainable_skills,      {:array, :string}
     field :exits,                 ApathyDrive.JSONB
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
-    field :items_on_floor,        :any, virtual: true, default: []
 
     timestamps
 
     has_many   :monsters, Monster
-    has_many   :items,    Item
     belongs_to :ability,  Ability
   end
 
@@ -40,7 +36,6 @@ defmodule Room do
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
     send(self, :load_monsters)
-    send(self, :load_items)
 
     room = if room.lair_monsters do
       PubSub.subscribe(self, "rooms:lairs")
@@ -54,14 +49,6 @@ defmodule Room do
       PubSub.subscribe(self, "rooms:permanent_npcs")
       send(self, :spawn_permanent_npc)
       TimerManager.call_every(room, {:spawn_permanent_npc, 60_000, fn -> send(self, :spawn_permanent_npc) end})
-    else
-      room
-    end
-
-    room = if room.placed_items |> Enum.any? do
-      PubSub.subscribe(self, "rooms:placed_items")
-      send(self, :spawn_placed_items)
-      TimerManager.call_every(room, {:spawn_placed_items, 60_000, fn -> send(self, :spawn_placed_items) end})
     else
       room
     end
@@ -129,10 +116,6 @@ defmodule Room do
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
 
   # Value functions
-  def items(%Room{} = room) do
-    room.items_on_floor
-  end
-
   def monsters(%Monster{room_id: room_id, pid: pid}) do
     PubSub.subscribers("rooms:#{room_id}:monsters")
     |> Enum.reject(&(&1 == pid))
@@ -143,8 +126,6 @@ defmodule Room do
     |> Enum.reject(&(&1 == monster))
   end
 
-  def shop?(%Room{shop_items: nil}),          do: false
-  def shop?(%Room{shop_items: _}),            do: true
   def trainer?(%Room{trainable_skills: nil}), do: false
   def trainer?(%Room{trainable_skills: _}),   do: true
 
@@ -194,8 +175,6 @@ defmodule Room do
   end
 
   def light_level(%Room{light: light} = room, %Monster{alignment: alignment} = monster) do
-    light = light + light_in_room(room)
-
     cond do
       alignment > 0 and light < 0 ->
         min(0, light + alignment)
@@ -204,24 +183,6 @@ defmodule Room do
       true ->
         light
     end
-  end
-
-  def lights(items) do
-    items
-    |> Enum.map(fn(%Item{effects: effects}) ->
-         effects
-         |> Map.values
-         |> Enum.reduce(0, fn(effect, total) ->
-              total + Map.get(effect, "light", 0)
-            end)
-       end)
-    |> Enum.sum
-  end
-
-  def light_in_room(%Room{id: id}) do
-    PubSub.subscribers("rooms:#{id}:lights")
-    |> Enum.map(&Item.value/1)
-    |> lights
   end
 
   def light_desc(light_level)  when light_level < -1000, do: "<p>You are blind.</p>"
@@ -235,9 +196,9 @@ defmodule Room do
   def light_desc(light_level)  when light_level >=   25, do: "<p>The room is brightly lit</p>"
   def light_desc(_light_level), do: nil
 
-  def look_shop_hint(%Room{shop_items: nil, trainable_skills: nil}), do: nil
+  def look_shop_hint(%Room{trainable_skills: nil}), do: nil
   def look_shop_hint(%Room{}) do
-    "<p><br><em>Type 'list' to see a list of goods and services sold here.</em><br><br></p>"
+    "<p><br><em>Type 'list' to see a list of skills trainable here.</em><br><br></p>"
   end
 
   def permanent_npc_present?(%Room{} = room) do
@@ -246,15 +207,9 @@ defmodule Room do
     |> Enum.member?(room.permanent_npc)
   end
 
-  def placed_item_present?(%Room{} = room, item_template_id) do
-    room.items_on_floor
-    |> Enum.map(&(&1.item_template_id))
-    |> Enum.member?(item_template_id)
-  end
-
   def look_items(%Room{} = room) do
-    items = items(room)
-            |> Enum.map(&(&1.name))
+    items = room.item_descriptions["visible"]
+            |> Map.keys
 
     case Enum.count(items) do
       0 ->
@@ -424,29 +379,6 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info(:spawn_placed_items, room) do
-    room = room.placed_items
-           |> Enum.reject(&(placed_item_present?(room, &1)))
-           |> Enum.reduce(room, fn(item_template_id, updated_room) ->
-                item = item_template_id
-                       |> ItemTemplate.find
-                       |> ItemTemplate.spawn_item
-
-                if item do
-
-                  item = item
-                         |> Map.put(:room_id, room.id)
-                         |> Item.save
-
-                  put_in(updated_room.items_on_floor, [item | updated_room.items_on_floor])
-                else
-                  updated_room
-                end
-              end)
-
-    {:noreply, room}
-  end
-
   def handle_info(:load_monsters, room) do
     query = from m in assoc(room, :monsters), select: m.id
 
@@ -457,33 +389,6 @@ defmodule Room do
        end)
 
     {:noreply, room}
-  end
-
-  def handle_info(:load_items, room) do
-    query = from i in assoc(room, :items), select: i.id
-
-    items = query
-            |> ApathyDrive.Repo.all
-            |> Enum.map(fn(item_id) ->
-                 Item.load(item_id)
-               end)
-            |> Enum.reject(&(&1 == nil))
-
-    {:noreply, put_in(room.items_on_floor, items)}
-  end
-
-  def handle_info({:add_item, %Item{} = item}, room) do
-    item = item
-           |> Map.put(:monster_id, nil)
-           |> Map.put(:equipped, false)
-           |> Map.put(:room_id, room.id)
-           |> Item.save
-
-    {:noreply, put_in(room.items_on_floor, [item | room.items_on_floor])}
-  end
-
-  def handle_info({:remove_item, %Item{} = item}, room) do
-    {:noreply, put_in(room.items_on_floor, Enum.reject(room.items_on_floor, &(&1.id == item.id)))}
   end
 
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do

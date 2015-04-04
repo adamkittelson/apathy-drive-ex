@@ -4,16 +4,8 @@ defmodule Systems.Death do
   def kill(%Monster{} = monster) do
     room = Room.find(monster.room_id)
 
-    ApathyDrive.PubSub.broadcast!("monsters:#{monster.id}", {:possessed_monster_died, monster})
+    ApathyDrive.PubSub.broadcast!("monsters:#{monster.id}",   {:possessed_monster_died, monster})
     ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_died, monster: monster, reward: experience_to_grant(monster)})
-
-    Map.values(monster.equipment) ++ monster.inventory
-    |> Enum.each(fn(%Item{} = item) ->
-         Map.put(item, :monster_id, nil)
-         |> Item.save
-
-         send(room, {:add_item, item})
-       end)
 
     ApathyDrive.Repo.delete(monster)
     Process.exit(self, :normal)

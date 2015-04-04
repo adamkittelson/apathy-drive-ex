@@ -17,10 +17,8 @@ defmodule Commands.Look do
           ApathyDrive.Exit.look(spirit, Enum.join(arguments, " "))
         target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
           Systems.Description.add_description_to_scroll(spirit, target)
-        target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
+        target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->
           Spirit.send_scroll spirit, "<p>#{target}</p>"
-        target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
-          Spirit.send_scroll spirit, "<p>#{target.description}</p>"
       true ->
         Spirit.send_scroll(spirit, "<p>You do not notice that here.</p>")
       end
@@ -38,12 +36,8 @@ defmodule Commands.Look do
           ApathyDrive.Exit.look(monster, Enum.join(arguments, " "))
         target = current_room |> find_monster_in_room(Enum.join(arguments, " "), monster) ->
           Systems.Description.add_description_to_scroll(monster, target)
-        target = current_room |> find_hidden_item_in_room(Enum.join(arguments, " ")) ->
+        target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->
           Monster.send_scroll monster, "<p>#{target}</p>"
-        target = find_item_in_room(current_room, Enum.join(arguments, " ")) ->
-          Monster.send_scroll monster, "<p>#{target.description}</p>"
-        target = find_item_on_monster(monster, Enum.join(arguments, " ")) ->
-          Monster.send_scroll monster, "<p>#{target.description}</p>"
         true ->
           Monster.send_scroll(monster, "<p>You do not notice that here.</p>")
       end
@@ -70,23 +64,25 @@ defmodule Commands.Look do
     |> Systems.Match.one(:name_contains, string)
   end
 
-  defp find_item_in_room(%Room{} = room, string) do
-    room
-    |> Room.items
-    |> Systems.Match.one(:name_contains, string)
-  end
+  defp find_item_in_room(%Room{item_descriptions: item_descriptions}, string) do
+    visible_item = item_descriptions["visible"]
+                   |> Map.keys
+                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                   |> Systems.Match.one(:keyword_starts_with, string)
 
-  defp find_item_on_monster(%Monster{} = monster, string) do
-    (Monster.equipped_items(monster) ++ Monster.inventory(monster))
-    |> Systems.Match.one(:name_contains, string)
-  end
+    hidden_item = item_descriptions["hidden"]
+                  |> Map.keys
+                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                  |> Systems.Match.one(:keyword_starts_with, string)
 
-  defp find_hidden_item_in_room(%Room{item_descriptions: item_descriptions}, string) do
-    key = item_descriptions
-          |> Map.keys
-          |> Enum.find(&(&1 == string))
-
-    item_descriptions[key]
+    cond do
+      visible_item ->
+        item_descriptions["visible"][visible_item.name]
+      hidden_item ->
+        item_descriptions["hidden"][hidden_item.name]
+      true ->
+        nil
+    end
   end
 
 end

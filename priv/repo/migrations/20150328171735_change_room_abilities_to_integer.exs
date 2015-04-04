@@ -9,9 +9,9 @@ defmodule ApathyDrive.Repo.Migrations.ChangeRoomAbilitiesToInteger do
   end
 
   def down do
-    alter table(:item_templates) do
-      add :room_ability, :text
+    alter table(:rooms) do
       remove :ability_id
+      add :room_ability, :string
     end
   end
 end

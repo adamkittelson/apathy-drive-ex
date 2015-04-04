@@ -44,15 +44,6 @@ defmodule ApathyDrive.Exits.Doors do
         Monster.modified_stat(monster, "strength") + room_exit["difficulty"] >= :random.uniform(100)
       end
 
-      def damage(monster) do
-        amount = monster
-                 |> Systems.Damage.base_attack_damage
-                 |> Systems.Damage.raw_damage
-
-        Monster.send_scroll(monster, "<p>You take #{amount} damage for bashing the #{name}!</p>")
-        Systems.Damage.do_damage(monster, amount)
-      end
-
       def bash(%Monster{} = monster, %Room{} = room, room_exit) do
         cond do
           open?(room, room_exit) ->
@@ -69,7 +60,7 @@ defmodule ApathyDrive.Exits.Doors do
                                                            direction: room_exit["direction"],
                                                            type: name }})
             # if :random.uniform(3) == 3 do
-            #   damage(monster)
+            #   Monster.send_scroll(monster, "<p>You take #{amount} damage for bashing the #{name}!</p>")
             # end
             monster
         end
@@ -113,30 +104,6 @@ defmodule ApathyDrive.Exits.Doors do
                                                              direction: room_exit["direction"],
                                                              type: name }})
               monster
-            end
-        end
-      end
-
-      def unlock(monster, room, room_exit) do
-        cond do
-          open?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is already open.</p>")
-          !locked?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is already unlocked.</p>")
-          true ->
-            key = monster
-                  |> Components.Items.get_items
-                  |> Enum.find(fn(item) ->
-                       Components.Name.value(item) == room_exit.key
-                     end)
-
-            if key do
-              #unlock!(room, room_exit["direction"])
-              Monster.send_scroll(monster, "<p>You unlocked the #{name} with your #{Components.Name.value(key)}.</p>")
-              Components.Uses.use!(key)
-              #mirror_unlock(room, room_exit)
-            else
-              Monster.send_scroll(monster, "<p>None of your keys seem to fit this lock.</p>")
             end
         end
       end

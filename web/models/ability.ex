@@ -247,7 +247,7 @@ defmodule Ability do
   def global_cooldown(%Ability{global_cooldown: :weapon_speed} = ability, %Monster{} = monster) do
     cost = (ability.properties["weapon_speed"] * 1000) / (((((monster.level * 5) + 45) * (Monster.modified_stat(monster, "agility") + 150)) * 1500) / 9000.0)
 
-    4 / (1000.0 / round(cost * ((trunc(trunc(Monster.current_encumbrance(monster) / Monster.max_encumbrance(monster)) * 100) / 2) + 75) / 100.0))
+    4 / (1000.0 / round(cost * 75 / 100.0))
   end
   def global_cooldown(%Ability{global_cooldown: gc}, %Monster{}), do: gc
 
