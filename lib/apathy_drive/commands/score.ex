@@ -28,9 +28,6 @@ defmodule Commands.Score do
     mana = "#{monster.mana}/#{Monster.max_mana(monster)}"
     Monster.send_scroll(monster, "<p><span class='dark-green'>HP:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span>  <span class='dark-cyan'>#{mana}</span></p>\n")
 
-    stat_names = ["strength", "agility", "intelligence", "health"]
-    chunks = get_chunks(stat_names)
-    Enum.each chunks, &display_stats(monster, &1)
     display_effects(monster)
     monster
   end
@@ -43,30 +40,6 @@ defmodule Commands.Score do
     |> Enum.each(fn(message) ->
          Monster.send_scroll(monster, "<p>#{message}</p>")
        end)
-  end
-
-  defp display_stats(%Monster{} = monster, [stat1, stat2]) do
-    Monster.send_scroll(monster, "<p>#{stattext(monster, stat1)} #{stattext(monster, stat2)}</p>")
-  end
-
-  defp display_stats(%Monster{} = monster, [stat]) do
-    Monster.send_scroll(monster, "<p>#{stattext(monster, stat)}</p>")
-  end
-
-  defp stattext(%Monster{} = monster, stat) do
-    stat_rating = Monster.modified_stat(monster, stat)
-    String.ljust("<span class='dark-green'>#{String.ljust("#{String.capitalize(stat)}:", 15)}</span> <span class='dark-cyan'>#{String.ljust("#{stat_rating}", 7)}</span>", 18)
-  end
-
-  defp get_chunks([]), do: []
-  defp get_chunks(stats) do
-    chunks = Enum.chunk(stats, 2)
-    last_stat = stats |> List.last
-    if List.flatten(chunks) |> Enum.member?(last_stat) do
-      chunks
-    else
-      [[last_stat] | chunks |> Enum.reverse] |> Enum.reverse
-    end
   end
 
 end

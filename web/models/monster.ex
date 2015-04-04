@@ -11,13 +11,16 @@ defmodule Monster do
     field :name,                :string
     field :skills,              ApathyDrive.JSONB, default: %{}
     field :limbs,               ApathyDrive.JSONB
-    field :experience,          :integer, default: 0
     field :level,               :integer, default: 1
     field :alignment,           :integer
     field :lair_id,             :integer
+    field :experience,          :integer, virtual: true
     field :max_hp,              :integer, virtual: true
+    field :max_mana,            :integer, virtual: true
     field :hp,                  :integer, virtual: true
     field :mana,                :integer, virtual: true
+    field :hp_regen,            :integer, virtual: true
+    field :mana_regen,          :integer, virtual: true
     field :hunting,             :any,     virtual: true, default: []
     field :combat,              :any,     virtual: true, default: %{"break_at" => 0}
     field :effects,             :any,     virtual: true, default: %{}
@@ -80,8 +83,8 @@ defmodule Monster do
 
     monster = monster
               |> TimerManager.call_every({:monster_ai,    5_000, fn -> send(self, :think) end})
-              |> TimerManager.call_every({:monster_regen, 5_000, fn -> send(self, :regen) end})
-              |> TimerManager.call_every({:calm_down,    10_000, fn -> send(self, :calm_down) end})
+              |> TimerManager.call_every({:monster_regen, 10_000, fn -> send(self, :regen) end})
+              |> TimerManager.call_every({:calm_down,     10_000, fn -> send(self, :calm_down) end})
 
     {:ok, monster}
   end
@@ -260,7 +263,7 @@ defmodule Monster do
 
         monster = monster
                   |> Map.put(:hp, monster.max_hp)
-                  |> Map.put(:mana, Monster.max_mana(monster))
+                  |> Map.put(:mana, monster.max_mana)
                   |> Map.put(:keywords, String.split(monster.name))
                   |> Map.put(:effects, %{"monster_template" => mt.effects})
 
@@ -301,32 +304,8 @@ defmodule Monster do
   def effect_description(nil), do: nil
   def effect_description(%{"description" => description}), do: description
 
-  def max_mana(%Monster{} = monster) do
-    intelligence = modified_stat(monster, "intelligence")
-
-    x = trunc(intelligence * (0.5 + (intelligence / 100)))
-    y = x / (125 + x)
-    trunc((x / 10) + (x * (1 - y)))
-  end
-
-  def pre_effect_bonus_stat(%Monster{} = monster, stat_name) do
-    Map.get(monster, String.to_atom(stat_name), 0) +
-    stat_skill_bonus(monster, stat_name)
-  end
-
-  def modified_stat(%Monster{} = monster, stat_name) do
-    pre_effect_bonus_stat(monster, stat_name) +
-    effect_bonus(monster, stat_name)
-  end
-
-  def stat_skill_bonus(%Monster{} = monster, stat_name) do
-    Skill.with_modifier(stat_name, trained_skills(monster))
-    |> Enum.reduce(0, fn(skill, total_stat_modification) ->
-         base = skill_from_training(monster, skill.name)
-         percentage = Skill.modifier_percentage(skill, stat_name)
-         total_stat_modification + base * percentage
-       end)
-    |> trunc
+  def max_mana(%Monster{max_mana: max_mana} = monster) do
+    max_mana
   end
 
   def trained_skills(%Monster{skills: skills}) do
@@ -374,19 +353,11 @@ defmodule Monster do
     base = base_skill(monster, skill_name)
 
     modified = if base > 0 do
-      total = ["strength", "intelligence", "agility", "health"]
-              |> Enum.reduce(0, fn(stat, total) ->
-                   total + modified_stat(monster, stat) * Map.get(skill, String.to_atom(stat), 0)
-                 end)
-
-      average = total / Skill.modifier_total(skill)
-
       light_level = monster
                     |> find_room
                     |> Room.light_level(monster)
 
-      round(base * (1 + average * 0.005))
-      |> Skill.modify_for_room_light(light_level)
+      Skill.modify_for_room_light(base, light_level)
     else
       0
     end
@@ -513,28 +484,6 @@ defmodule Monster do
               |> capitalize_first
 
     ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
-  end
-
-  defp regen_rate(seed) when is_integer(seed) do
-    regen_rate(trunc(seed / 2), 0)
-  end
-
-  defp regen_rate(seed, rate) when seed > 0 do
-    regen_rate(seed - 1, rate + ((seed - 1) / 100))
-  end
-
-  defp regen_rate(0, rate) do
-    trunc(rate)
-  end
-
-  def hp_regen_per_tick(%Monster{} = monster) do
-    regen_rate(modified_stat(monster, "health"))
-    |> max(1)
-  end
-
-  def mana_regen_per_tick(%Monster{} = monster) do
-    regen_rate(modified_stat(monster, "intelligence"))
-    |> max(1)
   end
 
   def ac(%Monster{} = monster) do
@@ -827,12 +776,10 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info(:regen, %Monster{hp: hp, max_hp: max_hp, mana: mana} = monster) do
-    max_mana = max_mana(monster)
-
+  def handle_info(:regen, %Monster{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = monster) do
     monster = monster
-              |> Map.put(:hp,   min(  hp + hp_regen_per_tick(monster),   max_hp))
-              |> Map.put(:mana, min(mana + mana_regen_per_tick(monster), max_mana))
+              |> Map.put(:hp,   min(  hp + monster.hp_regen,   max_hp))
+              |> Map.put(:mana, min(mana + monster.mana_regen, max_mana))
               |> Systems.Prompt.update
 
     {:noreply, monster}

@@ -41,7 +41,7 @@ defmodule ApathyDrive.Exits.Doors do
 
       def bash?(%Monster{} = monster, room_exit) do
         :random.seed(:os.timestamp)
-        Monster.modified_stat(monster, "strength") + room_exit["difficulty"] >= :random.uniform(100)
+        80 + room_exit["difficulty"] >= :random.uniform(100)
       end
 
       def bash(%Monster{} = monster, %Room{} = room, room_exit) do

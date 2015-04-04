@@ -58,13 +58,7 @@ defmodule Systems.Trainer do
       Monster.send_scroll(monster, "<p>You need #{cost} development points to train that skill.</p>")
       Monster.send_scroll(monster, "<p>You only have #{devs}.</p>")
     else
-      old_strength     = Monster.modified_stat(monster, "strength")
-      old_agility      = Monster.modified_stat(monster, "agility")
-      old_intelligence = Monster.modified_stat(monster, "intelligence")
-      old_health       = Monster.modified_stat(monster, "health")
-
       old_abilities = monster.abilities |> Enum.map(&(&1.name))
-
 
       skills = Map.put_new(monster.skills, skill.name, %{})
       current = get_in(skills, [skill.name, "trained"]) || 0
@@ -79,31 +73,6 @@ defmodule Systems.Trainer do
       monster = Monster.save(monster)
 
       Monster.send_scroll(monster, "<p>You spend #{spent} development points to train #{skill.name} to #{rating}%</p>")
-
-      new_strength     = Monster.modified_stat(monster, "strength")
-      new_agility      = Monster.modified_stat(monster, "agility")
-      new_intelligence = Monster.modified_stat(monster, "intelligence")
-      new_health       = Monster.modified_stat(monster, "health")
-
-      difference = new_strength - old_strength
-      if difference > 0 do
-        Monster.send_scroll(monster, "<p>Your strength increases by #{difference}!</p>")
-      end
-
-      difference = new_agility - old_agility
-      if difference > 0 do
-        Monster.send_scroll(monster, "<p>Your agility increases by #{difference}!</p>")
-      end
-
-      difference = new_intelligence - old_intelligence
-      if difference > 0 do
-        Monster.send_scroll(monster, "<p>Your intelligence increases by #{difference}!</p>")
-      end
-
-      difference = new_health - old_health
-      if difference > 0 do
-        Monster.send_scroll(monster, "<p>Your health increases by #{difference}!</p>")
-      end
 
       monster = Monster.set_abilities(monster)
 

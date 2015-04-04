@@ -84,22 +84,7 @@ defmodule MonsterTest do
     end
   end
 
-  with "a monster with 10 strength and no skills" do
-    setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{}}
-    end
-
-    should("have no trained skills", context) do
-      assert Monster.trained_skills(context.monster) == []
-    end
-
-    should("have 10 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 10
-    end
-  end
-
-  with "a monster with 10 strength and 100 devs spent on armour" do
+  with "100 devs spent on armour" do
     setup context do
       Dict.put context, :monster, %Monster{strength: 10,
                                            skills: %{"armour" => %{"trained" => 100}}}
@@ -112,13 +97,9 @@ defmodule MonsterTest do
     should("have 14 armour", context) do
       assert Monster.base_skill(context.monster, "armour") == 14
     end
-
-    should("have 17 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 17
-    end
   end
 
-  with "a monster with 10 strength and 14 armour" do
+  with "a monster with 14 armour" do
     setup context do
       Dict.put context, :monster, %Monster{strength: 10,
                                            skills: %{"armour" => %{"base" => 14}}}
@@ -131,35 +112,11 @@ defmodule MonsterTest do
     should("have 14 armour", context) do
       assert Monster.base_skill(context.monster, "armour") == 14
     end
-
-    should("have 10 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 10
-    end
   end
 
-  with "a monster with 10 strength and 5 strength from effects" do
+  with "a monster with 10 armour" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{},
-                                           effects: %{"some_key" => %{"strength" => 2},
-                                                      "some_other_key" => %{"strength" => 3}}}
-    end
-
-    should("have no trained skills", context) do
-      assert Monster.trained_skills(context.monster) == []
-    end
-
-    should("have 15 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 15
-    end
-  end
-
-  with "a monster with 10 strength and 10 armour, and 5 strength from effects" do
-    setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"armour" => %{"base" => 10, "trained" => 100}},
-                                           effects: %{"some_key" => %{"strength" => 2},
-                                                      "some_other_key" => %{"strength" => 3}}}
+      Dict.put context, :monster, %Monster{skills: %{"armour" => %{"base" => 10, "trained" => 100}}}
     end
 
     should("have trained armour", context) do
@@ -168,40 +125,6 @@ defmodule MonsterTest do
 
     should("have 24 armour", context) do
       assert Monster.base_skill(context.monster, "armour") == 24
-    end
-
-    should("have 22 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 22
-    end
-  end
-
-  with "a monster with intelligence" do
-    setup context do
-      Dict.put context, :monster, %Monster{intelligence: 3}
-    end
-
-    should("have 1 max mana", context) do
-      assert Monster.max_mana(context.monster) == 1
-    end
-  end
-
-  with "a monster with 50 intelligence" do
-    setup context do
-      Dict.put context, :monster, %Monster{intelligence: 50}
-    end
-
-    should("have 40 max mana", context) do
-      assert Monster.max_mana(context.monster) == 40
-    end
-  end
-
-  with "a monster with 100 intelligence" do
-    setup context do
-      Dict.put context, :monster, %Monster{intelligence: 100}
-    end
-
-    should("have 83 max mana", context) do
-      assert Monster.max_mana(context.monster) == 83
     end
   end
 
