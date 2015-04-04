@@ -97,3 +97,6 @@ CHANGELOG
 
 ---- 0.0.32 / 2015-01-04 / upgrade-phoenix -------------------------------------
 * upgrade phoenix to 0.7.2
+
+---- 0.0.33 / 2015-04-04 / big-crazy-refactor ----------------------------------
+* switch from gen_event to gen_server, use separate tables instead of a giant entities table
