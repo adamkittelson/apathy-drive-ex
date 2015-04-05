@@ -19,7 +19,7 @@ defmodule MonsterTemplate do
     field :chance_to_follow,  :integer
     field :disposition,       :string
     field :alignment,         :string
-    field :possession_level,  :integer
+    field :level,  :integer
     field :questions,         ApathyDrive.JSONB
     field :flags,             {:array, :string}, default: []
     field :max_hp,            :integer
@@ -85,18 +85,6 @@ defmodule MonsterTemplate do
     "#{adjective} #{name}"
   end
 
-  def alignment(alignment) do
-    alignment = case alignment do
-      "good" ->
-        -75
-      "neutral" ->
-        0
-      "evil" ->
-        75
-    end
-    alignment
-  end
-
   def value(monster) do
     GenServer.call(monster, :value)
   end
@@ -118,7 +106,6 @@ defmodule MonsterTemplate do
               |> Map.put(:name, name_with_adjective(monster_template.name, monster_template.adjectives))
               |> Map.put(:monster_template_id, monster_template.id)
               |> Map.put(:id, nil)
-              |> Map.put(:alignment, alignment(monster_template.alignment))
               |> Map.put(:room_id, room.id)
               |> Map.put(:lair_id, room.id)
               |> Map.put(:skills, skills)

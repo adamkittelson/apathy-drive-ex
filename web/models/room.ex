@@ -157,32 +157,18 @@ defmodule Room do
     Spirit.send_scroll spirit, html
   end
 
-  def look(%Room{} = room, %Monster{} = monster) do
-    light = light_level(room, monster)
-
+  def look(%Room{light: light} = room, %Monster{} = monster) do
     html = if light > -200 and light < 200 do
-      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light(room, monster)}</div>)
+      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light(room)}</div>)
     else
-      "<div class='room'>#{light(room, monster)}</div>"
+      "<div class='room'>#{light(room)}</div>"
     end
 
     Monster.send_scroll(monster, html)
   end
 
-  def light(%Room{} = room, %Monster{} = monster) do
-    light_level(room, monster)
-    |> light_desc
-  end
-
-  def light_level(%Room{light: light} = room, %Monster{alignment: alignment} = monster) do
-    cond do
-      alignment > 0 and light < 0 ->
-        min(0, light + alignment)
-      alignment < 0 and light > 0 ->
-        max(0, light + alignment)
-      true ->
-        light
-    end
+  def light(%Room{light: light}) do
+    light_desc(light)
   end
 
   def light_desc(light_level)  when light_level < -1000, do: "<p>You are blind.</p>"

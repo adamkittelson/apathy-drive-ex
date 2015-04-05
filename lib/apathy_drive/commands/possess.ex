@@ -23,10 +23,10 @@ defmodule Commands.Possess do
     end
   end
 
-  def possess(%Spirit{level: level} = spirit, %Monster{possession_level: possession_level} = monster)
-    when level < possession_level do
+  def possess(%Spirit{level: level} = spirit, %Monster{level: monster_level} = monster)
+    when level < monster_level do
     spirit
-    |> Spirit.send_scroll("<p>You must be at least level #{possession_level} to possess #{monster.name}.")
+    |> Spirit.send_scroll("<p>You must be at least level #{monster_level} to possess #{monster.name}.")
   end
 
   def possess(%Spirit{} = spirit, %Monster{} = monster) do

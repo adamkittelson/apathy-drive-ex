@@ -9,11 +9,10 @@ defmodule Monster do
 
   schema "monsters" do
     field :name,                :string
-    field :skills,              ApathyDrive.JSONB, default: %{}
-    field :limbs,               ApathyDrive.JSONB
-    field :level,               :integer, default: 1
-    field :alignment,           :integer
     field :lair_id,             :integer
+    field :skills,              :any,     virtual: true, default: %{}
+    field :level,               :integer, virtual: true
+    field :alignment,           :string,  virtual: true
     field :experience,          :integer, virtual: true
     field :max_hp,              :integer, virtual: true
     field :max_mana,            :integer, virtual: true
@@ -33,14 +32,7 @@ defmodule Monster do
     field :abilities,           :any,     virtual: true
     field :greeting,            :string,  virtual: true
     field :gender,              :string,  virtual: true
-    field :strength,            :integer, virtual: true
-    field :agility,             :integer, virtual: true
-    field :intelligence,        :integer, virtual: true
-    field :health,              :integer, virtual: true
-    field :hit_verbs,           :any,     virtual: true
     field :chance_to_follow,    :integer, virtual: true
-    field :damage,              :any,     virtual: true
-    field :possession_level,    :integer, virtual: true
     field :questions,           :any,     virtual: true
     field :pid,                 :any,     virtual: true
     field :keywords,            {:array, :string}, virtual: true
@@ -427,22 +419,11 @@ defmodule Monster do
     end
   end
 
-  def good?(%Monster{alignment: alignment}) when alignment < -50, do: true
+  def good?(%Monster{alignment: "good"}), do: true
   def good?(%Monster{}), do: false
-  def evil?(%Monster{alignment: alignment}) when alignment > 50,  do: true
+  def evil?(%Monster{alignment: "evil"}),  do: true
   def evil?(%Monster{}), do: false
   def neutral?(%Monster{} = monster), do: !good?(monster) and !evil?(monster)
-
-  def get_alignment(%Monster{} = monster) do
-    cond do
-      good?(monster) ->
-        "good"
-      evil?(monster) ->
-        "evil"
-      true ->
-        "neutral"
-    end
-  end
 
   def display_enter_message(%Room{} = room, monster) when is_pid(monster) do
     display_enter_message(%Room{} = room, Monster.value(monster))
@@ -972,7 +953,7 @@ defmodule Monster do
   end
 
   def handle_info({:monster_entered, intruder, intruder_alignment}, monster) do
-    monster = Systems.Aggression.react(%{monster: monster, alignment: Monster.get_alignment(monster)}, %{intruder: intruder, alignment: intruder_alignment})
+    monster = Systems.Aggression.react(%{monster: monster, alignment: monster.alignment}, %{intruder: intruder, alignment: intruder_alignment})
 
     2000
     |> :random.uniform
