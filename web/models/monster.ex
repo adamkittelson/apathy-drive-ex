@@ -39,6 +39,7 @@ defmodule Monster do
     field :flags,               {:array, :string}, virtual: true
     field :hate,                :any, virtual: true, default: HashDict.new
     field :attacks,             :any, virtual: true
+    field :spirit,              :any, virtual: true
 
     timestamps
 
@@ -300,17 +301,6 @@ defmodule Monster do
     max_mana
   end
 
-  def trained_skills(%Monster{skills: skills}) do
-    skills
-    |> Map.keys
-    |> Enum.filter(fn(skill_name) ->
-         trained = skills
-                   |> Map.get(skill_name)
-                   |> Map.get("trained", 0)
-         trained > 0
-       end)
-  end
-
   def effect_bonus(%Monster{effects: effects}, name) do
     effects
     |> Map.values
@@ -331,10 +321,10 @@ defmodule Monster do
        end)
   end
 
-  def base_skill(%Monster{skills: skills} = monster, skill_name) do
-    skills
-    |> Map.get(skill_name, %{})
-    |> Map.get("base", 0)
+  def base_skill(%Monster{skills: skills, spirit: spirit} = monster, skill_name) do
+    monster_skill = Map.get(skills, skill_name, 0)
+    spirit_skill = Spirit.skill(spirit, skill_name)
+    max(monster_skill, spirit_skill)
   end
 
   def modified_skill(%Monster{} = monster, skill_name) do
@@ -922,6 +912,23 @@ defmodule Monster do
     else
       {:noreply, monster}
     end
+  end
+
+  def handle_info({:possession, %Spirit{level: spirit_level} = spirit},
+                                %Monster{level: monster_level, spirit: nil} = monster)
+                                when spirit_level < monster_level do
+    Spirit.send_scroll(spirit, "<p>You must be at least level #{monster_level} to possess #{monster.name}.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:possession, spirit}, %Monster{spirit: nil} = monster) do
+    send(spirit.pid, {:possess, monster})
+    {:noreply, Map.put(monster, :spirit, spirit)}
+  end
+
+  def handle_info({:possession, spirit}, %Monster{spirit: _spirit} = monster) do
+    Spirit.send_scroll(spirit, "<p>#{capitalize_first(monster.name)} is already possessed.</p>")
+    {:noreply, Map.put(monster, :spirit, spirit)}
   end
 
   def handle_info(_message, monster) do

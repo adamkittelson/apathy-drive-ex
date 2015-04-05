@@ -8,9 +8,10 @@ defmodule Commands.Unpossess do
     |> Spirit.send_scroll("<p>You aren't possessing anything.</p>")
   end
 
-  def execute(%Monster{} = monster, _arguments) do
-    ApathyDrive.PubSub.broadcast!("monsters:#{monster.id}", :unpossess)
-    monster
+  def execute(%Monster{spirit: spirit} = monster, _arguments) do
+    send(spirit.pid, {:unpossess, monster})
+
+    Map.put(monster, :spirit, nil)
   end
 
 end

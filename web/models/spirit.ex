@@ -66,6 +66,7 @@ defmodule Spirit do
     |> Map.put(:abilities, abilities)
   end
 
+  def skills(nil), do: %{}
   def skills(%Spirit{skills: skills} = spirit) do
     skills
     |> Map.keys
@@ -74,6 +75,7 @@ defmodule Spirit do
        end)
   end
 
+  def skill(nil, _skill_name), do: 0
   def skill(%Spirit{skills: skills}, skill_name) do
     skill = Skill.find(skill_name)
 
@@ -279,17 +281,14 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info(:unpossess, spirit) do
-    monster = spirit.monster
-    room_id = Monster.room_id(monster)
-
+  def handle_info({:unpossess, %Monster{id: id, room_id: room_id} = monster}, spirit) do
     spirit = spirit
              |> Map.put(:monster, nil)
              |> set_room_id(room_id)
-             |> Spirit.send_scroll("<p>You leave the body of #{Monster.name(monster)}.</p>")
+             |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
              |> Systems.Prompt.update
 
-    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{Monster.id(monster)}")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{id}")
 
     {:noreply, spirit}
   end
@@ -464,6 +463,18 @@ defmodule Spirit do
 
   def handle_info(:set_abilities, spirit) do
     {:noreply, set_abilities(spirit) }
+  end
+
+  def handle_info({:possess, %Monster{} = monster}, spirit) do
+    ApathyDrive.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
+    ApathyDrive.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
+
+    spirit = spirit
+             |> Map.put(:monster, monster.pid)
+             |> Spirit.send_scroll("<p>You possess #{monster.name}.")
+
+    Systems.Prompt.update(monster)
+    {:noreply, spirit}
   end
 
   def handle_info(_message, spirit) do

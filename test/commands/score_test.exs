@@ -22,6 +22,7 @@ defmodule Commands.ScoreTest do
   with "a spirit with a name" do
     setup context do
       Dict.put(context, :spirit, %Spirit{name: "Adam",
+                                         skills: %{},
                                          level: 5,
                                          experience: 98765,
                                          socket: %Phoenix.Socket{pid: self}})
@@ -31,7 +32,7 @@ defmodule Commands.ScoreTest do
       Commands.Score.execute(context.spirit, [])
 
       assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"
-      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5</span></p>"
+      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span><span class='dark-green'>Devs:</span> <span class='dark-cyan'>4257</span></p>"
     end
   end
 
