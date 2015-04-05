@@ -11,7 +11,9 @@ defmodule Commands.Unpossess do
   def execute(%Monster{spirit: spirit} = monster, _arguments) do
     send(spirit.pid, {:unpossess, monster})
 
-    Map.put(monster, :spirit, nil)
+    monster
+    |> Map.put(:spirit, nil)
+    |> Monster.set_abilities
   end
 
 end

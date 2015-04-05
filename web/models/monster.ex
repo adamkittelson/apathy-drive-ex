@@ -313,9 +313,17 @@ defmodule Monster do
     |> Enum.sum
   end
 
-  def base_skills(%Monster{skills: skills} = monster) do
+  def base_skills(%Monster{skills: skills, spirit: nil} = monster) do
     skills
     |> Map.keys
+    |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
+         Map.put(base_skills, skill_name, base_skill(monster, skill_name))
+       end)
+  end
+
+  def base_skills(%Monster{skills: skills, spirit: %Spirit{skills: spirit_skills}} = monster) do
+    (Map.keys(skills) ++ Map.keys(spirit_skills))
+    |> Enum.uniq
     |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
          Map.put(base_skills, skill_name, base_skill(monster, skill_name))
        end)
@@ -923,7 +931,12 @@ defmodule Monster do
 
   def handle_info({:possession, spirit}, %Monster{spirit: nil} = monster) do
     send(spirit.pid, {:possess, monster})
-    {:noreply, Map.put(monster, :spirit, spirit)}
+
+    monster = monster
+              |> Map.put(:spirit, spirit)
+              |> set_abilities
+
+    {:noreply, monster}
   end
 
   def handle_info({:possession, spirit}, %Monster{spirit: _spirit} = monster) do
