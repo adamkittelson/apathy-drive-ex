@@ -64,10 +64,6 @@ defmodule MonsterTest do
 
       Dict.put context, :monster, %Monster{skills:  %{"dodge" => %{"base" => 10, "trained" => 10}},
                                            effects: %{"some_key" => %{"dodge" => 10}},
-                                           strength: 0,
-                                           agility:  0,
-                                           intelligence: 0,
-                                           health: 0,
                                            room_id: 1}
     end
 
@@ -86,8 +82,7 @@ defmodule MonsterTest do
 
   with "100 devs spent on armour" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"armour" => %{"trained" => 100}}}
+      Dict.put context, :monster, %Monster{skills: %{"armour" => %{"trained" => 100}}}
     end
 
     should("have trained armour", context) do
@@ -101,8 +96,7 @@ defmodule MonsterTest do
 
   with "a monster with 14 armour" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"armour" => %{"base" => 14}}}
+      Dict.put context, :monster, %Monster{skills: %{"armour" => %{"base" => 14}}}
     end
 
     should("have no trained skills", context) do

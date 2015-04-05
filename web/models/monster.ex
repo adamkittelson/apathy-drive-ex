@@ -345,11 +345,10 @@ defmodule Monster do
     base = base_skill(monster, skill_name)
 
     modified = if base > 0 do
-      light_level = monster
+      room = monster
                     |> find_room
-                    |> Room.light_level(monster)
 
-      Skill.modify_for_room_light(base, light_level)
+      Skill.modify_for_room_light(base, room.light)
     else
       0
     end
