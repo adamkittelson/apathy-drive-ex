@@ -75,26 +75,7 @@ defmodule Systems.Script do
   end
 
   def execute_instruction(%{"add_experience" => exp}, monster, script) do
-    old_power = Systems.Trainer.total_power(monster)
-
-    monster = monster
-              |> Map.put(:experience, monster.experience + exp)
-
-    new_power = Systems.Trainer.total_power(monster)
-
-    power_gain = new_power - old_power
-
-    if exp > 0 do
-      Monster.send_scroll(monster, "<p>You gain #{exp} experience.</p>")
-    end
-
-    if power_gain > 0 do
-      Monster.send_scroll(monster, "<p>You gain #{power_gain} development points.</p>")
-    end
-
-    monster = monster
-              |> Systems.Level.advance
-              |> Monster.save
+    PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
 
     execute_script(script, monster)
   end

@@ -332,11 +332,9 @@ defmodule Monster do
   end
 
   def base_skill(%Monster{skills: skills} = monster, skill_name) do
-    base = skills
-           |> Map.get(skill_name, %{})
-           |> Map.get("base", 0)
-
-    base + skill_from_training(monster, skill_name)
+    skills
+    |> Map.get(skill_name, %{})
+    |> Map.get("base", 0)
   end
 
   def modified_skill(%Monster{} = monster, skill_name) do
@@ -353,33 +351,6 @@ defmodule Monster do
       0
     end
     (modified + effect_bonus(monster, skill_name))
-  end
-
-  def skill_from_training(%Monster{skills: skills}, skill_name) do
-    skill = Skill.find(skill_name)
-
-    power_spent = skills
-                  |> Map.get(skill_name, %{})
-                  |> Map.get("trained", 0)
-
-    modifier = skill.cost
-
-    skill_from_training(modifier, power_spent)
-  end
-  def skill_from_training(modifier, power_spent) do
-    skill_from_training(0, modifier, cost(modifier, 0), power_spent)
-  end
-  def skill_from_training(rating, modifier, cost, power) when power >= cost do
-    new_rating = rating + 1
-    new_cost = cost(modifier, new_rating)
-    skill_from_training(new_rating, modifier, new_cost, power - cost)
-  end
-  def skill_from_training(rating, _modifier, cost, power) when power < cost do
-    rating
-  end
-
-  def cost(modifier, rating) do
-    [rating * modifier * 1.0 |> Float.ceil |> trunc, 1] |> Enum.max
   end
 
   def send_scroll(%Monster{id: id} = monster, html) do
@@ -877,24 +848,7 @@ defmodule Monster do
               |> interpolate(%{"name" => deceased.name})
               |> capitalize_first
 
-    old_power = Systems.Trainer.total_power(monster)
-
-    monster = monster
-              |> send_scroll("<p>#{message}</p>")
-              |> send_scroll("<p>You gain #{exp} experience.</p>")
-              |> Map.put(:experience, monster.experience + exp)
-
-    new_power = Systems.Trainer.total_power(monster)
-
-    power_gain = new_power - old_power
-
-    if power_gain > 0 do
-      send_scroll(monster, "<p>You gain #{power_gain} development points.</p>")
-    end
-
-    monster = monster
-              |> Systems.Level.advance
-              |> Monster.save
+    send_scroll(monster, "<p>#{message}</p>")
 
     PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
 
