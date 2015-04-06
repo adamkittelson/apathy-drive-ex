@@ -100,3 +100,6 @@ CHANGELOG
 
 ---- 0.0.33 / 2015-04-04 / big-crazy-refactor ----------------------------------
 * switch from gen_event to gen_server, use separate tables instead of a giant entities table
+
+---- 0.0.34 / 2015-04-05 / simplify --------------------------------------------
+* remove items / equipment, monsters don'\''t level / gain exp / train, spirits train skills which can be used when possessing a monster
