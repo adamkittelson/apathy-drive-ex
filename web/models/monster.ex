@@ -9,14 +9,17 @@ defmodule Monster do
 
   schema "monsters" do
     field :name,                :string
-    field :skills,              ApathyDrive.JSONB, default: %{}
-    field :limbs,               ApathyDrive.JSONB
-    field :experience,          :integer, default: 0
-    field :level,               :integer, default: 1
-    field :alignment,           :integer
     field :lair_id,             :integer
+    field :skills,              :any,     virtual: true, default: %{}
+    field :level,               :integer, virtual: true
+    field :alignment,           :string,  virtual: true
+    field :experience,          :integer, virtual: true
+    field :max_hp,              :integer, virtual: true
+    field :max_mana,            :integer, virtual: true
     field :hp,                  :integer, virtual: true
     field :mana,                :integer, virtual: true
+    field :hp_regen,            :integer, virtual: true
+    field :mana_regen,          :integer, virtual: true
     field :hunting,             :any,     virtual: true, default: []
     field :combat,              :any,     virtual: true, default: %{"break_at" => 0}
     field :effects,             :any,     virtual: true, default: %{}
@@ -29,27 +32,19 @@ defmodule Monster do
     field :abilities,           :any,     virtual: true
     field :greeting,            :string,  virtual: true
     field :gender,              :string,  virtual: true
-    field :strength,            :integer, virtual: true
-    field :agility,             :integer, virtual: true
-    field :intelligence,        :integer, virtual: true
-    field :health,              :integer, virtual: true
-    field :hit_verbs,           :any,     virtual: true
     field :chance_to_follow,    :integer, virtual: true
-    field :damage,              :any,     virtual: true
-    field :possession_level,    :integer, virtual: true
     field :questions,           :any,     virtual: true
     field :pid,                 :any,     virtual: true
     field :keywords,            {:array, :string}, virtual: true
     field :flags,               {:array, :string}, virtual: true
     field :hate,                :any, virtual: true, default: HashDict.new
-    field :inventory,           :any, virtual: true, default: []
-    field :equipment,           :any, virtual: true, default: %{}
+    field :attacks,             :any, virtual: true
+    field :spirit,              :any, virtual: true
 
     timestamps
 
     belongs_to :room, Room
     belongs_to :monster_template, MonsterTemplate
-    has_many   :items, Item
   end
 
   def init(%Monster{} = monster) do
@@ -81,8 +76,8 @@ defmodule Monster do
 
     monster = monster
               |> TimerManager.call_every({:monster_ai,    5_000, fn -> send(self, :think) end})
-              |> TimerManager.call_every({:monster_regen, 5_000, fn -> send(self, :regen) end})
-              |> TimerManager.call_every({:calm_down,    10_000, fn -> send(self, :calm_down) end})
+              |> TimerManager.call_every({:monster_regen, 10_000, fn -> send(self, :regen) end})
+              |> TimerManager.call_every({:calm_down,     10_000, fn -> send(self, :calm_down) end})
 
     {:ok, monster}
   end
@@ -94,7 +89,7 @@ defmodule Monster do
     abilities = monster_template_abilities(monster)
 
     abilities = abilities ++
-                abilities_from_equipment(monster, abilities) ++
+                abilities_from_attacks(monster) ++
                 abilities_from_skills(monster)
 
     monster
@@ -144,14 +139,7 @@ defmodule Monster do
        end)
   end
 
-  def abilities_from_equipment(%Monster{} = monster, abilities) do
-    monster.equipment
-    |> Map.values
-    |> Enum.find(&(Enum.member?(["Weapon Hand", "Two Handed"], &1.worn_on)))
-    |> abilities_from_weapon(abilities)
-  end
-
-  def abilities_from_weapon(nil, []) do
+  def abilities_from_attacks(%Monster{attacks: []}) do
     [
       %Ability{
         name:    "attack",
@@ -192,54 +180,16 @@ defmodule Monster do
       }
     ]
   end
-
-  def abilities_from_weapon(nil, abilities) do
-    attacks = abilities
-              |> Enum.filter(&(&1.kind == "attack"))
-
-    if Enum.any?(attacks) do
-      []
-    else
-      abilities_from_weapon(nil, [])
-    end
-  end
-
-  def abilities_from_weapon(%Item{} = weapon, _abilities) do
-    Enum.map(weapon.hit_verbs, fn(verb) ->
-      weapon = put_in(weapon.properties["damage"]["scaling"],
-                      Map.put(%{},
-                              weapon.accuracy_skill,
-                              %{"max_every"    => 20,
-                                "max_increase" => 1,
-                                "min_every"    => 25,
-                                "min_increase" => 1}))
-
+  def abilities_from_attacks(%Monster{attacks: attacks}) do
+    Enum.map(attacks, fn(attack) ->
       %Ability{
-        name:    "attack",
-        command: "a",
-        kind:    "attack",
-        required_skills: weapon.required_skills,
-        flags: [],
-        global_cooldown: :weapon_speed,
-        properties: %{
-          "dodgeable" => true,
-          "accuracy_skill" => weapon.accuracy_skill,
-          "dodge_message" => %{
-            "target" => "{{user}} swings at you with {{user:his/her/its}} #{weapon.name}, but you dodge!",
-            "user" => "You swing at {{target}} with your #{weapon.name}, but {{target:he/she/it}} dodges!",
-            "spectator" => "{{user}} swings at {{target}} with {{user:his/her/its}} #{weapon.name}, but they dodge!"
-          },
-          "instant_effects" => %{
-            "damage" => weapon.properties["damage"]
-          },
-          "cast_message" => %{
-            "target" => "{{user}} #{Inflex.pluralize(verb)} you with {{user:his/her/its}} #{weapon.name} for {{amount}} damage!",
-            "user" => "You #{verb} {{target}} with your #{weapon.name} for {{amount}} damage!",
-            "spectator" => "{{user}} #{Inflex.pluralize(verb)} {{target}} with {{user:his/her/its}} #{weapon.name} for {{amount}} damage!"
-          },
-          "damage_type" => "normal",
-          "weapon_speed" => weapon.speed || 1150
-        }
+        name:    attack["name"],
+        command: attack["command"],
+        kind:    attack["kind"],
+        required_skills: attack["required_skills"],
+        global_cooldown: attack["global_cooldown"],
+        flags: attack["flags"],
+        properties: attack["properties"]
       }
     end)
   end
@@ -254,21 +204,6 @@ defmodule Monster do
     effects
     |> Map.values
     |> Enum.any?(&(&1["cooldown"] == :ai_movement))
-  end
-
-  def max_encumbrance(%Monster{} = monster) do
-    modified_stat(monster, "strength") * 48
-  end
-
-  def current_encumbrance(%Monster{inventory: inventory}) do
-    inventory
-    |> Enum.reduce(0, fn(item, encumbrance) ->
-        encumbrance + item.weight
-       end)
-  end
-
-  def remaining_encumbrance(%Monster{} = monster) do
-    max_encumbrance(monster) - current_encumbrance(monster)
   end
 
   def execute_command(monster, command, arguments) do
@@ -320,20 +255,10 @@ defmodule Monster do
         monster = struct(Monster, monster)
 
         monster = monster
-                  |> Map.put(:hp, Monster.max_hp(monster))
-                  |> Map.put(:mana, Monster.max_mana(monster))
+                  |> Map.put(:hp, monster.max_hp)
+                  |> Map.put(:mana, monster.max_mana)
                   |> Map.put(:keywords, String.split(monster.name))
-
-        monster = monster
-                  |> item_ids
-                  |> Enum.map(&Item.load/1)
-                  |> Enum.reduce(monster, fn(item, mon) ->
-                       if item.equipped do
-                         equip_item(mon, item, nil)
-                       else
-                         put_in(mon.inventory, [item | mon.inventory])
-                       end
-                     end)
+                  |> Map.put(:effects, %{"monster_template" => mt.effects})
 
         {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
 
@@ -341,10 +266,6 @@ defmodule Monster do
       nil ->
         nil
     end
-  end
-
-  def item_ids(%Monster{} = monster) do
-    Repo.all(from i in assoc(monster, :items), select: i.id)
   end
 
   def find_room(%Monster{room_id: room_id}) do
@@ -357,61 +278,11 @@ defmodule Monster do
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}")
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters")
 
-    PubSub.subscribers("monsters:#{monster.id}:items")
-    |> Enum.each(fn(item) ->
-         ApathyDrive.PubSub.unsubscribe(item, "rooms:#{monster.room_id}:lights")
-         item = Item.value(item)
-         if Item.lit?(item) do
-           ApathyDrive.PubSub.subscribe(item.pid, "rooms:#{room_id}:lights")
-         end
-       end)
-
     PubSub.subscribe(self, "rooms:#{room_id}")
     PubSub.subscribe(self, "rooms:#{room_id}:monsters")
     monster
     |> Map.put(:room_id, room_id)
     |> Systems.Effect.add(%{"cooldown" => :ai_movement}, 30)
-  end
-
-  def display_inventory(%Monster{} = monster) do
-    if monster.equipment |> Map.values |> Enum.any? do
-      Monster.send_scroll(monster, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
-      monster.equipment
-      |> Map.values
-      |> Enum.each fn(item) ->
-        send_scroll(monster, "<p><span class='dark-green'>#{String.ljust(item.name, 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
-      end
-      send_scroll(monster, "<br>")
-    end
-
-    items = monster.inventory |> Enum.map(&(&1.name))
-    if items |> Enum.count > 0 do
-      send_scroll(monster, "<p>You are carrying #{Enum.join(items, ", ")}</p>")
-    else
-      send_scroll(monster, "<p>You are carrying nothing.</p>")
-    end
-
-    display_encumbrance(monster)
-  end
-
-  def display_encumbrance(%Monster{} = monster) do
-    current = current_encumbrance(monster)
-    max = max_encumbrance(monster)
-    percent = trunc((current / max) * 100)
-
-    display_encumbrance(monster, current, max, percent)
-  end
-  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 17 do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> None [#{percent}%]</p>")
-  end
-  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 34 do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-green'>Light [#{percent}%]</span></p>")
-  end
-  def display_encumbrance(%Monster{} = monster, current, max, percent) when percent < 67 do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-yellow'>Medium [#{percent}%]</span></p>")
-  end
-  def display_encumbrance(%Monster{} = monster, current, max, percent) do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-red'>Heavy [#{percent}%]</span></p>")
   end
 
   def effect_description(%Monster{effects: effects} = monster) do
@@ -426,118 +297,8 @@ defmodule Monster do
   def effect_description(nil), do: nil
   def effect_description(%{"description" => description}), do: description
 
-  def equip_item(%Monster{} = monster, %Item{} = item, nil) do
-    item = item
-           |> Map.put(:equipped, true)
-           |> Item.save
-
-    monster = case item.worn_on do
-      "Weapon Hand" ->
-        monster
-        |> unequip_item(monster.equipment["Weapon Hand"])
-        |> unequip_item(monster.equipment["Two Handed"])
-      "Two Handed" ->
-        monster
-        |> unequip_item(monster.equipment["Weapon Hand"])
-        |> unequip_item(monster.equipment["Two Handed"])
-        |> unequip_item(monster.equipment["Off-Hand"])
-      "Off-Hand" ->
-        monster
-        |> unequip_item(monster.equipment["Two Handed"])
-        |> unequip_item(monster.equipment["Off-Hand"])
-      _ ->
-        unequip_item(monster, monster.equipment[item.worn_on])
-    end
-
-    monster = put_in(monster.inventory, Enum.reject(monster.inventory, &(&1.id == item.id)))
-    put_in(monster.equipment[item.worn_on], item)
-    |> set_abilities
-    |> send_scroll("<p>You are now wearing #{item.name}.</p>")
-  end
-
-  def equip_item(%Monster{} = monster, %Item{}, {skill, req}) do
-    Monster.send_scroll(monster, "<p>You need at least #{req} #{skill} skill to equip that.</p>")
-  end
-
-  def unequip_item(%Monster{} = monster, nil), do: monster
-  def unequip_item(%Monster{} = monster, %Item{} = item) do
-    item = item
-           |> Map.put(:equipped, false)
-           |> Item.save
-
-    monster = put_in(monster.equipment, Map.delete(monster.equipment, item.worn_on))
-    put_in(monster.inventory, [item | monster.inventory])
-    |> set_abilities
-    |> send_scroll("<p>You remove #{item.name}.</p>")
-  end
-
-  def drop_item(%Monster{} = monster, %Item{} = item) do
-    monster.room_id
-    |> Room.find
-    |> send({:add_item, item})
-
-    put_in(monster.inventory, Enum.reject(monster.inventory, &(&1.id == item.id)))
-    |> set_abilities
-  end
-
-  def get_item(%Monster{} = monster, %Item{} = item) do
-    item = item
-           |> Map.put(:monster_id, monster.id)
-           |> Map.put(:equipped, false)
-           |> Map.put(:room_id, nil)
-           |> Item.save
-
-   monster.room_id
-   |> Room.find
-   |> send({:remove_item, item})
-
-    put_in(monster.inventory, [item | monster.inventory])
-    |> set_abilities
-  end
-
-  def max_hp(%Monster{} = monster) do
-    health = modified_stat(monster, "health")
-
-    round((health / 2) + (monster.level * 10) + ((health - 50) * monster.level) / 16.0)
-  end
-
-  def max_mana(%Monster{} = monster) do
-    intelligence = modified_stat(monster, "intelligence")
-
-    x = trunc(intelligence * (0.5 + (intelligence / 100)))
-    y = x / (125 + x)
-    trunc((x / 10) + (x * (1 - y)))
-  end
-
-  def pre_effect_bonus_stat(%Monster{} = monster, stat_name) do
-    Map.get(monster, String.to_atom(stat_name), 0) +
-    stat_skill_bonus(monster, stat_name)
-  end
-
-  def modified_stat(%Monster{} = monster, stat_name) do
-    pre_effect_bonus_stat(monster, stat_name) +
-    effect_bonus(monster, stat_name)
-  end
-
-  def stat_skill_bonus(%Monster{} = monster, stat_name) do
-    Skill.with_modifier(stat_name, trained_skills(monster))
-    |> Enum.reduce(0, fn(skill, total_stat_modification) ->
-         base = skill_from_training(monster, skill.name)
-         percentage = Skill.modifier_percentage(skill, stat_name)
-         total_stat_modification + base * percentage
-       end)
-    |> trunc
-  end
-
-  def trained_skills(%Monster{skills: skills}) do
-    skills
-    |> Map.keys
-    |> Enum.filter(fn(skill_name) ->
-         trained = skills
-                   |> Map.get(skill_name)
-                   |> Map.get("trained", 0)
-         trained > 0
-       end)
+  def max_mana(%Monster{max_mana: max_mana} = monster) do
+    max_mana
   end
 
   def effect_bonus(%Monster{effects: effects}, name) do
@@ -552,7 +313,7 @@ defmodule Monster do
     |> Enum.sum
   end
 
-  def base_skills(%Monster{skills: skills} = monster) do
+  def base_skills(%Monster{skills: skills, spirit: nil} = monster) do
     skills
     |> Map.keys
     |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
@@ -560,12 +321,18 @@ defmodule Monster do
        end)
   end
 
-  def base_skill(%Monster{skills: skills} = monster, skill_name) do
-    base = skills
-           |> Map.get(skill_name, %{})
-           |> Map.get("base", 0)
+  def base_skills(%Monster{skills: skills, spirit: %Spirit{skills: spirit_skills}} = monster) do
+    (Map.keys(skills) ++ Map.keys(spirit_skills))
+    |> Enum.uniq
+    |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
+         Map.put(base_skills, skill_name, base_skill(monster, skill_name))
+       end)
+  end
 
-    base + skill_from_training(monster, skill_name)
+  def base_skill(%Monster{skills: skills, spirit: spirit} = monster, skill_name) do
+    monster_skill = Map.get(skills, skill_name, 0)
+    spirit_skill = Spirit.skill(spirit, skill_name)
+    max(monster_skill, spirit_skill)
   end
 
   def modified_skill(%Monster{} = monster, skill_name) do
@@ -574,50 +341,14 @@ defmodule Monster do
     base = base_skill(monster, skill_name)
 
     modified = if base > 0 do
-      total = ["strength", "intelligence", "agility", "health"]
-              |> Enum.reduce(0, fn(stat, total) ->
-                   total + modified_stat(monster, stat) * Map.get(skill, String.to_atom(stat), 0)
-                 end)
-
-      average = total / Skill.modifier_total(skill)
-
-      light_level = monster
+      room = monster
                     |> find_room
-                    |> Room.light_level(monster)
 
-      round(base * (1 + average * 0.005))
-      |> Skill.modify_for_room_light(light_level)
+      Skill.modify_for_room_light(base, room.light)
     else
       0
     end
     (modified + effect_bonus(monster, skill_name))
-  end
-
-  def skill_from_training(%Monster{skills: skills}, skill_name) do
-    skill = Skill.find(skill_name)
-
-    power_spent = skills
-                  |> Map.get(skill_name, %{})
-                  |> Map.get("trained", 0)
-
-    modifier = skill.cost
-
-    skill_from_training(modifier, power_spent)
-  end
-  def skill_from_training(modifier, power_spent) do
-    skill_from_training(0, modifier, cost(modifier, 0), power_spent)
-  end
-  def skill_from_training(rating, modifier, cost, power) when power >= cost do
-    new_rating = rating + 1
-    new_cost = cost(modifier, new_rating)
-    skill_from_training(new_rating, modifier, new_cost, power - cost)
-  end
-  def skill_from_training(rating, _modifier, cost, power) when power < cost do
-    rating
-  end
-
-  def cost(modifier, rating) do
-    [rating * modifier * 1.0 |> Float.ceil |> trunc, 1] |> Enum.max
   end
 
   def send_scroll(%Monster{id: id} = monster, html) do
@@ -656,22 +387,11 @@ defmodule Monster do
     end
   end
 
-  def good?(%Monster{alignment: alignment}) when alignment < -50, do: true
+  def good?(%Monster{alignment: "good"}), do: true
   def good?(%Monster{}), do: false
-  def evil?(%Monster{alignment: alignment}) when alignment > 50,  do: true
+  def evil?(%Monster{alignment: "evil"}),  do: true
   def evil?(%Monster{}), do: false
   def neutral?(%Monster{} = monster), do: !good?(monster) and !evil?(monster)
-
-  def get_alignment(%Monster{} = monster) do
-    cond do
-      good?(monster) ->
-        "good"
-      evil?(monster) ->
-        "evil"
-      true ->
-        "neutral"
-    end
-  end
 
   def display_enter_message(%Room{} = room, monster) when is_pid(monster) do
     display_enter_message(%Room{} = room, Monster.value(monster))
@@ -715,37 +435,8 @@ defmodule Monster do
     ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
   end
 
-  defp regen_rate(seed) when is_integer(seed) do
-    regen_rate(trunc(seed / 2), 0)
-  end
-
-  defp regen_rate(seed, rate) when seed > 0 do
-    regen_rate(seed - 1, rate + ((seed - 1) / 100))
-  end
-
-  defp regen_rate(0, rate) do
-    trunc(rate)
-  end
-
-  def hp_regen_per_tick(%Monster{} = monster) do
-    regen_rate(modified_stat(monster, "health"))
-    |> max(1)
-  end
-
-  def mana_regen_per_tick(%Monster{} = monster) do
-    regen_rate(modified_stat(monster, "intelligence"))
-    |> max(1)
-  end
-
   def ac(%Monster{} = monster) do
-    ac_from_equipment(monster) + effect_bonus(monster, "ac")
-  end
-
-  def ac_from_equipment(%Monster{} = monster) do
-    monster.equipment
-    |> Map.values
-    |> Enum.map(&(&1.ac || 0))
-    |> Enum.sum
+    effect_bonus(monster, "ac")
   end
 
   def local_hated_targets(%Monster{hate: hate, pid: pid} = monster) do
@@ -1034,13 +725,10 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info(:regen, %Monster{hp: hp, mana: mana} = monster) do
-    max_hp   = max_hp(monster)
-    max_mana = max_mana(monster)
-
+  def handle_info(:regen, %Monster{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = monster) do
     monster = monster
-              |> Map.put(:hp,   min(  hp + hp_regen_per_tick(monster),   max_hp))
-              |> Map.put(:mana, min(mana + mana_regen_per_tick(monster), max_mana))
+              |> Map.put(:hp,   min(  hp + monster.hp_regen,   max_hp))
+              |> Map.put(:mana, min(mana + monster.mana_regen, max_mana))
               |> Systems.Prompt.update
 
     {:noreply, monster}
@@ -1158,45 +846,9 @@ defmodule Monster do
               |> interpolate(%{"name" => deceased.name})
               |> capitalize_first
 
-    old_power = Systems.Trainer.total_power(monster)
-
-    monster = monster
-              |> send_scroll("<p>#{message}</p>")
-              |> send_scroll("<p>You gain #{exp} experience.</p>")
-              |> Map.put(:experience, monster.experience + exp)
-
-    new_power = Systems.Trainer.total_power(monster)
-
-    power_gain = new_power - old_power
-
-    if power_gain > 0 do
-      send_scroll(monster, "<p>You gain #{power_gain} development points.</p>")
-    end
-
-    monster = monster
-              |> Systems.Level.advance
-              |> Monster.save
+    send_scroll(monster, "<p>#{message}</p>")
 
     PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
-
-    {:noreply, monster}
-  end
-
-  def handle_info({:item_destroyed, %Item{room_destruct_message: nil} = item}, monster) do
-    Monster.send_scroll(monster, "<p>#{item.destruct_message}</p>")
-    {:noreply, monster}
-  end
-
-  def handle_info({:item_destroyed, %Item{} = item}, monster) do
-    Monster.send_scroll(monster, "<p>#{item.destruct_message}</p>")
-
-    PubSub.broadcast_from!(self, "rooms:#{item.room_id}", {:room_item_destroyed, item, monster})
-
-    {:noreply, monster}
-  end
-
-  def handle_info({:room_item_destroyed, %Item{} = item, %Monster{} = holder}, monster) do
-    Monster.send_scroll(monster, "<p>#{item.room_destruct_message |> interpolate(%{"user" => holder})}</p>")
 
     {:noreply, monster}
   end
@@ -1252,7 +904,7 @@ defmodule Monster do
   end
 
   def handle_info({:monster_entered, intruder, intruder_alignment}, monster) do
-    monster = Systems.Aggression.react(%{monster: monster, alignment: Monster.get_alignment(monster)}, %{intruder: intruder, alignment: intruder_alignment})
+    monster = Systems.Aggression.react(%{monster: monster, alignment: monster.alignment}, %{intruder: intruder, alignment: intruder_alignment})
 
     2000
     |> :random.uniform
@@ -1268,6 +920,28 @@ defmodule Monster do
     else
       {:noreply, monster}
     end
+  end
+
+  def handle_info({:possession, %Spirit{level: spirit_level} = spirit},
+                                %Monster{level: monster_level, spirit: nil} = monster)
+                                when spirit_level < monster_level do
+    Spirit.send_scroll(spirit, "<p>You must be at least level #{monster_level} to possess #{monster.name}.</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:possession, spirit}, %Monster{spirit: nil} = monster) do
+    send(spirit.pid, {:possess, monster})
+
+    monster = monster
+              |> Map.put(:spirit, spirit)
+              |> set_abilities
+
+    {:noreply, monster}
+  end
+
+  def handle_info({:possession, spirit}, %Monster{spirit: _spirit} = monster) do
+    Spirit.send_scroll(spirit, "<p>#{capitalize_first(monster.name)} is already possessed.</p>")
+    {:noreply, Map.put(monster, :spirit, spirit)}
   end
 
   def handle_info(_message, monster) do

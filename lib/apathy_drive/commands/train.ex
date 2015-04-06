@@ -3,18 +3,18 @@ defmodule Commands.Train do
 
   def keywords, do: ["train"]
 
-  def execute(%Spirit{} = spirit, _arguments) do
-    spirit
-    |> Spirit.send_scroll("<p>You need a body to do that.</p>")
-  end
-
-  def execute(%Monster{} = monster, arguments) do
-    current_room = Monster.find_room(monster)
+  def execute(%Spirit{} = spirit, arguments) do
+    current_room = Spirit.find_room(spirit)
 
     if Room.trainer?(current_room) do
-      Systems.Trainer.train(monster, current_room, arguments)
+      Systems.Trainer.train(spirit, current_room, arguments)
     else
-      Monster.send_scroll(monster, "<p><span class='red'>You cannot TRAIN if you are not at a trainer!</span></p>")
+      Spirit.send_scroll(spirit, "<p><span class='red'>You cannot TRAIN if you are not at a trainer!</span></p>")
     end
+  end
+
+  def execute(%Monster{} = monster, _arguments) do
+    monster
+    |> Monster.send_scroll("<p>Only spirits may train.</p>")
   end
 end

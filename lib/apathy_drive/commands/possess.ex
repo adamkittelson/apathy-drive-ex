@@ -19,26 +19,9 @@ defmodule Commands.Possess do
       nil ->
         Spirit.send_scroll(spirit, "<p>You do not notice that here.</p>")
       monster ->
-        possess(spirit, Monster.value(monster))
+        send(monster, {:possession, spirit})
+        spirit
     end
-  end
-
-  def possess(%Spirit{level: level} = spirit, %Monster{possession_level: possession_level} = monster)
-    when level < possession_level do
-    spirit
-    |> Spirit.send_scroll("<p>You must be at least level #{possession_level} to possess #{monster.name}.")
-  end
-
-  def possess(%Spirit{} = spirit, %Monster{} = monster) do
-    ApathyDrive.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
-    ApathyDrive.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
-
-    spirit = spirit
-             |> Map.put(:monster, monster.pid)
-             |> Spirit.send_scroll("<p>You possess #{monster.name}.")
-
-    Systems.Prompt.update(monster)
-    spirit
   end
 
 end

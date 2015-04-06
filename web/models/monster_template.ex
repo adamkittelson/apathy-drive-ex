@@ -15,20 +15,20 @@ defmodule MonsterTemplate do
     field :gender,            :string
     field :game_limit,        :integer
     field :adjectives,        {:array, :string}, default: []
-    field :strength,          :integer
-    field :agility,           :integer
-    field :intelligence,      :integer
-    field :health,            :integer
     field :skills,            ApathyDrive.JSONB
-    field :hit_verbs,         {:array, :string}, default: ["attack", "assault", "strike"]
-    field :limbs,             ApathyDrive.JSONB
     field :chance_to_follow,  :integer
-    field :damage,            ApathyDrive.JSONB
     field :disposition,       :string
     field :alignment,         :string
-    field :possession_level,  :integer
+    field :level,  :integer
     field :questions,         ApathyDrive.JSONB
     field :flags,             {:array, :string}, default: []
+    field :max_hp,            :integer
+    field :max_mana,          :integer
+    field :hp_regen,          :integer
+    field :mana_regen,        :integer
+    field :attacks,           ApathyDrive.JSONB
+    field :effects,           ApathyDrive.JSONB
+    field :experience,        :integer
 
     has_many :monsters, Monster
 
@@ -85,18 +85,6 @@ defmodule MonsterTemplate do
     "#{adjective} #{name}"
   end
 
-  def alignment(alignment) do
-    alignment = case alignment do
-      "good" ->
-        -75
-      "neutral" ->
-        0
-      "evil" ->
-        75
-    end
-    alignment
-  end
-
   def value(monster) do
     GenServer.call(monster, :value)
   end
@@ -106,25 +94,17 @@ defmodule MonsterTemplate do
              |> Map.from_struct
              |> Enum.into(Keyword.new)
 
-    skills = Map.get(monster_template, :skills, %{})
-
-    skills = skills
-             |> Map.keys
-             |> Enum.reduce(%{}, fn(skill_name, monster_skills) ->
-                  Map.put(monster_skills, skill_name, %{"base" => skills[skill_name]})
-                end)
-
     monster = struct(Monster, values)
               |> Map.put(:name, name_with_adjective(monster_template.name, monster_template.adjectives))
               |> Map.put(:monster_template_id, monster_template.id)
               |> Map.put(:id, nil)
-              |> Map.put(:alignment, alignment(monster_template.alignment))
               |> Map.put(:room_id, room.id)
               |> Map.put(:lair_id, room.id)
-              |> Map.put(:skills, skills)
+              |> Map.put(:hp, monster_template.max_hp)
+              |> Map.put(:mana, monster_template.max_mana)
+              |> Map.put(:effects, %{"monster_template" => monster_template.effects})
 
     monster = monster
-              |> Map.put(:hp, Monster.max_hp(monster))
               |> Map.put(:mana, Monster.max_mana(monster))
               |> Map.put(:keywords, String.split(monster.name))
               |> Monster.insert

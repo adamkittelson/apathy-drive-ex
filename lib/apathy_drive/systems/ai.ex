@@ -8,9 +8,7 @@ defmodule Systems.AI do
     end
   end
 
-  def heal(%Monster{hp: hp} = monster) do
-    max_hp  = Monster.max_hp(monster)
-
+  def heal(%Monster{hp: hp, max_hp: max_hp} = monster) do
     chance = trunc((max_hp - hp) / max_hp * 100)
 
     roll = :random.uniform(100)

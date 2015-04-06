@@ -7,10 +7,6 @@ defmodule Skill do
     field :level,        :integer, default: 1
     field :cost,         :float
     field :universal,    :boolean, default: true
-    field :strength,     :integer, default: 0
-    field :agility,      :integer, default: 0
-    field :intelligence, :integer, default: 0
-    field :health,       :integer, default: 0
     field :description,  :string
     field :keywords,     {:array, :string}, virtual: true
 

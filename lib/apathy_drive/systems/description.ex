@@ -12,17 +12,7 @@ defmodule Systems.Description do
       |> Spirit.send_scroll("<p><span class='cyan'>#{monster.name}</span></p>")
       |> Spirit.send_scroll("<p>#{monster.description}</p>")
       |> Spirit.send_scroll("<p>#{describe_hp(monster) |> interpolate(%{"target" => monster})}</p>")
-
-      if Enum.any?(equipment = monster.equipment |> Map.values) do
-        Spirit.send_scroll(spirit, "<p><br><span class='dark-yellow'>#{"{{target:He/She/It}} is equipped with:" |> interpolate(%{"target" => monster})}</span></p><br>")
-        Enum.each equipment, fn(item) ->
-          Spirit.send_scroll(spirit, "<p><span class='dark-green'>#{String.ljust(item.name, 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
-        end
-        Spirit.send_scroll(spirit, "<br>")
-      end
     end
-
-    spirit
   end
 
   def add_description_to_scroll(%Monster{} = monster, target) when is_pid(target) do
@@ -36,21 +26,11 @@ defmodule Systems.Description do
       |> Monster.send_scroll("<p><span class='cyan'>#{target.name}</span></p>")
       |> Monster.send_scroll("<p>#{target.description}</p>")
       |> Monster.send_scroll("<p>#{describe_hp(target) |> interpolate(%{"target" => target})}</p>")
-
-      if Enum.any?(equipment = monster.equipment |> Map.values) do
-        Monster.send_scroll(monster, "<p><br><span class='dark-yellow'>#{"{{target:He/She/It}} is equipped with:" |> interpolate(%{"target" => target})}</span></p><br>")
-        Enum.each equipment, fn(item) ->
-          Monster.send_scroll(monster, "<p><span class='dark-green'>#{String.ljust(item.name, 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
-        end
-        Monster.send_scroll(monster, "<br>")
-      end
     end
-
-    monster
   end
 
   def describe_hp(%Monster{} = monster) do
-    percentage = round(100 * (monster.hp / Monster.max_hp(monster)))
+    percentage = round(100 * (monster.hp / monster.max_hp))
     description = case percentage do
       _ when percentage >= 100 ->
         "unwounded"

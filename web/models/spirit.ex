@@ -21,16 +21,19 @@ defmodule Spirit do
     field :hints,             {:array, :string}, default: []
     field :disabled_hints,    {:array, :string}, default: []
     field :monster,           :any, virtual: true
+    field :skills,            ApathyDrive.JSONB
+    field :abilities,         :any, virtual: true
 
     timestamps
   end
 
   def init(spirit) do
+    send(self, :set_abilities)
     {:ok, Map.put(spirit, :pid, self)}
   end
 
   def create(url) do
-    spirit = %Spirit{url: url, room_id: Room.start_room_id}
+    spirit = %Spirit{url: url, room_id: Room.start_room_id, skills: %{}}
     Repo.insert(spirit)
   end
 
@@ -42,6 +45,61 @@ defmodule Spirit do
 
   def execute_command(spirit, command, arguments) do
     GenServer.cast(spirit, {:execute_command, command, arguments})
+  end
+
+  def set_abilities(%Spirit{} = spirit) do
+    skills = skills(spirit)
+
+    abilities = Ability.trainable
+                |> Enum.filter(fn(%Ability{} = ability) ->
+                     ability.required_skills
+                     |> Map.keys
+                     |> Enum.all?(fn(required_skill) ->
+                          spirit_skill  = Map.get(skills, required_skill, 0)
+                          required_skill = Map.get(ability.required_skills, required_skill, 0)
+
+                          spirit_skill >= required_skill
+                        end)
+                   end)
+
+    spirit
+    |> Map.put(:abilities, abilities)
+  end
+
+  def skills(nil), do: %{}
+  def skills(%Spirit{skills: skills} = spirit) do
+    skills
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
+         Map.put(base_skills, skill_name, skill(spirit, skill_name))
+       end)
+  end
+
+  def skill(nil, _skill_name), do: 0
+  def skill(%Spirit{skills: skills}, skill_name) do
+    skill = Skill.find(skill_name)
+
+    power_spent = skills
+                  |> Map.get(skill_name, 0)
+
+    modifier = skill.cost
+
+    skill(modifier, power_spent)
+  end
+  def skill(modifier, power_spent) do
+    skill(0, modifier, cost(modifier, 0), power_spent)
+  end
+  def skill(rating, modifier, cost, power) when power >= cost do
+    new_rating = rating + 1
+    new_cost = cost(modifier, new_rating)
+    skill(new_rating, modifier, new_cost, power - cost)
+  end
+  def skill(rating, _modifier, cost, power) when power < cost do
+    rating
+  end
+
+  def cost(modifier, rating) do
+    [rating * modifier * 1.0 |> Float.ceil |> trunc, 1] |> Enum.max
   end
 
   def login(%Spirit{} = spirit) do
@@ -223,17 +281,14 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info(:unpossess, spirit) do
-    monster = spirit.monster
-    room_id = Monster.room_id(monster)
-
+  def handle_info({:unpossess, %Monster{id: id, room_id: room_id} = monster}, spirit) do
     spirit = spirit
              |> Map.put(:monster, nil)
              |> set_room_id(room_id)
-             |> Spirit.send_scroll("<p>You leave the body of #{Monster.name(monster)}.</p>")
+             |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
              |> Systems.Prompt.update
 
-    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{Monster.id(monster)}")
+    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{id}")
 
     {:noreply, spirit}
   end
@@ -376,17 +431,49 @@ defmodule Spirit do
   end
 
   def handle_info({:reward_possessor, exp}, spirit) do
+    old_power = Systems.Trainer.total_power(spirit)
+
     spirit = spirit
+             |> send_scroll("<p>You gain #{exp} experience.</p>")
              |> Map.put(:experience, spirit.experience + exp)
              |> Systems.Level.advance
              |> Spirit.save
 
+    new_power = Systems.Trainer.total_power(spirit)
+
+    power_gain = new_power - old_power
+
+    if power_gain > 0 do
+      send_scroll(spirit, "<p>You gain #{power_gain} development points.</p>")
+    end
+
     {:noreply, spirit}
   end
 
-  def handle_info({:room_item_destroyed, %Item{} = item, %Monster{} = holder}, spirit) do
-    Spirit.send_scroll(spirit, "<p>#{item.room_destruct_message |> interpolate(%{"user" => holder})}</p>")
+  def handle_info({:monster_dodged, messages: messages,
+                                    user: %Monster{} = user,
+                                    target: %Monster{} = target},
+                  spirit) do
 
+    message = interpolate(messages["spectator"], %{"user" => user, "target" => target})
+    send_scroll(spirit, "<p><span class='dark-cyan'>#{message}</span></p>")
+
+    {:noreply, spirit}
+  end
+
+  def handle_info(:set_abilities, spirit) do
+    {:noreply, set_abilities(spirit) }
+  end
+
+  def handle_info({:possess, %Monster{} = monster}, spirit) do
+    ApathyDrive.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
+    ApathyDrive.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
+
+    spirit = spirit
+             |> Map.put(:monster, monster.pid)
+             |> Spirit.send_scroll("<p>You possess #{monster.name}.")
+
+    Systems.Prompt.update(monster)
     {:noreply, spirit}
   end
 

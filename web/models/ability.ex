@@ -244,11 +244,6 @@ defmodule Ability do
     end
   end
 
-  def global_cooldown(%Ability{global_cooldown: :weapon_speed} = ability, %Monster{} = monster) do
-    cost = (ability.properties["weapon_speed"] * 1000) / (((((monster.level * 5) + 45) * (Monster.modified_stat(monster, "agility") + 150)) * 1500) / 9000.0)
-
-    4 / (1000.0 / round(cost * ((trunc(trunc(Monster.current_encumbrance(monster) / Monster.max_encumbrance(monster)) * 100) / 2) + 75) / 100.0))
-  end
   def global_cooldown(%Ability{global_cooldown: gc}, %Monster{}), do: gc
 
   def dodged?(%Monster{} = monster, %Ability{properties: %{"accuracy_skill" => accuracy_skill}}, %Monster{} = attacker) do
@@ -314,7 +309,7 @@ defmodule Ability do
     apply_instant_effects(monster, Map.delete(effects, "damage"), ability_user)
   end
   def apply_instant_effects(%Monster{} = monster, %{"heal" => heal} = effects, ability_user) do
-    monster = put_in(monster.hp, min(Monster.max_hp(monster), monster.hp + heal))
+    monster = put_in(monster.hp, min(monster.max_hp, monster.hp + heal))
 
     apply_instant_effects(monster, Map.delete(effects, "heal"), ability_user)
   end

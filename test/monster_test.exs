@@ -2,27 +2,20 @@ defmodule MonsterTest do
   use ExUnit.Case
   use ShouldI
 
-  with "a monster with no base dodge and no trained dodge" do
+  with "an unpossessed monster with no dodge" do
     setup context do
-      Dict.put context, :monster, %Monster{skills: %{}}
+      Dict.put context, :monster, %Monster{skills: %{}, spirit: nil}
     end
 
     should("have 0 dodge", context) do
       assert Monster.base_skill(context.monster, "dodge") == 0
     end
-
-    should("have no trained skills", context) do
-      assert Monster.trained_skills(context.monster) == []
-    end
   end
 
-  with "a monster with 10 base dodge and no trained dodge" do
+  with "an unpossessed monster with 10 dodge" do
     setup context do
-      Dict.put context, :monster, %Monster{skills: %{"dodge" => %{"base" => 10}}}
-    end
-
-    should("have no trained skills", context) do
-      assert Monster.trained_skills(context.monster) == []
+      Dict.put context, :monster, %Monster{skills: %{"dodge" => 10},
+                                           spirit: nil}
     end
 
     should("have 10 dodge", context) do
@@ -30,13 +23,10 @@ defmodule MonsterTest do
     end
   end
 
-  with "a monster with no base dodge and 10 power invested in dodge" do
+  with "a monster no dodge possessed by a spirit with 10 power invested in dodge" do
     setup context do
-      Dict.put context, :monster, %Monster{skills: %{"dodge" => %{"trained" => 10}}}
-    end
-
-    should("have trained dodge", context) do
-      assert Monster.trained_skills(context.monster) == ["dodge"]
+      Dict.put context, :monster, %Monster{skills: %{},
+                                           spirit: %Spirit{skills: %{"dodge" => 10}}}
     end
 
     should("have 4 dodge", context) do
@@ -44,194 +34,65 @@ defmodule MonsterTest do
     end
   end
 
-  with "a monster with 10 base dodge and 10 power invested in dodge" do
+  with "a monster with 10 dodge possessed by a spirit with 10 power invested in dodge" do
     setup context do
-      Dict.put context, :monster, %Monster{skills: %{"dodge" => %{"base" => 10, "trained" => 10}}}
+      Dict.put context, :monster, %Monster{skills: %{"dodge" => 10},
+                                           spirit: %Spirit{skills: %{"dodge" => 1000}}}
     end
 
-    should("have trained dodge", context) do
-      assert Monster.trained_skills(context.monster) == ["dodge"]
-    end
-
-    should("have 14 dodge", context) do
-      assert Monster.base_skill(context.monster, "dodge") == 14
+    should("have 45 dodge", context) do
+      assert Monster.base_skill(context.monster, "dodge") == 45
     end
   end
 
-  with "a monster with 10 base dodge and 10 power invested in dodge and 10 dodge from effects" do
+  with "a monster with 10 dodge possessed by a spirit with 1000 power invested in dodge and 10 dodge from effects" do
     setup context do
       GenServer.start_link(Room, %Room{id: 1, light: 0}, [name: {:global, :room_1}])
 
-      Dict.put context, :monster, %Monster{skills:  %{"dodge" => %{"base" => 10, "trained" => 10}},
+      Dict.put context, :monster, %Monster{skills:  %{"dodge" => 10},
                                            effects: %{"some_key" => %{"dodge" => 10}},
-                                           strength: 0,
-                                           agility:  0,
-                                           intelligence: 0,
-                                           health: 0,
+                                           spirit:  %Spirit{skills: %{"dodge" => 1000}},
                                            room_id: 1}
     end
 
-    should("have trained dodge", context) do
-      assert Monster.trained_skills(context.monster) == ["dodge"]
-    end
-
     should("have 14 base dodge", context) do
-      assert Monster.base_skill(context.monster, "dodge") == 14
+      assert Monster.base_skill(context.monster, "dodge") == 45
     end
 
     should("have 24 modified dodge", context) do
-      assert Monster.modified_skill(context.monster, "dodge") == 24
+      assert Monster.modified_skill(context.monster, "dodge") == 55
     end
   end
 
-  with "a monster with 10 strength and no skills" do
+  with "a monster possessed by a spirit with 1000 devs spent on mage" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{}}
+      Dict.put context, :monster, %Monster{skills: %{},
+                                           spirit: %Spirit{skills: %{"mage" => 1000}}}
     end
 
-    should("have no trained skills", context) do
-      assert Monster.trained_skills(context.monster) == []
-    end
-
-    should("have 10 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 10
+    should("have 29 mage", context) do
+      assert Monster.base_skill(context.monster, "mage") == 29
     end
   end
 
-  with "a monster with 10 strength and 100 devs spent on armour" do
+  with "a monster with 14 mage" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"armour" => %{"trained" => 100}}}
+      Dict.put context, :monster, %Monster{skills: %{"mage" => 14}}
     end
 
-    should("have trained armour", context) do
-      assert Monster.trained_skills(context.monster) == ["armour"]
-    end
-
-    should("have 14 armour", context) do
-      assert Monster.base_skill(context.monster, "armour") == 14
-    end
-
-    should("have 17 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 17
+    should("have 14 mage", context) do
+      assert Monster.base_skill(context.monster, "mage") == 14
     end
   end
 
-  with "a monster with 10 strength and 14 armour" do
+  with "a monster with 10 mage possessed by a spirit with 1000 devs spent on mage" do
     setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"armour" => %{"base" => 14}}}
+      Dict.put context, :monster, %Monster{skills: %{"mage" => 10},
+                                           spirit: %Spirit{skills: %{"mage" => 1000}}}
     end
 
-    should("have no trained skills", context) do
-      assert Monster.trained_skills(context.monster) == []
-    end
-
-    should("have 14 armour", context) do
-      assert Monster.base_skill(context.monster, "armour") == 14
-    end
-
-    should("have 10 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 10
-    end
-  end
-
-  with "a monster with 10 strength and 5 strength from effects" do
-    setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{},
-                                           effects: %{"some_key" => %{"strength" => 2},
-                                                      "some_other_key" => %{"strength" => 3}}}
-    end
-
-    should("have no trained skills", context) do
-      assert Monster.trained_skills(context.monster) == []
-    end
-
-    should("have 15 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 15
-    end
-  end
-
-  with "a monster with 10 strength and 10 armour, and 5 strength from effects" do
-    setup context do
-      Dict.put context, :monster, %Monster{strength: 10,
-                                           skills: %{"armour" => %{"base" => 10, "trained" => 100}},
-                                           effects: %{"some_key" => %{"strength" => 2},
-                                                      "some_other_key" => %{"strength" => 3}}}
-    end
-
-    should("have trained armour", context) do
-      assert Monster.trained_skills(context.monster) == ["armour"]
-    end
-
-    should("have 24 armour", context) do
-      assert Monster.base_skill(context.monster, "armour") == 24
-    end
-
-    should("have 22 strength", context) do
-      assert Monster.modified_stat(context.monster, "strength") == 22
-    end
-  end
-
-  with "a level 1 monster with 3 health" do
-    setup context do
-      Dict.put context, :monster, %Monster{level: 1, health: 3}
-    end
-
-    should("have 9 max hp", context) do
-      assert Monster.max_hp(context.monster) == 9
-    end
-  end
-
-  with "a level 20 monster with 100 health" do
-    setup context do
-      Dict.put context, :monster, %Monster{level: 20, health: 100}
-    end
-
-    should("have 313 max hp", context) do
-      assert Monster.max_hp(context.monster) == 313
-    end
-  end
-
-  with "a level 50 monster with 200 health" do
-    setup context do
-      Dict.put context, :monster, %Monster{level: 50, health: 200}
-    end
-
-    should("have 1069 max hp", context) do
-      assert Monster.max_hp(context.monster) == 1069
-    end
-  end
-
-  with "a monster with intelligence" do
-    setup context do
-      Dict.put context, :monster, %Monster{intelligence: 3}
-    end
-
-    should("have 1 max mana", context) do
-      assert Monster.max_mana(context.monster) == 1
-    end
-  end
-
-  with "a monster with 50 intelligence" do
-    setup context do
-      Dict.put context, :monster, %Monster{intelligence: 50}
-    end
-
-    should("have 40 max mana", context) do
-      assert Monster.max_mana(context.monster) == 40
-    end
-  end
-
-  with "a monster with 100 intelligence" do
-    setup context do
-      Dict.put context, :monster, %Monster{intelligence: 100}
-    end
-
-    should("have 83 max mana", context) do
-      assert Monster.max_mana(context.monster) == 83
+    should("have 29 mage", context) do
+      assert Monster.base_skill(context.monster, "mage") == 29
     end
   end
 

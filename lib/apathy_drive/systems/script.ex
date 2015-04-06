@@ -74,65 +74,8 @@ defmodule Systems.Script do
     end
   end
 
-  def execute_instruction(%{"give_item" => item}, monster, script) do
-    it = ItemTemplate.find(item)
-    if it do
-      ItemTemplate.spawn_item(it, monster)
-    end
-    execute_script(script, monster)
-  end
-
-  def execute_instruction(%{"fail_item" => %{"failure_message" => message, "item" => item}}, monster, script) do
-    if Systems.Item.has_item?(monster, item) do
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
-    else
-      execute_script(script, monster)
-    end
-  end
-
-  def execute_instruction(%{"check_item" => %{"failure_message" => message, "item" => item}}, monster, script) do
-    if Systems.Item.has_item?(monster, item) do
-      execute_script(script, monster)
-    else
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
-    end
-  end
-
-  def execute_instruction(%{"take_item" => %{"failure_message" => message, "item" => item}}, monster, script) do
-    i = Components.Items.get_items(monster)
-        |> Enum.find(fn(i) ->
-             Components.Name.value(i) == item
-           end)
-    if i do
-      Components.Items.remove_item(monster, i)
-      Entities.delete!(i)
-      execute_script(script, monster)
-    else
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
-    end
-  end
-
   def execute_instruction(%{"add_experience" => exp}, monster, script) do
-    old_power = Systems.Trainer.total_power(monster)
-
-    monster = monster
-              |> Map.put(:experience, monster.experience + exp)
-
-    new_power = Systems.Trainer.total_power(monster)
-
-    power_gain = new_power - old_power
-
-    if exp > 0 do
-      Monster.send_scroll(monster, "<p>You gain #{exp} experience.</p>")
-    end
-
-    if power_gain > 0 do
-      Monster.send_scroll(monster, "<p>You gain #{power_gain} development points.</p>")
-    end
-
-    monster = monster
-              |> Systems.Level.advance
-              |> Monster.save
+    PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
 
     execute_script(script, monster)
   end

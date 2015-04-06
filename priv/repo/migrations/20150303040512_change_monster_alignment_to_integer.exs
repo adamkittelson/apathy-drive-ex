@@ -8,7 +8,7 @@ defmodule ApathyDrive.Repo.Migrations.ChangeMonsterAlignmentToInteger do
   end
 
   def down do
-    alter table(:item_templates) do
+    alter table(:monsters) do
       modify :alignment, :decimal
     end
   end
