@@ -1,7 +1,5 @@
 defmodule Systems.Login do
 
-
-
   def create do
     url = Systems.URL.random
 

@@ -1,3 +1,8 @@
 <%= form_tag("/game", method: :post) %>
   <input type="submit" value="Play!">
 </form>
+
+<a class="btn btn-primary btn-lg" href="<%= auth_path @conn, :index %>">
+  <i class="fa fa-facebook"></i>
+  Sign in with Facebook
+</a>

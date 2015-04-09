@@ -32,6 +32,10 @@ defmodule Spirit do
     {:ok, Map.put(spirit, :pid, self)}
   end
 
+  def changeset(model, params \\ nil) do
+    cast(model, params, ~w(name), ~w())
+  end
+
   def create(url) do
     spirit = %Spirit{url: url, room_id: Room.start_room_id, skills: %{}}
     Repo.insert(spirit)
