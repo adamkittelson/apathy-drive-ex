@@ -17,7 +17,7 @@
     </div>
   </div>
 </div>
-
+<div id="spirit_id"><%= @current_spirit %></div>
 <div id="footer">
   <div class="container">
   </div>

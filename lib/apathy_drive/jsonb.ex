@@ -1,4 +1,6 @@
 defmodule ApathyDrive.JSONB do
+  @behaviour Ecto.Type
+
   def type, do: :jsonb
 
   def cast(json) when is_binary(json) do
@@ -21,6 +23,7 @@ defmodule ApathyDrive.JSONB do
     end
   end
   def load(nil), do: {:ok, nil}
+  def load(value), do: {:ok, value}
 
   def dump(json) when is_binary(json), do: {:ok, json}
   def dump(nil), do: {:ok, nil}

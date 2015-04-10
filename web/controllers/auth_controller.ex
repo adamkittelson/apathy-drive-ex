@@ -31,21 +31,10 @@ defmodule ApathyDrive.AuthController do
     # Request the user's data with the access token
     user = AccessToken.get!(token, "/me")
 
-    # %{"" => "Cole", "gender" => "male", "id" => "347880188743246",
-    #   "last_name" => "Avenue",
-    #   "link" => "https://www.facebook.com/app_scoped_user_id/347880188743246/",
-    #   "locale" => "en_US", "name" => "Cole Avenue", "timezone" => -5,
-    #   "updated_time" => "2014-05-20T01:25:36+0000", "verified" => true}
+    spirit = Spirit.find_or_create_by_external_id(user["id"])
 
-    # Store the user in the session under `:current_user` and redirect to /.
-    # In most cases, we'd probably just store the user's ID that can be used
-    # to fetch from the database. In this case, since this example app has no
-    # database, I'm just storing the user map.
-    #
-    # If you need to make additional resource requests, you may want to store
-    # the access token as well.
     conn
-    |> put_session(:current_user, user["id"])
+    |> put_session(:current_spirit, spirit.id)
     |> redirect(to: "/")
   end
 

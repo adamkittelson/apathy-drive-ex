@@ -1,8 +1,8 @@
 defmodule ApathyDrive.MUD do
   use Phoenix.Channel
 
-  def join("mud", message, socket) do
-    if spirit = Systems.Login.login(socket, message["login"]) do
+  def join("mud", %{"spirit" => id}, socket) do
+    if spirit = Systems.Login.login(socket, id) do
       #send_message(spirit, "clear scroll")
 
       spirit_struct = Spirit.value(spirit)
