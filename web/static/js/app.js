@@ -28,11 +28,12 @@ $(function() {
   };
   adjustScrollTop();
 
-  var pathparts, url;
-  pathparts = window.location.pathname.split("/");
-  url = pathparts[pathparts.length - 1];
+  var spirit_id;
+
+  spirit_id = parseInt($("#spirit_id").text());
+
   socket = new Phoenix.Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
-  socket.join("mud", {login: url}, function(chan){
+  socket.join("mud", {spirit: spirit_id}, function(chan){
 
     chan.on("room", function(message){
       updateRoom(message.html);

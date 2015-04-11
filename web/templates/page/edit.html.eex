@@ -1,0 +1,27 @@
+<h2>Edit spirit</h2>
+
+<%= form_for @changeset, spirit_path(@conn, :update_spirit), fn f -> %>
+  <%= if @changeset.errors != [] do %>
+    <p style="color: red">Oops, something went wrong!</p>
+  <% end %>
+
+  <p>
+    <label>
+      <span>Name:</span>
+      <%= text_input f, :name %>
+    </label>
+  </p>
+
+  <p>
+    <label>
+      <span>Alignment:</span>
+      <%= select(f, :alignment, [good: "Good", neutral: "Neutral", evil: "Evil"], prompt: "Choose Your Alignment") %>
+    </label>
+  </p>
+
+  <p>
+    <%= submit "Submit" %>
+  </p>
+<% end %>
+
+<%= link "Back", to: "/" %>

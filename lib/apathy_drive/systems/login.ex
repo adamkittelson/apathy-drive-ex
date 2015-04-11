@@ -1,17 +1,7 @@
 defmodule Systems.Login do
 
-
-
-  def create do
-    url = Systems.URL.random
-
-    Spirit.create(url)
-
-    url
-  end
-
-  def login(socket, url) do
-    spirit = Spirit.find_by_url(url)
+  def login(socket, id) do
+    spirit = ApathyDrive.Repo.get(Spirit, id)
 
     if spirit do
       case :global.whereis_name(:"spirit_#{spirit.id}") do
@@ -21,7 +11,6 @@ defmodule Systems.Login do
           spirit = Spirit.login(spirit)
 
           Spirit.activate_hint(spirit, "movement")
-          Spirit.activate_hint(spirit, "name")
           spirit
         spirit ->
           Spirit.socket(spirit, socket)
