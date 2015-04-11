@@ -103,3 +103,6 @@ CHANGELOG
 
 ---- 0.0.34 / 2015-04-05 / simplify --------------------------------------------
 * remove items / equipment, monsters don'\''t level / gain exp / train, spirits train skills which can be used when possessing a monster
+
+---- 0.0.35 / 2015-04-11 / facebook-login --------------------------------------
+* use facebook for login
