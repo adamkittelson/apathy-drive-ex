@@ -92,6 +92,7 @@ defmodule MonsterTemplate do
   def handle_call({:spawn_monster, %Room{} = room}, _from, monster_template) do
     values = monster_template
              |> Map.from_struct
+             |> Map.delete(:__meta__)
              |> Enum.into(Keyword.new)
 
     monster = struct(Monster, values)

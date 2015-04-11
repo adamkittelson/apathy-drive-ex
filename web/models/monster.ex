@@ -250,6 +250,7 @@ defmodule Monster do
                     monster_val || mt_val
                   end)
                   |> Map.from_struct
+                  |> Map.delete(:__meta__)
                   |> Enum.into(Keyword.new)
 
         monster = struct(Monster, monster)
