@@ -1,6 +1,7 @@
 defmodule ApathyDrive.PageController do
   use ApathyDrive.Web, :controller
   alias ApathyDrive.Repo
+  import Systems.Text
 
   plug :scrub_params, "spirit" when action in [:update_spirit]
   plug :action
@@ -32,6 +33,9 @@ defmodule ApathyDrive.PageController do
 
   def update_spirit(conn, %{"spirit" => spirit_params}) do
     spirit = Repo.get(Spirit, get_session(conn, :current_spirit))
+
+    spirit_params = Map.put(spirit_params, "name", capitalize_first(spirit_params["name"]))
+
     changeset = Spirit.changeset(spirit, spirit_params)
 
     if changeset.valid? do

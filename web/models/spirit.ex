@@ -17,7 +17,6 @@ defmodule Spirit do
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
-    field :url,               :string
     field :socket,            :any, virtual: true
     field :pid,               :any, virtual: true
     field :idle,              :integer, default: 0, virtual: true
@@ -41,8 +40,12 @@ defmodule Spirit do
   If `params` are nil, an invalid changeset is returned
   with no validation performed.
   """
-  def changeset(model, params \\ nil) do
-    cast(model, params, ~w(name alignment), ~w())
+  def changeset(spirit, params \\ nil) do
+    spirit
+    |> cast(params, ~w(name alignment), ~w())
+    |> validate_inclusion(:alignment, ["good", "neutral", "evil"])
+    |> validate_format(:name, ~r/^[a-zA-Z]+$/)
+    |> validate_unique(:name, on: Repo)
   end
 
   def find_or_create_by_external_id(external_id) do
@@ -281,7 +284,9 @@ defmodule Spirit do
 
     hint = Hint.random(spirit.hints)
 
-    Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>\n<span class='yellow'>Hint:</span> <em>#{hint}</em>\n\n<p>"}
+    if hint do
+      Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>\n<span class='yellow'>Hint:</span> <em>#{hint}</em>\n\n<p>"}
+    end
 
     {:noreply, spirit}
   end

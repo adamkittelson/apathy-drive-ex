@@ -11,7 +11,6 @@ defmodule Systems.Login do
           spirit = Spirit.login(spirit)
 
           Spirit.activate_hint(spirit, "movement")
-          Spirit.activate_hint(spirit, "name")
           spirit
         spirit ->
           Spirit.socket(spirit, socket)
