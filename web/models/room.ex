@@ -158,17 +158,15 @@ defmodule Room do
   end
 
   def look(%Room{light: light} = room, %Monster{} = monster) do
+    light = light + Monster.effect_bonus(monster, "light")
+
     html = if light > -200 and light < 200 do
-      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light(room)}</div>)
+      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
     else
-      "<div class='room'>#{light(room)}</div>"
+      "<div class='room'>#{light_desc(light)}</div>"
     end
 
     Monster.send_scroll(monster, html)
-  end
-
-  def light(%Room{light: light}) do
-    light_desc(light)
   end
 
   def light_desc(light_level)  when light_level < -1000, do: "<p>You are blind.</p>"

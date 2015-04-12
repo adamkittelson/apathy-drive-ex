@@ -287,6 +287,7 @@ defmodule Ability do
     |> display_cast_message(ability, ability_user)
     |> apply_instant_effects(ability.properties["instant_effects"], ability_user)
     |> add_duration_effects(ability)
+    |> Monster.save
   end
 
   def reduce_damage(%Ability{properties:
