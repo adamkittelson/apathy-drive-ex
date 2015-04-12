@@ -123,10 +123,12 @@ defmodule Spirit do
     [rating * modifier * 1.0 |> Float.ceil |> trunc, 1] |> Enum.max
   end
 
-  def login(%Spirit{} = spirit) do
+  def login(%Spirit{alignment: alignment} = spirit) do
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
     PubSub.subscribe(pid, "spirits:online")
     PubSub.subscribe(pid, "spirits:hints")
+    PubSub.subscribe(pid, "chat:gossip")
+    PubSub.subscribe(pid, "chat:#{alignment}")
     PubSub.subscribe(pid, "rooms:#{spirit.room_id}")
     pid
   end
@@ -490,6 +492,26 @@ defmodule Spirit do
              |> Spirit.send_scroll("<p>You possess #{monster.name}.")
 
     Systems.Prompt.update(monster)
+    {:noreply, spirit}
+  end
+
+  def handle_info({:gossip, name, message}, spirit) do
+    Spirit.send_scroll(spirit, "<p>[<span class='dark-magenta'>Gossip</span> : #{name}] #{message}</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:good, name, message}, spirit) do
+    Spirit.send_scroll(spirit, "<p>[<span class='white'>Good</span> : #{name}] #{message}</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:neutral, name, message}, spirit) do
+    Spirit.send_scroll(spirit, "<p>[<span class='dark-cyan'>Neutral</span> : #{name}] #{message}</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info({:evil, name, message}, spirit) do
+    Spirit.send_scroll(spirit, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
     {:noreply, spirit}
   end
 

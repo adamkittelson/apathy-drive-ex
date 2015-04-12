@@ -3,14 +3,16 @@ defmodule Commands.Score do
 
   def keywords, do: ["score", "stats", "status", "st"]
 
-  def execute(%Spirit{name: nil} = spirit, _arguments) do
-    spirit
-    |> Spirit.send_scroll("<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{"Anonymous" |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{spirit.experience}</span></p>")
-    |> Spirit.send_scroll("<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{spirit.level}</span></p>")
-  end
-
   def execute(%Spirit{name: name} = spirit, _arguments) do
-    Spirit.send_scroll(spirit, "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{name |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{spirit.experience}</span></p>")
+    color = case spirit.alignment do
+      "good" ->
+        "white"
+      "neutral" ->
+        "dark-cyan"
+      "evil" ->
+        "magenta"
+    end
+    Spirit.send_scroll(spirit, "<p><span class='dark-green'>Name:</span> <span class='#{color}'>#{name |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{spirit.experience}</span></p>")
 
     spirit_level = spirit.level |> to_string |> String.ljust(12)
     spirit_power = Systems.Trainer.spirit_power(spirit)
