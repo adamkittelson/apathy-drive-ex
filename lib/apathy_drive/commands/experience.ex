@@ -8,9 +8,9 @@ defmodule Commands.Experience do
     |> Spirit.send_scroll(message(spirit))
   end
 
-  def execute(%Monster{} = monster, _arguments) do
+  def execute(%Monster{spirit: spirit} = monster, _arguments) do
     monster
-    |> Monster.send_scroll(message(monster))
+    |> Monster.send_scroll(message(spirit))
   end
 
   def message(entity) do

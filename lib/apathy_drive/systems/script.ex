@@ -75,7 +75,7 @@ defmodule Systems.Script do
   end
 
   def execute_instruction(%{"add_experience" => exp}, monster, script) do
-    PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
+    ApathyDrive.PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
 
     execute_script(script, monster)
   end

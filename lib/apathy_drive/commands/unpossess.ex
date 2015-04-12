@@ -13,6 +13,8 @@ defmodule Commands.Unpossess do
 
     monster
     |> Map.put(:spirit, nil)
+    |> Map.put(:max_hp,   monster.max_hp   - (10 * spirit.level))
+    |> Map.put(:hp_regen, monster.hp_regen - spirit.level)
     |> Monster.set_abilities
     |> Monster.save
   end

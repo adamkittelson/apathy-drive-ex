@@ -852,6 +852,8 @@ defmodule Monster do
 
     PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
 
+    send(self, :update_spirit)
+
     {:noreply, monster}
   end
 
@@ -936,6 +938,8 @@ defmodule Monster do
 
     monster = monster
               |> Map.put(:spirit, spirit)
+              |> Map.put(:max_hp,   monster.max_hp   + (10 * spirit.level))
+              |> Map.put(:hp_regen, monster.hp_regen + spirit.level)
               |> set_abilities
               |> Monster.save
 
@@ -944,7 +948,26 @@ defmodule Monster do
 
   def handle_info({:possession, spirit}, %Monster{spirit: _spirit} = monster) do
     Spirit.send_scroll(spirit, "<p>#{capitalize_first(monster.name)} is already possessed.</p>")
-    {:noreply, Map.put(monster, :spirit, spirit)}
+    {:noreply, monster}
+  end
+
+  def handle_info(:update_spirit, %Monster{spirit: %Spirit{pid: pid} = spirit} = monster) do
+
+    new_spirit = Spirit.value(pid)
+
+    monster = monster
+              |> Map.put(:spirit, new_spirit)
+              |> Map.put(:max_hp,   monster.max_hp   + (10 * new_spirit.level) - (10 * spirit.level))
+              |> Map.put(:hp_regen, monster.hp_regen + new_spirit.level - spirit.level)
+              |> set_abilities
+              |> Monster.save
+
+
+    {:noreply, monster}
+  end
+
+  def handle_info(:update_spirit, %Monster{spirit: nil} = monster) do
+    {:noreply, monster}
   end
 
   def handle_info(_message, monster) do

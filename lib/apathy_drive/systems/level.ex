@@ -1,7 +1,7 @@
 defmodule Systems.Level do
 
-  def exp_to_next_level(entity) do
-    exp_at_level(entity.level + 1) - entity.experience
+  def exp_to_next_level(%Spirit{} = spirit) do
+    exp_at_level(spirit.level + 1) - spirit.experience
   end
 
   def exp_for_level(1), do: 0
@@ -18,20 +18,15 @@ defmodule Systems.Level do
        end)
   end
 
-  def advance(monster_or_spirit) do
-    advance(monster_or_spirit, exp_to_next_level(monster_or_spirit))
+  def advance(%Spirit{} = spirit) do
+    advance(spirit, exp_to_next_level(spirit))
   end
 
-  def advance(%Monster{} = monster, exp_tnl) when exp_tnl < 1 do
-    monster = put_in(monster.level, monster.level + 1)
-
-    Monster.send_scroll(monster, "<p>Your #{monster.name} has advanced to level #{monster.level}!</p>")
-  end
   def advance(%Spirit{} = spirit, exp_tnl) when exp_tnl < 1 do
     spirit = put_in(spirit.level, spirit.level + 1)
 
     Spirit.send_scroll(spirit, "<p>You've advanced to level #{spirit.level}!</p>")
   end
-  def advance(spirit_or_monster, _exp_tnl), do: spirit_or_monster
+  def advance(%Spirit{} = spirit, _exp_tnl), do: spirit
 
 end
