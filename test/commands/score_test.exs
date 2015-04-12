@@ -3,35 +3,56 @@ defmodule Commands.ScoreTest do
   use ShouldI
   import ApathyDrive.Matchers
 
-  with "a spirit with no name" do
-    setup context do
-      Dict.put(context, :spirit, %Spirit{name: nil,
-                                         level: 1,
-                                         experience: 1234,
-                                         socket: %Phoenix.Socket{pid: self}})
-    end
-
-    should("display anonymous status", context) do
-      Commands.Score.execute(context.spirit, [])
-
-      assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Anonymous   </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>1234</span></p>"
-      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>1</span></p>"
-    end
-  end
-
-  with "a spirit with a name" do
+  with "a good spirit" do
     setup context do
       Dict.put(context, :spirit, %Spirit{name: "Adam",
+                                         alignment: "good",
                                          skills: %{},
                                          level: 5,
                                          experience: 98765,
                                          socket: %Phoenix.Socket{pid: self}})
     end
 
-    should("display status with a name", context) do
+    should("display status with a good name", context) do
+      Commands.Score.execute(context.spirit, [])
+
+      assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='white'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"
+      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span><span class='dark-green'>Devs:</span> <span class='dark-cyan'>4257</span></p>"
+    end
+  end
+
+  with "a neutral spirit" do
+    setup context do
+      Dict.put(context, :spirit, %Spirit{name: "Adam",
+                                         alignment: "neutral",
+                                         skills: %{},
+                                         level: 5,
+                                         experience: 98765,
+                                         socket: %Phoenix.Socket{pid: self}})
+    end
+
+    should("display status with a neutral name", context) do
       Commands.Score.execute(context.spirit, [])
 
       assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"
+      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span><span class='dark-green'>Devs:</span> <span class='dark-cyan'>4257</span></p>"
+    end
+  end
+
+  with "an evil spirit" do
+    setup context do
+      Dict.put(context, :spirit, %Spirit{name: "Adam",
+                                         alignment: "evil",
+                                         skills: %{},
+                                         level: 5,
+                                         experience: 98765,
+                                         socket: %Phoenix.Socket{pid: self}})
+    end
+
+    should("display status with an evil name", context) do
+      Commands.Score.execute(context.spirit, [])
+
+      assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='magenta'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"
       assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span><span class='dark-green'>Devs:</span> <span class='dark-cyan'>4257</span></p>"
     end
   end
