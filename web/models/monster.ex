@@ -378,21 +378,22 @@ defmodule Monster do
   end
 
   def look_name(%Monster{} = monster) do
-    cond do
-      evil?(monster) ->
+    case monster_alignment(monster) do
+      "evil" ->
         "<span class='magenta'>#{monster.name}</span>"
-      good?(monster) ->
+      "good" ->
         "<span class='grey'>#{monster.name}</span>"
-      neutral?(monster) ->
+      "neutral" ->
         "<span class='dark-cyan'>#{monster.name}</span>"
     end
   end
 
-  def good?(%Monster{alignment: "good"}), do: true
-  def good?(%Monster{}), do: false
-  def evil?(%Monster{alignment: "evil"}),  do: true
-  def evil?(%Monster{}), do: false
-  def neutral?(%Monster{} = monster), do: !good?(monster) and !evil?(monster)
+  def monster_alignment(%Monster{spirit: %Spirit{alignment: alignment}}) do
+    alignment
+  end
+  def monster_alignment(%Monster{alignment: alignment}) do
+    alignment
+  end
 
   def display_enter_message(%Room{} = room, monster) when is_pid(monster) do
     display_enter_message(%Room{} = room, Monster.value(monster))
@@ -905,7 +906,7 @@ defmodule Monster do
   end
 
   def handle_info({:monster_entered, intruder, intruder_alignment}, monster) do
-    monster = Systems.Aggression.react(%{monster: monster, alignment: monster.alignment}, %{intruder: intruder, alignment: intruder_alignment})
+    monster = Systems.Aggression.react(%{monster: monster, alignment: monster_alignment(monster)}, %{intruder: intruder, alignment: intruder_alignment})
 
     2000
     |> :random.uniform
@@ -936,6 +937,7 @@ defmodule Monster do
     monster = monster
               |> Map.put(:spirit, spirit)
               |> set_abilities
+              |> Monster.save
 
     {:noreply, monster}
   end

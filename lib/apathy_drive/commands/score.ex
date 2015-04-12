@@ -21,7 +21,15 @@ defmodule Commands.Score do
   end
 
   def execute(%Monster{} = monster, _arguments) do
-    Monster.send_scroll(monster, "<p><span class='dark-cyan'>#{monster.name}</span></p>")
+    color = case Monster.monster_alignment(monster) do
+      "good" ->
+        "white"
+      "neutral" ->
+        "dark-cyan"
+      "evil" ->
+        "magenta"
+    end
+    Monster.send_scroll(monster, "<p><span class='#{color}'>#{monster.name}</span></p>")
 
     hp = String.ljust("#{monster.hp}/#{monster.max_hp}", 15)
     mana = "#{monster.mana}/#{monster.max_mana}"

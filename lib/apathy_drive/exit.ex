@@ -172,7 +172,7 @@ defmodule ApathyDrive.Exit do
         else
           Monster.display_enter_message(room, monster)
         end
-        ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room.id}:monsters", {:monster_entered, self, monster.alignment}
+        ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room.id}:monsters", {:monster_entered, self, Monster.monster_alignment(monster)}
       end
 
       def notify_monster_left(%Monster{} = monster, %Room{} = room, %Room{} = left_to) do

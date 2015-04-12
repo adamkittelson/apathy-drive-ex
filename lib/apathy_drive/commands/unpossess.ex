@@ -14,6 +14,7 @@ defmodule Commands.Unpossess do
     monster
     |> Map.put(:spirit, nil)
     |> Monster.set_abilities
+    |> Monster.save
   end
 
 end
