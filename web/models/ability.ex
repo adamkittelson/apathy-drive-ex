@@ -239,8 +239,7 @@ defmodule Ability do
         Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
       else
         monster
-      end |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
-          |> Systems.Prompt.update
+      end |> Systems.Prompt.update
     end
   end
 

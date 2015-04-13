@@ -8,13 +8,14 @@ defmodule Commands.Skills do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(%Monster{skills: skills} = monster, arguments) do
+  def execute(%Monster{} = monster, arguments) do
     arguments = Enum.join(arguments, " ")
     monster
     |> Monster.send_scroll("<p><span class='white'>Your skills are:</span></p>")
     |> Monster.send_scroll("<p><span class='blue'>------------------------------------------------------------------------</span></p>")
 
-    skill_names = skills
+    skill_names = monster
+                  |> Monster.base_skills
                   |> Map.keys
                   |> Enum.sort
 
