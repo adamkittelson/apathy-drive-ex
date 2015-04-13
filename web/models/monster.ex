@@ -10,7 +10,7 @@ defmodule Monster do
   schema "monsters" do
     field :name,                :string
     field :lair_id,             :integer
-    field :skills,              :any,     virtual: true, default: %{}
+    field :skills,              :any,     virtual: true
     field :level,               :integer, virtual: true
     field :alignment,           :string,  virtual: true
     field :experience,          :integer, virtual: true
@@ -110,7 +110,13 @@ defmodule Monster do
 
   def attack_abilities(%Monster{abilities: abilities} = monster) do
     abilities
-    |> Enum.filter(&(&1.kind == "attack"))
+    |> Enum.filter(&(&1.kind == "attack" and &1.name != "attack"))
+    |> Ability.useable(monster)
+  end
+
+  def monster_attacks(%Monster{abilities: abilities} = monster) do
+    abilities
+    |> Enum.filter(&(&1.name == "attack"))
     |> Ability.useable(monster)
   end
 
@@ -192,6 +198,12 @@ defmodule Monster do
         properties: attack["properties"]
       }
     end)
+  end
+
+  def on_attack_cooldown?(%Monster{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(&1["cooldown"] == :attack))
   end
 
   def on_global_cooldown?(%Monster{effects: effects}) do
@@ -339,17 +351,7 @@ defmodule Monster do
   def modified_skill(%Monster{} = monster, skill_name) do
     skill = Skill.find(skill_name)
 
-    base = base_skill(monster, skill_name)
-
-    modified = if base > 0 do
-      room = monster
-                    |> find_room
-
-      Skill.modify_for_room_light(base, room.light)
-    else
-      0
-    end
-    (modified + effect_bonus(monster, skill_name))
+    base_skill(monster, skill_name) + effect_bonus(monster, skill_name)
   end
 
   def send_scroll(%Monster{id: id} = monster, html) do
@@ -543,8 +545,15 @@ defmodule Monster do
   end
 
   def handle_cast({:execute_command, command, arguments}, monster) do
-    monster = ApathyDrive.Command.execute(monster, command, arguments)
-    {:noreply, monster}
+    try do
+      monster = ApathyDrive.Command.execute(monster, command, arguments)
+      {:noreply, monster}
+    catch
+      kind, error ->
+        Monster.send_scroll(monster, "<p><span class='red'>Something went wrong.</span></p>")
+        IO.puts Exception.format(kind, error)
+        {:noreply, monster}
+    end
   end
 
   def handle_info({:greet, %{greeter: %Monster{pid: greeter_pid},
@@ -864,11 +873,25 @@ defmodule Monster do
   end
 
   def handle_info({:execute_ability, ability}, monster) do
-    {:noreply, Ability.execute(monster, ability, monster)}
+    try do
+      {:noreply, Ability.execute(monster, ability, monster)}
+    catch
+      kind, error ->
+        Monster.send_scroll(monster, "<p><span class='red'>Something went wrong.</span></p>")
+        IO.puts Exception.format(kind, error)
+        {:noreply, monster}
+    end
   end
 
   def handle_info({:execute_ability, ability, target}, monster) do
-    {:noreply, Ability.execute(monster, ability, target)}
+    try do
+      {:noreply, Ability.execute(monster, ability, target)}
+    catch
+      kind, error ->
+        Monster.send_scroll(monster, "<p><span class='red'>Something went wrong.</span></p>")
+        IO.puts Exception.format(kind, error)
+        {:noreply, monster}
+    end
   end
 
   def handle_info(:think, monster) do

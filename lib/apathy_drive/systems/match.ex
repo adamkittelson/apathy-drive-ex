@@ -45,7 +45,7 @@ defmodule Systems.Match do
 
   def match_name("", _pid), do: false
   def match_name(string, pid) when is_pid(pid) do
-    match_name(string, %{name: GenServer.call(pid, :name)})
+    match_name(string, %{name: GenServer.call(pid, :value).name})
   end
   def match_name(string, %{name: name}) do
     String.downcase(string) == String.downcase(name)

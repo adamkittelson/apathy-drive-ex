@@ -1,21 +1,32 @@
 defmodule Systems.AI do
 
   def think(%Monster{} = monster) do
-    if Monster.on_global_cooldown?(monster) do
-      move(monster)
-    else
-      heal(monster) || bless(monster) || attack(monster) || move(monster)
-    end
+    heal(monster) || bless(monster) || attack(monster) || move(monster)
   end
 
-  def heal(%Monster{hp: hp, max_hp: max_hp} = monster) do
-    chance = trunc((max_hp - hp) / max_hp * 100)
+  def heal(%Monster{hp: hp, max_hp: max_hp, spirit: nil} = monster) do
+    unless Monster.on_global_cooldown?(monster) do
+      chance = trunc((max_hp - hp) / max_hp * 100)
 
-    roll = :random.uniform(100)
+      roll = :random.uniform(100)
 
-    if chance > roll do
+      if chance > roll do
+        ability = monster
+                  |> Monster.heal_abilities
+                  |> random_ability
+
+        if ability do
+          send(self, {:execute_ability, ability})
+        end
+      end
+    end
+  end
+  def heal(%Monster{}), do: nil
+
+  def bless(%Monster{spirit: nil} = monster) do
+    unless Monster.on_global_cooldown?(monster) do
       ability = monster
-                |> Monster.heal_abilities
+                |> Monster.bless_abilities
                 |> random_ability
 
       if ability do
@@ -23,24 +34,40 @@ defmodule Systems.AI do
       end
     end
   end
+  def bless(%Monster{}), do: nil
 
-  def bless(%Monster{} = monster) do
-    ability = monster
-              |> Monster.bless_abilities
-              |> random_ability
+  def attack(%Monster{spirit: nil} = monster) do
+    if target = Monster.aggro_target(monster) do
 
-    if ability do
-      send(self, {:execute_ability, ability})
+      attack = cond do
+        !Monster.on_attack_cooldown?(monster) ->
+          monster
+           |> Monster.monster_attacks
+           |> random_ability
+        !Monster.on_global_cooldown?(monster) ->
+           monster
+           |> Monster.attack_abilities
+           |> random_ability
+        true ->
+          nil
+      end
+
+      if attack do
+        send(self, {:execute_ability, attack, target})
+      end
     end
   end
 
-  def attack(monster) do
+  def attack(%Monster{} = monster) do
     if target = Monster.aggro_target(monster) do
-      attack = monster
-               |> Monster.attack_abilities
-               |> random_ability
 
-      send(self, {:execute_ability, attack, target})
+      if !Monster.on_attack_cooldown?(monster) do
+        attack = monster
+                 |> Monster.monster_attacks
+                 |> random_ability
+
+        send(self, {:execute_ability, attack, target})
+      end
     end
   end
 
@@ -55,7 +82,7 @@ defmodule Systems.AI do
     end
   end
 
-  def move(monster) do
+  def move(%Monster{spirit: nil} = monster) do
     if !Monster.on_ai_move_cooldown?(monster) && !Monster.aggro_target(monster) do
 
       room = Monster.find_room(monster)
@@ -70,5 +97,6 @@ defmodule Systems.AI do
       end
     end
   end
+  def move(%Monster{}), do: nil
 
 end

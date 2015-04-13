@@ -226,6 +226,23 @@ defmodule Ability do
     execute(monster, ability, Monster.value(target))
   end
 
+  def execute(%Monster{} = monster, %Ability{name: "attack"} = ability, %Monster{} = target) do
+    if Monster.on_attack_cooldown?(monster) do
+      Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't attack yet.</p>")
+    else
+      send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
+      send(self, :think)
+
+      gc = global_cooldown(ability, monster)
+
+      if gc do
+        Systems.Effect.add(monster, %{"cooldown" => :attack}, gc)
+      else
+        monster
+      end |> Systems.Prompt.update
+    end
+  end
+
   def execute(%Monster{} = monster, %Ability{} = ability, %Monster{} = target) do
     if Monster.on_global_cooldown?(monster) do
       Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
@@ -239,7 +256,8 @@ defmodule Ability do
         Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
       else
         monster
-      end |> Systems.Prompt.update
+      end |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
+          |> Systems.Prompt.update
     end
   end
 

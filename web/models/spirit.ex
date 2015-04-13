@@ -257,8 +257,15 @@ defmodule Spirit do
   end
 
   def handle_cast({:execute_command, command, arguments}, spirit) do
-    spirit = ApathyDrive.Command.execute(spirit, command, arguments)
-    {:noreply, spirit}
+    try do
+      spirit = ApathyDrive.Command.execute(spirit, command, arguments)
+      {:noreply, spirit}
+    catch
+      kind, error ->
+        Spirit.send_scroll(spirit, "<p><span class='red'>Something went wrong.</span></p>")
+        IO.puts Exception.format(kind, error)
+        {:noreply, spirit}
+    end
   end
 
   def handle_cast(:reset_idle, spirit) do

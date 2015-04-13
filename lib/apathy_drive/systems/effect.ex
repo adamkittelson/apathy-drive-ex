@@ -56,7 +56,7 @@ defmodule Systems.Effect do
   def remove(%{effects: effects} = entity, key) do
     case effects[key] do
       %{"timers" => timers, "expiration_message" => expiration_message} ->
-        send_scroll(entity, "<p><span class='dark-cyan'>#{expiration_message}</span></p>")
+        send_scroll(entity, "<p><span class='dark-yellow'>#{expiration_message}</span></p>")
 
         Enum.each(timers, fn(timer_name) ->
           TimerManager.cancel(entity, timer_name)
