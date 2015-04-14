@@ -19,8 +19,7 @@ defmodule Commands.Possess do
       nil ->
         Spirit.send_scroll(spirit, "<p>You do not notice that here.</p>")
       monster ->
-        send(monster, {:possession, spirit})
-        spirit
+        Monster.possess(monster, spirit)
     end
   end
 

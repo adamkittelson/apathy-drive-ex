@@ -218,8 +218,12 @@ defmodule Monster do
     |> Enum.any?(&(&1["cooldown"] == :ai_movement))
   end
 
-  def execute_command(monster, command, arguments) do
-    GenServer.cast(monster, {:execute_command, command, arguments})
+  def execute_command(%Monster{pid: pid}, command, arguments) do
+    GenServer.call(pid, {:execute_command, command, arguments})
+  end
+
+  def possess(monster, %Spirit{} = spirit) do
+    GenServer.call(monster, {:possess, spirit})
   end
 
   def value(monster_pid) do
@@ -354,30 +358,35 @@ defmodule Monster do
     base_skill(monster, skill_name) + effect_bonus(monster, skill_name)
   end
 
-  def send_scroll(%Monster{id: id} = monster, html) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "scroll", %{:html => html}
+  def send_scroll(%Monster{spirit: %Spirit{socket: socket}} = monster, html) do
+    Phoenix.Channel.reply socket, "scroll", %{:html => html}
     monster
   end
+  def send_scroll(%Monster{spirit: nil} = monster, html), do: monster
 
-  def send_disable(%Monster{id: id} = monster, elem) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "disable", %{:html => elem}
+  def send_disable(%Monster{spirit: %Spirit{socket: socket}} = monster, elem) do
+    Phoenix.Channel.reply socket, "disable", %{:html => elem}
     monster
   end
+  def send_disable(%Monster{spirit: nil} = monster, html), do: monster
 
-  def send_focus(%Monster{id: id} = monster, elem) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "focus", %{:html => elem}
+  def send_focus(%Monster{spirit: %Spirit{socket: socket}} = monster, elem) do
+    Phoenix.Channel.reply socket, "focus", %{:html => elem}
     monster
   end
+  def send_focus(%Monster{spirit: nil} = monster, html), do: monster
 
-  def send_up(%Monster{id: id} = monster) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "up", %{}
+  def send_up(%Monster{spirit: %Spirit{socket: socket}} = monster) do
+    Phoenix.Channel.reply socket, "up", %{}
     monster
   end
+  def send_up(%Monster{spirit: nil} = monster), do: monster
 
-  def send_update_prompt(%Monster{id: id} = monster, html) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "update prompt", %{:html => html}
+  def send_update_prompt(%Monster{spirit: %Spirit{socket: socket}} = monster, html) do
+    Phoenix.Channel.reply socket, "update prompt", %{:html => html}
     monster
   end
+  def send_update_prompt(%Monster{spirit: nil} = monster, html), do: monster
 
   def look_name(%Monster{} = monster) do
     case monster_alignment(monster) do
@@ -544,16 +553,48 @@ defmodule Monster do
     {:reply, monster, monster}
   end
 
-  def handle_cast({:execute_command, command, arguments}, monster) do
+  def handle_call({:execute_command, command, arguments}, _from, monster) do
     try do
-      monster = ApathyDrive.Command.execute(monster, command, arguments)
-      {:noreply, monster}
+      case ApathyDrive.Command.execute(monster, command, arguments) do
+        %Monster{} = monster ->
+          {:reply, monster, monster}
+        %Spirit{} = spirit ->
+          {:reply, spirit, Map.put(monster, :spirit, nil)}
+      end
     catch
       kind, error ->
         Monster.send_scroll(monster, "<p><span class='red'>Something went wrong.</span></p>")
         IO.puts Exception.format(kind, error)
-        {:noreply, monster}
+        {:reply, monster, monster}
     end
+  end
+
+  def handle_call({:possess, %Spirit{level: spirit_level} = spirit},
+                                _from,
+                                %Monster{level: monster_level, spirit: nil} = monster)
+                                when spirit_level < monster_level do
+    Spirit.send_scroll(spirit, "<p>You must be at least level #{monster_level} to possess #{monster.name}.</p>")
+    {:reply, spirit, monster}
+  end
+
+  def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: nil} = monster) do
+
+    ApathyDrive.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
+
+    monster = monster
+              |> Map.put(:spirit, spirit)
+              |> set_abilities
+              |> send_scroll("<p>You possess #{monster.name}.")
+              |> Monster.save
+
+    Systems.Prompt.update(monster)
+
+    {:reply, monster, monster}
+  end
+
+  def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: _spirit} = monster) do
+    Spirit.send_scroll(spirit, "<p>#{capitalize_first(monster.name)} is already possessed.</p>")
+    {:reply, spirit, monster}
   end
 
   def handle_info({:greet, %{greeter: %Monster{pid: greeter_pid},
@@ -947,31 +988,6 @@ defmodule Monster do
     else
       {:noreply, monster}
     end
-  end
-
-  def handle_info({:possession, %Spirit{level: spirit_level} = spirit},
-                                %Monster{level: monster_level, spirit: nil} = monster)
-                                when spirit_level < monster_level do
-    Spirit.send_scroll(spirit, "<p>You must be at least level #{monster_level} to possess #{monster.name}.</p>")
-    {:noreply, monster}
-  end
-
-  def handle_info({:possession, spirit}, %Monster{spirit: nil} = monster) do
-    send(spirit.pid, {:possess, monster})
-
-    monster = monster
-              |> Map.put(:spirit, spirit)
-              |> Map.put(:max_hp,   monster.max_hp   + (10 * spirit.level))
-              |> Map.put(:hp_regen, monster.hp_regen + spirit.level)
-              |> set_abilities
-              |> Monster.save
-
-    {:noreply, monster}
-  end
-
-  def handle_info({:possession, spirit}, %Monster{spirit: _spirit} = monster) do
-    Spirit.send_scroll(spirit, "<p>#{capitalize_first(monster.name)} is already possessed.</p>")
-    {:noreply, monster}
   end
 
   def handle_info(:update_spirit, %Monster{spirit: %Spirit{pid: pid} = spirit} = monster) do

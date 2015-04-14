@@ -92,7 +92,7 @@ defmodule Systems.AI do
         direction = Room.random_direction(room)
 
         if direction do
-          Monster.execute_command(self, direction, [])
+          ApathyDrive.Command.execute(monster, direction, [])
         end
       end
     end

@@ -6,15 +6,14 @@ defmodule Systems.Login do
     if spirit do
       case :global.whereis_name(:"spirit_#{spirit.id}") do
         :undefined ->
-          spirit = Map.put(spirit, :socket, socket)
-
-          spirit = Spirit.login(spirit)
-
-          Spirit.activate_hint(spirit, "movement")
           spirit
+          |> Map.put(:socket, socket)
+          |> Spirit.login
         spirit ->
-          Spirit.socket(spirit, socket)
           spirit
+          |> Spirit.socket(socket)
+
+          Spirit.value(spirit)
       end
     end
   end

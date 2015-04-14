@@ -3,18 +3,15 @@ defmodule ApathyDrive.MUD do
 
   def join("mud", %{"spirit" => id}, socket) do
     if spirit = Systems.Login.login(socket, id) do
-      #send_message(spirit, "clear scroll")
 
-      spirit_struct = Spirit.value(spirit)
-
-      room = spirit_struct.room_id
+      room = spirit.room_id
              |> Room.find
              |> Room.value
 
-      Room.look(room, spirit_struct)
-      Systems.Prompt.display(spirit_struct)
+      Room.look(room, spirit)
+      Systems.Prompt.display(spirit)
 
-      socket = Phoenix.Socket.assign(socket, :spirit, spirit)
+      socket = Phoenix.Socket.assign(socket, :entity, spirit)
 
       {:ok, socket}
     else
@@ -29,9 +26,14 @@ defmodule ApathyDrive.MUD do
   def handle_in("command", message, socket) do
     [command | arguments] = String.split(message)
 
-    spirit = socket.assigns[:spirit]
+    entity = case socket.assigns[:entity] do
+      %Spirit{} = spirit ->
+        Spirit.execute_command(spirit, command, arguments)
+      %Monster{} = monster ->
+        Monster.execute_command(monster, command, arguments)
+    end
 
-    Spirit.execute_command(spirit, command, arguments)
+    socket = Phoenix.Socket.assign(socket, :entity, entity)
 
     {:ok, socket}
   end
