@@ -238,6 +238,14 @@ defmodule Monster do
   end
   def insert(%Monster{} = monster), do: monster
 
+  def save(%Monster{id: id, spirit: %Spirit{} = spirit} = monster) when is_integer(id) do
+    spirit = Spirit.save(spirit)
+    monster = monster
+              |> Map.put(:spirit, spirit)
+              |> Repo.update
+    :ets.insert(:"monster_#{id}", {self, monster})
+    monster
+  end
   def save(%Monster{id: id} = monster) when is_integer(id) do
     monster = Repo.update(monster)
     :ets.insert(:"monster_#{id}", {self, monster})
@@ -559,7 +567,12 @@ defmodule Monster do
         %Monster{} = monster ->
           {:reply, monster, monster}
         %Spirit{} = spirit ->
-          {:reply, spirit, Map.put(monster, :spirit, nil)}
+          monster = monster
+                    |> Map.put(:spirit, nil)
+                    |> set_abilities
+                    |> save
+
+          {:reply, spirit, monster}
       end
     catch
       kind, error ->
@@ -579,7 +592,9 @@ defmodule Monster do
 
   def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: nil} = monster) do
 
-    ApathyDrive.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
+    send(spirit.pid, :go_away)
+
+    spirit = Map.put(spirit, :pid, nil)
 
     monster = monster
               |> Map.put(:spirit, spirit)

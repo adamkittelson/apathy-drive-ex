@@ -131,8 +131,9 @@ defmodule Spirit do
   end
 
   def login(%Spirit{alignment: alignment} = spirit) do
-    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
-    spirit
+    Supervisor.delete_child(ApathyDrive.Supervisor, :"spirit_#{spirit.id}")
+    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :transient, 5000, :worker, [Spirit]})
+    Map.put(spirit, :pid, pid)
   end
 
   def activate_hint(%Spirit{} = spirit, hint) do
@@ -303,18 +304,6 @@ defmodule Spirit do
 
   def handle_info({:socket_broadcast, message}, spirit) do
     Phoenix.Channel.reply spirit.socket, message.event, message.payload
-
-    {:noreply, spirit}
-  end
-
-  def handle_info({:unpossess, %Monster{id: id, room_id: room_id} = monster}, spirit) do
-    spirit = spirit
-             |> Map.put(:monster, nil)
-             |> set_room_id(room_id)
-             |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
-             |> Systems.Prompt.update
-
-    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{id}")
 
     {:noreply, spirit}
   end
@@ -508,6 +497,12 @@ defmodule Spirit do
 
   def handle_info({:evil, name, message}, spirit) do
     Spirit.send_scroll(spirit, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info(:go_away, spirit) do
+    save(spirit)
+    Process.exit(self, :normal)
     {:noreply, spirit}
   end
 

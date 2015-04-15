@@ -9,14 +9,18 @@ defmodule Commands.Unpossess do
   end
 
   def execute(%Monster{spirit: spirit} = monster, _arguments) do
-    send(spirit.pid, {:unpossess, monster})
 
-    monster
-    |> Map.put(:spirit, nil)
-    |> Map.put(:max_hp,   monster.max_hp   - (10 * spirit.level))
-    |> Map.put(:hp_regen, monster.hp_regen - spirit.level)
-    |> Monster.set_abilities
-    |> Monster.save
+    spirit
+    |> Map.put(:room_id, monster.room_id)
+    |> Spirit.save
+
+    spirit = Systems.Login.login(spirit.socket, spirit.id)
+
+    spirit
+    |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
+    |> Systems.Prompt.update
+
+    spirit
   end
 
 end
