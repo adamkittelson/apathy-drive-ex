@@ -591,7 +591,6 @@ defmodule Monster do
   end
 
   def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: nil} = monster) do
-
     send(spirit.pid, :go_away)
 
     spirit = Map.put(spirit, :pid, nil)
@@ -951,7 +950,7 @@ defmodule Monster do
   end
 
   def handle_info(:think, monster) do
-    Systems.AI.think(monster)
+    monster = Systems.AI.think(monster)
 
     {:noreply, monster}
   end
