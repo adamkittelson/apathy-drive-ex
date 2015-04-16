@@ -74,10 +74,13 @@ defmodule Systems.Script do
     end
   end
 
-  def execute_instruction(%{"add_experience" => exp}, monster, script) do
-    ApathyDrive.PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
-
+  def execute_instruction(%{"add_experience" => exp}, %Monster{spirit: nil} = monster, script) do
     execute_script(script, monster)
+  end
+
+  def execute_instruction(%{"add_experience" => exp}, %Monster{spirit: %Spirit{} = spirit} = monster, script) do
+    spirit = Spirit.add_experience(spirit, exp)
+    execute_script(script, Map.put(monster, :spirit, spirit))
   end
 
   def execute_instruction(%{"cast_ability" => ability_name}, monster, script) do

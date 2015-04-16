@@ -189,6 +189,25 @@ defmodule Spirit do
     spirit
   end
 
+  def add_experience(%Spirit{} = spirit, exp) do
+    old_power = Systems.Trainer.total_power(spirit)
+
+    spirit = spirit
+             |> send_scroll("<p>You gain #{exp} experience.</p>")
+             |> Map.put(:experience, spirit.experience + exp)
+             |> Systems.Level.advance
+             |> Spirit.save
+
+    new_power = Systems.Trainer.total_power(spirit)
+
+    power_gain = new_power - old_power
+
+    if power_gain > 0 do
+      send_scroll(spirit, "<p>You gain #{power_gain} development points.</p>")
+    end
+    spirit
+  end
+
   def logout(spirit) do
     save(spirit)
     spirit_to_kill = :"spirit_#{value(spirit).id}"
@@ -441,26 +460,6 @@ defmodule Spirit do
               |> capitalize_first
 
     Spirit.send_scroll(spirit, "<p>#{message}</p>")
-
-    {:noreply, spirit}
-  end
-
-  def handle_info({:reward_possessor, exp}, spirit) do
-    old_power = Systems.Trainer.total_power(spirit)
-
-    spirit = spirit
-             |> send_scroll("<p>You gain #{exp} experience.</p>")
-             |> Map.put(:experience, spirit.experience + exp)
-             |> Systems.Level.advance
-             |> Spirit.save
-
-    new_power = Systems.Trainer.total_power(spirit)
-
-    power_gain = new_power - old_power
-
-    if power_gain > 0 do
-      send_scroll(spirit, "<p>You gain #{power_gain} development points.</p>")
-    end
 
     {:noreply, spirit}
   end

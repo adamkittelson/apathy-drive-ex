@@ -601,6 +601,11 @@ defmodule Monster do
               |> send_scroll("<p>You possess #{monster.name}.")
               |> Monster.save
 
+    PubSub.subscribe(self, "spirits:online")
+    PubSub.subscribe(self, "spirits:hints")
+    PubSub.subscribe(self, "chat:gossip")
+    PubSub.subscribe(self, "chat:#{spirit.alignment}")
+
     Systems.Prompt.update(monster)
 
     {:reply, monster, monster}
@@ -907,18 +912,19 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, monster) do
+  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, %Monster{spirit: nil} = monster) do
+    {:noreply, monster}
+  end
+  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, %Monster{spirit: %Spirit{} = spirit} = monster) do
     message = deceased.death_message
               |> interpolate(%{"name" => deceased.name})
               |> capitalize_first
 
     send_scroll(monster, "<p>#{message}</p>")
 
-    PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
+    spirit = Spirit.add_experience(spirit, exp)
 
-    send(self, :update_spirit)
-
-    {:noreply, monster}
+    {:noreply, Map.put(monster, :spirit, spirit)}
   end
 
   def handle_info({:execute_room_ability, ability}, monster) do
@@ -1004,22 +1010,23 @@ defmodule Monster do
     end
   end
 
-  def handle_info(:update_spirit, %Monster{spirit: %Spirit{pid: pid} = spirit} = monster) do
-
-    new_spirit = Spirit.value(pid)
-
-    monster = monster
-              |> Map.put(:spirit, new_spirit)
-              |> Map.put(:max_hp,   monster.max_hp   + (10 * new_spirit.level) - (10 * spirit.level))
-              |> Map.put(:hp_regen, monster.hp_regen + new_spirit.level - spirit.level)
-              |> set_abilities
-              |> Monster.save
-
-
+  def handle_info({:gossip, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='dark-magenta'>Gossip</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
-  def handle_info(:update_spirit, %Monster{spirit: nil} = monster) do
+  def handle_info({:good, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='white'>Good</span> : #{name}] #{message}</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:neutral, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='dark-cyan'>Neutral</span> : #{name}] #{message}</p>")
+    {:noreply, monster}
+  end
+
+  def handle_info({:evil, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
