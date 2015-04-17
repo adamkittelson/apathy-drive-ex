@@ -336,6 +336,17 @@ defmodule Ability do
 
     apply_instant_effects(monster, Map.delete(effects, "script"), ability_user)
   end
+  def apply_instant_effects(%Monster{} = monster, %{"remove abilities" => abilities} = effects, ability_user) do
+    monster = Enum.reduce(abilities, monster, fn(ability_id, updated_monster) ->
+      Systems.Effect.remove_oldest_stack(updated_monster, ability_id)
+    end)
+
+    apply_instant_effects(monster, Map.delete(effects, "remove abilities"), ability_user)
+  end
+  def apply_instant_effects(%Monster{} = monster, %{} = effects, ability_user) do
+    IO.puts "unrecognized instant effects: #{inspect Map.keys(effects)}"
+    apply_instant_effects(monster, %{}, ability_user)
+  end
 
   def display_cast_message(%Monster{} = monster,
                            %Ability{properties:
@@ -407,7 +418,6 @@ defmodule Ability do
                                }
                              }
                            } = ability) do
-
      monster
      |> Systems.Effect.add(ability.properties["duration_effects"],
                            ability.properties["duration"])
