@@ -151,12 +151,12 @@ defmodule Monster do
         name:    "attack",
         command: "a",
         kind:    "attack",
-        required_skills: %{"melee" => 0},
+        required_skills: %{"attack" => 0},
         global_cooldown: 4,
         flags: [],
         properties: %{
           "dodgeable" => true,
-          "accuracy_skill" => "melee",
+          "accuracy_skill" => "attack",
           "dodge_message" => %{
             "target" => "You dodge {{user}}'s attack!",
             "user" => "{{Target}} dodges your attack!",
@@ -165,7 +165,7 @@ defmodule Monster do
           "instant_effects" => %{
             "damage" => %{
               "scaling" => %{
-                "melee" => %{
+                "attack" => %{
                   "max_every"    => 20,
                   "max_increase" => 1,
                   "min_every"    => 25,
