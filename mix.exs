@@ -7,7 +7,9 @@ defmodule ApathyDrive.Mixfile do
       elixir: "~> 1.0.4",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
-      deps: deps ]
+      deps: deps,
+      build_embedded: Mix.env == :prod,
+      start_permanent: Mix.env == :prod ]
   end
 
   # Configuration for the OTP application
@@ -20,16 +22,17 @@ defmodule ApathyDrive.Mixfile do
 
   defp deps do
     [
-      {:cowboy,       "~> 1.0.0"},
-      {:phoenix,      "~> 0.10.0"},
-      {:ecto,         "~> 0.10"},
-      {:decimal,      "~> 1.1.0"},
-      {:postgrex,     "~> 0.8.0"},
-      {:timex,        "~> 0.12.7"},
-      {:inflex,       "~> 0.2.8"},
-      {:block_timer,  "~> 0.0.1"},
-      {:oauth2,       "~> 0.0.5"},
-      {:phoenix_ecto, "~> 0.2.0"},
+      {:cowboy,              "~> 1.0.0"},
+      {:phoenix,             "~> 0.11.0"},
+      {:phoenix_live_reload, "~> 0.3"},
+      {:ecto,                "~> 0.10"},
+      {:decimal,             "~> 1.1.0"},
+      {:postgrex,            "~> 0.8.0"},
+      {:timex,               "~> 0.12.7"},
+      {:inflex,              "~> 0.2.8"},
+      {:block_timer,         "~> 0.0.1"},
+      {:oauth2,              "~> 0.0.5"},
+      {:phoenix_ecto,        "~> 0.2.0"},
       {:shouldi, only: :test}
     ]
   end

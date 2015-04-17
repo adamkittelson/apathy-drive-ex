@@ -10,7 +10,7 @@ defmodule Commands.ScoreTest do
                                          skills: %{},
                                          level: 5,
                                          experience: 98765,
-                                         socket: %Phoenix.Socket{pid: self}})
+                                         socket: %Phoenix.Socket{transport_pid: self, joined: true}})
     end
 
     should("display status with a good name", context) do
@@ -28,7 +28,7 @@ defmodule Commands.ScoreTest do
                                          skills: %{},
                                          level: 5,
                                          experience: 98765,
-                                         socket: %Phoenix.Socket{pid: self}})
+                                         socket: %Phoenix.Socket{transport_pid: self, joined: true}})
     end
 
     should("display status with a neutral name", context) do
@@ -46,7 +46,7 @@ defmodule Commands.ScoreTest do
                                          skills: %{},
                                          level: 5,
                                          experience: 98765,
-                                         socket: %Phoenix.Socket{pid: self}})
+                                         socket: %Phoenix.Socket{transport_pid: self, joined: true}})
     end
 
     should("display status with an evil name", context) do

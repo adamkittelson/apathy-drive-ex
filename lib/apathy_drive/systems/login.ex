@@ -1,6 +1,6 @@
 defmodule Systems.Login do
 
-  def login(socket, id) do
+  def login(socket, socket_pid, id) do
     spirit = ApathyDrive.Repo.get(Spirit, id)
 
     if spirit do
@@ -8,6 +8,7 @@ defmodule Systems.Login do
         :undefined ->
           spirit
           |> Map.put(:socket, socket)
+          |> Map.put(:socket_pid, socket_pid)
           |> Spirit.login
         spirit ->
           spirit

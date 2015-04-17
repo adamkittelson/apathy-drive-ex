@@ -367,31 +367,31 @@ defmodule Monster do
   end
 
   def send_scroll(%Monster{spirit: %Spirit{socket: socket}} = monster, html) do
-    Phoenix.Channel.reply socket, "scroll", %{:html => html}
+    Phoenix.Channel.push socket, "scroll", %{:html => html}
     monster
   end
   def send_scroll(%Monster{spirit: nil} = monster, html), do: monster
 
   def send_disable(%Monster{spirit: %Spirit{socket: socket}} = monster, elem) do
-    Phoenix.Channel.reply socket, "disable", %{:html => elem}
+    Phoenix.Channel.push socket, "disable", %{:html => elem}
     monster
   end
   def send_disable(%Monster{spirit: nil} = monster, html), do: monster
 
   def send_focus(%Monster{spirit: %Spirit{socket: socket}} = monster, elem) do
-    Phoenix.Channel.reply socket, "focus", %{:html => elem}
+    Phoenix.Channel.push socket, "focus", %{:html => elem}
     monster
   end
   def send_focus(%Monster{spirit: nil} = monster, html), do: monster
 
   def send_up(%Monster{spirit: %Spirit{socket: socket}} = monster) do
-    Phoenix.Channel.reply socket, "up", %{}
+    Phoenix.Channel.push socket, "up", %{}
     monster
   end
   def send_up(%Monster{spirit: nil} = monster), do: monster
 
   def send_update_prompt(%Monster{spirit: %Spirit{socket: socket}} = monster, html) do
-    Phoenix.Channel.reply socket, "update prompt", %{:html => html}
+    Phoenix.Channel.push socket, "update prompt", %{:html => html}
     monster
   end
   def send_update_prompt(%Monster{spirit: nil} = monster, html), do: monster

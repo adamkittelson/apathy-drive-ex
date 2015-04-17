@@ -19,7 +19,7 @@ defmodule Commands.Unpossess do
     |> Map.put(:room_id, monster.room_id)
     |> Spirit.save
 
-    spirit = Systems.Login.login(spirit.socket, spirit.id)
+    spirit = Systems.Login.login(spirit.socket, spirit.socket_pid, spirit.id)
 
     spirit
     |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")

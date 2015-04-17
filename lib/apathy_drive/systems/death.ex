@@ -8,11 +8,13 @@ defmodule Systems.Death do
     |> Map.put(:room_id, monster.room_id)
     |> Spirit.save
 
-    spirit = Systems.Login.login(spirit.socket, spirit.id)
+    spirit = Systems.Login.login(spirit.socket, spirit.socket_pid, spirit.id)
 
     spirit
     |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
     |> Systems.Prompt.update
+
+    send(spirit.socket_pid, {:set_entity, spirit})
 
     ApathyDrive.Repo.delete(monster)
     Process.exit(self, :normal)

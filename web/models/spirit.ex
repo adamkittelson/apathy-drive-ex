@@ -18,6 +18,7 @@ defmodule Spirit do
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
     field :socket,            :any, virtual: true
+    field :socket_pid,            :any, virtual: true
     field :pid,               :any, virtual: true
     field :idle,              :integer, default: 0, virtual: true
     field :hints,             {:array, :string}, default: []
@@ -165,27 +166,27 @@ defmodule Spirit do
   end
 
   def send_disable(%Spirit{socket: socket} = spirit, elem) do
-    Phoenix.Channel.reply socket, "disable", %{:html => elem}
+    Phoenix.Channel.push socket, "disable", %{:html => elem}
     spirit
   end
 
   def send_focus(%Spirit{socket: socket} = spirit, elem) do
-    Phoenix.Channel.reply socket, "focus", %{:html => elem}
+    Phoenix.Channel.push socket, "focus", %{:html => elem}
     spirit
   end
 
   def send_up(%Spirit{socket: socket} = spirit) do
-    Phoenix.Channel.reply socket, "up", %{}
+    Phoenix.Channel.push socket, "up", %{}
     spirit
   end
 
   def send_scroll(%Spirit{socket: socket} = spirit, html) do
-    Phoenix.Channel.reply socket, "scroll", %{:html => html}
+    Phoenix.Channel.push socket, "scroll", %{:html => html}
     spirit
   end
 
   def send_update_prompt(%Spirit{socket: socket} = spirit, html) do
-    Phoenix.Channel.reply socket, "update prompt", %{:html => html}
+    Phoenix.Channel.push socket, "update prompt", %{:html => html}
     spirit
   end
 
@@ -208,9 +209,9 @@ defmodule Spirit do
     spirit
   end
 
-  def logout(spirit) do
+  def logout(%Spirit{} = spirit) do
     save(spirit)
-    spirit_to_kill = :"spirit_#{value(spirit).id}"
+    spirit_to_kill = :"spirit_#{spirit.id}"
     Supervisor.terminate_child(ApathyDrive.Supervisor, spirit_to_kill)
     Supervisor.delete_child(ApathyDrive.Supervisor, spirit_to_kill)
   end
@@ -315,14 +316,14 @@ defmodule Spirit do
     hint = Hint.random(spirit.hints)
 
     if hint do
-      Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>\n<span class='yellow'>Hint:</span> <em>#{hint}</em>\n\n<p>"}
+      Phoenix.Channel.push spirit.socket, "scroll", %{:html => "<p>\n<span class='yellow'>Hint:</span> <em>#{hint}</em>\n\n<p>"}
     end
 
     {:noreply, spirit}
   end
 
   def handle_info({:socket_broadcast, message}, spirit) do
-    Phoenix.Channel.reply spirit.socket, message.event, message.payload
+    Phoenix.Channel.push spirit.socket, message.event, message.payload
 
     {:noreply, spirit}
   end

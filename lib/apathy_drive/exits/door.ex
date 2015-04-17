@@ -5,7 +5,7 @@ defmodule ApathyDrive.Exits.Door do
     if open?(current_room, room_exit) do
       super(current_room, spirit, room_exit)
     else
-      Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>The #{name} is closed in that direction!</p>"}
+      Phoenix.Channel.push spirit.socket, "scroll", %{:html => "<p>The #{name} is closed in that direction!</p>"}
     end
   end
 
