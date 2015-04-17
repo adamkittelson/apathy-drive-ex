@@ -106,3 +106,6 @@ CHANGELOG
 
 ---- 0.0.35 / 2015-04-11 / facebook-login --------------------------------------
 * use facebook for login
+
+---- 0.0.36 / 2015-04-16 / possession-update -----------------------------------
+* make monsters responsible for spirit struct while possessed, upgrade elixir / erlang / phoenix
