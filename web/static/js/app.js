@@ -1,5 +1,5 @@
 $(function() {
-  var addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, send;
+  var addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, push;
   focus = null;
   $('body').on('click', function(event) {
     return setFocus(focus);
@@ -33,7 +33,8 @@ $(function() {
   spirit_id = parseInt($("#spirit_id").text());
 
   socket = new Phoenix.Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
-  socket.join("mud", {spirit: spirit_id}, function(chan){
+  socket.connect();
+  socket.join("mud", {spirit: spirit_id}).receive("ok", function(chan){
 
     chan.on("room", function(message){
       updateRoom(message.html);
@@ -68,8 +69,8 @@ $(function() {
       addToScroll("#scroll", message.html);
     });
 
-    send = function(event, message) {
-             chan.send(event, message)
+    push = function(event, message) {
+             chan.push(event, message)
            };
   });
 
@@ -127,7 +128,7 @@ $(function() {
     if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {
       history_marker = null;
       command = $(event.target).val();
-      return send(event.target.id, command);
+      return push(event.target.id, command);
     } else if (event.which === 38) {
       return command_history("up");
     } else if (event.which === 40) {

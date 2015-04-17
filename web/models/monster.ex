@@ -218,8 +218,12 @@ defmodule Monster do
     |> Enum.any?(&(&1["cooldown"] == :ai_movement))
   end
 
-  def execute_command(monster, command, arguments) do
-    GenServer.cast(monster, {:execute_command, command, arguments})
+  def execute_command(%Monster{pid: pid}, command, arguments) do
+    GenServer.call(pid, {:execute_command, command, arguments})
+  end
+
+  def possess(monster, %Spirit{} = spirit) do
+    GenServer.call(monster, {:possess, spirit})
   end
 
   def value(monster_pid) do
@@ -234,6 +238,14 @@ defmodule Monster do
   end
   def insert(%Monster{} = monster), do: monster
 
+  def save(%Monster{id: id, spirit: %Spirit{} = spirit} = monster) when is_integer(id) do
+    spirit = Spirit.save(spirit)
+    monster = monster
+              |> Map.put(:spirit, spirit)
+              |> Repo.update
+    :ets.insert(:"monster_#{id}", {self, monster})
+    monster
+  end
   def save(%Monster{id: id} = monster) when is_integer(id) do
     monster = Repo.update(monster)
     :ets.insert(:"monster_#{id}", {self, monster})
@@ -354,30 +366,35 @@ defmodule Monster do
     base_skill(monster, skill_name) + effect_bonus(monster, skill_name)
   end
 
-  def send_scroll(%Monster{id: id} = monster, html) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "scroll", %{:html => html}
+  def send_scroll(%Monster{spirit: %Spirit{socket: socket}} = monster, html) do
+    Phoenix.Channel.push socket, "scroll", %{:html => html}
     monster
   end
+  def send_scroll(%Monster{spirit: nil} = monster, html), do: monster
 
-  def send_disable(%Monster{id: id} = monster, elem) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "disable", %{:html => elem}
+  def send_disable(%Monster{spirit: %Spirit{socket: socket}} = monster, elem) do
+    Phoenix.Channel.push socket, "disable", %{:html => elem}
     monster
   end
+  def send_disable(%Monster{spirit: nil} = monster, html), do: monster
 
-  def send_focus(%Monster{id: id} = monster, elem) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "focus", %{:html => elem}
+  def send_focus(%Monster{spirit: %Spirit{socket: socket}} = monster, elem) do
+    Phoenix.Channel.push socket, "focus", %{:html => elem}
     monster
   end
+  def send_focus(%Monster{spirit: nil} = monster, html), do: monster
 
-  def send_up(%Monster{id: id} = monster) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "up", %{}
+  def send_up(%Monster{spirit: %Spirit{socket: socket}} = monster) do
+    Phoenix.Channel.push socket, "up", %{}
     monster
   end
+  def send_up(%Monster{spirit: nil} = monster), do: monster
 
-  def send_update_prompt(%Monster{id: id} = monster, html) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{id}", "update prompt", %{:html => html}
+  def send_update_prompt(%Monster{spirit: %Spirit{socket: socket}} = monster, html) do
+    Phoenix.Channel.push socket, "update prompt", %{:html => html}
     monster
   end
+  def send_update_prompt(%Monster{spirit: nil} = monster, html), do: monster
 
   def look_name(%Monster{} = monster) do
     case monster_alignment(monster) do
@@ -544,16 +561,59 @@ defmodule Monster do
     {:reply, monster, monster}
   end
 
-  def handle_cast({:execute_command, command, arguments}, monster) do
+  def handle_call({:execute_command, command, arguments}, _from, monster) do
     try do
-      monster = ApathyDrive.Command.execute(monster, command, arguments)
-      {:noreply, monster}
+      case ApathyDrive.Command.execute(monster, command, arguments) do
+        %Monster{} = monster ->
+          {:reply, monster, monster}
+        %Spirit{} = spirit ->
+          monster = monster
+                    |> Map.put(:spirit, nil)
+                    |> set_abilities
+                    |> save
+
+          {:reply, spirit, monster}
+      end
     catch
       kind, error ->
         Monster.send_scroll(monster, "<p><span class='red'>Something went wrong.</span></p>")
         IO.puts Exception.format(kind, error)
-        {:noreply, monster}
+        {:reply, monster, monster}
     end
+  end
+
+  def handle_call({:possess, %Spirit{level: spirit_level} = spirit},
+                                _from,
+                                %Monster{level: monster_level, spirit: nil} = monster)
+                                when spirit_level < monster_level do
+    Spirit.send_scroll(spirit, "<p>You must be at least level #{monster_level} to possess #{monster.name}.</p>")
+    {:reply, spirit, monster}
+  end
+
+  def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: nil} = monster) do
+    send(spirit.pid, :go_away)
+
+    spirit = Map.put(spirit, :pid, nil)
+
+    monster = monster
+              |> Map.put(:spirit, spirit)
+              |> set_abilities
+              |> send_scroll("<p>You possess #{monster.name}.")
+              |> Monster.save
+
+    PubSub.subscribe(self, "spirits:online")
+    PubSub.subscribe(self, "spirits:hints")
+    PubSub.subscribe(self, "chat:gossip")
+    PubSub.subscribe(self, "chat:#{spirit.alignment}")
+
+    Systems.Prompt.update(monster)
+
+    {:reply, monster, monster}
+  end
+
+  def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: _spirit} = monster) do
+    Spirit.send_scroll(spirit, "<p>#{capitalize_first(monster.name)} is already possessed.</p>")
+    {:reply, spirit, monster}
   end
 
   def handle_info({:greet, %{greeter: %Monster{pid: greeter_pid},
@@ -852,18 +912,19 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, monster) do
+  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, %Monster{spirit: nil} = monster) do
+    {:noreply, monster}
+  end
+  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, %Monster{spirit: %Spirit{} = spirit} = monster) do
     message = deceased.death_message
               |> interpolate(%{"name" => deceased.name})
               |> capitalize_first
 
     send_scroll(monster, "<p>#{message}</p>")
 
-    PubSub.broadcast!("monsters:#{monster.id}", {:reward_possessor, exp})
+    spirit = Spirit.add_experience(spirit, exp)
 
-    send(self, :update_spirit)
-
-    {:noreply, monster}
+    {:noreply, Map.put(monster, :spirit, spirit)}
   end
 
   def handle_info({:execute_room_ability, ability}, monster) do
@@ -895,7 +956,7 @@ defmodule Monster do
   end
 
   def handle_info(:think, monster) do
-    Systems.AI.think(monster)
+    monster = Systems.AI.think(monster)
 
     {:noreply, monster}
   end
@@ -949,47 +1010,23 @@ defmodule Monster do
     end
   end
 
-  def handle_info({:possession, %Spirit{level: spirit_level} = spirit},
-                                %Monster{level: monster_level, spirit: nil} = monster)
-                                when spirit_level < monster_level do
-    Spirit.send_scroll(spirit, "<p>You must be at least level #{monster_level} to possess #{monster.name}.</p>")
+  def handle_info({:gossip, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='dark-magenta'>Gossip</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
-  def handle_info({:possession, spirit}, %Monster{spirit: nil} = monster) do
-    send(spirit.pid, {:possess, monster})
-
-    monster = monster
-              |> Map.put(:spirit, spirit)
-              |> Map.put(:max_hp,   monster.max_hp   + (10 * spirit.level))
-              |> Map.put(:hp_regen, monster.hp_regen + spirit.level)
-              |> set_abilities
-              |> Monster.save
-
+  def handle_info({:good, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='white'>Good</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
-  def handle_info({:possession, spirit}, %Monster{spirit: _spirit} = monster) do
-    Spirit.send_scroll(spirit, "<p>#{capitalize_first(monster.name)} is already possessed.</p>")
+  def handle_info({:neutral, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='dark-cyan'>Neutral</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
-  def handle_info(:update_spirit, %Monster{spirit: %Spirit{pid: pid} = spirit} = monster) do
-
-    new_spirit = Spirit.value(pid)
-
-    monster = monster
-              |> Map.put(:spirit, new_spirit)
-              |> Map.put(:max_hp,   monster.max_hp   + (10 * new_spirit.level) - (10 * spirit.level))
-              |> Map.put(:hp_regen, monster.hp_regen + new_spirit.level - spirit.level)
-              |> set_abilities
-              |> Monster.save
-
-
-    {:noreply, monster}
-  end
-
-  def handle_info(:update_spirit, %Monster{spirit: nil} = monster) do
+  def handle_info({:evil, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 

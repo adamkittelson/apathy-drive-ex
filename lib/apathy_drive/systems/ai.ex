@@ -1,7 +1,7 @@
 defmodule Systems.AI do
 
   def think(%Monster{} = monster) do
-    heal(monster) || bless(monster) || attack(monster) || move(monster)
+    heal(monster) || bless(monster) || attack(monster) || move(monster) || monster
   end
 
   def heal(%Monster{hp: hp, max_hp: max_hp, spirit: nil} = monster) do
@@ -17,6 +17,7 @@ defmodule Systems.AI do
 
         if ability do
           send(self, {:execute_ability, ability})
+          monster
         end
       end
     end
@@ -31,6 +32,7 @@ defmodule Systems.AI do
 
       if ability do
         send(self, {:execute_ability, ability})
+        monster
       end
     end
   end
@@ -54,6 +56,7 @@ defmodule Systems.AI do
 
       if attack do
         send(self, {:execute_ability, attack, target})
+        monster
       end
     end
   end
@@ -67,6 +70,7 @@ defmodule Systems.AI do
                  |> random_ability
 
         send(self, {:execute_ability, attack, target})
+        monster
       end
     end
   end
@@ -92,7 +96,7 @@ defmodule Systems.AI do
         direction = Room.random_direction(room)
 
         if direction do
-          Monster.execute_command(self, direction, [])
+          ApathyDrive.Command.execute(monster, direction, [])
         end
       end
     end

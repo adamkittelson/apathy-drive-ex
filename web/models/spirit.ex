@@ -18,6 +18,7 @@ defmodule Spirit do
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
     field :socket,            :any, virtual: true
+    field :socket_pid,            :any, virtual: true
     field :pid,               :any, virtual: true
     field :idle,              :integer, default: 0, virtual: true
     field :hints,             {:array, :string}, default: []
@@ -29,8 +30,15 @@ defmodule Spirit do
     timestamps
   end
 
-  def init(spirit) do
+  def init(%Spirit{} = spirit) do
     send(self, :set_abilities)
+
+    PubSub.subscribe(self, "spirits:online")
+    PubSub.subscribe(self, "spirits:hints")
+    PubSub.subscribe(self, "chat:gossip")
+    PubSub.subscribe(self, "chat:#{spirit.alignment}")
+    PubSub.subscribe(self, "rooms:#{spirit.room_id}")
+
     {:ok, Map.put(spirit, :pid, self)}
   end
 
@@ -64,8 +72,8 @@ defmodule Spirit do
   end
   def save(%Spirit{} = spirit), do: spirit
 
-  def execute_command(spirit, command, arguments) do
-    GenServer.cast(spirit, {:execute_command, command, arguments})
+  def execute_command(%Spirit{pid: pid}, command, arguments) do
+    GenServer.call(pid, {:execute_command, command, arguments})
   end
 
   def set_abilities(%Spirit{} = spirit) do
@@ -124,13 +132,19 @@ defmodule Spirit do
   end
 
   def login(%Spirit{alignment: alignment} = spirit) do
-    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :permanent, 5000, :worker, [Spirit]})
-    PubSub.subscribe(pid, "spirits:online")
-    PubSub.subscribe(pid, "spirits:hints")
-    PubSub.subscribe(pid, "chat:gossip")
-    PubSub.subscribe(pid, "chat:#{alignment}")
-    PubSub.subscribe(pid, "rooms:#{spirit.room_id}")
-    pid
+    Supervisor.delete_child(ApathyDrive.Supervisor, :"spirit_#{spirit.id}")
+    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :transient, 5000, :worker, [Spirit]})
+    Map.put(spirit, :pid, pid)
+  end
+
+  def activate_hint(%Spirit{} = spirit, hint) do
+    if hint in spirit.disabled_hints do
+      spirit
+    else
+      spirit = spirit
+               |> Map.put(:hints, [hint | spirit.hints] |> Enum.uniq)
+               |> save
+    end
   end
 
   def deactivate_hint(%Spirit{} = spirit, hint) do
@@ -152,33 +166,52 @@ defmodule Spirit do
   end
 
   def send_disable(%Spirit{socket: socket} = spirit, elem) do
-    Phoenix.Channel.reply socket, "disable", %{:html => elem}
+    Phoenix.Channel.push socket, "disable", %{:html => elem}
     spirit
   end
 
   def send_focus(%Spirit{socket: socket} = spirit, elem) do
-    Phoenix.Channel.reply socket, "focus", %{:html => elem}
+    Phoenix.Channel.push socket, "focus", %{:html => elem}
     spirit
   end
 
   def send_up(%Spirit{socket: socket} = spirit) do
-    Phoenix.Channel.reply socket, "up", %{}
+    Phoenix.Channel.push socket, "up", %{}
     spirit
   end
 
   def send_scroll(%Spirit{socket: socket} = spirit, html) do
-    Phoenix.Channel.reply socket, "scroll", %{:html => html}
+    Phoenix.Channel.push socket, "scroll", %{:html => html}
     spirit
   end
 
   def send_update_prompt(%Spirit{socket: socket} = spirit, html) do
-    Phoenix.Channel.reply socket, "update prompt", %{:html => html}
+    Phoenix.Channel.push socket, "update prompt", %{:html => html}
     spirit
   end
 
-  def logout(spirit) do
+  def add_experience(%Spirit{} = spirit, exp) do
+    old_power = Systems.Trainer.total_power(spirit)
+
+    spirit = spirit
+             |> send_scroll("<p>You gain #{exp} experience.</p>")
+             |> Map.put(:experience, spirit.experience + exp)
+             |> Systems.Level.advance
+             |> Spirit.save
+
+    new_power = Systems.Trainer.total_power(spirit)
+
+    power_gain = new_power - old_power
+
+    if power_gain > 0 do
+      send_scroll(spirit, "<p>You gain #{power_gain} development points.</p>")
+    end
+    spirit
+  end
+
+  def logout(%Spirit{} = spirit) do
     save(spirit)
-    spirit_to_kill = :"spirit_#{value(spirit).id}"
+    spirit_to_kill = :"spirit_#{spirit.id}"
     Supervisor.terminate_child(ApathyDrive.Supervisor, spirit_to_kill)
     Supervisor.delete_child(ApathyDrive.Supervisor, spirit_to_kill)
   end
@@ -211,10 +244,6 @@ defmodule Spirit do
   ##############
   # Hints
   ##############
-
-  def activate_hint(spirit, hint) do
-    GenServer.cast(spirit, {:activate_hint, hint})
-  end
 
   def value(spirit) do
     GenServer.call(spirit, :value)
@@ -256,31 +285,24 @@ defmodule Spirit do
     {:reply, Room.find(spirit.room_id), spirit}
   end
 
-  def handle_cast({:execute_command, command, arguments}, spirit) do
+  def handle_call({:execute_command, command, arguments}, _from, spirit) do
     try do
-      spirit = ApathyDrive.Command.execute(spirit, command, arguments)
-      {:noreply, spirit}
+      case ApathyDrive.Command.execute(spirit, command, arguments) do
+        %Spirit{} = spirit ->
+          {:reply, spirit, spirit}
+        %Monster{} = monster ->
+          {:reply, monster, spirit}
+      end
     catch
       kind, error ->
         Spirit.send_scroll(spirit, "<p><span class='red'>Something went wrong.</span></p>")
         IO.puts Exception.format(kind, error)
-        {:noreply, spirit}
+        {:reply, spirit, spirit}
     end
   end
 
   def handle_cast(:reset_idle, spirit) do
     {:noreply, Map.put(spirit, :idle, 0)}
-  end
-
-  def handle_cast({:activate_hint, hint}, spirit) do
-    if hint in spirit.disabled_hints do
-      {:noreply, spirit}
-    else
-      spirit = spirit
-               |> Map.put(:hints, [hint | spirit.hints] |> Enum.uniq)
-               |> save
-      {:noreply, spirit}
-    end
   end
 
   def handle_info(:increment_idle, spirit) do
@@ -294,26 +316,14 @@ defmodule Spirit do
     hint = Hint.random(spirit.hints)
 
     if hint do
-      Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>\n<span class='yellow'>Hint:</span> <em>#{hint}</em>\n\n<p>"}
+      Phoenix.Channel.push spirit.socket, "scroll", %{:html => "<p>\n<span class='yellow'>Hint:</span> <em>#{hint}</em>\n\n<p>"}
     end
 
     {:noreply, spirit}
   end
 
   def handle_info({:socket_broadcast, message}, spirit) do
-    Phoenix.Channel.reply spirit.socket, message.event, message.payload
-
-    {:noreply, spirit}
-  end
-
-  def handle_info({:unpossess, %Monster{id: id, room_id: room_id} = monster}, spirit) do
-    spirit = spirit
-             |> Map.put(:monster, nil)
-             |> set_room_id(room_id)
-             |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
-             |> Systems.Prompt.update
-
-    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{id}")
+    Phoenix.Channel.push spirit.socket, message.event, message.payload
 
     {:noreply, spirit}
   end
@@ -455,26 +465,6 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info({:reward_possessor, exp}, spirit) do
-    old_power = Systems.Trainer.total_power(spirit)
-
-    spirit = spirit
-             |> send_scroll("<p>You gain #{exp} experience.</p>")
-             |> Map.put(:experience, spirit.experience + exp)
-             |> Systems.Level.advance
-             |> Spirit.save
-
-    new_power = Systems.Trainer.total_power(spirit)
-
-    power_gain = new_power - old_power
-
-    if power_gain > 0 do
-      send_scroll(spirit, "<p>You gain #{power_gain} development points.</p>")
-    end
-
-    {:noreply, spirit}
-  end
-
   def handle_info({:monster_dodged, messages: messages,
                                     user: %Monster{} = user,
                                     target: %Monster{} = target},
@@ -488,18 +478,6 @@ defmodule Spirit do
 
   def handle_info(:set_abilities, spirit) do
     {:noreply, set_abilities(spirit) }
-  end
-
-  def handle_info({:possess, %Monster{} = monster}, spirit) do
-    ApathyDrive.PubSub.subscribe(spirit.pid, "monsters:#{monster.id}")
-    ApathyDrive.PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
-
-    spirit = spirit
-             |> Map.put(:monster, monster.pid)
-             |> Spirit.send_scroll("<p>You possess #{monster.name}.")
-
-    Systems.Prompt.update(monster)
-    {:noreply, spirit}
   end
 
   def handle_info({:gossip, name, message}, spirit) do
@@ -519,6 +497,12 @@ defmodule Spirit do
 
   def handle_info({:evil, name, message}, spirit) do
     Spirit.send_scroll(spirit, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
+    {:noreply, spirit}
+  end
+
+  def handle_info(:go_away, spirit) do
+    save(spirit)
+    Process.exit(self, :normal)
     {:noreply, spirit}
   end
 

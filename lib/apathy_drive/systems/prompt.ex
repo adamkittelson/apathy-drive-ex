@@ -1,7 +1,5 @@
 defmodule Systems.Prompt do
 
-
-
   def display(%Spirit{} = spirit) do
     spirit
     |> Spirit.send_disable("#prompt")

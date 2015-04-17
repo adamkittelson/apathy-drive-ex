@@ -52,7 +52,7 @@ defmodule ApathyDrive.Exits.Cast do
 
   def look(%Spirit{} = spirit, %Room{} = current_room, room_exit) do
     if room_exit.look_message do
-      Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>#{room_exit.look_message}</p>"}
+      Phoenix.Channel.push spirit.socket, "scroll", %{:html => "<p>#{room_exit.look_message}</p>"}
     else
       super(spirit, current_room, room_exit)
     end

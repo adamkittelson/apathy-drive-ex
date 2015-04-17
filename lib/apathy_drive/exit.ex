@@ -40,7 +40,7 @@ defmodule ApathyDrive.Exit do
   end
 
   def look(_current_room, %Spirit{} = spirit, nil) do
-    Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
+    Phoenix.Channel.push spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
   end
 
   def look(_current_room, %Monster{} = monster, nil) do
@@ -135,14 +135,15 @@ defmodule ApathyDrive.Exit do
         destination = Room.find(room_exit["destination"])
                       |> Room.value
 
+        notify_monster_entered(monster, current_room, destination)
+
         monster = monster
-                  |> Monster.set_room_id(room_exit["destination"])
+                  |> Monster.set_room_id(destination.id)
                   |> Monster.save
 
         Room.look(destination, monster)
 
         notify_monster_left(monster, current_room, destination)
-        notify_monster_entered(monster, current_room, destination)
         monster
       end
 

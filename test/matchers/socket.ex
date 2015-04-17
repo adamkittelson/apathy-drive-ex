@@ -7,7 +7,7 @@ defmodule ApathyDrive.Matchers do
 
       unquote(body[:do])
 
-      assert_received {:socket_reply,
+      assert_received {:socket_push,
                        %Phoenix.Socket.Message{event: "scroll",
                                                payload: %{
                                                  html: unquote(string)},
@@ -18,7 +18,7 @@ defmodule ApathyDrive.Matchers do
 
   defmacro assert_adds_to_scroll(string) do
     quote do
-      assert_received {:socket_reply,
+      assert_received {:socket_push,
                        %Phoenix.Socket.Message{event: "scroll",
                                                payload: %{
                                                  html: unquote(string)},

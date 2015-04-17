@@ -11,7 +11,7 @@ defmodule ApathyDrive.Exits.Hidden do
     if open?(current_room, room_exit) or room_exit.passable_while_hidden do
       super(spirit, current_room, room_exit)
     else
-      Phoenix.Channel.reply spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction!</p>"}
+      Phoenix.Channel.push spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction!</p>"}
     end
   end
 
