@@ -42,9 +42,7 @@ defmodule Ability do
   end
 
   def color(%Ability{kind: "attack"}),      do: "red"
-  def color(%Ability{kind: "curse"}),       do: "red"
   def color(%Ability{kind: "area attack"}), do: "red"
-  def color(%Ability{kind: "area curse"}),  do: "red"
   def color(%Ability{kind: _}), do: "blue"
 
   def prep_message(message, %Ability{} = ability, %Monster{} = user, %Monster{} = target, interpolations) do
