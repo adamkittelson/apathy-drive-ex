@@ -10,10 +10,10 @@ defmodule Commands.Unpossess do
 
   def execute(%Monster{spirit: spirit} = monster, _arguments) do
 
-    PubSub.unsubscribe(self, "spirits:online")
-    PubSub.unsubscribe(self, "spirits:hints")
-    PubSub.unsubscribe(self, "chat:gossip")
-    PubSub.unsubscribe(self, "chat:#{spirit.alignment}")
+    ApathyDrive.PubSub.unsubscribe(self, "spirits:online")
+    ApathyDrive.PubSub.unsubscribe(self, "spirits:hints")
+    ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
+    ApathyDrive.PubSub.unsubscribe(self, "chat:#{spirit.alignment}")
 
     spirit
     |> Map.put(:room_id, monster.room_id)
