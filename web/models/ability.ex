@@ -292,7 +292,7 @@ defmodule Ability do
     end
   end
   def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
-    ability = reduce_damage(ability, monster)
+    ability = reduce_damage(ability, monster, ability_user)
 
     2000
     |> :random.uniform
@@ -308,13 +308,25 @@ defmodule Ability do
   def reduce_damage(%Ability{properties:
                              %{"damage_type" => damage_type,
                                "instant_effects" => %{"damage" => damage}}} = ability,
-                    %Monster{} = monster) do
+                    %Monster{} = monster,
+                    %Monster{alignment: alignment}) do
 
     damage = Monster.reduce_damage(monster, damage, damage_type)
 
+    damage = case alignment do
+      "good" ->
+        prgd = Monster.effect_bonus(monster, "protection from good")
+        damage * (1 - prgd)
+      "evil" ->
+        prev = Monster.effect_bonus(monster, "protection from evil")
+        damage * (1 - prev)
+      _ ->
+        damage
+    end
+
     put_in(ability.properties["instant_effects"]["damage"], damage)
   end
-  def reduce_damage(%Ability{} = ability, _monster), do: ability
+  def reduce_damage(%Ability{} = ability, _monster, _ability_user), do: ability
 
   def apply_instant_effects(%Monster{} = monster, nil, _ability_user), do: monster
   def apply_instant_effects(%Monster{} = monster, %{} = effects, _ability_user) when map_size(effects) == 0, do: monster
