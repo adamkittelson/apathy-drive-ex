@@ -520,7 +520,10 @@ defmodule Monster do
   def top_threat(targets), do: Enum.max(targets)
 
   def protection(%Monster{} = monster, damage_type) do
-    resistance = 0 #resistance(entity, CritTables.damage_types[to_string(damage_type)])
+    resistance = monster
+                 |> resistance(damage_type)
+                 |> resistance
+
     ac = monster
          |> ac
          |> resistance
@@ -528,7 +531,20 @@ defmodule Monster do
     elemental_resistance = effect_bonus(monster, "#{damage_type} resistance")
     elemental_resistance = min(elemental_resistance, 100) / 100.0
 
-    1 - ((1 - resistance_reduction(resistance)) * (1 - resistance_reduction(ac)) * (1 -elemental_resistance))
+    1 - ((1 - resistance_reduction(resistance)) * (1 - resistance_reduction(ac)) * (1 - elemental_resistance))
+  end
+
+  def resistance_type("stone"),     do: "physical resistance"
+  def resistance_type("normal"),    do: "physical resistance"
+  def resistance_type("ice"),       do: "magical resistance"
+  def resistance_type("fire"),      do: "magical resistance"
+  def resistance_type("lightning"), do: "magical resistance"
+  def resistance_type("water"),     do: "magical resistance"
+  def resistance_type("poison"),    do: "magical resistance"
+
+  def resistance(%Monster{} = monster, damage_type) do
+    type = resistance_type(damage_type)
+    effect_bonus(monster, type)
   end
 
   def resistance(stat) do
