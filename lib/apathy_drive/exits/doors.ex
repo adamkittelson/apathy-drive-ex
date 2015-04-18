@@ -81,33 +81,6 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def pick(%Monster{} = monster, %Room{} = room, room_exit) do
-        cond do
-          open?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is already open.</p>")
-          !locked?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is already unlocked.</p>")
-          true ->
-            :random.seed(:os.timestamp)
-            skill = (Monster.modified_skill(monster, "stealth") +
-                     Monster.modified_skill(monster, "perception")) / 3
-
-            if (skill + room_exit["difficulty"] >= :random.uniform(100)) do
-              ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                       {:door_picked, %{picker: monster,
-                                                        direction: room_exit["direction"],
-                                                        type: name }})
-              monster
-            else
-              ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                       {:door_pick_failed, %{picker: monster,
-                                                             direction: room_exit["direction"],
-                                                             type: name }})
-              monster
-            end
-        end
-      end
-
       def close(monster, room, room_exit) do
         if open?(room, room_exit) do
           ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",

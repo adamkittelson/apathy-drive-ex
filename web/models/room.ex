@@ -1,7 +1,6 @@
 defmodule Room do
   require Logger
   use Ecto.Model
-
   use GenServer
   use Timex
   alias ApathyDrive.Repo
@@ -151,27 +150,18 @@ defmodule Room do
     end
   end
 
-  def look(%Room{} = room, %Spirit{} = spirit) do
-    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}</div>)
+  def look(%Room{light: light} = room, %Spirit{} = spirit) do
+    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
 
     Spirit.send_scroll spirit, html
   end
 
   def look(%Room{light: light} = room, %Monster{} = monster) do
-    light = light + Monster.effect_bonus(monster, "light")
-
-    html = if light > -200 and light < 200 do
-      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
-    else
-      "<div class='room'>#{light_desc(light)}</div>"
-    end
+    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
 
     Monster.send_scroll(monster, html)
   end
 
-  def light_desc(light_level)  when light_level < -1000, do: "<p>You are blind.</p>"
-  def light_desc(light_level)  when light_level <= -300, do: "<p>The room is pitch black - you can't see anything</p>"
-  def light_desc(light_level)  when light_level <= -200, do: "<p>The room is very dark - you can't see anything</p>"
   def light_desc(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
   def light_desc(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
   def light_desc(_light_level), do: nil
@@ -437,37 +427,6 @@ defmodule Room do
 
   def handle_info({:mirror_close, room_exit}, room) do
     room = close!(room, room_exit["direction"])
-    {:noreply, room}
-  end
-
-  def handle_info({:door_picked, %{direction: direction}}, room) do
-    room = unlock!(room, direction)
-
-    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
-
-    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
-
-    if mirror_exit["kind"] == room_exit["kind"] do
-      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_pick, mirror_exit})
-    end
-
-    {:noreply, room}
-  end
-
-  def handle_info({:mirror_pick, room_exit}, room) do
-    room = unlock!(room, room_exit["direction"])
-    {:noreply, room}
-  end
-
-  def handle_info({:door_pick_failed, %{direction: direction}}, room) do
-    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
-
-    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
-
-    if mirror_exit["kind"] == room_exit["kind"] do
-      ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_pick_failed, mirror_exit})
-    end
-
     {:noreply, room}
   end
 

@@ -738,51 +738,6 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:door_picked, %{picker: %Monster{pid: picker_pid},
-                                   type: type}},
-                                   %Monster{pid: monster_pid} = monster)
-                                   when picker_pid == monster_pid do
-
-    send_scroll(monster, "<p>You successfully unlocked the #{type}.</p>")
-    {:noreply, monster}
-  end
-
-  def handle_info({:door_picked, %{basher: %Monster{} = picker,
-                                   direction: direction,
-                                   type: type}},
-                                   %Monster{} = monster) do
-
-    send_scroll(monster, "<p>You see #{picker.name} pick the lock on the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
-    {:noreply, monster}
-  end
-
-  def handle_info({:mirror_pick, room_exit}, monster) do
-    send_scroll(monster, "<p>The #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} unlocks with a click.</p>")
-    {:noreply, monster}
-  end
-
-  def handle_info({:door_pick_failed, %{picker: %Monster{pid: picker_pid}}},
-                                        %Monster{pid: monster_pid} = monster)
-                                        when picker_pid == monster_pid do
-
-    send_scroll(monster, "<p>Your skill fails you this time.</p>")
-    {:noreply, monster}
-  end
-
-  def handle_info({:door_pick_failed, %{picker: %Monster{} = picker,
-                                        direction: direction,
-                                        type: type}},
-                                        monster) do
-
-    send_scroll(monster, "<p>You see #{picker.name} attempt to pick the lock on the #{type} #{ApathyDrive.Exit.direction_description(direction)}.</p>")
-    {:noreply, monster}
-  end
-
-  def handle_info({:mirror_pick_failed, room_exit}, monster) do
-    send_scroll(monster, "<p>You hear a scratching sound in the lock on the #{String.downcase(room_exit["kind"])} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")
-    {:noreply, monster}
-  end
-
   def handle_info({:door_locked, %{locker: %Monster{pid: locker_pid},
                                    type: type}},
                                    %Monster{pid: monster_pid} = monster)

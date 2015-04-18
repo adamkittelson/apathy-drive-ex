@@ -81,7 +81,7 @@ defmodule ApathyDrive.Exits.Trap do
 
   def detect?(monster, room_exit) do
     :random.seed(:os.timestamp)
-    perception = Monster.modified_skill(monster, "perception") - modifier(room_exit)
+    perception = 100 - modifier(room_exit)
     perception >= :random.uniform(100)
   end
 
