@@ -440,17 +440,15 @@ defmodule Ability do
   end
   def add_duration_effects(%Monster{} = monster, %Ability{}), do: monster
 
-  def affects_target?(%Monster{flags: []}, %Ability{}), do: true
-  def affects_target?(%Monster{}, %Ability{flags: []}), do: true
   def affects_target?(%Monster{flags: monster_flags}, %Ability{flags: ability_flags}) do
     cond do
-      Enum.member?(ability_flags, "affects living") and Enum.member?(monster_flags, "non-living") ->
+      Enum.member?(ability_flags, "affects-living") and Enum.member?(monster_flags, "non-living") ->
         false
-      Enum.member?(ability_flags, "affects animals") and Enum.member?(monster_flags, "animal") ->
+      Enum.member?(ability_flags, "affects-animals") and !Enum.member?(monster_flags, "animal") ->
         false
-      Enum.member?(ability_flags, "affects undead") and Enum.member?(monster_flags, "undead") ->
+      Enum.member?(ability_flags, "affects-undead") and !Enum.member?(monster_flags, "undead") ->
         false
-      Enum.member?(ability_flags, "poison") and Enum.member?(monster_flags, "poison immunity") ->
+      Enum.member?(ability_flags, "poison") and Enum.member?(monster_flags, "poison-immunity") ->
         false
       true ->
         true
