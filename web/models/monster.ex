@@ -53,6 +53,7 @@ defmodule Monster do
     if monster.room_id do
       PubSub.subscribe(self, "rooms:#{monster.room_id}")
       PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters")
+      PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster_alignment(monster)}")
     end
 
     if monster.lair_id do
@@ -312,9 +313,12 @@ defmodule Monster do
   def set_room_id(%Monster{} = monster, room_id) do
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}")
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters")
+    PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters:#{monster_alignment(monster)}")
 
     PubSub.subscribe(self, "rooms:#{room_id}")
     PubSub.subscribe(self, "rooms:#{room_id}:monsters")
+    PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster_alignment(monster)}")
+
     monster
     |> Map.put(:room_id, room_id)
     |> Systems.Effect.add(%{"cooldown" => :ai_movement}, 30)
@@ -632,6 +636,9 @@ defmodule Monster do
     PubSub.subscribe(self, "chat:gossip")
     PubSub.subscribe(self, "chat:#{spirit.alignment}")
 
+    PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters:#{monster.alignment}")
+    PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster_alignment(monster)}")
+
     Systems.Prompt.update(monster)
 
     {:reply, monster, monster}
@@ -911,12 +918,12 @@ defmodule Monster do
   def handle_info({:execute_room_ability, ability}, monster) do
     ability = Map.put(ability, :global_cooldown, nil)
 
-    {:noreply, Ability.execute(monster, ability, monster)}
+    {:noreply, Ability.execute(monster, ability, [self])}
   end
 
   def handle_info({:execute_ability, ability}, monster) do
     try do
-      {:noreply, Ability.execute(monster, ability, monster)}
+      {:noreply, Ability.execute(monster, ability, [self])}
     catch
       kind, error ->
         Monster.send_scroll(monster, "<p><span class='red'>Something went wrong.</span></p>")
@@ -927,7 +934,7 @@ defmodule Monster do
 
   def handle_info({:execute_ability, ability, target}, monster) do
     try do
-      {:noreply, Ability.execute(monster, ability, target)}
+      {:noreply, Ability.execute(monster, ability, [target])}
     catch
       kind, error ->
         Monster.send_scroll(monster, "<p><span class='red'>Something went wrong.</span></p>")

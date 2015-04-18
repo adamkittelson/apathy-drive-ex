@@ -14,6 +14,8 @@ defmodule Commands.Unpossess do
     ApathyDrive.PubSub.unsubscribe(self, "spirits:hints")
     ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
     ApathyDrive.PubSub.unsubscribe(self, "chat:#{spirit.alignment}")
+    PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters:#{Monster.monster_alignment(monster)}")
+    PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster.alignment}")
 
     spirit
     |> Map.put(:room_id, monster.room_id)

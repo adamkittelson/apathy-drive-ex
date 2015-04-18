@@ -42,7 +42,7 @@ defmodule Ability do
   end
 
   def color(%Ability{kind: "attack"}),      do: "red"
-  def color(%Ability{kind: "area attack"}), do: "red"
+  def color(%Ability{kind: "room attack"}), do: "red"
   def color(%Ability{kind: _}), do: "blue"
 
   def prep_message(message, %Ability{} = ability, %Monster{} = user, %Monster{} = target, interpolations) do
@@ -197,65 +197,178 @@ defmodule Ability do
     |> Systems.Match.one(:name_contains, string)
   end
 
-  def execute(%Monster{mana: mana} = monster,
-              %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
-    monster
-    |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
-  end
+  # def execute(%Monster{mana: mana} = monster,
+  #             %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
+  #   monster
+  #   |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+  # end
 
-  def execute(%Monster{} = monster, %Ability{} = ability, "") do
-    execute(monster, ability, monster)
-  end
-
-  def execute(%Monster{} = monster, %Ability{} = ability, target) when is_binary(target) do
-    target_monster = monster
-                     |> Monster.find_room
-                     |> find_monster_in_room(target, monster)
-
-    case target_monster do
-      nil ->
-        Monster.send_scroll(monster, "<p><span class='red'>You don't see #{target} here.</span></p>")
-      target ->
-        execute(monster, ability, target)
+  def alignment_enemies(%Monster{} = monster) do
+    case Monster.monster_alignment(monster) do
+      "good" ->
+        PubSub.subscribers("rooms:#{monster.room_id}:monsters:neutral") ++
+        PubSub.subscribers("rooms:#{monster.room_id}:monsters:evil")
+      "neutral" ->
+        PubSub.subscribers("rooms:#{monster.room_id}:monsters:good") ++
+        PubSub.subscribers("rooms:#{monster.room_id}:monsters:evil")
+      "evil" ->
+        PubSub.subscribers("rooms:#{monster.room_id}:monsters:neutral") ++
+        PubSub.subscribers("rooms:#{monster.room_id}:monsters:good")
     end
   end
 
-  def execute(%Monster{} = monster, %Ability{} = ability, target) when is_pid(target) do
-    execute(monster, ability, Monster.value(target))
+  def wrap_target(nil),    do: []
+  def wrap_target(%Monster{pid: pid}), do: [pid]
+  def wrap_target(target), do: [target]
+
+  def reject(%Monster{pid: target_pid}, %Monster{pid: pid}) when pid == target_pid, do: nil
+  def reject(%Monster{pid: target_pid}, %Monster{}), do: target_pid
+  def reject(target_pid, %Monster{pid: pid}) when pid == target_pid, do: nil
+  def reject(target_pid, %Monster{}), do: target_pid
+
+  def local_hated_targets(%Monster{} = monster) do
+    monster
+    |> Monster.local_hated_targets
+    |> Map.values
   end
 
-  def execute(%Monster{} = monster, %Ability{name: "attack"} = ability, %Monster{} = target) do
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "attack"} = ability, "") do
+    monster
+    |> Monster.aggro_target
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "attack"} = ability, target) when is_binary(target) do
+    monster
+    |> Monster.find_room
+    |> find_monster_in_room(target, monster)
+    |> reject(monster)
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "blessing"} = ability, "") do
+    monster.pid
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "blessing"} = ability, target) when is_binary(target) do
+    monster
+    |> Monster.find_room
+    |> find_monster_in_room(target, monster)
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "curse"} = ability, "") do
+    monster
+    |> Monster.aggro_target
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "curse"} = ability, target) when is_binary(target) do
+    monster
+    |> Monster.find_room
+    |> find_monster_in_room(target, monster)
+    |> reject(monster)
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "heal"} = ability, "") do
+    monster.pid
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "heal"} = ability, target) when is_binary(target) do
+    monster
+    |> Monster.find_room
+    |> find_monster_in_room(target, monster)
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "room attack"} = ability, target) when is_binary(target) do
+    Enum.uniq(alignment_enemies(monster) ++ local_hated_targets(monster))
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "room blessing"} = ability, target) when is_binary(target) do
+    Enum.uniq(PubSub.subscribers("rooms:#{monster.room_id}:monsters:#{Monster.monster_alignment(monster)}")) --
+    local_hated_targets(monster)
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "room curse"} = ability, target) when is_binary(target) do
+    Enum.uniq(alignment_enemies(monster) ++ local_hated_targets(monster))
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "room heal"} = ability, target) when is_binary(target) do
+    Enum.uniq(PubSub.subscribers("rooms:#{monster.room_id}:monsters:#{Monster.monster_alignment(monster)}")) --
+    local_hated_targets(monster)
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "utility"} = ability, "") do
+    monster.pid
+    |> wrap_target
+  end
+
+  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "utility"} = ability, target) when is_binary(target) do
+    monster
+    |> Monster.find_room
+    |> find_monster_in_room(target, monster)
+    |> wrap_target
+  end
+
+  def execute(%Monster{} = monster, %Ability{} = ability, target) when is_binary(target)do
+    case targets(monster, ability, target) do
+      [] ->
+        Monster.send_scroll(monster, "<p><span class='red'>You don't see them here.</span></p>")
+      targets ->
+        execute(monster, ability, targets)
+    end
+  end
+
+  def execute(%Monster{} = monster, %Ability{name: "attack"} = ability, targets) do
     if Monster.on_attack_cooldown?(monster) do
       Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't attack yet.</p>")
     else
-      send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
       send(self, :think)
 
       gc = global_cooldown(ability, monster)
 
-      if gc do
+      monster = if gc do
         Systems.Effect.add(monster, %{"cooldown" => :attack}, gc)
       else
         monster
       end |> Systems.Prompt.update
+
+      ability = scale_ability(monster, ability)
+
+      Enum.each(targets, fn(target) ->
+        send(target, {:apply_ability, ability, monster})
+      end)
+
+      monster
     end
   end
 
-  def execute(%Monster{} = monster, %Ability{} = ability, %Monster{} = target) do
+  def execute(%Monster{} = monster, %Ability{} = ability, targets) do
     if Monster.on_global_cooldown?(monster) do
       Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
     else
-      send(target.pid, {:apply_ability, scale_ability(monster, ability), monster})
       send(self, :think)
 
       gc = global_cooldown(ability, monster)
 
-      if gc do
+      monster = if gc do
         Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
       else
         monster
       end |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
           |> Systems.Prompt.update
+
+      ability = scale_ability(monster, ability)
+
+      Enum.each(targets, fn(target) ->
+        send(target, {:apply_ability, ability, monster})
+      end)
+
+      monster
     end
   end
 
