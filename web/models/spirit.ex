@@ -90,6 +90,16 @@ defmodule Spirit do
                           spirit_skill >= required_skill
                         end)
                    end)
+                |> Enum.reject(fn(%Ability{} = ability) ->
+                     case spirit.alignment do
+                       "good" ->
+                         Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "evil")
+                       "neutral" ->
+                         Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "evil")
+                       "evil" ->
+                         Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "neutral")
+                     end
+                   end)
 
     spirit
     |> Map.put(:abilities, abilities)

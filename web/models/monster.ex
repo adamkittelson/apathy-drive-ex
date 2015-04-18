@@ -143,6 +143,16 @@ defmodule Monster do
               monster_skill >= required_skill
             end)
        end)
+    |> Enum.reject(fn(%Ability{} = ability) ->
+         case monster_alignment(monster) do
+           "good" ->
+             Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "evil")
+           "neutral" ->
+             Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "evil")
+           "evil" ->
+             Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "neutral")
+         end
+       end)
   end
 
   def abilities_from_attacks(%Monster{attacks: []}) do
