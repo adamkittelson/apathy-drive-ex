@@ -55,7 +55,7 @@ defmodule Systems.AI do
       end
 
       if attack do
-        send(self, {:execute_ability, attack, target})
+        send(self, {:execute_ability, attack, [target]})
         monster
       end
     end
@@ -69,7 +69,7 @@ defmodule Systems.AI do
                  |> Monster.monster_attacks
                  |> random_ability
 
-        send(self, {:execute_ability, attack, target})
+        send(self, {:execute_ability, attack, [target]})
         monster
       end
     end

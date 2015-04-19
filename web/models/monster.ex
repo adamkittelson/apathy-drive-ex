@@ -785,12 +785,33 @@ defmodule Monster do
   end
 
   def handle_info(:regen, %Monster{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = monster) do
-    monster = monster
-              |> Map.put(:hp,   min(  hp + monster.hp_regen,   max_hp))
-              |> Map.put(:mana, min(mana + monster.mana_regen, max_mana))
-              |> Systems.Prompt.update
+    poison = effect_bonus(monster, "poison")
 
-    {:noreply, monster}
+    if poison > 0 do
+      message = monster.effects
+                |> Map.values
+                |> Enum.find_value(fn(effect) ->
+                     Map.has_key?(effect, "poison") && effect["effect_message"]
+                   end)
+
+      monster = monster
+                |> send_scroll("<p><span class='red'>#{message}</span></p>")
+                |> Map.put(:hp,   min(  hp + monster.hp_regen - poison, max_hp))
+                |> Map.put(:mana, min(mana + monster.mana_regen, max_mana))
+                |> Systems.Prompt.update
+
+      if monster.hp < 1, do: Systems.Death.kill(monster)
+
+      {:noreply, monster}
+    else
+      monster = monster
+                |> Map.put(:hp,   min(  hp + monster.hp_regen,   max_hp))
+                |> Map.put(:mana, min(mana + monster.mana_regen, max_mana))
+                |> Systems.Prompt.update
+
+      {:noreply, monster}
+    end
+
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %Monster{timers: timers} = monster) do
@@ -824,7 +845,7 @@ defmodule Monster do
                 |> Ability.apply_ability(ability, ability_user)
                 |> Systems.Prompt.update
 
-      if monster.hp < 0, do: Systems.Death.kill(monster)
+      if monster.hp < 1, do: Systems.Death.kill(monster)
     else
       message = "#{monster.name} is not affected by that ability." |> capitalize_first
       Monster.send_scroll(ability_user, "<p><span class='dark-cyan'>#{message}</span></p>")
@@ -932,9 +953,9 @@ defmodule Monster do
     end
   end
 
-  def handle_info({:execute_ability, ability, target}, monster) do
+  def handle_info({:execute_ability, ability, targets}, monster) do
     try do
-      {:noreply, Ability.execute(monster, ability, [target])}
+      {:noreply, Ability.execute(monster, ability, targets)}
     catch
       kind, error ->
         Monster.send_scroll(monster, "<p><span class='red'>Something went wrong.</span></p>")

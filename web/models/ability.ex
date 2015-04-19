@@ -353,14 +353,24 @@ defmodule Ability do
     else
       send(self, :think)
 
-      gc = global_cooldown(ability, monster)
-
-      monster = if gc do
-        Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
-      else
+      monster = if ability.properties["after_cast"] do
+        if after_cast_ability = ApathyDrive.Repo.get(Ability, ability.properties["after_cast"]) do
+          send(self, {:execute_ability, after_cast_ability, targets})
+        end
         monster
-      end |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
-          |> Systems.Prompt.update
+      else
+        gc = global_cooldown(ability, monster)
+
+        monster = if gc do
+          Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
+        else
+          monster
+        end
+      end
+
+      monster = monster
+                |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
+                |> Systems.Prompt.update
 
       ability = scale_ability(monster, ability)
 
