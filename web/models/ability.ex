@@ -464,11 +464,24 @@ defmodule Ability do
   end
   def reduce_damage(%Ability{} = ability, _monster, _ability_user), do: ability
 
+  def trigger_damage_shields(%Monster{} = monster, %Monster{} = attacker) do
+    monster.effects
+    |> Map.values
+    |> Enum.filter(&(Map.has_key?(&1, "damage shield")))
+    |> Enum.each(fn(%{"damage shield" => damage, "damage shield message" => message, "damage shield type" => damage_type}) ->
+         ability = %Ability{kind: "attack", flags: [], properties: %{"instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => message}}
+
+         send(attacker.pid, {:apply_ability, ability, monster})
+       end)
+  end
+
   def apply_instant_effects(%Monster{} = monster, nil, _ability_user), do: monster
   def apply_instant_effects(%Monster{} = monster, %{} = effects, _ability_user) when map_size(effects) == 0, do: monster
   def apply_instant_effects(%Monster{} = monster, %{"damage" => damage} = effects, %Monster{} = ability_user) do
     monster = put_in(monster.hp, monster.hp - damage)
     monster = put_in(monster.hate, HashDict.update(monster.hate, ability_user.pid, damage, fn(hate) -> hate + damage end))
+
+    trigger_damage_shields(monster, ability_user)
 
     apply_instant_effects(monster, Map.delete(effects, "damage"), ability_user)
   end
