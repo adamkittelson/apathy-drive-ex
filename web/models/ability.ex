@@ -483,6 +483,22 @@ defmodule Ability do
 
     apply_instant_effects(monster, Map.delete(effects, "remove abilities"), ability_user)
   end
+  def apply_instant_effects(%Monster{} = monster, %{"dispel" => effect_types} = effects, ability_user) do
+    monster = Enum.reduce(effect_types, monster, fn(type, updated_monster) ->
+      effects_with_type = monster.effects
+                          |> Map.keys
+                          |> Enum.filter(fn(key) ->
+                               monster.effects[key]
+                               |> Map.has_key?(type)
+                             end)
+
+      Enum.reduce(effects_with_type, updated_monster, fn(ability_id, sub_updated_monster) ->
+        Systems.Effect.remove(sub_updated_monster, ability_id)
+      end)
+    end)
+
+    apply_instant_effects(monster, Map.delete(effects, "dispel"), ability_user)
+  end
   def apply_instant_effects(%Monster{} = monster, %{} = effects, ability_user) do
     IO.puts "unrecognized instant effects: #{inspect Map.keys(effects)}"
     apply_instant_effects(monster, %{}, ability_user)
