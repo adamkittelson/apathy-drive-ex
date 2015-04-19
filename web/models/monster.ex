@@ -83,6 +83,24 @@ defmodule Monster do
     {:ok, monster}
   end
 
+  def confuse(%Monster{effects: effects} = monster) do
+    effects
+    |> Map.values
+    |> Enum.find(fn(effect) ->
+         Map.has_key?(effect, "confused") && (effect["confused"] >= :random.uniform(100))
+       end)
+    |> confuse(monster)
+  end
+  def confuse(nil, %Monster{}), do: false
+  def confuse(%{"confusion_message" => %{"user" => user_message, "spectator" => spectator_message}}, %Monster{} = monster) do
+    send_scroll(monster, "<p>#{user_message}</p>")
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{monster.room_id}", "scroll", %{:html => "<p>#{interpolate(spectator_message, %{"user" => monster})}</p>"}
+  end
+  def confuse(%{}, %Monster{} = monster) do
+    send_scroll(monster, "<p>You fumble in confusion!</p>")
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{monster.room_id}", "scroll", %{:html => "<p>#{interpolate("{{user}} fumbles in confusion!", %{"user" => monster})}</p>"}
+  end
+
   def set_abilities(%Monster{monster_template_id: nil} = monster) do
     monster
   end

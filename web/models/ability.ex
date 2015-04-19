@@ -197,12 +197,6 @@ defmodule Ability do
     |> Systems.Match.one(:name_contains, string)
   end
 
-  # def execute(%Monster{mana: mana} = monster,
-  #             %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
-  #   monster
-  #   |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
-  # end
-
   def alignment_enemies(%Monster{} = monster) do
     case Monster.monster_alignment(monster) do
       "good" ->
@@ -314,6 +308,12 @@ defmodule Ability do
     |> wrap_target
   end
 
+  # def execute(%Monster{mana: mana} = monster,
+  #             %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
+  #   monster
+  #   |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+  # end
+
   def execute(%Monster{} = monster, %Ability{} = ability, target) when is_binary(target)do
     case targets(monster, ability, target) do
       [] ->
@@ -324,61 +324,67 @@ defmodule Ability do
   end
 
   def execute(%Monster{} = monster, %Ability{name: "attack"} = ability, targets) do
-    if Monster.on_attack_cooldown?(monster) do
-      Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't attack yet.</p>")
-    else
-      send(self, :think)
-
-      gc = global_cooldown(ability, monster)
-
-      monster = if gc do
-        Systems.Effect.add(monster, %{"cooldown" => :attack}, gc)
-      else
+    cond do
+      Monster.on_attack_cooldown?(monster) ->
+        Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't attack yet.</p>")
+      Monster.confuse(monster) ->
         monster
-      end |> Systems.Prompt.update
+      true ->
+        send(self, :think)
 
-      ability = scale_ability(monster, ability)
+        gc = global_cooldown(ability, monster)
 
-      Enum.each(targets, fn(target) ->
-        send(target, {:apply_ability, ability, monster})
-      end)
+        monster = if gc do
+          Systems.Effect.add(monster, %{"cooldown" => :attack}, gc)
+        else
+          monster
+        end |> Systems.Prompt.update
 
-      monster
+        ability = scale_ability(monster, ability)
+
+        Enum.each(targets, fn(target) ->
+          send(target, {:apply_ability, ability, monster})
+        end)
+
+        monster
     end
   end
 
   def execute(%Monster{} = monster, %Ability{} = ability, targets) do
-    if Monster.on_global_cooldown?(monster) do
-      Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
-    else
-      send(self, :think)
-
-      monster = if ability.properties["after_cast"] do
-        if after_cast_ability = ApathyDrive.Repo.get(Ability, ability.properties["after_cast"]) do
-          send(self, {:execute_ability, after_cast_ability, targets})
-        end
+    cond do
+      Monster.on_global_cooldown?(monster) ->
+        Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
+      Monster.confuse(monster) ->
         monster
-      else
-        gc = global_cooldown(ability, monster)
+      true ->
+        send(self, :think)
 
-        monster = if gc do
-          Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
-        else
+        monster = if ability.properties["after_cast"] do
+          if after_cast_ability = ApathyDrive.Repo.get(Ability, ability.properties["after_cast"]) do
+            send(self, {:execute_ability, after_cast_ability, targets})
+          end
           monster
+        else
+          gc = global_cooldown(ability, monster)
+
+          monster = if gc do
+            Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
+          else
+            monster
+          end
         end
-      end
 
-      monster = monster
-                |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
-                |> Systems.Prompt.update
+        monster = monster
+                  |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
+                  |> Systems.Prompt.update
 
-      ability = scale_ability(monster, ability)
+        ability = scale_ability(monster, ability)
 
-      Enum.each(targets, fn(target) ->
-        send(target, {:apply_ability, ability, monster})
-      end)
+        Enum.each(targets, fn(target) ->
+          send(target, {:apply_ability, ability, monster})
+        end)
 
-      monster
+        monster
     end
   end
 

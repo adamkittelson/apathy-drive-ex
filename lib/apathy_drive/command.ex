@@ -76,16 +76,28 @@ defmodule ApathyDrive.Command do
 
       cond do
         command_exit ->
-          ApathyDrive.Exits.Command.move_via_command(room, monster, command_exit)
+          if Monster.confuse(monster) do
+            monster
+          else
+            ApathyDrive.Exits.Command.move_via_command(room, monster, command_exit)
+          end
         remote_action_exit ->
-          ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, monster, remote_action_exit)
+          if Monster.confuse(monster) do
+            monster
+          else
+            ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, monster, remote_action_exit)
+          end
         true ->
           case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
             nil ->
               Monster.send_scroll(monster, "<p>What?</p>")
               monster
             match ->
-              match.module.execute(monster, arguments)
+              if Monster.confuse(monster) do
+                monster
+              else
+                match.module.execute(monster, arguments)
+              end
           end
       end
     end
