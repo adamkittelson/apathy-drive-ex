@@ -52,7 +52,7 @@ defmodule Commands.Protection do
           |> Enum.find(fn(number) ->
                number <= (100 * protection_amount)
              end)
-    @protection_levels[key]
+    @protection_levels[key || 0]
   end
 
 end

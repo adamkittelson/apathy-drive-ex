@@ -229,6 +229,12 @@ defmodule Monster do
     |> Enum.any?(&(&1["cooldown"] == :ai_movement))
   end
 
+  def blind?(%Monster{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(Map.has_key?(&1, "blinded")))
+  end
+
   def execute_command(%Monster{pid: pid}, command, arguments) do
     GenServer.call(pid, {:execute_command, command, arguments})
   end

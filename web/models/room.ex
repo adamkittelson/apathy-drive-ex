@@ -157,7 +157,11 @@ defmodule Room do
   end
 
   def look(%Room{light: light} = room, %Monster{} = monster) do
-    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
+    html = if Monster.blind?(monster) do
+      "<p>You are blind.</p>"
+    else
+      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
+    end
 
     Monster.send_scroll(monster, html)
   end
