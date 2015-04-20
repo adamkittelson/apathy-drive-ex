@@ -198,6 +198,14 @@ defmodule Ability do
     |> Systems.Match.one(:name_contains, string)
   end
 
+  def find_other_monster_in_room(room, string, %Monster{pid: pid} = monster) do
+    PubSub.subscribers("rooms:#{room.id}:monsters")
+    |> Enum.reject(fn(monster_pid) ->
+         monster_pid == pid
+       end)
+    |> Systems.Match.one(:name_contains, string)
+  end
+
   def alignment_enemies(%Monster{} = monster) do
     case Monster.monster_alignment(monster) do
       "good" ->
@@ -236,8 +244,7 @@ defmodule Ability do
   def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "attack"} = ability, target) when is_binary(target) do
     monster
     |> Monster.find_room
-    |> find_monster_in_room(target, monster)
-    |> reject(monster)
+    |> find_other_monster_in_room(target, monster)
     |> wrap_target
   end
 
@@ -262,8 +269,7 @@ defmodule Ability do
   def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "curse"} = ability, target) when is_binary(target) do
     monster
     |> Monster.find_room
-    |> find_monster_in_room(target, monster)
-    |> reject(monster)
+    |> find_other_monster_in_room(target, monster)
     |> wrap_target
   end
 
@@ -492,6 +498,11 @@ defmodule Ability do
 
     put_in(ability.properties["instant_effects"]["damage"], damage)
   end
+  def reduce_damage(%Ability{properties:
+                             %{"damage_type" => damage_type,
+                               "instant_effects" => %{"drain" => drain}}} = ability, monster, ability_user) do
+     reduce_damage(put_in(ability.properties["instant_effects"]["damage"], drain), monster, ability_user)
+  end
   def reduce_damage(%Ability{} = ability, _monster, _ability_user), do: ability
 
   def trigger_damage_shields(%Monster{} = monster, %Monster{} = attacker) do
@@ -507,6 +518,11 @@ defmodule Ability do
 
   def apply_instant_effects(%Monster{} = monster, nil, _ability_user), do: monster
   def apply_instant_effects(%Monster{} = monster, %{} = effects, _ability_user) when map_size(effects) == 0, do: monster
+  def apply_instant_effects(%Monster{} = monster, %{"drain" => _} = effects, ability_user) do
+    send(ability_user.pid, {:apply_ability, %Ability{properties: %{"instant_effects" => %{"heal" => effects["damage"]}}}, monster})
+
+    apply_instant_effects(monster, Map.delete(effects, "drain"), ability_user)
+  end
   def apply_instant_effects(%Monster{} = monster, %{"damage" => damage} = effects, %Monster{} = ability_user) do
     monster = put_in(monster.hp, monster.hp - damage)
     monster = put_in(monster.hate, HashDict.update(monster.hate, ability_user.pid, damage, fn(hate) -> hate + damage end))
@@ -555,7 +571,7 @@ defmodule Ability do
 
   def display_cast_message(%Monster{} = monster,
                            %Ability{properties:
-                             %{"instant_effects" => %{"heal" => heal}}} = ability,
+                             %{"cast_message" => _, "instant_effects" => %{"heal" => heal}}} = ability,
                            %Monster{} = ability_user) do
 
     cast_messages = cast_messages(ability, ability_user, monster, %{"amount" => heal})
@@ -575,7 +591,7 @@ defmodule Ability do
 
   def display_cast_message(%Monster{} = monster,
                            %Ability{properties:
-                             %{"instant_effects" => %{"damage" => damage}}} = ability,
+                             %{"cast_message" => _, "instant_effects" => %{"damage" => damage}}} = ability,
                            %Monster{} = ability_user) do
 
     cast_messages = cast_messages(ability, ability_user, monster, %{"amount" => damage})
@@ -647,6 +663,7 @@ defmodule Ability do
   end
   def add_duration_effects(%Monster{} = monster, %Ability{}), do: monster
 
+  def affects_target?(%Monster{flags: _monster_flags}, %Ability{flags: nil}), do: true
   def affects_target?(%Monster{flags: monster_flags}, %Ability{flags: ability_flags}) do
     cond do
       Enum.member?(ability_flags, "affects-living") and Enum.member?(monster_flags, "non-living") ->
