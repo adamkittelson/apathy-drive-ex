@@ -75,8 +75,16 @@ defmodule ApathyDrive.Exit do
     Monster.send_scroll(monster, "<p>There is no exit in that direction.</p>")
   end
 
-  def move(%Room{} = current_room, spirit_or_monster, room_exit) do
-    :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".move(current_room, spirit_or_monster, room_exit)
+  def move(%Room{} = current_room, %Spirit{} = spirit, room_exit) do
+    :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".move(current_room, spirit, room_exit)
+  end
+
+  def move(%Room{} = current_room, %Monster{} = monster, room_exit) do
+    if Monster.held(monster) do
+      monster
+    else
+      :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".move(current_room, monster, room_exit)
+    end
   end
 
   def get_exit_by_direction(%Room{exits: exits}, direction) do

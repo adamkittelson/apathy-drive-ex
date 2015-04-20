@@ -76,10 +76,13 @@ defmodule ApathyDrive.Command do
 
       cond do
         command_exit ->
-          if Monster.confuse(monster) do
-            monster
-          else
-            ApathyDrive.Exits.Command.move_via_command(room, monster, command_exit)
+          cond do
+            Monster.confuse(monster) ->
+              monster
+            Monster.held(monster) ->
+              monster
+            true ->
+              ApathyDrive.Exits.Command.move_via_command(room, monster, command_exit)
           end
         remote_action_exit ->
           if Monster.confuse(monster) do

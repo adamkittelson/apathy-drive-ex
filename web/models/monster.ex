@@ -84,6 +84,19 @@ defmodule Monster do
     {:ok, monster}
   end
 
+  def held(%Monster{effects: effects} = monster) do
+    effects
+    |> Map.values
+    |> Enum.find(fn(effect) ->
+         Map.has_key?(effect, "held")
+       end)
+    |> held(monster)
+  end
+  def held(nil, %Monster{}), do: false
+  def held(%{"effect_message" => message}, %Monster{} = monster) do
+    send_scroll(monster, "<p>#{message}</p>")
+  end
+
   def confuse(%Monster{effects: effects} = monster) do
     effects
     |> Map.values
