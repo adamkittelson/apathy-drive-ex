@@ -55,11 +55,12 @@ defmodule Ability do
   def cast_messages(%Ability{} = ability,
                     %Monster{} = user,
                     %Monster{} = target,
-                    interpolations \\ %{}) do
+                    interpolations \\ %{},
+                    message_key \\ "cast_message") do
     %{
-      "user"      => prep_message(ability.properties["cast_message"]["user"],      ability, user, target, interpolations),
-      "target"    => prep_message(ability.properties["cast_message"]["target"],    ability, user, target, interpolations),
-      "spectator" => prep_message(ability.properties["cast_message"]["spectator"], ability, user, target, interpolations)
+      "user"      => prep_message(ability.properties[message_key]["user"],      ability, user, target, interpolations),
+      "target"    => prep_message(ability.properties[message_key]["target"],    ability, user, target, interpolations),
+      "spectator" => prep_message(ability.properties[message_key]["spectator"], ability, user, target, interpolations)
     }
   end
 
@@ -308,6 +309,21 @@ defmodule Ability do
     |> wrap_target
   end
 
+  def display_pre_cast_message(%Monster{} = monster, %Ability{properties: %{"cast_message" => _}} = ability, targets) do
+    target = targets
+             |> List.first
+             |> Monster.value
+
+    cast_messages = cast_messages(ability, monster, target, %{}, "pre-cast_message")
+
+    PubSub.broadcast!("rooms:#{monster.room_id}",
+                      {:cast_message,
+                        messages: cast_messages,
+                        user: monster,
+                        target: target})
+  end
+  def display_pre_cast_message(%Monster{} = monster, %Ability{} = ability, targets), do: nil
+
   # def execute(%Monster{mana: mana} = monster,
   #             %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
   #   monster
@@ -358,6 +374,8 @@ defmodule Ability do
         monster
       true ->
         send(self, :think)
+
+        display_pre_cast_message(monster, ability, targets)
 
         monster = if ability.properties["after_cast"] do
           if after_cast_ability = ApathyDrive.Repo.get(Ability, ability.properties["after_cast"]) do
