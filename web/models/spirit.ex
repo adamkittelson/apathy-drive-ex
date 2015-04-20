@@ -93,11 +93,11 @@ defmodule Spirit do
                 |> Enum.reject(fn(%Ability{} = ability) ->
                      case spirit.alignment do
                        "good" ->
-                         Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "evil")
+                         Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "evil") or Enum.member?(ability.flags, "not-good")
                        "neutral" ->
-                         Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "evil")
+                         Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "evil") or Enum.member?(ability.flags, "not-neutral")
                        "evil" ->
-                         Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "neutral")
+                         Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "not-evil")
                      end
                    end)
 

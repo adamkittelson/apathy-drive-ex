@@ -166,11 +166,11 @@ defmodule Monster do
     |> Enum.reject(fn(%Ability{} = ability) ->
          case monster_alignment(monster) do
            "good" ->
-             Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "evil")
-           "neutral" ->
-             Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "evil")
-           "evil" ->
-             Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "neutral")
+              Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "evil") or Enum.member?(ability.flags, "not-good")
+            "neutral" ->
+              Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "evil") or Enum.member?(ability.flags, "not-neutral")
+            "evil" ->
+              Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "not-evil")
          end
        end)
   end
@@ -577,7 +577,7 @@ defmodule Monster do
   end
 
   def resistance(stat) do
-    trunc(stat * (0.5 + (stat / 100)))
+    trunc(stat * (0.5 + (Kernel.abs(stat) / 100)))
   end
 
   def resistance_reduction(resistance) do

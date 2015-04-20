@@ -104,6 +104,7 @@ defmodule Ability do
 
   def scale_duration(%Monster{} = monster,
                      %Ability{properties: %{"duration" => %{} = duration}} = ability) do
+
     cap  = Map.get(duration, "cap", :infinity)
     base = Map.get(duration, "base")
 
@@ -113,8 +114,8 @@ defmodule Ability do
                |> Enum.reduce(base, fn(skill_name, total) ->
                     skill = Monster.modified_skill(monster, skill_name)
 
-                    increase = if duration["every"] do
-                      trunc(skill / duration["every"]) * duration["increase"]
+                    increase = if duration[skill_name]["every"] do
+                      trunc(skill / duration[skill_name]["every"]) * duration[skill_name]["increase"]
                     else
                       0
                     end
@@ -648,6 +649,7 @@ defmodule Ability do
                                }
                              }
                            } = ability) do
+
      monster
      |> Systems.Effect.add(ability.properties["duration_effects"],
                            ability.properties["duration"])
