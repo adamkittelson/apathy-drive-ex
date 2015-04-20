@@ -432,7 +432,10 @@ defmodule Spirit do
                                   target: %Monster{}},
                   %Spirit{} = spirit) do
 
-    send_scroll(spirit, messages["spectator"])
+
+    if messages["spectator"] do
+      send_scroll(spirit, messages["spectator"])
+    end
 
     {:noreply, spirit}
   end

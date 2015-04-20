@@ -45,6 +45,7 @@ defmodule Ability do
   def color(%Ability{kind: "room attack"}), do: "red"
   def color(%Ability{kind: _}), do: "blue"
 
+  def prep_message(nil, _, _, _, _), do: nil
   def prep_message(message, %Ability{} = ability, %Monster{} = user, %Monster{} = target, interpolations) do
     message = message
               |> interpolate(Map.merge(%{"user" => user, "target" => target}, interpolations))
@@ -413,17 +414,19 @@ defmodule Ability do
   end
 
   def global_cooldown(%Ability{global_cooldown: gc}, %Monster{effects: effects}) do
-    modifier = effects
-               |> Map.values
-               |> Enum.map(fn
-                    (%{} = effect) ->
-                      Map.get(effect, "speed", 1)
-                    (_) ->
-                      1
-                  end)
-               |> Enum.reduce(1, fn(speed, total_speed) -> speed * total_speed end)
+    if gc do
+      modifier = effects
+                 |> Map.values
+                 |> Enum.map(fn
+                      (%{} = effect) ->
+                        Map.get(effect, "speed", 1)
+                      (_) ->
+                        1
+                    end)
+                 |> Enum.reduce(1, fn(speed, total_speed) -> speed * total_speed end)
 
-    gc * modifier
+      gc * modifier
+    end
   end
 
   def dodged?(%Monster{} = monster, %Ability{properties: %{"accuracy_skill" => accuracy_skill}}, %Monster{} = attacker) do

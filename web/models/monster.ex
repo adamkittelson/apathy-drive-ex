@@ -76,9 +76,10 @@ defmodule Monster do
     :ets.insert(:"monster_#{monster.id}", {self, monster})
 
     monster = monster
-              |> TimerManager.call_every({:monster_ai,    5_000, fn -> send(self, :think) end})
-              |> TimerManager.call_every({:monster_regen, 10_000, fn -> send(self, :regen) end})
-              |> TimerManager.call_every({:calm_down,     10_000, fn -> send(self, :calm_down) end})
+              |> TimerManager.call_every({:periodic_effects, 5_000, fn -> send(self, :apply_periodic_effects) end})
+              |> TimerManager.call_every({:monster_ai,       5_000, fn -> send(self, :think) end})
+              |> TimerManager.call_every({:monster_regen,   10_000, fn -> send(self, :regen) end})
+              |> TimerManager.call_every({:calm_down,       10_000, fn -> send(self, :calm_down) end})
 
     {:ok, monster}
   end
@@ -892,7 +893,9 @@ defmodule Monster do
                   %Monster{pid: pid} = monster)
                   when pid == user_pid do
 
-    send_scroll(monster, messages["user"])
+    if messages["user"] do
+      send_scroll(monster, messages["user"])
+    end
 
     {:noreply, monster}
   end
@@ -903,7 +906,9 @@ defmodule Monster do
                   %Monster{pid: pid} = monster)
                   when pid == target_pid do
 
-    send_scroll(monster, messages["target"])
+    if messages["target"] do
+      send_scroll(monster, messages["target"])
+    end
 
     {:noreply, monster}
   end
@@ -913,7 +918,9 @@ defmodule Monster do
                                   target: %Monster{}},
                   %Monster{} = monster) do
 
-    send_scroll(monster, messages["spectator"])
+    if messages["spectator"] do
+      send_scroll(monster, messages["spectator"])
+    end
 
     {:noreply, monster}
   end
@@ -994,6 +1001,20 @@ defmodule Monster do
         IO.puts Exception.format(kind, error)
         {:noreply, monster}
     end
+  end
+
+  def handle_info(:apply_periodic_effects, monster) do
+
+    # periodic damage
+    monster.effects
+    |> Map.values
+    |> Enum.filter(&(Map.has_key?(&1, "damage")))
+    |> Enum.each(fn(%{"damage" => damage, "effect_message" => message, "damage_type" => damage_type}) ->
+         ability = %Ability{kind: "attack", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => %{"user" => message}}}
+
+         send(self, {:apply_ability, ability, monster})
+       end)
+    {:noreply, monster}
   end
 
   def handle_info(:think, monster) do
