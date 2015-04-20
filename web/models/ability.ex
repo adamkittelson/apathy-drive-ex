@@ -553,8 +553,14 @@ defmodule Ability do
       effects_with_type = monster.effects
                           |> Map.keys
                           |> Enum.filter(fn(key) ->
-                               monster.effects[key]
-                               |> Map.has_key?(type)
+                               effect = monster.effects[key]
+                               if key == "all" do
+                                 # match all temporary effects (effects with timers) for "all"
+                                  Map.has_key?(effect, "timers")
+                               else
+                                 # match all temporary effects with the matching key (e.g. poison, blinded)
+                                  Map.has_key?(effect, type) and Map.has_key?(effect, "timers")
+                               end
                              end)
 
       Enum.reduce(effects_with_type, updated_monster, fn(ability_id, sub_updated_monster) ->
