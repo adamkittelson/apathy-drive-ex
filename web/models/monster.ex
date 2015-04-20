@@ -588,6 +588,12 @@ defmodule Monster do
     |> round
   end
 
+  def get_hp_regen(%Monster{hp_regen: regen} = monster) do
+    modifier = 1 + effect_bonus(monster, "hp_regen") / 100
+
+    trunc(regen * modifier)
+  end
+
   # Generate functions from Ecto schema
   fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
@@ -820,7 +826,7 @@ defmodule Monster do
 
       monster = monster
                 |> send_scroll("<p><span class='red'>#{message}</span></p>")
-                |> Map.put(:hp,   min(  hp + monster.hp_regen - poison, max_hp))
+                |> Map.put(:hp,   min(  hp + get_hp_regen(monster) - poison, max_hp))
                 |> Map.put(:mana, min(mana + monster.mana_regen, max_mana))
                 |> Systems.Prompt.update
 
@@ -829,9 +835,11 @@ defmodule Monster do
       {:noreply, monster}
     else
       monster = monster
-                |> Map.put(:hp,   min(  hp + monster.hp_regen,   max_hp))
+                |> Map.put(:hp,   min(  hp + get_hp_regen(monster), max_hp))
                 |> Map.put(:mana, min(mana + monster.mana_regen, max_mana))
                 |> Systems.Prompt.update
+
+      if monster.hp < 1, do: Systems.Death.kill(monster)
 
       {:noreply, monster}
     end

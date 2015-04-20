@@ -309,7 +309,7 @@ defmodule Ability do
     |> wrap_target
   end
 
-  def display_pre_cast_message(%Monster{} = monster, %Ability{properties: %{"cast_message" => _}} = ability, targets) do
+  def display_pre_cast_message(%Monster{} = monster, %Ability{properties: %{"pre-cast_message" => _}} = ability, targets) do
     target = targets
              |> List.first
              |> Monster.value
