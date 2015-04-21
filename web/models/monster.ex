@@ -590,10 +590,12 @@ defmodule Monster do
   end
 
   def resistance(stat) do
-    trunc(stat * (0.5 + (Kernel.abs(stat) / 100)))
+    stat = max(0, stat)
+    trunc(stat * (0.5 + (stat / 100)))
   end
 
   def resistance_reduction(resistance) do
+    resistance = max(0, resistance)
     resistance / (250 + resistance)
   end
 
