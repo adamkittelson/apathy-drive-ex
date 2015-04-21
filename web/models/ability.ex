@@ -416,18 +416,20 @@ defmodule Ability do
 
   def global_cooldown(%Ability{global_cooldown: gc}, %Monster{effects: effects}) do
     if gc do
-      modifier = effects
-                 |> Map.values
-                 |> Enum.map(fn
-                      (%{} = effect) ->
-                        Map.get(effect, "speed", 1)
-                      (_) ->
-                        1
-                    end)
-                 |> Enum.reduce(1, fn(speed, total_speed) -> speed * total_speed end)
+      speed_mods = effects
+                   |> Map.values
+                   |> Enum.filter(&(Map.has_key?(&1, "speed")))
+                   |> Enum.map(&(Map.get(&1, "speed")))
 
-      gc * modifier
+      gc * speed_modifier(speed_mods)
     end
+  end
+
+  def speed_modifier([]), do: 1
+  def speed_modifier(speed_mods) do
+    count = length(speed_mods)
+
+    Enum.sum(speed_mods) / 100
   end
 
   def dodged?(%Monster{} = monster, %Ability{properties: %{"accuracy_skill" => accuracy_skill}}, %Monster{} = attacker) do
