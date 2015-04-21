@@ -355,7 +355,7 @@ defmodule Monster do
 
     PubSub.subscribe(self, "rooms:#{room_id}")
     PubSub.subscribe(self, "rooms:#{room_id}:monsters")
-    PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster_alignment(monster)}")
+    PubSub.subscribe(self, "rooms:#{room_id}:monsters:#{monster_alignment(monster)}")
 
     monster
     |> Map.put(:room_id, room_id)
