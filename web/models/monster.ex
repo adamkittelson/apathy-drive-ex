@@ -263,6 +263,8 @@ defmodule Monster do
     |> Enum.any?(&(&1["cooldown"] == :attack))
   end
 
+  def on_global_cooldown?(%Monster{},           %Ability{global_cooldown: nil}), do: false
+  def on_global_cooldown?(%Monster{} = monster, %Ability{global_cooldown: _}), do: on_global_cooldown?(monster)
   def on_global_cooldown?(%Monster{effects: effects}) do
     effects
     |> Map.values

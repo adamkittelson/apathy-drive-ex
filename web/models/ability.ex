@@ -332,12 +332,6 @@ defmodule Ability do
   end
   def display_pre_cast_message(%Monster{} = monster, %Ability{} = ability, targets), do: nil
 
-  # def execute(%Monster{mana: mana} = monster,
-  #               %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
-  #     monster
-  #     |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
-  #   end
-
   def execute(%Monster{} = monster, %Ability{} = ability, target) when is_binary(target)do
     case targets(monster, ability, target) do
       [] ->
@@ -346,6 +340,29 @@ defmodule Ability do
         execute(monster, ability, targets)
     end
   end
+
+  def execute(%Monster{} = monster, %Ability{properties: %{"multi-cast" => times}} = ability, targets) do
+    ability = put_in(ability.properties, Map.delete(ability.properties, "multi-cast"))
+
+    2..times |> Enum.each(fn(_) ->
+      ability = put_in(ability.properties, Map.delete(ability.properties, "pre-cast_message"))
+                |> Map.put(:global_cooldown, nil)
+      send(self, {:execute_ability, ability, targets})
+    end)
+
+    execute(monster, ability, targets)
+  end
+
+  # def execute(%Monster{mana: mana} = monster,
+  #             %Ability{global_cooldown: nil, properties: %{"mana_cost" => cost}}, _) when cost > mana do
+  #   monster
+  # end
+  #
+  # def execute(%Monster{mana: mana} = monster,
+  #             %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
+  #   monster
+  #   |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+  # end
 
   def execute(%Monster{} = monster, %Ability{name: "attack"} = ability, targets) do
     cond do
@@ -378,7 +395,7 @@ defmodule Ability do
 
   def execute(%Monster{} = monster, %Ability{} = ability, targets) do
     cond do
-      Monster.on_global_cooldown?(monster) ->
+      Monster.on_global_cooldown?(monster, ability) ->
         Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
       Monster.confuse(monster) ->
         monster
