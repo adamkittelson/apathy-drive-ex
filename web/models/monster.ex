@@ -97,6 +97,20 @@ defmodule Monster do
     send_scroll(monster, "<p>#{message}</p>")
   end
 
+  def silenced(%Monster{effects: effects} = monster, %Ability{properties: %{"mana_cost" => cost}}) when cost > 0 do
+    effects
+    |> Map.values
+    |> Enum.find(fn(effect) ->
+         Map.has_key?(effect, "silenced")
+       end)
+    |> silenced(monster)
+  end
+  def silenced(%Monster{}, %Ability{}), do: false
+  def silenced(nil,        %Monster{}), do: false
+  def silenced(%{"effect_message" => message}, %Monster{} = monster) do
+    send_scroll(monster, "<p>#{message}</p>")
+  end
+
   def confuse(%Monster{effects: effects} = monster) do
     effects
     |> Map.values

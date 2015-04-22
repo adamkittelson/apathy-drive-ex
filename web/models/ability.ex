@@ -333,10 +333,10 @@ defmodule Ability do
   def display_pre_cast_message(%Monster{} = monster, %Ability{} = ability, targets), do: nil
 
   # def execute(%Monster{mana: mana} = monster,
-  #             %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
-  #   monster
-  #   |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
-  # end
+  #               %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
+  #     monster
+  #     |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+  #   end
 
   def execute(%Monster{} = monster, %Ability{} = ability, target) when is_binary(target)do
     case targets(monster, ability, target) do
@@ -352,6 +352,8 @@ defmodule Ability do
       Monster.on_attack_cooldown?(monster) ->
         Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't attack yet.</p>")
       Monster.confuse(monster) ->
+        monster
+      Monster.silenced(monster, ability) ->
         monster
       true ->
         send(self, :think)
@@ -379,6 +381,8 @@ defmodule Ability do
       Monster.on_global_cooldown?(monster) ->
         Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
       Monster.confuse(monster) ->
+        monster
+      Monster.silenced(monster, ability) ->
         monster
       true ->
         send(self, :think)
