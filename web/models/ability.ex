@@ -65,80 +65,22 @@ defmodule Ability do
     }
   end
 
-  def scale_ability(%Monster{} = monster, %Ability{} = ability) do
-    ability = scale_duration_effects(monster, ability)
-    ability = scale_instant_effects(monster, ability)
-    scale_duration(monster, ability)
+  def scale_ability(%Monster{} = monster, %Ability{properties: properties} = ability) do
+    put_in ability.properties, scale_properties(monster, nil, properties)
   end
 
-  def scale_duration_effects(%Monster{} = monster,
-                             %Ability{properties: %{"duration_effects" => effects}} = ability) do
-    effects = scale_effects(monster, effects)
-
-    properties = Map.put(ability.properties, "duration_effects", effects)
-
-    Map.put(ability, :properties, properties)
+  def scale_properties(%Monster{} = monster, prop_name, %{"base_min" => _, "base_max" => _} = properties) do
+    scale_effect(monster, prop_name, properties)
   end
-  def scale_duration_effects(%Monster{}, %Ability{} = ability) do
-    ability
-  end
-
-  def scale_instant_effects(%Monster{} = monster,
-                            %Ability{properties: %{"instant_effects" => effects}} = ability) do
-
-    effects = scale_effects(monster, effects)
-
-    properties = Map.put(ability.properties, "instant_effects", effects)
-
-    Map.put(ability, :properties, properties)
-  end
-  def scale_instant_effects(%Monster{}, %Ability{} = ability) do
-    ability
-  end
-
-  def scale_duration(%Monster{},
-                     %Ability{properties: %{"duration" => duration}} = ability)
-                     when is_integer(duration) do
-    ability
-  end
-
-  def scale_duration(%Monster{} = monster,
-                     %Ability{properties: %{"duration" => %{} = duration}} = ability) do
-
-    cap  = Map.get(duration, "cap", :infinity)
-    base = Map.get(duration, "base")
-
-    duration = duration
-               |> Map.drop(["cap", "base"])
-               |> Map.keys
-               |> Enum.reduce(base, fn(skill_name, total) ->
-                    skill = Monster.modified_skill(monster, skill_name)
-
-                    increase = if duration[skill_name]["every"] do
-                      trunc(skill / duration[skill_name]["every"]) * duration[skill_name]["increase"]
-                    else
-                      0
-                    end
-
-                    min(total + increase, cap)
-                  end)
-
-    properties = Map.put(ability.properties, "duration", duration)
-
-    Map.put(ability, :properties, properties)
-  end
-
-  def scale_duration(%Monster{}, %Ability{} = ability) do
-    ability
-  end
-
-  def scale_effects(%Monster{} = monster, effects) do
-    effects
+  def scale_properties(%Monster{} = monster, _prop_name, %{} = properties) do
+    properties
     |> Map.keys
-    |> Enum.reduce(%{}, fn(effect_name, scaled_effects) ->
-         scaled_effect = scale_effect(monster, effect_name, effects[effect_name])
-         Map.put(scaled_effects, effect_name, scaled_effect)
+    |> Enum.reduce(%{}, fn(key, map) ->
+         Map.put(map, key, scale_properties(monster, key, properties[key]))
        end)
+  end
+  def scale_properties(%Monster{} = monster, _prop_name, properties) do
+    properties
   end
 
   def scale_effect(%Monster{} = _monster, value) when is_number(value), do: value
@@ -180,7 +122,7 @@ defmodule Ability do
     |> List.first
   end
 
-  def scale_effect(%Monster{}, _effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
+  def scale_effect(%Monster{}, effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
     base_min..base_max
     |> Enum.shuffle
     |> List.first
