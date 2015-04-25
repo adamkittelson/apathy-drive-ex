@@ -13,7 +13,7 @@ defmodule Ability do
     field :properties,      ApathyDrive.JSONB
     field :keywords,        {:array, :string}, virtual: true
     field :flags,           {:array, :string}
-    field :global_cooldown, :any, virtual: true, default: 4
+    field :global_cooldown, :float
 
     has_many :rooms, Room
 
@@ -330,8 +330,6 @@ defmodule Ability do
           send(target, {:apply_ability, ability, monster})
         end)
 
-        after_cast(ability, targets)
-
         monster
     end
   end
@@ -352,19 +350,19 @@ defmodule Ability do
     end
   end
 
-  def after_cast(%Ability{properties: %{"after_cast" => ability_id, "after_cast_chance" => chance}}, targets) do
+  def after_cast(%Monster{} = ability_user, %Ability{properties: %{"after_cast" => ability_id, "after_cast_chance" => chance}}, targets) do
     if chance >= :random.uniform(100) do
-      execute_after_cast(ability_id, targets)
+      execute_after_cast(ability_user, ability_id, targets)
     end
   end
-  def after_cast(%Ability{properties: %{"after_cast" => ability_id}}, targets) do
-    execute_after_cast(ability_id, targets)
+  def after_cast(%Monster{} = ability_user, %Ability{properties: %{"after_cast" => ability_id}}, targets) do
+    execute_after_cast(ability_user, ability_id, targets)
   end
-  def after_cast(%Ability{}, targets), do: false
+  def after_cast(%Monster{}, %Ability{}, targets), do: false
 
-  def execute_after_cast(ability_id, targets) do
+  def execute_after_cast(%Monster{} = ability_user, ability_id, targets) do
     if after_cast_ability = ApathyDrive.Repo.get(Ability, ability_id) do
-      send(self, {:execute_ability, after_cast_ability, targets})
+      send(ability_user.pid, {:execute_ability, after_cast_ability, targets})
     end
   end
 
@@ -417,6 +415,8 @@ defmodule Ability do
     end
   end
   def apply_ability(%Monster{} = monster, %Ability{} = ability, %Monster{} = ability_user) do
+
+    after_cast(ability_user, ability, [self])
 
     monster = if Enum.member?(["curse", "room curse"], ability.kind) do
       put_in(monster.hate, HashDict.update(monster.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
