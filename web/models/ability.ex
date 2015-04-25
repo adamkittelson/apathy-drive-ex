@@ -348,10 +348,7 @@ defmodule Ability do
 
         display_pre_cast_message(monster, ability, targets)
 
-        monster = if ability.properties["after_cast"] do
-          if after_cast_ability = ApathyDrive.Repo.get(Ability, ability.properties["after_cast"]) do
-            send(self, {:execute_ability, after_cast_ability, targets})
-          end
+        monster = if after_cast(ability, targets) do
           monster
         else
           gc = global_cooldown(ability, monster)
@@ -374,6 +371,22 @@ defmodule Ability do
         end)
 
         monster
+    end
+  end
+
+  def after_cast(%Ability{properties: %{"after_cast" => ability_id, "after_cast_chance" => chance}}, targets) do
+    if chance >= :random.uniform(100) do
+      execute_after_cast(ability_id, targets)
+    end
+  end
+  def after_cast(%Ability{properties: %{"after_cast" => ability_id}}, targets) do
+    execute_after_cast(ability_id, targets)
+  end
+  def after_cast(%Ability{}, targets), do: false
+
+  def execute_after_cast(ability_id, targets) do
+    if after_cast_ability = ApathyDrive.Repo.get(Ability, ability_id) do
+      send(self, {:execute_ability, after_cast_ability, targets})
     end
   end
 
@@ -474,6 +487,7 @@ defmodule Ability do
   end
   def reduce_damage(%Ability{} = ability, _monster, _ability_user), do: ability
 
+  def trigger_damage_shields(%Monster{id: id}, %Monster{id: attacker_id}) when id == attacker_id, do: nil
   def trigger_damage_shields(%Monster{} = monster, %Monster{} = attacker) do
     monster.effects
     |> Map.values
