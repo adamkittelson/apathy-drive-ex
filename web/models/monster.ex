@@ -482,7 +482,7 @@ defmodule Monster do
       "evil" ->
         "magenta"
       "good" ->
-        "grey"
+        "white"
       "neutral" ->
         "dark-cyan"
     end
@@ -514,7 +514,7 @@ defmodule Monster do
                  })
               |> capitalize_first
 
-    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='grey'>#{message}</span></p>"}
   end
 
   def display_exit_message(%Room{} = room, monster) when is_pid(monster) do
@@ -536,7 +536,7 @@ defmodule Monster do
                  })
               |> capitalize_first
 
-    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{message}</span></p>"}
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='grey'>#{message}</span></p>"}
   end
 
   def ac(%Monster{} = monster) do
