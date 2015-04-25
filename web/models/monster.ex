@@ -257,6 +257,15 @@ defmodule Monster do
     end)
   end
 
+  def on_cooldown?(%Monster{} = monster, %Ability{name: "attack"} = ability) do
+    on_attack_cooldown?(monster, ability)
+  end
+  def on_cooldown?(%Monster{} = monster, %Ability{} = ability) do
+    on_global_cooldown?(monster, ability)
+  end
+
+  def on_attack_cooldown?(%Monster{},           %Ability{global_cooldown: nil}), do: false
+  def on_attack_cooldown?(%Monster{} = monster, %Ability{global_cooldown: _}), do: on_attack_cooldown?(monster)
   def on_attack_cooldown?(%Monster{effects: effects}) do
     effects
     |> Map.values

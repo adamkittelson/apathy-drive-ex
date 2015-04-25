@@ -306,42 +306,9 @@ defmodule Ability do
   #   |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
   # end
 
-  def execute(%Monster{} = monster, %Ability{name: "attack"} = ability, targets) do
-    cond do
-      Monster.on_attack_cooldown?(monster) ->
-        Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't attack yet.</p>")
-      Monster.confuse(monster) ->
-        monster
-      Monster.silenced(monster, ability) ->
-        monster
-      true ->
-        send(self, :think)
-
-        monster = if after_cast(ability, targets) do
-          monster
-        else
-          gc = global_cooldown(ability, monster)
-
-          monster = if gc do
-            Systems.Effect.add(monster, %{"cooldown" => :attack, "expiration_message" => "You are ready to act again."}, gc)
-          else
-            monster
-          end
-        end |> Systems.Prompt.update
-
-        ability = scale_ability(monster, ability)
-
-        Enum.each(targets, fn(target) ->
-          send(target, {:apply_ability, ability, monster})
-        end)
-
-        monster
-    end
-  end
-
   def execute(%Monster{} = monster, %Ability{} = ability, targets) do
     cond do
-      Monster.on_global_cooldown?(monster, ability) ->
+      Monster.on_cooldown?(monster, ability) ->
         Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
       Monster.confuse(monster) ->
         monster
@@ -352,19 +319,8 @@ defmodule Ability do
 
         display_pre_cast_message(monster, ability, targets)
 
-        monster = if after_cast(ability, targets) do
-          monster
-        else
-          gc = global_cooldown(ability, monster)
-
-          monster = if gc do
-            Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
-          else
-            monster
-          end
-        end
-
         monster = monster
+                  |> apply_cooldown(ability)
                   |> Map.put(:mana, monster.mana - Map.get(ability.properties, "mana_cost", 0))
                   |> Systems.Prompt.update
 
@@ -374,7 +330,25 @@ defmodule Ability do
           send(target, {:apply_ability, ability, monster})
         end)
 
+        after_cast(ability, targets)
+
         monster
+    end
+  end
+
+  def apply_cooldown(%Monster{} = monster, %Ability{name: "attack"} = ability) do
+    if gc = global_cooldown(ability, monster) do
+      Systems.Effect.add(monster, %{"cooldown" => :attack}, gc)
+    else
+      monster
+    end
+  end
+
+  def apply_cooldown(%Monster{} = monster, %Ability{} = ability) do
+    if gc = global_cooldown(ability, monster) do
+      Systems.Effect.add(monster, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
+    else
+      monster
     end
   end
 
