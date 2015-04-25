@@ -1062,6 +1062,16 @@ defmodule Monster do
         send(self, {:apply_ability, ability, monster})
       end)
 
+    # periodic heal_mana
+    monster.effects
+    |> Map.values
+    |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
+    |> Enum.each(fn(%{"heal_mana" => heal}) ->
+        ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal_mana" => heal}}}
+
+        send(self, {:apply_ability, ability, monster})
+      end)
+
     {:noreply, monster}
   end
 

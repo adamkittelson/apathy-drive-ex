@@ -519,6 +519,11 @@ defmodule Ability do
 
     apply_instant_effects(monster, Map.delete(effects, "heal"), ability_user)
   end
+  def apply_instant_effects(%Monster{} = monster, %{"heal_mana" => heal} = effects, ability_user) do
+    monster = put_in(monster.mana, min(monster.max_mana, monster.mana + heal))
+
+    apply_instant_effects(monster, Map.delete(effects, "heal_mana"), ability_user)
+  end
   def apply_instant_effects(%Monster{} = monster, %{"script" => script} = effects, ability_user) do
     monster = Systems.Script.execute(script, monster)
 
