@@ -317,12 +317,16 @@ defmodule Ability do
       true ->
         send(self, :think)
 
-        gc = global_cooldown(ability, monster)
-
-        monster = if gc do
-          Systems.Effect.add(monster, %{"cooldown" => :attack}, gc)
-        else
+        monster = if after_cast(ability, targets) do
           monster
+        else
+          gc = global_cooldown(ability, monster)
+
+          monster = if gc do
+            Systems.Effect.add(monster, %{"cooldown" => :attack, "expiration_message" => "You are ready to act again."}, gc)
+          else
+            monster
+          end
         end |> Systems.Prompt.update
 
         ability = scale_ability(monster, ability)

@@ -465,13 +465,17 @@ defmodule Monster do
   def send_update_prompt(%Monster{spirit: nil} = monster, html), do: monster
 
   def look_name(%Monster{} = monster) do
+    "<span class='#{alignment_color(monster)}'>#{monster.name}</span>"
+  end
+
+  def alignment_color(%Monster{} = monster) do
     case monster_alignment(monster) do
       "evil" ->
-        "<span class='magenta'>#{monster.name}</span>"
+        "magenta"
       "good" ->
-        "<span class='grey'>#{monster.name}</span>"
+        "grey"
       "neutral" ->
-        "<span class='dark-cyan'>#{monster.name}</span>"
+        "dark-cyan"
     end
   end
 
@@ -492,11 +496,12 @@ defmodule Monster do
   def display_enter_message(%Room{} = room, monster, _direction)  when is_pid(monster) do
     display_enter_message(room, Monster.value(monster), Room.random_direction(room))
   end
-  def display_enter_message(%Room{} = room, %Monster{enter_message: enter_message, name: name}, direction) do
+  def display_enter_message(%Room{} = room, %Monster{enter_message: enter_message, name: name} = monster, direction) do
     message = enter_message
               |> interpolate(%{
                    "name" => name,
-                   "direction" => Room.enter_direction(direction)
+                   "direction" => Room.enter_direction(direction),
+                   "alignment-color" => alignment_color(monster)
                  })
               |> capitalize_first
 
@@ -513,11 +518,12 @@ defmodule Monster do
   def display_exit_message(%Room{} = room, monster, _direction)  when is_pid(monster) do
     display_exit_message(room, Monster.value(monster), Room.random_direction(room))
   end
-  def display_exit_message(%Room{} = room, %Monster{exit_message: exit_message, name: name}, direction) do
+  def display_exit_message(%Room{} = room, %Monster{exit_message: exit_message, name: name} = monster, direction) do
     message = exit_message
               |> interpolate(%{
                    "name" => name,
-                   "direction" => Room.exit_direction(direction)
+                   "direction" => Room.exit_direction(direction),
+                   "alignment-color" => alignment_color(monster)
                  })
               |> capitalize_first
 
