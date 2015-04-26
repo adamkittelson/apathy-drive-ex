@@ -736,7 +736,7 @@ defmodule Monster do
                              greeted: %Monster{pid: _greeted_pid} = greeted}},
                              %Monster{pid: monster_pid} = monster)
                              when greeter_pid == monster_pid do
-    send_scroll(monster, "<p><span class='dark-green'>#{greeted.greeting}</span></p>")
+    send_scroll(monster, "<p>#{greeted.greeting}</p>")
     {:noreply, monster}
   end
 
