@@ -45,7 +45,7 @@ defmodule Systems.AI do
         !Monster.on_attack_cooldown?(monster) ->
           monster
            |> Monster.monster_attacks
-           |> random_ability
+           |> ApathyDrive.Command.select_ability
         !Monster.on_global_cooldown?(monster) ->
            monster
            |> Monster.attack_abilities

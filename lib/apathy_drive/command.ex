@@ -56,8 +56,7 @@ defmodule ApathyDrive.Command do
               |> Enum.filter(fn(%Ability{command: cmd}) ->
                    cmd == String.downcase(command)
                  end)
-              |> Enum.shuffle
-              |> List.first
+              |> select_ability
 
     if ability do
       Ability.execute(monster, ability, Enum.join(arguments, " "))
@@ -105,6 +104,25 @@ defmodule ApathyDrive.Command do
       end
     end
   end
+
+  def select_ability([]),                     do: nil
+  def select_ability([%Ability{} = ability]), do: ability
+  def select_ability(abilities) do
+    if Enum.all?(abilities, fn(ability) -> Map.has_key?(ability.properties, "attack_chance") end) do
+      roll = :random.uniform(100)
+
+      abilities
+      |> Enum.sort_by(&(&1.properties["attack_chance"]))
+      |> Enum.find(fn(%Ability{properties: %{"attack_chance" => chance}}) ->
+           chance >= roll
+         end)
+    else
+      abilities
+      |> Enum.shuffle
+      |> List.first
+    end
+  end
+
 
   defmacro __using__(_opts) do
     quote do
