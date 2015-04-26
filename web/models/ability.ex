@@ -43,6 +43,8 @@ defmodule Ability do
 
   def color(%Ability{kind: "attack"}),      do: "red"
   def color(%Ability{kind: "room attack"}), do: "red"
+  def color(%Ability{kind: "curse"}),       do: "red"
+  def color(%Ability{kind: "room curse"}),  do: "red"
   def color(%Ability{kind: _}), do: "blue"
 
   def prep_message(nil, _, _, _, _), do: nil
