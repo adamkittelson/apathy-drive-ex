@@ -153,6 +153,9 @@ defmodule Monster do
     abilities
     |> Enum.filter(&(&1.kind == "blessing"))
     |> Ability.useable(monster)
+    |> Enum.reject(fn(ability) ->
+         Ability.removes_blessing?(monster, ability)
+       end)
   end
 
   def attack_abilities(%Monster{abilities: abilities} = monster) do

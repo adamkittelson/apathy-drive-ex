@@ -41,6 +41,16 @@ defmodule Ability do
        end)
   end
 
+  def removes_blessing?(%Monster{} = monster, %Ability{properties: %{"instant_effects" => %{"remove abilities" => abilities}}} = ability) do
+    Systems.Effect.max_stacks?(monster, ability) or
+    Enum.any?(abilities, fn(ability_id) ->
+      Systems.Effect.stack_count(monster, ability_id) > 0
+    end)
+  end
+  def removes_blessing?(monster, %Ability{} = ability) do
+    Systems.Effect.max_stacks?(monster, ability)
+  end
+
   def color(%Ability{kind: "attack"}),      do: "red"
   def color(%Ability{kind: "room attack"}), do: "red"
   def color(%Ability{kind: "curse"}),       do: "red"
