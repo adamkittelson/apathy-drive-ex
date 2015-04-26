@@ -729,7 +729,7 @@ defmodule Monster do
   end
 
   def handle_info({:greet, %{greeter: greeter, greeted: greeted}}, monster) do
-    send_scroll(monster, "<p><span class='dark-green'>#{greeter.name |> capitalize_first} greets #{greeted}.</span></p>")
+    send_scroll(monster, "<p><span class='dark-green'>#{greeter.name |> capitalize_first} greets #{greeted.name}.</span></p>")
     {:noreply, monster}
   end
 
