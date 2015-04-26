@@ -57,8 +57,8 @@ defmodule ApathyDrive.MUD do
     case socket.assigns[:entity] do
       %Spirit{} = spirit ->
         Spirit.logout(spirit)
-      %Monster{spirit: %Spirit{} = spirit} ->
-        Spirit.save(spirit)
+      %Monster{} = monster ->
+        Monster.execute_command(monster, "unpossess", [])
     end
 
     {:noreply, socket}
