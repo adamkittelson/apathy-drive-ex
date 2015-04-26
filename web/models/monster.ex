@@ -137,7 +137,7 @@ defmodule Monster do
 
     abilities = abilities ++
                 abilities_from_attacks(monster) ++
-                abilities_from_skills(monster)
+                abilities_from_spirit(monster)
 
     monster
     |> Map.put(:abilities, abilities)
@@ -179,31 +179,8 @@ defmodule Monster do
     |> Enum.map(&(Repo.get(Ability, &1)))
   end
 
-  def abilities_from_skills(monster) do
-    base_skills = base_skills(monster)
-
-    Ability.trainable
-    |> Enum.filter(fn(%Ability{} = ability) ->
-         ability.required_skills
-         |> Map.keys
-         |> Enum.all?(fn(required_skill) ->
-              monster_skill  = Map.get(base_skills, required_skill, 0)
-              required_skill = Map.get(ability.required_skills, required_skill, 0)
-
-              monster_skill >= required_skill
-            end)
-       end)
-    |> Enum.reject(fn(%Ability{} = ability) ->
-         case monster_alignment(monster) do
-           "good" ->
-              Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "evil") or Enum.member?(ability.flags, "not-good")
-            "neutral" ->
-              Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "evil") or Enum.member?(ability.flags, "not-neutral")
-            "evil" ->
-              Enum.member?(ability.flags, "good") or Enum.member?(ability.flags, "neutral") or Enum.member?(ability.flags, "not-evil")
-         end
-       end)
-  end
+  def abilities_from_spirit(%Monster{spirit: %Spirit{abilities: abilities}}), do: abilities
+  def abilities_from_spirit(%Monster{}), do: []
 
   def abilities_from_attacks(%Monster{attacks: []}) do
     [
