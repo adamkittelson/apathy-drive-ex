@@ -19,7 +19,7 @@ defmodule Commands.Ask do
 
     target = current_room |> find_monster_in_room(target, monster)
 
-    ask(monster, target, Enum.join(question, " "))
+    ask(monster, target, Enum.join(question, " ") |> String.downcase)
   end
 
   def ask(%Monster{} = monster, nil, _question) do
@@ -31,8 +31,8 @@ defmodule Commands.Ask do
   end
 
   def ask(%Monster{} = monster, %Monster{} = target, question) do
-    if monster.questions |> Map.keys |> Enum.member?(question) do
-      Systems.Script.execute(monster.questions[question], monster)
+    if target.questions |> Map.keys |> Enum.member?(question) do
+      Systems.Script.execute(target.questions[question], monster)
       monster
     else
       Monster.send_scroll(monster, "<p><span class='dark-green'>#{target.name} has nothing to tell you!</span></p>")
