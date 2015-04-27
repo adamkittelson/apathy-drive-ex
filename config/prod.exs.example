@@ -1,18 +1,22 @@
 use Mix.Config
 
-config :phoenix, ApathyDrive.Router,
-  port: System.get_env("PORT"),
-  ssl: false,
-  code_reload: false,
-  cookies: true,
-  consider_all_requests_local: false,
-  session_key: "_your_app_key",
-  session_secret: "super secret"
+config :apathy_drive, ApathyDrive.Endpoint,
+  url: [host: System.get_env("HOST")],
+  http: [port: System.get_env("PORT")],
+  secret_key_base: System.get_env("SECRET_KEY_BASE"),
+  oauth2: {OAuth2.Strategy.AuthCode, [
+    site: "https://graph.facebook.com",
+    authorize_url: "https://www.facebook.com/dialog/oauth",
+    token_url: "https://graph.facebook.com/v2.3/oauth/access_token",
+    client_id: System.get_env("FB_CLIENT_ID"),
+    client_secret: System.get_env("FB_CLIENT_SECRET")]}
 
-config :phoenix, :logger,
-  level: :debug
+config :logger,
+  level: :info
 
-config :phoenix, :mud,
-  start_room: 1235, # database id of room new characters start in
-  db: "ecto://user:password@hostname/database_name" # ecto db connection string
-
+config :apathy_drive, ApathyDrive.Repo,
+  database: System.get_env("DB_DATABASE"),
+  username: System.get_env("DB_USERNAME"),
+  password: System.get_env("DB_PASSWORD"),
+  hostname: System.get_env("DB_HOSTNAME"),
+  extensions: [{Extensions.JSON, library: Poison}]

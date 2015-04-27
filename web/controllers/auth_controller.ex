@@ -4,9 +4,6 @@ defmodule ApathyDrive.AuthController do
   alias OAuth2.AccessToken
   alias OAuth2.Strategy.AuthCode
 
-  @params %{redirect_uri: "http://localhost:4000/auth/callback"}
-  @token_params Map.merge(%{headers: [{"Accept", "application/json"}]}, @params)
-
   plug :action
 
   @doc """
@@ -15,7 +12,7 @@ defmodule ApathyDrive.AuthController do
   been stored in `conn.private.oauth2_strategy` in the router's pipeline.
   """
   def index(conn, _params) do
-    redirect conn, external: AuthCode.authorize_url(strategy(conn), @params)
+    redirect conn, external: AuthCode.authorize_url(strategy(conn), params)
   end
 
   @doc """
@@ -26,7 +23,7 @@ defmodule ApathyDrive.AuthController do
   """
   def callback(conn, %{"code" => code}) do
     # Exchange an auth code for an access token
-    token = AuthCode.get_token!(strategy(conn), code, @token_params)
+    token = AuthCode.get_token!(strategy(conn), code, token_params)
 
     # Request the user's data with the access token
     user = AccessToken.get!(token, "/me")
@@ -39,4 +36,10 @@ defmodule ApathyDrive.AuthController do
   end
 
   defp strategy(conn), do: conn.private.oauth2_strategy
+  defp params do
+    %{redirect_uri: ApathyDrive.Endpoint.url <> "/auth/callback"}
+  end
+  defp token_params do
+    Map.merge(%{headers: [{"Accept", "application/json"}]}, params)
+  end
 end

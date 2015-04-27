@@ -19,3 +19,13 @@ Now you can visit `localhost:4000` from your browser.
 # world data backup / restore
 # pg_dump --table=abilities --table=hints --table=monster_templates --table=rooms --table=skills --data-only --dbname=apathy_drive -Fc > data.dump
 # pg_restore --dbname=apathy_drive data.dump
+
+
+
+docker-compose build
+docker-compose up
+docker-compose stop web
+docker-compose run web mix ecto.create
+docker-compose run web mix ecto.migrate
+docker-compose run web pg_restore --dbname=apathy_drive_production --host=db --user=postgres data.dump
+docker-compose up
