@@ -109,3 +109,6 @@ CHANGELOG
 
 ---- 0.0.36 / 2015-04-16 / possession-update -----------------------------------
 * make monsters responsible for spirit struct while possessed, upgrade elixir / erlang / phoenix
+
+---- 0.0.37 / 2015-04-26 / dockerize -------------------------------------------
+* dockerize / make deployable
