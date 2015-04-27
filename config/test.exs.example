@@ -2,11 +2,10 @@ use Mix.Config
 
 config :apathy_drive, ApathyDrive.Endpoint,
   http: [port: System.get_env("PORT") || 4001],
-  debug_errors: true,
-  db: "ecto://postgres:@localhost/travis_ci_test"
+  debug_errors: true
 
 config :apathy_drive, ApathyDrive.Repo,
-  database: "travis_ci_test",
-  username: "postgres",
-  password: "",
-  hostname: "localhost"
+  database: "YOUR_TEST_DB",
+  username: "YOUR_TEST_USER",
+  password: "YOUR_TEST_PASSWORD",
+  hostname: "YOUR_TEST_HOST"

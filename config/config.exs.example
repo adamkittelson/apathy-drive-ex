@@ -2,18 +2,11 @@ use Mix.Config
 
 config :apathy_drive, ApathyDrive.Endpoint,
   url: [host: "localhost"],
-  http: [port: System.get_env("PORT")],
-  secret_key_base: "111111111111111111111111111111111111111111111111111111111111111111111111111",
+  secret_key_base: "YOUR_SECRET_HERE",
   debug_errors: false,
-  root: Path.expand("..", __DIR__),
   pubsub: [name: :pub_sub,
            adapter: Phoenix.PubSub.PG2],
-  oauth2: {OAuth2.Strategy.AuthCode, [
-    client_id: YOUR_FACEBOOK_DEVELOPER_CLIENT_ID,
-    client_secret: YOUR_FACEBOOK_DEVELOPER_CLIENT_SECRET,
-    site: "https://graph.facebook.com",
-    authorize_url: "https://www.facebook.com/dialog/oauth",
-    token_url: "https://graph.facebook.com/v2.3/oauth/access_token"]}
+  root: Path.expand("..", __DIR__)
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

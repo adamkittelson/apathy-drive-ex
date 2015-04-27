@@ -1,0 +1,14 @@
+web:
+  build: .
+  command: elixir -S mix phoenix.server
+  ports:
+   - "80:80"
+  volumes:
+   - .:/code
+  links:
+   - db
+  env_file: ./env/secret.env
+db:
+  image: postgres
+  expose:
+   - "5432"

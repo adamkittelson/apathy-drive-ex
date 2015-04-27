@@ -1,18 +1,32 @@
 use Mix.Config
 
-config :phoenix, ApathyDrive.Router,
-  port: System.get_env("PORT") || 4000,
-  ssl: false,
-  code_reload: false,
-  cookies: true,
-  consider_all_requests_local: true,
-  session_key: "_your_app_key",
-  session_secret: "super secret"
+config :apathy_drive, ApathyDrive.Endpoint,
+  http: [port: 4000],
+  debug_errors: true,
+  cache_static_lookup: false,
+  watchers: [{Path.expand("node_modules/brunch/bin/brunch"), ["watch"]}],
+  live_reload: [
+    # url is optional
+    url: "ws://localhost:4000", 
+    # `:patterns` replace `:paths` and are required for live reload
+    patterns: [~r{priv/static/.*(js|css|png|jpeg|jpg|gif)$},
+               ~r{web/views/.*(ex)$},
+               ~r{web/templates/.*(eex)$}]],
+  code_reloader: true,
+  oauth2: {OAuth2.Strategy.AuthCode, [
+    site: "https://graph.facebook.com",
+    authorize_url: "https://www.facebook.com/dialog/oauth",
+    token_url: "https://graph.facebook.com/v2.3/oauth/access_token",
+    client_id: "YOUR_FB_CLIENT_ID",
+    client_secret: "YOUR_FB_CLIENT_SECRET"]}
 
-config :phoenix, :logger,
-  level: :debug
+# Do not include metadata nor timestamps in development logs
+config :logger, truncate: 81920
+config :logger, :console, format: "[$level] $message\n"
 
-config :phoenix, :mud,
-  start_room: 1235, # database id of room new characters start in
-  db: "ecto://user:password@hostname/database_name" # ecto db connection string
-
+config :apathy_drive, ApathyDrive.Repo,
+  database: "YOUR_DEV_DB",
+  username: "YOUR_DEV_USER",
+  password: "YOUR_DEV_PASSWORD",
+  hostname: "YOUR_DEV_HOST",
+  extensions: [{Extensions.JSON, library: Poison}]

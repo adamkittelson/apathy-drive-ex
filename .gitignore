@@ -5,8 +5,8 @@ erl_crash.dump
 _build
 /logs
 .zenflow-log
-/lib/apathy_drive/data/apotheosis
 *.DS_Store
 *.ez
-/config/*.exs
 /node_modules
+/env/*.env
+/config/*.exs
