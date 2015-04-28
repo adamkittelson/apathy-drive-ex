@@ -16,7 +16,7 @@ defmodule ApathyDrive.Mixfile do
   def application do
     [
       mod: { ApathyDrive, [] },
-      applications: [:phoenix, :cowboy, :logger, :oauth2, :phoenix_ecto]
+      applications: [:postgrex, :ecto, :phoenix, :cowboy, :logger, :oauth2, :phoenix_ecto]
     ]
   end
 
