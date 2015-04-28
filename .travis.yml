@@ -26,3 +26,7 @@ script:
   - mix test
 env:
   - MIX_ENV=test
+  - DB_DATABASE=travis_ci_test
+  - DB_USERNAME=postgres
+  - DB_PASSWORD=
+  - DB_HOSTNAME=localhost

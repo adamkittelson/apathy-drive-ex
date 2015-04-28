@@ -5,9 +5,9 @@ config :apathy_drive, ApathyDrive.Endpoint,
   debug_errors: true
 
 config :apathy_drive, ApathyDrive.Repo,
-  database: "YOUR_TEST_DB",
-  username: "YOUR_TEST_USER",
-  password: "YOUR_TEST_PASSWORD",
-  hostname: "YOUR_TEST_HOST",
+  database: System.get_env("DB_DATABASE"),
+  username: System.get_env("DB_USERNAME"),
+  password: System.get_env("DB_PASSWORD"),
+  hostname: System.get_env("DB_HOSTNAME"),
   adapter: Ecto.Adapters.Postgres,
   extensions: [{Extensions.JSON, library: Poison}]
