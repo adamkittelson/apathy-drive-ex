@@ -418,8 +418,6 @@ defmodule Monster do
   end
 
   def modified_skill(%Monster{} = monster, skill_name) do
-    skill = Skill.find(skill_name)
-
     base_skill(monster, skill_name) + effect_bonus(monster, skill_name)
   end
 
