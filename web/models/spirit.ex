@@ -54,6 +54,7 @@ defmodule Spirit do
     |> validate_inclusion(:alignment, ["good", "neutral", "evil"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> validate_unique(:name, on: Repo)
+    |> validate_length(:name, min: 1, max: 18)
   end
 
   def find_or_create_by_external_id(external_id) do
@@ -71,6 +72,10 @@ defmodule Spirit do
     Repo.update(spirit)
   end
   def save(%Spirit{} = spirit), do: spirit
+
+  def alignment_color(%Spirit{alignment: "evil"}),    do: "magenta"
+  def alignment_color(%Spirit{alignment: "good"}),    do: "white"
+  def alignment_color(%Spirit{alignment: "neutral"}), do: "dark-cyan"
 
   def execute_command(%Spirit{pid: pid}, command, arguments) do
     GenServer.call(pid, {:execute_command, command, arguments})
