@@ -27,7 +27,7 @@ defmodule Ability do
     Map.put(ability, :keywords, String.split(name))
   end
 
-  def trainable(%Spirit{level: level, school: school} = spirit) do
+  def trainable(%Spirit{level: level, school: school}) do
     query = from a in Ability, where: a.level <= ^level and a.school == ^school, select: a
     Repo.all(query)
   end
@@ -92,7 +92,7 @@ defmodule Ability do
          Map.put(map, key, scale_properties(monster, key, properties[key]))
        end)
   end
-  def scale_properties(%Monster{} = monster, _prop_name, properties) do
+  def scale_properties(%Monster{}, _prop_name, properties) do
     properties
   end
 
@@ -145,7 +145,7 @@ defmodule Ability do
     |> List.first
   end
 
-  def scale_effect(%Monster{}, effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
+  def scale_effect(%Monster{}, _effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
     base_min..base_max
     |> Enum.shuffle
     |> List.first
@@ -165,7 +165,7 @@ defmodule Ability do
     |> Systems.Match.one(:name_contains, string)
   end
 
-  def find_other_monster_in_room(room, string, %Monster{pid: pid} = monster) do
+  def find_other_monster_in_room(room, string, %Monster{pid: pid}) do
     PubSub.subscribers("rooms:#{room.id}:monsters")
     |> Enum.reject(fn(monster_pid) ->
          monster_pid == pid
@@ -202,80 +202,80 @@ defmodule Ability do
     |> Map.values
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "attack"} = ability, "") do
+  def targets(%Monster{} = monster, %Ability{kind: "attack"}, "") do
     monster
     |> Monster.aggro_target
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "attack"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "attack"}, target) when is_binary(target) do
     monster
     |> Monster.find_room
     |> find_other_monster_in_room(target, monster)
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "blessing"} = ability, "") do
+  def targets(%Monster{} = monster, %Ability{kind: "blessing"}, "") do
     monster.pid
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "blessing"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "blessing"}, target) when is_binary(target) do
     monster
     |> Monster.find_room
     |> find_monster_in_room(target, monster)
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "curse"} = ability, "") do
+  def targets(%Monster{} = monster, %Ability{kind: "curse"}, "") do
     monster
     |> Monster.aggro_target
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "curse"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "curse"}, target) when is_binary(target) do
     monster
     |> Monster.find_room
     |> find_other_monster_in_room(target, monster)
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "heal"} = ability, "") do
+  def targets(%Monster{} = monster, %Ability{kind: "heal"}, "") do
     monster.pid
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "heal"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "heal"}, target) when is_binary(target) do
     monster
     |> Monster.find_room
     |> find_monster_in_room(target, monster)
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "room attack"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "room attack"}, target) when is_binary(target) do
     Enum.uniq(alignment_enemies(monster) ++ local_hated_targets(monster))
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "room blessing"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "room blessing"}, target) when is_binary(target) do
     Enum.uniq(PubSub.subscribers("rooms:#{monster.room_id}:monsters:#{Monster.monster_alignment(monster)}")) --
     local_hated_targets(monster)
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "room curse"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "room curse"}, target) when is_binary(target) do
     Enum.uniq(alignment_enemies(monster) ++ local_hated_targets(monster))
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "room heal"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "room heal"}, target) when is_binary(target) do
     Enum.uniq(PubSub.subscribers("rooms:#{monster.room_id}:monsters:#{Monster.monster_alignment(monster)}")) --
     local_hated_targets(monster)
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "utility"} = ability, "") do
+  def targets(%Monster{} = monster, %Ability{kind: "utility"}, "") do
     monster.pid
     |> wrap_target
   end
 
-  def targets(%Monster{alignment: alignment} = monster, %Ability{kind: "utility"} = ability, target) when is_binary(target) do
+  def targets(%Monster{} = monster, %Ability{kind: "utility"}, target) when is_binary(target) do
     monster
     |> Monster.find_room
     |> find_monster_in_room(target, monster)
@@ -295,7 +295,7 @@ defmodule Ability do
                         user: monster,
                         target: target})
   end
-  def display_pre_cast_message(%Monster{} = monster, %Ability{} = ability, targets), do: nil
+  def display_pre_cast_message(%Monster{}, %Ability{}, _targets), do: nil
 
   def execute(%Monster{} = monster, %Ability{} = ability, target) when is_binary(target)do
     case targets(monster, ability, target) do
@@ -381,7 +381,7 @@ defmodule Ability do
   def after_cast(%Monster{} = ability_user, %Ability{properties: %{"after_cast" => ability_id}}, targets) do
     execute_after_cast(ability_user, ability_id, targets)
   end
-  def after_cast(%Monster{}, %Ability{}, targets), do: false
+  def after_cast(%Monster{}, %Ability{}, _targets), do: false
 
   def execute_after_cast(%Monster{} = ability_user, ability_id, targets) do
     if after_cast_ability = ApathyDrive.Repo.get(Ability, ability_id) do
@@ -404,7 +404,7 @@ defmodule Ability do
   def speed_modifier(speed_mods) do
     count = length(speed_mods)
 
-    Enum.sum(speed_mods) / 100
+    Enum.sum(speed_mods) / count / 100
   end
 
   def dodged?(%Monster{} = monster, %Ability{properties: %{"accuracy_skill" => accuracy_skill}}, %Monster{} = attacker) do
@@ -482,8 +482,7 @@ defmodule Ability do
     put_in(ability.properties["instant_effects"]["damage"], damage)
   end
   def reduce_damage(%Ability{properties:
-                             %{"damage_type" => damage_type,
-                               "instant_effects" => %{"drain" => drain}}} = ability, monster, ability_user) do
+                             %{"instant_effects" => %{"drain" => drain}}} = ability, monster, ability_user) do
      reduce_damage(put_in(ability.properties["instant_effects"]["damage"], drain), monster, ability_user)
   end
   def reduce_damage(%Ability{} = ability, _monster, _ability_user), do: ability

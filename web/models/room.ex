@@ -184,7 +184,7 @@ defmodule Room do
     end
   end
 
-  def look_monsters(%Room{} = room, %Monster{} = monster) do
+  def look_monsters(%Room{}, %Monster{} = monster) do
     monsters = monsters(monster)
                |> Enum.map(&Monster.value/1)
                |> Enum.map(&Monster.look_name/1)
@@ -221,7 +221,7 @@ defmodule Room do
     end
   end
 
-  def send_scroll(%Room{id: id} = room, html) do
+  def send_scroll(%Room{id: id}, html) do
     ApathyDrive.Endpoint.broadcast! "rooms:#{id}", "scroll", %{:html => html}
   end
 

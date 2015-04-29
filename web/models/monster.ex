@@ -366,7 +366,7 @@ defmodule Monster do
     |> Systems.Effect.add(%{"cooldown" => :ai_movement}, 30)
   end
 
-  def effect_description(%Monster{effects: effects} = monster) do
+  def effect_description(%Monster{effects: effects}) do
     effects
     |> Map.values
     |> Enum.find(fn(effect) ->
@@ -378,7 +378,7 @@ defmodule Monster do
   def effect_description(nil), do: nil
   def effect_description(%{"description" => description}), do: description
 
-  def max_mana(%Monster{max_mana: max_mana} = monster) do
+  def max_mana(%Monster{max_mana: max_mana}) do
     max_mana
   end
 
@@ -402,7 +402,7 @@ defmodule Monster do
        end)
   end
 
-  def base_skill(%Monster{skills: skills} = monster, skill_name) do
+  def base_skill(%Monster{skills: skills}, skill_name) do
     Map.get(skills, skill_name, 0)
   end
 
@@ -414,19 +414,19 @@ defmodule Monster do
     Phoenix.Channel.push socket, "scroll", %{:html => html}
     monster
   end
-  def send_scroll(%Monster{spirit: nil} = monster, html), do: monster
+  def send_scroll(%Monster{spirit: nil} = monster, _html), do: monster
 
   def send_disable(%Monster{spirit: %Spirit{socket: socket}} = monster, elem) do
     Phoenix.Channel.push socket, "disable", %{:html => elem}
     monster
   end
-  def send_disable(%Monster{spirit: nil} = monster, html), do: monster
+  def send_disable(%Monster{spirit: nil} = monster, _html), do: monster
 
   def send_focus(%Monster{spirit: %Spirit{socket: socket}} = monster, elem) do
     Phoenix.Channel.push socket, "focus", %{:html => elem}
     monster
   end
-  def send_focus(%Monster{spirit: nil} = monster, html), do: monster
+  def send_focus(%Monster{spirit: nil} = monster, _html), do: monster
 
   def send_up(%Monster{spirit: %Spirit{socket: socket}} = monster) do
     Phoenix.Channel.push socket, "up", %{}
@@ -438,7 +438,7 @@ defmodule Monster do
     Phoenix.Channel.push socket, "update prompt", %{:html => html}
     monster
   end
-  def send_update_prompt(%Monster{spirit: nil} = monster, html), do: monster
+  def send_update_prompt(%Monster{spirit: nil} = monster, _html), do: monster
 
   def look_name(%Monster{} = monster) do
     "<span class='#{alignment_color(monster)}'>#{monster.name}</span>"
@@ -510,7 +510,7 @@ defmodule Monster do
     effect_bonus(monster, "ac")
   end
 
-  def local_hated_targets(%Monster{hate: hate, pid: pid} = monster) do
+  def local_hated_targets(%Monster{hate: hate} = monster) do
     monster
     |> Room.monsters
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
@@ -523,7 +523,7 @@ defmodule Monster do
        end)
   end
 
-  def global_hated_targets(%Monster{hate: hate, pid: pid} = monster) do
+  def global_hated_targets(%Monster{hate: hate}) do
     hate
     |> HashDict.keys
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
@@ -979,7 +979,7 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, %Monster{spirit: nil} = monster) do
+  def handle_info({:monster_died, monster: %Monster{}, reward: _exp}, %Monster{spirit: nil} = monster) do
     {:noreply, monster}
   end
   def handle_info({:monster_died, monster: %Monster{} = deceased, reward: exp}, %Monster{spirit: %Spirit{} = spirit} = monster) do

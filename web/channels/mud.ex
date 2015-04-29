@@ -11,8 +11,6 @@ defmodule ApathyDrive.MUD do
 
   def handle_info({:login, id}, socket) do
 
-    spirit = socket.assigns[:entity]
-
     if spirit = Systems.Login.login(socket, self, id) do
 
       socket = Phoenix.Socket.assign(socket, :entity, spirit)
@@ -53,7 +51,7 @@ defmodule ApathyDrive.MUD do
     {:noreply, socket}
   end
 
-  def terminate(reason, socket) do
+  def terminate(_reason, socket) do
     case socket.assigns[:entity] do
       %Spirit{} = spirit ->
         Spirit.logout(spirit)

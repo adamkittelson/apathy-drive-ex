@@ -99,7 +99,7 @@ defmodule Spirit do
     |> Map.put(:abilities, abilities)
   end
 
-  def login(%Spirit{alignment: alignment} = spirit) do
+  def login(%Spirit{} = spirit) do
     Supervisor.delete_child(ApathyDrive.Supervisor, :"spirit_#{spirit.id}")
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :transient, 5000, :worker, [Spirit]})
     Map.put(spirit, :pid, pid)
@@ -109,9 +109,9 @@ defmodule Spirit do
     if hint in spirit.disabled_hints do
       spirit
     else
-      spirit = spirit
-               |> Map.put(:hints, [hint | spirit.hints] |> Enum.uniq)
-               |> save
+      spirit
+      |> Map.put(:hints, [hint | spirit.hints] |> Enum.uniq)
+      |> save
     end
   end
 

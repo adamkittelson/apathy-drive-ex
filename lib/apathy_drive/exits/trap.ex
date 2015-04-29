@@ -79,7 +79,7 @@ defmodule ApathyDrive.Exits.Trap do
     room_exit["damage"] * 20
   end
 
-  def detect?(monster, room_exit) do
+  def detect?(_monster, room_exit) do
     :random.seed(:os.timestamp)
     perception = 100 - modifier(room_exit)
     perception >= :random.uniform(100)

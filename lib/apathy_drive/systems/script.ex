@@ -74,7 +74,7 @@ defmodule Systems.Script do
     end
   end
 
-  def execute_instruction(%{"add_experience" => exp}, %Monster{spirit: nil} = monster, script) do
+  def execute_instruction(%{"add_experience" => _exp}, %Monster{spirit: nil} = monster, script) do
     execute_script(script, monster)
   end
 

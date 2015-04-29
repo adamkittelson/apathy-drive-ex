@@ -1,11 +1,11 @@
 defmodule ApathyDrive.Exits.Alignment do
   use ApathyDrive.Exit
 
-  def move(%Room{} = room, %Spirit{alignment: "good"} = spirit, %{"min" => _min}) do
+  def move(%Room{}, %Spirit{alignment: "good"} = spirit, %{"min" => _min}) do
     Spirit.send_scroll(spirit, "<p>You are not evil enough to use this exit.</p>")
   end
 
-  def move(%Room{} = room, %Spirit{alignment: "evil"} = spirit, %{"max" => _max}) do
+  def move(%Room{}, %Spirit{alignment: "evil"} = spirit, %{"max" => _max}) do
     Spirit.send_scroll(spirit, "<p>You are too evil to use this exit.</p>")
   end
 

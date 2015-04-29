@@ -16,7 +16,7 @@ defmodule ApathyDrive.PageController do
         conn
         |> put_session(:current_spirit, id)
         |> redirect(to: "/create")
-      %Spirit{id: id} ->
+      %Spirit{} ->
         render conn, "game.html", []
       nil ->
         conn
@@ -25,7 +25,7 @@ defmodule ApathyDrive.PageController do
     end
   end
 
-  def edit_spirit(conn, params) do
+  def edit_spirit(conn, _params) do
     spirit = Repo.get(Spirit, get_session(conn, :current_spirit))
     changeset = Spirit.changeset(spirit)
     render conn, "edit.html", changeset: changeset
