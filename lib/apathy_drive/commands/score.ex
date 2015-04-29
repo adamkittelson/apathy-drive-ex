@@ -15,9 +15,8 @@ defmodule Commands.Score do
     Spirit.send_scroll(spirit, "<p><span class='dark-green'>Name:</span> <span class='#{color}'>#{name |> String.ljust(12)}</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{spirit.experience}</span></p>")
 
     spirit_level = spirit.level |> to_string |> String.ljust(12)
-    spirit_power = Systems.Trainer.spirit_power(spirit)
 
-    Spirit.send_scroll(spirit, "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{spirit_level}</span><span class='dark-green'>Devs:</span> <span class='dark-cyan'>#{spirit_power}</span></p>")
+    Spirit.send_scroll(spirit, "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{spirit_level}</span></p>")
   end
 
   def execute(%Monster{} = monster, _arguments) do

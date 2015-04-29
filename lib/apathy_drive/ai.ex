@@ -1,4 +1,4 @@
-defmodule Systems.AI do
+defmodule ApathyDrive.AI do
 
   def think(%Monster{} = monster) do
     heal(monster) || bless(monster) || attack(monster) || move(monster) || monster

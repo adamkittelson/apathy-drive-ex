@@ -188,8 +188,8 @@ defmodule Monster do
         name:    "attack",
         command: "a",
         kind:    "attack",
-        required_skills: %{"attack" => 0},
         global_cooldown: 4,
+        level: 0,
         flags: [],
         properties: %{
           "dodgeable" => true,
@@ -229,7 +229,6 @@ defmodule Monster do
         name:    attack["name"],
         command: attack["command"],
         kind:    attack["kind"],
-        required_skills: attack["required_skills"],
         global_cooldown: attack["global_cooldown"],
         flags: attack["flags"],
         properties: attack["properties"]
@@ -395,7 +394,7 @@ defmodule Monster do
     |> Enum.sum
   end
 
-  def base_skills(%Monster{skills: skills, spirit: nil} = monster) do
+  def base_skills(%Monster{skills: skills} = monster) do
     skills
     |> Map.keys
     |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
@@ -403,18 +402,8 @@ defmodule Monster do
        end)
   end
 
-  def base_skills(%Monster{skills: skills, spirit: %Spirit{skills: spirit_skills}} = monster) do
-    (Map.keys(skills) ++ Map.keys(spirit_skills))
-    |> Enum.uniq
-    |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
-         Map.put(base_skills, skill_name, base_skill(monster, skill_name))
-       end)
-  end
-
-  def base_skill(%Monster{skills: skills, spirit: spirit} = monster, skill_name) do
-    monster_skill = Map.get(skills, skill_name, 0)
-    spirit_skill = Spirit.skill(spirit, skill_name)
-    max(monster_skill, spirit_skill)
+  def base_skill(%Monster{skills: skills} = monster, skill_name) do
+    Map.get(skills, skill_name, 0)
   end
 
   def modified_skill(%Monster{} = monster, skill_name) do
@@ -1000,9 +989,20 @@ defmodule Monster do
 
     send_scroll(monster, "<p>#{message}</p>")
 
-    spirit = Spirit.add_experience(spirit, exp)
+    new_spirit = Spirit.add_experience(spirit, exp)
 
-    {:noreply, Map.put(monster, :spirit, spirit)}
+    if new_spirit.level > spirit.level do
+      monster = monster
+                |> Map.put(:spirit, new_spirit)
+                |> set_abilities
+
+      {:noreply, monster}
+    else
+      monster = monster
+                |> Map.put(:spirit, new_spirit)
+
+      {:noreply, monster}
+    end
   end
 
   def handle_info({:execute_room_ability, ability}, monster) do
@@ -1069,7 +1069,7 @@ defmodule Monster do
   end
 
   def handle_info(:think, monster) do
-    monster = Systems.AI.think(monster)
+    monster = ApathyDrive.AI.think(monster)
 
     {:noreply, monster}
   end

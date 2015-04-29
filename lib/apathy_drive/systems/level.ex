@@ -23,9 +23,23 @@ defmodule Systems.Level do
   end
 
   def advance(%Spirit{} = spirit, exp_tnl) when exp_tnl < 1 do
+    old_abilities = spirit.abilities |> Enum.map(&(&1.name))
+
     spirit = put_in(spirit.level, spirit.level + 1)
+             |> Spirit.set_abilities
 
     Spirit.send_scroll(spirit, "<p>You've advanced to level #{spirit.level}!</p>")
+
+    new_abilities = spirit.abilities |> Enum.map(&(&1.name))
+
+    new_abilities
+    |> Enum.each(fn(ability) ->
+         if !Enum.member?(old_abilities, ability) do
+           Spirit.send_scroll(spirit, "<p><span class='dark-cyan'>You learn #{ability}!</span></p>")
+         end
+       end)
+
+    spirit
   end
   def advance(%Spirit{} = spirit, _exp_tnl), do: spirit
 

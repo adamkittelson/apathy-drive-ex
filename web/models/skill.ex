@@ -27,32 +27,6 @@ defmodule Skill do
     Repo.all from s in Skill, select: s
   end
 
-  def all(%Room{trainable_skills: nil}) do
-    universal
-  end
-
-  def all(%Room{trainable_skills: trainable_skills}) do
-    universal ++ Enum.map(trainable_skills, &(find(&1)))
-  end
-
-  def universal do
-    Repo.all from s in Skill, where: s.universal == true, select: s
-  end
-
-  def with_modifier(attribute) when is_binary(attribute) do
-    attribute |> String.to_atom |> with_modifier
-  end
-  def with_modifier(attribute) do
-    Repo.all from s in Skill, where: field(s, ^attribute) > 0, select: s
-  end
-
-  def with_modifier(attribute, skill_names) when is_binary(attribute) do
-    attribute |> String.to_atom |> with_modifier(skill_names)
-  end
-  def with_modifier(attribute, skill_names) do
-    Repo.all from s in Skill, where: field(s, ^attribute) > 0 and s.name in ^skill_names, select: s
-  end
-
   def find(skill_name) do
     query = from s in Skill,
             where: s.name == ^skill_name,

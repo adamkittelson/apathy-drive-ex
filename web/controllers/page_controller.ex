@@ -34,7 +34,7 @@ defmodule ApathyDrive.PageController do
   def update_spirit(conn, %{"spirit" => spirit_params}) do
     spirit = Repo.get(Spirit, get_session(conn, :current_spirit))
 
-    spirit_params = Map.put(spirit_params, "name", capitalize_first(spirit_params["name"]))
+    spirit_params = Map.put(spirit_params, "name", capitalize_first(spirit_params["name"] || ""))
 
     changeset = Spirit.changeset(spirit, spirit_params)
 
@@ -45,6 +45,7 @@ defmodule ApathyDrive.PageController do
       |> put_flash(:info, "Your spirit has been created!")
       |> redirect(to: "/")
     else
+      IO.inspect(changeset)
       render conn, "edit.html", changeset: changeset
     end
   end

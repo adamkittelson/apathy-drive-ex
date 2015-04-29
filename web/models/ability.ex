@@ -9,7 +9,8 @@ defmodule Ability do
     field :command,         :string
     field :kind,            :string
     field :description,     :string
-    field :required_skills, ApathyDrive.JSONB
+    field :level,           :integer
+    field :school,          :string
     field :properties,      ApathyDrive.JSONB
     field :keywords,        {:array, :string}, virtual: true
     field :flags,           {:array, :string}
@@ -26,8 +27,8 @@ defmodule Ability do
     Map.put(ability, :keywords, String.split(name))
   end
 
-  def trainable do
-    query = from a in Ability, where: not is_nil(a.required_skills), select: a
+  def trainable(%Spirit{level: level, school: school} = spirit) do
+    query = from a in Ability, where: a.level <= ^level and a.school == ^school, select: a
     Repo.all(query)
   end
 
@@ -105,7 +106,17 @@ defmodule Ability do
     effect = scaling
              |> Map.keys
              |> Enum.reduce(effect, fn(skill_name, effect) ->
-                  skill = Monster.modified_skill(monster, skill_name)
+                  skill = if skill_name == "level" do
+                    case monster do
+                      %Monster{spirit: %Spirit{level: level}} ->
+                        level
+                      %Monster{level: level} ->
+                        level
+                    end
+                  else
+                    Monster.modified_skill(monster, skill_name)
+                  end
+
 
                   min = if scaling[skill_name]["min_every"] do
                     trunc(skill / scaling[skill_name]["min_every"]) * scaling[skill_name]["min_increase"]

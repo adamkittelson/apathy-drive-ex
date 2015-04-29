@@ -17,14 +17,14 @@ defmodule Spirit do
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
+    field :school,            :string
     field :socket,            :any, virtual: true
-    field :socket_pid,            :any, virtual: true
+    field :socket_pid,        :any, virtual: true
     field :pid,               :any, virtual: true
     field :idle,              :integer, default: 0, virtual: true
     field :hints,             {:array, :string}, default: []
     field :disabled_hints,    {:array, :string}, default: []
     field :monster,           :any, virtual: true
-    field :skills,            ApathyDrive.JSONB
     field :abilities,         :any, virtual: true
 
     timestamps
@@ -50,8 +50,9 @@ defmodule Spirit do
   """
   def changeset(spirit, params \\ nil) do
     spirit
-    |> cast(params, ~w(name alignment), ~w())
+    |> cast(params, ~w(name alignment school), ~w())
     |> validate_inclusion(:alignment, ["good", "neutral", "evil"])
+    |> validate_inclusion(:school, ["mage", "priest", "druid"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> validate_unique(:name, on: Repo)
     |> validate_length(:name, min: 1, max: 18)
@@ -62,7 +63,7 @@ defmodule Spirit do
       %Spirit{} = spirit ->
         spirit
       nil ->
-        %Spirit{room_id: Room.start_room_id, skills: %{}, external_id: external_id}
+        %Spirit{room_id: Room.start_room_id, external_id: external_id}
         |> Repo.insert
     end
   end
@@ -82,19 +83,7 @@ defmodule Spirit do
   end
 
   def set_abilities(%Spirit{} = spirit) do
-    skills = skills(spirit)
-
-    abilities = Ability.trainable
-                |> Enum.filter(fn(%Ability{} = ability) ->
-                     ability.required_skills
-                     |> Map.keys
-                     |> Enum.all?(fn(required_skill) ->
-                          spirit_skill  = Map.get(skills, required_skill, 0)
-                          required_skill = Map.get(ability.required_skills, required_skill, 0)
-
-                          spirit_skill >= required_skill
-                        end)
-                   end)
+    abilities = Ability.trainable(spirit)
                 |> Enum.reject(fn(%Ability{} = ability) ->
                      case spirit.alignment do
                        "good" ->
@@ -108,42 +97,6 @@ defmodule Spirit do
 
     spirit
     |> Map.put(:abilities, abilities)
-  end
-
-  def skills(nil), do: %{}
-  def skills(%Spirit{skills: skills} = spirit) do
-    skills
-    |> Map.keys
-    |> Enum.reduce(%{}, fn(skill_name, base_skills) ->
-         Map.put(base_skills, skill_name, skill(spirit, skill_name))
-       end)
-  end
-
-  def skill(nil, _skill_name), do: 0
-  def skill(%Spirit{skills: skills}, skill_name) do
-    skill = Skill.find(skill_name)
-
-    power_spent = skills
-                  |> Map.get(skill_name, 0)
-
-    modifier = skill.cost
-
-    skill(modifier, power_spent)
-  end
-  def skill(modifier, power_spent) do
-    skill(0, modifier, cost(modifier, 0), power_spent)
-  end
-  def skill(rating, modifier, cost, power) when power >= cost do
-    new_rating = rating + 1
-    new_cost = cost(modifier, new_rating)
-    skill(new_rating, modifier, new_cost, power - cost)
-  end
-  def skill(rating, _modifier, cost, power) when power < cost do
-    rating
-  end
-
-  def cost(modifier, rating) do
-    [rating * modifier * 1.0 |> Float.ceil |> trunc, 1] |> Enum.max
   end
 
   def login(%Spirit{alignment: alignment} = spirit) do
@@ -206,21 +159,12 @@ defmodule Spirit do
   end
 
   def add_experience(%Spirit{} = spirit, exp) do
-    old_power = Systems.Trainer.total_power(spirit)
-
     spirit = spirit
              |> send_scroll("<p>You gain #{exp} experience.</p>")
              |> Map.put(:experience, spirit.experience + exp)
              |> Systems.Level.advance
              |> Spirit.save
 
-    new_power = Systems.Trainer.total_power(spirit)
-
-    power_gain = new_power - old_power
-
-    if power_gain > 0 do
-      send_scroll(spirit, "<p>You gain #{power_gain} development points.</p>")
-    end
     spirit
   end
 

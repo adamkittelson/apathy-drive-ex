@@ -24,7 +24,7 @@ defmodule ApathyDrive.Exits.Hidden do
   end
 
   def search(monster, room, room_exit) do
-    if searched?(room, room_exit) || :random.uniform(100) > Skills.Perception.modified(monster) do
+    if searched?(room, room_exit) || :random.uniform(100) > monster.level do
       Monster.send_scroll(monster, "<p>You notice nothing different #{Exit.direction_description(room_exit["direction"])}.</p>")
     else
       if room_exit["message_when_revealed"] do

@@ -19,7 +19,6 @@ defmodule Room do
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :permanent_npc,         :integer
     field :start_room,            :boolean, default: false
-    field :trainable_skills,      {:array, :string}
     field :exits,                 ApathyDrive.JSONB
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
@@ -125,9 +124,6 @@ defmodule Room do
     |> Enum.reject(&(&1 == monster))
   end
 
-  def trainer?(%Room{trainable_skills: nil}), do: false
-  def trainer?(%Room{trainable_skills: _}),   do: true
-
   def exit_directions(%Room{} = room) do
     room.exits
     |> Enum.map(fn(room_exit) ->
@@ -151,7 +147,7 @@ defmodule Room do
   end
 
   def look(%Room{light: light} = room, %Spirit{} = spirit) do
-    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
+    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
 
     Spirit.send_scroll spirit, html
   end
@@ -160,7 +156,7 @@ defmodule Room do
     html = if Monster.blind?(monster) do
       "<p>You are blind.</p>"
     else
-      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_shop_hint(room)}#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
+      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
     end
 
     Monster.send_scroll(monster, html)
@@ -169,11 +165,6 @@ defmodule Room do
   def light_desc(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
   def light_desc(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
   def light_desc(_light_level), do: nil
-
-  def look_shop_hint(%Room{trainable_skills: nil}), do: nil
-  def look_shop_hint(%Room{}) do
-    "<p><br><em>Type 'list' to see a list of skills trainable here.</em><br><br></p>"
-  end
 
   def permanent_npc_present?(%Room{} = room) do
     PubSub.subscribers("rooms:#{room.id}:monsters")

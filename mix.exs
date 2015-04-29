@@ -32,7 +32,7 @@ defmodule ApathyDrive.Mixfile do
       {:inflex,              "~> 0.2.8"},
       {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.0.5"},
-      {:phoenix_ecto,        "~> 0.2.0"},
+      {:phoenix_ecto,        "~> 0.3.1"},
       {:shouldi, only: :test}
     ]
   end
