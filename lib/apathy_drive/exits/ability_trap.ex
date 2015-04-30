@@ -1,74 +1,27 @@
 defmodule ApathyDrive.Exits.AbilityTrap do
   use ApathyDrive.Exit
 
-  def move(current_room, %Spirit{} = spirit, room_exit),  do: super(current_room, spirit, room_exit)
-  def move(current_room, %Monster{} = monster, room_exit) do
+  def move(%Room{} = room, %Spirit{} = spirit, room_exit),  do: super(room, spirit, room_exit)
+  def move(%Room{} = room, %Monster{} = monster, room_exit) do
     destination = Room.find(room_exit["destination"])
-    Components.Monsters.remove_monster(current_room, monster)
-    Components.Monsters.add_monster(destination, monster)
-    Entities.save!(destination)
-    Entities.save!(current_room)
-    Entities.save(monster)
+                  |> Room.value
 
-    Systems.Aggression.monster_entered(monster, destination)
+    Room.send_scroll(destination, "<p>#{interpolate(room_exit["to_message"], %{"user" => monster, "alignment-color" => Monster.alignment_color(monster)})}</p>")
 
-    detected = detect?(monster, room_exit)
-    dodged   = dodge?(monster, room_exit)
+    monster = monster
+              |> Monster.set_room_id(destination.id)
+              |> Monster.save
 
-    cond do
-      detected and dodged ->
-        Monster.send_scroll(monster, "<p><span class='yellow'>You detected a trap as you entered and nimbly dodged out of the way!</span></p>")
-      detected and !dodged ->
-        Monster.send_scroll(monster, "<p><span class='yellow'>You detected a trap as you entered but were too slow to avoid it!</span></p>")
-        spring_trap!(monster, current_room, destination, room_exit)
-      true ->
-        spring_trap!(monster, current_room, destination, room_exit)
+    Monster.send_scroll(monster, "<p><span class='yellow'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
+
+    if ability = ApathyDrive.Repo.get(Ability, room_exit["ability"]) do
+      send(monster.pid, {:execute_ability, ability, [monster.pid]})
     end
 
-    #Systems.Room.display_room_in_scroll(spirit, monster, destination)
-    Monster.pursue(current_room, monster, room_exit["direction"])
-  end
+    Room.look(destination, monster)
 
-  def spring_trap!(monster, current_room, destination, room_exit) do
-    Monster.send_scroll(monster, "<p><span class='red'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
-    if room_exit["ability"] do
-      case Abilities.find(room_exit["ability"]) do
-        nil ->
-          Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: #{room_exit["ability"]}</span></p>")
-        ability ->
-          ability.execute(monster, nil)
-      end
-    end
-
-    if room_exit["from_message"] do
-      Systems.Monster.observers(current_room, monster)
-      |> Enum.each(fn(observer) ->
-        Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
-      end)
-    end
-
-    if room_exit["to_message"] do
-      Systems.Monster.observers(destination, monster)
-      |> Enum.each(fn(observer) ->
-        Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
-      end)
-    end
-  end
-
-  def modifier(_room_exit) do
-    200
-  end
-
-  def detect?(_monster, room_exit) do
-    :random.seed(:os.timestamp)
-    perception = 100 - modifier(room_exit)
-    perception >= :random.uniform(100)
-  end
-
-  def dodge?(monster, room_exit) do
-    :random.seed(:os.timestamp)
-    dodge = Monster.modified_skill(monster, "dodge") - modifier(room_exit)
-    dodge >= :random.uniform(100)
+    Room.send_scroll(room, "<p>#{interpolate(room_exit["from_message"], %{"user" => monster})}</p>")
+    monster
   end
 
 end
