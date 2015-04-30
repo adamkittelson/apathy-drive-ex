@@ -74,9 +74,13 @@ defmodule Spirit do
   end
   def save(%Spirit{} = spirit), do: spirit
 
-  def alignment_color(%Spirit{alignment: "evil"}),    do: "magenta"
-  def alignment_color(%Spirit{alignment: "good"}),    do: "white"
-  def alignment_color(%Spirit{alignment: "neutral"}), do: "dark-cyan"
+  def alignment_color(%{alignment: "evil"}),    do: "magenta"
+  def alignment_color(%{alignment: "good"}),    do: "white"
+  def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
+
+  def class_name(%{school: "druid"}),  do: "Nature Spirit"
+  def class_name(%{school: "mage"}),   do: "Arcane Spirit"
+  def class_name(%{school: "priest"}), do: "Guardian Spirit"
 
   def execute_command(%Spirit{pid: pid}, command, arguments) do
     GenServer.call(pid, {:execute_command, command, arguments})
@@ -102,7 +106,9 @@ defmodule Spirit do
   def login(%Spirit{} = spirit) do
     Supervisor.delete_child(ApathyDrive.Supervisor, :"spirit_#{spirit.id}")
     {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :transient, 5000, :worker, [Spirit]})
-    Map.put(spirit, :pid, pid)
+    spirit = Map.put(spirit, :pid, pid)
+    ApathyDrive.WhoList.log_on(spirit)
+    spirit
   end
 
   def activate_hint(%Spirit{} = spirit, hint) do
@@ -169,7 +175,10 @@ defmodule Spirit do
   end
 
   def logout(%Spirit{} = spirit) do
-    save(spirit)
+    spirit
+    |> save
+    |> ApathyDrive.WhoList.log_off
+
     spirit_to_kill = :"spirit_#{spirit.id}"
     Supervisor.terminate_child(ApathyDrive.Supervisor, spirit_to_kill)
     Supervisor.delete_child(ApathyDrive.Supervisor, spirit_to_kill)

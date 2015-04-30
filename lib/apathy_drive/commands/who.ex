@@ -4,45 +4,42 @@ defmodule Commands.Who do
   def keywords, do: ["who"]
 
   def execute(%Spirit{} = spirit, _arguments) do
-    Spirit.send_scroll(spirit, "<p><span class='dark-cyan'>Name                Possessing</span>")
-    Spirit.send_scroll(spirit, "<p><span class='dark-green'>================================</span></p>")
+    Spirit.send_scroll(spirit, "<p><span class='dark-cyan'>Name                Class                 Possessing</span>")
+    Spirit.send_scroll(spirit, "<p><span class='dark-green'>==============================================================</span></p>")
 
-    spirit
-    |> online_entities
+    ApathyDrive.WhoList.list
     |> Enum.each(fn(line) ->
-         Spirit.send_scroll(spirit, line)
-       end)
+      Spirit.send_scroll(spirit, format_line(line))
+    end)
     spirit
   end
 
   def execute(%Monster{} = monster, _arguments) do
-    Monster.send_scroll(monster, "<p><span class='dark-cyan'>Name                Possessing</span>")
-    Monster.send_scroll(monster, "<p><span class='dark-green'>================================</span></p>")
+    Monster.send_scroll(monster, "<p><span class='dark-cyan'>Name                Class               Possessing</span>")
+    Monster.send_scroll(monster, "<p><span class='dark-green'>============================================================</span></p>")
 
-    monster
-    |> online_entities
+    ApathyDrive.WhoList.list
     |> Enum.each(fn(line) ->
-         Monster.send_scroll(monster, line)
+         Monster.send_scroll(monster, format_line(line))
        end)
     monster
   end
 
-  def online_entities(entity) do
-    subscribers = (ApathyDrive.PubSub.subscribers("spirits:online") -- [self])
-                  |> Enum.map(&(GenServer.call(&1, :value)))
+  def format_line(%{name: name, possessing: ""} = line) do
+    color = Spirit.alignment_color(line)
+    class = line
+            |> Spirit.class_name
 
-    (subscribers ++ [entity])
-    |> Enum.sort_by(fn %Spirit{name: name} ->
-                         name
-                       %Monster{spirit: %Spirit{name: name}} ->
-                         name
-                    end)
-    |> Enum.map(fn %Spirit{name: name} = spirit ->
-                    "<p><span class='#{Spirit.alignment_color(spirit)}'>#{name}</span></p>"
-                   %Monster{name: monster_name, spirit: %Spirit{name: name} = spirit} ->
-                    color = Spirit.alignment_color(spirit)
-                    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{monster_name}</span></p>"
-                end)
+    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{class}</span></p>"
+  end
+
+  def format_line(%{name: name, possessing: monster} = line) do
+    color = Spirit.alignment_color(line)
+    class = line
+            |> Spirit.class_name
+            |> String.ljust(20)
+
+    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{class}</span><span class='#{color}'>#{monster}</span></p>"
   end
 
 end

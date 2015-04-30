@@ -27,6 +27,8 @@ defmodule Commands.Unpossess do
     |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
     |> Systems.Prompt.update
 
+    ApathyDrive.WhoList.log_off(self)
+
     spirit
   end
 
