@@ -45,7 +45,6 @@ defmodule ApathyDrive.PageController do
       |> put_flash(:info, "Your spirit has been created!")
       |> redirect(to: "/")
     else
-      IO.inspect(changeset)
       render conn, "edit.html", changeset: changeset
     end
   end

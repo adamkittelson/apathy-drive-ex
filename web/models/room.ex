@@ -481,6 +481,11 @@ defmodule Room do
     {:noreply, room}
   end
 
+  def handle_info({:search, direction}, room) do
+    room = Systems.Effect.add(room, %{searched: direction}, 300)
+    {:noreply, room}
+  end
+
   def handle_info(_message, room) do
     {:noreply, room}
   end

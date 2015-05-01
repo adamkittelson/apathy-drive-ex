@@ -8,8 +8,8 @@ defmodule Commands.Search do
     |> Spirit.send_scroll("<p>You need a body to do that.</p>")
   end
 
-  def execute(_spirit, monster, arguments) do
-    current_room = Parent.of(monster)
+  def execute(%Monster{} = monster, arguments) do
+    current_room = Monster.find_room(monster)
 
     if Enum.any? arguments do
       direction = arguments

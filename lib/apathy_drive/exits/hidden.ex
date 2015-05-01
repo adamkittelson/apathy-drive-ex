@@ -7,7 +7,7 @@ defmodule ApathyDrive.Exits.Hidden do
     end
   end
 
-  def look(%Spirit{} = spirit, %Room{} = current_room, room_exit) do
+  def look(%Room{} = current_room, %Spirit{} = spirit, room_exit) do
     if open?(current_room, room_exit) or room_exit.passable_while_hidden do
       super(spirit, current_room, room_exit)
     else
@@ -23,16 +23,17 @@ defmodule ApathyDrive.Exits.Hidden do
     end
   end
 
-  def search(monster, room, room_exit) do
-    if searched?(room, room_exit) || :random.uniform(100) > monster.level do
-      Monster.send_scroll(monster, "<p>You notice nothing different #{Exit.direction_description(room_exit["direction"])}.</p>")
+  def search(%Monster{} = monster, %Room{} = room, room_exit) do
+    if searched?(room, room_exit) || !room_exit["searchable"] || :random.uniform(100) < 75 do
+      Monster.send_scroll(monster, "<p>You notice nothing different #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")
     else
       if room_exit["message_when_revealed"] do
         Monster.send_scroll(monster, "<p>#{room_exit["message_when_revealed"]}</p>")
       end
 
-      Systems.Effect.add(room, %{searched: room_exit["direction"]}, 300)
+      ApathyDrive.PubSub.broadcast!("rooms:#{room.id}", {:search, room_exit["direction"]})
     end
+    monster
   end
 
   def move(current_room, %Spirit{} = spirit, room_exit) do
@@ -64,8 +65,10 @@ defmodule ApathyDrive.Exits.Hidden do
     if room_exit["remote_action_exits"] do
       room_exit["remote_action_exits"]
       |> Enum.all?(fn(remote_exit) ->
-           Room.find(remote_exit["room"])
-           |> Components.Effects.value
+           remote_exit["room"]
+           |> Room.find
+           |> Room.value
+           |> Map.get(:effects)
            |> Map.values
            |> Enum.filter(fn(effect) ->
                 Map.has_key?(effect, :triggered)
