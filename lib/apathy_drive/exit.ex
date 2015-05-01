@@ -40,11 +40,11 @@ defmodule ApathyDrive.Exit do
   end
 
   def look(_current_room, %Spirit{} = spirit, nil) do
-    Phoenix.Channel.push spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
+    Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
   end
 
   def look(_current_room, %Monster{} = monster, nil) do
-    ApathyDrive.Endpoint.broadcast! "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction.</p>"}
+    Monster.send_scroll(monster, "<p>There is no exit in that direction.</p>")
   end
 
   def look(%Room{} = current_room, %Spirit{} = spirit, room_exit) do
@@ -205,14 +205,15 @@ defmodule ApathyDrive.Exit do
         exit_to_destination["direction"]
       end
 
-      def mirror(%Room{exits: exits, id: id} = room, %{"destination" => destination}) do
+      def mirror(%Room{exits: exits, id: id} = room, %{"destination" => destination, "kind" => room_kind}) do
         mirror_room = Room.find(destination)
                       |> Room.value
 
         room_exit = exits
-                    |> Enum.find(fn(%{"destination" => destination}) ->
-                         destination == id
+                    |> Enum.find(fn(%{"destination" => destination, "kind" => kind}) ->
+                         destination == id and kind != "RemoteAction" and room_kind != "RemoteAction"
                        end)
+        IO.inspect(room_exit)
         {mirror_room, room_exit}
       end
 

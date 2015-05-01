@@ -8,18 +8,18 @@ defmodule ApathyDrive.Exits.Hidden do
   end
 
   def look(%Room{} = current_room, %Spirit{} = spirit, room_exit) do
-    if open?(current_room, room_exit) or room_exit.passable_while_hidden do
-      super(spirit, current_room, room_exit)
+    if open?(current_room, room_exit) or room_exit["passable_while_hidden"] do
+      super(current_room, spirit, room_exit)
     else
-      Phoenix.Channel.push spirit.socket, "scroll", %{:html => "<p>There is no exit in that direction!</p>"}
+      Spirit.send_scroll(spirit, "<p>There is no exit in that direction!</p>")
     end
   end
 
-  def look(%Monster{} = monster, %Room{} = current_room, room_exit) do
-    if open?(current_room, room_exit) or room_exit.passable_while_hidden do
-      super(monster, current_room, room_exit)
+  def look(%Room{} = current_room, %Monster{} = monster, room_exit) do
+    if open?(current_room, room_exit) or room_exit["passable_while_hidden"] do
+      super(current_room, monster, room_exit)
     else
-      ApathyDrive.Endpoint.broadcast! "monsters:#{monster.id}", "scroll", %{:html => "<p>There is no exit in that direction!</p>"}
+      Monster.send_scroll(monster, "<p>There is no exit in that direction!</p>")
     end
   end
 

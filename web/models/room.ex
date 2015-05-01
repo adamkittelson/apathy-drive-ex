@@ -486,6 +486,22 @@ defmodule Room do
     {:noreply, room}
   end
 
+  def handle_info({:trigger, direction}, room) do
+    room = Systems.Effect.add(room, %{triggered: direction}, 300)
+    {:noreply, room}
+  end
+
+  def handle_info({:clear_triggers, direction}, room) do
+    room = room.effects
+           |> Map.keys
+           |> Enum.filter(fn(key) ->
+                room.effects[key][:triggered] == direction
+              end)
+           |> Enum.reduce(room, &(Systems.Effect.remove(&1, &2)))
+
+    {:noreply, room}
+  end
+
   def handle_info(_message, room) do
     {:noreply, room}
   end
