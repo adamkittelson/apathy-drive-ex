@@ -20,6 +20,7 @@ defmodule Room do
     field :permanent_npc,         :integer
     field :start_room,            :boolean, default: false
     field :exits,                 ApathyDrive.JSONB
+    field :commands,              ApathyDrive.JSONB
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
