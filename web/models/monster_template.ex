@@ -66,7 +66,7 @@ defmodule MonsterTemplate do
 
   def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: nil}), do: false
   def on_cooldown?(%MonsterTemplate{last_killed_at: nil}),        do: false
-  def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: regen_time, last_killed_at: last_killed_at} = mt) do
+  def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: regen_time, last_killed_at: last_killed_at}) do
     now =
       Ecto.DateTime.utc
       |> Ecto.DateTime.to_iso8601
