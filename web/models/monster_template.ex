@@ -29,6 +29,7 @@ defmodule MonsterTemplate do
     field :attacks,           ApathyDrive.JSONB
     field :effects,           ApathyDrive.JSONB
     field :experience,        :integer
+    field :last_killed_at,    Ecto.DateTime
 
     has_many :monsters, Monster
 
@@ -89,6 +90,12 @@ defmodule MonsterTemplate do
     GenServer.call(monster, :value)
   end
 
+  def set_last_killed_at(%Monster{monster_template_id: id}) do
+    id
+    |> find
+    |> GenServer.cast(:set_last_killed_at)
+  end
+
   def handle_call({:spawn_monster, %Room{} = room}, _from, monster_template) do
     values = monster_template
              |> Map.from_struct
@@ -119,6 +126,15 @@ defmodule MonsterTemplate do
 
   def handle_call(:value, _from, monster_template) do
     {:reply, monster_template, monster_template}
+  end
+
+  def handle_cast(:set_last_killed_at, monster_template) do
+    mt =
+      monster_template
+      |> Map.put(:last_killed_at, Ecto.DateTime.utc)
+      |> Repo.update
+
+    {:noreply, mt}
   end
 
 end
