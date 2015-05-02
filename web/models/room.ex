@@ -497,7 +497,7 @@ defmodule Room do
            |> Enum.filter(fn(key) ->
                 room.effects[key][:triggered] == direction
               end)
-           |> Enum.reduce(room, &(Systems.Effect.remove(&1, &2)))
+           |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1)))
 
     {:noreply, room}
   end

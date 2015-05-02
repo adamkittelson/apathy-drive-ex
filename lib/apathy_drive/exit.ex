@@ -213,7 +213,6 @@ defmodule ApathyDrive.Exit do
                     |> Enum.find(fn(%{"destination" => destination, "kind" => kind}) ->
                          destination == id and kind != "RemoteAction" and room_kind != "RemoteAction"
                        end)
-        IO.inspect(room_exit)
         {mirror_room, room_exit}
       end
 

@@ -43,7 +43,7 @@ defmodule ApathyDrive.Exits.RemoteAction do
       end
     else
       clear_triggers!(remote_exit)
-      trigger_remote_action(monster, room, room_exit)
+      trigger_remote_action(room, monster, room_exit)
     end
   end
 
@@ -65,7 +65,7 @@ defmodule ApathyDrive.Exits.RemoteAction do
   def clear_triggers!(remote_exit) do
     remote_exit["remote_action_exits"]
     |> Enum.each(fn(map) ->
-         ApathyDrive.PubSub.broadcast!("rooms:#{map["room"]}", {:clear_triggers, remote_exit["direction"]})
+         ApathyDrive.PubSub.broadcast!("rooms:#{map["room"]}", {:clear_triggers, map["direction"]})
        end)
   end
 
