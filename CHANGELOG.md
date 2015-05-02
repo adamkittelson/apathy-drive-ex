@@ -115,3 +115,6 @@ CHANGELOG
 
 ---- 0.0.38 / 2015-05-02 / command-refactor ------------------------------------
 * finish updating a few exit types
+
+---- 0.0.39 / 2015-05-02 / merge-permanent-npcs-into-lairs ---------------------
+* remove permanent npcs, use lairs instead
