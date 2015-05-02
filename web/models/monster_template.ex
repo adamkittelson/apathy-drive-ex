@@ -5,31 +5,32 @@ defmodule MonsterTemplate do
   alias ApathyDrive.Repo
 
   schema "monster_templates" do
-    field :name,              :string
-    field :description,       :string
-    field :death_message,     :string
-    field :enter_message,     :string
-    field :exit_message,      :string
-    field :abilities,         {:array, :integer}, default: []
-    field :greeting,          :string
-    field :gender,            :string
-    field :game_limit,        :integer
-    field :adjectives,        {:array, :string}, default: []
-    field :skills,            ApathyDrive.JSONB
-    field :chance_to_follow,  :integer
-    field :disposition,       :string
-    field :alignment,         :string
-    field :level,  :integer
-    field :questions,         ApathyDrive.JSONB
-    field :flags,             {:array, :string}, default: []
-    field :max_hp,            :integer
-    field :max_mana,          :integer
-    field :hp_regen,          :integer
-    field :mana_regen,        :integer
-    field :attacks,           ApathyDrive.JSONB
-    field :effects,           ApathyDrive.JSONB
-    field :experience,        :integer
-    field :last_killed_at,    Ecto.DateTime
+    field :name,                   :string
+    field :description,            :string
+    field :death_message,          :string
+    field :enter_message,          :string
+    field :exit_message,           :string
+    field :abilities,              {:array, :integer}, default: []
+    field :greeting,               :string
+    field :gender,                 :string
+    field :game_limit,             :integer
+    field :adjectives,             {:array, :string}, default: []
+    field :skills,                 ApathyDrive.JSONB
+    field :chance_to_follow,       :integer
+    field :disposition,            :string
+    field :alignment,              :string
+    field :level,                  :integer
+    field :questions,              ApathyDrive.JSONB
+    field :flags,                  {:array, :string}, default: []
+    field :max_hp,                 :integer
+    field :max_mana,               :integer
+    field :hp_regen,               :integer
+    field :mana_regen,             :integer
+    field :attacks,                ApathyDrive.JSONB
+    field :effects,                ApathyDrive.JSONB
+    field :experience,             :integer
+    field :last_killed_at,         Ecto.DateTime
+    field :regen_time_in_minutes, :integer
 
     has_many :monsters, Monster
 
@@ -61,6 +62,26 @@ defmodule MonsterTemplate do
 
   def spawn_monster(monster_template, room) do
     GenServer.call(monster_template, {:spawn_monster, room})
+  end
+
+  def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: nil}), do: false
+  def on_cooldown?(%MonsterTemplate{last_killed_at: nil}),        do: false
+  def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: regen_time, last_killed_at: last_killed_at} = mt) do
+    now =
+      Ecto.DateTime.utc
+      |> Ecto.DateTime.to_iso8601
+      |> Timex.DateFormat.parse!("{ISOdate}T{ISOtime}Z")
+      |> Timex.Date.convert(:secs)
+
+    killed_at =
+      last_killed_at
+      |> Ecto.DateTime.to_iso8601
+      |> Timex.DateFormat.parse!("{ISOdate}T{ISOtime}Z")
+      |> Timex.Date.convert(:secs)
+
+    respawn_at = (now - (regen_time * 60))
+
+    respawn_at <= killed_at
   end
 
   def limit_reached?(%MonsterTemplate{game_limit: game_limit} = monster_template) do

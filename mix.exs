@@ -28,7 +28,7 @@ defmodule ApathyDrive.Mixfile do
       {:ecto,                "~> 0.10"},
       {:decimal,             "~> 1.1.0"},
       {:postgrex,            "~> 0.8.0"},
-      {:timex,               "~> 0.12.7"},
+      {:timex,               "~> 0.13.4"},
       {:inflex,              "~> 0.2.8"},
       {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.0.5"},
