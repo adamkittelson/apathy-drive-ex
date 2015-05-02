@@ -11,49 +11,51 @@ defmodule ApathyDrive.Exits.RemoteAction do
     Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
   end
 
-  def trigger_remote_action(spirit, monster, room, room_exit) do
-    remote_room = Room.find(room_exit["destination"])
-    remote_exit = Components.Exits.value(remote_room)
+  def get_room(%Room{id: id} = room, other_id) when id == other_id do
+    room
+  end
+  def get_room(%Room{}, id) do
+    id
+    |> Room.find
+    |> Room.value
+  end
+
+  def trigger_remote_action(%Room{} = room, %Monster{} = monster, room_exit) do
+    remote_room = get_room(room, room_exit["destination"])
+    remote_exit = remote_room.exits
                   |> Enum.find(fn(remote_exit) ->
                        remote_exit["remote_action_exits"] && Enum.member?(remote_exit["remote_action_exits"],
-                                                                          %{"room" => Components.ID.value(room),
+                                                                          %{"room" => room.id,
                                                                             "direction" => room_exit["direction"]})
                      end)
 
     if trigger_remote_action?(remote_room, remote_exit, room_exit) do
-      Systems.Effect.add(room, %{triggered: room_exit["direction"]}, 300)
+      ApathyDrive.PubSub.broadcast!("rooms:#{room.id}", {:trigger, room_exit["direction"]})
 
       Monster.send_scroll(monster, "<p>#{room_exit["message"]}</p>")
-      Systems.Monster.observers(room, monster)
-      |> Enum.each(fn(observer) ->
-        Monster.send_scroll(observer, "<p><span class='dark-green'>#{interpolate(room_exit["room_message"], %{"user" => monster})}</span></p>")
-      end)
+
+      ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{interpolate(room_exit["room_message"], %{"user" => monster})}</span></p>"}
 
       if :"Elixir.ApathyDrive.Exits.#{remote_exit["kind"]}".open?(remote_room, remote_exit) do
         if remote_exit["message_when_revealed"] do
-          Systems.Monster.observers(remote_room, nil)
-          |> Enum.each(fn(observer) ->
-            Monster.send_scroll(observer, "<p><span class='white'>#{remote_exit["message_when_revealed"]}</span></p>")
-          end)
+          Room.send_scroll(room, "<p><span class='white'>#{remote_exit["message_when_revealed"]}</span></p>")
         end
       end
     else
       clear_triggers!(remote_exit)
-      trigger_remote_action(spirit, monster, room, room_exit)
+      trigger_remote_action(room, monster, room_exit)
     end
   end
 
-  def trigger_remote_action?(_remote_room, %{"remote_action_order_matters" => true} = remote_exit, room_exit) do
+  def trigger_remote_action?(remote_room, %{"remote_action_order_matters" => true} = remote_exit, room_exit) do
     remote_exit["remote_action_exits"]
     |> Enum.filter(&triggered?/1)
     |> Enum.all?(fn(ra_exit) ->
-         remote_action_order = ra_exit["room"]
-                             |> Room.find
-                             |> Components.Exits.value
-                             |> Enum.find(fn(other_remote_exit) ->
-                                            other_remote_exit["direction"] == ra_exit["direction"]
-                                          end)
-                             |> Map.get("remote_action_order")
+         remote_action_order = get_room(remote_room, ra_exit["room"]).exits
+                               |> Enum.find(fn(other_remote_exit) ->
+                                    other_remote_exit["direction"] == ra_exit["direction"]
+                                  end)
+                               |> Map.get("remote_action_order")
 
          remote_action_order == nil or remote_action_order < room_exit["remote_action_order"]
        end)
@@ -63,27 +65,16 @@ defmodule ApathyDrive.Exits.RemoteAction do
   def clear_triggers!(remote_exit) do
     remote_exit["remote_action_exits"]
     |> Enum.each(fn(map) ->
-         room = map["room"]
-                |> Room.find
-
-         effects = room
-                   |> Components.Effects.value
-
-         effects
-         |> Map.keys
-         |> Enum.filter(fn(key) ->
-              effects[key][:triggered] == map["direction"]
-            end)
-         |> Enum.each(&(Components.Effects.remove(room, &1)))
+         ApathyDrive.PubSub.broadcast!("rooms:#{map["room"]}", {:clear_triggers, map["direction"]})
        end)
   end
 
   def triggered?(room_direction) do
     room = room_direction["room"]
            |> Room.find
+           |> Room.value
 
-    effects = room
-              |> Components.Effects.value
+    effects = room.effects
 
     effects
     |> Map.keys

@@ -21,16 +21,9 @@ defmodule ApathyDrive.Command do
                         ex["kind"] == "Command" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
                       end)
 
-    remote_action_exit = room.exits
-                         |> Enum.find(fn(ex) ->
-                              ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
-                            end)
-
     cond do
       command_exit ->
         ApathyDrive.Exits.Command.move_via_command(room, spirit, command_exit)
-      remote_action_exit ->
-        ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, spirit, remote_action_exit)
       true ->
         case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
           nil ->
@@ -88,6 +81,7 @@ defmodule ApathyDrive.Command do
             monster
           else
             ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, monster, remote_action_exit)
+            monster
           end
         true ->
           case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do

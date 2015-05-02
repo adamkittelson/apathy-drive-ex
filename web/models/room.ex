@@ -20,6 +20,7 @@ defmodule Room do
     field :permanent_npc,         :integer
     field :start_room,            :boolean, default: false
     field :exits,                 ApathyDrive.JSONB
+    field :commands,              ApathyDrive.JSONB
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
@@ -483,6 +484,22 @@ defmodule Room do
 
   def handle_info({:search, direction}, room) do
     room = Systems.Effect.add(room, %{searched: direction}, 300)
+    {:noreply, room}
+  end
+
+  def handle_info({:trigger, direction}, room) do
+    room = Systems.Effect.add(room, %{triggered: direction}, 300)
+    {:noreply, room}
+  end
+
+  def handle_info({:clear_triggers, direction}, room) do
+    room = room.effects
+           |> Map.keys
+           |> Enum.filter(fn(key) ->
+                room.effects[key][:triggered] == direction
+              end)
+           |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1)))
+
     {:noreply, room}
   end
 
