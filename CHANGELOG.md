@@ -112,3 +112,6 @@ CHANGELOG
 
 ---- 0.0.37 / 2015-04-26 / dockerize -------------------------------------------
 * dockerize / make deployable
+
+---- 0.0.38 / 2015-05-02 / command-refactor ------------------------------------
+* finish updating a few exit types
