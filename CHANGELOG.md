@@ -118,3 +118,6 @@ CHANGELOG
 
 ---- 0.0.39 / 2015-05-02 / merge-permanent-npcs-into-lairs ---------------------
 * remove permanent npcs, use lairs instead
+
+---- 0.0.40 / 2015-05-02 / boss-monster-regen-times ----------------------------
+* monsters can be set to not respawn for a period of time after being killed
