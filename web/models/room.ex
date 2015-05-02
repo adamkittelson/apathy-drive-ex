@@ -17,7 +17,6 @@ defmodule Room do
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
-    field :permanent_npc,         :integer
     field :start_room,            :boolean, default: false
     field :exits,                 ApathyDrive.JSONB
     field :commands,              ApathyDrive.JSONB
@@ -40,14 +39,6 @@ defmodule Room do
       PubSub.subscribe(self, "rooms:lairs")
       send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)})
       TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)}) end})
-    else
-      room
-    end
-
-    room = if room.permanent_npc do
-      PubSub.subscribe(self, "rooms:permanent_npcs")
-      send(self, :spawn_permanent_npc)
-      TimerManager.call_every(room, {:spawn_permanent_npc, 60_000, fn -> send(self, :spawn_permanent_npc) end})
     else
       room
     end
@@ -166,12 +157,6 @@ defmodule Room do
   def light_desc(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
   def light_desc(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
   def light_desc(_light_level), do: nil
-
-  def permanent_npc_present?(%Room{} = room) do
-    PubSub.subscribers("rooms:#{room.id}:monsters")
-    |> Enum.map(&(Monster.value(&1).monster_template_id))
-    |> Enum.member?(room.permanent_npc)
-  end
 
   def look_items(%Room{} = room) do
     items = room.item_descriptions["visible"]
@@ -329,18 +314,6 @@ defmodule Room do
            |> Map.put(:lair_next_spawn_at, Date.now
                                            |> Date.shift(mins: room.lair_frequency)
                                            |> Date.convert(:secs))
-
-    {:noreply, room}
-  end
-
-  def handle_info(:spawn_permanent_npc, room) do
-    mt = MonsterTemplate.find(room.permanent_npc)
-
-    unless MonsterTemplate.limit_reached?(MonsterTemplate.value(mt)) || permanent_npc_present?(room) do
-      monster = MonsterTemplate.spawn_monster(mt, room)
-
-      Monster.display_enter_message(room, monster)
-    end
 
     {:noreply, room}
   end
