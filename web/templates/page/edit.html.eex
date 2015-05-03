@@ -32,7 +32,7 @@
       <% else %>
         <label for="school">Class</label>
       <% end %>
-      <%= select(f, :school, [mage: "Arcane Spirit", druid: "Nature Spirit", priest: "Guardian Spirit"], prompt: "Choose Your Class", class: "u-full-width") %>
+      <%= select(f, :school, [mage: "Mage", druid: "Druid", priest: "Priest"], prompt: "Choose Your Class", class: "u-full-width") %>
     </div>
   </div>
 

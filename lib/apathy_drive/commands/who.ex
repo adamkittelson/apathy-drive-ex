@@ -25,19 +25,19 @@ defmodule Commands.Who do
     monster
   end
 
-  def format_line(%{name: name, possessing: ""} = line) do
+  def format_line(%{name: name, possessing: "", school: class} = line) do
     color = Spirit.alignment_color(line)
-    class = line
-            |> Spirit.class_name
+    class = String.capitalize(class)
 
     "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{class}</span></p>"
   end
 
-  def format_line(%{name: name, possessing: monster} = line) do
+  def format_line(%{name: name, possessing: monster, school: class} = line) do
     color = Spirit.alignment_color(line)
-    class = line
-            |> Spirit.class_name
-            |> String.ljust(20)
+    class =
+      class
+      |> String.capitalize
+      |> String.ljust(20)
 
     "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{class}</span><span class='#{color}'>#{monster}</span></p>"
   end

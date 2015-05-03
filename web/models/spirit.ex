@@ -78,10 +78,6 @@ defmodule Spirit do
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
 
-  def class_name(%{school: "druid"}),  do: "Nature Spirit"
-  def class_name(%{school: "mage"}),   do: "Arcane Spirit"
-  def class_name(%{school: "priest"}), do: "Guardian Spirit"
-
   def execute_command(%Spirit{pid: pid}, command, arguments) do
     GenServer.call(pid, {:execute_command, command, arguments})
   end
