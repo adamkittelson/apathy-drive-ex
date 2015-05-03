@@ -11,17 +11,24 @@ defmodule ApathyDrive.PageController do
   end
 
   def game(conn, _params) do
-    case Repo.get(Spirit, get_session(conn, :current_spirit)) do
-      %Spirit{id: id, name: nil} ->
-        conn
-        |> put_session(:current_spirit, id)
-        |> redirect(to: "/create")
-      %Spirit{} ->
-        render conn, "game.html", []
+    case get_session(conn, :current_spirit) do
       nil ->
         conn
         |> put_session(:current_spirit, nil)
         |> redirect(to: "/")
+      spirit_id ->
+        case Repo.get(Spirit, spirit_id) do
+          %Spirit{id: id, name: nil} ->
+            conn
+            |> put_session(:current_spirit, id)
+            |> redirect(to: "/create")
+          %Spirit{} ->
+            render conn, "game.html", []
+          nil ->
+            conn
+            |> put_session(:current_spirit, nil)
+            |> redirect(to: "/")
+        end
     end
   end
 
@@ -34,7 +41,21 @@ defmodule ApathyDrive.PageController do
   def update_spirit(conn, %{"spirit" => spirit_params}) do
     spirit = Repo.get(Spirit, get_session(conn, :current_spirit))
 
-    spirit_params = Map.put(spirit_params, "name", capitalize_first(spirit_params["name"] || ""))
+    alignment = case spirit_params["faction"] do
+      "Demon" ->
+        "evil"
+      "Angel" ->
+        "good"
+      "Elemental" ->
+        "neutral"
+      _ ->
+        nil
+    end
+
+    spirit_params =
+      spirit_params
+      |> Map.put("name", capitalize_first(spirit_params["name"] || ""))
+      |> Map.put("alignment", alignment)
 
     changeset = Spirit.changeset(spirit, spirit_params)
 

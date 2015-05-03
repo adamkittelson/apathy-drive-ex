@@ -17,7 +17,7 @@ defmodule Spirit do
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
-    field :school,            :string
+    field :faction,           :string
     field :socket,            :any, virtual: true
     field :socket_pid,        :any, virtual: true
     field :pid,               :any, virtual: true
@@ -50,9 +50,9 @@ defmodule Spirit do
   """
   def changeset(spirit, params \\ nil) do
     spirit
-    |> cast(params, ~w(name alignment school), ~w())
+    |> cast(params, ~w(name faction alignment), ~w())
+    |> validate_inclusion(:faction,   ["Angel", "Demon", "Elemental"])
     |> validate_inclusion(:alignment, ["good", "neutral", "evil"])
-    |> validate_inclusion(:school, ["mage", "priest", "druid"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> validate_unique(:name, on: Repo)
     |> validate_length(:name, min: 1, max: 18)
