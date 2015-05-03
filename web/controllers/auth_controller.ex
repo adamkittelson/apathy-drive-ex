@@ -30,9 +30,11 @@ defmodule ApathyDrive.AuthController do
 
     spirit = Spirit.find_or_create_by_external_id(user["id"])
 
-    conn
-    |> put_session(:current_spirit, spirit.id)
-    |> redirect(to: "/")
+    conn =
+      conn
+      |> put_session(:current_spirit, spirit.id)
+
+    redirect(conn, to: game_path(conn, :game))
   end
 
   defp strategy(conn), do: conn.private.oauth2_strategy

@@ -1,10 +1,8 @@
-<%= if @current_spirit do %>
-  <a class="btn btn-primary btn-lg" href="<%= game_path @conn, :game %>">
-    Play!
-  </a>
-<% else %>
-  <a class="btn btn-primary btn-lg" href="<%= auth_path @conn, :index %>">
-    <i class="fa fa-facebook"></i>
-    Sign in with Facebook
-  </a>
-<% end %>
+<section class="header">
+  <h1 class="title">Apotheosis</h1>
+  <%= if @current_spirit do %>
+    <a class="button button-primary" href="<%= game_path @conn, :game %>">Play</a>
+  <% else %>
+    <a class="button button-primary" href="<%= auth_path @conn, :index %>">Sign in with Facebook</a>
+  <% end %>
+</section>

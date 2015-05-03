@@ -1,43 +1,40 @@
-<h2>Edit spirit</h2>
+<div class="row">
+  <h3>Create Your Spirit</h3>
+</div>
 
 <%= form_for @changeset, spirit_path(@conn, :update_spirit), fn f -> %>
-  <%= if f.errors != [] do %>
-    <p style="color: red">Oops, something went wrong!</p>
-
-    <%= for {field, error} <- f.errors do %>
-      <%= if field == :school do %>
-        <p><%= "class #{error}"%></p>
+  <div class="row">
+    <div class="four columns">
+      <%= if f.errors[:name] do %>
+        <label for="name" class="error">Name <%= f.errors[:name]%></label>
       <% else %>
-        <p><%= "#{field} #{error}"%></p>
+        <label for="name">Name</label>
       <% end %>
-    <% end %>
+      <%= text_input f, :name, class: "u-full-width" %>
+    </div>
+  </div>
 
-  <% end %>
+  <div class="row">
+    <div class="four columns">
+      <%= if f.errors[:alignment] do %>
+        <label for="alignment" class="error">Alignment <%= f.errors[:alignment]%></label>
+      <% else %>
+        <label for="alignment">Alignment</label>
+      <% end %>
+      <%= select(f, :alignment, [good: "Good", neutral: "Neutral", evil: "Evil"], prompt: "Choose Your Alignment", class: "u-full-width") %>
+    </div>
+  </div>
 
-  <p>
-    <label>
-      <span>Name:</span>
-      <%= text_input f, :name %>
-    </label>
-  </p>
+  <div class="row">
+    <div class="four columns">
+      <%= if f.errors[:school] do %>
+        <label for="school" class="error">Class <%= f.errors[:school]%></label>
+      <% else %>
+        <label for="school">Class</label>
+      <% end %>
+      <%= select(f, :school, [mage: "Arcane Spirit", druid: "Nature Spirit", priest: "Guardian Spirit"], prompt: "Choose Your Class", class: "u-full-width") %>
+    </div>
+  </div>
 
-  <p>
-    <label>
-      <span>Alignment:</span>
-      <%= select(f, :alignment, [good: "Good", neutral: "Neutral", evil: "Evil"], prompt: "Choose Your Alignment") %>
-    </label>
-  </p>
-
-  <p>
-    <label>
-      <span>Class:</span>
-      <%= select(f, :school, [mage: "Arcane Spirit", druid: "Nature Spirit", priest: "Guardian Spirit"], prompt: "Choose Your Class") %>
-    </label>
-  </p>
-
-  <p>
-    <%= submit "Submit" %>
-  </p>
+  <%= submit "Submit", class: "button-primary" %>
 <% end %>
-
-<%= link "Back", to: "/" %>

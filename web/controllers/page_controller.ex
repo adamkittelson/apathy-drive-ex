@@ -42,8 +42,7 @@ defmodule ApathyDrive.PageController do
       Repo.update(changeset)
 
       conn
-      |> put_flash(:info, "Your spirit has been created!")
-      |> redirect(to: "/")
+      |> redirect(to: game_path(conn, :game))
     else
       render conn, "edit.html", changeset: changeset
     end

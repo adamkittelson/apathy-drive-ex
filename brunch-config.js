@@ -5,8 +5,7 @@ exports.config = {
       joinTo: 'js/app.js',
       order: {
         before: [
-          'web/static/vendor/js/jquery-1.10.2.min.js',
-          'web/static/vendor/js/bootstrap.min.js'
+          'web/static/vendor/js/jquery-1.10.2.min.js'
         ]
       }
 
@@ -15,9 +14,8 @@ exports.config = {
       joinTo: 'css/app.css',
       order: {
         before: [
-          'web/static/vendor/css/bootstrap.min.css',
-          'web/static/vendor/css/bootstrap-theme.min.css',
-          'web/static/vendor/css/sticky_footer.css'
+          'web/static/vendor/css/normalize.css',
+          'web/static/vendor/css/skeleton.css'
         ]
       }
     },

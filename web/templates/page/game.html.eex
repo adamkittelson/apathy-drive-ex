@@ -1,32 +1,7 @@
-<!-- Wrap all page content here -->
-<div id="wrap">
-
-  <!-- Begin page content -->
-  <div id="main" class="container">
-    <div id="room" class="room">
-      <div class="title"></div>
-      <div class="description"></div>
-      <div class="items"></div>
-      <div class="entities"></div>
-      <div class="exits"></div>
-    </div>
-
-    <div id="scroll_container" class="container">
-      <div id="scroll">
-      </div>
-    </div>
-  </div>
+<div id="scroll">
 </div>
-<div id="spirit_id"><%= @current_spirit %></div>
-<div id="footer">
-  <div class="container">
-  </div>
-</div>
+<script>var spiritID = <%= @current_spirit %></script>
 
-
-<!-- Bootstrap core JavaScript
-================================================== -->
-<!-- Placed at the end of the document so the pages load faster -->
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script>require("web/static/js/app")</script>
 

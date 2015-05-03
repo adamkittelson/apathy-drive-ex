@@ -28,13 +28,9 @@ $(function() {
   };
   adjustScrollTop();
 
-  var spirit_id;
-
-  spirit_id = parseInt($("#spirit_id").text());
-
   socket = new Phoenix.Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
   socket.connect();
-  socket.join("mud", {spirit: spirit_id}).receive("ok", function(chan){
+  socket.join("mud", {spirit: spiritID}).receive("ok", function(chan){
 
     chan.on("room", function(message){
       updateRoom(message.html);
