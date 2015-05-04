@@ -133,10 +133,30 @@ defmodule MonsterTemplate do
               |> Map.put(:mana, monster_template.max_mana)
               |> Map.put(:effects, %{"monster_template" => monster_template.effects})
 
+    monster =
+      case room.lair_faction do
+        "Demon" ->
+          monster
+          |> Map.put(:alignment,     "evil")
+          |> Map.put(:disposition, "lawful")
+        "Angel" ->
+          monster
+          |> Map.put(:alignment,     "good")
+          |> Map.put(:disposition, "lawful")
+        "Elemental" ->
+          monster
+          |> Map.put(:alignment,  "neutral")
+          |> Map.put(:disposition, "lawful")
+        _ ->
+          monster
+      end
+
     monster = monster
               |> Map.put(:mana, Monster.max_mana(monster))
               |> Map.put(:keywords, String.split(monster.name))
               |> Monster.insert
+
+
 
     worker_id = :"monster_#{monster.id}"
 

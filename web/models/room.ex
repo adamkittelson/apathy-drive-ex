@@ -516,8 +516,14 @@ defmodule Room do
 
   def handle_info({:capture, monster: monster, faction: faction}, %Room{lair_faction: _lair_faction} = room) do
     if all_monsters_belong_to_faction?(room, faction) do
+      room =
+        room
+        |> Map.put(:lair_faction, faction)
+        |> Repo.update
+
       send(monster, {:scroll, "<p>You capture the lair for your faction!</p>"})
-      {:noreply, Map.put(room, :lair_faction, faction)}
+
+      {:noreply, room}
     else
       send(monster, {:scroll, "<p>You must first clear the room of adversaries.</p>"})
       {:noreply, room}
