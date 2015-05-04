@@ -961,19 +961,18 @@ code {
 
 /* line 98, stdin */
 #scroll {
-  overflow: hidden;
   height: 100%;
   white-space: pre-wrap;
   font-family: "Inconsolata", "Andale Mono", Monospace;
   color: silver;
   line-height: 9px; }
 
-/* line 107, stdin */
+/* line 106, stdin */
 #scroll p {
   line-height: 19px;
   margin-bottom: 0px; }
 
-/* line 111, stdin */
+/* line 110, stdin */
 input.prompt {
   background-color: black;
   border: none;
@@ -983,16 +982,16 @@ input.prompt {
   display: inline;
   margin-bottom: 0px; }
 
-/* line 120, stdin */
+/* line 119, stdin */
 .prompt::selection {
   background-color: #0000aa;
   color: white; }
 
-/* line 124, stdin */
+/* line 123, stdin */
 .prompt:disabled {
   color: olive; }
 
-/* line 127, stdin */
+/* line 126, stdin */
 #prompt {
   color: silver;
   margin-right: 5px; }

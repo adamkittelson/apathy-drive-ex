@@ -363,7 +363,6 @@ defmodule Monster do
 
     monster
     |> Map.put(:room_id, room_id)
-    |> Systems.Effect.add(%{"cooldown" => :ai_movement}, 30)
   end
 
   def effect_description(%Monster{effects: effects}) do
@@ -410,6 +409,9 @@ defmodule Monster do
     base_skill(monster, skill_name) + effect_bonus(monster, skill_name)
   end
 
+  def send_scroll(monster, html) when is_pid(monster) do
+    send(monster, {:scroll, html})
+  end
   def send_scroll(%Monster{spirit: %Spirit{socket: socket}} = monster, html) do
     Phoenix.Channel.push socket, "scroll", %{:html => html}
     monster
@@ -1143,6 +1145,10 @@ defmodule Monster do
   def handle_info({:evil, name, message}, monster) do
     Monster.send_scroll(monster, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
     {:noreply, monster}
+  end
+  
+  def handle_info({:scroll, html}, monster) do
+    {:noreply, send_scroll(monster, html)}
   end
 
   def handle_info(_message, monster) do

@@ -32,6 +32,10 @@ defmodule ApathyDrive.MUD do
     {:noreply, Phoenix.Socket.assign(socket, :entity, entity)}
   end
 
+  def handle_in("command", %{}, socket) do
+    handle_in("command", "l", socket)
+  end
+
   def handle_in("command", "", socket) do
     handle_in("command", "l", socket)
   end

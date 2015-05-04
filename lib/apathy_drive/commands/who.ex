@@ -4,7 +4,7 @@ defmodule Commands.Who do
   def keywords, do: ["who"]
 
   def execute(%Spirit{} = spirit, _arguments) do
-    Spirit.send_scroll(spirit, "<p><span class='dark-cyan'>Name                Faction               Possessing</span>")
+    Spirit.send_scroll(spirit, "<p><span class='dark-cyan'>Name                Faction               Possessing</span></p>")
     Spirit.send_scroll(spirit, "<p><span class='dark-green'>==============================================================</span></p>")
 
     ApathyDrive.WhoList.list
@@ -15,7 +15,7 @@ defmodule Commands.Who do
   end
 
   def execute(%Monster{} = monster, _arguments) do
-    Monster.send_scroll(monster, "<p><span class='dark-cyan'>Name                Faction             Possessing</span>")
+    Monster.send_scroll(monster, "<p><span class='dark-cyan'>Name                Faction             Possessing</span></p>")
     Monster.send_scroll(monster, "<p><span class='dark-green'>============================================================</span></p>")
 
     ApathyDrive.WhoList.list

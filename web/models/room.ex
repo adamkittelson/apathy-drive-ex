@@ -140,7 +140,7 @@ defmodule Room do
   end
 
   def look(%Room{light: light} = room, %Spirit{} = spirit) do
-    html = ~s(<div class='room'><div class='title'>#{room.name}#{lair_description(room)}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
+    html = ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
 
     Spirit.send_scroll spirit, html
   end
@@ -149,24 +149,24 @@ defmodule Room do
     html = if Monster.blind?(monster) do
       "<p>You are blind.</p>"
     else
-      ~s(<div class='room'><div class='title'>#{room.name}#{lair_description(room)}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
+      ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
     end
 
     Monster.send_scroll(monster, html)
   end
 
-  def lair_description(%Room{lair_monsters: nil}), do: nil
-  def lair_description(%Room{lair_faction: nil}) do
-    "<span class='lair grey'> - unclaimed</span>"
+  def lair_indicator(%Room{lair_monsters: nil}), do: nil
+  def lair_indicator(%Room{lair_faction: nil}) do
+    "<span class='grey'>*</span>"
   end
-  def lair_description(%Room{lair_faction: "Demon"}) do
-    "<span class='lair magenta'> - Demonic</span>"
+  def lair_indicator(%Room{lair_faction: "Demon"}) do
+    "<span class='magenta'>*</span>"
   end
-  def lair_description(%Room{lair_faction: "Angel"}) do
-    "<span class='lair white'> - Angelic</span>"
+  def lair_indicator(%Room{lair_faction: "Angel"}) do
+    "<span class='white'>*</span>"
   end
-  def lair_description(%Room{lair_faction: "Elemental"}) do
-    "<span class='lair dark-cyan'> - Elemental</span>"
+  def lair_indicator(%Room{lair_faction: "Elemental"}) do
+    "<span class='dark-cyan'>*</span>"
   end
 
   def light_desc(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
@@ -289,6 +289,18 @@ defmodule Room do
     |> Enum.reduce(room, fn(key, room) ->
          Systems.Effect.remove(room, key)
        end)
+  end
+
+  def all_monsters_belong_to_faction?(%Room{id: id}, faction) do
+    monster_count = ApathyDrive.PubSub.subscribers("rooms:#{id}:monsters") |> length
+    case faction do
+      "Demon" ->
+        monster_count == ApathyDrive.PubSub.subscribers("rooms:#{id}:monsters:evil") |> length
+      "Angel" ->
+        monster_count == ApathyDrive.PubSub.subscribers("rooms:#{id}:monsters:good") |> length
+      "Elemental" ->
+        monster_count == ApathyDrive.PubSub.subscribers("rooms:#{id}:monsters:neutral") |> length
+    end
   end
 
   # Generate functions from Ecto schema
@@ -489,6 +501,27 @@ defmodule Room do
            |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1)))
 
     {:noreply, room}
+  end
+
+  def handle_info({:capture, monster: monster, faction: _}, %Room{lair_monsters: nil} = room) do
+    send(monster, {:scroll, "<p>This room is not a lair.</p>"})
+    {:noreply, room}
+  end
+
+  def handle_info({:capture, monster: monster, faction: faction}, %Room{lair_faction: lair_faction} = room) when faction == lair_faction do
+    send(monster, {:scroll, "<p>The #{faction}s already control this lair.</p>"})
+
+    {:noreply, room}
+  end
+
+  def handle_info({:capture, monster: monster, faction: faction}, %Room{lair_faction: _lair_faction} = room) do
+    if all_monsters_belong_to_faction?(room, faction) do
+      send(monster, {:scroll, "<p>You capture the lair for your faction!</p>"})
+      {:noreply, Map.put(room, :lair_faction, faction)}
+    else
+      send(monster, {:scroll, "<p>You must first clear the room of adversaries.</p>"})
+      {:noreply, room}
+    end
   end
 
   def handle_info(_message, room) do
