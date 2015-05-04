@@ -76,15 +76,21 @@ html {
 
 .room {
   width: 700px;
-  line-height: 19px; }
-  .room .title {
-    color: cyan; }
-  .room .description {
-    text-indent: 33px; }
-  .room .items {
-    color: teal; }
-  .room .exits {
-    color: green; }
+  line-height: 19px;
+  .title {
+    color: cyan;
+    .lair { font-style: italic; }
+  }
+  .description {
+    text-indent: 33px;
+  }
+  .items {
+    color: teal; 
+  }
+  .exits {
+    color: green; 
+  }
+}
 
 code {
   font-size: 80%; }

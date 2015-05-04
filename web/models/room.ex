@@ -17,6 +17,7 @@ defmodule Room do
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
+    field :lair_faction,          :string
     field :start_room,            :boolean, default: false
     field :exits,                 ApathyDrive.JSONB
     field :commands,              ApathyDrive.JSONB
@@ -139,7 +140,7 @@ defmodule Room do
   end
 
   def look(%Room{light: light} = room, %Spirit{} = spirit) do
-    html = ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
+    html = ~s(<div class='room'><div class='title'>#{room.name}#{lair_description(room)}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
 
     Spirit.send_scroll spirit, html
   end
@@ -148,10 +149,24 @@ defmodule Room do
     html = if Monster.blind?(monster) do
       "<p>You are blind.</p>"
     else
-      ~s(<div class='room'><div class='title'>#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
+      ~s(<div class='room'><div class='title'>#{room.name}#{lair_description(room)}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
     end
 
     Monster.send_scroll(monster, html)
+  end
+
+  def lair_description(%Room{lair_monsters: nil}), do: nil
+  def lair_description(%Room{lair_faction: nil}) do
+    "<span class='lair grey'> - unclaimed</span>"
+  end
+  def lair_description(%Room{lair_faction: "Demon"}) do
+    "<span class='lair magenta'> - Demonic</span>"
+  end
+  def lair_description(%Room{lair_faction: "Angel"}) do
+    "<span class='lair white'> - Angelic</span>"
+  end
+  def lair_description(%Room{lair_faction: "Elemental"}) do
+    "<span class='lair dark-cyan'> - Elemental</span>"
   end
 
   def light_desc(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"

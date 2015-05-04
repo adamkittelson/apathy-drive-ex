@@ -939,28 +939,27 @@ html {
 .room {
   width: 700px;
   line-height: 19px; }
+  /* line 80, stdin */
+  .room .title {
+    color: cyan; }
+    /* line 82, stdin */
+    .room .title .lair {
+      font-style: italic; }
+  /* line 84, stdin */
+  .room .description {
+    text-indent: 33px; }
+  /* line 87, stdin */
+  .room .items {
+    color: teal; }
+  /* line 90, stdin */
+  .room .exits {
+    color: green; }
 
-/* line 80, stdin */
-.room .title {
-  color: cyan; }
-
-/* line 82, stdin */
-.room .description {
-  text-indent: 33px; }
-
-/* line 84, stdin */
-.room .items {
-  color: teal; }
-
-/* line 86, stdin */
-.room .exits {
-  color: green; }
-
-/* line 89, stdin */
+/* line 95, stdin */
 code {
   font-size: 80%; }
 
-/* line 92, stdin */
+/* line 98, stdin */
 #scroll {
   overflow: hidden;
   height: 100%;
@@ -969,12 +968,12 @@ code {
   color: silver;
   line-height: 9px; }
 
-/* line 101, stdin */
+/* line 107, stdin */
 #scroll p {
   line-height: 19px;
   margin-bottom: 0px; }
 
-/* line 105, stdin */
+/* line 111, stdin */
 input.prompt {
   background-color: black;
   border: none;
@@ -984,16 +983,16 @@ input.prompt {
   display: inline;
   margin-bottom: 0px; }
 
-/* line 114, stdin */
+/* line 120, stdin */
 .prompt::selection {
   background-color: #0000aa;
   color: white; }
 
-/* line 118, stdin */
+/* line 124, stdin */
 .prompt:disabled {
   color: olive; }
 
-/* line 121, stdin */
+/* line 127, stdin */
 #prompt {
   color: silver;
   margin-right: 5px; }
