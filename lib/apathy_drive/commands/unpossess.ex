@@ -13,7 +13,8 @@ defmodule Commands.Unpossess do
     ApathyDrive.PubSub.unsubscribe(self, "spirits:online")
     ApathyDrive.PubSub.unsubscribe(self, "spirits:hints")
     ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
-    ApathyDrive.PubSub.unsubscribe(self, "chat:#{spirit.alignment}")
+    ApathyDrive.PubSub.unsubscribe(self, "chat:#{spirit.faction}")
+    ApathyDrive.PubSub.unsubscribe(self, "spirits:#{spirit.faction}")
     ApathyDrive.PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters:#{Monster.monster_alignment(monster)}")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster.alignment}")
 

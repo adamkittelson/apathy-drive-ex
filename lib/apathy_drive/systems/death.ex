@@ -3,6 +3,7 @@ defmodule Systems.Death do
 
   def kill(%Monster{spirit: %Spirit{} = spirit} = monster) do
     ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_died, monster: monster, reward: monster.experience})
+    ApathyDrive.Factions.add_to_bonus_pool(monster.experience)
 
     spirit
     |> Map.put(:room_id, monster.room_id)
@@ -24,6 +25,7 @@ defmodule Systems.Death do
 
   def kill(%Monster{spirit: nil} = monster) do
     ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_died, monster: monster, reward: monster.experience})
+    ApathyDrive.Factions.add_to_bonus_pool(monster.experience)
 
     MonsterTemplate.set_last_killed_at(monster)
 

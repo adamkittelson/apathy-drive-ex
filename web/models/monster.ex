@@ -687,8 +687,9 @@ defmodule Monster do
 
     PubSub.subscribe(self, "spirits:online")
     PubSub.subscribe(self, "spirits:hints")
+    PubSub.subscribe(self, "spirits:#{spirit.faction}")
     PubSub.subscribe(self, "chat:gossip")
-    PubSub.subscribe(self, "chat:#{spirit.alignment}")
+    PubSub.subscribe(self, "chat:#{spirit.faction}")
 
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters:#{monster.alignment}")
     PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster_alignment(monster)}")
@@ -1009,6 +1010,22 @@ defmodule Monster do
     end
   end
 
+  def handle_info({:lair_control_reward, count}, %Monster{spirit: %Spirit{} = spirit} = monster) do
+    send_scroll(monster, "<p>You control #{count} lairs.</p>")
+
+    spirit = Spirit.add_experience(spirit, count * spirit.level)
+
+    {:noreply, Map.put(monster, :spirit, spirit)}
+  end
+
+  def handle_info({:lair_control_victory_reward, exp}, %Monster{spirit: %Spirit{} = spirit} = monster) do
+    send_scroll(monster, "<p>Your faction is in the lead!</p>")
+
+    spirit = Spirit.add_experience(spirit, exp)
+
+    {:noreply, Map.put(monster, :spirit, spirit)}
+  end
+
   def handle_info({:execute_room_ability, ability}, monster) do
     ability = Map.put(ability, :global_cooldown, nil)
 
@@ -1146,7 +1163,7 @@ defmodule Monster do
     Monster.send_scroll(monster, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
-  
+
   def handle_info({:scroll, html}, monster) do
     {:noreply, send_scroll(monster, html)}
   end

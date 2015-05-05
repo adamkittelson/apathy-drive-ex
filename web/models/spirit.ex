@@ -35,8 +35,9 @@ defmodule Spirit do
 
     PubSub.subscribe(self, "spirits:online")
     PubSub.subscribe(self, "spirits:hints")
+    PubSub.subscribe(self, "spirits:#{spirit.faction}")
     PubSub.subscribe(self, "chat:gossip")
-    PubSub.subscribe(self, "chat:#{spirit.alignment}")
+    PubSub.subscribe(self, "chat:#{spirit.faction}")
     PubSub.subscribe(self, "rooms:#{spirit.room_id}")
 
     {:ok, Map.put(spirit, :pid, self)}
@@ -442,6 +443,24 @@ defmodule Spirit do
   def handle_info(:go_away, spirit) do
     save(spirit)
     Process.exit(self, :normal)
+    {:noreply, spirit}
+  end
+
+  def handle_info({:lair_control_reward, count}, spirit) do
+    spirit =
+      spirit
+      |> send_scroll("<p>You control #{count} lairs.</p>")
+      |> add_experience(count * spirit.level)
+
+    {:noreply, spirit}
+  end
+
+  def handle_info({:lair_control_victory_reward, exp}, spirit) do
+    spirit =
+      spirit
+      |> send_scroll("<p>Your faction is in the lead!</p>")
+      |> add_experience(exp)
+
     {:noreply, spirit}
   end
 
