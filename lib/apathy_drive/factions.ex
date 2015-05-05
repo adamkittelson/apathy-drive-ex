@@ -8,7 +8,7 @@ defmodule ApathyDrive.Factions do
 
   def init(state) do
     state = state
-            |> TimerManager.call_every({:reward, 60_000, fn -> send(self, :reward_factions) end})
+            |> TimerManager.call_every({:reward, 3600000, fn -> send(self, :reward_factions) end})
 
     {:ok, state}
   end
