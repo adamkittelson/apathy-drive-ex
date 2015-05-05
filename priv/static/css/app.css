@@ -965,14 +965,15 @@ code {
   white-space: pre-wrap;
   font-family: "Inconsolata", "Andale Mono", Monospace;
   color: silver;
-  line-height: 9px; }
+  line-height: 9px;
+  padding-bottom: 1em; }
 
-/* line 106, stdin */
+/* line 107, stdin */
 #scroll p {
   line-height: 19px;
   margin-bottom: 0px; }
 
-/* line 110, stdin */
+/* line 111, stdin */
 input.prompt {
   background-color: black;
   border: none;
@@ -982,16 +983,16 @@ input.prompt {
   display: inline;
   margin-bottom: 0px; }
 
-/* line 119, stdin */
+/* line 120, stdin */
 .prompt::selection {
   background-color: #0000aa;
   color: white; }
 
-/* line 123, stdin */
+/* line 124, stdin */
 .prompt:disabled {
   color: olive; }
 
-/* line 126, stdin */
+/* line 127, stdin */
 #prompt {
   color: silver;
   margin-right: 5px; }

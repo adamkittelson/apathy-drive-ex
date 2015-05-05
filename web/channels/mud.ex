@@ -2,8 +2,6 @@ defmodule ApathyDrive.MUD do
   use Phoenix.Channel
 
   def join("mud", %{"spirit" => id}, socket) do
-    Process.flag(:trap_exit, true)
-
     send(self, {:login, id})
 
     {:ok, socket}
@@ -56,6 +54,7 @@ defmodule ApathyDrive.MUD do
   end
 
   def terminate(_reason, socket) do
+    # {:shutdown, :left} and {:shutdown, :closed}
     case socket.assigns[:entity] do
       %Spirit{} = spirit ->
         Spirit.logout(spirit)
