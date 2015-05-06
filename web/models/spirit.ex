@@ -420,22 +420,22 @@ defmodule Spirit do
   end
 
   def handle_info({:gossip, name, message}, spirit) do
-    Spirit.send_scroll(spirit, "<p>[<span class='dark-magenta'>Gossip</span> : #{name}] #{message}</p>")
+    Spirit.send_scroll(spirit, "<p>[<span class='dark-magenta'>gossip</span> : #{name}] #{message}</p>")
     {:noreply, spirit}
   end
 
-  def handle_info({:good, name, message}, spirit) do
-    Spirit.send_scroll(spirit, "<p>[<span class='white'>Good</span> : #{name}] #{message}</p>")
+  def handle_info({:angel, name, message}, spirit) do
+    Spirit.send_scroll(spirit, "<p>[<span class='white'>angel</span> : #{name}] #{message}</p>")
     {:noreply, spirit}
   end
 
-  def handle_info({:neutral, name, message}, spirit) do
-    Spirit.send_scroll(spirit, "<p>[<span class='dark-cyan'>Neutral</span> : #{name}] #{message}</p>")
+  def handle_info({:elemental, name, message}, spirit) do
+    Spirit.send_scroll(spirit, "<p>[<span class='dark-cyan'>elemental</span> : #{name}] #{message}</p>")
     {:noreply, spirit}
   end
 
-  def handle_info({:evil, name, message}, spirit) do
-    Spirit.send_scroll(spirit, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
+  def handle_info({:demon, name, message}, spirit) do
+    Spirit.send_scroll(spirit, "<p>[<span class='magenta'>demon</span> : #{name}] #{message}</p>")
     {:noreply, spirit}
   end
 

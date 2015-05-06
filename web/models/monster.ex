@@ -1145,22 +1145,22 @@ defmodule Monster do
   end
 
   def handle_info({:gossip, name, message}, monster) do
-    Monster.send_scroll(monster, "<p>[<span class='dark-magenta'>Gossip</span> : #{name}] #{message}</p>")
+    Monster.send_scroll(monster, "<p>[<span class='dark-magenta'>gossip</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
-  def handle_info({:good, name, message}, monster) do
-    Monster.send_scroll(monster, "<p>[<span class='white'>Good</span> : #{name}] #{message}</p>")
+  def handle_info({:angel, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='white'>angel</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
-  def handle_info({:neutral, name, message}, monster) do
-    Monster.send_scroll(monster, "<p>[<span class='dark-cyan'>Neutral</span> : #{name}] #{message}</p>")
+  def handle_info({:elemental, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='dark-cyan'>elemental</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
-  def handle_info({:evil, name, message}, monster) do
-    Monster.send_scroll(monster, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
+  def handle_info({:demon, name, message}, monster) do
+    Monster.send_scroll(monster, "<p>[<span class='magenta'>demon</span> : #{name}] #{message}</p>")
     {:noreply, monster}
   end
 
