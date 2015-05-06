@@ -87,9 +87,7 @@ defmodule ApathyDrive.Factions do
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %{timers: timers} = state) do
-    jitter = trunc(time / 2) + :random.uniform(time)
-
-    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
+    new_ref = :erlang.start_timer(time, self, {name, time, function})
 
     timers = Map.put(timers, name, new_ref)
 
