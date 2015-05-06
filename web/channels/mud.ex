@@ -55,8 +55,7 @@ defmodule ApathyDrive.MUD do
     {:noreply, socket}
   end
 
-  def terminate(_reason, socket) do
-    # {:shutdown, :left} and {:shutdown, :closed}
+  def terminate(reason, socket) do
     case socket.assigns[:entity] do
       %Spirit{} = spirit ->
         ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}

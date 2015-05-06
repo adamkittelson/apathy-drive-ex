@@ -23,7 +23,8 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:phoenix,             "~> 0.12.0"},
+      {:phoenix,             github: "phoenixframework/phoenix", ref: "c12939a6bb2da6880ff93c41689edfbac726339f", override: true},
+      {:phoenix_html,        github: "phoenixframework/phoenix_html", ref: "f4fc4c74c242ce821ae194cbabe9bccbfaacebb5", override: true},
       {:phoenix_live_reload, "~> 0.3.3"},
       {:ecto,                "~> 0.11.0"},
       {:decimal,             "~> 1.1.0"},
