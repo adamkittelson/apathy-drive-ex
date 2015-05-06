@@ -1,7 +1,7 @@
 defmodule ApathyDrive.AI do
 
   def think(%Monster{} = monster) do
-    heal(monster) || bless(monster) || attack(monster) || move(monster) || monster
+    heal(monster) || bless(monster) || attack(monster) || monster
   end
 
   def heal(%Monster{hp: hp, max_hp: max_hp, spirit: nil} = monster) do

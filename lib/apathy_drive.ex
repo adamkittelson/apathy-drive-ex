@@ -10,7 +10,8 @@ defmodule ApathyDrive do
       worker(ApathyDrive.Endpoint, []),
       worker(ApathyDrive.Repo, []),
       worker(ApathyDrive.Ticks, [%{timers: %{}}]),
-      worker(ApathyDrive.WhoList, [])
+      worker(ApathyDrive.WhoList, []),
+      worker(ApathyDrive.Factions, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

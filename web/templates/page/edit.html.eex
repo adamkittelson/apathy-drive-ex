@@ -16,23 +16,12 @@
 
   <div class="row">
     <div class="four columns">
-      <%= if f.errors[:alignment] do %>
-        <label for="alignment" class="error">Alignment <%= f.errors[:alignment]%></label>
+      <%= if f.errors[:faction] do %>
+        <label for="faction" class="error">Faction <%= f.errors[:faction]%></label>
       <% else %>
-        <label for="alignment">Alignment</label>
+        <label for="faction">Faction</label>
       <% end %>
-      <%= select(f, :alignment, [good: "Good", neutral: "Neutral", evil: "Evil"], prompt: "Choose Your Alignment", class: "u-full-width") %>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="four columns">
-      <%= if f.errors[:school] do %>
-        <label for="school" class="error">Class <%= f.errors[:school]%></label>
-      <% else %>
-        <label for="school">Class</label>
-      <% end %>
-      <%= select(f, :school, [mage: "Mage", druid: "Druid", priest: "Priest"], prompt: "Choose Your Class", class: "u-full-width") %>
+      <%= select(f, :faction, ["Angel", "Demon", "Elemental"], prompt: "Choose Your Faction", class: "u-full-width") %>
     </div>
   </div>
 

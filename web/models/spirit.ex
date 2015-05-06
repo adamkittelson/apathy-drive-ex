@@ -17,7 +17,7 @@ defmodule Spirit do
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
-    field :school,            :string
+    field :faction,           :string
     field :socket,            :any, virtual: true
     field :socket_pid,        :any, virtual: true
     field :pid,               :any, virtual: true
@@ -35,8 +35,9 @@ defmodule Spirit do
 
     PubSub.subscribe(self, "spirits:online")
     PubSub.subscribe(self, "spirits:hints")
+    PubSub.subscribe(self, "spirits:#{spirit.faction}")
     PubSub.subscribe(self, "chat:gossip")
-    PubSub.subscribe(self, "chat:#{spirit.alignment}")
+    PubSub.subscribe(self, "chat:#{spirit.faction}")
     PubSub.subscribe(self, "rooms:#{spirit.room_id}")
 
     {:ok, Map.put(spirit, :pid, self)}
@@ -50,9 +51,9 @@ defmodule Spirit do
   """
   def changeset(spirit, params \\ nil) do
     spirit
-    |> cast(params, ~w(name alignment school), ~w())
+    |> cast(params, ~w(name faction alignment), ~w())
+    |> validate_inclusion(:faction,   ["Angel", "Demon", "Elemental"])
     |> validate_inclusion(:alignment, ["good", "neutral", "evil"])
-    |> validate_inclusion(:school, ["mage", "priest", "druid"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> validate_unique(:name, on: Repo)
     |> validate_length(:name, min: 1, max: 18)
@@ -162,7 +163,6 @@ defmodule Spirit do
 
   def add_experience(%Spirit{} = spirit, exp) do
     spirit = spirit
-             |> send_scroll("<p>You gain #{exp} experience.</p>")
              |> Map.put(:experience, spirit.experience + exp)
              |> Systems.Level.advance
              |> Spirit.save
@@ -442,6 +442,17 @@ defmodule Spirit do
   def handle_info(:go_away, spirit) do
     save(spirit)
     Process.exit(self, :normal)
+    {:noreply, spirit}
+  end
+
+  def handle_info({:lair_control_reward, count, bonus}, spirit) do
+    exp = count * spirit.level + bonus
+
+    spirit =
+      spirit
+      |> Spirit.add_experience(exp)
+      |> send_scroll("<p>You gain #{exp} bonus experience!<br><br></p>")
+
     {:noreply, spirit}
   end
 

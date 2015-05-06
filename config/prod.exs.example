@@ -4,6 +4,7 @@ config :apathy_drive, ApathyDrive.Endpoint,
   url: [host: System.get_env("HOST")],
   http: [port: System.get_env("PORT")],
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
+  cache_static_manifest: "priv/static/manifest.json",
   oauth2: {OAuth2.Strategy.AuthCode, [
     site: "https://graph.facebook.com",
     authorize_url: "https://www.facebook.com/dialog/oauth",

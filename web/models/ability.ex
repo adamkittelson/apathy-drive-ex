@@ -10,7 +10,7 @@ defmodule Ability do
     field :kind,            :string
     field :description,     :string
     field :level,           :integer
-    field :school,          :string
+    field :faction,         :string
     field :properties,      ApathyDrive.JSONB
     field :keywords,        {:array, :string}, virtual: true
     field :flags,           {:array, :string}
@@ -27,8 +27,8 @@ defmodule Ability do
     Map.put(ability, :keywords, String.split(name))
   end
 
-  def trainable(%Spirit{level: level, school: school}) do
-    query = from a in Ability, where: a.level <= ^level and a.school == ^school, select: a
+  def trainable(%Spirit{level: level, faction: faction}) do
+    query = from a in Ability, where: a.level <= ^level and a.faction == ^faction, select: a
     Repo.all(query)
   end
 

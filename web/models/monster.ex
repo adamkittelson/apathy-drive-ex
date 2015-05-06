@@ -363,7 +363,6 @@ defmodule Monster do
 
     monster
     |> Map.put(:room_id, room_id)
-    |> Systems.Effect.add(%{"cooldown" => :ai_movement}, 30)
   end
 
   def effect_description(%Monster{effects: effects}) do
@@ -410,6 +409,9 @@ defmodule Monster do
     base_skill(monster, skill_name) + effect_bonus(monster, skill_name)
   end
 
+  def send_scroll(monster, html) when is_pid(monster) do
+    send(monster, {:scroll, html})
+  end
   def send_scroll(%Monster{spirit: %Spirit{socket: socket}} = monster, html) do
     Phoenix.Channel.push socket, "scroll", %{:html => html}
     monster
@@ -685,8 +687,9 @@ defmodule Monster do
 
     PubSub.subscribe(self, "spirits:online")
     PubSub.subscribe(self, "spirits:hints")
+    PubSub.subscribe(self, "spirits:#{spirit.faction}")
     PubSub.subscribe(self, "chat:gossip")
-    PubSub.subscribe(self, "chat:#{spirit.alignment}")
+    PubSub.subscribe(self, "chat:#{spirit.faction}")
 
     PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters:#{monster.alignment}")
     PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster_alignment(monster)}")
@@ -991,7 +994,11 @@ defmodule Monster do
 
     send_scroll(monster, "<p>#{message}</p>")
 
-    new_spirit = Spirit.add_experience(spirit, exp)
+    new_spirit =
+      spirit
+      |> Spirit.add_experience(exp)
+
+      Monster.send_scroll(monster, "<p>You gain #{exp} experience.</p>")
 
     if new_spirit.level > spirit.level do
       monster = monster
@@ -1005,6 +1012,18 @@ defmodule Monster do
 
       {:noreply, monster}
     end
+  end
+
+  def handle_info({:lair_control_reward, count, bonus}, %Monster{spirit: %Spirit{} = spirit} = monster) do
+    exp = count * spirit.level + bonus
+
+    spirit =
+      spirit
+      |> Spirit.add_experience(exp)
+
+      Monster.send_scroll(monster, "<p>You gain #{exp} bonus experience!<br><br></p>")
+
+    {:noreply, Map.put(monster, :spirit, spirit)}
   end
 
   def handle_info({:execute_room_ability, ability}, monster) do
@@ -1143,6 +1162,10 @@ defmodule Monster do
   def handle_info({:evil, name, message}, monster) do
     Monster.send_scroll(monster, "<p>[<span class='magenta'>Evil</span> : #{name}] #{message}</p>")
     {:noreply, monster}
+  end
+
+  def handle_info({:scroll, html}, monster) do
+    {:noreply, send_scroll(monster, html)}
   end
 
   def handle_info(_message, monster) do

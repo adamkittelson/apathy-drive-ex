@@ -23,9 +23,9 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:phoenix,             "~> 0.11.0"},
-      {:phoenix_live_reload, "~> 0.3"},
-      {:ecto,                "~> 0.10"},
+      {:phoenix,             "~> 0.12.0"},
+      {:phoenix_live_reload, "~> 0.3.3"},
+      {:ecto,                "~> 0.11.0"},
       {:decimal,             "~> 1.1.0"},
       {:postgrex,            "~> 0.8.0"},
       {:timex,               "~> 0.13.4"},

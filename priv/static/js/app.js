@@ -3166,12 +3166,21 @@ $(function () {
     return $("#scroll").html("");
   };
   adjustScrollTop = function () {
-    $("#scroll_container").css("top", $("#room").height() + 10 + "px");
-    return $("#scroll").scrollTop($("#scroll")[0].scrollHeight);
+    if ($(window).scrollTop() + $(window).height() > $(document).height() - 250) {
+      console.log("close to bottom!");
+      return window.scrollTo(0, $("#scroll")[0].scrollHeight);
+    } else {
+      console.log("not close to bottom!");
+    }
   };
   setFocus = function (selector) {
     focus = selector;
-    return $(selector).focus();
+    selector = $(selector);
+    var x = window.scrollX,
+        y = window.scrollY;
+    selector.focus();
+    window.scrollTo(x, y);
+    return selector;
   };
   adjustScrollTop();
 
@@ -3221,7 +3230,7 @@ $(function () {
     $(elem).append(text);
     $(elem).append($("#prompt").parent().detach());
     setFocus(focus);
-    return $("#scroll").scrollTop($("#scroll")[0].scrollHeight);
+    return adjustScrollTop();
   };
   focusNext = function (elem) {
     var field, fields;
@@ -3271,6 +3280,7 @@ $(function () {
     if (event.which === 13 || event.which === 9 && !event.shiftKey) {
       history_marker = null;
       command = $(event.target).val();
+      console.log("sending command: " + command);
       return push(event.target.id, command);
     } else if (event.which === 38) {
       return command_history("up");

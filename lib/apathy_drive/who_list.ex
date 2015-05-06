@@ -3,15 +3,15 @@ defmodule ApathyDrive.WhoList do
     Agent.start_link(fn -> %{} end, name: __MODULE__)
   end
 
-  def log_on(%Spirit{name: name, alignment: alignment, pid: pid, school: school}) do
+  def log_on(%Spirit{name: name, alignment: alignment, pid: pid, faction: faction}) do
     :ok = Agent.cast(__MODULE__, fn(state) ->
-      Map.put(state, pid, %{alignment: alignment, name: name, possessing: "", school: school})
+      Map.put(state, pid, %{alignment: alignment, name: name, possessing: "", faction: faction})
     end)
   end
 
-  def log_on(%Monster{pid: pid, name: monster_name, spirit: %Spirit{name: name, alignment: alignment, school: school}}) do
+  def log_on(%Monster{pid: pid, name: monster_name, spirit: %Spirit{name: name, alignment: alignment, faction: faction}}) do
     :ok = Agent.cast(__MODULE__, fn(state) ->
-      Map.put(state, pid, %{alignment: alignment, name: name, possessing: monster_name, school: school})
+      Map.put(state, pid, %{alignment: alignment, name: name, possessing: monster_name, faction: faction})
     end)
   end
 
