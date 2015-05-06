@@ -121,3 +121,6 @@ CHANGELOG
 
 ---- 0.0.40 / 2015-05-02 / boss-monster-regen-times ----------------------------
 * monsters can be set to not respawn for a period of time after being killed
+
+---- 0.0.41 / 2015-05-05 / factions --------------------------------------------
+* lairs can be captured, hourly exp bonuses rewarded based on lair control
