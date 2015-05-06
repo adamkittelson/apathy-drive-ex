@@ -994,7 +994,11 @@ defmodule Monster do
 
     send_scroll(monster, "<p>#{message}</p>")
 
-    new_spirit = Spirit.add_experience(spirit, exp)
+    new_spirit =
+      spirit
+      |> Spirit.add_experience(exp)
+
+      Monster.send_scroll(monster, "<p>You gain #{exp} experience.</p>")
 
     if new_spirit.level > spirit.level do
       monster = monster
@@ -1010,18 +1014,14 @@ defmodule Monster do
     end
   end
 
-  def handle_info({:lair_control_reward, count}, %Monster{spirit: %Spirit{} = spirit} = monster) do
-    send_scroll(monster, "<p>You control #{count} lairs.</p>")
+  def handle_info({:lair_control_reward, count, bonus}, %Monster{spirit: %Spirit{} = spirit} = monster) do
+    exp = count * spirit.level + bonus
 
-    spirit = Spirit.add_experience(spirit, count * spirit.level)
+    spirit =
+      spirit
+      |> Spirit.add_experience(exp)
 
-    {:noreply, Map.put(monster, :spirit, spirit)}
-  end
-
-  def handle_info({:lair_control_victory_reward, exp}, %Monster{spirit: %Spirit{} = spirit} = monster) do
-    send_scroll(monster, "<p>Your faction is in the lead!</p>")
-
-    spirit = Spirit.add_experience(spirit, exp)
+      Monster.send_scroll(monster, "<p>You gain #{exp} bonus experience!<br><br></p>")
 
     {:noreply, Map.put(monster, :spirit, spirit)}
   end

@@ -163,7 +163,6 @@ defmodule Spirit do
 
   def add_experience(%Spirit{} = spirit, exp) do
     spirit = spirit
-             |> send_scroll("<p>You gain #{exp} experience.</p>")
              |> Map.put(:experience, spirit.experience + exp)
              |> Systems.Level.advance
              |> Spirit.save
@@ -446,20 +445,13 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info({:lair_control_reward, count}, spirit) do
+  def handle_info({:lair_control_reward, count, bonus}, spirit) do
+    exp = count * spirit.level + bonus
+
     spirit =
       spirit
-      |> send_scroll("<p>You control #{count} lairs.</p>")
-      |> add_experience(count * spirit.level)
-
-    {:noreply, spirit}
-  end
-
-  def handle_info({:lair_control_victory_reward, exp}, spirit) do
-    spirit =
-      spirit
-      |> send_scroll("<p>Your faction is in the lead!</p>")
-      |> add_experience(exp)
+      |> Spirit.add_experience(exp)
+      |> send_scroll("<p>You gain #{exp} bonus experience!<br><br></p>")
 
     {:noreply, spirit}
   end

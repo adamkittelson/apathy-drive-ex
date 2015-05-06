@@ -17,11 +17,28 @@ defmodule ApathyDrive.Factions do
     GenServer.cast(__MODULE__, {:add_to_bonus_pool, exp})
   end
 
+  def faction_bonus(0, bonus_pool) do
+    div(bonus_pool, 2)
+  end
+  def faction_bonus(1, bonus_pool) do
+    div(bonus_pool, 3)
+  end
+  def faction_bonus(2, bonus_pool) do
+    div(bonus_pool, 6)
+  end
+
   def lair_counts do
-    from(r in Room, where: not is_nil(r.lair_faction),
+    counts =
+      from(r in Room, where: not is_nil(r.lair_faction),
                     group_by: r.lair_faction,
                     select: {r.lair_faction, count(r.id)})
-    |> ApathyDrive.Repo.all
+      |> ApathyDrive.Repo.all
+
+     ["Angel", "Demon", "Elemental"]
+     |> Enum.reduce(%{}, fn(faction, factions) ->
+          {_, count} = Enum.find(counts, {faction, 0}, fn({counted_faction, _}) -> faction == counted_faction end)
+          Map.put(factions, faction, count)
+        end)
   end
 
   def handle_cast({:add_to_bonus_pool, exp}, state) do
@@ -31,26 +48,35 @@ defmodule ApathyDrive.Factions do
   def handle_info(:reward_factions, state) do
     counts = lair_counts
 
-    counts
-    |> Enum.each(fn({faction, count}) ->
-         ApathyDrive.PubSub.broadcast!("spirits:#{faction}", {:lair_control_reward, count})
-       end)
-
-    {winning_faction, _count} =
+    indexed =
       counts
       |> Enum.sort_by(fn({_, count}) -> -count end)
-      |> hd
+      |> Enum.with_index
 
-    winner_count =
-      ApathyDrive.PubSub.subscribers("spirits:#{winning_faction}")
-      |> length
+    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p><br>       <span class='dark-yellow'>War Status</span></p>"}
+    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p><span class='dark-cyan'>Faction          Lairs</span></p>"}
+    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p><span class='dark-green'>======================</span></p>"}
 
-    if winner_count > 0 do
-      ApathyDrive.PubSub.broadcast!("spirits:#{winning_faction}", {:lair_control_victory_reward, div(state.bonus_pool, winner_count)})
-      {:noreply, Map.put(state, :bonus_pool, 0)}
-    else
-      {:noreply, state}
-    end
+    indexed
+    |> Enum.each(fn({{faction, _count}, _index}) ->
+         color = case faction do
+           "Angel" ->
+             "white"
+           "Demon" ->
+              "magenta"
+           "Elemental" ->
+              "dark-cyan"
+         end
+         ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p><span class='#{color}'>#{String.ljust("#{faction}s", 11)}#{String.rjust(inspect(counts[faction]), 11)}</span></p>"}
+       end)
+
+    indexed
+    |> Enum.each(fn({{faction, count}, index}) ->
+         faction_bonus = faction_bonus(index, state.bonus_pool)
+         ApathyDrive.PubSub.broadcast!("spirits:#{faction}", {:lair_control_reward, count, faction_bonus})
+       end)
+
+    {:noreply, Map.put(state, :bonus_pool, 0)}
   end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %{timers: timers} = state) do
