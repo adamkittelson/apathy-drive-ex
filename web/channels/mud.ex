@@ -13,6 +13,8 @@ defmodule ApathyDrive.MUD do
 
       socket = Phoenix.Socket.assign(socket, :entity, spirit)
 
+      ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
+
       room = spirit.room_id
              |> Room.find
              |> Room.value
@@ -57,8 +59,10 @@ defmodule ApathyDrive.MUD do
     # {:shutdown, :left} and {:shutdown, :closed}
     case socket.assigns[:entity] do
       %Spirit{} = spirit ->
+        ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
         Spirit.logout(spirit)
-      %Monster{} = monster ->
+      %Monster{spirit: %Spirit{} = spirit} = monster ->
+        ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
         Monster.execute_command(monster, "unpossess", [])
     end
 
