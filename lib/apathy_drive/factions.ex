@@ -72,8 +72,15 @@ defmodule ApathyDrive.Factions do
 
     indexed
     |> Enum.each(fn({{faction, count}, index}) ->
-         faction_bonus = faction_bonus(index, state.bonus_pool)
-         ApathyDrive.PubSub.broadcast!("spirits:#{faction}", {:lair_control_reward, count, faction_bonus})
+         online_members = length(ApathyDrive.PubSub.subscribers("spirits:#{faction}"))
+         if online_members > 0 do
+           faction_bonus =
+             index
+             |> faction_bonus(state.bonus_pool)
+             |> div(online_members)
+
+           ApathyDrive.PubSub.broadcast!("spirits:#{faction}", {:lair_control_reward, count, faction_bonus})
+         end
        end)
 
     {:noreply, Map.put(state, :bonus_pool, 0)}
