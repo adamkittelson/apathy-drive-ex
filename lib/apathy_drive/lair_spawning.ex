@@ -8,8 +8,6 @@ defmodule ApathyDrive.LairSpawning do
 
         monster = MonsterTemplate.spawn_monster(monster_template, room)
 
-        ApathyDrive.PubSub.subscribe(monster, "rooms:#{room.id}:spawned_monsters")
-
         Monster.display_enter_message(room, monster)
         spawn_lair(room)
       end

@@ -17,7 +17,6 @@ defmodule MonsterTemplate do
     field :adjectives,             {:array, :string}, default: []
     field :skills,                 ApathyDrive.JSONB
     field :chance_to_follow,       :integer
-    field :disposition,            :string
     field :alignment,              :string
     field :level,                  :integer
     field :questions,              ApathyDrive.JSONB
@@ -49,9 +48,12 @@ defmodule MonsterTemplate do
   def load(id) do
     monster_template = Repo.get(MonsterTemplate, id)
 
-    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_template_#{id}", {GenServer, :start_link, [MonsterTemplate, monster_template, [name: {:global, :"monster_template_#{id}"}]]}, :permanent, 5000, :worker, [MonsterTemplate]})
-
-    pid
+    case Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_template_#{id}", {GenServer, :start_link, [MonsterTemplate, monster_template, [name: {:global, :"monster_template_#{id}"}]]}, :permanent, 5000, :worker, [MonsterTemplate]}) do
+      {:error, {:already_started, pid}} ->
+        pid
+      {:ok, pid} ->
+        pid
+    end
   end
 
   def spawn_monster(monster_template_id, room) when is_integer(monster_template_id) do
@@ -137,16 +139,16 @@ defmodule MonsterTemplate do
       case room.lair_faction do
         "Demon" ->
           monster
-          |> Map.put(:alignment,     "evil")
-          |> Map.put(:disposition, "lawful")
+          |> Map.put(:alignment, "evil")
+          |> Map.put(:touched?,  true)
         "Angel" ->
           monster
-          |> Map.put(:alignment,     "good")
-          |> Map.put(:disposition, "lawful")
+          |> Map.put(:alignment, "good")
+          |> Map.put(:touched?,  true)
         "Elemental" ->
           monster
-          |> Map.put(:alignment,  "neutral")
-          |> Map.put(:disposition, "lawful")
+          |> Map.put(:alignment, "neutral")
+          |> Map.put(:touched?,  true)
         _ ->
           monster
       end
@@ -160,7 +162,12 @@ defmodule MonsterTemplate do
 
     worker_id = :"monster_#{monster.id}"
 
-    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
+    pid = case Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]}) do
+      {:error, {:already_started, pid}} ->
+        pid
+      {:ok, pid} ->
+        pid
+    end
 
     {:reply, pid, monster_template}
   end

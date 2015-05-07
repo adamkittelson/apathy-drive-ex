@@ -38,7 +38,6 @@ defmodule Room do
 
     room = if room.lair_monsters do
       PubSub.subscribe(self, "rooms:lairs")
-      send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)})
       TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)}) end})
     else
       room
@@ -78,9 +77,15 @@ defmodule Room do
     case Repo.get(Room, id) do
       %Room{} = room ->
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
-
-        pid
+        case Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]}) do
+          {:error, {:already_started, pid}} ->
+            pid
+          {:ok, pid} ->
+            # Hack to give the newly spawned pid a chance to handle messages in its mailbox before returning it
+            # e.g. load monsters etc
+            :timer.sleep(50)
+            pid
+        end
       nil ->
         nil
     end
@@ -185,8 +190,8 @@ defmodule Room do
     end
   end
 
-  def look_monsters(%Room{}, %Monster{} = monster) do
-    monsters = monsters(monster)
+  def look_monsters(%Room{} = room, %Monster{} = monster) do
+    monsters = monsters(room, monster.pid)
                |> Enum.map(&Monster.value/1)
                |> Enum.map(&Monster.look_name/1)
                |> Enum.join("<span class='magenta'>, </span>")
@@ -346,14 +351,22 @@ defmodule Room do
   end
 
   def handle_info(:load_monsters, room) do
-    query = from m in assoc(room, :monsters), select: m.id
+    this = self
 
-    query
-    |> ApathyDrive.Repo.all
-    |> Enum.each(fn(monster_id) ->
-         Monster.find(monster_id)
-       end)
+    Task.start fn ->
+      query = from m in assoc(room, :monsters), select: m.id
 
+      query
+      |> ApathyDrive.Repo.all
+      |> Enum.each(fn(monster_id) ->
+           Monster.find(monster_id)
+         end)
+
+      if room.lair_monsters do
+        send(this, {:spawn_monsters, Date.now |> Date.convert(:secs)})
+      end
+
+    end
     {:noreply, room}
   end
 

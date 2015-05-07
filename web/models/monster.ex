@@ -24,7 +24,7 @@ defmodule Monster do
     field :combat,              :any,     virtual: true, default: %{"break_at" => 0}
     field :effects,             :any,     virtual: true, default: %{}
     field :timers,              :any,     virtual: true, default: %{}
-    field :disposition,         :string,  virtual: true
+    field :touched?,            :boolean, virtual: true, default: false
     field :description,         :string,  virtual: true
     field :death_message,       :string,  virtual: true
     field :enter_message,       :string,  virtual: true
@@ -80,6 +80,7 @@ defmodule Monster do
               |> TimerManager.call_every({:monster_ai,       5_000, fn -> send(self, :think) end})
               |> TimerManager.call_every({:monster_regen,   10_000, fn -> send(self, :regen) end})
               |> TimerManager.call_every({:calm_down,       10_000, fn -> send(self, :calm_down) end})
+              |> TimerManager.call_every({:monster_present,  4_000, fn -> send(self, :notify_presence) end})
 
     {:ok, monster}
   end
@@ -338,9 +339,38 @@ defmodule Monster do
                   |> Map.put(:keywords, String.split(monster.name))
                   |> Map.put(:effects, %{"monster_template" => mt.effects})
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
+        monster = if monster.lair_id do
+          room =
+            monster.lair_id
+            |> Room.find
+            |> Room.value
 
-        pid
+          case room.lair_faction do
+            "Demon" ->
+              monster
+              |> Map.put(:alignment, "evil")
+              |> Map.put(:touched?,  true)
+            "Angel" ->
+              monster
+              |> Map.put(:alignment, "good")
+              |> Map.put(:touched?,  true)
+            "Elemental" ->
+              monster
+              |> Map.put(:alignment, "neutral")
+              |> Map.put(:touched?,  true)
+            _ ->
+              monster
+          end
+        else
+          monster
+        end
+
+        case Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]}) do
+          {:error, {:already_started, pid}} ->
+            pid
+          {:ok, pid} ->
+            pid
+        end
       nil ->
         nil
     end
@@ -1115,6 +1145,16 @@ defmodule Monster do
     {:noreply, put_in(monster.hate, hate)}
   end
 
+  def handle_info(:notify_presence, monster) do
+    ApathyDrive.PubSub.broadcast_from! self, "rooms:#{monster.room_id}:monsters", {:monster_present, self, Monster.monster_alignment(monster), monster.lair_id}
+
+    2000
+    |> :random.uniform
+    |> :erlang.send_after(self, :think)
+
+    {:noreply, monster}
+  end
+
   def handle_info(:set_abilities, monster) do
     {:noreply, set_abilities(monster) }
   end
@@ -1125,12 +1165,8 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info({:monster_entered, intruder, intruder_alignment}, monster) do
-    monster = Systems.Aggression.react(%{monster: monster, alignment: monster_alignment(monster)}, %{intruder: intruder, alignment: intruder_alignment})
-
-    2000
-    |> :random.uniform
-    |> :erlang.send_after(self, :think)
+  def handle_info({:monster_present, intruder, intruder_alignment, intruder_lair}, monster) do
+    monster = Systems.Aggression.react(%{monster: monster, alignment: monster_alignment(monster)}, %{intruder: intruder, alignment: intruder_alignment, lair_id: intruder_lair})
 
     {:noreply, monster}
   end

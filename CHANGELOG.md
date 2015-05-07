@@ -124,3 +124,6 @@ CHANGELOG
 
 ---- 0.0.41 / 2015-05-05 / factions --------------------------------------------
 * lairs can be captured, hourly exp bonuses rewarded based on lair control
+
+---- 0.0.42 / 2015-05-06 / remove-disposition ----------------------------------
+* revamp monster aggro
