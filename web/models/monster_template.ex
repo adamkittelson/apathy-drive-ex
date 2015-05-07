@@ -17,7 +17,6 @@ defmodule MonsterTemplate do
     field :adjectives,             {:array, :string}, default: []
     field :skills,                 ApathyDrive.JSONB
     field :chance_to_follow,       :integer
-    field :disposition,            :string
     field :alignment,              :string
     field :level,                  :integer
     field :questions,              ApathyDrive.JSONB
@@ -137,16 +136,16 @@ defmodule MonsterTemplate do
       case room.lair_faction do
         "Demon" ->
           monster
-          |> Map.put(:alignment,     "evil")
-          |> Map.put(:disposition, "lawful")
+          |> Map.put(:alignment, "evil")
+          |> Map.put(:touched?,  true)
         "Angel" ->
           monster
-          |> Map.put(:alignment,     "good")
-          |> Map.put(:disposition, "lawful")
+          |> Map.put(:alignment, "good")
+          |> Map.put(:touched?,  true)
         "Elemental" ->
           monster
-          |> Map.put(:alignment,  "neutral")
-          |> Map.put(:disposition, "lawful")
+          |> Map.put(:alignment, "neutral")
+          |> Map.put(:touched?,  true)
         _ ->
           monster
       end
