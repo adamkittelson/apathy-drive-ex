@@ -365,9 +365,12 @@ defmodule Monster do
           monster
         end
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]})
-
-        pid
+        case Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_#{monster.id}", {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]}) do
+          {:error, {:already_started, pid}} ->
+            pid
+          {:ok, pid} ->
+            pid
+        end
       nil ->
         nil
     end

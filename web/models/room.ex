@@ -77,9 +77,12 @@ defmodule Room do
     case Repo.get(Room, id) do
       %Room{} = room ->
 
-        {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
-
-        pid
+        case Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]}) do
+          {:error, {:already_started, pid}} ->
+            pid
+          {:ok, pid} ->
+            pid
+        end
       nil ->
         nil
     end
