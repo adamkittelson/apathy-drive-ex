@@ -81,6 +81,9 @@ defmodule Room do
           {:error, {:already_started, pid}} ->
             pid
           {:ok, pid} ->
+            # Hack to give the newly spawned pid a chance to handle messages in its mailbox before returning it
+            # e.g. load monsters etc
+            :timer.sleep(50)
             pid
         end
       nil ->
