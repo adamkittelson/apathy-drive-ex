@@ -10,11 +10,20 @@ defmodule Systems.Login do
           |> Map.put(:socket, socket)
           |> Map.put(:socket_pid, socket_pid)
           |> Spirit.login
-        spirit ->
-          spirit
-          |> Spirit.socket(socket)
+        existing_spirit ->
+          spirit =
+            existing_spirit
+            |> Spirit.value
 
-          Spirit.value(spirit)
+          case spirit do
+            %Spirit{socket_pid: old_socket_pid} ->
+              send(old_socket_pid, :go_home)
+              Spirit.update_socket(spirit.pid, socket, socket_pid)
+            %Monster{spirit: %Spirit{socket_pid: old_socket_pid}} ->
+              send(old_socket_pid, :go_home)
+              Monster.update_socket(spirit.pid, socket, socket_pid)
+          end
+
       end
     end
   end

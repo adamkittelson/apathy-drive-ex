@@ -13,7 +13,12 @@ defmodule ApathyDrive.MUD do
 
       socket = Phoenix.Socket.assign(socket, :entity, spirit)
 
-      ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
+      case spirit do
+        %Spirit{} = spirit ->
+          ApathyDrive.Endpoint.broadcast_from! spirit.pid, "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
+        %Monster{} = spirit ->
+          ApathyDrive.Endpoint.broadcast_from! spirit.pid, "spirits:online", "scroll", %{:html => "<p>#{spirit.spirit.name} just entered the Realm.</p>"}
+      end
 
       room = spirit.room_id
              |> Room.find
@@ -21,15 +26,22 @@ defmodule ApathyDrive.MUD do
 
       Room.look(room, spirit)
       Systems.Prompt.display(spirit)
+      {:noreply, socket}
     else
       Phoenix.Channel.push socket, "redirect", %{:url => "/"}
+      {:noreply, socket}
     end
 
-    {:noreply, socket}
   end
 
   def handle_info({:set_entity, entity}, socket) do
     {:noreply, Phoenix.Socket.assign(socket, :entity, entity)}
+  end
+
+  def handle_info(:go_home, socket) do
+    Phoenix.Channel.push socket, "redirect", %{:url => "/"}
+
+    {:noreply, Phoenix.Socket.assign(socket, :entity, nil)}
   end
 
   def handle_in("command", %{}, socket) do
@@ -63,6 +75,8 @@ defmodule ApathyDrive.MUD do
       %Monster{spirit: %Spirit{} = spirit} = monster ->
         ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
         Monster.execute_command(monster, "unpossess", [])
+      nil ->
+        nil
     end
 
     {:noreply, socket}

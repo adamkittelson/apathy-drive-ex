@@ -276,6 +276,10 @@ defmodule Monster do
     GenServer.call(pid, {:execute_command, command, arguments})
   end
 
+  def update_socket(monster_pid, socket, socket_pid) do
+    GenServer.call(monster_pid, {:update_socket, socket, socket_pid})
+  end
+
   def possess(monster, %Spirit{} = spirit) do
     GenServer.call(monster, {:possess, spirit})
   end
@@ -673,6 +677,16 @@ defmodule Monster do
     {:reply, monster, monster}
   end
 
+  def handle_call({:update_socket, socket, socket_pid}, _from, monster) do
+    spirit =
+      monster.spirit
+      |> Map.put(:socket, socket)
+      |> Map.put(:socket_pid, socket_pid)
+
+    monster = Map.put(monster, :spirit, spirit)
+    {:reply, monster, monster}
+  end
+
   def handle_call({:execute_command, command, arguments}, _from, monster) do
     try do
       case ApathyDrive.Command.execute(monster, command, arguments) do
@@ -704,6 +718,8 @@ defmodule Monster do
 
   def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: nil} = monster) do
     send(spirit.pid, :go_away)
+
+    :yes = :global.re_register_name(:"spirit_#{spirit.id}", self)
 
     spirit = Map.put(spirit, :pid, nil)
 

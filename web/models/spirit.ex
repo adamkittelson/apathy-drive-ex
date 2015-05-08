@@ -101,11 +101,17 @@ defmodule Spirit do
   end
 
   def login(%Spirit{} = spirit) do
-    Supervisor.delete_child(ApathyDrive.Supervisor, :"spirit_#{spirit.id}")
-    {:ok, pid} = Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :transient, 5000, :worker, [Spirit]})
-    spirit = Map.put(spirit, :pid, pid)
-    ApathyDrive.WhoList.log_on(spirit)
-    spirit
+    case Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :transient, 5000, :worker, [Spirit]}) do
+      {:ok, pid} ->
+        spirit = Map.put(spirit, :pid, pid)
+        ApathyDrive.WhoList.log_on(spirit)
+        spirit
+      {:error, {:already_started, _}} ->
+        spirit
+      {:error, :already_present} ->
+        Supervisor.delete_child(ApathyDrive.Supervisor, :"spirit_#{spirit.id}")
+        login(spirit)
+    end
   end
 
   def activate_hint(%Spirit{} = spirit, hint) do
@@ -192,6 +198,10 @@ defmodule Spirit do
     GenServer.call(spirit, :room)
   end
 
+  def update_socket(spirit_pid, socket, socket_pid) do
+    GenServer.call(spirit_pid, {:update_socket, socket, socket_pid})
+  end
+
 
   #############
   # Idle
@@ -247,6 +257,14 @@ defmodule Spirit do
 
   def handle_call(:room, _from, spirit) do
     {:reply, Room.find(spirit.room_id), spirit}
+  end
+
+  def handle_call({:update_socket, socket, socket_pid}, _from, spirit) do
+    spirit =
+      spirit
+      |> Map.put(:socket, socket)
+      |> Map.put(:socket_pid, socket_pid)
+    {:reply, spirit, spirit}
   end
 
   def handle_call({:execute_command, command, arguments}, _from, spirit) do

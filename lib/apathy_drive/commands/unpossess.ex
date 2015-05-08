@@ -22,6 +22,8 @@ defmodule Commands.Unpossess do
     |> Map.put(:room_id, monster.room_id)
     |> Spirit.save
 
+    :global.unregister_name(:"spirit_#{spirit.id}")
+
     spirit = Systems.Login.login(spirit.socket, spirit.socket_pid, spirit.id)
 
     spirit
