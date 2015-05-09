@@ -142,6 +142,27 @@ defmodule Monster do
 
     monster
     |> Map.put(:abilities, abilities)
+    |> set_max_mana
+    |> set_mana
+    |> set_mana_regen
+  end
+
+  def set_max_mana(%Monster{abilities: abilities} = monster) do
+    max_mana = Enum.reduce(abilities, 0, fn(ability, max_mana) ->
+      max_mana + Map.get(ability.properties, "mana_cost", 0)
+    end)
+    Map.put(monster, :max_mana, max_mana * 2)
+  end
+
+  def set_mana(%Monster{mana: nil, max_mana: max_mana} = monster) do
+    Map.put(monster, :mana, max_mana)
+  end
+  def set_mana(%Monster{mana: mana, max_mana: max_mana} = monster) do
+    Map.put(monster, :mana, min(mana, max_mana))
+  end
+
+  def set_mana_regen(%Monster{max_mana: max_mana} = monster) do
+    Map.put(monster, :mana_regen,  max_mana |> div(10) |> max(1))
   end
 
   def heal_abilities(%Monster{abilities: abilities} = monster) do
@@ -339,7 +360,6 @@ defmodule Monster do
 
         monster = monster
                   |> Map.put(:hp, monster.max_hp)
-                  |> Map.put(:mana, monster.max_mana)
                   |> Map.put(:keywords, String.split(monster.name))
                   |> Map.put(:effects, %{"monster_template" => mt.effects})
 
@@ -410,10 +430,6 @@ defmodule Monster do
 
   def effect_description(nil), do: nil
   def effect_description(%{"description" => description}), do: description
-
-  def max_mana(%Monster{max_mana: max_mana}) do
-    max_mana
-  end
 
   def effect_bonus(%Monster{effects: effects}, name) do
     effects
@@ -726,6 +742,7 @@ defmodule Monster do
     monster = monster
               |> Map.put(:spirit, spirit)
               |> set_abilities
+              |> Map.put(:mana, max(spirit.mana, monster.mana))
               |> send_scroll("<p>You possess #{monster.name}.")
               |> Monster.save
 

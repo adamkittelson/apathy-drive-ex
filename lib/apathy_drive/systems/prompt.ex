@@ -28,7 +28,7 @@ defmodule Systems.Prompt do
   end
 
   def prompt(%Spirit{} = spirit) do
-    "[Level=#{spirit.level}/Exp=#{spirit.experience}]:"
+    "[Level=#{spirit.level}/MA=#{spirit.mana}]:"
   end
 
   def prompt(%Monster{} = monster) do

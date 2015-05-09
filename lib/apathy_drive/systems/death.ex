@@ -17,6 +17,7 @@ defmodule Systems.Death do
     spirit =
       spirit
       |> Map.put(:room_id, monster.room_id)
+      |> Map.put(:mana, min(monster.mana, spirit.max_mana))
       |> Spirit.login
       |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
       |> Spirit.send_scroll("<p>#{death_message}</p>")

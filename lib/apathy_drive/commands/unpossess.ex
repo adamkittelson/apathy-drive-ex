@@ -18,17 +18,18 @@ defmodule Commands.Unpossess do
     ApathyDrive.PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters:#{Monster.monster_alignment(monster)}")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster.alignment}")
 
-    spirit
-    |> Map.put(:room_id, monster.room_id)
-    |> Spirit.save
-
     :global.unregister_name(:"spirit_#{spirit.id}")
 
-    spirit = Systems.Login.login(spirit.socket, spirit.socket_pid, spirit.id)
+    spirit =
+      spirit
+      |> Map.put(:room_id, monster.room_id)
+      |> Map.put(:mana, min(monster.mana, spirit.max_mana))
+      |> Spirit.login
+      |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
+      |> Systems.Prompt.update
+      |> Spirit.save
 
-    spirit
-    |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
-    |> Systems.Prompt.update
+    send(spirit.socket_pid, {:set_entity, spirit})
 
     ApathyDrive.WhoList.log_off(self)
 

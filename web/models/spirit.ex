@@ -26,6 +26,10 @@ defmodule Spirit do
     field :disabled_hints,    {:array, :string}, default: []
     field :monster,           :any, virtual: true
     field :abilities,         :any, virtual: true
+    field :max_mana,          :integer, virtual: true
+    field :mana,              :integer, virtual: true
+    field :mana_regen,        :integer, virtual: true
+    field :timers,            :any,     virtual: true, default: %{}
 
     timestamps
   end
@@ -33,12 +37,8 @@ defmodule Spirit do
   def init(%Spirit{} = spirit) do
     send(self, :set_abilities)
 
-    PubSub.subscribe(self, "spirits:online")
-    PubSub.subscribe(self, "spirits:hints")
-    PubSub.subscribe(self, "spirits:#{spirit.faction}")
-    PubSub.subscribe(self, "chat:gossip")
-    PubSub.subscribe(self, "chat:#{spirit.faction}")
-    PubSub.subscribe(self, "rooms:#{spirit.room_id}")
+    spirit =
+      spirit |> TimerManager.call_every({:regen_mana, 10_000, fn -> send(self, :regen_mana) end})
 
     {:ok, Map.put(spirit, :pid, self)}
   end
@@ -98,20 +98,53 @@ defmodule Spirit do
 
     spirit
     |> Map.put(:abilities, abilities)
+    |> set_max_mana
+    |> set_mana
+    |> set_mana_regen
+  end
+
+  def set_max_mana(%Spirit{abilities: abilities} = spirit) do
+    max_mana = Enum.reduce(abilities, 0, fn(ability, max_mana) ->
+      max_mana + Map.get(ability.properties, "mana_cost", 0)
+    end)
+    Map.put(spirit, :max_mana, max_mana * 2)
+  end
+
+  def set_mana(%Spirit{mana: nil, max_mana: max_mana} = spirit) do
+    spirit
+    |> Map.put(:mana, max_mana)
+    |> Systems.Prompt.update
+  end
+  def set_mana(%Spirit{mana: mana, max_mana: max_mana} = spirit) do
+    spirit
+    |> Map.put(:mana, min(mana, max_mana))
+    |> Systems.Prompt.update
+  end
+
+  def set_mana_regen(%Spirit{max_mana: max_mana} = spirit) do
+    Map.put(spirit, :mana_regen,  max_mana |> div(10) |> max(1))
   end
 
   def login(%Spirit{} = spirit) do
-    case Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :transient, 5000, :worker, [Spirit]}) do
+    spirit = case Supervisor.start_child(ApathyDrive.Supervisor, {:"spirit_#{spirit.id}", {Spirit, :start_link, [spirit]}, :transient, 5000, :worker, [Spirit]}) do
       {:ok, pid} ->
-        spirit = Map.put(spirit, :pid, pid)
-        ApathyDrive.WhoList.log_on(spirit)
-        spirit
+        Map.put(spirit, :pid, pid)
       {:error, {:already_started, _}} ->
         spirit
       {:error, :already_present} ->
         Supervisor.delete_child(ApathyDrive.Supervisor, :"spirit_#{spirit.id}")
         login(spirit)
     end
+
+    PubSub.subscribe(spirit.pid, "spirits:online")
+    PubSub.subscribe(spirit.pid, "spirits:hints")
+    PubSub.subscribe(spirit.pid, "spirits:#{spirit.faction}")
+    PubSub.subscribe(spirit.pid, "chat:gossip")
+    PubSub.subscribe(spirit.pid, "chat:#{spirit.faction}")
+    PubSub.subscribe(spirit.pid, "rooms:#{spirit.room_id}")
+    ApathyDrive.WhoList.log_on(spirit)
+
+    spirit
   end
 
   def activate_hint(%Spirit{} = spirit, hint) do
@@ -181,9 +214,12 @@ defmodule Spirit do
     |> save
     |> ApathyDrive.WhoList.log_off
 
-    spirit_to_kill = :"spirit_#{spirit.id}"
-    Supervisor.terminate_child(ApathyDrive.Supervisor, spirit_to_kill)
-    Supervisor.delete_child(ApathyDrive.Supervisor, spirit_to_kill)
+    PubSub.unsubscribe(spirit.pid, "spirits:online")
+    PubSub.unsubscribe(spirit.pid, "spirits:hints")
+    PubSub.unsubscribe(spirit.pid, "spirits:#{spirit.faction}")
+    PubSub.unsubscribe(spirit.pid, "chat:gossip")
+    PubSub.unsubscribe(spirit.pid, "chat:#{spirit.faction}")
+    PubSub.unsubscribe(spirit.pid, "rooms:#{spirit.room_id}")
   end
 
   def start_link(spirit_struct) do
@@ -472,6 +508,39 @@ defmodule Spirit do
       |> send_scroll("<p>You gain #{exp} bonus experience!<br><br></p>")
 
     {:noreply, spirit}
+  end
+
+  def handle_info(:regen_mana, %Spirit{mana: mana, max_mana: max_mana, mana_regen: mana_regen} = spirit) do
+    spirit = spirit
+             |> Map.put(:mana, min(mana + mana_regen, max_mana))
+             |> Systems.Prompt.update
+
+    {:noreply, spirit}
+  end
+
+  def handle_info({:timeout, _ref, {name, time, function}}, %Spirit{timers: timers} = spirit) do
+    jitter = trunc(time / 2) + :random.uniform(time)
+
+    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
+
+    timers = Map.put(timers, name, new_ref)
+
+    TimerManager.execute_function(function)
+
+    {:noreply, Map.put(spirit, :timers, timers)}
+  end
+
+  def handle_info({:timeout, _ref, {name, function}}, %Spirit{timers: timers} = spirit) do
+    TimerManager.execute_function(function)
+
+    timers = Map.delete(timers, name)
+
+    {:noreply, Map.put(spirit, :timers, timers)}
+  end
+
+  def handle_info({:remove_effect, key}, room) do
+    room = Systems.Effect.remove(room, key)
+    {:noreply, room}
   end
 
   def handle_info(_message, spirit) do

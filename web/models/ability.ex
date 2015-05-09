@@ -318,16 +318,16 @@ defmodule Ability do
     execute(monster, ability, targets)
   end
 
-  # def execute(%Monster{mana: mana} = monster,
-  #             %Ability{global_cooldown: nil, properties: %{"mana_cost" => cost}}, _) when cost > mana do
-  #   monster
-  # end
-  #
-  # def execute(%Monster{mana: mana} = monster,
-  #             %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
-  #   monster
-  #   |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
-  # end
+  def execute(%Monster{mana: mana} = monster,
+              %Ability{global_cooldown: nil, properties: %{"mana_cost" => cost}}, _) when cost > mana do
+    monster
+  end
+
+  def execute(%Monster{mana: mana} = monster,
+              %Ability{properties: %{"mana_cost" => cost}}, _) when cost > mana do
+    monster
+    |> Monster.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+  end
 
   def execute(%Monster{} = monster, %Ability{} = ability, targets) do
     cond do
