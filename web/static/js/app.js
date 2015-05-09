@@ -1,8 +1,8 @@
 $(function() {
   var addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, push;
   focus = null;
-  $('body').on('click', function(event) {
-    return setFocus(focus);
+  $('html').on('click', function(event) {
+    return setFocus("#command");
   });
   updateRoom = function(data) {
     $('#room .title').html(data['name']);
