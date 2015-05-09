@@ -981,18 +981,19 @@ input.prompt {
   outline: none;
   font-size: 14px;
   display: inline;
-  margin-bottom: 0px; }
+  margin-bottom: 0px;
+  width: 525px; }
 
-/* line 120, stdin */
+/* line 121, stdin */
 .prompt::selection {
   background-color: #0000aa;
   color: white; }
 
-/* line 124, stdin */
+/* line 125, stdin */
 .prompt:disabled {
   color: olive; }
 
-/* line 127, stdin */
+/* line 128, stdin */
 #prompt {
   color: silver;
   margin-right: 5px; }
