@@ -901,18 +901,22 @@ defmodule Monster do
                 |> Map.put(:mana, min(mana + get_mana_regen(monster), max_mana))
                 |> Systems.Prompt.update
 
-      if monster.hp < 1, do: Systems.Death.kill(monster)
-
-      {:noreply, monster}
+      if monster.hp < 1 do
+        {:noreply, Systems.Death.kill(monster)}
+      else
+        {:noreply, monster}
+      end
     else
       monster = monster
                 |> Map.put(:hp,   min(  hp + get_hp_regen(monster), max_hp))
                 |> Map.put(:mana, min(mana + get_mana_regen(monster), max_mana))
                 |> Systems.Prompt.update
 
-      if monster.hp < 1, do: Systems.Death.kill(monster)
-
-      {:noreply, monster}
+      if monster.hp < 1 do
+        {:noreply, Systems.Death.kill(monster)}
+      else
+        {:noreply, monster}
+      end
     end
 
   end
@@ -948,13 +952,16 @@ defmodule Monster do
                 |> Ability.apply_ability(ability, ability_user)
                 |> Systems.Prompt.update
 
-      if monster.hp < 1, do: Systems.Death.kill(monster)
+      if monster.hp < 1 do
+        {:noreply, Systems.Death.kill(monster)}
+      else
+        {:noreply, monster}
+      end
     else
       message = "#{monster.name} is not affected by that ability." |> capitalize_first
       Monster.send_scroll(ability_user, "<p><span class='dark-cyan'>#{message}</span></p>")
+      {:noreply, monster}
     end
-
-    {:noreply, monster}
   end
 
   def handle_info({:cast_message, messages: messages,
