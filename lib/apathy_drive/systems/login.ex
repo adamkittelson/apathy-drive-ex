@@ -23,7 +23,6 @@ defmodule Systems.Login do
               send(old_socket_pid, :go_home)
               Monster.update_socket(spirit.pid, socket, socket_pid)
           end
-
       end
     end
   end

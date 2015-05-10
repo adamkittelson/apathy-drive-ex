@@ -18,6 +18,14 @@ defmodule Systems.Level do
        end)
   end
 
+  def level_at_exp(exp, level \\ 1) do
+    if exp_at_level(level) > exp do
+      level - 1
+    else
+      level_at_exp(exp, level + 1)
+    end
+  end
+
   def advance(%Spirit{} = spirit) do
     advance(spirit, exp_to_next_level(spirit))
   end

@@ -29,6 +29,13 @@ defmodule ApathyDrive.Command do
           nil ->
             Spirit.send_scroll(spirit, "<p>What?</p>")
             spirit
+          %ApathyDrive.Command{module: Commands.Reroll} ->
+            if command == "reroll" do
+              Commands.Reroll.execute(spirit, [])
+            else
+              Spirit.send_scroll(spirit, "<p>What?</p>")
+              spirit
+            end
           match ->
             match.module.execute(spirit, arguments)
         end

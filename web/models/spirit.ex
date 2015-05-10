@@ -538,9 +538,21 @@ defmodule Spirit do
     {:noreply, Map.put(spirit, :timers, timers)}
   end
 
-  def handle_info({:remove_effect, key}, room) do
-    room = Systems.Effect.remove(room, key)
-    {:noreply, room}
+  def handle_info({:reroll, name: name, faction: faction, alignment: alignment}, spirit) do
+    new_exp = div(spirit.experience, 10)
+
+    spirit =
+     spirit
+     |> Map.put(:name, name)
+     |> Map.put(:faction, faction)
+     |> Map.put(:alignment, alignment)
+     |> Map.put(:experience, new_exp)
+     |> Map.put(:level, Systems.Level.level_at_exp(new_exp))
+     |> Spirit.save
+
+     ApathyDrive.WhoList.log_on(spirit)
+
+    {:noreply, spirit}
   end
 
   def handle_info(_message, spirit) do

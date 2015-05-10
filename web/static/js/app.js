@@ -133,8 +133,19 @@ $(function() {
     if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {
       history_marker = null;
       command = $(event.target).val();
-      console.log("sending command: " + command);
-      return push(event.target.id, command);
+      if (command === "reroll") {
+        if (confirm("Rerolling will allow you to change your name and/or faction, but you will only retain 10% of your current experience. Are you sure you wish to reroll?") === true) {
+          console.log("sending command: " + command);
+          return push(event.target.id, command);
+        }
+        else {
+          $(event.target).val("")
+        }
+      }
+      else {
+        console.log("sending command: " + command);
+        return push(event.target.id, command);
+      }
     } else if (event.which === 38) {
       return command_history("up");
     } else if (event.which === 40) {

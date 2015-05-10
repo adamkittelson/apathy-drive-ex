@@ -60,10 +60,20 @@ defmodule ApathyDrive.PageController do
     changeset = Spirit.changeset(spirit, spirit_params)
 
     if changeset.valid? do
-      Repo.update(changeset)
+      spirit =
+        changeset
+        |> Repo.update
 
-      conn
-      |> redirect(to: game_path(conn, :game))
+      case :global.whereis_name(:"spirit_#{spirit.id}") do
+        :undefined ->
+          conn
+          |> redirect(to: game_path(conn, :game))
+        pid ->
+          send(pid, {:reroll, name: spirit.name, faction: spirit.faction, alignment: spirit.alignment})
+
+          conn
+          |> redirect(to: game_path(conn, :game))
+      end
     else
       render conn, "edit.html", changeset: changeset
     end
