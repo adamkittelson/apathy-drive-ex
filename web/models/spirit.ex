@@ -548,6 +548,7 @@ defmodule Spirit do
      |> Map.put(:alignment, alignment)
      |> Map.put(:experience, new_exp)
      |> Map.put(:level, Systems.Level.level_at_exp(new_exp))
+     |> set_abilities
      |> Spirit.save
 
      ApathyDrive.WhoList.log_on(spirit)
