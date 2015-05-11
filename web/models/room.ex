@@ -535,6 +535,7 @@ defmodule Room do
         |> Repo.update
 
       send(monster, {:scroll, "<p>You capture the lair for your faction!</p>"})
+      ApathyDrive.Factions.update_war_status
 
       {:noreply, room}
     else
