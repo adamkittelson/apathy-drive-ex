@@ -17,6 +17,10 @@ defmodule ApathyDrive.Factions do
     GenServer.cast(__MODULE__, {:add_to_bonus_pool, exp})
   end
 
+  def update_war_status do
+    GenServer.cast(__MODULE__, :update_war_status)
+  end
+
   def faction_bonus(0, bonus_pool) do
     div(bonus_pool, 2)
   end
@@ -41,8 +45,33 @@ defmodule ApathyDrive.Factions do
         end)
   end
 
+  def war_status do
+    counts = lair_counts
+
+    counts
+    |> Enum.sort_by(fn({_, count}) -> -count end)
+    |> Enum.with_index
+    |> Enum.map(fn({{faction, _count}, _index}) ->
+         color = case faction do
+           "Angel" ->
+             "white"
+           "Demon" ->
+              "magenta"
+           "Elemental" ->
+              "dark-cyan"
+         end
+         "<span class='#{color}'>#{String.ljust("#{faction}s", 11)}#{String.rjust(inspect(counts[faction]), 11)}</span>"
+       end)
+  end
+
   def handle_cast({:add_to_bonus_pool, exp}, state) do
     {:noreply, update_in(state, [:bonus_pool], &(&1 + exp))}
+  end
+
+  def handle_cast(:update_war_status, state) do
+    ApathyDrive.Endpoint.broadcast! "index", "war-status", %{stats: war_status}
+
+    {:noreply, state}
   end
 
   def handle_info(:reward_factions, state) do
@@ -57,17 +86,9 @@ defmodule ApathyDrive.Factions do
     ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p><span class='dark-cyan'>Faction          Lairs</span></p>"}
     ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p><span class='dark-green'>======================</span></p>"}
 
-    indexed
-    |> Enum.each(fn({{faction, _count}, _index}) ->
-         color = case faction do
-           "Angel" ->
-             "white"
-           "Demon" ->
-              "magenta"
-           "Elemental" ->
-              "dark-cyan"
-         end
-         ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p><span class='#{color}'>#{String.ljust("#{faction}s", 11)}#{String.rjust(inspect(counts[faction]), 11)}</span></p>"}
+    war_status
+    |> Enum.each(fn(line) ->
+         ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{line}</p>"}
        end)
 
     indexed

@@ -127,3 +127,6 @@ CHANGELOG
 
 ---- 0.0.42 / 2015-05-06 / remove-disposition ----------------------------------
 * revamp monster aggro
+
+---- 0.0.43 / 2015-05-10 / nav -------------------------------------------------
+* some work on the home page

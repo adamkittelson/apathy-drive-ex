@@ -30,6 +30,7 @@ defmodule ApathyDrive.Router do
 
   socket "/ws", ApathyDrive do
     channel "mud", MUD
+    channel "index", Index
   end
 
   # Fetch the current user from the session and add it to `conn.assigns`. This

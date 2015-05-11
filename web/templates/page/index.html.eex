@@ -5,4 +5,105 @@
   <% else %>
     <a class="button button-primary" href="<%= auth_path @conn, :index %>">Sign in with Facebook</a>
   <% end %>
+
+  <div class="value-props row">
+    <div class="four columns value-prop">
+      <img class="value-img" src="images/angel-outfit.svg">
+      Choose one of three factions, Angels, Demons, and Elementals
+    </div>
+    <div class="four columns value-prop">
+      <img class="value-img" src="images/minotaur.svg">
+      Possess and play as over 1,000 different monsters and NPCs
+    </div>
+    <div class="four columns value-prop">
+      <img class="value-img" src="images/all-for-one.svg">
+      Fight for control of a huge world with over 27,000 rooms
+    </div>
+  </div>
 </section>
+
+<div class="navbar-spacer"></div>
+<nav class="navbar">
+  <div class="container">
+    <ul class="navbar-list">
+      <li class="navbar-item">
+        <a class="navbar-link" href="#getting-started" data-popover="#gettingStartedPopover">Getting Started</a>
+        <div id="gettingStartedPopover" class="popover">
+          <ul class="popover-list">
+            <li class="popover-item">
+              <a class="popover-link" href="#character-creation">Character Creation</a>
+            </li>
+            <li class="popover-item">
+              <a class="popover-link" href="#factions">Factions</a>
+            </li>
+            <li class="popover-item">
+              <a class="popover-link" href="#getting-around">Getting Around</a>
+            </li>
+            <li class="popover-item">
+              <a class="popover-link" href="#communication">Communication</a>
+            </li>
+            <li class="popover-item">
+              <a class="popover-link" href="#possession">Possession</a>
+            </li>
+            <li class="popover-item">
+              <a class="popover-link" href="#abilities">Abilities</a>
+            </li>
+            <li class="popover-item">
+              <a class="popover-link" href="#getting-stronger">Getting Stronger</a>
+            </li>
+          </ul>
+        </div>
+      </li>
+      <li class="navbar-item"><a class="navbar-link" href="#the-war">The War</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="docs-section" id="getting-started">
+  <h6 class="docs-prime-header">Getting Started</h6>
+  <h6 class="docs-header" id="character-creation">Character Creation</h6>
+  <p>First you need to create your character, you can do this by clicking 'Sign in with Facebook' above. Character creation is easy, just choose the name you'd like to be known by in the game and whether you'd like to be an Angel, a Demon, or an Elemental. You can change your name or faction later by using the <code>reroll</code> command in-game.</p>
+  <h6 class="docs-header" id="factions">Factions</h6>
+  <p>The three factions are at war with each other. Angels are good-aligned and have abilities related to healing and protection. Elementals are neutral-aligned and have abilities related to nature and the elements. Demons are evil-aligned and specialize in destruction.</p>
+  <h6 class="docs-header" id="getting-around">Getting Around</h6>
+  <p>Once you're in the game you'll find yourself in a room much like this:</p>
+  <div class="room">
+    <div class="title">Newhaven, Village Entrance</div>
+    <div class="description">Welcome to Newhaven! You are standing at the crude wooden gates of the village entrance, in the middle of a dusty path. A low wooden palisade surrounds the village, to protect against creatures of the night and random raiders. You can see small buildings to the north and south, and a dusty path that leads to the west and southeast.</div>
+    <div class="items">You notice large sign, newbie manual here.</div>
+    <div class="exits">Obvious exits: north, south, west, southeast</div>
+  </div>
+  <p>You can move to adjacent rooms by typing the direction in which you want to go and pressing enter, e.g. <code>southeast</code> or just <code>se</code> for short.</p>
+  <h6 class="docs-header" id="communication">Communication</h6>
+  <p>You may communicate with all players in the game by typing <code>gossip &lt;your message&gt;</code>. You can communicate with other members of your faction by using your faction specific channel, e.g. <code>demon &lt;your message&gt;</code></p>
+  <h6 class="docs-header" id="possession">Possession</h6>
+  <p>Angels, Demons, and Elementals are powerful and immortal beings, but as spiritual entities they can't do much on their own. You'll need to take possession of a mortal body if you want to interact with the world in a meaningful way. You may possess a monster with the possess command, like <code>possess giant rat</code>. If you are powerful enough, and if the monster is not already possessed, you will take control of the monster. To see some basic information about the monster you're possessing you can type <code>status</code>.</p>
+  <h6 class="docs-header" id="abilities">Abilities</h6>
+  <p>While possessing a monster you have access to all its abilities, as well as abilities provided by your faction. Type <code>abilities</code> to see a list of your abilities. You use abilities by typing the ability's command. Type the command by itself to cast an ability on yourself, or with a target to use it on another monster, e.g. <code>mmis rat</code> will cast a magic missile at a rat i the room if you have that ability.</p>
+  <h6 class="docs-header" id="getting-stronger">Getting Stronger</h6>
+  <p>You get more powerful by gaining levels, and you gain levels by gaining experience. One way to gain experience is by killing monsters. You can see your progress toward your next level with the experience command by typing <code>experience</code>. When your level increases you'll be able to possess more powerful monsters, and you will learn new abilities.</p>
+</div>
+
+<div class="docs-section" id="the-war">
+  <h6 class="docs-prime-header">The War</h6>
+  <p>Approximately once an hour the status of the war will be tallied and displayed in-game.</p>
+  <pre>
+           <span class="dark-yellow">War Status</span>
+    <span class="dark-cyan">Faction          Lairs</span>
+    <span class="dark-green">======================</span>
+    <span id="war-status"></span>
+  </pre>
+  <p>Everyone who is logged into the game will receive bonus experience based on how many lairs their faction controls and what place their faction is in relative to the other factions. All experience earned during the previous hour is part of the bonus pool, so the more players who are killing monsters the bigger the bonuses will be. (In other words, invite your friends to play and everyone's bonus experience will grow!)</p>
+  <p>Feel free to stay logged in while you're away from your keyboard to continue receiving bonus experience.</p>
+  <p>Lairs are special rooms that periodically spawn monsters. You can recognize a lair by the * next to the room's name. The color of the asterisk indicates the faction that currently controls it:</p>
+  <pre>
+    <span class="white">*</span> Angels     - spawned monsters will be Good
+    <span class="dark-cyan">*</span> Elementals - spawned monsters will be Neutral
+    <span class="magenta">*</span> Demons     - spawned monsters will be Evil
+    <span class="grey">*</span> Unclaimed  - spawned monsters will be their natural alignment
+  </pre>
+  <p>To capture a lair for your faction you must be possessing a monster, and you must clear the room of all monsters whose alignments do not match that of your faction. Once those conditions are met just type <code>capture</code>.</p>
+</div>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/index")</script>
