@@ -78,13 +78,18 @@ $(document).ready(function() {
 
 });
 
+var update_war_status = function(war_status) {
+  $('#war-status').html(war_status.stats.join("\n    "))
+}
+
 var socket = new Phoenix.Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
 socket.connect();
-socket.join("index", {}).receive("ok", function(chan){
+var chan = socket.chan("index", {});
 
-  chan.on("war-status", function(message){
-    console.log(message)
-    $('#war-status').html(message.stats.join("\n    "))
-  });
+chan.join().receive("ok", (message) => {
+  update_war_status(message)
+})
 
+chan.on("war-status", function(message){
+  update_war_status(message)
 });

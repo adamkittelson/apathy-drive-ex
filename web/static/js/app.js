@@ -40,47 +40,48 @@ setFocus = function(selector) {
 };
 adjustScrollTop();
 
-socket = new Phoenix.Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
+var socket = new Phoenix.Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
 socket.connect();
-socket.join("mud", {spirit: spiritID}).receive("ok", function(chan){
+var chan = socket.chan("mud", {spirit: spiritID});
 
-  chan.on("room", function(message){
-    updateRoom(message.html);
-  });
+chan.join()
 
-  chan.on("clear scroll", function(message){
-    clearScroll();
-  });
-
-  chan.on("focus", function(message){
-    setFocus(message.html).select();
-  });
-
-  chan.on("disable", function(message){
-    disableField(message.html);
-  });
-
-  chan.on("update prompt", function(message){
-    $("#prompt").text(message.html);
-  });
-
-  chan.on("redirect", function(message){
-    window.location = "" + window.location.origin + message.url;
-  });
-
-  chan.on("up", function(message){
-    command_history("up");
-  });
-
-  chan.on("scroll", function(message){
-    console.log("message: " + message.html);
-    addToScroll("#scroll", message.html);
-  });
-
-  push = function(event, message) {
-           chan.push(event, message)
-         };
+chan.on("room", function(message){
+  updateRoom(message.html);
 });
+
+chan.on("clear scroll", function(message){
+  clearScroll();
+});
+
+chan.on("focus", function(message){
+  setFocus(message.html).select();
+});
+
+chan.on("disable", function(message){
+  disableField(message.html);
+});
+
+chan.on("update prompt", function(message){
+  $("#prompt").text(message.html);
+});
+
+chan.on("redirect", function(message){
+  window.location = "" + window.location.origin + message.url;
+});
+
+chan.on("up", function(message){
+  command_history("up");
+});
+
+chan.on("scroll", function(message){
+  console.log("message: " + message.html);
+  addToScroll("#scroll", message.html);
+});
+
+push = function(event, message) {
+         chan.push(event, message)
+       };
 
 addToScroll = function(elem, text) {
   $(elem).append(text);

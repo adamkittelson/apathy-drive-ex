@@ -23,17 +23,17 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:phoenix,             github: "phoenixframework/phoenix", ref: "c12939a6bb2da6880ff93c41689edfbac726339f", override: true},
-      {:phoenix_html,        github: "phoenixframework/phoenix_html", ref: "f4fc4c74c242ce821ae194cbabe9bccbfaacebb5", override: true},
-      {:phoenix_live_reload, "~> 0.3.3"},
       {:ecto,                "~> 0.11.0"},
       {:decimal,             "~> 1.1.0"},
       {:postgrex,            "~> 0.8.0"},
+      {:phoenix,             "~> 0.13"},
+      {:phoenix_live_reload, "~> 0.4"},
+      {:phoenix_ecto,        "~> 0.4"},
+      {:phoenix_html,        "~> 1.0"},
       {:timex,               "~> 0.13.4"},
       {:inflex,              "~> 0.2.8"},
       {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.0.5"},
-      {:phoenix_ecto,        "~> 0.3.1"},
       {:shouldi, only: :test}
     ]
   end
