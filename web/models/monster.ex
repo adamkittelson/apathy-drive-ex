@@ -1064,11 +1064,11 @@ defmodule Monster do
 
     send_scroll(monster, "<p>#{message}</p>")
 
+    Monster.send_scroll(monster, "<p>You gain #{exp} experience.</p>")
+
     new_spirit =
       spirit
       |> Spirit.add_experience(exp)
-
-      Monster.send_scroll(monster, "<p>You gain #{exp} experience.</p>")
 
     if new_spirit.level > spirit.level do
       monster = monster
@@ -1087,13 +1087,24 @@ defmodule Monster do
   def handle_info({:lair_control_reward, count, bonus}, %Monster{spirit: %Spirit{} = spirit} = monster) do
     exp = count * spirit.level + bonus
 
-    spirit =
+    Monster.send_scroll(monster, "<p>You gain #{exp} bonus experience!<br><br></p>")
+
+    new_spirit =
       spirit
       |> Spirit.add_experience(exp)
 
-      Monster.send_scroll(monster, "<p>You gain #{exp} bonus experience!<br><br></p>")
+    if new_spirit.level > spirit.level do
+      monster = monster
+                |> Map.put(:spirit, new_spirit)
+                |> set_abilities
 
-    {:noreply, Map.put(monster, :spirit, spirit)}
+      {:noreply, monster}
+    else
+      monster = monster
+                |> Map.put(:spirit, new_spirit)
+
+      {:noreply, monster}
+    end
   end
 
   def handle_info({:execute_room_ability, ability}, monster) do
