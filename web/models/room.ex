@@ -18,7 +18,6 @@ defmodule Room do
     field :lair_frequency,        :integer
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :lair_faction,          :string
-    field :start_room,            :boolean, default: false
     field :exits,                 ApathyDrive.JSONB
     field :commands,              ApathyDrive.JSONB
     field :legacy_id,             :string
@@ -57,11 +56,7 @@ defmodule Room do
   end
 
   def start_room_id do
-    query = from r in Room,
-            where: r.start_room == true,
-            select: r.id
-
-    Repo.one(query)
+    ApathyDrive.Config.get(:start_room)
   end
 
   def find(id) do
