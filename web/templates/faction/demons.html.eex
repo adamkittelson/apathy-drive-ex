@@ -1,0 +1,6 @@
+<%= render ApathyDrive.PageView, "nav.html" %>
+
+<%= render "abilities.html", abilities: @abilities %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>
