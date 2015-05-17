@@ -2,6 +2,7 @@ defmodule ApathyDrive.Router do
   use Phoenix.Router
 
   pipeline :browser do
+    plug ApathyDrive.Plugs.HTTPSRedirect
     plug :accepts, ~w(html)
     plug :fetch_session
     plug :fetch_flash
