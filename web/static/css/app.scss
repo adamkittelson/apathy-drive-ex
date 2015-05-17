@@ -75,6 +75,7 @@ html {
   margin-bottom: 20px; }
 
 .room {
+  font-family: "Inconsolata", "Andale Mono", Monospace;
   width: 700px;
   line-height: 19px;
   .title {
@@ -105,6 +106,10 @@ code {
   color: silver;
   line-height: 9px;
   padding-bottom: 1em;
+}
+
+pre {
+  font-family: "Inconsolata", "Andale Mono", Monospace;
 }
 
 #scroll p {

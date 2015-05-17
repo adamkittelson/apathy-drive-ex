@@ -2,7 +2,6 @@ defmodule ApathyDrive.FactionController do
   use ApathyDrive.Web, :controller
   alias ApathyDrive.Repo
   import Ecto.Query
-  import Systems.Text
 
   plug :action
 

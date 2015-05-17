@@ -937,31 +937,32 @@ html {
 
 /* line 77, stdin */
 .room {
+  font-family: "Inconsolata", "Andale Mono", Monospace;
   width: 700px;
   line-height: 19px; }
-  /* line 80, stdin */
+  /* line 81, stdin */
   .room .title {
     color: cyan; }
-    /* line 82, stdin */
+    /* line 83, stdin */
     .room .title .lair {
       font-style: italic; }
-  /* line 84, stdin */
+  /* line 85, stdin */
   .room .description {
     text-indent: 33px; }
-  /* line 87, stdin */
+  /* line 88, stdin */
   .room .items {
     color: teal; }
-  /* line 90, stdin */
+  /* line 91, stdin */
   .room .exits {
     color: green; }
 
-/* line 95, stdin */
+/* line 96, stdin */
 code {
   font-size: 80%;
   background-color: #333;
   border: 1px solid #a1a1a1; }
 
-/* line 101, stdin */
+/* line 102, stdin */
 #scroll {
   height: 100%;
   white-space: pre-wrap;
@@ -970,12 +971,16 @@ code {
   line-height: 9px;
   padding-bottom: 1em; }
 
-/* line 110, stdin */
+/* line 111, stdin */
+pre {
+  font-family: "Inconsolata", "Andale Mono", Monospace; }
+
+/* line 115, stdin */
 #scroll p {
   line-height: 19px;
   margin-bottom: 0px; }
 
-/* line 114, stdin */
+/* line 119, stdin */
 input.prompt {
   background-color: black;
   border: none;
@@ -986,43 +991,43 @@ input.prompt {
   margin-bottom: 0px;
   width: 525px; }
 
-/* line 124, stdin */
+/* line 129, stdin */
 .prompt::selection {
   background-color: #0000aa;
   color: white; }
 
-/* line 128, stdin */
+/* line 133, stdin */
 .prompt:disabled {
   color: olive; }
 
-/* line 131, stdin */
+/* line 136, stdin */
 #prompt {
   color: silver;
   margin-right: 5px; }
 
-/* line 135, stdin */
+/* line 140, stdin */
 .header {
   margin-top: 6rem;
   margin-bottom: 6rem;
   text-align: center; }
 
-/* line 139, stdin */
+/* line 144, stdin */
 .value-prop {
   margin-top: 1rem; }
 
-/* line 141, stdin */
+/* line 146, stdin */
 .value-props {
   margin-top: 4rem;
   margin-bottom: 4rem; }
 
-/* line 144, stdin */
+/* line 149, stdin */
 .docs-prime-header {
   text-transform: uppercase;
   font-size: 1.5rem;
   letter-spacing: .2rem;
   font-weight: 600; }
 
-/* line 149, stdin */
+/* line 154, stdin */
 .docs-header {
   text-transform: uppercase;
   font-size: 1.2rem;
@@ -1030,37 +1035,37 @@ input.prompt {
   font-weight: 600;
   margin-bottom: 1rem; }
 
-/* line 155, stdin */
+/* line 160, stdin */
 .docs-section {
   border-top: 1px solid #eee;
   padding: 4rem 0;
   margin-bottom: 0; }
-  /* line 159, stdin */
+  /* line 164, stdin */
   .docs-section p {
     font-size: 0.95em; }
-  /* line 162, stdin */
+  /* line 167, stdin */
   .docs-section div.room {
     padding-left: 2em;
     margin-bottom: 2.5rem; }
 
-/* line 167, stdin */
+/* line 172, stdin */
 .value-img {
   display: block;
   text-align: center;
   margin: 2.5rem auto 0;
   max-width: 50%; }
 
-/* line 172, stdin */
+/* line 177, stdin */
 .navbar {
   display: none; }
 
 /* Larger than tablet */
 @media (min-width: 750px) {
   /* Navbar */
-  /* line 178, stdin */
+  /* line 183, stdin */
   .navbar + .docs-section {
     border-top-width: 0; }
-  /* line 181, stdin */
+  /* line 186, stdin */
   .navbar, .navbar-spacer {
     display: block;
     width: 100%;
@@ -1069,22 +1074,22 @@ input.prompt {
     z-index: 99;
     border-top: 1px solid #eee;
     border-bottom: 1px solid #eee; }
-  /* line 189, stdin */
+  /* line 194, stdin */
   .navbar-spacer {
     display: none; }
-  /* line 191, stdin */
+  /* line 196, stdin */
   .navbar > .container {
     width: 100%; }
-  /* line 193, stdin */
+  /* line 198, stdin */
   .navbar-list {
     list-style: none;
     margin-bottom: 0; }
-  /* line 196, stdin */
+  /* line 201, stdin */
   .navbar-item {
     position: relative;
     float: left;
     margin-bottom: 0; }
-  /* line 200, stdin */
+  /* line 205, stdin */
   .navbar-link {
     text-transform: uppercase;
     font-size: 11px;
@@ -1094,26 +1099,26 @@ input.prompt {
     text-decoration: none;
     line-height: 6.5rem;
     color: #fff; }
-  /* line 209, stdin */
+  /* line 214, stdin */
   .navbar-link.active {
     color: #33C3F0; }
-  /* line 211, stdin */
+  /* line 216, stdin */
   .has-docked-nav .navbar {
     position: fixed;
     top: 0;
     left: 0; }
-  /* line 215, stdin */
+  /* line 220, stdin */
   .has-docked-nav .navbar-spacer {
     display: block; }
   /* Re-overiding the width 100% declaration to match size of % based container */
-  /* line 218, stdin */
+  /* line 223, stdin */
   .has-docked-nav .navbar > .container {
     width: 80%; }
   /* Popover */
-  /* line 222, stdin */
+  /* line 227, stdin */
   .popover.open {
     display: block; }
-  /* line 225, stdin */
+  /* line 230, stdin */
   .popover {
     display: none;
     position: absolute;
@@ -1127,7 +1132,7 @@ input.prompt {
     -webkit-filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1));
     -moz-filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1));
     filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1)); }
-  /* line 239, stdin */
+  /* line 244, stdin */
   .popover-item:first-child .popover-link:after, .popover-item:first-child .popover-link:before {
     bottom: 100%;
     left: 50%;
@@ -1137,28 +1142,28 @@ input.prompt {
     width: 0;
     position: absolute;
     pointer-events: none; }
-  /* line 248, stdin */
+  /* line 253, stdin */
   .popover-item:first-child .popover-link:after {
     border-color: rgba(255, 255, 255, 0);
     border-bottom-color: #fff;
     border-width: 10px;
     margin-left: -10px; }
-  /* line 253, stdin */
+  /* line 258, stdin */
   .popover-item:first-child .popover-link:before {
     border-color: rgba(238, 238, 238, 0);
     border-bottom-color: #eee;
     border-width: 11px;
     margin-left: -11px; }
-  /* line 258, stdin */
+  /* line 263, stdin */
   .popover-list {
     padding: 0;
     margin: 0;
     list-style: none; }
-  /* line 262, stdin */
+  /* line 267, stdin */
   .popover-item {
     padding: 0;
     margin: 0; }
-  /* line 265, stdin */
+  /* line 270, stdin */
   .popover-link {
     position: relative;
     color: #222;
@@ -1171,29 +1176,29 @@ input.prompt {
     font-weight: 600;
     text-align: center;
     letter-spacing: .1rem; }
-  /* line 277, stdin */
+  /* line 282, stdin */
   .popover-item:first-child .popover-link {
     border-radius: 4px 4px 0 0; }
-  /* line 279, stdin */
+  /* line 284, stdin */
   .popover-item:last-child .popover-link {
     border-radius: 0 0 4px 4px;
     border-bottom-width: 0; }
-  /* line 282, stdin */
+  /* line 287, stdin */
   .popover-link:hover {
     color: #fff;
     background: #33C3F0; }
-  /* line 286, stdin */
+  /* line 291, stdin */
   .popover-link:hover, .popover-item:first-child .popover-link:hover:after {
     border-bottom-color: #33C3F0; } }
 
-/* line 290, stdin */
+/* line 295, stdin */
 table {
   margin-top: 1rem; }
-  /* line 291, stdin */
+  /* line 296, stdin */
   table th, table td {
     padding: 5px 5px;
     border: 1px solid #E1E1E1; }
-  /* line 295, stdin */
+  /* line 300, stdin */
   table th:first-child, table td:first-child {
     padding: 5px 5px; }
 
