@@ -473,6 +473,10 @@ defmodule Spirit do
     {:noreply, set_abilities(spirit) }
   end
 
+  def handle_info(:display_prompt, spirit) do
+    {:noreply, Systems.Prompt.display(spirit) }
+  end
+
   def handle_info({:gossip, name, message}, spirit) do
     Spirit.send_scroll(spirit, "<p>[<span class='dark-magenta'>gossip</span> : #{name}] #{message}</p>")
     {:noreply, spirit}

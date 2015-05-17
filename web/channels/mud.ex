@@ -25,7 +25,9 @@ defmodule ApathyDrive.MUD do
              |> Room.value
 
       Room.look(room, spirit)
-      Systems.Prompt.display(spirit)
+
+      send(spirit.pid, :display_prompt)
+
       {:noreply, socket}
     else
       Phoenix.Channel.push socket, "redirect", %{:url => "/"}
