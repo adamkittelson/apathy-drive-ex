@@ -133,3 +133,6 @@ CHANGELOG
 
 ---- 0.0.44 / 2015-05-11 / upgrade-phoenix -------------------------------------
 * upgrade phoenix to 0.13
+
+---- 0.0.45 / 2015-05-16 / faction-pages ---------------------------------------
+* ability lists for factions on site
