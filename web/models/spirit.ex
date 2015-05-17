@@ -49,7 +49,7 @@ defmodule Spirit do
   If `params` are nil, an invalid changeset is returned
   with no validation performed.
   """
-  def changeset(spirit, params \\ nil) do
+  def changeset(spirit, params \\ :empty) do
     spirit
     |> cast(params, ~w(name faction alignment), ~w())
     |> validate_inclusion(:faction,   ["Angel", "Demon", "Elemental"])
