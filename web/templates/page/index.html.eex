@@ -22,42 +22,7 @@
   </div>
 </section>
 
-<div class="navbar-spacer"></div>
-<nav class="navbar">
-  <div class="container">
-    <ul class="navbar-list">
-      <li class="navbar-item">
-        <a class="navbar-link" href="#getting-started" data-popover="#gettingStartedPopover">Getting Started</a>
-        <div id="gettingStartedPopover" class="popover">
-          <ul class="popover-list">
-            <li class="popover-item">
-              <a class="popover-link" href="#character-creation">Character Creation</a>
-            </li>
-            <li class="popover-item">
-              <a class="popover-link" href="#factions">Factions</a>
-            </li>
-            <li class="popover-item">
-              <a class="popover-link" href="#getting-around">Getting Around</a>
-            </li>
-            <li class="popover-item">
-              <a class="popover-link" href="#communication">Communication</a>
-            </li>
-            <li class="popover-item">
-              <a class="popover-link" href="#possession">Possession</a>
-            </li>
-            <li class="popover-item">
-              <a class="popover-link" href="#abilities">Abilities</a>
-            </li>
-            <li class="popover-item">
-              <a class="popover-link" href="#getting-stronger">Getting Stronger</a>
-            </li>
-          </ul>
-        </div>
-      </li>
-      <li class="navbar-item"><a class="navbar-link" href="#the-war">The War</a></li>
-    </ul>
-  </div>
-</nav>
+<%= render "nav.html" %>
 
 <div class="docs-section" id="getting-started">
   <h6 class="docs-prime-header">Getting Started</h6>
@@ -107,3 +72,4 @@
 
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script>require("web/static/js/index")</script>
+<script>require("web/static/js/nav")</script>

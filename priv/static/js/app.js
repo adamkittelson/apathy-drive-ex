@@ -3456,7 +3456,9 @@ if (typeof window === "object" && !window.Phoenix) {
 var addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, push;
 focus = null;
 $("html").on("click", function (event) {
-  return setFocus("#command");
+  if (window.getSelection().type !== "Range") {
+    return setFocus("#command");
+  }
 });
 
 updateRoom = function (data) {
@@ -3592,6 +3594,16 @@ $(document).on("keydown", "input", function (event) {
   }
 });
 
+$(document).on("keydown", function (event) {
+  if (!(event.ctrlKey || event.shiftKey || event.metaKey)) {
+    setFocus("#command");
+  }
+});
+
+$(document).on("keyup", function (event) {
+  setFocus("#command");
+});
+
 $(document).on("keyup", "input", function (event) {
   var command, params;
   event.preventDefault();
@@ -3619,6 +3631,25 @@ $(document).on("keyup", "input", function (event) {
 require.register("web/static/js/index", function(exports, require, module) {
 "use strict";
 
+var update_war_status = function update_war_status(war_status) {
+  $("#war-status").html(war_status.stats.join("\n    "));
+};
+
+var socket = new Phoenix.Socket("" + window.location.origin.replace("http", "ws") + "/ws");
+socket.connect();
+var chan = socket.chan("index", {});
+
+chan.join().receive("ok", function (message) {
+  update_war_status(message);
+});
+
+chan.on("war-status", function (message) {
+  update_war_status(message);
+});});
+
+require.register("web/static/js/nav", function(exports, require, module) {
+"use strict";
+
 $(document).ready(function () {
 
   // Variables
@@ -3644,6 +3675,7 @@ $(document).ready(function () {
     $popoverLink.on("click", openPopover);
     $document.on("click", closePopover);
     $("a[href^=\"#\"]").on("click", smoothScroll);
+    onScroll();
   }
 
   function smoothScroll(e) {
@@ -3687,7 +3719,9 @@ $(document).ready(function () {
   }
 
   function onScroll() {
-    if (navOffsetTop < $window.scrollTop() && !$body.hasClass("has-docked-nav")) {
+    console.log(navOffsetTop);
+    console.log($window.scrollTop());
+    if (navOffsetTop <= $window.scrollTop() && !$body.hasClass("has-docked-nav")) {
       $body.addClass("has-docked-nav");
     }
     if (navOffsetTop > $window.scrollTop() && $body.hasClass("has-docked-nav")) {
@@ -3696,22 +3730,6 @@ $(document).ready(function () {
   }
 
   init();
-});
-
-var update_war_status = function update_war_status(war_status) {
-  $("#war-status").html(war_status.stats.join("\n    "));
-};
-
-var socket = new Phoenix.Socket("" + window.location.origin.replace("http", "ws") + "/ws");
-socket.connect();
-var chan = socket.chan("index", {});
-
-chan.join().receive("ok", function (message) {
-  update_war_status(message);
-});
-
-chan.on("war-status", function (message) {
-  update_war_status(message);
 });});
 
 

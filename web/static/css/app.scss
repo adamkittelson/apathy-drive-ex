@@ -286,3 +286,14 @@ input.prompt {
   .popover-item:first-child .popover-link:hover:after {
     border-bottom-color: #33C3F0; }
 }
+
+table {
+  th, td {
+    padding: 5px 5px;
+    border: 1px solid #E1E1E1;
+  }
+  th:first-child, td:first-child {
+    padding: 5px 5px;
+  }
+  margin-top: 1rem;
+}

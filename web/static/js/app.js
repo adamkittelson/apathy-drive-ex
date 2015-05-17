@@ -1,7 +1,9 @@
 var addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, push;
 focus = null;
 $('html').on('click', function(event) {
-  return setFocus("#command");
+  if (window.getSelection().type !== "Range") {
+    return setFocus("#command");
+  }
 });
 
 updateRoom = function(data) {
@@ -135,6 +137,16 @@ $(document).on('keydown', "input", function(event) {
   if (event.which === 9 && !event.shiftKey) {
     return event.preventDefault();
   }
+});
+
+$(document).on('keydown', function(event) {
+  if (!(event.ctrlKey || event.shiftKey || event.metaKey)) {
+    setFocus("#command");
+  }
+});
+
+$(document).on('keyup', function(event) {
+  setFocus("#command");
 });
 
 $(document).on('keyup', "input", function(event) {
