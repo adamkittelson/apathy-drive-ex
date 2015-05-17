@@ -1186,5 +1186,16 @@ input.prompt {
   .popover-link:hover, .popover-item:first-child .popover-link:hover:after {
     border-bottom-color: #33C3F0; } }
 
+/* line 290, stdin */
+table {
+  margin-top: 1rem; }
+  /* line 291, stdin */
+  table th, table td {
+    padding: 5px 5px;
+    border: 1px solid #E1E1E1; }
+  /* line 295, stdin */
+  table th:first-child, table td:first-child {
+    padding: 5px 5px; }
+
 
 /*# sourceMappingURL=app.css.map*/
