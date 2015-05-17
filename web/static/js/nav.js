@@ -67,8 +67,6 @@ $(document).ready(function() {
   }
 
   function onScroll() {
-    console.log(navOffsetTop)
-    console.log($window.scrollTop())
     if(navOffsetTop <= $window.scrollTop() && !$body.hasClass('has-docked-nav')) {
       $body.addClass('has-docked-nav')
     }
