@@ -41,6 +41,7 @@
   <p>You can move to adjacent rooms by typing the direction in which you want to go and pressing enter, e.g. <code>southeast</code> or just <code>se</code> for short.</p>
   <h6 class="docs-header" id="communication">Communication</h6>
   <p>You may communicate with all players in the game by typing <code>gossip &lt;your message&gt;</code>. You can communicate with other members of your faction by using your faction specific channel, e.g. <code>demon &lt;your message&gt;</code></p>
+  <p>If you're possessing a monster you can speak with other monsters in the same room as you by typing <code>say &lt;your message&gt;</code>
   <h6 class="docs-header" id="possession">Possession</h6>
   <p>Angels, Demons, and Elementals are powerful and immortal beings, but as spiritual entities they can't do much on their own. You'll need to take possession of a mortal body if you want to interact with the world in a meaningful way. You may possess a monster with the possess command, like <code>possess giant rat</code>. If you are powerful enough, and if the monster is not already possessed, you will take control of the monster. To see some basic information about the monster you're possessing you can type <code>status</code>.</p>
   <h6 class="docs-header" id="abilities">Abilities</h6>
