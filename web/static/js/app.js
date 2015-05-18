@@ -137,6 +137,11 @@ $(document).on('keydown', "input", function(event) {
 $(document).on('keydown', function(event) {
   if (!(event.ctrlKey || event.shiftKey || event.metaKey)) {
     setFocus("#command");
+  } else if (event.which === 75 && event.metaKey) {
+    var prompt = $("#prompt").parent().detach();
+    clearScroll();
+    $("#scroll").append(prompt);
+    setFocus("#command");
   }
 });
 
