@@ -34,10 +34,11 @@ defmodule ApathyDrive.Mixfile do
       {:inflex,              "~> 0.2.8"},
       {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.0.5"},
+      {:scrivener,           "~> 0.6.0"},
       {:shouldi, only: :test}
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "web", "test/matchers"]
+  defp elixirc_paths(:test), do: ["lib", "web", "test/matchers", "test/support"]
   defp elixirc_paths(_), do: ["lib", "web"]
 end

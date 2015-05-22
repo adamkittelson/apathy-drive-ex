@@ -938,17 +938,17 @@ html {
 /* line 77, stdin */
 .room {
   font-family: "Inconsolata", "Andale Mono", Monospace;
+  color: silver;
   width: 700px;
   line-height: 19px; }
-  /* line 81, stdin */
+  /* line 82, stdin */
   .room .title {
     color: cyan; }
-    /* line 83, stdin */
+    /* line 84, stdin */
     .room .title .lair {
       font-style: italic; }
-  /* line 85, stdin */
+  /* line 86, stdin */
   .room .description {
-    color: silver;
     text-indent: 33px; }
   /* line 89, stdin */
   .room .items {
@@ -1202,6 +1202,17 @@ table {
   /* line 301, stdin */
   table th:first-child, table td:first-child {
     padding: 5px 5px; }
+
+/* line 308, stdin */
+table.admin-index th, table.admin-index td {
+  padding: 5px; }
+  /* line 310, stdin */
+  table.admin-index th form, table.admin-index td form {
+    margin-bottom: 0; }
+/* line 314, stdin */
+table.admin-index .button {
+  width: 100%;
+  margin-top: 4px; }
 
 
 /*# sourceMappingURL=app.css.map*/

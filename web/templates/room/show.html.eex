@@ -1,0 +1,7 @@
+<h2>Show room</h2>
+
+<ul>
+
+</ul>
+
+<%= link "Back", to: room_path(@conn, :index) %>

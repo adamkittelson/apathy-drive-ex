@@ -169,8 +169,8 @@ defmodule Room do
     "<span class='dark-cyan'>*</span>"
   end
 
-  def light_desc(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
-  def light_desc(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
+  def light_desc(light_level)  when light_level <= -100, do: "<div>The room is barely visible</div>"
+  def light_desc(light_level)  when light_level <=  -25, do: "<div>The room is dimly lit</div>"
   def light_desc(_light_level), do: nil
 
   def look_items(%Room{} = room) do

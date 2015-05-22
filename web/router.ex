@@ -2,7 +2,9 @@ defmodule ApathyDrive.Router do
   use Phoenix.Router
 
   pipeline :browser do
-    plug ApathyDrive.Plugs.HTTPSRedirect
+    if Mix.env == :prod do
+      plug ApathyDrive.Plugs.HTTPSRedirect
+    end
     plug :accepts, ~w(html)
     plug :fetch_session
     plug :fetch_flash
@@ -24,6 +26,12 @@ defmodule ApathyDrive.Router do
     get "/angels", FactionController, :angels
     get "/demons", FactionController, :demons
     get "/elementals", FactionController, :elementals
+  end
+
+  scope "/system", ApathyDrive do
+    pipe_through :browser
+
+    resources "/rooms", RoomController
   end
 
   scope "/auth", alias: ApathyDrive do
