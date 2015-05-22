@@ -2,7 +2,7 @@ use Mix.Config
 
 config :apathy_drive, ApathyDrive.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "YOUR_SECRET_HERE",
+  secret_key_base: "YOUR_SECRET_WHICH_MUST_BE_AT_LEAST_SIXTY_FOUR_BYTES_IN_LENGTH_HERE",
   debug_errors: false,
   pubsub: [name: :pub_sub,
            adapter: Phoenix.PubSub.PG2],
