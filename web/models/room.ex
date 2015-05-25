@@ -55,6 +55,13 @@ defmodule Room do
     {:ok, room}
   end
 
+  def changeset(%Room{} = room, params \\ :empty) do
+    room
+    |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_monsters lair_frequency lair_faction commands legacy_id))
+    |> validate_format(:name, ~r/^[a-zA-Z ]+$/)
+    |> validate_length(:name, min: 1, max: 18)
+  end
+
   def start_room_id do
     ApathyDrive.Config.get(:start_room)
   end

@@ -8,7 +8,7 @@ defmodule ApathyDrive.RoomController do
   plug :action
 
   def index(conn, params) do
-    page = 
+    page =
       Room
       |> order_by([r], asc: r.id)
       |> Repo.paginate(IO.inspect(params))
@@ -52,6 +52,14 @@ defmodule ApathyDrive.RoomController do
 
   def update(conn, %{"id" => id, "room" => room_params}) do
     room = Repo.get(Room, id)
+
+    room_params = update_in room_params["lair_monsters"], fn(lair_monsters) ->
+      lair_monsters
+      |> String.replace(~r/[^\d,]/, "")
+      |> String.split(",")
+      |> Enum.map(&String.to_integer/1)
+    end
+
     changeset = Room.changeset(room, room_params)
 
     if changeset.valid? do

@@ -28,10 +28,7 @@ defmodule ApathyDrive.JSONB do
   def dump(json) when is_binary(json), do: {:ok, json}
   def dump(nil), do: {:ok, nil}
   def dump(any) do
-    case Poison.encode(any) do
-      {:ok, json} -> {:ok, json}
-      _           -> :error
-    end
+    {:ok, any}
   end
 
 end

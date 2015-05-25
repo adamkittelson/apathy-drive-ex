@@ -844,6 +844,365 @@ there.
 /* Larger than Desktop HD */
 @media (min-width: 1200px) {}
 
+/* BASICS */
+
+.CodeMirror {
+  /* Set height, width, borders, and global font properties here */
+  font-family: monospace;
+  height: 300px;
+  color: black;
+}
+
+/* PADDING */
+
+.CodeMirror-lines {
+  padding: 4px 0; /* Vertical padding around content */
+}
+.CodeMirror pre {
+  padding: 0 4px; /* Horizontal padding of content */
+}
+
+.CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
+  background-color: white; /* The little square between H and V scrollbars */
+}
+
+/* GUTTER */
+
+.CodeMirror-gutters {
+  border-right: 1px solid #ddd;
+  background-color: #f7f7f7;
+  white-space: nowrap;
+}
+.CodeMirror-linenumbers {}
+.CodeMirror-linenumber {
+  padding: 0 3px 0 5px;
+  min-width: 20px;
+  text-align: right;
+  color: #999;
+  white-space: nowrap;
+}
+
+.CodeMirror-guttermarker { color: black; }
+.CodeMirror-guttermarker-subtle { color: #999; }
+
+/* CURSOR */
+
+.CodeMirror div.CodeMirror-cursor {
+  border-left: 1px solid black;
+}
+/* Shown when moving in bi-directional text */
+.CodeMirror div.CodeMirror-secondarycursor {
+  border-left: 1px solid silver;
+}
+.CodeMirror.cm-fat-cursor div.CodeMirror-cursor {
+  width: auto;
+  border: 0;
+  background: #7e7;
+}
+.CodeMirror.cm-fat-cursor div.CodeMirror-cursors {
+  z-index: 1;
+}
+
+.cm-animate-fat-cursor {
+  width: auto;
+  border: 0;
+  -webkit-animation: blink 1.06s steps(1) infinite;
+  -moz-animation: blink 1.06s steps(1) infinite;
+  animation: blink 1.06s steps(1) infinite;
+}
+@-moz-keyframes blink {
+  0% { background: #7e7; }
+  50% { background: none; }
+  100% { background: #7e7; }
+}
+@-webkit-keyframes blink {
+  0% { background: #7e7; }
+  50% { background: none; }
+  100% { background: #7e7; }
+}
+@keyframes blink {
+  0% { background: #7e7; }
+  50% { background: none; }
+  100% { background: #7e7; }
+}
+
+/* Can style cursor different in overwrite (non-insert) mode */
+div.CodeMirror-overwrite div.CodeMirror-cursor {}
+
+.cm-tab { display: inline-block; text-decoration: inherit; }
+
+.CodeMirror-ruler {
+  border-left: 1px solid #ccc;
+  position: absolute;
+}
+
+/* DEFAULT THEME */
+
+.cm-s-default .cm-keyword {color: #708;}
+.cm-s-default .cm-atom {color: #219;}
+.cm-s-default .cm-number {color: #164;}
+.cm-s-default .cm-def {color: #00f;}
+.cm-s-default .cm-variable,
+.cm-s-default .cm-punctuation,
+.cm-s-default .cm-property,
+.cm-s-default .cm-operator {}
+.cm-s-default .cm-variable-2 {color: #05a;}
+.cm-s-default .cm-variable-3 {color: #085;}
+.cm-s-default .cm-comment {color: #a50;}
+.cm-s-default .cm-string {color: #a11;}
+.cm-s-default .cm-string-2 {color: #f50;}
+.cm-s-default .cm-meta {color: #555;}
+.cm-s-default .cm-qualifier {color: #555;}
+.cm-s-default .cm-builtin {color: #30a;}
+.cm-s-default .cm-bracket {color: #997;}
+.cm-s-default .cm-tag {color: #170;}
+.cm-s-default .cm-attribute {color: #00c;}
+.cm-s-default .cm-header {color: blue;}
+.cm-s-default .cm-quote {color: #090;}
+.cm-s-default .cm-hr {color: #999;}
+.cm-s-default .cm-link {color: #00c;}
+
+.cm-negative {color: #d44;}
+.cm-positive {color: #292;}
+.cm-header, .cm-strong {font-weight: bold;}
+.cm-em {font-style: italic;}
+.cm-link {text-decoration: underline;}
+.cm-strikethrough {text-decoration: line-through;}
+
+.cm-s-default .cm-error {color: #f00;}
+.cm-invalidchar {color: #f00;}
+
+.CodeMirror-composing { border-bottom: 2px solid; }
+
+/* Default styles for common addons */
+
+div.CodeMirror span.CodeMirror-matchingbracket {color: #0f0;}
+div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
+.CodeMirror-matchingtag { background: rgba(255, 150, 0, .3); }
+.CodeMirror-activeline-background {background: #e8f2ff;}
+
+/* STOP */
+
+/* The rest of this file contains styles related to the mechanics of
+   the editor. You probably shouldn't touch them. */
+
+.CodeMirror {
+  position: relative;
+  overflow: hidden;
+  background: white;
+}
+
+.CodeMirror-scroll {
+  overflow: scroll !important; /* Things will break if this is overridden */
+  /* 30px is the magic margin used to hide the element's real scrollbars */
+  /* See overflow: hidden in .CodeMirror */
+  margin-bottom: -30px; margin-right: -30px;
+  padding-bottom: 30px;
+  height: 100%;
+  outline: none; /* Prevent dragging from highlighting the element */
+  position: relative;
+}
+.CodeMirror-sizer {
+  position: relative;
+  border-right: 30px solid transparent;
+}
+
+/* The fake, visible scrollbars. Used to force redraw during scrolling
+   before actuall scrolling happens, thus preventing shaking and
+   flickering artifacts. */
+.CodeMirror-vscrollbar, .CodeMirror-hscrollbar, .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
+  position: absolute;
+  z-index: 6;
+  display: none;
+}
+.CodeMirror-vscrollbar {
+  right: 0; top: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+.CodeMirror-hscrollbar {
+  bottom: 0; left: 0;
+  overflow-y: hidden;
+  overflow-x: scroll;
+}
+.CodeMirror-scrollbar-filler {
+  right: 0; bottom: 0;
+}
+.CodeMirror-gutter-filler {
+  left: 0; bottom: 0;
+}
+
+.CodeMirror-gutters {
+  position: absolute; left: 0; top: 0;
+  z-index: 3;
+}
+.CodeMirror-gutter {
+  white-space: normal;
+  height: 100%;
+  display: inline-block;
+  margin-bottom: -30px;
+  /* Hack to make IE7 behave */
+  *zoom:1;
+  *display:inline;
+}
+.CodeMirror-gutter-wrapper {
+  position: absolute;
+  z-index: 4;
+  height: 100%;
+}
+.CodeMirror-gutter-elt {
+  position: absolute;
+  cursor: default;
+  z-index: 4;
+}
+.CodeMirror-gutter-wrapper {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.CodeMirror-lines {
+  cursor: text;
+  min-height: 1px; /* prevents collapsing before first draw */
+}
+.CodeMirror pre {
+  /* Reset some styles that the rest of the page might have set */
+  -moz-border-radius: 0; -webkit-border-radius: 0; border-radius: 0;
+  border-width: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+  white-space: pre;
+  word-wrap: normal;
+  line-height: inherit;
+  color: inherit;
+  z-index: 2;
+  position: relative;
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+}
+.CodeMirror-wrap pre {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  word-break: normal;
+}
+
+.CodeMirror-linebackground {
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  z-index: 0;
+}
+
+.CodeMirror-linewidget {
+  position: relative;
+  z-index: 2;
+  overflow: auto;
+}
+
+.CodeMirror-widget {}
+
+.CodeMirror-code {
+  outline: none;
+}
+
+/* Force content-box sizing for the elements where we expect it */
+.CodeMirror-scroll,
+.CodeMirror-sizer,
+.CodeMirror-gutter,
+.CodeMirror-gutters,
+.CodeMirror-linenumber {
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+.CodeMirror-measure {
+  position: absolute;
+  width: 100%;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+.CodeMirror-measure pre { position: static; }
+
+.CodeMirror div.CodeMirror-cursor {
+  position: absolute;
+  border-right: none;
+  width: 0;
+}
+
+div.CodeMirror-cursors {
+  visibility: hidden;
+  position: relative;
+  z-index: 3;
+}
+.CodeMirror-focused div.CodeMirror-cursors {
+  visibility: visible;
+}
+
+.CodeMirror-selected { background: #d9d9d9; }
+.CodeMirror-focused .CodeMirror-selected { background: #d7d4f0; }
+.CodeMirror-crosshair { cursor: crosshair; }
+.CodeMirror ::selection { background: #d7d4f0; }
+.CodeMirror ::-moz-selection { background: #d7d4f0; }
+
+.cm-searching {
+  background: #ffa;
+  background: rgba(255, 255, 0, .4);
+}
+
+/* IE7 hack to prevent it from returning funny offsetTops on the spans */
+.CodeMirror span { *vertical-align: text-bottom; }
+
+/* Used to force a border model for a node */
+.cm-force-border { padding-right: .1px; }
+
+@media print {
+  /* Hide the cursor when printing */
+  .CodeMirror div.CodeMirror-cursors {
+    visibility: hidden;
+  }
+}
+
+/* See issue #2901 */
+.cm-tab-wrap-hack:after { content: ''; }
+
+/* Help users use markselection to safely style text background */
+span.CodeMirror-selectedtext { background: none; }
+
+.cm-s-twilight.CodeMirror { background: #141414; color: #f7f7f7; } /**/
+.cm-s-twilight .CodeMirror-selected { background: #323232 !important; } /**/
+.cm-s-twilight.CodeMirror ::selection { background: rgba(50, 50, 50, 0.99); }
+.cm-s-twilight.CodeMirror ::-moz-selection { background: rgba(50, 50, 50, 0.99); }
+
+.cm-s-twilight .CodeMirror-gutters { background: #222; border-right: 1px solid #aaa; }
+.cm-s-twilight .CodeMirror-guttermarker { color: white; }
+.cm-s-twilight .CodeMirror-guttermarker-subtle { color: #aaa; }
+.cm-s-twilight .CodeMirror-linenumber { color: #aaa; }
+.cm-s-twilight .CodeMirror-cursor { border-left: 1px solid white !important; }
+
+.cm-s-twilight .cm-keyword {  color: #f9ee98; } /**/
+.cm-s-twilight .cm-atom { color: #FC0; }
+.cm-s-twilight .cm-number { color:  #ca7841; } /**/
+.cm-s-twilight .cm-def { color: #8DA6CE; }
+.cm-s-twilight span.cm-variable-2, .cm-s-twilight span.cm-tag { color: #607392; } /**/
+.cm-s-twilight span.cm-variable-3, .cm-s-twilight span.cm-def { color: #607392; } /**/
+.cm-s-twilight .cm-operator { color: #cda869; } /**/
+.cm-s-twilight .cm-comment { color:#777; font-style:italic; font-weight:normal; } /**/
+.cm-s-twilight .cm-string { color:#8f9d6a; font-style:italic; } /**/
+.cm-s-twilight .cm-string-2 { color:#bd6b18 } /*?*/
+.cm-s-twilight .cm-meta { background-color:#141414; color:#f7f7f7; } /*?*/
+.cm-s-twilight .cm-builtin { color: #cda869; } /*?*/
+.cm-s-twilight .cm-tag { color: #997643; } /**/
+.cm-s-twilight .cm-attribute { color: #d6bb6d; } /*?*/
+.cm-s-twilight .cm-header { color: #FF6400; }
+.cm-s-twilight .cm-hr { color: #AEAEAE; }
+.cm-s-twilight .cm-link {   color:#ad9361; font-style:italic; text-decoration:none; } /**/
+.cm-s-twilight .cm-error { border-bottom: 1px solid red; }
+
+.cm-s-twilight .CodeMirror-activeline-background {background: #27282E !important;}
+.cm-s-twilight .CodeMirror-matchingbracket {outline:1px solid grey; color:white !important;}
+
 /* line 1, stdin */
 html {
   height: 100%;
@@ -858,112 +1217,119 @@ html {
     color: red; }
   /* line 12, stdin */
   .container input {
-    color: black; }
+    background: #141414; }
   /* line 15, stdin */
+  .container textarea {
+    background: #141414;
+    height: 150px; }
+  /* line 19, stdin */
   .container select {
     color: black; }
 
-/* line 20, stdin */
+/* line 24, stdin */
 .header {
   margin-top: 6rem;
   text-align: center; }
 
 /* old */
-/* line 27, stdin */
+/* line 31, stdin */
 .dark-cyan {
   color: teal; }
 
-/* line 30, stdin */
+/* line 34, stdin */
 .cyan {
   color: cyan; }
 
-/* line 33, stdin */
+/* line 37, stdin */
 .dark-red {
   color: maroon; }
 
-/* line 36, stdin */
+/* line 40, stdin */
 .red {
   color: red; }
 
-/* line 39, stdin */
+/* line 43, stdin */
 .dark-magenta {
   color: purple; }
 
-/* line 42, stdin */
+/* line 46, stdin */
 .magenta {
   color: magenta; }
 
-/* line 45, stdin */
+/* line 49, stdin */
 .white {
   color: white; }
 
-/* line 48, stdin */
+/* line 52, stdin */
 .dark-yellow {
   color: olive; }
 
-/* line 51, stdin */
+/* line 55, stdin */
 .yellow {
   color: yellow; }
 
-/* line 54, stdin */
+/* line 58, stdin */
 .dark-blue {
   color: #0000aa; }
 
-/* line 57, stdin */
+/* line 61, stdin */
 .blue {
   color: blue; }
 
-/* line 60, stdin */
+/* line 64, stdin */
 .dark-green {
   color: green; }
 
-/* line 63, stdin */
+/* line 67, stdin */
 .green {
   color: lime; }
 
-/* line 66, stdin */
+/* line 70, stdin */
 .grey {
   color: silver; }
 
-/* line 69, stdin */
+/* line 73, stdin */
 .dark-grey {
   color: gray; }
 
-/* line 72, stdin */
+/* line 76, stdin */
 .underline {
   border-bottom: 1px solid green;
   padding-bottom: 3px;
   margin-bottom: 20px; }
 
-/* line 77, stdin */
+/* line 81, stdin */
 .room {
   font-family: "Inconsolata", "Andale Mono", Monospace;
   color: silver;
   width: 700px;
   line-height: 19px; }
-  /* line 82, stdin */
+  /* line 86, stdin */
   .room .title {
     color: cyan; }
-    /* line 84, stdin */
+    /* line 88, stdin */
     .room .title .lair {
       font-style: italic; }
-  /* line 86, stdin */
+  /* line 90, stdin */
   .room .description {
     text-indent: 33px; }
-  /* line 89, stdin */
+  /* line 93, stdin */
   .room .items {
     color: teal; }
-  /* line 92, stdin */
+  /* line 96, stdin */
   .room .exits {
     color: green; }
+    /* line 98, stdin */
+    .room .exits a {
+      color: green; }
 
-/* line 97, stdin */
+/* line 102, stdin */
 code {
   font-size: 80%;
   background-color: #333;
   border: 1px solid #a1a1a1; }
 
-/* line 103, stdin */
+/* line 108, stdin */
 #scroll {
   height: 100%;
   white-space: pre-wrap;
@@ -972,16 +1338,16 @@ code {
   line-height: 9px;
   padding-bottom: 1em; }
 
-/* line 112, stdin */
+/* line 117, stdin */
 pre {
   font-family: "Inconsolata", "Andale Mono", Monospace; }
 
-/* line 116, stdin */
+/* line 121, stdin */
 #scroll p {
   line-height: 19px;
   margin-bottom: 0px; }
 
-/* line 120, stdin */
+/* line 125, stdin */
 input.prompt {
   background-color: black;
   border: none;
@@ -992,43 +1358,43 @@ input.prompt {
   margin-bottom: 0px;
   width: 525px; }
 
-/* line 130, stdin */
+/* line 135, stdin */
 .prompt::selection {
   background-color: #0000aa;
   color: white; }
 
-/* line 134, stdin */
+/* line 139, stdin */
 .prompt:disabled {
   color: olive; }
 
-/* line 137, stdin */
+/* line 142, stdin */
 #prompt {
   color: silver;
   margin-right: 5px; }
 
-/* line 141, stdin */
+/* line 146, stdin */
 .header {
   margin-top: 6rem;
   margin-bottom: 6rem;
   text-align: center; }
 
-/* line 145, stdin */
+/* line 150, stdin */
 .value-prop {
   margin-top: 1rem; }
 
-/* line 147, stdin */
+/* line 152, stdin */
 .value-props {
   margin-top: 4rem;
   margin-bottom: 4rem; }
 
-/* line 150, stdin */
+/* line 155, stdin */
 .docs-prime-header {
   text-transform: uppercase;
   font-size: 1.5rem;
   letter-spacing: .2rem;
   font-weight: 600; }
 
-/* line 155, stdin */
+/* line 160, stdin */
 .docs-header {
   text-transform: uppercase;
   font-size: 1.2rem;
@@ -1036,37 +1402,37 @@ input.prompt {
   font-weight: 600;
   margin-bottom: 1rem; }
 
-/* line 161, stdin */
+/* line 166, stdin */
 .docs-section {
   border-top: 1px solid #eee;
   padding: 4rem 0;
   margin-bottom: 0; }
-  /* line 165, stdin */
+  /* line 170, stdin */
   .docs-section p {
     font-size: 0.95em; }
-  /* line 168, stdin */
+  /* line 173, stdin */
   .docs-section div.room {
     padding-left: 2em;
     margin-bottom: 2.5rem; }
 
-/* line 173, stdin */
+/* line 178, stdin */
 .value-img {
   display: block;
   text-align: center;
   margin: 2.5rem auto 0;
   max-width: 50%; }
 
-/* line 178, stdin */
+/* line 183, stdin */
 .navbar {
   display: none; }
 
 /* Larger than tablet */
 @media (min-width: 750px) {
   /* Navbar */
-  /* line 184, stdin */
+  /* line 189, stdin */
   .navbar + .docs-section {
     border-top-width: 0; }
-  /* line 187, stdin */
+  /* line 192, stdin */
   .navbar, .navbar-spacer {
     display: block;
     width: 100%;
@@ -1075,22 +1441,22 @@ input.prompt {
     z-index: 99;
     border-top: 1px solid #eee;
     border-bottom: 1px solid #eee; }
-  /* line 195, stdin */
+  /* line 200, stdin */
   .navbar-spacer {
     display: none; }
-  /* line 197, stdin */
+  /* line 202, stdin */
   .navbar > .container {
     width: 100%; }
-  /* line 199, stdin */
+  /* line 204, stdin */
   .navbar-list {
     list-style: none;
     margin-bottom: 0; }
-  /* line 202, stdin */
+  /* line 207, stdin */
   .navbar-item {
     position: relative;
     float: left;
     margin-bottom: 0; }
-  /* line 206, stdin */
+  /* line 211, stdin */
   .navbar-link {
     text-transform: uppercase;
     font-size: 11px;
@@ -1100,26 +1466,26 @@ input.prompt {
     text-decoration: none;
     line-height: 6.5rem;
     color: #fff; }
-  /* line 215, stdin */
+  /* line 220, stdin */
   .navbar-link.active {
     color: #33C3F0; }
-  /* line 217, stdin */
+  /* line 222, stdin */
   .has-docked-nav .navbar {
     position: fixed;
     top: 0;
     left: 0; }
-  /* line 221, stdin */
+  /* line 226, stdin */
   .has-docked-nav .navbar-spacer {
     display: block; }
   /* Re-overiding the width 100% declaration to match size of % based container */
-  /* line 224, stdin */
+  /* line 229, stdin */
   .has-docked-nav .navbar > .container {
     width: 80%; }
   /* Popover */
-  /* line 228, stdin */
+  /* line 233, stdin */
   .popover.open {
     display: block; }
-  /* line 231, stdin */
+  /* line 236, stdin */
   .popover {
     display: none;
     position: absolute;
@@ -1133,7 +1499,7 @@ input.prompt {
     -webkit-filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1));
     -moz-filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1));
     filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1)); }
-  /* line 245, stdin */
+  /* line 250, stdin */
   .popover-item:first-child .popover-link:after, .popover-item:first-child .popover-link:before {
     bottom: 100%;
     left: 50%;
@@ -1143,28 +1509,28 @@ input.prompt {
     width: 0;
     position: absolute;
     pointer-events: none; }
-  /* line 254, stdin */
+  /* line 259, stdin */
   .popover-item:first-child .popover-link:after {
     border-color: rgba(255, 255, 255, 0);
     border-bottom-color: #fff;
     border-width: 10px;
     margin-left: -10px; }
-  /* line 259, stdin */
+  /* line 264, stdin */
   .popover-item:first-child .popover-link:before {
     border-color: rgba(238, 238, 238, 0);
     border-bottom-color: #eee;
     border-width: 11px;
     margin-left: -11px; }
-  /* line 264, stdin */
+  /* line 269, stdin */
   .popover-list {
     padding: 0;
     margin: 0;
     list-style: none; }
-  /* line 268, stdin */
+  /* line 273, stdin */
   .popover-item {
     padding: 0;
     margin: 0; }
-  /* line 271, stdin */
+  /* line 276, stdin */
   .popover-link {
     position: relative;
     color: #222;
@@ -1177,42 +1543,48 @@ input.prompt {
     font-weight: 600;
     text-align: center;
     letter-spacing: .1rem; }
-  /* line 283, stdin */
+  /* line 288, stdin */
   .popover-item:first-child .popover-link {
     border-radius: 4px 4px 0 0; }
-  /* line 285, stdin */
+  /* line 290, stdin */
   .popover-item:last-child .popover-link {
     border-radius: 0 0 4px 4px;
     border-bottom-width: 0; }
-  /* line 288, stdin */
+  /* line 293, stdin */
   .popover-link:hover {
     color: #fff;
     background: #33C3F0; }
-  /* line 292, stdin */
+  /* line 297, stdin */
   .popover-link:hover, .popover-item:first-child .popover-link:hover:after {
     border-bottom-color: #33C3F0; } }
 
-/* line 296, stdin */
+/* line 301, stdin */
 table {
   margin-top: 1rem; }
-  /* line 297, stdin */
+  /* line 302, stdin */
   table th, table td {
     padding: 5px 5px;
     border: 1px solid #E1E1E1; }
-  /* line 301, stdin */
+  /* line 306, stdin */
   table th:first-child, table td:first-child {
     padding: 5px 5px; }
 
-/* line 308, stdin */
+/* line 313, stdin */
 table.admin-index th, table.admin-index td {
   padding: 5px; }
-  /* line 310, stdin */
+  /* line 315, stdin */
   table.admin-index th form, table.admin-index td form {
     margin-bottom: 0; }
-/* line 314, stdin */
+/* line 319, stdin */
 table.admin-index .button {
   width: 100%;
   margin-top: 4px; }
+
+/* line 325, stdin */
+.CodeMirror {
+  height: inherit;
+  margin-bottom: 1.5rem;
+  border: 1px solid silver; }
 
 
 /*# sourceMappingURL=app.css.map*/
