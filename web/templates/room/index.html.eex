@@ -44,7 +44,7 @@
       <td class="text-right">
         <%= link "Show", to: room_path(@conn, :show, room), class: "button button-primary" %>
         <%= link "Edit", to: room_path(@conn, :edit, room), class: "button button-primary" %>
-        <%= link "Delete", to: room_path(@conn, :delete, room), method: :delete, class: "button button-primary" %>
+        <%= link "Delete", to: room_path(@conn, :delete, room), method: :delete, class: "button button-primary", onclick: "return confirm('Are you sure?')" %>
       </td>
     </tr>
 <% end %>
