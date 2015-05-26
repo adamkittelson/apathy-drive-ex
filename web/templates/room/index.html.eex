@@ -2,14 +2,14 @@
   <div class="two columns">
     &nbsp;
     <%= if @page_number > 1 do %>
-      <%= link "Previous Page", to: room_path(@conn, :index, page: @page_number - 1), class: "button button-primary" %>
+      <%= link "Previous Page", to: room_path(@conn, :index, page: @page_number - 1, q: @q), class: "button button-primary" %>
     <% end %>
   </div>
   <div class="eight columns">&nbsp;</div>
   <div class="two columns">
     &nbsp;
     <%= if @page_number < @total_pages do %>
-      <%= link "Next Page", to: room_path(@conn, :index, page: @page_number + 1), class: "button button-primary" %>
+      <%= link "Next Page", to: room_path(@conn, :index, page: @page_number + 1, q: @q), class: "button button-primary" %>
     <% end %>
   </div>
 </div>
@@ -17,7 +17,8 @@
 <table class="admin-index">
   <thead>
     <tr>
-      <th colspan="3">Rooms</th>
+      <th colspan="2">Rooms - Page <%= @page_number %> of <%= @total_pages %></th>
+      <th colspan="1">Search<input id="search"/></th>
     </tr>
     <tr>
       <th>ID</th><th>Room</th><th>Actions</th>
@@ -52,3 +53,6 @@
 </table>
 
 <%= link "New room", to: room_path(@conn, :new) %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/json-edit")</script>

@@ -3661,6 +3661,13 @@ $("textarea.json").each(function () {
   });
 
   myCodeMirror.setValue(JSON.stringify(JSON.parse(myCodeMirror.getValue()), null, "  "));
+});
+
+$(document).on("keyup", "#search", function (event) {
+  if (event.which === 13) {
+    var query = $("#search").val();
+    window.location = "" + window.location.origin + window.location.pathname + "?q=" + query;
+  }
 });});
 
 require.register("web/static/js/nav", function(exports, require, module) {

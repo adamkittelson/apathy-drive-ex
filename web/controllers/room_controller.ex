@@ -7,11 +7,28 @@ defmodule ApathyDrive.RoomController do
   plug :scrub_params, "room" when action in [:create, :update]
   plug :action
 
+  def index(conn, %{"q" => query} = params) do
+    query = "%#{query}%"
+
+    page =
+      Room
+      |> where([r], ilike(r.name, ^query))
+      |> order_by([r], asc: r.id)
+      |> Repo.paginate(params)
+
+    render(conn, "index.html",
+      rooms: page.entries,
+      page_number: page.page_number,
+      page_size: page.page_size,
+      total_pages: page.total_pages,
+      q: params["q"])
+  end
+
   def index(conn, params) do
     page =
       Room
       |> order_by([r], asc: r.id)
-      |> Repo.paginate(IO.inspect(params))
+      |> Repo.paginate(params)
 
     render(conn, "index.html",
       rooms: page.entries,
@@ -26,7 +43,7 @@ defmodule ApathyDrive.RoomController do
   end
 
   def create(conn, %{"room" => room_params}) do
-    room_params = update_in room_params["lair_monsters"], fn 
+    room_params = update_in room_params["lair_monsters"], fn
       nil ->
         nil
       lair_monsters ->
@@ -63,7 +80,7 @@ defmodule ApathyDrive.RoomController do
   def update(conn, %{"id" => id, "room" => room_params}) do
     room = Repo.get(Room, id)
 
-    room_params = update_in room_params["lair_monsters"], fn 
+    room_params = update_in room_params["lair_monsters"], fn
       nil ->
         nil
       lair_monsters ->
