@@ -95,6 +95,8 @@ defmodule ApathyDrive.RoomController do
     if changeset.valid? do
       Repo.update(changeset)
 
+      ApathyDrive.PubSub.broadcast!("rooms:#{id}", {:room_updated, changeset})
+
       conn
       |> put_flash(:info, "Room updated successfully.")
       |> redirect(to: room_path(conn, :index))

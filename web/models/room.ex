@@ -58,8 +58,8 @@ defmodule Room do
   def changeset(%Room{} = room, params \\ :empty) do
     room
     |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_monsters lair_frequency lair_faction commands legacy_id))
-    |> validate_format(:name, ~r/^[a-zA-Z ]+$/)
-    |> validate_length(:name, min: 1, max: 18)
+    |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
+    |> validate_length(:name, min: 1, max: 30)
   end
 
   def start_room_id do
@@ -544,6 +544,10 @@ defmodule Room do
       send(monster, {:scroll, "<p>You must first clear the room of adversaries.</p>"})
       {:noreply, room}
     end
+  end
+
+  def handle_info({:room_updated, %{changes: changes}}, room) do
+    {:noreply, Map.merge(room, changes)}
   end
 
   def handle_info(_message, room) do
