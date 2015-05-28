@@ -59,17 +59,15 @@ defmodule ApathyDrive.Router do
     if spirit_id && (spirit = ApathyDrive.Repo.get(Spirit, spirit_id)) do
       conn
       |> assign(:current_spirit, spirit_id)
-      |> put_session(:admin?, spirit.admin)
+      |> assign(:admin?, spirit.admin)
     else
       conn
-      |> assign(:current_spirit, nil)
       |> put_session(:current_spirit, nil)
-      |> put_session(:admin?, nil)
     end
   end
 
   defp require_admin(conn, _) do
-    case get_session(conn, :admin?) do
+    case conn.assigns[:admin?] do
       true ->
         conn
       _ ->
