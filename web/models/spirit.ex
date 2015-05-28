@@ -30,6 +30,7 @@ defmodule Spirit do
     field :mana,              :integer, virtual: true
     field :mana_regen,        :integer, virtual: true
     field :timers,            :any,     virtual: true, default: %{}
+    field :admin,             :boolean
 
     timestamps
   end

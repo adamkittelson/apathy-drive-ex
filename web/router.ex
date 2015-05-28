@@ -16,6 +16,10 @@ defmodule ApathyDrive.Router do
     plug :put_oauth_strategy
   end
 
+  pipeline :admin do
+    plug :require_admin
+  end
+
   scope "/", ApathyDrive do
     pipe_through :browser # Use the default browser stack
 
@@ -29,7 +33,7 @@ defmodule ApathyDrive.Router do
   end
 
   scope "/system", ApathyDrive do
-    pipe_through :browser
+    pipe_through [:browser, :admin]
 
     resources "/rooms", RoomController
   end
@@ -49,14 +53,29 @@ defmodule ApathyDrive.Router do
   # will allow you to have access to the current user in your views with
   # `@current_user`.
   defp assign_current_spirit(conn, _) do
-    spirit_id = get_session(conn, :current_spirit)
+    spirit_id = conn
+                |> get_session(:current_spirit)
 
-    if spirit_id && ApathyDrive.Repo.get(Spirit, spirit_id) do
-      assign(conn, :current_spirit, spirit_id)
+    if spirit_id && (spirit = ApathyDrive.Repo.get(Spirit, spirit_id)) do
+      conn
+      |> assign(:current_spirit, spirit_id)
+      |> put_session(:admin?, spirit.admin)
     else
       conn
       |> assign(:current_spirit, nil)
       |> put_session(:current_spirit, nil)
+      |> put_session(:admin?, nil)
+    end
+  end
+
+  defp require_admin(conn, _) do
+    case get_session(conn, :admin?) do
+      true ->
+        conn
+      _ ->
+        conn
+        |> redirect(to: "/")
+        |> halt
     end
   end
 
