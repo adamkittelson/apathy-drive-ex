@@ -142,3 +142,6 @@ CHANGELOG
 
 ---- 0.0.48 / 2015-05-17 / score-updates ---------------------------------------
 * add skills / defense info to score
+
+---- 0.0.49 / 2015-05-28 / admin -----------------------------------------------
+* start admin section, room editing for admins
