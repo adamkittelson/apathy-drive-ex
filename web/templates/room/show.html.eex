@@ -1,0 +1,19 @@
+<h2>Show room</h2>
+
+<p>
+  <div class="room">
+    <div class="title"><%= if Room.lair_indicator(@room) do %><%= {:safe, Room.lair_indicator(@room) } %><% end %><%= @room.name %>
+    </div>
+    <div class="description"><%= @room.description %></div>
+    <%= {:safe, Room.look_items(@room)} %>
+    <%= {:safe, Room.look_monsters(@room, nil)} %>
+    <%= {:safe, look_directions(@conn, @room)} %>
+    <%= if Room.light_desc(@room.light) do %>
+      <%= {:safe, Room.light_desc(@room.light)} %>
+    <% end %>
+  </div>
+</p>
+<p>
+  <%= link "Back", to: room_path(@conn, :index),       class: "button button-primary" %>
+  <%= link "Edit", to: room_path(@conn, :edit, @room), class: "button button-primary" %>
+</p>

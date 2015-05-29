@@ -2,7 +2,9 @@ defmodule ApathyDrive.Router do
   use Phoenix.Router
 
   pipeline :browser do
-    plug ApathyDrive.Plugs.HTTPSRedirect
+    if Mix.env == :prod do
+      plug ApathyDrive.Plugs.HTTPSRedirect
+    end
     plug :accepts, ~w(html)
     plug :fetch_session
     plug :fetch_flash
@@ -12,6 +14,10 @@ defmodule ApathyDrive.Router do
 
   pipeline :auth do
     plug :put_oauth_strategy
+  end
+
+  pipeline :admin do
+    plug :require_admin
   end
 
   scope "/", ApathyDrive do
@@ -24,6 +30,12 @@ defmodule ApathyDrive.Router do
     get "/angels", FactionController, :angels
     get "/demons", FactionController, :demons
     get "/elementals", FactionController, :elementals
+  end
+
+  scope "/system", ApathyDrive do
+    pipe_through [:browser, :admin]
+
+    resources "/rooms", RoomController
   end
 
   scope "/auth", alias: ApathyDrive do
@@ -41,14 +53,27 @@ defmodule ApathyDrive.Router do
   # will allow you to have access to the current user in your views with
   # `@current_user`.
   defp assign_current_spirit(conn, _) do
-    spirit_id = get_session(conn, :current_spirit)
+    spirit_id = conn
+                |> get_session(:current_spirit)
 
-    if spirit_id && ApathyDrive.Repo.get(Spirit, spirit_id) do
-      assign(conn, :current_spirit, spirit_id)
+    if spirit_id && (spirit = ApathyDrive.Repo.get(Spirit, spirit_id)) do
+      conn
+      |> assign(:current_spirit, spirit_id)
+      |> assign(:admin?, spirit.admin)
     else
       conn
-      |> assign(:current_spirit, nil)
       |> put_session(:current_spirit, nil)
+    end
+  end
+
+  defp require_admin(conn, _) do
+    case conn.assigns[:admin?] do
+      true ->
+        conn
+      _ ->
+        conn
+        |> redirect(to: "/")
+        |> halt
     end
   end
 

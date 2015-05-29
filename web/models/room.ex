@@ -12,14 +12,14 @@ defmodule Room do
     field :description,           :string
     field :effects,               :any, virtual: true, default: %{}
     field :light,                 :integer
-    field :item_descriptions,     ApathyDrive.JSONB
+    field :item_descriptions,     ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
     field :lair_size,             :integer
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :lair_faction,          :string
-    field :exits,                 ApathyDrive.JSONB
-    field :commands,              ApathyDrive.JSONB
+    field :exits,                 ApathyDrive.JSONB, default: []
+    field :commands,              ApathyDrive.JSONB, default: %{}
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
@@ -53,6 +53,13 @@ defmodule Room do
     end
 
     {:ok, room}
+  end
+
+  def changeset(%Room{} = room, params \\ :empty) do
+    room
+    |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_monsters lair_frequency lair_faction commands legacy_id))
+    |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
+    |> validate_length(:name, min: 1, max: 30)
   end
 
   def start_room_id do
@@ -169,8 +176,8 @@ defmodule Room do
     "<span class='dark-cyan'>*</span>"
   end
 
-  def light_desc(light_level)  when light_level <= -100, do: "<p>The room is barely visible</p>"
-  def light_desc(light_level)  when light_level <=  -25, do: "<p>The room is dimly lit</p>"
+  def light_desc(light_level)  when light_level <= -100, do: "<div>The room is barely visible</div>"
+  def light_desc(light_level)  when light_level <=  -25, do: "<div>The room is dimly lit</div>"
   def light_desc(_light_level), do: nil
 
   def look_items(%Room{} = room) do
@@ -537,6 +544,10 @@ defmodule Room do
       send(monster, {:scroll, "<p>You must first clear the room of adversaries.</p>"})
       {:noreply, room}
     end
+  end
+
+  def handle_info({:room_updated, %{changes: changes}}, room) do
+    {:noreply, Map.merge(room, changes)}
   end
 
   def handle_info(_message, room) do

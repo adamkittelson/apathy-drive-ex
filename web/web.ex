@@ -23,9 +23,48 @@ defmodule ApathyDrive.Web do
       use Phoenix.HTML
       import Phoenix.Controller, only: [get_flash: 2]
 
-      # *****
-      # Copy your old `web/view.ex` using block contents here
-      # *****
+      def list_input(form, field, opts) when is_atom(field) and is_list(opts) do
+        opts =
+          opts
+          |> Keyword.put_new(:type, :text)
+          |> Keyword.put_new(:id, id_from(form, field))
+          |> Keyword.put_new(:name, name_from(form, field))
+          |> Keyword.put_new(:value, value_from(form, field))
+        tag(:input, opts)
+      end
+
+      def jsonarea(form, field, opts \\ []) do
+        opts =
+          opts
+          |> Keyword.put_new(:id, id_from(form, field))
+          |> Keyword.put_new(:name, name_from(form, field))
+
+        {value, opts} = Keyword.pop(opts, :value, value_from(form, field) || "")
+        content_tag(:textarea, html_escape(["\n", value]), Keyword.merge(opts, [class: "json"]))
+      end
+
+      defp value_from(%{model: model, params: params}, field) do
+        case Map.get(params, Atom.to_string(field)) || Map.get(model, field) do
+          %{} = value ->
+            Poison.encode!(value)
+          value when is_list(value) ->
+            Poison.encode!(value)
+          value ->
+            IO.inspect(value)
+        end
+      end
+      defp value_from(name, _field) when is_atom(name),
+        do: nil
+
+      defp id_from(%{name: name}, field),
+        do: "#{name}_#{field}"
+      defp id_from(name, field) when is_atom(name),
+        do: "#{name}_#{field}"
+
+      defp name_from(%{name: name}, field),
+        do: "#{name}[#{field}]"
+      defp name_from(name, field) when is_atom(name),
+        do: "#{name}[#{field}]"
     end
   end
 

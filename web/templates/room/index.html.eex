@@ -1,0 +1,58 @@
+<div class="row">
+  <div class="two columns">
+    &nbsp;
+    <%= if @page_number > 1 do %>
+      <%= link "Previous Page", to: room_path(@conn, :index, page: @page_number - 1, q: @q), class: "button button-primary" %>
+    <% end %>
+  </div>
+  <div class="eight columns">&nbsp;</div>
+  <div class="two columns">
+    &nbsp;
+    <%= if @page_number < @total_pages do %>
+      <%= link "Next Page", to: room_path(@conn, :index, page: @page_number + 1, q: @q), class: "button button-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<table class="admin-index">
+  <thead>
+    <tr>
+      <th colspan="2">Rooms - Page <%= @page_number %> of <%= @total_pages %></th>
+      <th colspan="1">Search<input id="search"/></th>
+    </tr>
+    <tr>
+      <th>ID</th><th>Room</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for room <- @rooms do %>
+    <tr>
+      <td><%= room.id %></td>
+      <td>
+        <div class="room">
+          <div class="title"><%= if Room.lair_indicator(room) do %><%= {:safe, Room.lair_indicator(room) } %><% end %><%= room.name %>
+          </div>
+          <div class="description"><%= room.description %></div>
+          <%= {:safe, Room.look_items(room)} %>
+          <%= {:safe, Room.look_monsters(room, nil)} %>
+          <%= {:safe, Room.look_directions(room)} %>
+          <%= if Room.light_desc(room.light) do %>
+            <%= {:safe, Room.light_desc(room.light)} %>
+          <% end %>
+        </div>
+      </td>
+
+      <td class="text-right">
+        <%= link "Show", to: room_path(@conn, :show, room), class: "button button-primary" %>
+        <%= link "Edit", to: room_path(@conn, :edit, room), class: "button button-primary" %>
+        <%= link "Delete", to: room_path(@conn, :delete, room), method: :delete, class: "button button-primary", onclick: "return confirm('Are you sure?')" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New room", to: room_path(@conn, :new) %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/json-edit")</script>

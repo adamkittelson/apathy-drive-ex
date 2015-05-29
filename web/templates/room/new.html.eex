@@ -1,0 +1,10 @@
+<h2>New room</h2>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+
+<%= render "form.html", changeset: @changeset,
+                        action: room_path(@conn, :create) %>
+
+<%= link "Back", to: room_path(@conn, :index) %>
+
+<script>require("web/static/js/json-edit")</script>

@@ -19,6 +19,7 @@
   "poolboy": {:hex, :poolboy, "1.5.1"},
   "postgrex": {:hex, :postgrex, "0.8.1"},
   "ranch": {:hex, :ranch, "1.0.0"},
+  "scrivener": {:hex, :scrivener, "0.6.0"},
   "shouldi": {:hex, :shouldi, "0.2.1"},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.4"},
   "timex": {:hex, :timex, "0.13.4"}}

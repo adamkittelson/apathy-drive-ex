@@ -10,7 +10,11 @@ html {
     color: red;
   }
   input {
-    color: black;
+    background: #141414;
+  }
+  textarea {
+    background: #141414;
+    height: 150px;
   }
   select {
     color: black;
@@ -76,6 +80,7 @@ html {
 
 .room {
   font-family: "Inconsolata", "Andale Mono", Monospace;
+  color: silver;
   width: 700px;
   line-height: 19px;
   .title {
@@ -83,7 +88,6 @@ html {
     .lair { font-style: italic; }
   }
   .description {
-    color: silver;
     text-indent: 33px;
   }
   .items {
@@ -91,11 +95,12 @@ html {
   }
   .exits {
     color: green;
+    a { color: green; }
   }
 }
 
 code {
-  font-size: 80%; 
+  font-size: 80%;
   background-color: #333;
   border: 1px solid #a1a1a1;
 }
@@ -156,7 +161,7 @@ input.prompt {
   text-transform: uppercase;
   font-size: 1.2rem;
   letter-spacing: .2rem;
-  font-weight: 600; 
+  font-weight: 600;
   margin-bottom: 1rem;}
 .docs-section {
   border-top: 1px solid #eee;
@@ -302,4 +307,23 @@ table {
     padding: 5px 5px;
   }
   margin-top: 1rem;
+}
+
+table.admin-index {
+  th, td {
+    padding: 5px;
+    form {
+      margin-bottom: 0;
+    }
+  }
+  .button {
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+
+.CodeMirror {
+  height: inherit;
+  margin-bottom: 1.5rem;
+  border: 1px solid silver;
 }
