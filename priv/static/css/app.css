@@ -1599,5 +1599,12 @@ h1.title {
   letter-spacing: 5px;
   text-transform: uppercase; }
 
+/* line 344, stdin */
+a.anchor {
+  display: block;
+  position: relative;
+  top: -7rem;
+  visibility: hidden; }
+
 
 /*# sourceMappingURL=app.css.map*/

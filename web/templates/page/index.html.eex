@@ -26,11 +26,14 @@
 
 <div class="docs-section" id="getting-started">
   <h6 class="docs-prime-header">Getting Started</h6>
-  <h6 class="docs-header" id="character-creation">Character Creation</h6>
+  <a class="anchor" id="character-creation"></a>
+  <h6 class="docs-header">Character Creation</h6>
   <p>First you need to create your character, you can do this by clicking 'Sign in with Facebook' above. Character creation is easy, just choose the name you'd like to be known by in the game and whether you'd like to be an Angel, a Demon, or an Elemental. You can change your name or faction later by using the <code>reroll</code> command in-game.</p>
-  <h6 class="docs-header" id="factions">Factions</h6>
+  <a class="anchor" id="factions"></a>
+  <h6 class="docs-header">Factions</h6>
   <p>The three factions are at war with each other. Angels are good-aligned and have abilities related to healing and protection. Elementals are neutral-aligned and have abilities related to nature and the elements. Demons are evil-aligned and specialize in destruction.</p>
-  <h6 class="docs-header" id="getting-around">Getting Around</h6>
+  <a class="anchor" id="getting-around"></a>
+  <h6 class="docs-header">Getting Around</h6>
   <p>Once you're in the game you'll find yourself in a room much like this:</p>
   <div class="room">
     <div class="title">Newhaven, Village Entrance</div>
@@ -39,18 +42,23 @@
     <div class="exits">Obvious exits: north, south, west, southeast</div>
   </div>
   <p>You can move to adjacent rooms by typing the direction in which you want to go and pressing enter, e.g. <code>southeast</code> or just <code>se</code> for short.</p>
-  <h6 class="docs-header" id="communication">Communication</h6>
+  <a class="anchor" id="communication"></a>
+  <h6 class="docs-header">Communication</h6>
   <p>You may communicate with all players in the game by typing <code>gossip &lt;your message&gt;</code>. You can communicate with other members of your faction by using your faction specific channel, e.g. <code>demon &lt;your message&gt;</code></p>
   <p>If you're possessing a monster you can speak with other monsters in the same room as you by typing <code>say &lt;your message&gt;</code>
-  <h6 class="docs-header" id="possession">Possession</h6>
+  <a class="anchor" id="possession"></a>
+  <h6 class="docs-header">Possession</h6>
   <p>Angels, Demons, and Elementals are powerful and immortal beings, but as spiritual entities they can't do much on their own. You'll need to take possession of a mortal body if you want to interact with the world in a meaningful way. You may possess a monster with the possess command, like <code>possess giant rat</code>. If you are powerful enough, and if the monster is not already possessed, you will take control of the monster. To see some basic information about the monster you're possessing you can type <code>status</code>.</p>
-  <h6 class="docs-header" id="abilities">Abilities</h6>
+  <a class="anchor" id="abilities"></a>
+  <h6 class="docs-header">Abilities</h6>
   <p>While possessing a monster you have access to all its abilities, as well as abilities provided by your faction. Type <code>abilities</code> to see a list of your abilities. You use abilities by typing the ability's command. Type the command by itself to cast an ability on yourself, or with a target to use it on another monster, e.g. <code>mmis rat</code> will cast a magic missile at a rat i the room if you have that ability.</p>
-  <h6 class="docs-header" id="getting-stronger">Getting Stronger</h6>
+  <a class="anchor" id="getting-stronger"></a>
+  <h6 class="docs-header">Getting Stronger</h6>
   <p>You get more powerful by gaining levels, and you gain levels by gaining experience. One way to gain experience is by killing monsters. You can see your progress toward your next level with the experience command by typing <code>experience</code>. When your level increases you'll be able to possess more powerful monsters, and you will learn new abilities.</p>
 </div>
 
-<div class="docs-section" id="the-war">
+<a class="anchor" id="the-war"></a>
+<div class="docs-section">
   <h6 class="docs-prime-header">The War</h6>
   <p>Approximately once an hour the status of the war will be tallied and displayed in-game.</p>
   <pre>
