@@ -1588,7 +1588,7 @@ table.admin-index .button {
   border: 1px solid silver; }
 
 /* line 332, stdin */
-a.title {
+#nav-title {
   font-size: 25px;
   font-weight: 100;
   letter-spacing: 5px; }

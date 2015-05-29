@@ -2,7 +2,7 @@
 <nav class="navbar">
   <div class="container">
     <ul class="navbar-list">
-      <li class="navbar-item"><a class="navbar-link title" href="/">Apotheosis</a></li>
+      <li class="navbar-item"><a id="nav-title" class="navbar-link" href="/" style="display:none;">Apotheosis</a></li>
       <li class="navbar-item">
         <a class="navbar-link" href="#getting-started" data-popover="#gettingStartedPopover">Getting Started</a>
         <div id="gettingStartedPopover" class="popover">

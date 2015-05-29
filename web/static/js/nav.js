@@ -68,10 +68,12 @@ $(document).ready(function() {
 
   function onScroll() {
     if(navOffsetTop <= $window.scrollTop() && !$body.hasClass('has-docked-nav')) {
-      $body.addClass('has-docked-nav')
+      $('#nav-title').show();
+      $body.addClass('has-docked-nav');
     }
     if(navOffsetTop > $window.scrollTop() && $body.hasClass('has-docked-nav')) {
-      $body.removeClass('has-docked-nav')
+      $body.removeClass('has-docked-nav');
+      $('#nav-title').hide();
     }
   }
 
