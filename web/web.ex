@@ -50,7 +50,7 @@ defmodule ApathyDrive.Web do
           value when is_list(value) ->
             Poison.encode!(value)
           value ->
-            IO.inspect(value)
+            value
         end
       end
       defp value_from(name, _field) when is_atom(name),
