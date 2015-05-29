@@ -25,3 +25,9 @@ Now you can visit `localhost:4000` from your browser.
 * docker-compose run web mix ecto.migrate
 * docker-compose run web pg_restore --dbname=apathy_drive_production --host=db --user=postgres test/data/data.dump
 * docker-compose up -d
+
+## grant a user admin privileges
+* docker-compose run web mix add_admin <username (case-sensitive)>
+
+## remove a user's admin privileges
+* docker-compose run web mix remove_admin <username (case-sensitive)>
