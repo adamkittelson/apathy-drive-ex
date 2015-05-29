@@ -1210,126 +1210,127 @@ html {
 
 /* line 6, stdin */
 .container {
-  max-width: 800px;
+  max-width: 900px;
+  min-width: 725px;
   color: white; }
-  /* line 9, stdin */
+  /* line 10, stdin */
   .container label.error {
     color: red; }
-  /* line 12, stdin */
+  /* line 13, stdin */
   .container input {
     background: #141414; }
-  /* line 15, stdin */
+  /* line 16, stdin */
   .container textarea {
     background: #141414;
     height: 150px; }
-  /* line 19, stdin */
+  /* line 20, stdin */
   .container select {
     color: black; }
 
-/* line 24, stdin */
+/* line 25, stdin */
 .header {
   margin-top: 6rem;
   text-align: center; }
 
 /* old */
-/* line 31, stdin */
+/* line 32, stdin */
 .dark-cyan {
   color: teal; }
 
-/* line 34, stdin */
+/* line 35, stdin */
 .cyan {
   color: cyan; }
 
-/* line 37, stdin */
+/* line 38, stdin */
 .dark-red {
   color: maroon; }
 
-/* line 40, stdin */
+/* line 41, stdin */
 .red {
   color: red; }
 
-/* line 43, stdin */
+/* line 44, stdin */
 .dark-magenta {
   color: purple; }
 
-/* line 46, stdin */
+/* line 47, stdin */
 .magenta {
   color: magenta; }
 
-/* line 49, stdin */
+/* line 50, stdin */
 .white {
   color: white; }
 
-/* line 52, stdin */
+/* line 53, stdin */
 .dark-yellow {
   color: olive; }
 
-/* line 55, stdin */
+/* line 56, stdin */
 .yellow {
   color: yellow; }
 
-/* line 58, stdin */
+/* line 59, stdin */
 .dark-blue {
   color: #0000aa; }
 
-/* line 61, stdin */
+/* line 62, stdin */
 .blue {
   color: blue; }
 
-/* line 64, stdin */
+/* line 65, stdin */
 .dark-green {
   color: green; }
 
-/* line 67, stdin */
+/* line 68, stdin */
 .green {
   color: lime; }
 
-/* line 70, stdin */
+/* line 71, stdin */
 .grey {
   color: silver; }
 
-/* line 73, stdin */
+/* line 74, stdin */
 .dark-grey {
   color: gray; }
 
-/* line 76, stdin */
+/* line 77, stdin */
 .underline {
   border-bottom: 1px solid green;
   padding-bottom: 3px;
   margin-bottom: 20px; }
 
-/* line 81, stdin */
+/* line 82, stdin */
 .room {
   font-family: "Inconsolata", "Andale Mono", Monospace;
   color: silver;
   width: 700px;
   line-height: 19px; }
-  /* line 86, stdin */
+  /* line 87, stdin */
   .room .title {
     color: cyan; }
-    /* line 88, stdin */
+    /* line 89, stdin */
     .room .title .lair {
       font-style: italic; }
-  /* line 90, stdin */
+  /* line 91, stdin */
   .room .description {
     text-indent: 33px; }
-  /* line 93, stdin */
+  /* line 94, stdin */
   .room .items {
     color: teal; }
-  /* line 96, stdin */
+  /* line 97, stdin */
   .room .exits {
     color: green; }
-    /* line 98, stdin */
+    /* line 99, stdin */
     .room .exits a {
       color: green; }
 
-/* line 102, stdin */
+/* line 103, stdin */
 code {
   font-size: 80%;
   background-color: #333;
   border: 1px solid #a1a1a1; }
 
-/* line 108, stdin */
+/* line 109, stdin */
 #scroll {
   height: 100%;
   white-space: pre-wrap;
@@ -1338,16 +1339,16 @@ code {
   line-height: 9px;
   padding-bottom: 1em; }
 
-/* line 117, stdin */
+/* line 118, stdin */
 pre {
   font-family: "Inconsolata", "Andale Mono", Monospace; }
 
-/* line 121, stdin */
+/* line 122, stdin */
 #scroll p {
   line-height: 19px;
   margin-bottom: 0px; }
 
-/* line 125, stdin */
+/* line 126, stdin */
 input.prompt {
   background-color: black;
   border: none;
@@ -1358,43 +1359,43 @@ input.prompt {
   margin-bottom: 0px;
   width: 525px; }
 
-/* line 135, stdin */
+/* line 136, stdin */
 .prompt::selection {
   background-color: #0000aa;
   color: white; }
 
-/* line 139, stdin */
+/* line 140, stdin */
 .prompt:disabled {
   color: olive; }
 
-/* line 142, stdin */
+/* line 143, stdin */
 #prompt {
   color: silver;
   margin-right: 5px; }
 
-/* line 146, stdin */
+/* line 147, stdin */
 .header {
   margin-top: 6rem;
   margin-bottom: 6rem;
   text-align: center; }
 
-/* line 150, stdin */
+/* line 151, stdin */
 .value-prop {
   margin-top: 1rem; }
 
-/* line 152, stdin */
+/* line 153, stdin */
 .value-props {
   margin-top: 4rem;
   margin-bottom: 4rem; }
 
-/* line 155, stdin */
+/* line 156, stdin */
 .docs-prime-header {
   text-transform: uppercase;
   font-size: 1.5rem;
   letter-spacing: .2rem;
   font-weight: 600; }
 
-/* line 160, stdin */
+/* line 161, stdin */
 .docs-header {
   text-transform: uppercase;
   font-size: 1.2rem;
@@ -1402,37 +1403,37 @@ input.prompt {
   font-weight: 600;
   margin-bottom: 1rem; }
 
-/* line 166, stdin */
+/* line 167, stdin */
 .docs-section {
   border-top: 1px solid #eee;
   padding: 4rem 0;
   margin-bottom: 0; }
-  /* line 170, stdin */
+  /* line 171, stdin */
   .docs-section p {
     font-size: 0.95em; }
-  /* line 173, stdin */
+  /* line 174, stdin */
   .docs-section div.room {
     padding-left: 2em;
     margin-bottom: 2.5rem; }
 
-/* line 178, stdin */
+/* line 179, stdin */
 .value-img {
   display: block;
   text-align: center;
   margin: 2.5rem auto 0;
   max-width: 50%; }
 
-/* line 183, stdin */
+/* line 184, stdin */
 .navbar {
   display: none; }
 
 /* Larger than tablet */
 @media (min-width: 750px) {
   /* Navbar */
-  /* line 189, stdin */
+  /* line 190, stdin */
   .navbar + .docs-section {
     border-top-width: 0; }
-  /* line 192, stdin */
+  /* line 193, stdin */
   .navbar, .navbar-spacer {
     display: block;
     width: 100%;
@@ -1441,22 +1442,22 @@ input.prompt {
     z-index: 99;
     border-top: 1px solid #eee;
     border-bottom: 1px solid #eee; }
-  /* line 200, stdin */
+  /* line 201, stdin */
   .navbar-spacer {
     display: none; }
-  /* line 202, stdin */
+  /* line 203, stdin */
   .navbar > .container {
     width: 100%; }
-  /* line 204, stdin */
+  /* line 205, stdin */
   .navbar-list {
     list-style: none;
     margin-bottom: 0; }
-  /* line 207, stdin */
+  /* line 208, stdin */
   .navbar-item {
     position: relative;
     float: left;
     margin-bottom: 0; }
-  /* line 211, stdin */
+  /* line 212, stdin */
   .navbar-link {
     text-transform: uppercase;
     font-size: 11px;
@@ -1466,26 +1467,26 @@ input.prompt {
     text-decoration: none;
     line-height: 6.5rem;
     color: #fff; }
-  /* line 220, stdin */
+  /* line 221, stdin */
   .navbar-link.active {
     color: #33C3F0; }
-  /* line 222, stdin */
+  /* line 223, stdin */
   .has-docked-nav .navbar {
     position: fixed;
     top: 0;
     left: 0; }
-  /* line 226, stdin */
+  /* line 227, stdin */
   .has-docked-nav .navbar-spacer {
     display: block; }
   /* Re-overiding the width 100% declaration to match size of % based container */
-  /* line 229, stdin */
+  /* line 230, stdin */
   .has-docked-nav .navbar > .container {
     width: 80%; }
   /* Popover */
-  /* line 233, stdin */
+  /* line 234, stdin */
   .popover.open {
     display: block; }
-  /* line 236, stdin */
+  /* line 237, stdin */
   .popover {
     display: none;
     position: absolute;
@@ -1499,7 +1500,7 @@ input.prompt {
     -webkit-filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1));
     -moz-filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1));
     filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.1)); }
-  /* line 250, stdin */
+  /* line 251, stdin */
   .popover-item:first-child .popover-link:after, .popover-item:first-child .popover-link:before {
     bottom: 100%;
     left: 50%;
@@ -1509,28 +1510,28 @@ input.prompt {
     width: 0;
     position: absolute;
     pointer-events: none; }
-  /* line 259, stdin */
+  /* line 260, stdin */
   .popover-item:first-child .popover-link:after {
     border-color: rgba(255, 255, 255, 0);
     border-bottom-color: #fff;
     border-width: 10px;
     margin-left: -10px; }
-  /* line 264, stdin */
+  /* line 265, stdin */
   .popover-item:first-child .popover-link:before {
     border-color: rgba(238, 238, 238, 0);
     border-bottom-color: #eee;
     border-width: 11px;
     margin-left: -11px; }
-  /* line 269, stdin */
+  /* line 270, stdin */
   .popover-list {
     padding: 0;
     margin: 0;
     list-style: none; }
-  /* line 273, stdin */
+  /* line 274, stdin */
   .popover-item {
     padding: 0;
     margin: 0; }
-  /* line 276, stdin */
+  /* line 277, stdin */
   .popover-link {
     position: relative;
     color: #222;
@@ -1543,48 +1544,60 @@ input.prompt {
     font-weight: 600;
     text-align: center;
     letter-spacing: .1rem; }
-  /* line 288, stdin */
+  /* line 289, stdin */
   .popover-item:first-child .popover-link {
     border-radius: 4px 4px 0 0; }
-  /* line 290, stdin */
+  /* line 291, stdin */
   .popover-item:last-child .popover-link {
     border-radius: 0 0 4px 4px;
     border-bottom-width: 0; }
-  /* line 293, stdin */
+  /* line 294, stdin */
   .popover-link:hover {
     color: #fff;
     background: #33C3F0; }
-  /* line 297, stdin */
+  /* line 298, stdin */
   .popover-link:hover, .popover-item:first-child .popover-link:hover:after {
     border-bottom-color: #33C3F0; } }
 
-/* line 301, stdin */
+/* line 302, stdin */
 table {
   margin-top: 1rem; }
-  /* line 302, stdin */
+  /* line 303, stdin */
   table th, table td {
     padding: 5px 5px;
     border: 1px solid #E1E1E1; }
-  /* line 306, stdin */
+  /* line 307, stdin */
   table th:first-child, table td:first-child {
     padding: 5px 5px; }
 
-/* line 313, stdin */
+/* line 314, stdin */
 table.admin-index th, table.admin-index td {
   padding: 5px; }
-  /* line 315, stdin */
+  /* line 316, stdin */
   table.admin-index th form, table.admin-index td form {
     margin-bottom: 0; }
-/* line 319, stdin */
+/* line 320, stdin */
 table.admin-index .button {
   width: 100%;
   margin-top: 4px; }
 
-/* line 325, stdin */
+/* line 326, stdin */
 .CodeMirror {
   height: inherit;
   margin-bottom: 1.5rem;
   border: 1px solid silver; }
+
+/* line 332, stdin */
+a.title {
+  font-size: 25px;
+  font-weight: 100;
+  letter-spacing: 5px; }
+
+/* line 338, stdin */
+h1.title {
+  font-weight: 100;
+  letter-spacing: 5px;
+  text-transform: uppercase; }
 
 
 /*# sourceMappingURL=app.css.map*/

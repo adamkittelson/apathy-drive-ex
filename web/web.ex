@@ -65,6 +65,10 @@ defmodule ApathyDrive.Web do
         do: "#{name}[#{field}]"
       defp name_from(name, field) when is_atom(name),
         do: "#{name}[#{field}]"
+
+      def admin?(conn) do
+        !!conn.assigns[:admin?]
+      end
     end
   end
 

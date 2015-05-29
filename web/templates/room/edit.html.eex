@@ -1,3 +1,5 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
 <h2>Edit room</h2>
 
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
@@ -8,3 +10,4 @@
 <%= link "Back", to: room_path(@conn, :index) %>
 
 <script>require("web/static/js/json-edit")</script>
+<script>require("web/static/js/nav")</script>

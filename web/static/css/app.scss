@@ -4,7 +4,8 @@ html {
 }
 
 .container {
-  max-width: 800px;
+  max-width: 900px;
+  min-width: 725px;
   color: white;
   label.error {
     color: red;
@@ -326,4 +327,16 @@ table.admin-index {
   height: inherit;
   margin-bottom: 1.5rem;
   border: 1px solid silver;
+}
+
+a.title {
+  font-size: 25px;
+  font-weight: 100;
+  letter-spacing: 5px;
+}
+
+h1.title {
+  font-weight: 100;
+  letter-spacing: 5px;
+  text-transform: uppercase;
 }

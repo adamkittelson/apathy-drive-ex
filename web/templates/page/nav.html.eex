@@ -2,6 +2,7 @@
 <nav class="navbar">
   <div class="container">
     <ul class="navbar-list">
+      <li class="navbar-item"><a class="navbar-link title" href="/">Apotheosis</a></li>
       <li class="navbar-item">
         <a class="navbar-link" href="#getting-started" data-popover="#gettingStartedPopover">Getting Started</a>
         <div id="gettingStartedPopover" class="popover">
@@ -47,6 +48,18 @@
           </ul>
         </div>
       </li>
+      <%= if admin?(@conn) do %>
+        <li class="navbar-item">
+          <a class="navbar-link" href="#system" data-popover="#systemPopover">System</a>
+          <div id="systemPopover" class="popover">
+            <ul class="popover-list">
+              <li class="popover-item">
+                <a class="popover-link" href="/system/rooms">Rooms</a>
+              </li>
+            </ul>
+          </div>
+        </li>
+      <% end %>
     </ul>
   </div>
 </nav>

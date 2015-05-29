@@ -1,3 +1,5 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
 <h2>Show room</h2>
 
 <p>
@@ -17,3 +19,6 @@
   <%= link "Back", to: room_path(@conn, :index),       class: "button button-primary" %>
   <%= link "Edit", to: room_path(@conn, :edit, @room), class: "button button-primary" %>
 </p>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>

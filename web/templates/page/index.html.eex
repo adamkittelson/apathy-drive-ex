@@ -22,7 +22,7 @@
   </div>
 </section>
 
-<%= render "nav.html" %>
+<%= render "nav.html", conn: @conn %>
 
 <div class="docs-section" id="getting-started">
   <h6 class="docs-prime-header">Getting Started</h6>
