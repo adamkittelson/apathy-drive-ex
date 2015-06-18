@@ -1,7 +1,9 @@
+<%= render "nav.html", conn: @conn %>
+
 <div id="scroll">
 </div>
 <script>var spiritID = <%= @current_spirit %></script>
 
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script>require("web/static/js/app")</script>
-
+<script>require("web/static/js/nav")</script>

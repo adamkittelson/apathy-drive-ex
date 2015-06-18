@@ -54,7 +54,7 @@
   </tbody>
 </table>
 
-<%= link "New room", to: room_path(@conn, :new) %>
+<%= link "New room", to: room_path(@conn, :new), class: "button button-primary" %>
 
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script>require("web/static/js/nav")</script>
