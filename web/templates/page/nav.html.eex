@@ -54,6 +54,9 @@
           <div id="systemPopover" class="popover">
             <ul class="popover-list">
               <li class="popover-item">
+                <a class="popover-link" href="/system/monsters">Monsters</a>
+              </li>
+              <li class="popover-item">
                 <a class="popover-link" href="/system/rooms">Rooms</a>
               </li>
             </ul>

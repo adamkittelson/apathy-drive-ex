@@ -36,6 +36,7 @@ defmodule ApathyDrive.Router do
     pipe_through [:browser, :admin]
 
     resources "/rooms", RoomController
+    resources "/monsters", MonsterController
   end
 
   scope "/auth", alias: ApathyDrive do

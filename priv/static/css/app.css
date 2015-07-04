@@ -1580,26 +1580,29 @@ table.admin-index th, table.admin-index td {
 table.admin-index .button {
   width: 100%;
   margin-top: 4px; }
+/* line 324, stdin */
+table.admin-index p {
+  margin-bottom: 0px; }
 
-/* line 326, stdin */
+/* line 329, stdin */
 .CodeMirror {
   height: inherit;
   margin-bottom: 1.5rem;
   border: 1px solid silver; }
 
-/* line 332, stdin */
+/* line 335, stdin */
 #nav-title {
   font-size: 25px;
   font-weight: 100;
   letter-spacing: 5px; }
 
-/* line 338, stdin */
+/* line 341, stdin */
 h1.title {
   font-weight: 100;
   letter-spacing: 5px;
   text-transform: uppercase; }
 
-/* line 344, stdin */
+/* line 347, stdin */
 a.anchor {
   display: block;
   position: relative;

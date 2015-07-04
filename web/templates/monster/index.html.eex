@@ -1,0 +1,52 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<div class="row">
+  <div class="two columns">
+    &nbsp;
+    <%= if @page_number > 1 do %>
+      <%= link "Previous Page", to: monster_path(@conn, :index, page: @page_number - 1, q: @q), class: "button button-primary" %>
+    <% end %>
+  </div>
+  <div class="eight columns">&nbsp;</div>
+  <div class="two columns">
+    &nbsp;
+    <%= if @page_number < @total_pages do %>
+      <%= link "Next Page", to: monster_path(@conn, :index, page: @page_number + 1, q: @q), class: "button button-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<table class="admin-index">
+  <thead>
+    <tr>
+      <th colspan="2">Monsters - Page <%= @page_number %> of <%= @total_pages %></th>
+      <th colspan="1">Search<input id="search"/></th>
+    </tr>
+    <tr>
+      <th>ID</th><th>Monster</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for monster <- @monsters do %>
+    <tr>
+      <td><%= monster.id %></td>
+      <td>
+        <p><span class='cyan'><%= monster.name %></span></p>
+        <p><%= monster.description %></p>
+      </td>
+
+      <td class="text-right">
+        <%= link "Show", to: monster_path(@conn, :show, monster), class: "button button-primary" %>
+        <%= link "Edit", to: monster_path(@conn, :edit, monster), class: "button button-primary" %>
+        <%= link "Delete", to: monster_path(@conn, :delete, monster), method: :delete, class: "button button-primary", onclick: "return confirm('Are you sure?')" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New monster", to: monster_path(@conn, :new), class: "button button-primary" %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>
+<script>require("web/static/js/json-edit")</script>

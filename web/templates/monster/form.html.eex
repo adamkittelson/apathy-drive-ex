@@ -1,0 +1,26 @@
+<%= form_for @changeset, @action, fn f -> %>
+  <div class="row">
+    <div class="four columns">
+      <%= if f.errors[:name] do %>
+        <label for="name" class="error">Name <%= f.errors[:name]%></label>
+      <% else %>
+        <label for="name">Name</label>
+      <% end %>
+      <%= text_input f, :name, class: "u-full-width" %>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="ten columns">
+      <%= if f.errors[:description] do %>
+        <label for="description" class="error">Description <%= f.errors[:description]%></label>
+      <% else %>
+        <label for="description">Description</label>
+      <% end %>
+      <%= textarea f, :description, class: "u-full-width" %>
+    </div>
+  </div>
+  <div class="form-group">
+    <%= submit "Submit", class: "button button-primary" %>
+  </div>
+<% end %>

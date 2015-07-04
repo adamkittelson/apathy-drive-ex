@@ -1,0 +1,15 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<h2>Show monster</h2>
+
+<p>
+  <div><span class='cyan'><%= @monster.name %></span></div>
+  <p><%= @monster.description %></p>
+</p>
+<p>
+  <%= link "Back", to: monster_path(@conn, :index),       class: "button button-primary" %>
+  <%= link "Edit", to: monster_path(@conn, :edit, @monster), class: "button button-primary" %>
+</p>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>

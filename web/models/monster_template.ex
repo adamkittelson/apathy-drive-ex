@@ -34,6 +34,13 @@ defmodule MonsterTemplate do
     timestamps
   end
 
+  def changeset(%MonsterTemplate{} = monster_template, params \\ :empty) do
+    monster_template
+    |> cast(params, ~w(name description), ~w())
+    |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
+    |> validate_length(:name, min: 1, max: 30)
+  end
+
   def find(id) do
     case :global.whereis_name(:"monster_template_#{id}") do
       :undefined ->
