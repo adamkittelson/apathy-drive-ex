@@ -5,7 +5,6 @@ defmodule ApathyDrive.MonsterController do
   alias ApathyDrive.Repo
 
   plug :scrub_params, "monster_template" when action in [:create, :update]
-  plug :action
 
   def index(conn, %{"q" => query} = params) do
     query = "%#{query}%"

@@ -2491,6 +2491,8 @@ require.define({ phoenix: function (exports, require, module) {
     // The `Socket` constructor takes the mount point of the socket
     // as well as options that can be found in the Socket docs,
     // such as configuring the `LongPoller` transport, and heartbeat.
+    // Socket params can also be passed as an option for default, but
+    // overridable channel params to apply to all channels.
     //
     //
     // ## Channels
@@ -2527,7 +2529,7 @@ require.define({ phoenix: function (exports, require, module) {
     //
     // ## Pushing Messages
     //
-    // From the prevoius example, we can see that pushing messages to the server
+    // From the previous example, we can see that pushing messages to the server
     // can be done with `chan.push(eventName, payload)` and we can optionally
     // receive responses from the push. Additionally, we can use
     // `after(millsec, callback)` to abort waiting for our `receive` hooks and
@@ -2726,39 +2728,34 @@ require.define({ phoenix: function (exports, require, module) {
         this.joinedOnce = false;
         this.joinPush = new Push(this, CHAN_EVENTS.join, this.params);
         this.pushBuffer = [];
-
+        this.rejoinTimer = new Timer(function () {
+          return _this.rejoinUntilConnected();
+        }, this.socket.reconnectAfterMs);
         this.joinPush.receive("ok", function () {
           _this.state = CHAN_STATES.joined;
+          _this.rejoinTimer.reset();
         });
         this.onClose(function () {
+          _this.socket.log("channel", "close " + _this.topic);
           _this.state = CHAN_STATES.closed;
           _this.socket.remove(_this);
         });
         this.onError(function (reason) {
+          _this.socket.log("channel", "error " + _this.topic, reason);
           _this.state = CHAN_STATES.errored;
-          setTimeout(function () {
-            return _this.rejoinUntilConnected();
-          }, _this.socket.reconnectAfterMs);
+          _this.rejoinTimer.setTimeout();
         });
-        this.on(CHAN_EVENTS.reply, function (payload) {
-          _this.trigger(_this.replyEventName(payload.ref), payload);
+        this.on(CHAN_EVENTS.reply, function (payload, ref) {
+          _this.trigger(_this.replyEventName(ref), payload);
         });
       }
 
       _prototypeProperties(Channel, null, {
         rejoinUntilConnected: {
           value: function rejoinUntilConnected() {
-            var _this = this;
-
-            if (this.state !== CHAN_STATES.errored) {
-              return;
-            }
+            this.rejoinTimer.setTimeout();
             if (this.socket.isConnected()) {
               this.rejoin();
-            } else {
-              setTimeout(function () {
-                return _this.rejoinUntilConnected();
-              }, this.socket.reconnectAfterMs);
             }
           },
           writable: true,
@@ -2767,7 +2764,7 @@ require.define({ phoenix: function (exports, require, module) {
         join: {
           value: function join() {
             if (this.joinedOnce) {
-              throw "tried to join mulitple times. 'join' can only be called a singe time per channel instance";
+              throw "tried to join multiple times. 'join' can only be called a single time per channel instance";
             } else {
               this.joinedOnce = true;
             }
@@ -2852,9 +2849,20 @@ require.define({ phoenix: function (exports, require, module) {
             var _this = this;
 
             return this.push(CHAN_EVENTS.leave).receive("ok", function () {
+              _this.log("channel", "leave " + _this.topic);
               _this.trigger(CHAN_EVENTS.close, "leave");
             });
           },
+          writable: true,
+          configurable: true
+        },
+        onMessage: {
+
+          // Overridable message hook
+          //
+          // Receives all events for specialized message handling
+
+          value: function onMessage(event, payload, ref) {},
           writable: true,
           configurable: true
         },
@@ -2888,11 +2896,12 @@ require.define({ phoenix: function (exports, require, module) {
           configurable: true
         },
         trigger: {
-          value: function trigger(triggerEvent, msg) {
+          value: function trigger(triggerEvent, payload, ref) {
+            this.onMessage(triggerEvent, payload, ref);
             this.bindings.filter(function (bind) {
               return bind.event === triggerEvent;
             }).map(function (bind) {
-              return bind.callback(msg);
+              return bind.callback(payload, ref);
             });
           },
           writable: true,
@@ -2920,32 +2929,47 @@ require.define({ phoenix: function (exports, require, module) {
       // opts - Optional configuration
       //   transport - The Websocket Transport, ie WebSocket, Phoenix.LongPoller.
       //               Defaults to WebSocket with automatic LongPoller fallback.
+      //   params - The defaults for all channel params, ie `{user_id: userToken}`
       //   heartbeatIntervalMs - The millisec interval to send a heartbeat message
-      //   reconnectAfterMs - The millisec interval to reconnect after connection loss
+      //   reconnectAfterMs - The optional function that returns the millsec
+      //                      reconnect interval. Defaults to stepped backoff of:
+      //
+      //     function(tries){
+      //       return [1000, 5000, 10000][tries - 1] || 10000
+      //     }
+      //
       //   logger - The optional function for specialized logging, ie:
-      //            `logger: function(msg){ console.log(msg) }`
-      //   longpoller_timeout - The maximum timeout of a long poll AJAX request.
+      //     `logger: (kind, msg, data) => { console.log(`${kind}: ${msg}`, data) }
+      //
+      //   longpollerTimeout - The maximum timeout of a long poll AJAX request.
       //                        Defaults to 20s (double the server long poll timer).
       //
       // For IE8 support use an ES5-shim (https://github.com/es-shims/es5-shim)
       //
 
       function Socket(endPoint) {
+        var _this = this;
+
         var opts = arguments[1] === undefined ? {} : arguments[1];
 
         _classCallCheck(this, Socket);
 
         this.stateChangeCallbacks = { open: [], close: [], error: [], message: [] };
-        this.reconnectTimer = null;
         this.channels = [];
         this.sendBuffer = [];
         this.ref = 0;
         this.transport = opts.transport || window.WebSocket || LongPoller;
         this.heartbeatIntervalMs = opts.heartbeatIntervalMs || 30000;
-        this.reconnectAfterMs = opts.reconnectAfterMs || 5000;
+        this.reconnectAfterMs = opts.reconnectAfterMs || function (tries) {
+          return [1000, 5000, 10000][tries - 1] || 10000;
+        };
+        this.reconnectTimer = new Timer(function () {
+          return _this.connect();
+        }, this.reconnectAfterMs);
         this.logger = opts.logger || function () {}; // noop
-        this.longpoller_timeout = opts.longpoller_timeout || 20000;
+        this.longpollerTimeout = opts.longpollerTimeout || 20000;
         this.endPoint = this.expandEndpoint(endPoint);
+        this.params = opts.params || {};
       }
 
       _prototypeProperties(Socket, null, {
@@ -2992,7 +3016,7 @@ require.define({ phoenix: function (exports, require, module) {
 
             this.disconnect(function () {
               _this.conn = new _this.transport(_this.endPoint);
-              _this.conn.timeout = _this.longpoller_timeout;
+              _this.conn.timeout = _this.longpollerTimeout;
               _this.conn.onopen = function () {
                 return _this.onConnOpen();
               };
@@ -3014,8 +3038,8 @@ require.define({ phoenix: function (exports, require, module) {
 
           // Logs the message. Override `this.logger` for specialized logging. noops by default
 
-          value: function log(msg) {
-            this.logger(msg);
+          value: function log(kind, msg, data) {
+            this.logger(kind, msg, data);
           },
           writable: true,
           configurable: true
@@ -3060,8 +3084,9 @@ require.define({ phoenix: function (exports, require, module) {
           value: function onConnOpen() {
             var _this = this;
 
+            this.log("transport", "connected to " + this.endPoint, this.transport);
             this.flushSendBuffer();
-            clearInterval(this.reconnectTimer);
+            this.reconnectTimer.reset();
             if (!this.conn.skipHeartbeat) {
               clearInterval(this.heartbeatTimer);
               this.heartbeatTimer = setInterval(function () {
@@ -3077,16 +3102,10 @@ require.define({ phoenix: function (exports, require, module) {
         },
         onConnClose: {
           value: function onConnClose(event) {
-            var _this = this;
-
-            this.log("WS close:");
-            this.log(event);
+            this.log("transport", "close", event);
             this.triggerChanError();
-            clearInterval(this.reconnectTimer);
             clearInterval(this.heartbeatTimer);
-            this.reconnectTimer = setInterval(function () {
-              return _this.connect();
-            }, this.reconnectAfterMs);
+            this.reconnectTimer.setTimeout();
             this.stateChangeCallbacks.close.forEach(function (callback) {
               return callback(event);
             });
@@ -3096,8 +3115,7 @@ require.define({ phoenix: function (exports, require, module) {
         },
         onConnError: {
           value: function onConnError(error) {
-            this.log("WS error:");
-            this.log(error);
+            this.log("transport", error);
             this.triggerChanError();
             this.stateChangeCallbacks.error.forEach(function (callback) {
               return callback(error);
@@ -3148,8 +3166,18 @@ require.define({ phoenix: function (exports, require, module) {
           configurable: true
         },
         chan: {
-          value: function chan(topic, params) {
-            var chan = new Channel(topic, params, this);
+          value: function chan(topic) {
+            var chanParams = arguments[1] === undefined ? {} : arguments[1];
+
+            var mergedParams = {};
+            for (var key in this.params) {
+              mergedParams[key] = this.params[key];
+            }
+            for (var key in chanParams) {
+              mergedParams[key] = chanParams[key];
+            }
+
+            var chan = new Channel(topic, mergedParams, this);
             this.channels.push(chan);
             return chan;
           },
@@ -3160,9 +3188,15 @@ require.define({ phoenix: function (exports, require, module) {
           value: function push(data) {
             var _this = this;
 
+            var topic = data.topic;
+            var event = data.event;
+            var payload = data.payload;
+            var ref = data.ref;
+
             var callback = function callback() {
               return _this.conn.send(JSON.stringify(data));
             };
+            this.log("push", "" + topic + " " + event + " (" + ref + ")", payload);
             if (this.isConnected()) {
               callback();
             } else {
@@ -3210,22 +3244,20 @@ require.define({ phoenix: function (exports, require, module) {
         },
         onConnMessage: {
           value: function onConnMessage(rawMessage) {
-            this.log("message received:");
-            this.log(rawMessage);
+            var msg = JSON.parse(rawMessage.data);
+            var topic = msg.topic;
+            var event = msg.event;
+            var payload = msg.payload;
+            var ref = msg.ref;
 
-            var _JSON$parse = JSON.parse(rawMessage.data);
-
-            var topic = _JSON$parse.topic;
-            var event = _JSON$parse.event;
-            var payload = _JSON$parse.payload;
-
+            this.log("receive", "" + (payload.status || "") + " " + topic + " " + event + " " + (ref && "(" + ref + ")" || ""), payload);
             this.channels.filter(function (chan) {
               return chan.isMember(topic);
             }).forEach(function (chan) {
-              return chan.trigger(event, payload);
+              return chan.trigger(event, payload, ref);
             });
             this.stateChangeCallbacks.message.forEach(function (callback) {
-              callback(topic, event, payload);
+              return callback(msg);
             });
           },
           writable: true,
@@ -3240,7 +3272,6 @@ require.define({ phoenix: function (exports, require, module) {
       function LongPoller(endPoint) {
         _classCallCheck(this, LongPoller);
 
-        this.retryInMs = 5000;
         this.endPoint = null;
         this.token = null;
         this.sig = null;
@@ -3266,7 +3297,7 @@ require.define({ phoenix: function (exports, require, module) {
         },
         endpointURL: {
           value: function endpointURL() {
-            return this.pollEndpoint + ("?token=" + encodeURIComponent(this.token) + "&sig=" + encodeURIComponent(this.sig));
+            return this.pollEndpoint + ("?token=" + encodeURIComponent(this.token) + "&sig=" + encodeURIComponent(this.sig) + "&format=json");
           },
           writable: true,
           configurable: true
@@ -3443,6 +3474,72 @@ require.define({ phoenix: function (exports, require, module) {
     })();
 
     Ajax.states = { complete: 4 };
+
+    // Creates a timer that accepts a `timerCalc` function to perform
+    // calculated timeout retries, such as exponential backoff.
+    //
+    // ## Examples
+    //
+    //    let reconnectTimer = new Timer(() => this.connect(), function(tries){
+    //      return [1000, 5000, 10000][tries - 1] || 10000
+    //    })
+    //    reconnectTimer.setTimeout() // fires after 1000
+    //    reconnectTimer.setTimeout() // fires after 5000
+    //    reconnectTimer.reset()
+    //    reconnectTimer.setTimeout() // fires after 1000
+    //
+
+    var Timer = (function () {
+      function Timer(callback, timerCalc) {
+        _classCallCheck(this, Timer);
+
+        this.callback = callback;
+        this.timerCalc = timerCalc;
+        this.timer = null;
+        this.tries = 0;
+      }
+
+      _prototypeProperties(Timer, null, {
+        reset: {
+          value: function reset() {
+            this.tries = 0;
+            clearTimeout(this.timer);
+          },
+          writable: true,
+          configurable: true
+        },
+        setTimeout: {
+
+          // Cancels any previous setTimeout and schedules callback
+
+          value: (function (_setTimeout) {
+            var _setTimeoutWrapper = function setTimeout() {
+              return _setTimeout.apply(this, arguments);
+            };
+
+            _setTimeoutWrapper.toString = function () {
+              return _setTimeout.toString();
+            };
+
+            return _setTimeoutWrapper;
+          })(function () {
+            var _this = this;
+
+            clearTimeout(this.timer);
+
+            this.timer = setTimeout(function () {
+              _this.tries = _this.tries + 1;
+              _this.callback();
+            }, this.timerCalc(this.tries + 1));
+          }),
+          writable: true,
+          configurable: true
+        }
+      });
+
+      return Timer;
+    })();
+
     Object.defineProperty(exports, "__esModule", {
       value: true
     });

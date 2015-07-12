@@ -11,7 +11,7 @@ defmodule ApathyDrive.MUD do
 
     if spirit = Systems.Login.login(socket, self, id) do
 
-      socket = Phoenix.Socket.assign(socket, :entity, spirit)
+      socket = assign(socket, :entity, spirit)
 
       case spirit do
         %Spirit{} = spirit ->
@@ -37,13 +37,13 @@ defmodule ApathyDrive.MUD do
   end
 
   def handle_info({:set_entity, entity}, socket) do
-    {:noreply, Phoenix.Socket.assign(socket, :entity, entity)}
+    {:noreply, assign(socket, :entity, entity)}
   end
 
   def handle_info(:go_home, socket) do
     Phoenix.Channel.push socket, "redirect", %{:url => "/"}
 
-    {:noreply, Phoenix.Socket.assign(socket, :entity, nil)}
+    {:noreply, assign(socket, :entity, nil)}
   end
 
   def handle_in("command", %{}, socket) do
@@ -64,7 +64,7 @@ defmodule ApathyDrive.MUD do
         Monster.execute_command(monster, command, arguments)
     end
 
-    socket = Phoenix.Socket.assign(socket, :entity, entity)
+    socket = assign(socket, :entity, entity)
 
     {:noreply, socket}
   end

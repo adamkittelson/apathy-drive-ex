@@ -3,15 +3,15 @@
 <div class="row">
   <div class="two columns">
     &nbsp;
-    <%= if @page_number > 1 do %>
+    <%= if assigns[:page_number] > 1 do %>
       <%= link "Previous Page", to: room_path(@conn, :index, page: @page_number - 1, q: @q), class: "button button-primary" %>
     <% end %>
   </div>
   <div class="eight columns">&nbsp;</div>
   <div class="two columns">
     &nbsp;
-    <%= if @page_number < @total_pages do %>
-      <%= link "Next Page", to: room_path(@conn, :index, page: @page_number + 1, q: @q), class: "button button-primary" %>
+    <%= if assigns[:page_number] < assigns[:total_pages] do %>
+      <%= link "Next Page", to: room_path(@conn, :index, page: @page_number + 1, q: assigns[:q]), class: "button button-primary" %>
     <% end %>
   </div>
 </div>

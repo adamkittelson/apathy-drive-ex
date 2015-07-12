@@ -4,7 +4,6 @@ defmodule ApathyDrive.PageController do
   import Systems.Text
 
   plug :scrub_params, "spirit" when action in [:update_spirit]
-  plug :action
 
   def index(conn, _params) do
     render conn, "index.html"

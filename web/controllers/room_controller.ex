@@ -5,7 +5,6 @@ defmodule ApathyDrive.RoomController do
   alias ApathyDrive.Repo
 
   plug :scrub_params, "room" when action in [:create, :update]
-  plug :action
 
   def index(conn, %{"q" => query} = params) do
     query = "%#{query}%"
