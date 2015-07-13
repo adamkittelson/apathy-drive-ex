@@ -2,8 +2,6 @@ defmodule ApathyDrive.RoomController do
   use ApathyDrive.Web, :controller
   import Ecto.Query
 
-  alias ApathyDrive.Repo
-
   plug :scrub_params, "room" when action in [:create, :update]
 
   def index(conn, %{"q" => query} = params) do

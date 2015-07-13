@@ -1,0 +1,6 @@
+<h2>Edit player</h2>
+
+<%= render "form.html", changeset: @changeset,
+                        action: player_path(@conn, :update, @player) %>
+
+<%= link "Back", to: player_path(@conn, :index) %>

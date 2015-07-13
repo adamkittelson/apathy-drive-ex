@@ -1,0 +1,28 @@
+<h2>Listing players</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>External</th>
+      <th>Admin</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for player <- @players do %>
+    <tr>
+      <td><%= player.external_id %></td>
+      <td><%= player.admin %></td>
+
+      <td class="text-right">
+        <%= link "Show", to: player_path(@conn, :show, player), class: "btn btn-default btn-xs" %>
+        <%= link "Edit", to: player_path(@conn, :edit, player), class: "btn btn-default btn-xs" %>
+        <%= link "Delete", to: player_path(@conn, :delete, player), method: :delete, class: "btn btn-danger btn-xs" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New player", to: player_path(@conn, :new) %>

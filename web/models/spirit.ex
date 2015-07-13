@@ -1,11 +1,9 @@
 defmodule Spirit do
-  use Ecto.Model
   use GenServer
   use ApathyDrive.Web, :model
 
   require Logger
   import Systems.Text
-  alias ApathyDrive.Repo
   alias ApathyDrive.PubSub
 
   @idle_threshold 60

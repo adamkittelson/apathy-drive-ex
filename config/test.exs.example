@@ -10,4 +10,5 @@ config :apathy_drive, ApathyDrive.Repo,
   password: System.get_env("DB_PASSWORD"),
   hostname: System.get_env("DB_HOSTNAME"),
   adapter: Ecto.Adapters.Postgres,
-  extensions: [{Extensions.JSON, library: Poison}]
+  extensions: [{Extensions.JSON, library: Poison}],
+  pool: Ecto.Adapters.SQL.Sandbox

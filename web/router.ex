@@ -30,6 +30,7 @@ defmodule ApathyDrive.Router do
     get "/angels", FactionController, :angels
     get "/demons", FactionController, :demons
     get "/elementals", FactionController, :elementals
+    resources "/players", PlayerController
   end
 
   scope "/system", ApathyDrive do
