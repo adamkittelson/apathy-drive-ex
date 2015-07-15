@@ -90,7 +90,7 @@ defmodule ApathyDrive.RoomController do
     changeset = Room.changeset(room, room_params)
 
     if changeset.valid? do
-      Repo.update(changeset)
+      Repo.update!(changeset)
 
       ApathyDrive.PubSub.broadcast!("rooms:#{id}", {:room_updated, changeset})
 

@@ -183,7 +183,7 @@ defmodule MonsterTemplate do
     mt =
       monster_template
       |> Map.put(:last_killed_at, Ecto.DateTime.utc)
-      |> Repo.update
+      |> Repo.update!
 
     {:noreply, mt}
   end

@@ -534,7 +534,7 @@ defmodule Room do
       room =
         room
         |> Map.put(:lair_faction, faction)
-        |> Repo.update
+        |> Repo.update!
 
       send(monster, {:scroll, "<p>You capture the lair for your faction!</p>"})
       ApathyDrive.Factions.update_war_status

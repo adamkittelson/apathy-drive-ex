@@ -9,7 +9,7 @@ defmodule Mix.Tasks.AddAdmin do
       %Spirit{} = spirit ->
         spirit
         |> Map.put(:admin, true)
-        |> ApathyDrive.Repo.update
+        |> ApathyDrive.Repo.update!
 
         Mix.shell.info "#{name} is now an admin"
       nil ->

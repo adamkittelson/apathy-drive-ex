@@ -70,7 +70,7 @@ defmodule Spirit do
 
   def save(spirit) when is_pid(spirit), do: spirit |> value |> save
   def save(%Spirit{id: id} = spirit) when is_integer(id) do
-    Repo.update(spirit)
+    Repo.update!(spirit)
   end
   def save(%Spirit{} = spirit), do: spirit
 

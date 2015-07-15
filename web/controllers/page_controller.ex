@@ -61,7 +61,7 @@ defmodule ApathyDrive.PageController do
     if changeset.valid? do
       spirit =
         changeset
-        |> Repo.update
+        |> Repo.update!
 
       case :global.whereis_name(:"spirit_#{spirit.id}") do
         :undefined ->

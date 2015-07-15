@@ -82,7 +82,7 @@ defmodule ApathyDrive.MonsterController do
     changeset = MonsterTemplate.changeset(mt, monster_params)
 
     if changeset.valid? do
-      Repo.update(changeset)
+      Repo.update!(changeset)
 
       ApathyDrive.PubSub.broadcast!("monster_templates:#{id}", {:monster_template_updated, changeset})
 
