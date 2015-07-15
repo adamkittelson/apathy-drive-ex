@@ -34,31 +34,31 @@ defmodule ApathyDrive.RoomControllerTest do
     end
 
     should "GET /rooms/:id", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = get context.conn, room_path(context.conn, :show, room)
       assert html_response(conn, 200) =~ "Show room"
     end
 
     should "GET /rooms/:id/edit", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = get context.conn, room_path(context.conn, :edit, room)
       assert html_response(conn, 200) =~ "Edit room"
     end
 
     should "PUT /rooms/:id with valid data", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = put context.conn, room_path(context.conn, :update, room), @valid_params
       assert redirected_to(conn) == room_path(conn, :index)
     end
 
     should "PUT /rooms/:id with invalid data", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = put context.conn, room_path(context.conn, :update, room), @invalid_params
       assert html_response(conn, 200) =~ "Edit room"
     end
 
     should "DELETE /rooms/:id", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = delete context.conn, room_path(context.conn, :delete, room)
       assert redirected_to(conn) == room_path(conn, :index)
       refute Repo.get(Room, room.id)
@@ -94,31 +94,31 @@ defmodule ApathyDrive.RoomControllerTest do
     end
 
     should "GET /rooms/:id should redirect to the home page", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = get context.conn, room_path(context.conn, :show, room)
       assert redirected_to(conn) == page_path(conn, :index)
     end
 
     should "GET /rooms/:id/edit should redirect to the home page", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = get context.conn, room_path(context.conn, :edit, room)
       assert redirected_to(conn) == page_path(conn, :index)
     end
 
     should "PUT /rooms/:id with valid data should redirect to the home page", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = put context.conn, room_path(context.conn, :update, room), @valid_params
       assert redirected_to(conn) == page_path(conn, :index)
     end
 
     should "PUT /rooms/:id with invalid data should redirect to the home page", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = put context.conn, room_path(context.conn, :update, room), @invalid_params
       assert redirected_to(conn) == page_path(conn, :index)
     end
 
     should "DELETE /rooms/:id should not delete the record and should redirect to the home page", context do
-      room = Repo.insert %Room{}
+      room = Repo.insert! %Room{}
       conn = delete context.conn, room_path(context.conn, :delete, room)
       assert redirected_to(conn) == page_path(conn, :index)
       assert Repo.get(Room, room.id)

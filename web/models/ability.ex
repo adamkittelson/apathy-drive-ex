@@ -11,7 +11,7 @@ defmodule Ability do
     field :description,     :string
     field :level,           :integer
     field :faction,         :string
-    field :properties,      ApathyDrive.JSONB
+    field :properties,      :map
     field :keywords,        {:array, :string}, virtual: true
     field :flags,           {:array, :string}
     field :global_cooldown, :float

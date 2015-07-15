@@ -89,6 +89,7 @@ defmodule ApathyDrive.Web do
   def model do
     quote do
       use Ecto.Model
+      alias ApathyDrive.Repo
     end
   end
 

@@ -20,7 +20,7 @@ defmodule Skill do
   end
 
   def insert(%Skill{id: nil} = skill) do
-    Repo.insert(skill)
+    Repo.insert!(skill)
   end
 
   def all do

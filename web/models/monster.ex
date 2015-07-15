@@ -313,7 +313,7 @@ defmodule Monster do
   end
 
   def insert(%Monster{id: nil} = monster) do
-    ApathyDrive.Repo.insert(monster)
+    ApathyDrive.Repo.insert!(monster)
   end
   def insert(%Monster{} = monster), do: monster
 

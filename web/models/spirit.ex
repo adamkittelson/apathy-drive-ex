@@ -64,7 +64,7 @@ defmodule Spirit do
         spirit
       nil ->
         %Spirit{room_id: Room.start_room_id, external_id: external_id}
-        |> Repo.insert
+        |> Repo.insert!
     end
   end
 

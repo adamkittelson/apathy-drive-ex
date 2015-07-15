@@ -12,14 +12,14 @@ defmodule Room do
     field :description,           :string
     field :effects,               :any, virtual: true, default: %{}
     field :light,                 :integer
-    field :item_descriptions,     ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
+    field :item_descriptions,     :map, default: %{"hidden" => %{}, "visible" => %{}}
     field :lair_size,             :integer
     field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :lair_faction,          :string
     field :exits,                 ApathyDrive.JSONB, default: []
-    field :commands,              ApathyDrive.JSONB, default: %{}
+    field :commands,              :map, default: %{}
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
