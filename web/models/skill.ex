@@ -1,6 +1,5 @@
 defmodule Skill do
-  use Ecto.Model
-  alias ApathyDrive.Repo
+  use ApathyDrive.Web, :model
 
   schema "skills" do
     field :name,         :string

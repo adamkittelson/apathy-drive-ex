@@ -1,5 +1,5 @@
 defmodule Hint do
-  use Ecto.Model
+  use ApathyDrive.Web, :model
 
   alias ApathyDrive.Repo
 

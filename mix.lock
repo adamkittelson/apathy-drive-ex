@@ -22,4 +22,6 @@
   "scrivener": {:hex, :scrivener, "0.10.0"},
   "shouldi": {:hex, :shouldi, "0.2.1"},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.4"},
-  "timex": {:hex, :timex, "0.13.4"}}
+  "timex": {:hex, :timex, "0.16.1"},
+  "timex_ecto": {:hex, :timex_ecto, "0.3.0"},
+  "tzdata": {:hex, :tzdata, "0.1.6"}}

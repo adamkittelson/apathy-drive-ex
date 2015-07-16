@@ -1,10 +1,9 @@
 defmodule Monster do
   require Logger
-  use Ecto.Model
+  use ApathyDrive.Web, :model
   use GenServer
 
   import Systems.Text
-  alias ApathyDrive.Repo
   alias ApathyDrive.PubSub
 
   schema "monsters" do

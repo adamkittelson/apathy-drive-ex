@@ -1,7 +1,6 @@
 defmodule Ability do
-  use Ecto.Model
+  use ApathyDrive.Web, :model
   import Systems.Text
-  alias ApathyDrive.Repo
   alias ApathyDrive.PubSub
 
   schema "abilities" do

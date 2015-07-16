@@ -1,9 +1,8 @@
 defmodule Room do
   require Logger
-  use Ecto.Model
+  use ApathyDrive.Web, :model
   use GenServer
   use Timex
-  alias ApathyDrive.Repo
   alias ApathyDrive.PubSub
 
   schema "rooms" do
