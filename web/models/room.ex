@@ -36,7 +36,7 @@ defmodule Room do
 
     room = if room.lair_monsters do
       PubSub.subscribe(self, "rooms:lairs")
-      TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.convert(:secs)}) end})
+      TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.to_secs}) end})
     else
       room
     end
@@ -346,7 +346,7 @@ defmodule Room do
     room = room
            |> Map.put(:lair_next_spawn_at, Date.now
                                            |> Date.shift(mins: room.lair_frequency)
-                                           |> Date.convert(:secs))
+                                           |> Date.to_secs)
 
     {:noreply, room}
   end
@@ -364,7 +364,7 @@ defmodule Room do
          end)
 
       if room.lair_monsters do
-        send(this, {:spawn_monsters, Date.now |> Date.convert(:secs)})
+        send(this, {:spawn_monsters, Date.now |> Date.to_secs})
       end
 
     end
