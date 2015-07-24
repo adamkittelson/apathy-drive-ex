@@ -1,9 +1,13 @@
 <section class="header">
   <h1 class="title">Apotheosis</h1>
-  <%= if assigns[:current_spirit] do %>
+  <%= if assigns[:current_player] && assigns[:current_character] do %>
     <a class="button button-primary" href="<%= game_path @conn, :game %>">Play</a>
   <% else %>
-    <a class="button button-primary" href="<%= auth_path @conn, :index %>">Sign in with Facebook</a>
+    <%= if assigns[:current_player] do %>
+      <a class="button button-primary" href="<%= character_path @conn, :index %>">Play</a>
+    <% else %>
+      <a class="button button-primary" href="<%= session_path @conn, :new %>">Sign in</a>
+    <% end %>
   <% end %>
 
   <div class="value-props row">

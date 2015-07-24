@@ -1,0 +1,38 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Race</th>
+      <th>Class</th>
+      <th>Experience</th>
+      <th>Alignment</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for character <- @characters do %>
+    <tr>
+      <td><%= character.name %></td>
+      <td><%= character.race_id %></td>
+      <td><%= character.class_id %></td>
+      <td><%= character.experience %></td>
+      <td><%= character.alignment %></td>
+
+      <td class="text-right">
+        <%= link "Show", to: character_path(@conn, :show, character), class: "btn btn-default btn-xs" %>
+        <%= link "Edit", to: character_path(@conn, :edit, character), class: "btn btn-default btn-xs" %>
+        <%= link "Delete", to: character_path(@conn, :delete, character), method: :delete, class: "btn btn-danger btn-xs" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New character", to: character_path(@conn, :new), class: "button button-primary" %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>
+

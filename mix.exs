@@ -16,7 +16,7 @@ defmodule ApathyDrive.Mixfile do
   def application do
     [
       mod: { ApathyDrive, [] },
-      applications: [:postgrex, :ecto, :phoenix, :cowboy, :logger, :oauth2, :phoenix_ecto]
+      applications: [:postgrex, :ecto, :phoenix, :cowboy, :logger, :oauth2, :phoenix_ecto, :comeonin]
     ]
   end
 
@@ -36,6 +36,7 @@ defmodule ApathyDrive.Mixfile do
       {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.0.5"},
       {:scrivener,           "~> 0.10.0"},
+      {:comeonin,            "~> 1.0.5"},
       {:shouldi, only: :test}
     ]
   end
