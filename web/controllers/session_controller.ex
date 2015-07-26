@@ -1,7 +1,6 @@
 defmodule ApathyDrive.SessionController do
   use ApathyDrive.Web, :controller
 
-  alias ApathyDrive.Session
   alias ApathyDrive.Player
 
   plug :scrub_params, "session" when action in [:create]

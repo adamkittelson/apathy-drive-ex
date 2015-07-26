@@ -16,23 +16,13 @@
   </div>
 
   <div class="form-group">
-    <%= label f, :race_id, "Race" %>
-    <%= select(f, :race_id, @races, prompt: "Choose Your Race", class: "u-full-width") %>
+    <%= label f, :description, "Description" %>
+    <%= textarea f, :description, class: "form-control" %>
   </div>
 
   <div class="form-group">
-    <%= label f, :class_id, "Class" %>
-    <%= number_input f, :class_id, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%= label f, :experience, "Experience" %>
-    <%= number_input f, :experience, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%= label f, :alignment, "Alignment" %>
-    <%= number_input f, :alignment, class: "form-control" %>
+    <%= label f, :properties, "Properties" %>
+    <%= jsonarea f, :properties, class: "form-control" %>
   </div>
 
   <div class="form-group">

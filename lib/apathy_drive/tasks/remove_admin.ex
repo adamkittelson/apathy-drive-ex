@@ -1,19 +1,20 @@
 defmodule Mix.Tasks.RemoveAdmin do
   use Mix.Task
+  alias ApathyDrive.Player
 
-  def run([name]) do
+  def run([email]) do
     ApathyDrive.Repo.start_link
-    case ApathyDrive.Repo.get_by(Spirit, name: name) do
-      %Spirit{admin: true} = spirit ->
-        spirit
+    case ApathyDrive.Repo.get_by(Spirit, email: email) do
+      %Player{admin: true} = player ->
+        player
         |> Map.put(:admin, false)
         |> ApathyDrive.Repo.update!
 
-        Mix.shell.info "#{name} is no longer an admin"
-      %Spirit{} ->
-        Mix.shell.info "#{name} is not an admin"
+        Mix.shell.info "#{email} is no longer an admin"
+      %Player{} ->
+        Mix.shell.info "#{email} is not an admin"
       nil ->
-        Mix.shell.info "#{name} does not exist"
+        Mix.shell.info "#{email} does not exist"
     end
   end
 end

@@ -1,0 +1,35 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<h2>Listing races</h2>
+
+<table class="admin-index">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Properties</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for race <- @races do %>
+    <tr>
+      <td><%= race.name %></td>
+      <td><%= race.description %></td>
+      <td><%= Poison.encode!(race.properties) %></td>
+
+      <td class="text-right">
+        <%= link "Show", to: race_path(@conn, :show, race), class: "button button-primary" %>
+        <%= link "Edit", to: race_path(@conn, :edit, race), class: "button button-primary" %>
+        <%= link "Delete", to: race_path(@conn, :delete, race), method: :delete, class: "button button-primary" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New race", to: race_path(@conn, :new) %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>

@@ -16,16 +16,16 @@ defmodule MonsterTemplate do
     field :gender,                 :string
     field :game_limit,             :integer
     field :adjectives,             {:array, :string}, default: []
-    field :skills,                 :map
+    field :skills,                 ApathyDrive.JSONB
     field :chance_to_follow,       :integer
     field :alignment,              :string
     field :level,                  :integer
-    field :questions,              :map
+    field :questions,              ApathyDrive.JSONB
     field :flags,                  {:array, :string}, default: []
     field :max_hp,                 :integer
     field :hp_regen,               :integer
-    field :attacks,                :map
-    field :effects,                :map
+    field :attacks,                ApathyDrive.JSONB
+    field :effects,                ApathyDrive.JSONB
     field :experience,             :integer
     field :last_killed_at,         Timex.Ecto.DateTime
     field :regen_time_in_minutes, :integer

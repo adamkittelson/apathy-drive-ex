@@ -1,6 +1,7 @@
 <h2>New character</h2>
 
 <%= render "form.html", changeset: @changeset,
-                        action: character_path(@conn, :create) %>
+                        action: character_path(@conn, :create),
+                        races: @races %>
 
-<%= link "Back", to: character_path(@conn, :index) %>
+<%= link "Back", to: character_path(@conn, :index), class: "button button-primary" %>

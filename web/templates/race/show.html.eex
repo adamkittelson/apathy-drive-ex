@@ -1,0 +1,22 @@
+<h2>Show race</h2>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @race.name %>
+  </li>
+
+  <li>
+    <strong>Description:</strong>
+    <%= @race.description %>
+  </li>
+
+  <li>
+    <strong>Properties:</strong>
+    <%= Poison.encode!(@race.properties) %>
+  </li>
+
+</ul>
+
+<%= link "Back", to: race_path(@conn, :index) %>

@@ -40,6 +40,7 @@ defmodule ApathyDrive.Router do
 
     resources "/rooms", RoomController
     resources "/monsters", MonsterController
+    resources "/races", RaceController
   end
 
   scope "/auth", alias: ApathyDrive do

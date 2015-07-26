@@ -1,19 +1,20 @@
 defmodule Mix.Tasks.AddAdmin do
   use Mix.Task
+  alias ApathyDrive.Player
 
-  def run([name]) do
+  def run([email]) do
     ApathyDrive.Repo.start_link
-    case ApathyDrive.Repo.get_by(Spirit, name: name) do
-      %Spirit{admin: true} ->
-        Mix.shell.info "#{name} is already an admin"
-      %Spirit{} = spirit ->
-        spirit
+    case ApathyDrive.Repo.get_by(Player, email: email) do
+      %Player{admin: true} ->
+        Mix.shell.info "#{email} is already an admin"
+      %Player{} = player ->
+        player
         |> Map.put(:admin, true)
         |> ApathyDrive.Repo.update!
 
-        Mix.shell.info "#{name} is now an admin"
+        Mix.shell.info "#{email} is now an admin"
       nil ->
-        Mix.shell.info "#{name} does not exist"
+        Mix.shell.info "#{email} does not exist"
     end
   end
 end

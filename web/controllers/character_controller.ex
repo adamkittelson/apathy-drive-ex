@@ -18,8 +18,9 @@ defmodule ApathyDrive.CharacterController do
   end
 
   def new(conn, _params) do
+    races = ApathyDrive.Race.list_for_select
     changeset = Character.changeset(%Character{})
-    render(conn, "new.html", changeset: changeset)
+    render(conn, "new.html", changeset: changeset, races: races)
   end
 
   def create(conn, %{"character" => character_params}) do
@@ -32,7 +33,8 @@ defmodule ApathyDrive.CharacterController do
       |> put_flash(:info, "Character created successfully.")
       |> redirect(to: character_path(conn, :index))
     else
-      render(conn, "new.html", changeset: changeset)
+      races = ApathyDrive.Race.list_for_select
+      render(conn, "new.html", changeset: changeset, races: races)
     end
   end
 
@@ -44,7 +46,8 @@ defmodule ApathyDrive.CharacterController do
   def edit(conn, %{"id" => id}) do
     character = Repo.get!(Character, id)
     changeset = Character.changeset(character)
-    render(conn, "edit.html", character: character, changeset: changeset)
+    races = ApathyDrive.Race.list_for_select
+    render(conn, "edit.html", character: character, changeset: changeset, races: races)
   end
 
   def update(conn, %{"id" => id, "character" => character_params}) do
@@ -58,7 +61,8 @@ defmodule ApathyDrive.CharacterController do
       |> put_flash(:info, "Character updated successfully.")
       |> redirect(to: character_path(conn, :index))
     else
-      render(conn, "edit.html", character: character, changeset: changeset)
+      races = ApathyDrive.Race.list_for_select
+      render(conn, "edit.html", character: character, changeset: changeset, races: races)
     end
   end
 
