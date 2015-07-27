@@ -2,7 +2,7 @@ defmodule ApathyDrive.CharacterControllerTest do
   use ApathyDrive.ConnCase
 
   alias ApathyDrive.Character
-  @valid_attrs %{alignment: 42, class_id: 42, experience: 42, name: "some content", race_id: 42}
+  @valid_attrs %{class_id: 42, name: "some content", race_id: 42}
   @invalid_attrs %{}
 
   setup do
