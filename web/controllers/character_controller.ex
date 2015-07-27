@@ -28,7 +28,11 @@ defmodule ApathyDrive.CharacterController do
     changeset = Character.changeset(%Character{}, character_params)
 
     if changeset.valid? do
-      Repo.insert!(changeset)
+      changeset
+      |> Ecto.Changeset.put_change(:player_id, conn.assigns[:current_player])
+      |> Ecto.Changeset.put_change(:experience, 0)
+      |> Ecto.Changeset.put_change(:alignment, 0)
+      |> Repo.insert!
 
       conn
       |> put_flash(:info, "Character created successfully.")

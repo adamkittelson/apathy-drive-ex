@@ -13,7 +13,7 @@ defmodule ApathyDrive.Character do
     timestamps
   end
 
-  @required_fields ~w(name race_id class_id experience alignment)
+  @required_fields ~w(name race_id class_id)
   @optional_fields ~w()
 
   @doc """
@@ -25,5 +25,13 @@ defmodule ApathyDrive.Character do
   def changeset(model, params \\ :empty) do
     model
     |> cast(params, @required_fields, @optional_fields)
+  end
+
+  def race(%ApathyDrive.Character{race_id: race_id}) do
+    Repo.get_by(ApathyDrive.Race, id: race_id).name
+  end
+
+  def class(%ApathyDrive.Character{class_id: class_id}) do
+    Repo.get_by(ApathyDrive.Class, id: class_id).name
   end
 end
