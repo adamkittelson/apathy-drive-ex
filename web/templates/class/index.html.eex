@@ -1,0 +1,30 @@
+<h2>Listing classes</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Properties</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for class <- @classes do %>
+    <tr>
+      <td><%= class.name %></td>
+      <td><%= class.description %></td>
+      <td><%= class.properties %></td>
+
+      <td class="text-right">
+        <%= link "Show", to: class_path(@conn, :show, class), class: "btn btn-default btn-xs" %>
+        <%= link "Edit", to: class_path(@conn, :edit, class), class: "btn btn-default btn-xs" %>
+        <%= link "Delete", to: class_path(@conn, :delete, class), method: :delete, class: "btn btn-danger btn-xs" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New class", to: class_path(@conn, :new) %>
