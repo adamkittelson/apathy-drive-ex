@@ -1,3 +1,5 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
 <h2>Listing classes</h2>
 
 <table class="table">
@@ -15,7 +17,7 @@
     <tr>
       <td><%= class.name %></td>
       <td><%= class.description %></td>
-      <td><%= class.properties %></td>
+      <td><%= Poison.encode!(class.properties) %></td>
 
       <td class="text-right">
         <%= link "Show", to: class_path(@conn, :show, class), class: "btn btn-default btn-xs" %>
@@ -28,3 +30,6 @@
 </table>
 
 <%= link "New class", to: class_path(@conn, :new) %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>

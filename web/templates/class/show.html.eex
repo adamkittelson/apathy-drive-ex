@@ -14,7 +14,7 @@
 
   <li>
     <strong>Properties:</strong>
-    <%= @class.properties %>
+    <%= Poison.encode!(@class.properties) %>
   </li>
 
 </ul>

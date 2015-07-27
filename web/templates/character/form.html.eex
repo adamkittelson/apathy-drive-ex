@@ -22,7 +22,7 @@
 
   <div class="form-group">
     <%= label f, :class_id, "Class" %>
-    <%= number_input f, :class_id, class: "form-control" %>
+    <%= select(f, :class_id, @classes, prompt: "Choose Your Class", class: "u-full-width") %>
   </div>
 
   <div class="form-group">

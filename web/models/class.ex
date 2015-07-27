@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Class do
   use ApathyDrive.Web, :model
+  import Ecto.Query
 
   schema "classes" do
     field :name, :string
@@ -21,5 +22,11 @@ defmodule ApathyDrive.Class do
   def changeset(model, params \\ :empty) do
     model
     |> cast(params, @required_fields, @optional_fields)
+  end
+
+  def list_for_select do
+    ApathyDrive.Class
+    |> select([r], {r.name, r.id})
+    |> Repo.all
   end
 end

@@ -1,7 +1,15 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
 <h2>New character</h2>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 
 <%= render "form.html", changeset: @changeset,
                         action: character_path(@conn, :create),
-                        races: @races %>
+                        races: @races,
+                        classes: @classes %>
 
 <%= link "Back", to: character_path(@conn, :index), class: "button button-primary" %>
+
+<script>require("web/static/js/json-edit")</script>
+<script>require("web/static/js/nav")</script>
