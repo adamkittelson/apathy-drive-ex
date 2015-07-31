@@ -1,6 +1,6 @@
 <%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
 
-<table class="table">
+<table class="admin-index">
   <thead>
     <tr>
       <th>Name</th>
@@ -17,9 +17,8 @@
       <td><%= ApathyDrive.Character.class(character) %></td>
 
       <td class="text-right">
-        <%= link "Show", to: character_path(@conn, :show, character), class: "btn btn-default btn-xs" %>
-        <%= link "Edit", to: character_path(@conn, :edit, character), class: "btn btn-default btn-xs" %>
-        <%= link "Delete", to: character_path(@conn, :delete, character), method: :delete, class: "btn btn-danger btn-xs" %>
+        <%= link "Play", to: game_path(@conn, :game, %{"character_id" => character.id}), method: :post, class: "button button-primary" %>
+        <%= link "Delete", to: character_path(@conn, :delete, character), method: :delete, class: "button button-primary" %>
       </td>
     </tr>
 <% end %>

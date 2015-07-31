@@ -1,6 +1,7 @@
 defmodule ApathyDrive.PageController do
   use ApathyDrive.Web, :controller
   alias ApathyDrive.Repo
+  alias ApathyDrive.Character
   import Systems.Text
 
   plug :scrub_params, "spirit" when action in [:update_spirit]
@@ -9,24 +10,39 @@ defmodule ApathyDrive.PageController do
     render conn, "index.html"
   end
 
+  def game(conn, %{"character_id" => character_id}) do
+    case Repo.get_by(Character, id: character_id, player_id: conn.assigns[:current_player]) do
+      %Character{} = character ->
+        IO.puts "found #{character.name}!"
+        conn
+        |> put_session(:current_character, character_id)
+        |> redirect(to: game_path(conn, :game))
+      nil ->
+        IO.puts "no character for id: #{character_id}, player_id: #{conn.assigns[:current_player]}"
+        redirect(conn, to: character_path(conn, :index))
+    end
+  end
+
   def game(conn, _params) do
-    case get_session(conn, :current_spirit) do
+    case get_session(conn, :current_character) do
       nil ->
         conn
-        |> put_session(:current_spirit, nil)
-        |> redirect(to: "/")
-      spirit_id ->
-        case Repo.get(Spirit, spirit_id) do
-          %Spirit{id: id, name: nil} ->
+        |> put_session(:current_character, nil)
+        |> redirect(to: character_path(conn, :index))
+      character_id ->
+        case Repo.get_by(Character, id: character_id, player_id: conn.assigns[:current_player]) do
+          # %Spirit{id: id, name: nil} ->
+          #   conn
+          #   |> put_session(:current_spirit, id)
+          #   |> redirect(to: "/create")
+          %Character{id: id} ->
             conn
-            |> put_session(:current_spirit, id)
-            |> redirect(to: "/create")
-          %Spirit{} ->
-            render conn, "game.html", []
+            |> assign(:current_character, id)
+            |> render "game.html", []
           nil ->
             conn
-            |> put_session(:current_spirit, nil)
-            |> redirect(to: "/")
+            |> put_session(:current_character, nil)
+            |> redirect(to: character_path(conn, :index))
         end
     end
   end

@@ -2,7 +2,7 @@
 
 <div id="scroll">
 </div>
-<script>var spiritID = <%= @current_spirit %></script>
+<script>var characterID = <%= @current_character %></script>
 
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script>require("web/static/js/app")</script>

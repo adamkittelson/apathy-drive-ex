@@ -25,6 +25,7 @@ defmodule ApathyDrive.Router do
 
     get "/", PageController, :index
     get  "/game", PageController, :game, as: :game
+    post "/game", PageController, :game, as: :game
     get "/create", PageController, :edit_spirit, as: :spirit
     put "/create", PageController, :update_spirit, as: :spirit
     get "/angels", FactionController, :angels
