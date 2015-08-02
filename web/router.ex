@@ -25,11 +25,12 @@ defmodule ApathyDrive.Router do
 
     get "/", PageController, :index
     get  "/game", PageController, :game, as: :game
-    get "/create", PageController, :edit_spirit, as: :spirit
-    put "/create", PageController, :update_spirit, as: :spirit
     get "/angels", FactionController, :angels
     get "/demons", FactionController, :demons
     get "/elementals", FactionController, :elementals
+    resources "/sessions", SessionController
+    resources "/spirits", SpiritController, only: [:create, :edit, :update],
+                                            singleton: true
   end
 
   scope "/system", ApathyDrive do
@@ -86,4 +87,3 @@ defmodule ApathyDrive.Router do
   end
 
 end
-

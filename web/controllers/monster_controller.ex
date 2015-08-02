@@ -5,7 +5,6 @@ defmodule ApathyDrive.MonsterController do
   alias ApathyDrive.Repo
 
   plug :scrub_params, "monster_template" when action in [:create, :update]
-  plug :action
 
   def index(conn, %{"q" => query} = params) do
     query = "%#{query}%"
@@ -56,7 +55,7 @@ defmodule ApathyDrive.MonsterController do
     changeset = Room.changeset(%Room{}, room_params)
 
     if changeset.valid? do
-      Repo.insert(changeset)
+      Repo.insert!(changeset)
 
       conn
       |> put_flash(:info, "Room created successfully.")
@@ -83,7 +82,7 @@ defmodule ApathyDrive.MonsterController do
     changeset = MonsterTemplate.changeset(mt, monster_params)
 
     if changeset.valid? do
-      Repo.update(changeset)
+      Repo.update!(changeset)
 
       ApathyDrive.PubSub.broadcast!("monster_templates:#{id}", {:monster_template_updated, changeset})
 
@@ -97,7 +96,7 @@ defmodule ApathyDrive.MonsterController do
 
   def delete(conn, %{"id" => id}) do
     room = Repo.get(Room, id)
-    Repo.delete(room)
+    Repo.delete!(room)
 
     conn
     |> put_flash(:info, "Room deleted successfully.")

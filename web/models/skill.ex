@@ -1,6 +1,5 @@
 defmodule Skill do
-  use Ecto.Model
-  alias ApathyDrive.Repo
+  use ApathyDrive.Web, :model
 
   schema "skills" do
     field :name,         :string
@@ -20,7 +19,7 @@ defmodule Skill do
   end
 
   def insert(%Skill{id: nil} = skill) do
-    Repo.insert(skill)
+    Repo.insert!(skill)
   end
 
   def all do

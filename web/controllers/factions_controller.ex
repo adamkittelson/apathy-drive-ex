@@ -3,8 +3,6 @@ defmodule ApathyDrive.FactionController do
   alias ApathyDrive.Repo
   import Ecto.Query
 
-  plug :action
-
   def angels(conn, _params) do
     render conn, "angels.html", abilities: abilities("Angel")
   end

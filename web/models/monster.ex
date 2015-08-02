@@ -1,10 +1,9 @@
 defmodule Monster do
   require Logger
-  use Ecto.Model
+  use ApathyDrive.Web, :model
   use GenServer
 
   import Systems.Text
-  alias ApathyDrive.Repo
   alias ApathyDrive.PubSub
 
   schema "monsters" do
@@ -313,7 +312,7 @@ defmodule Monster do
   end
 
   def insert(%Monster{id: nil} = monster) do
-    ApathyDrive.Repo.insert(monster)
+    ApathyDrive.Repo.insert!(monster)
   end
   def insert(%Monster{} = monster), do: monster
 
@@ -321,12 +320,12 @@ defmodule Monster do
     spirit = Spirit.save(spirit)
     monster = monster
               |> Map.put(:spirit, spirit)
-              |> Repo.update
+              |> Repo.update!
     :ets.insert(:"monster_#{id}", {self, monster})
     monster
   end
   def save(%Monster{id: id} = monster) when is_integer(id) do
-    monster = Repo.update(monster)
+    monster = Repo.update!(monster)
     :ets.insert(:"monster_#{id}", {self, monster})
     monster
   end

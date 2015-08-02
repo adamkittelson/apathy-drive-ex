@@ -7,22 +7,22 @@ defmodule ApathyDrive.Matchers do
 
       unquote(body[:do])
 
-      assert_received {:socket_push,
-                       %Phoenix.Socket.Message{event: "scroll",
+      assert_received %Phoenix.Socket.Message{event: "scroll",
                                                payload: %{
                                                  html: unquote(string)},
-                                                 topic: nil}}
+                                                 ref: nil,
+                                                 topic: "test"}
 
     end
   end
 
   defmacro assert_adds_to_scroll(string) do
     quote do
-      assert_received {:socket_push,
-                       %Phoenix.Socket.Message{event: "scroll",
+      assert_received %Phoenix.Socket.Message{event: "scroll",
                                                payload: %{
                                                  html: unquote(string)},
-                                                 topic: nil}}
+                                                 ref: nil,
+                                                 topic: "test"}
     end
   end
 

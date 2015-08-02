@@ -11,7 +11,7 @@
   <div class="two columns">
     &nbsp;
     <%= if @page_number < @total_pages do %>
-      <%= link "Next Page", to: monster_path(@conn, :index, page: @page_number + 1, q: @q), class: "button button-primary" %>
+      <%= link "Next Page", to: monster_path(@conn, :index, page: @page_number + 1, q: assigns[:q]), class: "button button-primary" %>
     <% end %>
   </div>
 </div>

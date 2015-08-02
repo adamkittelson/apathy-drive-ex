@@ -16,25 +16,27 @@ defmodule ApathyDrive.Mixfile do
   def application do
     [
       mod: { ApathyDrive, [] },
-      applications: [:postgrex, :ecto, :phoenix, :cowboy, :logger, :oauth2, :phoenix_ecto]
+      applications: [:postgrex, :ecto, :phoenix, :cowboy, :logger, :oauth2, :phoenix_ecto, :comeonin]
     ]
   end
 
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:ecto,                "~> 0.11.0"},
+      {:ecto,                "~> 0.13.1"},
       {:decimal,             "~> 1.1.0"},
-      {:postgrex,            "~> 0.8.0"},
-      {:phoenix,             "~> 0.13"},
-      {:phoenix_live_reload, "~> 0.4"},
-      {:phoenix_ecto,        "~> 0.4"},
-      {:phoenix_html,        "~> 1.0"},
-      {:timex,               "~> 0.13.4"},
+      {:postgrex,            "~> 0.8.3"},
+      {:phoenix,             "~> 0.14"},
+      {:phoenix_live_reload, "~> 0.4.3"},
+      {:phoenix_ecto,        "~> 0.5"},
+      {:phoenix_html,        "~> 1.1"},
+      {:timex,               "~> 0.16.1"},
+      {:timex_ecto,          "~> 0.3.0"},
       {:inflex,              "~> 0.2.8"},
       {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.0.5"},
-      {:scrivener,           "~> 0.6.0"},
+      {:scrivener,           "~> 0.10.0"},
+      {:comeonin,            "~> 1.0.5"},
       {:shouldi, only: :test}
     ]
   end

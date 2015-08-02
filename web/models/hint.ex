@@ -1,5 +1,5 @@
 defmodule Hint do
-  use Ecto.Model
+  use ApathyDrive.Web, :model
 
   alias ApathyDrive.Repo
 
@@ -12,7 +12,7 @@ defmodule Hint do
 
   def create(name, body) do
     %Hint{name: name, body: body}
-    |> Repo.insert
+    |> Repo.insert!
   end
 
   def find_by_name(name) do

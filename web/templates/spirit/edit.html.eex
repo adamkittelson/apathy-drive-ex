@@ -2,7 +2,7 @@
   <h3>Create Your Spirit</h3>
 </div>
 
-<%= form_for @changeset, spirit_path(@conn, :update_spirit), fn f -> %>
+<%= form_for @changeset, spirit_path(@conn, :update), fn f -> %>
   <div class="row">
     <div class="four columns">
       <%= if f.errors[:name] do %>

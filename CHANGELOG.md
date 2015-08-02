@@ -145,3 +145,6 @@ CHANGELOG
 
 ---- 0.0.49 / 2015-05-28 / admin -----------------------------------------------
 * start admin section, room editing for admins
+
+---- 0.0.50 / 2015-08-01 / players-characters-races-classes --------------------
+* just kidding about the title, add username / password auth instead

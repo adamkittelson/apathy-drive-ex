@@ -2,10 +2,7 @@ defmodule ApathyDrive.RoomController do
   use ApathyDrive.Web, :controller
   import Ecto.Query
 
-  alias ApathyDrive.Repo
-
   plug :scrub_params, "room" when action in [:create, :update]
-  plug :action
 
   def index(conn, %{"q" => query} = params) do
     query = "%#{query}%"
@@ -56,7 +53,7 @@ defmodule ApathyDrive.RoomController do
     changeset = Room.changeset(%Room{}, room_params)
 
     if changeset.valid? do
-      Repo.insert(changeset)
+      Repo.insert!(changeset)
 
       conn
       |> put_flash(:info, "Room created successfully.")
@@ -93,7 +90,7 @@ defmodule ApathyDrive.RoomController do
     changeset = Room.changeset(room, room_params)
 
     if changeset.valid? do
-      Repo.update(changeset)
+      Repo.update!(changeset)
 
       ApathyDrive.PubSub.broadcast!("rooms:#{id}", {:room_updated, changeset})
 
@@ -107,7 +104,7 @@ defmodule ApathyDrive.RoomController do
 
   def delete(conn, %{"id" => id}) do
     room = Repo.get(Room, id)
-    Repo.delete(room)
+    Repo.delete!(room)
 
     conn
     |> put_flash(:info, "Room deleted successfully.")

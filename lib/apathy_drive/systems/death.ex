@@ -5,7 +5,7 @@ defmodule Systems.Death do
     ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_died, monster: monster, reward: monster.experience})
     ApathyDrive.Factions.add_to_bonus_pool(monster.experience)
     MonsterTemplate.set_last_killed_at(monster)
-    ApathyDrive.Repo.delete(monster)
+    ApathyDrive.Repo.delete!(monster)
 
     death_message =
       monster.death_message
@@ -34,7 +34,7 @@ defmodule Systems.Death do
 
     MonsterTemplate.set_last_killed_at(monster)
 
-    ApathyDrive.Repo.delete(monster)
+    ApathyDrive.Repo.delete!(monster)
     Process.exit(self, :normal)
   end
 

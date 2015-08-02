@@ -4,8 +4,6 @@ defmodule ApathyDrive.AuthController do
   alias OAuth2.AccessToken
   alias OAuth2.Strategy.AuthCode
 
-  plug :action
-
   @doc """
   This action is reached via `/auth` and redirects to the OAuth2 provider
   based on the chosen strategy. The strategy in this example has already

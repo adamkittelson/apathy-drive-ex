@@ -1,6 +1,7 @@
 defmodule MonsterTemplate do
-  use Ecto.Model
+  use ApathyDrive.Web, :model
   use GenServer
+  use Timex
 
   alias ApathyDrive.Repo
 
@@ -26,7 +27,7 @@ defmodule MonsterTemplate do
     field :attacks,                ApathyDrive.JSONB
     field :effects,                ApathyDrive.JSONB
     field :experience,             :integer
-    field :last_killed_at,         Ecto.DateTime
+    field :last_killed_at,         Timex.Ecto.DateTime
     field :regen_time_in_minutes, :integer
 
     has_many :monsters, Monster
@@ -74,21 +75,10 @@ defmodule MonsterTemplate do
   def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: nil}), do: false
   def on_cooldown?(%MonsterTemplate{last_killed_at: nil}),        do: false
   def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: regen_time, last_killed_at: last_killed_at}) do
-    now =
-      Ecto.DateTime.utc
-      |> Ecto.DateTime.to_iso8601
-      |> Timex.DateFormat.parse!("{ISOdate}T{ISOtime}Z")
-      |> Timex.Date.convert(:secs)
+    respawn_at = Date.now
+                 |> Date.shift(mins: -regen_time)
 
-    killed_at =
-      last_killed_at
-      |> Ecto.DateTime.to_iso8601
-      |> Timex.DateFormat.parse!("{ISOdate}T{ISOtime}Z")
-      |> Timex.Date.convert(:secs)
-
-    respawn_at = (now - (regen_time * 60))
-
-    respawn_at <= killed_at
+    -1 == Date.compare(respawn_at, last_killed_at)
   end
 
   def limit_reached?(%MonsterTemplate{game_limit: game_limit} = monster_template) do
@@ -183,7 +173,7 @@ defmodule MonsterTemplate do
     mt =
       monster_template
       |> Map.put(:last_killed_at, Ecto.DateTime.utc)
-      |> Repo.update
+      |> Repo.update!
 
     {:noreply, mt}
   end

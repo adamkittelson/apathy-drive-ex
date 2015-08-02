@@ -1609,5 +1609,13 @@ a.anchor {
   top: -7rem;
   visibility: hidden; }
 
+/* line 349, stdin */
+#fb {
+  margin-top: 40px; }
+
+/* line 351, stdin */
+.alert {
+  color: red; }
+
 
 /*# sourceMappingURL=app.css.map*/
