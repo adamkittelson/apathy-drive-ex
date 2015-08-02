@@ -1,7 +1,5 @@
-defmodule ApathyDrive.PlayerTest do
+defmodule SpiritTest do
   use ApathyDrive.ModelCase
-
-  alias ApathyDrive.Player
 
   @valid_attrs %{email: "adam@apathydrive.com",
                  password: "awesome password",
@@ -20,18 +18,18 @@ defmodule ApathyDrive.PlayerTest do
                      password_confirmation: "awesome pw"}
 
   test "sign_up changeset with valid attributes" do
-    changeset = Player.sign_up_changeset(%Player{}, @valid_attrs)
+    changeset = Spirit.sign_up_changeset(%Spirit{}, @valid_attrs)
     assert changeset.valid?
   end
 
   test "changeset with an invalid email address" do
-    changeset = Player.sign_up_changeset(%Player{}, @invalid_email)
+    changeset = Spirit.sign_up_changeset(%Spirit{}, @invalid_email)
     assert changeset.errors == [email: "has invalid format"]
     refute changeset.valid?
   end
 
   test "changeset with a password that is too short" do
-    changeset = Player.sign_up_changeset(%Player{}, @pw_confirmation)
+    changeset = Spirit.sign_up_changeset(%Spirit{}, @pw_confirmation)
     assert changeset.errors ==  [password: "does not match confirmation"]
     refute changeset.valid?
   end

@@ -3593,7 +3593,7 @@ adjustScrollTop();
 
 var socket = new Phoenix.Socket("" + window.location.origin.replace("http", "ws") + "/ws");
 socket.connect();
-var chan = socket.chan("mud", { character: characterID });
+var chan = socket.chan("mud", { spirit: spiritID });
 
 chan.join();
 

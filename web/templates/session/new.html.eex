@@ -29,7 +29,7 @@
 <% end %>
 <hr/>
 <h2>Sign Up</h2>
-<%= form_for @changeset, player_path(@conn, :create), fn f -> %>
+<%= form_for @changeset, spirit_path(@conn, :create), fn f -> %>
   <%= if f.errors != [] do %>
     <div class="alert alert-danger">
       <p>Oops, something went wrong! Please check the errors below:</p>
@@ -50,7 +50,7 @@
     <%= label f, :password, "Password" %>
     <%= password_input f, :password, class: "form-control" %>
   </div>
-  
+
   <div class="form-group">
     <%= label f, :password_confirmation, "Password Confirmation" %>
     <%= password_input f, :password_confirmation, class: "form-control" %>

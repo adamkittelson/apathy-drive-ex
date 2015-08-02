@@ -9,7 +9,7 @@ defmodule ApathyDrive.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :protect_from_forgery
-    plug :assign_current_player
+    plug :assign_current_spirit
   end
 
   pipeline :auth do
@@ -25,15 +25,12 @@ defmodule ApathyDrive.Router do
 
     get "/", PageController, :index
     get  "/game", PageController, :game, as: :game
-    post "/game", PageController, :game, as: :game
-    get "/create", PageController, :edit_spirit, as: :spirit
-    put "/create", PageController, :update_spirit, as: :spirit
     get "/angels", FactionController, :angels
     get "/demons", FactionController, :demons
     get "/elementals", FactionController, :elementals
-    resources "/characters", CharacterController
-    resources "/players", PlayerController, only: [:create]
     resources "/sessions", SessionController
+    resources "/spirits", SpiritController, only: [:create, :edit, :update],
+                                            singleton: true
   end
 
   scope "/system", ApathyDrive do
@@ -41,8 +38,6 @@ defmodule ApathyDrive.Router do
 
     resources "/rooms", RoomController
     resources "/monsters", MonsterController
-    resources "/races", RaceController
-    resources "/classes", ClassController
   end
 
   scope "/auth", alias: ApathyDrive do
@@ -59,17 +54,17 @@ defmodule ApathyDrive.Router do
   # Fetch the current user from the session and add it to `conn.assigns`. This
   # will allow you to have access to the current user in your views with
   # `@current_user`.
-  defp assign_current_player(conn, _) do
-    player_id = conn
-                |> get_session(:current_player)
+  defp assign_current_spirit(conn, _) do
+    spirit_id = conn
+                |> get_session(:current_spirit)
 
-    if player_id && (player = ApathyDrive.Repo.get(ApathyDrive.Player, player_id)) do
+    if spirit_id && (spirit = ApathyDrive.Repo.get(Spirit, spirit_id)) do
       conn
-      |> assign(:current_player, player_id)
-      |> assign(:admin?, player.admin)
+      |> assign(:current_spirit, spirit_id)
+      |> assign(:admin?, spirit.admin)
     else
       conn
-      |> put_session(:current_player, nil)
+      |> put_session(:current_spirit, nil)
     end
   end
 
@@ -92,4 +87,3 @@ defmodule ApathyDrive.Router do
   end
 
 end
-

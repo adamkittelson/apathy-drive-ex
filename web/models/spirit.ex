@@ -4,6 +4,7 @@ defmodule Spirit do
 
   require Logger
   import Systems.Text
+  import Comeonin.Bcrypt
   alias ApathyDrive.PubSub
 
   @idle_threshold 60
@@ -12,6 +13,8 @@ defmodule Spirit do
     belongs_to :room, Room
     field :name,              :string
     field :alignment,         :string
+    field :email,             :string
+    field :password,          :string
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
@@ -56,6 +59,28 @@ defmodule Spirit do
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> validate_unique(:name, on: Repo)
     |> validate_length(:name, min: 1, max: 18)
+  end
+
+  def sign_up_changeset(model, params \\ :empty) do
+    model
+    |> cast(params, ~w(email password), [])
+    |> validate_format(:email, ~r/@/)
+    |> validate_length(:email, min: 3, max: 100)
+    |> validate_length(:password, min: 6)
+    |> validate_confirmation(:password)
+  end
+
+  def sign_in(email, password) do
+    player = Repo.get_by(Player, email: email)
+    sign_in?(player, password) && player
+  end
+
+  def sign_in?(%Spirit{password: stored_hash}, password) do
+    checkpw(password, stored_hash)
+  end
+
+  def sign_in?(nil, _password) do
+    dummy_checkpw
   end
 
   def find_or_create_by_external_id(external_id) do

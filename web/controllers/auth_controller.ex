@@ -3,7 +3,6 @@ defmodule ApathyDrive.AuthController do
 
   alias OAuth2.AccessToken
   alias OAuth2.Strategy.AuthCode
-  alias ApathyDrive.Player
 
   @doc """
   This action is reached via `/auth` and redirects to the OAuth2 provider
@@ -27,13 +26,13 @@ defmodule ApathyDrive.AuthController do
     # Request the user's data with the access token
     user = AccessToken.get!(token, "/me")
 
-    player = Player.find_or_create_by_external_id(user["id"])
+    spirit = Spirit.find_or_create_by_external_id(user["id"])
 
     conn =
       conn
-      |> put_session(:current_player, player.id)
+      |> put_session(:current_spirit, spirit.id)
 
-    redirect(conn, to: character_path(conn, :index))
+    redirect(conn, to: game_path(conn, :game))
   end
 
   defp strategy(conn), do: conn.private.oauth2_strategy

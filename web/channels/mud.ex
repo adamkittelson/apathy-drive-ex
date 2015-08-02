@@ -1,7 +1,7 @@
 defmodule ApathyDrive.MUD do
   use Phoenix.Channel
 
-  def join("mud", %{"character" => id}, socket) do
+  def join("mud", %{"spirit" => id}, socket) do
     send(self, {:login, id})
 
     {:ok, socket}
@@ -34,6 +34,12 @@ defmodule ApathyDrive.MUD do
       {:noreply, socket}
     end
 
+  end
+
+  def handle_info(%Phoenix.Socket.Broadcast{event: event, payload: payload}, socket) do
+    Phoenix.Channel.push socket, event, payload
+
+    {:noreply, socket}
   end
 
   def handle_info({:set_entity, entity}, socket) do
