@@ -1,16 +1,12 @@
 defmodule Commands.AskTest do
-  use ExUnit.Case
-  use ShouldI
-  import ApathyDrive.Matchers
-
-  with "a spirit" do
-    setup context do
-      Dict.put(context, :spirit, %Spirit{socket: %Phoenix.Socket{transport_pid: self, topic: "test", joined: true}})
-    end
-
-    should_add_to_scroll "<p>You need a body to do that.</p>" do
-      Commands.Ask.execute(context.spirit, [])
-    end
+  use ApathyDrive.ChannelCase
+  
+  setup do
+    {:ok, spirit: test_spirit()}
   end
 
+  test "receives an error message", %{spirit: spirit} do
+    Commands.Ask.execute(spirit, [])
+    assert_push "scroll", %{html: "<p>You need a body to do that.</p>"}
+  end
 end

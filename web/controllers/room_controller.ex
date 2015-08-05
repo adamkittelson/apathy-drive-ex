@@ -42,7 +42,7 @@ defmodule ApathyDrive.RoomController do
   def create(conn, %{"room" => room_params}) do
     room_params = update_in room_params["lair_monsters"], fn
       nil ->
-        nil
+        []
       lair_monsters ->
         lair_monsters
         |> String.replace(~r/[^\d,]/, "")
@@ -79,7 +79,7 @@ defmodule ApathyDrive.RoomController do
 
     room_params = update_in room_params["lair_monsters"], fn
       nil ->
-        nil
+        []
       lair_monsters ->
         lair_monsters
         |> String.replace(~r/[^\d,]/, "")

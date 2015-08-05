@@ -1,5 +1,5 @@
 defmodule ApathyDrive.MUD do
-  use Phoenix.Channel
+  use ApathyDrive.Web, :channel
 
   def join("mud", %{"spirit" => id}, socket) do
     send(self, {:login, id})

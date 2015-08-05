@@ -14,7 +14,7 @@ defmodule Room do
     field :item_descriptions,     ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
     field :lair_size,             :integer
     field :lair_monsters,         {:array, :integer}
-    field :lair_frequency,        :integer
+    field :lair_frequency,        :integer, default: 5
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :lair_faction,          :string
     field :exits,                 ApathyDrive.JSONB, default: []
@@ -34,7 +34,7 @@ defmodule Room do
     PubSub.subscribe(self, "rooms:#{room.id}")
     send(self, :load_monsters)
 
-    room = if room.lair_monsters do
+    room = if room.lair_monsters && Enum.any?(room.lair_monsters) do
       PubSub.subscribe(self, "rooms:lairs")
       TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.to_secs}) end})
     else
@@ -363,7 +363,7 @@ defmodule Room do
            Monster.find(monster_id)
          end)
 
-      if room.lair_monsters do
+      if room.lair_monsters && Enum.any?(room.lair_monsters) do
         send(this, {:spawn_monsters, Date.now |> Date.to_secs})
       end
 

@@ -172,7 +172,7 @@ defmodule MonsterTemplate do
   def handle_cast(:set_last_killed_at, monster_template) do
     mt =
       monster_template
-      |> Map.put(:last_killed_at, Ecto.DateTime.utc)
+      |> Map.put(:last_killed_at, Timex.Date.now)
       |> Repo.update!
 
     {:noreply, mt}
