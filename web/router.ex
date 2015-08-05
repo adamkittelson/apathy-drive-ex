@@ -44,12 +44,7 @@ defmodule ApathyDrive.Router do
     pipe_through [:browser, :auth]
     get "/", AuthController, :index
     get "/callback", AuthController, :callback
-  end
-
-  socket "/ws", ApathyDrive do
-    channel "mud", MUD
-    channel "index", Index
-  end
+  end  
 
   # Fetch the current user from the session and add it to `conn.assigns`. This
   # will allow you to have access to the current user in your views with

@@ -1,6 +1,8 @@
 defmodule ApathyDrive.Endpoint do
   use Phoenix.Endpoint, otp_app: :apathy_drive
 
+  socket "/ws", ApathyDrive.UserSocket
+
   plug Plug.Static,
     at: "/", from: :apathy_drive,
     only: ~w(css images js favicon.ico robots.txt)
@@ -25,8 +27,7 @@ defmodule ApathyDrive.Endpoint do
   plug Plug.Session,
     store: :cookie,
     key: "_apathy_drive_key",
-    signing_salt: "y+gCAOZH",
-    encryption_salt: "mMJ4NoI3"
+    signing_salt: "y+gCAOZH"
 
-  plug :router, ApathyDrive.Router
+  plug ApathyDrive.Router
 end

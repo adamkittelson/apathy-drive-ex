@@ -1,57 +1,37 @@
 defmodule Commands.ScoreTest do
-  use ExUnit.Case
-  use ShouldI
-  import ApathyDrive.Matchers
+  use ApathyDrive.ChannelCase
 
-  with "a good spirit" do
-    setup context do
-      Dict.put(context, :spirit, %Spirit{name: "Adam",
-                                         alignment: "good",
-                                         level: 5,
-                                         experience: 98765,
-                                         socket: %Phoenix.Socket{transport_pid: self, topic: "test", joined: true}})
-    end
-
-    should("display status with a good name", context) do
-      Commands.Score.execute(context.spirit, [])
-
-      assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='white'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"
-      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span></p>"
-    end
+  setup do
+    {:ok, good: test_spirit(%{name: "Adam",
+                              alignment: "good",
+                              level: 5,
+                              experience: 98765}),
+          neutral: test_spirit(%{name: "Adam",
+                                 alignment: "neutral",
+                                 level: 5,
+                                 experience: 98765}),
+          evil: test_spirit(%{name: "Adam",
+                              alignment: "evil",
+                              level: 5,
+                              experience: 98765})}
   end
 
-  with "a neutral spirit" do
-    setup context do
-      Dict.put(context, :spirit, %Spirit{name: "Adam",
-                                         alignment: "neutral",
-                                         level: 5,
-                                         experience: 98765,
-                                         socket: %Phoenix.Socket{transport_pid: self, topic: "test", joined: true}})
-    end
-
-    should("display status with a neutral name", context) do
-      Commands.Score.execute(context.spirit, [])
-
-      assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"
-      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span></p>"
-    end
+  test "a good spirit", %{good: spirit} do
+    Commands.Score.execute(spirit, [])
+    assert_push "scroll", %{html: "<p><span class='dark-green'>Name:</span> <span class='white'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"}
+    assert_push "scroll", %{html: "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span></p>"}
   end
 
-  with "an evil spirit" do
-    setup context do
-      Dict.put(context, :spirit, %Spirit{name: "Adam",
-                                         alignment: "evil",
-                                         level: 5,
-                                         experience: 98765,
-                                         socket: %Phoenix.Socket{transport_pid: self, topic: "test", joined: true}})
-    end
+  test "a neutral spirit", %{neutral: spirit} do
+    Commands.Score.execute(spirit, [])
+    assert_push "scroll", %{html: "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"}
+    assert_push "scroll", %{html: "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span></p>"}
+  end
 
-    should("display status with an evil name", context) do
-      Commands.Score.execute(context.spirit, [])
-
-      assert_adds_to_scroll "<p><span class='dark-green'>Name:</span> <span class='magenta'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"
-      assert_adds_to_scroll "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span></p>"
-    end
+  test "an evil spirit", %{evil: spirit} do
+    Commands.Score.execute(spirit, [])
+    assert_push "scroll", %{html: "<p><span class='dark-green'>Name:</span> <span class='magenta'>Adam        </span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>98765</span></p>"}
+    assert_push "scroll", %{html: "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>5           </span></p>"}
   end
 
 end

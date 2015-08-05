@@ -1,16 +1,13 @@
 defmodule Commands.AbilitiesTest do
-  use ExUnit.Case
-  use ShouldI
-  import ApathyDrive.Matchers
+  use ApathyDrive.ChannelCase
 
-  with "a spirit" do
-    setup context do
-      Dict.put(context, :spirit, %Spirit{socket: %Phoenix.Socket{transport_pid: self, topic: "test", joined: true}})
-    end
+  setup do
+    {:ok, spirit: test_spirit()}
+  end
 
-    should_add_to_scroll "<p>You must be possessing a monster to have abilities.</p>" do
-      Commands.Abilities.execute(context.spirit, [])
-    end
+  test "receives an error message", %{spirit: spirit} do
+    Commands.Abilities.execute(spirit, [])
+    assert_push "scroll", %{html: "<p>You must be possessing a monster to have abilities.</p>"}
   end
 
 end
