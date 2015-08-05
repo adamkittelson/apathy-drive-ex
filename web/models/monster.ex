@@ -745,7 +745,7 @@ defmodule Monster do
               |> send_scroll("<p>You possess #{monster.name}.")
               |> Monster.save
 
-    ApathyDrive.WhoList.log_on(monster)
+    #ApathyDrive.WhoList.log_on(monster)
 
     PubSub.subscribe(self, "spirits:online")
     PubSub.subscribe(self, "spirits:hints")

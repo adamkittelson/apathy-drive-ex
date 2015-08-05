@@ -166,7 +166,7 @@ defmodule Spirit do
     PubSub.subscribe(spirit.pid, "chat:gossip")
     PubSub.subscribe(spirit.pid, "chat:#{spirit.faction}")
     PubSub.subscribe(spirit.pid, "rooms:#{spirit.room_id}")
-    ApathyDrive.WhoList.log_on(spirit)
+    #ApathyDrive.WhoList.log_on(spirit)
 
     spirit
   end
@@ -236,7 +236,7 @@ defmodule Spirit do
   def logout(%Spirit{} = spirit) do
     spirit
     |> save
-    |> ApathyDrive.WhoList.log_off
+    #|> ApathyDrive.WhoList.log_off
 
     PubSub.unsubscribe(spirit.pid, "spirits:online")
     PubSub.unsubscribe(spirit.pid, "spirits:hints")
@@ -579,7 +579,7 @@ defmodule Spirit do
      |> set_abilities
      |> Spirit.save
 
-     ApathyDrive.WhoList.log_on(spirit)
+     #ApathyDrive.WhoList.log_on(spirit)
 
     {:noreply, spirit}
   end

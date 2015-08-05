@@ -32,24 +32,24 @@ defmodule Room do
   def init(%Room{} = room) do
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
-    send(self, :load_monsters)
-
-    room = if room.lair_monsters && Enum.any?(room.lair_monsters) do
-      PubSub.subscribe(self, "rooms:lairs")
-      TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.to_secs}) end})
-    else
-      room
-    end
-
-    room = if room.ability_id do
-      PubSub.subscribe(self, "rooms:abilities")
-
-      room
-      |> Map.put(:room_ability, ApathyDrive.Repo.get(Ability, room.ability_id))
-      |> TimerManager.call_every({:execute_room_ability, 5_000, fn -> send(self, :execute_room_ability) end})
-    else
-      room
-    end
+    # send(self, :load_monsters)
+    #
+    # room = if room.lair_monsters && Enum.any?(room.lair_monsters) do
+    #   PubSub.subscribe(self, "rooms:lairs")
+    #   TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.to_secs}) end})
+    # else
+    #   room
+    # end
+    #
+    # room = if room.ability_id do
+    #   PubSub.subscribe(self, "rooms:abilities")
+    #
+    #   room
+    #   |> Map.put(:room_ability, ApathyDrive.Repo.get(Ability, room.ability_id))
+    #   |> TimerManager.call_every({:execute_room_ability, 5_000, fn -> send(self, :execute_room_ability) end})
+    # else
+    #   room
+    # end
 
     {:ok, room}
   end

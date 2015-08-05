@@ -31,7 +31,7 @@ defmodule Commands.Unpossess do
 
     send(spirit.socket_pid, {:set_entity, spirit})
 
-    ApathyDrive.WhoList.log_off(self)
+    #ApathyDrive.WhoList.log_off(self)
 
     spirit
   end
