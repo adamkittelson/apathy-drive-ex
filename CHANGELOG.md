@@ -148,3 +148,6 @@ CHANGELOG
 
 ---- 0.0.50 / 2015-08-01 / players-characters-races-classes --------------------
 * just kidding about the title, add username / password auth instead
+
+---- 0.0.51 / 2015-08-04 / upgrade-phoenix -------------------------------------
+* upgrade phoenix and friends
