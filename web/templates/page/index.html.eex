@@ -78,7 +78,6 @@
   </pre>
   <p>To capture a lair for your faction you must be possessing a monster, and you must clear the room of all monsters whose alignments do not match that of your faction. Once those conditions are met just type <code>capture</code>.</p>
 </div>
-
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script>require("web/static/js/index")</script>
 <script>require("web/static/js/nav")</script>

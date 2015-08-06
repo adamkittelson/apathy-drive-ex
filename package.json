@@ -2,7 +2,7 @@
   "repository": {
   },
   "dependencies": {
-    "brunch": "git://github.com/brunch/brunch#5176b6b4bf70cd8cb9dad0058dd3e83e8d983218",
+    "brunch": "^1.8.5",
     "babel-brunch": "^4.0.0",
     "clean-css-brunch": ">= 1.0 < 1.8",
     "css-brunch": ">= 1.0 < 1.8",

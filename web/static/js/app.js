@@ -1,3 +1,6 @@
+import "deps/phoenix_html/web/static/js/phoenix_html"
+import {Socket} from "deps/phoenix/web/static/js/phoenix"
+
 var addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, push;
 focus = null;
 $('html').on('click', function(event) {
@@ -38,9 +41,9 @@ setFocus = function(selector) {
 };
 adjustScrollTop();
 
-var socket = new Phoenix.Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
+var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
 socket.connect();
-var chan = socket.chan("mud", {spirit: spiritID});
+var chan = socket.channel("mud", {spirit: spiritID});
 
 chan.join()
 
