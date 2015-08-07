@@ -1,12 +1,24 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
+  alias ApathyDrive.Mobile
 
   def all do
     :code.all_loaded
     |> Enum.map(fn{module, _} -> to_string(module) end)
     |> Enum.filter(&(String.starts_with?(&1, "Elixir.Commands.") and !String.ends_with?(&1, "Test")))
     |> Enum.map(&String.to_atom/1)
+  end
+
+  def execute(%Mobile{} = mobile, command, arguments) do
+    Mobile.display_prompt(mobile)
+
+    case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
+      nil ->
+        send(mobile.socket, {:scroll, "<p>What?</p>"})
+      match ->
+        match.module.execute(mobile, arguments)
+    end
   end
 
   def execute(%Spirit{monster: nil} = spirit, command, arguments) do

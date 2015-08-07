@@ -3440,7 +3440,7 @@ adjustScrollTop();
 
 var socket = new Socket("" + window.location.origin.replace("http", "ws") + "/ws");
 socket.connect();
-var chan = socket.channel("mud", { spirit: spiritID });
+var chan = socket.channel("mud:play", { spirit: spiritID });
 
 chan.join();
 
