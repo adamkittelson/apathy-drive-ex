@@ -16,6 +16,11 @@ defmodule ApathyDrive.Mobile do
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
 
+  def send_scroll(%Mobile{socket: nil}, _html), do: nil
+  def send_scroll(%Mobile{socket: socket}, html) do
+    send(socket, {:scroll, html})
+  end
+
   def init(%Mobile{spirit: nil} = state) do
     {:ok, state}
   end

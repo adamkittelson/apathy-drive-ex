@@ -5,8 +5,8 @@ defmodule Commands.Who do
   def keywords, do: ["who"]
 
   def execute(%Mobile{} = mobile, _arguments) do
-    send(mobile.socket, {:scroll, "<p><span class='dark-cyan'>Name                Faction               Possessing</span></p>"})
-    send(mobile.socket, {:scroll, "<p><span class='dark-green'>==============================================================</span></p>"})
+    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name                Faction               Possessing</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>==============================================================</span></p>")
 
     Task.start fn ->
       ApathyDrive.PubSub.subscribers("spirits:online")
@@ -14,7 +14,7 @@ defmodule Commands.Who do
            Mobile.data_for_who_list(pid)
          end)
       |> Enum.each(fn(line) ->
-        send(mobile.socket, {:scroll, format_line(line)})
+        Mobile.send_scroll(mobile, format_line(line))
       end)
     end
   end
