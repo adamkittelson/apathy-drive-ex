@@ -71,7 +71,7 @@ defmodule Spirit do
   end
 
   def sign_in(email, password) do
-    player = Repo.get_by(Player, email: email)
+    player = Repo.get_by(Spirit, email: email)
     sign_in?(player, password) && player
   end
 

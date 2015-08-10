@@ -2,7 +2,15 @@ defmodule ApathyDrive.Mobile do
   alias ApathyDrive.Mobile
   use GenServer
 
-  defstruct spirit: nil, socket: nil, hp: 10, mana: 5
+  defstruct spirit: nil,
+            socket: nil,
+            hp: 10,
+            mana: 5,
+            effects: %{},
+            pid: nil,
+            room_id: nil,
+            alignment: nil,
+            name: nil
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -12,9 +20,19 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :data_for_who_list)
   end
 
+  def look_name(pid) do
+    GenServer.call(pid, :look_name)
+  end
+
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
+
+  def blind?(%Mobile{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(Map.has_key?(&1, "blinded")))
+  end
 
   def send_scroll(%Mobile{socket: nil}, _html), do: nil
   def send_scroll(%Mobile{socket: socket}, html) do
@@ -24,18 +42,31 @@ defmodule ApathyDrive.Mobile do
   def init(%Mobile{spirit: nil} = state) do
     {:ok, state}
   end
-  def init(%Mobile{spirit: spirit, socket: socket} = state) do
+  def init(%Mobile{spirit: spirit, socket: socket} = mobile) do
     ApathyDrive.PubSub.subscribe(self, "spirits:online")
     ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
     ApathyDrive.PubSub.subscribe(socket, "spirits:#{spirit.id}:socket")
 
-    {:ok, state}
+    mobile =
+      mobile
+      |> Map.put(:pid, self)
+      |> Map.put(:room_id, spirit.room_id)
+      |> Map.put(:alignment, spirit.alignment)
+      |> Map.put(:name, spirit.name)
+
+    ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
+
+    {:ok, mobile}
   end
 
   def handle_call(:data_for_who_list, _from, mobile) do
-    data = %{name: mobile.spirit.name, possessing: "", faction: "Demon", alignment: "evil"}
+    data = %{name: mobile.spirit.name, possessing: "", faction: mobile.spirit.faction, alignment: mobile.spirit.alignment}
 
     {:reply, data, mobile}
+  end
+
+  def handle_call(:look_name, _from, mobile) do
+    {:reply, "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>", mobile}
   end
 
   def handle_info({:execute_command, command, arguments}, %Mobile{} = mobile) do

@@ -2,12 +2,34 @@ defmodule Commands.Look do
   require Logger
   use ApathyDrive.Command
   alias ApathyDrive.PubSub
+  alias ApathyDrive.Mobile
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
                "w", "west", "nw", "northwest", "u", "up", "d", "down"]
 
   def keywords, do: ["look", "l"]
+
+  def execute(%Mobile{spirit: nil} = mobile, arguments), do: nil
+  def execute(%Mobile{spirit: spirit} = mobile, arguments) do
+    Task.start fn ->
+      current_room = Spirit.find_room(spirit)
+      if Enum.any? arguments do
+        cond do
+          Enum.member?(@directions, Enum.join(arguments, " ")) ->
+            ApathyDrive.Exit.look(spirit, Enum.join(arguments, " "))
+          target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
+            Systems.Description.add_description_to_scroll(spirit, target)
+          target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->
+            Spirit.send_scroll spirit, "<p>#{target}</p>"
+        true ->
+          Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
+        end
+      else
+        Room.look(current_room, mobile)
+      end
+    end
+  end
 
   def execute(%Spirit{} = spirit, arguments) do
     current_room = Spirit.find_room(spirit)

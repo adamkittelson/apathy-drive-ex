@@ -4,6 +4,7 @@ defmodule Room do
   use GenServer
   use Timex
   alias ApathyDrive.PubSub
+  alias ApathyDrive.Mobile
 
   schema "rooms" do
     field :name,                  :string
@@ -113,14 +114,13 @@ defmodule Room do
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
 
   # Value functions
-  def monsters(%Monster{room_id: room_id, pid: pid}) do
-    PubSub.subscribers("rooms:#{room_id}:monsters")
+  def mobiles(%Mobile{room_id: room_id, pid: pid}) do
+    PubSub.subscribers("rooms:#{room_id}:mobiles")
     |> Enum.reject(&(&1 == pid))
   end
 
-  def monsters(%Room{} = room, monster \\ nil) do
-    PubSub.subscribers("rooms:#{room.id}:monsters")
-    |> Enum.reject(&(&1 == monster))
+  def mobiles(%Room{} = room) do
+    PubSub.subscribers("rooms:#{room.id}:mobiles")
   end
 
   def exit_directions(%Room{} = room) do
@@ -145,21 +145,31 @@ defmodule Room do
     end
   end
 
-  def look(%Room{light: light} = room, %Spirit{} = spirit) do
-    html = ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
-
-    Spirit.send_scroll spirit, html
-  end
-
-  def look(%Room{light: light} = room, %Monster{} = monster) do
-    html = if Monster.blind?(monster) do
+  def look(%Room{light: light} = room, %Mobile{} = mobile) do
+    html = if Mobile.blind?(mobile) do
       "<p>You are blind.</p>"
     else
-      ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
+      ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_mobiles(mobile)}#{look_directions(room)}#{light_desc(light)}</div>)
     end
 
-    Monster.send_scroll(monster, html)
+    Mobile.send_scroll(mobile, html)
   end
+
+  # def look(%Room{light: light} = room, %Spirit{} = spirit) do
+  #   html = ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
+  # 
+  #   Spirit.send_scroll spirit, html
+  # end
+  # 
+  # def look(%Room{light: light} = room, %Monster{} = monster) do
+  #   html = if Monster.blind?(monster) do
+  #     "<p>You are blind.</p>"
+  #   else
+  #     ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
+  #   end
+  # 
+  #   Monster.send_scroll(monster, html)
+  # end
 
   def lair_indicator(%Room{lair_monsters: nil}), do: nil
   def lair_indicator(%Room{lair_faction: nil}) do
@@ -191,31 +201,29 @@ defmodule Room do
     end
   end
 
-  def look_monsters(%Room{} = room, %Monster{} = monster) do
-    monsters = monsters(room, monster.pid)
-               |> Enum.map(&Monster.value/1)
-               |> Enum.map(&Monster.look_name/1)
-               |> Enum.join("<span class='magenta'>, </span>")
+  def look_mobiles(%Mobile{} = mobile) do
+    mobiles = mobiles(mobile)
+              |> Enum.map(&Mobile.look_name/1)
+              |> Enum.join("<span class='magenta'>, </span>")
 
-    case(monsters) do
+    case(mobiles) do
       "" ->
         ""
-      monsters ->
-        "<div class='monsters'><span class='dark-magenta'>Also here:</span> #{monsters}<span class='dark-magenta'>.</span></div>"
+      mobiles ->
+        "<div class='monsters'><span class='dark-magenta'>Also here:</span> #{mobiles}<span class='dark-magenta'>.</span></div>"
     end
   end
 
-  def look_monsters(%Room{} = room, nil) do
-    monsters = monsters(room, nil)
-               |> Enum.map(&Monster.value/1)
-               |> Enum.map(&Monster.look_name/1)
+  def look_mobiles(%Room{} = room) do
+    mobiles = mobiles(room)
+               |> Enum.map(&Mobile.look_name/1)
                |> Enum.join("<span class='magenta'>, </span>")
 
-    case(monsters) do
+    case(mobiles) do
       "" ->
         ""
-      monsters ->
-        "<div class='monsters'><span class='dark-magenta'>Also here:</span> #{monsters}<span class='dark-magenta'>.</span></div>"
+      mobiles ->
+        "<div class='monsters'><span class='dark-magenta'>Also here:</span> #{mobiles}<span class='dark-magenta'>.</span></div>"
     end
   end
 
