@@ -10,7 +10,7 @@ defmodule Commands.Look do
 
   def keywords, do: ["look", "l"]
 
-  def execute(%Mobile{spirit: nil} = mobile, arguments), do: nil
+  def execute(%Mobile{spirit: nil}, _arguments), do: nil
   def execute(%Mobile{spirit: spirit} = mobile, arguments) do
     Task.start fn ->
       current_room = Spirit.find_room(spirit)
