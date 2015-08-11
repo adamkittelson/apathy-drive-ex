@@ -15,8 +15,8 @@ defmodule Commands.Look do
     Task.start fn ->
       if Enum.any? arguments do
         cond do
-          # Enum.member?(@directions, Enum.join(arguments, " ")) ->
-          #   ApathyDrive.Exit.look(spirit, Enum.join(arguments, " "))
+          Enum.member?(@directions, Enum.join(arguments, " ")) ->
+            ApathyDrive.Exit.look(mobile, Enum.join(arguments, " "))
           target = mobile |> find_mobile_in_room(Enum.join(arguments, " ")) ->
             look_at_mobile(mobile, target)
           # target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->

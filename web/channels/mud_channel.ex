@@ -66,6 +66,11 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info(%Phoenix.Socket.Broadcast{event: event, payload: payload}, socket) do
+    Phoenix.Channel.push socket, event, payload
+
+    {:noreply, socket}
+  end
 
   def handle_in("command", message, socket) do
     [command | arguments] = String.split(message)

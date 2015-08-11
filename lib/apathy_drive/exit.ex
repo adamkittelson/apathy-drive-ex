@@ -1,70 +1,32 @@
 defmodule ApathyDrive.Exit do
+  alias ApathyDrive.Mobile
 
-  def direction(direction) do
-    case direction do
-      "n" ->
-        "north"
-      "ne" ->
-        "northeast"
-      "e" ->
-        "east"
-      "se" ->
-        "southeast"
-      "s" ->
-        "south"
-      "sw" ->
-        "southwest"
-      "w" ->
-        "west"
-      "nw" ->
-        "northwest"
-      "u" ->
-        "up"
-      "d" ->
-        "down"
-      direction ->
-        direction
-    end
+  def look(%Mobile{spirit: nil}, _direction), do: nil
+  def look(%Mobile{room_id: room_id} = mobile, direction) do
+    room      = Room.find(room_id)
+    room_exit = Room.get_exit(room, direction)
+
+    look(room, mobile, room_exit)
   end
 
-  def look(%Spirit{} = spirit, direction) do
-    current_room = Spirit.find_room(spirit)
-    room_exit = current_room |> get_exit_by_direction(direction)
-    look(current_room, spirit, room_exit)
+  def look(_current_room, %Mobile{} = mobile, nil) do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
-  def look(%Monster{} = monster, direction) do
-    current_room = Monster.find_room(monster)
-    room_exit = current_room |> get_exit_by_direction(direction)
-    look(current_room, monster, room_exit)
-  end
-
-  def look(_current_room, %Spirit{} = spirit, nil) do
-    Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
-  end
-
-  def look(_current_room, %Monster{} = monster, nil) do
-    Monster.send_scroll(monster, "<p>There is no exit in that direction.</p>")
-  end
-
-  def look(%Room{} = current_room, %Spirit{} = spirit, room_exit) do
-    :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".look(current_room, spirit, room_exit)
-  end
-
-  def look(%Room{} = current_room, %Monster{} = monster, room_exit) do
-    :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".look(current_room, monster, room_exit)
+  def look(room, %Mobile{} = mobile, room_exit) do
+    :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".look(room, mobile, room_exit)
   end
 
   def move(%Spirit{} = spirit, direction) do
     current_room = Spirit.find_room(spirit)
-    room_exit = current_room |> get_exit_by_direction(direction)
-    move(current_room, spirit, room_exit)
+    #room_exit = current_room |> get_exit_by_direction(direction)
+    #move(current_room, spirit, room_exit)
   end
 
   def move(%Monster{} = monster, direction) do
     current_room = Monster.find_room(monster)
-    room_exit = current_room |> get_exit_by_direction(direction)
-    move(current_room, monster, room_exit)
+    #room_exit = current_room |> get_exit_by_direction(direction)
+    #move(current_room, monster, room_exit)
   end
 
   def move(_current_room, %Spirit{} = spirit, nil) do
@@ -87,10 +49,6 @@ defmodule ApathyDrive.Exit do
     end
   end
 
-  def get_exit_by_direction(%Room{exits: exits}, direction) do
-    Enum.find(exits, &(&1["direction"] == direction(direction)))
-  end
-
   def direction_description(direction) do
     case direction do
     "up" ->
@@ -103,7 +61,7 @@ defmodule ApathyDrive.Exit do
   end
 
   def open_duration(%Room{} = room, direction) do
-    get_exit_by_direction(room, direction)["open_duration_in_seconds"]
+    #get_exit_by_direction(room, direction)["open_duration_in_seconds"]
   end
 
   def mirror(%Room{id: id}, %{"destination" => destination}) do
@@ -155,22 +113,23 @@ defmodule ApathyDrive.Exit do
         monster
       end
 
-      def look(%Room{} = room, %Spirit{} = spirit, room_exit) do
-        {mirror_room, mirror_exit} = mirror(room, room_exit)
+      def look(room, %Mobile{} = mobile, %{"destination" => destination}) do
+        mobile
+        |> Map.put(:room_id, destination)
+        |> Commands.Look.look_at_room()
 
-        Room.look(mirror_room, spirit)
-      end
+        room_id = Room.id(room)
 
-      def look(%Room{} = room, %Monster{} = monster, room_exit) do
-        {mirror_room, mirror_exit} = mirror(room, room_exit)
-
-        Room.look(mirror_room, monster)
+        mirror_exit =
+          destination
+          |> Room.find
+          |> Room.mirror_exit(room_id)
 
         if mirror_exit do
-          message = "#{monster.name} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
+          message = "#{mobile.name} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
                      |> capitalize_first
 
-          ApathyDrive.Endpoint.broadcast! "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-magenta'>#{message}</span></p>"}
+          ApathyDrive.Endpoint.broadcast! "rooms:#{destination}:mobiles", "scroll", %{:html => "<p><span class='dark-magenta'>#{message}</span></p>"}
         end
       end
 
@@ -202,17 +161,6 @@ defmodule ApathyDrive.Exit do
                                    other_room_id == id
                                  end
         exit_to_destination["direction"]
-      end
-
-      def mirror(%Room{exits: exits, id: id} = room, %{"destination" => destination, "kind" => room_kind}) do
-        mirror_room = Room.find(destination)
-                      |> Room.value
-
-        room_exit = exits
-                    |> Enum.find(fn(%{"destination" => destination, "kind" => kind}) ->
-                         destination == id and kind != "RemoteAction" and room_kind != "RemoteAction"
-                       end)
-        {mirror_room, room_exit}
       end
 
       defoverridable [move: 3,

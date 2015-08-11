@@ -105,6 +105,14 @@ defmodule Room do
     GenServer.call(room, {:look_data, mobile_data})
   end
 
+  def get_exit(room, direction) do
+    GenServer.call(room, {:get_exit, direction})
+  end
+
+  def mirror_exit(room, destination_id) do
+    GenServer.call(room, {:get_mirror_exit, destination_id})
+  end
+
   def exit_direction("up"),      do: "upwards"
   def exit_direction("down"),    do: "downwards"
   def exit_direction(direction), do: "to the #{direction}"
@@ -311,6 +319,33 @@ defmodule Room do
     end
   end
 
+  def direction(direction) do
+    case direction do
+      "n" ->
+        "north"
+      "ne" ->
+        "northeast"
+      "e" ->
+        "east"
+      "se" ->
+        "southeast"
+      "s" ->
+        "south"
+      "sw" ->
+        "southwest"
+      "w" ->
+        "west"
+      "nw" ->
+        "northwest"
+      "u" ->
+        "up"
+      "d" ->
+        "down"
+      direction ->
+        direction
+    end
+  end
+
   # Generate functions from Ecto schema
   fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
 
@@ -350,6 +385,21 @@ defmodule Room do
     }
 
     {:reply, data, room}
+  end
+
+  def handle_call({:get_exit, direction}, _from, room) do
+    room_exit = Enum.find(room.exits, &(&1["direction"] == direction(direction)))
+
+    {:reply, room_exit, room}
+  end
+
+  def handle_call({:get_mirror_exit, destination_id}, _from, room) do
+    room_exit = room.exits
+                |> Enum.find(fn(%{"destination" => destination, "kind" => kind}) ->
+                     destination == destination_id and kind != "RemoteAction"
+                   end)
+
+    {:reply, room_exit, room}
   end
 
   # GenServer callbacks

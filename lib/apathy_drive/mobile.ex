@@ -131,6 +131,12 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_info(%Phoenix.Socket.Broadcast{} = message, %Mobile{socket: socket} = mobile) do
+    send(socket, message)
+
+    {:noreply, mobile}
+  end
+
   def display_prompt(%Mobile{socket: socket} = mobile) do
     ApathyDrive.PubSub.broadcast_from! socket, "spirits:#{mobile.spirit.id}:socket", :go_home
 
