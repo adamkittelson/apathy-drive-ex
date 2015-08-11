@@ -101,6 +101,10 @@ defmodule Room do
     GenServer.call(room, :value)
   end
 
+  def get_look_data(room, mobile_data) do
+    GenServer.call(room, {:look_data, mobile_data})
+  end
+
   def exit_direction("up"),      do: "upwards"
   def exit_direction("down"),    do: "downwards"
   def exit_direction(direction), do: "to the #{direction}"
@@ -114,7 +118,7 @@ defmodule Room do
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
 
   # Value functions
-  def mobiles(%Mobile{room_id: room_id, pid: pid}) do
+  def mobiles(%{room_id: room_id, mobile_pid: pid}) do
     PubSub.subscribers("rooms:#{room_id}:mobiles")
     |> Enum.reject(&(&1 == pid))
   end
@@ -145,29 +149,19 @@ defmodule Room do
     end
   end
 
-  def look(%Room{light: light} = room, %Mobile{} = mobile) do
-    html = if Mobile.blind?(mobile) do
-      "<p>You are blind.</p>"
-    else
-      ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_mobiles(mobile)}#{look_directions(room)}#{light_desc(light)}</div>)
-    end
-
-    Mobile.send_scroll(mobile, html)
-  end
-
   # def look(%Room{light: light} = room, %Spirit{} = spirit) do
   #   html = ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
-  # 
+  #
   #   Spirit.send_scroll spirit, html
   # end
-  # 
+  #
   # def look(%Room{light: light} = room, %Monster{} = monster) do
   #   html = if Monster.blind?(monster) do
   #     "<p>You are blind.</p>"
   #   else
   #     ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
   #   end
-  # 
+  #
   #   Monster.send_scroll(monster, html)
   # end
 
@@ -201,8 +195,8 @@ defmodule Room do
     end
   end
 
-  def look_mobiles(%Mobile{} = mobile) do
-    mobiles = mobiles(mobile)
+  def look_mobiles(%{room_id: room_id, mobile_pid: pid}) do
+    mobiles = mobiles(%{room_id: room_id, mobile_pid: pid})
               |> Enum.map(&Mobile.look_name/1)
               |> Enum.join("<span class='magenta'>, </span>")
 
@@ -342,6 +336,20 @@ defmodule Room do
 
   def handle_call(:value, _from, room) do
     {:reply, room, room}
+  end
+
+  def handle_call({:look_data, mobile_data}, _from, room) do
+    data = %{
+      lair_indicator: lair_indicator(room),
+      name: room.name,
+      description: room.description,
+      items: look_items(room),
+      mobiles: look_mobiles(mobile_data),
+      exits: look_directions(room),
+      light: light_desc(room.light)
+    }
+
+    {:reply, data, room}
   end
 
   # GenServer callbacks

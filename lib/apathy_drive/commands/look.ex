@@ -11,78 +11,61 @@ defmodule Commands.Look do
   def keywords, do: ["look", "l"]
 
   def execute(%Mobile{spirit: nil}, _arguments), do: nil
-  def execute(%Mobile{spirit: spirit} = mobile, arguments) do
+  def execute(%Mobile{} = mobile, arguments) do
     Task.start fn ->
-      current_room = Spirit.find_room(spirit)
       if Enum.any? arguments do
         cond do
-          Enum.member?(@directions, Enum.join(arguments, " ")) ->
-            ApathyDrive.Exit.look(spirit, Enum.join(arguments, " "))
-          target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
-            Systems.Description.add_description_to_scroll(spirit, target)
-          target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->
-            Spirit.send_scroll spirit, "<p>#{target}</p>"
+          # Enum.member?(@directions, Enum.join(arguments, " ")) ->
+          #   ApathyDrive.Exit.look(spirit, Enum.join(arguments, " "))
+          target = mobile |> find_mobile_in_room(Enum.join(arguments, " ")) ->
+            look_at_mobile(mobile, target)
+          # target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->
+          #   Spirit.send_scroll spirit, "<p>#{target}</p>"
         true ->
           Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
         end
       else
-        Room.look(current_room, mobile)
+        look_at_room(mobile)
       end
     end
   end
 
-  def execute(%Spirit{} = spirit, arguments) do
-    current_room = Spirit.find_room(spirit)
-    if Enum.any? arguments do
-      cond do
-        Enum.member?(@directions, Enum.join(arguments, " ")) ->
-          ApathyDrive.Exit.look(spirit, Enum.join(arguments, " "))
-        target = current_room |> find_monster_in_room(Enum.join(arguments, " ")) ->
-          Systems.Description.add_description_to_scroll(spirit, target)
-        target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->
-          Spirit.send_scroll spirit, "<p>#{target}</p>"
-      true ->
-        Spirit.send_scroll(spirit, "<p>You do not notice that here.</p>")
-      end
-    else
-      Room.look(current_room, spirit)
-    end
-    spirit
+  def look_at_mobile(%Mobile{} = mobile, target) do
+    %{name: name,
+      description: description,
+      hp_description: hp_description} = Mobile.get_look_data(target)
+
+    mobile
+    |> Mobile.send_scroll("<p><span class='cyan'>#{name}</span></p>")
+    |> Mobile.send_scroll("<p>#{description}</p>")
+    |> Mobile.send_scroll("<p>#{hp_description}</p>")
   end
 
-  def execute(%Monster{} = monster, arguments) do
-    current_room = Monster.find_room(monster)
-    if Enum.any? arguments do
-      cond do
-        Enum.member?(@directions, Enum.join(arguments, " ")) ->
-          ApathyDrive.Exit.look(monster, Enum.join(arguments, " "))
-        target = current_room |> find_monster_in_room(Enum.join(arguments, " "), monster) ->
-          Systems.Description.add_description_to_scroll(monster, target)
-        target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->
-          Monster.send_scroll monster, "<p>#{target}</p>"
-        true ->
-          Monster.send_scroll(monster, "<p>You do not notice that here.</p>")
-      end
-    else
-      Room.look(current_room, monster)
-    end
-    monster
+  def look_at_room(%Mobile{} = mobile) do
+    Mobile.send_scroll(mobile, room_html(mobile, blind?: Mobile.blind?(mobile)))
   end
 
-  defp find_monster_in_room(%Room{} = room, string) do
-    PubSub.subscribers("rooms:#{room.id}:monsters")
-    |> Systems.Match.one(:name_contains, string)
+  def room_html(_mobile, blind?: true), do: "<p>You are blind.</p>"
+  def room_html(%Mobile{room_id: room_id} = mobile, blind?: false) do
+    %{
+      lair_indicator: lair_indicator,
+      name: name,
+      description: description,
+      items: items,
+      mobiles: mobiles,
+      exits: exits,
+      light: light
+    } = room_id
+        |> Room.find
+        |> Room.get_look_data(%{room_id: room_id, mobile_pid: mobile.pid})
+
+
+    ~s(<div class='room'><div class='title'>#{lair_indicator}#{name}</div><div class='description'>#{description}</div>#{items}#{mobiles}#{exits}#{light}</div>)
   end
 
-  defp find_monster_in_room(%Room{} = room, string, %Monster{pid: pid} = monster) do
-    PubSub.subscribers("rooms:#{room.id}:monsters")
-    |> Enum.map(fn(monster_pid) ->
-         if monster_pid == pid do
-           monster
-         else
-           monster_pid
-         end
-       end)
+
+  defp find_mobile_in_room(%Mobile{room_id: room_id}, string) do
+    PubSub.subscribers("rooms:#{room_id}:mobiles")
     |> Systems.Match.one(:name_contains, string)
   end
 

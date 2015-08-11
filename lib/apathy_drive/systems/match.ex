@@ -45,7 +45,7 @@ defmodule Systems.Match do
 
   def match_name("", _pid), do: false
   def match_name(string, pid) when is_pid(pid) do
-    match_name(string, %{name: GenServer.call(pid, :value).name})
+    match_name(string, GenServer.call(pid, :match_data))
   end
   def match_name(string, %{name: name}) do
     String.downcase(string) == String.downcase(name)
@@ -53,7 +53,7 @@ defmodule Systems.Match do
 
   def match_keyword("", _pid), do: false
   def match_keyword(string, pid) when is_pid(pid) do
-    match_keyword(string, %{keywords: GenServer.call(pid, :keywords)})
+    match_keyword(string, GenServer.call(pid, :match_data))
   end
   def match_keyword(string, %{keywords: keywords}) do
     keywords
@@ -64,7 +64,7 @@ defmodule Systems.Match do
 
   def keyword_starts_with("", _pid), do: false
   def keyword_starts_with(string, pid) when is_pid(pid) do
-    keyword_starts_with(string, %{keywords: GenServer.call(pid, :keywords)})
+    keyword_starts_with(string, GenServer.call(pid, :match_data))
   end
   def keyword_starts_with(string, %{keywords: keywords}) do
     keywords
@@ -75,7 +75,7 @@ defmodule Systems.Match do
 
   def name_starts_with("", _pid), do: false
   def name_starts_with(string, pid) when is_pid(pid) do
-    name_starts_with(string, %{name: GenServer.call(pid, :name)})
+    name_starts_with(string, GenServer.call(pid, :match_data))
   end
   def name_starts_with(string, %{name: name}) do
     name
@@ -85,7 +85,7 @@ defmodule Systems.Match do
 
   def name_contains("", _pid), do: false
   def name_contains(string, pid) when is_pid(pid) do
-    name_contains(string, %{name: GenServer.call(pid, :name)})
+    name_contains(string, GenServer.call(pid, :match_data))
   end
   def name_contains(string, %{name: name}) do
     name
