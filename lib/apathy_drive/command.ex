@@ -3,6 +3,10 @@ defmodule ApathyDrive.Command do
   require Logger
   alias ApathyDrive.Mobile
 
+  @directions ["n", "north", "ne", "northeast", "e", "east",
+              "se", "southeast", "s", "south", "sw", "southwest",
+               "w", "west", "nw", "northwest", "u", "up", "d", "down"]
+
   def all do
     :code.all_loaded
     |> Enum.map(fn{module, _} -> to_string(module) end)
@@ -13,11 +17,15 @@ defmodule ApathyDrive.Command do
   def execute(mobile, command, arguments) do
     send(mobile, :display_prompt)
 
-    case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
-      nil ->
-        Mobile.send_scroll(mobile, "<p>What?</p>")
-      match ->
-        match.module.execute(mobile, arguments)
+    if command in @directions do
+      ApathyDrive.Exit.move(mobile, Room.direction(command))
+    else
+      case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
+        nil ->
+          Mobile.send_scroll(mobile, "<p>What?</p>")
+        match ->
+          match.module.execute(mobile, arguments)
+      end
     end
   end
 

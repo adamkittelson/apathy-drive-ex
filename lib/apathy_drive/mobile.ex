@@ -14,7 +14,9 @@ defmodule ApathyDrive.Mobile do
             room_id: nil,
             alignment: nil,
             name: nil,
-            keywords: []
+            keywords: [],
+            enter_message: "{{name}} enters from {{direction}}.",
+            exit_message: "{{name}} leaves {{direction}}."
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -44,6 +46,14 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :name)
   end
 
+  def enter_message(pid) do
+    GenServer.call(pid, :enter_message)
+  end
+
+  def exit_message(pid) do
+    GenServer.call(pid, :exit_message)
+  end
+
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
@@ -52,6 +62,9 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, :blind?)
   end
 
+  def held(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :held?)
+  end
   def held(%Mobile{effects: effects} = mobile) do
     effects
     |> Map.values
@@ -63,6 +76,7 @@ defmodule ApathyDrive.Mobile do
   def held(nil, %Mobile{}), do: false
   def held(%{"effect_message" => message}, %Mobile{} = mobile) do
     send_scroll(mobile, "<p>#{message}</p>")
+    true
   end
 
   def send_scroll(mobile, message) when is_pid(mobile) do
@@ -158,6 +172,18 @@ defmodule ApathyDrive.Mobile do
     {:reply, blind, mobile}
   end
 
+  def handle_call(:held?, _from, mobile) do
+    {:reply, held(mobile), mobile}
+  end
+
+  def handle_call(:enter_message, _from, mobile) do
+    {:reply, mobile.enter_message, mobile}
+  end
+
+  def handle_call(:exit_message, _from, mobile) do
+    {:reply, mobile.exit_message, mobile}
+  end
+
   def handle_info(:display_prompt, %Mobile{socket: _socket} = mobile) do
     display_prompt(mobile)
 
@@ -166,6 +192,14 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:send_scroll, message}, mobile) do
     send_scroll(mobile, message)
+
+    {:noreply, mobile}
+  end
+
+  def handle_info({:move_to, room_id}, mobile) do
+    ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles")
+    mobile = Map.put(mobile, :room_id, room_id)
+    ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles")
 
     {:noreply, mobile}
   end
