@@ -75,7 +75,9 @@ defmodule ApathyDrive.MUDChannel do
   def handle_in("command", message, socket) do
     [command | arguments] = String.split(message)
 
-    send(socket.assigns[:mobile], {:execute_command, command, arguments})
+    Task.start fn ->
+      ApathyDrive.Command.execute(socket.assigns[:mobile], command, arguments)
+    end
 
     {:noreply, socket}
   end

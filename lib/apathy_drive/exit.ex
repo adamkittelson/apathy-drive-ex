@@ -1,19 +1,22 @@
 defmodule ApathyDrive.Exit do
   alias ApathyDrive.Mobile
 
-  def look(%Mobile{spirit: nil}, _direction), do: nil
-  def look(%Mobile{room_id: room_id} = mobile, direction) do
-    room      = Room.find(room_id)
+  def look(mobile, direction) do
+    room =
+      mobile
+      |> Mobile.room_id
+      |> Room.find
+
     room_exit = Room.get_exit(room, direction)
 
     look(room, mobile, room_exit)
   end
 
-  def look(_current_room, %Mobile{} = mobile, nil) do
+  def look(_room, mobile, nil) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
-  def look(room, %Mobile{} = mobile, room_exit) do
+  def look(room, mobile, room_exit) do
     :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".look(room, mobile, room_exit)
   end
 
@@ -113,10 +116,9 @@ defmodule ApathyDrive.Exit do
         monster
       end
 
-      def look(room, %Mobile{} = mobile, %{"destination" => destination}) do
-        mobile
-        |> Map.put(:room_id, destination)
-        |> Commands.Look.look_at_room()
+      def look(room, mobile, %{"destination" => destination}) do
+
+        Commands.Look.look_at_room(mobile, destination)
 
         room_id = Room.id(room)
 
@@ -126,7 +128,7 @@ defmodule ApathyDrive.Exit do
           |> Room.mirror_exit(room_id)
 
         if mirror_exit do
-          message = "#{mobile.name} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
+          message = "#{Mobile.name(mobile)} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
                      |> capitalize_first
 
           ApathyDrive.Endpoint.broadcast! "rooms:#{destination}:mobiles", "scroll", %{:html => "<p><span class='dark-magenta'>#{message}</span></p>"}

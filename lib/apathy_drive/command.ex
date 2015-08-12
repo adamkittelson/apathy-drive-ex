@@ -10,12 +10,12 @@ defmodule ApathyDrive.Command do
     |> Enum.map(&String.to_atom/1)
   end
 
-  def execute(%Mobile{} = mobile, command, arguments) do
-    Mobile.display_prompt(mobile)
+  def execute(mobile, command, arguments) do
+    send(mobile, :display_prompt)
 
     case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
       nil ->
-        send(mobile.socket, {:scroll, "<p>What?</p>"})
+        Mobile.send_scroll(mobile, "<p>What?</p>")
       match ->
         match.module.execute(mobile, arguments)
     end

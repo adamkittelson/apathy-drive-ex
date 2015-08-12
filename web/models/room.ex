@@ -101,8 +101,8 @@ defmodule Room do
     GenServer.call(room, :value)
   end
 
-  def get_look_data(room, mobile_data) do
-    GenServer.call(room, {:look_data, mobile_data})
+  def get_look_data(room, mobile) do
+    GenServer.call(room, {:look_data, mobile})
   end
 
   def get_exit(room, direction) do
@@ -111,6 +111,12 @@ defmodule Room do
 
   def mirror_exit(room, destination_id) do
     GenServer.call(room, {:get_mirror_exit, destination_id})
+  end
+
+  def html(room, mobile) do
+    data = get_look_data(room, mobile)
+
+    ~s(<div class='room'><div class='title'>#{data.lair_indicator}#{data.name}</div><div class='description'>#{data.description}</div>#{data.items}#{data.mobiles}#{data.exits}#{data.light}</div>)
   end
 
   def exit_direction("up"),      do: "upwards"
@@ -126,7 +132,7 @@ defmodule Room do
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
 
   # Value functions
-  def mobiles(%{room_id: room_id, mobile_pid: pid}) do
+  def mobiles(%{room_id: room_id, mobile: pid}) do
     PubSub.subscribers("rooms:#{room_id}:mobiles")
     |> Enum.reject(&(&1 == pid))
   end
@@ -203,8 +209,8 @@ defmodule Room do
     end
   end
 
-  def look_mobiles(%{room_id: room_id, mobile_pid: pid}) do
-    mobiles = mobiles(%{room_id: room_id, mobile_pid: pid})
+  def look_mobiles(%{room_id: room_id, mobile: pid}) do
+    mobiles = mobiles(%{room_id: room_id, mobile: pid})
               |> Enum.map(&Mobile.look_name/1)
               |> Enum.join("<span class='magenta'>, </span>")
 
@@ -373,13 +379,13 @@ defmodule Room do
     {:reply, room, room}
   end
 
-  def handle_call({:look_data, mobile_data}, _from, room) do
+  def handle_call({:look_data, mobile}, _from, room) do
     data = %{
       lair_indicator: lair_indicator(room),
       name: room.name,
       description: room.description,
       items: look_items(room),
-      mobiles: look_mobiles(mobile_data),
+      mobiles: look_mobiles(%{room_id: room.id, mobile: mobile}),
       exits: look_directions(room),
       light: light_desc(room.light)
     }

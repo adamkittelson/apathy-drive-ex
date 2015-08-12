@@ -36,20 +36,41 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :match_data)
   end
 
+  def room_id(pid) do
+    GenServer.call(pid, :room_id)
+  end
+
+  def name(pid) do
+    GenServer.call(pid, :name)
+  end
+
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
 
-  def blind?(%Mobile{effects: effects}) do
-    effects
-    |> Map.values
-    |> Enum.any?(&(Map.has_key?(&1, "blinded")))
+  def blind?(mobile) do
+    GenServer.call(mobile, :blind?)
   end
 
+  def held(%Mobile{effects: effects} = mobile) do
+    effects
+    |> Map.values
+    |> Enum.find(fn(effect) ->
+         Map.has_key?(effect, "held")
+       end)
+    |> held(mobile)
+  end
+  def held(nil, %Mobile{}), do: false
+  def held(%{"effect_message" => message}, %Mobile{} = mobile) do
+    send_scroll(mobile, "<p>#{message}</p>")
+  end
+
+  def send_scroll(mobile, message) when is_pid(mobile) do
+    send mobile, {:send_scroll, message}
+  end
   def send_scroll(%Mobile{socket: nil} = mobile, _html), do: mobile
   def send_scroll(%Mobile{socket: socket} = mobile, html) do
     send(socket, {:scroll, html})
-    mobile
   end
 
   def init(%Mobile{spirit: nil} = state) do
@@ -76,6 +97,10 @@ defmodule ApathyDrive.Mobile do
     data = %{name: mobile.spirit.name, possessing: "", faction: mobile.spirit.faction, alignment: mobile.spirit.alignment}
 
     {:reply, data, mobile}
+  end
+
+  def handle_call(:room_id, _from, mobile) do
+    {:reply, mobile.room_id, mobile}
   end
 
   def handle_call(:look_name, _from, mobile) do
@@ -120,13 +145,27 @@ defmodule ApathyDrive.Mobile do
     {:reply, %{name: mobile.name, keywords: mobile.keywords}, mobile}
   end
 
-  def handle_info({:execute_command, command, arguments}, %Mobile{} = mobile) do
-    ApathyDrive.Command.execute(mobile, command, arguments)
-    {:noreply, mobile}
+  def handle_call(:name, _from, mobile) do
+    {:reply, mobile.name, mobile}
+  end
+
+  def handle_call(:blind?, _from, mobile) do
+    blind =
+      mobile.effects
+      |> Map.values
+      |> Enum.any?(&(Map.has_key?(&1, "blinded")))
+
+    {:reply, blind, mobile}
   end
 
   def handle_info(:display_prompt, %Mobile{socket: _socket} = mobile) do
     display_prompt(mobile)
+
+    {:noreply, mobile}
+  end
+
+  def handle_info({:send_scroll, message}, mobile) do
+    send_scroll(mobile, message)
 
     {:noreply, mobile}
   end

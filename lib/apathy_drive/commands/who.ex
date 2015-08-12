@@ -4,41 +4,17 @@ defmodule Commands.Who do
 
   def keywords, do: ["who"]
 
-  def execute(%Mobile{} = mobile, _arguments) do
+  def execute(mobile, _arguments) do
     Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name                Faction               Possessing</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>==============================================================</span></p>")
 
-    Task.start fn ->
-      ApathyDrive.PubSub.subscribers("spirits:online")
-      |> Enum.map(fn(pid) ->
-           Mobile.data_for_who_list(pid)
-         end)
-      |> Enum.each(fn(line) ->
-        Mobile.send_scroll(mobile, format_line(line))
-      end)
-    end
-  end
-
-  def execute(%Spirit{} = spirit, _arguments) do
-    Spirit.send_scroll(spirit, "<p><span class='dark-cyan'>Name                Faction               Possessing</span></p>")
-    Spirit.send_scroll(spirit, "<p><span class='dark-green'>==============================================================</span></p>")
-
-    ApathyDrive.WhoList.list
-    |> Enum.each(fn(line) ->
-      Spirit.send_scroll(spirit, format_line(line))
-    end)
-    spirit
-  end
-
-  def execute(%Monster{} = monster, _arguments) do
-    Monster.send_scroll(monster, "<p><span class='dark-cyan'>Name                Faction             Possessing</span></p>")
-    Monster.send_scroll(monster, "<p><span class='dark-green'>============================================================</span></p>")
-
-    ApathyDrive.WhoList.list
-    |> Enum.each(fn(line) ->
-         Monster.send_scroll(monster, format_line(line))
+    ApathyDrive.PubSub.subscribers("spirits:online")
+    |> Enum.map(fn(pid) ->
+         Mobile.data_for_who_list(pid)
        end)
-    monster
+    |> Enum.each(fn(line) ->
+         Mobile.send_scroll(mobile, format_line(line))
+       end)
   end
 
   def format_line(%{name: name, possessing: "", faction: faction} = line) do
