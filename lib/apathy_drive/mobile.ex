@@ -16,7 +16,8 @@ defmodule ApathyDrive.Mobile do
             name: nil,
             keywords: [],
             enter_message: "{{name}} enters from {{direction}}.",
-            exit_message: "{{name}} leaves {{direction}}."
+            exit_message: "{{name}} leaves {{direction}}.",
+            gender: nil
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -87,8 +88,15 @@ defmodule ApathyDrive.Mobile do
     send(socket, {:scroll, html})
   end
 
-  def init(%Mobile{spirit: nil} = state) do
-    {:ok, state}
+  def init(%Mobile{spirit: nil} = mobile) do
+    mobile =
+      mobile
+      |> Map.put(:pid, self)
+
+      ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
+      ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
+
+    {:ok, mobile}
   end
   def init(%Mobile{spirit: spirit, socket: socket} = mobile) do
     ApathyDrive.PubSub.subscribe(self, "spirits:online")
@@ -204,6 +212,9 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_info(%Phoenix.Socket.Broadcast{} = message, %Mobile{socket: nil} = mobile) do
+    {:noreply, mobile}
+  end
   def handle_info(%Phoenix.Socket.Broadcast{} = message, %Mobile{socket: socket} = mobile) do
     send(socket, message)
 

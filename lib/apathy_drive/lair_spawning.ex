@@ -8,7 +8,12 @@ defmodule ApathyDrive.LairSpawning do
 
         monster = MonsterTemplate.spawn_monster(monster_template, room)
 
-        Monster.display_enter_message(room, monster)
+        room_pid = self
+
+        Task.start fn ->
+          ApathyDrive.Exits.Normal.display_enter_message(room_pid, monster)
+        end
+
         spawn_lair(room)
       end
     end

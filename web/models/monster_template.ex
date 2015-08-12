@@ -86,9 +86,7 @@ defmodule MonsterTemplate do
   end
 
   def count(%MonsterTemplate{} = monster_template) do
-    monster_template
-    |> assoc(:monsters)
-    |> Repo.all
+    ApathyDrive.PubSub.subscribers("monster_templates:#{monster_template.id}:monsters")
     |> Enum.count
   end
 
@@ -115,52 +113,72 @@ defmodule MonsterTemplate do
   end
 
   def handle_call({:spawn_monster, %Room{} = room}, _from, monster_template) do
-    values = monster_template
-             |> Map.from_struct
-             |> Map.delete(:__meta__)
-             |> Enum.into(Keyword.new)
+    # values = monster_template
+    #          |> Map.from_struct
+    #          |> Map.delete(:__meta__)
+    #          |> Enum.into(Keyword.new)
+    #
+    # monster = struct(Monster, values)
+    #           |> Map.put(:name, name_with_adjective(monster_template.name, monster_template.adjectives))
+    #           |> Map.put(:monster_template_id, monster_template.id)
+    #           |> Map.put(:id, nil)
+    #           |> Map.put(:room_id, room.id)
+    #           |> Map.put(:lair_id, room.id)
+    #           |> Map.put(:hp, monster_template.max_hp)
+    #           |> Map.put(:effects, %{"monster_template" => monster_template.effects})
+    #
+    # monster =
+    #   case room.lair_faction do
+    #     "Demon" ->
+    #       monster
+    #       |> Map.put(:alignment, "evil")
+    #       |> Map.put(:touched?,  true)
+    #     "Angel" ->
+    #       monster
+    #       |> Map.put(:alignment, "good")
+    #       |> Map.put(:touched?,  true)
+    #     "Elemental" ->
+    #       monster
+    #       |> Map.put(:alignment, "neutral")
+    #       |> Map.put(:touched?,  true)
+    #     _ ->
+    #       monster
+    #   end
+    #
+    # monster = monster
+    #           |> Map.put(:keywords, String.split(monster.name))
+    #           |> Monster.insert
+    #
+    #
+    #
+    # worker_id = :"monster_#{monster.id}"
+    #
+    # pid = case Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]}) do
+    #   {:error, {:already_started, pid}} ->
+    #     pid
+    #   {:ok, pid} ->
+    #     pid
+    # end
 
-    monster = struct(Monster, values)
-              |> Map.put(:name, name_with_adjective(monster_template.name, monster_template.adjectives))
-              |> Map.put(:monster_template_id, monster_template.id)
-              |> Map.put(:id, nil)
-              |> Map.put(:room_id, room.id)
-              |> Map.put(:lair_id, room.id)
-              |> Map.put(:hp, monster_template.max_hp)
-              |> Map.put(:effects, %{"monster_template" => monster_template.effects})
+    monster = %{
+      name: name_with_adjective(monster_template.name, monster_template.adjectives),
+      description: monster_template.description,
+      hp: monster_template.max_hp,
+      max_hp: monster_template.max_hp,
+      enter_message: monster_template.enter_message,
+      exit_message: monster_template.exit_message,
+      alignment: monster_template.alignment,
+      room_id: room.id,
+      gender: monster_template.gender
+    }
 
     monster =
-      case room.lair_faction do
-        "Demon" ->
-          monster
-          |> Map.put(:alignment, "evil")
-          |> Map.put(:touched?,  true)
-        "Angel" ->
-          monster
-          |> Map.put(:alignment, "good")
-          |> Map.put(:touched?,  true)
-        "Elemental" ->
-          monster
-          |> Map.put(:alignment, "neutral")
-          |> Map.put(:touched?,  true)
-        _ ->
-          monster
-      end
+      monster
+      |> Map.put(:keywords, String.split(monster.name))
 
-    monster = monster
-              |> Map.put(:keywords, String.split(monster.name))
-              |> Monster.insert
+    {:ok, pid} = ApathyDrive.Mobile.start_link(monster)
 
-
-
-    worker_id = :"monster_#{monster.id}"
-
-    pid = case Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]}) do
-      {:error, {:already_started, pid}} ->
-        pid
-      {:ok, pid} ->
-        pid
-    end
+    ApathyDrive.PubSub.subscribe(pid, "monster_templates:#{monster_template.id}:monsters")
 
     {:reply, pid, monster_template}
   end

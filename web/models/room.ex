@@ -33,14 +33,17 @@ defmodule Room do
   def init(%Room{} = room) do
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
-    # send(self, :load_monsters)
-    #
-    # room = if room.lair_monsters && Enum.any?(room.lair_monsters) do
-    #   PubSub.subscribe(self, "rooms:lairs")
-    #   TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.to_secs}) end})
-    # else
-    #   room
-    # end
+
+    if room.lair_monsters && Enum.any?(room.lair_monsters) do
+      send(self, {:spawn_monsters, Date.now |> Date.to_secs})
+    end
+
+    room = if room.lair_monsters && Enum.any?(room.lair_monsters) do
+      PubSub.subscribe(self, "rooms:lairs")
+      TimerManager.call_every(room, {:spawn_monsters, 60_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.to_secs}) end})
+    else
+      room
+    end
     #
     # room = if room.ability_id do
     #   PubSub.subscribe(self, "rooms:abilities")
@@ -420,26 +423,6 @@ defmodule Room do
                                            |> Date.shift(mins: room.lair_frequency)
                                            |> Date.to_secs)
 
-    {:noreply, room}
-  end
-
-  def handle_info(:load_monsters, room) do
-    this = self
-
-    Task.start fn ->
-      query = from m in assoc(room, :monsters), select: m.id
-
-      query
-      |> ApathyDrive.Repo.all
-      |> Enum.each(fn(monster_id) ->
-           Monster.find(monster_id)
-         end)
-
-      if room.lair_monsters && Enum.any?(room.lair_monsters) do
-        send(this, {:spawn_monsters, Date.now |> Date.to_secs})
-      end
-
-    end
     {:noreply, room}
   end
 

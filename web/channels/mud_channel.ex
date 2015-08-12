@@ -15,8 +15,6 @@ defmodule ApathyDrive.MUDChannel do
 
             send(self, :after_join)
 
-            IO.puts "authorized #{spirit.name}"
-
             {:ok, socket}
         end
       {:error, _} ->
