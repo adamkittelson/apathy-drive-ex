@@ -45,7 +45,7 @@ var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/
 socket.connect();
 var chan = socket.channel("mud:play", {spirit: spiritID});
 
-chan.join()
+chan.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
 
 chan.on("room", function(message){
   updateRoom(message.html);
