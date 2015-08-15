@@ -60,6 +60,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :exit_message)
   end
 
+  def value(pid) do
+    GenServer.call(pid, :value)
+  end
+
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
@@ -82,6 +86,29 @@ defmodule ApathyDrive.Mobile do
   def held(nil, %Mobile{}), do: false
   def held(%{"effect_message" => message}, %Mobile{} = mobile) do
     send_scroll(mobile, "<p>#{message}</p>")
+    true
+  end
+
+  def confused(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :confused?)
+  end
+  def confused(%Mobile{effects: effects} = mobile) do
+    effects
+    |> Map.values
+    |> Enum.find(fn(effect) ->
+         Map.has_key?(effect, "confused") && (effect["confused"] >= :random.uniform(100))
+       end)
+    |> held(mobile)
+  end
+  def confused(nil, %Mobile{}), do: false
+  def confused(%{"confusion_message" => %{"user" => user_message, "spectator" => spectator_message}}, %Mobile{} = mobile) do
+    send_scroll(mobile, "<p>#{user_message}</p>")
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}", "scroll", %{:html => "<p>#{interpolate(spectator_message, %{"user" => mobile})}</p>"}
+    true
+  end
+  def confused(%{}, %Mobile{} = mobile) do
+    send_scroll(mobile, "<p>You fumble in confusion!</p>")
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}", "scroll", %{:html => "<p>#{interpolate("{{user}} fumbles in confusion!", %{"user" => mobile})}</p>"}
     true
   end
 
@@ -188,6 +215,10 @@ defmodule ApathyDrive.Mobile do
     {:reply, blind, mobile}
   end
 
+  def handle_call(:confused?, _from, mobile) do
+    {:reply, confused(mobile), mobile}
+  end
+
   def handle_call(:held?, _from, mobile) do
     {:reply, held(mobile), mobile}
   end
@@ -198,6 +229,10 @@ defmodule ApathyDrive.Mobile do
 
   def handle_call(:exit_message, _from, mobile) do
     {:reply, mobile.exit_message, mobile}
+  end
+
+  def handle_call(:value, _from, mobile) do
+    {:reply, mobile, mobile}
   end
 
   def handle_info(:display_prompt, %Mobile{socket: _socket} = mobile) do

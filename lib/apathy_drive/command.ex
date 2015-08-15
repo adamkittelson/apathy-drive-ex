@@ -17,15 +17,32 @@ defmodule ApathyDrive.Command do
   def execute(mobile, command, arguments) do
     send(mobile, :display_prompt)
 
-    if command in @directions do
-      ApathyDrive.Exit.move(mobile, Room.direction(command))
-    else
-      case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
-        nil ->
-          Mobile.send_scroll(mobile, "<p>What?</p>")
-        match ->
-          match.module.execute(mobile, arguments)
-      end
+    room =
+      mobile
+      |> Mobile.room_id
+      |> Room.find
+
+    full_command = Enum.join([command | arguments], " ")
+
+    cond do
+      command in @directions ->
+        ApathyDrive.Exit.move(mobile, Room.direction(command))
+      command_exit = Room.command_exit(room, full_command) ->
+        cond do
+          Mobile.confused(mobile) ->
+            nil
+          Mobile.held(mobile) ->
+            nil
+          true ->
+            ApathyDrive.Exits.Command.move_via_command(room, mobile, command_exit)
+        end
+      true ->
+        case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
+          nil ->
+            Mobile.send_scroll(mobile, "<p>What?</p>")
+          match ->
+            match.module.execute(mobile, arguments)
+        end
     end
   end
 

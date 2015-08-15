@@ -116,6 +116,10 @@ defmodule Room do
     GenServer.call(room, {:get_mirror_exit, destination_id})
   end
 
+  def command_exit(room, string) do
+    GenServer.call(room, {:command_exit, string})
+  end
+
   def html(room, mobile) do
     data = get_look_data(room, mobile)
 
@@ -247,8 +251,8 @@ defmodule Room do
     end
   end
 
-  def send_scroll(%Room{id: id}, html) do
-    ApathyDrive.Endpoint.broadcast! "rooms:#{id}", "scroll", %{:html => html}
+  def send_scroll(room, html) do
+    ApathyDrive.Endpoint.broadcast! "rooms:#{Room.id(room)}:mobiles", "scroll", %{:html => html}
   end
 
   defp open!(%Room{} = room, direction) do
@@ -409,6 +413,15 @@ defmodule Room do
                    end)
 
     {:reply, room_exit, room}
+  end
+
+  def handle_call({:command_exit, string}, _from, room) do
+    command_exit = room.exits
+                   |> Enum.find(fn(ex) ->
+                        ex["kind"] == "Command" and Enum.member?(ex["commands"], string)
+                      end)
+
+    {:reply, command_exit, room}
   end
 
   # GenServer callbacks
