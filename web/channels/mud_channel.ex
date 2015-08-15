@@ -23,7 +23,7 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_info(:after_join, socket) do
-    send(socket.assigns[:mobile], :display_prompt)
+    ApathyDrive.Command.execute(socket.assigns[:mobile], "look", [])
 
     {:noreply, socket}
   end
@@ -73,9 +73,7 @@ defmodule ApathyDrive.MUDChannel do
   def handle_in("command", message, socket) do
     [command | arguments] = String.split(message)
 
-    Task.start fn ->
-      ApathyDrive.Command.execute(socket.assigns[:mobile], command, arguments)
-    end
+    ApathyDrive.Command.execute(socket.assigns[:mobile], command, arguments)
 
     {:noreply, socket}
   end
