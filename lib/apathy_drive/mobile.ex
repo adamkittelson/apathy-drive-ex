@@ -252,7 +252,13 @@ defmodule ApathyDrive.Mobile do
     mobile = Map.put(mobile, :room_id, room_id)
     ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles")
 
-    {:noreply, mobile}
+    if mobile.spirit do
+      mobile = put_in(mobile.spirit.room_id, mobile.room_id)
+      Spirit.save(mobile.spirit)
+      {:noreply, mobile}
+    else
+      {:noreply, mobile}
+    end
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{} = message, %Mobile{socket: nil} = mobile) do

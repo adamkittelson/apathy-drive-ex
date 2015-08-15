@@ -72,6 +72,7 @@ defmodule ApathyDrive.Exit do
       import Systems.Text
       import BlockTimer
       alias ApathyDrive.Exit
+      alias ApathyDrive.Mobile
 
       def display_direction(_room, room_exit) do
         room_exit["direction"]
