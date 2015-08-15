@@ -120,6 +120,21 @@ defmodule Room do
     GenServer.call(room, {:command_exit, string})
   end
 
+  def temporarily_open?(room, direction) when is_pid(room) do
+    GenServer.call(room, {:temporarily_open?, direction})
+  end
+  def temporarily_open?(%Room{} = room, direction) do
+    room.effects
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :open)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :open)
+       end)
+    |> Enum.member?(direction)
+  end
+
   def html(room, mobile) do
     data = get_look_data(room, mobile)
 
@@ -384,6 +399,10 @@ defmodule Room do
 
   def handle_call(:value, _from, room) do
     {:reply, room, room}
+  end
+
+  def handle_call({:temporarily_open?, direction}, _from, room) do
+    {:reply, temporarily_open?(room, direction), room}
   end
 
   def handle_call({:look_data, mobile}, _from, room) do

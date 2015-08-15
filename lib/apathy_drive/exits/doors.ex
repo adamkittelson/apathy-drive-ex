@@ -3,6 +3,7 @@ defmodule ApathyDrive.Exits.Doors do
   defmacro __using__(_opts) do
     quote do
       use ApathyDrive.Exit
+      alias ApathyDrive.Mobile
 
       def name, do: "door"
 
@@ -15,27 +16,11 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def move(current_room, %Spirit{} = spirit, room_exit) do
-        new_room = Room.find(room_exit["destination"])
-                   |> Room.value
-
-        if !open?(current_room, room_exit) do
-          Spirit.send_scroll(spirit, "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
-        end
-
-        Room.look(new_room, spirit)
-
-        spirit
-        |> Spirit.set_room_id(room_exit["destination"])
-        |> Spirit.deactivate_hint("movement")
-        |> Spirit.save
-      end
-
-      def move(current_room, %Monster{} = monster, room_exit) do
+      def move(current_room, mobile, room_exit) do
         if open?(current_room, room_exit) do
-          super(current_room, monster, room_exit)
+          super(current_room, mobile, room_exit)
         else
-          Monster.send_scroll(monster, "<p><span class='red'>The #{name} is closed!</span></p>")
+          Mobile.send_scroll(mobile, "<p><span class='red'>The #{name} is closed!</span></p>")
         end
       end
 
@@ -124,18 +109,18 @@ defmodule ApathyDrive.Exits.Doors do
         |> Enum.member?(room_exit["direction"])
       end
 
-      def open?(%Room{} = room, room_exit) do
-        permanently_open?(room, room_exit) or
-        all_remote_actions_triggered?(room, room_exit) or
-        temporarily_open?(room, room_exit) or
+      def open?(room, room_exit) do
+        permanently_open?(room_exit) or
+        all_remote_actions_triggered?(room_exit) or
+        Room.temporarily_open?(room, room_exit["direction"]) or
         opened_remotely?(room, room_exit)
       end
 
-      def permanently_open?(room, room_exit) do
+      def permanently_open?(room_exit) do
         !!room_exit["open"]
       end
 
-      def all_remote_actions_triggered?(room, room_exit) do
+      def all_remote_actions_triggered?(room_exit) do
         if room_exit["remote_action_exits"] do
           room_exit.remote_action_exits
           |> Enum.all?(fn(remote_exit) ->
@@ -153,18 +138,6 @@ defmodule ApathyDrive.Exits.Doors do
         else
           false
         end
-      end
-
-      def temporarily_open?(%Room{} = room, room_exit) do
-        room.effects
-        |> Map.values
-        |> Enum.filter(fn(effect) ->
-             Map.has_key?(effect, :open)
-           end)
-        |> Enum.map(fn(effect) ->
-             Map.get(effect, :open)
-           end)
-        |> Enum.member?(room_exit["direction"])
       end
 
       def opened_remotely?(room, room_exit) do
