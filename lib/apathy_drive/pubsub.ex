@@ -24,12 +24,12 @@ defmodule ApathyDrive.PubSub do
     Phoenix.PubSub.subscribe(:pub_sub, pid, topic, opts)
   end
 
-  def subscribers(topic) do
+  def subscribers(topic, exceptions \\ []) do
     case :pg2.get_members(topic) do
       {:error, {:no_such_group, _}} ->
         []
       subscribers ->
-        subscribers
+        subscribers -- exceptions
     end
   end
 

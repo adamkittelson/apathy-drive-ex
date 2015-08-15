@@ -169,7 +169,8 @@ defmodule MonsterTemplate do
       exit_message: monster_template.exit_message,
       alignment: monster_template.alignment,
       room_id: room.id,
-      gender: monster_template.gender
+      gender: monster_template.gender,
+      greeting: monster_template.greeting
     }
 
     monster =

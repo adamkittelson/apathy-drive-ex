@@ -17,7 +17,8 @@ defmodule ApathyDrive.Mobile do
             keywords: [],
             enter_message: "{{name}} enters from {{direction}}.",
             exit_message: "{{name}} leaves {{direction}}.",
-            gender: nil
+            gender: nil,
+            greeting: nil
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -25,6 +26,10 @@ defmodule ApathyDrive.Mobile do
 
   def data_for_who_list(pid) do
     GenServer.call(pid, :data_for_who_list)
+  end
+
+  def greeting(pid) do
+    GenServer.call(pid, :greeting)
   end
 
   def look_name(pid) do
@@ -125,6 +130,10 @@ defmodule ApathyDrive.Mobile do
     {:reply, mobile.room_id, mobile}
   end
 
+  def handle_call(:greeting, _from, mobile) do
+    {:reply, mobile.greeting, mobile}
+  end
+
   def handle_call(:look_name, _from, mobile) do
     {:reply, "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>", mobile}
   end
@@ -163,7 +172,6 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_call(:match_data, _from, mobile) do
-
     {:reply, %{name: mobile.name, keywords: mobile.keywords}, mobile}
   end
 

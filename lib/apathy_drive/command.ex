@@ -149,6 +149,7 @@ defmodule ApathyDrive.Command do
     quote do
       import BlockTimer
       import Systems.Text
+      alias ApathyDrive.Mobile
 
       def name do
         __MODULE__
