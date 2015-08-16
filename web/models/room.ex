@@ -108,8 +108,11 @@ defmodule Room do
     GenServer.call(room, {:look_data, mobile})
   end
 
-  def get_exit(room, direction) do
+  def get_exit(room, direction) when is_pid(room) do
     GenServer.call(room, {:get_exit, direction})
+  end
+  def get_exit(%Room{} = room, direction) do
+    Enum.find(room.exits, &(&1["direction"] == direction(direction)))
   end
 
   def mirror_exit(room, destination_id) do
@@ -270,7 +273,10 @@ defmodule Room do
     ApathyDrive.Endpoint.broadcast! "rooms:#{Room.id(room)}:mobiles", "scroll", %{:html => html}
   end
 
-  defp open!(%Room{} = room, direction) do
+  def open!(room, direction) when is_pid(room) do
+    GenServer.call(room, {:open, direction})
+  end
+  def open!(%Room{} = room, direction) do
     if open_duration = ApathyDrive.Exit.open_duration(room, direction) do
       Systems.Effect.add(room, %{open: direction}, open_duration)
       # todo: tell players in the room when it re-locks
@@ -405,6 +411,11 @@ defmodule Room do
     {:reply, temporarily_open?(room, direction), room}
   end
 
+  def handle_call({:open, direction}, _from, room) do
+    room = open!(room, direction)
+    {:reply, room, room}
+  end
+
   def handle_call({:look_data, mobile}, _from, room) do
     data = %{
       lair_indicator: lair_indicator(room),
@@ -420,7 +431,7 @@ defmodule Room do
   end
 
   def handle_call({:get_exit, direction}, _from, room) do
-    room_exit = Enum.find(room.exits, &(&1["direction"] == direction(direction)))
+    room_exit =  get_exit(room, direction)
 
     {:reply, room_exit, room}
   end
@@ -461,7 +472,7 @@ defmodule Room do
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do
     room = open!(room, direction)
 
-    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+    room_exit = get_exit(room, direction)
 
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
@@ -478,7 +489,7 @@ defmodule Room do
   end
 
   def handle_info({:door_bash_failed, %{direction: direction}}, room) do
-    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+    room_exit = room_exit = get_exit(room, direction)
 
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 

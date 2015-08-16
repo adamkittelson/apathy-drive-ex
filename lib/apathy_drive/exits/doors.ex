@@ -4,6 +4,7 @@ defmodule ApathyDrive.Exits.Doors do
     quote do
       use ApathyDrive.Exit
       alias ApathyDrive.Mobile
+      alias ApathyDrive.PubSub
 
       def name, do: "door"
 
@@ -24,30 +25,48 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def bash?(%Monster{} = monster, room_exit) do
+      def bash?(mobile, room_exit) do
         :random.seed(:os.timestamp)
         80 + room_exit["difficulty"] >= :random.uniform(100)
       end
 
-      def bash(%Monster{} = monster, %Room{} = room, room_exit) do
+      def bash(mobile, room, room_exit) do
         cond do
           open?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is already open.</p>")
-          bash?(monster, room_exit) ->
-            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                     {:door_bashed_open, %{basher: monster,
-                                                           direction: room_exit["direction"],
-                                                           type: name }})
-            monster
+            Mobile.send_scroll(mobile, "<p>The #{name} is already open.</p>")
+          bash?(mobile, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>You bashed the #{name} open.</p>")
+            PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+            Room.open!(room, room_exit["direction"])
+
+            mirror_room = Room.find(room_exit["destination"])
+            mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+            if mirror_exit["kind"] == room_exit["kind"] do
+              PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+              |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just flew open!</p>")))
+
+              Room.open!(mirror_room, mirror_exit["direction"])
+            end
           true ->
-            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                     {:door_bash_failed, %{basher: monster,
-                                                           direction: room_exit["direction"],
-                                                           type: name }})
+            Mobile.send_scroll(mobile, "<p>Your attempts to bash through fail!</p>")
+            PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+            mirror_room = Room.find(room_exit["destination"])
+            mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+            if mirror_exit["kind"] == room_exit["kind"] do
+              PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+              |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>")))
+                                                    
+            end
+
             # if :random.uniform(3) == 3 do
             #   Monster.send_scroll(monster, "<p>You take #{amount} damage for bashing the #{name}!</p>")
             # end
-            monster
         end
       end
 

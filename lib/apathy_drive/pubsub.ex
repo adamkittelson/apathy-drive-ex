@@ -16,25 +16,28 @@ defmodule ApathyDrive.PubSub do
     Phoenix.PubSub.broadcast_from(:pub_sub, from_pid, topic, message)
   end
 
+  def broadcast_except(exceptions, topic, message) do
+    topic
+    |> subscribers
+    |> Enum.each(fn(pid) ->
+         if Enum.member?(exceptions, pid) do
+           :noop
+         else
+           send(pid, message)
+         end
+       end)
+    :ok
+  end
+
   def subscribe(pid, topic, opts \\ []) do
-    :pg2.create(topic)
-    unless subscribers(topic) |> Enum.member?(pid) do
-      :pg2.join(topic, pid)
-    end
     Phoenix.PubSub.subscribe(:pub_sub, pid, topic, opts)
   end
 
   def subscribers(topic, exceptions \\ []) do
-    case :pg2.get_members(topic) do
-      {:error, {:no_such_group, _}} ->
-        []
-      subscribers ->
-        subscribers -- exceptions
-    end
+    Phoenix.PubSub.Local.subscribers(:"Elixir.pub_sub.Local", topic) -- exceptions
   end
 
   def unsubscribe(pid, topic) do
-    :pg2.leave(topic, pid)
     Phoenix.PubSub.unsubscribe(:pub_sub, pid, topic)
   end
 
