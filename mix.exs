@@ -26,8 +26,8 @@ defmodule ApathyDrive.Mixfile do
       {:ecto,                "~> 0.14.3"},
       {:decimal,             "~> 1.1.0"},
       {:postgrex,            "~> 0.9.1"},
-      {:phoenix,             "~> 0.16"},
-      {:phoenix_live_reload, "~> 0.6", only: :dev},
+      {:phoenix,             "~> 0.17"},
+      {:phoenix_live_reload, "~> 1.0"},
       {:phoenix_ecto,        "~> 0.9"},
       {:phoenix_html,        "~> 2.0"},
       {:timex,               "~> 0.16"},
@@ -37,6 +37,7 @@ defmodule ApathyDrive.Mixfile do
       {:oauth2,              "~> 0.0.5"},
       {:scrivener,           "~> 0.11.0"},
       {:comeonin,            "~> 1.0.5"},
+      {:plug,                "~> 1.0", override: true},
       {:shouldi, only: :test}
     ]
   end

@@ -36,7 +36,7 @@ defmodule ApathyDrive.ChannelCase do
           |> Map.merge(map)
           |> Repo.insert!
 
-          {:ok, _, socket} = subscribe_and_join(ApathyDrive.MUD, "mud", %{"spirit" => spirit.id})
+          {:ok, _, socket} = socket() |> subscribe_and_join(ApathyDrive.MUD, "mud", %{"spirit" => spirit.id})
 
           put_in spirit.socket, socket
       end
@@ -53,7 +53,7 @@ defmodule ApathyDrive.ChannelCase do
 
           token = Phoenix.Token.sign(ApathyDrive.Endpoint, "spirit", spirit.id)
 
-          {:ok, _, socket} = subscribe_and_join(ApathyDrive.MUDChannel, "mud:play", %{"spirit" => token})
+          {:ok, _, socket} = socket() |> subscribe_and_join(ApathyDrive.MUDChannel, "mud:play", %{"spirit" => token})
 
           socket.assigns[:mobile]
       end
