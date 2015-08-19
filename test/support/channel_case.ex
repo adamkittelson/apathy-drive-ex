@@ -41,10 +41,10 @@ defmodule ApathyDrive.ChannelCase do
           put_in spirit.socket, socket
       end
 
-      def test_mobile(map \\ %{}) do
-        room =
-          %Room{}
-          |> Repo.insert!
+      def test_mobile(map \\ %{}, room \\ Repo.insert!(%Room{})) do
+        # room =
+        #   %Room{}
+        #   |> Repo.insert!
 
         spirit =
           %Spirit{room_id: room.id, faction: "Demon"}
@@ -55,7 +55,7 @@ defmodule ApathyDrive.ChannelCase do
 
           {:ok, _, socket} = subscribe_and_join(ApathyDrive.MUDChannel, "mud:play", %{"spirit" => token})
 
-          %ApathyDrive.Mobile{spirit: spirit, socket: socket}
+          socket.assigns[:mobile]
       end
     end
   end
