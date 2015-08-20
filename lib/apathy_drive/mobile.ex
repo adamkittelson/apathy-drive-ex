@@ -115,8 +115,8 @@ defmodule ApathyDrive.Mobile do
   def send_scroll(mobile, message) when is_pid(mobile) do
     send mobile, {:send_scroll, message}
   end
-  def send_scroll(%Mobile{socket: nil} = mobile, _html), do: mobile
-  def send_scroll(%Mobile{socket: socket} = mobile, html) do
+  def send_scroll(%Mobile{socket: nil}, _html),  do: nil
+  def send_scroll(%Mobile{socket: socket}, html) do
     send(socket, {:scroll, html})
   end
 
@@ -261,7 +261,7 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_info(%Phoenix.Socket.Broadcast{} = message, %Mobile{socket: nil} = mobile) do
+  def handle_info(%Phoenix.Socket.Broadcast{}, %Mobile{socket: nil} = mobile) do
     {:noreply, mobile}
   end
   def handle_info(%Phoenix.Socket.Broadcast{} = message, %Mobile{socket: socket} = mobile) do

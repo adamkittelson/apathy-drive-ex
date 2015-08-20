@@ -52,10 +52,6 @@ defmodule ApathyDrive.Exit do
     end
   end
 
-  def open_duration(%Room{} = room, direction) do
-    #get_exit_by_direction(room, direction)["open_duration_in_seconds"]
-  end
-
   def mirror(%Room{id: id}, %{"destination" => destination}) do
     mirror_room = Room.find(destination)
                   |> Room.value

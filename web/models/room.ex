@@ -126,7 +126,7 @@ defmodule Room do
   def unlocked?(room, direction) when is_pid(room) do
     GenServer.call(room, {:unlocked?, direction})
   end
-  def unlocked?(%Room{effects: effects} = room, direction) do
+  def unlocked?(%Room{effects: effects}, direction) do
     effects
     |> Map.values
     |> Enum.filter(fn(effect) ->
@@ -524,7 +524,7 @@ defmodule Room do
   end
 
   def handle_info({:door_bash_failed, %{direction: direction}}, room) do
-    room_exit = room_exit = get_exit(room, direction)
+    room_exit = get_exit(room, direction)
 
     {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
 
