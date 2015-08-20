@@ -294,7 +294,10 @@ defmodule Room do
     end
   end
 
-  defp close!(%Room{effects: effects} = room, direction) do
+  def close!(room, direction) when is_pid(room) do
+    GenServer.call(room, {:close, direction})
+  end
+  def close!(%Room{effects: effects} = room, direction) do
     room = effects
            |> Map.keys
            |> Enum.filter(fn(key) ->
@@ -319,7 +322,7 @@ defmodule Room do
   end
 
   defp unlock!(%Room{} = room, direction) do
-    unlock_duration = if open_duration = ApathyDrive.Exit.open_duration(room, direction) do
+    unlock_duration = if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
       open_duration
     else
       10#300
@@ -413,6 +416,11 @@ defmodule Room do
 
   def handle_call({:open, direction}, _from, room) do
     room = open!(room, direction)
+    {:reply, room, room}
+  end
+
+  def handle_call({:close, direction}, _from, room) do
+    room = close!(room, direction)
     {:reply, room, room}
   end
 

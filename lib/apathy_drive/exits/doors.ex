@@ -30,6 +30,28 @@ defmodule ApathyDrive.Exits.Doors do
         80 + room_exit["difficulty"] >= :random.uniform(100)
       end
 
+      def close(mobile, room, room_exit) do
+        if open?(room, room_exit) do
+          Mobile.send_scroll(mobile, "<p>The #{name} is now closed.</p>")
+          PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+          |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} close the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+          Room.close!(room, room_exit["direction"])
+
+          mirror_room = Room.find(room_exit["destination"])
+          mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+          if mirror_exit["kind"] == room_exit["kind"] do
+            PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just closed.</p>")))
+
+            Room.close!(mirror_room, mirror_exit["direction"])
+          end
+        else
+          Mobile.send_scroll(mobile, "<p><span class='red'>That #{name} is already closed.</span></p>")
+        end
+      end
+
       def bash(mobile, room, room_exit) do
         cond do
           open?(room, room_exit) ->
@@ -61,7 +83,7 @@ defmodule ApathyDrive.Exits.Doors do
             if mirror_exit["kind"] == room_exit["kind"] do
               PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
               |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>")))
-                                                    
+
             end
 
             # if :random.uniform(3) == 3 do
@@ -82,18 +104,6 @@ defmodule ApathyDrive.Exits.Doors do
                                                       direction: room_exit["direction"],
                                                       type: name }})
             monster
-        end
-      end
-
-      def close(monster, room, room_exit) do
-        if open?(room, room_exit) do
-          ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                   {:door_closed, %{closer: monster,
-                                                    direction: room_exit["direction"],
-                                                    type: name }})
-          monster
-        else
-          Monster.send_scroll(monster, "<p><span class='red'>That #{name} is already closed.</span></p>")
         end
       end
 

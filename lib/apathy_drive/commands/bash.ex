@@ -6,6 +6,7 @@ defmodule Commands.Bash do
   def execute(mobile, []) do
     Mobile.send_scroll(mobile, "<p>Bash what?</p>")
   end
+
   def execute(mobile, arguments) do
     direction = arguments
                 |> Enum.join(" ")
