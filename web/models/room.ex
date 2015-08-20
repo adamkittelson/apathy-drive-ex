@@ -336,6 +336,20 @@ defmodule Room do
     unlock!(room, direction)
   end
 
+  def lock!(room, direction) when is_pid(room) do
+    GenServer.call(room, {:lock, direction})
+  end
+  def lock!(%Room{effects: effects} = room, direction) do
+    effects
+    |> Map.keys
+    |> Enum.filter(fn(key) ->
+         effects[key][:unlocked] == direction
+       end)
+    |> Enum.reduce(room, fn(key, room) ->
+         Systems.Effect.remove(room, key)
+       end)
+  end
+
   defp unlock!(%Room{} = room, direction) do
     unlock_duration = if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
       open_duration
@@ -346,17 +360,6 @@ defmodule Room do
     Systems.Effect.add(room, %{unlocked: direction}, unlock_duration)
     # todo: tell players in the room when it re-locks
     #"The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
-  end
-
-  defp lock!(%Room{effects: effects} = room, direction) do
-    effects
-    |> Map.keys
-    |> Enum.filter(fn(key) ->
-         effects[key][:unlocked] == direction
-       end)
-    |> Enum.reduce(room, fn(key, room) ->
-         Systems.Effect.remove(room, key)
-       end)
   end
 
   def all_monsters_belong_to_faction?(%Room{id: id}, faction) do
@@ -440,6 +443,11 @@ defmodule Room do
 
   def handle_call({:close, direction}, _from, room) do
     room = close!(room, direction)
+    {:reply, room, room}
+  end
+
+  def handle_call({:lock, direction}, _from, room) do
+    room = lock!(room, direction)
     {:reply, room, room}
   end
 

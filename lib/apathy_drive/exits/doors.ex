@@ -52,6 +52,31 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
+      def lock(mobile, room, room_exit) do
+        cond do
+          locked?(room, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>The #{name} is already locked.</p>")
+          open?(room, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>You must close the #{name} before you may lock it.</p>")
+          true ->
+            Mobile.send_scroll(mobile, "<p>The #{name} is now locked.</p>")
+            PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} lock the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+            Room.lock!(room, room_exit["direction"])
+
+            mirror_room = Room.find(room_exit["destination"])
+            mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+            if mirror_exit["kind"] == room_exit["kind"] do
+              PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+              |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>")))
+
+              Room.lock!(mirror_room, mirror_exit["direction"])
+            end
+        end
+      end
+
       def open(mobile, room, room_exit) do
         cond do
           locked?(room, room_exit) ->
@@ -114,21 +139,6 @@ defmodule ApathyDrive.Exits.Doors do
             # if :random.uniform(3) == 3 do
             #   Monster.send_scroll(monster, "<p>You take #{amount} damage for bashing the #{name}!</p>")
             # end
-        end
-      end
-
-      def lock(monster, room, room_exit) do
-        cond do
-          locked?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is already locked.</p>")
-          open?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>You must close the #{name} before you may lock it.</p>")
-          true ->
-            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                     {:door_locked, %{locker: monster,
-                                                      direction: room_exit["direction"],
-                                                      type: name }})
-            monster
         end
       end
 
