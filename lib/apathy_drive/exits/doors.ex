@@ -52,6 +52,31 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
+      def open(mobile, room, room_exit) do
+        cond do
+          locked?(room, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>The #{name} is locked.</p>")
+          open?(room, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>The #{name} was already open.</p>")
+          true ->
+            Mobile.send_scroll(mobile, "<p>The #{name} is now open.</p>")
+            PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+            Room.open!(room, room_exit["direction"])
+
+            mirror_room = Room.find(room_exit["destination"])
+            mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+            if mirror_exit["kind"] == room_exit["kind"] do
+              PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+              |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just opened.</p>")))
+
+              Room.open!(mirror_room, mirror_exit["direction"])
+            end
+        end
+      end
+
       def bash(mobile, room, room_exit) do
         cond do
           open?(room, room_exit) ->
@@ -92,21 +117,6 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def open(%Monster{} = monster, %Room{} = room, room_exit) do
-        cond do
-          locked?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is locked.</p>")
-          open?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} was already open.</p>")
-          true ->
-            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                     {:door_opened, %{opener: monster,
-                                                      direction: room_exit["direction"],
-                                                      type: name }})
-            monster
-        end
-      end
-
       def lock(monster, room, room_exit) do
         cond do
           locked?(room, room_exit) ->
@@ -122,20 +132,8 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def locked?(%Room{} = room, room_exit) do
-        !open?(room, room_exit) and !unlocked?(room, room_exit)
-      end
-
-      def unlocked?(%Room{effects: effects} = room, room_exit) do
-        effects
-        |> Map.values
-        |> Enum.filter(fn(effect) ->
-             Map.has_key?(effect, :unlocked)
-           end)
-        |> Enum.map(fn(effect) ->
-             Map.get(effect, :unlocked)
-           end)
-        |> Enum.member?(room_exit["direction"])
+      def locked?(room, room_exit) do
+        !open?(room, room_exit) and !Room.unlocked?(room, room_exit["direction"])
       end
 
       def open?(room, room_exit) do

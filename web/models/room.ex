@@ -123,6 +123,21 @@ defmodule Room do
     GenServer.call(room, {:command_exit, string})
   end
 
+  def unlocked?(room, direction) when is_pid(room) do
+    GenServer.call(room, {:unlocked?, direction})
+  end
+  def unlocked?(%Room{effects: effects} = room, direction) do
+    effects
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :unlocked)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :unlocked)
+       end)
+    |> Enum.member?(direction)
+  end
+
   def temporarily_open?(room, direction) when is_pid(room) do
     GenServer.call(room, {:temporarily_open?, direction})
   end
@@ -412,6 +427,10 @@ defmodule Room do
 
   def handle_call({:temporarily_open?, direction}, _from, room) do
     {:reply, temporarily_open?(room, direction), room}
+  end
+
+  def handle_call({:unlocked?, direction}, _from, room) do
+    {:reply, unlocked?(room, direction), room}
   end
 
   def handle_call({:open, direction}, _from, room) do
