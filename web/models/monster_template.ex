@@ -11,7 +11,7 @@ defmodule MonsterTemplate do
     field :death_message,          :string
     field :enter_message,          :string
     field :exit_message,           :string
-    field :abilities,              {:array, :integer}, default: []
+    field :abilities,              ApathyDrive.JSONB
     field :greeting,               :string
     field :gender,                 :string
     field :game_limit,             :integer
