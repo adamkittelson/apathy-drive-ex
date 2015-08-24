@@ -139,7 +139,7 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> Map.put(:pid, self)
       |> Map.put(:room_id, spirit.room_id)
-      |> Map.put(:alignment, spirit.alignment)
+      |> Map.put(:alignment, ApathyDrive.Class.alignment(spirit.class_id))
       |> Map.put(:name, spirit.name)
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")

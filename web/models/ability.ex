@@ -26,11 +26,6 @@ defmodule Ability do
     Map.put(ability, :keywords, String.split(name))
   end
 
-  def trainable(%Spirit{level: level, faction: faction}) do
-    query = from a in Ability, where: a.level <= ^level and a.faction == ^faction, select: a
-    Repo.all(query)
-  end
-
   def useable(abilities, %Monster{mana: mana} = monster) do
     abilities
     |> Enum.reject(fn(ability) ->

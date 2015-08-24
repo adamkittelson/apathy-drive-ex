@@ -1,0 +1,46 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<table class="admin-index">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Alignment</th>
+      <th>Starting Room</th>
+      <th>Strength</th>
+      <th>Strength per level</th>
+      <th>Agility</th>
+      <th>Agility per level</th>
+      <th>Will</th>
+      <th>Will per level</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for class <- @classes do %>
+    <tr>
+      <td><%= class.name %></td>
+      <td><%= class.alignment %></td>
+      <td><%= class.start_room_id %></td>
+      <td><%= class.strength %></td>
+      <td><%= class.strength_per_level %></td>
+      <td><%= class.agility %></td>
+      <td><%= class.agility_per_level %></td>
+      <td><%= class.will %></td>
+      <td><%= class.will_per_level %></td>
+
+      <td class="text-right">
+        <%= link "Show", to: class_path(@conn, :show, class), class: "button button-primary button-xs" %>
+        <%= link "Edit", to: class_path(@conn, :edit, class), class: "button button-primary button-xs" %>
+        <%= link "Delete", to: class_path(@conn, :delete, class), method: :delete, data: [confirm: "Are you sure?"], class: "button button-primary button-xs" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New class", to: class_path(@conn, :new), class: "button button-primary" %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>
+<script>require("web/static/js/json-edit")</script>

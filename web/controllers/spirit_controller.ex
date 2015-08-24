@@ -18,7 +18,6 @@ defmodule ApathyDrive.SpiritController do
       spirit =
         changeset
         |> put_change(:password, hashed_password)
-        |> put_change(:room_id, Room.start_room_id)
         |> Repo.insert!
 
       conn =
@@ -40,27 +39,16 @@ defmodule ApathyDrive.SpiritController do
   def update(conn, %{"spirit" => spirit_params}) do
     spirit = Repo.get(Spirit, get_session(conn, :current_spirit))
 
-    alignment = case spirit_params["faction"] do
-      "Demon" ->
-        "evil"
-      "Angel" ->
-        "good"
-      "Elemental" ->
-        "neutral"
-      _ ->
-        nil
-    end
-
     spirit_params =
       spirit_params
       |> Map.put("name", capitalize_first(spirit_params["name"] || ""))
-      |> Map.put("alignment", alignment)
 
     changeset = Spirit.changeset(spirit, spirit_params)
 
     if changeset.valid? do
       spirit =
         changeset
+        |> put_change(:room_id, ApathyDrive.Class.start_room(changeset.changes.class_id))
         |> Repo.update!
 
       case :global.whereis_name(:"spirit_#{spirit.id}") do
