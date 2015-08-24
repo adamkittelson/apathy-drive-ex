@@ -9,6 +9,8 @@ defmodule ApathyDrive.MUDChannel do
             {:error, %{reason: "unauthorized"}}
           %Spirit{} = spirit ->
 
+            spirit = Repo.preload(spirit, :class)
+
             {:ok, pid} = ApathyDrive.Mobile.start_link(%{spirit: spirit, socket: self})
 
             socket = assign(socket, :mobile, pid)

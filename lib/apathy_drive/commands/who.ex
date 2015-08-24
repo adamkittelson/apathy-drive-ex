@@ -17,17 +17,17 @@ defmodule Commands.Who do
        end)
   end
 
-  def format_line(%{name: name, possessing: "", faction: faction} = line) do
+  def format_line(%{name: name, possessing: "", class: class} = line) do
     color = Mobile.alignment_color(line)
 
-    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{faction}</span></p>"
+    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{class}</span></p>"
   end
 
-  def format_line(%{name: name, possessing: monster, faction: faction} = line) do
+  def format_line(%{name: name, possessing: monster, class: class} = line) do
     color = Mobile.alignment_color(line)
-    faction = String.ljust(faction, 20)
+    class = String.ljust(class, 20)
 
-    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{faction}</span><span class='#{color}'>#{monster}</span></p>"
+    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{class}</span><span class='#{color}'>#{monster}</span></p>"
   end
 
 end

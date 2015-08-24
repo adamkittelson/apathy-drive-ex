@@ -148,7 +148,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_call(:data_for_who_list, _from, mobile) do
-    data = %{name: mobile.spirit.name, possessing: "", faction: mobile.spirit.faction, alignment: mobile.spirit.alignment}
+    data = %{name: mobile.spirit.name, possessing: "", class: mobile.spirit.class.name, alignment: mobile.spirit.class.alignment}
 
     {:reply, data, mobile}
   end
