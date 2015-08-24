@@ -32,7 +32,7 @@ defmodule ApathyDrive.ChannelCase do
           |> Repo.insert!
 
         spirit =
-          %Spirit{room_id: room.id, faction: "Demon"}
+          %Spirit{room_id: room.id}
           |> Map.merge(map)
           |> Repo.insert!
 
@@ -42,12 +42,10 @@ defmodule ApathyDrive.ChannelCase do
       end
 
       def test_mobile(map \\ %{}, room \\ Repo.insert!(%Room{})) do
-        # room =
-        #   %Room{}
-        #   |> Repo.insert!
+        class = Repo.insert!(%ApathyDrive.Class{alignment: "evil", name: "Demon", start_room_id: room.id})
 
         spirit =
-          %Spirit{room_id: room.id, faction: "Demon"}
+          %Spirit{room_id: room.id, class_id: class.id}
           |> Map.merge(map)
           |> Repo.insert!
 
