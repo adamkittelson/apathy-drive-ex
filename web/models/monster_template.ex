@@ -170,7 +170,8 @@ defmodule MonsterTemplate do
       alignment: monster_template.alignment,
       room_id: room.id,
       gender: monster_template.gender,
-      greeting: monster_template.greeting
+      greeting: monster_template.greeting,
+      level: monster_template.level
     }
 
     monster =

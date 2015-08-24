@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Mobile do
   alias ApathyDrive.Mobile
+  alias ApathyDrive.Repo
   use GenServer
   import Systems.Text
 
@@ -18,7 +19,9 @@ defmodule ApathyDrive.Mobile do
             enter_message: "{{name}} enters from {{direction}}.",
             exit_message: "{{name}} leaves {{direction}}.",
             gender: nil,
-            greeting: nil
+            greeting: nil,
+            abilities: [],
+            level: nil
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -26,6 +29,10 @@ defmodule ApathyDrive.Mobile do
 
   def data_for_who_list(pid) do
     GenServer.call(pid, :data_for_who_list)
+  end
+
+  def ability_list(pid) do
+    GenServer.call(pid, :ability_list)
   end
 
   def greeting(pid) do
@@ -130,17 +137,23 @@ defmodule ApathyDrive.Mobile do
 
     {:ok, mobile}
   end
-  def init(%Mobile{spirit: spirit, socket: socket} = mobile) do
+  def init(%Mobile{spirit: spirit_id, socket: socket} = mobile) do
+    spirit = Repo.get(Spirit, spirit_id)
+             |> Repo.preload(:class)
+
     ApathyDrive.PubSub.subscribe(self, "spirits:online")
     ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
     ApathyDrive.PubSub.subscribe(socket, "spirits:#{spirit.id}:socket")
 
     mobile =
       mobile
+      |> Map.put(:spirit, spirit)
       |> Map.put(:pid, self)
       |> Map.put(:room_id, spirit.room_id)
       |> Map.put(:alignment, ApathyDrive.Class.alignment(spirit.class_id))
       |> Map.put(:name, spirit.name)
+      |> Map.put(:abilities, spirit.class.abilities)
+      |> Map.put(:level, spirit.level)
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
 
@@ -151,6 +164,16 @@ defmodule ApathyDrive.Mobile do
     data = %{name: mobile.spirit.name, possessing: "", class: mobile.spirit.class.name, alignment: mobile.spirit.class.alignment}
 
     {:reply, data, mobile}
+  end
+
+  def handle_call(:ability_list, _from, mobile) do
+    abilities =
+      mobile.abilities
+      |> Enum.reject(&(Map.get(&1, "command") == nil))
+      |> Enum.uniq(&(Map.get(&1, "command")))
+      |> Enum.sort_by(&(Map.get(&1, "level")))
+
+    {:reply, abilities, mobile}
   end
 
   def handle_call(:room_id, _from, mobile) do
