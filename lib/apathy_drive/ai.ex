@@ -1,7 +1,9 @@
 defmodule ApathyDrive.AI do
+  alias ApathyDrive.Mobile
 
-  def think(%Monster{} = monster) do
-    heal(monster) || bless(monster) || attack(monster) || monster
+  def think(%Mobile{} = mobile) do
+    #heal(monster) || bless(monster) || attack(monster) || monster
+    mobile
   end
 
   def heal(%Monster{hp: hp, max_hp: max_hp, spirit: nil} = monster) do

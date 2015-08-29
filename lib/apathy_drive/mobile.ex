@@ -21,10 +21,17 @@ defmodule ApathyDrive.Mobile do
             gender: nil,
             greeting: nil,
             abilities: [],
-            level: nil
+            level: nil,
+            hate: %{},
+            timers: %{},
+            flags: []
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
+  end
+
+  def use_ability(pid, command, arguments) do
+    GenServer.cast(pid, {:use_ability, command, arguments})
   end
 
   def data_for_who_list(pid) do
@@ -71,6 +78,11 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :value)
   end
 
+  def interpolation_data(%Mobile{} = mobile),  do: %{name: mobile.name, gender: mobile.gender}
+  def interpolation_data(pid) when is_pid(pid) do
+    GenServer.call(pid, :interpolation_data)
+  end
+
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
@@ -96,6 +108,23 @@ defmodule ApathyDrive.Mobile do
     true
   end
 
+  def silenced(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :silenced?)
+  end
+  def silenced(%Mobile{effects: effects} = mobile, %{"mana_cost" => cost}) when cost > 0 do
+    effects
+    |> Map.values
+    |> Enum.find(fn(effect) ->
+         Map.has_key?(effect, "silenced")
+       end)
+    |> silenced(mobile)
+  end
+  def silenced(%Mobile{}, %{}), do: false
+  def silenced(nil, %Mobile{}), do: false
+  def silenced(%{"effect_message" => message}, %Mobile{} = mobile) do
+    send_scroll(mobile, "<p>#{message}</p>")
+  end
+
   def confused(mobile) when is_pid(mobile) do
     GenServer.call(mobile, :confused?)
   end
@@ -119,12 +148,25 @@ defmodule ApathyDrive.Mobile do
     true
   end
 
+  def effect_bonus(%Mobile{effects: effects}, name) do
+    effects
+    |> Map.values
+    |> Enum.map(fn
+         (%{} = effect) ->
+           Map.get(effect, name, 0)
+         (_) ->
+           0
+       end)
+    |> Enum.sum
+  end
+
   def send_scroll(mobile, message) when is_pid(mobile) do
     send mobile, {:send_scroll, message}
   end
   def send_scroll(%Mobile{socket: nil}, _html),  do: nil
-  def send_scroll(%Mobile{socket: socket}, html) do
+  def send_scroll(%Mobile{socket: socket} = mobile, html) do
     send(socket, {:scroll, html})
+    mobile
   end
 
   def init(%Mobile{spirit: nil} = mobile) do
@@ -133,6 +175,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:pid, self)
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
+      ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
 
     {:ok, mobile}
@@ -156,9 +199,59 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:level, spirit.level)
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
+    ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
     {:ok, mobile}
   end
+
+  def local_hated_targets(%Mobile{hate: hate} = mobile) do
+    mobile
+    |> Room.mobiles
+    |> Enum.reduce(%{}, fn(potential_target, targets) ->
+         threat = Map.get(hate, potential_target, 0)
+         if threat > 0 do
+           Map.put(targets, threat, potential_target)
+         else
+           targets
+         end
+       end)
+  end
+
+  def global_hated_targets(%Mobile{hate: hate}) do
+    hate
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(potential_target, targets) ->
+         threat = Map.get(hate, potential_target, 0)
+         if threat > 0 do
+           Map.put(targets, threat, potential_target)
+         else
+           targets
+         end
+       end)
+  end
+
+  def aggro_target(%Mobile{} = mobile) do
+    targets = local_hated_targets(mobile)
+
+    top_threat = targets
+                 |> Map.keys
+                 |> top_threat
+
+    Map.get(targets, top_threat)
+  end
+
+  def most_hated_target(%Mobile{} = mobile) do
+    targets = global_hated_targets(mobile)
+
+    top_threat = targets
+                 |> Map.keys
+                 |> top_threat
+
+    Map.get(targets, top_threat)
+  end
+
+  def top_threat([]),      do: nil
+  def top_threat(targets), do: Enum.max(targets)
 
   def handle_call(:data_for_who_list, _from, mobile) do
     data = %{name: mobile.spirit.name, possessing: "", class: mobile.spirit.class.name, alignment: mobile.spirit.class.alignment}
@@ -242,6 +335,10 @@ defmodule ApathyDrive.Mobile do
     {:reply, confused(mobile), mobile}
   end
 
+  def handle_call(:silenced?, _from, mobile) do
+    {:reply, silenced(mobile), mobile}
+  end
+
   def handle_call(:held?, _from, mobile) do
     {:reply, held(mobile), mobile}
   end
@@ -254,8 +351,28 @@ defmodule ApathyDrive.Mobile do
     {:reply, mobile.exit_message, mobile}
   end
 
+  def handle_call(:interpolation_data, _from, mobile) do
+    {:reply, interpolation_data(mobile), mobile}
+  end
+
   def handle_call(:value, _from, mobile) do
     {:reply, mobile, mobile}
+  end
+
+  def handle_cast({:use_ability, command, args}, mobile) do
+
+    ability = mobile.abilities
+              |> Enum.find(fn(%{"command" => cmd}) ->
+                   cmd == String.downcase(command)
+                 end)
+
+    if ability do
+      mobile = Ability.execute(mobile, ability, Enum.join(args, " "))
+      {:noreply, mobile}
+    else
+      Mobile.send_scroll(mobile, "<p>What?</p>")
+      {:noreply, mobile}
+    end
   end
 
   def handle_info(:display_prompt, %Mobile{socket: _socket} = mobile) do
@@ -272,8 +389,10 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:move_to, room_id}, mobile) do
     ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles")
+    ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
     mobile = Map.put(mobile, :room_id, room_id)
     ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles")
+    ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles:#{mobile.alignment}")
 
     if mobile.spirit do
       mobile = put_in(mobile.spirit.room_id, mobile.room_id)
@@ -293,6 +412,56 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_info(:think, mobile) do
+    mobile = ApathyDrive.AI.think(mobile)
+
+    {:noreply, mobile}
+  end
+
+  def handle_info({:apply_ability, %{} = ability, %Mobile{} = ability_user}, mobile) do
+    if Ability.affects_target?(mobile, ability) do
+      mobile = mobile
+               |> Ability.apply_ability(ability, ability_user)
+
+      Mobile.update_prompt(mobile)
+
+      if mobile.hp < 1 do
+        {:noreply, Systems.Death.kill(mobile)}
+      else
+        {:noreply, mobile}
+      end
+    else
+      message = "#{mobile.name} is not affected by that ability." |> capitalize_first
+      Mobile.send_scroll(ability_user, "<p><span class='dark-cyan'>#{message}</span></p>")
+      {:noreply, mobile}
+    end
+  end
+
+  def handle_info({:timeout, _ref, {name, time, function}}, %Mobile{timers: timers} = mobile) do
+    jitter = trunc(time / 2) + :random.uniform(time)
+
+    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
+
+    timers = Map.put(timers, name, new_ref)
+
+    TimerManager.execute_function(function)
+
+    {:noreply, Map.put(mobile, :timers, timers)}
+  end
+
+  def handle_info({:timeout, _ref, {name, function}}, %Mobile{timers: timers} = mobile) do
+    TimerManager.execute_function(function)
+
+    timers = Map.delete(timers, name)
+
+    {:noreply, Map.put(mobile, :timers, timers)}
+  end
+
+  def handle_info({:remove_effect, key}, mobile) do
+    mobile = Systems.Effect.remove(mobile, key)
+    {:noreply, mobile}
+  end
+
   def display_prompt(%Mobile{socket: socket} = mobile) do
     ApathyDrive.PubSub.broadcast_from! socket, "spirits:#{mobile.spirit.id}:socket", :go_home
 
@@ -301,6 +470,10 @@ defmodule ApathyDrive.Mobile do
     send(socket, {:scroll, "<p><span id='prompt'>#{prompt(mobile)}</span><input id='command' size='50' class='prompt'></input></p>"})
     send(socket, {:focus_element, "#command"})
     send(socket, :up)
+  end
+
+  def update_prompt(%Mobile{socket: socket} = mobile) do
+    send(socket, {:update_prompt, prompt(mobile)})
   end
 
   # def update(%Spirit{} = spirit) do

@@ -36,13 +36,10 @@ defmodule ApathyDrive.Command do
           true ->
             ApathyDrive.Exits.Command.move_via_command(room, mobile, command_exit)
         end
+      cmd = Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
+        cmd.module.execute(mobile, arguments)
       true ->
-        case Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) do
-          nil ->
-            Mobile.send_scroll(mobile, "<p>What?</p>")
-          match ->
-            match.module.execute(mobile, arguments)
-        end
+        Mobile.use_ability(mobile, command, arguments)
     end
   end
 
@@ -50,14 +47,14 @@ defmodule ApathyDrive.Command do
   #   spirit
   #   |> Map.put(:idle, 0)
   #   |> Systems.Prompt.display
-  # 
+  #
   #   room = Spirit.find_room(spirit)
-  # 
+  #
   #   command_exit = room.exits
   #                  |> Enum.find(fn(ex) ->
   #                       ex["kind"] == "Command" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
   #                     end)
-  # 
+  #
   #   cond do
   #     command_exit ->
   #       ApathyDrive.Exits.Command.move_via_command(room, spirit, command_exit)
@@ -78,38 +75,38 @@ defmodule ApathyDrive.Command do
   #       end
   #   end
   # end
-  # 
+  #
   # def execute(%Spirit{monster: monster} = spirit, command, arguments) do
   #   Monster.execute_command(monster, command, arguments)
-  # 
+  #
   #   spirit
   #   |> Map.put(:idle, 0)
   # end
-  # 
+  #
   # def execute(%Monster{} = monster, command, arguments) do
   #   Systems.Prompt.display(monster)
-  # 
+  #
   #   ability = monster.abilities
   #             |> Enum.filter(fn(%Ability{command: cmd}) ->
   #                  cmd == String.downcase(command)
   #                end)
   #             |> select_ability
-  # 
+  #
   #   if ability do
   #     Ability.execute(monster, ability, Enum.join(arguments, " "))
   #   else
   #     room = Monster.find_room(monster)
-  # 
+  #
   #     command_exit = room.exits
   #                    |> Enum.find(fn(ex) ->
   #                         ex["kind"] == "Command" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
   #                       end)
-  # 
+  #
   #     remote_action_exit = room.exits
   #                          |> Enum.find(fn(ex) ->
   #                               ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], [command | arguments] |> Enum.join(" "))
   #                             end)
-  # 
+  #
   #     cond do
   #       command_exit ->
   #         cond do
