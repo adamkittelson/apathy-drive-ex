@@ -6,10 +6,17 @@ defmodule ApathyDrive.Mobile do
 
   defstruct spirit: nil,
             socket: nil,
-            hp: 10,
-            max_hp: 10,
+            hp: nil,
+            max_hp: nil,
+            strength: nil,
+            strength_per_level: 0,
+            agility: nil,
+            agility_per_level: 0,
+            will: nil,
+            will_per_level: 0,
             description: "Some temporary description.",
-            mana: 5,
+            mana: nil,
+            max_mana: nil,
             effects: %{},
             pid: nil,
             room_id: nil,
@@ -173,6 +180,11 @@ defmodule ApathyDrive.Mobile do
     mobile =
       mobile
       |> Map.put(:pid, self)
+      |> set_abilities
+      |> set_max_mana
+      |> set_mana
+      |> set_max_hp
+      |> set_hp
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -193,15 +205,100 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:spirit, spirit)
       |> Map.put(:pid, self)
       |> Map.put(:room_id, spirit.room_id)
-      |> Map.put(:alignment, ApathyDrive.Class.alignment(spirit.class_id))
+      |> Map.put(:alignment, spirit.class.alignment)
+      |> Map.put(:strength, spirit.class.strength)
+      |> Map.put(:strength_per_level, spirit.class.strength_per_level)
+      |> Map.put(:agility, spirit.class.agility)
+      |> Map.put(:agility_per_level, spirit.class.agility_per_level)
+      |> Map.put(:will, spirit.class.will)
+      |> Map.put(:will_per_level, spirit.class.will_per_level)
       |> Map.put(:name, spirit.name)
-      |> Map.put(:abilities, spirit.class.abilities)
       |> Map.put(:level, spirit.level)
+      |> set_abilities
+      |> set_max_mana
+      |> set_mana
+      |> set_max_hp
+      |> set_hp
+      |> TimerManager.call_every({:monster_regen, 1_000, fn -> send(self, :regen) end})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
     {:ok, mobile}
+  end
+
+  def set_abilities(%Mobile{spirit: nil} = mobile), do: adjust_mana_costs(mobile)
+  def set_abilities(%Mobile{spirit: spirit, level: level} = mobile) do
+    abilities =
+     spirit.class.abilities
+     |> Enum.filter(&(Map.get(&1, "level", 0) <= level))
+
+    mobile
+    |> Map.put(:abilities, abilities)
+    |> adjust_mana_costs
+  end
+
+  def adjust_mana_costs(%Mobile{} = mobile) do
+    abilities =
+      mobile.abilities
+      |> Enum.map(&(adjust_mana_cost(mobile, &1)))
+
+    Map.put(mobile, "abilities", abilities)
+  end
+
+  def adjust_mana_cost(%Mobile{level: level}, %{"mana_cost" => base} = ability) do
+    Map.put(ability, "mana_cost",  trunc(base + base * ((level * 0.1) * ((level * 0.1)))))
+  end
+  def adjust_mana_cost(%Mobile{}, %{} = ability), do: ability
+
+  def set_mana(%Mobile{mana: nil, max_mana: max_mana} = mobile) do
+    Map.put(mobile, :mana, max_mana)
+  end
+  def set_mana(%Mobile{mana: mana, max_mana: max_mana} = mobile) do
+    Map.put(mobile, :mana, min(mana, max_mana))
+  end
+
+  def set_max_mana(%Mobile{} = mobile) do
+    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.8 + (0.01 * mobile.level))))
+  end
+
+  def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
+    Map.put(mobile, :hp, max_hp)
+  end
+  def set_hp(%Mobile{hp: hp, max_hp: max_hp} = mobile) do
+    Map.put(mobile, :hp, min(hp, max_hp))
+  end
+
+  def set_max_hp(%Mobile{} = mobile) do
+    Map.put(mobile, :max_hp, trunc(strength(mobile) * 1.45 + (0.025 * mobile.level)))
+  end
+
+  def strength(%Mobile{} = mobile) do
+    attribute(mobile, :strength)
+  end
+
+  def agility(%Mobile{} = mobile) do
+    attribute(mobile, :agility)
+  end
+
+  def will(%Mobile{} = mobile) do
+    attribute(mobile, :will)
+  end
+
+  def attribute(%Mobile{level: level} = mobile, attribute) do
+    Map.get(mobile, attribute) + (level * Map.get(mobile, :"#{attribute}_per_level"))
+  end
+
+  def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
+    modifier = 1 + effect_bonus(mobile, "hp_regen") / 100
+
+    min(1, trunc(max_hp * 0.02 * modifier))
+  end
+
+  def mana_regen_per_second(%Mobile{max_mana: max_mana} = mobile) do
+    modifier = 1 + effect_bonus(mobile, "mana_regen") / 100
+
+    min(1, trunc(max_mana * 0.02 * modifier))
   end
 
   def local_hated_targets(%Mobile{hate: hate} = mobile) do
@@ -462,6 +559,20 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_info(:regen, %Mobile{hp: hp,     max_hp: max_hp,
+                                  mana: mana, max_mana: max_mana} = mobile)
+                                  when hp == max_hp and mana == max_mana, do: {:noreply, mobile}
+
+  def handle_info(:regen, %Mobile{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = mobile) do
+    mobile = mobile
+             |> Map.put(:hp,   min(  hp + hp_regen_per_second(mobile), max_hp))
+             |> Map.put(:mana, min(mana + mana_regen_per_second(mobile), max_mana))
+
+    update_prompt(mobile)
+
+    {:noreply, mobile}
+  end
+
   def display_prompt(%Mobile{socket: socket} = mobile) do
     ApathyDrive.PubSub.broadcast_from! socket, "spirits:#{mobile.spirit.id}:socket", :go_home
 
@@ -471,6 +582,8 @@ defmodule ApathyDrive.Mobile do
     send(socket, {:focus_element, "#command"})
     send(socket, :up)
   end
+
+  def update_prompt(%Mobile{socket: nil}), do: :noop
 
   def update_prompt(%Mobile{socket: socket} = mobile) do
     send(socket, {:update_prompt, prompt(mobile)})

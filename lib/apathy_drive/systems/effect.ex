@@ -1,6 +1,7 @@
 defmodule Systems.Effect do
   import BlockTimer
   use Timex
+  alias ApathyDrive.Mobile
 
   def add(%{effects: _effects} = entity, effect) do
     key = Time.now(:msecs) * 1000 |> trunc
@@ -115,6 +116,10 @@ defmodule Systems.Effect do
 
   def send_scroll(%Spirit{} = spirit, message) do
     Spirit.send_scroll(spirit, message)
+  end
+
+  def send_scroll(%Mobile{} = mobile, message) do
+    Mobile.send_scroll(mobile, message)
   end
 
   def send_scroll(_, _), do: nil

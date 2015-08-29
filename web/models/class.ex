@@ -46,7 +46,4 @@ defmodule ApathyDrive.Class do
     Repo.get(__MODULE__, id).start_room_id
   end
 
-  def alignment(id) do
-    Repo.get(__MODULE__, id).alignment
-  end
 end

@@ -28,7 +28,10 @@ defmodule MonsterTemplate do
     field :effects,                ApathyDrive.JSONB
     field :experience,             :integer
     field :last_killed_at,         Timex.Ecto.DateTime
-    field :regen_time_in_minutes, :integer
+    field :regen_time_in_minutes,  :integer
+    field :strength,               :integer
+    field :agility,                :integer
+    field :will,                   :integer
 
     has_many :monsters, Monster
 
@@ -171,7 +174,10 @@ defmodule MonsterTemplate do
       room_id: room.id,
       gender: monster_template.gender,
       greeting: monster_template.greeting,
-      level: monster_template.level
+      level: monster_template.level,
+      strength: monster_template.strength,
+      agility: monster_template.agility,
+      will: monster_template.will
     }
 
     monster =

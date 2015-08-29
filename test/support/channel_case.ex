@@ -42,7 +42,16 @@ defmodule ApathyDrive.ChannelCase do
       end
 
       def test_mobile(map \\ %{}, room \\ Repo.insert!(%Room{})) do
-        class = Repo.insert!(%ApathyDrive.Class{alignment: "evil", name: "Demon", start_room_id: room.id})
+        class = Repo.insert!(%ApathyDrive.Class{alignment: "evil",
+                                                name: "Demon",
+                                                start_room_id: room.id,
+                                                abilities: [],
+                                                strength: 40,
+                                                strength_per_level: 5,
+                                                agility: 40,
+                                                agility_per_level: 5,
+                                                will: 40,
+                                                will_per_level: 5})
 
         spirit =
           %Spirit{room_id: room.id, class_id: class.id}

@@ -27,10 +27,7 @@ defmodule Spirit do
     field :disabled_hints,    {:array, :string}, default: []
     field :monster,           :any, virtual: true
     field :abilities,         :any, virtual: true
-    field :max_mana,          :integer, virtual: true
-    field :mana,              :integer, virtual: true
-    field :mana_regen,        :integer, virtual: true
-    field :timers,            :any,     virtual: true, default: %{}
+    field :timers,            :any, virtual: true, default: %{}
     field :admin,             :boolean
 
     belongs_to :class, ApathyDrive.Class
@@ -124,31 +121,6 @@ defmodule Spirit do
 
     spirit
     |> Map.put(:abilities, abilities)
-    |> set_max_mana
-    |> set_mana
-    |> set_mana_regen
-  end
-
-  def set_max_mana(%Spirit{abilities: abilities} = spirit) do
-    max_mana = Enum.reduce(abilities, 0, fn(ability, max_mana) ->
-      max_mana + Map.get(ability.properties, "mana_cost", 0)
-    end)
-    Map.put(spirit, :max_mana, max_mana * 2)
-  end
-
-  def set_mana(%Spirit{mana: nil, max_mana: max_mana} = spirit) do
-    spirit
-    |> Map.put(:mana, max_mana)
-    |> Systems.Prompt.update
-  end
-  def set_mana(%Spirit{mana: mana, max_mana: max_mana} = spirit) do
-    spirit
-    |> Map.put(:mana, min(mana, max_mana))
-    |> Systems.Prompt.update
-  end
-
-  def set_mana_regen(%Spirit{max_mana: max_mana} = spirit) do
-    Map.put(spirit, :mana_regen,  max_mana |> div(10) |> max(1))
   end
 
   def login(%Spirit{} = spirit) do
@@ -538,13 +510,13 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info(:regen_mana, %Spirit{mana: mana, max_mana: max_mana, mana_regen: mana_regen} = spirit) do
-    spirit = spirit
-             |> Map.put(:mana, min(mana + mana_regen, max_mana))
-             |> Systems.Prompt.update
-
-    {:noreply, spirit}
-  end
+  # def handle_info(:regen_mana, %Spirit{mana: mana, max_mana: max_mana, mana_regen: mana_regen} = spirit) do
+  #   spirit = spirit
+  #            |> Map.put(:mana, min(mana + mana_regen, max_mana))
+  #            |> Systems.Prompt.update
+  # 
+  #   {:noreply, spirit}
+  # end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %Spirit{timers: timers} = spirit) do
     jitter = trunc(time / 2) + :random.uniform(time)
