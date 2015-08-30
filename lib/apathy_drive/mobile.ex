@@ -526,6 +526,11 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_info({:execute_ability, ability, arg_string}, mobile) do
+    mobile = Ability.execute(mobile, ability, arg_string)
+    {:noreply, mobile}
+  end
+
   def handle_info(:display_prompt, %Mobile{socket: _socket} = mobile) do
     display_prompt(mobile)
 

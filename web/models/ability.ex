@@ -1,6 +1,7 @@
 defmodule Ability do
   use ApathyDrive.Web, :model
   import Systems.Text
+  import BlockTimer
   alias ApathyDrive.PubSub
   alias ApathyDrive.Mobile
 
@@ -315,12 +316,64 @@ defmodule Ability do
   end
   def display_pre_cast_message(%Mobile{}, %{}, _targets), do: nil
 
-  def execute(%Mobile{} = mobile, %{} = ability, target) when is_binary(target)do
-    case targets(mobile, ability, target) do
-      [] ->
-        Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
-      targets ->
-        execute(mobile, ability, targets)
+  def can_execute?(%Mobile{} = mobile, ability) do
+    cond do
+      on_cooldown?(mobile, ability) ->
+        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You can't do that yet.</p>")
+        false
+      Mobile.confused(mobile) ->
+        false
+      Mobile.silenced(mobile, ability) ->
+        false
+      true ->
+        true
+    end
+  end
+
+  def execute(%Mobile{timers: timers} = mobile, %{"cast_time" => time} = ability, target) do
+    if can_execute?(mobile, ability) do
+      if ref = Map.get(timers, :cast_timer) do
+        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You interrupt your spell.</span></p>")
+        :erlang.cancel_timer(ref)
+      end
+
+      Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You begin your casting.</span></p>")
+
+      TimerManager.call_after(mobile, {:cast_timer, time |> seconds, fn ->
+        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You cast your spell.</span></p>")
+
+        ability = case ability do
+          %{"global_cooldown" => nil} ->
+            ability
+          %{"global_cooldown" => cooldown} ->
+            if cooldown > time do
+              Map.put(ability, "global_cooldown", cooldown - time)
+            else
+              ability
+              |> Map.delete("global_cooldown")
+              |> Map.put("ignores_global_cooldown", true)
+            end
+          _ ->
+            ability
+        end
+
+        send(self, {:execute_ability, Map.delete(ability, "cast_time"), target})
+      end})
+    else
+      mobile
+    end
+  end
+
+  def execute(%Mobile{} = mobile, %{} = ability, target) when is_binary(target) do
+    if can_execute?(mobile, ability) do
+      case targets(mobile, ability, target) do
+        [] ->
+          Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
+        targets ->
+          execute(mobile, ability, targets)
+      end
+    else
+      mobile
     end
   end
 
@@ -350,32 +403,23 @@ defmodule Ability do
   end
 
   def execute(%Mobile{} = mobile, %{} = ability, targets) do
-    cond do
-      on_cooldown?(mobile, ability) ->
-        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You can't do that yet.</p>")
-      Mobile.confused(mobile) ->
-        mobile
-      Mobile.silenced(mobile, ability) ->
-        mobile
-      true ->
-        send(self, :think)
+    send(self, :think)
 
-        display_pre_cast_message(mobile, ability, targets)
+    display_pre_cast_message(mobile, ability, targets)
 
-        mobile = mobile
-                 |> apply_cooldown(ability)
-                 |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
+    mobile = mobile
+             |> apply_cooldown(ability)
+             |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
 
-        Mobile.update_prompt(mobile)
+    Mobile.update_prompt(mobile)
 
-        ability = scale_ability(mobile, nil, ability)
+    ability = scale_ability(mobile, nil, ability)
 
-        Enum.each(targets, fn(target) ->
-          send(target, {:apply_ability, ability, mobile})
-        end)
+    Enum.each(targets, fn(target) ->
+      send(target, {:apply_ability, ability, mobile})
+    end)
 
-        mobile
-    end
+    mobile
   end
 
   def on_cooldown?(%Mobile{} = mobile, %{"name" => "attack"} = ability) do
