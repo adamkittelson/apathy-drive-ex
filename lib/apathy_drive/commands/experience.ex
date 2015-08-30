@@ -3,14 +3,8 @@ defmodule Commands.Experience do
 
   def keywords, do: ["exp"]
 
-  def execute(%Spirit{} = spirit, _arguments) do
-    spirit
-    |> Spirit.send_scroll(message(spirit))
-  end
-
-  def execute(%Monster{spirit: spirit} = monster, _arguments) do
-    monster
-    |> Monster.send_scroll(message(spirit))
+  def execute(mobile, _arguments) do
+    Mobile.display_experience(mobile)
   end
 
   def message(entity) do

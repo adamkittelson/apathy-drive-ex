@@ -88,6 +88,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :value)
   end
 
+  def display_experience(pid) do
+    GenServer.cast(pid, :display_experience)
+  end
+
   def interpolation_data(%Mobile{} = mobile),  do: %{name: mobile.name, gender: mobile.gender}
   def interpolation_data(pid) when is_pid(pid) do
     GenServer.call(pid, :interpolation_data)
@@ -478,6 +482,15 @@ defmodule ApathyDrive.Mobile do
       Mobile.send_scroll(mobile, "<p>What?</p>")
       {:noreply, mobile}
     end
+  end
+
+  def handle_cast(:display_experience, %Mobile{spirit: nil} = mobile) do
+    {:noreply, mobile}
+  end
+  def handle_cast(:display_experience, %Mobile{spirit: spirit} = mobile) do
+    Mobile.send_scroll(mobile, Commands.Experience.message(spirit))
+
+    {:noreply, mobile}
   end
 
   def handle_info(:display_prompt, %Mobile{socket: _socket} = mobile) do
