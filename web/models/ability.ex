@@ -145,6 +145,26 @@ defmodule Ability do
     |> List.first
   end
 
+  def scale_effect(%Mobile{} = mobile, "heal", %{"potency" => potency}) do
+    magic_damage_from_weapon = 1 # for now
+
+    average = (potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile)))
+
+    modifier = (80..120 |> Enum.shuffle |> List.first) / 100
+
+    trunc(average * modifier)
+  end
+
+  def scale_effect(%Mobile{} = mobile, "damage", %{"potency" => potency}) do
+    magic_damage_from_weapon = 1 # for now
+
+    average = (potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile)))
+
+    modifier = (80..120 |> Enum.shuffle |> List.first) / 100
+
+    trunc(average * modifier)
+  end
+
   def scale_effect(%Mobile{}, _effect_name, %{"potency" => potency}) do
     potency
   end
@@ -517,15 +537,15 @@ defmodule Ability do
   end
   def reduce_damage(%{} = ability, _monster, _ability_user), do: ability
 
-  def trigger_damage_shields(%Monster{id: id}, %Monster{id: attacker_id}) when id == attacker_id, do: nil
-  def trigger_damage_shields(%Monster{} = monster, %Monster{} = attacker) do
-    monster.effects
+  def trigger_damage_shields(%Mobile{pid: pid}, %Mobile{pid: attacker_pid}) when pid == attacker_pid, do: nil
+  def trigger_damage_shields(%Mobile{} = mobile, %Mobile{} = attacker) do
+    mobile.effects
     |> Map.values
     |> Enum.filter(&(Map.has_key?(&1, "damage shield")))
     |> Enum.each(fn(%{"damage shield" => damage, "damage shield message" => message, "damage shield type" => damage_type}) ->
-         ability = %Ability{kind: "attack", flags: [], properties: %{"instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => message}}
+         ability = %{"kind" => "attack", "flags" => [], "instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => message}
 
-         send(attacker.pid, {:apply_ability, ability, monster})
+         send(attacker.pid, {:apply_ability, ability, mobile})
        end)
   end
 
@@ -536,13 +556,13 @@ defmodule Ability do
 
     apply_instant_effects(monster, Map.delete(effects, "drain"), ability_user)
   end
-  def apply_instant_effects(%Monster{} = monster, %{"damage" => damage} = effects, %Monster{} = ability_user) do
-    monster = put_in(monster.hp, monster.hp - damage)
-    monster = put_in(monster.hate, HashDict.update(monster.hate, ability_user.pid, damage, fn(hate) -> hate + damage end))
+  def apply_instant_effects(%Mobile{} = mobile, %{"damage" => damage} = effects, %Mobile{} = ability_user) do
+    mobile = put_in(mobile.hp, mobile.hp - damage)
+    mobile = put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + damage end))
 
-    trigger_damage_shields(monster, ability_user)
+    trigger_damage_shields(mobile, ability_user)
 
-    apply_instant_effects(monster, Map.delete(effects, "damage"), ability_user)
+    apply_instant_effects(mobile, Map.delete(effects, "damage"), ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"heal" => heal} = effects, ability_user) do
     mobile = put_in(mobile.hp, min(mobile.max_hp, mobile.hp + heal))

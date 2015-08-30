@@ -173,8 +173,11 @@ defmodule Room do
 
   # Value functions
   def mobiles(%{room_id: room_id, mobile: pid}) do
+    PubSub.subscribers("rooms:#{room_id}:mobiles", [pid])
+  end
+
+  def mobiles(%Mobile{room_id: room_id} = mobile) do
     PubSub.subscribers("rooms:#{room_id}:mobiles")
-    |> Enum.reject(&(&1 == pid))
   end
 
   def mobiles(%Room{} = room) do
@@ -292,7 +295,7 @@ defmodule Room do
     GenServer.call(room, {:open, direction})
   end
   def open!(%Room{} = room, direction) do
-    if open_duration = ApathyDrive.Exit.open_duration(room, direction) do
+    if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
       Systems.Effect.add(room, %{open: direction}, open_duration)
       # todo: tell players in the room when it re-locks
       #"The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"

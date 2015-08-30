@@ -25,13 +25,16 @@ defmodule ApathyDrive.Mobile do
             keywords: [],
             enter_message: "{{name}} enters from {{direction}}.",
             exit_message: "{{name}} leaves {{direction}}.",
+            death_message: "{{name}} dies.",
             gender: nil,
             greeting: nil,
             abilities: [],
             level: nil,
             hate: %{},
             timers: %{},
-            flags: []
+            flags: [],
+            experience: nil,
+            monster_template_id: nil
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -177,6 +180,8 @@ defmodule ApathyDrive.Mobile do
   end
 
   def init(%Mobile{spirit: nil} = mobile) do
+    :random.seed(:os.timestamp)
+
     mobile =
       mobile
       |> Map.put(:pid, self)
@@ -185,6 +190,7 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
+      |> TimerManager.call_every({:monster_regen, 1_000, fn -> send(self, :regen) end})
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -193,6 +199,8 @@ defmodule ApathyDrive.Mobile do
     {:ok, mobile}
   end
   def init(%Mobile{spirit: spirit_id, socket: socket} = mobile) do
+    :random.seed(:os.timestamp)
+
     spirit = Repo.get(Spirit, spirit_id)
              |> Repo.preload(:class)
 
@@ -571,6 +579,36 @@ defmodule ApathyDrive.Mobile do
     update_prompt(mobile)
 
     {:noreply, mobile}
+  end
+
+  def handle_info({:mobile_died, mobile: %Mobile{}, reward: _exp}, %Mobile{spirit: nil} = mobile) do
+    {:noreply, mobile}
+  end
+  def handle_info({:mobile_died, mobile: %Mobile{} = deceased, reward: exp}, %Mobile{spirit: %Spirit{} = spirit} = mobile) do
+    message = deceased.death_message
+              |> interpolate(%{"name" => deceased.name})
+              |> capitalize_first
+
+    send_scroll(mobile, "<p>#{message}</p>")
+
+    send_scroll(mobile, "<p>You gain #{exp} experience.</p>")
+
+    new_spirit =
+      spirit
+      |> Spirit.add_experience(exp)
+
+    if new_spirit.level > spirit.level do
+      mobile = mobile
+               |> Map.put(:spirit, new_spirit)
+               |> set_abilities
+
+      {:noreply, mobile}
+    else
+      mobile = mobile
+                |> Map.put(:spirit, new_spirit)
+
+      {:noreply, mobile}
+    end
   end
 
   def display_prompt(%Mobile{socket: socket} = mobile) do

@@ -1,5 +1,6 @@
 defmodule Systems.Death do
   import Systems.Text
+  alias ApathyDrive.Mobile
 
   def kill(%Monster{spirit: %Spirit{} = spirit} = monster) do
     ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_died, monster: monster, reward: monster.experience})
@@ -28,13 +29,12 @@ defmodule Systems.Death do
     Process.exit(self, :normal)
   end
 
-  def kill(%Monster{spirit: nil} = monster) do
-    ApathyDrive.PubSub.broadcast!("rooms:#{monster.room_id}", {:monster_died, monster: monster, reward: monster.experience})
-    ApathyDrive.Factions.add_to_bonus_pool(monster.experience)
+  def kill(%Mobile{spirit: nil} = mobile) do
+    ApathyDrive.PubSub.broadcast!("rooms:#{mobile.room_id}:mobiles", {:mobile_died, mobile: mobile, reward: mobile.experience})
+    #ApathyDrive.Factions.add_to_bonus_pool(mobile.experience)
 
-    MonsterTemplate.set_last_killed_at(monster)
+    MonsterTemplate.set_last_killed_at(mobile)
 
-    ApathyDrive.Repo.delete!(monster)
     Process.exit(self, :normal)
   end
 

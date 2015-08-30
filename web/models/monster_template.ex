@@ -4,6 +4,7 @@ defmodule MonsterTemplate do
   use Timex
 
   alias ApathyDrive.Repo
+  alias ApathyDrive.Mobile
 
   schema "monster_templates" do
     field :name,                   :string
@@ -109,7 +110,7 @@ defmodule MonsterTemplate do
     GenServer.call(monster, :value)
   end
 
-  def set_last_killed_at(%Monster{monster_template_id: id}) do
+  def set_last_killed_at(%Mobile{monster_template_id: id}) do
     id
     |> find
     |> GenServer.cast(:set_last_killed_at)
@@ -170,6 +171,7 @@ defmodule MonsterTemplate do
       max_hp: monster_template.max_hp,
       enter_message: monster_template.enter_message,
       exit_message: monster_template.exit_message,
+      death_message: monster_template.death_message,
       alignment: monster_template.alignment,
       room_id: room.id,
       gender: monster_template.gender,
@@ -177,7 +179,9 @@ defmodule MonsterTemplate do
       level: monster_template.level,
       strength: monster_template.strength,
       agility: monster_template.agility,
-      will: monster_template.will
+      will: monster_template.will,
+      experience: monster_template.experience,
+      monster_template_id: monster_template.id
     }
 
     monster =
