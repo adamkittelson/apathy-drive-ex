@@ -38,8 +38,6 @@ defmodule ApathyDrive.Command do
         end
       cmd = Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
         cmd.module.execute(mobile, arguments)
-      # cmd = if mobile.spirit && mobile.spirit.class.name ->
-      #   cmd.module.execute(mobile, arguments)
       true ->
         Mobile.use_ability(mobile, command, arguments)
     end

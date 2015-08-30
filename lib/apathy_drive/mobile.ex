@@ -92,6 +92,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, :display_experience)
   end
 
+  def class_chat(pid, message) do
+    GenServer.cast(pid, {:class_chat, message})
+  end
+
   def aligned_spirit_name(mobile) when is_pid(mobile) do
     GenServer.call(mobile, :aligned_spirit_name)
   end
@@ -224,6 +228,7 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe(self, "spirits:online")
     ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
     ApathyDrive.PubSub.subscribe(self, "chat:gossip")
+    ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
     ApathyDrive.PubSub.subscribe(socket, "spirits:#{spirit.id}:socket")
 
     mobile =
@@ -511,6 +516,16 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_cast({:class_chat, message}, %Mobile{spirit: nil} = mobile) do
+    {:noreply, mobile}
+  end
+  def handle_cast({:class_chat, message}, %Mobile{spirit: spirit} = mobile) do
+    class_name = String.downcase(spirit.class.name)
+
+    ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
+    {:noreply, mobile}
+  end
+
   def handle_info(:display_prompt, %Mobile{socket: _socket} = mobile) do
     display_prompt(mobile)
 
@@ -645,6 +660,21 @@ defmodule ApathyDrive.Mobile do
   def handle_info({:gossip, name, message}, mobile) do
     send_scroll(mobile, "<p>[<span class='dark-magenta'>gossip</span> : #{name}] #{message}</p>")
 
+    {:noreply, mobile}
+  end
+
+  def handle_info({:angel, name, message}, mobile) do
+    send_scroll(mobile, "<p>[<span class='white'>angel</span> : #{name}] #{message}</p>")
+    {:noreply, mobile}
+  end
+
+  def handle_info({:elemental, name, message}, mobile) do
+    send_scroll(mobile, "<p>[<span class='dark-cyan'>elemental</span> : #{name}] #{message}</p>")
+    {:noreply, mobile}
+  end
+
+  def handle_info({:demon, name, message}, mobile) do
+    send_scroll(mobile, "<p>[<span class='magenta'>demon</span> : #{name}] #{message}</p>")
     {:noreply, mobile}
   end
 
