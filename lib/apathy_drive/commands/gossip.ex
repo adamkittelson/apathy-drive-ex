@@ -3,28 +3,9 @@ defmodule Commands.Gossip do
 
   def keywords, do: ["gos"]
 
-  def execute(%Spirit{} = spirit, arguments) do
+  def execute(mobile, arguments) do
     message = sanitize(arguments)
-    ApathyDrive.PubSub.broadcast!("chat:gossip", {:gossip, name(spirit), message})
-    spirit
-  end
-
-  def execute(%Monster{spirit: spirit} = monster, arguments) do
-    message = sanitize(arguments)
-    ApathyDrive.PubSub.broadcast!("chat:gossip", {:gossip, name(spirit), message})
-    monster
-  end
-
-  def name(%Spirit{name: name, alignment: "good"}) do
-    "<span class='white'>#{name}</span>"
-  end
-
-  def name(%Spirit{name: name, alignment: "neutral"}) do
-    "<span class='dark-cyan'>#{name}</span>"
-  end
-
-  def name(%Spirit{name: name, alignment: "evil"}) do
-    "<span class='magenta'>#{name}</span>"
+    ApathyDrive.PubSub.broadcast!("chat:gossip", {:gossip, Mobile.aligned_spirit_name(mobile), message})
   end
 
   def sanitize(arguments) do

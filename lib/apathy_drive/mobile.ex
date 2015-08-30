@@ -92,6 +92,19 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, :display_experience)
   end
 
+  def aligned_spirit_name(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :aligned_spirit_name)
+  end
+  def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "good"}}}) do
+    "<span class='white'>#{name}</span>"
+  end
+  def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "neutral"}}}) do
+    "<span class='dark-cyan'>#{name}</span>"
+  end
+  def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "evil"}}}) do
+    "<span class='magenta'>#{name}</span>"
+  end
+
   def interpolation_data(%Mobile{} = mobile),  do: %{name: mobile.name, gender: mobile.gender}
   def interpolation_data(pid) when is_pid(pid) do
     GenServer.call(pid, :interpolation_data)
@@ -210,6 +223,7 @@ defmodule ApathyDrive.Mobile do
 
     ApathyDrive.PubSub.subscribe(self, "spirits:online")
     ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
+    ApathyDrive.PubSub.subscribe(self, "chat:gossip")
     ApathyDrive.PubSub.subscribe(socket, "spirits:#{spirit.id}:socket")
 
     mobile =
@@ -464,6 +478,10 @@ defmodule ApathyDrive.Mobile do
     {:reply, interpolation_data(mobile), mobile}
   end
 
+  def handle_call(:aligned_spirit_name, _from, mobile) do
+    {:reply, aligned_spirit_name(mobile), mobile}
+  end
+
   def handle_call(:value, _from, mobile) do
     {:reply, mobile, mobile}
   end
@@ -622,6 +640,12 @@ defmodule ApathyDrive.Mobile do
 
       {:noreply, mobile}
     end
+  end
+
+  def handle_info({:gossip, name, message}, mobile) do
+    send_scroll(mobile, "<p>[<span class='dark-magenta'>gossip</span> : #{name}] #{message}</p>")
+
+    {:noreply, mobile}
   end
 
   def display_prompt(%Mobile{socket: socket} = mobile) do
