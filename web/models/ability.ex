@@ -159,11 +159,7 @@ defmodule Ability do
   def scale_effect(%Mobile{} = mobile, "damage", %{"potency" => potency}) do
     magic_damage_from_weapon = 1 # for now
 
-    average = (potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile)))
-
-    modifier = (80..120 |> Enum.shuffle |> List.first) / 100
-
-    trunc(average * modifier)
+    (potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile)))
   end
 
   def scale_effect(%Mobile{}, _effect_name, %{"potency" => potency}) do
@@ -549,11 +545,11 @@ defmodule Ability do
     |> :random.uniform
     |> :erlang.send_after(self, :think)
 
-    display_cast_message(mobile, ability, ability_user)
+    ability = display_cast_message(mobile, ability, ability_user)
 
     mobile
     |> apply_instant_effects(ability["instant_effects"], ability_user)
-    # |> add_duration_effects(ability)
+    |> add_duration_effects(ability)
   end
 
   def reduce_damage(%{"damage_type" => damage_type,
@@ -601,6 +597,7 @@ defmodule Ability do
     apply_instant_effects(monster, Map.delete(effects, "drain"), ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"damage" => damage} = effects, %Mobile{} = ability_user) do
+
     mobile = put_in(mobile.hp, mobile.hp - damage)
     mobile = put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + damage end))
 
@@ -671,11 +668,16 @@ defmodule Ability do
 
     PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
     |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
+
+    ability
   end
 
   def display_cast_message(%Mobile{} = mobile,
                            %{"cast_message" => _, "instant_effects" => %{"damage" => damage}} = ability,
                            %Mobile{} = ability_user) do
+
+    modifier = (80..120 |> Enum.shuffle |> List.first) / 100
+    damage = trunc(damage * modifier)
 
     cast_messages = cast_messages(ability, ability_user, mobile, %{"amount" => damage})
 
@@ -687,6 +689,8 @@ defmodule Ability do
 
     PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
     |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
+
+    put_in ability, ["instant_effects", "damage"], damage
   end
 
   def display_cast_message(%Mobile{} = mobile,
@@ -703,43 +707,38 @@ defmodule Ability do
 
     PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
     |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
+
+    ability
   end
 
-  def display_cast_message(%Mobile{} = mobile, %{}, %Mobile{}), do: mobile
+  def display_cast_message(%Mobile{} = mobile, %{} = ability, %Mobile{}), do: ability
 
-  def add_duration_effects(%Monster{} = monster,
-                           %Ability{
-                             properties: %{
+  def add_duration_effects(%Mobile{} = mobile,
+                           %{
                                "duration_effects" => %{
                                  "stack_key"   => _stack_key,
                                  "stack_count" => _stack_count
                                }
-                             }
-                           } = ability) do
+                             } = ability) do
 
-     monster
-     |> Systems.Effect.add(ability.properties["duration_effects"],
-                           ability.properties["duration"])
-     |> Monster.send_scroll("<p><span class='#{Ability.color(ability)}'>#{ability.properties["duration_effects"]["effect_message"]}</span></p>")
+     mobile
+     |> Systems.Effect.add(ability["duration_effects"], ability["duration"])
+     |> Mobile.send_scroll("<p><span class='#{Ability.color(ability)}'>#{ability["duration_effects"]["effect_message"]}</span></p>")
   end
-  def add_duration_effects(%Monster{} = monster,
-                           %Ability{
-                             properties: %{
+  def add_duration_effects(%Mobile{} = mobile,
+                           %{
                                "duration_effects" => effects
-                             }
-                           } = ability) do
+                             } = ability) do
 
     effects = effects
-              |> Map.put("stack_key",   ability.name)
+              |> Map.put("stack_key",   ability["name"])
               |> Map.put("stack_count", 1)
 
-    properties = Map.put(ability.properties, "duration_effects", effects)
+    ability = Map.put(ability, "duration_effects", effects)
 
-    ability = Map.put(ability, :properties, properties)
-
-    add_duration_effects(monster, ability)
+    add_duration_effects(mobile, ability)
   end
-  def add_duration_effects(%Monster{} = monster, %Ability{}), do: monster
+  def add_duration_effects(%Mobile{} = mobile, %{}), do: mobile
 
   def affects_target?(%Mobile{flags: _monster_flags}, %{"flags" => nil}), do: true
   def affects_target?(%Mobile{flags: monster_flags}, %{"flags" => ability_flags}) do

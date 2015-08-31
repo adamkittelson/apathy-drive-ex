@@ -198,7 +198,7 @@ defmodule ApathyDrive.Mobile do
   def send_scroll(mobile, message) when is_pid(mobile) do
     send mobile, {:send_scroll, message}
   end
-  def send_scroll(%Mobile{socket: nil}, _html),  do: nil
+  def send_scroll(%Mobile{socket: nil} = mobile, _html),  do: mobile
   def send_scroll(%Mobile{socket: socket} = mobile, html) do
     send(socket, {:scroll, html})
     mobile
@@ -215,7 +215,8 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
-      |> TimerManager.call_every({:monster_regen, 1_000, fn -> send(self, :regen) end})
+      |> TimerManager.call_every({:monster_regen, 1_000,    fn -> send(self, :regen) end})
+      |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -254,7 +255,8 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
-      |> TimerManager.call_every({:monster_regen, 1_000, fn -> send(self, :regen) end})
+      |> TimerManager.call_every({:monster_regen,    1_000, fn -> send(self, :regen) end})
+      |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -707,6 +709,45 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:demon, name, message}, mobile) do
     send_scroll(mobile, "<p>[<span class='magenta'>demon</span> : #{name}] #{message}</p>")
+    {:noreply, mobile}
+  end
+
+  def handle_info(:apply_periodic_effects, mobile) do
+
+    # periodic damage
+    mobile.effects
+    |> Map.values
+    |> Enum.filter(&(Map.has_key?(&1, "damage")))
+    |> Enum.each(fn(%{"damage" => damage, "effect_message" => message}) ->
+         ability = %{"kind" => "attack",
+                     "ignores_global_cooldown" => true,
+                     "flags" => [],
+                     "instant_effects" => %{"damage" => damage},
+                     "cast_message"    => %{"user" => message}}
+
+         send(self, {:apply_ability, ability, mobile})
+       end)
+
+    # # periodic heal
+    # monster.effects
+    # |> Map.values
+    # |> Enum.filter(&(Map.has_key?(&1, "heal")))
+    # |> Enum.each(fn(%{"heal" => heal}) ->
+    #     ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal" => heal}}}
+    # 
+    #     send(self, {:apply_ability, ability, monster})
+    #   end)
+    # 
+    # # periodic heal_mana
+    # monster.effects
+    # |> Map.values
+    # |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
+    # |> Enum.each(fn(%{"heal_mana" => heal}) ->
+    #     ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal_mana" => heal}}}
+    # 
+    #     send(self, {:apply_ability, ability, monster})
+    #   end)
+
     {:noreply, mobile}
   end
 
