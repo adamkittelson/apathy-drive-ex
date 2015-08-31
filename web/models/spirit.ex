@@ -57,7 +57,7 @@ defmodule Spirit do
     |> validate_inclusion(:gender, ["male", "female", nil])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> validate_unique(:name, on: Repo)
-    |> validate_length(:name, min: 1, max: 18)
+    |> validate_length(:name, min: 1, max: 12)
   end
 
   def sign_up_changeset(model, params \\ :empty) do

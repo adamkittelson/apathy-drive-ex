@@ -84,6 +84,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :exit_message)
   end
 
+  def score_data(pid) do
+    GenServer.call(pid, :score_data)
+  end
+
   def value(pid) do
     GenServer.call(pid, :value)
   end
@@ -380,6 +384,29 @@ defmodule ApathyDrive.Mobile do
 
   def top_threat([]),      do: nil
   def top_threat(targets), do: Enum.max(targets)
+
+  def handle_call(:score_data, _from, mobile) do
+    effects =
+      mobile.effects
+      |> Map.values
+      |> Enum.filter(&(Map.has_key?(&1, "effect_message")))
+      |> Enum.map(&(&1["effect_message"]))
+
+    data = %{name: mobile.spirit.name,
+             class: mobile.spirit.class.name,
+             level: mobile.spirit.level,
+             experience: mobile.spirit.experience,
+             hp: mobile.hp,
+             max_hp: mobile.max_hp,
+             mana: mobile.mana,
+             max_mana: mobile.max_mana,
+             strength: strength(mobile),
+             agility: agility(mobile),
+             will: will(mobile),
+             effects: effects}
+
+    {:reply, data, mobile}
+  end
 
   def handle_call(:data_for_who_list, _from, mobile) do
     data = %{name: mobile.spirit.name, possessing: "", class: mobile.spirit.class.name, alignment: mobile.spirit.class.alignment}
