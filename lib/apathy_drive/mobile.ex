@@ -34,7 +34,15 @@ defmodule ApathyDrive.Mobile do
             timers: %{},
             flags: [],
             experience: nil,
-            monster_template_id: nil
+            monster_template_id: nil,
+            physical_defense: 0,
+            magical_defense: 0,
+            fire_resistance: 0,
+            ice_resistance: 0,
+            stone_resistance: 0,
+            lightning_resistance: 0,
+            water_resistance: 0,
+            poison_resistance: 0
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -181,6 +189,73 @@ defmodule ApathyDrive.Mobile do
     send_scroll(mobile, "<p>You fumble in confusion!</p>")
     ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}", "scroll", %{:html => "<p>#{interpolate("{{user}} fumbles in confusion!", %{"user" => mobile})}</p>"}
     true
+  end
+
+  def reduce_damage(%Mobile{} = mobile, "physical defense") do
+    1 - (0.00044 * physical_defense(mobile))
+  end
+  def reduce_damage(%Mobile{} = mobile, "magical defense") do
+    1 - (0.00044 * magical_defense(mobile))
+  end
+  def reduce_damage(%Mobile{} = mobile, "fire resistance") do
+    1 - (0.01 * fire_resistance(mobile))
+  end
+  def reduce_damage(%Mobile{} = mobile, "ice resistance") do
+    1 - (0.01 * ice_resistance(mobile))
+  end
+  def reduce_damage(%Mobile{} = mobile, "stone resistance") do
+    1 - (0.01 * stone_resistance(mobile))
+  end
+  def reduce_damage(%Mobile{} = mobile, "lightning resistance") do
+    1 - (0.01 * lightning_resistance(mobile))
+  end
+  def reduce_damage(%Mobile{} = mobile, "water resistance") do
+    1 - (0.01 * water_resistance(mobile))
+  end
+  def reduce_damage(%Mobile{} = mobile, "poison resistance") do
+    1 - (0.01 * poison_resistance(mobile))
+  end
+
+  def reduce_damage(%Mobile{}, damage, nil), do: damage
+  def reduce_damage(%Mobile{}, damage, []),  do: damage
+  def reduce_damage(%Mobile{} = mobile, damage, mitigated_by) when is_list(mitigated_by) do
+    multiplier = Enum.reduce(mitigated_by, 1, fn(mitigating_factor, multiplier) ->
+      multiplier * reduce_damage(mobile, mitigating_factor)
+    end)
+
+    max(0, trunc(damage * multiplier))
+  end
+
+  def physical_defense(%Mobile{} = mobile) do
+    mobile.physical_defense
+  end
+
+  def magical_defense(%Mobile{} = mobile) do
+    mobile.magical_defense
+  end
+
+  def fire_resistance(%Mobile{} = mobile) do
+    mobile.fire_resistance
+  end
+
+  def ice_resistance(%Mobile{} = mobile) do
+    mobile.ice_resistance
+  end
+
+  def stone_resistance(%Mobile{} = mobile) do
+    mobile.stone_resistance
+  end
+
+  def lightning_resistance(%Mobile{} = mobile) do
+    mobile.lightning_resistance
+  end
+
+  def water_resistance(%Mobile{} = mobile) do
+    mobile.water_resistance
+  end
+
+  def poison_resistance(%Mobile{} = mobile) do
+    mobile.poison_resistance
   end
 
   def effect_bonus(%Mobile{effects: effects}, name) do
@@ -545,7 +620,7 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:class_chat, message}, %Mobile{spirit: nil} = mobile) do
+  def handle_cast({:class_chat, _message}, %Mobile{spirit: nil} = mobile) do
     {:noreply, mobile}
   end
   def handle_cast({:class_chat, message}, %Mobile{spirit: spirit} = mobile) do
@@ -734,17 +809,17 @@ defmodule ApathyDrive.Mobile do
     # |> Enum.filter(&(Map.has_key?(&1, "heal")))
     # |> Enum.each(fn(%{"heal" => heal}) ->
     #     ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal" => heal}}}
-    # 
+    #
     #     send(self, {:apply_ability, ability, monster})
     #   end)
-    # 
+    #
     # # periodic heal_mana
     # monster.effects
     # |> Map.values
     # |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
     # |> Enum.each(fn(%{"heal_mana" => heal}) ->
     #     ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal_mana" => heal}}}
-    # 
+    #
     #     send(self, {:apply_ability, ability, monster})
     #   end)
 

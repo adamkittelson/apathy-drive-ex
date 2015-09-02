@@ -176,7 +176,7 @@ defmodule Room do
     PubSub.subscribers("rooms:#{room_id}:mobiles", [pid])
   end
 
-  def mobiles(%Mobile{room_id: room_id} = mobile) do
+  def mobiles(%Mobile{room_id: room_id}) do
     PubSub.subscribers("rooms:#{room_id}:mobiles")
   end
 

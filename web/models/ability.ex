@@ -159,7 +159,7 @@ defmodule Ability do
   def scale_effect(%Mobile{} = mobile, "damage", %{"potency" => potency}) do
     magic_damage_from_weapon = 1 # for now
 
-    (potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile)))
+    trunc((potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile))))
   end
 
   def scale_effect(%Mobile{}, _effect_name, %{"potency" => potency}) do
@@ -552,30 +552,23 @@ defmodule Ability do
     |> add_duration_effects(ability)
   end
 
-  def reduce_damage(%{"damage_type" => damage_type,
-                      "instant_effects" => %{"damage" => damage}} = ability,
+  def reduce_damage(%{"instant_effects" => %{"damage" => damage}} = ability,
                     %Mobile{} = mobile,
-                    %Mobile{alignment: alignment}) do
+                    %Mobile{}) do
 
-    damage = Monster.reduce_damage(mobile, damage, damage_type)
+    modifier = (80..120 |> Enum.shuffle |> List.first) / 100
+    damage = trunc(damage * modifier)
 
-    damage = case alignment do
-      "good" ->
-        prgd = Monster.effect_bonus(mobile, "protection from good")
-        damage * (1 - prgd)
-      "evil" ->
-        prev = Monster.effect_bonus(mobile, "protection from evil")
-        damage * (1 - prev)
-      _ ->
-        damage
-    end
+    damage = Mobile.reduce_damage(mobile, damage, ability["instant_effects"]["mitigated_by"])
 
-    Map.put_in(ability["instant_effects"]["damage"], damage)
+    put_in(ability, ["instant_effects", "damage"], damage)
   end
   def reduce_damage(%{"instant_effects" => %{"drain" => drain}} = ability, mobile, ability_user) do
-     reduce_damage(put_in(ability["instant_effects"]["damage"], drain), mobile, ability_user)
+     reduce_damage(put_in(ability, ["instant_effects", "damage"], drain), mobile, ability_user)
   end
-  def reduce_damage(%{} = ability, _monster, _ability_user), do: ability
+  def reduce_damage(%{} = ability, _mobile, _ability_user) do
+    ability
+  end
 
   def trigger_damage_shields(%Mobile{pid: pid}, %Mobile{pid: attacker_pid}) when pid == attacker_pid, do: nil
   def trigger_damage_shields(%Mobile{} = mobile, %Mobile{} = attacker) do
@@ -597,7 +590,6 @@ defmodule Ability do
     apply_instant_effects(monster, Map.delete(effects, "drain"), ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"damage" => damage} = effects, %Mobile{} = ability_user) do
-
     mobile = put_in(mobile.hp, mobile.hp - damage)
     mobile = put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + damage end))
 
@@ -676,9 +668,6 @@ defmodule Ability do
                            %{"cast_message" => _, "instant_effects" => %{"damage" => damage}} = ability,
                            %Mobile{} = ability_user) do
 
-    modifier = (80..120 |> Enum.shuffle |> List.first) / 100
-    damage = trunc(damage * modifier)
-
     cast_messages = cast_messages(ability, ability_user, mobile, %{"amount" => damage})
 
     Mobile.send_scroll(ability_user, cast_messages["user"])
@@ -690,7 +679,7 @@ defmodule Ability do
     PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
     |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
 
-    put_in ability, ["instant_effects", "damage"], damage
+    ability
   end
 
   def display_cast_message(%Mobile{} = mobile,
@@ -711,7 +700,7 @@ defmodule Ability do
     ability
   end
 
-  def display_cast_message(%Mobile{} = mobile, %{} = ability, %Mobile{}), do: ability
+  def display_cast_message(%Mobile{}, %{} = ability, %Mobile{}), do: ability
 
   def add_duration_effects(%Mobile{} = mobile,
                            %{
