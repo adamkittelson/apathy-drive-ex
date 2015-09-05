@@ -1,0 +1,13 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<h2>Edit item</h2>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+
+<%= render "form.html", changeset: @changeset,
+                        action: item_path(@conn, :update, @item) %>
+
+<%= link "Back", to: item_path(@conn, :index) %>
+
+<script>require("web/static/js/json-edit")</script>
+<script>require("web/static/js/nav")</script>

@@ -1,0 +1,69 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<div class="row">
+  <div class="two columns">
+    &nbsp;
+    <%= if assigns[:page_number] > 1 do %>
+      <%= link "Previous Page", to: item_path(@conn, :index, page: @page_number - 1, q: @q), class: "button button-primary" %>
+    <% end %>
+  </div>
+  <div class="eight columns">&nbsp;</div>
+  <div class="two columns">
+    &nbsp;
+    <%= if assigns[:page_number] < assigns[:total_pages] do %>
+      <%= link "Next Page", to: item_path(@conn, :index, page: @page_number + 1, q: assigns[:q]), class: "button button-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<table class="admin-index">
+  <thead>
+    <tr>
+      <th colspan="10">Items - Page <%= @page_number %> of <%= @total_pages %></th>
+      <th colspan="1">Search<input id="search"/></th>
+    </tr>
+    <tr>
+      <th>Name</th>
+      <th>Weight</th>
+      <th>Worn on</th>
+      <th>Physical defense</th>
+      <th>Magical defense</th>
+      <th>Level</th>
+      <th>Strength</th>
+      <th>Agility</th>
+      <th>Will</th>
+      <th>Grade</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for item <- @items do %>
+    <tr>
+      <td><%= item.name %></td>
+      <td><%= item.weight %></td>
+      <td><%= item.worn_on %></td>
+      <td><%= item.physical_defense %></td>
+      <td><%= item.magical_defense %></td>
+      <td><%= item.level %></td>
+      <td><%= item.strength %></td>
+      <td><%= item.agility %></td>
+      <td><%= item.will %></td>
+      <td><%= item.grade %></td>
+
+      <td class="text-right">
+        <%= link "Show", to: item_path(@conn, :show, item), class: "button button-primary" %>
+        <%= link "Edit", to: item_path(@conn, :edit, item), class: "button button-primary" %>
+        <%= link "Delete", to: item_path(@conn, :delete, item), method: :delete, data: [confirm: "Are you sure?"], class: "button button-primary" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New item", to: item_path(@conn, :new), class: "button button-primary" %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>
+<script>require("web/static/js/json-edit")</script>
+

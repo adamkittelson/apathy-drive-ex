@@ -1,0 +1,63 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<h2><%= @item.name %></h2>
+
+<ul>
+  <li>
+    <strong>Description:</strong>
+    <%= @item.description %>
+  </li>
+
+  <li>
+    <strong>Weight:</strong>
+    <%= @item.weight %>
+  </li>
+
+  <li>
+    <strong>Worn on:</strong>
+    <%= @item.worn_on %>
+  </li>
+
+  <li>
+    <strong>Physical defense:</strong>
+    <%= @item.physical_defense %>
+  </li>
+
+  <li>
+    <strong>Magical defense:</strong>
+    <%= @item.magical_defense %>
+  </li>
+
+  <li>
+    <strong>Level:</strong>
+    <%= @item.level %>
+  </li>
+
+  <li>
+    <strong>Strength:</strong>
+    <%= @item.strength %>
+  </li>
+
+  <li>
+    <strong>Agility:</strong>
+    <%= @item.agility %>
+  </li>
+
+  <li>
+    <strong>Will:</strong>
+    <%= @item.will %>
+  </li>
+
+  <li>
+    <strong>Grade:</strong>
+    <%= @item.grade %>
+  </li>
+
+</ul>
+
+<%= link "Edit", to: item_path(@conn, :edit, @item), class: "button button-primary" %>
+<%= link "Back", to: item_path(@conn, :index), class: "button button-primary" %>
+
+<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script>require("web/static/js/nav")</script>
+
