@@ -31,6 +31,11 @@ defmodule Systems.Death do
 
   def kill(%Mobile{spirit: nil} = mobile) do
     ApathyDrive.PubSub.broadcast!("rooms:#{mobile.room_id}:mobiles", {:mobile_died, mobile: mobile, reward: mobile.experience})
+
+    mobile.room_id
+    |> Room.find
+    |> send({:generate_loot, mobile.level})
+
     #ApathyDrive.Factions.add_to_bonus_pool(mobile.experience)
 
     MonsterTemplate.set_last_killed_at(mobile)

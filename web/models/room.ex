@@ -242,8 +242,13 @@ defmodule Room do
   def light_desc(_light_level), do: nil
 
   def look_items(%Room{} = room) do
-    items = room.item_descriptions["visible"]
-            |> Map.keys
+    psuedo_items = room.item_descriptions["visible"]
+                   |> Map.keys
+
+    items = room.items
+            |> Enum.map(&(&1.name))
+
+    items = items ++ psuedo_items
 
     case Enum.count(items) do
       0 ->
@@ -684,6 +689,18 @@ defmodule Room do
 
   def handle_info({:room_updated, %{changes: changes}}, room) do
     {:noreply, Map.merge(room, changes)}
+  end
+
+  def handle_info({:generate_loot, level}, room) do
+    if :random.uniform(10) > 7 do
+      room =
+        room
+        |> Map.put(:items, [ApathyDrive.Item.generate_item(level) | room.items])
+        |> Repo.update!
+      {:noreply, room}
+    else
+      {:noreply, room}
+    end
   end
 
   def handle_info(_message, room) do

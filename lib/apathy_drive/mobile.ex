@@ -757,6 +757,8 @@ defmodule ApathyDrive.Mobile do
                |> Map.put(:spirit, new_spirit)
                |> set_abilities
 
+      send_scroll(mobile, "<p>You've advanced to level #{new_spirit.level}!</p>")
+
       {:noreply, mobile}
     else
       mobile = mobile
