@@ -17,8 +17,8 @@ defmodule Commands.Look do
           ApathyDrive.Exit.look(mobile, Enum.join(arguments, " "))
         target = mobile |> find_mobile_in_room(Enum.join(arguments, " ")) ->
           look_at_mobile(mobile, target)
-        # target = current_room |> find_item_in_room(Enum.join(arguments, " ")) ->
-        #   Spirit.send_scroll spirit, "<p>#{target}</p>"
+        target = mobile |> Mobile.room_id |> Room.find |> Room.find_item(Enum.join(arguments, " ")) ->
+          look_at_item(mobile, target)
       true ->
         Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
       end
@@ -56,25 +56,17 @@ defmodule Commands.Look do
     |> Systems.Match.one(:name_contains, string)
   end
 
-  defp find_item_in_room(%Room{item_descriptions: item_descriptions}, string) do
-    visible_item = item_descriptions["visible"]
-                   |> Map.keys
-                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Systems.Match.one(:keyword_starts_with, string)
+  defp look_at_item(mobile, description) when is_binary(description) do
+    Mobile.send_scroll mobile, "<p>#{description}</p>"
+  end
+  defp look_at_item(mobile, %{} = item) do
+    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{item["name"]}</span></p>")
+    Mobile.send_scroll(mobile, "<p>#{item["description"]}</p>\n\n")
 
-    hidden_item = item_descriptions["hidden"]
-                  |> Map.keys
-                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Systems.Match.one(:keyword_starts_with, string)
-
-    cond do
-      visible_item ->
-        item_descriptions["visible"][visible_item.name]
-      hidden_item ->
-        item_descriptions["hidden"][hidden_item.name]
-      true ->
-        nil
-    end
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Defense</span>: <span class='dark-cyan'>#{item["physical_defense"]}</span>       <span class='dark-green'>Magical Defense</span>: <span class='dark-cyan'>#{item["magical_defense"]}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Strength</span>: <span class='dark-cyan'>#{item["strength"]}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility</span>: <span class='dark-cyan'>#{item["agility"]}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will</span>: <span class='dark-cyan'>#{item["will"]}</span></p>")
   end
 
 end

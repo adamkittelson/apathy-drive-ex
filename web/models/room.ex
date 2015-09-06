@@ -109,6 +109,10 @@ defmodule Room do
     GenServer.call(room, {:look_data, mobile})
   end
 
+  def find_item(room, item) do
+    GenServer.call(room, {:find_item, item})
+  end
+
   def get_exit(room, direction) when is_pid(room) do
     GenServer.call(room, {:get_exit, direction})
   end
@@ -246,7 +250,7 @@ defmodule Room do
                    |> Map.keys
 
     items = room.items
-            |> Enum.map(&(&1.name))
+            |> Enum.map(&(&1["name"]))
 
     items = items ++ psuedo_items
 
@@ -435,6 +439,32 @@ defmodule Room do
 
   def handle_call(:value, _from, room) do
     {:reply, room, room}
+  end
+
+  def handle_call({:find_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
+    actual_item = items
+                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+                  |> Systems.Match.one(:keyword_starts_with, item)
+
+    visible_item = item_descriptions["visible"]
+                   |> Map.keys
+                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                   |> Systems.Match.one(:keyword_starts_with, item)
+
+    hidden_item = item_descriptions["hidden"]
+                  |> Map.keys
+                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                  |> Systems.Match.one(:keyword_starts_with, item)
+
+    item = cond do
+      visible_item ->
+        item_descriptions["visible"][visible_item.name]
+      hidden_item ->
+        item_descriptions["hidden"][hidden_item.name]
+      actual_item ->
+        actual_item.item
+    end
+    {:reply, item, room}
   end
 
   def handle_call({:temporarily_open?, direction}, _from, room) do

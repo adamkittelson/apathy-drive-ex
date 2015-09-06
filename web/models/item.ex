@@ -55,6 +55,8 @@ defmodule ApathyDrive.Item do
     |> Map.take([:name, :description, :weight, :worn_on,
                  :physical_defense, :magical_defense,
                  :level, :strength, :agility, :will, :grade])
+    |> Poison.encode! # dirty hack to
+    |> Poison.decode! # stringify the keys
   end
 
   def roll_stats(nil, _rolls),   do: nil
@@ -69,14 +71,14 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def enhance(%{strength: str, agility: agi, will: will} = item) do
+  def enhance(%{"strength" => str, "agility" => agi, "will" => will} = item) do
     case :random.uniform(str + agi + will) do
       roll when roll > (str + agi) ->
-        Map.put(item, :will, will + 1)
+        Map.put(item, "will", will + 1)
       roll when roll <= str ->
-        Map.put(item, :strength, str + 1)
+        Map.put(item, "strength", str + 1)
       _ ->
-        Map.put(item, :agility, agi + 1)
+        Map.put(item, "agility", agi + 1)
     end
   end
 end
