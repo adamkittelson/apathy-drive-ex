@@ -249,8 +249,13 @@ defmodule Room do
     psuedo_items = room.item_descriptions["visible"]
                    |> Map.keys
 
-    items = room.items
-            |> Enum.map(&(&1["name"]))
+    items = case room.items do
+      nil ->
+        []
+      items ->
+        items
+        |> Enum.map(&(&1["name"]))
+    end
 
     items = items ++ psuedo_items
 
