@@ -23,6 +23,7 @@ defmodule Room do
     field :legacy_id,             :string
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
+    field :items,                 ApathyDrive.JSONB, default: []
 
     timestamps
 

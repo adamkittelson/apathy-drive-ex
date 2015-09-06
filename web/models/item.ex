@@ -30,4 +30,53 @@ defmodule ApathyDrive.Item do
     model
     |> cast(params, @required_fields, @optional_fields)
   end
+
+  def items_below_level(level) do
+    query =
+      from i in __MODULE__,
+      where: i.level <= ^level
+
+    Repo.all(query)
+  end
+
+  def generate_item(level) do
+    level
+    |> items_below_level
+    |> Enum.shuffle
+    |> List.first
+    |> to_map
+    |> roll_stats(level)
+  end
+
+  def to_map(nil), do: nil
+  def to_map(%__MODULE__{} = item) do
+    item
+    |> Map.from_struct
+    |> Map.take([:name, :description, :weight, :worn_on,
+                 :physical_defense, :magical_defense,
+                 :level, :strength, :agility, :will, :grade])
+  end
+
+  def roll_stats(nil, _rolls),   do: nil
+  def roll_stats(%{} = item, 0), do: item
+  def roll_stats(%{} = item, rolls) do
+    if :random.uniform(10) > 7 do
+      item
+      |> enhance
+      |> roll_stats(rolls)
+    else
+      roll_stats(item, rolls - 1)
+    end
+  end
+
+  def enhance(%{strength: str, agility: agi, will: will} = item) do
+    case :random.uniform(str + agi + will) do
+      roll when roll > (str + agi) ->
+        Map.put(item, :will, will + 1)
+      roll when roll <= str ->
+        Map.put(item, :strength, str + 1)
+      _ ->
+        Map.put(item, :agility, agi + 1)
+    end
+  end
 end
