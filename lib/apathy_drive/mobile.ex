@@ -134,6 +134,68 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, :blind?)
   end
 
+  def display_inventory(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :display_inventory)
+  end
+  def display_inventory(%Mobile{spirit: nil}), do: nil
+  def display_inventory(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
+    if equipment |> Map.values |> Enum.any? do
+      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
+
+      equipment
+      |> Map.values
+      |> Enum.each fn(item) ->
+        send_scroll(mobile, "<p><span class='dark-green'>#{String.ljust(item["name"], 23)}</span><span class='dark-cyan'>(#{item["worn_on"]})</span></p>")
+      end
+      send_scroll(mobile, "<br>")
+    end
+
+    items = inventory |> Enum.map(&(&1["name"]))
+    if items |> Enum.count > 0 do
+      send_scroll(mobile, "<p>You are carrying #{Enum.join(items, ", ")}</p>")
+    else
+      send_scroll(mobile, "<p>You are carrying nothing.</p>")
+    end
+
+    display_encumbrance(mobile)
+  end
+
+  def display_encumbrance(%Mobile{spirit: nil}), do: nil
+  def display_encumbrance(%Mobile{} = mobile) do
+    current = current_encumbrance(mobile)
+    max = max_encumbrance(mobile)
+    percent = trunc((current / max) * 100)
+
+    display_encumbrance(mobile, current, max, percent)
+  end
+  def display_encumbrance(%Mobile{} = mobile, current, max, percent) when percent < 17 do
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> None [#{percent}%]</p>")
+  end
+  def display_encumbrance(%Mobile{} = mobile, current, max, percent) when percent < 34 do
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-green'>Light [#{percent}%]</span></p>")
+  end
+  def display_encumbrance(%Mobile{} = mobile, current, max, percent) when percent < 67 do
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-yellow'>Medium [#{percent}%]</span></p>")
+  end
+  def display_encumbrance(%Mobile{} = mobile, current, max, percent) do
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-red'>Heavy [#{percent}%]</span></p>")
+  end
+
+  def max_encumbrance(%Mobile{} = mobile) do
+    strength(mobile) * 48
+  end
+
+  def current_encumbrance(%Mobile{spirit: %Spirit{inventory: inventory}}) do
+    inventory
+    |> Enum.reduce(0, fn(item, encumbrance) ->
+        encumbrance + item["weight"]
+       end)
+  end
+
+  def remaining_encumbrance(%Mobile{} = mobile) do
+    max_encumbrance(mobile) - current_encumbrance(mobile)
+  end
+
   def held(mobile) when is_pid(mobile) do
     GenServer.call(mobile, :held?)
   end
@@ -589,6 +651,10 @@ defmodule ApathyDrive.Mobile do
 
   def handle_call(:aligned_spirit_name, _from, mobile) do
     {:reply, aligned_spirit_name(mobile), mobile}
+  end
+
+  def handle_call(:display_inventory, _from, mobile) do
+    {:reply, display_inventory(mobile), mobile}
   end
 
   def handle_call(:value, _from, mobile) do

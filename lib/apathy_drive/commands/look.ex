@@ -65,8 +65,8 @@ defmodule Commands.Look do
 
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Defense</span>: <span class='dark-cyan'>#{item["physical_defense"]}</span>       <span class='dark-green'>Magical Defense</span>: <span class='dark-cyan'>#{item["magical_defense"]}</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Strength</span>: <span class='dark-cyan'>#{item["strength"]}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility</span>: <span class='dark-cyan'>#{item["agility"]}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will</span>: <span class='dark-cyan'>#{item["will"]}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility</span>:  <span class='dark-cyan'>#{item["agility"]}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will</span>:     <span class='dark-cyan'>#{item["will"]}</span></p>")
   end
 
 end

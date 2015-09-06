@@ -29,6 +29,8 @@ defmodule Spirit do
     field :abilities,         :any, virtual: true
     field :timers,            :any, virtual: true, default: %{}
     field :admin,             :boolean
+    field :inventory,         ApathyDrive.JSONB, default: []
+    field :equipment,         ApathyDrive.JSONB, default: %{}
 
     belongs_to :class, ApathyDrive.Class
 
