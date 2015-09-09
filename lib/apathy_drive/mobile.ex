@@ -160,6 +160,14 @@ defmodule ApathyDrive.Mobile do
     display_encumbrance(mobile)
   end
 
+  def get_item(mobile, item) do
+    GenServer.call(mobile, {:get_item, item})
+  end
+
+  def drop_item(mobile, item) do
+    GenServer.call(mobile, {:drop_item, item})
+  end
+
   def display_encumbrance(%Mobile{spirit: nil}), do: nil
   def display_encumbrance(%Mobile{} = mobile) do
     current = current_encumbrance(mobile)
@@ -545,6 +553,27 @@ defmodule ApathyDrive.Mobile do
              effects: effects}
 
     {:reply, data, mobile}
+  end
+
+  def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
+    if remaining_encumbrance(mobile) >= weight do
+      {:reply, :ok, put_in(mobile.spirit.inventory, [item | inventory])}
+    else
+      {:reply, :too_heavy, mobile}
+    end
+  end
+
+  def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
+    item = inventory
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Systems.Match.one(:keyword_starts_with, item)
+
+    case item do
+      nil ->
+        {:reply, :not_found, mobile}
+      %{item: item} ->
+        {:reply, {:ok, item}, put_in(mobile.spirit.inventory, List.delete(inventory, item))}
+    end
   end
 
   def handle_call(:data_for_who_list, _from, mobile) do

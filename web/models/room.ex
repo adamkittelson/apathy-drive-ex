@@ -31,7 +31,8 @@ defmodule Room do
     belongs_to :ability,  Ability
   end
 
-  def init(%Room{} = room) do
+  def init(id) do
+    room = Repo.get!(Room, id)
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
 
@@ -80,20 +81,14 @@ defmodule Room do
   end
 
   def load(id) do
-    case Repo.get(Room, id) do
-      %Room{} = room ->
-
-        case Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, room, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]}) do
-          {:error, {:already_started, pid}} ->
-            pid
-          {:ok, pid} ->
-            # Hack to give the newly spawned pid a chance to handle messages in its mailbox before returning it
-            # e.g. load monsters etc
-            :timer.sleep(50)
-            pid
-        end
-      nil ->
-        nil
+    case Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, id, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]}) do
+      {:error, {:already_started, pid}} ->
+        pid
+      {:ok, pid} ->
+        # Hack to give the newly spawned pid a chance to handle messages in its mailbox before returning it
+        # e.g. load monsters etc
+        :timer.sleep(50)
+        pid
     end
   end
 
@@ -107,6 +102,10 @@ defmodule Room do
 
   def get_look_data(room, mobile) do
     GenServer.call(room, {:look_data, mobile})
+  end
+
+  def get_item(room, item) do
+    GenServer.call(room, {:get_item, item})
   end
 
   def find_item(room, item) do
@@ -126,6 +125,10 @@ defmodule Room do
 
   def command_exit(room, string) do
     GenServer.call(room, {:command_exit, string})
+  end
+
+  def add_item(room, item) do
+    GenServer.cast(room, {:add_item, item})
   end
 
   def unlocked?(room, direction) when is_pid(room) do
@@ -446,6 +449,37 @@ defmodule Room do
     {:reply, room, room}
   end
 
+  def handle_call({:get_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
+    actual_item = items
+                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+                  |> Systems.Match.one(:keyword_starts_with, item)
+
+    visible_item = item_descriptions["visible"]
+                   |> Map.keys
+                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                   |> Systems.Match.one(:keyword_starts_with, item)
+
+    hidden_item = item_descriptions["hidden"]
+                  |> Map.keys
+                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                  |> Systems.Match.one(:keyword_starts_with, item)
+
+    cond do
+      visible_item ->
+        {:reply, {:cant_get, visible_item.name}, room}
+      hidden_item ->
+        {:reply, {:cant_get, hidden_item.name}, room}
+      actual_item ->
+        room =
+          room
+          |> Map.put(:items, List.delete(room.items, actual_item.item))
+          |> Repo.update!
+        {:reply, actual_item.item, room}
+      true ->
+        {:reply, :not_found, room}
+    end
+  end
+
   def handle_call({:find_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -468,6 +502,8 @@ defmodule Room do
         item_descriptions["hidden"][hidden_item.name]
       actual_item ->
         actual_item.item
+      true ->
+        nil
     end
     {:reply, item, room}
   end
@@ -531,6 +567,10 @@ defmodule Room do
                       end)
 
     {:reply, command_exit, room}
+  end
+
+  def handle_cast({:add_item, item}, %Room{items: items} = room) do
+    {:noreply, put_in(room.items, [item | items])}
   end
 
   # GenServer callbacks
