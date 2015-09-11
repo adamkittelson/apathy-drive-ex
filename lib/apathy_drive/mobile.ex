@@ -126,6 +126,26 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :interpolation_data)
   end
 
+  def display_prompt(%Mobile{socket: socket} = mobile) do
+    ApathyDrive.PubSub.broadcast_from! socket, "spirits:#{mobile.spirit.id}:socket", :go_home
+
+    send(socket, {:disable_element, "#prompt"})
+    send(socket, {:disable_element, "#command"})
+    send(socket, {:scroll, "<p><span id='prompt'>#{prompt(mobile)}</span><input id='command' size='50' class='prompt'></input></p>"})
+    send(socket, {:focus_element, "#command"})
+    send(socket, :up)
+  end
+
+  def update_prompt(%Mobile{socket: nil}), do: :noop
+
+  def update_prompt(%Mobile{socket: socket} = mobile) do
+    send(socket, {:update_prompt, prompt(mobile)})
+  end
+
+  def prompt(%Mobile{} = mobile) do
+    "[HP=#{mobile.hp}/MA=#{mobile.mana}]:"
+  end
+
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
@@ -139,11 +159,10 @@ defmodule ApathyDrive.Mobile do
   end
   def display_inventory(%Mobile{spirit: nil}), do: nil
   def display_inventory(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
-    if equipment |> Map.values |> Enum.any? do
+    if equipment |> Enum.any? do
       Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
 
       equipment
-      |> Map.values
       |> Enum.each fn(item) ->
         send_scroll(mobile, "<p><span class='dark-green'>#{String.ljust(item["name"], 23)}</span><span class='dark-cyan'>(#{item["worn_on"]})</span></p>")
       end
@@ -166,6 +185,10 @@ defmodule ApathyDrive.Mobile do
 
   def drop_item(mobile, item) do
     GenServer.call(mobile, {:drop_item, item})
+  end
+
+  def equip_item(mobile, item) do
+    GenServer.call(mobile, {:equip_item, item})
   end
 
   def display_encumbrance(%Mobile{spirit: nil}), do: nil
@@ -576,6 +599,51 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
+  def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
+    item = inventory
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Systems.Match.one(:keyword_starts_with, item)
+
+    case item do
+      nil ->
+        {:reply, :not_found, mobile}
+      %{item: %{"worn_on" => worn_on} = item} ->
+        if Enum.count(equipment, &(&1["worn_on"] == worn_on)) >= worn_on_max(item) do
+          item_to_remove =
+            equipment
+            |> Enum.find(&(&1["worn_on"] == worn_on))
+
+          equipment =
+            equipment
+            |> List.delete(item_to_remove)
+            |> List.insert_at(-1, item)
+
+          inventory =
+            inventory
+            |> List.insert_at(-1, item_to_remove)
+            |> List.delete(item)
+
+            mobile = put_in(mobile.spirit.inventory, inventory)
+            mobile = put_in(mobile.spirit.equipment, equipment)
+
+          {:reply, {:ok, %{equipped: item, unequipped: item_to_remove}}, mobile}
+        else
+          equipment =
+            equipment
+            |> List.insert_at(-1, item)
+
+          inventory =
+            inventory
+            |> List.delete(item)
+
+          mobile = put_in(mobile.spirit.inventory, inventory)
+          mobile = put_in(mobile.spirit.equipment, equipment)
+
+          {:reply, {:ok, %{equipped: item}}, mobile}
+        end
+    end
+  end
+
   def handle_call(:data_for_who_list, _from, mobile) do
     data = %{name: mobile.spirit.name, possessing: "", class: mobile.spirit.class.name, alignment: mobile.spirit.class.alignment}
 
@@ -923,37 +991,8 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def display_prompt(%Mobile{socket: socket} = mobile) do
-    ApathyDrive.PubSub.broadcast_from! socket, "spirits:#{mobile.spirit.id}:socket", :go_home
-
-    send(socket, {:disable_element, "#prompt"})
-    send(socket, {:disable_element, "#command"})
-    send(socket, {:scroll, "<p><span id='prompt'>#{prompt(mobile)}</span><input id='command' size='50' class='prompt'></input></p>"})
-    send(socket, {:focus_element, "#command"})
-    send(socket, :up)
-  end
-
-  def update_prompt(%Mobile{socket: nil}), do: :noop
-
-  def update_prompt(%Mobile{socket: socket} = mobile) do
-    send(socket, {:update_prompt, prompt(mobile)})
-  end
-
-  # def update(%Spirit{} = spirit) do
-  #   spirit
-  #   |> Spirit.send_update_prompt(prompt(spirit))
-  # end
-  #
-  # def update(%Monster{} = monster) do
-  #   Monster.send_update_prompt(monster, prompt(monster))
-  # end
-  #
-  # def prompt(%Spirit{} = spirit) do
-  #   "[Level=#{spirit.level}/MA=#{spirit.mana}]:"
-  # end
-  #
-  def prompt(%Mobile{} = mobile) do
-    "[HP=#{mobile.hp}/MA=#{mobile.mana}]:"
-  end
+  defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
+  defp worn_on_max(%{"worn_on" => "Wrist"}),  do: 2
+  defp worn_on_max(%{"worn_on" => _}),        do: 1
 
 end
