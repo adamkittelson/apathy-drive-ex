@@ -491,7 +491,14 @@ defmodule ApathyDrive.Mobile do
   end
 
   def attribute(%Mobile{level: level} = mobile, attribute) do
-    Map.get(mobile, attribute) + (level * Map.get(mobile, :"#{attribute}_per_level"))
+    Map.get(mobile, attribute) +
+    (level * Map.get(mobile, :"#{attribute}_per_level")) +
+    attribute_from_equipment(mobile, attribute)
+  end
+
+  def attribute_from_equipment(%Mobile{spirit: nil}, _), do: 0
+  def attribute_from_equipment(%Mobile{spirit: %Spirit{equipment: equipment}}, attribute) do
+    Enum.reduce(equipment, 0, &(&2 + &1[Atom.to_string(attribute)]))
   end
 
   def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
@@ -638,6 +645,12 @@ defmodule ApathyDrive.Mobile do
 
           mobile = put_in(mobile.spirit.inventory, inventory)
           mobile = put_in(mobile.spirit.equipment, equipment)
+                   |> set_max_mana
+                   |> set_mana
+                   |> set_max_hp
+                   |> set_hp
+
+          Repo.update!(mobile.spirit)
 
           {:reply, {:ok, %{equipped: item}}, mobile}
         end
