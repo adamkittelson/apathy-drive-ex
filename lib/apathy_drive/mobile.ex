@@ -191,6 +191,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, {:equip_item, item})
   end
 
+  def unequip_item(mobile, item) do
+    GenServer.call(mobile, {:unequip_item, item})
+  end
+
   def display_encumbrance(%Mobile{spirit: nil}), do: nil
   def display_encumbrance(%Mobile{} = mobile) do
     current = current_encumbrance(mobile)
@@ -632,6 +636,12 @@ defmodule ApathyDrive.Mobile do
 
             mobile = put_in(mobile.spirit.inventory, inventory)
             mobile = put_in(mobile.spirit.equipment, equipment)
+                     |> set_max_mana
+                     |> set_mana
+                     |> set_max_hp
+                     |> set_hp
+
+            Repo.update!(mobile.spirit)
 
           {:reply, {:ok, %{equipped: item, unequipped: item_to_remove}}, mobile}
         else
@@ -654,6 +664,36 @@ defmodule ApathyDrive.Mobile do
 
           {:reply, {:ok, %{equipped: item}}, mobile}
         end
+    end
+  end
+
+  def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
+    item = equipment
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Systems.Match.one(:keyword_starts_with, item)
+
+    case item do
+      nil ->
+        {:reply, :not_found, mobile}
+      %{item: item_to_remove} ->
+        equipment =
+          equipment
+          |> List.delete(item_to_remove)
+
+        inventory =
+          inventory
+          |> List.insert_at(-1, item_to_remove)
+
+          mobile = put_in(mobile.spirit.inventory, inventory)
+          mobile = put_in(mobile.spirit.equipment, equipment)
+                   |> set_max_mana
+                   |> set_mana
+                   |> set_max_hp
+                   |> set_hp
+
+          Repo.update!(mobile.spirit)
+
+        {:reply, {:ok, %{unequipped: item_to_remove}}, mobile}
     end
   end
 
