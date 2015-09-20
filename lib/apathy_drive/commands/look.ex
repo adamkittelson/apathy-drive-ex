@@ -19,8 +19,10 @@ defmodule Commands.Look do
           look_at_mobile(mobile, target)
         target = mobile |> Mobile.room_id |> Room.find |> Room.find_item(Enum.join(arguments, " ")) ->
           look_at_item(mobile, target)
-      true ->
-        Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
+        target = mobile |> Mobile.find_item(Enum.join(arguments, " ")) ->
+          look_at_item(mobile, target)
+        true ->
+          Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
       end
     else
       look_at_room(mobile)

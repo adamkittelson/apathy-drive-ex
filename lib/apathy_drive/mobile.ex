@@ -195,6 +195,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, {:unequip_item, item})
   end
 
+  def find_item(mobile, item) do
+    GenServer.call(mobile, {:find_item, item})
+  end
+
   def display_encumbrance(%Mobile{spirit: nil}), do: nil
   def display_encumbrance(%Mobile{} = mobile) do
     current = current_encumbrance(mobile)
@@ -694,6 +698,19 @@ defmodule ApathyDrive.Mobile do
           Repo.update!(mobile.spirit)
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, mobile}
+    end
+  end
+
+  def handle_call({:find_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
+    item = (inventory ++ equipment)
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Systems.Match.one(:keyword_starts_with, item)
+
+    case item do
+      nil ->
+        {:reply, nil, mobile}
+      %{item: item} ->
+        {:reply, item, mobile}
     end
   end
 
