@@ -391,6 +391,8 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
+      |> set_physical_defense
+      |> set_magical_defense
       |> TimerManager.call_every({:monster_regen, 1_000,    fn -> send(self, :regen) end})
       |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
 
@@ -431,6 +433,8 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
+      |> set_physical_defense
+      |> set_magical_defense
       |> TimerManager.call_every({:monster_regen,    1_000, fn -> send(self, :regen) end})
       |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
 
@@ -484,6 +488,28 @@ defmodule ApathyDrive.Mobile do
 
   def set_max_hp(%Mobile{} = mobile) do
     Map.put(mobile, :max_hp, trunc(strength(mobile) * 1.45 + (0.025 * mobile.level)))
+  end
+
+  def set_physical_defense(%Mobile{} = mobile) do
+    Map.put(mobile, :physical_defense, physical_defense_from_items(mobile))
+  end
+
+  def set_magical_defense(%Mobile{} = mobile) do
+    Map.put(mobile, :magical_defense, magical_defense_from_items(mobile))
+  end
+
+  def physical_defense_from_items(%Mobile{spirit: nil}), do: 0
+  def physical_defense_from_items(%Mobile{spirit: %Spirit{equipment: equipment}}) do
+    Enum.reduce(equipment, 0, fn(item, total) ->
+      total + item["physical_defense"]
+    end)
+  end
+
+  def magical_defense_from_items(%Mobile{spirit: nil}), do: 0
+  def magical_defense_from_items(%Mobile{spirit: %Spirit{equipment: equipment}}) do
+    Enum.reduce(equipment, 0, fn(item, total) ->
+      total + item["magical_defense"]
+    end)
   end
 
   def strength(%Mobile{} = mobile) do
@@ -588,7 +614,9 @@ defmodule ApathyDrive.Mobile do
              strength: strength(mobile),
              agility: agility(mobile),
              will: will(mobile),
-             effects: effects}
+             effects: effects,
+             physical_defense: physical_defense(mobile),
+             magical_defense: magical_defense(mobile)}
 
     {:reply, data, mobile}
   end
@@ -644,6 +672,8 @@ defmodule ApathyDrive.Mobile do
                      |> set_mana
                      |> set_max_hp
                      |> set_hp
+                     |> set_physical_defense
+                     |> set_magical_defense
 
             Repo.update!(mobile.spirit)
 
@@ -663,6 +693,8 @@ defmodule ApathyDrive.Mobile do
                    |> set_mana
                    |> set_max_hp
                    |> set_hp
+                   |> set_physical_defense
+                   |> set_magical_defense
 
           Repo.update!(mobile.spirit)
 
@@ -694,6 +726,8 @@ defmodule ApathyDrive.Mobile do
                    |> set_mana
                    |> set_max_hp
                    |> set_hp
+                   |> set_physical_defense
+                   |> set_magical_defense
 
           Repo.update!(mobile.spirit)
 
