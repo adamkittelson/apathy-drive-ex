@@ -1,8 +1,10 @@
 defmodule ApathyDrive.Mobile do
   alias ApathyDrive.Mobile
   alias ApathyDrive.Repo
+  alias ApathyDrive.PubSub
   use GenServer
   import Systems.Text
+  import BlockTimer
 
   defstruct spirit: nil,
             socket: nil,
@@ -42,7 +44,9 @@ defmodule ApathyDrive.Mobile do
             stone_resistance: 0,
             lightning_resistance: 0,
             water_resistance: 0,
-            poison_resistance: 0
+            poison_resistance: 0,
+            attack_target: nil,
+            auto_attack_interval: 2.0
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -1093,6 +1097,78 @@ defmodule ApathyDrive.Mobile do
     #   end)
 
     {:noreply, mobile}
+  end
+
+  def handle_info({:attack, target}, mobile) do
+
+    mobile =
+      mobile
+      |> send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+      |> set_attack_target(target)
+      |> initiate_combat
+
+    {:noreply, mobile}
+  end
+
+  def handle_info(:execute_auto_attack, %Mobile{attack_target: nil} = mobile) do
+    send_scroll(mobile, "<p><span class='dark-yellow'>*Combat Off*</span></p>")
+    {:noreply, mobile}
+  end
+  def handle_info(:execute_auto_attack, %Mobile{attack_target: target, auto_attack_interval: interval} = mobile) do
+    if Process.alive?(target) and target in PubSub.subscribers("rooms:#{mobile.room_id}:mobiles") do
+      execute_auto_attack(mobile, target)
+
+      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval |> seconds, fn ->
+        send(self, :execute_auto_attack)
+      end})
+      {:noreply, mobile}
+    else
+      mobile =
+        mobile
+        |> send_scroll("<p><span class='dark-yellow'>*Combat Off*</span></p>")
+        |> Map.put(:attack_target, nil)
+
+      {:noreply, mobile}
+    end
+  end
+
+  defp execute_auto_attack(%Mobile{} = mobile, target) do
+    attack =
+      mobile.abilities
+      |> Enum.filter(&(&1["kind"] == "auto_attack"))
+      |> Enum.shuffle
+      |> List.first
+
+    if attack do
+      attack =
+        attack
+        |> Map.put("ignores_global_cooldown", true)
+        |> Map.put("kind", "attack")
+
+      send(self, {:execute_ability, attack, [target]})
+    end
+  end
+
+  defp set_attack_target(%Mobile{attack_target: attack_target} = mobile, target) when attack_target == target do
+    mobile
+  end
+  defp set_attack_target(%Mobile{} = mobile, target) do
+    Task.start fn ->
+      PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, target])
+      |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-yellow'>#{mobile.name} moves to attack #{Mobile.name(target)}.</span></p>")))
+
+      send_scroll(target, "<p><span class='dark-yellow'>#{mobile.name} moves to attack you.</span></p>")
+    end
+
+    Map.put(mobile, :attack_target, target)
+  end
+
+  defp initiate_combat(%Mobile{timers: %{auto_attack_timer: _}} = mobile) do
+    mobile
+  end
+  defp initiate_combat(%Mobile{} = mobile) do
+    send(mobile.pid, :execute_auto_attack)
+    mobile
   end
 
   defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
