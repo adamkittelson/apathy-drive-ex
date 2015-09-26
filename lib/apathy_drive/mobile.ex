@@ -46,7 +46,8 @@ defmodule ApathyDrive.Mobile do
             water_resistance: 0,
             poison_resistance: 0,
             attack_target: nil,
-            auto_attack_interval: 2.0
+            auto_attack_interval: 2.0,
+            highest_armour_grade: 0
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -390,6 +391,7 @@ defmodule ApathyDrive.Mobile do
     mobile =
       mobile
       |> Map.put(:pid, self)
+      |> set_highest_armour_grade
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -432,6 +434,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:will_per_level, spirit.class.will_per_level)
       |> Map.put(:name, spirit.name)
       |> Map.put(:level, spirit.level)
+      |> set_highest_armour_grade
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -448,15 +451,70 @@ defmodule ApathyDrive.Mobile do
     {:ok, mobile}
   end
 
+  def set_highest_armour_grade(%Mobile{spirit: nil} = mobile) do
+    Map.put(mobile, :highest_armour_grade, 0)
+  end
+  def set_highest_armour_grade(%Mobile{spirit: %Spirit{inventory: [], equipment: []}} = mobile) do
+    Map.put(mobile, :highest_armour_grade, 0)
+  end
+  # if a spirit is holding anything ot loses its ethereal status
+  def set_highest_armour_grade(%Mobile{spirit: %Spirit{inventory: _inv, equipment: []}} = mobile) do
+    Map.put(mobile, :highest_armour_grade, 1)
+  end
+  def set_highest_armour_grade(%Mobile{spirit: %Spirit{equipment: equipment}} = mobile) do
+    highest_grade =
+      equipment
+      |> Enum.max_by(&(&1["grade"]))
+      |> Map.get("grade")
+
+    Map.put(mobile, :highest_armour_grade, highest_grade)
+  end
+
   def set_abilities(%Mobile{spirit: nil} = mobile), do: adjust_mana_costs(mobile)
   def set_abilities(%Mobile{spirit: spirit, level: level} = mobile) do
     abilities =
      spirit.class.abilities
      |> Enum.filter(&(Map.get(&1, "level", 0) <= level))
+     |> Enum.reject(&(Map.get(&1, "min_armour_type", 1) > mobile.highest_armour_grade))
+     |> Enum.reject(&(Map.get(&1, "max_armour_type", 10) < mobile.highest_armour_grade))
 
     mobile
     |> Map.put(:abilities, abilities)
+    |> set_passive_effects
     |> adjust_mana_costs
+  end
+
+  def set_passive_effects(%Mobile{abilities: []} = mobile) do
+    remove_passive_effects(mobile, passive_effects(mobile))
+  end
+  def set_passive_effects(%Mobile{abilities: abilities} = mobile) do
+    original_passives = passive_effects(mobile)
+
+    new_passives =
+      abilities
+      |> Enum.filter(&(Map.has_key?(&1, "passive_effects")))
+      |> Enum.map(&(%{"name" => "passive_#{&1["name"]}", "passive_effects" => &1["passive_effects"]}))
+
+    passives_to_remove = original_passives -- Enum.map(new_passives, &(Map.get(&1, "name")))
+
+    mobile = remove_passive_effects(mobile, passives_to_remove)
+
+    new_passives
+    |> Enum.reduce(mobile, fn(%{"name" => name, "passive_effects" => effect}, new_mobile) ->
+         Systems.Effect.add_effect(new_mobile, name, effect)
+       end)
+  end
+
+  def remove_passive_effects(%Mobile{} = mobile, effect_keys_to_remove) do
+    Enum.reduce(effect_keys_to_remove, mobile, fn(effect_key, new_mobile) ->
+      Systems.Effect.remove(new_mobile, effect_key)
+    end)
+  end
+
+  def passive_effects(%Mobile{effects: effects}) do
+    effects
+    |> Map.keys
+    |> Enum.filter(&(String.starts_with?(&1, "passive")))
   end
 
   def adjust_mana_costs(%Mobile{} = mobile) do
@@ -466,7 +524,6 @@ defmodule ApathyDrive.Mobile do
 
     Map.put(mobile, "abilities", abilities)
   end
-
   def adjust_mana_cost(%Mobile{level: level}, %{"mana_cost" => base} = ability) do
     Map.put(ability, "mana_cost",  trunc(base + base * ((level * 0.1) * ((level * 0.1)))))
   end
@@ -627,7 +684,14 @@ defmodule ApathyDrive.Mobile do
 
   def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
     if remaining_encumbrance(mobile) >= weight do
-      {:reply, :ok, put_in(mobile.spirit.inventory, [item | inventory])}
+      mobile =
+        put_in(mobile.spirit.inventory, [item | inventory])
+        |> set_highest_armour_grade
+        |> set_abilities
+
+        Repo.update!(mobile.spirit)
+
+      {:reply, :ok, mobile}
     else
       {:reply, :too_heavy, mobile}
     end
@@ -642,7 +706,14 @@ defmodule ApathyDrive.Mobile do
       nil ->
         {:reply, :not_found, mobile}
       %{item: item} ->
-        {:reply, {:ok, item}, put_in(mobile.spirit.inventory, List.delete(inventory, item))}
+        mobile =
+          put_in(mobile.spirit.inventory, List.delete(inventory, item))
+          |> set_highest_armour_grade
+          |> set_abilities
+
+          Repo.update!(mobile.spirit)
+
+        {:reply, {:ok, item}, mobile}
     end
   end
 
@@ -672,6 +743,8 @@ defmodule ApathyDrive.Mobile do
 
             mobile = put_in(mobile.spirit.inventory, inventory)
             mobile = put_in(mobile.spirit.equipment, equipment)
+                     |> set_highest_armour_grade
+                     |> set_abilities
                      |> set_max_mana
                      |> set_mana
                      |> set_max_hp
@@ -693,6 +766,8 @@ defmodule ApathyDrive.Mobile do
 
           mobile = put_in(mobile.spirit.inventory, inventory)
           mobile = put_in(mobile.spirit.equipment, equipment)
+                   |> set_highest_armour_grade
+                   |> set_abilities
                    |> set_max_mana
                    |> set_mana
                    |> set_max_hp
@@ -726,6 +801,8 @@ defmodule ApathyDrive.Mobile do
 
           mobile = put_in(mobile.spirit.inventory, inventory)
           mobile = put_in(mobile.spirit.equipment, equipment)
+                   |> set_highest_armour_grade
+                   |> set_abilities
                    |> set_max_mana
                    |> set_mana
                    |> set_max_hp

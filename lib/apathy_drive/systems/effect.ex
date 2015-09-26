@@ -38,6 +38,10 @@ defmodule Systems.Effect do
   end
 
   def add_effect(%{effects: effects} = entity, key, effect) do
+    if Map.has_key?(effect, "application_message") do
+      send_scroll(entity, "<p><span class='dark-yellow'>#{effect["application_message"]}</span></p>")
+    end
+
     effects = Map.put(effects, key, effect)
     Map.put(entity, :effects, effects)
   end
@@ -69,6 +73,12 @@ defmodule Systems.Effect do
           TimerManager.cancel(entity, timer_name)
         end)
         send(self, :think)
+        Map.put entity, :effects, Map.delete(effects, key)
+      %{"expiration_message" => expiration_message} ->
+        send_scroll(entity, "<p><span class='dark-yellow'>#{expiration_message}</span></p>")
+
+        Map.put entity, :effects, Map.delete(effects, key)
+      %{} ->
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->
         found_key = effects
