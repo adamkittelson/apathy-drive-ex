@@ -2,8 +2,8 @@ defmodule ApathyDrive.AI do
   alias ApathyDrive.Mobile
 
   def think(%Mobile{} = mobile) do
-    #heal(monster) || bless(monster) || attack(monster) || monster
-    mobile
+    #heal(monster) || bless(monster) ||
+    attack(mobile) || mobile
   end
 
   def heal(%Monster{hp: hp, max_hp: max_hp, spirit: nil} = monster) do
@@ -40,17 +40,13 @@ defmodule ApathyDrive.AI do
   end
   def bless(%Monster{}), do: nil
 
-  def attack(%Monster{spirit: nil} = monster) do
-    if target = Monster.aggro_target(monster) do
+  def attack(%Mobile{spirit: nil} = mobile) do
+    if target = Mobile.aggro_target(mobile) do
 
       attack = cond do
-        !Monster.on_attack_cooldown?(monster) ->
-          monster
-           |> Monster.monster_attacks
-           |> ApathyDrive.Command.select_ability
-        !Monster.on_global_cooldown?(monster) ->
-           monster
-           |> Monster.attack_abilities
+        !Ability.on_global_cooldown?(mobile) ->
+           mobile
+           |> Ability.attack_abilities
            |> random_ability
         true ->
           nil
@@ -58,24 +54,17 @@ defmodule ApathyDrive.AI do
 
       if attack do
         send(self, {:execute_ability, attack, [target]})
-        monster
+        mobile
+        |> Mobile.set_attack_target(target)
+        |> Mobile.initiate_combat
+      else
+        mobile
+        |> Mobile.set_attack_target(target)
+        |> Mobile.initiate_combat
       end
     end
   end
-
-  def attack(%Monster{} = monster) do
-    if target = Monster.aggro_target(monster) do
-
-      if !Monster.on_attack_cooldown?(monster) do
-        attack = monster
-                 |> Monster.monster_attacks
-                 |> random_ability
-
-        send(self, {:execute_ability, attack, [target]})
-        monster
-      end
-    end
-  end
+  def attack(%{spirit: _} = mobile), do: mobile
 
   def random_ability(abilities) do
     case abilities do

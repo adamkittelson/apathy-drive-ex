@@ -95,17 +95,15 @@ defmodule Systems.Effect do
     end
   end
 
-  def max_stacks?(%Monster{} = monster, %Ability{properties: %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}}) do
-    stack_count(monster, stack_key) >= stack_count
+  def max_stacks?(%Mobile{} = mobile, %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}) do
+    stack_count(mobile, stack_key) >= stack_count
   end
-
-  def max_stacks?(%Monster{} = monster, %Ability{properties: %{"duration_effects" => _}} = ability) do
-    ability = put_in(ability.properties["duration_effects"]["stack_key"],   ability.name)
-    ability = put_in(ability.properties["duration_effects"]["stack_count"], 1)
-    max_stacks?(monster, ability)
+  def max_stacks?(%Mobile{} = mobile, %{"duration_effects" => _} = ability) do
+    ability = put_in(ability["duration_effects"]["stack_key"],   ability["name"])
+    ability = put_in(ability["duration_effects"]["stack_count"], 1)
+    max_stacks?(mobile, ability)
   end
-
-  def max_stacks?(%Monster{}, %Ability{}), do: false
+  def max_stacks?(%Mobile{}, %{}), do: false
 
   def stack_count(%{effects: _effects} = entity, stack_key) do
     stack(entity, stack_key)

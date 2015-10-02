@@ -401,8 +401,9 @@ defmodule ApathyDrive.Mobile do
       |> set_hp
       |> set_physical_defense
       |> set_magical_defense
-      |> TimerManager.call_every({:monster_regen, 1_000,    fn -> send(self, :regen) end})
+      |> TimerManager.call_every({:monster_regen,    1_000, fn -> send(self, :regen) end})
       |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
+      |> TimerManager.call_every({:monster_ai,       5_000, fn -> send(self, :think) end})
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -1067,8 +1068,8 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:use_ability, command, args}, mobile) do
 
     ability = mobile.abilities
-              |> Enum.find(fn(%{"command" => cmd}) ->
-                   cmd == String.downcase(command)
+              |> Enum.find(fn(ability) ->
+                   ability["command"] == String.downcase(command)
                  end)
 
     if ability do
@@ -1350,10 +1351,10 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  defp set_attack_target(%Mobile{attack_target: attack_target} = mobile, target) when attack_target == target do
+  def set_attack_target(%Mobile{attack_target: attack_target} = mobile, target) when attack_target == target do
     mobile
   end
-  defp set_attack_target(%Mobile{} = mobile, target) do
+  def set_attack_target(%Mobile{} = mobile, target) do
     Task.start fn ->
       PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, target])
       |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-yellow'>#{mobile.name} moves to attack #{Mobile.name(target)}.</span></p>")))
@@ -1364,10 +1365,10 @@ defmodule ApathyDrive.Mobile do
     Map.put(mobile, :attack_target, target)
   end
 
-  defp initiate_combat(%Mobile{timers: %{auto_attack_timer: _}} = mobile) do
+  def initiate_combat(%Mobile{timers: %{auto_attack_timer: _}} = mobile) do
     mobile
   end
-  defp initiate_combat(%Mobile{} = mobile) do
+  def initiate_combat(%Mobile{} = mobile) do
     send(mobile.pid, :execute_auto_attack)
     mobile
   end
