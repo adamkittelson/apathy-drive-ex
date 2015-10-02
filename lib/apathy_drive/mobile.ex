@@ -73,6 +73,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :look_name)
   end
 
+  def spirit_id(pid) do
+    GenServer.call(pid, :spirit_id)
+  end
+
   def get_look_data(pid) do
     GenServer.call(pid, :look_data)
   end
@@ -148,7 +152,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def prompt(%Mobile{} = mobile) do
-    "[HP=#{mobile.hp}/MA=#{mobile.mana}]:"
+    "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
   end
 
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
@@ -391,8 +395,6 @@ defmodule ApathyDrive.Mobile do
     mobile =
       mobile
       |> Map.put(:pid, self)
-      |> set_highest_armour_grade
-      |> set_abilities
       |> set_max_mana
       |> set_mana
       |> set_max_hp
@@ -449,6 +451,18 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
     {:ok, mobile}
+  end
+
+  def able_to_possess?(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :able_to_possess?)
+  end
+
+  def possess(mobile, spirit_id, socket) when is_pid(mobile) do
+    GenServer.call(mobile, {:possess, spirit_id, socket})
+  end
+
+  def unpossess(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :unpossess)
   end
 
   def set_highest_armour_grade(%Mobile{spirit: nil} = mobile) do
@@ -599,13 +613,13 @@ defmodule ApathyDrive.Mobile do
   def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
     modifier = 1 + effect_bonus(mobile, "hp_regen") / 100
 
-    min(1, trunc(max_hp * 0.02 * modifier))
+    max_hp * 0.02 * modifier
   end
 
   def mana_regen_per_second(%Mobile{max_mana: max_mana} = mobile) do
     modifier = 1 + effect_bonus(mobile, "mana_regen") / 100
 
-    min(1, trunc(max_mana * 0.02 * modifier))
+    max_mana * 0.02 * modifier
   end
 
   def local_hated_targets(%Mobile{hate: hate} = mobile) do
@@ -657,6 +671,71 @@ defmodule ApathyDrive.Mobile do
   def top_threat([]),      do: nil
   def top_threat(targets), do: Enum.max(targets)
 
+  def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: nil} = mobile) do
+    if ethereal?(mobile) do
+      {:reply, :ok, mobile}
+    else
+      {:reply, {:error, "You cannot use possession if you have a physical body."}, mobile}
+    end
+  end
+  def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: _, effects: effects} = mobile) do
+    {:reply, {:error, "You are already possessing #{mobile.name}."}, mobile}
+  end
+
+  def ethereal?(%Mobile{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(&1["ethereal"] == true))
+  end
+
+  def handle_call(:unpossess, _from, %Mobile{monster_template_id: nil} = mobile) do
+    {:reply, {:error, "You aren't possessing anything."}, mobile}
+  end
+  def handle_call(:unpossess, _from, %Mobile{socket: socket, spirit: spirit} = mobile) do
+    mobile =
+      mobile
+      |> Map.put(:spirit, nil)
+      |> Map.put(:socket, nil)
+
+      ApathyDrive.PubSub.unsubscribe(self, "spirits:online")
+      ApathyDrive.PubSub.unsubscribe(self, "spirits:#{spirit.id}")
+      ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
+      ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+
+    {:reply, {:ok, spirit}, mobile}
+  end
+
+  def handle_call({:possess, _spirit_id, _socket}, _from, %Mobile{monster_template_id: nil} = mobile) do
+    {:reply, {:error, "You can't possess other players."}, mobile}
+  end
+  def handle_call({:possess, spirit_id, socket}, _from, %Mobile{spirit: nil} = mobile) do
+
+    spirit =
+      Repo.get!(Spirit, spirit_id)
+      |> Repo.preload(:class)
+
+    ApathyDrive.PubSub.subscribe(self, "spirits:online")
+    ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
+    ApathyDrive.PubSub.subscribe(self, "chat:gossip")
+    ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+
+    mobile =
+      mobile
+      |> Map.put(:spirit, spirit)
+      |> Map.put(:socket, socket)
+
+    send(socket, {:update_mobile, self})
+
+    send_scroll(mobile, "<p>You possess #{mobile.name}.")
+
+    Process.monitor(socket)
+
+    {:reply, :ok, mobile}
+  end
+  def handle_call({:possess, spirit_id, socket}, _from, mobile) do
+    {:reply, {:error, "#{mobile.name} is possessed by another player."}, mobile}
+  end
+
   def handle_call(:score_data, _from, mobile) do
     effects =
       mobile.effects
@@ -665,7 +744,7 @@ defmodule ApathyDrive.Mobile do
       |> Enum.map(&(&1["effect_message"]))
 
     data = %{name: mobile.spirit.name,
-             class: mobile.spirit.class.name,
+             class: (mobile.monster_template_id && mobile.name) || mobile.spirit.class.name,
              level: mobile.spirit.level,
              experience: mobile.spirit.experience,
              hp: mobile.hp,
@@ -851,6 +930,10 @@ defmodule ApathyDrive.Mobile do
 
   def handle_call(:greeting, _from, mobile) do
     {:reply, mobile.greeting, mobile}
+  end
+
+  def handle_call(:spirit_id, _from, mobile) do
+    {:reply, mobile.spirit && mobile.spirit.id, mobile}
   end
 
   def handle_call(:look_name, _from, mobile) do
@@ -1207,6 +1290,20 @@ defmodule ApathyDrive.Mobile do
 
       {:noreply, mobile}
     end
+  end
+
+  def handle_info({:DOWN, _ref, :process, pid, {:shutdown, :closed}}, %Mobile{spirit: spirit, socket: socket} = mobile) when pid == socket do
+    mobile =
+      mobile
+      |> Map.put(:spirit, nil)
+      |> Map.put(:socket, nil)
+
+      ApathyDrive.PubSub.unsubscribe(self, "spirits:online")
+      ApathyDrive.PubSub.unsubscribe(self, "spirits:#{spirit.id}")
+      ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
+      ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+
+    {:noreply, mobile}
   end
 
   defp execute_auto_attack(%Mobile{} = mobile, target) do

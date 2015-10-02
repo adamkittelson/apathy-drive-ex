@@ -1,5 +1,6 @@
 defmodule Commands.Unpossess do
   use ApathyDrive.Command
+  alias ApathyDrive.Repo
 
   def keywords, do: ["unpossess"]
 
@@ -32,6 +33,24 @@ defmodule Commands.Unpossess do
     send(spirit.socket_pid, {:set_entity, spirit})
 
     spirit
+  end
+
+  def execute(mobile, _arguments) do
+    case Mobile.unpossess(mobile) do
+      {:ok, spirit} ->
+        Process.unlink(mobile)
+
+        spirit = Repo.update!(spirit)
+
+        {:ok, pid} = ApathyDrive.Mobile.start_link(%{spirit: spirit.id, socket: self})
+
+        send(self, {:update_mobile, pid})
+
+        Mobile.send_scroll(pid, "<p>You leave the body of #{Mobile.name(mobile)}.</p>")
+
+      {:error, reason} ->
+        Mobile.send_scroll(mobile, "<p>#{reason}</p>")
+    end
   end
 
 end

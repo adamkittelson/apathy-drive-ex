@@ -491,43 +491,43 @@ defmodule Ability do
     Enum.sum(speed_mods) / count / 100
   end
 
-  def dodged?(%Monster{} = monster, %Ability{properties: %{"accuracy_skill" => accuracy_skill}}, %Monster{} = attacker) do
-    dodge = Monster.modified_skill(monster, "dodge")
-    accuracy = Monster.modified_skill(attacker, accuracy_skill)
-
-    chance = 30
-    if dodge > 0 do
-      difference = dodge - accuracy
-      chance = if difference > 0 do
-        chance + difference * 0.2
-      else
-        chance + difference * 0.3
-      end
-
-      :random.uniform(100) < trunc(chance)
-    else
+  def dodged?(%Mobile{} = mobile, %{"accuracy_skill" => accuracy_skill}, %Mobile{} = attacker) do
+    # dodge = Monster.modified_skill(monster, "dodge")
+    # accuracy = Monster.modified_skill(attacker, accuracy_skill)
+    # 
+    # chance = 30
+    # if dodge > 0 do
+    #   difference = dodge - accuracy
+    #   chance = if difference > 0 do
+    #     chance + difference * 0.2
+    #   else
+    #     chance + difference * 0.3
+    #   end
+    # 
+    #   :random.uniform(100) < trunc(chance)
+    # else
       false
-    end
+    # end
   end
 
   def apply_ability(%Mobile{} = mobile, %{"dodgeable" => true} = ability, %Mobile{} = ability_user) do
-    if dodged?(mobile, ability, ability_user) do
-
-      user_message = interpolate(ability["dodge_message"]["user"], %{"user" => ability_user, "target" => mobile})
-      Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{user_message}</span></p>")
-
-      target_message = interpolate(ability["dodge_message"]["target"], %{"user" => ability_user, "target" => mobile})
-      Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{target_message}</span></p>")
-
-      spectator_message = interpolate(ability["dodge_message"]["spectator"], %{"user" => ability_user, "target" => mobile})
-      PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
-      |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")))
-
-      put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
-    else
+    # if dodged?(mobile, ability, ability_user) do
+    # 
+    #   user_message = interpolate(ability["dodge_message"]["user"], %{"user" => ability_user, "target" => mobile})
+    #   Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{user_message}</span></p>")
+    # 
+    #   target_message = interpolate(ability["dodge_message"]["target"], %{"user" => ability_user, "target" => mobile})
+    #   Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{target_message}</span></p>")
+    # 
+    #   spectator_message = interpolate(ability["dodge_message"]["spectator"], %{"user" => ability_user, "target" => mobile})
+    #   PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
+    #   |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")))
+    # 
+    #   put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
+    # else
       ability = Map.put(ability, "dodgeable", false)
       apply_ability(mobile, ability, ability_user)
-    end
+    # end
   end
   def apply_ability(%Mobile{} = mobile, %{} = ability, %Mobile{} = ability_user) do
 

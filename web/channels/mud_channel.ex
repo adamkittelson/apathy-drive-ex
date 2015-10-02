@@ -22,6 +22,12 @@ defmodule ApathyDrive.MUDChannel do
     end
   end
 
+  def handle_info({:update_mobile, pid}, socket) do
+    socket = assign(socket, :mobile, pid)
+
+    {:noreply, socket}
+  end
+
   def handle_info(:after_join, socket) do
     ApathyDrive.Command.execute(socket.assigns[:mobile], "look", [])
 

@@ -7,8 +7,8 @@ defmodule Commands.Score do
 
     score_data = Mobile.score_data(mobile)
 
-    hp = String.ljust("#{score_data.hp}/#{score_data.max_hp}", 13)
-    mana = "#{score_data.mana}/#{score_data.max_mana}"
+    hp = String.ljust("#{trunc(score_data.hp)}/#{score_data.max_hp}", 13)
+    mana = "#{trunc(score_data.mana)}/#{score_data.max_mana}"
 
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{String.ljust(score_data.name, 13)}</span><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{score_data.class}</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.level), 12)}</span><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{score_data.experience}</span></p>")
