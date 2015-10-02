@@ -761,7 +761,7 @@ defmodule ApathyDrive.Mobile do
     {:reply, data, mobile}
   end
 
-  def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
+  def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
     if remaining_encumbrance(mobile) >= weight do
       mobile =
         put_in(mobile.spirit.inventory, [item | inventory])
@@ -775,8 +775,11 @@ defmodule ApathyDrive.Mobile do
       {:reply, :too_heavy, mobile}
     end
   end
+  def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{monster_template_id: _} = mobile) do
+    {:reply, :possessed, mobile}
+  end
 
-  def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
+  def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
            |> Systems.Match.one(:keyword_starts_with, item)
@@ -794,6 +797,9 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, item}, mobile}
     end
+  end
+  def handle_call({:drop_item, _item}, _from, %Mobile{monster_template_id: _} = mobile) do
+    {:reply, :possessed, mobile}
   end
 
   def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do

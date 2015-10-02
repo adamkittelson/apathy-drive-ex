@@ -15,7 +15,6 @@ defmodule Commands.Get do
       |> Room.find
 
     case Room.get_item(room, item) do
-
       {:cant_get, item_name} ->
         Mobile.send_scroll(mobile, "<p>#{item_name |> capitalize_first} cannot be picked up.</p>")
       :not_found ->
@@ -27,6 +26,9 @@ defmodule Commands.Get do
           :too_heavy ->
             Room.add_item(room, item)
             Mobile.send_scroll(mobile, "<p>#{capitalize_first(item["name"])} is too heavy.</p>")
+          :possessed ->
+            Room.add_item(room, item)
+            Mobile.send_scroll(mobile, "<p>You can't use items while using possession.</p>")
         end
     end
   end

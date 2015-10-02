@@ -19,6 +19,8 @@ defmodule Commands.Drop do
         Mobile.send_scroll(mobile, "<p>You drop #{name}.</p>")
       :not_found ->
         Mobile.send_scroll(mobile, "<p>You don't have \"#{item}\" to drop!</p>")
+      :possessed ->
+        Mobile.send_scroll(mobile, "<p>You can't use items while using possession.</p>")
     end
   end
 end
