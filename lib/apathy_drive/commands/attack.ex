@@ -9,7 +9,13 @@ defmodule Commands.Attack do
   end
   def execute(mobile, arguments) do
     target = find_mobile_in_room(mobile, Enum.join(arguments, " "))
-    attack(mobile, target)
+
+    case Mobile.attackable?(target) do
+      :ok ->
+        attack(mobile, target)
+      {:error, error} ->
+        Mobile.send_scroll(mobile, "<p>#{error}</p>")
+    end
   end
 
   def attack(mobile, nil) do
@@ -21,7 +27,12 @@ defmodule Commands.Attack do
   end
 
   def attack(mobile, target) do
-    send(mobile, {:attack, target})
+    case Mobile.attack(mobile, target) do
+      :ok ->
+        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+      {:error, error} ->
+        Mobile.send_scroll(mobile, "<p>#{error}</p>")
+    end
   end
 
   defp find_mobile_in_room(mobile, string) do

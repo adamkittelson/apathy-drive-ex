@@ -457,6 +457,14 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, :able_to_possess?)
   end
 
+  def attackable?(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :attackable?)
+  end
+
+  def attack(mobile, target) do
+    GenServer.call(mobile, {:attack, target})
+  end
+
   def possess(mobile, spirit_id, socket) when is_pid(mobile) do
     GenServer.call(mobile, {:possess, spirit_id, socket})
   end
@@ -671,6 +679,17 @@ defmodule ApathyDrive.Mobile do
   def top_threat([]),      do: nil
   def top_threat(targets), do: Enum.max(targets)
 
+  def handle_call(:attackable?, _from, %Mobile{monster_template_id: nil} = mobile) do
+    if ethereal?(mobile) do
+      {:reply, {:error, "#{mobile.name} has no body to attack."}, mobile}
+    else
+      {:reply, :ok, mobile}
+    end
+  end
+  def handle_call(:attackable?, _from, %Mobile{monster_template_id: _} = mobile) do
+    {:reply, :ok, mobile}
+  end
+
   def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: nil} = mobile) do
     if ethereal?(mobile) do
       {:reply, :ok, mobile}
@@ -680,6 +699,19 @@ defmodule ApathyDrive.Mobile do
   end
   def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: _, effects: effects} = mobile) do
     {:reply, {:error, "You are already possessing #{mobile.name}."}, mobile}
+  end
+
+  def handle_call({:attack, target}, _from, mobile) do
+    if ethereal?(mobile) do
+      {:reply, {:error, "You need a physical form to attack monsters."}, mobile}
+    else
+      mobile =
+        mobile
+        |> set_attack_target(target)
+        |> initiate_combat
+
+      {:reply, :ok, mobile}
+    end
   end
 
   def ethereal?(%Mobile{effects: effects}) do
@@ -1261,17 +1293,6 @@ defmodule ApathyDrive.Mobile do
     #
     #     send(self, {:apply_ability, ability, monster})
     #   end)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:attack, target}, mobile) do
-
-    mobile =
-      mobile
-      |> send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
-      |> set_attack_target(target)
-      |> initiate_combat
 
     {:noreply, mobile}
   end
