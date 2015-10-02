@@ -2,43 +2,42 @@ defmodule ApathyDrive.AI do
   alias ApathyDrive.Mobile
 
   def think(%Mobile{} = mobile) do
-    #heal(monster) || bless(monster) ||
-    attack(mobile) || mobile
+    heal(mobile) || bless(mobile) || attack(mobile) || mobile
   end
 
-  def heal(%Monster{hp: hp, max_hp: max_hp, spirit: nil} = monster) do
-    unless Monster.on_global_cooldown?(monster) do
+  def heal(%Mobile{hp: hp, max_hp: max_hp, spirit: nil} = mobile) do
+    unless Ability.on_global_cooldown?(mobile) do
       chance = trunc((max_hp - hp) / max_hp * 100)
 
       roll = :random.uniform(100)
 
       if chance > roll do
-        ability = monster
-                  |> Monster.heal_abilities
+        ability = mobile
+                  |> Ability.heal_abilities
                   |> random_ability
 
         if ability do
           send(self, {:execute_ability, ability})
-          monster
+          mobile
         end
       end
     end
   end
-  def heal(%Monster{}), do: nil
+  def heal(%Mobile{}), do: nil
 
-  def bless(%Monster{spirit: nil} = monster) do
-    unless Monster.on_global_cooldown?(monster) do
-      ability = monster
-                |> Monster.bless_abilities
+  def bless(%Mobile{spirit: nil} = mobile) do
+    unless Ability.on_global_cooldown?(mobile) do
+      ability = mobile
+                |> Ability.bless_abilities
                 |> random_ability
 
       if ability do
         send(self, {:execute_ability, ability})
-        monster
+        mobile
       end
     end
   end
-  def bless(%Monster{}), do: nil
+  def bless(%Mobile{}), do: nil
 
   def attack(%Mobile{spirit: nil} = mobile) do
     if target = Mobile.aggro_target(mobile) do

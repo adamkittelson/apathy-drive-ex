@@ -424,6 +424,18 @@ defmodule Ability do
     |> useable(mobile)
   end
 
+  def bless_abilities(%Mobile{abilities: abilities} = mobile) do
+    abilities
+    |> Enum.filter(&(&1["kind"] == "blessing"))
+    |> useable(mobile)
+  end
+
+  def heal_abilities(%Mobile{abilities: abilities} = mobile) do
+    abilities
+    |> Enum.filter(&(&1["kind"] == "heal"))
+    |> useable(mobile)
+  end
+
   def on_cooldown?(%Mobile{} = mobile, %{} = ability) do
     on_global_cooldown?(mobile, ability)
   end
