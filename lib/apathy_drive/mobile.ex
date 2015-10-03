@@ -451,6 +451,8 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
+    update_prompt(mobile)
+
     {:ok, mobile}
   end
 
@@ -560,7 +562,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_mana(%Mobile{} = mobile) do
-    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.8 + (0.01 * mobile.level))))
+    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.3 + (0.03 * mobile.level))))
   end
 
   def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
@@ -571,7 +573,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_hp(%Mobile{} = mobile) do
-    Map.put(mobile, :max_hp, trunc(strength(mobile) * 1.45 + (0.025 * mobile.level)))
+    Map.put(mobile, :max_hp, trunc(strength(mobile) * 0.5 + (0.05 * mobile.level)))
   end
 
   def set_physical_defense(%Mobile{} = mobile) do
@@ -735,7 +737,7 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
       ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
 
-    {:reply, {:ok, spirit}, mobile}
+    {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, mobile}
   end
 
   def handle_call({:possess, _spirit_id, _socket}, _from, %Mobile{monster_template_id: nil} = mobile) do
@@ -762,6 +764,8 @@ defmodule ApathyDrive.Mobile do
     send_scroll(mobile, "<p>You possess #{mobile.name}.")
 
     Process.monitor(socket)
+
+    update_prompt(mobile)
 
     {:reply, :ok, mobile}
   end
@@ -1330,6 +1334,12 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.unsubscribe(self, "spirits:#{spirit.id}")
       ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
       ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+
+    {:noreply, mobile}
+  end
+
+  def handle_info(:die, mobile) do
+    Systems.Death.kill(mobile)
 
     {:noreply, mobile}
   end

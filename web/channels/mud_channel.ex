@@ -28,6 +28,16 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:respawn, spirit: spirit}, socket) do
+    spirit = Repo.update!(spirit)
+
+    {:ok, pid} = ApathyDrive.Mobile.start_link(%{spirit: spirit.id, socket: self})
+
+    socket = assign(socket, :mobile, pid)
+
+    {:noreply, socket}
+  end
+
   def handle_info(:after_join, socket) do
     ApathyDrive.Command.execute(socket.assigns[:mobile], "look", [])
 

@@ -157,7 +157,7 @@ defmodule Ability do
   end
 
   def scale_effect(%Mobile{} = mobile, "damage", %{"potency" => potency}) do
-    magic_damage_from_weapon = 1 # for now
+    magic_damage_from_weapon = 5 # for now
 
     trunc((potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile))))
   end
