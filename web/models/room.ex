@@ -131,6 +131,10 @@ defmodule Room do
     GenServer.cast(room, {:add_item, item})
   end
 
+  def add_items(room, items) do
+    GenServer.cast(room, {:add_items, items})
+  end
+
   def unlocked?(room, direction) when is_pid(room) do
     GenServer.call(room, {:unlocked?, direction})
   end
@@ -571,6 +575,10 @@ defmodule Room do
 
   def handle_cast({:add_item, item}, %Room{items: items} = room) do
     {:noreply, put_in(room.items, [item | items])}
+  end
+
+  def handle_cast({:add_items, new_items}, %Room{items: items} = room) do
+    {:noreply, put_in(room.items, new_items ++ items)}
   end
 
   # GenServer callbacks

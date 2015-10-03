@@ -31,7 +31,7 @@ defmodule Systems.Death do
 
   # Player not possessing a monster
   def kill(%Mobile{monster_template_id: nil, spirit: %Spirit{} = spirit} = mobile) do
-    kill(mobile, [:inform_player, :respawn_spirit])
+    kill(mobile, [:drop_equipment, :inform_player, :respawn_spirit])
   end
   # Player possessing a monster
   def kill(%Mobile{monster_template_id: _, spirit: %Spirit{} = spirit} = mobile) do
@@ -42,6 +42,18 @@ defmodule Systems.Death do
     kill(mobile, [:reward_monster_death_exp, :generate_loot, :set_last_killed_at])
   end
 
+  def kill(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment} = spirit} = mobile, [:drop_equipment | remaining_steps]) do
+    mobile.room_id
+    |> Room.find
+    |> Room.add_items(inventory ++ equipment)
+
+    spirit =
+      Map.merge(spirit, %{inventory: [], equipment: []})
+
+    mobile = Map.put(mobile, :spirit, spirit)
+
+    kill(mobile, remaining_steps)
+  end
   def kill(mobile, [:reward_monster_death_exp | remaining_steps]) do
     ApathyDrive.PubSub.broadcast!("rooms:#{mobile.room_id}:mobiles", {:mobile_died, mobile: mobile, reward: mobile.experience})
 
