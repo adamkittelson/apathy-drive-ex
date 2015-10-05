@@ -35,6 +35,8 @@ defmodule ApathyDrive.MUDChannel do
 
     socket = assign(socket, :mobile, pid)
 
+    ApathyDrive.Command.execute(socket.assigns[:mobile], "look", [])
+
     {:noreply, socket}
   end
 

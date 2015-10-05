@@ -574,11 +574,19 @@ defmodule Room do
   end
 
   def handle_cast({:add_item, item}, %Room{items: items} = room) do
-    {:noreply, put_in(room.items, [item | items])}
+    room =
+      put_in(room.items, [item | items])
+      |> Repo.update!
+
+    {:noreply, room}
   end
 
   def handle_cast({:add_items, new_items}, %Room{items: items} = room) do
-    {:noreply, put_in(room.items, new_items ++ items)}
+    room =
+      put_in(room.items, new_items ++ items)
+      |> Repo.update!
+
+    {:noreply, room}
   end
 
   # GenServer callbacks

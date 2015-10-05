@@ -31,7 +31,7 @@ defmodule Systems.Death do
 
   # Player not possessing a monster
   def kill(%Mobile{monster_template_id: nil, spirit: %Spirit{} = spirit} = mobile) do
-    kill(mobile, [:drop_equipment, :inform_player, :respawn_spirit])
+    kill(mobile, [:drop_equipment, :inform_player, :send_home, :respawn_spirit])
   end
   # Player possessing a monster
   def kill(%Mobile{monster_template_id: _, spirit: %Spirit{} = spirit} = mobile) do
@@ -42,6 +42,12 @@ defmodule Systems.Death do
     kill(mobile, [:reward_monster_death_exp, :generate_loot, :set_last_killed_at])
   end
 
+  def kill(mobile, [:send_home | remaining_steps]) do
+    mobile =
+      put_in(mobile.spirit.room_id, mobile.spirit.class.start_room_id)
+
+    kill(mobile, remaining_steps)
+  end
   def kill(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment} = spirit} = mobile, [:drop_equipment | remaining_steps]) do
     mobile.room_id
     |> Room.find
