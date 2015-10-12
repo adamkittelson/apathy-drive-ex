@@ -136,14 +136,12 @@ defmodule Ability do
   def scale_effect(%Mobile{} = mobile, "damage", %{"base_min" => base_min, "base_max" => base_max}) do
     base_max = base_max + Mobile.effect_bonus(mobile, "increase max damage")
     base_min..base_max
-    |> Enum.shuffle
-    |> List.first
+    |> Enum.random
   end
 
   def scale_effect(%Mobile{}, _effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
     base_min..base_max
-    |> Enum.shuffle
-    |> List.first
+    |> Enum.random
   end
 
   def scale_effect(%Mobile{} = mobile, "heal", %{"potency" => potency}) do
@@ -151,7 +149,7 @@ defmodule Ability do
 
     average = (potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile)))
 
-    modifier = (80..120 |> Enum.shuffle |> List.first) / 100
+    modifier = (80..120 |> Enum.random) / 100
 
     trunc(average * modifier)
   end
@@ -563,7 +561,7 @@ defmodule Ability do
                     %Mobile{} = mobile,
                     %Mobile{}) do
 
-    modifier = (80..120 |> Enum.shuffle |> List.first) / 100
+    modifier = (80..120 |> Enum.random) / 100
     damage = trunc(damage * modifier)
 
     damage = Mobile.reduce_damage(mobile, damage, ability["instant_effects"]["mitigated_by"])

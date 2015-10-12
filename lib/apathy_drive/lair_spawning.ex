@@ -23,8 +23,7 @@ defmodule ApathyDrive.LairSpawning do
     :random.seed(:os.timestamp)
 
     monster_ids
-    |> Enum.shuffle
-    |> List.first
+    |> Enum.random
   end
 
   def eligible_monsters(room) do

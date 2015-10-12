@@ -213,8 +213,7 @@ defmodule Room do
       exits ->
         exits
         |> Enum.map(&(&1["direction"]))
-        |> Enum.shuffle
-        |> List.first
+        |> Enum.random
     end
   end
 

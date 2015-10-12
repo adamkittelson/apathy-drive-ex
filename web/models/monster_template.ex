@@ -100,8 +100,7 @@ defmodule MonsterTemplate do
     :random.seed(:os.timestamp)
 
     adjective = adjectives
-                |> Enum.shuffle
-                |> List.first
+                |> Enum.random
 
     "#{adjective} #{name}"
   end

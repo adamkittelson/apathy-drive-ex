@@ -1348,8 +1348,7 @@ defmodule ApathyDrive.Mobile do
     attack =
       mobile.abilities
       |> Enum.filter(&(&1["kind"] == "auto_attack"))
-      |> Enum.shuffle
-      |> List.first
+      |> Enum.random
 
     if attack do
       attack =

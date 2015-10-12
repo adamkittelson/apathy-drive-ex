@@ -72,7 +72,7 @@ defmodule ApathyDrive.AI do
       [] ->
         nil
       abilities ->
-        abilities |> Enum.shuffle |> List.first
+        abilities |> Enum.random
     end
   end
 

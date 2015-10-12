@@ -153,8 +153,7 @@ defmodule ApathyDrive.Command do
          end)
     else
       abilities
-      |> Enum.shuffle
-      |> List.first
+      |> Enum.random
     end
   end
 

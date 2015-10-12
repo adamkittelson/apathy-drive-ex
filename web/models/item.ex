@@ -42,8 +42,7 @@ defmodule ApathyDrive.Item do
   def generate_item(level) do
     level
     |> items_below_level
-    |> Enum.shuffle
-    |> List.first
+    |> Enum.random
     |> to_map
     |> roll_stats(level)
   end
