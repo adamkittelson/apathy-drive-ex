@@ -26,18 +26,17 @@ defmodule ApathyDrive.Mixfile do
       {:ecto,                "~> 1.0"},
       {:decimal,             "~> 1.1.0"},
       {:postgrex,            "~> 0.9.1"},
-      {:phoenix,             "~> 0.17"},
-      {:phoenix_live_reload, "~> 1.0"},
+      {:phoenix,             "~> 1.0"},
+      {:phoenix_live_reload, "~> 1.0.1"},
       {:phoenix_ecto,        "~> 1.2"},
       {:phoenix_html,        "~> 2.0"},
       {:timex,               "~> 0.19"},
       {:timex_ecto,          "~> 0.5"},
       {:inflex,              "~> 0.2.8"},
       {:block_timer,         "~> 0.0.1"},
-      {:oauth2,              "~> 0.0.5"},
+      {:oauth2,              "~> 0.3"},
       {:scrivener,           "~> 1.0"},
       {:comeonin,            "~> 1.2.2"},
-      {:plug,                "~> 1.0", override: true},
       {:shouldi, only: :test}
     ]
   end
