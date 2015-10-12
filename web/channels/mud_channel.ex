@@ -88,10 +88,19 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_in("command", message, socket) do
-    [command | arguments] = String.split(message)
+  def handle_in("command", %{}, socket) do
+    ApathyDrive.Command.execute(socket.assigns[:mobile], "l", [])
 
-    ApathyDrive.Command.execute(socket.assigns[:mobile], command, arguments)
+    {:noreply, socket}
+  end
+
+  def handle_in("command", message, socket) do
+    case String.split(message) do
+      [command | arguments] ->
+        ApathyDrive.Command.execute(socket.assigns[:mobile], command, arguments)
+      [] ->
+        ApathyDrive.Command.execute(socket.assigns[:mobile], "l", [])
+    end
 
     {:noreply, socket}
   end
