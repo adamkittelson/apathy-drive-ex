@@ -4,7 +4,7 @@ defmodule ApathyDrive.Mixfile do
   def project do
     [ app: :apathy_drive,
       version: "0.0.1",
-      elixir: "~> 1.0.4",
+      elixir: "~> 1.1",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
       deps: deps,
@@ -23,20 +23,20 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:ecto,                "~> 0.14.3"},
+      {:ecto,                "~> 1.0"},
       {:decimal,             "~> 1.1.0"},
       {:postgrex,            "~> 0.9.1"},
       {:phoenix,             "~> 0.17"},
       {:phoenix_live_reload, "~> 1.0"},
-      {:phoenix_ecto,        "~> 0.9"},
+      {:phoenix_ecto,        "~> 1.2"},
       {:phoenix_html,        "~> 2.0"},
-      {:timex,               "~> 0.16"},
-      {:timex_ecto,          "~> 0.4.0"},
+      {:timex,               "~> 0.19"},
+      {:timex_ecto,          "~> 0.5"},
       {:inflex,              "~> 0.2.8"},
       {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.0.5"},
-      {:scrivener,           "~> 0.11.0"},
-      {:comeonin,            "~> 1.0.5"},
+      {:scrivener,           "~> 1.0"},
+      {:comeonin,            "~> 1.2.2"},
       {:plug,                "~> 1.0", override: true},
       {:shouldi, only: :test}
     ]
