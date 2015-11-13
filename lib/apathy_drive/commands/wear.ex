@@ -11,7 +11,9 @@ defmodule Commands.Wear do
 
     case Mobile.equip_item(mobile, item) do
       {:ok, %{equipped: equipped, unequipped: unequipped}} ->
-        Mobile.send_scroll(mobile, "<p>You remove #{unequipped["name"]}.</p>")
+        Enum.each(unequipped, fn(item) ->
+          Mobile.send_scroll(mobile, "<p>You remove #{item["name"]}.</p>")
+        end)
         Mobile.send_scroll(mobile, "<p>You are now wearing #{equipped["name"]}.</p>")
       {:ok, %{equipped: equipped}} ->
         Mobile.send_scroll(mobile, "<p>You are now wearing #{equipped["name"]}.</p>")

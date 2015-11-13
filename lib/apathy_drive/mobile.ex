@@ -848,20 +848,73 @@ defmodule ApathyDrive.Mobile do
       nil ->
         {:reply, :not_found, mobile}
       %{item: %{"worn_on" => worn_on} = item} ->
-        if Enum.count(equipment, &(&1["worn_on"] == worn_on)) >= worn_on_max(item) do
-          item_to_remove =
-            equipment
-            |> Enum.find(&(&1["worn_on"] == worn_on))
+        cond do
+          Enum.count(equipment, &(&1["worn_on"] == worn_on)) >= worn_on_max(item) ->
+            item_to_remove =
+              equipment
+              |> Enum.find(&(&1["worn_on"] == worn_on))
 
-          equipment =
-            equipment
-            |> List.delete(item_to_remove)
-            |> List.insert_at(-1, item)
+            equipment =
+              equipment
+              |> List.delete(item_to_remove)
+              |> List.insert_at(-1, item)
 
-          inventory =
-            inventory
-            |> List.insert_at(-1, item_to_remove)
-            |> List.delete(item)
+            inventory =
+              inventory
+              |> List.insert_at(-1, item_to_remove)
+              |> List.delete(item)
+
+              mobile = put_in(mobile.spirit.inventory, inventory)
+              mobile = put_in(mobile.spirit.equipment, equipment)
+                       |> set_highest_armour_grade
+                       |> set_abilities
+                       |> set_max_mana
+                       |> set_mana
+                       |> set_max_hp
+                       |> set_hp
+                       |> set_physical_defense
+                       |> set_magical_defense
+
+              Repo.update!(mobile.spirit)
+            {:reply, {:ok, %{equipped: item, unequipped: [item_to_remove]}}, mobile}
+          conflicting_worn_on(worn_on) |> Enum.any? ->
+            items_to_remove =
+              equipment
+              |> Enum.filter(&(&1["worn_on"] in conflicting_worn_on(worn_on)))
+
+            equipment =
+              equipment
+              |> Enum.reject(&(&1 in items_to_remove))
+              |> List.insert_at(-1, item)
+
+            inventory =
+              items_to_remove
+              |> Enum.reduce(inventory, fn(item_to_remove, inv) ->
+                   List.insert_at(inv, -1, item_to_remove)
+                 end)
+              |> List.delete(item)
+
+              mobile = put_in(mobile.spirit.inventory, inventory)
+              mobile = put_in(mobile.spirit.equipment, equipment)
+                       |> set_highest_armour_grade
+                       |> set_abilities
+                       |> set_max_mana
+                       |> set_mana
+                       |> set_max_hp
+                       |> set_hp
+                       |> set_physical_defense
+                       |> set_magical_defense
+
+              Repo.update!(mobile.spirit)
+            {:reply, {:ok, %{equipped: item, unequipped: items_to_remove}}, mobile}
+          true ->
+            equipment =
+              equipment
+              |> List.insert_at(-1, item)
+
+            inventory =
+              inventory
+              |> List.delete(item)
 
             mobile = put_in(mobile.spirit.inventory, inventory)
             mobile = put_in(mobile.spirit.equipment, equipment)
@@ -876,33 +929,15 @@ defmodule ApathyDrive.Mobile do
 
             Repo.update!(mobile.spirit)
 
-          {:reply, {:ok, %{equipped: item, unequipped: item_to_remove}}, mobile}
-        else
-          equipment =
-            equipment
-            |> List.insert_at(-1, item)
-
-          inventory =
-            inventory
-            |> List.delete(item)
-
-          mobile = put_in(mobile.spirit.inventory, inventory)
-          mobile = put_in(mobile.spirit.equipment, equipment)
-                   |> set_highest_armour_grade
-                   |> set_abilities
-                   |> set_max_mana
-                   |> set_mana
-                   |> set_max_hp
-                   |> set_hp
-                   |> set_physical_defense
-                   |> set_magical_defense
-
-          Repo.update!(mobile.spirit)
-
-          {:reply, {:ok, %{equipped: item}}, mobile}
+            {:reply, {:ok, %{equipped: item}}, mobile}
         end
     end
   end
+
+  defp conflicting_worn_on("Weapon Hand"),     do: ["Two Handed"]
+  defp conflicting_worn_on("Off-Hand"),   do: ["Two Handed"]
+  defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
+  defp conflicting_worn_on(_), do: []
 
   def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = equipment
