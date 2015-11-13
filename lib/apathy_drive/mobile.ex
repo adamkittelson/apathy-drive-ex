@@ -819,7 +819,7 @@ defmodule ApathyDrive.Mobile do
   def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Systems.Match.one(:keyword_starts_with, item)
+           |> Systems.Match.one(:name_contains, item)
 
     case item do
       nil ->
@@ -842,7 +842,7 @@ defmodule ApathyDrive.Mobile do
   def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Systems.Match.one(:keyword_starts_with, item)
+           |> Systems.Match.one(:name_contains, item)
 
     case item do
       nil ->

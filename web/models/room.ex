@@ -455,7 +455,7 @@ defmodule Room do
   def handle_call({:get_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-                  |> Systems.Match.one(:keyword_starts_with, item)
+                  |> Systems.Match.one(:name_contains, item)
 
     visible_item = item_descriptions["visible"]
                    |> Map.keys

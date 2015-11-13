@@ -13,10 +13,6 @@ defmodule ApathyDrive.Router do
     plug :put_secure_browser_headers
   end
 
-  pipeline :auth do
-    plug :put_oauth_strategy
-  end
-
   pipeline :admin do
     plug :require_admin
   end
@@ -44,7 +40,7 @@ defmodule ApathyDrive.Router do
   end
 
   scope "/auth", alias: ApathyDrive do
-    pipe_through [:browser, :auth]
+    pipe_through :browser
     get "/", AuthController, :index
     get "/callback", AuthController, :callback
   end
@@ -75,13 +71,6 @@ defmodule ApathyDrive.Router do
         |> redirect(to: "/")
         |> halt
     end
-  end
-
-  # Fetch the configured strategy from the router's config and store the
-  # initialized strategy into `conn.private.oauth2_strategy`.
-  defp put_oauth_strategy(conn, _) do
-    {strategy, opts} = ApathyDrive.Endpoint.config(:oauth2)
-    put_private(conn, :oauth2_strategy, apply(strategy, :new, [opts]))
   end
 
 end
