@@ -38,7 +38,7 @@ defmodule ApathyDrive.ItemControllerTest do
     test "shows chosen resource", %{conn: conn} do
       item = Repo.insert! %Item{}
       conn = get conn, item_path(conn, :show, item)
-      assert html_response(conn, 200) =~ "Description:"
+      assert html_response(conn, 200) =~ "Dropped by:"
     end
 
     test "renders page not found when id is nonexistent", %{conn: conn} do
