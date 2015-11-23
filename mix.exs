@@ -29,7 +29,7 @@ defmodule ApathyDrive.Mixfile do
       {:phoenix,             "~> 1.0"},
       {:phoenix_live_reload, "~> 1.0.1"},
       {:phoenix_ecto,        "~> 1.2"},
-      {:phoenix_html,        "~> 2.0"},
+      {:phoenix_html,        "~> 2.2"},
       {:timex,               "~> 0.19"},
       {:timex_ecto,          "~> 0.5"},
       {:inflex,              "~> 0.2.8"},

@@ -7,10 +7,13 @@
   <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600,100' rel='stylesheet' type='text/css'>
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+  <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+  <script>require("web/static/js/nav");</script>
 </head>
 <body>
   <div class="container">
     <%= @inner %>
   </div>
+  <script>require("deps/phoenix_html/web/static/js/phoenix_html");</script>
 </body>
 </html>

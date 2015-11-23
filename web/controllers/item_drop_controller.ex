@@ -1,4 +1,4 @@
-defmodule ApathyDrive.ItemController do
+defmodule ApathyDrive.ItemDropController do
   use ApathyDrive.Web, :controller
   import Ecto.Query
 
@@ -6,36 +6,6 @@ defmodule ApathyDrive.ItemController do
   alias ApathyDrive.ItemDrop
 
   plug :scrub_params, "item" when action in [:create, :update]
-
-  def index(conn, %{"q" => query} = params) do
-    query = "%#{query}%"
-
-    page =
-      Item
-      |> where([r], ilike(r.name, ^query))
-      |> order_by([r], asc: r.id)
-      |> Repo.paginate(params)
-
-    render(conn, "index.html",
-      items: page.entries,
-      page_number: page.page_number,
-      page_size: page.page_size,
-      total_pages: page.total_pages,
-      q: params["q"])
-  end
-
-  def index(conn, params) do
-    page =
-      Item
-      |> order_by([r], asc: r.id)
-      |> Repo.paginate(params)
-
-    render(conn, "index.html",
-      items: page.entries,
-      page_number: page.page_number,
-      page_size: page.page_size,
-      total_pages: page.total_pages)
-  end
 
   def new(conn, _params) do
     changeset = Item.changeset(%Item{})
@@ -53,15 +23,6 @@ defmodule ApathyDrive.ItemController do
       {:error, changeset} ->
         render(conn, "new.html", changeset: changeset)
     end
-  end
-
-  def show(conn, %{"id" => id}) do
-    item = Repo.get!(Item, id)
-    drops =
-      id
-      |> ItemDrop.item_drops
-      |> ItemDrop.names
-    render(conn, "show.html", item: item, drops: drops)
   end
 
   def edit(conn, %{"id" => id}) do
@@ -84,15 +45,16 @@ defmodule ApathyDrive.ItemController do
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    item = Repo.get!(Item, id)
+  def delete(conn, %{"id" => id} = params) do
+    IO.puts "DELETING!!!"
+    item_drop = Repo.get!(ItemDrop, id)
 
     # Here we use delete! (with a bang) because we expect
     # it to always work (and if it does not, it will raise).
-    Repo.delete!(item)
+    Repo.delete!(item_drop)
 
     conn
-    |> put_flash(:info, "Item deleted successfully.")
-    |> redirect(to: item_path(conn, :index))
+    |> put_flash(:info, "Item Drop deleted successfully.")
+    |> redirect(to: params["from"])
   end
 end

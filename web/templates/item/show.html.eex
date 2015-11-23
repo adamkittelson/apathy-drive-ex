@@ -1,59 +1,25 @@
 <%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
 
-<h2><%= @item.name %></h2>
-
-<ul>
-  <li>
-    <strong>Description:</strong>
-    <%= @item.description %>
-  </li>
-
-  <li>
-    <strong>Weight:</strong>
-    <%= @item.weight %>
-  </li>
-
-  <li>
-    <strong>Worn on:</strong>
-    <%= @item.worn_on %>
-  </li>
-
-  <li>
-    <strong>Physical defense:</strong>
-    <%= @item.physical_defense %>
-  </li>
-
-  <li>
-    <strong>Magical defense:</strong>
-    <%= @item.magical_defense %>
-  </li>
-
-  <li>
-    <strong>Level:</strong>
-    <%= @item.level %>
-  </li>
-
-  <li>
-    <strong>Strength:</strong>
-    <%= @item.strength %>
-  </li>
-
-  <li>
-    <strong>Agility:</strong>
-    <%= @item.agility %>
-  </li>
-
-  <li>
-    <strong>Will:</strong>
-    <%= @item.will %>
-  </li>
-
-  <li>
-    <strong>Grade:</strong>
-    <%= @item.grade %>
-  </li>
-
-</ul>
+<p>
+  <div><span class='cyan'><%= @item.name %></span></div>
+  <p><%= @item.description %></p>
+</p>
+<p>
+  <div>Dropped by:</div>
+  <table>
+    <thead>
+      <th>Monster</th>
+      <th>Chance</th>
+    </thead>
+    <%= for drop <- @drops do %>
+      <tr>
+        <td><%= link drop.monster, to: monster_path(@conn, :show, drop.monster_id) %></td>
+        <td><%= drop.chance %>%</td>
+        <td><%= link "X", to: item_drop_path(@conn, :delete, drop.id, from: item_path(@conn, :show, @item)), method: :delete %></td>
+      </tr>
+    <% end %>
+  </table>
+</p>
 
 <%= link "Edit", to: item_path(@conn, :edit, @item), class: "button button-primary" %>
 <%= link "Back", to: item_path(@conn, :index), class: "button button-primary" %>
