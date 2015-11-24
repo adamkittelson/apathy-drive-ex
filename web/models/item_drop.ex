@@ -13,11 +13,32 @@ defmodule ApathyDrive.ItemDrop do
   @optional_fields ~w()
 
   def changeset(model, params \\ :empty) do
+    updated_params = update_params(params)
+
     model
-    |> cast(params, @required_fields, @optional_fields)
+    |> cast(updated_params, @required_fields, @optional_fields)
     |> unique_constraint(:item_id, name: :item_drops_monster_id_item_id_index)
     |> foreign_key_constraint(:item_id)
     |> foreign_key_constraint(:monster_id)
+    |> validate_number(:chance, greater_than: 0, less_than: 101)
+  end
+
+  def update_params(:empty), do: :empty
+  def update_params(params) do
+    params
+    |> Map.put("monster_id", get_number(Map.get(params, "monster_id")))
+    |> Map.put("item_id",    get_number(Map.get(params, "item_id")))
+  end
+
+  def get_number(nil), do: nil
+  def get_number(""),  do: nil
+  def get_number(string) do
+    case Regex.run(~r/\d+$/, string) do
+      nil ->
+        nil
+      [number] ->
+        number
+    end
   end
 
   def monster_drops(monster_template_id) do

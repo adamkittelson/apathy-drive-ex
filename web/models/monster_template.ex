@@ -66,6 +66,14 @@ defmodule MonsterTemplate do
     end
   end
 
+  def datalist do
+    __MODULE__
+    |> Repo.all
+    |> Enum.map(fn(mt) ->
+         "#{mt.name} - #{mt.id}"
+       end)
+  end
+
   def spawn_monster(monster_template_id, room) when is_integer(monster_template_id) do
     monster_template_id
     |> find

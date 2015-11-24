@@ -39,6 +39,14 @@ defmodule ApathyDrive.Item do
     Repo.all(query)
   end
 
+  def datalist do
+    __MODULE__
+    |> Repo.all
+    |> Enum.map(fn(item) ->
+         "#{item.name} - #{item.id}"
+       end)
+  end
+
   def generate_item(level) do
     level
     |> items_below_level
