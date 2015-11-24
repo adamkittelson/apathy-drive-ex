@@ -5,6 +5,7 @@ defmodule Room do
   use Timex
   alias ApathyDrive.PubSub
   alias ApathyDrive.Mobile
+  alias ApathyDrive.ItemDrop
 
   schema "rooms" do
     field :name,                  :string
@@ -32,6 +33,8 @@ defmodule Room do
   end
 
   def init(id) do
+    :random.seed(:os.timestamp)
+
     room = Repo.get!(Room, id)
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
@@ -781,16 +784,19 @@ defmodule Room do
     {:noreply, Map.merge(room, changes)}
   end
 
-  def handle_info({:generate_loot, level}, room) do
-    if :random.uniform(10) > 7 do
-      room =
-        room
-        |> Map.put(:items, [ApathyDrive.Item.generate_item(level) | room.items])
-        |> Repo.update!
-      {:noreply, room}
-    else
-      {:noreply, room}
-    end
+  def handle_info({:generate_loot, monster_template_id, level}, room) do
+    items =
+      ItemDrop.monster_drops(monster_template_id)
+      |> Enum.map(fn(%{item_id: item_id, chance: chance}) ->
+           ApathyDrive.Item.generate_item(%{chance: chance, item_id: item_id, level: level})
+         end)
+      |> Enum.reject(&is_nil/1)
+
+    room =
+      room
+      |> Map.put(:items, items ++ room.items)
+      |> Repo.update!
+    {:noreply, room}
   end
 
   def handle_info(_message, room) do
