@@ -10,7 +10,7 @@
     <thead>
       <th>Monster</th>
       <th>Chance</th>
-      <th><%= link "Add", to: item_drop_path(@conn, :new, from: item_path(@conn, :show, @item)) %></th>
+      <th><%= link "Add", to: item_drop_path(@conn, :new, from: item_path(@conn, :show, @item), item_id: @item.id )%></th>
     </thead>
     <%= for drop <- @drops do %>
       <tr>
