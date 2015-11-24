@@ -2,7 +2,6 @@ defmodule ApathyDrive.AuthController do
   use ApathyDrive.Web, :controller
 
   alias OAuth2.AccessToken
-  alias OAuth2.Strategy.AuthCode
 
   @doc """
   This action is reached via `/auth` and redirects to the OAuth2 provider
@@ -28,7 +27,7 @@ defmodule ApathyDrive.AuthController do
   """
   def callback(conn, %{"code" => code}) do
     # Exchange an auth code for an access token
-    token = Facebook.get_token!(code: code)
+    token = Facebook.get_token!([code: code], [])
 
     # Request the user's data with the access token
     user = AccessToken.get!(token, "/me")
@@ -40,12 +39,6 @@ defmodule ApathyDrive.AuthController do
       |> put_session(:current_spirit, spirit.id)
 
     redirect(conn, to: game_path(conn, :game))
-  end
-
-  defp get_user!(token) do
-    {:ok, %{body: user}} = OAuth2.AccessToken.get(token, "/me", fields: "id")
-
-    user
   end
 
 end

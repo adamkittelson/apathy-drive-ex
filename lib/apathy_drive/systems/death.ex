@@ -30,11 +30,11 @@ defmodule Systems.Death do
   end
 
   # Player not possessing a monster
-  def kill(%Mobile{monster_template_id: nil, spirit: %Spirit{} = spirit} = mobile) do
+  def kill(%Mobile{monster_template_id: nil, spirit: %Spirit{}} = mobile) do
     kill(mobile, [:drop_equipment, :inform_player, :send_home, :respawn_spirit])
   end
   # Player possessing a monster
-  def kill(%Mobile{monster_template_id: _, spirit: %Spirit{} = spirit} = mobile) do
+  def kill(%Mobile{monster_template_id: _, spirit: %Spirit{}} = mobile) do
     kill(mobile, [:reward_monster_death_exp, :respawn_spirit, :unpossess, :set_last_killed_at])
   end
   # Monster not possessed by a player
@@ -99,7 +99,7 @@ defmodule Systems.Death do
 
     kill(mobile, remaining_steps)
   end
-  def kill(mobile, []) do
+  def kill(_mobile, []) do
     Process.exit(self, :normal)
   end
 

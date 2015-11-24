@@ -1,6 +1,5 @@
 defmodule ApathyDrive.ItemDropController do
   use ApathyDrive.Web, :controller
-  import Ecto.Query
 
   alias ApathyDrive.Item
   alias ApathyDrive.ItemDrop

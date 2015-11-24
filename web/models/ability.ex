@@ -496,7 +496,7 @@ defmodule Ability do
     Enum.sum(speed_mods) / count / 100
   end
 
-  def dodged?(%Mobile{} = mobile, %{"accuracy_skill" => accuracy_skill}, %Mobile{} = attacker) do
+  def dodged?(%Mobile{} = _mobile, %{"accuracy_skill" => _accuracy_skill}, %Mobile{} = _attacker) do
     # dodge = Monster.modified_skill(monster, "dodge")
     # accuracy = Monster.modified_skill(attacker, accuracy_skill)
     #

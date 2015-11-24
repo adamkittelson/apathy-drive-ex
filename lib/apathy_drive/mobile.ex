@@ -700,7 +700,7 @@ defmodule ApathyDrive.Mobile do
       {:reply, {:error, "You cannot use possession if you have a physical body."}, mobile}
     end
   end
-  def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: _, effects: effects} = mobile) do
+  def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: _, effects: _effects} = mobile) do
     {:reply, {:error, "You are already possessing #{mobile.name}."}, mobile}
   end
 
@@ -717,16 +717,10 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def ethereal?(%Mobile{effects: effects}) do
-    effects
-    |> Map.values
-    |> Enum.any?(&(&1["ethereal"] == true))
-  end
-
   def handle_call(:unpossess, _from, %Mobile{monster_template_id: nil} = mobile) do
     {:reply, {:error, "You aren't possessing anything."}, mobile}
   end
-  def handle_call(:unpossess, _from, %Mobile{socket: socket, spirit: spirit} = mobile) do
+  def handle_call(:unpossess, _from, %Mobile{socket: _socket, spirit: spirit} = mobile) do
     mobile =
       mobile
       |> Map.put(:spirit, nil)
@@ -769,7 +763,7 @@ defmodule ApathyDrive.Mobile do
 
     {:reply, :ok, mobile}
   end
-  def handle_call({:possess, spirit_id, socket}, _from, mobile) do
+  def handle_call({:possess, _spirit_id, _socket}, _from, mobile) do
     {:reply, {:error, "#{mobile.name} is possessed by another player."}, mobile}
   end
 
@@ -812,7 +806,7 @@ defmodule ApathyDrive.Mobile do
       {:reply, :too_heavy, mobile}
     end
   end
-  def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{monster_template_id: _} = mobile) do
+  def handle_call({:get_item, %{"weight" => _weight} = _item}, _from, %Mobile{monster_template_id: _} = mobile) do
     {:reply, :possessed, mobile}
   end
 
@@ -933,11 +927,6 @@ defmodule ApathyDrive.Mobile do
         end
     end
   end
-
-  defp conflicting_worn_on("Weapon Hand"),     do: ["Two Handed"]
-  defp conflicting_worn_on("Off-Hand"),   do: ["Two Handed"]
-  defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
-  defp conflicting_worn_on(_), do: []
 
   def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = equipment
@@ -1420,5 +1409,20 @@ defmodule ApathyDrive.Mobile do
   defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
   defp worn_on_max(%{"worn_on" => "Wrist"}),  do: 2
   defp worn_on_max(%{"worn_on" => _}),        do: 1
+
+  defp ethereal?(%Mobile{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(&1["ethereal"] == true))
+  end
+
+  defp conflicting_worn_on("Weapon Hand"),     do: ["Two Handed"]
+  defp conflicting_worn_on("Off-Hand"),   do: ["Two Handed"]
+  defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
+  defp conflicting_worn_on(_), do: []
+
+
+
+
 
 end
