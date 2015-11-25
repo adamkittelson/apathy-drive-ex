@@ -598,6 +598,58 @@ defmodule ApathyDrive.Mobile do
     end)
   end
 
+  def weapon(%Mobile{spirit: nil}), do: nil
+  def weapon(%Mobile{spirit: %Spirit{equipment: equipment}}) do
+    equipment
+    |> Enum.find(fn(%{"worn_on" => worn_on}) ->
+         worn_on in ["Weapon Hand", "Two Handed"]
+       end)
+  end
+
+  def physical_damage_from_weapon(nil), do: 0
+  def physical_damage_from_weapon(%{"strength" => str, "agility" => agi, "will" => will}) do
+    physical_damage(str, agi, will)
+  end
+
+  def magical_damage_from_weapon(nil), do: 0
+  def magical_damage_from_weapon(%{"strength" => str, "agility" => agi, "will" => will}) do
+    magical_damage(str, agi, will)
+  end
+
+  def physical_damage(%Mobile{} = mobile) do
+    str = strength(mobile)
+    agi = agility(mobile)
+    wil = will(mobile)
+
+    damage =
+      (physical_damage(str, agi, wil) / 5) + physical_damage_from_weapon(weapon(mobile))
+
+    max(trunc(damage), 1)
+  end
+
+  def physical_damage(str, agi, wil) do
+    total = str + agi + wil
+
+    total * (str / total)
+  end
+
+  def magical_damage(%Mobile{} = mobile) do
+    str = strength(mobile)
+    agi = agility(mobile)
+    wil = will(mobile)
+
+    damage =
+      (magical_damage(str, agi, wil) / 5) + magical_damage_from_weapon(weapon(mobile))
+
+    max(trunc(damage), 1)
+  end
+
+  def magical_damage(str, agi, wil) do
+    total = str + agi + wil
+
+    total * (wil / total)
+  end
+
   def strength(%Mobile{} = mobile) do
     attribute(mobile, :strength)
   end
@@ -787,7 +839,9 @@ defmodule ApathyDrive.Mobile do
              will: will(mobile),
              effects: effects,
              physical_defense: physical_defense(mobile),
-             magical_defense: magical_defense(mobile)}
+             magical_defense: magical_defense(mobile),
+             physical_damage: physical_damage(mobile),
+             magical_damage: magical_damage(mobile)}
 
     {:reply, data, mobile}
   end

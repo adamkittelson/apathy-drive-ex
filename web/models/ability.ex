@@ -145,9 +145,7 @@ defmodule Ability do
   end
 
   def scale_effect(%Mobile{} = mobile, "heal", %{"potency" => potency}) do
-    magic_damage_from_weapon = 1 # for now
-
-    average = (potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile)))
+    average = (potency/300) * ((Mobile.magical_damage(mobile)) + (0.2229 * Mobile.will(mobile)))
 
     modifier = (80..120 |> Enum.random) / 100
 
@@ -155,9 +153,7 @@ defmodule Ability do
   end
 
   def scale_effect(%Mobile{} = mobile, "damage", %{"potency" => potency}) do
-    magic_damage_from_weapon = 5 # for now
-
-    trunc((potency/300) * ((magic_damage_from_weapon) + (0.2229 * Mobile.will(mobile))))
+    trunc((potency/300) * ((Mobile.physical_damage(mobile)) + (0.2229 * Mobile.will(mobile))))
   end
 
   def scale_effect(%Mobile{}, _effect_name, %{"potency" => potency}) do
