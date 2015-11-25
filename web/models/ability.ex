@@ -496,43 +496,67 @@ defmodule Ability do
     Enum.sum(speed_mods) / count / 100
   end
 
-  def dodged?(%Mobile{} = _mobile, %{"accuracy_skill" => _accuracy_skill}, %Mobile{} = _attacker) do
-    # dodge = Monster.modified_skill(monster, "dodge")
-    # accuracy = Monster.modified_skill(attacker, accuracy_skill)
-    #
-    # chance = 30
-    # if dodge > 0 do
-    #   difference = dodge - accuracy
-    #   chance = if difference > 0 do
-    #     chance + difference * 0.2
-    #   else
-    #     chance + difference * 0.3
-    #   end
-    #
-    #   :random.uniform(100) < trunc(chance)
-    # else
+  def dodged?(%Mobile{} = mobile, %{"accuracy_stats" => stats}, %Mobile{} = attacker) do
+    accuracy =
+      stats
+      |> Enum.reduce(0, fn(stat, total) ->
+           total + Mobile.attribute(attacker, String.to_existing_atom(stat))
+         end)
+      |> div(length(stats))
+      |> +(Mobile.effect_bonus(mobile, "Accuracy"))
+
+    dodge = Mobile.agility(mobile) + Mobile.effect_bonus(mobile, "Dodge")
+
+    if dodge > 0 do
+      chance = dodge_chance(dodge, accuracy)
+
+      :random.uniform(100) < trunc(chance)
+    else
       false
-    # end
+    end
   end
 
-  def apply_ability(%Mobile{} = mobile, %{"dodgeable" => true} = ability, %Mobile{} = ability_user) do
-    # if dodged?(mobile, ability, ability_user) do
-    #
-    #   user_message = interpolate(ability["dodge_message"]["user"], %{"user" => ability_user, "target" => mobile})
-    #   Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{user_message}</span></p>")
-    #
-    #   target_message = interpolate(ability["dodge_message"]["target"], %{"user" => ability_user, "target" => mobile})
-    #   Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{target_message}</span></p>")
-    #
-    #   spectator_message = interpolate(ability["dodge_message"]["spectator"], %{"user" => ability_user, "target" => mobile})
-    #   PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
-    #   |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")))
-    #
-    #   put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
-    # else
-      ability = Map.put(ability, "dodgeable", false)
+  def dodge_chance(dodge, accuracy)
+  def dodge_chance(_dodge, accuracy) when accuracy < 1, do: 100
+  def dodge_chance(dodge, _accuracy) when dodge < 1, do: 0
+  def dodge_chance(dodge, accuracy) when dodge == accuracy, do: 10
+  def dodge_chance(dodge, accuracy) do
+    ratio = dodge / accuracy
+
+    if ratio < 1 do
+      max(trunc(10 - ((1.0 - ratio) / 0.1) * 2), 1)
+    else
+      max(min(trunc(((3.0 + ratio) * 87) - 340), 90), 10)
+    end
+  end
+
+  def apply_ability(%Mobile{} = mobile, %{"dodge_message" => _, "accuracy_stats" => _} = ability, %Mobile{} = ability_user) do
+    if dodged?(mobile, ability, ability_user) do
+
+      user_message = interpolate(ability["dodge_message"]["user"], %{"user" => ability_user, "target" => mobile})
+      Mobile.send_scroll(ability_user, "<p><span class='dark-cyan'>#{user_message}</span></p>")
+
+      target_message = interpolate(ability["dodge_message"]["target"], %{"user" => ability_user, "target" => mobile})
+      unless ability_user.pid == self do
+        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{target_message}</span></p>")
+      end
+
+      spectator_message = interpolate(ability["dodge_message"]["spectator"], %{"user" => ability_user, "target" => mobile})
+      PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
+      |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")))
+
+      2000
+      |> :random.uniform
+      |> :erlang.send_after(self, :think)
+
+      put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
+    else
+      ability =
+        ability
+        |> Map.drop(["dodge_message", "accuracy_stats"])
+
       apply_ability(mobile, ability, ability_user)
-    # end
+    end
   end
   def apply_ability(%Mobile{} = mobile, %{} = ability, %Mobile{} = ability_user) do
 
