@@ -173,6 +173,7 @@ defmodule ApathyDrive.Mobile do
 
     score_data =
       current
+      |> Map.take([:max_hp, :max_mana, :physical_damage, :magical_damage, :physical_defense, :magical_defense, :strength, :agility, :will])
       |> Enum.reduce(%{}, fn({key, val}, values) ->
            Map.put(values, key, value(val, equipped[key]))
          end)
@@ -650,11 +651,16 @@ defmodule ApathyDrive.Mobile do
      |> Enum.filter(&(Map.get(&1, "level", 0) <= level))
      |> Enum.reject(&(Map.get(&1, "min_armour_type", 1) > mobile.highest_armour_grade))
      |> Enum.reject(&(Map.get(&1, "max_armour_type", 10) < mobile.highest_armour_grade))
+     |> add_abilities_from_equipment(spirit.equipment)
 
     mobile
     |> Map.put(:abilities, abilities)
     |> set_passive_effects
     |> adjust_mana_costs
+  end
+
+  def add_abilities_from_equipment(abilities, equipment) do
+    abilities ++ Enum.flat_map(equipment, &(&1["abilities"]))
   end
 
   def set_passive_effects(%Mobile{abilities: []} = mobile) do
@@ -1534,7 +1540,7 @@ defmodule ApathyDrive.Mobile do
   defp value(pre, post) when pre < post do
     "#{post}(<span class='green'>+#{post - pre}</span>)"
   end
-  defp value(pre, post) do
+  defp value(_pre, post) do
     "#{post}"
   end
 

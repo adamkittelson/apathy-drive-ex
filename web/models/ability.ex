@@ -152,8 +152,12 @@ defmodule Ability do
     trunc(average * modifier)
   end
 
-  def scale_effect(%Mobile{} = mobile, "damage", %{"potency" => potency}) do
-    trunc((potency/300) * ((Mobile.physical_damage(mobile)) + (0.2229 * Mobile.will(mobile))))
+  def scale_effect(%Mobile{} = mobile, "damage", %{"potency" => potency, "type" => type}) do
+    if type == "magical" do
+      trunc((potency/300) * (Mobile.magical_damage(mobile) + (0.2229 * Mobile.will(mobile))))
+    else
+      trunc((potency/300) * (Mobile.physical_damage(mobile) + (0.2229 * Mobile.strength(mobile))))
+    end
   end
 
   def scale_effect(%Mobile{}, _effect_name, %{"potency" => potency}) do
