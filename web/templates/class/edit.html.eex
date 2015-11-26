@@ -7,9 +7,7 @@
 
 <%= link "Back", to: class_path(@conn, :index) %>
 
-<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script>require("web/static/js/jquery-linedtextarea")</script>
 <script>require("web/static/js/json-format")</script>
 <script>require("web/static/js/json-parser")</script>
 <script>require("web/static/js/json-edit")</script>
-<script>require("web/static/js/nav")</script>

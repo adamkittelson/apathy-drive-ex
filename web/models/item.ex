@@ -13,6 +13,7 @@ defmodule ApathyDrive.Item do
     field :agility, :integer
     field :will, :integer
     field :grade, :integer
+    field :abilities, ApathyDrive.JSONB
 
     timestamps
   end

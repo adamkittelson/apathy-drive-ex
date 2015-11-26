@@ -9,5 +9,7 @@
 
 <%= link "Back", to: item_path(@conn, :index) %>
 
+<script>require("web/static/js/jquery-linedtextarea")</script>
+<script>require("web/static/js/json-format")</script>
+<script>require("web/static/js/json-parser")</script>
 <script>require("web/static/js/json-edit")</script>
-<script>require("web/static/js/nav")</script>
