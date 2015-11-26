@@ -62,13 +62,7 @@ defmodule Commands.Look do
     Mobile.send_scroll mobile, "<p>#{description}</p>"
   end
   defp look_at_item(mobile, %{} = item) do
-    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{item["name"]}</span></p>")
-    Mobile.send_scroll(mobile, "<p>#{item["description"]}</p>\n\n")
-
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Defense</span>: <span class='dark-cyan'>#{item["physical_defense"]}</span>       <span class='dark-green'>Magical Defense</span>: <span class='dark-cyan'>#{item["magical_defense"]}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Strength</span>: <span class='dark-cyan'>#{item["strength"]}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility</span>:  <span class='dark-cyan'>#{item["agility"]}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will</span>:     <span class='dark-cyan'>#{item["will"]}</span></p>")
+    Mobile.look_at_item(mobile, item)
   end
 
 end

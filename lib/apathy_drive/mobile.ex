@@ -101,9 +101,34 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :exit_message)
   end
 
-  def score_data(pid) do
+  def score_data(pid) when is_pid(pid) do
     GenServer.call(pid, :score_data)
   end
+  def score_data(mobile) do
+    effects =
+      mobile.effects
+      |> Map.values
+      |> Enum.filter(&(Map.has_key?(&1, "effect_message")))
+      |> Enum.map(&(&1["effect_message"]))
+
+    %{name: mobile.spirit.name,
+      class: (mobile.monster_template_id && mobile.name) || mobile.spirit.class.name,
+      level: mobile.spirit.level,
+      experience: mobile.spirit.experience,
+      hp: mobile.hp,
+      max_hp: mobile.max_hp,
+      mana: mobile.mana,
+      max_mana: mobile.max_mana,
+      strength: strength(mobile),
+      agility: agility(mobile),
+      will: will(mobile),
+      effects: effects,
+      physical_defense: physical_defense(mobile),
+      magical_defense: magical_defense(mobile),
+      physical_damage: physical_damage(mobile),
+      magical_damage: magical_damage(mobile)}
+  end
+
 
   def value(pid) do
     GenServer.call(pid, :value)
@@ -128,6 +153,47 @@ defmodule ApathyDrive.Mobile do
   end
   def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "evil"}}}) do
     "<span class='magenta'>#{name}</span>"
+  end
+
+  def look_at_item(%Mobile{} = mobile, item) do
+    Mobile.send_scroll(mobile, "\n\n")
+
+    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{item["name"]}</span></p>")
+    Mobile.send_scroll(mobile, "<p>#{item["description"]}</p>\n\n")
+
+    current =
+      mobile
+      |> Mobile.score_data
+
+    {:reply, {:ok, %{equipped: _}}, equipped} =
+      mobile
+      |> Mobile.equip_item(item)
+
+    equipped = Mobile.score_data(equipped)
+
+    score_data =
+      current
+      |> Enum.reduce(%{}, fn({key, val}, values) ->
+           Map.put(values, key, value(val, equipped[key]))
+         end)
+
+    Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>Changes if Equipped:</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Max HP:</span> <span class='dark-cyan'>#{score_data.max_hp}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Max Mana:</span> <span class='dark-cyan'>#{score_data.max_mana}</span></p>")
+
+    Mobile.send_scroll(mobile, "\n\n")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Damage:</span> <span class='dark-cyan'>#{score_data.physical_damage}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Magical Damage:</span>  <span class='dark-cyan'>#{score_data.magical_damage}</span></p>")
+    Mobile.send_scroll(mobile, "\n\n")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Defense:</span> <span class='dark-cyan'>#{score_data.physical_defense}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Magical Defense:</span> <span class='dark-cyan'>#{score_data.magical_defense}</span></p>")
+    Mobile.send_scroll(mobile, "\n\n")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Strength:</span> <span class='dark-cyan'>#{score_data.strength}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility:</span>  <span class='dark-cyan'>#{score_data.agility}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will:</span>     <span class='dark-cyan'>#{score_data.will}</span></p>")
+  end
+  def look_at_item(mobile, item) do
+    GenServer.call(mobile, {:look_at_item, item})
   end
 
   def interpolation_data(%Mobile{} = mobile),  do: %{name: mobile.name, gender: mobile.gender}
@@ -196,8 +262,90 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, {:drop_item, item})
   end
 
-  def equip_item(mobile, item) do
+  def equip_item(mobile, item) when is_pid(mobile) do
     GenServer.call(mobile, {:equip_item, item})
+  end
+
+  def equip_item(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile, %{"worn_on" => worn_on} = item) do
+    cond do
+      Enum.count(equipment, &(&1["worn_on"] == worn_on)) >= worn_on_max(item) ->
+        item_to_remove =
+          equipment
+          |> Enum.find(&(&1["worn_on"] == worn_on))
+
+        equipment =
+          equipment
+          |> List.delete(item_to_remove)
+          |> List.insert_at(-1, item)
+
+        inventory =
+          inventory
+          |> List.insert_at(-1, item_to_remove)
+          |> List.delete(item)
+
+          mobile = put_in(mobile.spirit.inventory, inventory)
+          mobile = put_in(mobile.spirit.equipment, equipment)
+                   |> set_highest_armour_grade
+                   |> set_abilities
+                   |> set_max_mana
+                   |> set_mana
+                   |> set_max_hp
+                   |> set_hp
+                   |> set_physical_defense
+                   |> set_magical_defense
+
+        {:reply, {:ok, %{equipped: item, unequipped: [item_to_remove]}}, mobile}
+      conflicting_worn_on(worn_on) |> Enum.any? ->
+        items_to_remove =
+          equipment
+          |> Enum.filter(&(&1["worn_on"] in conflicting_worn_on(worn_on)))
+
+        equipment =
+          equipment
+          |> Enum.reject(&(&1 in items_to_remove))
+          |> List.insert_at(-1, item)
+
+        inventory =
+          items_to_remove
+          |> Enum.reduce(inventory, fn(item_to_remove, inv) ->
+               List.insert_at(inv, -1, item_to_remove)
+             end)
+          |> List.delete(item)
+
+          mobile = put_in(mobile.spirit.inventory, inventory)
+          mobile = put_in(mobile.spirit.equipment, equipment)
+                   |> set_highest_armour_grade
+                   |> set_abilities
+                   |> set_max_mana
+                   |> set_mana
+                   |> set_max_hp
+                   |> set_hp
+                   |> set_physical_defense
+                   |> set_magical_defense
+
+        {:reply, {:ok, %{equipped: item, unequipped: items_to_remove}}, mobile}
+      true ->
+        equipment =
+          equipment
+          |> List.insert_at(-1, item)
+
+        inventory =
+          inventory
+          |> List.delete(item)
+
+        mobile = put_in(mobile.spirit.inventory, inventory)
+        mobile = put_in(mobile.spirit.equipment, equipment)
+                 |> set_highest_armour_grade
+                 |> set_abilities
+                 |> set_max_mana
+                 |> set_mana
+                 |> set_max_hp
+                 |> set_hp
+                 |> set_physical_defense
+                 |> set_magical_defense
+
+        {:reply, {:ok, %{equipped: item}}, mobile}
+    end
   end
 
   def unequip_item(mobile, item) do
@@ -820,30 +968,13 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_call(:score_data, _from, mobile) do
-    effects =
-      mobile.effects
-      |> Map.values
-      |> Enum.filter(&(Map.has_key?(&1, "effect_message")))
-      |> Enum.map(&(&1["effect_message"]))
+    score_data(mobile)
 
-    data = %{name: mobile.spirit.name,
-             class: (mobile.monster_template_id && mobile.name) || mobile.spirit.class.name,
-             level: mobile.spirit.level,
-             experience: mobile.spirit.experience,
-             hp: mobile.hp,
-             max_hp: mobile.max_hp,
-             mana: mobile.mana,
-             max_mana: mobile.max_mana,
-             strength: strength(mobile),
-             agility: agility(mobile),
-             will: will(mobile),
-             effects: effects,
-             physical_defense: physical_defense(mobile),
-             magical_defense: magical_defense(mobile),
-             physical_damage: physical_damage(mobile),
-             magical_damage: magical_damage(mobile)}
+    {:reply, score_data(mobile), mobile}
+  end
 
-    {:reply, data, mobile}
+  def handle_call({:look_at_item, item}, _from, mobile) do
+    {:reply, look_at_item(mobile, item), mobile}
   end
 
   def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
@@ -887,98 +1018,20 @@ defmodule ApathyDrive.Mobile do
     {:reply, :possessed, mobile}
   end
 
-  def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
+  def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: _equipment}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
            |> Systems.Match.one(:name_contains, item)
 
     case item do
       nil ->
-        {:reply, :not_found, mobile}
-      %{item: %{"worn_on" => worn_on} = item} ->
-        cond do
-          Enum.count(equipment, &(&1["worn_on"] == worn_on)) >= worn_on_max(item) ->
-            item_to_remove =
-              equipment
-              |> Enum.find(&(&1["worn_on"] == worn_on))
+       {:reply, :not_found, mobile}
+     %{item: item} ->
+       {:reply, resp, mobile} = equip_item(mobile, item)
 
-            equipment =
-              equipment
-              |> List.delete(item_to_remove)
-              |> List.insert_at(-1, item)
+       Repo.update!(mobile.spirit)
 
-            inventory =
-              inventory
-              |> List.insert_at(-1, item_to_remove)
-              |> List.delete(item)
-
-              mobile = put_in(mobile.spirit.inventory, inventory)
-              mobile = put_in(mobile.spirit.equipment, equipment)
-                       |> set_highest_armour_grade
-                       |> set_abilities
-                       |> set_max_mana
-                       |> set_mana
-                       |> set_max_hp
-                       |> set_hp
-                       |> set_physical_defense
-                       |> set_magical_defense
-
-              Repo.update!(mobile.spirit)
-            {:reply, {:ok, %{equipped: item, unequipped: [item_to_remove]}}, mobile}
-          conflicting_worn_on(worn_on) |> Enum.any? ->
-            items_to_remove =
-              equipment
-              |> Enum.filter(&(&1["worn_on"] in conflicting_worn_on(worn_on)))
-
-            equipment =
-              equipment
-              |> Enum.reject(&(&1 in items_to_remove))
-              |> List.insert_at(-1, item)
-
-            inventory =
-              items_to_remove
-              |> Enum.reduce(inventory, fn(item_to_remove, inv) ->
-                   List.insert_at(inv, -1, item_to_remove)
-                 end)
-              |> List.delete(item)
-
-              mobile = put_in(mobile.spirit.inventory, inventory)
-              mobile = put_in(mobile.spirit.equipment, equipment)
-                       |> set_highest_armour_grade
-                       |> set_abilities
-                       |> set_max_mana
-                       |> set_mana
-                       |> set_max_hp
-                       |> set_hp
-                       |> set_physical_defense
-                       |> set_magical_defense
-
-              Repo.update!(mobile.spirit)
-            {:reply, {:ok, %{equipped: item, unequipped: items_to_remove}}, mobile}
-          true ->
-            equipment =
-              equipment
-              |> List.insert_at(-1, item)
-
-            inventory =
-              inventory
-              |> List.delete(item)
-
-            mobile = put_in(mobile.spirit.inventory, inventory)
-            mobile = put_in(mobile.spirit.equipment, equipment)
-                     |> set_highest_armour_grade
-                     |> set_abilities
-                     |> set_max_mana
-                     |> set_mana
-                     |> set_max_hp
-                     |> set_hp
-                     |> set_physical_defense
-                     |> set_magical_defense
-
-            Repo.update!(mobile.spirit)
-
-            {:reply, {:ok, %{equipped: item}}, mobile}
-        end
+       {:reply, resp, mobile}
     end
   end
 
@@ -1475,8 +1528,14 @@ defmodule ApathyDrive.Mobile do
   defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
   defp conflicting_worn_on(_), do: []
 
-
-
-
+  defp value(pre, post) when pre > post do
+    "#{post}(<span class='dark-red'>#{post - pre}</span>)"
+  end
+  defp value(pre, post) when pre < post do
+    "#{post}(<span class='green'>+#{post - pre}</span>)"
+  end
+  defp value(pre, post) do
+    "#{post}"
+  end
 
 end
