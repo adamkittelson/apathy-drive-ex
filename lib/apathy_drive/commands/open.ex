@@ -3,35 +3,33 @@ defmodule Commands.Open do
 
   def keywords, do: ["open"]
 
-  def execute(%Spirit{} = spirit, _arguments) do
-    spirit
-    |> Spirit.send_scroll("<p>You need a body to do that.</p>")
+  def execute(mobile, []) do
+    Mobile.send_scroll(mobile, "<p>Open what?</p>")
   end
 
-  def execute(%Monster{} = monster, arguments) do
-    current_room = Monster.find_room(monster)
+  def execute(mobile, arguments) do
+    direction = arguments
+                |> Enum.join(" ")
+                |> Room.direction
 
-    if Enum.any? arguments do
-      direction = arguments
-                  |> Enum.join(" ")
-                  |> ApathyDrive.Exit.direction
+    room =
+      mobile
+      |> Mobile.room_id
+      |> Room.find
 
-      room_exit = ApathyDrive.Exit.get_exit_by_direction(current_room, direction)
+    room_exit = Room.get_exit(room, direction)
 
-      case room_exit do
-        nil ->
-          Monster.send_scroll(monster, "<p>There is no exit in that direction!</p>")
-        %{"kind" => "Door"} ->
-          ApathyDrive.Exits.Door.open(monster, current_room, room_exit)
-        %{"kind" => "Gate"} ->
-          ApathyDrive.Exits.Gate.open(monster, current_room, room_exit)
-        %{"kind" => "Key"} ->
-          ApathyDrive.Exits.Key.open(monster, current_room, room_exit)
-        _ ->
-          Monster.send_scroll(monster, "<p>That exit has no door.</p>")
-      end
-    else
-      Monster.send_scroll(monster, "<p>Open what?</p>")
+    case room_exit do
+      nil ->
+        Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
+      %{"kind" => "Door"} ->
+        ApathyDrive.Exits.Door.open(mobile, room, room_exit)
+      %{"kind" => "Gate"} ->
+        ApathyDrive.Exits.Gate.open(mobile, room, room_exit)
+      %{"kind" => "Key"} ->
+        ApathyDrive.Exits.Key.open(mobile, room, room_exit)
+      _ ->
+        Mobile.send_scroll(mobile, "<p>That exit has no door.</p>")
     end
   end
 

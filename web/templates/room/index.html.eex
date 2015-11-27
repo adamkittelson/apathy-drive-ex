@@ -36,7 +36,7 @@
           </div>
           <div class="description"><%= room.description %></div>
           <%= {:safe, Room.look_items(room)} %>
-          <%= {:safe, Room.look_monsters(room, nil)} %>
+          <%= {:safe, Room.look_mobiles(room)} %>
           <%= {:safe, Room.look_directions(room)} %>
           <%= if Room.light_desc(room.light) do %>
             <%= {:safe, Room.light_desc(room.light)} %>

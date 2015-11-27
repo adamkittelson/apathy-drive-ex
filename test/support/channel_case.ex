@@ -32,13 +32,37 @@ defmodule ApathyDrive.ChannelCase do
           |> Repo.insert!
 
         spirit =
-          %Spirit{room_id: room.id, faction: "Demon"}
+          %Spirit{room_id: room.id}
           |> Map.merge(map)
           |> Repo.insert!
 
-          {:ok, _, socket} = subscribe_and_join(ApathyDrive.MUD, "mud", %{"spirit" => spirit.id})
+          {:ok, _, socket} = socket() |> subscribe_and_join(ApathyDrive.MUD, "mud", %{"spirit" => spirit.id})
 
           put_in spirit.socket, socket
+      end
+
+      def test_mobile(map \\ %{}, room \\ Repo.insert!(%Room{})) do
+        class = Repo.insert!(%ApathyDrive.Class{alignment: "evil",
+                                                name: "Demon",
+                                                start_room_id: room.id,
+                                                abilities: [],
+                                                strength: 40,
+                                                strength_per_level: 5,
+                                                agility: 40,
+                                                agility_per_level: 5,
+                                                will: 40,
+                                                will_per_level: 5})
+
+        spirit =
+          %Spirit{room_id: room.id, class_id: class.id}
+          |> Map.merge(map)
+          |> Repo.insert!
+
+          token = Phoenix.Token.sign(ApathyDrive.Endpoint, "spirit", spirit.id)
+
+          {:ok, _, socket} = socket() |> subscribe_and_join(ApathyDrive.MUDChannel, "mud:play", %{"spirit" => token})
+
+          socket.assigns[:mobile]
       end
     end
   end

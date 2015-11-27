@@ -1,0 +1,26 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<p>
+  <div><span class='cyan'><%= @item.name %></span></div>
+  <p><%= @item.description %></p>
+</p>
+<p>
+  <div>Dropped by:</div>
+  <table>
+    <thead>
+      <th>Monster</th>
+      <th>Chance</th>
+      <th><%= link "Add", to: item_drop_path(@conn, :new, from: item_path(@conn, :show, @item), item_id: @item.id )%></th>
+    </thead>
+    <%= for drop <- @drops do %>
+      <tr>
+        <td><%= link drop.monster, to: monster_path(@conn, :show, drop.monster_id) %></td>
+        <td><%= drop.chance %>%</td>
+        <td><%= link "Delete", to: item_drop_path(@conn, :delete, drop.id, from: item_path(@conn, :show, @item)), method: :delete %></td>
+      </tr>
+    <% end %>
+  </table>
+</p>
+
+<%= link "Edit", to: item_path(@conn, :edit, @item), class: "button button-primary" %>
+<%= link "Back", to: item_path(@conn, :index), class: "button button-primary" %>

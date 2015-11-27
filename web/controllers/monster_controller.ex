@@ -3,6 +3,7 @@ defmodule ApathyDrive.MonsterController do
   import Ecto.Query
 
   alias ApathyDrive.Repo
+  alias ApathyDrive.ItemDrop
 
   plug :scrub_params, "monster_template" when action in [:create, :update]
 
@@ -67,7 +68,11 @@ defmodule ApathyDrive.MonsterController do
 
   def show(conn, %{"id" => id}) do
     monster = Repo.get(MonsterTemplate, id)
-    render(conn, "show.html", monster: monster)
+    drops =
+     id
+     |> ItemDrop.monster_drops
+     |> ItemDrop.names
+    render(conn, "show.html", monster: monster, drops: drops)
   end
 
   def edit(conn, %{"id" => id}) do

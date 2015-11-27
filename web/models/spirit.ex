@@ -12,13 +12,13 @@ defmodule Spirit do
   schema "spirits" do
     belongs_to :room, Room
     field :name,              :string
-    field :alignment,         :string
+    field :gender,            :string
+    field :alignment,         :string, virtual: true
     field :email,             :string
     field :password,          :string
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
-    field :faction,           :string
     field :socket,            :any, virtual: true
     field :socket_pid,        :any, virtual: true
     field :pid,               :any, virtual: true
@@ -27,11 +27,12 @@ defmodule Spirit do
     field :disabled_hints,    {:array, :string}, default: []
     field :monster,           :any, virtual: true
     field :abilities,         :any, virtual: true
-    field :max_mana,          :integer, virtual: true
-    field :mana,              :integer, virtual: true
-    field :mana_regen,        :integer, virtual: true
-    field :timers,            :any,     virtual: true, default: %{}
+    field :timers,            :any, virtual: true, default: %{}
     field :admin,             :boolean
+    field :inventory,         ApathyDrive.JSONB, default: []
+    field :equipment,         ApathyDrive.JSONB, default: []
+
+    belongs_to :class, ApathyDrive.Class
 
     timestamps
   end
@@ -53,12 +54,12 @@ defmodule Spirit do
   """
   def changeset(spirit, params \\ :empty) do
     spirit
-    |> cast(params, ~w(name faction alignment), ~w())
-    |> validate_inclusion(:faction,   ["Angel", "Demon", "Elemental"])
-    |> validate_inclusion(:alignment, ["good", "neutral", "evil"])
+    |> cast(params, ~w(name class_id), ~w(gender))
+    |> validate_inclusion(:class_id, ApathyDrive.Class.ids)
+    |> validate_inclusion(:gender, ["male", "female", nil])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
-    |> validate_unique(:name, on: Repo)
-    |> validate_length(:name, min: 1, max: 18)
+    |> unique_constraint(:name, on: Repo)
+    |> validate_length(:name, min: 1, max: 12)
   end
 
   def sign_up_changeset(model, params \\ :empty) do
@@ -71,7 +72,7 @@ defmodule Spirit do
   end
 
   def sign_in(email, password) do
-    player = Repo.get_by(Player, email: email)
+    player = Repo.get_by(Spirit, email: email)
     sign_in?(player, password) && player
   end
 
@@ -122,31 +123,6 @@ defmodule Spirit do
 
     spirit
     |> Map.put(:abilities, abilities)
-    |> set_max_mana
-    |> set_mana
-    |> set_mana_regen
-  end
-
-  def set_max_mana(%Spirit{abilities: abilities} = spirit) do
-    max_mana = Enum.reduce(abilities, 0, fn(ability, max_mana) ->
-      max_mana + Map.get(ability.properties, "mana_cost", 0)
-    end)
-    Map.put(spirit, :max_mana, max_mana * 2)
-  end
-
-  def set_mana(%Spirit{mana: nil, max_mana: max_mana} = spirit) do
-    spirit
-    |> Map.put(:mana, max_mana)
-    |> Systems.Prompt.update
-  end
-  def set_mana(%Spirit{mana: mana, max_mana: max_mana} = spirit) do
-    spirit
-    |> Map.put(:mana, min(mana, max_mana))
-    |> Systems.Prompt.update
-  end
-
-  def set_mana_regen(%Spirit{max_mana: max_mana} = spirit) do
-    Map.put(spirit, :mana_regen,  max_mana |> div(10) |> max(1))
   end
 
   def login(%Spirit{} = spirit) do
@@ -166,7 +142,6 @@ defmodule Spirit do
     PubSub.subscribe(spirit.pid, "chat:gossip")
     PubSub.subscribe(spirit.pid, "chat:#{spirit.faction}")
     PubSub.subscribe(spirit.pid, "rooms:#{spirit.room_id}")
-    ApathyDrive.WhoList.log_on(spirit)
 
     spirit
   end
@@ -236,7 +211,6 @@ defmodule Spirit do
   def logout(%Spirit{} = spirit) do
     spirit
     |> save
-    |> ApathyDrive.WhoList.log_off
 
     PubSub.unsubscribe(spirit.pid, "spirits:online")
     PubSub.unsubscribe(spirit.pid, "spirits:hints")
@@ -538,13 +512,13 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info(:regen_mana, %Spirit{mana: mana, max_mana: max_mana, mana_regen: mana_regen} = spirit) do
-    spirit = spirit
-             |> Map.put(:mana, min(mana + mana_regen, max_mana))
-             |> Systems.Prompt.update
-
-    {:noreply, spirit}
-  end
+  # def handle_info(:regen_mana, %Spirit{mana: mana, max_mana: max_mana, mana_regen: mana_regen} = spirit) do
+  #   spirit = spirit
+  #            |> Map.put(:mana, min(mana + mana_regen, max_mana))
+  #            |> Systems.Prompt.update
+  # 
+  #   {:noreply, spirit}
+  # end
 
   def handle_info({:timeout, _ref, {name, time, function}}, %Spirit{timers: timers} = spirit) do
     jitter = trunc(time / 2) + :random.uniform(time)
@@ -578,8 +552,6 @@ defmodule Spirit do
      |> Map.put(:level, Systems.Level.level_at_exp(new_exp))
      |> set_abilities
      |> Spirit.save
-
-     ApathyDrive.WhoList.log_on(spirit)
 
     {:noreply, spirit}
   end

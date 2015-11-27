@@ -1,64 +1,41 @@
 defmodule ApathyDrive.Exits.Command do
   use ApathyDrive.Exit
+  alias ApathyDrive.Mobile
 
   def display_direction(_room, room_exit) do
     room_exit["name"]
   end
 
-  def move(_current_room, %Spirit{} = spirit, _room_exit)  do
-    Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
+  def move(_room, mobile, _room_exit)  do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
-  def move(_current_room, %Monster{} = monster, _room_exit) do
-    Monster.send_scroll(monster, "<p>There is no exit in that direction.</p>")
-  end
-
-  def move_via_command(_current_room, %Spirit{} = spirit, room_exit) do
-    Spirit.send_scroll(spirit, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
-
-    new_room = Room.find(room_exit["destination"])
-               |> Room.value
-
-    Room.look(new_room, spirit)
-
-    spirit
-    |> Spirit.set_room_id(room_exit["destination"])
-    |> Spirit.deactivate_hint("movement")
-    |> Spirit.save
-  end
-
-  def move_via_command(%Room{} = room, %Monster{} = monster, room_exit) do
-    destination = Room.find(room_exit["destination"])
-                  |> Room.value
+  def move_via_command(current_room, mobile, %{"destination" => destination_id} = room_exit) do
+    destination = Room.find(destination_id)
 
     if room_exit["to_message"] do
-      Room.send_scroll(destination, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => monster})}</span></p>")
+      Room.send_scroll(destination, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => %{name: Mobile.look_name(mobile)}})}</span></p>")
     else
-      notify_monster_entered(monster, room, destination)
+      notify_mobile_entered(mobile, current_room, destination)
     end
 
-    monster = monster
-              |> Monster.set_room_id(room_exit["destination"])
-              |> Monster.save
+    send(mobile, {:move_to, destination_id})
 
-    Monster.send_scroll(monster, "<p><span class='yellow'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
+    if room_exit["mover_message"] do
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{room_exit["mover_message"]}</span></p>")
+    end
 
-    Room.look(destination, monster)
+    Commands.Look.look_at_room(mobile)
 
     if room_exit["from_message"] do
-      Room.send_scroll(room, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => monster})}</span></p>")
+      Room.send_scroll(current_room, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => %{name: Mobile.look_name(mobile)}})}</span></p>")
     else
-      notify_monster_left(monster, room, destination)
+      notify_mobile_left(mobile, current_room, destination)
     end
-    monster
   end
 
-  def look(%Room{}, %Spirit{} = spirit, _room_exit) do
-    Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
-  end
-
-  def look(%Room{}, %Monster{} = monster, _room_exit) do
-    Monster.send_scroll(monster, "<p>There is no exit in that direction.</p>")
+  def look(_room, mobile, _room_exit)  do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
 end

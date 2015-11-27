@@ -27,8 +27,7 @@ defmodule Hint do
   def random(hint_names) do
     :random.seed(:os.timestamp)
     hint_names
-    |> Enum.shuffle
-    |> List.first
+    |> Enum.random
     |> find_by_name
   end
 

@@ -1,16 +1,31 @@
-$('textarea.json').each(function() {
-  var textarea = $(this);
+import {formatJson} from "web/static/js/json-format";
 
-  var myCodeMirror = CodeMirror.fromTextArea(textarea.get(0), {
-    mode:  {name: "javascript", json: true},
-    lineNumbers: true,
-    smartIndent: true,
-    theme: "twilight",
-    matchBrackets: true
-  });
+$(".json").linedtextarea()
 
-  myCodeMirror.setValue(JSON.stringify(JSON.parse(myCodeMirror.getValue()), null, '  '));
+$('textarea.json').each(function(index, textarea) {
+
+  reformat(textarea);
+
 });
+
+$('textarea.json').on('change', function() {
+  validate($(this).context);
+});
+
+function reformat(field) {
+  field.value = formatJson(field.value);
+}
+
+function validate(textarea) {
+  try {
+    var result = parser.parse(textarea.value);
+    if (result) {
+      reformat(textarea);
+    }
+  } catch(e) {
+    alert("Invalid JSON in: " + textarea.name + ":\n\n" + e);
+  }
+}
 
 $(document).on('keyup', "#search", function(event) {
   if (event.which === 13) {

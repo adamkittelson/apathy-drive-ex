@@ -1,6 +1,7 @@
 defmodule Systems.Effect do
   import BlockTimer
   use Timex
+  alias ApathyDrive.Mobile
 
   def add(%{effects: _effects} = entity, effect) do
     key = Time.now(:msecs) * 1000 |> trunc
@@ -37,6 +38,10 @@ defmodule Systems.Effect do
   end
 
   def add_effect(%{effects: effects} = entity, key, effect) do
+    if Map.has_key?(effect, "application_message") do
+      send_scroll(entity, "<p><span class='dark-yellow'>#{effect["application_message"]}</span></p>")
+    end
+
     effects = Map.put(effects, key, effect)
     Map.put(entity, :effects, effects)
   end
@@ -69,6 +74,12 @@ defmodule Systems.Effect do
         end)
         send(self, :think)
         Map.put entity, :effects, Map.delete(effects, key)
+      %{"expiration_message" => expiration_message} ->
+        send_scroll(entity, "<p><span class='dark-yellow'>#{expiration_message}</span></p>")
+
+        Map.put entity, :effects, Map.delete(effects, key)
+      %{} ->
+        Map.put entity, :effects, Map.delete(effects, key)
       _ ->
         found_key = effects
                     |> Map.keys
@@ -84,17 +95,15 @@ defmodule Systems.Effect do
     end
   end
 
-  def max_stacks?(%Monster{} = monster, %Ability{properties: %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}}) do
-    stack_count(monster, stack_key) >= stack_count
+  def max_stacks?(%Mobile{} = mobile, %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}) do
+    stack_count(mobile, stack_key) >= stack_count
   end
-
-  def max_stacks?(%Monster{} = monster, %Ability{properties: %{"duration_effects" => _}} = ability) do
-    ability = put_in(ability.properties["duration_effects"]["stack_key"],   ability.name)
-    ability = put_in(ability.properties["duration_effects"]["stack_count"], 1)
-    max_stacks?(monster, ability)
+  def max_stacks?(%Mobile{} = mobile, %{"duration_effects" => _} = ability) do
+    ability = put_in(ability["duration_effects"]["stack_key"],   ability["name"])
+    ability = put_in(ability["duration_effects"]["stack_count"], 1)
+    max_stacks?(mobile, ability)
   end
-
-  def max_stacks?(%Monster{}, %Ability{}), do: false
+  def max_stacks?(%Mobile{}, %{}), do: false
 
   def stack_count(%{effects: _effects} = entity, stack_key) do
     stack(entity, stack_key)
@@ -115,6 +124,10 @@ defmodule Systems.Effect do
 
   def send_scroll(%Spirit{} = spirit, message) do
     Spirit.send_scroll(spirit, message)
+  end
+
+  def send_scroll(%Mobile{} = mobile, message) do
+    Mobile.send_scroll(mobile, message)
   end
 
   def send_scroll(_, _), do: nil

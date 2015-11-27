@@ -1,0 +1,53 @@
+<h2>Show class</h2>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @class.name %>
+  </li>
+
+  <li>
+    <strong>Alignment:</strong>
+    <%= @class.alignment %>
+  </li>
+
+  <li>
+    <strong>Strength:</strong>
+    <%= @class.strength %>
+  </li>
+
+  <li>
+    <strong>Strength per level:</strong>
+    <%= @class.strength_per_level %>
+  </li>
+
+  <li>
+    <strong>Agility:</strong>
+    <%= @class.agility %>
+  </li>
+
+  <li>
+    <strong>Agility per level:</strong>
+    <%= @class.agility_per_level %>
+  </li>
+
+  <li>
+    <strong>Will:</strong>
+    <%= @class.will %>
+  </li>
+
+  <li>
+    <strong>Will per level:</strong>
+    <%= @class.will_per_level %>
+  </li>
+
+  <li>
+    <strong>Abilities:</strong>
+    <%= inspect @class.abilities %>
+  </li>
+
+</ul>
+
+<%= link "Edit", to: class_path(@conn, :edit, @class) %>
+<%= link "Back", to: class_path(@conn, :index) %>

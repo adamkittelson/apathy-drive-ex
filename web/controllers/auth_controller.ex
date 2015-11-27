@@ -2,7 +2,6 @@ defmodule ApathyDrive.AuthController do
   use ApathyDrive.Web, :controller
 
   alias OAuth2.AccessToken
-  alias OAuth2.Strategy.AuthCode
 
   @doc """
   This action is reached via `/auth` and redirects to the OAuth2 provider
@@ -10,7 +9,14 @@ defmodule ApathyDrive.AuthController do
   been stored in `conn.private.oauth2_strategy` in the router's pipeline.
   """
   def index(conn, _params) do
-    redirect conn, external: AuthCode.authorize_url(strategy(conn), params)
+    redirect conn, external: Facebook.authorize_url!([])
+  end
+
+  def delete(conn, _params) do
+    conn
+    |> put_flash(:info, "You have been logged out!")
+    |> configure_session(drop: true)
+    |> redirect(to: "/")
   end
 
   @doc """
@@ -21,12 +27,12 @@ defmodule ApathyDrive.AuthController do
   """
   def callback(conn, %{"code" => code}) do
     # Exchange an auth code for an access token
-    token = AuthCode.get_token!(strategy(conn), code, token_params)
+    token = Facebook.get_token!([code: code], [])
 
     # Request the user's data with the access token
     user = AccessToken.get!(token, "/me")
 
-    spirit = Spirit.find_or_create_by_external_id(user["id"])
+    spirit = Spirit.find_or_create_by_external_id(user.body["id"])
 
     conn =
       conn
@@ -35,11 +41,4 @@ defmodule ApathyDrive.AuthController do
     redirect(conn, to: game_path(conn, :game))
   end
 
-  defp strategy(conn), do: conn.private.oauth2_strategy
-  defp params do
-    %{redirect_uri: ApathyDrive.Endpoint.url <> "/auth/callback"}
-  end
-  defp token_params do
-    Map.merge(%{headers: [{"Accept", "application/json"}]}, params)
-  end
 end

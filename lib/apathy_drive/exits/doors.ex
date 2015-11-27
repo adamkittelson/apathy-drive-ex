@@ -3,6 +3,8 @@ defmodule ApathyDrive.Exits.Doors do
   defmacro __using__(_opts) do
     quote do
       use ApathyDrive.Exit
+      alias ApathyDrive.Mobile
+      alias ApathyDrive.PubSub
 
       def name, do: "door"
 
@@ -15,127 +17,147 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def move(current_room, %Spirit{} = spirit, room_exit) do
-        new_room = Room.find(room_exit["destination"])
-                   |> Room.value
-
-        if !open?(current_room, room_exit) do
-          Spirit.send_scroll(spirit, "<p><span class='dark-green'>You pass right through the #{name}.</span></p>")
-        end
-
-        Room.look(new_room, spirit)
-
-        spirit
-        |> Spirit.set_room_id(room_exit["destination"])
-        |> Spirit.deactivate_hint("movement")
-        |> Spirit.save
-      end
-
-      def move(current_room, %Monster{} = monster, room_exit) do
+      def move(current_room, mobile, room_exit) do
         if open?(current_room, room_exit) do
-          super(current_room, monster, room_exit)
+          super(current_room, mobile, room_exit)
         else
-          Monster.send_scroll(monster, "<p><span class='red'>The #{name} is closed!</span></p>")
+          Mobile.send_scroll(mobile, "<p><span class='red'>The #{name} is closed!</span></p>")
         end
       end
 
-      def bash?(%Monster{} = monster, room_exit) do
+      def bash?(mobile, room_exit) do
         :random.seed(:os.timestamp)
         80 + room_exit["difficulty"] >= :random.uniform(100)
       end
 
-      def bash(%Monster{} = monster, %Room{} = room, room_exit) do
+      def close(mobile, room, room_exit) do
+        if open?(room, room_exit) do
+          Mobile.send_scroll(mobile, "<p>The #{name} is now closed.</p>")
+          PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+          |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} close the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+          Room.close!(room, room_exit["direction"])
+
+          mirror_room = Room.find(room_exit["destination"])
+          mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+          if mirror_exit["kind"] == room_exit["kind"] do
+            PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just closed.</p>")))
+
+            Room.close!(mirror_room, mirror_exit["direction"])
+          end
+        else
+          Mobile.send_scroll(mobile, "<p><span class='red'>That #{name} is already closed.</span></p>")
+        end
+      end
+
+      def lock(mobile, room, room_exit) do
+        cond do
+          locked?(room, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>The #{name} is already locked.</p>")
+          open?(room, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>You must close the #{name} before you may lock it.</p>")
+          true ->
+            Mobile.send_scroll(mobile, "<p>The #{name} is now locked.</p>")
+            PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} lock the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+            Room.lock!(room, room_exit["direction"])
+
+            mirror_room = Room.find(room_exit["destination"])
+            mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+            if mirror_exit["kind"] == room_exit["kind"] do
+              PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+              |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>")))
+
+              Room.lock!(mirror_room, mirror_exit["direction"])
+            end
+        end
+      end
+
+      def open(mobile, room, room_exit) do
+        cond do
+          locked?(room, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>The #{name} is locked.</p>")
+          open?(room, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>The #{name} was already open.</p>")
+          true ->
+            Mobile.send_scroll(mobile, "<p>The #{name} is now open.</p>")
+            PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+            Room.open!(room, room_exit["direction"])
+
+            mirror_room = Room.find(room_exit["destination"])
+            mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+            if mirror_exit["kind"] == room_exit["kind"] do
+              PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+              |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just opened.</p>")))
+
+              Room.open!(mirror_room, mirror_exit["direction"])
+            end
+        end
+      end
+
+      def bash(mobile, room, room_exit) do
         cond do
           open?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is already open.</p>")
-          bash?(monster, room_exit) ->
-            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                     {:door_bashed_open, %{basher: monster,
-                                                           direction: room_exit["direction"],
-                                                           type: name }})
-            monster
+            Mobile.send_scroll(mobile, "<p>The #{name} is already open.</p>")
+          bash?(mobile, room_exit) ->
+            Mobile.send_scroll(mobile, "<p>You bashed the #{name} open.</p>")
+            PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+            Room.open!(room, room_exit["direction"])
+
+            mirror_room = Room.find(room_exit["destination"])
+            mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+            if mirror_exit["kind"] == room_exit["kind"] do
+              PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+              |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just flew open!</p>")))
+
+              Room.open!(mirror_room, mirror_exit["direction"])
+            end
           true ->
-            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                     {:door_bash_failed, %{basher: monster,
-                                                           direction: room_exit["direction"],
-                                                           type: name }})
+            Mobile.send_scroll(mobile, "<p>Your attempts to bash through fail!</p>")
+            PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
+            |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+
+            mirror_room = Room.find(room_exit["destination"])
+            mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
+
+            if mirror_exit["kind"] == room_exit["kind"] do
+              PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
+              |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>")))
+
+            end
+
             # if :random.uniform(3) == 3 do
             #   Monster.send_scroll(monster, "<p>You take #{amount} damage for bashing the #{name}!</p>")
             # end
-            monster
         end
       end
 
-      def open(%Monster{} = monster, %Room{} = room, room_exit) do
-        cond do
-          locked?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is locked.</p>")
-          open?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} was already open.</p>")
-          true ->
-            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                     {:door_opened, %{opener: monster,
-                                                      direction: room_exit["direction"],
-                                                      type: name }})
-            monster
-        end
+      def locked?(room, room_exit) do
+        !open?(room, room_exit) and !Room.unlocked?(room, room_exit["direction"])
       end
 
-      def close(monster, room, room_exit) do
-        if open?(room, room_exit) do
-          ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                   {:door_closed, %{closer: monster,
-                                                    direction: room_exit["direction"],
-                                                    type: name }})
-          monster
-        else
-          Monster.send_scroll(monster, "<p><span class='red'>That #{name} is already closed.</span></p>")
-        end
-      end
-
-      def lock(monster, room, room_exit) do
-        cond do
-          locked?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>The #{name} is already locked.</p>")
-          open?(room, room_exit) ->
-            Monster.send_scroll(monster, "<p>You must close the #{name} before you may lock it.</p>")
-          true ->
-            ApathyDrive.PubSub.broadcast!("rooms:#{room.id}",
-                                     {:door_locked, %{locker: monster,
-                                                      direction: room_exit["direction"],
-                                                      type: name }})
-            monster
-        end
-      end
-
-      def locked?(%Room{} = room, room_exit) do
-        !open?(room, room_exit) and !unlocked?(room, room_exit)
-      end
-
-      def unlocked?(%Room{effects: effects} = room, room_exit) do
-        effects
-        |> Map.values
-        |> Enum.filter(fn(effect) ->
-             Map.has_key?(effect, :unlocked)
-           end)
-        |> Enum.map(fn(effect) ->
-             Map.get(effect, :unlocked)
-           end)
-        |> Enum.member?(room_exit["direction"])
-      end
-
-      def open?(%Room{} = room, room_exit) do
-        permanently_open?(room, room_exit) or
-        all_remote_actions_triggered?(room, room_exit) or
-        temporarily_open?(room, room_exit) or
+      def open?(room, room_exit) do
+        permanently_open?(room_exit) or
+        all_remote_actions_triggered?(room_exit) or
+        Room.temporarily_open?(room, room_exit["direction"]) or
         opened_remotely?(room, room_exit)
       end
 
-      def permanently_open?(room, room_exit) do
+      def permanently_open?(room_exit) do
         !!room_exit["open"]
       end
 
-      def all_remote_actions_triggered?(room, room_exit) do
+      def all_remote_actions_triggered?(room_exit) do
         if room_exit["remote_action_exits"] do
           room_exit.remote_action_exits
           |> Enum.all?(fn(remote_exit) ->
@@ -153,18 +175,6 @@ defmodule ApathyDrive.Exits.Doors do
         else
           false
         end
-      end
-
-      def temporarily_open?(%Room{} = room, room_exit) do
-        room.effects
-        |> Map.values
-        |> Enum.filter(fn(effect) ->
-             Map.has_key?(effect, :open)
-           end)
-        |> Enum.map(fn(effect) ->
-             Map.get(effect, :open)
-           end)
-        |> Enum.member?(room_exit["direction"])
       end
 
       def opened_remotely?(room, room_exit) do

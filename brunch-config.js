@@ -27,11 +27,20 @@ exports.config = {
   // Phoenix paths configuration
   paths: {
     // Which directories to watch
-    watched: ["web/static", "test/static"],
+    watched: ["deps/phoenix/web/static",
+              "deps/phoenix_html/web/static",
+              //"deps/phoenix_live_reload/priv/static",
+              "web/static", "test/static"],
 
     // Where to compile files to
     public: "priv/static"
   },
+
+  // modules: {
+  //   autoRequire: {
+  //     'js/app.js': ['web/static/js/app']
+  //   }
+  // },
 
   // Configure your plugins
   plugins: {

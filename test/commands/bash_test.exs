@@ -2,11 +2,11 @@ defmodule Commands.BashTest do
   use ApathyDrive.ChannelCase
 
   setup do
-    {:ok, spirit: test_spirit()}
+    {:ok, mobile: test_mobile()}
   end
 
-  test "receives an error message", %{spirit: spirit} do
-    Commands.Bash.execute(spirit, ["north"])
-    assert_push "scroll", %{html: "<p>You need a body to do that.</p>"}
+  test "bashing without providing a direction", %{mobile: mobile} do
+    Commands.Bash.execute(mobile, [])
+    assert_push "scroll", %{html: "<p>Bash what?</p>"}
   end
 end

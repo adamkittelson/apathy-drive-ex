@@ -10,10 +10,7 @@ defmodule ApathyDrive.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :assign_current_spirit
-  end
-
-  pipeline :auth do
-    plug :put_oauth_strategy
+    plug :put_secure_browser_headers
   end
 
   pipeline :admin do
@@ -36,15 +33,18 @@ defmodule ApathyDrive.Router do
   scope "/system", ApathyDrive do
     pipe_through [:browser, :admin]
 
-    resources "/rooms", RoomController
-    resources "/monsters", MonsterController
+    resources "/classes",    ClassController
+    resources "/items",      ItemController
+    resources "/monsters",   MonsterController
+    resources "/rooms",      RoomController
+    resources "/item_drops", ItemDropController
   end
 
   scope "/auth", alias: ApathyDrive do
-    pipe_through [:browser, :auth]
+    pipe_through :browser
     get "/", AuthController, :index
     get "/callback", AuthController, :callback
-  end  
+  end
 
   # Fetch the current user from the session and add it to `conn.assigns`. This
   # will allow you to have access to the current user in your views with
@@ -72,13 +72,6 @@ defmodule ApathyDrive.Router do
         |> redirect(to: "/")
         |> halt
     end
-  end
-
-  # Fetch the configured strategy from the router's config and store the
-  # initialized strategy into `conn.private.oauth2_strategy`.
-  defp put_oauth_strategy(conn, _) do
-    {strategy, opts} = ApathyDrive.Endpoint.config(:oauth2)
-    put_private(conn, :oauth2_strategy, apply(strategy, :new, [opts]))
   end
 
 end

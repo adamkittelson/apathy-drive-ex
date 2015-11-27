@@ -2,8 +2,8 @@ defmodule Commands.ExperienceTest do
   use ApathyDrive.ChannelCase
 
   setup do
-    {:ok, spirit_1: test_spirit(%{level: 1, experience: 0}),
-          spirit_2: test_spirit(%{level: 5, experience: 12345})}
+    {:ok, spirit_1: test_mobile(%{level: 1, experience: 0}),
+          spirit_2: test_mobile(%{level: 5, experience: 12345})}
   end
 
   test "a level 1 spirit with no experience", %{spirit_1: spirit} do

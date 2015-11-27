@@ -1,15 +1,28 @@
 <%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
 
-<h2>Show monster</h2>
-
 <p>
   <div><span class='cyan'><%= @monster.name %></span></div>
   <p><%= @monster.description %></p>
 </p>
 <p>
+  <div>Drops:</div>
+  <table>
+    <thead>
+      <th>Item</th>
+      <th>Chance</th>
+      <th><%= link "Add", to: item_drop_path(@conn, :new, from: monster_path(@conn, :show, @monster), monster_id: @monster.id) %></th>
+    </thead>
+    <%= for drop <- @drops do %>
+      <tr>
+        <td><%= link drop.item, to: item_path(@conn, :show, drop.item_id) %></td>
+        <td><%= drop.chance %>%</td>
+        <td><%= link "Delete", to: item_drop_path(@conn, :delete, drop.id, from: monster_path(@conn, :show, @monster)), method: :delete %></td>
+      </tr>
+    <% end %>
+  </table>
+</p>
+
+<p>
   <%= link "Back", to: monster_path(@conn, :index),       class: "button button-primary" %>
   <%= link "Edit", to: monster_path(@conn, :edit, @monster), class: "button button-primary" %>
 </p>
-
-<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
-<script>require("web/static/js/nav")</script>

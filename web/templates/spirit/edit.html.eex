@@ -16,12 +16,23 @@
 
   <div class="row">
     <div class="four columns">
-      <%= if f.errors[:faction] do %>
-        <label for="faction" class="error">Faction <%= f.errors[:faction]%></label>
+      <%= if f.errors[:gender] do %>
+        <label for="faction" class="error">Gender <%= f.errors[:gender]%></label>
       <% else %>
-        <label for="faction">Faction</label>
+        <label for="faction">Gender</label>
       <% end %>
-      <%= select(f, :faction, ["Angel", "Demon", "Elemental"], prompt: "Choose Your Faction", class: "u-full-width") %>
+      <%= select(f, :gender, ["Male": "male", "Female": "female", "None": nil], prompt: "Choose Your Gender", class: "u-full-width") %>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="four columns">
+      <%= if f.errors[:class_id] do %>
+        <label for="faction" class="error">Class <%= f.errors[:class_id]%></label>
+      <% else %>
+        <label for="faction">Class</label>
+      <% end %>
+      <%= select(f, :class_id, ApathyDrive.Class.select, prompt: "Choose Your Class", class: "u-full-width") %>
     </div>
   </div>
 

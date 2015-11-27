@@ -3,6 +3,7 @@ defmodule ApathyDrive.UserSocket do
 
   ## Channels
   channel "mud", ApathyDrive.MUD
+  channel "mud:play", ApathyDrive.MUDChannel
   channel "index", ApathyDrive.Index
 
   ## Transports
