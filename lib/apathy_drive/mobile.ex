@@ -727,7 +727,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_hp(%Mobile{} = mobile) do
-    Map.put(mobile, :max_hp, trunc(strength(mobile) * 0.5 + (0.05 * mobile.level)))
+    Map.put(mobile, :max_hp, trunc(strength(mobile) * (0.5 + (0.05 * mobile.level))))
   end
 
   def set_physical_defense(%Mobile{} = mobile) do
