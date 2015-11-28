@@ -57,6 +57,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, {:use_ability, command, arguments})
   end
 
+  def add_experience(mobile, exp) do
+    GenServer.cast(mobile, {:add_experience, exp})
+  end
+
   def data_for_who_list(pid) do
     GenServer.call(pid, :data_for_who_list)
   end
@@ -261,6 +265,10 @@ defmodule ApathyDrive.Mobile do
 
   def drop_item(mobile, item) do
     GenServer.call(mobile, {:drop_item, item})
+  end
+
+  def destroy_item(mobile, item) do
+    GenServer.call(mobile, {:destroy_item, item})
   end
 
   def equip_item(mobile, item) when is_pid(mobile) do
@@ -1001,6 +1009,26 @@ defmodule ApathyDrive.Mobile do
     {:reply, :possessed, mobile}
   end
 
+  def handle_call({:destroy_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
+    item = inventory
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Systems.Match.one(:name_contains, item)
+
+    case item do
+      nil ->
+        {:reply, :not_found, mobile}
+      %{item: item} ->
+        mobile =
+          put_in(mobile.spirit.inventory, List.delete(inventory, item))
+          |> set_highest_armour_grade
+          |> set_abilities
+
+          Repo.update!(mobile.spirit)
+
+        {:reply, {:ok, item}, mobile}
+    end
+  end
+
   def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -1218,6 +1246,28 @@ defmodule ApathyDrive.Mobile do
       {:noreply, mobile}
     else
       Mobile.send_scroll(mobile, "<p>What?</p>")
+      {:noreply, mobile}
+    end
+  end
+
+  def handle_cast({:add_experience, exp}, %Mobile{spirit: spirit} = mobile) do
+    new_spirit =
+      spirit
+      |> Spirit.add_experience(exp)
+
+    if new_spirit.level > spirit.level do
+      mobile = mobile
+               |> Map.put(:spirit, new_spirit)
+               |> set_abilities
+
+      send_scroll(mobile, "<p>You've advanced to level #{new_spirit.level}!</p>")
+
+      {:noreply, mobile}
+    else
+      mobile =
+        mobile
+        |> Map.put(:spirit, new_spirit)
+
       {:noreply, mobile}
     end
   end

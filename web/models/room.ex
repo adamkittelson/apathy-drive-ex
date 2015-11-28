@@ -111,6 +111,10 @@ defmodule Room do
     GenServer.call(room, {:get_item, item})
   end
 
+  def destroy_item(room, item) do
+    GenServer.call(room, {:destroy_item, item})
+  end
+
   def find_item(room, item) do
     GenServer.call(room, {:find_item, item})
   end
@@ -453,6 +457,37 @@ defmodule Room do
 
   def handle_call(:value, _from, room) do
     {:reply, room, room}
+  end
+
+  def handle_call({:destroy_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
+    actual_item = items
+                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+                  |> Systems.Match.one(:name_contains, item)
+
+    visible_item = item_descriptions["visible"]
+                   |> Map.keys
+                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                   |> Systems.Match.one(:keyword_starts_with, item)
+
+    hidden_item = item_descriptions["hidden"]
+                  |> Map.keys
+                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                  |> Systems.Match.one(:keyword_starts_with, item)
+
+    cond do
+      visible_item ->
+        {:reply, {:cant_destroy, visible_item.name}, room}
+      hidden_item ->
+        {:reply, {:cant_destroy, hidden_item.name}, room}
+      actual_item ->
+        room =
+          room
+          |> Map.put(:items, List.delete(room.items, actual_item.item))
+          |> Repo.update!
+        {:reply, {:ok, actual_item.item}, room}
+      true ->
+        {:reply, :not_found, room}
+    end
   end
 
   def handle_call({:get_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do

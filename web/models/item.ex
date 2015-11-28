@@ -89,4 +89,15 @@ defmodule ApathyDrive.Item do
         Map.put(item, "agility", agi + 1)
     end
   end
+
+  def deconstruction_experience(%{"strength" => str, "agility" => agi, "will" => will} = item) do
+    experience(str + agi + will)
+  end
+
+  def experience(num) do
+    (0..num)
+    |> Enum.reduce(0, fn(n, total) ->
+         total + n
+       end)
+  end
 end

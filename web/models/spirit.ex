@@ -11,6 +11,10 @@ defmodule Spirit do
 
   schema "spirits" do
     belongs_to :room, Room
+    belongs_to :class, ApathyDrive.Class
+    has_many :recipes, ApathyDrive.SpiritItemRecipe
+    has_many :recipe_items, through: [:recipes, :item]
+
     field :name,              :string
     field :gender,            :string
     field :alignment,         :string, virtual: true
@@ -31,8 +35,6 @@ defmodule Spirit do
     field :admin,             :boolean
     field :inventory,         ApathyDrive.JSONB, default: []
     field :equipment,         ApathyDrive.JSONB, default: []
-
-    belongs_to :class, ApathyDrive.Class
 
     timestamps
   end
@@ -516,7 +518,7 @@ defmodule Spirit do
   #   spirit = spirit
   #            |> Map.put(:mana, min(mana + mana_regen, max_mana))
   #            |> Systems.Prompt.update
-  # 
+  #
   #   {:noreply, spirit}
   # end
 
