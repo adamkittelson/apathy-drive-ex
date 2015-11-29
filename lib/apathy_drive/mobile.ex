@@ -57,6 +57,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, {:use_ability, command, arguments})
   end
 
+  def list_forms(mobile, slot \\ "all") do
+    GenServer.cast(mobile, {:list_forms, slot})
+  end
+
   def add_experience(mobile, exp) do
     GenServer.cast(mobile, {:add_experience, exp})
   end
@@ -1274,6 +1278,35 @@ defmodule ApathyDrive.Mobile do
 
       {:noreply, mobile}
     end
+  end
+
+  def handle_cast({:list_forms, limb}, %Mobile{spirit: spirit} = mobile) do
+    Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
+    spirit
+    |> Ecto.Model.assoc(:recipe_items)
+    |> ApathyDrive.Repo.all
+    |> Enum.reduce(%{}, fn(item, items) ->
+         items
+         |> Map.put_new(item.worn_on, [])
+         |> update_in([item.worn_on], &([item | &1]))
+       end)
+    |> Enum.each(fn({slot, items}) ->
+         if String.downcase(slot) == String.downcase(limb) or limb == "" do
+           Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>#{slot}</span></p>")
+           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost   |          Item Name | STR | AGI | WIL</span></p>")
+           Enum.each(items, fn(item) ->
+             exp =
+              (ApathyDrive.Item.experience(item.strength + item.agility + item.will) * 10)
+              |> to_string
+              |> String.ljust(14)
+
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(item.name, 18)} | #{String.rjust(to_string(item.strength), 3)} | #{String.rjust(to_string(item.agility), 3)} | #{String.rjust(to_string(item.will), 3)}</span></p>")
+           end)
+           Mobile.send_scroll(mobile, "<p>\n</p>")
+         end
+       end)
+
+    {:noreply, mobile}
   end
 
   def handle_cast({:add_form, %{"id" => item_id, "name" => name}}, %Mobile{spirit: spirit} = mobile) do
