@@ -728,7 +728,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_mana(%Mobile{} = mobile) do
-    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.3 + (0.03 * mobile.level))))
+    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.9 + (0.09 * mobile.level))))
   end
 
   def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
@@ -739,7 +739,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_hp(%Mobile{} = mobile) do
-    Map.put(mobile, :max_hp, trunc(strength(mobile) * (0.5 + (0.05 * mobile.level))))
+    Map.put(mobile, :max_hp, trunc(strength(mobile) * (1.5 + (0.15 * mobile.level))))
   end
 
   def set_physical_defense(%Mobile{} = mobile) do
@@ -788,7 +788,7 @@ defmodule ApathyDrive.Mobile do
     wil = will(mobile)
 
     damage =
-      (physical_damage(str, agi, wil) / 5) + physical_damage_from_weapon(weapon(mobile))
+      (physical_damage(str, agi, wil) / 3) + physical_damage_from_weapon(weapon(mobile))
 
     max(trunc(damage), 1)
   end
@@ -805,7 +805,7 @@ defmodule ApathyDrive.Mobile do
     wil = will(mobile)
 
     damage =
-      (magical_damage(str, agi, wil) / 5) + magical_damage_from_weapon(weapon(mobile))
+      (magical_damage(str, agi, wil) / 3) + magical_damage_from_weapon(weapon(mobile))
 
     max(trunc(damage), 1)
   end
@@ -842,13 +842,13 @@ defmodule ApathyDrive.Mobile do
   def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
     modifier = 1 + effect_bonus(mobile, "hp_regen") / 100
 
-    max_hp * 0.02 * modifier
+    max_hp * 0.01 * modifier
   end
 
   def mana_regen_per_second(%Mobile{max_mana: max_mana} = mobile) do
     modifier = 1 + effect_bonus(mobile, "mana_regen") / 100
 
-    max_mana * 0.02 * modifier
+    max_mana * 0.01 * modifier
   end
 
   def local_hated_targets(%Mobile{hate: hate} = mobile) do
