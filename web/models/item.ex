@@ -62,7 +62,7 @@ defmodule ApathyDrive.Item do
     |> Map.from_struct
     |> Map.take([:name, :description, :weight, :worn_on,
                  :physical_defense, :magical_defense,
-                 :level, :strength, :agility, :will, :grade, :abilities])
+                 :level, :strength, :agility, :will, :grade, :abilities, :id])
     |> Poison.encode! # dirty hack to
     |> Poison.decode! # stringify the keys
   end
@@ -90,7 +90,7 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def deconstruction_experience(%{"strength" => str, "agility" => agi, "will" => will} = item) do
+  def deconstruction_experience(%{"strength" => str, "agility" => agi, "will" => will}) do
     experience(str + agi + will)
   end
 

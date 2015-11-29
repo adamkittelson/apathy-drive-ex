@@ -33,5 +33,8 @@ defmodule Commands.Deconstruct do
     exp = ApathyDrive.Item.deconstruction_experience(item)
     Mobile.send_scroll(mobile, "<p>You break down the #{name} and absorb #{exp} essence.</p>")
     Mobile.add_experience(mobile, exp)
+    if :rand.uniform(10) == 10 do
+      Mobile.add_form(mobile, item)
+    end
   end
 end

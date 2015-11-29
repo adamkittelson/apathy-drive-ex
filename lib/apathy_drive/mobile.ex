@@ -61,6 +61,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:add_experience, exp})
   end
 
+  def add_form(mobile, item) do
+    GenServer.cast(mobile, {:add_form, item})
+  end
+
   def data_for_who_list(pid) do
     GenServer.call(pid, :data_for_who_list)
   end
@@ -1270,6 +1274,23 @@ defmodule ApathyDrive.Mobile do
 
       {:noreply, mobile}
     end
+  end
+
+  def handle_cast({:add_form, %{"id" => item_id, "name" => name}}, %Mobile{spirit: spirit} = mobile) do
+    alias ApathyDrive.SpiritItemRecipe
+
+    form =
+      %SpiritItemRecipe{}
+      |> SpiritItemRecipe.changeset(%{item_id: item_id, spirit_id: spirit.id})
+
+    case Repo.insert(form) do
+      {:ok, _recipe} ->
+        Mobile.send_scroll(mobile, "<p>You gain knowledge of #{name}'s <span class='green'>form</span>, allowing you to <span class='green'>construct</span> it from raw essence.</p>")
+      {:error, _} ->
+        :noop
+    end
+
+    {:noreply, mobile}
   end
 
   def handle_cast(:display_experience, %Mobile{spirit: nil} = mobile) do
