@@ -1293,14 +1293,14 @@ defmodule ApathyDrive.Mobile do
     |> Enum.each(fn({slot, items}) ->
          if String.downcase(slot) == String.downcase(limb) or limb == "" do
            Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>#{slot}</span></p>")
-           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost   |          Item Name | STR | AGI | WIL</span></p>")
+           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost | STR | AGI | WIL | Item Name</span></p>")
            Enum.each(items, fn(item) ->
              exp =
               (ApathyDrive.Item.experience(item.strength + item.agility + item.will) * 10)
               |> to_string
-              |> String.ljust(14)
+              |> String.ljust(12)
 
-             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(item.name, 18)} | #{String.rjust(to_string(item.strength), 3)} | #{String.rjust(to_string(item.agility), 3)} | #{String.rjust(to_string(item.will), 3)}</span></p>")
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(item.strength), 3)} | #{String.rjust(to_string(item.agility), 3)} | #{String.rjust(to_string(item.will), 3)} | #{item.name} </span></p>")
            end)
            Mobile.send_scroll(mobile, "<p>\n</p>")
          end
