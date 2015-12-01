@@ -1,10 +1,10 @@
-defmodule Commands.Deconstruct do
+defmodule Commands.Absorb do
   use ApathyDrive.Command
 
-  def keywords, do: ["deconstruct"]
+  def keywords, do: ["absorb", "disintegrate"]
 
   def execute(mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Deconstruct what?</p>")
+    Mobile.send_scroll(mobile, "<p>Absorb what?</p>")
   end
   def execute(mobile, arguments) do
     item = Enum.join(arguments, " ")
@@ -18,7 +18,7 @@ defmodule Commands.Deconstruct do
       {:ok, %{} = item} ->
         success(mobile, item)
       {:cant_destroy, item_name} ->
-        Mobile.send_scroll(mobile, "<p>#{item_name |> capitalize_first} cannot be broken down.</p>")
+        Mobile.send_scroll(mobile, "<p>#{item_name |> capitalize_first} cannot be absorbed.</p>")
       :not_found ->
         case Mobile.destroy_item(mobile, item) do
           {:ok, %{} = item} ->
@@ -31,7 +31,7 @@ defmodule Commands.Deconstruct do
 
   def success(mobile, %{"name" => name} = item) do
     exp = ApathyDrive.Item.deconstruction_experience(item)
-    Mobile.send_scroll(mobile, "<p>You break down the #{name} and absorb #{exp} essence.</p>")
+    Mobile.send_scroll(mobile, "<p>You disintegrate the #{name} and absorb #{exp} essence.</p>")
     Mobile.add_experience(mobile, exp)
     if :rand.uniform(10) == 10 do
       Mobile.add_form(mobile, item)

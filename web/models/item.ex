@@ -48,12 +48,18 @@ defmodule ApathyDrive.Item do
        end)
   end
 
-  def generate_item(%{chance: chance, item_id: item_id, level: level}) do
+  def generate_item(%{chance: chance, item_id: _item_id, level: _level} = opts) do
     if :random.uniform(100) <= chance do
-      Repo.get(__MODULE__, item_id)
-      |> to_map
-      |> roll_stats(level)
+      opts
+      |> Map.delete(:chance)
+      |> generate_item
     end
+  end
+
+  def generate_item(%{item_id: item_id, level: level}) do
+    Repo.get(__MODULE__, item_id)
+    |> to_map
+    |> roll_stats(level)
   end
 
   def to_map(nil), do: nil

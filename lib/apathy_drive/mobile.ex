@@ -271,6 +271,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, {:get_item, item})
   end
 
+  def construct_item(mobile, item) do
+    GenServer.call(mobile, {:construct_item, item})
+  end
+
   def drop_item(mobile, item) do
     GenServer.call(mobile, {:drop_item, item})
   end
@@ -800,7 +804,7 @@ defmodule ApathyDrive.Mobile do
   def physical_damage(str, agi, wil) do
     total = str + agi + wil
 
-    total * (str / total)
+    total * (str / (str + wil))
   end
 
   def magical_damage(%Mobile{} = mobile) do
@@ -817,7 +821,7 @@ defmodule ApathyDrive.Mobile do
   def magical_damage(str, agi, wil) do
     total = str + agi + wil
 
-    total * (wil / total)
+    total * (wil / (str + wil))
   end
 
   def strength(%Mobile{} = mobile) do
@@ -1014,6 +1018,49 @@ defmodule ApathyDrive.Mobile do
     end
   end
   def handle_call({:get_item, %{"weight" => _weight} = _item}, _from, %Mobile{monster_template_id: _} = mobile) do
+    {:reply, :possessed, mobile}
+  end
+
+  def handle_call({:construct_item, item_name}, _from, %Mobile{spirit: %Spirit{inventory: inventory, experience: exp, level: level} = spirit, monster_template_id: nil} = mobile) do
+    alias ApathyDrive.Item
+
+    match =
+      spirit
+      |> Ecto.Model.assoc(:recipe_items)
+      |> ApathyDrive.Repo.all
+      |> Enum.map(&(%{name: &1.name, keywords: String.split(&1.name), item: &1}))
+      |> Systems.Match.one(:name_contains, item_name)
+
+    if match do
+      item = match.item
+
+      cost = Item.experience(item.strength + item.agility + item.will) * 10
+
+      cond do
+        remaining_encumbrance(mobile) < item.weight ->
+          {:reply, {:too_heavy, item.name}, mobile}
+        cost > exp ->
+          {:reply, {:not_enough_essence, item_name}, mobile}
+        true ->
+          constructed_item = Item.generate_item(%{item_id: item.id, level: level})
+
+          mobile =
+            put_in(mobile.spirit.experience, exp - cost)
+
+          mobile =
+            put_in(mobile.spirit.inventory, [constructed_item | inventory])
+            |> set_highest_armour_grade
+            |> set_abilities
+
+            Repo.update!(mobile.spirit)
+
+          {:reply, {:ok, constructed_item["name"], cost}, mobile}
+      end
+    else
+      {:reply, :not_found, mobile}
+    end
+  end
+  def handle_call({:construct_item, _item}, _from, %Mobile{monster_template_id: _} = mobile) do
     {:reply, :possessed, mobile}
   end
 
