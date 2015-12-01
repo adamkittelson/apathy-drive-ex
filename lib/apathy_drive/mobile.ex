@@ -402,8 +402,8 @@ defmodule ApathyDrive.Mobile do
     strength(mobile) * 48
   end
 
-  def current_encumbrance(%Mobile{spirit: %Spirit{inventory: inventory}}) do
-    inventory
+  def current_encumbrance(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}}) do
+    (inventory ++ equipment)
     |> Enum.reduce(0, fn(item, encumbrance) ->
         encumbrance + item["weight"]
        end)
