@@ -154,3 +154,6 @@ CHANGELOG
 
 ---- 0.0.52 / 2015-11-27 / character-revamp ------------------------------------
 * various and sundry
+
+---- 0.0.53 / 2015-12-01 / crafting --------------------------------------------
+* learn how to create items by absorbing them for their essence, spend essence to create items
