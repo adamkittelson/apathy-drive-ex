@@ -57,6 +57,18 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, {:use_ability, command, arguments})
   end
 
+  def list_forms(mobile, slot \\ "all") do
+    GenServer.cast(mobile, {:list_forms, slot})
+  end
+
+  def add_experience(mobile, exp) do
+    GenServer.cast(mobile, {:add_experience, exp})
+  end
+
+  def add_form(mobile, item) do
+    GenServer.cast(mobile, {:add_form, item})
+  end
+
   def data_for_who_list(pid) do
     GenServer.call(pid, :data_for_who_list)
   end
@@ -259,8 +271,16 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, {:get_item, item})
   end
 
+  def construct_item(mobile, item) do
+    GenServer.call(mobile, {:construct_item, item})
+  end
+
   def drop_item(mobile, item) do
     GenServer.call(mobile, {:drop_item, item})
+  end
+
+  def destroy_item(mobile, item) do
+    GenServer.call(mobile, {:destroy_item, item})
   end
 
   def equip_item(mobile, item) when is_pid(mobile) do
@@ -382,8 +402,8 @@ defmodule ApathyDrive.Mobile do
     strength(mobile) * 48
   end
 
-  def current_encumbrance(%Mobile{spirit: %Spirit{inventory: inventory}}) do
-    inventory
+  def current_encumbrance(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}}) do
+    (inventory ++ equipment)
     |> Enum.reduce(0, fn(item, encumbrance) ->
         encumbrance + item["weight"]
        end)
@@ -716,7 +736,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_mana(%Mobile{} = mobile) do
-    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.3 + (0.03 * mobile.level))))
+    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.9 + (0.09 * mobile.level))))
   end
 
   def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
@@ -727,7 +747,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_hp(%Mobile{} = mobile) do
-    Map.put(mobile, :max_hp, trunc(strength(mobile) * (0.5 + (0.05 * mobile.level))))
+    Map.put(mobile, :max_hp, trunc(strength(mobile) * (1.5 + (0.15 * mobile.level))))
   end
 
   def set_physical_defense(%Mobile{} = mobile) do
@@ -776,7 +796,7 @@ defmodule ApathyDrive.Mobile do
     wil = will(mobile)
 
     damage =
-      (physical_damage(str, agi, wil) / 5) + physical_damage_from_weapon(weapon(mobile))
+      (physical_damage(str, agi, wil) / 3) + physical_damage_from_weapon(weapon(mobile))
 
     max(trunc(damage), 1)
   end
@@ -784,7 +804,7 @@ defmodule ApathyDrive.Mobile do
   def physical_damage(str, agi, wil) do
     total = str + agi + wil
 
-    total * (str / total)
+    total * (str / (str + wil))
   end
 
   def magical_damage(%Mobile{} = mobile) do
@@ -793,7 +813,7 @@ defmodule ApathyDrive.Mobile do
     wil = will(mobile)
 
     damage =
-      (magical_damage(str, agi, wil) / 5) + magical_damage_from_weapon(weapon(mobile))
+      (magical_damage(str, agi, wil) / 3) + magical_damage_from_weapon(weapon(mobile))
 
     max(trunc(damage), 1)
   end
@@ -801,7 +821,7 @@ defmodule ApathyDrive.Mobile do
   def magical_damage(str, agi, wil) do
     total = str + agi + wil
 
-    total * (wil / total)
+    total * (wil / (str + wil))
   end
 
   def strength(%Mobile{} = mobile) do
@@ -830,13 +850,13 @@ defmodule ApathyDrive.Mobile do
   def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
     modifier = 1 + effect_bonus(mobile, "hp_regen") / 100
 
-    max_hp * 0.02 * modifier
+    max_hp * 0.01 * modifier
   end
 
   def mana_regen_per_second(%Mobile{max_mana: max_mana} = mobile) do
     modifier = 1 + effect_bonus(mobile, "mana_regen") / 100
 
-    max_mana * 0.02 * modifier
+    max_mana * 0.01 * modifier
   end
 
   def local_hated_targets(%Mobile{hate: hate} = mobile) do
@@ -999,6 +1019,69 @@ defmodule ApathyDrive.Mobile do
   end
   def handle_call({:get_item, %{"weight" => _weight} = _item}, _from, %Mobile{monster_template_id: _} = mobile) do
     {:reply, :possessed, mobile}
+  end
+
+  def handle_call({:construct_item, item_name}, _from, %Mobile{spirit: %Spirit{inventory: inventory, experience: exp, level: level} = spirit, monster_template_id: nil} = mobile) do
+    alias ApathyDrive.Item
+
+    match =
+      spirit
+      |> Ecto.Model.assoc(:recipe_items)
+      |> ApathyDrive.Repo.all
+      |> Enum.map(&(%{name: &1.name, keywords: String.split(&1.name), item: &1}))
+      |> Systems.Match.one(:name_contains, item_name)
+
+    if match do
+      item = match.item
+
+      cost = Item.experience(item.strength + item.agility + item.will) * 10
+
+      cond do
+        remaining_encumbrance(mobile) < item.weight ->
+          {:reply, {:too_heavy, item.name}, mobile}
+        cost > exp ->
+          {:reply, {:not_enough_essence, item_name}, mobile}
+        true ->
+          constructed_item = Item.generate_item(%{item_id: item.id, level: level})
+
+          mobile =
+            put_in(mobile.spirit.experience, exp - cost)
+
+          mobile =
+            put_in(mobile.spirit.inventory, [constructed_item | inventory])
+            |> set_highest_armour_grade
+            |> set_abilities
+
+            Repo.update!(mobile.spirit)
+
+          {:reply, {:ok, constructed_item["name"], cost}, mobile}
+      end
+    else
+      {:reply, :not_found, mobile}
+    end
+  end
+  def handle_call({:construct_item, _item}, _from, %Mobile{monster_template_id: _} = mobile) do
+    {:reply, :possessed, mobile}
+  end
+
+  def handle_call({:destroy_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
+    item = inventory
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Systems.Match.one(:name_contains, item)
+
+    case item do
+      nil ->
+        {:reply, :not_found, mobile}
+      %{item: item} ->
+        mobile =
+          put_in(mobile.spirit.inventory, List.delete(inventory, item))
+          |> set_highest_armour_grade
+          |> set_abilities
+
+          Repo.update!(mobile.spirit)
+
+        {:reply, {:ok, item}, mobile}
+    end
   end
 
   def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
@@ -1220,6 +1303,74 @@ defmodule ApathyDrive.Mobile do
       Mobile.send_scroll(mobile, "<p>What?</p>")
       {:noreply, mobile}
     end
+  end
+
+  def handle_cast({:add_experience, exp}, %Mobile{spirit: spirit} = mobile) do
+    new_spirit =
+      spirit
+      |> Spirit.add_experience(exp)
+
+    if new_spirit.level > spirit.level do
+      mobile = mobile
+               |> Map.put(:spirit, new_spirit)
+               |> set_abilities
+
+      send_scroll(mobile, "<p>You've advanced to level #{new_spirit.level}!</p>")
+
+      {:noreply, mobile}
+    else
+      mobile =
+        mobile
+        |> Map.put(:spirit, new_spirit)
+
+      {:noreply, mobile}
+    end
+  end
+
+  def handle_cast({:list_forms, limb}, %Mobile{spirit: spirit} = mobile) do
+    Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
+    spirit
+    |> Ecto.Model.assoc(:recipe_items)
+    |> ApathyDrive.Repo.all
+    |> Enum.reduce(%{}, fn(item, items) ->
+         items
+         |> Map.put_new(item.worn_on, [])
+         |> update_in([item.worn_on], &([item | &1]))
+       end)
+    |> Enum.each(fn({slot, items}) ->
+         if String.downcase(slot) == String.downcase(limb) or limb == "" do
+           Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>#{slot}</span></p>")
+           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost | STR | AGI | WIL | Item Name</span></p>")
+           Enum.each(items, fn(item) ->
+             exp =
+              (ApathyDrive.Item.experience(item.strength + item.agility + item.will) * 10)
+              |> to_string
+              |> String.ljust(12)
+
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(item.strength), 3)} | #{String.rjust(to_string(item.agility), 3)} | #{String.rjust(to_string(item.will), 3)} | #{item.name} </span></p>")
+           end)
+           Mobile.send_scroll(mobile, "<p>\n</p>")
+         end
+       end)
+
+    {:noreply, mobile}
+  end
+
+  def handle_cast({:add_form, %{"id" => item_id, "name" => name}}, %Mobile{spirit: spirit} = mobile) do
+    alias ApathyDrive.SpiritItemRecipe
+
+    form =
+      %SpiritItemRecipe{}
+      |> SpiritItemRecipe.changeset(%{item_id: item_id, spirit_id: spirit.id})
+
+    case Repo.insert(form) do
+      {:ok, _recipe} ->
+        Mobile.send_scroll(mobile, "<p>You gain knowledge of #{name}'s <span class='green'>form</span>, allowing you to <span class='green'>construct</span> it from raw essence.</p>")
+      {:error, _} ->
+        :noop
+    end
+
+    {:noreply, mobile}
   end
 
   def handle_cast(:display_experience, %Mobile{spirit: nil} = mobile) do

@@ -33,3 +33,4 @@ $(document).on('keyup', "#search", function(event) {
     window.location = "" + window.location.origin + window.location.pathname + "?q=" + query;
   }
 });
+

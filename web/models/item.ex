@@ -48,12 +48,18 @@ defmodule ApathyDrive.Item do
        end)
   end
 
-  def generate_item(%{chance: chance, item_id: item_id, level: level}) do
+  def generate_item(%{chance: chance, item_id: _item_id, level: _level} = opts) do
     if :random.uniform(100) <= chance do
-      Repo.get(__MODULE__, item_id)
-      |> to_map
-      |> roll_stats(level)
+      opts
+      |> Map.delete(:chance)
+      |> generate_item
     end
+  end
+
+  def generate_item(%{item_id: item_id, level: level}) do
+    Repo.get(__MODULE__, item_id)
+    |> to_map
+    |> roll_stats(level)
   end
 
   def to_map(nil), do: nil
@@ -62,7 +68,7 @@ defmodule ApathyDrive.Item do
     |> Map.from_struct
     |> Map.take([:name, :description, :weight, :worn_on,
                  :physical_defense, :magical_defense,
-                 :level, :strength, :agility, :will, :grade, :abilities])
+                 :level, :strength, :agility, :will, :grade, :abilities, :id])
     |> Poison.encode! # dirty hack to
     |> Poison.decode! # stringify the keys
   end
@@ -88,5 +94,16 @@ defmodule ApathyDrive.Item do
       _ ->
         Map.put(item, "agility", agi + 1)
     end
+  end
+
+  def deconstruction_experience(%{"strength" => str, "agility" => agi, "will" => will}) do
+    experience(str + agi + will)
+  end
+
+  def experience(num) do
+    (0..num)
+    |> Enum.reduce(0, fn(n, total) ->
+         total + n
+       end)
   end
 end
