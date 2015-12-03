@@ -637,7 +637,7 @@ defmodule Ability do
     apply_instant_effects(monster, Map.delete(effects, "heal_mana"), ability_user)
   end
   def apply_instant_effects(%Monster{} = monster, %{"script" => script} = effects, ability_user) do
-    monster = Systems.Script.execute(script, monster)
+    monster = ApathyDrive.Script.execute(script, monster)
 
     apply_instant_effects(monster, Map.delete(effects, "script"), ability_user)
   end

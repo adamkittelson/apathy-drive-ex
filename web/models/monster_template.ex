@@ -189,7 +189,8 @@ defmodule MonsterTemplate do
       will: monster_template.will,
       experience: monster_template.experience,
       monster_template_id: monster_template.id,
-      abilities: monster_template.abilities
+      abilities: monster_template.abilities,
+      questions: monster_template.questions
     }
 
     monster =

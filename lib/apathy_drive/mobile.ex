@@ -47,7 +47,8 @@ defmodule ApathyDrive.Mobile do
             poison_resistance: 0,
             attack_target: nil,
             auto_attack_interval: 2.0,
-            highest_armour_grade: 0
+            highest_armour_grade: 0,
+            questions: %{}
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -79,6 +80,14 @@ defmodule ApathyDrive.Mobile do
 
   def greeting(pid) do
     GenServer.call(pid, :greeting)
+  end
+
+  def questions(pid) do
+    GenServer.call(pid, :questions)
+  end
+
+  def execute_script(pid, script) do
+    GenServer.cast(pid, {:execute_script, script})
   end
 
   def look_name(pid) do
@@ -1195,6 +1204,10 @@ defmodule ApathyDrive.Mobile do
     {:reply, mobile.greeting, mobile}
   end
 
+  def handle_call(:questions, _from, mobile) do
+    {:reply, mobile.questions, mobile}
+  end
+
   def handle_call(:spirit_id, _from, mobile) do
     {:reply, mobile.spirit && mobile.spirit.id, mobile}
   end
@@ -1287,6 +1300,10 @@ defmodule ApathyDrive.Mobile do
 
   def handle_call(:value, _from, mobile) do
     {:reply, mobile, mobile}
+  end
+
+  def handle_cast({:execute_script, script}, mobile) do
+    {:noreply, ApathyDrive.Script.execute(script, mobile)}
   end
 
   def handle_cast({:use_ability, command, args}, mobile) do

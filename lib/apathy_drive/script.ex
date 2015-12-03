@@ -1,31 +1,32 @@
-defmodule Systems.Script do
+defmodule ApathyDrive.Script do
+  alias ApathyDrive.Mobile
 
-  def execute(scripts, monster) do
+  def execute(scripts, %Mobile{} = mobile) do
     scripts
     |> Enum.any?(fn(script) ->
-         execute_script(script, monster)
+         execute_script(script, mobile)
        end)
-    monster
+    mobile
   end
 
-  def execute_script([instruction | rest], monster) when is_list(instruction) do
-    unless execute_script(instruction, monster) do
-      execute_script(rest, monster)
+  def execute_script([instruction | rest], %Mobile{} = mobile) when is_list(instruction) do
+    unless execute_script(instruction, mobile) do
+      execute_script(rest, mobile)
     end
   end
 
-  def execute_script([instruction | script], monster) do
-    execute_instruction(instruction, monster, script)
+  def execute_script([instruction | script], %Mobile{} = mobile) do
+    execute_instruction(instruction, mobile, script)
   end
 
-  def execute_script([], _monster),  do: true
-  def execute_script(nil, _monster), do: false
+  def execute_script([], _mobile),  do: true
+  def execute_script(nil, _mobile), do: false
 
-  def execute_script(instruction, monster), do: execute_instruction(instruction, monster, nil)
+  def execute_script(instruction, %Mobile{} = mobile), do: execute_instruction(instruction, mobile, nil)
 
-  def execute_instruction(%{"message" => message}, monster, script) do
-    Monster.send_scroll(monster, "<p>#{message}</p>")
-    execute_script(script, monster)
+  def execute_instruction(%{"message" => message}, %Mobile{} = mobile, script) do
+    Mobile.send_scroll(mobile, "<p>#{message}</p>")
+    execute_script(script, mobile)
   end
 
   def execute_instruction(%{"fail_flag" => %{"failure_message" => message, "flag" => flag}}, monster, script) do

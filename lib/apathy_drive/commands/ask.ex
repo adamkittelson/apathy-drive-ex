@@ -4,50 +4,45 @@ defmodule Commands.Ask do
 
   def keywords, do: ["ask"]
 
-  def execute(%Spirit{} = spirit, _arguments) do
-    spirit
-    |> Spirit.send_scroll("<p>You need a body to do that.</p>")
+  def execute(mobile, []) do
+    Mobile.send_scroll(mobile, "<p>Ask whom?</p>")
   end
-
-  def execute(%Monster{} = monster, []),          do: Monster.send_scroll(monster, "<p>Ask whom?</p>")
-  def execute(%Monster{} = monster, [_question]), do: Monster.send_scroll(monster, "<p>Ask what?</p>")
-
-  def execute(%Monster{} = monster, arguments) do
-    current_room = Monster.find_room(monster)
-
+  def execute(mobile, [_]) do
+    Mobile.send_scroll(mobile, "<p>Ask what?</p>")
+  end
+  def execute(mobile, arguments) do
     [target | question] = arguments
 
-    target = current_room |> find_monster_in_room(target, monster)
+    target = find_mobile_in_room(mobile, target)
 
-    ask(monster, target, Enum.join(question, " ") |> String.downcase)
+    question =
+      question
+      |> Enum.join(" ")
+      |> String.downcase
+
+    ask(mobile, target, question)
   end
 
-  def ask(%Monster{} = monster, nil, _question) do
-    Monster.send_scroll(monster, "<p>Ask whom?</p>")
+  def ask(mobile, nil, _question) do
+    Mobile.send_scroll(mobile, "<p>Ask whom?</p>")
   end
 
-  def ask(%Monster{} = monster, target, question) when is_pid(target) do
-    ask(monster, Monster.value(target), question)
+  def ask(mobile, target, _question) when mobile == target do
+    Mobile.send_scroll(mobile, "<p>Ask yourself?</p>")
   end
 
-  def ask(%Monster{} = monster, %Monster{} = target, question) do
-    if target.questions |> Map.keys |> Enum.member?(question) do
-      Systems.Script.execute(target.questions[question], monster)
-      monster
+  def ask(mobile, target, question) do
+    questions = Mobile.questions(target)
+
+    if questions |> Map.keys |> Enum.member?(question) do
+      Mobile.execute_script(mobile, questions[question])
     else
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{target.name} has nothing to tell you!</span></p>")
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{Mobile.name(target)} has nothing to tell you!</span></p>")
     end
   end
 
-  defp find_monster_in_room(%Room{} = room, string, %Monster{pid: pid} = monster) do
-    PubSub.subscribers("rooms:#{room.id}:monsters")
-    |> Enum.map(fn(monster_pid) ->
-         if monster_pid == pid do
-           monster
-         else
-           monster_pid
-         end
-       end)
+  defp find_mobile_in_room(mobile, string) do
+    PubSub.subscribers("rooms:#{Mobile.room_id(mobile)}:mobiles")
     |> Systems.Match.one(:name_contains, string)
   end
 
