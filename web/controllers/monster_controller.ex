@@ -43,16 +43,6 @@ defmodule ApathyDrive.MonsterController do
   end
 
   def create(conn, %{"room" => room_params}) do
-    room_params = update_in room_params["lair_monsters"], fn
-      nil ->
-        nil
-      lair_monsters ->
-        lair_monsters
-        |> String.replace(~r/[^\d,]/, "")
-        |> String.split(",")
-        |> Enum.map(&String.to_integer/1)
-    end
-
     changeset = Room.changeset(%Room{}, room_params)
 
     if changeset.valid? do

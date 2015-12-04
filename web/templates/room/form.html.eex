@@ -67,17 +67,6 @@
 
   <div class="row">
     <div class="four columns">
-      <%= if f.errors[:lair_monsters] do %>
-        <label for="lair_monsters" class="error">Lair Monsters <%= f.errors[:lair_monsters]%></label>
-      <% else %>
-        <label for="lair_monsters">Lair Monsters</label>
-      <% end %>
-      <%= list_input f, :lair_monsters, class: "u-full-width" %>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="four columns">
       <%= if f.errors[:lair_frequency] do %>
         <label for="lair_frequency" class="error">Lair Frequency <%= f.errors[:lair_frequency]%></label>
       <% else %>
