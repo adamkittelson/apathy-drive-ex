@@ -83,6 +83,8 @@ defmodule ApathyDrive.Exit do
 
         Commands.Look.look_at_room(mobile)
 
+        send(mobile, :notify_presence)
+
         notify_mobile_left(mobile, current_room, destination)
       end
 

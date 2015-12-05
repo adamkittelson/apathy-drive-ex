@@ -2,7 +2,31 @@ defmodule ApathyDrive.AI do
   alias ApathyDrive.Mobile
 
   def think(%Mobile{} = mobile) do
+    mobile =
+      mobile
+      |> calm_down()
+
     heal(mobile) || bless(mobile) || attack(mobile) || mobile
+  end
+
+  def calm_down(%Mobile{hate: hate, room_id: room_id} = mobile) do
+    mobiles_in_room = ApathyDrive.PubSub.subscribers("rooms:#{room_id}:mobiles")
+                      |> Enum.into(HashSet.new)
+
+    hate = hate
+           |> Map.keys
+           |> Enum.into(HashSet.new)
+           |> HashSet.difference(mobiles_in_room)
+           |> Enum.reduce(hate, fn(enemy, new_hate) ->
+                current = Map.get(new_hate, enemy)
+                if current > 5 do
+                  Map.put(new_hate, enemy, current - 5)
+                else
+                  Map.delete(new_hate, enemy)
+                end
+              end)
+
+    Map.put(mobile, :hate, hate)
   end
 
   def heal(%Mobile{spirit: nil, hp: hp, max_hp: max_hp, spirit: nil} = mobile) do

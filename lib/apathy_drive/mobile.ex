@@ -626,6 +626,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.call_every({:monster_regen,    1_000, fn -> send(self, :regen) end})
       |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
       |> TimerManager.call_every({:monster_ai,       5_000, fn -> send(self, :think) end})
+      |> TimerManager.call_every({:monster_present,  4_000, fn -> send(self, :notify_presence) end})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -1453,7 +1454,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:think, mobile) do
-    mobile = ApathyDrive.AI.think(mobile)
+    %Mobile{} = mobile = ApathyDrive.AI.think(mobile)
 
     {:noreply, mobile}
   end
@@ -1626,6 +1627,18 @@ defmodule ApathyDrive.Mobile do
 
       {:noreply, mobile}
     end
+  end
+
+  def handle_info(:notify_presence, %Mobile{room_id: room_id} = mobile) do
+    ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room_id}:mobiles", {:monster_present, self, mobile.alignment}
+
+    {:noreply, mobile}
+  end
+
+  def handle_info({:monster_present, intruder, intruder_alignment}, %Mobile{spirit: nil} = mobile) do
+    mobile = ApathyDrive.Aggression.react(%{mobile: mobile, alignment: mobile.alignment}, %{intruder: intruder, alignment: intruder_alignment})
+
+    {:noreply, mobile}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, {:shutdown, :closed}}, %Mobile{spirit: spirit, socket: socket} = mobile) when pid == socket do
