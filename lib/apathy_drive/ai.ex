@@ -5,7 +5,7 @@ defmodule ApathyDrive.AI do
     heal(mobile) || bless(mobile) || attack(mobile) || mobile
   end
 
-  def heal(%Mobile{hp: hp, max_hp: max_hp, spirit: nil} = mobile) do
+  def heal(%Mobile{spirit: nil, hp: hp, max_hp: max_hp, spirit: nil} = mobile) do
     unless Ability.on_global_cooldown?(mobile) do
       chance = trunc((max_hp - hp) / max_hp * 100)
 
@@ -63,7 +63,14 @@ defmodule ApathyDrive.AI do
       end
     end
   end
-  def attack(%{spirit: _} = mobile), do: mobile
+  def attack(%{spirit: _} = mobile) do
+    if target = Mobile.aggro_target(mobile) do
+
+      mobile
+      |> Mobile.set_attack_target(target)
+      |> Mobile.initiate_combat
+    end
+  end
 
   def random_ability(abilities) do
     case abilities do

@@ -625,6 +625,7 @@ defmodule ApathyDrive.Mobile do
       |> set_magical_defense
       |> TimerManager.call_every({:monster_regen,    1_000, fn -> send(self, :regen) end})
       |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
+      |> TimerManager.call_every({:monster_ai,       5_000, fn -> send(self, :think) end})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -1608,7 +1609,6 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:execute_auto_attack, %Mobile{attack_target: nil} = mobile) do
-    send_scroll(mobile, "<p><span class='dark-yellow'>*Combat Off*</span></p>")
     {:noreply, mobile}
   end
   def handle_info(:execute_auto_attack, %Mobile{attack_target: target, auto_attack_interval: interval} = mobile) do
@@ -1622,7 +1622,6 @@ defmodule ApathyDrive.Mobile do
     else
       mobile =
         mobile
-        |> send_scroll("<p><span class='dark-yellow'>*Combat Off*</span></p>")
         |> Map.put(:attack_target, nil)
 
       {:noreply, mobile}
@@ -1669,13 +1668,6 @@ defmodule ApathyDrive.Mobile do
     mobile
   end
   def set_attack_target(%Mobile{} = mobile, target) do
-    Task.start fn ->
-      PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, target])
-      |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-yellow'>#{mobile.name} moves to attack #{Mobile.name(target)}.</span></p>")))
-
-      send_scroll(target, "<p><span class='dark-yellow'>#{mobile.name} moves to attack you.</span></p>")
-    end
-
     Map.put(mobile, :attack_target, target)
   end
 
