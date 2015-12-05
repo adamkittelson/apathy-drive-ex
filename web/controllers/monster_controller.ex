@@ -59,10 +59,19 @@ defmodule ApathyDrive.MonsterController do
   def show(conn, %{"id" => id}) do
     monster = Repo.get(MonsterTemplate, id)
     drops =
-     id
-     |> ItemDrop.monster_drops
-     |> ItemDrop.names
-    render(conn, "show.html", monster: monster, drops: drops)
+      id
+      |> ItemDrop.monster_drops
+      |> ItemDrop.names
+
+    lairs =
+      monster
+      |> Ecto.Model.assoc(:lairs)
+      |> Ecto.Query.preload(:room)
+      |> Repo.all
+
+    render(conn, "show.html", monster: monster,
+                              drops: drops,
+                              lairs: lairs)
   end
 
   def edit(conn, %{"id" => id}) do

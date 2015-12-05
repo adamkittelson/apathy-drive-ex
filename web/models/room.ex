@@ -29,7 +29,7 @@ defmodule Room do
 
     has_many   :monsters, Monster
     belongs_to :ability,  Ability
-    has_many   :lairs, ApathyDrive.LairMonsters
+    has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster]
   end
 
@@ -63,6 +63,14 @@ defmodule Room do
     |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_frequency lair_faction commands legacy_id))
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
+  end
+
+  def datalist do
+    __MODULE__
+    |> Repo.all
+    |> Enum.map(fn(mt) ->
+         "#{mt.name} - #{mt.id}"
+       end)
   end
 
   def start_room_id do

@@ -3,7 +3,7 @@ defmodule ApathyDrive.LairMonster do
 
   schema "lair_monsters" do
     belongs_to :room, Room
-    belongs_to :monster_template, ApathyDrive.Item
+    belongs_to :monster_template, MonsterTemplate
 
     timestamps
   end
@@ -12,11 +12,31 @@ defmodule ApathyDrive.LairMonster do
   @optional_fields ~w()
 
   def changeset(model, params \\ :empty) do
+    updated_params = update_params(params)
+
     model
-    |> cast(params, @required_fields, @optional_fields)
+    |> cast(updated_params, @required_fields, @optional_fields)
     |> unique_constraint(:monster_id, name: :lair_monsters_room_id_monster_template_id_index)
     |> foreign_key_constraint(:room_id)
     |> foreign_key_constraint(:monster_template_id)
+  end
+
+  def update_params(:empty), do: :empty
+  def update_params(params) do
+    params
+    |> Map.put("monster_template_id", get_number(Map.get(params, "monster_template_id")))
+    |> Map.put("room_id", get_number(Map.get(params, "room_id")))
+  end
+
+  def get_number(nil), do: nil
+  def get_number(""),  do: nil
+  def get_number(string) do
+    case Regex.run(~r/\d+$/, string) do
+      nil ->
+        nil
+      [number] ->
+        number
+    end
   end
 
   def monsters_template_ids(room_id) do

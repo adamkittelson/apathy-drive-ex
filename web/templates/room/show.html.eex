@@ -15,6 +15,27 @@
     <% end %>
   </div>
 </p>
+
+<p>
+  <div>Monsters Spawned Here:</div>
+  <table>
+    <thead>
+      <th>Room</th>
+      <th>Lair Size</th>
+      <th>Lair Frequency</th>
+      <th><%= link "Add", to: lair_path(@conn, :new, from: room_path(@conn, :show, @room), room_id: @room.id) %></th>
+    </thead>
+    <%= for lair <- @lairs do %>
+      <tr>
+        <td><%= link lair.monster_template.name, to: monster_path(@conn, :show, lair.monster_template.id) %></td>
+        <td>up to <%= @room.lair_size %> monsters</td>
+        <td>every <%= @room.lair_frequency %> minutes</td>
+        <td><%= link "Delete", to: lair_path(@conn, :delete, lair.id, from: room_path(@conn, :show, @room)), method: :delete %></td>
+      </tr>
+    <% end %>
+  </table>
+</p>
+
 <p>
   <%= link "Back", to: room_path(@conn, :index),       class: "button button-primary" %>
   <%= link "Edit", to: room_path(@conn, :edit, @room), class: "button button-primary" %>

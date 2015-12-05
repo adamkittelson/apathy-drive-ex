@@ -55,7 +55,14 @@ defmodule ApathyDrive.RoomController do
 
   def show(conn, %{"id" => id}) do
     room = Repo.get(Room, id)
-    render(conn, "show.html", room: room)
+
+    lairs =
+      room
+      |> Ecto.Model.assoc(:lairs)
+      |> Ecto.Query.preload(:monster_template)
+      |> Repo.all
+
+    render(conn, "show.html", room: room, lairs: lairs)
   end
 
   def edit(conn, %{"id" => id}) do
