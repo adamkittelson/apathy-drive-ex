@@ -1,8 +1,10 @@
 defmodule ApathyDrive.LairSpawning do
 
   def spawn_lair(room) do
+    lair_monsters = ApathyDrive.LairMonster.monsters_template_ids(room.id)
+
     if room.lair_size > (room.id |> Room.spawned_monsters |> length) do
-      monster_templates = eligible_monsters(room)
+      monster_templates = eligible_monsters(lair_monsters)
       if Enum.any?(monster_templates) do
         monster_template = select_lair_monster(monster_templates)
 
@@ -26,8 +28,8 @@ defmodule ApathyDrive.LairSpawning do
     |> Enum.random
   end
 
-  def eligible_monsters(room) do
-    room.lair_monsters
+  def eligible_monsters(lair_monsters) do
+    lair_monsters
     |> Enum.map(&MonsterTemplate.find/1)
     |> Enum.reject(fn(mt) ->
          mt = MonsterTemplate.value(mt)

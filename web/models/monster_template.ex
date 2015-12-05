@@ -35,6 +35,8 @@ defmodule MonsterTemplate do
     field :will,                   :integer
 
     has_many :monsters, Monster
+    has_many :lairs, ApathyDrive.LairMonster
+    has_many :lair_rooms, through: [:lairs, :room]
 
     timestamps
   end

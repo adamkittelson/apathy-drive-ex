@@ -38,6 +38,7 @@ defmodule ApathyDrive.Router do
     resources "/monsters",   MonsterController
     resources "/rooms",      RoomController
     resources "/item_drops", ItemDropController
+    resources "/lairs",      LairController
   end
 
   scope "/auth", alias: ApathyDrive do

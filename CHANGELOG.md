@@ -157,3 +157,6 @@ CHANGELOG
 
 ---- 0.0.53 / 2015-12-01 / crafting --------------------------------------------
 * learn how to create items by absorbing them for their essence, spend essence to create items
+
+---- 0.0.54 / 2015-12-05 / lair-refactor ---------------------------------------
+* use a join table for lair monsters

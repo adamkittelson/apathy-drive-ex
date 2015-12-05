@@ -15,7 +15,6 @@ defmodule Room do
     field :light,                 :integer
     field :item_descriptions,     ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
     field :lair_size,             :integer
-    field :lair_monsters,         {:array, :integer}
     field :lair_frequency,        :integer, default: 5
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :lair_faction,          :string
@@ -30,6 +29,8 @@ defmodule Room do
 
     has_many   :monsters, Monster
     belongs_to :ability,  Ability
+    has_many   :lairs, ApathyDrive.LairMonster
+    has_many   :lair_monsters, through: [:lairs, :monster]
   end
 
   def init(id) do
@@ -39,16 +40,10 @@ defmodule Room do
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
 
-    if room.lair_monsters && Enum.any?(room.lair_monsters) do
-      send(self, {:spawn_monsters, Date.now |> Date.to_secs})
+    if room.lair_size && Enum.any?(ApathyDrive.LairMonster.monsters_template_ids(id)) do
+      send(self, :spawn_monsters)
     end
 
-    room = if room.lair_monsters && Enum.any?(room.lair_monsters) do
-      PubSub.subscribe(self, "rooms:lairs")
-      TimerManager.call_every(room, {:spawn_monsters, 5_000, fn -> send(self, {:spawn_monsters, Date.now |> Date.to_secs}) end})
-    else
-      room
-    end
     #
     # room = if room.ability_id do
     #   PubSub.subscribe(self, "rooms:abilities")
@@ -65,9 +60,17 @@ defmodule Room do
 
   def changeset(%Room{} = room, params \\ :empty) do
     room
-    |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_monsters lair_frequency lair_faction commands legacy_id))
+    |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_frequency lair_faction commands legacy_id))
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
+  end
+
+  def datalist do
+    __MODULE__
+    |> Repo.all
+    |> Enum.map(fn(mt) ->
+         "#{mt.name} - #{mt.id}"
+       end)
   end
 
   def start_room_id do
@@ -240,7 +243,7 @@ defmodule Room do
   #   Monster.send_scroll(monster, html)
   # end
 
-  def lair_indicator(%Room{lair_monsters: nil}), do: nil
+  def lair_indicator(%Room{lair_size: nil}), do: nil
   def lair_indicator(%Room{lair_faction: nil}) do
     "<span class='grey'>*</span>"
   end
@@ -627,16 +630,19 @@ defmodule Room do
   end
 
   # GenServer callbacks
-  def handle_info({:spawn_monsters, time},
-                 %{:lair_next_spawn_at => lair_next_spawn_at} = room)
-                 when time >= lair_next_spawn_at do
+  def handle_info(:spawn_monsters,
+                  %{:lair_next_spawn_at => lair_next_spawn_at} = room) do
 
-    ApathyDrive.LairSpawning.spawn_lair(room)
+    if Date.to_secs(Date.now) >= lair_next_spawn_at do
+      ApathyDrive.LairSpawning.spawn_lair(room)
 
-    room = room
-           |> Map.put(:lair_next_spawn_at, Date.now
-                                           |> Date.shift(mins: room.lair_frequency)
-                                           |> Date.to_secs)
+      room = room
+             |> Map.put(:lair_next_spawn_at, Date.now
+                                             |> Date.shift(mins: room.lair_frequency)
+                                             |> Date.to_secs)
+    end
+
+    :erlang.send_after(5000, self, :spawn_monsters)
 
     {:noreply, room}
   end

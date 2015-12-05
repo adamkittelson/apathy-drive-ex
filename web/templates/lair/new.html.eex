@@ -1,0 +1,42 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<%= form_for @changeset, lair_path(@conn, :create), fn f -> %>
+  <input name="from" type="hidden" value="<%= @from %>">
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below:</p>
+      <ul>
+        <%= for {attr, message} <- f.errors do %>
+          <li><%= humanize(attr) %> <%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <table>
+    <tr>
+      <th>Room</th>
+      <td>
+        <datalist id="rooms">
+          <%= for room <- @rooms do %>
+            <option value="<%= room %>">
+          <% end %>
+        </datalist>
+        <%= text_input f, :room_id, class: "form-control", list: "rooms" %>
+      </td>
+      <th>Monster</th>
+      <td>
+        <datalist id="monsters">
+          <%= for monster <- @monsters do %>
+            <option value="<%= monster %>">
+          <% end %>
+        </datalist>
+        <%= text_input f, :monster_template_id, class: "form-control", list: "monsters" %>
+      </td>
+    </tr>
+  </table>
+
+  <div class="form-group">
+    <%= submit "Submit", class: "button button-primary" %>
+  </div>
+<% end %>
