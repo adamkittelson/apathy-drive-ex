@@ -645,10 +645,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, :able_to_possess?)
   end
 
-  def attackable?(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :attackable?)
-  end
-
   def attack(mobile, target) do
     GenServer.call(mobile, {:attack, target})
   end
@@ -664,12 +660,8 @@ defmodule ApathyDrive.Mobile do
   def set_highest_armour_grade(%Mobile{spirit: nil} = mobile) do
     Map.put(mobile, :highest_armour_grade, 0)
   end
-  def set_highest_armour_grade(%Mobile{spirit: %Spirit{inventory: [], equipment: []}} = mobile) do
-    Map.put(mobile, :highest_armour_grade, 0)
-  end
-  # if a spirit is holding anything ot loses its ethereal status
   def set_highest_armour_grade(%Mobile{spirit: %Spirit{inventory: _inv, equipment: []}} = mobile) do
-    Map.put(mobile, :highest_armour_grade, 1)
+    Map.put(mobile, :highest_armour_grade, 0)
   end
   def set_highest_armour_grade(%Mobile{spirit: %Spirit{equipment: equipment}} = mobile) do
     highest_grade =
@@ -924,39 +916,20 @@ defmodule ApathyDrive.Mobile do
   def top_threat([]),      do: nil
   def top_threat(targets), do: Enum.max(targets)
 
-  def handle_call(:attackable?, _from, %Mobile{monster_template_id: nil} = mobile) do
-    if ethereal?(mobile) do
-      {:reply, {:error, "#{mobile.name} has no body to attack."}, mobile}
-    else
-      {:reply, :ok, mobile}
-    end
-  end
-  def handle_call(:attackable?, _from, %Mobile{monster_template_id: _} = mobile) do
-    {:reply, :ok, mobile}
-  end
-
   def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: nil} = mobile) do
-    if ethereal?(mobile) do
-      {:reply, :ok, mobile}
-    else
-      {:reply, {:error, "You cannot use possession if you have a physical body."}, mobile}
-    end
+    {:reply, :ok, mobile}
   end
   def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: _, effects: _effects} = mobile) do
     {:reply, {:error, "You are already possessing #{mobile.name}."}, mobile}
   end
 
   def handle_call({:attack, target}, _from, mobile) do
-    if ethereal?(mobile) do
-      {:reply, {:error, "You need a physical form to attack monsters."}, mobile}
-    else
-      mobile =
-        mobile
-        |> set_attack_target(target)
-        |> initiate_combat
+    mobile =
+      mobile
+      |> set_attack_target(target)
+      |> initiate_combat
 
-      {:reply, :ok, mobile}
-    end
+    {:reply, :ok, mobile}
   end
 
   def handle_call(:unpossess, _from, %Mobile{monster_template_id: nil} = mobile) do
@@ -1700,12 +1673,6 @@ defmodule ApathyDrive.Mobile do
   defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
   defp worn_on_max(%{"worn_on" => "Wrist"}),  do: 2
   defp worn_on_max(%{"worn_on" => _}),        do: 1
-
-  defp ethereal?(%Mobile{effects: effects}) do
-    effects
-    |> Map.values
-    |> Enum.any?(&(&1["ethereal"] == true))
-  end
 
   defp conflicting_worn_on("Weapon Hand"),     do: ["Two Handed"]
   defp conflicting_worn_on("Off-Hand"),   do: ["Two Handed"]
