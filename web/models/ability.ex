@@ -401,9 +401,22 @@ defmodule Ability do
 
     display_pre_cast_message(mobile, ability, targets)
 
+    if mobile.combo && mobile.combo == get_in(ability, ["combo", "previous"]) do
+      ability =
+        ability
+        |> Map.merge(ability["combo"])
+        |> Map.delete("previous")
+    end
+
     mobile = mobile
              |> apply_cooldown(ability)
              |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
+
+    if ability["set_combo"] do
+      mobile =
+        mobile
+        |> Map.put(:combo, ability["set_combo"])
+    end
 
     Mobile.update_prompt(mobile)
 

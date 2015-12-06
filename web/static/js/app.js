@@ -64,7 +64,7 @@ chan.on("disable", function(message){
 });
 
 chan.on("update prompt", function(message){
-  $("#prompt").text(message.html);
+  $("#prompt").html(message.html);
 });
 
 chan.on("redirect", function(message){

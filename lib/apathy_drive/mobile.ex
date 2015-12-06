@@ -48,7 +48,8 @@ defmodule ApathyDrive.Mobile do
             attack_target: nil,
             auto_attack_interval: 2.0,
             highest_armour_grade: 0,
-            questions: %{}
+            questions: %{},
+            combo: nil
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -239,8 +240,12 @@ defmodule ApathyDrive.Mobile do
     send(socket, {:update_prompt, prompt(mobile)})
   end
 
-  def prompt(%Mobile{} = mobile) do
+  def prompt(%Mobile{combo: nil} = mobile) do
     "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
+  end
+
+  def prompt(%Mobile{combo: combo} = mobile) do
+    "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}] <span class='yellow'>*#{combo}*</span>:"
   end
 
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
@@ -758,7 +763,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_hp(%Mobile{} = mobile) do
-    Map.put(mobile, :max_hp, trunc(strength(mobile) * (1.5 + (0.15 * mobile.level))))
+    Map.put(mobile, :max_hp, trunc(strength(mobile) * (3 + (0.3 * mobile.level))))
   end
 
   def set_physical_defense(%Mobile{} = mobile) do
