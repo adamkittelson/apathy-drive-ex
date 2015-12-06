@@ -176,8 +176,6 @@ defmodule MonsterTemplate do
     monster = %{
       name: name_with_adjective(monster_template.name, monster_template.adjectives),
       description: monster_template.description,
-      hp: monster_template.max_hp,
-      max_hp: monster_template.max_hp,
       enter_message: monster_template.enter_message,
       exit_message: monster_template.exit_message,
       death_message: monster_template.death_message,

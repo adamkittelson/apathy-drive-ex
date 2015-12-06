@@ -10,12 +10,9 @@ defmodule ApathyDrive.Mobile do
             socket: nil,
             hp: nil,
             max_hp: nil,
-            strength: nil,
-            strength_per_level: 0,
-            agility: nil,
-            agility_per_level: 0,
-            will: nil,
-            will_per_level: 0,
+            strength: 0,
+            agility: 0,
+            will: 0,
             description: "Some temporary description.",
             mana: nil,
             max_mana: nil,
@@ -612,12 +609,6 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:pid, self)
       |> Map.put(:room_id, spirit.room_id)
       |> Map.put(:alignment, spirit.class.alignment)
-      |> Map.put(:strength, spirit.class.strength)
-      |> Map.put(:strength_per_level, spirit.class.strength_per_level)
-      |> Map.put(:agility, spirit.class.agility)
-      |> Map.put(:agility_per_level, spirit.class.agility_per_level)
-      |> Map.put(:will, spirit.class.will)
-      |> Map.put(:will_per_level, spirit.class.will_per_level)
       |> Map.put(:name, spirit.name)
       |> Map.put(:level, spirit.level)
       |> set_highest_armour_grade
@@ -672,8 +663,7 @@ defmodule ApathyDrive.Mobile do
     Map.put(mobile, :highest_armour_grade, highest_grade)
   end
 
-  def set_abilities(%Mobile{spirit: nil} = mobile), do: adjust_mana_costs(mobile)
-  def set_abilities(%Mobile{spirit: spirit, level: level} = mobile) do
+  def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit, level: level} = mobile) do
     abilities =
      spirit.class.abilities
      |> Enum.filter(&(Map.get(&1, "level", 0) <= level))
@@ -686,6 +676,7 @@ defmodule ApathyDrive.Mobile do
     |> set_passive_effects
     |> adjust_mana_costs
   end
+  def set_abilities(%Mobile{} = mobile), do: adjust_mana_costs(mobile)
 
   def add_abilities_from_equipment(abilities, equipment) do
     abilities ++ Enum.flat_map(equipment, &(&1["abilities"]))
@@ -744,7 +735,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_mana(%Mobile{} = mobile) do
-    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.9 + (0.09 * mobile.level))))
+    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.9 + (0.09 * level(mobile)))))
   end
 
   def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
@@ -755,8 +746,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_hp(%Mobile{} = mobile) do
-    Map.put(mobile, :max_hp, trunc(strength(mobile) * (3 + (0.3 * mobile.level))))
+    Map.put(mobile, :max_hp, trunc(strength(mobile) * (3 + (0.3 * level(mobile)))))
   end
+
+  def level(%Mobile{spirit: nil, level: level}), do: level
+  def level(%Mobile{spirit: spirit}), do: spirit.level
 
   def set_physical_defense(%Mobile{} = mobile) do
     Map.put(mobile, :physical_defense, physical_defense_from_items(mobile))
@@ -844,10 +838,27 @@ defmodule ApathyDrive.Mobile do
     attribute(mobile, :will)
   end
 
-  def attribute(%Mobile{level: level} = mobile, attribute) do
-    Map.get(mobile, attribute) +
-    (level * Map.get(mobile, :"#{attribute}_per_level")) +
+  def attribute(%Mobile{spirit: nil} = mobile, attribute) do
+    Map.get(mobile, attribute)
+  end
+
+  def attribute(%Mobile{spirit: spirit, monster_template_id: nil} = mobile, attribute) do
+    (spirit.level * Map.get(spirit.class, :"#{attribute}_per_level")) +
     attribute_from_equipment(mobile, attribute)
+  end
+
+  def attribute(%Mobile{spirit: spirit} = mobile, attribute) do
+    spirit_attribute =
+      mobile
+      |> Map.put(:monster_template_id, nil)
+      |> attribute(attribute)
+
+    mobile_attribute =
+      mobile
+      |> Map.put(:spirit, nil)
+      |> attribute(attribute)
+
+    div((spirit_attribute + mobile_attribute), 2)
   end
 
   def attribute_from_equipment(%Mobile{spirit: nil}, _), do: 0
@@ -968,6 +979,10 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:spirit, spirit)
       |> Map.put(:socket, socket)
 
+      mobile
+      |> Map.take([:hp, :max_hp])
+      |> IO.inspect
+
     send(socket, {:update_mobile, self})
 
     send_scroll(mobile, "<p>You possess #{mobile.name}.")
@@ -996,8 +1011,6 @@ defmodule ApathyDrive.Mobile do
     if remaining_encumbrance(mobile) >= weight do
       mobile =
         put_in(mobile.spirit.inventory, [item | inventory])
-        |> set_highest_armour_grade
-        |> set_abilities
 
         Repo.update!(mobile.spirit)
 
@@ -1038,8 +1051,6 @@ defmodule ApathyDrive.Mobile do
 
           mobile =
             put_in(mobile.spirit.inventory, [constructed_item | inventory])
-            |> set_highest_armour_grade
-            |> set_abilities
 
             Repo.update!(mobile.spirit)
 
@@ -1064,8 +1075,6 @@ defmodule ApathyDrive.Mobile do
       %{item: item} ->
         mobile =
           put_in(mobile.spirit.inventory, List.delete(inventory, item))
-          |> set_highest_armour_grade
-          |> set_abilities
 
           Repo.update!(mobile.spirit)
 
@@ -1084,8 +1093,6 @@ defmodule ApathyDrive.Mobile do
       %{item: item} ->
         mobile =
           put_in(mobile.spirit.inventory, List.delete(inventory, item))
-          |> set_highest_armour_grade
-          |> set_abilities
 
           Repo.update!(mobile.spirit)
 
