@@ -633,11 +633,19 @@ defmodule Ability do
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"damage" => damage} = effects, %Mobile{} = ability_user) do
     mobile = put_in(mobile.hp, mobile.hp - damage)
-    mobile = put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + damage end))
+
+    enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))
+
+    mobile = put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + enmity end))
 
     trigger_damage_shields(mobile, ability_user)
 
-    apply_instant_effects(mobile, Map.delete(effects, "damage"), ability_user)
+    effects =
+      effects
+      |> Map.delete("damage")
+      |> Map.delete("hate_multiplier")
+
+    apply_instant_effects(mobile, effects, ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"heal" => heal} = effects, ability_user) do
     mobile = put_in(mobile.hp, min(mobile.max_hp, mobile.hp + heal))
