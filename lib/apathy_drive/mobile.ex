@@ -979,10 +979,7 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> Map.put(:spirit, spirit)
       |> Map.put(:socket, socket)
-
-      mobile
-      |> Map.take([:hp, :max_hp])
-      |> IO.inspect
+      |> TimerManager.call_every({:monster_present, 4_000, fn -> send(self, :notify_presence) end})
 
     send(socket, {:update_mobile, self})
 
@@ -1644,6 +1641,10 @@ defmodule ApathyDrive.Mobile do
   def handle_info(:die, mobile) do
     Systems.Death.kill(mobile)
 
+    {:noreply, mobile}
+  end
+
+  def handle_info(_message, %Mobile{} = mobile) do
     {:noreply, mobile}
   end
 
