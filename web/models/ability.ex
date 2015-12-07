@@ -475,20 +475,21 @@ defmodule Ability do
     end
   end
 
-  def after_cast(%Mobile{} = ability_user, %{"after_cast" => ability_id, "after_cast_chance" => chance}, targets) do
-    if chance >= :random.uniform(100) do
-      execute_after_cast(ability_user, ability_id, targets)
+  def after_cast(%Mobile{} = ability_user, %{"after_cast" => after_cast_ability, "after_cast_chance" => chance}, targets) do
+    if chance >= :rand.uniform(100) do
+      execute_after_cast(ability_user, after_cast_ability, targets)
     end
   end
-  def after_cast(%Mobile{} = ability_user, %{"after_cast" => ability_id}, targets) do
-    execute_after_cast(ability_user, ability_id, targets)
+  def after_cast(%Mobile{} = ability_user, %{"after_cast" => after_cast_ability}, targets) do
+    execute_after_cast(ability_user, after_cast_ability, targets)
   end
   def after_cast(%Mobile{}, %{}, _targets), do: false
 
-  def execute_after_cast(%Monster{} = ability_user, ability_id, targets) do
-    if after_cast_ability = ApathyDrive.Repo.get(Ability, ability_id) do
-      send(ability_user.pid, {:execute_ability, after_cast_ability, targets})
-    end
+  def execute_after_cast(%Mobile{} = ability_user, after_cast_ability, targets) do
+    ability =
+      after_cast_ability
+      |> Map.put("ignores_global_cooldown", true)
+    send(ability_user.pid, {:execute_ability, ability, targets})
   end
 
   def global_cooldown(%{"ignores_global_cooldown" => true}, %Mobile{}), do: nil
@@ -603,7 +604,7 @@ defmodule Ability do
 
     damage = Mobile.reduce_damage(mobile, damage, ability["instant_effects"]["mitigated_by"])
 
-    put_in(ability, ["instant_effects", "damage"], damage)
+    put_in(ability, ["instant_effects", "damage"], max(damage, 1))
   end
   def reduce_damage(%{"instant_effects" => %{"drain" => drain}} = ability, mobile, ability_user) do
      reduce_damage(put_in(ability, ["instant_effects", "damage"], drain), mobile, ability_user)

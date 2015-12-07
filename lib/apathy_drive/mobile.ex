@@ -667,7 +667,7 @@ defmodule ApathyDrive.Mobile do
     abilities =
      spirit.class.abilities
      |> Enum.filter(&(Map.get(&1, "level", 0) <= level))
-     |> Enum.reject(&(Map.get(&1, "min_armour_type", 1) > mobile.highest_armour_grade))
+     |> Enum.reject(&(Map.get(&1, "min_armour_type", 0) > mobile.highest_armour_grade))
      |> Enum.reject(&(Map.get(&1, "max_armour_type", 10) < mobile.highest_armour_grade))
      |> add_abilities_from_equipment(spirit.equipment)
 
@@ -847,7 +847,7 @@ defmodule ApathyDrive.Mobile do
     attribute_from_equipment(mobile, attribute)
   end
 
-  def attribute(%Mobile{spirit: spirit} = mobile, attribute) do
+  def attribute(%Mobile{} = mobile, attribute) do
     spirit_attribute =
       mobile
       |> Map.put(:monster_template_id, nil)
@@ -973,6 +973,7 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
     ApathyDrive.PubSub.subscribe(self, "chat:gossip")
     ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+    ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
 
     mobile =
       mobile
