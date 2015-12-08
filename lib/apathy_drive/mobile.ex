@@ -1437,9 +1437,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:think, mobile) do
-    %Mobile{} = mobile = ApathyDrive.AI.think(mobile)
-
-    {:noreply, mobile}
+    {:noreply, ApathyDrive.AI.think(mobile)}
   end
 
   def handle_info({:apply_ability, %{} = ability, %Mobile{} = ability_user}, mobile) do
@@ -1643,6 +1641,13 @@ defmodule ApathyDrive.Mobile do
 
     {:noreply, mobile}
   end
+
+  def handle_info({:execute_room_ability, ability}, monster) do
+    ability = Map.put(ability, "ignores_global_cooldown", true)
+
+    {:noreply, Ability.execute(monster, ability, [self])}
+  end
+
 
   def handle_info(_message, %Mobile{} = mobile) do
     {:noreply, mobile}

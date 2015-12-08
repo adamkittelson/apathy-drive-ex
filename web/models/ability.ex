@@ -658,10 +658,10 @@ defmodule Ability do
 
     apply_instant_effects(monster, Map.delete(effects, "heal_mana"), ability_user)
   end
-  def apply_instant_effects(%Monster{} = monster, %{"script" => script} = effects, ability_user) do
-    monster = ApathyDrive.Script.execute(script, monster)
+  def apply_instant_effects(%Mobile{} = mobile, %{"script" => script} = effects, ability_user) do
+    mobile = ApathyDrive.Script.execute(script, mobile)
 
-    apply_instant_effects(monster, Map.delete(effects, "script"), ability_user)
+    apply_instant_effects(mobile, Map.delete(effects, "script"), ability_user)
   end
   def apply_instant_effects(%Monster{} = monster, %{"remove abilities" => abilities} = effects, ability_user) do
     monster = Enum.reduce(abilities, monster, fn(ability_id, updated_monster) ->
@@ -692,7 +692,7 @@ defmodule Ability do
 
     apply_instant_effects(monster, Map.delete(effects, "dispel"), ability_user)
   end
-  def apply_instant_effects(%Monster{} = monster, %{} = effects, ability_user) do
+  def apply_instant_effects(%Mobile{} = monster, %{} = effects, ability_user) do
     IO.puts "unrecognized instant effects: #{inspect Map.keys(effects)}"
     apply_instant_effects(monster, %{}, ability_user)
   end

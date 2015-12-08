@@ -79,9 +79,9 @@ defmodule ApathyDrive.Script do
     execute_script(script, monster)
   end
 
-  def execute_instruction(%{"add_experience" => exp}, %Monster{spirit: %Spirit{} = spirit} = monster, script) do
+  def execute_instruction(%{"add_experience" => exp}, %Mobile{spirit: %Spirit{} = spirit} = mobile, script) do
     spirit = Spirit.add_experience(spirit, exp)
-    execute_script(script, Map.put(monster, :spirit, spirit))
+    execute_script(script, Map.put(mobile, :spirit, spirit))
   end
 
   def execute_instruction(%{"cast_ability" => ability_name}, monster, script) do
@@ -108,8 +108,8 @@ defmodule ApathyDrive.Script do
     execute_script(script, monster)
   end
 
-  def execute_instruction(instruction, monster, _script) do
-    Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: #{inspect instruction}</span></p>")
+  def execute_instruction(instruction, mobile, _script) do
+    Mobile.send_scroll(mobile, "<p><span class='red'>Not Implemented: #{inspect instruction}</span></p>")
     false
   end
 

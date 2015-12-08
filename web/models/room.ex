@@ -44,16 +44,15 @@ defmodule Room do
       send(self, :spawn_monsters)
     end
 
-    #
-    # room = if room.ability_id do
-    #   PubSub.subscribe(self, "rooms:abilities")
-    #
-    #   room
-    #   |> Map.put(:room_ability, ApathyDrive.Repo.get(Ability, room.ability_id))
-    #   |> TimerManager.call_every({:execute_room_ability, 5_000, fn -> send(self, :execute_room_ability) end})
-    # else
-    #   room
-    # end
+
+    if room.ability_id do
+      PubSub.subscribe(self, "rooms:abilities")
+
+      room =
+        room
+        |> Map.put(:room_ability, ApathyDrive.Repo.get(Ability, room.ability_id).properties)
+        |> TimerManager.call_every({:execute_room_ability, 5_000, fn -> send(self, :execute_room_ability) end})
+    end
 
     {:ok, room}
   end
@@ -742,7 +741,7 @@ defmodule Room do
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:monsters", {:execute_room_ability, ability})
+    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:mobiles", {:execute_room_ability, ability})
 
     {:noreply, room}
   end

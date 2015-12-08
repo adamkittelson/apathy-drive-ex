@@ -15,7 +15,7 @@ defmodule ApathyDrive.Exits.AbilityTrap do
     Monster.send_scroll(monster, "<p><span class='yellow'>#{interpolate(room_exit["mover_message"], %{"user" => monster})}</span></p>")
 
     if ability = ApathyDrive.Repo.get(Ability, room_exit["ability"]) do
-      send(monster.pid, {:execute_ability, ability, [monster.pid]})
+      send(monster.pid, {:execute_ability, ability.properties, [monster.pid]})
     end
 
     Room.look(destination, monster)
