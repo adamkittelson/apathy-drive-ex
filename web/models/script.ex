@@ -1,16 +1,31 @@
 defmodule ApathyDrive.Script do
   alias ApathyDrive.Mobile
+  use ApathyDrive.Web, :model
+
+  schema "scripts" do
+    field :instructions, ApathyDrive.JSONB, default: []
+
+    timestamps
+  end
+
+  def find(id) do
+    ApathyDrive.Repo.get(__MODULE__, id)
+    |> Map.get(:instructions)
+  end
 
   def execute(scripts, %Mobile{} = mobile) do
-    scripts
-    |> Enum.any?(fn(script) ->
-         execute_script(script, mobile)
-       end)
-    mobile
+    result =
+      scripts
+      |> Enum.find_value(fn(script) ->
+           execute_script(script, mobile)
+         end)
+    result || mobile
   end
 
   def execute_script([instruction | rest], %Mobile{} = mobile) when is_list(instruction) do
-    unless execute_script(instruction, mobile) do
+    if mobile = execute_script(instruction, mobile) do
+      mobile
+    else
       execute_script(rest, mobile)
     end
   end
@@ -19,7 +34,7 @@ defmodule ApathyDrive.Script do
     execute_instruction(instruction, mobile, script)
   end
 
-  def execute_script([], _mobile),  do: true
+  def execute_script([], mobile),   do: mobile
   def execute_script(nil, _mobile), do: false
 
   def execute_script(instruction, %Mobile{} = mobile), do: execute_instruction(instruction, mobile, nil)
@@ -67,6 +82,40 @@ defmodule ApathyDrive.Script do
     end
   end
 
+  def execute_instruction(%{"check_item" => %{"failure_message" => message, "item" => item_template_id}}, %Mobile{} = mobile, script) do
+    if Mobile.has_item?(mobile, item_template_id) do
+      execute_script(script, mobile)
+    else
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{message}</p>")
+    end
+  end
+
+  def execute_instruction(%{"add_delay" => delay}, %Mobile{delayed: false} = mobile, script) do
+    Process.send_after(self, {:execute_script, script}, delay * 1000)
+    execute_script([], Map.put(mobile, :delayed, true))
+  end
+
+  def execute_instruction(%{"add_delay" => _delay}, %Mobile{delayed: true} = mobile, _script) do
+    execute_script([], mobile)
+  end
+
+  def execute_instruction(%{"give_item" => item_template_id}, %Mobile{} = mobile, script) do
+    item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: mobile.level})
+
+    if Mobile.remaining_encumbrance(mobile) >= item["weight"] do
+      mobile =
+        put_in(mobile.spirit.inventory, [item | mobile.spirit.inventory])
+
+      Repo.update!(mobile.spirit)
+    else
+      mobile.spirit.room_id
+      |> Room.find
+      |> Room.add_item(item)
+    end
+
+    execute_script(script, mobile)
+  end
+
   def execute_instruction(%{"min_level" => %{"failure_message" => message, "level" => level}}, monster, script) do
     if Components.Level.value(monster) < level do
       Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
@@ -94,8 +143,8 @@ defmodule ApathyDrive.Script do
     execute_script(script, monster)
   end
 
-  def execute_instruction(%{"random" => scripts}, monster, script) do
-    roll = :random.uniform(100)
+  def execute_instruction(%{"random" => scripts}, mobile, script) do
+    roll = :rand.uniform(100)
 
     number = scripts
             |> Map.keys
@@ -103,9 +152,13 @@ defmodule ApathyDrive.Script do
             |> Enum.sort
             |> Enum.find(&(&1 >= roll))
 
-    execute_script(scripts["#{number}"], monster)
+    if script do
+      send(self, {:execute_script, script})
+    end
 
-    execute_script(script, monster)
+    scripts["#{number}"]
+    |> find
+    |> execute_script(mobile)
   end
 
   def execute_instruction(instruction, mobile, _script) do

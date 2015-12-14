@@ -136,6 +136,10 @@ defmodule Room do
     GenServer.call(room, {:command_exit, string})
   end
 
+  def command(room, string) do
+    GenServer.call(room, {:command, string})
+  end
+
   def add_item(room, item) do
     GenServer.cast(room, {:add_item, item})
   end
@@ -610,6 +614,18 @@ defmodule Room do
                       end)
 
     {:reply, command_exit, room}
+  end
+
+  def handle_call({:command, string}, _from, room) do
+    command = room.commands
+              |> Map.keys
+              |> Enum.find(fn(command) ->
+                   String.downcase(command) == String.downcase(string)
+                 end)
+
+    scripts = room.commands[command]
+
+    {:reply, scripts, room}
   end
 
   def handle_cast({:add_item, item}, %Room{items: items} = room) do

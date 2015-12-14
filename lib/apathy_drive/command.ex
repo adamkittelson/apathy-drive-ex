@@ -27,6 +27,15 @@ defmodule ApathyDrive.Command do
     cond do
       command in @directions ->
         ApathyDrive.Exit.move(mobile, Room.direction(command))
+      scripts = Room.command(room, full_command) ->
+        cond do
+          Mobile.confused(mobile) ->
+            nil
+          true ->
+            scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
+
+            Mobile.execute_script(mobile, scripts)
+        end
       command_exit = Room.command_exit(room, full_command) ->
         cond do
           Mobile.confused(mobile) ->
