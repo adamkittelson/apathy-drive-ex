@@ -90,8 +90,17 @@ defmodule ApathyDrive.Script do
     end
   end
 
+  def execute_instruction(%{"take_item" => %{"failure_message" => message, "item" => item_template_id}}, %Mobile{} = mobile, script) do
+    if mobile = Mobile.remove_item?(mobile, item_template_id) do
+      Spirit.save(mobile.spirit)
+      execute_script(script, mobile)
+    else
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{message}</p>")
+    end
+  end
+
   def execute_instruction(%{"add_delay" => delay}, %Mobile{delayed: false} = mobile, script) do
-    Process.send_after(self, {:execute_script, script}, delay * 1000)
+    Process.send_after(self, {:execute_script, script}, delay)# * 1000)
     execute_script([], Map.put(mobile, :delayed, true))
   end
 
@@ -111,6 +120,22 @@ defmodule ApathyDrive.Script do
       mobile.spirit.room_id
       |> Room.find
       |> Room.add_item(item)
+    end
+
+    execute_script(script, mobile)
+  end
+
+  def execute_instruction(%{"spawn_monster" => monster_template_id}, %Mobile{} = mobile, script) do
+    room =
+      mobile.room_id
+      |> Room.find
+
+    monster =
+      monster_template_id
+      |> MonsterTemplate.spawn_monster(Room.value(room))
+
+    Task.start fn ->
+      ApathyDrive.Exits.Normal.display_enter_message(room, monster)
     end
 
     execute_script(script, mobile)
@@ -156,9 +181,14 @@ defmodule ApathyDrive.Script do
       send(self, {:execute_script, script})
     end
 
-    scripts["#{number}"]
-    |> find
-    |> execute_script(mobile)
+    case scripts["#{number}"] do
+      script_id when is_integer(script_id) ->
+        script_id
+        |> find
+        |> execute_script(mobile)
+      instructions ->
+        execute_script(instructions, mobile)
+    end
   end
 
   def execute_instruction(instruction, mobile, _script) do

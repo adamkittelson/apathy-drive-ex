@@ -285,6 +285,24 @@ defmodule ApathyDrive.Mobile do
     |> Enum.member?(item_template_id)
   end
 
+  def remove_item?(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile, item_template_id) do
+    inventory_item =
+      inventory
+      |> Enum.find(&(&1["id"] == item_template_id))
+
+    if inventory_item do
+      put_in(mobile.spirit.inventory, List.delete(inventory, inventory_item))
+    else
+      equipment_item =
+        equipment
+        |> Enum.find(&(&1["id"] == item_template_id))
+
+      if equipment_item do
+        put_in(mobile.spirit.equipment, List.delete(equipment, equipment_item))
+      end
+    end
+  end
+
   def get_item(mobile, item) do
     GenServer.call(mobile, {:get_item, item})
   end
