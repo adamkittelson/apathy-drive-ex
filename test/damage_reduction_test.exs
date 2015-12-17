@@ -3,7 +3,7 @@ defmodule DamageReductionTest do
   use ShouldI
   alias ApathyDrive.Mobile
 
-  with "a Mobile with no physical defense and 1000 magical defense" do
+  having "a Mobile with no physical defense and 1000 magical defense" do
     setup context do
       Dict.put context, :mobile, %Mobile{physical_defense: 0, magical_defense: 1000}
     end
@@ -29,7 +29,7 @@ defmodule DamageReductionTest do
     end
   end
 
-  with "a Mobile with 500 physical defense and 500 magical defense" do
+  having "a Mobile with 500 physical defense and 500 magical defense" do
     setup context do
       Dict.put context, :mobile, %Mobile{physical_defense: 500, magical_defense: 500}
     end
@@ -55,7 +55,7 @@ defmodule DamageReductionTest do
     end
   end
 
-  with "a Mobile with 500 physical defense, 0 magical defense and 50 fire resistance" do
+  having "a Mobile with 500 physical defense, 0 magical defense and 50 fire resistance" do
     setup context do
       Dict.put context, :mobile, %Mobile{physical_defense: 500,
                                          magical_defense:  0,
@@ -83,7 +83,7 @@ defmodule DamageReductionTest do
     end
   end
 
-  with "a Mobile with 500 magical defense and 50 fire resistance" do
+  having "a Mobile with 500 magical defense and 50 fire resistance" do
     setup context do
       Dict.put context, :mobile, %Mobile{magical_defense:  500,
                                          fire_resistance:  50}

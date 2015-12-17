@@ -26,7 +26,7 @@
   "postgrex": {:hex, :postgrex, "0.10.0"},
   "ranch": {:hex, :ranch, "1.2.0"},
   "scrivener": {:hex, :scrivener, "1.0.0"},
-  "shouldi": {:hex, :shouldi, "0.2.3"},
+  "shouldi": {:git, "https://github.com/batate/shouldi", "54559b9a694db4d7cf4c62b365a36686844eb3ea", []},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"},
   "timex": {:hex, :timex, "1.0.0-rc4"},
   "timex_ecto": {:hex, :timex_ecto, "0.7.0"},

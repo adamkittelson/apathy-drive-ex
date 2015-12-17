@@ -36,7 +36,7 @@ defmodule ApathyDrive.Mixfile do
       {:oauth2,              "~> 0.5"},
       {:scrivener,           "~> 1.0"},
       {:comeonin,            "~> 1.2.2"},
-      {:shouldi, only: :test}
+      {:shouldi, git: "https://github.com/batate/shouldi", only: :test}
     ]
   end
 
