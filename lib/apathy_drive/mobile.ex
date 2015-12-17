@@ -46,7 +46,8 @@ defmodule ApathyDrive.Mobile do
             auto_attack_interval: 2.0,
             highest_armour_grade: 0,
             questions: %{},
-            combo: nil
+            combo: nil,
+            delayed: false
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -276,6 +277,30 @@ defmodule ApathyDrive.Mobile do
     end
 
     display_encumbrance(mobile)
+  end
+
+  def has_item?(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}}, item_template_id) do
+    (inventory ++ equipment)
+    |> Enum.map(&Map.get(&1, "id"))
+    |> Enum.member?(item_template_id)
+  end
+
+  def remove_item?(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile, item_template_id) do
+    inventory_item =
+      inventory
+      |> Enum.find(&(&1["id"] == item_template_id))
+
+    if inventory_item do
+      put_in(mobile.spirit.inventory, List.delete(inventory, inventory_item))
+    else
+      equipment_item =
+        equipment
+        |> Enum.find(&(&1["id"] == item_template_id))
+
+      if equipment_item do
+        put_in(mobile.spirit.equipment, List.delete(equipment, equipment_item))
+      end
+    end
   end
 
   def get_item(mobile, item) do
@@ -1409,6 +1434,10 @@ defmodule ApathyDrive.Mobile do
     send_scroll(mobile, message)
 
     {:noreply, mobile}
+  end
+
+  def handle_info({:execute_script, script}, mobile) do
+    {:noreply, ApathyDrive.Script.execute(script, Map.put(mobile, :delayed, false))}
   end
 
   def handle_info({:move_to, room_id}, mobile) do

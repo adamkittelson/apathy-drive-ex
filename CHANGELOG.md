@@ -160,3 +160,6 @@ CHANGELOG
 
 ---- 0.0.54 / 2015-12-05 / lair-refactor ---------------------------------------
 * use a join table for lair monsters
+
+---- 0.0.55 / 2015-12-16 / script-stuff ----------------------------------------
+* enough textblock/script stuff to handle grave digging
