@@ -98,7 +98,16 @@ defmodule Spirit do
 
   def save(spirit) when is_pid(spirit), do: spirit |> value |> save
   def save(%Spirit{id: id} = spirit) when is_integer(id) do
-    Repo.update!(spirit)
+    changes =
+      unquote(Keyword.keys(@ecto_fields))
+      |> Enum.reduce(%{}, fn(field, changes) ->
+           Map.put(changes, field, Map.get(spirit, field))
+         end)
+      |> Map.delete(:updated_at)
+
+    %Spirit{id: id}
+    |> Ecto.Changeset.change(changes)
+    |> Repo.update!
   end
   def save(%Spirit{} = spirit), do: spirit
 
