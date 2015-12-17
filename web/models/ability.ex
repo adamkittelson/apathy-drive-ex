@@ -22,8 +22,6 @@ defmodule Ability do
     timestamps
   end
 
-  after_load :set_keywords
-
   def set_keywords(%Ability{name: name} = ability) do
     Map.put(ability, :keywords, String.split(name))
   end

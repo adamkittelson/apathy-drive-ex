@@ -80,15 +80,18 @@ defmodule ApathyDrive.Web do
 
       # Alias the data repository and import query/model functions
       alias ApathyDrive.Repo
-      import Ecto.Model
-      import Ecto.Query, only: [from: 2]
+      import Ecto
+      import Ecto.Query, only: [from: 1, from: 2]
       import ApathyDrive.Router.Helpers
     end
   end
 
   def model do
     quote do
-      use Ecto.Model
+      use Ecto.Schema
+      import Ecto
+      import Ecto.Changeset
+      import Ecto.Query, only: [from: 1, from: 2]
       use Timex.Ecto.Timestamps
       alias ApathyDrive.Repo
     end
@@ -105,8 +108,8 @@ defmodule ApathyDrive.Web do
       use Phoenix.Channel
       # Alias the data repository and import query/model functions
       alias ApathyDrive.Repo
-      import Ecto.Model
-      import Ecto.Query, only: [from: 2]
+      import Ecto
+      import Ecto.Query, only: [from: 1, from: 2]
     end
   end
 

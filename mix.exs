@@ -23,13 +23,13 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:ecto,                "~> 1.0"},
+      {:ecto,                "~> 1.1"},
+      {:postgrex,            "~> 0.10"},
       {:decimal,             "~> 1.1.0"},
-      {:postgrex,            "~> 0.9.1"},
-      {:phoenix,             "~> 1.0"},
+      {:phoenix,             "~> 1.1"},
       {:phoenix_live_reload, "~> 1.0.1"},
-      {:phoenix_ecto,        "~> 1.2"},
-      {:phoenix_html,        "~> 2.2"},
+      {:phoenix_ecto,        "~> 2.0"},
+      {:phoenix_html,        "~> 2.3"},
       {:timex,               "~> 0.19"},
       {:timex_ecto,          "~> 0.5"},
       {:inflex,              "~> 0.2.8"},

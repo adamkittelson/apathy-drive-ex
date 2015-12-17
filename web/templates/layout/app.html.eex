@@ -12,7 +12,7 @@
 </head>
 <body>
   <div class="container">
-    <%= @inner %>
+    <%= render @view_module, @view_template, assigns %>
   </div>
   <script>require("deps/phoenix_html/web/static/js/phoenix_html");</script>
 </body>

@@ -140,7 +140,6 @@ defmodule ApathyDrive.Exit do
                      })
                   |> capitalize_first
 
-        #ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room.id}:monsters", {:monster_left, self, direction}
         ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{Room.id(room)}:mobiles", "scroll", %{:html => "<p><span class='grey'>#{message}</span></p>"}
       end
 

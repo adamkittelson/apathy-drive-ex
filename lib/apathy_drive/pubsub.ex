@@ -34,7 +34,7 @@ defmodule ApathyDrive.PubSub do
   end
 
   def subscribers(topic, exceptions \\ []) do
-    Phoenix.PubSub.Local.subscribers(:"Elixir.pub_sub.Local", topic) -- exceptions
+    Phoenix.PubSub.Local.subscribers(:pub_sub, topic, 0) -- exceptions
   end
 
   def unsubscribe(pid, topic) do
