@@ -163,3 +163,6 @@ CHANGELOG
 
 ---- 0.0.55 / 2015-12-16 / script-stuff ----------------------------------------
 * enough textblock/script stuff to handle grave digging
+
+---- 0.0.56 / 2015-12-17 / upgrade-phoenix -------------------------------------
+* update phoenix / ecto
