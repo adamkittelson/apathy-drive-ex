@@ -145,11 +145,11 @@ defmodule ApathyDrive.Exit do
 
       def get_direction_by_destination(room, destination) do
         exit_to_destination = Room.exits(room)
-                              |> Enum.find fn(room_exit) ->
+                              |> Enum.find(fn(room_exit) ->
                                    other_room = Room.find(room_exit["destination"])
 
                                    other_room == destination
-                                 end
+                                 end)
         exit_to_destination["direction"]
       end
 

@@ -263,9 +263,9 @@ defmodule ApathyDrive.Mobile do
       Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
 
       equipment
-      |> Enum.each fn(item) ->
-        send_scroll(mobile, "<p><span class='dark-green'>#{String.ljust(item["name"], 23)}</span><span class='dark-cyan'>(#{item["worn_on"]})</span></p>")
-      end
+      |> Enum.each(fn(item) ->
+           send_scroll(mobile, "<p><span class='dark-green'>#{String.ljust(item["name"], 23)}</span><span class='dark-cyan'>(#{item["worn_on"]})</span></p>")
+         end)
       send_scroll(mobile, "<br>")
     end
 
