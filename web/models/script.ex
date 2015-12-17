@@ -100,7 +100,7 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"add_delay" => delay}, %Mobile{delayed: false} = mobile, script) do
-    Process.send_after(self, {:execute_script, script}, delay)# * 1000)
+    Process.send_after(self, {:execute_script, script}, delay * 1000)
     execute_script([], Map.put(mobile, :delayed, true))
   end
 
