@@ -4,7 +4,7 @@ defmodule ApathyDrive.Mixfile do
   def project do
     [ app: :apathy_drive,
       version: "0.0.1",
-      elixir: "~> 1.1",
+      elixir: "~> 1.2.0-rc.0",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
       deps: deps,
@@ -16,7 +16,7 @@ defmodule ApathyDrive.Mixfile do
   def application do
     [
       mod: { ApathyDrive, [] },
-      applications: [:postgrex, :ecto, :phoenix, :cowboy, :logger, :oauth2, :phoenix_ecto, :comeonin]
+      applications: [:postgrex, :ecto, :phoenix, :cowboy, :logger, :oauth2, :phoenix_ecto, :comeonin, :tzdata]
     ]
   end
 
@@ -25,19 +25,18 @@ defmodule ApathyDrive.Mixfile do
       {:cowboy,              "~> 1.0.0"},
       {:ecto,                "~> 1.1"},
       {:postgrex,            "~> 0.10"},
-      {:decimal,             "~> 1.1.0"},
       {:phoenix,             "~> 1.1"},
       {:phoenix_live_reload, "~> 1.0.1"},
       {:phoenix_ecto,        "~> 2.0"},
       {:phoenix_html,        "~> 2.3"},
-      {:timex,               "~> 0.19"},
-      {:timex_ecto,          "~> 0.5"},
+      {:timex,               "~> 1.0.0-rc4"},
+      {:timex_ecto,          "~> 0.7.0"},
       {:inflex,              "~> 0.2.8"},
       {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.5"},
       {:scrivener,           "~> 1.0"},
       {:comeonin,            "~> 1.2.2"},
-      {:shouldi, only: :test}
+      {:shouldi, git: "https://github.com/batate/shouldi", only: :test}
     ]
   end
 

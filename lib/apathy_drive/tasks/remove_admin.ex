@@ -7,7 +7,7 @@ defmodule Mix.Tasks.RemoveAdmin do
       %Spirit{admin: true} = spirit ->
         spirit
         |> Map.put(:admin, false)
-        |> ApathyDrive.Repo.update!
+        |> ApathyDrive.Repo.save!
 
         Mix.shell.info "#{name} is no longer an admin"
       %Spirit{} ->

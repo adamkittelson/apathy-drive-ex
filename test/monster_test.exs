@@ -2,7 +2,7 @@ defmodule MonsterTest do
   use ExUnit.Case
   use ShouldI
 
-  # with "an unpossessed monster with no dodge" do
+  # having "an unpossessed monster with no dodge" do
   #   setup context do
   #     Dict.put context, :monster, %Monster{skills: %{}, spirit: nil}
   #   end
@@ -12,7 +12,7 @@ defmodule MonsterTest do
   #   end
   # end
   # 
-  # with "an unpossessed monster with 10 dodge" do
+  # having "an unpossessed monster with 10 dodge" do
   #   setup context do
   #     Dict.put context, :monster, %Monster{skills: %{"dodge" => 10},
   #                                          spirit: nil}
@@ -23,7 +23,7 @@ defmodule MonsterTest do
   #   end
   # end
   # 
-  # with "a monster with 10 dodge with 10 dodge from effects" do
+  # having "a monster with 10 dodge with 10 dodge from effects" do
   #   setup context do
   #     GenServer.start_link(Room, %Room{id: 1, light: 0}, [name: {:global, :room_1}])
   # 

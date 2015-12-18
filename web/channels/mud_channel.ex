@@ -29,7 +29,7 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_info({:respawn, spirit: spirit}, socket) do
-    spirit = Repo.update!(spirit)
+    spirit = Repo.save!(spirit)
 
     {:ok, pid} = ApathyDrive.Mobile.start_link(%{spirit: spirit.id, socket: self})
 

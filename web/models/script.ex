@@ -115,7 +115,7 @@ defmodule ApathyDrive.Script do
       mobile =
         put_in(mobile.spirit.inventory, [item | mobile.spirit.inventory])
 
-      Repo.update!(mobile.spirit)
+      Repo.save!(mobile.spirit)
     else
       mobile.spirit.room_id
       |> Room.find

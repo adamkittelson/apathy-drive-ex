@@ -5,7 +5,7 @@ defmodule ApathyDrive.RoomControllerTest do
   @valid_params room: %{"name" => "test room", "description" => "this is the description"}
   @invalid_params room: %{}
 
-  with "admin privledges" do
+  having "admin privledges" do
     setup context do
       conn = conn()
              |> assign(:admin?, true)
@@ -66,7 +66,7 @@ defmodule ApathyDrive.RoomControllerTest do
 
   end
 
-  with "no admin privledges" do
+  having "no admin privledges" do
     setup context do
       conn = conn()
 

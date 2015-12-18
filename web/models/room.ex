@@ -489,7 +489,7 @@ defmodule Room do
         room =
           room
           |> Map.put(:items, List.delete(room.items, actual_item.item))
-          |> Repo.update!
+          |> Repo.save!
         {:reply, {:ok, actual_item.item}, room}
       true ->
         {:reply, :not_found, room}
@@ -520,7 +520,7 @@ defmodule Room do
         room =
           room
           |> Map.put(:items, List.delete(room.items, actual_item.item))
-          |> Repo.update!
+          |> Repo.save!
         {:reply, actual_item.item, room}
       true ->
         {:reply, :not_found, room}
@@ -631,7 +631,7 @@ defmodule Room do
   def handle_cast({:add_item, item}, %Room{items: items} = room) do
     room =
       put_in(room.items, [item | items])
-      |> Repo.update!
+      |> Repo.save!
 
     {:noreply, room}
   end
@@ -639,7 +639,7 @@ defmodule Room do
   def handle_cast({:add_items, new_items}, %Room{items: items} = room) do
     room =
       put_in(room.items, new_items ++ items)
-      |> Repo.update!
+      |> Repo.save!
 
     {:noreply, room}
   end
@@ -824,7 +824,7 @@ defmodule Room do
       room =
         room
         |> Map.put(:lair_faction, faction)
-        |> Repo.update!
+        |> Repo.save!
 
       send(monster, {:scroll, "<p>You capture the lair for your faction!</p>"})
       ApathyDrive.Factions.update_war_status
@@ -851,7 +851,7 @@ defmodule Room do
     room =
       room
       |> Map.put(:items, items ++ room.items)
-      |> Repo.update!
+      |> Repo.save!
     {:noreply, room}
   end
 

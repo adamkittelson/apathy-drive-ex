@@ -263,9 +263,9 @@ defmodule ApathyDrive.Mobile do
       Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
 
       equipment
-      |> Enum.each fn(item) ->
-        send_scroll(mobile, "<p><span class='dark-green'>#{String.ljust(item["name"], 23)}</span><span class='dark-cyan'>(#{item["worn_on"]})</span></p>")
-      end
+      |> Enum.each(fn(item) ->
+           send_scroll(mobile, "<p><span class='dark-green'>#{String.ljust(item["name"], 23)}</span><span class='dark-cyan'>(#{item["worn_on"]})</span></p>")
+         end)
       send_scroll(mobile, "<br>")
     end
 
@@ -1035,7 +1035,7 @@ defmodule ApathyDrive.Mobile do
       mobile =
         put_in(mobile.spirit.inventory, [item | inventory])
 
-        Repo.update!(mobile.spirit)
+        Repo.save!(mobile.spirit)
 
       {:reply, :ok, mobile}
     else
@@ -1075,7 +1075,7 @@ defmodule ApathyDrive.Mobile do
           mobile =
             put_in(mobile.spirit.inventory, [constructed_item | inventory])
 
-            Repo.update!(mobile.spirit)
+            Repo.save!(mobile.spirit)
 
           {:reply, {:ok, constructed_item["name"], cost}, mobile}
       end
@@ -1099,7 +1099,7 @@ defmodule ApathyDrive.Mobile do
         mobile =
           put_in(mobile.spirit.inventory, List.delete(inventory, item))
 
-          Repo.update!(mobile.spirit)
+          Repo.save!(mobile.spirit)
 
         {:reply, {:ok, item}, mobile}
     end
@@ -1117,7 +1117,7 @@ defmodule ApathyDrive.Mobile do
         mobile =
           put_in(mobile.spirit.inventory, List.delete(inventory, item))
 
-          Repo.update!(mobile.spirit)
+          Repo.save!(mobile.spirit)
 
         {:reply, {:ok, item}, mobile}
     end
@@ -1137,7 +1137,7 @@ defmodule ApathyDrive.Mobile do
      %{item: item} ->
        {:reply, resp, mobile} = equip_item(mobile, item)
 
-       Repo.update!(mobile.spirit)
+       Repo.save!(mobile.spirit)
 
        {:reply, resp, mobile}
     end
@@ -1171,7 +1171,7 @@ defmodule ApathyDrive.Mobile do
                    |> set_physical_defense
                    |> set_magical_defense
 
-          Repo.update!(mobile.spirit)
+          Repo.save!(mobile.spirit)
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, mobile}
     end
