@@ -66,7 +66,6 @@ defmodule ApathyDrive.Exit do
   defmacro __using__(_opts) do
     quote do
       import Systems.Text
-      import BlockTimer
       alias ApathyDrive.Exit
       alias ApathyDrive.Mobile
 

@@ -1,5 +1,4 @@
 defmodule Systems.Effect do
-  import BlockTimer
   use Timex
   alias ApathyDrive.Mobile
 
@@ -12,7 +11,7 @@ defmodule Systems.Effect do
   def add(%{effects: _effects} = entity, effect, duration) do
     key = Time.now(:msecs) * 1000 |> trunc
 
-    entity = TimerManager.call_after(entity, {{:effect, key}, duration |> seconds, fn ->
+    entity = TimerManager.call_after(entity, {{:effect, key}, duration |> :timer.seconds, fn ->
       send(self, {:remove_effect, key})
     end})
 

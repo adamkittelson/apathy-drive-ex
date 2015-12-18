@@ -4,7 +4,6 @@ defmodule ApathyDrive.Mobile do
   alias ApathyDrive.PubSub
   use GenServer
   import Systems.Text
-  import BlockTimer
 
   defstruct spirit: nil,
             socket: nil,
@@ -1626,7 +1625,7 @@ defmodule ApathyDrive.Mobile do
     if Process.alive?(target) and target in PubSub.subscribers("rooms:#{mobile.room_id}:mobiles") do
       execute_auto_attack(mobile, target)
 
-      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval |> seconds, fn ->
+      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval |> :timer.seconds, fn ->
         send(self, :execute_auto_attack)
       end})
       {:noreply, mobile}

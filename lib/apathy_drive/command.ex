@@ -169,7 +169,6 @@ defmodule ApathyDrive.Command do
 
   defmacro __using__(_opts) do
     quote do
-      import BlockTimer
       import Systems.Text
       alias ApathyDrive.Mobile
 

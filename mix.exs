@@ -32,7 +32,6 @@ defmodule ApathyDrive.Mixfile do
       {:timex,               "~> 1.0.0-rc4"},
       {:timex_ecto,          "~> 0.7.0"},
       {:inflex,              "~> 0.2.8"},
-      {:block_timer,         "~> 0.0.1"},
       {:oauth2,              "~> 0.5"},
       {:scrivener,           "~> 1.0"},
       {:comeonin,            "~> 1.2.2"},

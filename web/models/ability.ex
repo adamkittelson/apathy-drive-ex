@@ -1,7 +1,6 @@
 defmodule Ability do
   use ApathyDrive.Web, :model
   import Systems.Text
-  import BlockTimer
   alias ApathyDrive.PubSub
   alias ApathyDrive.Mobile
 
@@ -331,7 +330,7 @@ defmodule Ability do
 
       Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You begin your casting.</span></p>")
 
-      TimerManager.call_after(mobile, {:cast_timer, time |> seconds, fn ->
+      TimerManager.call_after(mobile, {:cast_timer, time |> :timer.seconds, fn ->
         Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You cast your spell.</span></p>")
 
         ability = case ability do
