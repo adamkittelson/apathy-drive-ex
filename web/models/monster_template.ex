@@ -212,7 +212,7 @@ defmodule MonsterTemplate do
     mt =
       monster_template
       |> Map.put(:last_killed_at, Timex.Date.now)
-      |> Repo.update!
+      |> Repo.save!
 
     {:noreply, mt}
   end

@@ -320,12 +320,12 @@ defmodule Monster do
     spirit = Spirit.save(spirit)
     monster = monster
               |> Map.put(:spirit, spirit)
-              |> Repo.update!
+              |> Repo.save!
     :ets.insert(:"monster_#{id}", {self, monster})
     monster
   end
   def save(%Monster{id: id} = monster) when is_integer(id) do
-    monster = Repo.update!(monster)
+    monster = Repo.save!(monster)
     :ets.insert(:"monster_#{id}", {self, monster})
     monster
   end
