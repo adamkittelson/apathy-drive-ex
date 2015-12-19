@@ -1,9 +1,8 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.Mobile
-  alias ApathyDrive.Repo
-  alias ApathyDrive.PubSub
+  alias ApathyDrive.{Mobile, Repo, PubSub, TimerManager}
   use GenServer
   import Systems.Text
+  import TimerManager, only: [seconds: 1]
 
   defstruct spirit: nil,
             socket: nil,
@@ -46,7 +45,8 @@ defmodule ApathyDrive.Mobile do
             highest_armour_grade: 0,
             questions: %{},
             combo: nil,
-            delayed: false
+            delayed: false,
+            last_effect_key: 0
 
   def start_link(state \\ %{}, opts \\ []) do
     GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -118,6 +118,10 @@ defmodule ApathyDrive.Mobile do
 
   def exit_message(pid) do
     GenServer.call(pid, :exit_message)
+  end
+
+  def display_cooldowns(pid) do
+    GenServer.cast(pid, :display_cooldowns)
   end
 
   def score_data(pid) when is_pid(pid) do
@@ -1315,6 +1319,23 @@ defmodule ApathyDrive.Mobile do
     {:noreply, ApathyDrive.Script.execute(script, mobile)}
   end
 
+  def handle_cast(:display_cooldowns, mobile) do
+    mobile.effects
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, "cooldown")
+       end)
+    |> Enum.each(fn(effect) ->
+         remaining =
+           mobile
+           |> ApathyDrive.TimerManager.time_remaining(effect["timers"] |> List.first)
+           |> div(1000)
+
+         Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{effect["cooldown"] |> String.ljust(15)} #{remaining} seconds</span></p>")
+       end)
+    {:noreply, mobile}
+  end
+
   def handle_cast({:use_ability, command, args}, mobile) do
 
     ability = mobile.abilities
@@ -1625,7 +1646,7 @@ defmodule ApathyDrive.Mobile do
     if Process.alive?(target) and target in PubSub.subscribers("rooms:#{mobile.room_id}:mobiles") do
       execute_auto_attack(mobile, target)
 
-      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval |> :timer.seconds, fn ->
+      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval |> seconds, fn ->
         send(self, :execute_auto_attack)
       end})
       {:noreply, mobile}

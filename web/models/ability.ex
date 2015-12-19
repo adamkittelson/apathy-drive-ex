@@ -1,8 +1,8 @@
 defmodule Ability do
   use ApathyDrive.Web, :model
+  alias ApathyDrive.{PubSub, Mobile, TimerManager}
   import Systems.Text
-  alias ApathyDrive.PubSub
-  alias ApathyDrive.Mobile
+  import ApathyDrive.TimerManager, only: [seconds: 1]
 
   schema "abilities" do
     field :name,            :string
@@ -330,7 +330,7 @@ defmodule Ability do
 
       Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You begin your casting.</span></p>")
 
-      TimerManager.call_after(mobile, {:cast_timer, time |> :timer.seconds, fn ->
+      TimerManager.call_after(mobile, {:cast_timer, time |> seconds, fn ->
         Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You cast your spell.</span></p>")
 
         ability = case ability do
@@ -444,6 +444,11 @@ defmodule Ability do
     |> useable(mobile)
   end
 
+  def on_cooldown?(%Mobile{effects: effects} = mobile, %{"cooldown" => _, "name" => name} = ability) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(&1["cooldown"] == name)) or on_global_cooldown?(mobile, ability)
+  end
   def on_cooldown?(%Mobile{} = mobile, %{} = ability) do
     on_global_cooldown?(mobile, ability)
   end
@@ -462,6 +467,14 @@ defmodule Ability do
     else
       mobile
     end
+  end
+
+  def apply_cooldown(%Mobile{} = mobile, %{"cooldown" => cooldown, "name" => name} = ability) do
+    mobile
+    |> Systems.Effect.add(%{"cooldown" => name,
+                            "expiration_message" => "#{capitalize_first(name)} is ready for use again."},
+                          cooldown)
+    |> apply_cooldown(Map.delete(ability, "cooldown"))
   end
 
   def apply_cooldown(%Mobile{} = mobile, %{} = ability) do

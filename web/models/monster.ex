@@ -4,7 +4,7 @@ defmodule Monster do
   use GenServer
 
   import Systems.Text
-  alias ApathyDrive.PubSub
+  alias ApathyDrive.{PubSub, TimerManager}
 
   schema "monsters" do
     field :name,                :string

@@ -1,17 +1,15 @@
 defmodule Systems.Effect do
   use Timex
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, TimerManager}
+  import TimerManager, only: [seconds: 1]
 
-  def add(%{effects: _effects} = entity, effect) do
-    key = Time.now(:msecs) * 1000 |> trunc
-
-    add_effect(entity, key, effect)
+  def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
+    add_effect(entity, key + 1, effect)
   end
 
-  def add(%{effects: _effects} = entity, effect, duration) do
-    key = Time.now(:msecs) * 1000 |> trunc
-
-    entity = TimerManager.call_after(entity, {{:effect, key}, duration |> :timer.seconds, fn ->
+  def add(%{effects: _effects, last_effect_key: key} = entity, effect, duration) do
+    key = key + 1
+    entity = TimerManager.call_after(entity, {{:effect, key}, duration |> seconds, fn ->
       send(self, {:remove_effect, key})
     end})
 
@@ -28,7 +26,9 @@ defmodule Systems.Effect do
     case stack_count(entity, stack_key) do
       count when count < stack_count ->
         effects = Map.put(effects, key, effect)
-        Map.put(entity, :effects, effects)
+        entity
+        |> Map.put(:effects, effects)
+        |> Map.put(:last_effect_key, key)
       _count ->
         entity
         |> remove_oldest_stack(effect["stack_key"])
@@ -42,7 +42,9 @@ defmodule Systems.Effect do
     end
 
     effects = Map.put(effects, key, effect)
-    Map.put(entity, :effects, effects)
+    entity
+    |> Map.put(:effects, effects)
+    |> Map.put(:last_effect_key, key)
   end
 
   def remove_oldest_stack(%{effects: _effects} = entity, stack_key) do

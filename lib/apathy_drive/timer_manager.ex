@@ -1,4 +1,6 @@
-defmodule TimerManager do
+defmodule ApathyDrive.TimerManager do
+
+  def seconds(seconds), do: seconds |> :timer.seconds |> trunc
 
   def call_after(%{timers: timers} = entity, {name, time, function}) do
     ref = :erlang.start_timer(time, self, {name, function})

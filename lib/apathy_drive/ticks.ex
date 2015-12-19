@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Ticks do
   use Timex
   use GenServer
-  alias ApathyDrive.PubSub
+  alias ApathyDrive.{PubSub, TimerManager}
 
   def start_link(state) do
     GenServer.start_link(__MODULE__, state)
