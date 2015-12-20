@@ -515,29 +515,13 @@ defmodule ApathyDrive.Mobile do
   def reduce_damage(%Mobile{} = mobile, "magical defense") do
     1 - (0.00044 * magical_defense(mobile))
   end
-  def reduce_damage(%Mobile{} = mobile, "fire resistance") do
-    1 - (0.01 * fire_resistance(mobile))
-  end
-  def reduce_damage(%Mobile{} = mobile, "ice resistance") do
-    1 - (0.01 * ice_resistance(mobile))
-  end
-  def reduce_damage(%Mobile{} = mobile, "stone resistance") do
-    1 - (0.01 * stone_resistance(mobile))
-  end
-  def reduce_damage(%Mobile{} = mobile, "lightning resistance") do
-    1 - (0.01 * lightning_resistance(mobile))
-  end
-  def reduce_damage(%Mobile{} = mobile, "water resistance") do
-    1 - (0.01 * water_resistance(mobile))
-  end
-  def reduce_damage(%Mobile{} = mobile, "poison resistance") do
-    1 - (0.01 * poison_resistance(mobile))
+  def reduce_damage(%Mobile{} = mobile, mitigator) do
+    1 - (0.01 * Mobile.effect_bonus(mobile, mitigator))
   end
 
-  def reduce_damage(%Mobile{}, damage, nil), do: damage
-  def reduce_damage(%Mobile{}, damage, []),  do: damage
+  def reduce_damage(%Mobile{} = mobile, damage, nil), do: reduce_damage(mobile, damage, [])
   def reduce_damage(%Mobile{} = mobile, damage, mitigated_by) when is_list(mitigated_by) do
-    multiplier = Enum.reduce(mitigated_by, 1, fn(mitigating_factor, multiplier) ->
+    multiplier = Enum.reduce(["damage resistance" | mitigated_by], 1, fn(mitigating_factor, multiplier) ->
       multiplier * reduce_damage(mobile, mitigating_factor)
     end)
 
@@ -574,6 +558,10 @@ defmodule ApathyDrive.Mobile do
 
   def poison_resistance(%Mobile{} = mobile) do
     mobile.poison_resistance
+  end
+
+  def poison_resistance(%Mobile{} = mobile) do
+    mobile.damage_resistance
   end
 
   def effect_bonus(%Mobile{effects: effects}, name) do

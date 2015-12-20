@@ -59,7 +59,7 @@ defmodule DamageReductionTest do
     setup context do
       Dict.put context, :mobile, %Mobile{physical_defense: 500,
                                          magical_defense:  0,
-                                         fire_resistance:  50}
+                                         effects: %{"test" => %{"fire resistance" => 50}}}
     end
 
     should("take full damage from an ability with no mitigations", context) do
@@ -86,7 +86,7 @@ defmodule DamageReductionTest do
   having "a Mobile with 500 magical defense and 50 fire resistance" do
     setup context do
       Dict.put context, :mobile, %Mobile{magical_defense:  500,
-                                         fire_resistance:  50}
+                                         effects: %{"test" => %{"fire resistance" => 50}}}
     end
 
     should("take 780 damage from an ability mitigated by magical defense alone", context) do
@@ -99,6 +99,30 @@ defmodule DamageReductionTest do
 
     should("take 390 damage from a 1000 damage ability mitigated by magical defense and fire resistance", context) do
       assert Mobile.reduce_damage(context.mobile, 1000, ["magical defense", "fire resistance"]) == 390
+    end
+  end
+
+  having "a Mobile with 500 magical defense and 50 fire resistance and 50 damage resistance" do
+    setup context do
+      Dict.put context, :mobile, %Mobile{magical_defense:  500,
+                                         effects: %{"test" => %{"fire resistance" => 50,
+                                                                "damage resistance" => 50}}}
+    end
+
+    should("take 500 damage from an ability mitigated by nothing", context) do
+      assert Mobile.reduce_damage(context.mobile, 1000, []) == 500
+    end
+    
+    should("take 390 damage from an ability mitigated by magical defense alone", context) do
+      assert Mobile.reduce_damage(context.mobile, 1000, ["magical defense"]) == 390
+    end
+
+    should("take 250 damage from a 1000 damage ability mitigated only by fire resistance alone", context) do
+      assert Mobile.reduce_damage(context.mobile, 1000, ["fire resistance"]) == 250
+    end
+
+    should("take 195 damage from a 1000 damage ability mitigated by magical defense and fire resistance", context) do
+      assert Mobile.reduce_damage(context.mobile, 1000, ["magical defense", "fire resistance"]) == 195
     end
   end
 
