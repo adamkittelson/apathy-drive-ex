@@ -34,12 +34,6 @@ defmodule ApathyDrive.Mobile do
             monster_template_id: nil,
             physical_defense: 0,
             magical_defense: 0,
-            fire_resistance: 0,
-            ice_resistance: 0,
-            stone_resistance: 0,
-            lightning_resistance: 0,
-            water_resistance: 0,
-            poison_resistance: 0,
             attack_target: nil,
             auto_attack_interval: 2.0,
             highest_armour_grade: 0,
@@ -534,34 +528,6 @@ defmodule ApathyDrive.Mobile do
 
   def magical_defense(%Mobile{} = mobile) do
     mobile.magical_defense
-  end
-
-  def fire_resistance(%Mobile{} = mobile) do
-    mobile.fire_resistance
-  end
-
-  def ice_resistance(%Mobile{} = mobile) do
-    mobile.ice_resistance
-  end
-
-  def stone_resistance(%Mobile{} = mobile) do
-    mobile.stone_resistance
-  end
-
-  def lightning_resistance(%Mobile{} = mobile) do
-    mobile.lightning_resistance
-  end
-
-  def water_resistance(%Mobile{} = mobile) do
-    mobile.water_resistance
-  end
-
-  def poison_resistance(%Mobile{} = mobile) do
-    mobile.poison_resistance
-  end
-
-  def poison_resistance(%Mobile{} = mobile) do
-    mobile.damage_resistance
   end
 
   def effect_bonus(%Mobile{effects: effects}, name) do
