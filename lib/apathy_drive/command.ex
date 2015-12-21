@@ -45,6 +45,13 @@ defmodule ApathyDrive.Command do
           true ->
             ApathyDrive.Exits.Command.move_via_command(room, mobile, command_exit)
         end
+      remote_action_exit = Room.remote_action_exit(room, full_command) ->
+        cond do
+          Mobile.confused(mobile) ->
+            nil
+          true ->
+            ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, mobile, remote_action_exit)
+        end
       cmd = Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
         cmd.module.execute(mobile, arguments)
       true ->

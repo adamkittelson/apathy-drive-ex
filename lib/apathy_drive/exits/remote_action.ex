@@ -3,12 +3,12 @@ defmodule ApathyDrive.Exits.RemoteAction do
 
   def display_direction(_room, _room_exit), do: nil
 
-  def move(spirit, _monster, _current_room, _room_exit) do
-    Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
+  def move(_room, mobile, _room_exit) do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
-  def look(spirit, _monster, _current_room, _room_exit) do
-    Spirit.send_scroll(spirit, "<p>There is no exit in that direction.</p>")
+  def look(_room, mobile, _room_exit) do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
   def get_room(%Room{id: id} = room, other_id) when id == other_id do
@@ -20,7 +20,10 @@ defmodule ApathyDrive.Exits.RemoteAction do
     |> Room.value
   end
 
-  def trigger_remote_action(%Room{} = room, %Monster{} = monster, room_exit) do
+  def trigger_remote_action(room, mobile, room_exit) do
+    room   = Room.value(room)
+    mobile = Mobile.value(mobile)
+
     remote_room = get_room(room, room_exit["destination"])
     remote_exit = remote_room.exits
                   |> Enum.find(fn(remote_exit) ->
@@ -32,18 +35,18 @@ defmodule ApathyDrive.Exits.RemoteAction do
     if trigger_remote_action?(remote_room, remote_exit, room_exit) do
       ApathyDrive.PubSub.broadcast!("rooms:#{room.id}", {:trigger, room_exit["direction"]})
 
-      Monster.send_scroll(monster, "<p>#{room_exit["message"]}</p>")
+      Mobile.send_scroll(mobile, "<p>#{room_exit["message"]}</p>")
 
-      ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{interpolate(room_exit["room_message"], %{"user" => monster})}</span></p>"}
+      ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room.id}", "scroll", %{:html => "<p><span class='dark-green'>#{interpolate(room_exit["room_message"], %{"user" => mobile})}</span></p>"}
 
       if :"Elixir.ApathyDrive.Exits.#{remote_exit["kind"]}".open?(remote_room, remote_exit) do
         if remote_exit["message_when_revealed"] do
-          Room.send_scroll(room, "<p><span class='white'>#{remote_exit["message_when_revealed"]}</span></p>")
+          Room.send_scroll(remote_room, "<p><span class='white'>#{remote_exit["message_when_revealed"]}</span></p>")
         end
       end
     else
       clear_triggers!(remote_exit)
-      trigger_remote_action(room, monster, room_exit)
+      trigger_remote_action(room, mobile, room_exit)
     end
   end
 

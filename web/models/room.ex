@@ -22,6 +22,7 @@ defmodule Room do
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
     field :items,                 ApathyDrive.JSONB, default: []
+    field :last_effect_key,       :any, virtual: true, default: 0
 
     timestamps
 
@@ -134,6 +135,10 @@ defmodule Room do
     GenServer.call(room, {:command_exit, string})
   end
 
+  def remote_action_exit(room, string) do
+    GenServer.call(room, {:remote_action_exit, string})
+  end
+
   def command(room, string) do
     GenServer.call(room, {:command, string})
   end
@@ -172,6 +177,39 @@ defmodule Room do
        end)
     |> Enum.map(fn(effect) ->
          Map.get(effect, :open)
+       end)
+    |> Enum.member?(direction)
+  end
+
+  def searched?(room, direction) when is_pid(room) do
+    GenServer.call(room, {:searched?, direction})
+  end
+  def searched?(%Room{} = room, direction) do
+    room.effects
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :searched)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :searched)
+       end)
+    |> Enum.member?(direction)
+  end
+
+  def triggered?(room, direction, current_room) when is_pid(room) and room == self do
+    triggered?(current_room, direction)
+  end
+  def triggered?(room, direction, _current_room) when is_pid(room) do
+    GenServer.call(room, {:triggered?, direction})
+  end
+  def triggered?(%Room{} = room, direction) do
+    room.effects
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :triggered)
+       end)
+    |> Enum.map(fn(effect) ->
+         Map.get(effect, :triggered)
        end)
     |> Enum.member?(direction)
   end
@@ -319,6 +357,9 @@ defmodule Room do
     end
   end
 
+  def send_scroll(%Room{id: id}, html) do
+    ApathyDrive.Endpoint.broadcast! "rooms:#{id}:mobiles", "scroll", %{:html => html}
+  end
   def send_scroll(room, html) do
     ApathyDrive.Endpoint.broadcast! "rooms:#{Room.id(room)}:mobiles", "scroll", %{:html => html}
   end
@@ -557,6 +598,14 @@ defmodule Room do
     {:reply, temporarily_open?(room, direction), room}
   end
 
+  def handle_call({:searched?, direction}, _from, room) do
+    {:reply, searched?(room, direction), room}
+  end
+
+  def handle_call({:triggered?, direction}, _from, room) do
+    {:reply, triggered?(room, direction), room}
+  end
+
   def handle_call({:unlocked?, direction}, _from, room) do
     {:reply, unlocked?(room, direction), room}
   end
@@ -609,6 +658,15 @@ defmodule Room do
     command_exit = room.exits
                    |> Enum.find(fn(ex) ->
                         ex["kind"] == "Command" and Enum.member?(ex["commands"], string)
+                      end)
+
+    {:reply, command_exit, room}
+  end
+
+  def handle_call({:remote_action_exit, string}, _from, room) do
+    command_exit = room.exits
+                   |> Enum.find(fn(ex) ->
+                        ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], string)
                       end)
 
     {:reply, command_exit, room}

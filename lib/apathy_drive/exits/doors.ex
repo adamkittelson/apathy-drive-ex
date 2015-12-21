@@ -159,9 +159,9 @@ defmodule ApathyDrive.Exits.Doors do
 
       def all_remote_actions_triggered?(room_exit) do
         if room_exit["remote_action_exits"] do
-          room_exit.remote_action_exits
+          room_exit["remote_action_exits"]
           |> Enum.all?(fn(remote_exit) ->
-               Room.find(remote_exit.room)
+               Room.find(remote_exit["room"])
                |> Room.effects
                |> Map.values
                |> Enum.filter(fn(effect) ->
