@@ -694,7 +694,7 @@ defmodule ApathyDrive.Mobile do
   def passive_effects(%Mobile{effects: effects}) do
     effects
     |> Map.keys
-    |> Enum.filter(&(String.starts_with?(&1, "passive")))
+    |> Enum.filter(&(String.starts_with?(to_string(&1), "passive")))
   end
 
   def adjust_mana_costs(%Mobile{} = mobile) do
