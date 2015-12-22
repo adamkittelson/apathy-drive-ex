@@ -41,7 +41,7 @@ defmodule ApathyDrive.ChannelCase do
           put_in spirit.socket, socket
       end
 
-      def test_mobile(map \\ %{}, room \\ Repo.insert!(%Room{commands: %{}, exits: [], items: [], item_descriptions: %{"hidden" => %{}, "visible" => %{}}})) do
+      def test_mobile(map \\ %{}, room \\ Repo.insert!(%Room{})) do
         class = Repo.insert!(%ApathyDrive.Class{alignment: "evil",
                                                 name: "Demon",
                                                 start_room_id: room.id,
@@ -51,11 +51,10 @@ defmodule ApathyDrive.ChannelCase do
                                                 agility: 40,
                                                 agility_per_level: 5,
                                                 will: 40,
-                                                will_per_level: 5
-                                                })
+                                                will_per_level: 5})
 
         spirit =
-          %Spirit{room_id: room.id, class_id: class.id, equipment: [], inventory: []}
+          %Spirit{room_id: room.id, class_id: class.id}
           |> Map.merge(map)
           |> Repo.insert!
 

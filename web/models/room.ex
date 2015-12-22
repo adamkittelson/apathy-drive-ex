@@ -9,20 +9,20 @@ defmodule Room do
     field :name,                  :string
     field :keywords,              {:array, :string}
     field :description,           :string
+    field :effects,               :any, virtual: true, default: %{}
     field :light,                 :integer
+    field :item_descriptions,     ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
     field :lair_size,             :integer
     field :lair_frequency,        :integer, default: 5
+    field :lair_next_spawn_at,    :any, virtual: true, default: 0
     field :lair_faction,          :string
+    field :exits,                 ApathyDrive.JSONB, default: []
+    field :commands,              ApathyDrive.JSONB, default: %{}
     field :legacy_id,             :string
-    field :item_descriptions,     ApathyDrive.JSONB
-    field :items,                 ApathyDrive.JSONB
-    field :exits,                 ApathyDrive.JSONB
-    field :commands,              ApathyDrive.JSONB
     field :timers,                :any, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
+    field :items,                 ApathyDrive.JSONB, default: []
     field :last_effect_key,       :any, virtual: true, default: 0
-    field :effects,               :any, virtual: true, default: %{}
-    field :lair_next_spawn_at,    :any, virtual: true, default: 0
 
     timestamps
 

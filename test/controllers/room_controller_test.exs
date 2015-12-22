@@ -2,12 +2,7 @@ defmodule ApathyDrive.RoomControllerTest do
   use ApathyDrive.ConnCase
   use ShouldI
 
-  @valid_params room: %{"name" => "test room",
-                        "description" => "this is the description",
-                        "commands" => %{},
-                        "exits" => [],
-                        "items" => [],
-                        "item_descriptions" => %{"hidden" => %{}, "visible" => %{}}}
+  @valid_params room: %{"name" => "test room", "description" => "this is the description"}
   @invalid_params room: %{}
 
   having "admin privledges" do
@@ -39,7 +34,7 @@ defmodule ApathyDrive.RoomControllerTest do
     end
 
     should "GET /rooms/:id", context do
-      room = Repo.insert! %Room{commands: %{}, exits: [], items: [], item_descriptions: %{"hidden" => %{}, "visible" => %{}}}
+      room = Repo.insert! %Room{}
       conn = get context.conn, room_path(context.conn, :show, room)
       assert html_response(conn, 200) =~ "Show room"
     end

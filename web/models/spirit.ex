@@ -17,24 +17,24 @@ defmodule Spirit do
 
     field :name,              :string
     field :gender,            :string
+    field :alignment,         :string, virtual: true
     field :email,             :string
     field :password,          :string
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
-    field :hints,             {:array, :string}
-    field :disabled_hints,    {:array, :string}
+    field :socket,            :any, virtual: true
+    field :socket_pid,        :any, virtual: true
+    field :pid,               :any, virtual: true
+    field :idle,              :integer, default: 0, virtual: true
+    field :hints,             {:array, :string}, default: []
+    field :disabled_hints,    {:array, :string}, default: []
+    field :monster,           :any, virtual: true
+    field :abilities,         :any, virtual: true
+    field :timers,            :any, virtual: true, default: %{}
     field :admin,             :boolean
-    field :inventory,         ApathyDrive.JSONB
-    field :equipment,         ApathyDrive.JSONB
-    field :monster,           :any,     virtual: true
-    field :abilities,         :any,     virtual: true
-    field :timers,            :any,     virtual: true, default: %{}
-    field :socket,            :any,     virtual: true
-    field :socket_pid,        :any,     virtual: true
-    field :pid,               :any,     virtual: true
-    field :idle,              :integer, virtual: true, default: 0
-    field :alignment,         :string,  virtual: true
+    field :inventory,         ApathyDrive.JSONB, default: []
+    field :equipment,         ApathyDrive.JSONB, default: []
 
     timestamps
   end
