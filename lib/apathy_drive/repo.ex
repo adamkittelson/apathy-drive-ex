@@ -7,7 +7,19 @@ defmodule ApathyDrive.Repo do
     model     = struct(struct.__struct__, [id: struct.id, __meta__: struct.__meta__])
     changes   = struct |> Map.from_struct
                        |> Map.take(module.__schema__(:fields))
-                       |> Map.drop([:inserted_at, :updated_at])
+                       |> Map.drop([:inserted_at, :updated_at, :id])
+
+
+    model =
+      changes
+      |> Map.keys
+      |> Enum.reduce(model, fn(field, model) ->
+           if Map.get(model, field) == Map.get(changes, field) do
+             Map.put(model, field, "_change_me")
+           else
+             model
+           end
+         end)
 
     struct
     |> Map.merge(model
