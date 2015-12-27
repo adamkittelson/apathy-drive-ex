@@ -35,7 +35,7 @@ defmodule ApathyDrive.Mobile do
             physical_defense: 0,
             magical_defense: 0,
             attack_target: nil,
-            auto_attack_interval: 2.0,
+            auto_attack_interval: 4.0,
             highest_armour_grade: 0,
             questions: %{},
             combo: nil,
@@ -235,12 +235,8 @@ defmodule ApathyDrive.Mobile do
     send(socket, {:update_prompt, prompt(mobile)})
   end
 
-  def prompt(%Mobile{combo: nil} = mobile) do
+  def prompt(%Mobile{} = mobile) do
     "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
-  end
-
-  def prompt(%Mobile{combo: combo} = mobile) do
-    "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}] <span class='yellow'>*#{combo}*</span>:"
   end
 
   def alignment_color(%{alignment: "evil"}),    do: "magenta"
@@ -1279,13 +1275,16 @@ defmodule ApathyDrive.Mobile do
     |> Enum.filter(fn(effect) ->
          Map.has_key?(effect, "cooldown")
        end)
-    |> Enum.each(fn(effect) ->
-         remaining =
-           mobile
-           |> ApathyDrive.TimerManager.time_remaining(effect["timers"] |> List.first)
-           |> div(1000)
+    |> Enum.each(fn
+           %{"cooldown" => name} = effect when is_binary(name) ->
+             remaining =
+               mobile
+               |> ApathyDrive.TimerManager.time_remaining(effect["timers"] |> List.first)
+               |> div(1000)
 
-         Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{effect["cooldown"] |> String.ljust(15)} #{remaining} seconds</span></p>")
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{name |> String.ljust(15)} #{remaining} seconds</span></p>")
+          _effect ->
+            :noop
        end)
     {:noreply, mobile}
   end
@@ -1391,6 +1390,10 @@ defmodule ApathyDrive.Mobile do
 
     ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
     {:noreply, mobile}
+  end
+
+  def handle_info({:execute_ability, ability}, monster) do
+    {:noreply, Ability.execute(monster, ability, [self])}
   end
 
   def handle_info({:execute_ability, ability, arg_string}, mobile) do
@@ -1650,7 +1653,6 @@ defmodule ApathyDrive.Mobile do
 
     {:noreply, Ability.execute(monster, ability, [self])}
   end
-
 
   def handle_info(_message, %Mobile{} = mobile) do
     {:noreply, mobile}

@@ -29,16 +29,16 @@ defmodule ApathyDrive.AI do
     Map.put(mobile, :hate, hate)
   end
 
-  def heal(%Mobile{spirit: nil, hp: hp, max_hp: max_hp, spirit: nil} = mobile) do
+  def heal(%Mobile{hp: hp, max_hp: max_hp} = mobile) do
     unless Ability.on_global_cooldown?(mobile) do
       chance = trunc((max_hp - hp) / max_hp * 100)
 
-      roll = :random.uniform(100)
+      roll = :rand.uniform(100)
 
       if chance > roll do
         ability = mobile
                   |> Ability.heal_abilities
-                  |> random_ability
+                  |> random_ability(mobile)
 
         if ability do
           send(self, {:execute_ability, ability})
@@ -49,11 +49,11 @@ defmodule ApathyDrive.AI do
   end
   def heal(%Mobile{}), do: nil
 
-  def bless(%Mobile{spirit: nil} = mobile) do
+  def bless(%Mobile{} = mobile) do
     unless Ability.on_global_cooldown?(mobile) do
       ability = mobile
                 |> Ability.bless_abilities
-                |> random_ability
+                |> random_ability(mobile)
 
       if ability do
         send(self, {:execute_ability, ability})
@@ -61,16 +61,15 @@ defmodule ApathyDrive.AI do
       end
     end
   end
-  def bless(%Mobile{}), do: nil
 
-  def attack(%Mobile{spirit: nil} = mobile) do
+  def attack(%Mobile{} = mobile) do
     if target = Mobile.aggro_target(mobile) do
 
       attack = cond do
         !Ability.on_global_cooldown?(mobile) ->
            mobile
            |> Ability.attack_abilities
-           |> random_ability
+           |> random_ability(mobile)
         true ->
           nil
       end
@@ -96,14 +95,18 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def random_ability(abilities) do
+  def random_ability(abilities, mobile) do
     case abilities do
       [ability] ->
-        ability
+        unless Ability.on_cooldown?(mobile, ability) do
+          ability
+        end
       [] ->
         nil
       abilities ->
-        abilities |> Enum.random
+        abilities
+        |> Enum.reject(&(Ability.on_cooldown?(mobile, &1)))
+        |> Enum.random
     end
   end
 

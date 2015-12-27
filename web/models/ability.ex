@@ -324,14 +324,14 @@ defmodule Ability do
   def execute(%Mobile{timers: timers} = mobile, %{"cast_time" => time} = ability, target) do
     if can_execute?(mobile, ability) do
       if ref = Map.get(timers, :cast_timer) do
-        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You interrupt your spell.</span></p>")
+        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You interrupt your spell.</span></p>")
         :erlang.cancel_timer(ref)
       end
 
-      Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You begin your casting.</span></p>")
+      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
 
       TimerManager.call_after(mobile, {:cast_timer, time |> seconds, fn ->
-        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You cast your spell.</span></p>")
+        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
 
         ability = case ability do
           %{"global_cooldown" => nil} ->
@@ -435,6 +435,7 @@ defmodule Ability do
   def bless_abilities(%Mobile{abilities: abilities} = mobile) do
     abilities
     |> Enum.filter(&(&1["kind"] == "blessing"))
+    |> Enum.reject(&(Map.has_key?(&1, "cooldown")))
     |> useable(mobile)
   end
 
@@ -479,7 +480,7 @@ defmodule Ability do
 
   def apply_cooldown(%Mobile{} = mobile, %{} = ability) do
     if gc = global_cooldown(ability, mobile) do
-      Systems.Effect.add(mobile, %{"cooldown" => :global, "expiration_message" => "You are ready to act again."}, gc)
+      Systems.Effect.add(mobile, %{"cooldown" => :global}, gc)
     else
       mobile
     end
@@ -669,6 +670,7 @@ defmodule Ability do
     apply_instant_effects(monster, Map.delete(effects, "heal_mana"), ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"script" => script} = effects, ability_user) do
+    script = ApathyDrive.Script.find(script)
     mobile = ApathyDrive.Script.execute(script, mobile)
 
     apply_instant_effects(mobile, Map.delete(effects, "script"), ability_user)
