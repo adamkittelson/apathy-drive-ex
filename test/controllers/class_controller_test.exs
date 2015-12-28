@@ -3,7 +3,7 @@ defmodule ApathyDrive.ClassControllerTest do
   use ShouldI
 
   alias ApathyDrive.Class
-  @valid_attrs %{abilities: "{}", agility: 42, agility_per_level: 42, alignment: "good", name: "Adam", strength: 42, strength_per_level: 42, will: 42, will_per_level: 42, start_room_id: 42}
+  @valid_attrs %{"agility" => 42, "agility_per_level" => 42, "alignment" => "good", "name" => "Adam", "strength" => 42, "strength_per_level" => 42, "will" => 42, "will_per_level" => 42, "start_room_id" => "Sweet room 42"}
   @invalid_attrs %{}
 
   having "admin privledges" do
@@ -27,7 +27,7 @@ defmodule ApathyDrive.ClassControllerTest do
     test "creates resource and redirects when data is valid", %{conn: conn} do
       conn = post conn, class_path(conn, :create), class: @valid_attrs
       assert redirected_to(conn) == class_path(conn, :index)
-      assert Repo.get_by(Class, @valid_attrs)
+      assert Repo.get_by(Class, %{name: @valid_attrs["name"]})
     end
 
     test "does not create resource and renders errors when data is invalid", %{conn: conn} do
@@ -38,7 +38,7 @@ defmodule ApathyDrive.ClassControllerTest do
     test "shows chosen resource", %{conn: conn} do
       class = Repo.insert! %Class{}
       conn = get conn, class_path(conn, :show, class)
-      assert html_response(conn, 200) =~ "Show class"
+      assert html_response(conn, 200) =~ "<th>Alignment</th>"
     end
 
     test "renders page not found when id is nonexistent", %{conn: conn} do
@@ -57,7 +57,7 @@ defmodule ApathyDrive.ClassControllerTest do
       class = Repo.insert! %Class{}
       conn = put conn, class_path(conn, :update, class), class: @valid_attrs
       assert redirected_to(conn) == class_path(conn, :show, class)
-      assert Repo.get_by(Class, @valid_attrs)
+      assert Repo.get_by(Class, %{name: @valid_attrs["name"]})
     end
 
     test "does not update chosen resource and renders errors when data is invalid", %{conn: conn} do

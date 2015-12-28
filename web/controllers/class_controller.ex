@@ -12,7 +12,7 @@ defmodule ApathyDrive.ClassController do
 
   def new(conn, _params) do
     changeset = Class.changeset(%Class{})
-    render(conn, "new.html", changeset: changeset)
+    render(conn, "new.html", changeset: changeset, rooms: Room.datalist)
   end
 
   def create(conn, %{"class" => class_params}) do
@@ -24,19 +24,27 @@ defmodule ApathyDrive.ClassController do
         |> put_flash(:info, "Class created successfully.")
         |> redirect(to: class_path(conn, :index))
       {:error, changeset} ->
-        render(conn, "new.html", changeset: changeset)
+        render(conn, "new.html", changeset: changeset, rooms: Room.datalist)
     end
   end
 
   def show(conn, %{"id" => id}) do
     class = Repo.get!(Class, id)
-    render(conn, "show.html", class: class)
+
+    class_abilities =
+      class
+      |> Ecto.Model.assoc(:class_abilities)
+      |> Ecto.Query.preload(:ability)
+      |> Ecto.Query.order_by(:level)
+      |> Repo.all
+
+    render(conn, "show.html", class: class, class_abilities: class_abilities)
   end
 
   def edit(conn, %{"id" => id}) do
     class = Repo.get!(Class, id)
     changeset = Class.changeset(class)
-    render(conn, "edit.html", class: class, changeset: changeset)
+    render(conn, "edit.html", class: class, changeset: changeset, rooms: Room.datalist)
   end
 
   def update(conn, %{"id" => id, "class" => class_params}) do
@@ -49,7 +57,7 @@ defmodule ApathyDrive.ClassController do
         |> put_flash(:info, "Class updated successfully.")
         |> redirect(to: class_path(conn, :show, class))
       {:error, changeset} ->
-        render(conn, "edit.html", class: class, changeset: changeset)
+        render(conn, "edit.html", class: class, changeset: changeset, rooms: Room.datalist)
     end
   end
 

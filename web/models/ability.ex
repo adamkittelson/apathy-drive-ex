@@ -1,28 +1,23 @@
-defmodule Ability do
+defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{PubSub, Mobile, TimerManager}
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability}
   import Systems.Text
   import ApathyDrive.TimerManager, only: [seconds: 1]
 
   schema "abilities" do
-    field :name,            :string
-    field :command,         :string
-    field :kind,            :string
-    field :description,     :string
-    field :level,           :integer
-    field :faction,         :string
     field :properties,      ApathyDrive.JSONB
-    field :keywords,        {:array, :string}, virtual: true
-    field :flags,           {:array, :string}
-    field :global_cooldown, :float
 
     has_many :rooms, Room
 
     timestamps
   end
 
-  def set_keywords(%Ability{name: name} = ability) do
-    Map.put(ability, :keywords, String.split(name))
+  @required_fields ~w(properties)
+  @optional_fields ~w()
+
+  def changeset(model, params \\ :empty) do
+    model
+    |> cast(params, @required_fields, @optional_fields)
   end
 
   def useable(abilities, %Mobile{mana: mana} = mobile) do

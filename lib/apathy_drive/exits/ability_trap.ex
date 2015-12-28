@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Exits.AbilityTrap do
   use ApathyDrive.Exit
+  alias ApathyDrive.Ability
 
   def move(%Room{} = room, %Spirit{} = spirit, room_exit),  do: super(room, spirit, room_exit)
   def move(%Room{} = room, %Monster{} = monster, room_exit) do

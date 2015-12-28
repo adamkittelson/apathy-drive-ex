@@ -11,14 +11,15 @@ defmodule ApathyDrive.Class do
     field :agility_per_level, :integer
     field :will, :integer
     field :will_per_level, :integer
-    field :abilities, ApathyDrive.JSONB
 
     has_many :spirits, Spirit
+    has_many :class_abilities, ApathyDrive.ClassAbility
+    has_many :abilities, through: [:class_abilities, :ability]
 
     timestamps
   end
 
-  @required_fields ~w(name alignment strength strength_per_level agility agility_per_level will will_per_level abilities start_room_id)
+  @required_fields ~w(name alignment strength strength_per_level agility agility_per_level will will_per_level start_room_id)
   @optional_fields ~w()
 
   @doc """
@@ -28,8 +29,10 @@ defmodule ApathyDrive.Class do
   with no validation performed.
   """
   def changeset(model, params \\ :empty) do
+    updated_params = update_params(params)
+
     model
-    |> cast(params, @required_fields, @optional_fields)
+    |> cast(updated_params, @required_fields, @optional_fields)
   end
 
   def ids do
@@ -49,6 +52,23 @@ defmodule ApathyDrive.Class do
 
   def start_room(id) do
     Repo.get(__MODULE__, id).start_room_id
+  end
+
+  defp update_params(:empty), do: :empty
+  defp update_params(params) do
+    params
+    |> Map.put("start_room_id", get_number(Map.get(params, "start_room_id")))
+  end
+
+  defp get_number(nil), do: nil
+  defp get_number(""),  do: nil
+  defp get_number(string) do
+    case Regex.run(~r/\d+$/, string) do
+      nil ->
+        nil
+      [number] ->
+        number
+    end
   end
 
 end

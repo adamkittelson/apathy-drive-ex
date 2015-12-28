@@ -4,7 +4,7 @@ defmodule Monster do
   use GenServer
 
   import Systems.Text
-  alias ApathyDrive.{PubSub, TimerManager}
+  alias ApathyDrive.{PubSub, TimerManager, Ability}
 
   schema "monsters" do
     field :name,                :string
@@ -206,12 +206,12 @@ defmodule Monster do
   def abilities_from_attacks(%Monster{attacks: []}) do
     [
       %Ability{
-        name:    "attack",
-        command: "a",
-        kind:    "attack",
-        global_cooldown: 4,
-        level: 0,
-        flags: [],
+        # name:    "attack",
+        # command: "a",
+        # kind:    "attack",
+        # global_cooldown: 4,
+        # level: 0,
+        # flags: [],
         properties: %{
           "dodgeable" => true,
           "accuracy_skill" => "attack",
@@ -247,33 +247,33 @@ defmodule Monster do
   def abilities_from_attacks(%Monster{attacks: attacks}) do
     Enum.map(attacks, fn(attack) ->
       %Ability{
-        name:    attack["name"],
-        command: attack["command"],
-        kind:    attack["kind"],
-        global_cooldown: attack["global_cooldown"],
-        flags: attack["flags"],
+        # name:    attack["name"],
+        # command: attack["command"],
+        # kind:    attack["kind"],
+        # global_cooldown: attack["global_cooldown"],
+        # flags: attack["flags"],
         properties: attack["properties"]
       }
     end)
   end
 
-  def on_cooldown?(%Monster{} = monster, %Ability{name: "attack"} = ability) do
+  def on_cooldown?(%Monster{} = monster, %Ability{properties: %{"name" => "attack"}} = ability) do
     on_attack_cooldown?(monster, ability)
   end
   def on_cooldown?(%Monster{} = monster, %Ability{} = ability) do
     on_global_cooldown?(monster, ability)
   end
 
-  def on_attack_cooldown?(%Monster{},           %Ability{global_cooldown: nil}), do: false
-  def on_attack_cooldown?(%Monster{} = monster, %Ability{global_cooldown: _}), do: on_attack_cooldown?(monster)
+  def on_attack_cooldown?(%Monster{},           %Ability{properties: %{"global_cooldown" => nil}}), do: false
+  def on_attack_cooldown?(%Monster{} = monster, %Ability{properties: %{"global_cooldown" => _}}), do: on_attack_cooldown?(monster)
   def on_attack_cooldown?(%Monster{effects: effects}) do
     effects
     |> Map.values
     |> Enum.any?(&(&1["cooldown"] == :attack))
   end
 
-  def on_global_cooldown?(%Monster{},           %Ability{global_cooldown: nil}), do: false
-  def on_global_cooldown?(%Monster{} = monster, %Ability{global_cooldown: _}), do: on_global_cooldown?(monster)
+  def on_global_cooldown?(%Monster{},           %Ability{properties: %{"global_cooldown" => nil}}), do: false
+  def on_global_cooldown?(%Monster{} = monster, %Ability{properties: %{"global_cooldown" => _}}), do: on_global_cooldown?(monster)
   def on_global_cooldown?(%Monster{effects: effects}) do
     effects
     |> Map.values
@@ -1139,7 +1139,7 @@ defmodule Monster do
     |> Map.values
     |> Enum.filter(&(Map.has_key?(&1, "damage")))
     |> Enum.each(fn(%{"damage" => damage, "effect_message" => message, "damage_type" => damage_type}) ->
-         ability = %Ability{kind: "attack", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => %{"user" => message}}}
+         ability = %Ability{}#kind: "attack", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => %{"user" => message}}}
 
          send(self, {:apply_ability, ability, monster})
        end)
@@ -1149,7 +1149,7 @@ defmodule Monster do
     |> Map.values
     |> Enum.filter(&(Map.has_key?(&1, "heal")))
     |> Enum.each(fn(%{"heal" => heal}) ->
-        ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal" => heal}}}
+        ability = %Ability{}#kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal" => heal}}}
 
         send(self, {:apply_ability, ability, monster})
       end)
@@ -1159,7 +1159,7 @@ defmodule Monster do
     |> Map.values
     |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
     |> Enum.each(fn(%{"heal_mana" => heal}) ->
-        ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal_mana" => heal}}}
+        ability = %Ability{}#kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal_mana" => heal}}}
 
         send(self, {:apply_ability, ability, monster})
       end)

@@ -5,7 +5,7 @@ defmodule Spirit do
   require Logger
   import Systems.Text
   import Comeonin.Bcrypt
-  alias ApathyDrive.{PubSub, TimerManager}
+  alias ApathyDrive.{PubSub, TimerManager, Ability}
 
   @idle_threshold 60
 

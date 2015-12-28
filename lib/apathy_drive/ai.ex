@@ -1,5 +1,5 @@
 defmodule ApathyDrive.AI do
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, Ability}
 
   def think(%Mobile{} = mobile) do
     mobile =

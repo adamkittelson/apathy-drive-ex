@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, Ability}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",

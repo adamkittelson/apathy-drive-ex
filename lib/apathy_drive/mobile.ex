@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Mobile, Repo, PubSub, TimerManager}
+  alias ApathyDrive.{Mobile, Repo, PubSub, TimerManager, Ability}
   use GenServer
   import Systems.Text
   import TimerManager, only: [seconds: 1]
@@ -643,7 +643,7 @@ defmodule ApathyDrive.Mobile do
 
   def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit, level: level} = mobile) do
     abilities =
-     spirit.class.abilities
+     ApathyDrive.ClassAbility.for_spirit(spirit)
      |> Enum.filter(&(Map.get(&1, "level", 0) <= level))
      |> Enum.reject(&(Map.get(&1, "min_armour_type", 0) > mobile.highest_armour_grade))
      |> Enum.reject(&(Map.get(&1, "max_armour_type", 10) < mobile.highest_armour_grade))
@@ -821,7 +821,8 @@ defmodule ApathyDrive.Mobile do
   end
 
   def attribute(%Mobile{spirit: spirit, monster_template_id: nil} = mobile, attribute) do
-    (spirit.level * Map.get(spirit.class, :"#{attribute}_per_level")) +
+    ((spirit.level - 1) * Map.get(spirit.class, :"#{attribute}_per_level")) +
+    Map.get(spirit.class, :"#{attribute}") +
     attribute_from_equipment(mobile, attribute)
   end
 
@@ -1659,10 +1660,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   defp execute_auto_attack(%Mobile{} = mobile, target) do
-    attack =
+    attacks =
       mobile.abilities
       |> Enum.filter(&(&1["kind"] == "auto_attack"))
-      |> Enum.random
+
+    attack = if Enum.any?(attacks), do: Enum.random(attacks), else: nil
 
     if attack do
       attack =

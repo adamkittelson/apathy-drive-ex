@@ -1,6 +1,6 @@
 defmodule ApathyDrive.FactionController do
   use ApathyDrive.Web, :controller
-  alias ApathyDrive.Repo
+  alias ApathyDrive.{Repo,Ability}
   import Ecto.Query
 
   def angels(conn, _params) do

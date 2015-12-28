@@ -1,53 +1,45 @@
-<h2>Show class</h2>
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
 
-<ul>
+<table>
+  <tr>
+    <th>Name</th>
+    <td><%= @class.name %></td>
+  </tr>
+  <tr>
+    <th>Alignment</th>
+    <td><%= @class.alignment %></td>
+  </tr>
+  <tr>
+    <th>Strength</th>
+    <td><%= @class.strength %> + <%= @class.strength_per_level %>/lvl</td>
+  </tr>
+  <tr>
+    <th>Agility</th>
+    <td><%= @class.agility %> + <%= @class.agility_per_level %>/lvl</td>
+  </tr>
+  <tr>
+    <th>Will</th>
+    <td><%= @class.will %> + <%= @class.will_per_level %>/lvl</td>
+  </tr>
+</table>
 
-  <li>
-    <strong>Name:</strong>
-    <%= @class.name %>
-  </li>
-
-  <li>
-    <strong>Alignment:</strong>
-    <%= @class.alignment %>
-  </li>
-
-  <li>
-    <strong>Strength:</strong>
-    <%= @class.strength %>
-  </li>
-
-  <li>
-    <strong>Strength per level:</strong>
-    <%= @class.strength_per_level %>
-  </li>
-
-  <li>
-    <strong>Agility:</strong>
-    <%= @class.agility %>
-  </li>
-
-  <li>
-    <strong>Agility per level:</strong>
-    <%= @class.agility_per_level %>
-  </li>
-
-  <li>
-    <strong>Will:</strong>
-    <%= @class.will %>
-  </li>
-
-  <li>
-    <strong>Will per level:</strong>
-    <%= @class.will_per_level %>
-  </li>
-
-  <li>
-    <strong>Abilities:</strong>
-    <%= inspect @class.abilities %>
-  </li>
-
-</ul>
+<p>
+  <div>Abilities:</div>
+  <table>
+    <thead>
+      <th>Level</th>
+      <th>Name</th>
+      <th><%= link "Add", to: class_ability_path(@conn, :new, from: class_path(@conn, :show, @class), class_id: @class.id) %></th>
+    </thead>
+    <%= for class_ability <- @class_abilities do %>
+      <tr>
+        <td><%= class_ability.level %></td>
+        <td><%= link class_ability.ability.properties["name"], to: ability_path(@conn, :show, class_ability.ability.id) %></td>
+        <td><%= link "Delete", to: class_ability_path(@conn, :delete, class_ability.id, from: class_path(@conn, :show, @class)), method: :delete %></td>
+      </tr>
+    <% end %>
+  </table>
+</p>
 
 <%= link "Edit", to: class_path(@conn, :edit, @class) %>
 <%= link "Back", to: class_path(@conn, :index) %>
