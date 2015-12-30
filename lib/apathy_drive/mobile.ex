@@ -972,6 +972,7 @@ defmodule ApathyDrive.Mobile do
     send_scroll(mobile, "<p>You possess #{mobile.name}.")
 
     Process.monitor(socket)
+    Process.unregister(:"spirit_#{spirit.id}")
     Process.register(self, :"spirit_#{spirit.id}")
 
     update_prompt(mobile)

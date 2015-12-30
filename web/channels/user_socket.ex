@@ -2,7 +2,6 @@ defmodule ApathyDrive.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  channel "mud", ApathyDrive.MUD
   channel "mud:play", ApathyDrive.MUDChannel
   channel "index", ApathyDrive.Index
 

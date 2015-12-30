@@ -26,21 +26,6 @@ defmodule ApathyDrive.ChannelCase do
       # The default endpoint for testing
       @endpoint ApathyDrive.Endpoint
 
-      def test_spirit(map \\ %{}) do
-        room =
-          %Room{}
-          |> Repo.insert!
-
-        spirit =
-          %Spirit{room_id: room.id}
-          |> Map.merge(map)
-          |> Repo.insert!
-
-          {:ok, _, socket} = socket() |> subscribe_and_join(ApathyDrive.MUD, "mud", %{"spirit" => spirit.id})
-
-          put_in spirit.socket, socket
-      end
-
       def test_mobile(map \\ %{}, room \\ Repo.insert!(%Room{})) do
         class = Repo.insert!(%ApathyDrive.Class{alignment: "evil",
                                                 name: "Demon",
