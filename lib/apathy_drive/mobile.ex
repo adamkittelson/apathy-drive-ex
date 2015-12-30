@@ -140,8 +140,8 @@ defmodule ApathyDrive.Mobile do
       agility: agility(mobile),
       will: will(mobile),
       effects: effects,
-      physical_defense: physical_defense(mobile),
-      magical_defense: magical_defense(mobile),
+      physical_defense: (1 - reduce_damage(mobile, "physical defense")) * 100,
+      magical_defense:  (1 - reduce_damage(mobile, "magical defense")) * 100,
       physical_damage: physical_damage(mobile),
       magical_damage: magical_damage(mobile)}
   end
@@ -519,11 +519,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   def physical_defense(%Mobile{} = mobile) do
-    mobile.physical_defense
+    mobile.physical_defense + effect_bonus(mobile, "physical defense")
   end
 
   def magical_defense(%Mobile{} = mobile) do
-    mobile.magical_defense
+    mobile.magical_defense + effect_bonus(mobile, "magical defense")
   end
 
   def effect_bonus(%Mobile{effects: effects}, name) do
@@ -1700,11 +1700,20 @@ defmodule ApathyDrive.Mobile do
   defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
   defp conflicting_worn_on(_), do: []
 
+  defp value(pre, post) when pre > post and is_float(pre) and is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}%(<span class='dark-red'>#{Float.to_string(post - pre, decimals: 2)}%</span>)"
+  end
   defp value(pre, post) when pre > post do
     "#{post}(<span class='dark-red'>#{post - pre}</span>)"
   end
+  defp value(pre, post) when pre < post and is_float(pre) and is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}%(<span class='green'>+#{Float.to_string(post - pre, decimals: 2)}%</span>)"
+  end
   defp value(pre, post) when pre < post do
     "#{post}(<span class='green'>+#{post - pre}</span>)"
+  end
+  defp value(_pre, post) when is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}%"
   end
   defp value(_pre, post) do
     "#{post}"
