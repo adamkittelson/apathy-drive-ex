@@ -43,7 +43,7 @@ defmodule MonsterTemplate do
 
   def changeset(%MonsterTemplate{} = monster_template, params \\ :empty) do
     monster_template
-    |> cast(params, ~w(name description), ~w())
+    |> cast(params, ~w(name description strength agility will), ~w())
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
   end

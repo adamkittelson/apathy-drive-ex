@@ -5,7 +5,7 @@ defmodule ApathyDrive.AbilityController do
   alias ApathyDrive.Ability
   alias ApathyDrive.ClassAbility
 
-  plug :scrub_params, "item" when action in [:create, :update]
+  plug :scrub_params, "ability" when action in [:create, :update]
 
   def index(conn, %{"q" => query} = params) do
     query = "%#{query}%"

@@ -6,7 +6,11 @@ defmodule ApathyDrive.AI do
       mobile
       |> calm_down()
 
-    heal(mobile) || bless(mobile) || attack(mobile) || mobile
+    if casting?(mobile) do
+      mobile
+    else
+      heal(mobile) || bless(mobile) || attack(mobile) || mobile
+    end
   end
 
   def calm_down(%Mobile{hate: hate, room_id: room_id} = mobile) do
@@ -126,5 +130,9 @@ defmodule ApathyDrive.AI do
     end
   end
   def move(%Monster{}), do: nil
+
+  defp casting?(%Mobile{timers: timers}) do
+    !!Map.get(timers, :cast_timer)
+  end
 
 end

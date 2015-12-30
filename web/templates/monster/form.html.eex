@@ -22,6 +22,21 @@
   </div>
 
   <div class="form-group">
+    <%= label f, :strength, "Strength", class: "control-label" %>
+    <%= text_input f, :strength, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :agility, "Agility", class: "control-label" %>
+    <%= text_input f, :agility, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :will, "Will", class: "control-label" %>
+    <%= text_input f, :will, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
     <%= label f, :abilities, "Abilities", class: "control-label" %>
     <%= jsonarea f, :abilities, class: "u-full-width" %>
   </div>

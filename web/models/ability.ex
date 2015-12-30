@@ -603,10 +603,11 @@ defmodule ApathyDrive.Ability do
 
   def reduce_damage(%{"instant_effects" => %{"damage" => damage}} = ability,
                     %Mobile{} = mobile,
-                    %Mobile{}) do
+                    %Mobile{} = ability_user) do
 
-    modifier = (80..120 |> Enum.random) / 100
-    damage = trunc(damage * modifier)
+    min_damage = trunc(80 * damage / 100)  + Mobile.effect_bonus(ability_user, "increase min damage")
+    max_damage = trunc(120 * damage / 100) + Mobile.effect_bonus(ability_user, "increase max damage")
+    damage = min_damage..max_damage |> Enum.random
 
     damage = Mobile.reduce_damage(mobile, damage, ability["instant_effects"]["mitigated_by"])
 
@@ -670,12 +671,12 @@ defmodule ApathyDrive.Ability do
 
     apply_instant_effects(mobile, Map.delete(effects, "script"), ability_user)
   end
-  def apply_instant_effects(%Monster{} = monster, %{"remove abilities" => abilities} = effects, ability_user) do
-    monster = Enum.reduce(abilities, monster, fn(ability_id, updated_monster) ->
-      Systems.Effect.remove_oldest_stack(updated_monster, ability_id)
+  def apply_instant_effects(%Mobile{} = mobile, %{"remove abilities" => abilities} = effects, ability_user) do
+    mobile = Enum.reduce(abilities, mobile, fn(ability_id, updated_mobile) ->
+      Systems.Effect.remove_oldest_stack(updated_mobile, ability_id)
     end)
 
-    apply_instant_effects(monster, Map.delete(effects, "remove abilities"), ability_user)
+    apply_instant_effects(mobile, Map.delete(effects, "remove abilities"), ability_user)
   end
   def apply_instant_effects(%Monster{} = monster, %{"dispel" => effect_types} = effects, ability_user) do
     monster = Enum.reduce(effect_types, monster, fn(type, updated_monster) ->
