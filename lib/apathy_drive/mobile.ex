@@ -42,8 +42,8 @@ defmodule ApathyDrive.Mobile do
             delayed: false,
             last_effect_key: 0
 
-  def start_link(state \\ %{}, opts \\ []) do
-    GenServer.start_link(__MODULE__, Map.merge(%Mobile{}, state), opts)
+  def start(state \\ %{}, opts \\ []) do
+    GenServer.start(__MODULE__, Map.merge(%Mobile{}, state), opts)
   end
 
   def use_ability(pid, command, arguments) do
@@ -572,6 +572,9 @@ defmodule ApathyDrive.Mobile do
   def init(%Mobile{spirit: spirit_id, socket: socket} = mobile) do
     :random.seed(:os.timestamp)
 
+    Process.monitor(socket)
+    Process.register(self, :"spirit_#{spirit_id}")
+
     spirit = Repo.get(Spirit, spirit_id)
              |> Repo.preload(:class)
 
@@ -606,6 +609,8 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
     update_prompt(mobile)
+
+    ApathyDrive.Endpoint.broadcast_from! self, "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
 
     {:ok, mobile}
   end
@@ -931,6 +936,8 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:spirit, nil)
       |> Map.put(:socket, nil)
 
+      Process.unregister(:"spirit_#{spirit.id}")
+
       ApathyDrive.PubSub.unsubscribe(self, "spirits:online")
       ApathyDrive.PubSub.unsubscribe(self, "spirits:#{spirit.id}")
       ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
@@ -965,6 +972,7 @@ defmodule ApathyDrive.Mobile do
     send_scroll(mobile, "<p>You possess #{mobile.name}.")
 
     Process.monitor(socket)
+    Process.register(self, :"spirit_#{spirit.id}")
 
     update_prompt(mobile)
 
@@ -1629,11 +1637,21 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, {:shutdown, :closed}}, %Mobile{spirit: spirit, socket: socket} = mobile) when pid == socket do
+  def handle_info({:DOWN, _ref, :process, pid, {:shutdown, :closed}}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
+    Process.send_after(self, :disconnected, 30_000)
+    {:noreply, Map.put(mobile, :socket, nil)}
+  end
+
+  def handle_info(:disconnected, %Mobile{monster_template_id: nil, spirit: spirit, socket: nil} = mobile) do
+    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
+    {:stop, :normal, mobile}
+  end
+
+  def handle_info(:disconnected, %Mobile{spirit: spirit, socket: nil} = mobile) do
+    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
     mobile =
       mobile
       |> Map.put(:spirit, nil)
-      |> Map.put(:socket, nil)
 
       ApathyDrive.PubSub.unsubscribe(self, "spirits:online")
       ApathyDrive.PubSub.unsubscribe(self, "spirits:#{spirit.id}")
@@ -1641,6 +1659,11 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
 
     {:noreply, mobile}
+  end
+
+  def handle_info({:set_socket, socket}, %Mobile{socket: nil} = mobile) do
+    Process.monitor(socket)
+    {:noreply, Map.put(mobile, :socket, socket)}
   end
 
   def handle_info(:die, mobile) do

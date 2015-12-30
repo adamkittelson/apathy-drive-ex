@@ -8,14 +8,17 @@ defmodule ApathyDrive.MUDChannel do
           nil ->
             {:error, %{reason: "unauthorized"}}
           %Spirit{} = spirit ->
-
-            {:ok, pid} = ApathyDrive.Mobile.start_link(%{spirit: spirit.id, socket: self})
-
-            socket = assign(socket, :mobile, pid)
-
-            send(self, :after_join)
-
-            {:ok, socket}
+            case Process.whereis(:"spirit_#{spirit.id}") do
+              nil ->
+                {:ok, pid} = ApathyDrive.Mobile.start(%{spirit: spirit.id, socket: self})
+                socket = assign(socket, :mobile, pid)
+                send(self, :after_join)
+                {:ok, socket}
+              pid ->
+                socket = assign(socket, :mobile, pid)
+                send(self, :after_join)
+                {:ok, socket}
+            end
         end
       {:error, _} ->
         {:error, %{reason: "unauthorized"}}
@@ -31,7 +34,7 @@ defmodule ApathyDrive.MUDChannel do
   def handle_info({:respawn, spirit: spirit}, socket) do
     spirit = Repo.save!(spirit)
 
-    {:ok, pid} = ApathyDrive.Mobile.start_link(%{spirit: spirit.id, socket: self})
+    {:ok, pid} = ApathyDrive.Mobile.start(%{spirit: spirit.id, socket: self})
 
     socket = assign(socket, :mobile, pid)
 
@@ -41,6 +44,8 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_info(:after_join, socket) do
+    send(socket.assigns[:mobile], {:set_socket, self})
+
     ApathyDrive.Command.execute(socket.assigns[:mobile], "look", [])
 
     {:noreply, socket}

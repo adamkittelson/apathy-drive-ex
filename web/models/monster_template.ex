@@ -197,7 +197,7 @@ defmodule MonsterTemplate do
       monster
       |> Map.put(:keywords, String.split(monster.name))
 
-    {:ok, pid} = ApathyDrive.Mobile.start_link(monster)
+    {:ok, pid} = ApathyDrive.Mobile.start(monster)
 
     ApathyDrive.PubSub.subscribe(pid, "monster_templates:#{monster_template.id}:monsters")
 
