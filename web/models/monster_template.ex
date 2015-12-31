@@ -12,21 +12,15 @@ defmodule MonsterTemplate do
     field :death_message,          :string
     field :enter_message,          :string
     field :exit_message,           :string
-    field :abilities,              ApathyDrive.JSONB
     field :greeting,               :string
     field :gender,                 :string
     field :game_limit,             :integer
     field :adjectives,             {:array, :string}, default: []
-    field :skills,                 ApathyDrive.JSONB
     field :chance_to_follow,       :integer
     field :alignment,              :string
     field :level,                  :integer
     field :questions,              ApathyDrive.JSONB
     field :flags,                  {:array, :string}, default: []
-    field :max_hp,                 :integer
-    field :hp_regen,               :integer
-    field :attacks,                ApathyDrive.JSONB
-    field :effects,                ApathyDrive.JSONB
     field :experience,             :integer
     field :last_killed_at,         Timex.Ecto.DateTime
     field :regen_time_in_minutes,  :integer
@@ -37,6 +31,8 @@ defmodule MonsterTemplate do
     has_many :monsters, Monster
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
+    has_many :monster_abilities, ApathyDrive.MonsterAbility
+    has_many :abilities, through: [:monster_abilities, :ability]
 
     timestamps
   end
@@ -58,7 +54,10 @@ defmodule MonsterTemplate do
   end
 
   def load(id) do
-    monster_template = Repo.get(MonsterTemplate, id)
+    monster_template =
+      MonsterTemplate
+      |> Repo.get(id)
+      |> Repo.preload(:abilities)
 
     case Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_template_#{id}", {GenServer, :start_link, [MonsterTemplate, monster_template, [name: {:global, :"monster_template_#{id}"}]]}, :permanent, 5000, :worker, [MonsterTemplate]}) do
       {:error, {:already_started, pid}} ->
@@ -189,7 +188,7 @@ defmodule MonsterTemplate do
       will: monster_template.will,
       experience: monster_template.experience,
       monster_template_id: monster_template.id,
-      abilities: monster_template.abilities,
+      abilities: Enum.map(monster_template.abilities, &(&1.properties)),
       questions: monster_template.questions
     }
 

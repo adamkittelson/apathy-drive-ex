@@ -25,6 +25,23 @@
     </tbody>
   </table>
 </p>
+
+<p>
+  <div>Monsters:</div>
+  <table>
+    <thead>
+      <th>Monster</th>
+      <th><%= link "Add", to: monster_ability_path(@conn, :new, from: ability_path(@conn, :show, @ability), ability_id: @ability.id )%></th>
+    </thead>
+    <%= for monster_ability <- @monster_abilities do %>
+      <tr>
+        <td><%= link monster_ability.monster, to: monster_path(@conn, :show, monster_ability.monster_template_id) %></td>
+        <td><%= link "Delete", to: monster_ability_path(@conn, :delete, monster_ability.id, from: ability_path(@conn, :show, @ability)), method: :delete %></td>
+      </tr>
+    <% end %>
+  </table>
+</p>
+
 <p>
   <div>Classes:</div>
   <table>

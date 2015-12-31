@@ -33,14 +33,15 @@ defmodule ApathyDrive.Router do
   scope "/system", ApathyDrive do
     pipe_through [:browser, :admin]
 
-    resources "/classes",         ClassController
-    resources "/items",           ItemController
-    resources "/monsters",        MonsterController
-    resources "/rooms",           RoomController
-    resources "/item_drops",      ItemDropController
-    resources "/lairs",           LairController
-    resources "/class_abilities", ClassAbilityController
-    resources "/abilities",       AbilityController
+    resources "/classes",           ClassController
+    resources "/items",             ItemController
+    resources "/monsters",          MonsterController
+    resources "/rooms",             RoomController
+    resources "/item_drops",        ItemDropController
+    resources "/lairs",             LairController
+    resources "/class_abilities",   ClassAbilityController
+    resources "/monster_abilities", MonsterAbilityController
+    resources "/abilities",         AbilityController
   end
 
   scope "/auth", alias: ApathyDrive do

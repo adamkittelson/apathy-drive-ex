@@ -15,29 +15,31 @@ defmodule ApathyDrive.Ability do
   @required_fields ~w(properties)
   @optional_fields ~w()
 
+  def find(id) do
+    ApathyDrive.Repo.get(__MODULE__, id)
+    |> Map.get(:properties)
+  end
+
   def changeset(model, params \\ :empty) do
     model
     |> cast(params, @required_fields, @optional_fields)
   end
 
-  def useable(abilities, %Mobile{mana: mana} = mobile) do
+  def useable(abilities, %Mobile{mana: mana}) do
     abilities
     |> Enum.reject(fn(ability) ->
          ability["mana_cost"] && ability["mana_cost"] > mana
        end)
-    |> Enum.reject(fn(ability) ->
-         Systems.Effect.max_stacks?(mobile, ability)
-       end)
   end
 
-  def removes_blessing?(%Monster{} = monster, %Ability{properties: %{"instant_effects" => %{"remove abilities" => abilities}}} = ability) do
-    Systems.Effect.max_stacks?(monster, ability) or
+  def removes_blessing?(%Mobile{} = mobile, %{"instant_effects" => %{"remove abilities" => abilities}} = ability) do
+    Systems.Effect.max_stacks?(mobile, ability) or
     Enum.any?(abilities, fn(ability_id) ->
-      Systems.Effect.stack_count(monster, ability_id) > 0
+      Systems.Effect.stack_count(mobile, ability_id) > 0
     end)
   end
-  def removes_blessing?(monster, %Ability{} = ability) do
-    Systems.Effect.max_stacks?(monster, ability)
+  def removes_blessing?(mobile, ability) do
+    Systems.Effect.max_stacks?(mobile, ability)
   end
 
   def color(%{"kind" => "attack"}),      do: "red"
@@ -431,6 +433,9 @@ defmodule ApathyDrive.Ability do
     abilities
     |> Enum.filter(&(&1["kind"] == "blessing"))
     |> Enum.reject(&(Map.has_key?(&1, "cooldown")))
+    |> Enum.reject(fn(ability) ->
+         Ability.removes_blessing?(mobile, ability)
+       end)
     |> useable(mobile)
   end
 
@@ -494,6 +499,7 @@ defmodule ApathyDrive.Ability do
   def execute_after_cast(%Mobile{} = ability_user, after_cast_ability, targets) do
     ability =
       after_cast_ability
+      |> find()
       |> Map.put("ignores_global_cooldown", true)
     send(ability_user.pid, {:execute_ability, ability, targets})
   end

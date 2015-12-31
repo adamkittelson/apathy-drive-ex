@@ -23,6 +23,22 @@
 </p>
 
 <p>
+  <div>Abilities:</div>
+  <table>
+    <thead>
+      <th>Name</th>
+      <th><%= link "Add", to: monster_ability_path(@conn, :new, from: monster_path(@conn, :show, @monster), monster_id: @monster.id) %></th>
+    </thead>
+    <%= for monster_ability <- @monster_abilities do %>
+      <tr>
+        <td><%= link monster_ability.ability.properties["name"], to: ability_path(@conn, :show, monster_ability.ability.id) %></td>
+        <td><%= link "Delete", to: monster_ability_path(@conn, :delete, monster_ability.id, from: monster_path(@conn, :show, @monster)), method: :delete %></td>
+      </tr>
+    <% end %>
+  </table>
+</p>
+
+<p>
   <div>Spawns at:</div>
   <table>
     <thead>
