@@ -108,6 +108,22 @@ defmodule ApathyDrive.Script do
     execute_script([], mobile)
   end
 
+  def execute_instruction(%{"check_hitpoints" => %{"modifier" => amount, "failure_script" => failure_script}}, %Mobile{hp: hp} = mobile, script) do
+    if hp < :rand.uniform(100 + amount) do
+      execute_script(find(failure_script), mobile)
+    else
+      execute_script(script, mobile)
+    end
+  end
+
+  def execute_instruction(%{"min_evil_points" => %{"amount" => amount, "failure_message" => failure_message}}, %Mobile{} = mobile, script) do
+    if Mobile.evil_points(mobile) < amount do
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")
+    else
+      execute_script(script, mobile)
+    end
+  end
+
   def execute_instruction(%{"give_item" => item_template_id}, %Mobile{} = mobile, script) do
     item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: mobile.level})
 
@@ -158,14 +174,38 @@ defmodule ApathyDrive.Script do
     execute_script(script, Map.put(mobile, :spirit, spirit))
   end
 
-  def execute_instruction(%{"cast_ability" => ability_name}, monster, script) do
-    case Abilities.find(ability_name) do
+  def execute_instruction(%{"cast_ability" => ability_id}, %Mobile{} = mobile, script) do
+    case ApathyDrive.Ability.find(ability_id) do
       nil ->
-        Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: #{ability_name}</span></p>")
+        Mobile.send_scroll(mobile, "<p><span class='red'>Not Implemented: Ability ##{ability_id}</span></p>")
       ability ->
-        ability.execute(monster, nil)
+        ability = Map.put(ability, "ignores_global_cooldown", true)
+        send(self, {:execute_ability, ability})
     end
-    execute_script(script, monster)
+    execute_script(script, mobile)
+  end
+
+  def execute_instruction(%{"room_item" => %{"failure_message" => failure_message, "item" => item_name}}, %Mobile{room_id: room_id} = mobile, script) do
+    room = Room.find(room_id)
+
+    if Room.find_item(room, item_name) do
+      execute_script(script, mobile)
+    else
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")
+    end
+  end
+
+  def execute_instruction(%{"price" => %{"failure_message" => failure_message, "price_in_copper" => _price}}, %Mobile{spirit: nil} = mobile, _script) do
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")
+  end
+
+  def execute_instruction(%{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, %Mobile{spirit: %Spirit{experience: exp} = spirit} = mobile, script) do
+    if exp >= price do
+      spirit = Spirit.add_experience(spirit, -price)
+      execute_script(script, Map.put(mobile, :spirit, spirit))
+    else
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")
+    end
   end
 
   def execute_instruction(%{"random" => scripts}, mobile, script) do
@@ -193,7 +233,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(instruction, mobile, _script) do
     Mobile.send_scroll(mobile, "<p><span class='red'>Not Implemented: #{inspect instruction}</span></p>")
-    false
+    execute_script([], mobile)
   end
 
 end

@@ -486,15 +486,18 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def after_cast(%Mobile{} = ability_user, %{"after_cast" => after_cast_ability, "after_cast_chance" => chance}, targets) do
+  def after_cast(%{"ability_user" => %Mobile{} = ability_user,
+                   "ability" => after_cast_ability,
+                   "chance" => chance}, targets) do
     if chance >= :rand.uniform(100) do
       execute_after_cast(ability_user, after_cast_ability, targets)
     end
   end
-  def after_cast(%Mobile{} = ability_user, %{"after_cast" => after_cast_ability}, targets) do
+  def after_cast(%{"ability_user" => %Mobile{} = ability_user,
+                   "ability"   => after_cast_ability}, targets) do
     execute_after_cast(ability_user, after_cast_ability, targets)
   end
-  def after_cast(%Mobile{}, %{}, _targets), do: false
+  def after_cast(%{}, _targets), do: false
 
   def execute_after_cast(%Mobile{} = ability_user, after_cast_ability, targets) do
     ability =
@@ -586,8 +589,6 @@ defmodule ApathyDrive.Ability do
   end
   def apply_ability(%Mobile{} = mobile, %{} = ability, %Mobile{} = ability_user) do
 
-    after_cast(ability_user, ability, [self])
-
     mobile = if Enum.member?(["curse", "room curse"], ability["kind"]) do
       put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
     else
@@ -604,7 +605,7 @@ defmodule ApathyDrive.Ability do
 
     mobile
     |> apply_instant_effects(ability["instant_effects"], ability_user)
-    |> add_duration_effects(ability)
+    |> add_duration_effects(ability, ability_user)
   end
 
   def reduce_damage(%{"instant_effects" => %{"damage" => damage}} = ability,
@@ -684,6 +685,11 @@ defmodule ApathyDrive.Ability do
 
     apply_instant_effects(mobile, Map.delete(effects, "remove abilities"), ability_user)
   end
+  def apply_instant_effects(%Mobile{} = mobile, %{"teleport" => room_ids} = effects, ability_user) do
+    send(self, {:move_to, Enum.random(room_ids)})
+
+    apply_instant_effects(mobile, Map.delete(effects, "teleport"), ability_user)
+  end
   def apply_instant_effects(%Monster{} = monster, %{"dispel" => effect_types} = effects, ability_user) do
     monster = Enum.reduce(effect_types, monster, fn(type, updated_monster) ->
       effects_with_type = monster.effects
@@ -706,9 +712,9 @@ defmodule ApathyDrive.Ability do
 
     apply_instant_effects(monster, Map.delete(effects, "dispel"), ability_user)
   end
-  def apply_instant_effects(%Mobile{} = monster, %{} = effects, ability_user) do
-    IO.puts "unrecognized instant effects: #{inspect Map.keys(effects)}"
-    apply_instant_effects(monster, %{}, ability_user)
+  def apply_instant_effects(%Mobile{} = mobile, %{} = effects, ability_user) do
+    Mobile.send_scroll(mobile, "<p><span class='red'>unrecognized instant effects: #{inspect Map.keys(effects)}</span></p>")
+    apply_instant_effects(mobile, %{}, ability_user)
   end
 
   def display_cast_message(%Mobile{} = mobile,
@@ -772,17 +778,23 @@ defmodule ApathyDrive.Ability do
                                "duration_effects" => %{
                                  "stack_key"   => _stack_key,
                                  "stack_count" => _stack_count
-                               }
-                             } = ability) do
+                               } = effects
+                             } = ability,
+                            ability_user) do
+
+     if Map.has_key? effects, "after_cast" do
+       effects = put_in effects, ["after_cast", "ability_user"], ability_user
+     end
 
      mobile
-     |> Systems.Effect.add(ability["duration_effects"], ability["duration"])
-     |> Mobile.send_scroll("<p><span class='#{Ability.color(ability)}'>#{ability["duration_effects"]["effect_message"]}</span></p>")
+     |> Systems.Effect.add(effects, Map.get(ability, "duration", 0))
+     |> Mobile.send_scroll("<p><span class='#{Ability.color(ability)}'>#{effects["effect_message"]}</span></p>")
   end
   def add_duration_effects(%Mobile{} = mobile,
                            %{
                                "duration_effects" => effects
-                             } = ability) do
+                             } = ability,
+                             ability_user) do
 
     effects = effects
               |> Map.put("stack_key",   ability["name"])
@@ -790,9 +802,9 @@ defmodule ApathyDrive.Ability do
 
     ability = Map.put(ability, "duration_effects", effects)
 
-    add_duration_effects(mobile, ability)
+    add_duration_effects(mobile, ability, ability_user)
   end
-  def add_duration_effects(%Mobile{} = mobile, %{}), do: mobile
+  def add_duration_effects(%Mobile{} = mobile, %{}, _ability_user), do: mobile
 
   def affects_target?(%Mobile{flags: _monster_flags}, %{"flags" => nil}), do: true
   def affects_target?(%Mobile{flags: monster_flags}, %{"flags" => ability_flags}) do

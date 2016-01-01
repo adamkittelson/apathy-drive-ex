@@ -61,25 +61,22 @@ defmodule Systems.Effect do
 
   def remove(%{effects: effects} = entity, key) do
     case effects[key] do
-      %{"timers" => timers, "expiration_message" => expiration_message} ->
-        send_scroll(entity, "<p><span class='dark-yellow'>#{expiration_message}</span></p>")
-
-        Enum.each(timers, fn(timer_name) ->
-          TimerManager.cancel(entity, timer_name)
-        end)
-        send(self, :think)
-        Map.put entity, :effects, Map.delete(effects, key)
-      %{"timers" => timers} ->
-        Enum.each(timers, fn(timer_name) ->
-          TimerManager.cancel(entity, timer_name)
-        end)
-        send(self, :think)
-        Map.put entity, :effects, Map.delete(effects, key)
-      %{"expiration_message" => expiration_message} ->
-        send_scroll(entity, "<p><span class='dark-yellow'>#{expiration_message}</span></p>")
-
-        Map.put entity, :effects, Map.delete(effects, key)
       %{} ->
+        if Map.has_key?(effects[key], "after_cast") do
+          ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [self])
+        end
+
+        if Map.has_key?(effects[key], "expiration_message") do
+          send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["expiration_message"]}</span></p>")
+        end
+
+        if Map.has_key?(effects[key], "timers") do
+          Enum.each(effects[key]["timers"], fn(timer_name) ->
+            TimerManager.cancel(entity, timer_name)
+          end)
+        end
+
+        send(self, :think)
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->
         found_key = effects

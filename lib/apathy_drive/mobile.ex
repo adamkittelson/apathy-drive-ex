@@ -243,6 +243,10 @@ defmodule ApathyDrive.Mobile do
   def alignment_color(%{alignment: "good"}),    do: "white"
   def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
 
+  def evil_points(%{alignment: "evil"}),    do: 250
+  def evil_points(%{alignment: "good"}),    do: -215
+  def evil_points(%{alignment: "neutral"}), do: 0
+
   def blind?(mobile) do
     GenServer.call(mobile, :blind?)
   end
