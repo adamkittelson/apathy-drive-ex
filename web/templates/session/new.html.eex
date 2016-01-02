@@ -8,7 +8,7 @@
 <hr/>
 
 <h2>Sign In</h2>
-<%= form_for @conn, session_path(@conn, :create), [name: :session], fn f -> %>
+<%= form_for @conn, session_path(@conn, :create), [as: :session], fn f -> %>
   <div class="alert alert-danger">
     <%= get_flash(@conn, :sign_in) %>
   </div>
