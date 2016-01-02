@@ -322,7 +322,8 @@ defmodule Room do
     end
   end
 
-  def look_mobiles(%{room_id: room_id, mobile: pid}) do
+  def look_mobiles(%{room_id: room_id, mobile: mobile}) do
+    pid = if is_pid(mobile), do: mobile, else: mobile.pid
     mobiles = mobiles(%{room_id: room_id, mobile: pid})
               |> Enum.map(&Mobile.look_name/1)
               |> Enum.join("<span class='magenta'>, </span>")

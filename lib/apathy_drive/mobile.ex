@@ -98,9 +98,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :match_data)
   end
 
-  def room_id(pid) do
+  def room_id(pid) when is_pid(pid) do
     GenServer.call(pid, :room_id)
   end
+  def room_id(%Mobile{room_id: room_id}), do: room_id
 
   def name(pid) do
     GenServer.call(pid, :name)
@@ -247,8 +248,13 @@ defmodule ApathyDrive.Mobile do
   def evil_points(%{alignment: "good"}),    do: -215
   def evil_points(%{alignment: "neutral"}), do: 0
 
-  def blind?(mobile) do
+  def blind?(mobile) when is_pid(mobile) do
     GenServer.call(mobile, :blind?)
+  end
+  def blind?(%Mobile{} = mobile) do
+    mobile.effects
+    |> Map.values
+    |> Enum.any?(&(Map.has_key?(&1, "blinded")))
   end
 
   def display_inventory(mobile) when is_pid(mobile) do
@@ -1174,7 +1180,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_call(:room_id, _from, mobile) do
-    {:reply, mobile.room_id, mobile}
+    {:reply, room_id(mobile), mobile}
   end
 
   def handle_call(:greeting, _from, mobile) do
@@ -1235,12 +1241,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_call(:blind?, _from, mobile) do
-    blind =
-      mobile.effects
-      |> Map.values
-      |> Enum.any?(&(Map.has_key?(&1, "blinded")))
-
-    {:reply, blind, mobile}
+    {:reply, blind?(mobile), mobile}
   end
 
   def handle_call(:confused?, _from, mobile) do

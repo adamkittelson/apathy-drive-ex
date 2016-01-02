@@ -686,7 +686,10 @@ defmodule ApathyDrive.Ability do
     apply_instant_effects(mobile, Map.delete(effects, "remove abilities"), ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"teleport" => room_ids} = effects, ability_user) do
-    send(self, {:move_to, Enum.random(room_ids)})
+    destination = Enum.random(room_ids)
+    send(self, {:move_to, destination})
+
+    Commands.Look.look_at_room(mobile, destination)
 
     apply_instant_effects(mobile, Map.delete(effects, "teleport"), ability_user)
   end
