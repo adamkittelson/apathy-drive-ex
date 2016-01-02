@@ -59,10 +59,10 @@ defmodule Systems.Effect do
     remove(entity, oldest)
   end
 
-  def remove(%{effects: effects} = entity, key) do
+  def remove(%{effects: effects} = entity, key, opts \\ []) do
     case effects[key] do
       %{} ->
-        if Map.has_key?(effects[key], "after_cast") do
+        if opts[:fire_after_cast] && Map.has_key?(effects[key], "after_cast") do
           ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [self])
         end
 

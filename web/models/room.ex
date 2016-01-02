@@ -839,7 +839,7 @@ defmodule Room do
   end
 
   def handle_info({:remove_effect, key}, room) do
-    room = Systems.Effect.remove(room, key)
+    room = Systems.Effect.remove(room, key, fire_after_cast: true)
     {:noreply, room}
   end
 

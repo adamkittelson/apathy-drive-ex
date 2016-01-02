@@ -1500,7 +1500,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info({:remove_effect, key}, mobile) do
-    mobile = Systems.Effect.remove(mobile, key)
+    mobile = Systems.Effect.remove(mobile, key, fire_after_cast: true)
     {:noreply, mobile}
   end
 
