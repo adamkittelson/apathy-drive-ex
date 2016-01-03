@@ -21,7 +21,7 @@ RUN echo "deb http://packages.erlang-solutions.com/ubuntu trusty contrib" >> /et
     apt-key adv --fetch-keys http://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc && \
     apt-get -qq update && apt-get install -y \
     postgresql-client && \
-    esl-erlang=1:18.2 \
+    esl-erlang=1:18.1 \
     git \
     unzip \
     build-essential \
