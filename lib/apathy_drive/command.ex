@@ -8,10 +8,14 @@ defmodule ApathyDrive.Command do
                "w", "west", "nw", "northwest", "u", "up", "d", "down"]
 
   def all do
-    :code.all_loaded
-    |> Enum.map(fn{module, _} -> to_string(module) end)
-    |> Enum.filter(&(String.starts_with?(&1, "Elixir.Commands.") and !String.ends_with?(&1, "Test")))
-    |> Enum.map(&String.to_atom/1)
+    [Commands.Abilities, Commands.Absorb, Commands.Ask, Commands.Attack,
+     Commands.Bash, Commands.Class, Commands.Close, Commands.Construct,
+     Commands.Cooldowns, Commands.Drop, Commands.Experience, Commands.Forms,
+     Commands.Get, Commands.Gossip, Commands.Goto, Commands.Greet,
+     Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
+     Commands.Possess, Commands.Protection, Commands.Remove, Commands.Reroll,
+     Commands.Say, Commands.Score, Commands.Search, Commands.Spawn,
+     Commands.Unpossess, Commands.Wear, Commands.Who]
   end
 
   def execute(mobile, command, arguments) do

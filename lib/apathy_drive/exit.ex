@@ -1,6 +1,14 @@
 defmodule ApathyDrive.Exit do
   alias ApathyDrive.Mobile
 
+  def all do
+    [ApathyDrive.Exits.AbilityTrap, ApathyDrive.Exits.Action,
+     ApathyDrive.Exits.Cast, ApathyDrive.Exits.Command, ApathyDrive.Exits.Door,
+     ApathyDrive.Exits.Doors, ApathyDrive.Exits.Gate, ApathyDrive.Exits.Hidden,
+     ApathyDrive.Exits.Normal, ApathyDrive.Exits.RemoteAction,
+     ApathyDrive.Exits.Trap]
+  end
+
   def look(mobile, direction) do
     room =
       mobile

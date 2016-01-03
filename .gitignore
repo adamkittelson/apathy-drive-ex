@@ -10,3 +10,6 @@ _build
 /node_modules
 /env/*.env
 /config/*.exs
+/config/*.conf
+/rel
+relx
