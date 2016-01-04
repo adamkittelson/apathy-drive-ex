@@ -20,8 +20,8 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN echo "deb http://packages.erlang-solutions.com/ubuntu trusty contrib" >> /etc/apt/sources.list && \
     apt-key adv --fetch-keys http://packages.erlang-solutions.com/ubuntu/erlang_solutions.asc && \
     apt-get -qq update && apt-get install -y \
-    postgresql-client && \
-    esl-erlang=1:18.1 \
+    postgresql-client \
+    esl-erlang=1:18.2 \
     git \
     unzip \
     build-essential \
@@ -49,8 +49,4 @@ ADD . /usr/src/app
 WORKDIR /usr/src/app
 
 ENV MIX_ENV prod
-RUN mix deps.get && mix compile && mix phoenix.digest
-
-ENV ELIXIR_ERL_OPTIONS -kernel inet_dist_listen_min 49000 -kernel inet_dist_listen_max 49004 +K true +A 64
-
-CMD elixir -S mix phoenix.server
+RUN mix deps.clean --all && mix clean && mix deps.get && mix compile && mix phoenix.digest && mix release.clean && mix release

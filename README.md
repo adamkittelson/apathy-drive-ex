@@ -13,8 +13,8 @@ Now you can visit `localhost:4000` from your browser.
 * If you choose to change the application's structure, you could manually start the router from your code like this `ApathyDrive.Router.start`
 
 ## world data backup / restore
-* pg_dump --table=abilities --table=hints --table=monster_templates --table=rooms --data-only --dbname=apathy_drive -Fc > test/data/data.dump
-* pg_restore --dbname=apathy_drive data.dump
+* pg_dump --table=abilities --table=class_abilities --table=classes --table=item_drops --table=items --table=lair_monsters --table=monster_abilities --table=monster_templates --table=rooms --table=scripts --data-only --dbname=apathy_drive -Fc > priv/data.dump
+* pg_restore --dbname=apathy_drive -U apathy_drive /app/lib/apathy_drive-0.0.1/priv/data.dump
 
 
 ## docker setup
@@ -31,3 +31,32 @@ Now you can visit `localhost:4000` from your browser.
 
 ## remove a user's admin privileges
 * docker-compose run web mix remove_admin <username (case-sensitive)>
+
+##########
+Setting up the build server
+docker-machine create --driver virtualbox apathy-drive-build
+eval "$(docker-machine env apathy-drive-build)"
+
+docker build .
+
+Successfully built e912a7f84cc2
+
+id=$(docker create a06ae519cc17)
+docker cp $id:/usr/src/app/rel/apathy_drive/releases/0.0.1/apathy_drive.tar.gz apathy_drive.tar.gz
+docker rm -v $id
+
+scp apathy_drive.tar.gz apotheos.is:/home/deploy
+
+ssh apotheos.is
+sudo rm -rf /app
+sudo mkdir -p /app
+sudo chown deploy:deploy /app
+cd /app
+tar xfz /home/deploy/apathy_drive.tar.gz
+
+./bin/apathy_drive start
+
+./bin/apathy_drive rpc Elixir.Ecto.Storage up "['Elixir.ApathyDrive.Repo']."
+
+./bin/apathy_drive rpc Elixir.Ecto.Migrator run "['Elixir.ApathyDrive.Repo', <<\"//app/lib/apathy_drive-0.0.1/priv/repo/migrations\">>, up, [{all, true}]]."
+
