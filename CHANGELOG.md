@@ -169,3 +169,6 @@ CHANGELOG
 
 ---- 0.0.57 / 2015-12-17 / elixir-1-2 ------------------------------------------
 * upgrade to elixir 1.2(ish)
+
+---- 0.0.58 / 2016-01-03 / deploy-stuff ----------------------------------------
+* notes etc regarding releases
