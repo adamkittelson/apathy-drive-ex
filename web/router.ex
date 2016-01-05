@@ -2,9 +2,6 @@ defmodule ApathyDrive.Router do
   use Phoenix.Router
 
   pipeline :browser do
-    if Mix.env == :prod do
-      plug ApathyDrive.Plugs.HTTPSRedirect
-    end
     plug :accepts, ~w(html)
     plug :fetch_session
     plug :fetch_flash
