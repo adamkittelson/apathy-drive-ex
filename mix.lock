@@ -33,7 +33,7 @@
   "ranch": {:hex, :ranch, "1.2.0"},
   "relx": {:hex, :relx, "3.5.0"},
   "scrivener": {:hex, :scrivener, "1.1.1"},
-  "shouldi": {:git, "https://github.com/batate/shouldi", "54559b9a694db4d7cf4c62b365a36686844eb3ea", []},
+  "shouldi": {:hex, :shouldi, "0.3.0"},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"},
   "timex": {:hex, :timex, "1.0.0"},
   "timex_ecto": {:hex, :timex_ecto, "0.7.0"},

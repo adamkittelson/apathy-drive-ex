@@ -41,7 +41,7 @@ defmodule ApathyDrive.Mixfile do
       {:exrm,                "1.0.0-rc7"},
       {:conform,             "1.0.0-rc8"},
       {:conform_exrm,        "0.2.0"},
-      {:shouldi, git: "https://github.com/batate/shouldi", only: :test},
+      {:shouldi,             "0.3.0", only: :test}
     ]
   end
 
