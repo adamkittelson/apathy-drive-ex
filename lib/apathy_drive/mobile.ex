@@ -221,8 +221,6 @@ defmodule ApathyDrive.Mobile do
   end
 
   def display_prompt(%Mobile{socket: socket} = mobile) do
-    ApathyDrive.PubSub.broadcast_from! socket, "spirits:#{mobile.spirit.id}:socket", :go_home
-
     send(socket, {:disable_element, "#prompt"})
     send(socket, {:disable_element, "#command"})
     send(socket, {:scroll, "<p><span id='prompt'>#{prompt(mobile)}</span><input id='command' size='50' class='prompt'></input></p>"})
@@ -1669,6 +1667,13 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:set_socket, socket}, %Mobile{socket: nil} = mobile) do
     Process.monitor(socket)
+    {:noreply, Map.put(mobile, :socket, socket)}
+  end
+
+  # already signed-in in another tab / browser / location whatever
+  # redirect old socket to the home page and give control to the new socket
+  def handle_info({:set_socket, socket}, %Mobile{socket: old_socket} = mobile) do
+    send(old_socket, :go_home)
     {:noreply, Map.put(mobile, :socket, socket)}
   end
 
