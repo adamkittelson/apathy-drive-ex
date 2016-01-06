@@ -1673,6 +1673,7 @@ defmodule ApathyDrive.Mobile do
   # already signed-in in another tab / browser / location whatever
   # redirect old socket to the home page and give control to the new socket
   def handle_info({:set_socket, socket}, %Mobile{socket: old_socket} = mobile) do
+    Process.monitor(socket)
     send(old_socket, :go_home)
     {:noreply, Map.put(mobile, :socket, socket)}
   end
