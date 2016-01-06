@@ -17,7 +17,7 @@ defmodule ApathyDrive.Mixfile do
     [
       mod: { ApathyDrive, [] },
       applications: [:postgrex, :ecto, :phoenix, :cowboy, :conform, :conform_exrm,
-                     :logger, :oauth2, :phoenix_ecto, :comeonin,
+                     :logger, :oauth2, :phoenix_ecto, :comeonin, :runtime_tools,
                      :tzdata, :timex_ecto, :scrivener, :phoenix_live_reload,
                      :phoenix_html, :inflex, :connection, :decimal, :neotoma]
     ]
