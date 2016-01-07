@@ -567,9 +567,9 @@ defmodule ApathyDrive.Mobile do
       |> set_hp
       |> set_physical_defense
       |> set_magical_defense
-      |> TimerManager.call_every({:monster_regen,    1_000, fn -> send(self, :regen) end})
-      |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
-      |> TimerManager.call_every({:monster_ai,       5_000, fn -> send(self, :think) end})
+      |> TimerManager.send_every({:monster_regen,    1_000, :regen})
+      |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
+      |> TimerManager.send_every({:monster_ai,       5_000, :think})
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -608,10 +608,10 @@ defmodule ApathyDrive.Mobile do
       |> set_hp
       |> set_physical_defense
       |> set_magical_defense
-      |> TimerManager.call_every({:monster_regen,    1_000, fn -> send(self, :regen) end})
-      |> TimerManager.call_every({:periodic_effects, 3_000, fn -> send(self, :apply_periodic_effects) end})
-      |> TimerManager.call_every({:monster_ai,       5_000, fn -> send(self, :think) end})
-      |> TimerManager.call_every({:monster_present,  4_000, fn -> send(self, :notify_presence) end})
+      |> TimerManager.send_every({:monster_regen,    1_000, :regen})
+      |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
+      |> TimerManager.send_every({:monster_ai,       5_000, :think})
+      |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -919,6 +919,10 @@ defmodule ApathyDrive.Mobile do
   def top_threat([]),      do: nil
   def top_threat(targets), do: Enum.max(targets)
 
+  def send_execute_auto_attack do
+    send(self, :execute_auto_attack)
+  end
+
   def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: nil} = mobile) do
     {:reply, :ok, mobile}
   end
@@ -973,7 +977,7 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> Map.put(:spirit, spirit)
       |> Map.put(:socket, socket)
-      |> TimerManager.call_every({:monster_present, 4_000, fn -> send(self, :notify_presence) end})
+      |> TimerManager.send_every({:monster_present, 4_000, :notify_presence})
 
     send(socket, {:update_mobile, self})
 
@@ -1478,20 +1482,20 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_info({:timeout, _ref, {name, time, function}}, %Mobile{timers: timers} = mobile) do
+  def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Mobile{timers: timers} = mobile) do
     jitter = trunc(time / 2) + :random.uniform(time)
 
-    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
+    new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
 
     timers = Map.put(timers, name, new_ref)
 
-    TimerManager.execute_function(function)
+    apply module, function, args
 
     {:noreply, Map.put(mobile, :timers, timers)}
   end
 
-  def handle_info({:timeout, _ref, {name, function}}, %Mobile{timers: timers} = mobile) do
-    TimerManager.execute_function(function)
+  def handle_info({:timeout, _ref, {name, [module, function, args]}}, %Mobile{timers: timers} = mobile) do
+    apply module, function, args
 
     timers = Map.delete(timers, name)
 
@@ -1616,9 +1620,8 @@ defmodule ApathyDrive.Mobile do
     if Process.alive?(target) and target in PubSub.subscribers("rooms:#{mobile.room_id}:mobiles") do
       execute_auto_attack(mobile, target)
 
-      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval |> seconds, fn ->
-        send(self, :execute_auto_attack)
-      end})
+      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval |> seconds, [__MODULE__, :send_execute_auto_attack, []]})
+
       {:noreply, mobile}
     else
       mobile =

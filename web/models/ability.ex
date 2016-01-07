@@ -318,6 +318,27 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def timer_cast_ability(mobile, ability, time, target) do
+    Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
+
+    ability = case ability do
+      %{"global_cooldown" => nil} ->
+        ability
+      %{"global_cooldown" => cooldown} ->
+        if cooldown > time do
+          Map.put(ability, "global_cooldown", cooldown - time)
+        else
+          ability
+          |> Map.delete("global_cooldown")
+          |> Map.put("ignores_global_cooldown", true)
+        end
+      _ ->
+        ability
+    end
+
+    send(self, {:execute_ability, Map.delete(ability, "cast_time"), target})
+  end
+
   def execute(%Mobile{timers: timers} = mobile, %{"cast_time" => time} = ability, target) do
     if can_execute?(mobile, ability) do
       if ref = Map.get(timers, :cast_timer) do
@@ -327,26 +348,7 @@ defmodule ApathyDrive.Ability do
 
       Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
 
-      TimerManager.call_after(mobile, {:cast_timer, time |> seconds, fn ->
-        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
-
-        ability = case ability do
-          %{"global_cooldown" => nil} ->
-            ability
-          %{"global_cooldown" => cooldown} ->
-            if cooldown > time do
-              Map.put(ability, "global_cooldown", cooldown - time)
-            else
-              ability
-              |> Map.delete("global_cooldown")
-              |> Map.put("ignores_global_cooldown", true)
-            end
-          _ ->
-            ability
-        end
-
-        send(self, {:execute_ability, Map.delete(ability, "cast_time"), target})
-      end})
+      TimerManager.call_after(mobile, {:cast_timer, time |> seconds, [__MODULE__, :timer_cast_ability, [mobile, ability, time, target]]})
     else
       mobile
     end

@@ -9,7 +9,7 @@ defmodule ApathyDrive.Factions do
 
   def init(state) do
     state = state
-            |> TimerManager.call_every({:reward, 3600000, fn -> send(self, :reward_factions) end})
+            |> TimerManager.send_every({:reward, 3600000, :reward_factions})
 
     {:ok, state}
   end
@@ -108,18 +108,18 @@ defmodule ApathyDrive.Factions do
     {:noreply, Map.put(state, :bonus_pool, 0)}
   end
 
-  def handle_info({:timeout, _ref, {name, time, function}}, %{timers: timers} = state) do
-    new_ref = :erlang.start_timer(time, self, {name, time, function})
+  def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %{timers: timers} = state) do
+    new_ref = :erlang.start_timer(time, self, {name, time, [module, function, args]})
 
     timers = Map.put(timers, name, new_ref)
 
-    TimerManager.execute_function(function)
+    apply module, function, args
 
     {:noreply, Map.put(state, :timers, timers)}
   end
 
-  def handle_info({:timeout, _ref, {name, function}}, %{timers: timers} = state) do
-    TimerManager.execute_function(function)
+  def handle_info({:timeout, _ref, {name, [module, function, args]}}, %{timers: timers} = state) do
+    apply module, function, args
 
     timers = Map.delete(timers, name)
 

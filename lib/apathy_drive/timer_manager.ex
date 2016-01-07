@@ -2,16 +2,24 @@ defmodule ApathyDrive.TimerManager do
 
   def seconds(seconds), do: seconds |> :timer.seconds |> trunc
 
-  def call_after(%{timers: timers} = entity, {name, time, function}) do
-    ref = :erlang.start_timer(time, self, {name, function})
+  def call_after(%{timers: timers} = entity, {name, time, [module, function, args]}) do
+    ref = :erlang.start_timer(time, self, {name, [module, function, args]})
 
     timers = Map.put(timers, name, ref)
 
     Map.put(entity, :timers, timers)
   end
 
-  def call_every(%{timers: timers} = entity, {name, time, function}) do
-    ref = :erlang.start_timer(time, self, {name, time, function})
+  def call_every(%{timers: timers} = entity, {name, time, [module, function, args]}) do
+    ref = :erlang.start_timer(time, self, {name, time, [module, function, args]})
+
+    timers = Map.put(timers, name, ref)
+
+    Map.put(entity, :timers, timers)
+  end
+
+  def send_every(%{timers: timers} = entity, {name, time, atom}) do
+    ref = :erlang.start_timer(time, self, {name, time, [Kernel, :send, [self, atom]]})
 
     timers = Map.put(timers, name, ref)
 
@@ -34,19 +42,4 @@ defmodule ApathyDrive.TimerManager do
     end
   end
 
-  def execute_function(function) do
-    try do
-      function.()
-    catch
-      kind, error ->
-        IO.puts Exception.format(kind, error)
-        # {fun, arity} = env.function
-        # IO.puts """
-        # ** BlockTimer apply error, originating from:
-        #      #{env.file}:#{env.line} in #{fun}/#{arity}
-        #    error:
-        #      #{Exception.format(kind, error)}
-        # """
-    end
-  end
 end

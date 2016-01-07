@@ -75,11 +75,11 @@ defmodule Monster do
     :ets.insert(:"monster_#{monster.id}", {self, monster})
 
     monster = monster
-              |> TimerManager.call_every({:periodic_effects, 5_000, fn -> send(self, :apply_periodic_effects) end})
-              |> TimerManager.call_every({:monster_ai,       5_000, fn -> send(self, :think) end})
-              |> TimerManager.call_every({:monster_regen,   10_000, fn -> send(self, :regen) end})
-              |> TimerManager.call_every({:calm_down,       10_000, fn -> send(self, :calm_down) end})
-              |> TimerManager.call_every({:monster_present,  4_000, fn -> send(self, :notify_presence) end})
+              |> TimerManager.send_every({:periodic_effects, 5_000, :apply_periodic_effects})
+              |> TimerManager.send_every({:monster_ai,       5_000, :think})
+              |> TimerManager.send_every({:monster_regen,   10_000, :regen})
+              |> TimerManager.send_every({:calm_down,       10_000, :calm_down})
+              |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
 
     {:ok, monster}
   end
@@ -935,20 +935,20 @@ defmodule Monster do
 
   end
 
-  def handle_info({:timeout, _ref, {name, time, function}}, %Monster{timers: timers} = monster) do
+  def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Monster{timers: timers} = monster) do
     jitter = trunc(time / 2) + :random.uniform(time)
 
-    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
+    new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
 
     timers = Map.put(timers, name, new_ref)
 
-    TimerManager.execute_function(function)
+    apply module, function, args
 
     {:noreply, Map.put(monster, :timers, timers)}
   end
 
-  def handle_info({:timeout, _ref, {name, function}}, %Monster{timers: timers} = monster) do
-    TimerManager.execute_function(function)
+  def handle_info({:timeout, _ref, {name, [module, function, args]}}, %Monster{timers: timers} = monster) do
+    apply module, function, args
 
     timers = Map.delete(timers, name)
 

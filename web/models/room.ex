@@ -50,7 +50,7 @@ defmodule Room do
       room =
         room
         |> Map.put(:room_ability, ApathyDrive.Repo.get(Ability, room.ability_id).properties)
-        |> TimerManager.call_every({:execute_room_ability, 5_000, fn -> send(self, :execute_room_ability) end})
+        |> TimerManager.send_every({:execute_room_ability, 5_000, :execute_room_ability})
     end
 
     {:ok, room}
@@ -819,20 +819,20 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:timeout, _ref, {name, time, function}}, %Room{timers: timers} = room) do
+  def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Room{timers: timers} = room) do
     jitter = trunc(time / 2) + :random.uniform(time)
 
-    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
+    new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
 
     timers = Map.put(timers, name, new_ref)
 
-    TimerManager.execute_function(function)
+    apply module, function, args
 
     {:noreply, Map.put(room, :timers, timers)}
   end
 
-  def handle_info({:timeout, _ref, {name, function}}, %Room{timers: timers} = room) do
-    TimerManager.execute_function(function)
+  def handle_info({:timeout, _ref, {name, [module, function, args]}}, %Room{timers: timers} = room) do
+    apply module, function, args
 
     timers = Map.delete(timers, name)
 

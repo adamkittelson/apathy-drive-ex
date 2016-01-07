@@ -43,7 +43,7 @@ defmodule Spirit do
     send(self, :set_abilities)
 
     spirit =
-      spirit |> TimerManager.call_every({:regen_mana, 10_000, fn -> send(self, :regen_mana) end})
+      spirit |> TimerManager.call_every({:regen_mana, 10_000, :regen_mana})
 
     {:ok, Map.put(spirit, :pid, self)}
   end
@@ -522,20 +522,20 @@ defmodule Spirit do
   #   {:noreply, spirit}
   # end
 
-  def handle_info({:timeout, _ref, {name, time, function}}, %Spirit{timers: timers} = spirit) do
+  def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Spirit{timers: timers} = spirit) do
     jitter = trunc(time / 2) + :random.uniform(time)
 
-    new_ref = :erlang.start_timer(jitter, self, {name, time, function})
+    new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
 
     timers = Map.put(timers, name, new_ref)
 
-    TimerManager.execute_function(function)
+    apply module, function, args
 
     {:noreply, Map.put(spirit, :timers, timers)}
   end
 
-  def handle_info({:timeout, _ref, {name, function}}, %Spirit{timers: timers} = spirit) do
-    TimerManager.execute_function(function)
+  def handle_info({:timeout, _ref, {name, [module, function, args]}}, %Spirit{timers: timers} = spirit) do
+    apply module, function, args
 
     timers = Map.delete(timers, name)
 
