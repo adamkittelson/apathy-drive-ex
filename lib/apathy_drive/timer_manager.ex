@@ -10,6 +10,14 @@ defmodule ApathyDrive.TimerManager do
     Map.put(entity, :timers, timers)
   end
 
+  def send_after(%{timers: timers} = entity, {name, time, term}) do
+    ref = :erlang.start_timer(time, self, {name, [Kernel, :send, [self, term]]})
+
+    timers = Map.put(timers, name, ref)
+
+    Map.put(entity, :timers, timers)
+  end
+
   def call_every(%{timers: timers} = entity, {name, time, [module, function, args]}) do
     ref = :erlang.start_timer(time, self, {name, time, [module, function, args]})
 
@@ -18,8 +26,8 @@ defmodule ApathyDrive.TimerManager do
     Map.put(entity, :timers, timers)
   end
 
-  def send_every(%{timers: timers} = entity, {name, time, atom}) do
-    ref = :erlang.start_timer(time, self, {name, time, [Kernel, :send, [self, atom]]})
+  def send_every(%{timers: timers} = entity, {name, time, term}) do
+    ref = :erlang.start_timer(time, self, {name, time, [Kernel, :send, [self, term]]})
 
     timers = Map.put(timers, name, ref)
 

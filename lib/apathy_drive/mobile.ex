@@ -1409,6 +1409,29 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_info({:timer_cast_ability, %{ability: ability, timer: time, target: target}}, mobile) do
+    Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
+
+    ability = case ability do
+      %{"global_cooldown" => nil} ->
+        ability
+      %{"global_cooldown" => cooldown} ->
+        if cooldown > time do
+          Map.put(ability, "global_cooldown", cooldown - time)
+        else
+          ability
+          |> Map.delete("global_cooldown")
+          |> Map.put("ignores_global_cooldown", true)
+        end
+      _ ->
+        ability
+    end
+
+    send(self, {:execute_ability, Map.delete(ability, "cast_time"), target})
+
+    {:noreply, mobile}
+  end
+
   def handle_info({:execute_ability, ability}, monster) do
     {:noreply, Ability.execute(monster, ability, [self])}
   end

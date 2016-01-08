@@ -318,27 +318,6 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def timer_cast_ability(mobile, ability, time, target) do
-    Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
-
-    ability = case ability do
-      %{"global_cooldown" => nil} ->
-        ability
-      %{"global_cooldown" => cooldown} ->
-        if cooldown > time do
-          Map.put(ability, "global_cooldown", cooldown - time)
-        else
-          ability
-          |> Map.delete("global_cooldown")
-          |> Map.put("ignores_global_cooldown", true)
-        end
-      _ ->
-        ability
-    end
-
-    send(self, {:execute_ability, Map.delete(ability, "cast_time"), target})
-  end
-
   def execute(%Mobile{timers: timers} = mobile, %{"cast_time" => time} = ability, target) do
     if can_execute?(mobile, ability) do
       if ref = Map.get(timers, :cast_timer) do
@@ -348,7 +327,7 @@ defmodule ApathyDrive.Ability do
 
       Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
 
-      TimerManager.call_after(mobile, {:cast_timer, time |> seconds, [__MODULE__, :timer_cast_ability, [mobile, ability, time, target]]})
+      TimerManager.send_after(mobile, {:cast_timer, time |> seconds, {:timer_cast_ability, %{ability: ability, timer: time, target: target}}})
     else
       mobile
     end
@@ -651,9 +630,11 @@ defmodule ApathyDrive.Ability do
   def apply_instant_effects(%Mobile{} = mobile, %{"damage" => damage} = effects, %Mobile{} = ability_user) do
     mobile = put_in(mobile.hp, mobile.hp - damage)
 
-    enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))
+    unless mobile.pid == ability_user.pid do
+      enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))
 
-    mobile = put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + enmity end))
+      mobile = put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + enmity end))
+    end
 
     trigger_damage_shields(mobile, ability_user)
 
