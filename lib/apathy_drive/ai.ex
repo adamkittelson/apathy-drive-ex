@@ -33,7 +33,7 @@ defmodule ApathyDrive.AI do
     Map.put(mobile, :hate, hate)
   end
 
-  def heal(%Mobile{hp: hp, max_hp: max_hp} = mobile) do
+  def heal(%Mobile{hp: hp, max_hp: max_hp, spirit: nil} = mobile) do
     unless Ability.on_global_cooldown?(mobile) do
       chance = trunc((max_hp - hp) / max_hp * 100)
 
@@ -53,7 +53,7 @@ defmodule ApathyDrive.AI do
   end
   def heal(%Mobile{}), do: nil
 
-  def bless(%Mobile{} = mobile) do
+  def bless(%Mobile{spirit: nil} = mobile) do
     unless Ability.on_global_cooldown?(mobile) do
       ability = mobile
                 |> Ability.bless_abilities
@@ -65,8 +65,9 @@ defmodule ApathyDrive.AI do
       end
     end
   end
+  def bless(%Mobile{}), do: nil
 
-  def attack(%Mobile{} = mobile) do
+  def attack(%Mobile{spirit: nil} = mobile) do
     if target = Mobile.aggro_target(mobile) do
 
       attack = cond do

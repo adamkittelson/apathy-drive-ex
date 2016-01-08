@@ -497,7 +497,7 @@ defmodule ApathyDrive.Ability do
 
     gc * speed_modifier(speed_mods)
   end
-  def global_cooldown(%{}, %Mobile{} = mobile), do: global_cooldown(%{"global_cooldown" => 4}, mobile)
+  def global_cooldown(%{}, %Mobile{}), do: nil
 
   def speed_modifier([]), do: 1
   def speed_modifier(speed_mods) do
