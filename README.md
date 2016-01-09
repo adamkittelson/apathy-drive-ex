@@ -14,7 +14,7 @@ Now you can visit `localhost:4000` from your browser.
 
 ## world data backup / restore
 * pg_dump --table=abilities --table=class_abilities --table=classes --table=item_drops --table=items --table=lair_monsters --table=monster_abilities --table=monster_templates --table=rooms --table=scripts --data-only --dbname=apathy_drive -Fc > priv/data.dump
-* pg_restore --dbname=apathy_drive -U apathy_drive -h localhost /app/lib/apathy_drive-0.0.1/priv/data.dump
+* pg_restore --dbname=apathy_drive -U apathy_drive -W -h localhost /app/lib/apathy_drive-0.0.1/priv/data.dump
 
 
 ## docker setup
@@ -41,14 +41,14 @@ docker build .
 
 Successfully built e912a7f84cc2
 
-id=$(docker create a06ae519cc17)
+id=$(docker create 93cd87f415d1)
 docker cp $id:/usr/src/app/rel/apathy_drive/releases/0.0.1/apathy_drive.tar.gz apathy_drive.tar.gz
 docker rm -v $id
 
 scp apathy_drive.tar.gz apotheos.is:/home/deploy
 
 ssh apotheos.is
-sudo apathy_drive stop
+sudo stop apathy_drive
 sudo rm -rf /app
 sudo mkdir -p /app
 sudo chown deploy:deploy /app
@@ -58,7 +58,6 @@ tar xfz /home/deploy/apathy_drive.tar.gz
 ./bin/apathy_drive rpc Elixir.ApathyDrive.Repo truncate_world! "[]."
 
 pg_restore from above
-
 
 ./bin/apathy_drive start
 
