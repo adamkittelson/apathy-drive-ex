@@ -28,4 +28,8 @@ defmodule ApathyDrive.Repo do
                  |> Map.take([:id, :__meta__]))
   end
 
+  def truncate_world! do
+    Ecto.Adapters.SQL.query!(__MODULE__, "TRUNCATE class_abilities, item_drops, lair_monsters, monster_abilities, abilities, classes, items, monster_templates, rooms, scripts")
+  end
+
 end

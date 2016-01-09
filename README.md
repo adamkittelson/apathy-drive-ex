@@ -48,11 +48,17 @@ docker rm -v $id
 scp apathy_drive.tar.gz apotheos.is:/home/deploy
 
 ssh apotheos.is
+sudo apathy_drive stop
 sudo rm -rf /app
 sudo mkdir -p /app
 sudo chown deploy:deploy /app
 cd /app
 tar xfz /home/deploy/apathy_drive.tar.gz
+
+./bin/apathy_drive rpc Elixir.ApathyDrive.Repo truncate_world! "[]."
+
+pg_restore from above
+
 
 ./bin/apathy_drive start
 
