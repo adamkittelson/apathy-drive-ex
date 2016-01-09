@@ -34,8 +34,4 @@ defmodule ApathyDrive.Repo do
     |> Enum.each(&(Ecto.Adapters.SQL.query!(ApathyDrive.Repo, "DELETE FROM #{&1}", [])))
   end
 
-  def truncate_world! do
-    Ecto.Adapters.SQL.query!(__MODULE__, "TRUNCATE class_abilities, item_drops, lair_monsters, monster_abilities, abilities, classes, items, monster_templates, rooms, scripts")
-  end
-
 end

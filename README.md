@@ -41,7 +41,7 @@ docker build .
 
 Successfully built e912a7f84cc2
 
-id=$(docker create 93cd87f415d1)
+id=$(docker create 7573770908e4)
 docker cp $id:/usr/src/app/rel/apathy_drive/releases/0.0.1/apathy_drive.tar.gz apathy_drive.tar.gz
 docker rm -v $id
 
@@ -54,8 +54,9 @@ sudo mkdir -p /app
 sudo chown deploy:deploy /app
 cd /app
 tar xfz /home/deploy/apathy_drive.tar.gz
-
-./bin/apathy_drive rpc Elixir.ApathyDrive.Repo truncate_world! "[]."
+sudo start apathy_drive
+./bin/apathy_drive rpc Elixir.Ecto.Migrator run "['Elixir.ApathyDrive.Repo', <<\"//app/lib/apathy_drive-0.0.1/priv/repo/migrations\">>, up, [{all, true}]]."
+./bin/apathy_drive rpc Elixir.ApathyDrive.Repo drop_world! "[]."
 
 pg_restore from above
 
@@ -63,5 +64,5 @@ pg_restore from above
 
 ./bin/apathy_drive rpc Elixir.Ecto.Storage up "['Elixir.ApathyDrive.Repo']."
 
-./bin/apathy_drive rpc Elixir.Ecto.Migrator run "['Elixir.ApathyDrive.Repo', <<\"//app/lib/apathy_drive-0.0.1/priv/repo/migrations\">>, up, [{all, true}]]."
+
 
