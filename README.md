@@ -57,10 +57,10 @@ tar xfz /home/deploy/apathy_drive.tar.gz
 sudo start apathy_drive
 ./bin/apathy_drive rpc Elixir.Ecto.Migrator run "['Elixir.ApathyDrive.Repo', <<\"//app/lib/apathy_drive-0.0.1/priv/repo/migrations\">>, up, [{all, true}]]."
 ./bin/apathy_drive rpc Elixir.ApathyDrive.Repo drop_world! "[]."
+pg_restore --dbname=apathy_drive -U apathy_drive -W -h localhost /app/lib/apathy_drive-0.0.1/priv/data.dump
+sudo restart apathy_drive
 
-pg_restore from above
 
-./bin/apathy_drive start
 
 ./bin/apathy_drive rpc Elixir.Ecto.Storage up "['Elixir.ApathyDrive.Repo']."
 
