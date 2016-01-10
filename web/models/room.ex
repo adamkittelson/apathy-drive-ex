@@ -325,7 +325,7 @@ defmodule Room do
       0 ->
         ""
       _ ->
-        "<div class='items'>You notice #{Enum.join(items, ", ")} here.</div>"
+        "You notice #{Enum.join(items, ", ")} here."
     end
   end
 
