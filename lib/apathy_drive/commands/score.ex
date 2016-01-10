@@ -7,15 +7,16 @@ defmodule Commands.Score do
 
     score_data = Mobile.score_data(mobile)
 
-    hp = String.ljust("#{trunc(score_data.hp)}/#{score_data.max_hp}", 13)
+    hp = String.ljust("#{trunc(score_data.hp)}/#{score_data.max_hp}", 14)
     mana = "#{trunc(score_data.mana)}/#{score_data.max_mana}"
 
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{String.ljust(score_data.name, 13)}</span><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{score_data.class}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.level), 12)}</span><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{score_data.experience}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Hits:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span> <span class='dark-cyan'>#{mana}</span></p>")
+    Mobile.send_scroll(mobile, "<p> <span class='dark-green'>Name:</span> <span class='dark-cyan'>#{String.ljust(score_data.name, 13)}</span><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{score_data.class}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.level), 15)}</span><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{score_data.experience}</span></p>")
+    Mobile.send_scroll(mobile, "<p> <span class='dark-green'>Hits:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span> <span class='dark-cyan'>#{mana}</span></p>")
     Mobile.send_scroll(mobile, "\n\n")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Damage:</span>  <span class='dark-cyan'>#{score_data.physical_damage}</span> <span class='dark-green'>Magical Damage:</span>  <span class='dark-cyan'>#{score_data.magical_damage}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Defense:</span> <span class='dark-cyan'>#{Float.to_string(score_data.physical_defense, decimals: 2)}%</span> <span class='dark-green'>Magical Defense:</span> <span class='dark-cyan'>#{Float.to_string(score_data.magical_defense, decimals: 2)}%</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Damage:</span>  <span class='dark-cyan'>#{String.ljust(to_string(score_data.physical_damage), 6)}</span> <span class='dark-green'>Magical Damage:</span>  <span class='dark-cyan'>#{score_data.magical_damage}</span></p>")
+    phys_def = Float.to_string(score_data.physical_defense, decimals: 2) <> "%"
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Defense:</span> <span class='dark-cyan'>#{String.ljust(phys_def, 6)}</span> <span class='dark-green'>Magical Defense:</span> <span class='dark-cyan'>#{Float.to_string(score_data.magical_defense, decimals: 2)}%</span></p>")
     Mobile.send_scroll(mobile, "\n\n")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Strength:</span> <span class='dark-cyan'>#{score_data.strength}</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility:</span>  <span class='dark-cyan'>#{score_data.agility}</span></p>")
