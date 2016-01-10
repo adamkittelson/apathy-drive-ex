@@ -3,7 +3,7 @@ defmodule ApathyDrive.Mixfile do
 
   def project do
     [ app: :apathy_drive,
-      version: "0.0.1",
+      version: version(),
       elixir: "~> 1.2.0",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
@@ -43,6 +43,13 @@ defmodule ApathyDrive.Mixfile do
       {:conform_exrm,        "0.2.0"},
       {:shouldi,             "0.3.0", only: :test}
     ]
+  end
+
+  defp version do
+    ~r/[0-9]+/
+    |> Regex.scan(File.read!("VERSION.yml"))
+    |> List.flatten
+    |> Enum.join(".")
   end
 
   defp elixirc_paths(:test), do: ["lib", "web", "test/matchers", "test/support"]
