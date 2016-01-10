@@ -47,9 +47,7 @@ defmodule Commands.Look do
       room_id = room_id || Mobile.room_id(mobile)
       room_html = room_id
                   |> Room.find
-                  |> Room.html(mobile)
-
-      Mobile.send_scroll(mobile, room_html)
+                  |> Room.look_at_room(mobile)
     end
   end
 

@@ -214,10 +214,17 @@ defmodule Room do
     |> Enum.member?(direction)
   end
 
-  def html(room, mobile) do
+  def look_at_room(room, mobile) do
     data = get_look_data(room, mobile)
 
-    ~s(<div class='room'><div class='title'>#{data.lair_indicator}#{data.name}</div><div class='description'>#{data.description}</div>#{data.items}#{data.mobiles}#{data.exits}#{data.light}</div>)
+    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{data.name}</span></p>")
+    Mobile.send_scroll(mobile, "<p>    #{data.description}</p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{data.items}</span></p>")
+    Mobile.send_scroll(mobile, "<p>#{data.mobiles}</p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{data.exits}</span></p>")
+    if data.light do
+      Mobile.send_scroll(mobile, "<p>#{data.light}</p>")
+    end
   end
 
   def exit_direction("up"),      do: "upwards"
@@ -296,8 +303,8 @@ defmodule Room do
     "<span class='dark-cyan'>*</span>"
   end
 
-  def light_desc(light_level)  when light_level <= -100, do: "<div>The room is barely visible</div>"
-  def light_desc(light_level)  when light_level <=  -25, do: "<div>The room is dimly lit</div>"
+  def light_desc(light_level)  when light_level <= -100, do: "The room is barely visible"
+  def light_desc(light_level)  when light_level <=  -25, do: "The room is dimly lit"
   def light_desc(_light_level), do: nil
 
   def look_items(%Room{} = room) do
@@ -332,7 +339,7 @@ defmodule Room do
       "" ->
         ""
       mobiles ->
-        "<div class='monsters'><span class='dark-magenta'>Also here:</span> #{mobiles}<span class='dark-magenta'>.</span></div>"
+        "<span class='dark-magenta'>Also here:</span> #{mobiles}<span class='dark-magenta'>.</span>"
     end
   end
 
@@ -345,16 +352,16 @@ defmodule Room do
       "" ->
         ""
       mobiles ->
-        "<div class='monsters'><span class='dark-magenta'>Also here:</span> #{mobiles}<span class='dark-magenta'>.</span></div>"
+        "<span class='dark-magenta'>Also here:</span> #{mobiles}<span class='dark-magenta'>.</span>"
     end
   end
 
   def look_directions(%Room{} = room) do
     case exit_directions(room) do
       [] ->
-        "<div class='exits'>Obvious exits: NONE</div>"
+        "Obvious exits: NONE"
       directions ->
-        "<div class='exits'>Obvious exits: #{Enum.join(directions, ", ")}</div>"
+        "Obvious exits: #{Enum.join(directions, ", ")}"
     end
   end
 

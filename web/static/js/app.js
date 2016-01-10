@@ -1,7 +1,7 @@
 import "deps/phoenix_html/web/static/js/phoenix_html"
 import {Socket} from "deps/phoenix/web/static/js/phoenix"
 
-var addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, push;
+var pruneBackscroll, addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, push;
 focus = null;
 $('html').on('click', function(event) {
   if (window.getSelection().type !== "Range") {
@@ -80,12 +80,22 @@ chan.on("scroll", function(message){
 });
 
 push = function(event, message) {
-         chan.push(event, message)
-       };
+   chan.push(event, message)
+  };
+
+pruneBackscroll = function() {
+  var backscroll_size = 10000;
+  if ($("#scroll").children().length > backscroll_size) {
+
+    $("#scroll").children().first().remove();
+  };
+  console.log($("#scroll").children().length);
+};
 
 addToScroll = function(elem, text) {
   $(elem).append(text);
   $(elem).append($("#prompt").parent().detach());
+  pruneBackscroll();
   setFocus(focus);
   return adjustScrollTop();
 };
