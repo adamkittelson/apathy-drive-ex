@@ -7,9 +7,9 @@
     <div class="title"><%= if Room.lair_indicator(@room) do %><%= {:safe, Room.lair_indicator(@room) } %><% end %><%= @room.name %>
     </div>
     <div class="description"><%= @room.description %></div>
-    <%= {:safe, Room.look_items(@room)} %>
+    <div class="items"><%= {:safe, Room.look_items(@room)} %></div>
     <%= {:safe, Room.look_mobiles(@room)} %>
-    <%= {:safe, look_directions(@conn, @room)} %>
+    <div class="exits"><%= {:safe, look_directions(@conn, @room)} %></div>
     <%= if Room.light_desc(@room.light) do %>
       <%= {:safe, Room.light_desc(@room.light)} %>
     <% end %>
