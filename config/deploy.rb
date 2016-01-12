@@ -4,6 +4,10 @@ lock '3.4.0'
 set :application, 'apathy_drive'
 set :repo_url, 'git@example.com:me/my_repo.git'
 set :deploy_to, '/app'
+set :default_env, { 
+  'RELEASE_CONFIG_FILE' => '/home/deploy/apathy_drive.conf',
+  'VMARGS_PATH' => '/home/deploy/vm.args'
+}
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
@@ -40,7 +44,8 @@ Rake::Task["deploy"].clear_actions
 task :deploy do
   invoke "deploy:build"
   run_locally do
-    execute :scp, "apathy_drive.tar.gz", "apotheos.is:/home/deploy"
+    last_release = capture("ls rel/apathy_drive/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
+    execute :scp, "rel/apathy_drive/releases/#{last_release}/apathy_drive.tar.gz", "apotheos.is:/home/deploy"
   end
   on roles(:apathy_drive) do |host|
     execute :sudo, "stop", "apathy_drive"
@@ -54,6 +59,24 @@ end
 
 namespace :deploy do
 
+  desc "Perform a hot code upgrade"
+  task :hot do
+    invoke "deploy:build"
+    last_release = nil
+    run_locally do
+      last_release = capture("ls rel/apathy_drive/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
+    end
+    on roles(:apathy_drive) do |host|
+      execute :mkdir, "/app/releases/#{last_release}"
+    end
+    run_locally do
+      execute :scp, "rel/apathy_drive/releases/#{last_release}/apathy_drive.tar.gz", "apotheos.is:/app/releases/#{last_release}"
+    end
+    on roles(:apathy_drive) do |host|
+      execute "/app/bin/apathy_drive", "upgrade", last_release
+    end
+  end
+
   desc "Build release tarball"
   task :build do
     run_locally do
@@ -63,7 +86,7 @@ namespace :deploy do
       image_id = /Successfully built (\w+)/.match(build_output)[1]
       raise "build error" unless version && image_id
       container_id = capture("docker create #{image_id}")
-      `docker cp #{container_id}:/usr/src/app/rel/apathy_drive/releases/#{version}/apathy_drive.tar.gz apathy_drive.tar.gz`
+      `docker cp #{container_id}:/usr/src/app/rel/ .`
       `docker rm -v #{container_id}`
     end
   end

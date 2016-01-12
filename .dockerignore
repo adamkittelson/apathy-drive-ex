@@ -1,2 +1,3 @@
 _build/*
-rel/*
+/rel/apathy_drive/bin
+/rel/apathy_drive/erts-*
