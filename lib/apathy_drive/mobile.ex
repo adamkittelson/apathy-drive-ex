@@ -1667,7 +1667,12 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, {:shutdown, :closed}}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
+  def handle_info({:DOWN, _ref, :process, pid, {:normal, :timeout}}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
+    send(self, :disconnected)
+    {:noreply, Map.put(mobile, :socket, nil)}
+  end
+
+  def handle_info({:DOWN, _ref, :process, pid, reason}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
     Process.send_after(self, :disconnected, 30_000)
     {:noreply, Map.put(mobile, :socket, nil)}
   end
