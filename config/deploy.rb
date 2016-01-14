@@ -82,7 +82,7 @@ namespace :deploy do
     run_locally do
       `eval "$(docker-machine env apathy-drive-build)"`
       build_output = capture("docker build .")
-      version  = /The release for apathy_drive-(\d+\.\d+\.\d+) is ready!/.match(build_output)[1]
+      version  = /The release for apathy_drive-(\d+\.\d+\.\d+-\d+) is ready!/.match(build_output)[1]
       image_id = /Successfully built (\w+)/.match(build_output)[1]
       raise "build error" unless version && image_id
       container_id = capture("docker create #{image_id}")

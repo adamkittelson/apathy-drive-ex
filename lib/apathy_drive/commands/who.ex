@@ -5,7 +5,7 @@ defmodule Commands.Who do
   def keywords, do: ["who"]
 
   def execute(mobile, _arguments) do
-    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name                Faction               Possessing</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name                Faction</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>==============================================================</span></p>")
 
     ApathyDrive.PubSub.subscribers("spirits:online")
