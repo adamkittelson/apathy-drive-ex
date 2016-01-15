@@ -773,23 +773,12 @@ defmodule ApathyDrive.Mobile do
        end)
   end
 
-  def physical_damage_from_weapon(nil), do: 0
-  def physical_damage_from_weapon(%{"strength" => str, "agility" => agi, "will" => will}) do
-    physical_damage(str, agi, will)
-  end
-
-  def magical_damage_from_weapon(nil), do: 0
-  def magical_damage_from_weapon(%{"strength" => str, "agility" => agi, "will" => will}) do
-    magical_damage(str, agi, will)
-  end
-
   def physical_damage(%Mobile{} = mobile) do
     str = strength(mobile)
     agi = agility(mobile)
     wil = will(mobile)
 
-    damage =
-      (physical_damage(str, agi, wil) / 3) + physical_damage_from_weapon(weapon(mobile))
+    damage = physical_damage(str, agi, wil)
 
     max(trunc(damage), 1)
   end
@@ -805,8 +794,7 @@ defmodule ApathyDrive.Mobile do
     agi = agility(mobile)
     wil = will(mobile)
 
-    damage =
-      (magical_damage(str, agi, wil) / 3) + magical_damage_from_weapon(weapon(mobile))
+    damage = magical_damage(str, agi, wil)
 
     max(trunc(damage), 1)
   end
@@ -1672,7 +1660,7 @@ defmodule ApathyDrive.Mobile do
     {:noreply, Map.put(mobile, :socket, nil)}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, reason}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
     Process.send_after(self, :disconnected, 30_000)
     {:noreply, Map.put(mobile, :socket, nil)}
   end
