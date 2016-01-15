@@ -8,9 +8,9 @@ defmodule ApathyDrive.Mobile do
             socket: nil,
             hp: nil,
             max_hp: nil,
-            strength: 0,
-            agility: 0,
-            will: 0,
+            strength: 1,
+            agility: 1,
+            will: 1,
             description: "Some temporary description.",
             mana: nil,
             max_mana: nil,
@@ -26,14 +26,12 @@ defmodule ApathyDrive.Mobile do
             gender: nil,
             greeting: nil,
             abilities: [],
-            level: nil,
+            level: 1,
             hate: %{},
             timers: %{},
             flags: [],
             experience: nil,
             monster_template_id: nil,
-            physical_defense: 0,
-            magical_defense: 0,
             attack_target: nil,
             auto_attack_interval: 4.0,
             highest_armour_grade: 0,
@@ -131,7 +129,7 @@ defmodule ApathyDrive.Mobile do
 
     %{name: mobile.spirit.name,
       class: (mobile.monster_template_id && mobile.name) || mobile.spirit.class.name,
-      level: mobile.spirit.level,
+      level: level(mobile),
       experience: mobile.spirit.experience,
       hp: mobile.hp,
       max_hp: mobile.max_hp,
@@ -349,8 +347,6 @@ defmodule ApathyDrive.Mobile do
                    |> set_mana
                    |> set_max_hp
                    |> set_hp
-                   |> set_physical_defense
-                   |> set_magical_defense
 
         {:reply, {:ok, %{equipped: item, unequipped: [item_to_remove]}}, mobile}
       conflicting_worn_on(worn_on) |> Enum.any? ->
@@ -378,8 +374,6 @@ defmodule ApathyDrive.Mobile do
                    |> set_mana
                    |> set_max_hp
                    |> set_hp
-                   |> set_physical_defense
-                   |> set_magical_defense
 
         {:reply, {:ok, %{equipped: item, unequipped: items_to_remove}}, mobile}
       true ->
@@ -399,8 +393,6 @@ defmodule ApathyDrive.Mobile do
                  |> set_mana
                  |> set_max_hp
                  |> set_hp
-                 |> set_physical_defense
-                 |> set_magical_defense
 
         {:reply, {:ok, %{equipped: item}}, mobile}
     end
@@ -527,11 +519,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   def physical_defense(%Mobile{} = mobile) do
-    mobile.physical_defense + effect_bonus(mobile, "physical defense")
+    physical_damage(mobile) * (2 + 0.01 * level(mobile)) + effect_bonus(mobile, "physical defense")
   end
 
   def magical_defense(%Mobile{} = mobile) do
-    mobile.magical_defense + effect_bonus(mobile, "magical defense")
+    magical_damage(mobile) * (2 + 0.01 * level(mobile)) + effect_bonus(mobile, "magical defense")
   end
 
   def effect_bonus(%Mobile{effects: effects}, name) do
@@ -565,8 +557,6 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
-      |> set_physical_defense
-      |> set_magical_defense
       |> TimerManager.send_every({:monster_regen,    1_000, :regen})
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
@@ -599,15 +589,12 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:room_id, spirit.room_id)
       |> Map.put(:alignment, spirit.class.alignment)
       |> Map.put(:name, spirit.name)
-      |> Map.put(:level, spirit.level)
       |> set_highest_armour_grade
       |> set_abilities
       |> set_max_mana
       |> set_mana
       |> set_max_hp
       |> set_hp
-      |> set_physical_defense
-      |> set_magical_defense
       |> TimerManager.send_every({:monster_regen,    1_000, :regen})
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
@@ -654,10 +641,10 @@ defmodule ApathyDrive.Mobile do
     Map.put(mobile, :highest_armour_grade, highest_grade)
   end
 
-  def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit, level: level} = mobile) do
+  def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
     abilities =
      ApathyDrive.ClassAbility.for_spirit(spirit)
-     |> Enum.filter(&(Map.get(&1, "level", 0) <= level))
+     |> Enum.filter(&(Map.get(&1, "level", 0) <= level(mobile)))
      |> Enum.reject(&(Map.get(&1, "min_armour_type", 0) > mobile.highest_armour_grade))
      |> Enum.reject(&(Map.get(&1, "max_armour_type", 10) < mobile.highest_armour_grade))
      |> add_abilities_from_equipment(spirit.equipment)
@@ -713,8 +700,8 @@ defmodule ApathyDrive.Mobile do
 
     Map.put(mobile, "abilities", abilities)
   end
-  def adjust_mana_cost(%Mobile{level: level}, %{"mana_cost" => base} = ability) do
-    Map.put(ability, "mana_cost",  trunc(base + base * ((level * 0.1) * ((level * 0.1)))))
+  def adjust_mana_cost(%Mobile{} = mobile, %{"mana_cost" => base} = ability) do
+    Map.put(ability, "mana_cost",  trunc(base + base * ((level(mobile) * 0.1) * ((level(mobile) * 0.1)))))
   end
   def adjust_mana_cost(%Mobile{}, %{} = ability), do: ability
 
@@ -740,30 +727,8 @@ defmodule ApathyDrive.Mobile do
     Map.put(mobile, :max_hp, trunc(strength(mobile) * (3 + (0.3 * level(mobile)))))
   end
 
-  def level(%Mobile{spirit: nil, level: level}), do: level
-  def level(%Mobile{spirit: spirit}), do: spirit.level
-
-  def set_physical_defense(%Mobile{} = mobile) do
-    Map.put(mobile, :physical_defense, physical_defense_from_items(mobile))
-  end
-
-  def set_magical_defense(%Mobile{} = mobile) do
-    Map.put(mobile, :magical_defense, magical_defense_from_items(mobile))
-  end
-
-  def physical_defense_from_items(%Mobile{spirit: nil}), do: 0
-  def physical_defense_from_items(%Mobile{spirit: %Spirit{equipment: equipment}}) do
-    Enum.reduce(equipment, 0, fn(item, total) ->
-      total + item["physical_defense"]
-    end)
-  end
-
-  def magical_defense_from_items(%Mobile{spirit: nil}), do: 0
-  def magical_defense_from_items(%Mobile{spirit: %Spirit{equipment: equipment}}) do
-    Enum.reduce(equipment, 0, fn(item, total) ->
-      total + item["magical_defense"]
-    end)
-  end
+  def level(%Mobile{spirit: nil, level: level}),     do: level
+  def level(%Mobile{spirit: %Spirit{level: level}}), do: level
 
   def weapon(%Mobile{spirit: nil}), do: nil
   def weapon(%Mobile{spirit: %Spirit{equipment: equipment}}) do
@@ -822,7 +787,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def attribute(%Mobile{spirit: spirit, monster_template_id: nil} = mobile, attribute) do
-    ((spirit.level - 1) * Map.get(spirit.class, :"#{attribute}_per_level")) +
+    ((level(mobile) - 1) * Map.get(spirit.class, :"#{attribute}_per_level")) +
     Map.get(spirit.class, :"#{attribute}") +
     attribute_from_equipment(mobile, attribute)
   end
@@ -1009,7 +974,7 @@ defmodule ApathyDrive.Mobile do
     {:reply, :possessed, mobile}
   end
 
-  def handle_call({:construct_item, item_name}, _from, %Mobile{spirit: %Spirit{inventory: inventory, experience: exp, level: level} = spirit, monster_template_id: nil} = mobile) do
+  def handle_call({:construct_item, item_name}, _from, %Mobile{spirit: %Spirit{inventory: inventory, experience: exp} = spirit, monster_template_id: nil} = mobile) do
     alias ApathyDrive.Item
 
     match =
@@ -1030,7 +995,7 @@ defmodule ApathyDrive.Mobile do
         cost > exp ->
           {:reply, {:not_enough_essence, item_name}, mobile}
         true ->
-          constructed_item = Item.generate_item(%{item_id: item.id, level: level})
+          constructed_item = Item.generate_item(%{item_id: item.id, level: level(mobile)})
 
           mobile =
             put_in(mobile.spirit.experience, exp - cost)
@@ -1131,8 +1096,6 @@ defmodule ApathyDrive.Mobile do
                    |> set_mana
                    |> set_max_hp
                    |> set_hp
-                   |> set_physical_defense
-                   |> set_magical_defense
 
           Repo.save!(mobile.spirit)
 

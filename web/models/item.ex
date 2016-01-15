@@ -6,8 +6,6 @@ defmodule ApathyDrive.Item do
     field :description, :string
     field :weight, :integer
     field :worn_on, :string
-    field :physical_defense, :integer
-    field :magical_defense, :integer
     field :level, :integer
     field :strength, :integer
     field :agility, :integer
@@ -18,7 +16,7 @@ defmodule ApathyDrive.Item do
     timestamps
   end
 
-  @required_fields ~w(name description weight worn_on physical_defense magical_defense level strength agility will grade)
+  @required_fields ~w(name description weight worn_on level strength agility will grade)
   @optional_fields ~w()
 
   @doc """
