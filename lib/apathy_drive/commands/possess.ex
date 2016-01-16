@@ -28,6 +28,8 @@ defmodule Commands.Possess do
   def possess(mobile, target) do
     case Mobile.possess(target, Mobile.spirit_id(mobile), self) do
       :ok ->
+        Mobile.remove_effects(mobile)
+
         Process.unlink(mobile)
         Process.exit(mobile, :kill)
       {:error, reason} ->

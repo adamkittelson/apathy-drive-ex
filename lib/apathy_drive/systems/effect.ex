@@ -24,13 +24,13 @@ defmodule Systems.Effect do
     add_effect(entity, key, effect)
   end
 
-  def add_effect(%{effects: effects} = entity, key, %{"stack_key" => stack_key, "stack_count" => stack_count} = effect) do
+  def add_effect(%{effects: effects, last_effect_key: last_effect} = entity, key, %{"stack_key" => stack_key, "stack_count" => stack_count} = effect) do
     case stack_count(entity, stack_key) do
       count when count < stack_count ->
         effects = Map.put(effects, key, effect)
         entity
         |> Map.put(:effects, effects)
-        |> Map.put(:last_effect_key, key)
+        |> Map.put(:last_effect_key, last_effect + 1)
       _count ->
         entity
         |> remove_oldest_stack(effect["stack_key"])
@@ -38,7 +38,7 @@ defmodule Systems.Effect do
     end
   end
 
-  def add_effect(%{effects: effects} = entity, key, effect) do
+  def add_effect(%{effects: effects, last_effect_key: last_effect} = entity, key, effect) do
     if Map.has_key?(effect, "application_message") do
       send_scroll(entity, "<p><span class='dark-yellow'>#{effect["application_message"]}</span></p>")
     end
@@ -50,7 +50,7 @@ defmodule Systems.Effect do
     effects = Map.put(effects, key, effect)
     entity
     |> Map.put(:effects, effects)
-    |> Map.put(:last_effect_key, key)
+    |> Map.put(:last_effect_key, last_effect + 1)
   end
 
   def remove_oldest_stack(%{effects: _effects} = entity, stack_key) do
@@ -65,6 +65,14 @@ defmodule Systems.Effect do
     remove(entity, oldest)
   end
 
+  def remove_all(%{effects: effects} = entity) do
+    effects
+    |> Map.keys
+    |> Enum.reduce(entity, fn(key, entity) ->
+         remove(entity, key)
+       end)
+  end
+
   def remove(%{effects: effects} = entity, key, opts \\ []) do
     case effects[key] do
       %{} ->
@@ -75,7 +83,7 @@ defmodule Systems.Effect do
         if Map.has_key?(effects[key], "expiration_message") do
           send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["expiration_message"]}</span></p>")
         end
-        
+
         if Map.has_key?(effects[key], "member") do
           ApathyDrive.PubSub.unsubscribe(self, effects[key]["member"])
         end

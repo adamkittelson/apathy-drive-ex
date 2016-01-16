@@ -68,6 +68,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :ability_list)
   end
 
+  def remove_effects(pid) do
+    GenServer.call(pid, :remove_effects)
+  end
+
   def greeting(pid) do
     GenServer.call(pid, :greeting)
   end
@@ -881,6 +885,10 @@ defmodule ApathyDrive.Mobile do
   end
   def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: _, effects: _effects} = mobile) do
     {:reply, {:error, "You are already possessing #{mobile.name}."}, mobile}
+  end
+
+  def handle_call(:remove_effects, _from, mobile) do
+    {:reply, :ok, Systems.Effect.remove_all(mobile)}
   end
 
   def handle_call({:attack, target}, _from, mobile) do
