@@ -1,7 +1,7 @@
 defmodule ApathyDrive.ClassAbilityController do
   use ApathyDrive.Web, :controller
 
-  alias ApathyDrive.{Ability, ClassAbility}
+  alias ApathyDrive.{Ability, ClassAbility, Class}
 
   plug :scrub_params, "class_ability" when action in [:create, :update]
 
@@ -13,13 +13,13 @@ defmodule ApathyDrive.ClassAbilityController do
                              from: params["from"])
   end
 
-  def create(conn, %{"lair_monster" => lair_params} = params) do
-    changeset = ClassAbility.changeset(%ClassAbility{}, lair_params)
+  def create(conn, %{"class_ability" => class_ability_params} = params) do
+    changeset = ClassAbility.changeset(%ClassAbility{}, class_ability_params)
 
     case Repo.insert(changeset) do
       {:ok, _item} ->
         conn
-        |> put_flash(:info, "Lair monster created successfully.")
+        |> put_flash(:info, "Class Ability created successfully.")
         |> redirect(to: params["from"])
       {:error, changeset} ->
         render(conn, "new.html", changeset: changeset,

@@ -54,6 +54,15 @@ defmodule ApathyDrive.Class do
     Repo.get(__MODULE__, id).start_room_id
   end
 
+  def datalist do
+    __MODULE__
+    |> Repo.all
+    |> Enum.map(fn(class) ->
+         "#{class.name} - #{class.id}"
+       end)
+  end
+
+
   defp update_params(:empty), do: :empty
   defp update_params(params) do
     params

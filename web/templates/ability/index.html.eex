@@ -1,0 +1,60 @@
+<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+
+<div class="row">
+  <div class="two columns">
+    &nbsp;
+    <%= if @page_number > 1 do %>
+      <%= link "Previous Page", to: ability_path(@conn, :index, page: @page_number - 1, q: @q), class: "button button-primary" %>
+    <% end %>
+  </div>
+  <div class="eight columns">&nbsp;</div>
+  <div class="two columns">
+    &nbsp;
+    <%= if @page_number < @total_pages do %>
+      <%= link "Next Page", to: ability_path(@conn, :index, page: @page_number + 1, q: assigns[:q]), class: "button button-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="ability-index">
+  <table class="u-full-width">
+    <tr>
+      <th>Abilities - Page <%= @page_number %> of <%= @total_pages %></th>
+      <th style="width: 180px;">Search<input id="search"/></th>
+    </tr>
+  </table>
+  <%= for ability <- @abilities do %>
+    <div class="ability">
+      <table class="u-full-width admin-index">
+        <tr>
+          <th>Name</th>
+          <th>Command</th>
+          <th>Type</th>
+          <th>Mana</th>
+          <th>Duration</th>
+          <td rowspan="4" class="text-right" style="width: 175px;">
+            <%= link "Show", to: ability_path(@conn, :show, ability), class: "button button-primary" %>
+            <%= link "Edit", to: ability_path(@conn, :edit, ability), class: "button button-primary" %>
+            <%= link "Delete", to: ability_path(@conn, :delete, ability), method: :delete, class: "button button-primary", onclick: "return confirm('Are you sure?')" %></td>
+        </tr>
+        <tr>
+          <td rowspan="2"><%= ability.properties["name"] %></td>
+          <td><%= ability.properties["command"] %></td>
+          <td><%= ability.properties["kind"] %></td>
+          <td><%= ability.properties["mana_cost"] %></td>
+          <td><%= ability.properties["duration"] || "-" %></td>
+        </tr>
+        <tr>
+          <td colspan="4"><%= ability.properties["description"] %></td>
+        </tr>
+      </table>
+    </div>
+  <% end %>
+</div>
+  <%= link "New ability", to: ability_path(@conn, :new), class: "button button-primary", style: "margin-top: 1em;" %>
+
+<script>require("web/static/js/jquery-linedtextarea")</script>
+<script>require("web/static/js/json-format")</script>
+<script>require("web/static/js/json-parser")</script>
+<script>require("web/static/js/json-edit")</script>
+

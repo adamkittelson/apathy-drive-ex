@@ -7,20 +7,32 @@ defmodule ApathyDrive.AbilityController do
   plug :scrub_params, "ability" when action in [:create, :update]
 
   def index(conn, %{"q" => query} = params) do
-    query = "%#{query}%"
 
-    page =
-      Ability
-      |> where([r], ilike(r.name, ^query))
-      |> order_by([r], asc: r.id)
-      |> Repo.paginate(params)
+    if query == "" do
+      page =
+        ApathyDrive.Ability
+        |> Repo.paginate(params)
 
-    render(conn, "index.html",
-      abilities: page.entries,
-      page_number: page.page_number,
-      page_size: page.page_size,
-      total_pages: page.total_pages,
-      q: params["q"])
+      render(conn, "index.html",
+        abilities: page.entries,
+        page_number: page.page_number,
+        page_size: page.page_size,
+        total_pages: page.total_pages,
+        q: params["q"])
+    else
+      page =
+        ApathyDrive.Ability
+        |> ApathyDrive.Repo.all
+        |> Stream.filter(&(String.contains?(&1.properties["name"] |> to_string, query)))
+        |> Enum.sort_by(&(&1.id))
+
+      render(conn, "index.html",
+        abilities: page,
+        page_number: 1,
+        page_size: length(page),
+        total_pages: 1,
+        q: params["q"])
+    end
   end
 
   def index(conn, params) do

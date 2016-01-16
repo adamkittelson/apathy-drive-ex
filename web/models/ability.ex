@@ -20,6 +20,15 @@ defmodule ApathyDrive.Ability do
     |> Map.get(:properties)
   end
 
+  def datalist do
+    __MODULE__
+    |> Repo.all
+    |> Enum.map(fn(ability) ->
+         "#{ability.properties["name"]} - #{ability.id}"
+       end)
+  end
+
+
   def changeset(model, params \\ :empty) do
     model
     |> cast(params, @required_fields, @optional_fields)

@@ -43,6 +43,10 @@ defmodule Systems.Effect do
       send_scroll(entity, "<p><span class='dark-yellow'>#{effect["application_message"]}</span></p>")
     end
 
+    if Map.has_key?(effect, "member") do
+      ApathyDrive.PubSub.subscribe(self, effect["member"])
+    end
+
     effects = Map.put(effects, key, effect)
     entity
     |> Map.put(:effects, effects)
@@ -70,6 +74,10 @@ defmodule Systems.Effect do
 
         if Map.has_key?(effects[key], "expiration_message") do
           send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["expiration_message"]}</span></p>")
+        end
+        
+        if Map.has_key?(effects[key], "member") do
+          ApathyDrive.PubSub.unsubscribe(self, effects[key]["member"])
         end
 
         if Map.has_key?(effects[key], "timers") do

@@ -298,6 +298,13 @@ input.prompt {
     border-bottom-color: #33C3F0; }
 }
 
+.ability-index table {
+  margin: 0px;
+}
+.ability th:first-child {
+ width: 100px;
+}
+
 table {
   th, td {
     padding: 5px 5px;
@@ -323,6 +330,10 @@ table.admin-index {
   p {
     margin-bottom: 0px;
   }
+}
+
+td.ability-cell {
+  td { padding: 0px; border: none;}
 }
 
 .CodeMirror {

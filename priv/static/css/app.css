@@ -1231,64 +1231,77 @@ input.prompt {
     border-bottom-color: #33C3F0; } }
 
 /* line 301, stdin */
+.ability-index table {
+  margin: 0px; }
+
+/* line 304, stdin */
+.ability th:first-child {
+  width: 100px; }
+
+/* line 308, stdin */
 table {
   margin-top: 1rem; }
-  /* line 302, stdin */
+  /* line 309, stdin */
   table th, table td {
     padding: 5px 5px;
     border: 1px solid #E1E1E1; }
-  /* line 306, stdin */
+  /* line 313, stdin */
   table th:first-child, table td:first-child {
     padding: 5px 5px; }
 
-/* line 313, stdin */
+/* line 320, stdin */
 table.admin-index th, table.admin-index td {
   padding: 5px; }
-  /* line 315, stdin */
+  /* line 322, stdin */
   table.admin-index th form, table.admin-index td form {
     margin-bottom: 0; }
-/* line 319, stdin */
+/* line 326, stdin */
 table.admin-index .button {
   width: 100%;
   margin-top: 4px; }
-/* line 323, stdin */
+/* line 330, stdin */
 table.admin-index p {
   margin-bottom: 0px; }
 
-/* line 328, stdin */
+/* line 336, stdin */
+td.ability-cell td {
+  padding: 0px;
+  border: none; }
+
+/* line 339, stdin */
 .CodeMirror {
   height: inherit;
   margin-bottom: 1.5rem;
   border: 1px solid silver; }
 
-/* line 334, stdin */
+/* line 345, stdin */
 #nav-title {
   font-size: 25px;
   font-weight: 100;
   letter-spacing: 5px; }
 
-/* line 340, stdin */
+/* line 351, stdin */
 h1.title {
   font-weight: 100;
   letter-spacing: 5px;
   text-transform: uppercase; }
 
-/* line 346, stdin */
+/* line 357, stdin */
 a.anchor {
   display: block;
   position: relative;
   top: -7rem;
   visibility: hidden; }
 
-/* line 348, stdin */
+/* line 359, stdin */
 #fb {
   margin-top: 40px; }
 
-/* line 350, stdin */
+/* line 361, stdin */
 .alert {
   color: red; }
 
-/* line 352, stdin */
+/* line 363, stdin */
 textarea.json {
   height: 500px;
   margin: 0;
@@ -1300,11 +1313,11 @@ textarea.json {
   text-indent: 0px;
   line-height: normal !important; }
 
-/* line 364, stdin */
+/* line 375, stdin */
 .linedwrap {
   margin-bottom: 2em; }
 
-/* line 366, stdin */
+/* line 377, stdin */
 form.link {
   margin-bottom: 0; }
 

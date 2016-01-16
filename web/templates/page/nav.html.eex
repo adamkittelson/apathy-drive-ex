@@ -54,6 +54,9 @@
           <div id="systemPopover" class="popover">
             <ul class="popover-list">
               <li class="popover-item">
+                <a class="popover-link" href="/system/abilities">Abilities</a>
+              </li>
+              <li class="popover-item">
                 <a class="popover-link" href="/system/classes">Classes</a>
               </li>
               <li class="popover-item">
