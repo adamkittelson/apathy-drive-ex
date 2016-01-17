@@ -30,6 +30,7 @@ defmodule ApathyDrive.PubSub do
   end
 
   def subscribe(pid, topic, opts \\ []) do
+    unsubscribe(pid, topic)
     Phoenix.PubSub.subscribe(:pub_sub, pid, topic, opts)
   end
 

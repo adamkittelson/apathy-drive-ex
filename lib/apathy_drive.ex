@@ -9,8 +9,7 @@ defmodule ApathyDrive do
     children = [
       worker(ApathyDrive.Endpoint, []),
       worker(ApathyDrive.Repo, []),
-      #worker(ApathyDrive.Ticks, [%{timers: %{}}]),
-      #worker(ApathyDrive.Factions, [])
+      worker(ApathyDrive.Unity, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

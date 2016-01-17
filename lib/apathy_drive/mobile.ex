@@ -149,7 +149,6 @@ defmodule ApathyDrive.Mobile do
       magical_damage: magical_damage(mobile)}
   end
 
-
   def value(pid) do
     GenServer.call(pid, :value)
   end
@@ -173,6 +172,14 @@ defmodule ApathyDrive.Mobile do
   end
   def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "evil"}}}) do
     "<span class='magenta'>#{name}</span>"
+  end
+
+  def experience(mobile) do
+    GenServer.call(mobile, :experience)
+  end
+
+  def effects(mobile) do
+    GenServer.call(mobile, :effects)
   end
 
   def look_at_item(%Mobile{} = mobile, item) do
@@ -675,11 +682,19 @@ defmodule ApathyDrive.Mobile do
       |> Enum.filter(&(Map.has_key?(&1, "passive_effects")))
       |> Enum.map(&(%{"name" => "passive_#{&1["name"]}", "passive_effects" => &1["passive_effects"]}))
 
-    passives_to_remove = original_passives -- Enum.map(new_passives, &(Map.get(&1, "name")))
+
+    new_passive_names = Enum.map(new_passives, &(Map.get(&1, "name")))
+    passives_to_remove = original_passives -- new_passive_names
+    passive_names_to_add = new_passive_names -- original_passives
 
     mobile = remove_passive_effects(mobile, passives_to_remove)
 
-    new_passives
+    passives_to_add =
+      Enum.reduce(passive_names_to_add, [], fn(passive_name, to_add) ->
+        [Enum.find(new_passives, &(&1["name"] == passive_name)) | to_add]
+      end)
+
+    passives_to_add
     |> Enum.reduce(mobile, fn(%{"name" => name, "passive_effects" => effect}, new_mobile) ->
          Systems.Effect.add_effect(new_mobile, name, effect)
        end)
@@ -889,6 +904,14 @@ defmodule ApathyDrive.Mobile do
 
   def handle_call(:remove_effects, _from, mobile) do
     {:reply, :ok, Systems.Effect.remove_all(mobile)}
+  end
+
+  def handle_call(:experience, _from, mobile) do
+    {:reply, mobile.spirit.experience, mobile}
+  end
+
+  def handle_call(:effects, _from, mobile) do
+    {:reply, mobile.effects, mobile}
   end
 
   def handle_call({:attack, target}, _from, mobile) do
