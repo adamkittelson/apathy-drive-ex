@@ -56,8 +56,7 @@ defmodule Spirit do
   """
   def changeset(spirit, params \\ :empty) do
     spirit
-    |> cast(params, ~w(name class_id), ~w(gender))
-    |> validate_inclusion(:class_id, ApathyDrive.Class.ids)
+    |> cast(params, ~w(name), ~w(gender))
     |> validate_inclusion(:gender, ["male", "female", nil])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, on: Repo)
