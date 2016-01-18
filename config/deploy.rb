@@ -4,7 +4,7 @@ lock '3.4.0'
 set :application, 'apathy_drive'
 set :repo_url, 'git@example.com:me/my_repo.git'
 set :deploy_to, '/app'
-set :default_env, { 
+set :default_env, {
   'RELEASE_CONFIG_FILE' => '/home/deploy/apathy_drive.conf',
   'VMARGS_PATH' => '/home/deploy/vm.args'
 }
@@ -57,7 +57,41 @@ task :deploy do
   end
 end
 
+namespace :db do
+
+  desc "Create DB"
+  task :create do
+    on roles(:apathy_drive) do |host|
+      execute "/app/bin/apathy_drive", "rpc", "Elixir.Ecto.Storage", "up", "\"['Elixir.ApathyDrive.Repo'].\""
+    end
+  end
+
+  desc "Run DB Migrations"
+  task :migrate do
+    on roles(:apathy_drive) do |host|
+      last_release = capture("ls /app/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
+      execute "/app/bin/apathy_drive", "rpc", "Elixir.Ecto.Migrator", "run", "\"['Elixir.ApathyDrive.Repo', <<\\\"/app/lib/apathy_drive-#{last_release}/priv/repo/migrations\\\">>, up, [{all, true}]].\""
+    end
+  end
+
+  desc "Drop / Load Game World State"
+  task :reload do
+    on roles(:apathy_drive) do |host|
+      last_release = capture("ls /app/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
+      execute "/app/bin/apathy_drive", "rpc", "Elixir.ApathyDrive.Repo", "drop_world!", "\"[].\""
+      execute :pg_restore, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "/app/lib/apathy_drive-#{last_release}/priv/data.dump"
+    end
+  end
+end
+
 namespace :deploy do
+
+  desc "Restart application"
+  task :restart do
+    on roles(:apathy_drive) do |host|
+      execute :sudo, "restart", "apathy_drive"
+    end
+  end
 
   desc "Perform a hot code upgrade"
   task :hot do
