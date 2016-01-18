@@ -1313,6 +1313,8 @@ defmodule ApathyDrive.Mobile do
       mobile = mobile
                |> Map.put(:spirit, new_spirit)
                |> set_abilities
+               |> set_max_mana
+               |> set_max_hp
 
       send_scroll(mobile, "<p>You've advanced to level #{new_spirit.level}!</p>")
 
