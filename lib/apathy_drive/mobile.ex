@@ -746,7 +746,8 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_mana(%Mobile{} = mobile) do
-    Map.put(mobile, :max_mana, trunc(will(mobile) * (0.9 + (0.09 * level(mobile)))))
+    attr = div((will(mobile) * 2) + agility(mobile), 3)
+    Map.put(mobile, :max_mana, trunc(attr * (0.9 + (0.09 * level(mobile)))))
   end
 
   def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
@@ -757,7 +758,8 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_hp(%Mobile{} = mobile) do
-    Map.put(mobile, :max_hp, trunc(strength(mobile) * (3 + (0.3 * level(mobile)))))
+    attr = div((strength(mobile) * 2) + agility(mobile), 3)
+    Map.put(mobile, :max_hp, trunc(attr * (3 + (0.3 * level(mobile)))))
   end
 
   def level(%Mobile{spirit: nil, level: level}),     do: level
@@ -781,10 +783,8 @@ defmodule ApathyDrive.Mobile do
     max(trunc(damage), 1)
   end
 
-  def physical_damage(str, agi, wil) do
-    total = str + agi + wil
-
-    total * (str / (str + wil))
+  def physical_damage(str, agi, _wil) do
+    div((str * 2) + agi, 2)
   end
 
   def magical_damage(%Mobile{} = mobile) do
@@ -797,10 +797,8 @@ defmodule ApathyDrive.Mobile do
     max(trunc(damage), 1)
   end
 
-  def magical_damage(str, agi, wil) do
-    total = str + agi + wil
-
-    total * (wil / (str + wil))
+  def magical_damage(_str, agi, wil) do
+    div((wil * 2) + agi, 2)
   end
 
   def strength(%Mobile{} = mobile) do
