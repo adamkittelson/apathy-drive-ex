@@ -52,6 +52,16 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:list_forms, slot})
   end
 
+  def forms(mobile) when is_pid(mobile) do
+    GenServer.call(mobile, :forms)
+  end
+  def forms(%Mobile{spirit: nil}), do: nil
+  def forms(%Mobile{spirit: spirit}) do
+    spirit
+    |> Ecto.Model.assoc(:recipe_items)
+    |> ApathyDrive.Repo.all
+  end
+
   def add_experience(mobile, exp) do
     GenServer.cast(mobile, {:add_experience, exp})
   end
@@ -318,7 +328,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def construct_item(mobile, item) do
-    GenServer.call(mobile, {:construct_item, item})
+    GenServer.cast(mobile, {:construct_item, item})
   end
 
   def drop_item(mobile, item) do
@@ -694,10 +704,14 @@ defmodule ApathyDrive.Mobile do
         [Enum.find(new_passives, &(&1["name"] == passive_name)) | to_add]
       end)
 
-    passives_to_add
+    mobile = passives_to_add
     |> Enum.reduce(mobile, fn(%{"name" => name, "passive_effects" => effect}, new_mobile) ->
          Systems.Effect.add_effect(new_mobile, name, effect)
        end)
+
+    ApathyDrive.Unity.update_forms
+
+    mobile
   end
 
   def remove_passive_effects(%Mobile{} = mobile, effect_keys_to_remove) do
@@ -895,6 +909,10 @@ defmodule ApathyDrive.Mobile do
     send(self, :execute_auto_attack)
   end
 
+  def handle_call(:forms, _ref, mobile) do
+    {:reply, forms(mobile), mobile}
+  end
+
   def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: nil} = mobile) do
     {:reply, :ok, mobile}
   end
@@ -1002,47 +1020,6 @@ defmodule ApathyDrive.Mobile do
     end
   end
   def handle_call({:get_item, %{"weight" => _weight} = _item}, _from, %Mobile{monster_template_id: _} = mobile) do
-    {:reply, :possessed, mobile}
-  end
-
-  def handle_call({:construct_item, item_name}, _from, %Mobile{spirit: %Spirit{inventory: inventory, experience: exp} = spirit, monster_template_id: nil} = mobile) do
-    alias ApathyDrive.Item
-
-    match =
-      spirit
-      |> Ecto.Model.assoc(:recipe_items)
-      |> ApathyDrive.Repo.all
-      |> Enum.map(&(%{name: &1.name, keywords: String.split(&1.name), item: &1}))
-      |> Systems.Match.one(:name_contains, item_name)
-
-    if match do
-      item = match.item
-
-      cost = Item.experience(item.strength + item.agility + item.will) * 10
-
-      cond do
-        remaining_encumbrance(mobile) < item.weight ->
-          {:reply, {:too_heavy, item.name}, mobile}
-        cost > exp ->
-          {:reply, {:not_enough_essence, item_name}, mobile}
-        true ->
-          constructed_item = Item.generate_item(%{item_id: item.id, level: level(mobile)})
-
-          mobile =
-            put_in(mobile.spirit.experience, exp - cost)
-
-          mobile =
-            put_in(mobile.spirit.inventory, [constructed_item | inventory])
-
-            Repo.save!(mobile.spirit)
-
-          {:reply, {:ok, constructed_item["name"], cost}, mobile}
-      end
-    else
-      {:reply, :not_found, mobile}
-    end
-  end
-  def handle_call({:construct_item, _item}, _from, %Mobile{monster_template_id: _} = mobile) do
     {:reply, :possessed, mobile}
   end
 
@@ -1328,31 +1305,13 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_cast({:list_forms, limb}, %Mobile{spirit: spirit} = mobile) do
-    Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
-    spirit
-    |> Ecto.Model.assoc(:recipe_items)
-    |> ApathyDrive.Repo.all
-    |> Enum.reduce(%{}, fn(item, items) ->
-         items
-         |> Map.put_new(item.worn_on, [])
-         |> update_in([item.worn_on], &([item | &1]))
-       end)
-    |> Enum.each(fn({slot, items}) ->
-         if String.downcase(slot) == String.downcase(limb) or limb == "" do
-           Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>#{slot}</span></p>")
-           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost | STR | AGI | WIL | Item Name</span></p>")
-           Enum.each(items, fn(item) ->
-             exp =
-              (ApathyDrive.Item.experience(item.strength + item.agility + item.will) * 10)
-              |> to_string
-              |> String.ljust(12)
+  def handle_cast({:construct_item, item_name}, mobile) do
+    ApathyDrive.Unity.construct(self, forms(mobile), item_name)
+    {:noreply, mobile}
+  end
 
-             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(item.strength), 3)} | #{String.rjust(to_string(item.agility), 3)} | #{String.rjust(to_string(item.will), 3)} | #{item.name} </span></p>")
-           end)
-           Mobile.send_scroll(mobile, "<p>\n</p>")
-         end
-       end)
+  def handle_cast({:list_forms, limb}, %Mobile{} = mobile) do
+    ApathyDrive.Unity.forms(self, limb)
 
     {:noreply, mobile}
   end
@@ -1366,6 +1325,7 @@ defmodule ApathyDrive.Mobile do
 
     case Repo.insert(form) do
       {:ok, _recipe} ->
+        ApathyDrive.Unity.update_forms
         Mobile.send_scroll(mobile, "<p>You gain knowledge of #{name}'s <span class='green'>form</span>, allowing you to <span class='green'>construct</span> it from raw essence.</p>")
       {:error, _} ->
         :noop
@@ -1390,6 +1350,53 @@ defmodule ApathyDrive.Mobile do
     class_name = String.downcase(spirit.class.name)
 
     ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
+    {:noreply, mobile}
+  end
+
+  def handle_info({:construct_item, item_name, nil}, mobile) do
+    Mobile.send_scroll(mobile, "<p>You don't know how to construct a #{item_name}.</p>")
+    {:noreply, mobile}
+  end
+  def handle_info({:construct_item, _item_name, match}, %Mobile{spirit: %Spirit{inventory: inventory, experience: exp}} = mobile) do
+    alias ApathyDrive.Item
+
+    item = match.item
+
+    cost = Item.experience(item.strength + item.agility + item.will) * 10
+
+    cond do
+      remaining_encumbrance(mobile) < item.weight ->
+        Mobile.send_scroll(mobile, "<p>A #{item.name} would be too heavy for you to hold.</p>")
+        {:noreply, mobile}
+      cost > exp ->
+        Mobile.send_scroll(mobile, "<p>You don't have enough essence to construct #{item.name}.</p>")
+        {:noreply, mobile}
+      true ->
+        constructed_item = Item.generate_item(%{item_id: item.id, level: level(mobile)})
+
+        mobile =
+          put_in(mobile.spirit.experience, exp - cost)
+
+        mobile =
+          put_in(mobile.spirit.inventory, [constructed_item | inventory])
+
+          Repo.save!(mobile.spirit)
+
+        Mobile.send_scroll(mobile, "<p>You construct a #{item.name} using #{cost} of your essence.</p>")
+
+        {:noreply, mobile}
+    end
+  end
+
+  def handle_info({:list_forms, :non_member, limb}, mobile) do
+    list_forms(mobile, forms(mobile), limb)
+
+    {:noreply, mobile}
+  end
+
+  def handle_info({:list_forms, forms, limb}, mobile) do
+    list_forms(mobile, forms, limb)
+
     {:noreply, mobile}
   end
 
@@ -1663,6 +1670,7 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info(:disconnected, %Mobile{monster_template_id: nil, spirit: spirit, socket: nil} = mobile) do
     ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
+    ApathyDrive.Unity.update_forms
     {:stop, :normal, mobile}
   end
 
@@ -1769,6 +1777,37 @@ defmodule ApathyDrive.Mobile do
   end
   defp value(_pre, post) do
     "#{post}"
+  end
+
+  defp list_forms(mobile, forms, limb) do
+    personal_forms = forms(mobile)
+
+    Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
+
+    forms
+    |> Enum.reduce(%{}, fn(item, items) ->
+         items
+         |> Map.put_new(item.worn_on, [])
+         |> update_in([item.worn_on], &([item | &1]))
+       end)
+    |> Enum.each(fn({slot, items}) ->
+         if String.downcase(slot) == String.downcase(limb) or limb == "" do
+           Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>#{slot}</span></p>")
+           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost | STR | AGI | WIL | Item Name</span></p>")
+           Enum.each(items, fn(item) ->
+             exp =
+              (ApathyDrive.Item.experience(item.strength + item.agility + item.will) * 10)
+              |> to_string
+              |> String.ljust(12)
+
+             mark = if item in personal_forms, do: "", else: "<span class='white'>*</span>"
+
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(item.strength), 3)} | #{String.rjust(to_string(item.agility), 3)} | #{String.rjust(to_string(item.will), 3)} | #{item.name} #{mark}</span></p>")
+           end)
+           Mobile.send_scroll(mobile, "<p>\n</p>")
+           Mobile.send_scroll(mobile, "<p><span class='white'>*</span> = via Angelic Unity</p>")
+         end
+       end)
   end
 
 end
