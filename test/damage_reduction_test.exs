@@ -5,7 +5,7 @@ defmodule DamageReductionTest do
 
   having "a Mobile with no physical defense and 1000 magical defense" do
     setup context do
-      Dict.put context, :mobile, %Mobile{strength: 1, agility: 249, will: 249}
+      Dict.put context, :mobile, %Mobile{strength: 0, agility: 0, will: 249}
     end
 
     should("take full damage from an ability with no mitigations", context) do
@@ -20,12 +20,12 @@ defmodule DamageReductionTest do
       assert Mobile.reduce_damage(context.mobile, 1000, ["physical defense"]) == 999
     end
 
-    should("take 560 damage from an ability mitigated only by magical defense", context) do
-      assert Mobile.reduce_damage(context.mobile, 1000, ["magical defense"]) == 560
+    should("take 779 damage from an ability mitigated only by magical defense", context) do
+      assert Mobile.reduce_damage(context.mobile, 1000, ["magical defense"]) == 779
     end
 
-    should("take 560 damage from an ability mitigated only by physical defense and magical defense", context) do
-      assert Mobile.reduce_damage(context.mobile, 1000, ["physical defense", "magical defense"]) == 559
+    should("take 779 damage from an ability mitigated only by physical defense and magical defense", context) do
+      assert Mobile.reduce_damage(context.mobile, 1000, ["physical defense", "magical defense"]) == 779
     end
   end
 
@@ -57,7 +57,7 @@ defmodule DamageReductionTest do
 
   having "a Mobile with 500 physical defense, 0 magical defense and 50 fire resistance" do
     setup context do
-      Dict.put context, :mobile, %Mobile{strength: 165, agility: 165, will: 1, effects: %{"test" => %{"fire resistance" => 50}}}
+      Dict.put context, :mobile, %Mobile{strength: 165, agility: 0, will: 0, effects: %{"test" => %{"fire resistance" => 50}}}
     end
 
     should("take full damage from an ability with no mitigations", context) do
