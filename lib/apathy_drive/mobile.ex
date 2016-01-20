@@ -540,11 +540,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   def physical_defense(%Mobile{} = mobile) do
-    physical_damage(mobile) * (2 + 0.01 * level(mobile)) + effect_bonus(mobile, "physical defense")
+    physical_damage(mobile) * (4 + 0.01 * level(mobile)) + effect_bonus(mobile, "physical defense")
   end
 
   def magical_defense(%Mobile{} = mobile) do
-    magical_damage(mobile) * (2 + 0.01 * level(mobile)) + effect_bonus(mobile, "magical defense")
+    magical_damage(mobile) * (4 + 0.01 * level(mobile)) + effect_bonus(mobile, "magical defense")
   end
 
   def effect_bonus(%Mobile{effects: effects}, name) do
@@ -744,7 +744,7 @@ defmodule ApathyDrive.Mobile do
 
   def set_max_mana(%Mobile{} = mobile) do
     attr = div((will(mobile) * 2) + agility(mobile), 3)
-    Map.put(mobile, :max_mana, trunc(attr * (0.9 + (0.09 * level(mobile)))))
+    Map.put(mobile, :max_mana, trunc(attr * (0.09 + (0.009 * level(mobile)))))
   end
 
   def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
@@ -756,7 +756,7 @@ defmodule ApathyDrive.Mobile do
 
   def set_max_hp(%Mobile{} = mobile) do
     attr = div((strength(mobile) * 2) + agility(mobile), 3)
-    Map.put(mobile, :max_hp, trunc(attr * (3 + (0.3 * level(mobile)))))
+    Map.put(mobile, :max_hp, trunc(attr * (0.3 + (0.03 * level(mobile)))))
   end
 
   def level(%Mobile{spirit: nil, level: level}),     do: level
@@ -781,7 +781,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def physical_damage(str, agi, _wil) do
-    div((str * 2) + agi, 2)
+    div((str * 2) + agi, 20)
   end
 
   def magical_damage(%Mobile{} = mobile) do
@@ -795,7 +795,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def magical_damage(_str, agi, wil) do
-    div((wil * 2) + agi, 2)
+    div((wil * 2) + agi, 20)
   end
 
   def strength(%Mobile{} = mobile) do
@@ -810,8 +810,8 @@ defmodule ApathyDrive.Mobile do
     attribute(mobile, :will)
   end
 
-  def attribute(%Mobile{spirit: nil} = mobile, attribute) do
-    Map.get(mobile, attribute)
+  def attribute(%Mobile{spirit: nil, level: level}, _attribute) do
+    50 + (10 * level)
   end
 
   def attribute(%Mobile{spirit: spirit, monster_template_id: nil} = mobile, attribute) do
