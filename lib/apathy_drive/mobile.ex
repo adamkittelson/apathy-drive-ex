@@ -665,9 +665,6 @@ defmodule ApathyDrive.Mobile do
   def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
     abilities =
      ApathyDrive.ClassAbility.for_spirit(spirit)
-     |> Enum.filter(&(Map.get(&1, "level", 0) <= level(mobile)))
-     |> Enum.reject(&(Map.get(&1, "min_armour_type", 0) > mobile.highest_armour_grade))
-     |> Enum.reject(&(Map.get(&1, "max_armour_type", 10) < mobile.highest_armour_grade))
      |> add_abilities_from_equipment(spirit.equipment)
 
     mobile

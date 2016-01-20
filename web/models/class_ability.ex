@@ -47,7 +47,7 @@ defmodule ApathyDrive.ClassAbility do
     |> where([ca], ca.level <= ^level)
     |> preload(:ability)
     |> ApathyDrive.Repo.all
-    |> Enum.map(&(&1.ability.properties))
+    |> Enum.map(&(Map.merge(%{"level" => &1.level}, &1.ability.properties)))
   end
 
   def monsters_template_ids(room_id) do
