@@ -821,7 +821,7 @@ defmodule Room do
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:mobiles", {:execute_room_ability, ability})
+    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:execute_room_ability, ability})
 
     {:noreply, room}
   end

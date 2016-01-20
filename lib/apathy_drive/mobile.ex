@@ -1454,7 +1454,10 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles:#{mobile.alignment}")
 
     if mobile.spirit do
+      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
       mobile = put_in(mobile.spirit.room_id, mobile.room_id)
+      ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
+
       Spirit.save(mobile.spirit)
       {:noreply, mobile}
     else
