@@ -26,8 +26,6 @@
       <th>Name</th>
       <th>Weight</th>
       <th>Worn on</th>
-      <th>Physical defense</th>
-      <th>Magical defense</th>
       <th>Level</th>
       <th>Strength</th>
       <th>Agility</th>
@@ -43,8 +41,6 @@
       <td><%= item.name %></td>
       <td><%= item.weight %></td>
       <td><%= item.worn_on %></td>
-      <td><%= item.physical_defense %></td>
-      <td><%= item.magical_defense %></td>
       <td><%= item.level %></td>
       <td><%= item.strength %></td>
       <td><%= item.agility %></td>

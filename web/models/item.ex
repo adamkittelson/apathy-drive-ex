@@ -65,7 +65,6 @@ defmodule ApathyDrive.Item do
     item
     |> Map.from_struct
     |> Map.take([:name, :description, :weight, :worn_on,
-                 :physical_defense, :magical_defense,
                  :level, :strength, :agility, :will, :grade, :abilities, :id])
     |> Poison.encode! # dirty hack to
     |> Poison.decode! # stringify the keys
