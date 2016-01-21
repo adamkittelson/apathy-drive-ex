@@ -836,7 +836,7 @@ defmodule ApathyDrive.Mobile do
 
   def attribute_from_equipment(%Mobile{spirit: nil}, _), do: 0
   def attribute_from_equipment(%Mobile{spirit: %Spirit{equipment: equipment}}, attribute) do
-    Enum.reduce(equipment, 0, &(&2 + &1[Atom.to_string(attribute)]))
+    Enum.reduce(equipment, 0, &(&2 + apply(ApathyDrive.Item, attribute, [&1])))
   end
 
   def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
@@ -1357,7 +1357,7 @@ defmodule ApathyDrive.Mobile do
 
     item = match.item
 
-    cost = Item.experience(item.strength + item.agility + item.will) * 10
+    cost = Item.experience(Item.strength(item) + Item.agility(item) + Item.will(item)) * 10
 
     cond do
       remaining_encumbrance(mobile) < item.weight ->
@@ -1778,6 +1778,8 @@ defmodule ApathyDrive.Mobile do
   end
 
   defp list_forms(mobile, forms, limb) do
+    alias ApathyDrive.Item
+
     personal_forms = forms(mobile)
 
     Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
@@ -1794,18 +1796,18 @@ defmodule ApathyDrive.Mobile do
            Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost | STR | AGI | WIL | Item Name</span></p>")
            Enum.each(items, fn(item) ->
              exp =
-              (ApathyDrive.Item.experience(item.strength + item.agility + item.will) * 10)
+              (ApathyDrive.Item.experience(Item.strength(item) + Item.agility(item) + Item.will(item)) * 10)
               |> to_string
               |> String.ljust(12)
 
              mark = if item in personal_forms, do: "", else: "<span class='white'>*</span>"
 
-             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(item.strength), 3)} | #{String.rjust(to_string(item.agility), 3)} | #{String.rjust(to_string(item.will), 3)} | #{item.name} #{mark}</span></p>")
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(Item.strength(item)), 3)} | #{String.rjust(to_string(Item.agility(item)), 3)} | #{String.rjust(to_string(Item.will(item)), 3)} | #{item.name} #{mark}</span></p>")
            end)
            Mobile.send_scroll(mobile, "<p>\n</p>")
-           Mobile.send_scroll(mobile, "<p><span class='white'>*</span> = via Angelic Unity</p>")
          end
        end)
+    Mobile.send_scroll(mobile, "<p><span class='white'>*</span> = via Angelic Unity</p>")
   end
 
 end

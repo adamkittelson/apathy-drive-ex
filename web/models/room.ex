@@ -910,6 +910,7 @@ defmodule Room do
       |> Enum.map(fn(%{item_id: item_id, chance: chance}) ->
            ApathyDrive.Item.generate_item(%{chance: chance, item_id: item_id, level: level})
          end)
+      |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: 20, item_id: :global, level: level}))
       |> Enum.reject(&is_nil/1)
 
     room =

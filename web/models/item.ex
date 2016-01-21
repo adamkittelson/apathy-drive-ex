@@ -7,16 +7,14 @@ defmodule ApathyDrive.Item do
     field :weight, :integer
     field :worn_on, :string
     field :level, :integer
-    field :strength, :integer
-    field :agility, :integer
-    field :will, :integer
-    field :grade, :integer
+    field :grade, :string
     field :abilities, ApathyDrive.JSONB
+    field :global_drop, :boolean
 
     timestamps
   end
 
-  @required_fields ~w(name description weight worn_on level strength agility will grade)
+  @required_fields ~w(name description weight worn_on level grade)
   @optional_fields ~w()
 
   @doc """
@@ -30,12 +28,14 @@ defmodule ApathyDrive.Item do
     |> cast(params, @required_fields, @optional_fields)
   end
 
-  def items_below_level(level) do
-    query =
-      from i in __MODULE__,
-      where: i.level <= ^level
-
-    Repo.all(query)
+  def random_item_id_below_level(level) do
+    count = Repo.one(from item in __MODULE__, select: count(item.id), where: item.level <= ^level and item.global_drop == true)
+    case Ecto.Adapters.SQL.query!(Repo, "SELECT id FROM items where level <= #{level} and global_drop = true OFFSET floor(random()*#{count}) LIMIT 1;", []) do
+      %{rows: [[item_id]]} ->
+        item_id
+      _ ->
+        nil
+    end
   end
 
   def datalist do
@@ -52,6 +52,11 @@ defmodule ApathyDrive.Item do
       |> Map.delete(:chance)
       |> generate_item
     end
+  end
+
+  def generate_item(%{item_id: :global, level: level}) do
+    item_id = random_item_id_below_level(level)
+    generate_item(%{item_id: item_id, level: level})
   end
 
   def generate_item(%{item_id: item_id, level: level}) do
@@ -82,7 +87,11 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def enhance(%{"strength" => str, "agility" => agi, "will" => will} = item) do
+  def enhance(item) do
+    str = strength(item)
+    agi = agility(item)
+    will = will(item)
+
     case :random.uniform(str + agi + will) do
       roll when roll > (str + agi) ->
         Map.put(item, "will", will + 1)
@@ -93,7 +102,11 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def deconstruction_experience(%{"strength" => str, "agility" => agi, "will" => will}) do
+  def deconstruction_experience(item) do
+    str = strength(item)
+    agi = agility(item)
+    will = will(item)
+
     experience(str + agi + will)
   end
 
@@ -103,4 +116,35 @@ defmodule ApathyDrive.Item do
          total + n
        end)
   end
+
+  def strength(%{level: level, grade: "light"}),            do: 1 + div(level, 2)
+  def strength(%{level: level, grade: "medium"}),           do: 1 + div(level, 2)
+  def strength(%{level: level, grade: "heavy"}),            do: 2 + level
+  def strength(%{level: level, grade: "blunt"}),            do: 1 + div(level, 2)
+  def strength(%{level: level, grade: "blade"}),            do: 1 + div(level, 2)
+  def strength(%{level: level, grade: "two handed blunt"}), do: 2 + level
+  def strength(%{level: level, grade: "two handed blade"}), do: 2 + level
+  def strength(%{"strength" => str}),                       do: str
+  def strength(%{"level" => level, "grade" => grade}),      do: strength(%{level: level, grade: grade})
+
+  def agility(%{level: level, grade: "light"}),            do: 1 + div(level, 2)
+  def agility(%{level: level, grade: "medium"}),           do: 2 + level
+  def agility(%{level: level, grade: "heavy"}),            do: 1 + div(level, 2)
+  def agility(%{level: level, grade: "blunt"}),            do: 1 + div(level, 2)
+  def agility(%{level: level, grade: "blade"}),            do: 1 + div(level, 2)
+  def agility(%{level: level, grade: "two handed blunt"}), do: 2 + level
+  def agility(%{level: level, grade: "two handed blade"}), do: 2 + level
+  def agility(%{"agility" => agi}),                        do: agi
+  def agility(%{"level" => level, "grade" => grade}),      do: agility(%{level: level, grade: grade})
+
+  def will(%{level: level, grade: "light"}),            do: 2 + level
+  def will(%{level: level, grade: "medium"}),           do: 1 + div(level, 2)
+  def will(%{level: level, grade: "heavy"}),            do: 1 + div(level, 2)
+  def will(%{level: level, grade: "blunt"}),            do: 1 + div(level, 2)
+  def will(%{level: level, grade: "blade"}),            do: 1 + div(level, 2)
+  def will(%{level: level, grade: "two handed blunt"}), do: 2 + level
+  def will(%{level: level, grade: "two handed blade"}), do: 2 + level
+  def will(%{"will" => will}),                          do: will
+  def will(%{"level" => level, "grade" => grade}),      do: will(%{level: level, grade: grade})
+
 end

@@ -27,9 +27,6 @@
       <th>Weight</th>
       <th>Worn on</th>
       <th>Level</th>
-      <th>Strength</th>
-      <th>Agility</th>
-      <th>Will</th>
       <th>Grade</th>
 
       <th></th>
@@ -42,9 +39,6 @@
       <td><%= item.weight %></td>
       <td><%= item.worn_on %></td>
       <td><%= item.level %></td>
-      <td><%= item.strength %></td>
-      <td><%= item.agility %></td>
-      <td><%= item.will %></td>
       <td><%= item.grade %></td>
 
       <td class="text-right">

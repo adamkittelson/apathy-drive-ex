@@ -3,7 +3,7 @@ defmodule ApathyDrive.ItemTest do
 
   alias ApathyDrive.Item
 
-  @valid_attrs %{agility: 42, description: "some content", grade: 42, level: 42, magical_defense: 42, name: "some content", physical_defense: 42, strength: 42, weight: 42, will: 42, worn_on: "some content"}
+  @valid_attrs %{description: "some content", grade: "light", level: 42,  name: "some content", weight: 42, worn_on: "some content"}
   @invalid_attrs %{}
 
   test "changeset with valid attributes" do
