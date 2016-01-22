@@ -89,7 +89,6 @@ pruneBackscroll = function() {
 
     $("#scroll").children().first().remove();
   };
-  console.log($("#scroll").children().length);
 };
 
 addToScroll = function(elem, text) {
