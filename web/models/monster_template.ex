@@ -183,13 +183,11 @@ defmodule MonsterTemplate do
       gender: monster_template.gender,
       greeting: monster_template.greeting,
       level: monster_template.level,
-      strength: monster_template.strength,
-      agility: monster_template.agility,
-      will: monster_template.will,
       experience: monster_template.experience,
       monster_template_id: monster_template.id,
       abilities: Enum.map(monster_template.abilities, &(&1.properties)),
-      questions: monster_template.questions
+      questions: monster_template.questions,
+      flags: monster_template.flags
     }
 
     monster =
