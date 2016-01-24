@@ -24,9 +24,6 @@ defmodule MonsterTemplate do
     field :experience,             :integer
     field :last_killed_at,         Timex.Ecto.DateTime
     field :regen_time_in_minutes,  :integer
-    field :strength,               :integer
-    field :agility,                :integer
-    field :will,                   :integer
 
     has_many :monsters, Monster
     has_many :lairs, ApathyDrive.LairMonster

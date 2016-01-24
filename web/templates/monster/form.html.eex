@@ -22,18 +22,8 @@
   </div>
 
   <div class="form-group">
-    <%= label f, :strength, "Strength", class: "control-label" %>
-    <%= text_input f, :strength, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%= label f, :agility, "Agility", class: "control-label" %>
-    <%= text_input f, :agility, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%= label f, :will, "Will", class: "control-label" %>
-    <%= text_input f, :will, class: "form-control" %>
+    <%= label f, :level, "Level", class: "control-label" %>
+    <%= text_input f, :level, class: "form-control" %>
   </div>
 
   <div class="form-group">
