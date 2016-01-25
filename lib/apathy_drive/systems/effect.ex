@@ -80,7 +80,7 @@ defmodule Systems.Effect do
           ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [self])
         end
 
-        if Map.has_key?(effects[key], "expiration_message") do
+        if opts[:show_expiration_message] && Map.has_key?(effects[key], "expiration_message") do
           send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["expiration_message"]}</span></p>")
         end
 

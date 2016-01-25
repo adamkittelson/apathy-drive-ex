@@ -163,6 +163,14 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def scale_effect(%Mobile{} = mobile, "drain", %{"potency" => potency, "type" => type}) do
+    if type == "magical" do
+      trunc((potency/300) * (Mobile.magical_damage(mobile) + (0.2229 * Mobile.will(mobile))))
+    else
+      trunc((potency/300) * (Mobile.physical_damage(mobile) + (0.2229 * Mobile.strength(mobile))))
+    end
+  end
+
   def scale_effect(%Mobile{}, _effect_name, %{"potency" => potency}) do
     potency
   end
@@ -611,7 +619,7 @@ defmodule ApathyDrive.Ability do
     put_in(ability, ["instant_effects", "damage"], max(damage, 1))
   end
   def reduce_damage(%{"instant_effects" => %{"drain" => drain}} = ability, mobile, ability_user) do
-     reduce_damage(put_in(ability, ["instant_effects", "damage"], drain), mobile, ability_user)
+    reduce_damage(put_in(ability, ["instant_effects", "damage"], drain), mobile, ability_user)
   end
   def reduce_damage(%{} = ability, _mobile, _ability_user) do
     ability
@@ -631,10 +639,10 @@ defmodule ApathyDrive.Ability do
 
   def apply_instant_effects(%Mobile{} = mobile, nil, _ability_user), do: mobile
   def apply_instant_effects(%Mobile{} = mobile, %{} = effects, _ability_user) when map_size(effects) == 0, do: mobile
-  def apply_instant_effects(%Monster{} = monster, %{"drain" => _} = effects, ability_user) do
-    send(ability_user.pid, {:apply_ability, %Ability{properties: %{"instant_effects" => %{"heal" => effects["damage"]}}}, monster})
+  def apply_instant_effects(%Mobile{} = mobile, %{"drain" => _} = effects, ability_user) do
+    send(ability_user.pid, {:apply_ability, %{"instant_effects" => %{"heal" => effects["damage"]}}, mobile})
 
-    apply_instant_effects(monster, Map.delete(effects, "drain"), ability_user)
+    apply_instant_effects(mobile, Map.delete(effects, "drain"), ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"damage" => damage} = effects, %Mobile{} = ability_user) do
     mobile = put_in(mobile.hp, mobile.hp - damage)

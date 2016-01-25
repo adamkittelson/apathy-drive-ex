@@ -403,7 +403,7 @@ defmodule Room do
                 effects[key][:open] == direction
               end)
            |> Enum.reduce(room, fn(room, key) ->
-                Systems.Effect.remove(room, key)
+                Systems.Effect.remove(room, key, show_expiration_message: true)
               end)
 
     exits = room.exits
@@ -430,7 +430,7 @@ defmodule Room do
          effects[key][:unlocked] == direction
        end)
     |> Enum.reduce(room, fn(key, room) ->
-         Systems.Effect.remove(room, key)
+         Systems.Effect.remove(room, key, show_expiration_message: true)
        end)
   end
 
@@ -847,7 +847,7 @@ defmodule Room do
   end
 
   def handle_info({:remove_effect, key}, room) do
-    room = Systems.Effect.remove(room, key, fire_after_cast: true)
+    room = Systems.Effect.remove(room, key, fire_after_cast: true, show_expiration_message: true)
     {:noreply, room}
   end
 
@@ -867,7 +867,7 @@ defmodule Room do
            |> Enum.filter(fn(key) ->
                 room.effects[key][:triggered] == direction
               end)
-           |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1)))
+           |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1, show_expiration_message: true)))
 
     {:noreply, room}
   end
@@ -910,7 +910,7 @@ defmodule Room do
       |> Enum.map(fn(%{item_id: item_id, chance: chance}) ->
            ApathyDrive.Item.generate_item(%{chance: chance, item_id: item_id, level: level})
          end)
-      |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: 20, item_id: :global, level: level}))
+      |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: 50, item_id: :global, level: level}))
       |> Enum.reject(&is_nil/1)
 
     room =

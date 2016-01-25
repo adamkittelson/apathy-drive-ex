@@ -540,11 +540,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   def physical_defense(%Mobile{} = mobile) do
-    physical_damage(mobile) * (4 + 0.01 * level(mobile)) + effect_bonus(mobile, "physical defense")
+    (physical_damage(mobile) * 2) * (4 + 0.01 * level(mobile)) + effect_bonus(mobile, "physical defense")
   end
 
   def magical_defense(%Mobile{} = mobile) do
-    magical_damage(mobile) * (4 + 0.01 * level(mobile)) + effect_bonus(mobile, "magical defense")
+    (magical_damage(mobile) * 2) * (4 + 0.01 * level(mobile)) + effect_bonus(mobile, "magical defense")
   end
 
   def effect_bonus(%Mobile{effects: effects}, name) do
@@ -713,7 +713,7 @@ defmodule ApathyDrive.Mobile do
 
   def remove_passive_effects(%Mobile{} = mobile, effect_keys_to_remove) do
     Enum.reduce(effect_keys_to_remove, mobile, fn(effect_key, new_mobile) ->
-      Systems.Effect.remove(new_mobile, effect_key)
+      Systems.Effect.remove(new_mobile, effect_key, show_expiration_message: true)
     end)
   end
 
@@ -744,7 +744,7 @@ defmodule ApathyDrive.Mobile do
 
   def set_max_mana(%Mobile{} = mobile) do
     attr = div((will(mobile) * 2) + agility(mobile), 3)
-    Map.put(mobile, :max_mana, trunc(attr * (0.09 + (0.009 * level(mobile)))))
+    Map.put(mobile, :max_mana, trunc(attr * (0.18 + (0.018 * level(mobile)))))
   end
 
   def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
@@ -756,7 +756,7 @@ defmodule ApathyDrive.Mobile do
 
   def set_max_hp(%Mobile{} = mobile) do
     attr = div((strength(mobile) * 2) + agility(mobile), 3)
-    Map.put(mobile, :max_hp, trunc(attr * (0.3 + (0.03 * level(mobile)))))
+    Map.put(mobile, :max_hp, trunc(attr * (0.6 + (0.06 * level(mobile)))))
   end
 
   def level(%Mobile{spirit: nil, level: level}),     do: level
@@ -777,11 +777,11 @@ defmodule ApathyDrive.Mobile do
 
     damage = physical_damage(str, agi, wil)
 
-    max(trunc(damage), 1)
+    max(damage, 1)
   end
 
   def physical_damage(str, agi, _wil) do
-    div((str * 2) + agi, 20)
+    ((str * 2) + agi) / 20
   end
 
   def magical_damage(%Mobile{} = mobile) do
@@ -791,11 +791,11 @@ defmodule ApathyDrive.Mobile do
 
     damage = magical_damage(str, agi, wil)
 
-    max(trunc(damage), 1)
+    max(damage, 1)
   end
 
   def magical_damage(_str, agi, wil) do
-    div((wil * 2) + agi, 20)
+    ((wil * 2) + agi) / 20
   end
 
   def strength(%Mobile{} = mobile) do
@@ -1515,7 +1515,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info({:remove_effect, key}, mobile) do
-    mobile = Systems.Effect.remove(mobile, key, fire_after_cast: true)
+    mobile = Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
     {:noreply, mobile}
   end
 
@@ -1759,19 +1759,19 @@ defmodule ApathyDrive.Mobile do
   defp conflicting_worn_on(_), do: []
 
   defp value(pre, post) when pre > post and is_float(pre) and is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}%(<span class='dark-red'>#{Float.to_string(post - pre, decimals: 2)}%</span>)"
+    "#{Float.to_string(post, decimals: 2)}(<span class='dark-red'>#{Float.to_string(post - pre, decimals: 2)}</span>)"
   end
   defp value(pre, post) when pre > post do
     "#{post}(<span class='dark-red'>#{post - pre}</span>)"
   end
   defp value(pre, post) when pre < post and is_float(pre) and is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}%(<span class='green'>+#{Float.to_string(post - pre, decimals: 2)}%</span>)"
+    "#{Float.to_string(post, decimals: 2)}(<span class='green'>+#{Float.to_string(post - pre, decimals: 2)}</span>)"
   end
   defp value(pre, post) when pre < post do
     "#{post}(<span class='green'>+#{post - pre}</span>)"
   end
   defp value(_pre, post) when is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}%"
+    "#{Float.to_string(post, decimals: 2)}"
   end
   defp value(_pre, post) do
     "#{post}"
