@@ -8,9 +8,9 @@ defmodule ApathyDrive.Mobile do
             socket: nil,
             hp: nil,
             max_hp: nil,
-            strength: 1,
-            agility: 1,
-            will: 1,
+            strength: nil,
+            agility: nil,
+            will: nil,
             description: "Some temporary description.",
             mana: nil,
             max_mana: nil,
@@ -775,9 +775,7 @@ defmodule ApathyDrive.Mobile do
     agi = agility(mobile)
     wil = will(mobile)
 
-    damage = physical_damage(str, agi, wil)
-
-    max(damage, 1)
+    physical_damage(str, agi, wil)
   end
 
   def physical_damage(str, agi, _wil) do
@@ -789,9 +787,7 @@ defmodule ApathyDrive.Mobile do
     agi = agility(mobile)
     wil = will(mobile)
 
-    damage = magical_damage(str, agi, wil)
-
-    max(damage, 1)
+    magical_damage(str, agi, wil)
   end
 
   def magical_damage(_str, agi, wil) do
@@ -810,9 +806,13 @@ defmodule ApathyDrive.Mobile do
     attribute(mobile, :will)
   end
 
-  def attribute(%Mobile{spirit: nil, level: level}, _attribute) do
+  def attribute(%Mobile{spirit: nil, strength: nil, agility: nil, will: nil, level: level}, _attribute) do
     50 + (10 * level)
   end
+
+  def attribute(%Mobile{spirit: nil, strength: str}, :strength), do: str
+  def attribute(%Mobile{spirit: nil, agility:  agi}, :agility),  do: agi
+  def attribute(%Mobile{spirit: nil, will:    will}, :will),     do: will
 
   def attribute(%Mobile{spirit: spirit, monster_template_id: nil} = mobile, attribute) do
     ((level(mobile) - 1) * Map.get(spirit.class, :"#{attribute}_per_level")) +
