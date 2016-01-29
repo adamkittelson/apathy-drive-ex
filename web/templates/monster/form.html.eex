@@ -27,6 +27,11 @@
   </div>
 
   <div class="form-group">
+    <%= label f, :questions, "Questions", class: "control-label" %>
+    <%= jsonarea f, :questions, class: "u-full-width" %>
+  </div>
+
+  <div class="form-group">
     <%= submit "Submit", class: "button button-primary" %>
   </div>
 

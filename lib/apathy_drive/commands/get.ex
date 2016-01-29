@@ -26,9 +26,6 @@ defmodule Commands.Get do
           :too_heavy ->
             Room.add_item(room, item)
             Mobile.send_scroll(mobile, "<p>#{capitalize_first(item["name"])} is too heavy.</p>")
-          :possessed ->
-            Room.add_item(room, item)
-            Mobile.send_scroll(mobile, "<p>You can't use items while using possession.</p>")
         end
     end
   end

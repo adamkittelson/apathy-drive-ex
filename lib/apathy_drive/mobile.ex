@@ -964,6 +964,11 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> Map.put(:spirit, nil)
       |> Map.put(:socket, nil)
+      |> set_abilities
+      |> set_max_mana
+      |> set_mana
+      |> set_max_hp
+      |> set_hp
 
       Process.unregister(:"spirit_#{spirit.id}")
 
@@ -978,40 +983,44 @@ defmodule ApathyDrive.Mobile do
   def handle_call({:possess, _spirit_id, _socket}, _from, %Mobile{monster_template_id: nil} = mobile) do
     {:reply, {:error, "You can't possess other players."}, mobile}
   end
-  def handle_call({:possess, spirit_id, socket}, _from, %Mobile{spirit: nil} = mobile) do
+  def handle_call({:possess, spirit_id, socket}, _from, %Mobile{spirit: nil, level: level} = mobile) do
 
     spirit =
       Repo.get!(Spirit, spirit_id)
       |> Repo.preload(:class)
+      
+    if spirit.level >= level do
+      ApathyDrive.PubSub.subscribe(self, "spirits:online")
+      ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
+      ApathyDrive.PubSub.subscribe(self, "chat:gossip")
+      ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
 
-    ApathyDrive.PubSub.subscribe(self, "spirits:online")
-    ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
-    ApathyDrive.PubSub.subscribe(self, "chat:gossip")
-    ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
-    ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
+      mobile =
+        mobile
+        |> Map.put(:spirit, spirit)
+        |> Map.put(:socket, socket)
+        |> set_abilities
+        |> set_max_mana
+        |> set_mana
+        |> set_max_hp
+        |> set_hp
+        |> TimerManager.send_every({:monster_present, 4_000, :notify_presence})
 
-    mobile =
-      mobile
-      |> Map.put(:spirit, spirit)
-      |> Map.put(:socket, socket)
-      |> set_abilities
-      |> set_max_mana
-      |> set_mana
-      |> set_max_hp
-      |> set_hp
-      |> TimerManager.send_every({:monster_present, 4_000, :notify_presence})
+      send(socket, {:update_mobile, self})
 
-    send(socket, {:update_mobile, self})
+      send_scroll(mobile, "<p>You possess #{mobile.name}.")
 
-    send_scroll(mobile, "<p>You possess #{mobile.name}.")
+      Process.monitor(socket)
+      Process.unregister(:"spirit_#{spirit.id}")
+      Process.register(self, :"spirit_#{spirit.id}")
 
-    Process.monitor(socket)
-    Process.unregister(:"spirit_#{spirit.id}")
-    Process.register(self, :"spirit_#{spirit.id}")
+      update_prompt(mobile)
 
-    update_prompt(mobile)
-
-    {:reply, :ok, mobile}
+      {:reply, :ok, mobile}
+    else
+      {:reply, {:error, "You are too low level to possess #{mobile.name}."}, mobile}
+    end
   end
   def handle_call({:possess, _spirit_id, _socket}, _from, mobile) do
     {:reply, {:error, "#{mobile.name} is possessed by another player."}, mobile}
@@ -1027,7 +1036,7 @@ defmodule ApathyDrive.Mobile do
     {:reply, look_at_item(mobile, item), mobile}
   end
 
-  def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
+  def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
     if remaining_encumbrance(mobile) >= weight do
       mobile =
         put_in(mobile.spirit.inventory, [item | inventory])
@@ -1039,11 +1048,8 @@ defmodule ApathyDrive.Mobile do
       {:reply, :too_heavy, mobile}
     end
   end
-  def handle_call({:get_item, %{"weight" => _weight} = _item}, _from, %Mobile{monster_template_id: _} = mobile) do
-    {:reply, :possessed, mobile}
-  end
 
-  def handle_call({:destroy_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
+  def handle_call({:destroy_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
            |> Systems.Match.one(:name_contains, item)
@@ -1061,7 +1067,7 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}, monster_template_id: nil} = mobile) do
+  def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
            |> Systems.Match.one(:name_contains, item)
@@ -1077,9 +1083,6 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, item}, mobile}
     end
-  end
-  def handle_call({:drop_item, _item}, _from, %Mobile{monster_template_id: _} = mobile) do
-    {:reply, :possessed, mobile}
   end
 
   def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: _equipment}} = mobile) do

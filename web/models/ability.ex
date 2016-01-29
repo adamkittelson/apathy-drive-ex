@@ -693,12 +693,12 @@ defmodule ApathyDrive.Ability do
 
     apply_instant_effects(mobile, Map.delete(effects, "teleport"), ability_user)
   end
-  def apply_instant_effects(%Monster{} = monster, %{"dispel" => effect_types} = effects, ability_user) do
-    monster = Enum.reduce(effect_types, monster, fn(type, updated_monster) ->
-      effects_with_type = monster.effects
+  def apply_instant_effects(%Mobile{} = mobile, %{"dispel" => effect_types} = effects, ability_user) do
+    mobile = Enum.reduce(effect_types, mobile, fn(type, updated_monster) ->
+      effects_with_type = mobile.effects
                           |> Map.keys
                           |> Enum.filter(fn(key) ->
-                               effect = monster.effects[key]
+                               effect = mobile.effects[key]
                                if key == "all" do
                                  # match all temporary effects (effects with timers) for "all"
                                   Map.has_key?(effect, "timers")
@@ -709,11 +709,11 @@ defmodule ApathyDrive.Ability do
                              end)
 
       Enum.reduce(effects_with_type, updated_monster, fn(ability_id, sub_updated_monster) ->
-        Systems.Effect.remove(sub_updated_monster, ability_id)
+        Systems.Effect.remove(sub_updated_monster, ability_id, show_expiration_message: true)
       end)
     end)
 
-    apply_instant_effects(monster, Map.delete(effects, "dispel"), ability_user)
+    apply_instant_effects(mobile, Map.delete(effects, "dispel"), ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{} = effects, ability_user) do
     Mobile.send_scroll(mobile, "<p><span class='red'>unrecognized instant effects: #{inspect Map.keys(effects)}</span></p>")
