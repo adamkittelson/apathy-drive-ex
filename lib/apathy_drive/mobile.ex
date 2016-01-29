@@ -862,7 +862,11 @@ defmodule ApathyDrive.Mobile do
   def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
     modifier = 1 + effect_bonus(mobile, "hp_regen") / 100
 
-    max_hp * 0.01 * modifier
+    normal_regen = max_hp * 0.01 * modifier
+
+    poison = effect_bonus(mobile, "poison") / 10
+
+    normal_regen - poison
   end
 
   def mana_regen_per_second(%Mobile{max_mana: max_mana} = mobile) do
@@ -988,7 +992,7 @@ defmodule ApathyDrive.Mobile do
     spirit =
       Repo.get!(Spirit, spirit_id)
       |> Repo.preload(:class)
-      
+
     if spirit.level >= level do
       ApathyDrive.PubSub.subscribe(self, "spirits:online")
       ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
@@ -1546,10 +1550,6 @@ defmodule ApathyDrive.Mobile do
     mobile = Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
     {:noreply, mobile}
   end
-
-  def handle_info(:regen, %Mobile{hp: hp,     max_hp: max_hp,
-                                  mana: mana, max_mana: max_mana} = mobile)
-                                  when hp == max_hp and mana == max_mana, do: {:noreply, mobile}
 
   def handle_info(:regen, %Mobile{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = mobile) do
     mobile = mobile
