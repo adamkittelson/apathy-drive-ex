@@ -362,7 +362,6 @@ defmodule ApathyDrive.Mobile do
 
           mobile = put_in(mobile.spirit.inventory, inventory)
           mobile = put_in(mobile.spirit.equipment, equipment)
-                   |> set_highest_armour_grade
                    |> set_abilities
                    |> set_max_mana
                    |> set_mana
@@ -389,7 +388,6 @@ defmodule ApathyDrive.Mobile do
 
           mobile = put_in(mobile.spirit.inventory, inventory)
           mobile = put_in(mobile.spirit.equipment, equipment)
-                   |> set_highest_armour_grade
                    |> set_abilities
                    |> set_max_mana
                    |> set_mana
@@ -408,7 +406,6 @@ defmodule ApathyDrive.Mobile do
 
         mobile = put_in(mobile.spirit.inventory, inventory)
         mobile = put_in(mobile.spirit.equipment, equipment)
-                 |> set_highest_armour_grade
                  |> set_abilities
                  |> set_max_mana
                  |> set_mana
@@ -574,6 +571,7 @@ defmodule ApathyDrive.Mobile do
     mobile =
       mobile
       |> Map.put(:pid, self)
+      |> set_abilities
       |> set_max_mana
       |> set_mana
       |> set_max_hp
@@ -610,7 +608,6 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:room_id, spirit.room_id)
       |> Map.put(:alignment, spirit.class.alignment)
       |> Map.put(:name, spirit.name)
-      |> set_highest_armour_grade
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -672,7 +669,30 @@ defmodule ApathyDrive.Mobile do
     |> set_passive_effects
     |> adjust_mana_costs
   end
-  def set_abilities(%Mobile{} = mobile), do: adjust_mana_costs(mobile)
+  def set_abilities(%Mobile{monster_template_id: mt_id, spirit: nil} = mobile) do
+    abilities = MonsterTemplate.abilities(mt_id)
+
+    mobile
+    |> Map.put(:abilities, abilities)
+    |> set_passive_effects
+    |> adjust_mana_costs
+  end
+  def set_abilities(%Mobile{monster_template_id: mt_id, spirit: spirit} = mobile) do
+    spirit_abilities =
+     ApathyDrive.ClassAbility.for_spirit(spirit)
+     |> add_abilities_from_equipment(spirit.equipment)
+     |> Enum.filter(fn(ability) ->
+          !!Map.get(ability, "passive")
+        end)
+
+    monster_abilities = MonsterTemplate.abilities(mt_id)
+
+    mobile
+    |> Map.put(:abilities, spirit_abilities ++ monster_abilities)
+    |> set_passive_effects
+    |> adjust_mana_costs
+  end
+
 
   def add_abilities_from_equipment(abilities, equipment) do
     abilities ++ Enum.flat_map(equipment, &(&1["abilities"]))
@@ -974,6 +994,11 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> Map.put(:spirit, spirit)
       |> Map.put(:socket, socket)
+      |> set_abilities
+      |> set_max_mana
+      |> set_mana
+      |> set_max_hp
+      |> set_hp
       |> TimerManager.send_every({:monster_present, 4_000, :notify_presence})
 
     send(socket, {:update_mobile, self})

@@ -72,14 +72,31 @@ defmodule MonsterTemplate do
        end)
   end
 
-  def spawn_monster(monster_template_id, room) when is_integer(monster_template_id) do
+  def create_monster(monster_template_id, room) when is_integer(monster_template_id) do
     monster_template_id
     |> find
-    |> spawn_monster(room)
+    |> create_monster(room)
   end
 
-  def spawn_monster(monster_template, room) do
-    GenServer.call(monster_template, {:spawn_monster, room})
+  def create_monster(monster_template, room) do
+    GenServer.call(monster_template, {:create_monster, room})
+  end
+
+  def spawn(%{monster_template_id: mt_id} = mobile) do
+    {:ok, pid} = ApathyDrive.Mobile.start(mobile)
+
+    ApathyDrive.PubSub.subscribe(pid, "monster_templates:#{mt_id}:monsters")
+
+    pid
+  end
+
+  def abilities(monster_template_id) when is_integer(monster_template_id) do
+    monster_template_id
+    |> find
+    |> abilities
+  end
+  def abilities(monster_template) do
+    GenServer.call(monster_template, :abilities)
   end
 
   def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: nil}), do: false
@@ -121,7 +138,7 @@ defmodule MonsterTemplate do
     |> GenServer.cast(:set_last_killed_at)
   end
 
-  def handle_call({:spawn_monster, %Room{} = room}, _from, monster_template) do
+  def handle_call({:create_monster, %Room{} = room}, _from, monster_template) do
     # values = monster_template
     #          |> Map.from_struct
     #          |> Map.delete(:__meta__)
@@ -182,7 +199,6 @@ defmodule MonsterTemplate do
       level: monster_template.level,
       experience: monster_template.experience,
       monster_template_id: monster_template.id,
-      abilities: Enum.map(monster_template.abilities, &(&1.properties)),
       questions: monster_template.questions,
       flags: monster_template.flags
     }
@@ -191,15 +207,15 @@ defmodule MonsterTemplate do
       monster
       |> Map.put(:keywords, String.split(monster.name))
 
-    {:ok, pid} = ApathyDrive.Mobile.start(monster)
-
-    ApathyDrive.PubSub.subscribe(pid, "monster_templates:#{monster_template.id}:monsters")
-
-    {:reply, pid, monster_template}
+    {:reply, monster, monster_template}
   end
 
   def handle_call(:value, _from, monster_template) do
     {:reply, monster_template, monster_template}
+  end
+
+  def handle_call(:abilities, _from, monster_template) do
+    {:reply, Enum.map(monster_template.abilities, &(&1.properties)), monster_template}
   end
 
   def handle_cast(:set_last_killed_at, monster_template) do

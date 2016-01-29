@@ -3,11 +3,12 @@ defmodule Commands.Spawn do
 
   def keywords, do: ["spawn"]
 
-  def execute(%Spirit{} = spirit, arguments) do
-    if mt = arguments |> hd |> MonsterTemplate.find do
+  def execute(%Spirit{} = spirit, [mt_id | _]) do
+    if mt = MonsterTemplate.find(mt_id) do
       room = Spirit.find_room(spirit)
 
-      spawned_monster = MonsterTemplate.spawn_monster(mt, room)
+      spawned_monster = MonsterTemplate.create_monster(mt, room)
+                        |> MonsterTemplate.spawn
 
       # execute in a different process because display_enter_message
       # does a broadcast_from
@@ -18,11 +19,12 @@ defmodule Commands.Spawn do
     end
   end
 
-  def execute(%Monster{} = monster, arguments) do
-    if mt = arguments |> hd |> MonsterTemplate.find do
+  def execute(%Monster{} = monster, [mt_id | _]) do
+    if mt = MonsterTemplate.find(mt_id) do
       room = Monster.find_room(monster)
 
-      spawned_monster = MonsterTemplate.spawn_monster(mt, room)
+      spawned_monster = MonsterTemplate.create_monster(mt, room)
+                        |> MonsterTemplate.spawn
 
       # execute in a different process because display_enter_message
       # does a broadcast_from

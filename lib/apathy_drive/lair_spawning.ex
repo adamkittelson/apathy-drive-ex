@@ -6,10 +6,11 @@ defmodule ApathyDrive.LairSpawning do
     if room.lair_size > (room.id |> Room.spawned_monsters |> length) do
       monster_templates = eligible_monsters(lair_monsters)
       if Enum.any?(monster_templates) do
-        monster_template = select_lair_monster(monster_templates)
+        {mt_id, monster_template} = select_lair_monster(monster_templates)
 
-        monster = MonsterTemplate.spawn_monster(monster_template, room)
-
+        monster = MonsterTemplate.create_monster(monster_template, room)
+                  |> MonsterTemplate.spawn
+        
         room_pid = self
 
         Task.start fn ->
@@ -30,8 +31,8 @@ defmodule ApathyDrive.LairSpawning do
 
   def eligible_monsters(lair_monsters) do
     lair_monsters
-    |> Enum.map(&MonsterTemplate.find/1)
-    |> Enum.reject(fn(mt) ->
+    |> Enum.map(&({&1, MonsterTemplate.find(&1)}))
+    |> Enum.reject(fn({_mt_id, mt}) ->
          mt = MonsterTemplate.value(mt)
 
          MonsterTemplate.on_cooldown?(mt) or MonsterTemplate.limit_reached?(mt)

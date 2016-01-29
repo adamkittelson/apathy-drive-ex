@@ -148,7 +148,8 @@ defmodule ApathyDrive.Script do
 
     monster =
       monster_template_id
-      |> MonsterTemplate.spawn_monster(Room.value(room))
+      |> MonsterTemplate.create_monster(Room.value(room))
+      |> MonsterTemplate.spawn
 
     Task.start fn ->
       ApathyDrive.Exits.Normal.display_enter_message(room, monster)
