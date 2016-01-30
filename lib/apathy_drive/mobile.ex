@@ -644,6 +644,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, :unpossess)
   end
 
+  def inventory_item_names(room) do
+    GenServer.call(room, :inventory_item_names)
+  end
+
   def set_highest_armour_grade(%Mobile{spirit: nil} = mobile) do
     Map.put(mobile, :highest_armour_grade, 0)
   end
@@ -926,6 +930,11 @@ defmodule ApathyDrive.Mobile do
 
   def send_execute_auto_attack do
     send(self, :execute_auto_attack)
+  end
+
+  def handle_call(:inventory_item_names, _from, mobile) do
+    items = Enum.map(mobile.spirit.inventory, fn(%{"name" => name}) -> name end)
+    {:reply, items, mobile}
   end
 
   def handle_call(:forms, _ref, mobile) do

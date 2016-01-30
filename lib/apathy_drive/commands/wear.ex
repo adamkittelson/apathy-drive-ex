@@ -6,6 +6,13 @@ defmodule Commands.Wear do
   def execute(mobile, []) do
     Mobile.send_scroll(mobile, "<p>Equip what?</p>")
   end
+  def execute(mobile, ["all"]) do
+    mobile
+    |> Mobile.inventory_item_names
+    |> Enum.each(fn(item_name) ->
+         execute(mobile, [item_name])
+       end)
+  end
   def execute(mobile, arguments) do
     item = Enum.join(arguments, " ")
 

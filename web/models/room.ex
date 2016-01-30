@@ -120,6 +120,10 @@ defmodule Room do
     GenServer.call(room, {:find_item, item})
   end
 
+  def item_names(room) do
+    GenServer.call(room, :item_names)
+  end
+
   def get_exit(room, direction) when is_pid(room) do
     GenServer.call(room, {:get_exit, direction})
   end
@@ -600,6 +604,11 @@ defmodule Room do
         nil
     end
     {:reply, item, room}
+  end
+
+  def handle_call(:item_names, _from, room) do
+    items = Enum.map(room.items, fn(%{"name" => name}) -> name end)
+    {:reply, items, room}
   end
 
   def handle_call({:temporarily_open?, direction}, _from, room) do

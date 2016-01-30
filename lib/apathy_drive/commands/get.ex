@@ -6,6 +6,18 @@ defmodule Commands.Get do
   def execute(mobile, []) do
     Mobile.send_scroll(mobile, "<p>Get what?</p>")
   end
+  def execute(mobile, ["all"]) do
+    room =
+      mobile
+      |> Mobile.room_id
+      |> Room.find
+
+    room
+    |> Room.item_names
+    |> Enum.each(fn(item_name) ->
+         execute(mobile, [item_name])
+       end)
+  end
   def execute(mobile, arguments) do
     item = Enum.join(arguments, " ")
 
