@@ -1,6 +1,6 @@
 FROM phusion/baseimage:0.9.16
 
-ENV REFRESHED_AT 2015-12-29
+ENV REFRESHED_AT 2016-01-30
 
 RUN echo /root > /etc/container_environment/HOME
 
@@ -48,5 +48,7 @@ RUN mix local.rebar --force && mix local.hex --force
 ADD . /usr/src/app
 WORKDIR /usr/src/app
 
-ENV MIX_ENV prod
+ARG MIX_ENV
+ENV MIX_ENV ${MIX_ENV}
+
 RUN mix deps.clean --all && mix clean && mix deps.get && mix compile && mix phoenix.digest && mix release.clean && mix release
