@@ -14,7 +14,6 @@
 * cap production deploy
 
 ## misc db commands
-* create db: `./bin/apathy_drive rpc Elixir.Ecto.Storage up "['Elixir.ApathyDrive.Repo']."`
-* run migrations: `./bin/apathy_drive rpc Elixir.Ecto.Migrator run "['Elixir.ApathyDrive.Repo', <<\"//app/lib/apathy_drive-0.0.1/priv/repo/migrations\">>, up, [{all, true}]]."`
-* drop world data: `./bin/apathy_drive rpc Elixir.ApathyDrive.Repo drop_world! "[]."`
-* restore world data: `pg_restore --dbname=apathy_drive -U apathy_drive -W -h localhost /app/lib/apathy_drive-x.x.x/priv/data.dump`
+* create db: `cap production db:create`
+* run migrations: `cap production db:migrate`
+* drop / restore world data: `cap production db:reload`

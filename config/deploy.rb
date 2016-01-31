@@ -3,6 +3,10 @@ lock '3.4.0'
 
 set :application, 'apathy_drive'
 set :deploy_to, '/app'
+set :default_env, {
+  'RELEASE_CONFIG_FILE' => '/home/deploy/apathy_drive.conf',
+  'VMARGS_PATH' => '/home/deploy/vm.args'
+}
 
 Rake::Task["deploy"].clear_actions
 task :deploy do
