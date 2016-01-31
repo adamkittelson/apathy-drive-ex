@@ -508,7 +508,7 @@ defmodule Spirit do
     spirit =
       spirit
       |> Spirit.add_experience(exp)
-      |> send_scroll("<p>You gain #{exp} bonus experience!<br><br></p>")
+      |> send_scroll("<p>You gain #{exp} bonus essence!<br><br></p>")
 
     {:noreply, spirit}
   end

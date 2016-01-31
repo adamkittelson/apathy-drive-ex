@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Mobile, Repo, PubSub, TimerManager, Ability}
+  alias ApathyDrive.{Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability}
   use GenServer
   import Systems.Text
   import TimerManager, only: [seconds: 1]
@@ -599,6 +599,8 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
     ApathyDrive.PubSub.subscribe(self, "chat:gossip")
     ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+    ApathyDrive.PubSub.subscribe(self, "rooms:#{spirit.room_id}:spirits")
+
     ApathyDrive.PubSub.subscribe(socket, "spirits:#{spirit.id}:socket")
 
     mobile =
@@ -1580,7 +1582,7 @@ defmodule ApathyDrive.Mobile do
 
     send_scroll(mobile, "<p>#{message}</p>")
 
-    send_scroll(mobile, "<p>You gain #{exp} experience.</p>")
+    send_scroll(mobile, "<p>You gain #{exp} essence.</p>")
 
     new_spirit =
       spirit
@@ -1748,6 +1750,59 @@ defmodule ApathyDrive.Mobile do
     ability = Map.put(ability, "ignores_global_cooldown", true)
 
     {:noreply, Ability.execute(monster, ability, [self])}
+  end
+
+  def handle_info({:generate_loot, monster_template_id, level}, mobile) do
+    ItemDrop.monster_drops(monster_template_id)
+    |> Enum.map(fn(%{item_id: item_id, chance: chance}) ->
+         ApathyDrive.Item.generate_item(%{chance: chance, item_id: item_id, level: level})
+       end)
+    |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: 50, item_id: :global, level: level}))
+    |> Enum.reject(&is_nil/1)
+    |> case do
+         [] ->
+           {:noreply, mobile}
+         items ->
+           Mobile.send_scroll(mobile, "<p><span class='white'>A wild surge of spirtual essence coalesces into:</span></p>")
+           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>STR | AGI | WIL | Item Name</span></p>")
+           Enum.each(items, fn(item) ->
+
+             current =
+               mobile
+               |> Mobile.score_data
+
+             {:reply, {:ok, %{equipped: _}}, equipped} =
+               mobile
+               |> Mobile.equip_item(item)
+
+             equipped = Mobile.score_data(equipped)
+
+             color =
+               current
+               |> Map.take([:strength, :agility, :will])
+               |> Enum.reduce(%{}, fn({key, val}, values) ->
+                    diff = equipped[key] - val
+                    color = cond do
+                      diff > 0 ->
+                        "green"
+                      diff < 0 ->
+                        "dark-red"
+                      true ->
+                        "dark-cyan"
+                    end
+                    Map.put(values, key, color)
+                  end)
+
+
+             Mobile.send_scroll(mobile, "<p><span class='#{color[:strength]}'>#{String.rjust(to_string(Item.strength(item)), 3)}</span> <span class='dark-cyan'>|</span> <span class='#{color[:agility]}'>#{String.rjust(to_string(Item.agility(item)), 3)}</span> <span class='dark-cyan'>|</span> <span class='#{color[:will]}'>#{String.rjust(to_string(Item.will(item)), 3)}</span> <span class='dark-cyan'>| #{item["name"]}</span></p>")
+           end)
+
+           mobile = put_in(mobile.spirit.inventory, items ++ mobile.spirit.inventory)
+
+           Repo.save!(mobile.spirit)
+
+           {:noreply, mobile}
+       end
   end
 
   def handle_info(_message, %Mobile{} = mobile) do

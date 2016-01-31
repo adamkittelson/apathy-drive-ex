@@ -1061,7 +1061,7 @@ defmodule Monster do
 
     send_scroll(monster, "<p>#{message}</p>")
 
-    Monster.send_scroll(monster, "<p>You gain #{exp} experience.</p>")
+    Monster.send_scroll(monster, "<p>You gain #{exp} essence.</p>")
 
     new_spirit =
       spirit

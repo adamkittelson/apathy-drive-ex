@@ -913,22 +913,6 @@ defmodule Room do
     {:noreply, Map.merge(room, changes)}
   end
 
-  def handle_info({:generate_loot, monster_template_id, level}, room) do
-    items =
-      ItemDrop.monster_drops(monster_template_id)
-      |> Enum.map(fn(%{item_id: item_id, chance: chance}) ->
-           ApathyDrive.Item.generate_item(%{chance: chance, item_id: item_id, level: level})
-         end)
-      |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: 50, item_id: :global, level: level}))
-      |> Enum.reject(&is_nil/1)
-
-    room =
-      room
-      |> Map.put(:items, items ++ room.items)
-      |> Repo.save!
-    {:noreply, room}
-  end
-
   def handle_info(_message, room) do
     {:noreply, room}
   end
