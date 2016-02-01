@@ -9,7 +9,7 @@ defmodule ApathyDrive.AI do
     if casting?(mobile) do
       mobile
     else
-      heal(mobile) || bless(mobile) || attack(mobile) || mobile
+      heal(mobile) || bless(mobile) || curse(mobile) || attack(mobile) || mobile
     end
   end
 
@@ -66,6 +66,27 @@ defmodule ApathyDrive.AI do
     end
   end
   def bless(%Mobile{}), do: nil
+
+  def curse(%Mobile{spirit: nil} = mobile) do
+    if (:rand.uniform(100) > 95) && (target = Mobile.aggro_target(mobile)) do
+
+      curse = cond do
+        !Ability.on_global_cooldown?(mobile) ->
+
+          mobile
+          |> Ability.curse_abilities
+          |> random_ability(mobile)
+        true ->
+          nil
+      end
+
+      if curse do
+        send(self, {:execute_ability, curse, [target]})
+        mobile
+      end
+    end
+  end
+  def curse(%Mobile{}), do: nil
 
   def attack(%Mobile{spirit: nil} = mobile) do
     if target = Mobile.aggro_target(mobile) do

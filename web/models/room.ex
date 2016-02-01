@@ -3,7 +3,7 @@ defmodule Room do
   use ApathyDrive.Web, :model
   use GenServer
   use Timex
-  alias ApathyDrive.{PubSub, Mobile, ItemDrop, TimerManager, Ability}
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability}
 
   schema "rooms" do
     field :name,                  :string

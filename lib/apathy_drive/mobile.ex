@@ -1667,11 +1667,13 @@ defmodule ApathyDrive.Mobile do
   def handle_info(:execute_auto_attack, %Mobile{attack_target: nil} = mobile) do
     {:noreply, mobile}
   end
-  def handle_info(:execute_auto_attack, %Mobile{attack_target: target, auto_attack_interval: interval} = mobile) do
+  def handle_info(:execute_auto_attack, %Mobile{attack_target: target, auto_attack_interval: default_interval} = mobile) do
     if Process.alive?(target) and target in PubSub.subscribers("rooms:#{mobile.room_id}:mobiles") do
-      execute_auto_attack(mobile, target)
+      attack_interval = execute_auto_attack(mobile, target)
 
-      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval |> seconds, [__MODULE__, :send_execute_auto_attack, []]})
+      interval = attack_interval || seconds(default_interval)
+
+      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval, [__MODULE__, :send_execute_auto_attack, []]})
 
       {:noreply, mobile}
     else
@@ -1763,7 +1765,7 @@ defmodule ApathyDrive.Mobile do
          [] ->
            {:noreply, mobile}
          items ->
-           Mobile.send_scroll(mobile, "<p><span class='white'>A wild surge of spirtual essence coalesces into:</span></p>")
+           Mobile.send_scroll(mobile, "<p>\n<span class='white'>A wild surge of spirtual essence coalesces into:</span></p>")
            Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>STR | AGI | WIL | Item Name</span></p>")
            Enum.each(items, fn(item) ->
 
@@ -1823,6 +1825,7 @@ defmodule ApathyDrive.Mobile do
         |> Map.put("kind", "attack")
 
       send(self, {:execute_ability, attack, [target]})
+      attack["attack_interval"] # return interval to change default auto_attack delay
     end
   end
 

@@ -389,7 +389,6 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Mobile{} = mobile, %{} = ability, targets) do
-    send(self, :think)
 
     display_pre_cast_message(mobile, ability, targets)
 
@@ -430,7 +429,15 @@ defmodule ApathyDrive.Ability do
   def bless_abilities(%Mobile{abilities: abilities} = mobile) do
     abilities
     |> Enum.filter(&(&1["kind"] == "blessing"))
-    |> Enum.reject(&(Map.has_key?(&1, "cooldown")))
+    |> Enum.reject(fn(ability) ->
+         Ability.removes_blessing?(mobile, ability)
+       end)
+    |> useable(mobile)
+  end
+
+  def curse_abilities(%Mobile{abilities: abilities} = mobile) do
+    abilities
+    |> Enum.filter(&(&1["kind"] == "curse"))
     |> Enum.reject(fn(ability) ->
          Ability.removes_blessing?(mobile, ability)
        end)
