@@ -29,13 +29,27 @@ defmodule ApathyDrive.Item do
   end
 
   def random_item_id_below_level(level) do
-    count = Repo.one(from item in __MODULE__, select: count(item.id), where: item.level <= ^level and item.global_drop == true)
-    case Ecto.Adapters.SQL.query!(Repo, "SELECT id FROM items where level <= #{level} and global_drop = true OFFSET floor(random()*#{count}) LIMIT 1;", []) do
-      %{rows: [[item_id]]} ->
-        item_id
-      _ ->
-        nil
-    end
+    count =
+      __MODULE__
+      |> below_level(level)
+      |> global_drops
+      |> select([item], count(item.id))
+      |> Repo.one
+
+    __MODULE__
+    |> below_level(level)
+    |> global_drops
+    |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+    |> select([item], item.id)
+    |> Repo.one
+  end
+
+  def global_drops(query) do
+    query |> where([item], item.global_drop == true)
+  end
+
+  def below_level(query, level) do
+    query |> where([item], item.level <= ^level )
   end
 
   def datalist do
