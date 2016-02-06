@@ -9,6 +9,7 @@
 ## Setting up the build server
 * docker-machine create --driver virtualbox apathy-drive-build
 * eval "$(docker-machine env apathy-drive-build)"
+* word on the street is `docker rmi $(docker images --filter "dangling=true" -q --no-trunc)` might help if docker is being lame and running out of space
 
 ## deploy
 * cap production deploy
