@@ -1,6 +1,18 @@
-html {
+html, body {
   height: 100%;
   background-color: #000;
+}
+.table-container {
+  display: table;
+  height: 100%;
+  width: 100%;
+}
+.table-block {
+  display: table-row;
+  height: 1px;
+}
+.footer-push {
+  height: auto;
 }
 
 .container {
@@ -111,7 +123,13 @@ code {
   font-family: "Inconsolata", "Andale Mono", Monospace;
   color: silver;
   line-height: 9px;
-  padding-bottom: 1em;
+}
+
+#footer {
+  font-family: "Inconsolata", "Andale Mono", Monospace;
+  color: silver;
+  line-height: 9px;
+  margin-bottom: 1em;
 }
 
 pre {

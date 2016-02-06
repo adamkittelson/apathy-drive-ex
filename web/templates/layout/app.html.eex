@@ -11,9 +11,21 @@
   <script>require("web/static/js/nav");</script>
 </head>
 <body>
-  <div class="container">
-    <%= render @view_module, @view_template, assigns %>
+  <div class="table-block">
+    <div class="container">
+      <%= render @view_module, @view_template, assigns %>
+    </div>
   </div>
+  <div class="table-block">
+        <!-- Page Footer Layout
+             –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+        <div class="container">
+          <footer id="footer" class="twelve columns">
+            <span id="prompt"></span><input id="command" size="50" class="prompt">
+          </footer>
+        </div> <!-- end footer div.container -->
+      </div>  <!-- end footer div.table-block -->
+    </div>
   <script>require("deps/phoenix_html/web/static/js/phoenix_html");</script>
 </body>
 </html>

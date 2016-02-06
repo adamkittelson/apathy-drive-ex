@@ -345,20 +345,6 @@ defmodule Spirit do
     {:noreply, spirit}
   end
 
-  def handle_info({:possessed_monster_died, %Monster{} = monster}, spirit) do
-    room_id = monster.room_id
-
-    spirit = spirit
-             |> Map.put(:monster, nil)
-             |> set_room_id(room_id)
-             |> Spirit.send_scroll("<p>You leave the body of #{monster.name}.</p>")
-             |> Systems.Prompt.update
-
-    ApathyDrive.PubSub.unsubscribe(self, "monsters:#{monster.id}")
-
-    {:noreply, spirit}
-  end
-
   def handle_info({:greet, %{greeter: greeter, greeted: greeted}}, spirit) do
     send_scroll(spirit, "<p><span class='dark-green'>#{greeter.name |> capitalize_first} greets #{greeted.name}.</span></p>")
     {:noreply, spirit}
@@ -472,10 +458,6 @@ defmodule Spirit do
     {:noreply, set_abilities(spirit) }
   end
 
-  def handle_info(:display_prompt, spirit) do
-    {:noreply, Systems.Prompt.display(spirit) }
-  end
-
   def handle_info({:gossip, name, message}, spirit) do
     Spirit.send_scroll(spirit, "<p>[<span class='dark-magenta'>gossip</span> : #{name}] #{message}</p>")
     {:noreply, spirit}
@@ -512,14 +494,6 @@ defmodule Spirit do
 
     {:noreply, spirit}
   end
-
-  # def handle_info(:regen_mana, %Spirit{mana: mana, max_mana: max_mana, mana_regen: mana_regen} = spirit) do
-  #   spirit = spirit
-  #            |> Map.put(:mana, min(mana + mana_regen, max_mana))
-  #            |> Systems.Prompt.update
-  #
-  #   {:noreply, spirit}
-  # end
 
   def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Spirit{timers: timers} = spirit) do
     jitter = trunc(time / 2) + :random.uniform(time)

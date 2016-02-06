@@ -723,47 +723,6 @@ defmodule Monster do
     end
   end
 
-  def handle_call({:possess, %Spirit{level: spirit_level} = spirit},
-                                _from,
-                                %Monster{level: monster_level, spirit: nil} = monster)
-                                when spirit_level < monster_level do
-    Spirit.send_scroll(spirit, "<p>You must be at least level #{monster_level} to possess #{monster.name}.</p>")
-    {:reply, spirit, monster}
-  end
-
-  def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: nil} = monster) do
-    send(spirit.pid, :go_away)
-
-    :yes = :global.re_register_name(:"spirit_#{spirit.id}", self)
-
-    spirit = Map.put(spirit, :pid, nil)
-
-    monster = monster
-              |> Map.put(:spirit, spirit)
-              |> set_abilities
-              |> Map.put(:mana, max(spirit.mana, monster.mana))
-              |> send_scroll("<p>You possess #{monster.name}.")
-              |> Monster.save
-
-    PubSub.subscribe(self, "spirits:online")
-    PubSub.subscribe(self, "spirits:hints")
-    PubSub.subscribe(self, "spirits:#{spirit.faction}")
-    PubSub.subscribe(self, "chat:gossip")
-    PubSub.subscribe(self, "chat:#{spirit.faction}")
-
-    PubSub.unsubscribe(self, "rooms:#{monster.room_id}:monsters:#{monster.alignment}")
-    PubSub.subscribe(self, "rooms:#{monster.room_id}:monsters:#{monster_alignment(monster)}")
-
-    Systems.Prompt.update(monster)
-
-    {:reply, monster, monster}
-  end
-
-  def handle_call({:possess, %Spirit{} = spirit}, _from, %Monster{spirit: _spirit} = monster) do
-    Spirit.send_scroll(spirit, "<p>#{capitalize_first(monster.name)} is already possessed.</p>")
-    {:reply, spirit, monster}
-  end
-
   def handle_info({:greet, %{greeter: %Monster{pid: greeter_pid},
                              greeted: %Monster{pid: _greeted_pid} = greeted}},
                              %Monster{pid: monster_pid} = monster)
@@ -899,42 +858,6 @@ defmodule Monster do
     {:noreply, monster}
   end
 
-  def handle_info(:regen, %Monster{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = monster) do
-    poison = effect_bonus(monster, "poison")
-
-    if poison > 0 do
-      message = monster.effects
-                |> Map.values
-                |> Enum.find_value(fn(effect) ->
-                     Map.has_key?(effect, "poison") && effect["effect_message"]
-                   end)
-
-      monster = monster
-                |> send_scroll("<p><span class='red'>#{message}</span></p>")
-                |> Map.put(:hp,   min(  hp + get_hp_regen(monster) - poison, max_hp))
-                |> Map.put(:mana, min(mana + get_mana_regen(monster), max_mana))
-                |> Systems.Prompt.update
-
-      if monster.hp < 1 do
-        {:noreply, Systems.Death.kill(monster)}
-      else
-        {:noreply, monster}
-      end
-    else
-      monster = monster
-                |> Map.put(:hp,   min(  hp + get_hp_regen(monster), max_hp))
-                |> Map.put(:mana, min(mana + get_mana_regen(monster), max_mana))
-                |> Systems.Prompt.update
-
-      if monster.hp < 1 do
-        {:noreply, Systems.Death.kill(monster)}
-      else
-        {:noreply, monster}
-      end
-    end
-
-  end
-
   def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Monster{timers: timers} = monster) do
     jitter = trunc(time / 2) + :random.uniform(time)
 
@@ -958,24 +881,6 @@ defmodule Monster do
   def handle_info({:remove_effect, key}, room) do
     room = Systems.Effect.remove(room, key)
     {:noreply, room}
-  end
-
-  def handle_info({:apply_ability, %Ability{} = ability, %Monster{} = ability_user}, monster) do
-    if Ability.affects_target?(monster, ability) do
-      monster = monster
-                |> Ability.apply_ability(ability, ability_user)
-                |> Systems.Prompt.update
-
-      if monster.hp < 1 do
-        {:noreply, Systems.Death.kill(monster)}
-      else
-        {:noreply, monster}
-      end
-    else
-      message = "#{monster.name} is not affected by that ability." |> capitalize_first
-      Monster.send_scroll(ability_user, "<p><span class='dark-cyan'>#{message}</span></p>")
-      {:noreply, monster}
-    end
   end
 
   def handle_info({:cast_message, messages: messages,

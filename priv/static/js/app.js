@@ -3447,7 +3447,7 @@ require("deps/phoenix_html/web/static/js/phoenix_html");
 
 var Socket = require("deps/phoenix/web/static/js/phoenix").Socket;
 
-var pruneBackscroll, addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, focusNext, focusPrevious, history_marker, setFocus, updateRoom, socket, push;
+var pruneBackscroll, addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, history_marker, setFocus, updateRoom, socket, push;
 focus = null;
 $("html").on("click", function (event) {
   if (window.getSelection().type !== "Range") {
@@ -3534,37 +3534,18 @@ push = function (event, message) {
 };
 
 pruneBackscroll = function () {
-  var backscroll_size = 10000;
-  if ($("#scroll").children().length > backscroll_size) {
+  var backscroll_size = 5000;
 
+  if ($("#scroll").children().length > backscroll_size) {
+    $("#scroll").children().first().remove();
     $("#scroll").children().first().remove();
   };
 };
 
 addToScroll = function (elem, text) {
   $(elem).append(text);
-  $(elem).append($("#prompt").parent().detach());
   pruneBackscroll();
-  setFocus(focus);
   return adjustScrollTop();
-};
-
-focusNext = function (elem) {
-  var field, fields;
-  fields = $("#scroll").find("input:not([disabled])");
-  field = fields.eq(fields.index(elem) + 1)[0];
-  if (field) {
-    return setFocus("#" + field.id).select();
-  }
-};
-
-focusPrevious = function (elem) {
-  var field, fields;
-  fields = $("#scroll").find(":input");
-  field = fields.eq(fields.index(elem) - 1)[0];
-  if (field) {
-    return setFocus("#" + field.id).select();
-  }
 };
 
 disableField = function (selector) {
@@ -3600,9 +3581,7 @@ $(document).on("keydown", function (event) {
   if (!(event.ctrlKey || event.shiftKey || event.metaKey)) {
     setFocus("#command");
   } else if (event.which === 75 && event.metaKey) {
-    var prompt = $("#prompt").parent().detach();
     clearScroll();
-    $("#scroll").append(prompt);
     setFocus("#command");
   }
 });
@@ -3617,15 +3596,9 @@ $(document).on("keyup", "input", function (event) {
   if (event.which === 13 || event.which === 9 && !event.shiftKey) {
     history_marker = null;
     command = $(event.target).val();
-    if (command === "reroll") {
-      if (confirm("Rerolling will allow you to change your name and/or faction, but you will only retain 10% of your current experience. Are you sure you wish to reroll?") === true) {
-        return push(event.target.id, command);
-      } else {
-        $(event.target).val("");
-      }
-    } else {
-      return push(event.target.id, command);
-    }
+    setFocus("#command").select();
+    addToScroll($("#scroll"), "<p>" + $("#prompt").html() + " <span class='dark-yellow'>" + command + "</span></p>");
+    return push(event.target.id, command);
   } else if (event.which === 38) {
     return command_history("up");
   } else if (event.which === 40) {

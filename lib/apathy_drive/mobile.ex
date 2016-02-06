@@ -239,14 +239,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(pid, :interpolation_data)
   end
 
-  def display_prompt(%Mobile{socket: socket} = mobile) do
-    send(socket, {:disable_element, "#prompt"})
-    send(socket, {:disable_element, "#command"})
-    send(socket, {:scroll, "<p><span id='prompt'>#{prompt(mobile)}</span><input id='command' size='50' class='prompt'></input></p>"})
-    send(socket, {:focus_element, "#command"})
-    send(socket, :up)
-  end
-
   def update_prompt(%Mobile{socket: nil}), do: :noop
 
   def update_prompt(%Mobile{socket: socket} = mobile) do
@@ -1467,12 +1459,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:execute_ability, ability, arg_string}, mobile) do
     mobile = Ability.execute(mobile, ability, arg_string)
-    {:noreply, mobile}
-  end
-
-  def handle_info(:display_prompt, %Mobile{socket: _socket} = mobile) do
-    display_prompt(mobile)
-
     {:noreply, mobile}
   end
 
