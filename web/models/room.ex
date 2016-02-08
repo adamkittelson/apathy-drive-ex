@@ -26,8 +26,8 @@ defmodule Room do
 
     timestamps
 
-    has_many   :monsters, Monster
-    belongs_to :ability,  Ability
+    has_many   :mobiles, Mobile
+    belongs_to :ability, Ability
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster]
   end

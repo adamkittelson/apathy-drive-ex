@@ -1,44 +1,48 @@
 defmodule ApathyDrive.Mobile do
   alias ApathyDrive.{Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability}
   use GenServer
+  use ApathyDrive.Web, :model
   import Systems.Text
   import TimerManager, only: [seconds: 1]
 
-  defstruct spirit: nil,
-            socket: nil,
-            hp: nil,
-            max_hp: nil,
-            strength: nil,
-            agility: nil,
-            will: nil,
-            description: "Some temporary description.",
-            mana: nil,
-            max_mana: nil,
-            effects: %{},
-            pid: nil,
-            room_id: nil,
-            alignment: nil,
-            name: nil,
-            keywords: [],
-            enter_message: "{{name}} enters from {{direction}}.",
-            exit_message: "{{name}} leaves {{direction}}.",
-            death_message: "{{name}} dies.",
-            gender: nil,
-            greeting: nil,
-            abilities: [],
-            level: 1,
-            hate: %{},
-            timers: %{},
-            flags: [],
-            experience: nil,
-            monster_template_id: nil,
-            attack_target: nil,
-            auto_attack_interval: 4.0,
-            highest_armour_grade: 0,
-            questions: %{},
-            combo: nil,
-            delayed: false,
-            last_effect_key: 0
+  schema "mobiles" do
+    belongs_to :room, Room
+    belongs_to :monster_template, MonsterTemplate
+
+    field :name,                 :string
+    field :alignment,            :string
+    field :enter_message,        :string,           default: "{{name}} enters from {{direction}}."
+    field :exit_message,         :string,           default: "{{name}} leaves {{direction}}."
+    field :death_message,        :string,           default: "{{name}} dies."
+    field :description,          :string,           default: "Some temporary description."
+    field :gender,               :string
+    field :greeting,             :string
+    field :level,                :integer,          default: 1
+    field :flags,                {:array, :string}, default: []
+    field :experience,           :integer
+    field :auto_attack_interval, :float,            default: 4.0
+    field :questions,            ApathyDrive.JSONB
+
+    field :spirit,          :any,     virtual: true
+    field :socket,          :any,     virtual: true
+    field :hp,              :float,   virtual: true
+    field :max_hp,          :integer, virtual: true
+    field :strength,        :integer, virtual: true
+    field :agility,         :integer, virtual: true
+    field :will,            :integer, virtual: true
+    field :mana,            :float,   virtual: true
+    field :max_mana,        :integer, virtual: true
+    field :effects,         :any,     virtual: true, default: %{}
+    field :pid,             :any,     virtual: true
+    field :keywords,        :any,     virtual: true, default: []
+    field :abilities,       :any,     virtual: true, default: []
+    field :hate,            :any,     virtual: true, default: %{}
+    field :timers,          :any,     virtual: true, default: %{}
+    field :attack_target,   :any,     virtual: true
+    field :combo,           :any,     virtual: true
+    field :delayed,         :boolean, virtual: true, default: false
+    field :last_effect_key, :any,     virtual: true, default: 0
+  end
 
   def start(state \\ %{}, opts \\ []) do
     GenServer.start(__MODULE__, Map.merge(%Mobile{}, state), opts)
@@ -642,21 +646,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(room, :inventory_item_names)
   end
 
-  def set_highest_armour_grade(%Mobile{spirit: nil} = mobile) do
-    Map.put(mobile, :highest_armour_grade, 0)
-  end
-  def set_highest_armour_grade(%Mobile{spirit: %Spirit{inventory: _inv, equipment: []}} = mobile) do
-    Map.put(mobile, :highest_armour_grade, 0)
-  end
-  def set_highest_armour_grade(%Mobile{spirit: %Spirit{equipment: equipment}} = mobile) do
-    highest_grade =
-      equipment
-      |> Enum.max_by(&(&1["grade"]))
-      |> Map.get("grade")
-
-    Map.put(mobile, :highest_armour_grade, highest_grade)
-  end
-
   def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
     abilities =
      ApathyDrive.ClassAbility.for_spirit(spirit)
@@ -1128,7 +1117,6 @@ defmodule ApathyDrive.Mobile do
 
           mobile = put_in(mobile.spirit.inventory, inventory)
           mobile = put_in(mobile.spirit.equipment, equipment)
-                   |> set_highest_armour_grade
                    |> set_abilities
                    |> set_max_mana
                    |> set_mana

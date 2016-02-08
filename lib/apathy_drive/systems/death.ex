@@ -1,5 +1,4 @@
 defmodule Systems.Death do
-  import Systems.Text
   alias ApathyDrive.Mobile
 
   # Player not possessing a monster

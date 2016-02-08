@@ -10,7 +10,7 @@ defmodule ApathyDrive.LairSpawning do
 
         monster = MonsterTemplate.create_monster(monster_template, room)
                   |> MonsterTemplate.spawn
-        
+
         room_pid = self
 
         Task.start fn ->
