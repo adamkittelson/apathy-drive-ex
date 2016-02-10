@@ -936,7 +936,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_call(:experience, _from, mobile) do
-    {:reply, mobile.spirit.experience, mobile}
+    {:reply, mobile.experience || mobile.spirit.experience, mobile}
   end
 
   def handle_call(:effects, _from, mobile) do
@@ -1297,6 +1297,10 @@ defmodule ApathyDrive.Mobile do
       Mobile.send_scroll(mobile, "<p>What?</p>")
       {:noreply, mobile}
     end
+  end
+
+  def handle_cast({:add_experience, exp}, %Mobile{spirit: nil, experience: experience} = mobile) do
+    {:noreply, Map.put(mobile, :experience, experience + exp)}
   end
 
   def handle_cast({:add_experience, exp}, %Mobile{spirit: spirit} = mobile) do

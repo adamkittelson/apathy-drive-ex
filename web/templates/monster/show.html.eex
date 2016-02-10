@@ -27,7 +27,7 @@
   <table>
     <thead>
       <th>Name</th>
-      <th><%= link "Add", to: monster_ability_path(@conn, :new, from: monster_path(@conn, :show, @monster), monster_id: @monster.id) %></th>
+      <th><%= link "Add", to: monster_ability_path(@conn, :new, from: monster_path(@conn, :show, @monster), monster_template_id: @monster.id) %></th>
     </thead>
     <%= for monster_ability <- @monster_abilities do %>
       <tr>

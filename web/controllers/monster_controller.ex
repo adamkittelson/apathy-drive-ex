@@ -38,21 +38,24 @@ defmodule ApathyDrive.MonsterController do
   end
 
   def new(conn, _params) do
-    changeset = Room.changeset(%Room{})
-    render(conn, "new.html", changeset: changeset)
+    changeset = MonsterTemplate.changeset(%MonsterTemplate{})
+    render(conn, "new.html", changeset: changeset,
+                             genders: MonsterTemplate.genders,
+                             alignments: MonsterTemplate.alignments)
   end
 
-  def create(conn, %{"room" => room_params}) do
-    changeset = Room.changeset(%Room{}, room_params)
+  def create(conn, %{"monster_template" => monster_template_params}) do
+    changeset = MonsterTemplate.changeset(%MonsterTemplate{}, monster_template_params)
 
-    if changeset.valid? do
-      Repo.insert!(changeset)
-
-      conn
-      |> put_flash(:info, "Room created successfully.")
-      |> redirect(to: room_path(conn, :index))
-    else
-      render(conn, "new.html", changeset: changeset)
+    case Repo.insert(changeset) do
+      {:ok, _monster_template} ->
+        conn
+        |> put_flash(:info, "MonsterTemplate created successfully.")
+        |> redirect(to: monster_path(conn, :index))
+      {:error, changeset} ->
+        render(conn, "new.html", changeset: changeset,
+                                 genders: MonsterTemplate.genders,
+                                 alignments: MonsterTemplate.alignments)
     end
   end
 
@@ -84,7 +87,10 @@ defmodule ApathyDrive.MonsterController do
   def edit(conn, %{"id" => id}) do
     monster = Repo.get(MonsterTemplate, id)
     changeset = MonsterTemplate.changeset(monster)
-    render(conn, "edit.html", monster: monster, changeset: changeset)
+    render(conn, "edit.html", monster: monster,
+                              changeset: changeset,
+                              genders: MonsterTemplate.genders,
+                              alignments: MonsterTemplate.alignments)
   end
 
   def update(conn, %{"id" => id, "monster_template" => monster_params}) do
@@ -99,9 +105,12 @@ defmodule ApathyDrive.MonsterController do
 
       conn
       |> put_flash(:info, "Monster Template updated successfully.")
-      |> redirect(to: monster_path(conn, :index))
+      |> redirect(to: monster_path(conn, :show, id))
     else
-      render(conn, "edit.html", monster: mt, changeset: changeset)
+      render(conn, "edit.html", monster: mt,
+                                changeset: changeset,
+                                genders: MonsterTemplate.genders,
+                                alignments: MonsterTemplate.alignments)
     end
   end
 

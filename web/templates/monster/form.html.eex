@@ -22,8 +22,48 @@
   </div>
 
   <div class="form-group">
+    <%= label f, :death_message, "Death Message", class: "control-label" %>
+    <%= textarea f, :death_message, class: "u-full-width" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :enter_message, "Enter Message", class: "control-label" %>
+    <%= textarea f, :enter_message, class: "u-full-width" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :exit_message, "Exit Message", class: "control-label" %>
+    <%= textarea f, :exit_message, class: "u-full-width" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :greeting, "Greeting", class: "control-label" %>
+    <%= textarea f, :greeting, class: "u-full-width" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :gender, "Gender", class: "control-label" %>
+    <%= select f, :gender, @genders, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :alignment, "Alignment", class: "control-label" %>
+    <%= select f, :alignment, @alignments, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
     <%= label f, :level, "Level", class: "control-label" %>
-    <%= text_input f, :level, class: "form-control" %>
+    <%= number_input f, :level, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :experience, "Experience", class: "control-label" %>
+    <%= number_input f, :experience, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :game_limit, "Limit (Maximum number existing at once time)", class: "control-label" %>
+    <%= text_input f, :game_limit, class: "form-control" %>
   </div>
 
   <div class="form-group">

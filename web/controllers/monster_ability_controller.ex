@@ -1,9 +1,9 @@
 defmodule ApathyDrive.MonsterAbilityController do
   use ApathyDrive.Web, :controller
 
-  alias ApathyDrive.{Ability, MonsterAbility, MonsterTemplate}
+  alias ApathyDrive.{Ability, MonsterAbility}
 
-  plug :scrub_params, "class_ability" when action in [:create, :update]
+  plug :scrub_params, "monster_ability" when action in [:create, :update]
 
   def new(conn, params) do
     changeset = MonsterAbility.changeset(%MonsterAbility{}, params)

@@ -36,9 +36,11 @@ defmodule MonsterTemplate do
 
   def changeset(%MonsterTemplate{} = monster_template, params \\ :empty) do
     monster_template
-    |> cast(params, ~w(name description strength agility will), ~w())
+    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting gender alignment level game_limit experience), ~w())
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
+    |> validate_inclusion(:gender, MonsterTemplate.genders)
+    |> validate_inclusion(:alignment, MonsterTemplate.alignments)
   end
 
   def find(id) do
@@ -136,6 +138,14 @@ defmodule MonsterTemplate do
     id
     |> find
     |> GenServer.cast(:set_last_killed_at)
+  end
+
+  def genders do
+    [nil, "male", "female"]
+  end
+
+  def alignments do
+    ["good", "neutral", "evil"]
   end
 
   def handle_call({:create_monster, %Room{} = room}, _from, monster_template) do

@@ -17,7 +17,7 @@ defmodule ApathyDrive.MonsterAbility do
 
     model
     |> cast(updated_params, @required_fields, @optional_fields)
-    |> unique_constraint(:class_id, name: :monster_abilities_monster_template_id_ability_id_index)
+    |> unique_constraint(:monster_template_id, name: :monster_abilities_monster_template_id_ability_id_index)
     |> foreign_key_constraint(:monster_template_id)
     |> foreign_key_constraint(:ability_id)
   end
