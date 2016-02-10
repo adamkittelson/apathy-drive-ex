@@ -16,7 +16,7 @@ task :deploy do
     execute :scp, "rel/apathy_drive/releases/#{last_release}/apathy_drive.tar.gz", "apotheos.is:/tmp"
   end
   on roles(:app) do |host|
-    execute :sudo, "stop", "apathy_drive"
+    execute :sudo, "stop", "apathy_drive" rescue nil
     execute :sudo, "rm", "-rf", fetch(:deploy_to)
     execute :sudo, "mkdir", "-p", fetch(:deploy_to)
     execute :sudo, "chown", "deploy:deploy", fetch(:deploy_to)
