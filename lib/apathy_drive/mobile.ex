@@ -577,6 +577,15 @@ defmodule ApathyDrive.Mobile do
     mobile
   end
 
+  def send_unity(mobile, message) when is_pid(mobile) do
+    send mobile, {:send_unity, message}
+  end
+  def send_unity(%Mobile{socket: nil} = mobile, _html),  do: mobile
+  def send_unity(%Mobile{socket: socket} = mobile, html) do
+    send(socket, {:unity, html})
+    mobile
+  end
+
   def init(%Mobile{spirit: nil} = mobile) do
     :random.seed(:os.timestamp)
 
@@ -1481,6 +1490,12 @@ defmodule ApathyDrive.Mobile do
 
     {:noreply, mobile}
   end
+
+def handle_info({:send_unity, message}, mobile) do
+  send_unity(mobile, message)
+
+  {:noreply, mobile}
+end
 
   def handle_info({:execute_script, script}, mobile) do
     {:noreply, ApathyDrive.Script.execute(script, Map.put(mobile, :delayed, false))}
