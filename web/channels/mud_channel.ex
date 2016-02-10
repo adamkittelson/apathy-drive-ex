@@ -10,7 +10,7 @@ defmodule ApathyDrive.MUDChannel do
           %Spirit{} = spirit ->
             case Process.whereis(:"spirit_#{spirit.id}") do
               nil ->
-                {:ok, pid} = ApathyDrive.Mobile.start(%{spirit: spirit.id, socket: self})
+                {:ok, pid} = ApathyDrive.Mobile.start(%ApathyDrive.Mobile{spirit: spirit.id, socket: self})
                 socket = assign(socket, :mobile, pid)
                 send(self, :after_join)
                 {:ok, socket}

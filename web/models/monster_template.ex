@@ -24,6 +24,7 @@ defmodule MonsterTemplate do
     field :experience,             :integer
     field :last_killed_at,         Timex.Ecto.DateTime
     field :regen_time_in_minutes,  :integer
+    field :permanent,              :boolean
 
     has_many :monsters, Monster
     has_many :lairs, ApathyDrive.LairMonster
@@ -36,7 +37,7 @@ defmodule MonsterTemplate do
 
   def changeset(%MonsterTemplate{} = monster_template, params \\ :empty) do
     monster_template
-    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting gender alignment level game_limit experience), ~w())
+    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting gender alignment level game_limit permanent experience), ~w())
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
     |> validate_inclusion(:gender, MonsterTemplate.genders)
@@ -210,12 +211,19 @@ defmodule MonsterTemplate do
       experience: monster_template.experience,
       monster_template_id: monster_template.id,
       questions: monster_template.questions,
-      flags: monster_template.flags
+      flags: monster_template.flags,
+      permanent: monster_template.permanent
     }
 
     monster =
       monster
       |> Map.put(:keywords, String.split(monster.name))
+
+    monster = Map.merge(%Mobile{}, monster)
+
+    if monster.permanent do
+      monster = Repo.save!(monster)
+    end
 
     {:reply, monster, monster_template}
   end

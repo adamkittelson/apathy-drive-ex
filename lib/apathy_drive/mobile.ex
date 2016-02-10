@@ -42,10 +42,26 @@ defmodule ApathyDrive.Mobile do
     field :combo,           :any,     virtual: true
     field :delayed,         :boolean, virtual: true, default: false
     field :last_effect_key, :any,     virtual: true, default: 0
+    field :permanent,       :boolean, virtual: true, default: false
+
+    timestamps
   end
 
-  def start(state \\ %{}, opts \\ []) do
-    GenServer.start(__MODULE__, Map.merge(%Mobile{}, state), opts)
+  def permanent_monsters_in_room(room_id) do
+    __MODULE__
+    |> where(room_id: ^room_id)
+    |> ApathyDrive.Repo.all
+  end
+
+  def permanent_monster_room_ids do
+    __MODULE__
+    |> distinct(true)
+    |> select([m], m.room_id)
+    |> ApathyDrive.Repo.all
+  end
+
+  def start(%Mobile{} = mobile, opts \\ []) do
+    GenServer.start(__MODULE__, mobile, opts)
   end
 
   def use_ability(pid, command, arguments) do
@@ -1300,7 +1316,13 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_cast({:add_experience, exp}, %Mobile{spirit: nil, experience: experience} = mobile) do
-    {:noreply, Map.put(mobile, :experience, experience + exp)}
+    mobile = Map.put(mobile, :experience, experience + exp)
+
+    if mobile.permanent do
+      mobile = Repo.save!(mobile)
+    end
+
+    {:noreply, mobile}
   end
 
   def handle_cast({:add_experience, exp}, %Mobile{spirit: spirit} = mobile) do
