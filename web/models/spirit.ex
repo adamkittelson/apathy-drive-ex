@@ -203,7 +203,7 @@ defmodule Spirit do
   def add_experience(%Spirit{} = spirit, exp) do
     spirit = spirit
              |> Map.put(:experience, spirit.experience + exp)
-             |> Systems.Level.advance
+             |> ApathyDrive.Level.advance
              |> Spirit.save
 
     spirit
@@ -524,7 +524,7 @@ defmodule Spirit do
      |> Map.put(:faction, faction)
      |> Map.put(:alignment, alignment)
      |> Map.put(:experience, new_exp)
-     |> Map.put(:level, Systems.Level.level_at_exp(new_exp))
+     |> Map.put(:level, ApathyDrive.Level.level_at_exp(new_exp))
      |> set_abilities
      |> Spirit.save
 
