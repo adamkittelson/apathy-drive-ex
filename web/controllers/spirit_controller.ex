@@ -52,6 +52,7 @@ defmodule ApathyDrive.SpiritController do
         changeset
         |> put_change(:class_id, class_id)
         |> put_change(:room_id, ApathyDrive.Class.start_room(class_id))
+        |> put_change(:unity, "angel")
         |> Repo.update!
 
       case :global.whereis_name(:"spirit_#{spirit.id}") do

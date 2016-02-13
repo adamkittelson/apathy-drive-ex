@@ -35,6 +35,7 @@ defmodule Spirit do
     field :admin,             :boolean
     field :inventory,         ApathyDrive.JSONB, default: []
     field :equipment,         ApathyDrive.JSONB, default: []
+    field :unity,             :string
 
     timestamps
   end
@@ -93,6 +94,13 @@ defmodule Spirit do
         %Spirit{room_id: Room.start_room_id, external_id: external_id}
         |> Repo.insert!
     end
+  end
+
+  def unities do
+    __MODULE__
+    |> distinct(true)
+    |> select([s], s.unity)
+    |> Repo.all
   end
 
   def save(spirit) when is_pid(spirit), do: spirit |> value |> save

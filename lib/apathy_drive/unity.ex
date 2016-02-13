@@ -9,70 +9,32 @@ defmodule ApathyDrive.Unity do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  def forms(mobile, limb) do
-    GenServer.cast(__MODULE__, {:forms, mobile, limb})
-  end
-
-  def construct(mobile, mobile_forms, item_name) do
-    GenServer.cast(__MODULE__, {:construct, mobile, mobile_forms, item_name})
-  end
-
-  def update_forms do
-    GenServer.cast(__MODULE__, :update_forms)
-  end
-
-  def init(forms) do
+  def init(unities) do
+    send(self, :update_unities)
     Process.send_after(self, :redistribute_essence, @interval)
 
-    {:ok, forms}
+    {:ok, unities}
   end
 
-  def handle_cast({:forms, mobile, limb}, forms) do
-    if mobile in members() do
-      send mobile, {:list_forms, forms, limb}
-    else
-      send mobile, {:list_forms, :non_member, limb}
-    end
-
-    {:noreply, forms}
+  def handle_info(:update_unities, _unities) do
+    {:noreply, Spirit.unities}
   end
 
-  def handle_cast({:construct, mobile, mobile_forms, item_name}, forms) do
-    match = if mobile in members() do
-      find_form(forms, item_name)
-    else
-      find_form(mobile_forms, item_name)
-    end
+  def handle_info(:redistribute_essence, unities) do
+    Enum.each(unities, fn(unity) ->
+      Logger.debug "Redstributing Essence for #{unity}"
+      contributors = ApathyDrive.PubSub.subscribers("#{unity}-unity")
+      contributions = contributions(contributors)
 
-    send mobile, {:construct_item, item_name, match}
+      contributions
+      |> calculate_distributions()
+      |> distribute()
 
-    {:noreply, forms}
-  end
-
-  def handle_cast(:update_forms, _forms) do
-    :timer.sleep(100)
-
-    forms =
-      members()
-      |> Enum.map(&Mobile.forms/1)
-      |> List.flatten
-      |> Enum.uniq
-
-    {:noreply, forms}
-  end
-
-  def handle_info(:redistribute_essence, forms) do
-    Logger.debug "Redstributing Essence"
-    contributors = members()
-    contributions = contributions(contributors)
-
-    contributions
-    |> calculate_distributions()
-    |> distribute()
+    end)
 
     Process.send_after(self, :redistribute_essence, @interval)
 
-    {:noreply, forms}
+    {:noreply, unities}
   end
 
   def calculate_distributions(contributions) do
@@ -85,16 +47,6 @@ defmodule ApathyDrive.Unity do
     |> Map.keys
     |> Enum.sort_by(&Map.get(contributions, &1))
     |> calculate_distributions(contributions, exp_pool)
-  end
-
-  def members do
-    ApathyDrive.PubSub.subscribers("unity")
-  end
-
-  defp find_form(forms, item_name) do
-    forms
-    |> Enum.map(&(%{name: &1.name, keywords: String.split(&1.name), item: &1}))
-    |> Systems.Match.one(:name_contains, item_name)
   end
 
   defp calculate_distributions([], distributions, _exp_pool), do: distributions
