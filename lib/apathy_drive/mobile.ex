@@ -1405,7 +1405,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_cast({:list_forms, limb}, %Mobile{} = mobile) do
-    ApathyDrive.Unity.forms(self, limb)
+    list_forms(mobile, forms(mobile), limb)
 
     {:noreply, mobile}
   end
@@ -1443,18 +1443,6 @@ defmodule ApathyDrive.Mobile do
     class_name = String.downcase(spirit.class.name)
 
     ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
-    {:noreply, mobile}
-  end
-
-  def handle_info({:list_forms, :non_member, limb}, mobile) do
-    list_forms(mobile, forms(mobile), limb)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:list_forms, forms, limb}, mobile) do
-    list_forms(mobile, forms, limb)
-
     {:noreply, mobile}
   end
 
@@ -1894,8 +1882,6 @@ end
   defp list_forms(mobile, forms, limb) do
     alias ApathyDrive.Item
 
-    personal_forms = forms(mobile)
-
     Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
 
     forms
@@ -1914,14 +1900,11 @@ end
               |> to_string
               |> String.ljust(12)
 
-             mark = if item in personal_forms, do: "", else: "<span class='white'>*</span>"
-
-             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(Item.strength(item)), 3)} | #{String.rjust(to_string(Item.agility(item)), 3)} | #{String.rjust(to_string(Item.will(item)), 3)} | #{item.name} #{mark}</span></p>")
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(Item.strength(item)), 3)} | #{String.rjust(to_string(Item.agility(item)), 3)} | #{String.rjust(to_string(Item.will(item)), 3)} | #{item.name}</span></p>")
            end)
            Mobile.send_scroll(mobile, "<p>\n</p>")
          end
        end)
-    Mobile.send_scroll(mobile, "<p><span class='white'>*</span> = via Angelic Unity</p>")
   end
 
 end
