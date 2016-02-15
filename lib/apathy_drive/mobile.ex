@@ -620,6 +620,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_regen,    1_000, :regen})
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
+      |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -629,7 +630,6 @@ defmodule ApathyDrive.Mobile do
 
         mobile =
           mobile
-          |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
           |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
       else
         ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
@@ -1062,7 +1062,6 @@ defmodule ApathyDrive.Mobile do
         |> Map.put(:unity, unity)
         |> Map.put(:alignment, alignment)
         |> Mobile.add_experience(essence_required)
-        |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
         |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
         ApathyDrive.PubSub.subscribe(self, "#{unity}-unity")
@@ -1770,13 +1769,13 @@ end
   end
 
   def handle_info(:notify_presence, %Mobile{room_id: room_id} = mobile) do
-    ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room_id}:mobiles", {:monster_present, self, mobile.alignment}
+    ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room_id}:mobiles", {:monster_present, self, mobile.alignment, mobile.unity || (mobile.spirit && mobile.spirit.unity)}
 
     {:noreply, mobile}
   end
 
-  def handle_info({:monster_present, intruder, intruder_alignment}, %Mobile{spirit: nil} = mobile) do
-    mobile = ApathyDrive.Aggression.react(%{mobile: mobile, alignment: mobile.alignment}, %{intruder: intruder, alignment: intruder_alignment})
+  def handle_info({:monster_present, intruder, intruder_alignment, intruder_unity}, %Mobile{spirit: nil} = mobile) do
+    mobile = ApathyDrive.Aggression.react(%{mobile: mobile, alignment: mobile.alignment, unity: mobile.unity || (mobile.spirit && mobile.spirit.unity)}, %{intruder: intruder, alignment: intruder_alignment, unity: intruder_unity})
 
     {:noreply, mobile}
   end

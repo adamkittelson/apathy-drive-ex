@@ -1,6 +1,10 @@
 defmodule ApathyDrive.Aggression do
   alias ApathyDrive.Mobile
 
+  def react(%{mobile: %Mobile{} = mobile, unity: unity}, %{unity: intruder_unity}) when unity == intruder_unity do
+    mobile
+  end
+
   def react(%{mobile: %Mobile{} = mobile, alignment: "good"}, %{intruder: intruder, alignment: "evil"}) do
     attack(mobile, intruder)
   end
