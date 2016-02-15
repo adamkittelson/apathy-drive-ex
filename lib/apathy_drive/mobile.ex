@@ -5,6 +5,8 @@ defmodule ApathyDrive.Mobile do
   import Systems.Text
   import TimerManager, only: [seconds: 1]
 
+  @unity_hp_regen_bonus 100
+
   schema "mobiles" do
     belongs_to :room, Room
     belongs_to :monster_template, MonsterTemplate
@@ -625,7 +627,10 @@ defmodule ApathyDrive.Mobile do
       if mobile.unity do
         ApathyDrive.PubSub.subscribe(self, "#{mobile.unity}-unity")
 
-        mobile = TimerManager.send_every(mobile, {:monster_present,  4_000, :notify_presence})
+        mobile =
+          mobile
+          |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
+          |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
       else
         ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
 
@@ -669,6 +674,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
+      |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -1057,6 +1063,7 @@ defmodule ApathyDrive.Mobile do
         |> Map.put(:alignment, alignment)
         |> Mobile.add_experience(essence_required)
         |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
+        |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
         ApathyDrive.PubSub.subscribe(self, "#{unity}-unity")
 
