@@ -88,7 +88,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:add_experience, exp})
   end
   def add_experience(%Mobile{experience: experience} = mobile, exp) do
-    mobile = Map.put(mobile, :experience, experience + exp)
+    mobile =
+      mobile
+      |> Map.put(:experience, experience + exp)
+      |> ApathyDrive.Level.advance
 
     if mobile.permanent do
       mobile = Repo.save!(mobile)
@@ -1406,6 +1409,7 @@ defmodule ApathyDrive.Mobile do
     if new_spirit.level > spirit.level do
       mobile = mobile
                |> Map.put(:spirit, new_spirit)
+               |> Map.put(:level, new_spirit.level)
                |> set_abilities
                |> set_max_mana
                |> set_max_hp
@@ -1640,7 +1644,12 @@ end
     {:noreply, mobile}
   end
 
-  def handle_info({:mobile_died, mobile: %Mobile{}, reward: _exp}, %Mobile{spirit: nil} = mobile) do
+  def handle_info({:mobile_died, mobile: %Mobile{}, reward: _exp}, %Mobile{unity: nil, spirit: nil} = mobile) do
+    {:noreply, mobile}
+  end
+  def handle_info({:mobile_died, mobile: %Mobile{} = _deceased, reward: exp}, %Mobile{spirit: nil} = mobile) do
+    mobile = add_experience(mobile, exp)
+
     {:noreply, mobile}
   end
   def handle_info({:mobile_died, mobile: %Mobile{} = deceased, reward: exp}, %Mobile{spirit: %Spirit{} = spirit} = mobile) do

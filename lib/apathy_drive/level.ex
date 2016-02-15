@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Level do
 
-  def exp_to_next_level(%Spirit{} = spirit) do
-    exp_at_level(spirit.level + 1) - spirit.experience
+  def exp_to_next_level(entity) do
+    exp_at_level(entity.level + 1) - entity.experience
   end
 
   def exp_for_level(1), do: 0
@@ -32,14 +32,14 @@ defmodule ApathyDrive.Level do
     end
   end
 
-  def advance(%Spirit{} = spirit) do
-    advance(spirit, exp_to_next_level(spirit))
+  def advance(entity) do
+    advance(entity, exp_to_next_level(entity))
   end
 
-  def advance(%Spirit{} = spirit, exp_tnl) when exp_tnl < 1 do
-    put_in(spirit.level, spirit.level + 1)
+  def advance(entity, exp_tnl) when exp_tnl < 1 do
+    put_in(entity.level, entity.level + 1)
   end
-  def advance(%Spirit{} = spirit, _exp_tnl), do: spirit
+  def advance(entity, _exp_tnl), do: entity
 
   def display_exp_table do
     Enum.each(1..50, fn(level) ->
