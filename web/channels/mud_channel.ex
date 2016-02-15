@@ -34,7 +34,7 @@ defmodule ApathyDrive.MUDChannel do
   def handle_info({:respawn, spirit: spirit}, socket) do
     spirit = Repo.save!(spirit)
 
-    {:ok, pid} = ApathyDrive.Mobile.start(%{spirit: spirit.id, socket: self})
+    {:ok, pid} = ApathyDrive.Mobile.start(%ApathyDrive.Mobile{spirit: spirit.id, socket: self})
 
     socket = assign(socket, :mobile, pid)
 
