@@ -208,7 +208,7 @@ defmodule MonsterTemplate do
       gender: monster_template.gender,
       greeting: monster_template.greeting,
       level: monster_template.level,
-      experience: monster_template.experience,
+      experience: ApathyDrive.Level.exp_at_level(monster_template.level),
       monster_template_id: monster_template.id,
       questions: monster_template.questions,
       flags: monster_template.flags,

@@ -44,6 +44,7 @@ defmodule ApathyDrive.Mobile do
     field :delayed,         :boolean, virtual: true, default: false
     field :last_effect_key, :any,     virtual: true, default: 0
     field :permanent,       :boolean, virtual: true, default: false
+    field :spawned_at,      :integer, virtual: true
 
     timestamps
   end
@@ -83,8 +84,17 @@ defmodule ApathyDrive.Mobile do
     |> ApathyDrive.Repo.all
   end
 
-  def add_experience(mobile, exp) do
+  def add_experience(mobile, exp) when is_pid(mobile) do
     GenServer.cast(mobile, {:add_experience, exp})
+  end
+  def add_experience(%Mobile{experience: experience} = mobile, exp) do
+    mobile = Map.put(mobile, :experience, experience + exp)
+
+    if mobile.permanent do
+      mobile = Repo.save!(mobile)
+    end
+
+    mobile
   end
 
   def add_form(mobile, item) do
@@ -207,6 +217,10 @@ defmodule ApathyDrive.Mobile do
 
   def experience(mobile) do
     GenServer.call(mobile, :experience)
+  end
+
+  def turn_data(mobile) do
+    GenServer.call(mobile, :turn_data)
   end
 
   def effects(mobile) do
@@ -604,9 +618,15 @@ defmodule ApathyDrive.Mobile do
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
-      ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
+
       if mobile.unity do
         ApathyDrive.PubSub.subscribe(self, "#{mobile.unity}-unity")
+
+        mobile = TimerManager.send_every(mobile, {:monster_present,  4_000, :notify_presence})
+      else
+        ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
+
+        mobile = Map.put(mobile, :spawned_at, mobile.room_id)
       end
 
     {:ok, mobile}
@@ -667,6 +687,10 @@ defmodule ApathyDrive.Mobile do
 
   def possess(mobile, spirit_id, socket) when is_pid(mobile) do
     GenServer.call(mobile, {:possess, spirit_id, socket})
+  end
+
+  def turn(mobile, data) when is_pid(mobile) do
+    GenServer.call(mobile, {:turn, data})
   end
 
   def unpossess(mobile) when is_pid(mobile) do
@@ -896,7 +920,7 @@ defmodule ApathyDrive.Mobile do
     |> Room.mobiles
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
          threat = Map.get(hate, potential_target, 0)
-         if threat > 0 do
+         if threat > 0 and !(potential_target in ApathyDrive.PubSub.subscribers("#{mobile.unity}-unity")) do
            Map.put(targets, threat, potential_target)
          else
            targets
@@ -968,6 +992,16 @@ defmodule ApathyDrive.Mobile do
     {:reply, mobile.experience || mobile.spirit.experience, mobile}
   end
 
+  def handle_call(:turn_data, _from, mobile) do
+    data = %{
+      unity: mobile.spirit.unity,
+      essence: mobile.spirit.experience,
+      alignment: mobile.spirit.class.alignment
+    }
+
+    {:reply, data, mobile}
+  end
+
   def handle_call(:effects, _from, mobile) do
     {:reply, mobile.effects, mobile}
   end
@@ -1005,6 +1039,36 @@ defmodule ApathyDrive.Mobile do
     {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, mobile}
   end
 
+  def handle_call({:turn, %{unity: unity, essence: essence, alignment: alignment}}, _ref, %Mobile{unity: nil, level: level, experience: exp} = mobile) do
+    essence_required = ApathyDrive.Level.exp_at_level(level + 1) - exp
+
+    if essence_required < essence do
+      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spawned_at}:spawned_monsters")
+
+      mobile =
+        mobile
+        |> Map.put(:attack_target, nil)
+        |> Map.put(:spawned_at, nil)
+        |> Map.put(:permanent, true)
+        |> Map.put(:unity, unity)
+        |> Map.put(:alignment, alignment)
+        |> Mobile.add_experience(essence_required)
+        |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
+
+        ApathyDrive.PubSub.subscribe(self, "#{unity}-unity")
+
+      {:reply, {:ok, mobile.name, essence_required}, mobile}
+    else
+      {:reply, {:error, :not_enough_essence, mobile.name, essence_required}, mobile}
+    end
+  end
+  def handle_call({:turn, %{unity: unity}}, _ref, %Mobile{unity: current_unity} = mobile) when unity == current_unity do
+    {:reply, {:error, :already_turned, mobile.name}, mobile}
+  end
+  def handle_call({:turn, %{unity: _unity}}, _ref, %Mobile{unity: _current_unity} = mobile) do
+    {:reply, {:error, :already_turned_by_other, mobile.name}, mobile}
+  end
+
   def handle_call({:possess, _spirit_id, _socket}, _from, %Mobile{monster_template_id: nil} = mobile) do
     {:reply, {:error, "You can't possess other players."}, mobile}
   end
@@ -1019,7 +1083,7 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
       ApathyDrive.PubSub.subscribe(self, "chat:gossip")
       ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
-      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
+      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spawned_at}:spawned_monsters")
 
       mobile =
         mobile
@@ -1328,12 +1392,8 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_cast({:add_experience, exp}, %Mobile{spirit: nil, experience: experience} = mobile) do
-    mobile = Map.put(mobile, :experience, experience + exp)
-
-    if mobile.permanent do
-      mobile = Repo.save!(mobile)
-    end
+  def handle_cast({:add_experience, exp}, %Mobile{spirit: nil, experience: _experience} = mobile) do
+    mobile = add_experience(mobile, exp)
 
     {:noreply, mobile}
   end
