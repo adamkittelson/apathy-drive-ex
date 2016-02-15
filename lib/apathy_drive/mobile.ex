@@ -26,27 +26,28 @@ defmodule ApathyDrive.Mobile do
     field :questions,            ApathyDrive.JSONB
     field :unity,                :string
 
-    field :spirit,          :any,     virtual: true
-    field :socket,          :any,     virtual: true
-    field :hp,              :float,   virtual: true
-    field :max_hp,          :integer, virtual: true
-    field :strength,        :integer, virtual: true
-    field :agility,         :integer, virtual: true
-    field :will,            :integer, virtual: true
-    field :mana,            :float,   virtual: true
-    field :max_mana,        :integer, virtual: true
-    field :effects,         :any,     virtual: true, default: %{}
-    field :pid,             :any,     virtual: true
-    field :keywords,        :any,     virtual: true, default: []
-    field :abilities,       :any,     virtual: true, default: []
-    field :hate,            :any,     virtual: true, default: %{}
-    field :timers,          :any,     virtual: true, default: %{}
-    field :attack_target,   :any,     virtual: true
-    field :combo,           :any,     virtual: true
-    field :delayed,         :boolean, virtual: true, default: false
-    field :last_effect_key, :any,     virtual: true, default: 0
-    field :permanent,       :boolean, virtual: true, default: false
-    field :spawned_at,      :integer, virtual: true
+    field :spirit,           :any,     virtual: true
+    field :socket,           :any,     virtual: true
+    field :hp,               :float,   virtual: true
+    field :max_hp,           :integer, virtual: true
+    field :strength,         :integer, virtual: true
+    field :agility,          :integer, virtual: true
+    field :will,             :integer, virtual: true
+    field :mana,             :float,   virtual: true
+    field :max_mana,         :integer, virtual: true
+    field :effects,          :any,     virtual: true, default: %{}
+    field :pid,              :any,     virtual: true
+    field :keywords,         :any,     virtual: true, default: []
+    field :abilities,        :any,     virtual: true, default: []
+    field :hate,             :any,     virtual: true, default: %{}
+    field :timers,           :any,     virtual: true, default: %{}
+    field :attack_target,    :any,     virtual: true
+    field :combo,            :any,     virtual: true
+    field :delayed,          :boolean, virtual: true, default: false
+    field :last_effect_key,  :any,     virtual: true, default: 0
+    field :permanent,        :boolean, virtual: true, default: false
+    field :spawned_at,       :integer, virtual: true
+    field :chance_to_follow, :integer, virtual: true, default: 0
 
     timestamps
   end
@@ -304,6 +305,18 @@ defmodule ApathyDrive.Mobile do
     mobile.effects
     |> Map.values
     |> Enum.any?(&(Map.has_key?(&1, "blinded")))
+  end
+
+  def on_ai_move_cooldown?(%Mobile{effects: effects}) do
+    effects
+    |> Map.values
+    |> Enum.any?(&(&1["cooldown"] == :ai_movement))
+  end
+
+  def find_room(%Mobile{room_id: room_id}) do
+    room_id
+    |> Room.find
+    |> Room.value
   end
 
   def display_inventory(mobile) when is_pid(mobile) do

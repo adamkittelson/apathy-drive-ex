@@ -212,7 +212,8 @@ defmodule MonsterTemplate do
       monster_template_id: monster_template.id,
       questions: monster_template.questions,
       flags: monster_template.flags,
-      permanent: monster_template.permanent
+      permanent: monster_template.permanent,
+      chance_to_follow: monster_template.chance_to_follow
     }
 
     monster =

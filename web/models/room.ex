@@ -156,6 +156,19 @@ defmodule Room do
     GenServer.cast(room, {:add_items, items})
   end
 
+  def random_exit(room) when is_pid(room) do
+    GenServer.call(room, :random_exit)
+  end
+  def random_exit(%Room{} = room) do
+    case room.exits do
+      nil ->
+        nil
+      exits ->
+        exits
+        |> Enum.random
+    end
+  end
+
   def unlocked?(room, direction) when is_pid(room) do
     GenServer.call(room, {:unlocked?, direction})
   end
@@ -263,19 +276,6 @@ defmodule Room do
          :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".display_direction(room, room_exit)
        end)
     |> Enum.reject(&(&1 == nil))
-  end
-
-  def random_direction(%Room{} = room) do
-    :random.seed(:os.timestamp)
-
-    case room.exits do
-      nil ->
-        nil
-      exits ->
-        exits
-        |> Enum.map(&(&1["direction"]))
-        |> Enum.random
-    end
   end
 
   # def look(%Room{light: light} = room, %Spirit{} = spirit) do
@@ -626,6 +626,10 @@ defmodule Room do
 
   def handle_call({:unlocked?, direction}, _from, room) do
     {:reply, unlocked?(room, direction), room}
+  end
+
+  def handle_call(:random_exit, _from, room) do
+    {:reply, random_exit(room), room}
   end
 
   def handle_call({:open, direction}, _from, room) do

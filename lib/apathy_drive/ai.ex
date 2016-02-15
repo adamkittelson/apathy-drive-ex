@@ -9,7 +9,7 @@ defmodule ApathyDrive.AI do
     if casting?(mobile) do
       mobile
     else
-      heal(mobile) || bless(mobile) || curse(mobile) || attack(mobile) || mobile
+      heal(mobile) || bless(mobile) || curse(mobile) || attack(mobile) || move(mobile) || mobile
     end
   end
 
@@ -136,22 +136,26 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def move(%Monster{spirit: nil} = monster) do
-    if !Monster.on_ai_move_cooldown?(monster) && !Monster.aggro_target(monster) do
+  def move(%Mobile{spirit: nil} = mobile) do
+    if !Mobile.on_ai_move_cooldown?(mobile) && !Mobile.aggro_target(mobile) do
 
-      room = Monster.find_room(monster)
+      room = Room.find(mobile.room_id)
       roll = :random.uniform(100)
 
-      if room && (roll < trunc(monster.chance_to_follow / 5)) do
-        direction = Room.random_direction(room)
+      if room && (roll < trunc(mobile.chance_to_follow / 5)) do
+        room_exit = Room.random_exit(room)
 
-        if direction do
-          ApathyDrive.Command.execute(monster, direction, [])
+        if room_exit do
+          monster = self
+          Task.start fn ->
+            ApathyDrive.Exit.move(room, monster, room_exit)
+          end
+          mobile
         end
       end
     end
   end
-  def move(%Monster{}), do: nil
+  def move(%Mobile{}), do: nil
 
   defp casting?(%Mobile{timers: timers}) do
     !!Map.get(timers, :cast_timer)
