@@ -9,6 +9,7 @@ defmodule ApathyDrive do
     children = [
       worker(ApathyDrive.Endpoint, []),
       worker(ApathyDrive.Repo, []),
+      worker(ApathyDrive.Migrator, [], restart: :temporary),
       worker(ApathyDrive.Unity, [])
     ]
 
@@ -17,7 +18,6 @@ defmodule ApathyDrive do
     opts = [strategy: :one_for_one, name: ApathyDrive.Supervisor]
     started = Supervisor.start_link(children, opts)
 
-    run_migrations()
     load_rooms_with_permanent_monsters()
 
     started
@@ -28,10 +28,6 @@ defmodule ApathyDrive do
   def config_change(changed, _new, removed) do
     ApathyDrive.Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp run_migrations() do
-    Ecto.Migrator.run(ApathyDrive.Repo, "#{:code.priv_dir(:apathy_drive)}/repo/migrations", :up, all: true)
   end
 
   defp load_rooms_with_permanent_monsters do
