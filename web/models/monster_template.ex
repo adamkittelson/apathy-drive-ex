@@ -25,6 +25,7 @@ defmodule MonsterTemplate do
     field :last_killed_at,         Timex.Ecto.DateTime
     field :regen_time_in_minutes,  :integer
     field :permanent,              :boolean
+    field :movement,               :string
 
     has_many :monsters, Monster
     has_many :lairs, ApathyDrive.LairMonster
@@ -213,7 +214,8 @@ defmodule MonsterTemplate do
       questions: monster_template.questions,
       flags: monster_template.flags,
       permanent: monster_template.permanent,
-      chance_to_follow: monster_template.chance_to_follow
+      chance_to_follow: monster_template.chance_to_follow,
+      movement: monster_template.movement
     }
 
     monster =

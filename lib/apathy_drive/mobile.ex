@@ -25,6 +25,7 @@ defmodule ApathyDrive.Mobile do
     field :auto_attack_interval, :float,            default: 4.0
     field :questions,            ApathyDrive.JSONB
     field :unity,                :string
+    field :movement,             :string
 
     field :spirit,           :any,     virtual: true
     field :socket,           :any,     virtual: true
@@ -305,12 +306,6 @@ defmodule ApathyDrive.Mobile do
     mobile.effects
     |> Map.values
     |> Enum.any?(&(Map.has_key?(&1, "blinded")))
-  end
-
-  def on_ai_move_cooldown?(%Mobile{effects: effects}) do
-    effects
-    |> Map.values
-    |> Enum.any?(&(&1["cooldown"] == :ai_movement))
   end
 
   def find_room(%Mobile{room_id: room_id}) do
@@ -634,6 +629,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
+      |> TimerManager.send_every({:monster_movement, 5_000, :auto_move})
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -687,6 +683,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
+      |> TimerManager.send_every({:monster_movement, 5_000, :auto_move})
       |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
@@ -1567,11 +1564,38 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-def handle_info({:send_unity, message}, mobile) do
-  send_unity(mobile, message)
+  def handle_info({:send_unity, message}, mobile) do
+    send_unity(mobile, message)
 
-  {:noreply, mobile}
-end
+    {:noreply, mobile}
+  end
+
+  def handle_info(:auto_move, %Mobile{movement: "stationary"} = mobile) do
+    {:noreply, mobile}
+  end
+  def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
+    if !Mobile.aggro_target(mobile) do
+
+      room = Room.find(mobile.room_id)
+      roll = :random.uniform(100)
+
+      if room && (roll < trunc(mobile.chance_to_follow / 5)) do
+        room_exit = Room.random_exit(room)
+
+        if room_exit do
+          monster = self
+          Task.start fn ->
+            ApathyDrive.Exit.move(room, monster, room_exit)
+          end
+          mobile
+        end
+      end
+    end
+    {:noreply, mobile}
+  end
+  def handle_info(:auto_move, mobile) do
+    {:noreply, mobile}
+  end
 
   def handle_info({:execute_script, script}, mobile) do
     {:noreply, ApathyDrive.Script.execute(script, Map.put(mobile, :delayed, false))}
