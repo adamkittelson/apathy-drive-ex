@@ -27,28 +27,30 @@ defmodule ApathyDrive.Mobile do
     field :unity,                :string
     field :movement,             :string
 
-    field :spirit,           :any,     virtual: true
-    field :socket,           :any,     virtual: true
-    field :hp,               :float,   virtual: true
-    field :max_hp,           :integer, virtual: true
-    field :strength,         :integer, virtual: true
-    field :agility,          :integer, virtual: true
-    field :will,             :integer, virtual: true
-    field :mana,             :float,   virtual: true
-    field :max_mana,         :integer, virtual: true
-    field :effects,          :any,     virtual: true, default: %{}
-    field :pid,              :any,     virtual: true
-    field :keywords,         :any,     virtual: true, default: []
-    field :abilities,        :any,     virtual: true, default: []
-    field :hate,             :any,     virtual: true, default: %{}
-    field :timers,           :any,     virtual: true, default: %{}
-    field :attack_target,    :any,     virtual: true
-    field :combo,            :any,     virtual: true
-    field :delayed,          :boolean, virtual: true, default: false
-    field :last_effect_key,  :any,     virtual: true, default: 0
-    field :permanent,        :boolean, virtual: true, default: false
-    field :spawned_at,       :integer, virtual: true
-    field :chance_to_follow, :integer, virtual: true, default: 0
+    field :spirit,             :any,     virtual: true
+    field :socket,             :any,     virtual: true
+    field :hp,                 :float,   virtual: true
+    field :max_hp,             :integer, virtual: true
+    field :strength,           :integer, virtual: true
+    field :agility,            :integer, virtual: true
+    field :will,               :integer, virtual: true
+    field :mana,               :float,   virtual: true
+    field :max_mana,           :integer, virtual: true
+    field :effects,            :any,     virtual: true, default: %{}
+    field :pid,                :any,     virtual: true
+    field :keywords,           :any,     virtual: true, default: []
+    field :abilities,          :any,     virtual: true, default: []
+    field :hate,               :any,     virtual: true, default: %{}
+    field :timers,             :any,     virtual: true, default: %{}
+    field :attack_target,      :any,     virtual: true
+    field :combo,              :any,     virtual: true
+    field :delayed,            :boolean, virtual: true, default: false
+    field :last_effect_key,    :any,     virtual: true, default: 0
+    field :permanent,          :boolean, virtual: true, default: false
+    field :spawned_at,         :integer, virtual: true
+    field :chance_to_follow,   :integer, virtual: true, default: 0
+    field :movement_frequency, :integer, virtual: true, default: 5
+    field :last_room_id,       :integer, virtual: true
 
     timestamps
   end
@@ -629,7 +631,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
-      |> TimerManager.send_every({:monster_movement, 5_000, :auto_move})
+      |> move_after()
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -639,6 +641,7 @@ defmodule ApathyDrive.Mobile do
 
         mobile =
           mobile
+          |> Map.put(:movement_frequency, 1)
           |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
       else
         ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:spawned_monsters")
@@ -683,7 +686,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
-      |> TimerManager.send_every({:monster_movement, 5_000, :auto_move})
+      |> move_after()
       |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
@@ -1071,6 +1074,7 @@ defmodule ApathyDrive.Mobile do
         |> Map.put(:permanent, true)
         |> Map.put(:unity, unity)
         |> Map.put(:alignment, alignment)
+        |> Map.put(:movement_frequency, 1)
         |> Mobile.add_experience(essence_required)
         |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
@@ -1571,30 +1575,31 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:auto_move, %Mobile{movement: "stationary"} = mobile) do
-    {:noreply, mobile}
+    {:noreply, move_after(mobile)}
   end
   def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
     if !Mobile.aggro_target(mobile) do
 
       room = Room.find(mobile.room_id)
-      roll = :random.uniform(100)
 
-      if room && (roll < trunc(mobile.chance_to_follow / 5)) do
-        room_exit = Room.random_exit(room)
+      if room do
+        room_exit = Room.random_exit(room, mobile.last_room_id)
 
         if room_exit do
           monster = self
           Task.start fn ->
             ApathyDrive.Exit.move(room, monster, room_exit)
           end
-          mobile
+          mobile = Map.put(mobile, :last_room_id, mobile.room_id)
         end
       end
     end
-    {:noreply, mobile}
+
+    {:noreply, move_after(mobile)}
   end
   def handle_info(:auto_move, mobile) do
-    {:noreply, mobile}
+
+    {:noreply, move_after(mobile)}
   end
 
   def handle_info({:execute_script, script}, mobile) do
@@ -1961,6 +1966,16 @@ defmodule ApathyDrive.Mobile do
   def initiate_combat(%Mobile{} = mobile) do
     send(mobile.pid, :execute_auto_attack)
     mobile
+  end
+
+  defp move_after(%Mobile{movement_frequency: frequency} = mobile) do
+    time =
+      frequency
+      |> :timer.seconds
+      |> :rand.uniform
+      |> Kernel.+(:timer.seconds(frequency))
+
+    TimerManager.send_after(mobile, {:monster_movement, time, :auto_move})
   end
 
   defp worn_on_max(%{"worn_on" => "Finger"}), do: 2

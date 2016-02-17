@@ -156,16 +156,27 @@ defmodule Room do
     GenServer.cast(room, {:add_items, items})
   end
 
-  def random_exit(room) when is_pid(room) do
-    GenServer.call(room, :random_exit)
+  def random_exit(room, last_room_id) when is_pid(room) do
+    GenServer.call(room, {:random_exit, last_room_id})
   end
-  def random_exit(%Room{} = room) do
+  def random_exit(%Room{} = room, last_room_id) do
     case room.exits do
       nil ->
         nil
       exits ->
-        exits
-        |> Enum.random
+        exit_to_last_room =
+          Enum.find(exits, &(&1["destination"] == last_room_id))
+
+
+        new_exits =
+          exits
+          |> Enum.reject(&(&1 == exit_to_last_room))
+
+        if Enum.any?(new_exits) do
+          Enum.random(new_exits)
+        else
+          exit_to_last_room
+        end
     end
   end
 
@@ -628,8 +639,8 @@ defmodule Room do
     {:reply, unlocked?(room, direction), room}
   end
 
-  def handle_call(:random_exit, _from, room) do
-    {:reply, random_exit(room), room}
+  def handle_call({:random_exit, last_room_id}, _from, room) do
+    {:reply, random_exit(room, last_room_id), room}
   end
 
   def handle_call({:open, direction}, _from, room) do

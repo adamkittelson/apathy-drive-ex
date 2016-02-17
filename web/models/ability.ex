@@ -306,12 +306,8 @@ defmodule ApathyDrive.Ability do
     Mobile.interpolation_data(target)
   end
 
-  def display_pre_cast_message(%Mobile{} = mobile, %{"pre-cast_message" => _} = ability, targets) do
-    target = targets
-             |> List.first
-             |> interpolation_data(mobile)
-
-    cast_messages = cast_messages(ability, mobile, target, %{}, "pre-cast_message")
+  def display_pre_cast_message(%Mobile{} = mobile, %{"pre-cast_message" => _} = ability, _targets) do
+    cast_messages = cast_messages(ability, mobile, mobile, %{}, "pre-cast_message")
 
     Mobile.send_scroll(mobile, cast_messages["user"])
 

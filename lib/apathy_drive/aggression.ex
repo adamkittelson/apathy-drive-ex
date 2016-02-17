@@ -17,8 +17,8 @@ defmodule ApathyDrive.Aggression do
     mobile
   end
 
-  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", unity: unity}, %{intruder: intruder, alignment: "evil", unity: intruder_unity}) when unity != intruder_unity do
-    attack(mobile, intruder)
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", unity: unity}, %{intruder: _intruder, alignment: "evil", unity: intruder_unity}) when unity == intruder_unity do
+    mobile
   end
 
   def react(%{mobile: %Mobile{} = mobile, alignment: "evil", unity: _unity}, %{intruder: intruder, alignment: _alignment, unity: _intruder_unity}) do
