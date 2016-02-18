@@ -17,11 +17,24 @@ defmodule ApathyDrive.Aggression do
     mobile
   end
 
-  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", unity: unity}, %{intruder: _intruder, alignment: "evil", unity: intruder_unity}) when unity == intruder_unity do
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", unity: unity}, %{intruder: _intruder, alignment: "evil", unity: intruder_unity}) when not is_nil(unity) and unity == intruder_unity do
     mobile
   end
 
-  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", unity: _unity}, %{intruder: intruder, alignment: _alignment, unity: _intruder_unity}) do
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", spawned_at: spawned_at}, %{intruder: _intruder, alignment: "evil", spawned_at: intruder_spawned_at}) when spawned_at == intruder_spawned_at do
+    mobile
+  end
+
+  # evil monsters will attack each other if their names aren't similar enough, superficial bastards
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", name: name}, %{intruder: intruder, alignment: "evil", name: intruder_name}) do
+    if String.jaro_distance(name, intruder_name) < 0.65 do
+      attack(mobile, intruder)
+    else
+      mobile
+    end
+  end
+
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil"}, %{intruder: intruder, alignment: _alignment}) do
     attack(mobile, intruder)
   end
 

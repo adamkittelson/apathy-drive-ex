@@ -1811,13 +1811,24 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:notify_presence, %Mobile{room_id: room_id} = mobile) do
-    ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room_id}:mobiles", {:monster_present, self, mobile.alignment, mobile.unity || (mobile.spirit && mobile.spirit.unity)}
+    ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room_id}:mobiles", {:monster_present, self, mobile.alignment, mobile.unity || (mobile.spirit && mobile.spirit.unity), mobile.spawned_at, mobile.name}
 
     {:noreply, mobile}
   end
 
-  def handle_info({:monster_present, intruder, intruder_alignment, intruder_unity}, %Mobile{spirit: nil} = mobile) do
-    mobile = ApathyDrive.Aggression.react(%{mobile: mobile, alignment: mobile.alignment, unity: mobile.unity || (mobile.spirit && mobile.spirit.unity)}, %{intruder: intruder, alignment: intruder_alignment, unity: intruder_unity})
+  def handle_info({:monster_present, intruder, intruder_alignment, intruder_unity, intruder_spawned_at, intruder_name}, %Mobile{spirit: nil} = mobile) do
+    mobile = ApathyDrive.Aggression.react(%{mobile: mobile,
+                                            alignment: mobile.alignment,
+                                            unity: mobile.unity || (mobile.spirit && mobile.spirit.unity),
+                                            spawned_at: mobile.spawned_at,
+                                            name: mobile.name
+                                          },
+                                          %{intruder: intruder,
+                                            alignment: intruder_alignment,
+                                            unity: intruder_unity,
+                                            spawned_at: intruder_spawned_at,
+                                            name: intruder_name
+                                            })
 
     {:noreply, mobile}
   end
