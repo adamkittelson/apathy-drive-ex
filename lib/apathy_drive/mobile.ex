@@ -1607,8 +1607,12 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
     ApathyDrive.PubSub.broadcast!("rooms:#{room_id}:adjacent", {:audibile_movement, room_id, mobile.room_id})
-    mobile = Map.put(mobile, :room_id, room_id)
-    mobile = if mobile.last_room, do: Map.put(mobile, :last_room, last_room), else: mobile
+
+    mobile =
+      mobile
+      |> Map.put(:room_id, room_id)
+      |> Map.put(:last_room, last_room)
+
     ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles:#{mobile.alignment}")
 

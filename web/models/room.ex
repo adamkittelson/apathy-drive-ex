@@ -174,11 +174,12 @@ defmodule Room do
             exit_to_last_room = Enum.find(exits, &(&1["destination"] == last_room_id))
 
             words_in_common =
-              (Regex.scan(~r/\w+/, last_room_name)
-              |> List.flatten
-              |> Enum.uniq) -- (Regex.scan(~r/\w+/, room.name)
-              |> List.flatten
-              |> Enum.uniq)
+              MapSet.union(MapSet.new(Regex.scan(~r/\w+/, last_room_name)
+                                      |> List.flatten
+                                      |> Enum.uniq),
+                           MapSet.new(Regex.scan(~r/\w+/, room.name)
+                                      |> List.flatten
+                                      |> Enum.uniq))
 
             if Enum.any?(words_in_common) do
               new_exits =
@@ -191,7 +192,7 @@ defmodule Room do
                 %{new_exit: exit_to_last_room, last_room: last_room}
               end
             else
-              exit_to_last_room
+              %{new_exit: exit_to_last_room, last_room: last_room}
             end
           nil ->
             if Enum.any?(exits), do: %{new_exit: Enum.random(exits), last_room: %{id: room.id, name: room.name}}

@@ -45,7 +45,7 @@ defmodule ApathyDrive.Command do
           Mobile.held(mobile) ->
             nil
           true ->
-            ApathyDrive.Exits.Command.move_via_command(room, mobile, command_exit)
+            ApathyDrive.Exits.Command.move_via_command(room, mobile, command_exit, nil)
         end
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
         cond do
