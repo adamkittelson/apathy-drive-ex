@@ -39,6 +39,11 @@ defmodule Room do
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
 
+    room.exits
+    |> Enum.each(fn(room_exit) ->
+         PubSub.subscribe(self, "rooms:#{room_exit["destination"]}:adjacent")
+       end)
+
     send(self, :spawn_permanent_monsters)
 
     if room.lair_size && Enum.any?(ApathyDrive.LairMonster.monsters_template_ids(id)) do
@@ -166,8 +171,7 @@ defmodule Room do
       exits ->
         case last_room do
           %{id: last_room_id, name: last_room_name} ->
-            exit_to_last_room =
-              if last_room_id = last_room && last_room.id, do: Enum.find(exits, &(&1["destination"] == last_room_id))
+            exit_to_last_room = Enum.find(exits, &(&1["destination"] == last_room_id))
 
             words_in_common =
               (Regex.scan(~r/\w+/, last_room_name)
@@ -279,6 +283,10 @@ defmodule Room do
   def enter_direction("up"),      do: "above"
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
+
+  def sound_direction("up"),      do: "above you"
+  def sound_direction("down"),    do: "below you"
+  def sound_direction(direction), do: "to the #{direction}"
 
   def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
@@ -960,6 +968,16 @@ defmodule Room do
 
   def handle_info({:room_updated, %{changes: changes}}, room) do
     {:noreply, Map.merge(room, changes)}
+  end
+
+  def handle_info({:audibile_movement, room_id, exception_room_id}, %Room{id: id} = room) when id != exception_room_id do
+    case Enum.find(room.exits, &(&1["destination"] == room_id)) do
+      %{"direction" => direction} ->
+        send_scroll(room, "<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
+      _ ->
+        :noop
+    end
+    {:noreply, room}
   end
 
   def handle_info(_message, room) do

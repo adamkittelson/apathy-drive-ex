@@ -11,6 +11,8 @@ defmodule ApathyDrive.LairSpawning do
         monster = MonsterTemplate.create_monster(monster_template, room)
                   |> MonsterTemplate.spawn
 
+        ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:adjacent", {:audibile_movement, room.id, nil})
+
         room_pid = self
 
         Task.start fn ->
