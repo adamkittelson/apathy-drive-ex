@@ -156,26 +156,41 @@ defmodule Room do
     GenServer.cast(room, {:add_items, items})
   end
 
-  def random_exit(room, last_room_id) when is_pid(room) do
-    GenServer.call(room, {:random_exit, last_room_id})
+  def auto_move_exit(room, last_room) when is_pid(room) do
+    GenServer.call(room, {:auto_move_exit, last_room})
   end
-  def random_exit(%Room{} = room, last_room_id) do
+  def auto_move_exit(%Room{} = room, last_room) do
     case room.exits do
       nil ->
         nil
       exits ->
-        exit_to_last_room =
-          Enum.find(exits, &(&1["destination"] == last_room_id))
+        case last_room do
+          %{id: last_room_id, name: last_room_name} ->
+            exit_to_last_room =
+              if last_room_id = last_room && last_room.id, do: Enum.find(exits, &(&1["destination"] == last_room_id))
 
+            words_in_common =
+              (Regex.scan(~r/\w+/, last_room_name)
+              |> List.flatten
+              |> Enum.uniq) -- (Regex.scan(~r/\w+/, room.name)
+              |> List.flatten
+              |> Enum.uniq)
 
-        new_exits =
-          exits
-          |> Enum.reject(&(&1 == exit_to_last_room))
+            if Enum.any?(words_in_common) do
+              new_exits =
+                exits
+                |> Enum.reject(&(&1 == exit_to_last_room))
 
-        if Enum.any?(new_exits) do
-          Enum.random(new_exits)
-        else
-          exit_to_last_room
+              if Enum.any?(new_exits) do
+                %{new_exit: Enum.random(new_exits), last_room: %{id: room.id, name: room.name}}
+              else
+                %{new_exit: exit_to_last_room, last_room: last_room}
+              end
+            else
+              exit_to_last_room
+            end
+          nil ->
+            if Enum.any?(exits), do: %{new_exit: Enum.random(exits), last_room: %{id: room.id, name: room.name}}
         end
     end
   end
@@ -639,8 +654,8 @@ defmodule Room do
     {:reply, unlocked?(room, direction), room}
   end
 
-  def handle_call({:random_exit, last_room_id}, _from, room) do
-    {:reply, random_exit(room, last_room_id), room}
+  def handle_call({:auto_move_exit, last_room}, _from, room) do
+    {:reply, auto_move_exit(room, last_room), room}
   end
 
   def handle_call({:open, direction}, _from, room) do

@@ -50,7 +50,7 @@ defmodule ApathyDrive.Mobile do
     field :spawned_at,         :integer, virtual: true
     field :chance_to_follow,   :integer, virtual: true, default: 0
     field :movement_frequency, :integer, virtual: true, default: 5
-    field :last_room_id,       :integer, virtual: true
+    field :last_room,          :any,     virtual: true
 
     timestamps
   end
@@ -1578,27 +1578,26 @@ defmodule ApathyDrive.Mobile do
     {:noreply, move_after(mobile)}
   end
   def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
-    if !Mobile.aggro_target(mobile) do
+    if !Mobile.aggro_target(mobile) && (room = Room.find(mobile.room_id)) do
+      case Room.auto_move_exit(room, mobile.last_room) do
+        %{new_exit: room_exit, last_room: last_room} ->
+          mobile = Map.put(mobile, :last_room, last_room)
 
-      room = Room.find(mobile.room_id)
-
-      if room do
-        room_exit = Room.random_exit(room, mobile.last_room_id)
-
-        if room_exit do
           monster = self
+
           Task.start fn ->
             ApathyDrive.Exit.move(room, monster, room_exit)
           end
-          mobile = Map.put(mobile, :last_room_id, mobile.room_id)
-        end
-      end
-    end
 
-    {:noreply, move_after(mobile)}
+          {:noreply, move_after(mobile)}
+        _ ->
+          {:noreply, move_after(mobile)}
+      end
+    else
+      {:noreply, move_after(mobile)}
+    end
   end
   def handle_info(:auto_move, mobile) do
-
     {:noreply, move_after(mobile)}
   end
 
