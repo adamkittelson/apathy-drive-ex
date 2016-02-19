@@ -28,9 +28,9 @@ defmodule ApathyDrive.Exits.Hidden do
     mobile
   end
 
-  def move(current_room, mobile, room_exit) do
+  def move(current_room, mobile, room_exit, last_room) do
     if open?(current_room, room_exit) do
-      super(current_room, mobile, room_exit)
+      super(current_room, mobile, room_exit, last_room)
     else
       Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
     end

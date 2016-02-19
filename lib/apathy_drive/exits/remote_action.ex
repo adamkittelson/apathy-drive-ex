@@ -3,7 +3,7 @@ defmodule ApathyDrive.Exits.RemoteAction do
 
   def display_direction(_room, _room_exit), do: nil
 
-  def move(_room, mobile, _room_exit) do
+  def move(_room, mobile, _room_exit, _last_room) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 

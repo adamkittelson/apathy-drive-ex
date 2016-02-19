@@ -2,8 +2,7 @@ defmodule ApathyDrive.Exits.Trap do
   use ApathyDrive.Exit
   alias ApathyDrive.Ability
 
-  def move(%Room{} = room, %Spirit{} = spirit, room_exit),  do: super(room, spirit, room_exit)
-  def move(%Room{} = room, %Monster{} = monster, room_exit) do
+  def move(room, monster, room_exit, _last_room) do
     destination = Room.find(room_exit["destination"])
                   |> Room.value
 

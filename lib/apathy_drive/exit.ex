@@ -36,16 +36,16 @@ defmodule ApathyDrive.Exit do
 
     room_exit = Room.get_exit(room, direction)
 
-    move(room, mobile, room_exit)
+    move(room, mobile, room_exit, nil)
   end
 
-  def move(_current_room, mobile, nil) do
+  def move(_current_room, mobile, nil, _last_room) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
-  def move(room, mobile, room_exit) do
+  def move(room, mobile, room_exit, last_room) do
     if !Mobile.held(mobile) do
-      :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".move(room, mobile, room_exit)
+      :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".move(room, mobile, room_exit, last_room)
     end
   end
 
@@ -81,12 +81,12 @@ defmodule ApathyDrive.Exit do
         room_exit["direction"]
       end
 
-      def move(current_room, mobile, %{"destination" => destination_id}) do
+      def move(current_room, mobile, %{"destination" => destination_id}, last_room) do
         destination = Room.find(destination_id)
 
         notify_mobile_entered(mobile, current_room, destination)
 
-        send(mobile, {:move_to, destination_id})
+        send(mobile, {:move_to, destination_id, last_room})
 
         Commands.Look.look_at_room(mobile)
 
@@ -160,7 +160,7 @@ defmodule ApathyDrive.Exit do
         exit_to_destination["direction"]
       end
 
-      defoverridable [move: 3,
+      defoverridable [move: 4,
                       look: 3,
                       display_direction: 2]
     end

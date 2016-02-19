@@ -1581,12 +1581,10 @@ defmodule ApathyDrive.Mobile do
     if !Mobile.aggro_target(mobile) && (room = Room.find(mobile.room_id)) do
       case Room.auto_move_exit(room, mobile.last_room) do
         %{new_exit: room_exit, last_room: last_room} ->
-          mobile = Map.put(mobile, :last_room, last_room)
-
           monster = self
 
           Task.start fn ->
-            ApathyDrive.Exit.move(room, monster, room_exit)
+            ApathyDrive.Exit.move(room, monster, room_exit, last_room)
           end
 
           {:noreply, move_after(mobile)}
@@ -1605,11 +1603,12 @@ defmodule ApathyDrive.Mobile do
     {:noreply, ApathyDrive.Script.execute(script, Map.put(mobile, :delayed, false))}
   end
 
-  def handle_info({:move_to, room_id}, mobile) do
+  def handle_info({:move_to, room_id, last_room}, mobile) do
     ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
     ApathyDrive.PubSub.broadcast!("rooms:#{room_id}:adjacent", {:audibile_movement, room_id, mobile.room_id})
     mobile = Map.put(mobile, :room_id, room_id)
+    mobile = if mobile.last_room, do: Map.put(mobile, :last_room, last_room), else: mobile
     ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{room_id}:mobiles:#{mobile.alignment}")
 

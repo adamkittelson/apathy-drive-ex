@@ -10,7 +10,7 @@ defmodule ApathyDrive.Exits.Command do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
-  def move_via_command(current_room, mobile, %{"destination" => destination_id} = room_exit) do
+  def move_via_command(current_room, mobile, %{"destination" => destination_id} = room_exit, last_room) do
     destination = Room.find(destination_id)
 
     if room_exit["to_message"] do
@@ -19,7 +19,7 @@ defmodule ApathyDrive.Exits.Command do
       notify_mobile_entered(mobile, current_room, destination)
     end
 
-    send(mobile, {:move_to, destination_id})
+    send(mobile, {:move_to, destination_id, last_room})
 
     if room_exit["mover_message"] do
       Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{room_exit["mover_message"]}</span></p>")

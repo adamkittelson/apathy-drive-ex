@@ -1,9 +1,9 @@
 defmodule ApathyDrive.Exits.Cast do
   use ApathyDrive.Exit
 
-  def move(current_room, %Spirit{} = spirit, room_exit),  do: super(current_room, spirit, room_exit)
+  def move(current_room, %Spirit{} = spirit, room_exit, last_room),  do: super(current_room, spirit, room_exit, last_room)
 
-  def move(current_room, %Monster{} = monster, room_exit) do
+  def move(current_room, %Monster{} = monster, room_exit, _last_room) do
     if room_exit["pre_exit_ability"] do
       case Abilities.find(room_exit["pre_exit_ability"]) do
         nil ->

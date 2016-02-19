@@ -17,9 +17,9 @@ defmodule ApathyDrive.Exits.Doors do
         end
       end
 
-      def move(current_room, mobile, room_exit) do
+      def move(current_room, mobile, room_exit, last_room) do
         if open?(current_room, room_exit) do
-          super(current_room, mobile, room_exit)
+          super(current_room, mobile, room_exit, last_room)
         else
           Mobile.send_scroll(mobile, "<p><span class='red'>The #{name} is closed!</span></p>")
         end
