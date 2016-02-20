@@ -810,7 +810,7 @@ defmodule ApathyDrive.Mobile do
       mobile.abilities
       |> Enum.map(&(adjust_mana_cost(mobile, &1)))
 
-    Map.put(mobile, "abilities", abilities)
+    Map.put(mobile, :abilities, abilities)
   end
   def adjust_mana_cost(%Mobile{} = mobile, %{"mana_cost" => base} = ability) do
     Map.put(ability, "mana_cost",  trunc(base + base * ((level(mobile) * 0.1) * ((level(mobile) * 0.1)))))
