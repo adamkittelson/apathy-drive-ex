@@ -366,7 +366,7 @@ defmodule Monster do
           room =
             monster.lair_id
             |> Room.find
-            |> Room.value
+            |> World.room
 
           case room.lair_faction do
             "Demon" ->
@@ -402,7 +402,7 @@ defmodule Monster do
   def find_room(%Monster{room_id: room_id}) do
     room_id
     |> Room.find
-    |> Room.value
+    |> World.room
   end
 
   def set_room_id(%Monster{} = monster, room_id) do

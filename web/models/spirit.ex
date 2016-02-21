@@ -180,7 +180,7 @@ defmodule Spirit do
   def find_room(%Spirit{room_id: room_id}) do
     room_id
     |> Room.find
-    |> Room.value
+    |> World.room
   end
 
   def send_disable(%Spirit{socket: socket} = spirit, elem) do

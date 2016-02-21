@@ -62,7 +62,7 @@ defmodule ApathyDrive.Exit do
 
   def mirror(%Room{id: id}, %{"destination" => destination}) do
     mirror_room = Room.find(destination)
-                  |> Room.value
+                  |> World.room
 
     room_exit = mirror_room.exits
                 |> Enum.find(fn(%{"destination" => destination}) ->

@@ -148,7 +148,7 @@ defmodule ApathyDrive.Script do
 
     monster =
       monster_template_id
-      |> MonsterTemplate.create_monster(Room.value(room))
+      |> MonsterTemplate.create_monster(World.room(room))
       |> MonsterTemplate.spawn
 
     Task.start fn ->

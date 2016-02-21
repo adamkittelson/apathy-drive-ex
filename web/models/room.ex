@@ -3,7 +3,7 @@ defmodule Room do
   use ApathyDrive.Web, :model
   use GenServer
   use Timex
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability}
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, World}
 
   schema "rooms" do
     field :name,                  :string
@@ -59,7 +59,8 @@ defmodule Room do
         |> TimerManager.send_every({:execute_room_ability, 5_000, :execute_room_ability})
     end
 
-    {:ok, room}
+
+    {:ok, World.add_room(room)}
   end
 
   def changeset(%Room{} = room, params \\ :empty) do
@@ -97,7 +98,7 @@ defmodule Room do
       {:ok, pid} ->
         # Hack to give the newly spawned pid a chance to handle messages in its mailbox before returning it
         # e.g. load monsters etc
-        :timer.sleep(50)
+        #:timer.sleep(50)
         pid
     end
   end
@@ -106,12 +107,17 @@ defmodule Room do
     PubSub.subscribers("rooms")
   end
 
-  def value(room) do
-    GenServer.call(room, :value)
-  end
-
   def get_look_data(room, mobile) do
-    GenServer.call(room, {:look_data, mobile})
+    room = World.room(room)
+
+    %{
+      name: room.name,
+      description: room.description,
+      items: look_items(room),
+      mobiles: look_mobiles(%{room_id: room.id, mobile: mobile}),
+      exits: look_directions(room),
+      light: light_desc(room.light)
+    }
   end
 
   def get_item(room, item) do
@@ -122,35 +128,105 @@ defmodule Room do
     GenServer.call(room, {:destroy_item, item})
   end
 
+  def id(room) do
+    room
+    |> World.room
+    |> Map.get(:id)
+  end
+
+  def exits(room) do
+    room
+    |> World.room
+    |> Map.get(:exits)
+  end
+
   def find_item(room, item) do
-    GenServer.call(room, {:find_item, item})
+    %Room{items: items, item_descriptions: item_descriptions} = World.room(room)
+
+    actual_item = items
+                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+                  |> Systems.Match.one(:keyword_starts_with, item)
+
+    visible_item = item_descriptions["visible"]
+                   |> Map.keys
+                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                   |> Systems.Match.one(:keyword_starts_with, item)
+
+    hidden_item = item_descriptions["hidden"]
+                  |> Map.keys
+                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
+                  |> Systems.Match.one(:keyword_starts_with, item)
+
+    cond do
+      visible_item ->
+        item_descriptions["visible"][visible_item.name]
+      hidden_item ->
+        item_descriptions["hidden"][hidden_item.name]
+      actual_item ->
+        actual_item.item
+      true ->
+        nil
+    end
   end
 
   def item_names(room) do
-    GenServer.call(room, :item_names)
+    room
+    |> World.room
+    |> Map.get(:items)
+    |> Enum.map(&(&1["name"]))
   end
 
   def get_exit(room, direction) when is_pid(room) do
-    GenServer.call(room, {:get_exit, direction})
+    room
+    |> World.room
+    |> get_exit(direction)
   end
-  def get_exit(%Room{} = room, direction) do
-    Enum.find(room.exits, &(&1["direction"] == direction(direction)))
+
+  def get_exit(room, direction) do
+    room
+    |> Map.get(:exits)
+    |> Enum.find(&(&1["direction"] == direction(direction)))
   end
 
   def mirror_exit(room, destination_id) do
-    GenServer.call(room, {:get_mirror_exit, destination_id})
+    room
+    |> World.room
+    |> Map.get(:exits)
+    |> Enum.find(fn(%{"destination" => destination, "kind" => kind}) ->
+         destination == destination_id and kind != "RemoteAction"
+       end)
   end
 
   def command_exit(room, string) do
-    GenServer.call(room, {:command_exit, string})
+    room
+    |> World.room
+    |> Map.get(:exits)
+    |> Enum.find(fn(ex) ->
+         ex["kind"] == "Command" and Enum.member?(ex["commands"], string)
+       end)
   end
 
   def remote_action_exit(room, string) do
-    GenServer.call(room, {:remote_action_exit, string})
+    room
+    |> World.room
+    |> Map.get(:exits)
+    |> Enum.find(fn(ex) ->
+         ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], string)
+       end)
   end
 
   def command(room, string) do
-    GenServer.call(room, {:command, string})
+    room = World.room(room)
+
+    command =
+      room
+      |> Map.get(:commands)
+      |> Map.keys
+      |> Enum.find(fn(command) ->
+           String.downcase(command) == String.downcase(string)
+         end)
+
+    room.commands[command]
   end
 
   def add_item(room, item) do
@@ -162,9 +238,8 @@ defmodule Room do
   end
 
   def auto_move_exit(room, last_room) when is_pid(room) do
-    GenServer.call(room, {:auto_move_exit, last_room})
-  end
-  def auto_move_exit(%Room{} = room, last_room) do
+    room = World.room(room)
+
     case room.exits do
       nil ->
         nil
@@ -200,10 +275,9 @@ defmodule Room do
     end
   end
 
-  def unlocked?(room, direction) when is_pid(room) do
-    GenServer.call(room, {:unlocked?, direction})
-  end
-  def unlocked?(%Room{effects: effects}, direction) do
+  def unlocked?(room, direction) do
+    %Room{effects: effects} = World.room(room)
+
     effects
     |> Map.values
     |> Enum.filter(fn(effect) ->
@@ -216,10 +290,13 @@ defmodule Room do
   end
 
   def temporarily_open?(room, direction) when is_pid(room) do
-    GenServer.call(room, {:temporarily_open?, direction})
+    room
+    |> World.room
+    |> temporarily_open?(direction)
   end
   def temporarily_open?(%Room{} = room, direction) do
-    room.effects
+    room
+    |> Map.get(:effects)
     |> Map.values
     |> Enum.filter(fn(effect) ->
          Map.has_key?(effect, :open)
@@ -231,10 +308,13 @@ defmodule Room do
   end
 
   def searched?(room, direction) when is_pid(room) do
-    GenServer.call(room, {:searched?, direction})
+    room
+    |> World.room
+    |> searched?(direction)
   end
-  def searched?(%Room{} = room, direction) do
-    room.effects
+  def searched?(room, direction) do
+    room
+    |> Map.get(:effects)
     |> Map.values
     |> Enum.filter(fn(effect) ->
          Map.has_key?(effect, :searched)
@@ -245,14 +325,10 @@ defmodule Room do
     |> Enum.member?(direction)
   end
 
-  def triggered?(room, direction, current_room) when is_pid(room) and room == self do
-    triggered?(current_room, direction)
-  end
-  def triggered?(room, direction, _current_room) when is_pid(room) do
-    GenServer.call(room, {:triggered?, direction})
-  end
-  def triggered?(%Room{} = room, direction) do
-    room.effects
+  def triggered?(room, direction) do
+    room
+    |> World.room
+    |> Map.get(:effects)
     |> Map.values
     |> Enum.filter(fn(effect) ->
          Map.has_key?(effect, :triggered)
@@ -290,7 +366,7 @@ defmodule Room do
   def sound_direction(direction), do: "to the #{direction}"
 
   def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
-  def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{id(room)}:spawned_monsters")
+  def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{World.room(room).id}:spawned_monsters")
 
   # Value functions
   def mobiles(%{room_id: room_id, mobile: pid}) do
@@ -311,36 +387,6 @@ defmodule Room do
          :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".display_direction(room, room_exit)
        end)
     |> Enum.reject(&(&1 == nil))
-  end
-
-  # def look(%Room{light: light} = room, %Spirit{} = spirit) do
-  #   html = ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, nil)}#{look_directions(room)}#{light_desc(light)}</div>)
-  #
-  #   Spirit.send_scroll spirit, html
-  # end
-  #
-  # def look(%Room{light: light} = room, %Monster{} = monster) do
-  #   html = if Monster.blind?(monster) do
-  #     "<p>You are blind.</p>"
-  #   else
-  #     ~s(<div class='room'><div class='title'>#{lair_indicator(room)}#{room.name}</div><div class='description'>#{room.description}</div>#{look_items(room)}#{look_monsters(room, monster)}#{look_directions(room)}#{light_desc(light)}</div>)
-  #   end
-  #
-  #   Monster.send_scroll(monster, html)
-  # end
-
-  def lair_indicator(%Room{lair_size: nil}), do: nil
-  def lair_indicator(%Room{lair_faction: nil}) do
-    "<span class='grey'>*</span>"
-  end
-  def lair_indicator(%Room{lair_faction: "Demon"}) do
-    "<span class='magenta'>*</span>"
-  end
-  def lair_indicator(%Room{lair_faction: "Angel"}) do
-    "<span class='white'>*</span>"
-  end
-  def lair_indicator(%Room{lair_faction: "Elemental"}) do
-    "<span class='dark-cyan'>*</span>"
   end
 
   def light_desc(light_level)  when light_level <= -100, do: "The room is barely visible"
@@ -418,8 +464,6 @@ defmodule Room do
   def open!(%Room{} = room, direction) do
     if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
       Systems.Effect.add(room, %{open: direction}, open_duration)
-      # todo: tell players in the room when it re-locks
-      #"The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
     else
       exits = room.exits
               |> Enum.map(fn(room_exit) ->
@@ -486,18 +530,6 @@ defmodule Room do
     #"The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
   end
 
-  def all_monsters_belong_to_faction?(%Room{id: id}, faction) do
-    monster_count = ApathyDrive.PubSub.subscribers("rooms:#{id}:monsters") |> length
-    case faction do
-      "Demon" ->
-        monster_count == ApathyDrive.PubSub.subscribers("rooms:#{id}:monsters:evil") |> length
-      "Angel" ->
-        monster_count == ApathyDrive.PubSub.subscribers("rooms:#{id}:monsters:good") |> length
-      "Elemental" ->
-        monster_count == ApathyDrive.PubSub.subscribers("rooms:#{id}:monsters:neutral") |> length
-    end
-  end
-
   def direction(direction) do
     case direction do
       "n" ->
@@ -523,33 +555,6 @@ defmodule Room do
       direction ->
         direction
     end
-  end
-
-  # Generate functions from Ecto schema
-  fields = Keyword.keys(@struct_fields) -- Keyword.keys(@ecto_assocs)
-
-  Enum.each(fields, fn(field) ->
-    def unquote(field)(pid) do
-      GenServer.call(pid, unquote(field))
-    end
-
-    def unquote(field)(pid, new_value) do
-      GenServer.call(pid, {unquote(field), new_value})
-    end
-  end)
-
-  Enum.each(fields, fn(field) ->
-    def handle_call(unquote(field), _from, state) do
-      {:reply, Map.get(state, unquote(field)), state}
-    end
-
-    def handle_call({unquote(field), new_value}, _from, state) do
-      {:reply, new_value, Map.put(state, unquote(field), new_value)}
-    end
-  end)
-
-  def handle_call(:value, _from, room) do
-    {:reply, room, room}
   end
 
   def handle_call({:destroy_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
@@ -614,131 +619,19 @@ defmodule Room do
     end
   end
 
-  def handle_call({:find_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
-    actual_item = items
-                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-                  |> Systems.Match.one(:keyword_starts_with, item)
-
-    visible_item = item_descriptions["visible"]
-                   |> Map.keys
-                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Systems.Match.one(:keyword_starts_with, item)
-
-    hidden_item = item_descriptions["hidden"]
-                  |> Map.keys
-                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Systems.Match.one(:keyword_starts_with, item)
-
-    item = cond do
-      visible_item ->
-        item_descriptions["visible"][visible_item.name]
-      hidden_item ->
-        item_descriptions["hidden"][hidden_item.name]
-      actual_item ->
-        actual_item.item
-      true ->
-        nil
-    end
-    {:reply, item, room}
-  end
-
-  def handle_call(:item_names, _from, room) do
-    items = Enum.map(room.items, fn(%{"name" => name}) -> name end)
-    {:reply, items, room}
-  end
-
-  def handle_call({:temporarily_open?, direction}, _from, room) do
-    {:reply, temporarily_open?(room, direction), room}
-  end
-
-  def handle_call({:searched?, direction}, _from, room) do
-    {:reply, searched?(room, direction), room}
-  end
-
-  def handle_call({:triggered?, direction}, _from, room) do
-    {:reply, triggered?(room, direction), room}
-  end
-
-  def handle_call({:unlocked?, direction}, _from, room) do
-    {:reply, unlocked?(room, direction), room}
-  end
-
-  def handle_call({:auto_move_exit, last_room}, _from, room) do
-    {:reply, auto_move_exit(room, last_room), room}
-  end
-
   def handle_call({:open, direction}, _from, room) do
     room = open!(room, direction)
-    {:reply, room, room}
+    {:reply, room, World.add_room(room)}
   end
 
   def handle_call({:close, direction}, _from, room) do
     room = close!(room, direction)
-    {:reply, room, room}
+    {:reply, room, World.add_room(room)}
   end
 
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
-    {:reply, room, room}
-  end
-
-  def handle_call({:look_data, mobile}, _from, room) do
-    data = %{
-      lair_indicator: lair_indicator(room),
-      name: room.name,
-      description: room.description,
-      items: look_items(room),
-      mobiles: look_mobiles(%{room_id: room.id, mobile: mobile}),
-      exits: look_directions(room),
-      light: light_desc(room.light)
-    }
-
-    {:reply, data, room}
-  end
-
-  def handle_call({:get_exit, direction}, _from, room) do
-    room_exit =  get_exit(room, direction)
-
-    {:reply, room_exit, room}
-  end
-
-  def handle_call({:get_mirror_exit, destination_id}, _from, room) do
-    room_exit = room.exits
-                |> Enum.find(fn(%{"destination" => destination, "kind" => kind}) ->
-                     destination == destination_id and kind != "RemoteAction"
-                   end)
-
-    {:reply, room_exit, room}
-  end
-
-  def handle_call({:command_exit, string}, _from, room) do
-    command_exit = room.exits
-                   |> Enum.find(fn(ex) ->
-                        ex["kind"] == "Command" and Enum.member?(ex["commands"], string)
-                      end)
-
-    {:reply, command_exit, room}
-  end
-
-  def handle_call({:remote_action_exit, string}, _from, room) do
-    command_exit = room.exits
-                   |> Enum.find(fn(ex) ->
-                        ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], string)
-                      end)
-
-    {:reply, command_exit, room}
-  end
-
-  def handle_call({:command, string}, _from, room) do
-    command = room.commands
-              |> Map.keys
-              |> Enum.find(fn(command) ->
-                   String.downcase(command) == String.downcase(string)
-                 end)
-
-    scripts = room.commands[command]
-
-    {:reply, scripts, room}
+    {:reply, room, World.add_room(room)}
   end
 
   def handle_cast({:add_item, item}, %Room{items: items} = room) do
@@ -746,7 +639,7 @@ defmodule Room do
       put_in(room.items, [item | items])
       |> Repo.save!
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_cast({:add_items, new_items}, %Room{items: items} = room) do
@@ -754,7 +647,7 @@ defmodule Room do
       put_in(room.items, new_items ++ items)
       |> Repo.save!
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   # GenServer callbacks
@@ -790,7 +683,7 @@ defmodule Room do
 
     :erlang.send_after(5000, self, :spawn_monsters)
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do
@@ -804,12 +697,12 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_bash, mirror_exit})
     end
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:mirror_bash, room_exit}, room) do
     room = open!(room, room_exit["direction"])
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:door_bash_failed, %{direction: direction}}, room) do
@@ -821,7 +714,7 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_bash_failed, mirror_exit})
     end
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:door_opened, %{direction: direction}}, room) do
@@ -835,12 +728,12 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_open, mirror_exit})
     end
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:mirror_open, room_exit}, room) do
     room = open!(room, room_exit["direction"])
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:door_closed, %{direction: direction}}, room) do
@@ -854,12 +747,12 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_close, mirror_exit})
     end
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:mirror_close, room_exit}, room) do
     room = close!(room, room_exit["direction"])
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:door_locked, %{direction: direction}}, room) do
@@ -873,24 +766,24 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_lock, mirror_exit})
     end
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:mirror_lock, room_exit}, room) do
     room = lock!(room, room_exit["direction"])
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: nil} = room) do
     ApathyDrive.PubSub.unsubscribe(self, "rooms:abilities")
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
     ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:execute_room_ability, ability})
 
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Room{timers: timers} = room) do
@@ -902,7 +795,7 @@ defmodule Room do
 
     apply module, function, args
 
-    {:noreply, Map.put(room, :timers, timers)}
+    {:noreply, Map.put(room, :timers, timers) |> World.add_room}
   end
 
   def handle_info({:timeout, _ref, {name, [module, function, args]}}, %Room{timers: timers} = room) do
@@ -910,22 +803,22 @@ defmodule Room do
 
     timers = Map.delete(timers, name)
 
-    {:noreply, Map.put(room, :timers, timers)}
+    {:noreply, Map.put(room, :timers, timers) |> World.add_room}
   end
 
   def handle_info({:remove_effect, key}, room) do
     room = Systems.Effect.remove(room, key, fire_after_cast: true, show_expiration_message: true)
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:search, direction}, room) do
     room = Systems.Effect.add(room, %{searched: direction}, 300)
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:trigger, direction}, room) do
     room = Systems.Effect.add(room, %{triggered: direction}, 300)
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:clear_triggers, direction}, room) do
@@ -936,39 +829,11 @@ defmodule Room do
               end)
            |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1, show_expiration_message: true)))
 
-    {:noreply, room}
-  end
-
-  def handle_info({:capture, monster: monster, faction: _}, %Room{lair_monsters: nil} = room) do
-    send(monster, {:scroll, "<p>This room is not a lair.</p>"})
-    {:noreply, room}
-  end
-
-  def handle_info({:capture, monster: monster, faction: faction}, %Room{lair_faction: lair_faction} = room) when faction == lair_faction do
-    send(monster, {:scroll, "<p>The #{faction}s already control this lair.</p>"})
-
-    {:noreply, room}
-  end
-
-  def handle_info({:capture, monster: monster, faction: faction}, %Room{lair_faction: _lair_faction} = room) do
-    if all_monsters_belong_to_faction?(room, faction) do
-      room =
-        room
-        |> Map.put(:lair_faction, faction)
-        |> Repo.save!
-
-      send(monster, {:scroll, "<p>You capture the lair for your faction!</p>"})
-      ApathyDrive.Factions.update_war_status
-
-      {:noreply, room}
-    else
-      send(monster, {:scroll, "<p>You must first clear the room of adversaries.</p>"})
-      {:noreply, room}
-    end
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info({:room_updated, %{changes: changes}}, room) do
-    {:noreply, Map.merge(room, changes)}
+    {:noreply, Map.merge(room, changes) |> World.add_room(room)}
   end
 
   def handle_info({:audibile_movement, room_id, exception_room_id}, %Room{id: id} = room) when id != exception_room_id do
@@ -978,7 +843,7 @@ defmodule Room do
       _ ->
         :noop
     end
-    {:noreply, room}
+    {:noreply, World.add_room(room)}
   end
 
   def handle_info(_message, room) do

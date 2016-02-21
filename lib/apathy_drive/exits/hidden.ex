@@ -38,7 +38,7 @@ defmodule ApathyDrive.Exits.Hidden do
 
   def open?(room, room_exit) do
     permanently_open?(room_exit) or
-    all_remote_actions_triggered?(room_exit, room) or
+    all_remote_actions_triggered?(room_exit) or
     Room.searched?(room, room_exit["direction"]) or
     opened_remotely?(room, room_exit)
   end
@@ -47,13 +47,13 @@ defmodule ApathyDrive.Exits.Hidden do
     !!room_exit["open"]
   end
 
-  def all_remote_actions_triggered?(room_exit, room) do
+  def all_remote_actions_triggered?(room_exit) do
     if room_exit["remote_action_exits"] do
       room_exit["remote_action_exits"]
       |> Enum.all?(fn(remote_exit) ->
            remote_exit["room"]
            |> Room.find
-           |> Room.triggered?(remote_exit["direction"], room)
+           |> Room.triggered?(remote_exit["direction"])
          end)
     else
       false

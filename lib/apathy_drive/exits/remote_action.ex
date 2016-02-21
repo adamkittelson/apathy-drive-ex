@@ -17,11 +17,11 @@ defmodule ApathyDrive.Exits.RemoteAction do
   def get_room(%Room{}, id) do
     id
     |> Room.find
-    |> Room.value
+    |> World.room
   end
 
   def trigger_remote_action(room, mobile, room_exit) do
-    room   = Room.value(room)
+    room   = World.room(room)
     mobile = Mobile.value(mobile)
 
     remote_room = get_room(room, room_exit["destination"])
@@ -75,7 +75,7 @@ defmodule ApathyDrive.Exits.RemoteAction do
   def triggered?(room_direction) do
     room = room_direction["room"]
            |> Room.find
-           |> Room.value
+           |> World.room
 
     effects = room.effects
 

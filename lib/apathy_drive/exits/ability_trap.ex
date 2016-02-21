@@ -5,7 +5,7 @@ defmodule ApathyDrive.Exits.AbilityTrap do
   def move(%Room{} = room, %Spirit{} = spirit, room_exit, last_room),  do: super(room, spirit, room_exit, last_room)
   def move(%Room{} = room, %Monster{} = monster, room_exit, _last_room) do
     destination = Room.find(room_exit["destination"])
-                  |> Room.value
+                  |> World.room
 
     Room.send_scroll(destination, "<p>#{interpolate(room_exit["to_message"], %{"user" => monster, "alignment-color" => Monster.alignment_color(monster)})}</p>")
 

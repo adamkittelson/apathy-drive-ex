@@ -11,7 +11,7 @@ defmodule ApathyDrive.Command do
     [Commands.Abilities, Commands.Absorb, Commands.Ask, Commands.Attack,
      Commands.Bash, Commands.Class, Commands.Close, Commands.Construct,
      Commands.Cooldowns, Commands.Drop, Commands.Experience, Commands.Forms,
-     Commands.Get, Commands.Gossip, Commands.Goto, Commands.Greet,
+     Commands.Get, Commands.Gossip, Commands.Greet,
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
      Commands.Possess, Commands.Protection, Commands.Remove, Commands.Reroll,
      Commands.Say, Commands.Score, Commands.Search, Commands.Spawn,

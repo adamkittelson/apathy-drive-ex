@@ -313,7 +313,7 @@ defmodule ApathyDrive.Mobile do
   def find_room(%Mobile{room_id: room_id}) do
     room_id
     |> Room.find
-    |> Room.value
+    |> World.room
   end
 
   def display_inventory(mobile) when is_pid(mobile) do
