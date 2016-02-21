@@ -79,11 +79,11 @@ defmodule ApathyDrive.Unity do
 
   defp adjust_essence(_member, amount) when amount == 0, do: :noop
   defp adjust_essence(member, amount) when amount > 0 do
-    Mobile.send_scroll(member, "<p>[<span class='yellow'>unity</span>]: You gain #{amount} essence.</p>")
+    Mobile.send_scroll(member, "<p>[<span class='yellow'>unity</span>]: You receive #{amount} essence.</p>")
     Mobile.add_experience(member, amount)
   end
   defp adjust_essence(member, amount) when amount < 0 do
-    Mobile.send_scroll(member, "<p>[<span class='yellow'>unity</span>]: You lose #{abs(amount)} essence.</p>")
+    Mobile.send_scroll(member, "<p>[<span class='yellow'>unity</span>]: You contribute #{abs(amount)} essence.</p>")
     Mobile.add_experience(member, amount)
   end
 

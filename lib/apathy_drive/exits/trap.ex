@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Exits.Trap do
   use ApathyDrive.Exit
-  alias ApathyDrive.Ability
+  alias ApathyDrive.{Ability, World}
 
   def move(room, monster, room_exit, _last_room) do
     destination = Room.find(room_exit["destination"])

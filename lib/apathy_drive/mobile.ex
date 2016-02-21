@@ -1565,7 +1565,7 @@ defmodule ApathyDrive.Mobile do
     {:noreply, move_after(mobile)}
   end
   def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
-    if !Mobile.aggro_target(mobile) && (room = Room.find(mobile.room_id)) do
+    if should_move?(mobile) && (room = Room.find(mobile.room_id)) do
       case Room.auto_move_exit(room, mobile.last_room) do
         %{new_exit: room_exit, last_room: last_room} ->
           monster = self
@@ -1934,6 +1934,19 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info(_message, %Mobile{} = mobile) do
     {:noreply, mobile}
+  end
+
+  defp should_move?(%Mobile{} = mobile) do
+    cond do
+      # at least 80% health and no enemies present, go find something to kill
+      ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(local_hated_targets(mobile)) ->
+        true
+      # 20% or less health and enemies present, run away!
+      ((mobile.hp / mobile.max_hp) <= 0.3) and Enum.any?(local_hated_targets(mobile)) ->
+        true
+      true ->
+        false
+    end
   end
 
   defp execute_auto_attack(%Mobile{} = mobile, target) do
