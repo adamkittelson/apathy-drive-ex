@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability}
+  alias ApathyDrive.{Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, World}
   use GenServer
   use ApathyDrive.Web, :model
   import Systems.Text
@@ -1259,7 +1259,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_call(:data_for_who_list, _from, mobile) do
-    data = %{name: mobile.spirit.name, possessing: "", class: mobile.spirit.class.name, alignment: mobile.spirit.class.alignment}
+    data = %{name: mobile.name, room: World.room(mobile.room_id).name, alignment: mobile.alignment}
 
     {:reply, data, mobile}
   end

@@ -5,10 +5,10 @@ defmodule Commands.Who do
   def keywords, do: ["who"]
 
   def execute(mobile, _arguments) do
-    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name                Faction</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name                Location</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>==============================================================</span></p>")
 
-    ApathyDrive.PubSub.subscribers("spirits:online")
+    ApathyDrive.PubSub.subscribers("angel-unity")
     |> Enum.map(fn(pid) ->
          Mobile.data_for_who_list(pid)
        end)
@@ -17,17 +17,10 @@ defmodule Commands.Who do
        end)
   end
 
-  def format_line(%{name: name, possessing: "", class: class} = line) do
+  def format_line(%{name: name, room: room} = line) do
     color = Mobile.alignment_color(line)
 
-    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{class}</span></p>"
-  end
-
-  def format_line(%{name: name, possessing: monster, class: class} = line) do
-    color = Mobile.alignment_color(line)
-    class = String.ljust(class, 20)
-
-    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='#{color}'>#{class}</span><span class='#{color}'>#{monster}</span></p>"
+    "<p><span class='#{color}'>#{String.ljust(name, 20)}</span><span class='cyan'>#{room}</span></p>"
   end
 
 end

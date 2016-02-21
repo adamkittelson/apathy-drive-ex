@@ -1,5 +1,5 @@
 defmodule Systems.Death do
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, World}
 
   # Player not possessing a monster
   def kill(%Mobile{monster_template_id: nil, spirit: %Spirit{}} = mobile) do
@@ -84,7 +84,7 @@ defmodule Systems.Death do
     kill(mobile, remaining_steps)
   end
   def kill(mobile, [:inform_unity | remaining_steps]) do
-    ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>info</span>] <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> has been slain.</p>"})
+    ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>info</span>] <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> has been slain at <span class='cyan'>#{mobile.room_id |> World.room |> Map.get(:name)}</span>.</p>"})
 
     kill(mobile, remaining_steps)
   end
