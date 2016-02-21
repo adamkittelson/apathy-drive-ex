@@ -232,6 +232,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, :turn_data)
   end
 
+  def say_data(mobile) do
+    GenServer.call(mobile, :say_data)
+  end
+
   def effects(mobile) do
     GenServer.call(mobile, :effects)
   end
@@ -1014,6 +1018,10 @@ defmodule ApathyDrive.Mobile do
     }
 
     {:reply, data, mobile}
+  end
+
+  def handle_call(:say_data, _from, mobile) do
+    {:reply, %{name: mobile.name, unity: mobile.spirit && mobile.spirit.unity || mobile.unity}, mobile}
   end
 
   def handle_call(:effects, _from, mobile) do
@@ -1932,11 +1940,38 @@ defmodule ApathyDrive.Mobile do
        end
   end
 
+  def handle_info({:say, %{name: _speaker, unity: speaker_unity}, "stay"}, %Mobile{permanent: true, spirit: nil, unity: unity} = mobile) when unity == speaker_unity do
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}:mobiles", "scroll", %{html: "<p>#{capitalize_first(mobile.name)} says: <span class='dark-green'>\"Ok.\"</span></p>"}
+
+    mobile =
+      mobile
+      |> Map.put(:movement, "stationary")
+      |> Repo.save!
+
+    {:noreply, mobile}
+  end
+
+  def handle_info({:say, %{name: _speaker, unity: speaker_unity}, "hunt"}, %Mobile{permanent: true, spirit: nil, unity: unity} = mobile) when unity == speaker_unity do
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}:mobiles", "scroll", %{html: "<p>#{capitalize_first(mobile.name)} says: <span class='dark-green'>\"Ok.\"</span></p>"}
+
+    mobile =
+      mobile
+      |> Map.put(:movement, "solo")
+      |> Repo.save!
+
+    {:noreply, mobile}
+  end
+
+  def handle_info({:say, %{name: speaker, unity: _speaker_unity}, message}, %Mobile{} = mobile) do
+    Mobile.send_scroll(mobile, "<p>#{capitalize_first(speaker)} says: <span class='dark-green'>\"#{message}\"</span></p>")
+    {:noreply, mobile}
+  end
+
   def handle_info(_message, %Mobile{} = mobile) do
     {:noreply, mobile}
   end
 
-  defp should_move?(%Mobile{} = mobile) do
+  defp should_move?(%Mobile{permanent: true} = mobile) do
     cond do
       # at least 80% health and no enemies present, go find something to kill
       ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(local_hated_targets(mobile)) ->
@@ -1947,6 +1982,10 @@ defmodule ApathyDrive.Mobile do
       true ->
         false
     end
+  end
+
+  defp should_move?(%Mobile{} = mobile) do
+    !Enum.any?(local_hated_targets(mobile))
   end
 
   defp execute_auto_attack(%Mobile{} = mobile, target) do

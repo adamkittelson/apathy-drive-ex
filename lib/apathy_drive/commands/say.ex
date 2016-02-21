@@ -3,17 +3,12 @@ defmodule Commands.Say do
 
   def keywords, do: ["say"]
 
-  def execute(%Spirit{} = spirit, _arguments) do
-    spirit
-    |> Spirit.send_scroll("<p>You need a body to do that.</p>")
-  end
-
-  def execute(%Monster{room_id: room_id} = monster, arguments) do
+  def execute(mobile, arguments) do
     message = sanitize(arguments)
 
-    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{room_id}", "scroll", %{:html => "<p>#{Systems.Text.capitalize_first(monster.name)} says: #{message}</p>"}
+    ApathyDrive.PubSub.broadcast_from! mobile, "rooms:#{Mobile.room_id(mobile)}:mobiles", {:say, Mobile.say_data(mobile), message}
 
-    Monster.send_scroll(monster, "<p>You say: #{message}</p>")
+    Mobile.send_scroll(mobile, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
   end
 
   def sanitize(arguments) do
@@ -21,7 +16,7 @@ defmodule Commands.Say do
                        |> Enum.join(" ")
                        |> Phoenix.HTML.html_escape
 
-    "<span class='dark-green'>\"#{message}\"</span>"
+    message
   end
 
 end
