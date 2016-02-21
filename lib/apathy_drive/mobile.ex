@@ -607,15 +607,6 @@ defmodule ApathyDrive.Mobile do
     mobile
   end
 
-  def send_unity(mobile, message) when is_pid(mobile) do
-    send mobile, {:send_unity, message}
-  end
-  def send_unity(%Mobile{socket: nil} = mobile, _html),  do: mobile
-  def send_unity(%Mobile{socket: socket} = mobile, html) do
-    send(socket, {:unity, html})
-    mobile
-  end
-
   def init(%Mobile{spirit: nil} = mobile) do
     :random.seed(:os.timestamp)
 
@@ -1018,7 +1009,8 @@ defmodule ApathyDrive.Mobile do
     data = %{
       unity: mobile.spirit.unity,
       essence: mobile.spirit.experience,
-      alignment: mobile.spirit.class.alignment
+      alignment: mobile.spirit.class.alignment,
+      turner: "<span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span>"
     }
 
     {:reply, data, mobile}
@@ -1061,7 +1053,7 @@ defmodule ApathyDrive.Mobile do
     {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, mobile}
   end
 
-  def handle_call({:turn, %{unity: unity, essence: essence, alignment: alignment}}, _ref, %Mobile{unity: nil, level: level, experience: exp} = mobile) do
+  def handle_call({:turn, %{unity: unity, essence: essence, alignment: alignment, turner: turner}}, _ref, %Mobile{unity: nil, level: level, experience: exp} = mobile) do
     essence_required = ApathyDrive.Level.exp_at_level(level + 1) - exp
 
     if essence_required < essence do
@@ -1079,6 +1071,7 @@ defmodule ApathyDrive.Mobile do
         |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
         ApathyDrive.PubSub.subscribe(self, "#{unity}-unity")
+        ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>] #{turner} has added <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> to the unity.</p>"})
 
       {:reply, {:ok, mobile.name, essence_required}, mobile}
     else
@@ -1564,12 +1557,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:send_scroll, message}, mobile) do
     send_scroll(mobile, message)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:send_unity, message}, mobile) do
-    send_unity(mobile, message)
 
     {:noreply, mobile}
   end

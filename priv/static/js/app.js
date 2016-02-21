@@ -3529,11 +3529,6 @@ chan.on("scroll", function (message) {
   addToScroll("#scroll", message.html);
 });
 
-chan.on("unity", function (message) {
-  $("#socialism").remove();
-  addToScroll("#scroll", "<p id='socialism'>" + message.html + "</p>");
-});
-
 push = function (event, message) {
   chan.push(event, message);
 };
