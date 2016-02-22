@@ -1,6 +1,6 @@
 defmodule Commands.Greet do
   use ApathyDrive.Command
-  alias ApathyDrive.PubSub
+  alias ApathyDrive.{PubSub, World}
 
   def keywords, do: ["greet"]
 
@@ -21,7 +21,9 @@ defmodule Commands.Greet do
   end
 
   def greet(mobile, target) do
-    target_greeting = Mobile.greeting(target) || "You greet #{Mobile.name(target)}."
+    mob = World.mobile(target)
+    target_greeting = 
+      mob.greeting || "You greet #{mob.name}."
 
     Mobile.send_scroll(target, "<p>#{Mobile.name(mobile)} greets you.</p>")
     Mobile.send_scroll(mobile, "<p>#{target_greeting}</p>")

@@ -1,8 +1,8 @@
 defmodule Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.PubSub
-  alias ApathyDrive.Mobile
+  import Systems.Text
+  alias ApathyDrive.{Mobile, PubSub, World}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -30,13 +30,33 @@ defmodule Commands.Look do
   end
 
   def look_at_mobile(mobile, target) do
-    %{name: name,
-      description: description,
-      hp_description: hp_description} = Mobile.get_look_data(target)
+    target = World.mobile(target)
 
+    hp_percentage = round(100 * (target.hp / target.max_hp))
 
-    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{name}</span></p>")
-    Mobile.send_scroll(mobile, "<p>#{description}</p>")
+    hp_description = case hp_percentage do
+      _ when hp_percentage >= 100 ->
+        "unwounded"
+      _ when hp_percentage >= 90 ->
+        "slightly wounded"
+      _ when hp_percentage >= 60 ->
+        "moderately wounded"
+      _ when hp_percentage >= 40 ->
+        "heavily wounded"
+      _ when hp_percentage >= 20 ->
+        "severely wounded"
+      _ when hp_percentage >= 10 ->
+        "critically wounded"
+      _ ->
+        "very critically wounded"
+    end
+
+    hp_description =
+      "{{target:He/She/It}} appears to be #{hp_description}."
+      |> interpolate(%{"target" => target})
+
+    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{target.name}</span></p>")
+    Mobile.send_scroll(mobile, "<p>#{target.description}</p>")
     Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
   end
 

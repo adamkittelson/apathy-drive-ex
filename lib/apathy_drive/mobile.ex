@@ -81,7 +81,9 @@ defmodule ApathyDrive.Mobile do
   end
 
   def forms(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :forms)
+    mobile
+    |> World.mobile
+    |> forms
   end
   def forms(%Mobile{spirit: nil}), do: nil
   def forms(%Mobile{spirit: spirit}) do
@@ -113,24 +115,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:add_form, item})
   end
 
-  def data_for_who_list(pid) do
-    GenServer.call(pid, :data_for_who_list)
-  end
-
-  def ability_list(pid) do
-    GenServer.call(pid, :ability_list)
-  end
-
   def remove_effects(pid) do
     GenServer.call(pid, :remove_effects)
-  end
-
-  def greeting(pid) do
-    GenServer.call(pid, :greeting)
-  end
-
-  def questions(pid) do
-    GenServer.call(pid, :questions)
   end
 
   def execute_script(pid, script) do
@@ -138,15 +124,8 @@ defmodule ApathyDrive.Mobile do
   end
 
   def look_name(pid) do
-    GenServer.call(pid, :look_name)
-  end
-
-  def spirit_id(pid) do
-    GenServer.call(pid, :spirit_id)
-  end
-
-  def get_look_data(pid) do
-    GenServer.call(pid, :look_data)
+    mobile = World.mobile(pid)
+    "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>"
   end
 
   def match_data(pid) do
@@ -200,10 +179,6 @@ defmodule ApathyDrive.Mobile do
       magical_defense:  (1 - reduce_damage(mobile, "magical defense")) * 100,
       physical_damage: physical_damage(mobile),
       magical_damage: magical_damage(mobile)}
-  end
-
-  def value(pid) do
-    GenServer.call(pid, :value)
   end
 
   def display_experience(pid) do
@@ -647,7 +622,7 @@ defmodule ApathyDrive.Mobile do
         mobile = Map.put(mobile, :spawned_at, mobile.room_id)
       end
 
-    {:ok, mobile}
+    {:ok, World.add_mobile(mobile)}
   end
   def init(%Mobile{spirit: spirit_id, socket: socket} = mobile) do
     :random.seed(:os.timestamp)
@@ -694,11 +669,7 @@ defmodule ApathyDrive.Mobile do
 
     ApathyDrive.Endpoint.broadcast_from! self, "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
 
-    {:ok, mobile}
-  end
-
-  def able_to_possess?(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :able_to_possess?)
+    {:ok, World.add_mobile(mobile)}
   end
 
   def attack(mobile, target) do
@@ -993,17 +964,6 @@ defmodule ApathyDrive.Mobile do
     {:reply, items, mobile}
   end
 
-  def handle_call(:forms, _ref, mobile) do
-    {:reply, forms(mobile), mobile}
-  end
-
-  def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: nil} = mobile) do
-    {:reply, :ok, mobile}
-  end
-  def handle_call(:able_to_possess?, _from, %Mobile{monster_template_id: _, effects: _effects} = mobile) do
-    {:reply, {:error, "You are already possessing #{mobile.name}."}, mobile}
-  end
-
   def handle_call(:remove_effects, _from, mobile) do
     {:reply, :ok, Systems.Effect.remove_all(mobile)}
   end
@@ -1264,73 +1224,8 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_call(:data_for_who_list, _from, mobile) do
-    data = %{name: mobile.name, room: World.room(mobile.room_id).name, alignment: mobile.alignment}
-
-    {:reply, data, mobile}
-  end
-
-  def handle_call(:ability_list, _from, mobile) do
-    abilities =
-      mobile.abilities
-      |> Enum.reject(&(Map.get(&1, "command") == nil))
-      |> Enum.uniq(&(Map.get(&1, "command")))
-      |> Enum.sort_by(&(Map.get(&1, "level")))
-
-    {:reply, abilities, mobile}
-  end
-
   def handle_call(:room_id, _from, mobile) do
     {:reply, room_id(mobile), mobile}
-  end
-
-  def handle_call(:greeting, _from, mobile) do
-    {:reply, mobile.greeting, mobile}
-  end
-
-  def handle_call(:questions, _from, mobile) do
-    {:reply, mobile.questions, mobile}
-  end
-
-  def handle_call(:spirit_id, _from, mobile) do
-    {:reply, mobile.spirit && mobile.spirit.id, mobile}
-  end
-
-  def handle_call(:look_name, _from, mobile) do
-    {:reply, "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>", mobile}
-  end
-
-  def handle_call(:look_data, _from, mobile) do
-    hp_percentage = round(100 * (mobile.hp / mobile.max_hp))
-
-    hp_description = case hp_percentage do
-      _ when hp_percentage >= 100 ->
-        "unwounded"
-      _ when hp_percentage >= 90 ->
-        "slightly wounded"
-      _ when hp_percentage >= 60 ->
-        "moderately wounded"
-      _ when hp_percentage >= 40 ->
-        "heavily wounded"
-      _ when hp_percentage >= 20 ->
-        "severely wounded"
-      _ when hp_percentage >= 10 ->
-        "critically wounded"
-      _ ->
-        "very critically wounded"
-    end
-
-    hp_description =
-      "{{target:He/She/It}} appears to be #{hp_description}."
-      |> interpolate(%{"target" => mobile})
-
-    data = %{
-      name: mobile.name,
-      description: mobile.description,
-      hp_description: hp_description
-    }
-
-    {:reply, data, mobile}
   end
 
   def handle_call(:match_data, _from, mobile) do
@@ -1375,10 +1270,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_call(:display_inventory, _from, mobile) do
     {:reply, display_inventory(mobile), mobile}
-  end
-
-  def handle_call(:value, _from, mobile) do
-    {:reply, mobile, mobile}
   end
 
   def handle_cast({:execute_script, script}, mobile) do

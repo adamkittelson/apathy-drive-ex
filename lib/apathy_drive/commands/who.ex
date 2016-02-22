@@ -1,6 +1,6 @@
 defmodule Commands.Who do
   use ApathyDrive.Command
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, World}
 
   def keywords, do: ["who"]
 
@@ -10,7 +10,8 @@ defmodule Commands.Who do
 
     ApathyDrive.PubSub.subscribers("angel-unity")
     |> Enum.map(fn(pid) ->
-         Mobile.data_for_who_list(pid)
+         mob = World.mobile(pid)
+         %{name: mob.name, room: World.room(mob.room_id).name, alignment: mob.alignment}
        end)
     |> Enum.each(fn(line) ->
          Mobile.send_scroll(mobile, format_line(line))

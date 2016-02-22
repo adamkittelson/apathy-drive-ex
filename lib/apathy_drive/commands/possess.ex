@@ -1,6 +1,6 @@
 defmodule Commands.Possess do
   use ApathyDrive.Command
-  alias ApathyDrive.PubSub
+  alias ApathyDrive.{PubSub, World}
 
   def keywords, do: ["possess"]
 
@@ -8,12 +8,12 @@ defmodule Commands.Possess do
     Mobile.send_scroll(mobile, "<p>Possess what?</p>")
   end
   def execute(mobile, arguments) do
-    case Mobile.able_to_possess?(mobile) do
-      :ok ->
+    case World.mobile(mobile) do
+      %Mobile{monster_template_id: nil} ->
         target = find_mobile_in_room(mobile, Enum.join(arguments, " "))
         possess(mobile, target)
-      {:error, error} ->
-        Mobile.send_scroll(mobile, "<p>#{error}</p>")
+      %Mobile{monster_template_id: _, name: name} ->
+        Mobile.send_scroll(mobile, "<p>You are already possessing #{name}.</p>")
     end
   end
 
@@ -26,7 +26,9 @@ defmodule Commands.Possess do
   end
 
   def possess(mobile, target) do
-    case Mobile.possess(target, Mobile.spirit_id(mobile), self) do
+    mob = World.mobile(mobile)
+
+    case Mobile.possess(target, mob.spirit.id, self) do
       :ok ->
         Mobile.remove_effects(mobile)
 

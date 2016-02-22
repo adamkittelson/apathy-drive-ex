@@ -1,5 +1,6 @@
 defmodule Commands.Abilities do
   use ApathyDrive.Command
+  alias ApathyDrive.World
 
   def keywords, do: ["abilities", "spells"]
 
@@ -11,7 +12,11 @@ defmodule Commands.Abilities do
 
   def display_abilities(mobile) do
     mobile
-    |> Mobile.ability_list
+    |> World.mobile
+    |> Map.get(:abilities)
+    |> Enum.reject(&(Map.get(&1, "command") == nil))
+    |> Enum.uniq(&(Map.get(&1, "command")))
+    |> Enum.sort_by(&(Map.get(&1, "level")))
     |> Enum.each(fn(%{"name" => name, "command" => command} = ability) ->
          mana_cost = ability["mana_cost"]
                      |> to_string

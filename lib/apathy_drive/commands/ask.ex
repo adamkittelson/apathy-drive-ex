@@ -1,6 +1,6 @@
 defmodule Commands.Ask do
   use ApathyDrive.Command
-  alias ApathyDrive.PubSub
+  alias ApathyDrive.{PubSub, World}
 
   def keywords, do: ["ask"]
 
@@ -32,12 +32,12 @@ defmodule Commands.Ask do
   end
 
   def ask(mobile, target, question) do
-    questions = Mobile.questions(target)
+    target = World.mobile(target)
 
-    if questions |> Map.keys |> Enum.member?(question) do
-      Mobile.execute_script(mobile, questions[question])
+    if target.questions |> Map.keys |> Enum.member?(question) do
+      Mobile.execute_script(mobile, target.questions[question])
     else
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{Mobile.name(target)} has nothing to tell you!</span></p>")
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{target.name} has nothing to tell you!</span></p>")
     end
   end
 
