@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Exits.RemoteAction do
   use ApathyDrive.Exit
+  alias ApathyDrive.World
 
   def display_direction(_room, _room_exit), do: nil
 
