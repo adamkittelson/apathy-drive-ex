@@ -1962,6 +1962,7 @@ defmodule ApathyDrive.Mobile do
     mobile =
       mobile
       |> Map.put(:movement, "solo")
+      |> Map.put(:last_room, nil)
       |> Repo.save!
 
     {:noreply, mobile}
@@ -1981,7 +1982,7 @@ defmodule ApathyDrive.Mobile do
       # at least 80% health and no enemies present, go find something to kill
       ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(local_hated_targets(mobile)) ->
         true
-      # 20% or less health and enemies present, run away!
+      # 30% or less health and enemies present, run away!
       ((mobile.hp / mobile.max_hp) <= 0.3) and Enum.any?(local_hated_targets(mobile)) ->
         true
       true ->
