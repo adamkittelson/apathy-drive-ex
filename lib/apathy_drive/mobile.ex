@@ -1582,7 +1582,12 @@ defmodule ApathyDrive.Mobile do
             ApathyDrive.Exit.move(room, monster, room_exit, last_room)
           end
 
-          {:noreply, move_after(mobile)}
+          mobile =
+            mobile
+            |> move_after
+            |> Map.put(:last_room, last_room)
+
+          {:noreply, mobile}
         _ ->
           {:noreply, move_after(mobile)}
       end
@@ -1984,7 +1989,7 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  defp should_move?(%Mobile{} = mobile) do
+  defp should_move?(%Mobile{spirit: nil} = mobile) do
     !Enum.any?(local_hated_targets(mobile))
   end
 
