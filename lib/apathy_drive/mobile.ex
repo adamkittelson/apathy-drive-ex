@@ -93,7 +93,7 @@ defmodule ApathyDrive.Mobile do
   def add_experience(mobile, exp) when is_pid(mobile) do
     GenServer.cast(mobile, {:add_experience, exp})
   end
-  def add_experience(%Mobile{experience: experience} = mobile, exp) do
+  def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
     mobile =
       mobile
       |> Map.put(:experience, experience + exp)
@@ -101,6 +101,9 @@ defmodule ApathyDrive.Mobile do
 
     if mobile.permanent do
       mobile = Repo.save!(mobile)
+      if mobile.level > level do
+        ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>] <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
+      end
     end
 
     mobile
@@ -1075,11 +1078,13 @@ defmodule ApathyDrive.Mobile do
         |> Map.put(:unity, unity)
         |> Map.put(:alignment, alignment)
         |> Map.put(:movement_frequency, 1)
-        |> Mobile.add_experience(essence_required)
         |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
+        ApathyDrive.Endpoint.broadcast!("#{unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>] #{turner} has added <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> to the unity.</p>"})
+
+        mobile = Mobile.add_experience(mobile, essence_required)
+
         ApathyDrive.PubSub.subscribe(self, "#{unity}-unity")
-        ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>] #{turner} has added <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> to the unity.</p>"})
 
       {:reply, {:ok, mobile.name, essence_required}, mobile}
     else
