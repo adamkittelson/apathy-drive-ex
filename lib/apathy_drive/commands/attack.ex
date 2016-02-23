@@ -1,6 +1,6 @@
 defmodule Commands.Attack do
   use ApathyDrive.Command
-  alias ApathyDrive.PubSub
+  alias ApathyDrive.{PubSub, Match}
 
   def keywords, do: ["a", "attack", "k", "kill"]
 
@@ -32,7 +32,7 @@ defmodule Commands.Attack do
 
   defp find_mobile_in_room(mobile, string) do
     PubSub.subscribers("rooms:#{Mobile.room_id(mobile)}:mobiles")
-    |> Systems.Match.one(:name_contains, string)
+    |> Match.one(:name_contains, string)
   end
 
 end

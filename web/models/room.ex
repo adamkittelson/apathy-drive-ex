@@ -3,7 +3,7 @@ defmodule Room do
   use ApathyDrive.Web, :model
   use GenServer
   use Timex
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, World}
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, World, Match}
 
   schema "rooms" do
     field :name,                  :string
@@ -145,17 +145,17 @@ defmodule Room do
 
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-                  |> Systems.Match.one(:keyword_starts_with, item)
+                  |> Match.one(:keyword_starts_with, item)
 
     visible_item = item_descriptions["visible"]
                    |> Map.keys
                    |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Systems.Match.one(:keyword_starts_with, item)
+                   |> Match.one(:keyword_starts_with, item)
 
     hidden_item = item_descriptions["hidden"]
                   |> Map.keys
                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Systems.Match.one(:keyword_starts_with, item)
+                  |> Match.one(:keyword_starts_with, item)
 
     cond do
       visible_item ->
@@ -560,17 +560,17 @@ defmodule Room do
   def handle_call({:destroy_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-                  |> Systems.Match.one(:name_contains, item)
+                  |> Match.one(:name_contains, item)
 
     visible_item = item_descriptions["visible"]
                    |> Map.keys
                    |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Systems.Match.one(:keyword_starts_with, item)
+                   |> Match.one(:keyword_starts_with, item)
 
     hidden_item = item_descriptions["hidden"]
                   |> Map.keys
                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Systems.Match.one(:keyword_starts_with, item)
+                  |> Match.one(:keyword_starts_with, item)
 
     cond do
       visible_item ->
@@ -591,17 +591,17 @@ defmodule Room do
   def handle_call({:get_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-                  |> Systems.Match.one(:name_contains, item)
+                  |> Match.one(:name_contains, item)
 
     visible_item = item_descriptions["visible"]
                    |> Map.keys
                    |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Systems.Match.one(:keyword_starts_with, item)
+                   |> Match.one(:keyword_starts_with, item)
 
     hidden_item = item_descriptions["hidden"]
                   |> Map.keys
                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Systems.Match.one(:keyword_starts_with, item)
+                  |> Match.one(:keyword_starts_with, item)
 
     cond do
       visible_item ->

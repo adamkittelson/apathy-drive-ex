@@ -25,7 +25,7 @@ defmodule ApathyDrive.Exits.Command do
       Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{room_exit["mover_message"]}</span></p>")
     end
 
-    Commands.Look.look_at_room(mobile)
+    Commands.Look.look_at_room(mobile, destination_id)
 
     if room_exit["from_message"] do
       Room.send_scroll(current_room, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => %{name: Mobile.look_name(mobile)}})}</span></p>")

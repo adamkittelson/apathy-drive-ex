@@ -2,7 +2,7 @@ defmodule Commands.Look do
   require Logger
   use ApathyDrive.Command
   import Systems.Text
-  alias ApathyDrive.{Mobile, PubSub, World}
+  alias ApathyDrive.{Mobile, PubSub, World, Match}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -73,7 +73,7 @@ defmodule Commands.Look do
 
   defp find_mobile_in_room(mobile, string) do
     PubSub.subscribers("rooms:#{Mobile.room_id(mobile)}:mobiles")
-    |> Systems.Match.one(:name_contains, string)
+    |> Match.one(:name_contains, string)
   end
 
   defp look_at_item(mobile, description) when is_binary(description) do

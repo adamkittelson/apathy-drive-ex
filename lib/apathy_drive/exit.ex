@@ -88,7 +88,7 @@ defmodule ApathyDrive.Exit do
 
         send(mobile, {:move_to, destination_id, last_room})
 
-        Commands.Look.look_at_room(mobile)
+        Commands.Look.look_at_room(mobile, destination_id)
 
         send(mobile, :notify_presence)
 

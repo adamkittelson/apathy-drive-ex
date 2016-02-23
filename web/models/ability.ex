@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability}
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, Match}
   import Systems.Text
   import ApathyDrive.TimerManager, only: [seconds: 1]
 
@@ -186,12 +186,12 @@ defmodule ApathyDrive.Ability do
            mobile_pid
          end
        end)
-    |> Systems.Match.one(:name_contains, string)
+    |> Match.one(:name_contains, string)
   end
 
   def find_other_mobile_in_room(room_id, string, %Mobile{pid: pid}) do
     PubSub.subscribers("rooms:#{room_id}:mobiles", [pid])
-    |> Systems.Match.one(:name_contains, string)
+    |> Match.one(:name_contains, string)
   end
 
   def alignment_enemies(%Mobile{} = mobile) do

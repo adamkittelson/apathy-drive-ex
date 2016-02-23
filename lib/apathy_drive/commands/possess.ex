@@ -1,6 +1,6 @@
 defmodule Commands.Possess do
   use ApathyDrive.Command
-  alias ApathyDrive.{PubSub, World}
+  alias ApathyDrive.{PubSub, World, Match}
 
   def keywords, do: ["possess"]
 
@@ -41,7 +41,7 @@ defmodule Commands.Possess do
 
   defp find_mobile_in_room(mobile, string) do
     PubSub.subscribers("rooms:#{Mobile.room_id(mobile)}:mobiles")
-    |> Systems.Match.one(:name_contains, string)
+    |> Match.one(:name_contains, string)
   end
 
 end

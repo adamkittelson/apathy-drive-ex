@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Mobile, Ability}
+  alias ApathyDrive.{Mobile, Ability, Match}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -54,7 +54,7 @@ defmodule ApathyDrive.Command do
           true ->
             ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, mobile, remote_action_exit)
         end
-      cmd = Systems.Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
+      cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
         cmd.module.execute(mobile, arguments)
       true ->
         Mobile.use_ability(mobile, command, arguments)

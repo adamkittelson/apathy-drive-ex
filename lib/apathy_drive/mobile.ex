@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, World}
+  alias ApathyDrive.{Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, World, Match}
   use GenServer
   use ApathyDrive.Web, :model
   import Systems.Text
@@ -104,7 +104,7 @@ defmodule ApathyDrive.Mobile do
     if mobile.permanent do
       mobile = Repo.save!(mobile)
       if mobile.level > level do
-        ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>] <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
+        ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
       end
     end
 
@@ -128,12 +128,10 @@ defmodule ApathyDrive.Mobile do
     "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>"
   end
 
-  def match_data(pid) do
-    GenServer.call(pid, :match_data)
-  end
-
   def room_id(pid) when is_pid(pid) do
-    GenServer.call(pid, :room_id)
+    pid
+    |> World.mobile
+    |> room_id
   end
   def room_id(%Mobile{room_id: room_id}), do: room_id
 
@@ -965,7 +963,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_call(:remove_effects, _from, mobile) do
-    {:reply, :ok, Systems.Effect.remove_all(mobile)}
+    {:reply, :ok, Systems.Effect.remove_all(mobile) |> World.add_mobile}
   end
 
   def handle_call(:experience, _from, mobile) do
@@ -997,7 +995,7 @@ defmodule ApathyDrive.Mobile do
       |> set_attack_target(target)
       |> initiate_combat
 
-    {:reply, :ok, mobile}
+    {:reply, :ok, World.add_mobile(mobile)}
   end
 
   def handle_call(:unpossess, _from, %Mobile{monster_template_id: nil} = mobile) do
@@ -1021,7 +1019,7 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
       ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
 
-    {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, mobile}
+    {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, World.add_mobile(mobile)}
   end
 
   def handle_call({:turn, %{unity: unity, essence: essence, alignment: alignment, turner: turner}}, _ref, %Mobile{unity: nil, level: level, experience: exp} = mobile) do
@@ -1040,13 +1038,13 @@ defmodule ApathyDrive.Mobile do
         |> Map.put(:movement_frequency, 1)
         |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
 
-        ApathyDrive.Endpoint.broadcast!("#{unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>] #{turner} has added <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> to the unity.</p>"})
+        ApathyDrive.Endpoint.broadcast!("#{unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: #{turner} has added <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> to the unity.</p>"})
 
         mobile = Mobile.add_experience(mobile, essence_required)
 
         ApathyDrive.PubSub.subscribe(self, "#{unity}-unity")
 
-      {:reply, {:ok, mobile.name, essence_required}, mobile}
+      {:reply, {:ok, mobile.name, essence_required}, World.add_mobile(mobile)}
     else
       {:reply, {:error, :not_enough_essence, mobile.name, essence_required}, mobile}
     end
@@ -1095,7 +1093,7 @@ defmodule ApathyDrive.Mobile do
 
       update_prompt(mobile)
 
-      {:reply, :ok, mobile}
+      {:reply, :ok, World.add_mobile(mobile)}
     else
       {:reply, {:error, "You are too low level to possess #{mobile.name}."}, mobile}
     end
@@ -1121,7 +1119,7 @@ defmodule ApathyDrive.Mobile do
 
         Repo.save!(mobile.spirit)
 
-      {:reply, :ok, mobile}
+      {:reply, :ok, World.add_mobile(mobile)}
     else
       {:reply, :too_heavy, mobile}
     end
@@ -1130,7 +1128,7 @@ defmodule ApathyDrive.Mobile do
   def handle_call({:destroy_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Systems.Match.one(:name_contains, item)
+           |> Match.one(:name_contains, item)
 
     case item do
       nil ->
@@ -1141,14 +1139,14 @@ defmodule ApathyDrive.Mobile do
 
           Repo.save!(mobile.spirit)
 
-        {:reply, {:ok, item}, mobile}
+        {:reply, {:ok, item}, World.add_mobile(mobile)}
     end
   end
 
   def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Systems.Match.one(:name_contains, item)
+           |> Match.one(:name_contains, item)
 
     case item do
       nil ->
@@ -1159,14 +1157,14 @@ defmodule ApathyDrive.Mobile do
 
           Repo.save!(mobile.spirit)
 
-        {:reply, {:ok, item}, mobile}
+        {:reply, {:ok, item}, World.add_mobile(mobile)}
     end
   end
 
   def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: _equipment}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Systems.Match.one(:name_contains, item)
+           |> Match.one(:name_contains, item)
 
     case item do
       nil ->
@@ -1176,14 +1174,14 @@ defmodule ApathyDrive.Mobile do
 
        Repo.save!(mobile.spirit)
 
-       {:reply, resp, mobile}
+       {:reply, resp, World.add_mobile(mobile)}
     end
   end
 
   def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = equipment
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Systems.Match.one(:keyword_starts_with, item)
+           |> Match.one(:keyword_starts_with, item)
 
     case item do
       nil ->
@@ -1207,14 +1205,14 @@ defmodule ApathyDrive.Mobile do
 
           Repo.save!(mobile.spirit)
 
-        {:reply, {:ok, %{unequipped: item_to_remove}}, mobile}
+        {:reply, {:ok, %{unequipped: item_to_remove}}, World.add_mobile(mobile)}
     end
   end
 
   def handle_call({:find_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = (inventory ++ equipment)
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Systems.Match.one(:keyword_starts_with, item)
+           |> Match.one(:keyword_starts_with, item)
 
     case item do
       nil ->
@@ -1222,14 +1220,6 @@ defmodule ApathyDrive.Mobile do
       %{item: item} ->
         {:reply, item, mobile}
     end
-  end
-
-  def handle_call(:room_id, _from, mobile) do
-    {:reply, room_id(mobile), mobile}
-  end
-
-  def handle_call(:match_data, _from, mobile) do
-    {:reply, %{name: mobile.name, keywords: mobile.keywords}, mobile}
   end
 
   def handle_call(:name, _from, mobile) do
@@ -1273,7 +1263,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_cast({:execute_script, script}, mobile) do
-    {:noreply, ApathyDrive.Script.execute(script, mobile)}
+    {:noreply, ApathyDrive.Script.execute(script, mobile) |> World.add_mobile}
   end
 
   def handle_cast(:display_cooldowns, mobile) do
@@ -1305,7 +1295,7 @@ defmodule ApathyDrive.Mobile do
 
     if ability do
       mobile = Ability.execute(mobile, ability, Enum.join(args, " "))
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     else
       Mobile.send_scroll(mobile, "<p>What?</p>")
       {:noreply, mobile}
@@ -1315,7 +1305,7 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:add_experience, exp}, %Mobile{spirit: nil, experience: _experience} = mobile) do
     mobile = add_experience(mobile, exp)
 
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
 
   def handle_cast({:add_experience, exp}, %Mobile{spirit: spirit} = mobile) do
@@ -1333,13 +1323,13 @@ defmodule ApathyDrive.Mobile do
 
       send_scroll(mobile, "<p>You've advanced to level #{new_spirit.level}!</p>")
 
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     else
       mobile =
         mobile
         |> Map.put(:spirit, new_spirit)
 
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     end
   end
 
@@ -1350,7 +1340,7 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> forms()
       |> Enum.map(&(%{name: &1.name, keywords: String.split(&1.name), item: &1}))
-      |> Systems.Match.one(:name_contains, item_name)
+      |> Match.one(:name_contains, item_name)
 
     if match do
       item = match.item
@@ -1377,7 +1367,7 @@ defmodule ApathyDrive.Mobile do
 
           Mobile.send_scroll(mobile, "<p>You construct a #{item.name} using #{cost} of your essence.</p>")
 
-          {:noreply, mobile}
+          {:noreply, World.add_mobile(mobile)}
       end
     else
       Mobile.send_scroll(mobile, "<p>You don't know how to construct a #{item_name}.</p>")
@@ -1451,12 +1441,12 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info({:execute_ability, ability}, monster) do
-    {:noreply, Ability.execute(monster, ability, [self])}
+    {:noreply, Ability.execute(monster, ability, [self]) |> World.add_mobile}
   end
 
   def handle_info({:execute_ability, ability, arg_string}, mobile) do
     mobile = Ability.execute(mobile, ability, arg_string)
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
 
   def handle_info({:send_scroll, message}, mobile) do
@@ -1466,7 +1456,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:auto_move, %Mobile{movement: "stationary"} = mobile) do
-    {:noreply, move_after(mobile)}
+    {:noreply, move_after(mobile) |> World.add_mobile}
   end
   def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
     if should_move?(mobile) && (room = Room.find(mobile.room_id)) do
@@ -1485,18 +1475,18 @@ defmodule ApathyDrive.Mobile do
 
           {:noreply, mobile}
         _ ->
-          {:noreply, move_after(mobile)}
+          {:noreply, move_after(mobile) |> World.add_mobile}
       end
     else
-      {:noreply, move_after(mobile)}
+      {:noreply, move_after(mobile) |> World.add_mobile}
     end
   end
   def handle_info(:auto_move, mobile) do
-    {:noreply, move_after(mobile)}
+    {:noreply, move_after(mobile) |> World.add_mobile}
   end
 
   def handle_info({:execute_script, script}, mobile) do
-    {:noreply, ApathyDrive.Script.execute(script, Map.put(mobile, :delayed, false))}
+    {:noreply, ApathyDrive.Script.execute(script, Map.put(mobile, :delayed, false)) |> World.add_mobile}
   end
 
   def handle_info({:move_to, room_id, last_room}, mobile) do
@@ -1518,7 +1508,7 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
 
       Spirit.save(mobile.spirit)
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     else
       {:noreply, mobile}
     end
@@ -1534,7 +1524,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:think, mobile) do
-    {:noreply, ApathyDrive.AI.think(mobile)}
+    {:noreply, ApathyDrive.AI.think(mobile) |> World.add_mobile}
   end
 
   def handle_info({:apply_ability, %{} = ability, %Mobile{} = ability_user}, mobile) do
@@ -1565,7 +1555,7 @@ defmodule ApathyDrive.Mobile do
 
     apply module, function, args
 
-    {:noreply, Map.put(mobile, :timers, timers)}
+    {:noreply, Map.put(mobile, :timers, timers) |> World.add_mobile}
   end
 
   def handle_info({:timeout, _ref, {name, [module, function, args]}}, %Mobile{timers: timers} = mobile) do
@@ -1573,12 +1563,12 @@ defmodule ApathyDrive.Mobile do
 
     timers = Map.delete(timers, name)
 
-    {:noreply, Map.put(mobile, :timers, timers)}
+    {:noreply, Map.put(mobile, :timers, timers) |> World.add_mobile}
   end
 
   def handle_info({:remove_effect, key}, mobile) do
     mobile = Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
 
   def handle_info(:regen, %Mobile{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = mobile) do
@@ -1588,7 +1578,7 @@ defmodule ApathyDrive.Mobile do
 
     update_prompt(mobile)
 
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
 
   def handle_info({:mobile_died, mobile: %Mobile{}, reward: _exp}, %Mobile{unity: nil, spirit: nil} = mobile) do
@@ -1597,7 +1587,7 @@ defmodule ApathyDrive.Mobile do
   def handle_info({:mobile_died, mobile: %Mobile{} = _deceased, reward: exp}, %Mobile{spirit: nil} = mobile) do
     mobile = add_experience(mobile, exp)
 
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
   def handle_info({:mobile_died, mobile: %Mobile{} = deceased, reward: exp}, %Mobile{spirit: %Spirit{} = spirit} = mobile) do
     message = deceased.death_message
@@ -1624,7 +1614,7 @@ defmodule ApathyDrive.Mobile do
       mobile = mobile
                 |> Map.put(:spirit, new_spirit)
 
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     end
   end
 
@@ -1699,13 +1689,13 @@ defmodule ApathyDrive.Mobile do
 
       mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval, [__MODULE__, :send_execute_auto_attack, []]})
 
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     else
       mobile =
         mobile
         |> Map.put(:attack_target, nil)
 
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     end
   end
 
@@ -1729,17 +1719,17 @@ defmodule ApathyDrive.Mobile do
                                             name: intruder_name
                                             })
 
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, {:normal, :timeout}}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
     send(self, :disconnected)
-    {:noreply, Map.put(mobile, :socket, nil)}
+    {:noreply, Map.put(mobile, :socket, nil) |> World.add_mobile}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
     Process.send_after(self, :disconnected, 30_000)
-    {:noreply, Map.put(mobile, :socket, nil)}
+    {:noreply, Map.put(mobile, :socket, nil) |> World.add_mobile}
   end
 
   def handle_info(:disconnected, %Mobile{monster_template_id: nil, spirit: spirit, socket: nil} = mobile) do
@@ -1758,12 +1748,12 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
       ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
 
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
 
   def handle_info({:set_socket, socket}, %Mobile{socket: nil} = mobile) do
     Process.monitor(socket)
-    {:noreply, Map.put(mobile, :socket, socket)}
+    {:noreply, Map.put(mobile, :socket, socket) |> World.add_mobile}
   end
 
   # already signed-in in another tab / browser / location whatever
@@ -1773,7 +1763,7 @@ defmodule ApathyDrive.Mobile do
 
     if socket != old_socket, do: send(old_socket, :go_home)
 
-    {:noreply, Map.put(mobile, :socket, socket)}
+    {:noreply, Map.put(mobile, :socket, socket) |> World.add_mobile}
   end
 
   def handle_info(:die, mobile) do
@@ -1782,10 +1772,10 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:execute_room_ability, ability}, monster) do
+  def handle_info({:execute_room_ability, ability}, mobile) do
     ability = Map.put(ability, "ignores_global_cooldown", true)
 
-    {:noreply, Ability.execute(monster, ability, [self])}
+    {:noreply, Ability.execute(mobile, ability, [self]) |> World.add_mobile}
   end
 
   def handle_info({:generate_loot, monster_template_id, level}, mobile) do
@@ -1837,7 +1827,7 @@ defmodule ApathyDrive.Mobile do
 
            Repo.save!(mobile.spirit)
 
-           {:noreply, mobile}
+           {:noreply, World.add_mobile(mobile)}
        end
   end
 
@@ -1849,7 +1839,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:movement, "stationary")
       |> Repo.save!
 
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
 
   def handle_info({:say, %{name: _speaker, unity: speaker_unity}, "hunt"}, %Mobile{permanent: true, spirit: nil, unity: unity} = mobile) when unity == speaker_unity do
@@ -1861,7 +1851,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:last_room, nil)
       |> Repo.save!
 
-    {:noreply, mobile}
+    {:noreply, World.add_mobile(mobile)}
   end
 
   def handle_info({:say, %{name: speaker, unity: _speaker_unity}, message}, %Mobile{} = mobile) do
