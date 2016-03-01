@@ -136,15 +136,21 @@ defmodule ApathyDrive.Mobile do
   def room_id(%Mobile{room_id: room_id}), do: room_id
 
   def name(pid) do
-    GenServer.call(pid, :name)
+    pid
+    |> World.mobile
+    |> Map.get(:name)
   end
 
   def enter_message(pid) do
-    GenServer.call(pid, :enter_message)
+    pid
+    |> World.mobile
+    |> Map.get(:enter_message)
   end
 
   def exit_message(pid) do
-    GenServer.call(pid, :exit_message)
+    pid
+    |> World.mobile
+    |> Map.get(:exit_message)
   end
 
   def display_cooldowns(pid) do
@@ -152,7 +158,9 @@ defmodule ApathyDrive.Mobile do
   end
 
   def score_data(pid) when is_pid(pid) do
-    GenServer.call(pid, :score_data)
+    pid
+    |> World.mobile
+    |> score_data
   end
   def score_data(mobile) do
     effects =
@@ -188,7 +196,9 @@ defmodule ApathyDrive.Mobile do
   end
 
   def aligned_spirit_name(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :aligned_spirit_name)
+    mobile
+    |> World.mobile
+    |> aligned_spirit_name()
   end
   def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "good"}}}) do
     "<span class='white'>#{name}</span>"
@@ -201,19 +211,38 @@ defmodule ApathyDrive.Mobile do
   end
 
   def experience(mobile) do
-    GenServer.call(mobile, :experience)
+    mobile =
+      mobile
+      |> World.mobile
+
+    mobile.experience || mobile.spirit.experience
   end
 
   def turn_data(mobile) do
-    GenServer.call(mobile, :turn_data)
+    mobile =
+      mobile
+      |> World.mobile
+
+    %{
+      unity: mobile.spirit.unity,
+      essence: mobile.spirit.experience,
+      alignment: mobile.spirit.class.alignment,
+      turner: "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>"
+    }
   end
 
   def say_data(mobile) do
-    GenServer.call(mobile, :say_data)
+    mobile =
+      mobile
+      |> World.mobile
+
+    %{name: mobile.name, unity: mobile.spirit && mobile.spirit.unity || mobile.unity}
   end
 
   def effects(mobile) do
-    GenServer.call(mobile, :effects)
+    mobile
+    |> World.mobile
+    |> Map.get(:effects)
   end
 
   def look_at_item(%Mobile{} = mobile, item) do
@@ -255,12 +284,9 @@ defmodule ApathyDrive.Mobile do
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will:</span>     <span class='dark-cyan'>#{score_data.will}</span></p>")
   end
   def look_at_item(mobile, item) do
-    GenServer.call(mobile, {:look_at_item, item})
-  end
-
-  def interpolation_data(%Mobile{} = mobile),  do: %{name: mobile.name, gender: mobile.gender}
-  def interpolation_data(pid) when is_pid(pid) do
-    GenServer.call(pid, :interpolation_data)
+    mobile
+    |> World.mobile
+    |> look_at_item(item)
   end
 
   def update_prompt(%Mobile{socket: nil}), do: :noop
@@ -282,7 +308,9 @@ defmodule ApathyDrive.Mobile do
   def evil_points(%{alignment: "neutral"}), do: 0
 
   def blind?(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :blind?)
+    mobile
+    |> World.mobile
+    |> blind?()
   end
   def blind?(%Mobile{} = mobile) do
     mobile.effects
@@ -297,7 +325,9 @@ defmodule ApathyDrive.Mobile do
   end
 
   def display_inventory(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :display_inventory)
+    mobile
+    |> World.mobile
+    |> display_inventory()
   end
   def display_inventory(%Mobile{spirit: nil}), do: nil
   def display_inventory(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
@@ -443,7 +473,18 @@ defmodule ApathyDrive.Mobile do
   end
 
   def find_item(mobile, item) do
-    GenServer.call(mobile, {:find_item, item})
+    %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = World.mobile(mobile)
+
+    item = (inventory ++ equipment)
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Match.one(:keyword_starts_with, item)
+
+    case item do
+      nil ->
+        nil
+      %{item: item} ->
+        item
+    end
   end
 
   def display_encumbrance(%Mobile{spirit: nil}), do: nil
@@ -483,7 +524,9 @@ defmodule ApathyDrive.Mobile do
   end
 
   def held(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :held?)
+    mobile
+    |> World.mobile
+    |> held()
   end
   def held(%Mobile{effects: effects} = mobile) do
     effects
@@ -500,7 +543,9 @@ defmodule ApathyDrive.Mobile do
   end
 
   def silenced(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :silenced?)
+    mobile
+    |> World.mobile
+    |> silenced()
   end
   def silenced(%Mobile{effects: effects} = mobile, %{"mana_cost" => cost}) when cost > 0 do
     effects
@@ -517,7 +562,9 @@ defmodule ApathyDrive.Mobile do
   end
 
   def confused(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :confused?)
+    mobile
+    |> World.mobile
+    |> confused()
   end
   def confused(%Mobile{effects: effects} = mobile) do
     effects
@@ -686,8 +733,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, :unpossess)
   end
 
-  def inventory_item_names(room) do
-    GenServer.call(room, :inventory_item_names)
+  def inventory_item_names(mobile) do
+    mobile = World.mobile(mobile)
+
+    Enum.map(mobile.spirit.inventory, fn(%{"name" => name}) -> name end)
   end
 
   def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
@@ -957,36 +1006,8 @@ defmodule ApathyDrive.Mobile do
     send(self, :execute_auto_attack)
   end
 
-  def handle_call(:inventory_item_names, _from, mobile) do
-    items = Enum.map(mobile.spirit.inventory, fn(%{"name" => name}) -> name end)
-    {:reply, items, mobile}
-  end
-
   def handle_call(:remove_effects, _from, mobile) do
     {:reply, :ok, Systems.Effect.remove_all(mobile) |> World.add_mobile}
-  end
-
-  def handle_call(:experience, _from, mobile) do
-    {:reply, mobile.experience || mobile.spirit.experience, mobile}
-  end
-
-  def handle_call(:turn_data, _from, mobile) do
-    data = %{
-      unity: mobile.spirit.unity,
-      essence: mobile.spirit.experience,
-      alignment: mobile.spirit.class.alignment,
-      turner: "<span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span>"
-    }
-
-    {:reply, data, mobile}
-  end
-
-  def handle_call(:say_data, _from, mobile) do
-    {:reply, %{name: mobile.name, unity: mobile.spirit && mobile.spirit.unity || mobile.unity}, mobile}
-  end
-
-  def handle_call(:effects, _from, mobile) do
-    {:reply, mobile.effects, mobile}
   end
 
   def handle_call({:attack, target}, _from, mobile) do
@@ -1102,16 +1123,6 @@ defmodule ApathyDrive.Mobile do
     {:reply, {:error, "#{mobile.name} is possessed by another player."}, mobile}
   end
 
-  def handle_call(:score_data, _from, mobile) do
-    score_data(mobile)
-
-    {:reply, score_data(mobile), mobile}
-  end
-
-  def handle_call({:look_at_item, item}, _from, mobile) do
-    {:reply, look_at_item(mobile, item), mobile}
-  end
-
   def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
     if remaining_encumbrance(mobile) >= weight do
       mobile =
@@ -1207,59 +1218,6 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, World.add_mobile(mobile)}
     end
-  end
-
-  def handle_call({:find_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
-    item = (inventory ++ equipment)
-           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Match.one(:keyword_starts_with, item)
-
-    case item do
-      nil ->
-        {:reply, nil, mobile}
-      %{item: item} ->
-        {:reply, item, mobile}
-    end
-  end
-
-  def handle_call(:name, _from, mobile) do
-    {:reply, mobile.name, mobile}
-  end
-
-  def handle_call(:blind?, _from, mobile) do
-    {:reply, blind?(mobile), mobile}
-  end
-
-  def handle_call(:confused?, _from, mobile) do
-    {:reply, confused(mobile), mobile}
-  end
-
-  def handle_call(:silenced?, _from, mobile) do
-    {:reply, silenced(mobile), mobile}
-  end
-
-  def handle_call(:held?, _from, mobile) do
-    {:reply, held(mobile), mobile}
-  end
-
-  def handle_call(:enter_message, _from, mobile) do
-    {:reply, mobile.enter_message, mobile}
-  end
-
-  def handle_call(:exit_message, _from, mobile) do
-    {:reply, mobile.exit_message, mobile}
-  end
-
-  def handle_call(:interpolation_data, _from, mobile) do
-    {:reply, interpolation_data(mobile), mobile}
-  end
-
-  def handle_call(:aligned_spirit_name, _from, mobile) do
-    {:reply, aligned_spirit_name(mobile), mobile}
-  end
-
-  def handle_call(:display_inventory, _from, mobile) do
-    {:reply, display_inventory(mobile), mobile}
   end
 
   def handle_cast({:execute_script, script}, mobile) do

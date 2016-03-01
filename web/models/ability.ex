@@ -298,14 +298,6 @@ defmodule ApathyDrive.Ability do
     |> wrap_target
   end
 
-  def interpolation_data(target, %Mobile{pid: pid} = mobile) when target == pid do
-    Mobile.interpolation_data(mobile)
-  end
-
-  def interpolation_data(target, %Mobile{}) do
-    Mobile.interpolation_data(target)
-  end
-
   def display_pre_cast_message(%Mobile{} = mobile, %{"pre-cast_message" => _} = ability, _targets) do
     cast_messages = cast_messages(ability, mobile, mobile, %{}, "pre-cast_message")
 
