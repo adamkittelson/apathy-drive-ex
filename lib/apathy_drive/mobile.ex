@@ -420,7 +420,7 @@ defmodule ApathyDrive.Mobile do
                    |> set_max_hp
                    |> set_hp
 
-        {:reply, {:ok, %{equipped: item, unequipped: [item_to_remove]}}, mobile}
+        {:reply, {:ok, %{equipped: item, unequipped: [item_to_remove]}}, World.add_mobile(mobile)}
       conflicting_worn_on(worn_on) |> Enum.any? ->
         items_to_remove =
           equipment
@@ -446,7 +446,7 @@ defmodule ApathyDrive.Mobile do
                    |> set_max_hp
                    |> set_hp
 
-        {:reply, {:ok, %{equipped: item, unequipped: items_to_remove}}, mobile}
+        {:reply, {:ok, %{equipped: item, unequipped: items_to_remove}}, World.add_mobile(mobile)}
       true ->
         equipment =
           equipment
@@ -464,7 +464,7 @@ defmodule ApathyDrive.Mobile do
                  |> set_max_hp
                  |> set_hp
 
-        {:reply, {:ok, %{equipped: item}}, mobile}
+        {:reply, {:ok, %{equipped: item}}, World.add_mobile(mobile)}
     end
   end
 
@@ -1431,7 +1431,7 @@ defmodule ApathyDrive.Mobile do
             |> move_after
             |> Map.put(:last_room, last_room)
 
-          {:noreply, mobile}
+          {:noreply, World.add_mobile(mobile)}
         _ ->
           {:noreply, move_after(mobile) |> World.add_mobile}
       end
@@ -1567,7 +1567,7 @@ defmodule ApathyDrive.Mobile do
 
       send_scroll(mobile, "<p>You've advanced to level #{new_spirit.level}!</p>")
 
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     else
       mobile = mobile
                 |> Map.put(:spirit, new_spirit)
