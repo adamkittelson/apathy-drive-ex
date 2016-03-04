@@ -50,7 +50,7 @@ defmodule ApathyDrive.World do
     :ets.insert(:rooms, {id, room})
 
     case :ets.lookup(:rooms, pid) do
-      [{_pid, %Mobile{id: id}}] ->
+      [{_pid, %Room{id: _id}}] ->
         :ets.insert(:rooms, {pid, room})
       _ ->
         Process.monitor(pid)
@@ -64,7 +64,7 @@ defmodule ApathyDrive.World do
     :ets.insert(:mobiles, {id, mobile})
 
     case :ets.lookup(:mobiles, pid) do
-      [{_pid, %Mobile{id: id}}] ->
+      [{_pid, %Mobile{id: _id}}] ->
         :ets.insert(:mobiles, {pid, mobile})
       _ ->
         Process.monitor(pid)
