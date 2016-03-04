@@ -38,8 +38,8 @@ defmodule ApathyDrive.Mixfile do
       {:oauth2,              "~> 0.5"},
       {:scrivener,           "~> 1.0"},
       {:comeonin,            "~> 1.2.2"},
-      {:exrm,                "1.0.0-rc7"},
-      {:conform,             "1.0.0-rc8"},
+      {:exrm,                "1.0.0-rc7", override: true},
+      {:conform,             "1.0.0-rc8", override: true},
       {:conform_exrm,        "0.2.0"},
       {:shouldi,             "0.3.0", only: :test}
     ]
