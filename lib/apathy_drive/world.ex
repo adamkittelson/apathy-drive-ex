@@ -47,19 +47,29 @@ defmodule ApathyDrive.World do
   end
 
   def handle_cast({:add_room, pid, %Room{id: id} = room}, state) do
-    :ets.insert(:rooms, {pid, room})
     :ets.insert(:rooms, {id, room})
 
-    Process.monitor(pid)
+    case :ets.lookup(:rooms, pid) do
+      [{_pid, %Mobile{id: id}}] ->
+        :ets.insert(:rooms, {pid, room})
+      _ ->
+        Process.monitor(pid)
+        :ets.insert(:rooms, {pid, room})
+    end
 
     {:noreply, state}
   end
 
   def handle_cast({:add_mobile, pid, %Mobile{id: id} = mobile}, state) do
-    :ets.insert(:mobiles, {pid, mobile})
     :ets.insert(:mobiles, {id, mobile})
 
-    Process.monitor(pid)
+    case :ets.lookup(:mobiles, pid) do
+      [{_pid, %Mobile{id: id}}] ->
+        :ets.insert(:mobiles, {pid, mobile})
+      _ ->
+        Process.monitor(pid)
+        :ets.insert(:mobiles, {pid, mobile})
+    end
 
     {:noreply, state}
   end
