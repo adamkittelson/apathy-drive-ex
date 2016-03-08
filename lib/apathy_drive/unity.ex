@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Unity do
   use GenServer
   require Logger
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, World}
 
   @interval 60_000
 
@@ -63,7 +63,9 @@ defmodule ApathyDrive.Unity do
 
   defp distribute(distributions) do
     Enum.each(distributions, fn({member, amount}) ->
-      Logger.debug "#{Mobile.name(member)} essence changes by #{inspect amount}"
+      entity = World.mobile(member) || World.room(member)
+
+      Logger.debug "#{entity.name} essence changes by #{inspect amount}"
       adjust_essence(member, amount)
     end)
   end
@@ -71,21 +73,43 @@ defmodule ApathyDrive.Unity do
   defp contributions(contributors) do
     contributors
     |> Enum.reduce(%{}, fn(member, contributions) ->
-         contribution = div(Mobile.experience(member), 100)
-         Logger.debug "#{Mobile.name(member)} contributes #{inspect contribution}"
-         Map.put(contributions, member, contribution)
+         entity = World.mobile(member) || World.room(member)
+
+         case entity do
+           %Mobile{} ->
+             essence = entity.experience || entity.spirit.experience
+             contribution = div(essence, 100)
+             Logger.debug "#{entity.name} contributes #{inspect contribution}"
+             Map.put(contributions, member, contribution)
+           %Room{} ->
+             essence = Room.essence(entity)
+             contribution = div(essence, 100)
+             Logger.debug "#{entity.name} contributes #{inspect contribution}"
+             Map.put(contributions, member, contribution)
+         end
        end)
   end
 
   defp adjust_essence(_member, amount) when amount == 0, do: :noop
   defp adjust_essence(member, amount) when amount > 0 do
-    Mobile.send_scroll(member, "<p>[<span class='yellow'>unity</span>]: You receive #{amount} essence.</p>")
-    Mobile.add_experience(member, amount)
+    entity = World.mobile(member) || World.room(member)
+    case entity do
+      %Mobile{} ->
+        Mobile.send_scroll(member, "<p>[<span class='yellow'>unity</span>]: You receive #{amount} essence.</p>")
+        Mobile.add_experience(member, amount)
+      %Room{} ->
+        send(member, {:add_essence, amount})
+    end
   end
   defp adjust_essence(member, amount) when amount < 0 do
-    Mobile.send_scroll(member, "<p>[<span class='yellow'>unity</span>]: You contribute #{abs(amount)} essence.</p>")
-    Mobile.add_experience(member, amount)
+    entity = World.mobile(member) || World.room(member)
+    case entity do
+      %Mobile{} ->
+        Mobile.send_scroll(member, "<p>[<span class='yellow'>unity</span>]: You contribute #{abs(amount)} essence.</p>")
+        Mobile.add_experience(member, amount)
+      %Room{} ->
+        send(member, {:add_essence, amount})
+    end
   end
-
 
 end

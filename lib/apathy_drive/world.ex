@@ -25,26 +25,31 @@ defmodule ApathyDrive.World do
     mobile
   end
 
-  def room(pid_or_id) do
+  def room(pid_or_id, retries \\ 0)
+  def room(pid_or_id, retries) when retries < 5 do
     case :ets.lookup(:rooms, pid_or_id) do
       [{^pid_or_id, room}] ->
         room
       _ when is_pid(pid_or_id) ->
-        room(pid_or_id)
+        room(pid_or_id, retries + 1)
       _ when is_integer(pid_or_id) ->
         Room.find(pid_or_id)
         |> room()
     end
   end
+  def room(_pid_or_id, _retries), do: nil
 
-  def mobile(pid_or_id) do
+  def mobile(pid_or_id, retries \\ 0)
+  def mobile(pid_or_id, retries) when retries < 5 do
     case :ets.lookup(:mobiles, pid_or_id) do
       [{^pid_or_id, mobile}] ->
         mobile
       _ ->
-        mobile(pid_or_id)
+        :timer.sleep(10)
+        mobile(pid_or_id, retries + 1)
     end
   end
+  def mobile(_pid_or_id, _retries), do: nil
 
   def handle_cast({:add_room, pid, %Room{id: id} = room}, state) do
     :ets.insert(:rooms, {id, room})

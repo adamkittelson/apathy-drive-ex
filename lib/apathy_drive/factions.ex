@@ -33,17 +33,18 @@ defmodule ApathyDrive.Factions do
   end
 
   def lair_counts do
-    counts =
-      from(r in Room, where: not is_nil(r.lair_faction),
-                    group_by: r.lair_faction,
-                    select: {r.lair_faction, count(r.id)})
-      |> ApathyDrive.Repo.all
-
-     ["Angel", "Demon", "Elemental"]
-     |> Enum.reduce(%{}, fn(faction, factions) ->
-          {_, count} = Enum.find(counts, {faction, 0}, fn({counted_faction, _}) -> faction == counted_faction end)
-          Map.put(factions, faction, count)
-        end)
+    # counts =
+    #   from(r in Room, where: not is_nil(r.lair_faction),
+    #                 group_by: r.lair_faction,
+    #                 select: {r.lair_faction, count(r.id)})
+    #   |> ApathyDrive.Repo.all
+    # 
+     # ["Angel", "Demon", "Elemental"]
+     # |> Enum.reduce(%{}, fn(faction, factions) ->
+     #      {_, count} = Enum.find(counts, {faction, 0}, fn({counted_faction, _}) -> faction == counted_faction end)
+     #      Map.put(factions, faction, count)
+     #    end)
+    %{"Angel" => 700, "Demon" => 666}
   end
 
   def war_status do

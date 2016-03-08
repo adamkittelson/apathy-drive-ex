@@ -15,7 +15,7 @@ defmodule ApathyDrive.Command do
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
      Commands.Possess, Commands.Protection, Commands.Remove, Commands.Reroll,
      Commands.Say, Commands.Score, Commands.Search, Commands.Spawn,
-     Commands.Unpossess, Commands.Wear, Commands.Who, Commands.Turn]
+     Commands.Unpossess, Commands.Wear, Commands.Who, Commands.Turn, Commands.Purify]
   end
 
   def execute(mobile, command, arguments) do

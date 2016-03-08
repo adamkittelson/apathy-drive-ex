@@ -3,7 +3,7 @@ defmodule Room do
   use ApathyDrive.Web, :model
   use GenServer
   use Timex
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, World, Match}
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, World, Match, RoomUnity}
 
   schema "rooms" do
     field :name,                  :string
@@ -15,7 +15,6 @@ defmodule Room do
     field :lair_size,             :integer
     field :lair_frequency,        :integer, default: 5
     field :lair_next_spawn_at,    :any, virtual: true, default: 0
-    field :lair_faction,          :string
     field :exits,                 ApathyDrive.JSONB, default: []
     field :commands,              ApathyDrive.JSONB, default: %{}
     field :legacy_id,             :string
@@ -26,6 +25,7 @@ defmodule Room do
 
     timestamps
 
+    has_one    :room_unity, RoomUnity
     has_many   :mobiles, Mobile
     belongs_to :ability, Ability
     has_many   :lairs, ApathyDrive.LairMonster
@@ -35,7 +35,14 @@ defmodule Room do
   def init(id) do
     :random.seed(:os.timestamp)
 
-    room = Repo.get!(Room, id)
+    room =
+      Repo.get!(Room, id)
+      |> Repo.preload(:room_unity)
+
+    if room.room_unity && room.room_unity.unity do
+      ApathyDrive.PubSub.subscribe(self, "#{room.room_unity.unity}-unity")
+    end
+
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
 
@@ -65,7 +72,7 @@ defmodule Room do
 
   def changeset(%Room{} = room, params \\ :empty) do
     room
-    |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_frequency lair_faction commands legacy_id))
+    |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_frequency commands legacy_id))
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
   end
@@ -107,17 +114,38 @@ defmodule Room do
     PubSub.subscribers("rooms")
   end
 
+  def essence(%Room{room_unity: nil}), do: 0
+  def essence(%Room{room_unity: %RoomUnity{essences: essences}}) do
+    essences
+    |> Map.values
+    |> Enum.sum
+  end
+
   def get_look_data(room, mobile) do
     room = World.room(room)
 
+    name_color =
+      case room.room_unity && room.room_unity.unity do
+        "demon" ->
+          "magenta"
+        "angel" ->
+          "white"
+        _ ->
+          "cyan"
+      end
+
     %{
-      name: room.name,
+      name: "<span class='#{name_color}'>#{room.name}</span>",
       description: room.description,
       items: look_items(room),
       mobiles: look_mobiles(%{room_id: room.id, mobile: mobile}),
       exits: look_directions(room),
       light: light_desc(room.light)
     }
+  end
+
+  def purify(room) do
+    GenServer.call(room, :purify)
   end
 
   def get_item(room, item) do
@@ -220,13 +248,15 @@ defmodule Room do
 
     command =
       room
-      |> Map.get(:commands)
+      |> Map.get(:commands, %{})
       |> Map.keys
       |> Enum.find(fn(command) ->
            String.downcase(command) == String.downcase(string)
          end)
 
-    room.commands[command]
+    if command do
+      room.commands[command]
+    end
   end
 
   def add_item(room, item) do
@@ -342,7 +372,7 @@ defmodule Room do
   def look_at_room(room, mobile) do
     data = get_look_data(room, mobile)
 
-    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{data.name}</span></p>")
+    Mobile.send_scroll(mobile, "<p>#{data.name}</p>")
     Mobile.send_scroll(mobile, "<p>    #{data.description}</p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{data.items}</span></p>")
     Mobile.send_scroll(mobile, "<p>#{data.mobiles}</p>")
@@ -586,6 +616,22 @@ defmodule Room do
       true ->
         {:reply, :not_found, room}
     end
+  end
+
+  def handle_call(:purify, _from, %Room{room_unity: nil} = room) do
+    room_unity =
+      room
+      |> build_assoc(:room_unity, unity: "angel", essences: %{"angel" => 100})
+      |> Repo.save!
+
+    room = %{room | room_unity: room_unity}
+
+    ApathyDrive.PubSub.subscribe(self, "angel-unity")
+
+    {:reply, :ok, World.add_room(room)}
+  end
+  def handle_call(:purify, _from, room) do
+    {:reply, :nope, room}
   end
 
   def handle_call({:get_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
@@ -846,7 +892,52 @@ defmodule Room do
     {:noreply, World.add_room(room)}
   end
 
-  def handle_info(_message, room) do
+  def handle_info({:add_essence, amount}, %Room{room_unity: room_unity} = room) when amount > 0 do
+    updated_essence =
+      room_unity.essences
+      |> Enum.reduce(%{}, fn({unity, total}, essences) ->
+           if unity == room_unity.unity do
+             Map.put(essences, unity, total + amount)
+           else
+             Map.put(essences, unity, max(0, total - amount))
+           end
+         end)
+
+    room_unity =
+      room_unity
+      |> Map.put(:essences, updated_essence)
+      |> Repo.save!
+
+    room = Map.put(room, :room_unity, room_unity)
+
+    {:noreply, World.add_room(room)}
+  end
+
+  def handle_info({:add_essence, amount}, %Room{room_unity: room_unity} = room) when amount < 0 do
+    updated_essence =
+      room_unity.essences
+      |> Enum.reduce(%{}, fn({unity, total}, essences) ->
+           if unity != room_unity.unity && room_unity.essences[unity] > room_unity.essences[room_unity.unity] do
+             essences
+             |> Map.put(unity, max(0, total + amount * 2))
+             |> Map.put(room_unity.unity, essences[room_unity.unity] - amount * 2)
+           else
+             Map.put(essences, unity, max(0, total + amount))
+           end
+         end)
+
+    room_unity =
+      room_unity
+      |> Map.put(:essences, updated_essence)
+      |> Repo.save!
+
+    room = Map.put(room, :room_unity, room_unity)
+
+    {:noreply, World.add_room(room)}
+  end
+
+  def handle_info(message, room) do
+    IO.inspect(message)
     {:noreply, room}
   end
 

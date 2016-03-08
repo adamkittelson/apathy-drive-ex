@@ -3,8 +3,7 @@ defmodule ApathyDrive.Exits.Doors do
   defmacro __using__(_opts) do
     quote do
       use ApathyDrive.Exit
-      alias ApathyDrive.Mobile
-      alias ApathyDrive.PubSub
+      alias ApathyDrive.{ Mobile, PubSub, World }
 
       def name, do: "door"
 
@@ -162,7 +161,8 @@ defmodule ApathyDrive.Exits.Doors do
           room_exit["remote_action_exits"]
           |> Enum.all?(fn(remote_exit) ->
                Room.find(remote_exit["room"])
-               |> Room.effects
+               |> World.room
+               |> Map.get(:effects)
                |> Map.values
                |> Enum.filter(fn(effect) ->
                     Map.has_key?(effect, :triggered)
