@@ -9,6 +9,7 @@ defmodule ApathyDrive.World do
   def init([]) do
     :ets.new(:rooms,   [:named_table, :set, read_concurrency: true])
     :ets.new(:mobiles, [:named_table, :set, read_concurrency: true])
+    :ets.new(:unities, [:named_table, :set, read_concurrency: true])
 
     {:ok, nil}
   end
@@ -23,6 +24,19 @@ defmodule ApathyDrive.World do
     GenServer.cast(__MODULE__, {:add_mobile, self, mobile})
 
     mobile
+  end
+
+  def set_average_essence(unity, essence) do
+    GenServer.cast(__MODULE__, {:set_average_essence, unity, essence})
+  end
+
+  def average_essence(unity) do
+    case :ets.lookup(:unities, unity) do
+      [{^unity, essence}] ->
+        essence
+      _ ->
+        nil
+    end
   end
 
   def room(pid_or_id, retries \\ 0)
@@ -61,6 +75,12 @@ defmodule ApathyDrive.World do
         Process.monitor(pid)
         :ets.insert(:rooms, {pid, room})
     end
+
+    {:noreply, state}
+  end
+
+  def handle_cast({:set_average_essence, unity, essence}, state) do
+    :ets.insert(:unities, {unity, essence})
 
     {:noreply, state}
   end

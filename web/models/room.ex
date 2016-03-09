@@ -144,8 +144,8 @@ defmodule Room do
     }
   end
 
-  def purify(room) do
-    GenServer.call(room, :purify)
+  def purify(room, amount) do
+    GenServer.cast(room, {:purify, amount})
   end
 
   def get_item(room, item) do
@@ -246,16 +246,18 @@ defmodule Room do
   def command(room, string) do
     room = World.room(room)
 
-    command =
-      room
-      |> Map.get(:commands, %{})
-      |> Map.keys
-      |> Enum.find(fn(command) ->
-           String.downcase(command) == String.downcase(string)
-         end)
+    if room do
+      command =
+        room
+        |> Map.get(:commands, %{})
+        |> Map.keys
+        |> Enum.find(fn(command) ->
+             String.downcase(command) == String.downcase(string)
+           end)
 
-    if command do
-      room.commands[command]
+      if command do
+        room.commands[command]
+      end
     end
   end
 
@@ -618,22 +620,6 @@ defmodule Room do
     end
   end
 
-  def handle_call(:purify, _from, %Room{room_unity: nil} = room) do
-    room_unity =
-      room
-      |> build_assoc(:room_unity, unity: "angel", essences: %{"angel" => 100})
-      |> Repo.save!
-
-    room = %{room | room_unity: room_unity}
-
-    ApathyDrive.PubSub.subscribe(self, "angel-unity")
-
-    {:reply, :ok, World.add_room(room)}
-  end
-  def handle_call(:purify, _from, room) do
-    {:reply, :nope, room}
-  end
-
   def handle_call({:get_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -678,6 +664,50 @@ defmodule Room do
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, World.add_room(room)}
+  end
+
+  def handle_cast({:purify, amount}, %Room{room_unity: nil} = room) do
+    room_unity =
+      room
+      |> build_assoc(:room_unity, unity: "angel", essences: %{"angel" => amount})
+      |> Repo.save!
+
+    room = %{room | room_unity: room_unity}
+
+    ApathyDrive.PubSub.subscribe(self, "angel-unity")
+    send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
+
+    {:noreply, :ok, World.add_room(room)}
+  end
+  def handle_cast({:purify, amount}, %Room{room_unity: room_unity} = room) do
+    angel = Map.get(room_unity.essences, "angel", 0)
+    demon = Map.get(room_unity.essences, "demon", 0)
+
+    essences =
+      room_unity.essences
+      |> Map.put("angel", angel + amount)
+      |> Map.put("demon", max(0, demon - amount))
+
+    room_unity = Map.put(room_unity, :essences, essences)
+
+    cond do
+      angel > demon ->
+        send_scroll(room, "<p><span class='white'>The aura of benevolence here grows stronger.</span></p>")
+        room = %{room | room_unity: Repo.save!(room_unity)}
+        {:noreply, World.add_room(room)}
+      demon > angel + amount ->
+        send_scroll(room, "<p><span class='dark-red'>The malevolent aura here weakens.</span></p>")
+        room = %{room | room_unity: Repo.save!(room_unity)}
+        {:noreply, World.add_room(room)}
+      (angel + amount) >= demon ->
+        send_scroll(room, "<p><span class='dark-red'>The malevolent aura here dissipates.</span></p>")
+        send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
+        ApathyDrive.PubSub.subscribe(self, "angel-unity")
+        ApathyDrive.PubSub.unsubscribe(self, "demon-unity")
+        room_unity = Map.put(room_unity, :unity, "angel")
+        room = %{room | room_unity: Repo.save!(room_unity)}
+        {:noreply, World.add_room(room)}
+    end
   end
 
   def handle_cast({:add_item, item}, %Room{items: items} = room) do
@@ -936,8 +966,7 @@ defmodule Room do
     {:noreply, World.add_room(room)}
   end
 
-  def handle_info(message, room) do
-    IO.inspect(message)
+  def handle_info(_message, room) do
     {:noreply, room}
   end
 

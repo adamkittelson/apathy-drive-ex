@@ -96,13 +96,6 @@ defmodule Spirit do
     end
   end
 
-  def unities do
-    __MODULE__
-    |> distinct(true)
-    |> select([s], s.unity)
-    |> Repo.all
-  end
-
   def save(spirit) when is_pid(spirit), do: spirit |> value |> save
   def save(%Spirit{id: id} = spirit) when is_integer(id) do
     Repo.save!(spirit)

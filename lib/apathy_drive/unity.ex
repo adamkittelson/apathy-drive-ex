@@ -6,30 +6,35 @@ defmodule ApathyDrive.Unity do
   @interval 60_000
 
   def start_link do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+    GenServer.start_link(__MODULE__, ["demon", "angel"], name: __MODULE__)
   end
 
   def init(unities) do
-    send(self, :update_unities)
     Process.send_after(self, :redistribute_essence, @interval)
 
     {:ok, unities}
-  end
-
-  def handle_info(:update_unities, _unities) do
-    {:noreply, Spirit.unities}
   end
 
   def handle_info(:redistribute_essence, unities) do
     Enum.each(unities, fn(unity) ->
       Logger.debug "Redstributing Essence for #{unity}"
       contributors = ApathyDrive.PubSub.subscribers("#{unity}-unity")
-      contributions = contributions(contributors)
 
-      contributions
-      |> calculate_distributions()
-      |> distribute()
+      if Enum.any?(contributors) do
+       contributions = contributions(contributors)
 
+        contributions
+        |> calculate_distributions()
+        |> distribute()
+
+        average =
+          contributions
+          |> Map.values
+          |> Enum.sum
+          |> div(map_size(contributions))
+
+        World.set_average_essence(unity, average)
+      end
     end)
 
     Process.send_after(self, :redistribute_essence, @interval)
