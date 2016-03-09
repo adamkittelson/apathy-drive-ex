@@ -7,9 +7,9 @@ defmodule ApathyDrive.World do
   end
 
   def init([]) do
-    :ets.new(:rooms,   [:named_table, :set, read_concurrency: true])
-    :ets.new(:mobiles, [:named_table, :set, read_concurrency: true])
-    :ets.new(:unities, [:named_table, :set, read_concurrency: true])
+    :ets.new(:rooms,   [:named_table, :set])
+    :ets.new(:mobiles, [:named_table, :set])
+    :ets.new(:unities, [:named_table, :set])
 
     {:ok, nil}
   end
@@ -45,6 +45,7 @@ defmodule ApathyDrive.World do
       [{^pid_or_id, room}] ->
         room
       _ when is_pid(pid_or_id) ->
+        :timer.sleep(10)
         room(pid_or_id, retries + 1)
       _ when is_integer(pid_or_id) ->
         Room.find(pid_or_id)
