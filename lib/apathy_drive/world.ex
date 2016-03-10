@@ -40,31 +40,33 @@ defmodule ApathyDrive.World do
   end
 
   def room(pid_or_id, retries \\ 0)
-  def room(pid_or_id, retries) when retries < 5 do
-    case :ets.lookup(:rooms, pid_or_id) do
-      [{^pid_or_id, room}] ->
+  def room(id, retries) when is_integer(id) do
+    id
+    |> Room.find
+    |> room(retries)
+  end
+  def room(pid, retries) when retries < 5 do
+    case :ets.lookup(:rooms, pid) do
+      [{^pid, room}] ->
         room
-      _ when is_pid(pid_or_id) ->
+      _ ->
         :timer.sleep(10)
-        room(pid_or_id, retries + 1)
-      _ when is_integer(pid_or_id) ->
-        Room.find(pid_or_id)
-        |> room()
+        room(pid, retries + 1)
     end
   end
-  def room(_pid_or_id, _retries), do: nil
+  def room(pid, _retries), do: raise "wtf couldn't find state for room #{inspect pid}"
 
-  def mobile(pid_or_id, retries \\ 0)
-  def mobile(pid_or_id, retries) when retries < 5 do
-    case :ets.lookup(:mobiles, pid_or_id) do
-      [{^pid_or_id, mobile}] ->
+  def mobile(pid, retries \\ 0)
+  def mobile(pid, retries) when retries < 5 and is_pid(pid) do
+    case :ets.lookup(:mobiles, pid) do
+      [{^pid, mobile}] ->
         mobile
       _ ->
         :timer.sleep(10)
-        mobile(pid_or_id, retries + 1)
+        mobile(pid, retries + 1)
     end
   end
-  def mobile(_pid_or_id, _retries), do: nil
+  def mobile(pid, _retries) when is_pid(pid), do: raise "wtf couldn't find state for mobile #{inspect pid}"
 
   def handle_cast({:add_room, pid, %Room{id: id} = room}, state) do
     :ets.insert(:rooms, {id, room})

@@ -40,7 +40,7 @@ defmodule Room do
       |> Repo.preload(:room_unity)
 
     if room.room_unity && room.room_unity.unity do
-      ApathyDrive.PubSub.subscribe(self, "#{room.room_unity.unity}-unity")
+      ApathyDrive.PubSub.subscribe(self, "#{room.room_unity.unity}-unity:rooms")
     end
 
     PubSub.subscribe(self, "rooms")
@@ -679,7 +679,7 @@ defmodule Room do
 
     room = %{room | room_unity: room_unity}
 
-    ApathyDrive.PubSub.subscribe(self, "angel-unity")
+    ApathyDrive.PubSub.subscribe(self, "angel-unity:rooms")
     turn_spawned_monsters(room, "angel")
     send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
 
@@ -708,8 +708,8 @@ defmodule Room do
       (angel + amount) >= demon ->
         send_scroll(room, "<p><span class='dark-red'>The malevolent aura here dissipates.</span></p>")
         send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
-        ApathyDrive.PubSub.subscribe(self, "angel-unity")
-        ApathyDrive.PubSub.unsubscribe(self, "demon-unity")
+        ApathyDrive.PubSub.subscribe(self, "angel-unity:rooms")
+        ApathyDrive.PubSub.unsubscribe(self, "demon-unity:rooms")
         turn_spawned_monsters(room, "angel")
         room_unity = Map.put(room_unity, :unity, "angel")
         room = %{room | room_unity: Repo.save!(room_unity)}
@@ -866,7 +866,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info(:increase_essence, %Room{room_unity: %RoomUnity{unity: unity, essences: essences}} = room) do
+  def handle_info(:increase_essence, %Room{room_unity: %RoomUnity{unity: _unity, essences: _essences}} = room) do
     level =
       room
       |> essence()

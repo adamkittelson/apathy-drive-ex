@@ -102,7 +102,7 @@ defmodule ApathyDrive.Mobile do
 
     mobile = Repo.save!(mobile)
     if mobile.level > level do
-      ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
+      ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity:mobiles", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
     end
 
     mobile
@@ -653,7 +653,7 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
       if mobile.unity do
-        ApathyDrive.PubSub.subscribe(self, "#{mobile.unity}-unity")
+        ApathyDrive.PubSub.subscribe(self, "#{mobile.unity}-unity:mobiles")
       end
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spawned_at}:spawned_monsters")
@@ -677,7 +677,7 @@ defmodule ApathyDrive.Mobile do
 
     ApathyDrive.PubSub.subscribe(socket, "spirits:#{spirit.id}:socket")
 
-    ApathyDrive.PubSub.subscribe(self, "#{spirit.unity}-unity")
+    ApathyDrive.PubSub.subscribe(self, "#{spirit.unity}-unity:mobiles")
 
     mobile =
       mobile
@@ -949,7 +949,7 @@ defmodule ApathyDrive.Mobile do
     |> Room.mobiles
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
          threat = Map.get(hate, potential_target, 0)
-         if threat > 0 and !(potential_target in ApathyDrive.PubSub.subscribers("#{mobile.unity}-unity")) do
+         if threat > 0 and !(potential_target in ApathyDrive.PubSub.subscribers("#{mobile.unity}-unity:mobiles")) do
            Map.put(targets, threat, potential_target)
          else
            targets
@@ -1186,7 +1186,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:alignment, (if unity == "angel", do: "good", else: "evil"))
       |> Repo.save!
 
-    ApathyDrive.PubSub.subscribe(self, "#{unity}-unity")
+    ApathyDrive.PubSub.subscribe(self, "#{unity}-unity:mobiles")
 
     {:noreply, World.add_mobile(mobile)}
   end
