@@ -399,10 +399,10 @@ defmodule Room do
   def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{World.room(room).id}:spawned_monsters")
 
-  def turn_spawned_monsters(%Room{id: room_id}, unity) do
+  def turn_spawned_monsters(%Room{id: room_id}, unity, essence) do
     room_id
     |> spawned_monsters
-    |> Enum.each(&(Mobile.turn(&1, unity)))
+    |> Enum.each(&(Mobile.turn(&1, unity, essence)))
   end
 
   # Value functions
@@ -680,7 +680,7 @@ defmodule Room do
     room = %{room | room_unity: room_unity}
 
     ApathyDrive.PubSub.subscribe(self, "angel-unity:rooms")
-    turn_spawned_monsters(room, "angel")
+    turn_spawned_monsters(room, "angel", essence(room))
     send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
 
     {:noreply, :ok, World.add_room(room)}
@@ -710,7 +710,7 @@ defmodule Room do
         send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
         ApathyDrive.PubSub.subscribe(self, "angel-unity:rooms")
         ApathyDrive.PubSub.unsubscribe(self, "demon-unity:rooms")
-        turn_spawned_monsters(room, "angel")
+        turn_spawned_monsters(room, "angel", essence(room))
         room_unity = Map.put(room_unity, :unity, "angel")
         room = %{room | room_unity: Repo.save!(room_unity)}
         {:noreply, World.add_room(room)}

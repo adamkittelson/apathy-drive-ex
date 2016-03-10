@@ -99,9 +99,15 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> Map.put(:experience, experience + exp)
       |> ApathyDrive.Level.advance
+      |> Repo.save!
 
-    mobile = Repo.save!(mobile)
     if mobile.level > level do
+      send_scroll mobile, "<p>You ascend to level #{mobile.level}!"
+      ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity:mobiles", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
+    end
+
+    if mobile.level < level do
+      send_scroll mobile, "<p>You fall to level #{mobile.level}!"
       ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity:mobiles", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
     end
 
@@ -652,6 +658,10 @@ defmodule ApathyDrive.Mobile do
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
+      if mobile.monster_template_id do
+        ApathyDrive.PubSub.subscribe(self, "monster_templates:#{mobile.monster_template_id}:monsters")
+      end
+
       if mobile.unity do
         ApathyDrive.PubSub.subscribe(self, "#{mobile.unity}-unity:mobiles")
       end
@@ -731,8 +741,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, {:possess, spirit_id, socket})
   end
 
-  def turn(mobile, unity) when is_pid(mobile) do
-    GenServer.cast(mobile, {:turn, unity})
+  def turn(mobile, unity, essence) when is_pid(mobile) do
+    GenServer.cast(mobile, {:turn, unity, essence})
   end
 
   def unpossess(mobile) when is_pid(mobile) do
@@ -1289,13 +1299,14 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_cast({:turn, unity}, %Mobile{} = mobile) do
+  def handle_cast({:turn, unity, essence}, %Mobile{} = mobile) do
     mobile =
       mobile
       |> Map.put(:attack_target, nil)
       |> Map.put(:hate, %{})
       |> Map.put(:unity, unity)
       |> Map.put(:alignment, (if unity == "angel", do: "good", else: "evil"))
+      |> Map.put(:experience, essence)
       |> Repo.save!
 
     ApathyDrive.PubSub.subscribe(self, "#{unity}-unity:mobiles")

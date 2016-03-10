@@ -89,8 +89,6 @@ defmodule MonsterTemplate do
   def spawn(%{monster_template_id: mt_id} = mobile) do
     {:ok, pid} = ApathyDrive.Mobile.start(mobile)
 
-    ApathyDrive.PubSub.subscribe(pid, "monster_templates:#{mt_id}:monsters")
-
     pid
   end
 

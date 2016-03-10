@@ -45,12 +45,12 @@ defmodule ApathyDrive.World do
     |> Room.find
     |> room(retries)
   end
-  def room(pid, retries) when retries < 5 do
+  def room(pid, retries) when retries < 10 do
     case :ets.lookup(:rooms, pid) do
       [{^pid, room}] ->
         room
-      _ ->
-        :timer.sleep(10)
+      result ->
+        :timer.sleep(10 * retries)
         room(pid, retries + 1)
     end
   end
