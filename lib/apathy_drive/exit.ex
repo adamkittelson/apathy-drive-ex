@@ -128,7 +128,8 @@ defmodule ApathyDrive.Exit do
                      })
                   |> capitalize_first
 
-        ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{Room.id(room)}:mobiles", "scroll", %{:html => "<p><span class='grey'>#{message}</span></p>"}
+        room_id = Room.id(room)
+        ApathyDrive.PubSub.broadcast! "rooms:#{room_id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room_id, message: "<p><span class='grey'>#{message}</span></p>"}}
       end
 
       def notify_mobile_left(mobile, room, left_to) do
@@ -145,7 +146,9 @@ defmodule ApathyDrive.Exit do
                      })
                   |> capitalize_first
 
-        ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{Room.id(room)}:mobiles", "scroll", %{:html => "<p><span class='grey'>#{message}</span></p>"}
+        room_id = Room.id(room)
+
+        ApathyDrive.PubSub.broadcast! "rooms:#{room_id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room_id, message: "<p><span class='grey'>#{message}</span></p>"}}
       end
 
       def get_direction_by_destination(room, destination) do

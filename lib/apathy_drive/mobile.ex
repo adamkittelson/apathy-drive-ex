@@ -708,6 +708,21 @@ defmodule ApathyDrive.Mobile do
     {:ok, World.add_mobile(mobile)}
   end
 
+  def set_attack_target(%Mobile{attack_target: attack_target} = mobile, target) when attack_target == target do
+    mobile
+  end
+  def set_attack_target(%Mobile{} = mobile, target) do
+    Map.put(mobile, :attack_target, target)
+  end
+
+  def initiate_combat(%Mobile{timers: %{auto_attack_timer: _}} = mobile) do
+    mobile
+  end
+  def initiate_combat(%Mobile{} = mobile) do
+    send(mobile.pid, :execute_auto_attack)
+    mobile
+  end
+
   def attack(mobile, target) do
     GenServer.call(mobile, {:attack, target})
   end
@@ -995,6 +1010,103 @@ defmodule ApathyDrive.Mobile do
 
   def send_execute_auto_attack do
     send(self, :execute_auto_attack)
+  end
+
+  defp should_move?(%Mobile{spirit: nil} = mobile) do
+    cond do
+      # at least 80% health and no enemies present, go find something to kill
+      ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(local_hated_targets(mobile)) ->
+        true
+      # 30% or less health and enemies present, run away!
+      ((mobile.hp / mobile.max_hp) <= 0.3) and Enum.any?(local_hated_targets(mobile)) ->
+        true
+      true ->
+        false
+    end
+  end
+
+  defp execute_auto_attack(%Mobile{} = mobile, target) do
+    attacks =
+      mobile.abilities
+      |> Enum.filter(&(&1["kind"] == "auto_attack"))
+
+    attack = if Enum.any?(attacks), do: Enum.random(attacks), else: nil
+
+    if attack do
+      attack =
+        attack
+        |> Map.put("ignores_global_cooldown", true)
+        |> Map.put("kind", "attack")
+
+      send(self, {:execute_ability, attack, [target]})
+      attack["attack_interval"] # return interval to change default auto_attack delay
+    end
+  end
+
+  defp move_after(%Mobile{movement_frequency: frequency} = mobile) do
+    time =
+      frequency
+      |> :timer.seconds
+      |> :rand.uniform
+      |> Kernel.+(:timer.seconds(frequency))
+
+    TimerManager.send_after(mobile, {:monster_movement, time, :auto_move})
+  end
+
+  defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
+  defp worn_on_max(%{"worn_on" => "Wrist"}),  do: 2
+  defp worn_on_max(%{"worn_on" => _}),        do: 1
+
+  defp conflicting_worn_on("Weapon Hand"),     do: ["Two Handed"]
+  defp conflicting_worn_on("Off-Hand"),   do: ["Two Handed"]
+  defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
+  defp conflicting_worn_on(_), do: []
+
+  defp value(pre, post) when pre > post and is_float(pre) and is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}(<span class='dark-red'>#{Float.to_string(post - pre, decimals: 2)}</span>)"
+  end
+  defp value(pre, post) when pre > post do
+    "#{post}(<span class='dark-red'>#{post - pre}</span>)"
+  end
+  defp value(pre, post) when pre < post and is_float(pre) and is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}(<span class='green'>+#{Float.to_string(post - pre, decimals: 2)}</span>)"
+  end
+  defp value(pre, post) when pre < post do
+    "#{post}(<span class='green'>+#{post - pre}</span>)"
+  end
+  defp value(_pre, post) when is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}"
+  end
+  defp value(_pre, post) do
+    "#{post}"
+  end
+
+  defp list_forms(mobile, forms, limb) do
+    alias ApathyDrive.Item
+
+    Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
+
+    forms
+    |> Enum.reduce(%{}, fn(item, items) ->
+         items
+         |> Map.put_new(item.worn_on, [])
+         |> update_in([item.worn_on], &([item | &1]))
+       end)
+    |> Enum.each(fn({slot, items}) ->
+         if String.downcase(slot) == String.downcase(limb) or limb == "" do
+           Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>#{slot}</span></p>")
+           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost | STR | AGI | WIL | Item Name</span></p>")
+           Enum.each(items, fn(item) ->
+             exp =
+              (ApathyDrive.Item.experience(Item.strength(item) + Item.agility(item) + Item.will(item)) * 10)
+              |> to_string
+              |> String.ljust(12)
+
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(Item.strength(item)), 3)} | #{String.rjust(to_string(Item.agility(item)), 3)} | #{String.rjust(to_string(Item.will(item)), 3)} | #{item.name}</span></p>")
+           end)
+           Mobile.send_scroll(mobile, "<p>\n</p>")
+         end
+       end)
   end
 
   def handle_call(:remove_effects, _from, mobile) do
@@ -1788,120 +1900,13 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info(_message, %Mobile{} = mobile) do
+  def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do
+    send_scroll mobile, message
     {:noreply, mobile}
   end
 
-  defp should_move?(%Mobile{spirit: nil} = mobile) do
-    cond do
-      # at least 80% health and no enemies present, go find something to kill
-      ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(local_hated_targets(mobile)) ->
-        true
-      # 30% or less health and enemies present, run away!
-      ((mobile.hp / mobile.max_hp) <= 0.3) and Enum.any?(local_hated_targets(mobile)) ->
-        true
-      true ->
-        false
-    end
-  end
-
-  defp execute_auto_attack(%Mobile{} = mobile, target) do
-    attacks =
-      mobile.abilities
-      |> Enum.filter(&(&1["kind"] == "auto_attack"))
-
-    attack = if Enum.any?(attacks), do: Enum.random(attacks), else: nil
-
-    if attack do
-      attack =
-        attack
-        |> Map.put("ignores_global_cooldown", true)
-        |> Map.put("kind", "attack")
-
-      send(self, {:execute_ability, attack, [target]})
-      attack["attack_interval"] # return interval to change default auto_attack delay
-    end
-  end
-
-  def set_attack_target(%Mobile{attack_target: attack_target} = mobile, target) when attack_target == target do
-    mobile
-  end
-  def set_attack_target(%Mobile{} = mobile, target) do
-    Map.put(mobile, :attack_target, target)
-  end
-
-  def initiate_combat(%Mobile{timers: %{auto_attack_timer: _}} = mobile) do
-    mobile
-  end
-  def initiate_combat(%Mobile{} = mobile) do
-    send(mobile.pid, :execute_auto_attack)
-    mobile
-  end
-
-  defp move_after(%Mobile{movement_frequency: frequency} = mobile) do
-    time =
-      frequency
-      |> :timer.seconds
-      |> :rand.uniform
-      |> Kernel.+(:timer.seconds(frequency))
-
-    TimerManager.send_after(mobile, {:monster_movement, time, :auto_move})
-  end
-
-  defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
-  defp worn_on_max(%{"worn_on" => "Wrist"}),  do: 2
-  defp worn_on_max(%{"worn_on" => _}),        do: 1
-
-  defp conflicting_worn_on("Weapon Hand"),     do: ["Two Handed"]
-  defp conflicting_worn_on("Off-Hand"),   do: ["Two Handed"]
-  defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
-  defp conflicting_worn_on(_), do: []
-
-  defp value(pre, post) when pre > post and is_float(pre) and is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}(<span class='dark-red'>#{Float.to_string(post - pre, decimals: 2)}</span>)"
-  end
-  defp value(pre, post) when pre > post do
-    "#{post}(<span class='dark-red'>#{post - pre}</span>)"
-  end
-  defp value(pre, post) when pre < post and is_float(pre) and is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}(<span class='green'>+#{Float.to_string(post - pre, decimals: 2)}</span>)"
-  end
-  defp value(pre, post) when pre < post do
-    "#{post}(<span class='green'>+#{post - pre}</span>)"
-  end
-  defp value(_pre, post) when is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}"
-  end
-  defp value(_pre, post) do
-    "#{post}"
-  end
-
-  defp list_forms(mobile, forms, limb) do
-    alias ApathyDrive.Item
-
-    Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
-
-    forms
-    |> Enum.reduce(%{}, fn(item, items) ->
-         items
-         |> Map.put_new(item.worn_on, [])
-         |> update_in([item.worn_on], &([item | &1]))
-       end)
-    |> Enum.each(fn({slot, items}) ->
-         if String.downcase(slot) == String.downcase(limb) or limb == "" do
-           Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>#{slot}</span></p>")
-           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost | STR | AGI | WIL | Item Name</span></p>")
-           Enum.each(items, fn(item) ->
-             exp =
-              (ApathyDrive.Item.experience(Item.strength(item) + Item.agility(item) + Item.will(item)) * 10)
-              |> to_string
-              |> String.ljust(12)
-
-             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(Item.strength(item)), 3)} | #{String.rjust(to_string(Item.agility(item)), 3)} | #{String.rjust(to_string(Item.will(item)), 3)} | #{item.name}</span></p>")
-           end)
-           Mobile.send_scroll(mobile, "<p>\n</p>")
-         end
-       end)
+  def handle_info(_message, %Mobile{} = mobile) do
+    {:noreply, mobile}
   end
 
 end
