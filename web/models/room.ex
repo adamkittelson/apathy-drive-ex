@@ -66,6 +66,8 @@ defmodule Room do
         |> TimerManager.send_every({:execute_room_ability, 5_000, :execute_room_ability})
     end
 
+    room = TimerManager.send_every(room, {:increase_essence, 300_000, :increase_essence})
+
 
     {:ok, World.add_room(room)}
   end
@@ -858,6 +860,21 @@ defmodule Room do
     ApathyDrive.PubSub.unsubscribe(self, "rooms:abilities")
 
     {:noreply, World.add_room(room)}
+  end
+
+  def handle_info(:increase_essence, %Room{room_unity: nil} = room) do
+    {:noreply, room}
+  end
+
+  def handle_info(:increase_essence, %Room{room_unity: %RoomUnity{unity: unity, essences: essences}} = room) do
+    level =
+      room
+      |> essence()
+      |> ApathyDrive.Level.level_at_exp
+
+    send(self, {:add_essence, level * 100})
+
+    {:noreply, room}
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do

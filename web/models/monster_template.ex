@@ -177,7 +177,7 @@ defmodule MonsterTemplate do
     if monster.unity do
       monster =
         monster
-        |> Map.put(:experience, trunc(ApathyDrive.Level.exp_at_level(monster_template.level) * 0.9) |> min(100))
+        |> Map.put(:experience, trunc(ApathyDrive.Level.exp_at_level(monster_template.level) * 0.9) |> max(100))
 
       monster =
         monster
@@ -187,7 +187,7 @@ defmodule MonsterTemplate do
       monster =
         monster
         |> Map.put(:level, monster_template.level)
-        |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level) |> min(100))
+        |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level) |> max(100))
     end
 
     monster =

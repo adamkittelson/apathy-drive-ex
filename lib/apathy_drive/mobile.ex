@@ -1439,7 +1439,7 @@ defmodule ApathyDrive.Mobile do
       Spirit.save(mobile.spirit)
       {:noreply, World.add_mobile(mobile)}
     else
-      {:noreply, mobile}
+      {:noreply, World.add_mobile(mobile)}
     end
   end
 

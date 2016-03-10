@@ -91,6 +91,8 @@ defmodule ApathyDrive.Unity do
              contribution = div(essence, 100)
              Logger.debug "#{entity.name} contributes #{inspect contribution}"
              Map.put(contributions, member, contribution)
+            nil ->
+              contributions
          end
        end)
   end

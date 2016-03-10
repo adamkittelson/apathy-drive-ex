@@ -91,7 +91,6 @@ defmodule ApathyDrive.Exit do
         Commands.Look.look_at_room(mobile, destination_id)
 
         send(mobile, :notify_presence)
-
         notify_mobile_left(mobile, current_room, destination)
       end
 
@@ -132,7 +131,6 @@ defmodule ApathyDrive.Exit do
         ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{Room.id(room)}:mobiles", "scroll", %{:html => "<p><span class='grey'>#{message}</span></p>"}
       end
 
-      def notify_monster_left(%Monster{} = monster, %Room{} = room, %Room{} = left_to), do: nil
       def notify_mobile_left(mobile, room, left_to) do
         direction = get_direction_by_destination(room, left_to)
         display_exit_message(room, mobile, direction)
