@@ -7,7 +7,7 @@ defmodule Systems.Death do
   end
   # Player possessing a monster
   def kill(%Mobile{unity: nil, monster_template_id: _, spirit: %Spirit{}} = mobile) do
-    kill(mobile, [:reward_monster_death_exp, :respawn_spirit, :unpossess, :set_last_killed_at])
+    kill(mobile, [:reward_monster_death_exp, :respawn_spirit, :unpossess, :set_last_killed_at, :delete])
   end
   # Player possessing a turned monster
   def kill(%Mobile{monster_template_id: _, spirit: %Spirit{}} = mobile) do
@@ -15,7 +15,7 @@ defmodule Systems.Death do
   end
   # Monster not possessed by a player
   def kill(%Mobile{unity: nil, spirit: nil} = mobile) do
-    kill(mobile, [:reward_monster_death_exp, :generate_loot, :set_last_killed_at])
+    kill(mobile, [:reward_monster_death_exp, :generate_loot, :set_last_killed_at, :delete])
   end
   # Turned monster not possessed by a player
   def kill(%Mobile{spirit: nil} = mobile) do

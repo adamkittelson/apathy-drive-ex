@@ -103,9 +103,6 @@ defmodule Room do
       {:error, {:already_started, pid}} ->
         pid
       {:ok, pid} ->
-        # Hack to give the newly spawned pid a chance to handle messages in its mailbox before returning it
-        # e.g. load monsters etc
-        #:timer.sleep(50)
         pid
     end
   end
@@ -400,6 +397,12 @@ defmodule Room do
   def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
   def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{World.room(room).id}:spawned_monsters")
 
+  def turn_spawned_monsters(%Room{id: room_id}, unity) do
+    room_id
+    |> spawned_monsters
+    |> Enum.each(&(Mobile.turn(&1, unity)))
+  end
+
   # Value functions
   def mobiles(%{room_id: room_id, mobile: pid}) do
     PubSub.subscribers("rooms:#{room_id}:mobiles", [pid])
@@ -675,6 +678,7 @@ defmodule Room do
     room = %{room | room_unity: room_unity}
 
     ApathyDrive.PubSub.subscribe(self, "angel-unity")
+    turn_spawned_monsters(room, "angel")
     send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
 
     {:noreply, :ok, World.add_room(room)}
@@ -704,6 +708,7 @@ defmodule Room do
         send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
         ApathyDrive.PubSub.subscribe(self, "angel-unity")
         ApathyDrive.PubSub.unsubscribe(self, "demon-unity")
+        turn_spawned_monsters(room, "angel")
         room_unity = Map.put(room_unity, :unity, "angel")
         room = %{room | room_unity: Repo.save!(room_unity)}
         {:noreply, World.add_room(room)}
@@ -733,7 +738,6 @@ defmodule Room do
     |> Enum.each(fn(mobile) ->
          mobile_pid =
           mobile
-          |> Map.put(:permanent, true)
           |> MonsterTemplate.spawn
 
          room_pid = self

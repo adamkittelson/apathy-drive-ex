@@ -38,7 +38,7 @@ defmodule MonsterTemplate do
 
   def changeset(%MonsterTemplate{} = monster_template, params \\ :empty) do
     monster_template
-    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting gender alignment level game_limit permanent experience), ~w())
+    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting gender alignment level game_limit experience), ~w())
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
     |> validate_inclusion(:gender, MonsterTemplate.genders)
@@ -150,73 +150,45 @@ defmodule MonsterTemplate do
     ["good", "neutral", "evil"]
   end
 
-  def handle_call({:create_monster, %Room{} = room}, _from, monster_template) do
-    # values = monster_template
-    #          |> Map.from_struct
-    #          |> Map.delete(:__meta__)
-    #          |> Enum.into(Keyword.new)
-    #
-    # monster = struct(Monster, values)
-    #           |> Map.put(:name, name_with_adjective(monster_template.name, monster_template.adjectives))
-    #           |> Map.put(:monster_template_id, monster_template.id)
-    #           |> Map.put(:id, nil)
-    #           |> Map.put(:room_id, room.id)
-    #           |> Map.put(:lair_id, room.id)
-    #           |> Map.put(:hp, monster_template.max_hp)
-    #           |> Map.put(:effects, %{"monster_template" => monster_template.effects})
-    #
-    # monster =
-    #   case room.lair_faction do
-    #     "Demon" ->
-    #       monster
-    #       |> Map.put(:alignment, "evil")
-    #       |> Map.put(:touched?,  true)
-    #     "Angel" ->
-    #       monster
-    #       |> Map.put(:alignment, "good")
-    #       |> Map.put(:touched?,  true)
-    #     "Elemental" ->
-    #       monster
-    #       |> Map.put(:alignment, "neutral")
-    #       |> Map.put(:touched?,  true)
-    #     _ ->
-    #       monster
-    #   end
-    #
-    # monster = monster
-    #           |> Map.put(:keywords, String.split(monster.name))
-    #           |> Monster.insert
-    #
-    #
-    #
-    # worker_id = :"monster_#{monster.id}"
-    #
-    # pid = case Supervisor.start_child(ApathyDrive.Supervisor, {worker_id, {GenServer, :start_link, [Monster, monster, []]}, :transient, 5000, :worker, [Monster]}) do
-    #   {:error, {:already_started, pid}} ->
-    #     pid
-    #   {:ok, pid} ->
-    #     pid
-    # end
+  def unity_alignment("angel"), do: "good"
+  def unity_alignment("demon"), do: "evil"
+  def unity_alignment(_),       do: nil
 
+  def handle_call({:create_monster, %Room{} = room}, _from, monster_template) do
     monster = %{
       name: name_with_adjective(monster_template.name, monster_template.adjectives),
       description: monster_template.description,
       enter_message: monster_template.enter_message,
       exit_message: monster_template.exit_message,
       death_message: monster_template.death_message,
-      alignment: monster_template.alignment,
       room_id: room.id,
       gender: monster_template.gender,
       greeting: monster_template.greeting,
-      level: monster_template.level,
-      experience: ApathyDrive.Level.exp_at_level(monster_template.level),
       monster_template_id: monster_template.id,
       questions: monster_template.questions,
       flags: monster_template.flags,
-      permanent: monster_template.permanent,
       chance_to_follow: monster_template.chance_to_follow,
-      movement: monster_template.movement
+      movement: monster_template.movement,
+      unity: room.room_unity && room.room_unity.unity,
+      alignment: monster_template.alignment,
+      spawned_at: room.id
     }
+
+    if monster.unity do
+      monster =
+        monster
+        |> Map.put(:experience, trunc(ApathyDrive.Level.exp_at_level(monster_template.level) * 0.9) |> min(100))
+
+      monster =
+        monster
+        |> Map.put(:level, ApathyDrive.Level.level_at_exp(monster.experience))
+        |> Map.put(:alignment, unity_alignment(monster.unity))
+    else
+      monster =
+        monster
+        |> Map.put(:level, monster_template.level)
+        |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level) |> min(100))
+    end
 
     monster =
       monster
@@ -224,9 +196,7 @@ defmodule MonsterTemplate do
 
     monster = Map.merge(%Mobile{}, monster)
 
-    if monster.permanent do
-      monster = Repo.save!(monster)
-    end
+    monster = Repo.save!(monster)
 
     {:reply, monster, monster_template}
   end
