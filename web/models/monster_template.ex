@@ -86,7 +86,7 @@ defmodule MonsterTemplate do
     GenServer.call(monster_template, {:create_monster, room})
   end
 
-  def spawn(%{monster_template_id: mt_id} = mobile) do
+  def spawn(%{monster_template_id: _mt_id} = mobile) do
     {:ok, pid} = ApathyDrive.Mobile.start(mobile)
 
     pid

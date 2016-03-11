@@ -683,7 +683,7 @@ defmodule Room do
     turn_spawned_monsters(room, "angel", essence(room))
     send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
 
-    {:noreply, :ok, World.add_room(room)}
+    {:noreply, World.add_room(room)}
   end
   def handle_cast({:purify, amount}, %Room{room_unity: room_unity} = room) do
     angel = Map.get(room_unity.essences, "angel", 0)
@@ -735,7 +735,6 @@ defmodule Room do
 
   # GenServer callbacks
   def handle_info(:spawn_permanent_monsters, room) do
-
     ApathyDrive.Mobile.permanent_monsters_in_room(room.id)
     |> Enum.each(fn(mobile) ->
          mobile_pid =
