@@ -3,8 +3,7 @@ defmodule MonsterTemplate do
   use GenServer
   use Timex
 
-  alias ApathyDrive.Repo
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile,Repo}
 
   schema "monster_templates" do
     field :name,                   :string
@@ -36,6 +35,14 @@ defmodule MonsterTemplate do
     timestamps
   end
 
+  def start_link(mt, opts \\ []) do
+    GenServer.start_link(__MODULE__, mt, IO.inspect(opts))
+  end
+
+  def init(mt) do
+    {:ok, mt}
+  end
+
   def changeset(%MonsterTemplate{} = monster_template, params \\ :empty) do
     monster_template
     |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting gender alignment level game_limit experience), ~w())
@@ -46,7 +53,7 @@ defmodule MonsterTemplate do
   end
 
   def find(id) do
-    case :global.whereis_name(:"monster_template_#{id}") do
+    case :global.whereis_name("monster_template_#{id}") do
       :undefined ->
         load(id)
       monster_template ->
@@ -55,12 +62,13 @@ defmodule MonsterTemplate do
   end
 
   def load(id) do
+    import Supervisor.Spec
     monster_template =
       MonsterTemplate
       |> Repo.get(id)
       |> Repo.preload(:abilities)
 
-    case Supervisor.start_child(ApathyDrive.Supervisor, {:"monster_template_#{id}", {GenServer, :start_link, [MonsterTemplate, monster_template, [name: {:global, :"monster_template_#{id}"}]]}, :permanent, 5000, :worker, [MonsterTemplate]}) do
+    case Supervisor.start_child(ApathyDrive.Supervisor, worker(MonsterTemplate, [monster_template, [name: {:global, "monster_template_#{id}"}]], id: "monster_template_#{id}", restart: :permanent)) do
       {:error, {:already_started, pid}} ->
         pid
       {:ok, pid} ->
@@ -86,19 +94,13 @@ defmodule MonsterTemplate do
     GenServer.call(monster_template, {:create_monster, room})
   end
 
-  def spawn(%{monster_template_id: _mt_id} = mobile) do
-    {:ok, pid} = ApathyDrive.Mobile.start(mobile)
-
-    pid
-  end
-
-  def abilities(monster_template_id) when is_integer(monster_template_id) do
-    monster_template_id
-    |> find
-    |> abilities
-  end
-  def abilities(monster_template) do
-    GenServer.call(monster_template, :abilities)
+  def abilities(monster_template_id) do
+    __MODULE__
+    |> where(id: ^monster_template_id)
+    |> Ecto.Query.preload(:abilities)
+    |> Repo.one!
+    |> Map.get(:abilities)
+    |> Enum.map(&Map.get(&1, :properties))
   end
 
   def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: nil}), do: false
@@ -196,15 +198,11 @@ defmodule MonsterTemplate do
 
     monster = Repo.save!(monster)
 
-    {:reply, monster, monster_template}
+    {:reply, monster.id, monster_template}
   end
 
   def handle_call(:value, _from, monster_template) do
     {:reply, monster_template, monster_template}
-  end
-
-  def handle_call(:abilities, _from, monster_template) do
-    {:reply, Enum.map(monster_template.abilities, &(&1.properties)), monster_template}
   end
 
   def handle_cast(:set_last_killed_at, monster_template) do

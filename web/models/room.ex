@@ -51,8 +51,6 @@ defmodule Room do
          PubSub.subscribe(self, "rooms:#{room_exit["destination"]}:adjacent")
        end)
 
-    send(self, :spawn_permanent_monsters)
-
     if room.lair_size && Enum.any?(ApathyDrive.LairMonster.monsters_template_ids(id)) do
       send(self, :spawn_monsters)
     end
@@ -731,23 +729,6 @@ defmodule Room do
       |> Repo.save!
 
     {:noreply, World.add_room(room)}
-  end
-
-  # GenServer callbacks
-  def handle_info(:spawn_permanent_monsters, room) do
-    ApathyDrive.Mobile.permanent_monsters_in_room(room.id)
-    |> Enum.each(fn(mobile) ->
-         mobile_pid =
-          mobile
-          |> MonsterTemplate.spawn
-
-         room_pid = self
-         Task.start fn ->
-           ApathyDrive.Exits.Normal.display_enter_message(room_pid, mobile_pid)
-         end
-       end)
-
-    {:noreply, room}
   end
 
   def handle_info(:spawn_monsters,

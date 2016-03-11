@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Exits.Trap do
   use ApathyDrive.Exit
-  alias ApathyDrive.{Ability, World}
+  # alias ApathyDrive.{Ability, World}
 
   def move(current_room, mobile, room_exit, last_room), do: super(current_room, mobile, room_exit, last_room)
   # def move(current_room, mobile, room_exit, last_room) do
@@ -26,10 +26,10 @@ defmodule ApathyDrive.Exits.Trap do
   #   monster
   # end
 
-  def ability(room_exit) do
-    %Ability{properties: %{"kind" => "attack",
-                           "flags" => [],
-                           "instant_effects" => %{"damage" => room_exit["damage"]}, "damage_type" => "normal"}}
-  end
+  # def ability(room_exit) do
+  #   %Ability{properties: %{"kind" => "attack",
+  #                          "flags" => [],
+  #                          "instant_effects" => %{"damage" => room_exit["damage"]}, "damage_type" => "normal"}}
+  # end
 
 end

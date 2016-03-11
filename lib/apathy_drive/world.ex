@@ -1,6 +1,6 @@
 defmodule ApathyDrive.World do
   use GenServer
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, RoomUnity}
 
   def start_link do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -10,6 +10,8 @@ defmodule ApathyDrive.World do
     :ets.new(:rooms,   [:named_table, :set])
     :ets.new(:mobiles, [:named_table, :set])
     :ets.new(:unities, [:named_table, :set])
+
+    send(self, :load)
 
     {:ok, nil}
   end
@@ -49,7 +51,7 @@ defmodule ApathyDrive.World do
     case :ets.lookup(:rooms, pid) do
       [{^pid, room}] ->
         room
-      result ->
+      _result ->
         :timer.sleep(10 * retries)
         room(pid, retries + 1)
     end
@@ -118,5 +120,26 @@ defmodule ApathyDrive.World do
     end
 
     {:noreply, state}
+  end
+
+  def handle_info(:load, state) do
+    load_mobiles()
+    load_rooms()
+    {:noreply, state}
+  end
+
+  def load_mobiles do
+    Mobile.ids
+    |> ApathyDrive.Repo.all
+    |> Enum.each(fn(%{id: id, room_id: room_id}) ->
+         Mobile.load(id)
+         Room.find(room_id)
+       end)
+  end
+
+  def load_rooms do
+    RoomUnity.room_ids
+    |> ApathyDrive.Repo.all
+    |> Enum.each(&Room.find/1)
   end
 end

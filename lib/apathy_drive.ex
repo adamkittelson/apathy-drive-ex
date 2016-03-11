@@ -17,11 +17,7 @@ defmodule ApathyDrive do
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: ApathyDrive.Supervisor]
-    started = Supervisor.start_link(children, opts)
-
-    load_rooms_with_permanent_monsters()
-
-    started
+    Supervisor.start_link(children, opts)
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -31,8 +27,4 @@ defmodule ApathyDrive do
     :ok
   end
 
-  defp load_rooms_with_permanent_monsters do
-    ApathyDrive.Mobile.permanent_monster_room_ids
-    |> Enum.each(&Room.find/1)
-  end
 end

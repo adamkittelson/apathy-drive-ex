@@ -54,21 +54,18 @@ defmodule ApathyDrive.Mobile do
     timestamps
   end
 
-  def permanent_monsters_in_room(room_id) do
-    __MODULE__
-    |> where(room_id: ^room_id)
-    |> ApathyDrive.Repo.all
-  end
-
-  def permanent_monster_room_ids do
+  def ids do
     __MODULE__
     |> distinct(true)
-    |> select([m], m.room_id)
-    |> ApathyDrive.Repo.all
+    |> select([m], %{id: m.id, room_id: m.room_id, monster_template_id: m.monster_template_id})
   end
 
   def start(%Mobile{} = mobile, opts \\ []) do
     GenServer.start(__MODULE__, mobile, opts)
+  end
+
+  def start_link(id, opts \\ []) do
+    GenServer.start_link(__MODULE__, id, opts)
   end
 
   def use_ability(pid, command, arguments) do
@@ -637,9 +634,11 @@ defmodule ApathyDrive.Mobile do
     mobile
   end
 
+  def init(id) when is_integer(id) do
+    Repo.get!(Mobile, id)
+    |> init()
+  end
   def init(%Mobile{spirit: nil} = mobile) do
-    :random.seed(:os.timestamp)
-
     mobile =
       mobile
       |> Map.put(:pid, self)
@@ -716,6 +715,15 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.Endpoint.broadcast_from! self, "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
 
     {:ok, World.add_mobile(mobile)}
+  end
+
+  def load(id) do
+    case Supervisor.start_child(ApathyDrive.Supervisor, {"mobile##{id}", {GenServer, :start_link, [Mobile, id, [name: {:global, "mobile##{id}"}]]}, :transient, 5000, :worker, [Mobile]}) do
+      {:error, {:already_started, pid}} ->
+        pid
+      {:ok, pid} ->
+        pid
+    end
   end
 
   def set_attack_target(%Mobile{attack_target: attack_target} = mobile, target) when attack_target == target do

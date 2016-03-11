@@ -11,4 +11,11 @@ defmodule ApathyDrive.RoomUnity do
 
     belongs_to :room, Room
   end
+
+  def room_ids do
+    __MODULE__
+    |> distinct(true)
+    |> select([ru], ru.room_id)
+  end
+
 end

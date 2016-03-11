@@ -1,4 +1,5 @@
 defmodule ApathyDrive.LairSpawning do
+  alias ApathyDrive.Mobile
 
   def spawn_lair(room) do
     lair_monsters = ApathyDrive.LairMonster.monsters_template_ids(room.id)
@@ -9,7 +10,7 @@ defmodule ApathyDrive.LairSpawning do
         {mt_id, monster_template} = select_lair_monster(monster_templates)
 
         monster = MonsterTemplate.create_monster(monster_template, room)
-                  |> MonsterTemplate.spawn
+                  |> Mobile.load
 
         ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:adjacent", {:audibile_movement, room.id, nil})
 

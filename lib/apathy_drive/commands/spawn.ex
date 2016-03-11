@@ -1,5 +1,6 @@
 defmodule Commands.Spawn do
   use ApathyDrive.Command
+  alias ApathyDrive.Mobile
 
   def keywords, do: ["spawn"]
 
@@ -8,7 +9,7 @@ defmodule Commands.Spawn do
       room = Spirit.find_room(spirit)
 
       spawned_monster = MonsterTemplate.create_monster(mt, room)
-                        |> MonsterTemplate.spawn
+                        |> Mobile.load
 
       # execute in a different process because display_enter_message
       # does a broadcast_from
@@ -24,7 +25,7 @@ defmodule Commands.Spawn do
       room = Monster.find_room(monster)
 
       spawned_monster = MonsterTemplate.create_monster(mt, room)
-                        |> MonsterTemplate.spawn
+                        |> Mobile.load
 
       # execute in a different process because display_enter_message
       # does a broadcast_from
