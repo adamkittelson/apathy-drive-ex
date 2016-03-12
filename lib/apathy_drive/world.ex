@@ -56,7 +56,7 @@ defmodule ApathyDrive.World do
         room(pid, retries + 1)
     end
   end
-  def room(pid, _retries), do: raise "wtf couldn't find state for room #{inspect pid}"
+  def room(pid, _retries), do: raise "wtf couldn't find state for room #{inspect pid} - #{inspect Process.info(pid)}"
 
   def mobile(pid, retries \\ 0)
   def mobile(pid, retries) when retries < 5 and is_pid(pid) do
@@ -68,7 +68,7 @@ defmodule ApathyDrive.World do
         mobile(pid, retries + 1)
     end
   end
-  def mobile(pid, _retries) when is_pid(pid), do: raise "wtf couldn't find state for mobile #{inspect pid}"
+  def mobile(pid, _retries) when is_pid(pid), do: raise "wtf couldn't find state for mobile #{inspect pid} - #{inspect Process.info(pid)}"
 
   def handle_cast({:add_room, pid, %Room{id: id} = room}, state) do
     :ets.insert(:rooms, {id, room})
@@ -123,8 +123,10 @@ defmodule ApathyDrive.World do
   end
 
   def handle_info(:load, state) do
-    load_mobiles()
-    load_rooms()
+    Task.start fn ->
+      load_mobiles()
+      load_rooms()
+    end
     {:noreply, state}
   end
 

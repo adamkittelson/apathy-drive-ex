@@ -36,7 +36,7 @@ defmodule MonsterTemplate do
   end
 
   def start_link(mt, opts \\ []) do
-    GenServer.start_link(__MODULE__, mt, IO.inspect(opts))
+    GenServer.start_link(__MODULE__, mt, opts)
   end
 
   def init(mt) do

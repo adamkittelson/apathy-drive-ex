@@ -28,7 +28,7 @@ defmodule Commands.Possess do
   def possess(mobile, target) do
     mob = World.mobile(mobile)
 
-    case Mobile.possess(target, mob.spirit.id, self) do
+    case Mobile.possess(target, mob.spirit.id, mob.spirit.class.name, self) do
       :ok ->
         Mobile.remove_effects(mobile)
 

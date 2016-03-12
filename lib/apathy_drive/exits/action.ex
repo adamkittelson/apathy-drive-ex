@@ -2,9 +2,7 @@ defmodule ApathyDrive.Exits.Action do
   use ApathyDrive.Exit
 
   def move(current_room, mobile, %{"destination" => destination_id} = room_exit, last_room) do
-    destination = Room.find(destination_id)
-
-    Room.send_scroll(destination, "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => %{name: Mobile.look_name(mobile)}})}</span></p>")
+    ApathyDrive.PubSub.broadcast! "rooms:#{destination_id}:mobiles", {:mobile_movement, %{mobile: mobile, room: destination_id, message: "<p><span class='dark-green'>#{interpolate(room_exit["to_message"], %{"user" => %{name: Mobile.look_name(mobile)}})}</span></p>"}}
 
     send(mobile, {:move_to, destination_id, last_room})
 
@@ -12,7 +10,7 @@ defmodule ApathyDrive.Exits.Action do
 
     Commands.Look.look_at_room(mobile, destination_id)
 
-    Room.send_scroll(current_room, "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => %{name: Mobile.look_name(mobile)}})}</span></p>")
+    ApathyDrive.PubSub.broadcast! "rooms:#{Room.id(current_room)}:mobiles", {:mobile_movement, %{mobile: mobile, room: Room.id(current_room), message: "<p><span class='dark-green'>#{interpolate(room_exit["from_message"], %{"user" => %{name: Mobile.look_name(mobile)}})}</span></p>"}}
   end
 
 end

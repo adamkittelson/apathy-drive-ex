@@ -745,8 +745,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, {:attack, target})
   end
 
-  def possess(mobile, spirit_id, socket) when is_pid(mobile) do
-    GenServer.call(mobile, {:possess, spirit_id, socket})
+  def possess(mobile, spirit_id, unity, socket) when is_pid(mobile) do
+    GenServer.call(mobile, {:possess, spirit_id, unity, socket})
   end
 
   def turn(mobile, unity, essence) when is_pid(mobile) do
@@ -1164,11 +1164,13 @@ defmodule ApathyDrive.Mobile do
     {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, World.add_mobile(mobile)}
   end
 
-  def handle_call({:possess, _spirit_id, _socket}, _from, %Mobile{monster_template_id: nil} = mobile) do
+  def handle_call({:possess, _spirit_id, _class, _socket}, _from, %Mobile{monster_template_id: nil} = mobile) do
     {:reply, {:error, "You can't possess other players."}, mobile}
   end
-  def handle_call({:possess, spirit_id, socket}, _from, %Mobile{spirit: nil, level: level} = mobile) do
-
+  def handle_call({:possess, _spirit_id, "Angel", _socket}, _from, %Mobile{unity: unity} = mobile) when unity != "angel" do
+    {:reply, {:error, "You may only possess monsters who were spawned in a purified room."}, mobile}
+  end
+  def handle_call({:possess, spirit_id, class, socket}, _from, %Mobile{spirit: nil, level: level} = mobile) do
     spirit =
       Repo.get!(Spirit, spirit_id)
       |> Repo.preload(:class)
@@ -1206,7 +1208,7 @@ defmodule ApathyDrive.Mobile do
       {:reply, {:error, "You are too low level to possess #{mobile.name}."}, mobile}
     end
   end
-  def handle_call({:possess, _spirit_id, _socket}, _from, mobile) do
+  def handle_call({:possess, _spirit_id, _class, _socket}, _from, mobile) do
     {:reply, {:error, "#{mobile.name} is possessed by another player."}, mobile}
   end
 
