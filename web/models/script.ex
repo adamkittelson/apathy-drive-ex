@@ -151,9 +151,7 @@ defmodule ApathyDrive.Script do
       |> MonsterTemplate.create_monster(World.room(room))
       |> Mobile.load
 
-    Task.start fn ->
-      ApathyDrive.Exits.Normal.display_enter_message(room, monster)
-    end
+    Mobile.display_enter_message(monster, room)
 
     execute_script(script, mobile)
   end

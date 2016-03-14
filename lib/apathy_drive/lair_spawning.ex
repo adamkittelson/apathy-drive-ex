@@ -2,27 +2,23 @@ defmodule ApathyDrive.LairSpawning do
   alias ApathyDrive.Mobile
 
   def spawn_lair(room) do
-    lair_monsters = ApathyDrive.LairMonster.monsters_template_ids(room.id)
-
-    if room.lair_size > (room.id |> Room.spawned_monsters |> length) do
-      monster_templates = eligible_monsters(lair_monsters)
-      if Enum.any?(monster_templates) do
-        {mt_id, monster_template} = select_lair_monster(monster_templates)
-
-        monster = MonsterTemplate.create_monster(monster_template, room)
-                  |> Mobile.load
-
-        ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:adjacent", {:audibile_movement, room.id, nil})
-
-        room_pid = self
-
-        Task.start fn ->
-          ApathyDrive.Exits.Normal.display_enter_message(room_pid, monster)
-        end
-
-        spawn_lair(room)
-      end
-    end
+    # lair_monsters = ApathyDrive.LairMonster.monsters_template_ids(room.id)
+    # 
+    # if room.lair_size > (room.id |> Room.spawned_monsters |> length) do
+    #   monster_templates = eligible_monsters(lair_monsters)
+    #   if Enum.any?(monster_templates) do
+    #     {mt_id, monster_template} = select_lair_monster(monster_templates)
+    # 
+    #     monster = MonsterTemplate.create_monster(monster_template, room)
+    #               |> Mobile.load
+    # 
+    #     ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:adjacent", {:audible_movement, room.id, nil})
+    # 
+    #     Mobile.display_enter_message(monster, self)
+    # 
+    #     spawn_lair(room)
+    #   end
+    # end
   end
 
   def select_lair_monster(monster_ids) do

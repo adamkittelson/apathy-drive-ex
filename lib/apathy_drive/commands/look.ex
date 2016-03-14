@@ -64,7 +64,7 @@ defmodule Commands.Look do
     if Mobile.blind?(mobile) do
       Mobile.send_scroll(mobile, "<p>You are blind.</p>")
     else
-      room_id = room_id || Mobile.room_id(mobile)
+      room_id = room_id || mobile.room_id
       room_html = room_id
                   |> Room.find
                   |> Room.look_at_room(mobile)

@@ -36,17 +36,7 @@ defmodule ApathyDrive.Exit do
 
     room_exit = Room.get_exit(room, direction)
 
-    move(room, mobile, room_exit, nil)
-  end
-
-  def move(_current_room, mobile, nil, _last_room) do
-    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
-  end
-
-  def move(room, mobile, room_exit, last_room) do
-    if !Mobile.held(mobile) do
-      :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".move(room, mobile, room_exit, last_room)
-    end
+    #move(room, mobile, room_exit, nil)
   end
 
   def direction_description(direction) do
@@ -116,20 +106,7 @@ defmodule ApathyDrive.Exit do
       def notify_monster_entered(monster, room, destination), do: nil
       def notify_mobile_entered(mobile, entered_from, room) do
         direction = get_direction_by_destination(room, entered_from)
-        display_enter_message(room, mobile, direction)
-      end
-
-      def display_enter_message(room, mobile, direction \\ nil) do
-        message = mobile
-                  |> Mobile.enter_message
-                  |> interpolate(%{
-                       "name" => Mobile.look_name(mobile),
-                       "direction" => Room.enter_direction(direction)
-                     })
-                  |> capitalize_first
-
-        room_id = Room.id(room)
-        ApathyDrive.PubSub.broadcast! "rooms:#{room_id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room_id, message: "<p><span class='grey'>#{message}</span></p>"}}
+        Mobile.display_enter_message(mobile, room, direction)
       end
 
       def notify_mobile_left(mobile, room, left_to) do

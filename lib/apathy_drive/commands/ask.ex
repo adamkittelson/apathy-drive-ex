@@ -1,6 +1,6 @@
 defmodule Commands.Ask do
   use ApathyDrive.Command
-  alias ApathyDrive.{PubSub, World, Match}
+  alias ApathyDrive.{PubSub, Match}
 
   def keywords, do: ["ask"]
 
@@ -32,8 +32,10 @@ defmodule Commands.Ask do
   end
 
   def ask(mobile, target, question) do
-    target = World.mobile(target)
+    Mobile.answer(target, mobile, question)
+  end
 
+  def answer(%Mobile{} = target, mobile, question) do
     if target.questions |> Map.keys |> Enum.member?(question) do
       Mobile.execute_script(mobile, target.questions[question])
     else

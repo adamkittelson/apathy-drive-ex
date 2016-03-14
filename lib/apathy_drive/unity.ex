@@ -10,7 +10,7 @@ defmodule ApathyDrive.Unity do
   end
 
   def init(unities) do
-    Process.send_after(self, :redistribute_essence, @interval)
+    #Process.send_after(self, :redistribute_essence, @interval)
 
     {:ok, unities}
   end

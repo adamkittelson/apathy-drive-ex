@@ -3,6 +3,7 @@ defmodule Room do
   use ApathyDrive.Web, :model
   use GenServer
   use Timex
+  import Systems.Text
   alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, World, Match, RoomUnity}
 
   schema "rooms" do
@@ -22,6 +23,7 @@ defmodule Room do
     field :room_ability,          :any, virtual: true
     field :items,                 ApathyDrive.JSONB, default: []
     field :last_effect_key,       :any, virtual: true, default: 0
+    field :also_here,             :map, virtual: true, default: %{}
 
     timestamps
 
@@ -67,7 +69,7 @@ defmodule Room do
     room = TimerManager.send_every(room, {:increase_essence, 300_000, :increase_essence})
 
 
-    {:ok, World.add_room(room)}
+    {:ok, room}
   end
 
   def changeset(%Room{} = room, params \\ :empty) do
@@ -118,27 +120,28 @@ defmodule Room do
     |> Enum.sum
   end
 
-  def get_look_data(room, mobile) do
-    room = World.room(room)
+  def execute_command(room, mobile, command, arguments) do
+    GenServer.cast(room, {:execute_command, mobile, command, arguments})
+  end
 
-    name_color =
-      case room.room_unity && room.room_unity.unity do
-        "demon" ->
-          "magenta"
-        "angel" ->
-          "white"
-        _ ->
-          "cyan"
-      end
+  def notify_presence(room, data) do
+    GenServer.cast(room, {:mobile_present, data})
+  end
 
-    %{
-      name: "<span class='#{name_color}'>#{room.name}</span>",
-      description: room.description,
-      items: look_items(room),
-      mobiles: look_mobiles(%{room_id: room.id, mobile: mobile}),
-      exits: look_directions(room),
-      light: light_desc(room.light)
-    }
+  def look(room, mobile) do
+    GenServer.cast(room, {:look_at_room, mobile})
+  end
+
+  def display_enter_message(room, data) do
+    GenServer.cast(room, {:mobile_entered, data})
+  end
+
+  def display_exit_message(room, data) do
+    GenServer.cast(room, {:mobile_left, data})
+  end
+
+  def mobile_movement(room, mobile, message) do
+    GenServer.cast(room, {:mobile_movement, mobile, message})
   end
 
   def purify(room, amount) do
@@ -240,21 +243,17 @@ defmodule Room do
        end)
   end
 
-  def command(room, string) do
-    room = World.room(room)
+  def command(%Room{} = room, string) do
+    command =
+      room
+      |> Map.get(:commands, %{})
+      |> Map.keys
+      |> Enum.find(fn(command) ->
+           String.downcase(command) == String.downcase(string)
+         end)
 
-    if room do
-      command =
-        room
-        |> Map.get(:commands, %{})
-        |> Map.keys
-        |> Enum.find(fn(command) ->
-             String.downcase(command) == String.downcase(string)
-           end)
-
-      if command do
-        room.commands[command]
-      end
+    if command do
+      room.commands[command]
     end
   end
 
@@ -266,42 +265,8 @@ defmodule Room do
     GenServer.cast(room, {:add_items, items})
   end
 
-  def auto_move_exit(room, last_room) when is_pid(room) do
-    room = World.room(room)
-
-    case room.exits do
-      nil ->
-        nil
-      exits ->
-        case last_room do
-          %{id: last_room_id, name: last_room_name} ->
-            exit_to_last_room = Enum.find(exits, &(&1["destination"] == last_room_id))
-
-            words_in_common =
-              MapSet.intersection(MapSet.new(Regex.scan(~r/\w+/, last_room_name)
-                                      |> List.flatten
-                                      |> Enum.uniq),
-                           MapSet.new(Regex.scan(~r/\w+/, room.name)
-                                      |> List.flatten
-                                      |> Enum.uniq))
-
-            if Enum.any?(words_in_common) do
-              new_exits =
-                exits
-                |> Enum.reject(&(&1 == exit_to_last_room))
-
-              if Enum.any?(new_exits) do
-                %{new_exit: Enum.random(new_exits), last_room: %{id: room.id, name: room.name}}
-              else
-                %{new_exit: exit_to_last_room, last_room: last_room}
-              end
-            else
-              %{new_exit: exit_to_last_room, last_room: %{id: room.id, name: last_room.name}}
-            end
-          nil ->
-            if Enum.any?(exits), do: %{new_exit: Enum.random(exits), last_room: %{id: room.id, name: room.name}}
-        end
-    end
+  def auto_move(room, mobile, last_room) do
+    GenServer.cast(room, {:auto_move, mobile, last_room})
   end
 
   def unlocked?(room, direction) do
@@ -369,7 +334,7 @@ defmodule Room do
   end
 
   def look_at_room(room, mobile) do
-    data = get_look_data(room, mobile)
+    data = %{} #get_look_data(room, mobile)
 
     Mobile.send_scroll(mobile, "<p>#{data.name}</p>")
     Mobile.send_scroll(mobile, "<p>    #{data.description}</p>")
@@ -553,6 +518,14 @@ defmodule Room do
        end)
   end
 
+  def get_direction_by_destination(%Room{exits: exits} = room, destination_id) do
+    exit_to_destination = exits
+                          |> Enum.find(fn(room_exit) ->
+                               room_exit["destination"] == destination_id
+                             end)
+    exit_to_destination && exit_to_destination["direction"]
+  end
+
   defp unlock!(%Room{} = room, direction) do
     unlock_duration = if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
       open_duration
@@ -656,17 +629,135 @@ defmodule Room do
 
   def handle_call({:open, direction}, _from, room) do
     room = open!(room, direction)
-    {:reply, room, World.add_room(room)}
+    {:reply, room, room}
   end
 
   def handle_call({:close, direction}, _from, room) do
     room = close!(room, direction)
-    {:reply, room, World.add_room(room)}
+    {:reply, room, room}
   end
 
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
-    {:reply, room, World.add_room(room)}
+    {:reply, room, room}
+  end
+
+  def handle_cast({:execute_command, mobile, command, arguments}, room) do
+    room = ApathyDrive.Command.execute(room, mobile, command, arguments)
+    {:noreply, room}
+  end
+  def handle_cast({:mobile_present, %{intruder: mobile, look_name: name} = data}, room) do
+    ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room.id}:mobiles", {:monster_present, data}
+    {:noreply, put_in(room.also_here[mobile], name)}
+  end
+
+  def handle_cast({:look_at_room, mobile}, %Room{} = room) do
+    name_color =
+      case room.room_unity && room.room_unity.unity do
+        "demon" ->
+          "magenta"
+        "angel" ->
+          "white"
+        _ ->
+          "cyan"
+      end
+
+    present_mobiles = mobiles(room)
+
+    mobiles =
+      room.also_here
+      |> Enum.reduce(%{}, fn({pid, name}, also_here) ->
+           if pid in present_mobiles, do: Map.put(also_here, pid, name), else: also_here
+         end)
+
+    mobiles_to_show =
+      mobiles
+      |> Enum.reduce([], fn({pid, name}, list) ->
+           if pid == mobile do
+             list
+           else
+             [name | list]
+           end
+         end)
+
+    Mobile.send_scroll(mobile, "<p><span class='#{name_color}'>#{room.name}</span></p>")
+    Mobile.send_scroll(mobile, "<p>    #{room.description}</p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
+    if Enum.any?(mobiles_to_show) do
+      Mobile.send_scroll(mobile, "<span class='dark-magenta'>Also here:</span> #{Enum.join(mobiles_to_show, ", ")}<span class='dark-magenta'>.</span>")
+    end
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
+    if room.light do
+      Mobile.send_scroll(mobile, "<p>#{light_desc(room.light)}</p>")
+    end
+
+    {:noreply, Map.put(room, :also_here, mobiles)}
+  end
+
+  def handle_cast({:auto_move, mobile, last_room}, %Room{} = room) do
+    case room.exits do
+      nil ->
+        nil
+      exits ->
+        case last_room do
+          %{id: last_room_id, name: last_room_name} ->
+            exit_to_last_room = Enum.find(exits, &(&1["destination"] == last_room_id))
+
+            words_in_common =
+              MapSet.intersection(MapSet.new(Regex.scan(~r/\w+/, last_room_name)
+                                      |> List.flatten
+                                      |> Enum.uniq),
+                           MapSet.new(Regex.scan(~r/\w+/, room.name)
+                                      |> List.flatten
+                                      |> Enum.uniq))
+
+            if Enum.any?(words_in_common) do
+              new_exits =
+                exits
+                |> Enum.reject(&(&1 == exit_to_last_room))
+
+              if Enum.any?(new_exits) do
+                Mobile.auto_move(mobile, %{new_exit: Enum.random(new_exits), last_room: %{id: room.id, name: room.name}})
+              else
+                Mobile.auto_move(mobile, %{new_exit: exit_to_last_room, last_room: last_room})
+              end
+            else
+              Mobile.auto_move(mobile, %{new_exit: exit_to_last_room, last_room: %{id: room.id, name: last_room.name}})
+            end
+          nil ->
+            if Enum.any?(exits), do: Mobile.auto_move(mobile, %{new_exit: Enum.random(exits), last_room: %{id: room.id, name: room.name}})
+        end
+    end
+
+    {:noreply, room}
+  end
+
+  def handle_cast({:mobile_movement, mobile, message}, room) do
+    {:noreply, room}
+  end
+
+  def handle_cast({:mobile_entered, %{name: name, mobile: mobile, message: message, from: from_room_id}}, room) do
+    message = message
+              |> interpolate(%{
+                   "name" => name,
+                   "direction" => room |> get_direction_by_destination(from_room_id) |> enter_direction()
+                 })
+              |> capitalize_first
+
+    ApathyDrive.PubSub.broadcast! "rooms:#{room.id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room.id, message: "<p><span class='grey'>#{message}</span></p>"}}
+    {:noreply, room}
+  end
+
+  def handle_cast({:mobile_left, %{name: name, mobile: mobile, message: message, to: to_room_id}}, room) do
+    message = message
+              |> interpolate(%{
+                   "name" => name,
+                   "direction" => room |> get_direction_by_destination(to_room_id) |> exit_direction()
+                 })
+              |> capitalize_first
+
+    ApathyDrive.PubSub.broadcast! "rooms:#{room.id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room.id, message: "<p><span class='grey'>#{message}</span></p>"}}
+    {:noreply, room}
   end
 
   def handle_cast({:purify, amount}, %Room{room_unity: nil} = room) do
@@ -681,7 +772,7 @@ defmodule Room do
     turn_spawned_monsters(room, "angel", essence(room))
     send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
   def handle_cast({:purify, amount}, %Room{room_unity: room_unity} = room) do
     angel = Map.get(room_unity.essences, "angel", 0)
@@ -698,11 +789,11 @@ defmodule Room do
       angel > demon ->
         send_scroll(room, "<p><span class='white'>The aura of benevolence here grows stronger.</span></p>")
         room = %{room | room_unity: Repo.save!(room_unity)}
-        {:noreply, World.add_room(room)}
+        {:noreply, room}
       demon > angel + amount ->
         send_scroll(room, "<p><span class='dark-red'>The malevolent aura here weakens.</span></p>")
         room = %{room | room_unity: Repo.save!(room_unity)}
-        {:noreply, World.add_room(room)}
+        {:noreply, room}
       (angel + amount) >= demon ->
         send_scroll(room, "<p><span class='dark-red'>The malevolent aura here dissipates.</span></p>")
         send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
@@ -711,7 +802,7 @@ defmodule Room do
         turn_spawned_monsters(room, "angel", essence(room))
         room_unity = Map.put(room_unity, :unity, "angel")
         room = %{room | room_unity: Repo.save!(room_unity)}
-        {:noreply, World.add_room(room)}
+        {:noreply, room}
     end
   end
 
@@ -720,7 +811,7 @@ defmodule Room do
       put_in(room.items, [item | items])
       |> Repo.save!
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_cast({:add_items, new_items}, %Room{items: items} = room) do
@@ -728,7 +819,7 @@ defmodule Room do
       put_in(room.items, new_items ++ items)
       |> Repo.save!
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info(:spawn_monsters,
@@ -745,7 +836,7 @@ defmodule Room do
 
     :erlang.send_after(5000, self, :spawn_monsters)
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do
@@ -759,12 +850,12 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_bash, mirror_exit})
     end
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:mirror_bash, room_exit}, room) do
     room = open!(room, room_exit["direction"])
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:door_bash_failed, %{direction: direction}}, room) do
@@ -776,7 +867,7 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_bash_failed, mirror_exit})
     end
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:door_opened, %{direction: direction}}, room) do
@@ -790,12 +881,12 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_open, mirror_exit})
     end
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:mirror_open, room_exit}, room) do
     room = open!(room, room_exit["direction"])
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:door_closed, %{direction: direction}}, room) do
@@ -809,12 +900,12 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_close, mirror_exit})
     end
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:mirror_close, room_exit}, room) do
     room = close!(room, room_exit["direction"])
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:door_locked, %{direction: direction}}, room) do
@@ -828,18 +919,18 @@ defmodule Room do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_lock, mirror_exit})
     end
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:mirror_lock, room_exit}, room) do
     room = lock!(room, room_exit["direction"])
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: nil} = room) do
     ApathyDrive.PubSub.unsubscribe(self, "rooms:abilities")
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info(:increase_essence, %Room{room_unity: nil} = room) do
@@ -860,7 +951,7 @@ defmodule Room do
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
     ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:execute_room_ability, ability})
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Room{timers: timers} = room) do
@@ -872,7 +963,7 @@ defmodule Room do
 
     apply module, function, args
 
-    {:noreply, Map.put(room, :timers, timers) |> World.add_room}
+    {:noreply, Map.put(room, :timers, timers)}
   end
 
   def handle_info({:timeout, _ref, {name, [module, function, args]}}, %Room{timers: timers} = room) do
@@ -880,22 +971,22 @@ defmodule Room do
 
     timers = Map.delete(timers, name)
 
-    {:noreply, Map.put(room, :timers, timers) |> World.add_room}
+    {:noreply, Map.put(room, :timers, timers)}
   end
 
   def handle_info({:remove_effect, key}, room) do
     room = Systems.Effect.remove(room, key, fire_after_cast: true, show_expiration_message: true)
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:search, direction}, room) do
     room = Systems.Effect.add(room, %{searched: direction}, 300)
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:trigger, direction}, room) do
     room = Systems.Effect.add(room, %{triggered: direction}, 300)
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:clear_triggers, direction}, room) do
@@ -906,21 +997,21 @@ defmodule Room do
               end)
            |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1, show_expiration_message: true)))
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:room_updated, %{changes: changes}}, room) do
-    {:noreply, Map.merge(room, changes) |> World.add_room(room)}
+    {:noreply, Map.merge(room, changes)}
   end
 
-  def handle_info({:audibile_movement, room_id, exception_room_id}, %Room{id: id} = room) when id != exception_room_id do
+  def handle_info({:audible_movement, room_id, exception_room_id}, %Room{id: id} = room) when id != exception_room_id do
     case Enum.find(room.exits, &(&1["destination"] == room_id)) do
       %{"direction" => direction} ->
         send_scroll(room, "<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
       _ ->
         :noop
     end
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:add_essence, amount}, %Room{room_unity: room_unity} = room) when amount > 0 do
@@ -941,7 +1032,7 @@ defmodule Room do
 
     room = Map.put(room, :room_unity, room_unity)
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info({:add_essence, amount}, %Room{room_unity: room_unity} = room) when amount < 0 do
@@ -964,7 +1055,7 @@ defmodule Room do
 
     room = Map.put(room, :room_unity, room_unity)
 
-    {:noreply, World.add_room(room)}
+    {:noreply, room}
   end
 
   def handle_info(_message, room) do
