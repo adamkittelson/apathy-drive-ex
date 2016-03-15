@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.BashTest do
   use ApathyDrive.ChannelCase
+  alias ApathyDrive.Commands
 
   setup do
     {:ok, mobile: test_mobile()}
