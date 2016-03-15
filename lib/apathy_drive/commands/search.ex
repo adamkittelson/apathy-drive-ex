@@ -1,4 +1,4 @@
-defmodule Commands.Search do
+defmodule ApathyDrive.Commands.Search do
   use ApathyDrive.Command
 
   def keywords, do: ["sea", "search"]

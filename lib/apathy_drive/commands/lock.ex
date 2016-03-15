@@ -1,4 +1,4 @@
-defmodule Commands.Lock do
+defmodule ApathyDrive.Commands.Lock do
   use ApathyDrive.Command
 
   def keywords, do: ["lock"]

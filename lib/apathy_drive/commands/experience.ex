@@ -1,4 +1,4 @@
-defmodule Commands.Experience do
+defmodule ApathyDrive.Commands.Experience do
   use ApathyDrive.Command
   alias ApathyDrive.Level
 

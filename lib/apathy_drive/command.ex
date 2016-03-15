@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Mobile, Ability, Match}
+  alias ApathyDrive.{Commands, Mobile, Ability, Match}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -14,7 +14,7 @@ defmodule ApathyDrive.Command do
      Commands.Get, Commands.Gossip, Commands.Greet,
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
      Commands.Possess, Commands.Protection, Commands.Remove, Commands.Reroll,
-     Commands.Say, Commands.Score, Commands.Search, Commands.Spawn,
+     Commands.Say, Commands.Score, Commands.Search,
      Commands.Unpossess, Commands.Wear, Commands.Who, Commands.Turn, Commands.Purify]
   end
 
@@ -22,8 +22,6 @@ defmodule ApathyDrive.Command do
     room_id
     |> Room.find
     |> Room.execute_command(self, command, arguments)
-
-    mobile
   end
 
   def execute(%Room{} = room, mobile, command, arguments) do
@@ -38,8 +36,8 @@ defmodule ApathyDrive.Command do
         Mobile.move_via_command(mobile, self, command_exit)
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
         Mobile.trigger_remote_action(mobile, self, remote_action_exit)
-      # cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
-      #   cmd.module.execute(mobile, arguments)
+      cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
+        cmd.module.execute(mobile, arguments)
       # true ->
       #   Mobile.use_ability(mobile, command, arguments)
     end

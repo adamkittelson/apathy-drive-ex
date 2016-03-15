@@ -1,4 +1,4 @@
-defmodule Commands.Drop do
+defmodule ApathyDrive.Commands.Drop do
   use ApathyDrive.Command
 
   def keywords, do: ["drop"]

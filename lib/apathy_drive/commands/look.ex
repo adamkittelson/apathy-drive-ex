@@ -1,4 +1,4 @@
-defmodule Commands.Look do
+defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
   import Systems.Text
@@ -61,14 +61,7 @@ defmodule Commands.Look do
   end
 
   def look_at_room(mobile, room_id \\ nil) do
-    if Mobile.blind?(mobile) do
-      Mobile.send_scroll(mobile, "<p>You are blind.</p>")
-    else
-      room_id = room_id || mobile.room_id
-      room_html = room_id
-                  |> Room.find
-                  |> Room.look_at_room(mobile)
-    end
+    Mobile.look_at_room(mobile, room_id)
   end
 
   defp find_mobile_in_room(mobile, string) do

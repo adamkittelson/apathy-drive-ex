@@ -1,4 +1,4 @@
-defmodule Commands.Close do
+defmodule ApathyDrive.Commands.Close do
   use ApathyDrive.Command
 
   def keywords, do: ["close", "shut"]

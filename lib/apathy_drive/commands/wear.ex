@@ -1,4 +1,4 @@
-defmodule Commands.Wear do
+defmodule ApathyDrive.Commands.Wear do
   use ApathyDrive.Command
 
   def keywords, do: ["wear", "equip", "wield"]

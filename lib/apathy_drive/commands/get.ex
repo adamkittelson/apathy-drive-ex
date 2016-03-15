@@ -1,4 +1,4 @@
-defmodule Commands.Get do
+defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
 
   def keywords, do: ["get"]

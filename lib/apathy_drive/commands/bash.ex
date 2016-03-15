@@ -1,4 +1,4 @@
-defmodule Commands.Bash do
+defmodule ApathyDrive.Commands.Bash do
   use ApathyDrive.Command
 
   def keywords, do: ["bash"]

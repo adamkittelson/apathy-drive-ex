@@ -1,4 +1,4 @@
-defmodule Commands.Protection do
+defmodule ApathyDrive.Commands.Protection do
   use ApathyDrive.Command
 
   @protection_levels %{

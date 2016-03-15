@@ -1,4 +1,4 @@
-defmodule Commands.Forms do
+defmodule ApathyDrive.Commands.Forms do
   use ApathyDrive.Command
 
   def keywords, do: ["forms", "recipes"]

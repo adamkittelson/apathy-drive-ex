@@ -1,4 +1,4 @@
-defmodule Commands.ExperienceTest do
+defmodule ApathyDrive.Commands.ExperienceTest do
   use ApathyDrive.ChannelCase
 
   setup do

@@ -1,4 +1,4 @@
-defmodule Commands.Who do
+defmodule ApathyDrive.Commands.Who do
   use ApathyDrive.Command
   alias ApathyDrive.{Mobile, World}
 

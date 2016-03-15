@@ -1,4 +1,4 @@
-defmodule Commands.Reroll do
+defmodule ApathyDrive.Commands.Reroll do
   use ApathyDrive.Command
 
   def keywords, do: ["reroll"]

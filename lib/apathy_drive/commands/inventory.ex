@@ -1,4 +1,4 @@
-defmodule Commands.Inventory do
+defmodule ApathyDrive.Commands.Inventory do
   use ApathyDrive.Command
 
   def keywords, do: ["i", "inv", "inventory"]

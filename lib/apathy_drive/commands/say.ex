@@ -1,4 +1,4 @@
-defmodule Commands.Say do
+defmodule ApathyDrive.Commands.Say do
   use ApathyDrive.Command
 
   def keywords, do: ["say"]

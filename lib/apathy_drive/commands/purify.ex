@@ -1,4 +1,4 @@
-defmodule Commands.Purify do
+defmodule ApathyDrive.Commands.Purify do
   use ApathyDrive.Command
   alias ApathyDrive.{Class, Mobile, World}
 

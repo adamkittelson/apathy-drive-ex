@@ -1,4 +1,4 @@
-defmodule Commands.Unpossess do
+defmodule ApathyDrive.Commands.Unpossess do
   use ApathyDrive.Command
 
   def keywords, do: ["unpossess"]

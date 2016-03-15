@@ -1,4 +1,4 @@
-defmodule Commands.Gossip do
+defmodule ApathyDrive.Commands.Gossip do
   use ApathyDrive.Command
 
   def keywords, do: ["gos"]

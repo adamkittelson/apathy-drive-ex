@@ -1,11 +1,10 @@
-defmodule Commands.Move do
+defmodule ApathyDrive.Commands.Move do
   alias ApathyDrive.{Mobile, Repo}
 
   def execute(%Room{} = room, mobile, command) do
     direction = Room.direction(command)
     room_exit = Room.get_exit(room, direction)
     Mobile.move(mobile, self, room_exit, nil)
-    room
   end
 
   def execute(%Mobile{} = mobile, _room, nil, _last_room) do

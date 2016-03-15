@@ -1,4 +1,4 @@
-defmodule Commands.List do
+defmodule ApathyDrive.Commands.List do
   use ApathyDrive.Command
 
   def keywords, do: ["list"]

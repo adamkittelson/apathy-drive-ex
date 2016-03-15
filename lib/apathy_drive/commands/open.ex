@@ -1,4 +1,4 @@
-defmodule Commands.Open do
+defmodule ApathyDrive.Commands.Open do
   use ApathyDrive.Command
 
   def keywords, do: ["open"]

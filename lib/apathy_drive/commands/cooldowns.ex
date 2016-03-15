@@ -1,4 +1,4 @@
-defmodule Commands.Cooldowns do
+defmodule ApathyDrive.Commands.Cooldowns do
   use ApathyDrive.Command
 
   def keywords, do: ["cooldowns", "cd"]

@@ -225,18 +225,16 @@ defmodule Room do
        end)
   end
 
-  def command_exit(room, string) do
+  def command_exit(%Room{} = room, string) do
     room
-    |> World.room
     |> Map.get(:exits)
     |> Enum.find(fn(ex) ->
          ex["kind"] == "Command" and Enum.member?(ex["commands"], string)
        end)
   end
 
-  def remote_action_exit(room, string) do
+  def remote_action_exit(%Room{} = room, string) do
     room
-    |> World.room
     |> Map.get(:exits)
     |> Enum.find(fn(ex) ->
          ex["kind"] == "RemoteAction" and Enum.member?(ex["commands"], string)
@@ -643,7 +641,7 @@ defmodule Room do
   end
 
   def handle_cast({:execute_command, mobile, command, arguments}, room) do
-    room = ApathyDrive.Command.execute(room, mobile, command, arguments)
+    ApathyDrive.Command.execute(room, mobile, command, arguments)
     {:noreply, room}
   end
   def handle_cast({:mobile_present, %{intruder: mobile, look_name: name} = data}, room) do

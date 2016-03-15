@@ -1,4 +1,4 @@
-defmodule Commands.Abilities do
+defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
 
   def keywords, do: ["abilities", "spells"]

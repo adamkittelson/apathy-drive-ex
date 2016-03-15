@@ -1,4 +1,4 @@
-defmodule Commands.Absorb do
+defmodule ApathyDrive.Commands.Absorb do
   use ApathyDrive.Command
 
   def keywords, do: ["absorb", "disintegrate"]

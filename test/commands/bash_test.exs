@@ -1,4 +1,4 @@
-defmodule Commands.BashTest do
+defmodule ApathyDrive.Commands.BashTest do
   use ApathyDrive.ChannelCase
 
   setup do

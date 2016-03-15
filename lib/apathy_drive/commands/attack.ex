@@ -1,4 +1,4 @@
-defmodule Commands.Attack do
+defmodule ApathyDrive.Commands.Attack do
   use ApathyDrive.Command
   alias ApathyDrive.{PubSub, Match}
 

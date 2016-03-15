@@ -1,4 +1,4 @@
-defmodule Commands.Score do
+defmodule ApathyDrive.Commands.Score do
   use ApathyDrive.Command
 
   def keywords, do: ["score", "stats", "status", "st"]

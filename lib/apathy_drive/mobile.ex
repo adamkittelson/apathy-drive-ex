@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, World, Match}
+  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, World, Match}
   use GenServer
   use ApathyDrive.Web, :model
   import Systems.Text
@@ -276,8 +276,8 @@ defmodule ApathyDrive.Mobile do
     |> Map.get(:effects)
   end
 
-  def look_at_room(mobile) do
-    GenServer.cast(mobile, :look_at_room)
+  def look_at_room(mobile, room \\ nil) do
+    GenServer.cast(mobile, {:look_at_room, room})
   end
 
   def look_at_item(%Mobile{} = mobile, item) do
@@ -1378,14 +1378,24 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_cast({:execute_command, command, arguments}, mobile) do
-    mobile = ApathyDrive.Command.execute(mobile, command, arguments)
+    ApathyDrive.Command.execute(mobile, command, arguments)
     {:noreply, mobile}
   end
 
-  def handle_cast(:look_at_room, mobile) do
-    mobile.room_id
-    |> Room.find
-    |> Room.look(self)
+  def handle_cast({:look_at_room, nil}, mobile) do
+    unless blind?(mobile) do
+      mobile.room_id
+      |> Room.find
+      |> Room.look(self)
+    end
+    {:noreply, mobile}
+  end
+  def handle_cast({:look_at_room, room_id}, mobile) do
+    unless blind?(mobile) do
+      room_id
+      |> Room.find
+      |> Room.look(self)
+    end
     {:noreply, mobile}
   end
 
