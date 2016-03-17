@@ -68,6 +68,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.start_link(__MODULE__, id, opts)
   end
 
+  def bash(mobile, arguments) do
+    GenServer.cast(mobile, {:bash, arguments})
+  end
+
   def execute_room_command(mobile, scripts) do
     GenServer.cast(mobile, {:execute_room_command, scripts})
   end
@@ -1068,6 +1072,21 @@ defmodule ApathyDrive.Mobile do
     "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>"
   end
 
+  def notify_presence(%Mobile{room_id: room_id} = mobile) do
+    data = %{
+      intruder: self,
+      alignment: mobile.alignment,
+      unity: mobile.unity || (mobile.spirit && mobile.spirit.unity),
+      spawned_at: mobile.spawned_at,
+      name: mobile.name,
+      look_name: look_name(mobile)
+    }
+
+    room_id
+    |> Room.find
+    |> Room.notify_presence(data)
+  end
+
   defp should_move?(%Mobile{spirit: nil} = mobile) do
     cond do
       # at least 80% health and no enemies present, go find something to kill
@@ -1345,6 +1364,11 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, mobile}
     end
+  end
+
+  def handle_cast({:bash, args}, mobile) do
+    Commands.Bash.execute(mobile, args)
+    {:noreply, mobile}
   end
 
   def handle_cast({:execute_room_command, scripts}, mobile) do
@@ -1852,21 +1876,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def notify_presence(%Mobile{room_id: room_id} = mobile) do
-    data = %{
-      intruder: self,
-      alignment: mobile.alignment,
-      unity: mobile.unity || (mobile.spirit && mobile.spirit.unity),
-      spawned_at: mobile.spawned_at,
-      name: mobile.name,
-      look_name: look_name(mobile)
-    }
-
-    room_id
-    |> Room.find
-    |> Room.notify_presence(data)
-  end
-
   def handle_info({:monster_present, intruder_data}, %Mobile{spirit: nil} = mobile) do
     mobile = ApathyDrive.Aggression.react(%{mobile: mobile,
                                             alignment: mobile.alignment,
@@ -2018,6 +2027,16 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do
     send_scroll mobile, message
+    {:noreply, mobile}
+  end
+
+  def handle_info({:door_bashed, %{basher: pid, type: type}}, mobile) when pid == self() do
+    Mobile.send_scroll(mobile, "<p>You bashed the #{type} open.</p>")
+    {:noreply, mobile}
+  end
+
+  def handle_info({:door_bashed, %{name: name, type: type, description: description}}, mobile) do
+    Mobile.send_scroll(mobile, "<p>You see #{name} bash open the #{type} #{description}.</p>")
     {:noreply, mobile}
   end
 

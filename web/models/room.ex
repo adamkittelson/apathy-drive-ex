@@ -4,7 +4,7 @@ defmodule Room do
   use GenServer
   use Timex
   import Systems.Text
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, World, Match, RoomUnity}
+  alias ApathyDrive.{Commands, PubSub, Mobile, TimerManager, Ability, World, Match, RoomUnity, Doors}
 
   schema "rooms" do
     field :name,                  :string
@@ -120,6 +120,14 @@ defmodule Room do
     |> Enum.sum
   end
 
+  def bash(room, mobile, direction) do
+    GenServer.cast(room, {:bash, mobile, direction})
+  end
+
+  def mirror_bash(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_bash, mirror_room_id, room_exit})
+  end
+
   def execute_command(room, mobile, command, arguments) do
     GenServer.cast(room, {:execute_command, mobile, command, arguments})
   end
@@ -216,9 +224,8 @@ defmodule Room do
     |> Enum.find(&(&1["direction"] == direction(direction)))
   end
 
-  def mirror_exit(room, destination_id) do
+  def mirror_exit(%Room{} = room, destination_id) do
     room
-    |> World.room
     |> Map.get(:exits)
     |> Enum.find(fn(%{"destination" => destination, "kind" => kind}) ->
          destination == destination_id and kind != "RemoteAction"
@@ -382,10 +389,28 @@ defmodule Room do
   def exit_directions(%Room{} = room) do
     room.exits
     |> Enum.map(fn(room_exit) ->
-         :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".display_direction(room, room_exit)
+        display_direction(room_exit, room)
        end)
     |> Enum.reject(&(&1 == nil))
   end
+
+  def display_direction(%{"kind" => "Gate", "direction" => direction} = room_exit, room) do
+    case Doors.open?(room, room_exit) do
+      true ->
+        "open gate #{direction}"
+      false ->
+        "closed gate #{direction}"
+    end
+  end
+  def display_direction(%{"kind" => "Door", "direction" => direction} = room_exit, room) do
+    case Doors.open?(room, room_exit) do
+      true ->
+        "open door #{direction}"
+      false ->
+        "closed door #{direction}"
+    end
+  end
+  def display_direction(%{"direction" => direction}, room), do: direction
 
   def light_desc(light_level)  when light_level <= -100, do: "The room is barely visible"
   def light_desc(light_level)  when light_level <=  -25, do: "The room is dimly lit"
@@ -640,10 +665,27 @@ defmodule Room do
     {:reply, room, room}
   end
 
+  def handle_cast({:mirror_bash, mirror_room_id, room_exit}, %Room{id: id} = room) do
+    mirror_exit = mirror_exit(room, mirror_room_id)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just flew open!</p>"}
+      {:noreply, Room.open!(room, mirror_exit["direction"])}
+    else
+      {:noreply, room}
+    end
+  end
+
+  def handle_cast({:bash, mobile, direction}, room) do
+    room = Commands.Bash.execute(room, mobile, direction)
+    {:noreply, room}
+  end
+
   def handle_cast({:execute_command, mobile, command, arguments}, room) do
     ApathyDrive.Command.execute(room, mobile, command, arguments)
     {:noreply, room}
   end
+
   def handle_cast({:mobile_present, %{intruder: mobile, look_name: name} = data}, room) do
     ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room.id}:mobiles", {:monster_present, data}
     {:noreply, put_in(room.also_here[mobile], name)}
