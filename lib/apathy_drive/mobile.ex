@@ -1579,6 +1579,11 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_info({:who_request, who}, mobile) do
+    Mobile.send_scroll(who, "<p>#{Mobile.look_name(mobile)}</p>")
+    {:noreply, mobile}
+  end
+
   def handle_info({:timer_cast_ability, %{ability: ability, timer: time, target: target}}, mobile) do
     Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
 
