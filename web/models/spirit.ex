@@ -201,6 +201,7 @@ defmodule Spirit do
     spirit
   end
 
+  def add_experience(nil, exp), do: nil
   def add_experience(%Spirit{} = spirit, exp) do
     spirit = spirit
              |> Map.put(:experience, spirit.experience + exp)
