@@ -24,7 +24,7 @@ defmodule ApathyDrive.Commands.Look do
     execute(room, %{mobile: mobile}, [])
   end
 
-  def execute(%Room{id: id} = room, %{mobile: mobile}, []) do
+  def execute(%Room{} = room, %{mobile: mobile}, []) do
     name_color =
       case room.room_unity && room.room_unity.unity do
         "demon" ->
@@ -61,15 +61,15 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def execute(%Room{} = room, %{mobile: mobile}, nil) do
+  def execute(%Room{}, %{mobile: mobile}, nil) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
   end
 
-  def execute(%Room{} = room, %{mobile: mobile}, %{"direction" => direction, "kind" => kind}) when kind in ["RemoteAction", "Command"] do
+  def execute(%Room{}, %{mobile: mobile}, %{"kind" => kind}) when kind in ["RemoteAction", "Command"] do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
   end
 
-  def execute(%Room{} = room, %{mobile: mobile} = mobile_data, %{"direction" => direction, "kind" => "Door"} = room_exit) do
+  def execute(%Room{} = room, %{mobile: mobile} = mobile_data, %{"kind" => "Door"} = room_exit) do
     if Doors.open?(room, room_exit) do
       execute(room, mobile_data, Map.put(room_exit, "kind", "Normal"))
     else
@@ -77,7 +77,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def execute(%Room{} = room, mobile_data, %{"direction" => direction, "destination" => destination}) do
+  def execute(%Room{}, mobile_data, %{"destination" => destination}) do
     destination
     |> Room.find
     |> Room.look(mobile_data, [])
@@ -132,6 +132,7 @@ defmodule ApathyDrive.Commands.Look do
         "closed door #{direction}"
     end
   end
+  def display_direction(%{"kind" => "Command"}, _room), do: nil
   def display_direction(%{"direction" => direction}, _room), do: direction
 
   def exit_directions(%Room{} = room) do
