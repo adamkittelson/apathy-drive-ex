@@ -9,17 +9,22 @@ defmodule ApathyDrive.Commands.Look do
 
   def keywords, do: ["look", "l"]
 
-  def execute(%Mobile{room_id: room_id} = mobile, []) do
+  def execute(%Mobile{room_id: room_id} = mobile, args) do
     if blind?(mobile) do
       Mobile.send_scroll(mobile, "<p>You are blind.</p>")
     else
       room_id
       |> Room.find
-      |> Room.look(self)
+      |> Room.look(%{mobile: self, name: Mobile.look_name(mobile), room_id: mobile.room_id}, args)
     end
   end
 
-  def execute(%Room{} = room, mobile, []) do
+  def execute(%Room{id: id} = room, %{mobile: mobile, room_id: room_id, name: name}, []) when id != room_id do
+    peek(room, name, room_id)
+    execute(room, %{mobile: mobile}, [])
+  end
+
+  def execute(%Room{id: id} = room, %{mobile: mobile}, []) do
     name_color =
       case room.room_unity && room.room_unity.unity do
         "demon" ->
@@ -37,6 +42,47 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
     if room.light do
       Mobile.send_scroll(mobile, "<p>#{light_desc(room.light)}</p>")
+    end
+  end
+
+  def execute(%Room{} = room, %{mobile: mobile} = mobile_data, arguments) when is_list(arguments) do
+    cond do
+      Enum.member?(@directions, Enum.join(arguments, " ")) ->
+        room_exit = Room.get_exit(room, Enum.join(arguments, " "))
+        execute(room, mobile_data, room_exit)
+      # target = mobile |> find_mobile_in_room(Enum.join(arguments, " ")) ->
+      #   look_at_mobile(mobile, target)
+      # target = mobile |> Mobile.room_id |> Room.find |> Room.find_item(Enum.join(arguments, " ")) ->
+      #   look_at_item(mobile, target)
+      # target = mobile |> Mobile.find_item(Enum.join(arguments, " ")) ->
+      #   look_at_item(mobile, target)
+      true ->
+        Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
+    end
+  end
+
+  def execute(%Room{} = room, %{mobile: mobile}, nil) do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
+  end
+
+  def execute(%Room{} = room, %{mobile: mobile}, %{"direction" => direction, "kind" => kind}) when kind in ["RemoteAction", "Command"] do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
+  end
+
+  def execute(%Room{} = room, mobile_data, %{"direction" => direction, "destination" => destination}) do
+    destination
+    |> Room.find
+    |> Room.look(mobile_data, [])
+  end
+
+  def peek(%Room{id: id} = room, name, room_id) do
+    mirror_exit = Room.mirror_exit(room, room_id)
+
+    if mirror_exit do
+      message = "#{name} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
+                 |> capitalize_first
+
+      ApathyDrive.Endpoint.broadcast! "rooms:#{id}:mobiles", "scroll", %{:html => "<p><span class='dark-magenta'>#{message}</span></p>"}
     end
   end
 
@@ -125,24 +171,6 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.any?(&(Map.has_key?(&1, "blinded")))
   end
 
-  # def execute(mobile, arguments) do
-  #   if Enum.any? arguments do
-  #     cond do
-  #       Enum.member?(@directions, Enum.join(arguments, " ")) ->
-  #         ApathyDrive.Exit.look(mobile, Enum.join(arguments, " "))
-  #       target = mobile |> find_mobile_in_room(Enum.join(arguments, " ")) ->
-  #         look_at_mobile(mobile, target)
-  #       target = mobile |> Mobile.room_id |> Room.find |> Room.find_item(Enum.join(arguments, " ")) ->
-  #         look_at_item(mobile, target)
-  #       target = mobile |> Mobile.find_item(Enum.join(arguments, " ")) ->
-  #         look_at_item(mobile, target)
-  #       true ->
-  #         Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
-  #     end
-  #   else
-  #     look_at_room(mobile)
-  #   end
-  # end
   #
   # def look_at_mobile(mobile, target) do
   #   target = World.mobile(target)

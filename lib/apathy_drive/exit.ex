@@ -2,7 +2,7 @@ defmodule ApathyDrive.Exit do
   alias ApathyDrive.Mobile
 
   def all do
-    [ApathyDrive.Exits.Action, ApathyDrive.Exits.Command, ApathyDrive.Exits.Door,
+    [ApathyDrive.Exits.Command, ApathyDrive.Exits.Door,
      ApathyDrive.Exits.Doors, ApathyDrive.Exits.Gate, ApathyDrive.Exits.Hidden,
      ApathyDrive.Exits.Normal, ApathyDrive.Exits.RemoteAction]
   end

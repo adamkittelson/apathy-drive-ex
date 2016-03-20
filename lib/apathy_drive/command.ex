@@ -39,7 +39,7 @@ defmodule ApathyDrive.Command do
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
         case cmd do
           %ApathyDrive.Command{name: "look", module: mod} ->
-            mod.execute(room, mobile, arguments)
+            Mobile.look(mobile, arguments)
           _ ->
             cmd.module.execute(mobile, arguments)
         end
