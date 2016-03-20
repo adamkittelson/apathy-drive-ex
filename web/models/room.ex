@@ -687,7 +687,7 @@ defmodule Room do
   end
 
   def handle_cast({:mobile_present, %{intruder: mobile, look_name: name} = data}, room) do
-    ApathyDrive.PubSub.broadcast_from! self, "rooms:#{room.id}:mobiles", {:monster_present, data}
+    ApathyDrive.PubSub.broadcast_from! mobile, "rooms:#{room.id}:mobiles", {:monster_present, data}
     {:noreply, put_in(room.also_here[mobile], name)}
   end
 
@@ -724,7 +724,7 @@ defmodule Room do
     Mobile.send_scroll(mobile, "<p>    #{room.description}</p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
     if Enum.any?(mobiles_to_show) do
-      Mobile.send_scroll(mobile, "<span class='dark-magenta'>Also here:</span> #{Enum.join(mobiles_to_show, ", ")}<span class='dark-magenta'>.</span>")
+      Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Also here:</span> #{Enum.join(mobiles_to_show, ", ")}<span class='dark-magenta'>.</span></p>")
     end
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
     if room.light do

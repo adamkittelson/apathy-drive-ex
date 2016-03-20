@@ -658,6 +658,8 @@ defmodule ApathyDrive.Mobile do
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spawned_at}:spawned_monsters")
 
+      send(self, :notify_presence)
+
     {:ok, mobile}
   end
   def init(%Mobile{spirit: spirit_id, socket: socket} = mobile) do
@@ -705,6 +707,8 @@ defmodule ApathyDrive.Mobile do
     update_prompt(mobile)
 
     ApathyDrive.Endpoint.broadcast_from! self, "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
+
+    send(self, :notify_presence)
 
     {:ok, mobile}
   end
@@ -1377,16 +1381,15 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:auto_move, %{new_exit: room_exit, last_room: last_room}}, mobile) do
-    mobile =
-      mobile
-      |> Commands.Move.execute(Room.find(mobile.room_id), room_exit, last_room)
-      |> move_after
-
+  def handle_cast({:auto_move, %{new_exit: room_exit, last_room: _last_room}}, mobile) do
+    mobile.room_id
+    |> Room.find
+    |> Room.execute_command(self, room_exit["direction"], [])
+    #Commands.Move.execute(Room.find(mobile.room_id), self, room_exit, last_room)
     {:noreply, mobile}
   end
   def handle_cast({:auto_move, _}, mobile) do
-    {:noreply, move_after(mobile)}
+    {:noreply, mobile}
   end
 
   def handle_cast({:answer, asker, question}, mobile) do

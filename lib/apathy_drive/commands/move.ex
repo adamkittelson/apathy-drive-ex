@@ -16,11 +16,27 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
+  def execute(%Room{} = room, mobile, %{"kind" => "Hidden", "passable_while_hidden" => true} = room_exit, last_room) do
+    Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"), last_room)
+  end
+
+  def execute(%Room{} = room, mobile, %{"kind" => "Hidden", "passable_while_hidden" => false} = room_exit, last_room) do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+  end
+
   def execute(%Room{} = room, mobile, room_exit, last_room) do
     Mobile.move(mobile, self, room_exit, last_room)
   end
 
   def execute(%Mobile{} = mobile, _room, nil, _last_room) do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+  end
+
+  def execute(%Mobile{} = mobile, _room, %{"kind" => "Command"}, _last_room) do
+    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+  end
+
+  def execute(%Mobile{} = mobile, _room, %{"kind" => "RemoteAction"}, _last_room) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
