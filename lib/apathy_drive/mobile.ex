@@ -48,7 +48,7 @@ defmodule ApathyDrive.Mobile do
     field :delayed,            :boolean, virtual: true, default: false
     field :last_effect_key,    :any,     virtual: true, default: 0
     field :chance_to_follow,   :integer, virtual: true, default: 0
-    field :movement_frequency, :integer, virtual: true, default: 5
+    field :movement_frequency, :integer, virtual: true, default: 60
     field :last_room,          :any,     virtual: true
 
     timestamps
@@ -133,10 +133,6 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:experience, experience + exp)
       |> ApathyDrive.Level.advance
       |> Map.put(:spirit, Spirit.add_experience(mobile.spirit, exp))
-
-    if mobile.monster_template_id do
-      mobile = Repo.save!(mobile)
-    end
 
     if mobile.level > level do
       send_scroll mobile, "<p>You ascend to level #{mobile.level}!"
@@ -629,7 +625,6 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> move_after()
-      |> Repo.save!
 
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -646,11 +641,11 @@ defmodule ApathyDrive.Mobile do
 
       send(self, :notify_presence)
 
+      send(self, :save)
+
     {:ok, mobile}
   end
   def init(%Mobile{spirit: spirit_id, socket: socket} = mobile) do
-    :random.seed(:os.timestamp)
-
     Process.monitor(socket)
     Process.register(self, :"spirit_#{spirit_id}")
 
@@ -695,6 +690,8 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.Endpoint.broadcast_from! self, "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
 
     send(self, :notify_presence)
+
+    send(self, :save)
 
     {:ok, mobile}
   end
@@ -1067,13 +1064,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   defp move_after(%Mobile{movement_frequency: frequency} = mobile) do
-    time =
-      frequency
-      |> :timer.seconds
-      |> :rand.uniform
-      |> Kernel.+(:timer.seconds(frequency))
-
-    TimerManager.send_after(mobile, {:monster_movement, time, :auto_move})
+    TimerManager.send_after(mobile, {:monster_movement, jitter(:timer.seconds(frequency)), :auto_move})
   end
 
   defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
@@ -1553,6 +1544,36 @@ defmodule ApathyDrive.Mobile do
     class_name = String.downcase(spirit.class.name)
 
     ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
+    {:noreply, mobile}
+  end
+
+  def jitter(time) do
+    time
+    |> :rand.uniform
+    |> Kernel.+(time)
+  end
+
+  def handle_info(:save, %Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
+    mobile = Map.put(mobile, :spirit, Repo.save!(spirit))
+
+    Process.send_after(self, :save, jitter(:timer.minutes(5)))
+    {:noreply, mobile}
+  end
+
+  def handle_info(:save, %Mobile{monster_template_id: _, spirit: nil} = mobile) do
+    mobile = Repo.save!(mobile)
+
+    Process.send_after(self, :save, jitter(:timer.minutes(5)))
+    {:noreply, mobile}
+  end
+
+  def handle_info(:save, %Mobile{monster_template_id: _, spirit: spirit} = mobile) do
+    mobile =
+      mobile
+      |> Map.put(:spirit, Repo.save!(spirit))
+      |> Repo.save!
+
+    Process.send_after(self, :save, jitter(:timer.minutes(5)))
     {:noreply, mobile}
   end
 

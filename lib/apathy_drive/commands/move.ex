@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Commands.Move do
-  alias ApathyDrive.{Mobile, Repo, Doors}
+  alias ApathyDrive.{Mobile, Doors}
 
   def execute(%Room{} = room, mobile, command) do
     direction = Room.direction(command)
@@ -65,12 +65,6 @@ defmodule ApathyDrive.Commands.Move do
         ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
         mobile = put_in(mobile.spirit.room_id, mobile.room_id)
         ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
-
-        Repo.save!(mobile.spirit)
-      end
-
-      if mobile.monster_template_id do
-        mobile = Repo.save!(mobile)
       end
 
       destination = Room.find(destination_id)
@@ -115,12 +109,6 @@ defmodule ApathyDrive.Commands.Move do
         ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
         mobile = put_in(mobile.spirit.room_id, mobile.room_id)
         ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
-
-        Repo.save!(mobile.spirit)
-      end
-
-      if mobile.monster_template_id do
-        mobile = Repo.save!(mobile)
       end
 
       destination = Room.find(destination_id)
