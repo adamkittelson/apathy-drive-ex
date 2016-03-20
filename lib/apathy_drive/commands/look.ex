@@ -69,6 +69,14 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
   end
 
+  def execute(%Room{} = room, %{mobile: mobile} = mobile_data, %{"direction" => direction, "kind" => "Door"} = room_exit) do
+    if Doors.open?(room, room_exit) do
+      execute(room, mobile_data, Map.put(room_exit, "kind", "Normal"))
+    else
+      Mobile.send_scroll(mobile, "<p>The door is closed in that direction!</p>")
+    end
+  end
+
   def execute(%Room{} = room, mobile_data, %{"direction" => direction, "destination" => destination}) do
     destination
     |> Room.find

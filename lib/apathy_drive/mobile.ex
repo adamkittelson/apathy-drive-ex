@@ -133,7 +133,10 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:experience, experience + exp)
       |> ApathyDrive.Level.advance
       |> Map.put(:spirit, Spirit.add_experience(mobile.spirit, exp))
-      |> Repo.save!
+
+    if mobile.monster_template_id do
+      mobile = Repo.save!(mobile)
+    end
 
     if mobile.level > level do
       send_scroll mobile, "<p>You ascend to level #{mobile.level}!"
