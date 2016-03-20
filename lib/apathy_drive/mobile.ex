@@ -1032,6 +1032,26 @@ defmodule ApathyDrive.Mobile do
     |> Room.notify_presence(data)
   end
 
+  defp jitter(time) do
+    time
+    |> :rand.uniform
+    |> Kernel.+(time)
+  end
+
+  defp save(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
+    Map.put(mobile, :spirit, Repo.save!(spirit))
+  end
+
+  defp save(%Mobile{monster_template_id: _, spirit: nil} = mobile) do
+    Repo.save!(mobile)
+  end
+
+  defp save(%Mobile{monster_template_id: _, spirit: spirit} = mobile) do
+    mobile
+    |> Map.put(:spirit, Repo.save!(spirit))
+    |> Repo.save!
+  end
+
   defp should_move?(%Mobile{spirit: nil} = mobile) do
     cond do
       # at least 80% health and no enemies present, go find something to kill
@@ -1547,34 +1567,9 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def jitter(time) do
-    time
-    |> :rand.uniform
-    |> Kernel.+(time)
-  end
-
-  def handle_info(:save, %Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
-    mobile = Map.put(mobile, :spirit, Repo.save!(spirit))
-
+  def handle_info(:save, mobile) do
     Process.send_after(self, :save, jitter(:timer.minutes(5)))
-    {:noreply, mobile}
-  end
-
-  def handle_info(:save, %Mobile{monster_template_id: _, spirit: nil} = mobile) do
-    mobile = Repo.save!(mobile)
-
-    Process.send_after(self, :save, jitter(:timer.minutes(5)))
-    {:noreply, mobile}
-  end
-
-  def handle_info(:save, %Mobile{monster_template_id: _, spirit: spirit} = mobile) do
-    mobile =
-      mobile
-      |> Map.put(:spirit, Repo.save!(spirit))
-      |> Repo.save!
-
-    Process.send_after(self, :save, jitter(:timer.minutes(5)))
-    {:noreply, mobile}
+    {:noreply, save(mobile)}
   end
 
   def handle_info({:who_request, who}, mobile) do
@@ -1852,7 +1847,7 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info(:disconnected, %Mobile{monster_template_id: nil, spirit: spirit, socket: nil} = mobile) do
     ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
-    {:stop, :normal, mobile}
+    {:stop, :normal, save(mobile)}
   end
 
   def handle_info(:disconnected, %Mobile{spirit: spirit, socket: nil} = mobile) do
