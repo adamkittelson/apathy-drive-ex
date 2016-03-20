@@ -684,7 +684,7 @@ defmodule ApathyDrive.Ability do
     destination = Enum.random(room_ids)
     send(self, {:move_to, destination, nil})
 
-    Mobile.look_at_room(mobile.pid)
+    Mobile.look(mobile.pid)
 
     apply_instant_effects(mobile, Map.delete(effects, "teleport"), ability_user)
   end

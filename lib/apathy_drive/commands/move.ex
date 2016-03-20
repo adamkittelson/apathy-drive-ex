@@ -75,7 +75,7 @@ defmodule ApathyDrive.Commands.Move do
 
       destination = Room.find(destination_id)
 
-      unless blind?(mobile), do: Room.look(destination, self)
+      Mobile.look(self)
 
       Room.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: mobile.enter_message, from: mobile.room_id})
 
@@ -125,7 +125,7 @@ defmodule ApathyDrive.Commands.Move do
 
       destination = Room.find(destination_id)
 
-      unless blind?(mobile), do: Room.look(destination, self)
+      Mobile.look(self)
 
       Room.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: room_exit["to_message"], from: mobile.room_id})
 

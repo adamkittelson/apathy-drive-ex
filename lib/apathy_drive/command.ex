@@ -37,7 +37,12 @@ defmodule ApathyDrive.Command do
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
         Mobile.trigger_remote_action(mobile, self, remote_action_exit)
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
-        cmd.module.execute(mobile, arguments)
+        case cmd do
+          %ApathyDrive.Command{name: "look", module: mod} ->
+            mod.execute(room, mobile, arguments)
+          _ ->
+            cmd.module.execute(mobile, arguments)
+        end
       # true ->
       #   Mobile.use_ability(mobile, command, arguments)
     end

@@ -281,8 +281,8 @@ defmodule ApathyDrive.Mobile do
     |> Map.get(:effects)
   end
 
-  def look_at_room(mobile, room \\ nil) do
-    GenServer.cast(mobile, {:look_at_room, room})
+  def look(mobile, args \\ []) do
+    GenServer.cast(mobile, {:look, args})
   end
 
   def look_at_item(%Mobile{} = mobile, item) do
@@ -346,17 +346,6 @@ defmodule ApathyDrive.Mobile do
   def evil_points(%{alignment: "evil"}),    do: 250
   def evil_points(%{alignment: "good"}),    do: -215
   def evil_points(%{alignment: "neutral"}), do: 0
-
-  def blind?(mobile) when is_pid(mobile) do
-    mobile
-    |> World.mobile
-    |> blind?()
-  end
-  def blind?(%Mobile{} = mobile) do
-    mobile.effects
-    |> Map.values
-    |> Enum.any?(&(Map.has_key?(&1, "blinded")))
-  end
 
   def find_room(%Mobile{room_id: room_id}) do
     room_id
@@ -1359,20 +1348,8 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:look_at_room, nil}, mobile) do
-    unless blind?(mobile) do
-      mobile.room_id
-      |> Room.find
-      |> Room.look(self)
-    end
-    {:noreply, mobile}
-  end
-  def handle_cast({:look_at_room, room_id}, mobile) do
-    unless blind?(mobile) do
-      room_id
-      |> Room.find
-      |> Room.look(self)
-    end
+  def handle_cast({:look, args}, mobile) do
+    Commands.Look.execute(mobile, args)
     {:noreply, mobile}
   end
 

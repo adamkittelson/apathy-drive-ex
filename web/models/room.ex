@@ -136,8 +136,8 @@ defmodule Room do
     GenServer.cast(room, {:mobile_present, data})
   end
 
-  def look(room, mobile) do
-    GenServer.cast(room, {:look_at_room, mobile})
+  def look(room, mobile, args \\ []) do
+    GenServer.cast(room, {:look, mobile, args})
   end
 
   def display_enter_message(room, data) do
@@ -338,19 +338,6 @@ defmodule Room do
     |> Enum.member?(direction)
   end
 
-  def look_at_room(room, mobile) do
-    data = %{} #get_look_data(room, mobile)
-
-    Mobile.send_scroll(mobile, "<p>#{data.name}</p>")
-    Mobile.send_scroll(mobile, "<p>    #{data.description}</p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{data.items}</span></p>")
-    Mobile.send_scroll(mobile, "<p>#{data.mobiles}</p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{data.exits}</span></p>")
-    if data.light do
-      Mobile.send_scroll(mobile, "<p>#{data.light}</p>")
-    end
-  end
-
   def exit_direction("up"),      do: "upwards"
   def exit_direction("down"),    do: "downwards"
   def exit_direction(direction), do: "to the #{direction}"
@@ -384,94 +371,6 @@ defmodule Room do
 
   def mobiles(%Room{} = room) do
     PubSub.subscribers("rooms:#{room.id}:mobiles")
-  end
-
-  def exit_directions(%Room{} = room) do
-    room.exits
-    |> Enum.map(fn(room_exit) ->
-        display_direction(room_exit, room)
-       end)
-    |> Enum.reject(&(&1 == nil))
-  end
-
-  def display_direction(%{"kind" => "Gate", "direction" => direction} = room_exit, room) do
-    case Doors.open?(room, room_exit) do
-      true ->
-        "open gate #{direction}"
-      false ->
-        "closed gate #{direction}"
-    end
-  end
-  def display_direction(%{"kind" => "Door", "direction" => direction} = room_exit, room) do
-    case Doors.open?(room, room_exit) do
-      true ->
-        "open door #{direction}"
-      false ->
-        "closed door #{direction}"
-    end
-  end
-  def display_direction(%{"direction" => direction}, room), do: direction
-
-  def light_desc(light_level)  when light_level <= -100, do: "The room is barely visible"
-  def light_desc(light_level)  when light_level <=  -25, do: "The room is dimly lit"
-  def light_desc(_light_level), do: nil
-
-  def look_items(%Room{} = room) do
-    psuedo_items = room.item_descriptions["visible"]
-                   |> Map.keys
-
-    items = case room.items do
-      nil ->
-        []
-      items ->
-        items
-        |> Enum.map(&(&1["name"]))
-    end
-
-    items = items ++ psuedo_items
-
-    case Enum.count(items) do
-      0 ->
-        ""
-      _ ->
-        "You notice #{Enum.join(items, ", ")} here."
-    end
-  end
-
-  def look_mobiles(%{room_id: room_id, mobile: mobile}) do
-    pid = if is_pid(mobile), do: mobile, else: mobile.pid
-    mobiles = mobiles(%{room_id: room_id, mobile: pid})
-              |> Enum.map(&Mobile.look_name/1)
-              |> Enum.join("<span class='magenta'>, </span>")
-
-    case(mobiles) do
-      "" ->
-        ""
-      mobiles ->
-        "<span class='dark-magenta'>Also here:</span> #{mobiles}<span class='dark-magenta'>.</span>"
-    end
-  end
-
-  def look_mobiles(%Room{} = room) do
-    mobiles = mobiles(room)
-               |> Enum.map(&Mobile.look_name/1)
-               |> Enum.join("<span class='magenta'>, </span>")
-
-    case(mobiles) do
-      "" ->
-        ""
-      mobiles ->
-        "<span class='dark-magenta'>Also here:</span> #{mobiles}<span class='dark-magenta'>.</span>"
-    end
-  end
-
-  def look_directions(%Room{} = room) do
-    case exit_directions(room) do
-      [] ->
-        "Obvious exits: NONE"
-      directions ->
-        "Obvious exits: #{Enum.join(directions, ", ")}"
-    end
   end
 
   def send_scroll(%Room{id: id}, html) do
@@ -691,17 +590,7 @@ defmodule Room do
     {:noreply, put_in(room.also_here[mobile], name)}
   end
 
-  def handle_cast({:look_at_room, mobile}, %Room{} = room) do
-    name_color =
-      case room.room_unity && room.room_unity.unity do
-        "demon" ->
-          "magenta"
-        "angel" ->
-          "white"
-        _ ->
-          "cyan"
-      end
-
+  def handle_cast({:look, mobile, args}, %Room{} = room) do
     present_mobiles = mobiles(room)
 
     mobiles =
@@ -710,28 +599,11 @@ defmodule Room do
            if pid in present_mobiles, do: Map.put(also_here, pid, name), else: also_here
          end)
 
-    mobiles_to_show =
-      mobiles
-      |> Enum.reduce([], fn({pid, name}, list) ->
-           if pid == mobile do
-             list
-           else
-             [name | list]
-           end
-         end)
+    room = Map.put(room, :also_here, mobiles)
 
-    Mobile.send_scroll(mobile, "<p><span class='#{name_color}'>#{room.name}</span></p>")
-    Mobile.send_scroll(mobile, "<p>    #{room.description}</p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
-    if Enum.any?(mobiles_to_show) do
-      Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Also here:</span> #{Enum.join(mobiles_to_show, ", ")}<span class='dark-magenta'>.</span></p>")
-    end
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
-    if room.light do
-      Mobile.send_scroll(mobile, "<p>#{light_desc(room.light)}</p>")
-    end
+    Commands.Look.execute(room, mobile, args)
 
-    {:noreply, Map.put(room, :also_here, mobiles)}
+    {:noreply, room}
   end
 
   def handle_cast({:auto_move, mobile, last_room}, %Room{} = room) do
