@@ -209,17 +209,17 @@ defmodule ApathyDrive.Ability do
   end
 
   def wrap_target(nil),    do: []
-  def wrap_target(%Monster{pid: pid}), do: [pid]
+  def wrap_target(%Mobile{pid: pid}), do: [pid]
   def wrap_target(target), do: [target]
 
-  def reject(%Monster{pid: target_pid}, %Monster{pid: pid}) when pid == target_pid, do: nil
-  def reject(%Monster{pid: target_pid}, %Monster{}), do: target_pid
-  def reject(target_pid, %Monster{pid: pid}) when pid == target_pid, do: nil
-  def reject(target_pid, %Monster{}), do: target_pid
+  def reject(%Mobile{pid: target_pid}, %Mobile{pid: pid}) when pid == target_pid, do: nil
+  def reject(%Mobile{pid: target_pid}, %Mobile{}), do: target_pid
+  def reject(target_pid, %Mobile{pid: pid}) when pid == target_pid, do: nil
+  def reject(target_pid, %Mobile{}), do: target_pid
 
-  def local_hated_targets(%Monster{} = monster) do
+  def local_hated_targets(%Mobile{} = monster) do
     monster
-    |> Monster.local_hated_targets
+    |> Mobile.local_hated_targets
     |> Map.values
   end
 
@@ -662,7 +662,7 @@ defmodule ApathyDrive.Ability do
 
     apply_instant_effects(mobile, Map.delete(effects, "heal"), ability_user)
   end
-  def apply_instant_effects(%Monster{} = monster, %{"heal_mana" => heal} = effects, ability_user) do
+  def apply_instant_effects(%Mobile{} = monster, %{"heal_mana" => heal} = effects, ability_user) do
     monster = put_in(monster.mana, min(monster.max_mana, monster.mana + heal))
 
     apply_instant_effects(monster, Map.delete(effects, "heal_mana"), ability_user)

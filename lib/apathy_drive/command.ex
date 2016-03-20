@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Commands, Mobile, Ability, Match}
+  alias ApathyDrive.{Commands, Mobile, Match}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -13,12 +13,12 @@ defmodule ApathyDrive.Command do
      Commands.Cooldowns, Commands.Drop, Commands.Experience, Commands.Forms,
      Commands.Get, Commands.Gossip, Commands.Greet,
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
-     Commands.Possess, Commands.Protection, Commands.Remove, Commands.Reroll,
+     Commands.Possess, Commands.Protection, Commands.Remove,
      Commands.Say, Commands.Score, Commands.Search,
      Commands.Unpossess, Commands.Wear, Commands.Who, Commands.Turn, Commands.Purify]
   end
 
-  def execute(%Mobile{room_id: room_id} = mobile, command, arguments) do
+  def execute(%Mobile{room_id: room_id}, command, arguments) do
     room_id
     |> Room.find
     |> Room.execute_command(self, command, arguments)
@@ -43,8 +43,8 @@ defmodule ApathyDrive.Command do
           _ ->
             cmd.module.execute(mobile, arguments)
         end
-      # true ->
-      #   Mobile.use_ability(mobile, command, arguments)
+      true ->
+        Mobile.use_ability(mobile, command, arguments)
     end
   end
 

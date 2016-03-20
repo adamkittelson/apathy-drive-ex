@@ -347,12 +347,6 @@ defmodule ApathyDrive.Mobile do
   def evil_points(%{alignment: "good"}),    do: -215
   def evil_points(%{alignment: "neutral"}), do: 0
 
-  def find_room(%Mobile{room_id: room_id}) do
-    room_id
-    |> Room.find
-    |> World.room
-  end
-
   def has_item?(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}}, item_template_id) do
     (inventory ++ equipment)
     |> Enum.map(&Map.get(&1, "id"))
@@ -1353,7 +1347,7 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:display_enter_message, room, direction}, mobile) do
+  def handle_cast({:display_enter_message, room, _direction}, mobile) do
     Room.display_enter_message(room, %{name: look_name(mobile), mobile: mobile, message: mobile.enter_message, from: mobile.room_id})
     {:noreply, mobile}
   end
@@ -1804,7 +1798,7 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_info(:notify_presence, %Mobile{room_id: room_id} = mobile) do
+  def handle_info(:notify_presence, %Mobile{} = mobile) do
     notify_presence(mobile)
 
     {:noreply, mobile}

@@ -1,15 +1,7 @@
 defmodule ApathyDrive.Doors do
   alias ApathyDrive.{Mobile, PubSub}
-  
-  def name, do: "door"
 
-  def move(current_room, mobile, room_exit, last_room) do
-    # if open?(current_room, room_exit) do
-    #   super(current_room, mobile, room_exit, last_room)
-    # else
-    #   Mobile.send_scroll(mobile, "<p><span class='red'>The #{name} is closed!</span></p>")
-    # end
-  end
+  def name, do: "door"
 
   def close(mobile, room, room_exit) do
     if open?(room, room_exit) do
@@ -119,7 +111,7 @@ defmodule ApathyDrive.Doors do
     end
   end
 
-  def opened_remotely?(room, room_exit) do
+  def opened_remotely?(_room, _room_exit) do
     false
     #!!reactor.timer(self, :opened_remotely)
   end

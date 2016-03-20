@@ -1,8 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  import Systems.Text
-  alias ApathyDrive.{Doors, Mobile, PubSub, Match}
+  alias ApathyDrive.{Doors, Mobile}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -20,7 +19,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def execute(%Room{also_here: mobiles} = room, mobile, []) do
+  def execute(%Room{} = room, mobile, []) do
     name_color =
       case room.room_unity && room.room_unity.unity do
         "demon" ->
@@ -31,6 +30,17 @@ defmodule ApathyDrive.Commands.Look do
           "cyan"
       end
 
+    Mobile.send_scroll(mobile, "<p><span class='#{name_color}'>#{room.name}</span></p>")
+    Mobile.send_scroll(mobile, "<p>    #{room.description}</p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
+    Mobile.send_scroll(mobile, look_mobiles(room, mobile))
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
+    if room.light do
+      Mobile.send_scroll(mobile, "<p>#{light_desc(room.light)}</p>")
+    end
+  end
+
+  def look_mobiles(%Room{also_here: mobiles}, mobile \\ nil) do
     mobiles_to_show =
       mobiles
       |> Enum.reduce([], fn({pid, name}, list) ->
@@ -41,15 +51,10 @@ defmodule ApathyDrive.Commands.Look do
            end
          end)
 
-    Mobile.send_scroll(mobile, "<p><span class='#{name_color}'>#{room.name}</span></p>")
-    Mobile.send_scroll(mobile, "<p>    #{room.description}</p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
     if Enum.any?(mobiles_to_show) do
-      Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Also here:</span> #{Enum.join(mobiles_to_show, ", ")}<span class='dark-magenta'>.</span></p>")
-    end
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
-    if room.light do
-      Mobile.send_scroll(mobile, "<p>#{light_desc(room.light)}</p>")
+      "<p><span class='dark-magenta'>Also here:</span> #{Enum.join(mobiles_to_show, ", ")}<span class='dark-magenta'>.</span></p>"
+    else
+      ""
     end
   end
 
@@ -73,7 +78,7 @@ defmodule ApathyDrive.Commands.Look do
         "closed door #{direction}"
     end
   end
-  def display_direction(%{"direction" => direction}, room), do: direction
+  def display_direction(%{"direction" => direction}, _room), do: direction
 
   def exit_directions(%Room{} = room) do
     room.exits
@@ -92,7 +97,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  defp look_items(%Room{} = room) do
+  def look_items(%Room{} = room) do
     psuedo_items = room.item_descriptions["visible"]
                    |> Map.keys
 

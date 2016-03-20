@@ -65,10 +65,6 @@ defmodule ApathyDrive.Commands.Bash do
           |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>")))
 
         end
-
-        # if :random.uniform(3) == 3 do
-        #   Monster.send_scroll(monster, "<p>You take #{amount} damage for bashing the #{name}!</p>")
-        # end
     end
   end
 

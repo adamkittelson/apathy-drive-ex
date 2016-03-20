@@ -4,7 +4,7 @@ defmodule Room do
   use GenServer
   use Timex
   import Systems.Text
-  alias ApathyDrive.{Commands, PubSub, Mobile, TimerManager, Ability, World, Match, RoomUnity, Doors}
+  alias ApathyDrive.{Commands, PubSub, Mobile, TimerManager, Ability, World, Match, RoomUnity}
 
   schema "rooms" do
     field :name,                  :string
@@ -440,7 +440,7 @@ defmodule Room do
        end)
   end
 
-  def get_direction_by_destination(%Room{exits: exits} = room, destination_id) do
+  def get_direction_by_destination(%Room{exits: exits}, destination_id) do
     exit_to_destination = exits
                           |> Enum.find(fn(room_exit) ->
                                room_exit["destination"] == destination_id
@@ -644,7 +644,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_cast({:mobile_movement, mobile, message}, room) do
+  def handle_cast({:mobile_movement, _mobile, _message}, room) do
     {:noreply, room}
   end
 

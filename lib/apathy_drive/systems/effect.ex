@@ -134,14 +134,6 @@ defmodule Systems.Effect do
        end)
   end
 
-  def send_scroll(%Monster{} = monster, message) do
-    Monster.send_scroll(monster, message)
-  end
-
-  def send_scroll(%Spirit{} = spirit, message) do
-    Spirit.send_scroll(spirit, message)
-  end
-
   def send_scroll(%Mobile{} = mobile, message) do
     Mobile.send_scroll(mobile, message)
   end

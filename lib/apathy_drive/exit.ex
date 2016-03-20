@@ -2,11 +2,9 @@ defmodule ApathyDrive.Exit do
   alias ApathyDrive.Mobile
 
   def all do
-    [ApathyDrive.Exits.AbilityTrap, ApathyDrive.Exits.Action,
-     ApathyDrive.Exits.Cast, ApathyDrive.Exits.Command, ApathyDrive.Exits.Door,
+    [ApathyDrive.Exits.Action, ApathyDrive.Exits.Command, ApathyDrive.Exits.Door,
      ApathyDrive.Exits.Doors, ApathyDrive.Exits.Gate, ApathyDrive.Exits.Hidden,
-     ApathyDrive.Exits.Normal, ApathyDrive.Exits.RemoteAction,
-     ApathyDrive.Exits.Trap]
+     ApathyDrive.Exits.Normal, ApathyDrive.Exits.RemoteAction]
   end
 
   def look(mobile, direction) do
@@ -34,9 +32,7 @@ defmodule ApathyDrive.Exit do
       |> Mobile.room_id
       |> Room.find
 
-    room_exit = Room.get_exit(room, direction)
-
-    #move(room, mobile, room_exit, nil)
+    Room.get_exit(room, direction)
   end
 
   def direction_description(direction) do

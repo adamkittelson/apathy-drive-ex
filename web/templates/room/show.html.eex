@@ -7,11 +7,11 @@
     <div class="title"><%= @room.name %>
     </div>
     <div class="description"><%= @room.description %></div>
-    <div class="items"><%= {:safe, Room.look_items(@room)} %></div>
-    <%= {:safe, Room.look_mobiles(@room)} %>
+    <div class="items"><%= {:safe, ApathyDrive.Commands.Look.look_items(@room)} %></div>
+    <%= {:safe, ApathyDrive.Commands.Look.look_mobiles(@room)} %>
     <div class="exits"><%= {:safe, look_directions(@conn, @room)} %></div>
-    <%= if Room.light_desc(@room.light) do %>
-      <%= {:safe, Room.light_desc(@room.light)} %>
+    <%= if ApathyDrive.Commands.Look.light_desc(@room.light) do %>
+      <%= {:safe, ApathyDrive.Commands.Look.light_desc(@room.light)} %>
     <% end %>
   </div>
 </p>

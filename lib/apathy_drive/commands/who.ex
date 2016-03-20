@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Who do
   use ApathyDrive.Command
-  alias ApathyDrive.{Mobile, World}
+  alias ApathyDrive.Mobile
 
   def keywords, do: ["who"]
 
