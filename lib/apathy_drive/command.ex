@@ -40,6 +40,8 @@ defmodule ApathyDrive.Command do
         case cmd do
           %ApathyDrive.Command{name: "look"} ->
             Mobile.look(mobile, arguments)
+          %ApathyDrive.Command{name: "search"} ->
+            Commands.Search.execute(room, mobile, arguments)
           _ ->
             cmd.module.execute(mobile, arguments)
         end

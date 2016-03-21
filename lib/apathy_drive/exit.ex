@@ -2,7 +2,7 @@ defmodule ApathyDrive.Exit do
   alias ApathyDrive.Mobile
 
   def all do
-    [ApathyDrive.Exits.Hidden, ApathyDrive.Exits.RemoteAction]
+    [ApathyDrive.Exits.RemoteAction]
   end
 
   def look(mobile, direction) do

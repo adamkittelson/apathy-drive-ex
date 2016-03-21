@@ -83,6 +83,7 @@ defmodule ApathyDrive.Doors do
     permanently_open?(room_exit) or
     all_remote_actions_triggered?(room_exit) or
     Room.temporarily_open?(room, room_exit["direction"]) or
+    Room.searched?(room, room_exit["direction"]) or
     opened_remotely?(room, room_exit)
   end
 

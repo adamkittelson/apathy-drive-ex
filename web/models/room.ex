@@ -120,6 +120,10 @@ defmodule Room do
     |> Enum.sum
   end
 
+  def search(room, direction) do
+    GenServer.cast(room, {:search, direction})
+  end
+
   def bash(room, mobile, direction) do
     GenServer.cast(room, {:bash, mobile, direction})
   end
@@ -306,11 +310,6 @@ defmodule Room do
     |> Enum.member?(direction)
   end
 
-  def searched?(room, direction) when is_pid(room) do
-    room
-    |> World.room
-    |> searched?(direction)
-  end
   def searched?(room, direction) do
     room
     |> Map.get(:effects)
@@ -562,6 +561,11 @@ defmodule Room do
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:search, direction}, room) do
+    room = Systems.Effect.add(room, %{searched: direction}, 300)
+    {:noreply, room}
   end
 
   def handle_cast({:mirror_bash, mirror_room_id, room_exit}, %Room{id: id} = room) do
@@ -888,11 +892,6 @@ defmodule Room do
 
   def handle_info({:remove_effect, key}, room) do
     room = Systems.Effect.remove(room, key, fire_after_cast: true, show_expiration_message: true)
-    {:noreply, room}
-  end
-
-  def handle_info({:search, direction}, room) do
-    room = Systems.Effect.add(room, %{searched: direction}, 300)
     {:noreply, room}
   end
 

@@ -20,8 +20,12 @@ defmodule ApathyDrive.Commands.Move do
     Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"), last_room)
   end
 
-  def execute(%Room{}, mobile, %{"kind" => "Hidden", "passable_while_hidden" => false}, _last_room) do
-    Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+  def execute(%Room{} = room, mobile, %{"kind" => "Hidden", "passable_while_hidden" => false} = room_exit, last_room) do
+    if Doors.open?(room, room_exit) do
+      Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"), last_room)
+    else
+      Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+    end
   end
 
   def execute(%Room{}, mobile, room_exit, last_room) do

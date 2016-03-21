@@ -3,29 +3,34 @@ defmodule ApathyDrive.Commands.Search do
 
   def keywords, do: ["sea", "search"]
 
-  def execute(mobile, []) do
+  def execute(%Room{}, mobile, []) do
     Mobile.send_scroll(mobile, "<p>Your search revealed nothing.</p>")
   end
 
-  def execute(mobile, arguments) do
+  def execute(%Room{} = room, mobile, arguments) do
     direction = arguments
                 |> Enum.join(" ")
                 |> Room.direction
 
-    room =
-      mobile
-      |> Mobile.room_id
-      |> Room.find
-
     room_exit = Room.get_exit(room, direction)
 
     case room_exit do
-      nil ->
-        Mobile.send_scroll(mobile, "<p>You notice nothing different #{ApathyDrive.Exit.direction_description(direction)}.</p>")
       %{"kind" => "Hidden"} ->
-        ApathyDrive.Exits.Hidden.search(mobile, room, room_exit)
+        search(room, mobile, room_exit)
       _ ->
         Mobile.send_scroll(mobile, "<p>You notice nothing different #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    end
+  end
+
+  defp search(%Room{} = room, mobile, %{"direction" => direction, "message_when_revealed" => message, "searchable" => searchable?} = room_exit) do
+    if Room.searched?(room, room_exit) || !searchable? || :rand.uniform(100) < 75 do
+      Mobile.send_scroll(mobile, "<p>You notice nothing different #{ApathyDrive.Exit.direction_description(direction)}.</p>")
+    else
+      if message do
+        Mobile.send_scroll(mobile, "<p>#{message}</p>")
+      end
+
+      Room.search(self, room_exit["direction"])
     end
   end
 

@@ -77,6 +77,14 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def execute(%Room{} = room, %{mobile: mobile} = mobile_data, %{"kind" => "Hidden"} = room_exit) do
+    if Doors.open?(room, room_exit) do
+      execute(room, mobile_data, Map.put(room_exit, "kind", "Normal"))
+    else
+      Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
+    end
+  end
+
   def execute(%Room{}, mobile_data, %{"destination" => destination}) do
     destination
     |> Room.find
@@ -131,6 +139,9 @@ defmodule ApathyDrive.Commands.Look do
       false ->
         "closed door #{direction}"
     end
+  end
+  def display_direction(%{"kind" => "Hidden", "description" => description} = room_exit, room) do
+    if Doors.open?(room, room_exit), do: description
   end
   def display_direction(%{"kind" => "Command"}, _room), do: nil
   def display_direction(%{"direction" => direction}, _room), do: direction
