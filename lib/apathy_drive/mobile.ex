@@ -76,12 +76,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:execute_room_command, scripts})
   end
 
-  def move_via_command(mobile, room, command_exit) do
-    GenServer.cast(mobile, {:move_via_command, room, command_exit})
-  end
-
-  def trigger_remote_action(mobile, room, remote_action_exit) do
-    GenServer.cast(mobile, {:trigger_remote_action, room, remote_action_exit})
+  def trigger_remote_action(mobile, remote_action_exit) do
+    GenServer.cast(mobile, {:trigger_remote_action, remote_action_exit})
   end
 
   def move(mobile, room, room_exit, last_room) do
@@ -534,11 +530,6 @@ defmodule ApathyDrive.Mobile do
     send_scroll(mobile, "<p>#{message}</p>")
   end
 
-  def confused(mobile) when is_pid(mobile) do
-    mobile
-    |> World.mobile
-    |> confused()
-  end
   def confused(%Mobile{effects: effects} = mobile) do
     effects
     |> Map.values
@@ -1330,17 +1321,17 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:move_via_command, room, command_exit}, mobile) do
-    unless confused(mobile) || held(mobile) do
-      ApathyDrive.Exits.Command.move_via_command(room, mobile, command_exit, nil)
-    end
-
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:trigger_remote_action, room, remote_action_exit}, mobile) do
+  def handle_cast({:trigger_remote_action, remote_action_exit}, mobile) do
     unless confused(mobile) do
-      ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, mobile, remote_action_exit)
+      remote_action_exit["destination"]
+      |> Room.find
+      |> Room.trigger_remote_action(remote_action_exit, mobile.room_id)
+
+      mobile.room_id
+      |> Room.send_scroll(%{
+        self => "<p>#{remote_action_exit["message"]}</p>",
+        :other => "<p>#{interpolate(remote_action_exit["room_message"], %{"name" => look_name(mobile)})}</span></p>"
+      })
     end
 
     {:noreply, mobile}
@@ -1564,6 +1555,20 @@ defmodule ApathyDrive.Mobile do
     class_name = String.downcase(spirit.class.name)
 
     ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
+    {:noreply, mobile}
+  end
+
+  def handle_info({:scroll, %{} = data}, mobile) do
+    if self in Map.keys(data) do
+      send_scroll(mobile, data[self])
+    else
+      send_scroll(mobile, data[:other])
+    end
+    {:noreply, mobile}
+  end
+
+  def handle_info({:scroll, html}, mobile) do
+    send_scroll(mobile, html)
     {:noreply, mobile}
   end
 

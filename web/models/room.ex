@@ -120,6 +120,10 @@ defmodule Room do
     |> Enum.sum
   end
 
+  def trigger_remote_action(room, remote_action_exit, from) do
+    GenServer.cast(room, {:trigger_remote_action, remote_action_exit, from})
+  end
+
   def search(room, direction) do
     GenServer.cast(room, {:search, direction})
   end
@@ -372,11 +376,11 @@ defmodule Room do
     PubSub.subscribers("rooms:#{room.id}:mobiles")
   end
 
-  def send_scroll(%Room{id: id}, html) do
-    ApathyDrive.Endpoint.broadcast! "rooms:#{id}:mobiles", "scroll", %{:html => html}
+  def send_scroll(id, html) when is_integer(id) do
+    ApathyDrive.PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, html}
   end
-  def send_scroll(room, html) do
-    ApathyDrive.Endpoint.broadcast! "rooms:#{Room.id(room)}:mobiles", "scroll", %{:html => html}
+  def send_scroll(%Room{id: id}, html) do
+    ApathyDrive.PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, html}
   end
 
   def open!(room, direction) when is_pid(room) do
@@ -561,6 +565,11 @@ defmodule Room do
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:trigger_remote_action, remote_action_exit, from}, room) do
+    room = Commands.RemoteAction.execute(room, remote_action_exit, from)
+    {:noreply, room}
   end
 
   def handle_cast({:search, direction}, room) do
@@ -892,22 +901,6 @@ defmodule Room do
 
   def handle_info({:remove_effect, key}, room) do
     room = Systems.Effect.remove(room, key, fire_after_cast: true, show_expiration_message: true)
-    {:noreply, room}
-  end
-
-  def handle_info({:trigger, direction}, room) do
-    room = Systems.Effect.add(room, %{triggered: direction}, 300)
-    {:noreply, room}
-  end
-
-  def handle_info({:clear_triggers, direction}, room) do
-    room = room.effects
-           |> Map.keys
-           |> Enum.filter(fn(key) ->
-                room.effects[key][:triggered] == direction
-              end)
-           |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1, show_expiration_message: true)))
-
     {:noreply, room}
   end
 
