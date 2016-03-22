@@ -188,11 +188,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, :display_cooldowns)
   end
 
-  def score_data(pid) when is_pid(pid) do
-    pid
-    |> World.mobile
-    |> score_data
+  def show_score(pid) do
+    GenServer.cast(pid, :show_score)
   end
+
   def score_data(mobile) do
     effects =
       mobile.effects
@@ -1296,6 +1295,11 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, mobile}
     end
+  end
+
+  def handle_cast(:show_score, mobile) do
+    Commands.Score.execute(mobile)
+    {:noreply, mobile}
   end
 
   def handle_cast({:absorb, item}, mobile) do

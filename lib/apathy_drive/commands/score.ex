@@ -4,6 +4,10 @@ defmodule ApathyDrive.Commands.Score do
   def keywords, do: ["score", "stats", "status", "st"]
 
   def execute(mobile, _arguments) do
+    Mobile.show_score(mobile)
+  end
+
+  def execute(%Mobile{} = mobile) do
 
     score_data = Mobile.score_data(mobile)
 
