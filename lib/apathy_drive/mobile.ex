@@ -382,7 +382,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def drop_item(mobile, item) do
-    GenServer.call(mobile, {:drop_item, item})
+    GenServer.cast(mobile, {:drop_item, item})
   end
 
   def equip_item(mobile, item) when is_pid(mobile) do
@@ -1231,24 +1231,6 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_call({:drop_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
-    item = inventory
-           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Match.one(:name_contains, item)
-
-    case item do
-      nil ->
-        {:reply, :not_found, mobile}
-      %{item: item} ->
-        mobile =
-          put_in(mobile.spirit.inventory, List.delete(inventory, item))
-
-          Repo.save!(mobile.spirit)
-
-        {:reply, {:ok, item}, mobile}
-    end
-  end
-
   def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: _equipment}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -1294,6 +1276,29 @@ defmodule ApathyDrive.Mobile do
           Repo.save!(mobile.spirit)
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, mobile}
+    end
+  end
+
+  def handle_cast({:drop_item, item}, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
+    item = inventory
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Match.one(:name_contains, item)
+
+    case item do
+      nil ->
+        Mobile.send_scroll(mobile, "<p>You don't have \"#{item}\" to drop!</p>")
+        {:noreply, mobile}
+      %{item: item} ->
+        mobile =
+          put_in(mobile.spirit.inventory, List.delete(inventory, item))
+
+          Mobile.send_scroll(mobile, "<p>You drop #{item["name"]}.</p>")
+
+          mobile.room_id
+          |> Room.find
+          |> Room.add_item(item)
+
+        {:noreply, save(mobile)}
     end
   end
 

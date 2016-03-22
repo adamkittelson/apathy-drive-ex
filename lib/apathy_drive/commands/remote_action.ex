@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.RemoteAction do
   alias ApathyDrive.Doors
 
-  def execute(%Room{} = room, %{"direction" => direction, "destination" => destination} = room_exit, from) do
+  def execute(%Room{} = room, %{"direction" => direction} = room_exit, from) do
     exit_to_trigger = exit_to_trigger(room, room_exit, from)
 
     room =
@@ -22,7 +22,7 @@ defmodule ApathyDrive.Commands.RemoteAction do
     |> Systems.Effect.add(%{:triggered => exit_to_trigger, "stack_key" => exit_to_trigger, "stack_count" => 1}, 300)
   end
 
-  defp exit_to_trigger(%Room{exits: exits}, %{"direction" => direction, "destination" => destination}, from) do
+  defp exit_to_trigger(%Room{exits: exits}, %{"direction" => direction}, from) do
     exits
     |> Enum.find(fn(exit_to_trigger) ->
          exit_to_trigger
