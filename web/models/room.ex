@@ -164,8 +164,8 @@ defmodule Room do
     GenServer.cast(room, {:purify, amount})
   end
 
-  def get_item(room, item) do
-    GenServer.call(room, {:get_item, item})
+  def get_item(room, mobile, item) do
+    GenServer.cast(room, {:get_item, mobile, item})
   end
 
   def destroy_item(room, item) do
@@ -521,37 +521,6 @@ defmodule Room do
     end
   end
 
-  def handle_call({:get_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
-    actual_item = items
-                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-                  |> Match.one(:name_contains, item)
-
-    visible_item = item_descriptions["visible"]
-                   |> Map.keys
-                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Match.one(:keyword_starts_with, item)
-
-    hidden_item = item_descriptions["hidden"]
-                  |> Map.keys
-                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Match.one(:keyword_starts_with, item)
-
-    cond do
-      visible_item ->
-        {:reply, {:cant_get, visible_item.name}, room}
-      hidden_item ->
-        {:reply, {:cant_get, hidden_item.name}, room}
-      actual_item ->
-        room =
-          room
-          |> Map.put(:items, List.delete(room.items, actual_item.item))
-          |> Repo.save!
-        {:reply, actual_item.item, room}
-      true ->
-        {:reply, :not_found, room}
-    end
-  end
-
   def handle_call({:open, direction}, _from, room) do
     room = open!(room, direction)
     {:reply, room, room}
@@ -565,6 +534,10 @@ defmodule Room do
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:get_item, mobile, item}, room) do
+    {:noreply, Commands.Get.execute(room, mobile, item)}
   end
 
   def handle_cast({:trigger_remote_action, remote_action_exit, from}, room) do

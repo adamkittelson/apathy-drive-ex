@@ -366,7 +366,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def get_item(mobile, item) do
-    GenServer.call(mobile, {:get_item, item})
+    GenServer.cast(mobile, {:get_item, item})
   end
 
   def display_inventory(mobile) when is_pid(mobile) do
@@ -1022,24 +1022,24 @@ defmodule ApathyDrive.Mobile do
     |> Room.notify_presence(data)
   end
 
+  def save(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
+    Map.put(mobile, :spirit, Repo.save!(spirit))
+  end
+
+  def save(%Mobile{monster_template_id: _, spirit: nil} = mobile) do
+    Repo.save!(mobile)
+  end
+
+  def save(%Mobile{monster_template_id: _, spirit: spirit} = mobile) do
+    mobile
+    |> Map.put(:spirit, Repo.save!(spirit))
+    |> Repo.save!
+  end
+
   defp jitter(time) do
     time
     |> :rand.uniform
     |> Kernel.+(time)
-  end
-
-  defp save(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
-    Map.put(mobile, :spirit, Repo.save!(spirit))
-  end
-
-  defp save(%Mobile{monster_template_id: _, spirit: nil} = mobile) do
-    Repo.save!(mobile)
-  end
-
-  defp save(%Mobile{monster_template_id: _, spirit: spirit} = mobile) do
-    mobile
-    |> Map.put(:spirit, Repo.save!(spirit))
-    |> Repo.save!
   end
 
   defp should_move?(%Mobile{spirit: nil} = mobile) do
@@ -1218,19 +1218,6 @@ defmodule ApathyDrive.Mobile do
     {:reply, {:error, "#{mobile.name} is possessed by another player."}, mobile}
   end
 
-  def handle_call({:get_item, %{"weight" => weight} = item}, _from, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
-    if remaining_encumbrance(mobile) >= weight do
-      mobile =
-        put_in(mobile.spirit.inventory, [item | inventory])
-
-        Repo.save!(mobile.spirit)
-
-      {:reply, :ok, mobile}
-    else
-      {:reply, :too_heavy, mobile}
-    end
-  end
-
   def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: _equipment}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -1279,14 +1266,23 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_cast({:drop_item, item}, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
+  def handle_cast({:get_item, %{} = item}, mobile) do
+    {:noreply, Commands.Get.execute(mobile, item)}
+  end
+
+  def handle_cast({:get_item, item}, mobile) do
+    Commands.Get.execute(mobile, item)
+    {:noreply, mobile}
+  end
+
+  def handle_cast({:drop_item, item_name}, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
     item = inventory
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Match.one(:name_contains, item)
+           |> Match.one(:name_contains, item_name)
 
     case item do
       nil ->
-        Mobile.send_scroll(mobile, "<p>You don't have \"#{item}\" to drop!</p>")
+        Mobile.send_scroll(mobile, "<p>You don't have \"#{item_name}\" to drop!</p>")
         {:noreply, mobile}
       %{item: item} ->
         mobile =
