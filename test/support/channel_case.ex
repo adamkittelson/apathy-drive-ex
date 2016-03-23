@@ -38,6 +38,12 @@ defmodule ApathyDrive.ChannelCase do
                                                 will: 40,
                                                 will_per_level: 5})
 
+        # Hack to prevent it from trying to load rooms that don't exist
+        Task.start(fn ->
+          :global.register_name(:"room_#{room.id}", self())
+          receive do end
+        end)
+
         spirit =
           %Spirit{room_id: room.id, class_id: class.id}
           |> Map.merge(map)
