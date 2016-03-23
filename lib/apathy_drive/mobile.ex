@@ -386,7 +386,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def equip_item(mobile, item) when is_pid(mobile) do
-    GenServer.call(mobile, {:equip_item, item})
+    GenServer.cast(mobile, {:equip_item, item})
   end
 
   def equip_item(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile, %{"worn_on" => worn_on} = item) do
@@ -414,7 +414,7 @@ defmodule ApathyDrive.Mobile do
                    |> set_max_hp
                    |> set_hp
 
-        {:reply, {:ok, %{equipped: item, unequipped: [item_to_remove]}}, mobile}
+        %{equipped: item, unequipped: [item_to_remove], mobile: mobile}
       conflicting_worn_on(worn_on) |> Enum.any? ->
         items_to_remove =
           equipment
@@ -440,7 +440,7 @@ defmodule ApathyDrive.Mobile do
                    |> set_max_hp
                    |> set_hp
 
-        {:reply, {:ok, %{equipped: item, unequipped: items_to_remove}}, mobile}
+        %{equipped: item, unequipped: items_to_remove, mobile: mobile}
       true ->
         equipment =
           equipment
@@ -458,7 +458,7 @@ defmodule ApathyDrive.Mobile do
                  |> set_max_hp
                  |> set_hp
 
-        {:reply, {:ok, %{equipped: item}}, mobile}
+        %{equipped: item, mobile: mobile}
     end
   end
 
@@ -728,12 +728,6 @@ defmodule ApathyDrive.Mobile do
 
   def unpossess(mobile) when is_pid(mobile) do
     GenServer.call(mobile, :unpossess)
-  end
-
-  def inventory_item_names(mobile) do
-    mobile = World.mobile(mobile)
-
-    Enum.map(mobile.spirit.inventory, fn(%{"name" => name}) -> name end)
   end
 
   def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
@@ -1218,23 +1212,6 @@ defmodule ApathyDrive.Mobile do
     {:reply, {:error, "#{mobile.name} is possessed by another player."}, mobile}
   end
 
-  def handle_call({:equip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: _equipment}} = mobile) do
-    item = inventory
-           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Match.one(:name_contains, item)
-
-    case item do
-      nil ->
-       {:reply, :not_found, mobile}
-     %{item: item} ->
-       {:reply, resp, mobile} = equip_item(mobile, item)
-
-       Repo.save!(mobile.spirit)
-
-       {:reply, resp, mobile}
-    end
-  end
-
   def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = equipment
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -1260,10 +1237,12 @@ defmodule ApathyDrive.Mobile do
                    |> set_max_hp
                    |> set_hp
 
-          Repo.save!(mobile.spirit)
-
-        {:reply, {:ok, %{unequipped: item_to_remove}}, mobile}
+        {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
     end
+  end
+
+  def handle_cast({:equip_item, item}, mobile) do
+    {:noreply, Commands.Wear.execute(mobile, item)}
   end
 
   def handle_cast({:get_item, %{} = item}, mobile) do
@@ -1920,7 +1899,7 @@ defmodule ApathyDrive.Mobile do
                mobile
                |> Mobile.score_data
 
-             {:reply, {:ok, %{equipped: _}}, equipped} =
+             %{equipped: _, mobile: equipped} =
                mobile
                |> Mobile.equip_item(item)
 
