@@ -52,12 +52,10 @@ defmodule ApathyDrive.Commands.Look do
         execute(room, mobile_data, room_exit)
       target = find_mobile_in_room(room, mobile, Enum.join(arguments, " ")) ->
         Mobile.look_at_mobile(target.pid, %{name: mobile_data.name, looker: mobile})
-      # target = mobile |> Mobile.room_id |> Room.find |> Room.find_item(Enum.join(arguments, " ")) ->
-      #   look_at_item(mobile, target)
-      # target = mobile |> Mobile.find_item(Enum.join(arguments, " ")) ->
-      #   look_at_item(mobile, target)
+      target = Room.find_item(room, Enum.join(arguments, " ")) ->
+        look_at_item(mobile, target)
       true ->
-        Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
+        Mobile.look_at_item(mobile, Enum.join(arguments, " "))
     end
   end
 
@@ -222,6 +220,62 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.any?(&(Map.has_key?(&1, "blinded")))
   end
 
+  def look_at_item(mobile, %{} = item) when is_pid(mobile) do
+    Mobile.look_at_item(mobile, item)
+  end
+
+  def look_at_item(mobile, %{description: description}) do
+    Mobile.send_scroll mobile, "<p>#{description}</p>"
+  end
+
+  def look_at_item(%Mobile{} = mobile, %{} = item) do
+    Mobile.send_scroll(mobile, "\n\n")
+
+    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{item["name"]}</span></p>")
+    Mobile.send_scroll(mobile, "<p>#{item["description"]}</p>\n\n")
+
+    current =
+      mobile
+      |> Mobile.score_data
+
+    %{equipped: _, mobile: equipped} =
+      mobile
+      |> Mobile.equip_item(item)
+
+    equipped = Mobile.score_data(equipped)
+
+    score_data =
+      current
+      |> Map.take([:max_hp, :max_mana, :physical_damage, :magical_damage, :physical_defense, :magical_defense, :strength, :agility, :will])
+      |> Enum.reduce(%{}, fn({key, val}, values) ->
+           Map.put(values, key, value(val, equipped[key]))
+         end)
+
+    Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>Changes if Equipped:</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Max HP:</span> <span class='dark-cyan'>#{score_data.max_hp}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Max Mana:</span> <span class='dark-cyan'>#{score_data.max_mana}</span></p>")
+
+    Mobile.send_scroll(mobile, "\n\n")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Damage:</span> <span class='dark-cyan'>#{score_data.physical_damage}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Magical Damage:</span>  <span class='dark-cyan'>#{score_data.magical_damage}</span></p>")
+    Mobile.send_scroll(mobile, "\n\n")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Defense:</span> <span class='dark-cyan'>#{score_data.physical_defense}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Magical Defense:</span> <span class='dark-cyan'>#{score_data.magical_defense}</span></p>")
+    Mobile.send_scroll(mobile, "\n\n")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Strength:</span> <span class='dark-cyan'>#{score_data.strength}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility:</span>  <span class='dark-cyan'>#{score_data.agility}</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will:</span>     <span class='dark-cyan'>#{score_data.will}</span></p>")
+  end
+
+  def look_at_item(%Mobile{} = mobile, item_name) do
+    case find_item(mobile, item_name) do
+      nil ->
+        Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
+      item ->
+        look_at_item(mobile, item)
+    end
+  end
+
   defp find_mobile_in_room(%Room{also_here: mobiles}, mobile, string) do
     mobile =
       mobiles
@@ -234,12 +288,38 @@ defmodule ApathyDrive.Commands.Look do
     |> List.insert_at(-1, mobile)
     |> Match.one(:name_contains, string)
   end
-  #
-  # defp look_at_item(mobile, description) when is_binary(description) do
-  #   Mobile.send_scroll mobile, "<p>#{description}</p>"
-  # end
-  # defp look_at_item(mobile, %{} = item) do
-  #   Mobile.look_at_item(mobile, item)
-  # end
+
+  defp value(pre, post) when pre > post and is_float(pre) and is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}(<span class='dark-red'>#{Float.to_string(post - pre, decimals: 2)}</span>)"
+  end
+  defp value(pre, post) when pre > post do
+    "#{post}(<span class='dark-red'>#{post - pre}</span>)"
+  end
+  defp value(pre, post) when pre < post and is_float(pre) and is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}(<span class='green'>+#{Float.to_string(post - pre, decimals: 2)}</span>)"
+  end
+  defp value(pre, post) when pre < post do
+    "#{post}(<span class='green'>+#{post - pre}</span>)"
+  end
+  defp value(_pre, post) when is_float(post) do
+    "#{Float.to_string(post, decimals: 2)}"
+  end
+  defp value(_pre, post) do
+    "#{post}"
+  end
+
+  defp find_item(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}}, item) do
+    item = (inventory ++ equipment)
+           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Match.one(:keyword_starts_with, item)
+
+    case item do
+      nil ->
+        nil
+      %{item: item} ->
+        item
+    end
+  end
+
 
 end

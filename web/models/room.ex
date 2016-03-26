@@ -184,9 +184,7 @@ defmodule Room do
     |> Map.get(:exits)
   end
 
-  def find_item(room, item) do
-    %Room{items: items, item_descriptions: item_descriptions} = World.room(room)
-
+  def find_item(%Room{items: items, item_descriptions: item_descriptions} = room, item) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
                   |> Match.one(:keyword_starts_with, item)
@@ -203,9 +201,9 @@ defmodule Room do
 
     cond do
       visible_item ->
-        item_descriptions["visible"][visible_item.name]
+        %{description: item_descriptions["visible"][visible_item.name]}
       hidden_item ->
-        item_descriptions["hidden"][hidden_item.name]
+        %{description: item_descriptions["hidden"][hidden_item.name]}
       actual_item ->
         actual_item.item
       true ->

@@ -283,48 +283,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:look_at_mobile, looker})
   end
 
-  def look_at_item(%Mobile{} = mobile, item) do
-    Mobile.send_scroll(mobile, "\n\n")
-
-    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{item["name"]}</span></p>")
-    Mobile.send_scroll(mobile, "<p>#{item["description"]}</p>\n\n")
-
-    current =
-      mobile
-      |> Mobile.score_data
-
-    {:reply, {:ok, %{equipped: _}}, equipped} =
-      mobile
-      |> Mobile.equip_item(item)
-
-    equipped = Mobile.score_data(equipped)
-
-    score_data =
-      current
-      |> Map.take([:max_hp, :max_mana, :physical_damage, :magical_damage, :physical_defense, :magical_defense, :strength, :agility, :will])
-      |> Enum.reduce(%{}, fn({key, val}, values) ->
-           Map.put(values, key, value(val, equipped[key]))
-         end)
-
-    Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>Changes if Equipped:</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Max HP:</span> <span class='dark-cyan'>#{score_data.max_hp}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Max Mana:</span> <span class='dark-cyan'>#{score_data.max_mana}</span></p>")
-
-    Mobile.send_scroll(mobile, "\n\n")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Damage:</span> <span class='dark-cyan'>#{score_data.physical_damage}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Magical Damage:</span>  <span class='dark-cyan'>#{score_data.magical_damage}</span></p>")
-    Mobile.send_scroll(mobile, "\n\n")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Physical Defense:</span> <span class='dark-cyan'>#{score_data.physical_defense}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Magical Defense:</span> <span class='dark-cyan'>#{score_data.magical_defense}</span></p>")
-    Mobile.send_scroll(mobile, "\n\n")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Strength:</span> <span class='dark-cyan'>#{score_data.strength}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility:</span>  <span class='dark-cyan'>#{score_data.agility}</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will:</span>     <span class='dark-cyan'>#{score_data.will}</span></p>")
-  end
   def look_at_item(mobile, item) do
-    mobile
-    |> World.mobile
-    |> look_at_item(item)
+    GenServer.cast(mobile, {:look_at_item, item})
   end
 
   def update_prompt(%Mobile{socket: nil}), do: :noop
@@ -468,21 +428,6 @@ defmodule ApathyDrive.Mobile do
 
   def unequip_item(mobile, item) do
     GenServer.call(mobile, {:unequip_item, item})
-  end
-
-  def find_item(mobile, item) do
-    %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = World.mobile(mobile)
-
-    item = (inventory ++ equipment)
-           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Match.one(:keyword_starts_with, item)
-
-    case item do
-      nil ->
-        nil
-      %{item: item} ->
-        item
-    end
   end
 
   def max_encumbrance(%Mobile{} = mobile) do
@@ -664,6 +609,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:alignment, spirit.class.alignment)
       |> Map.put(:name, spirit.name)
       |> Map.put(:experience, spirit.experience)
+      |> Map.put(:level, spirit.level)
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -1084,25 +1030,6 @@ defmodule ApathyDrive.Mobile do
   defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
   defp conflicting_worn_on(_), do: []
 
-  defp value(pre, post) when pre > post and is_float(pre) and is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}(<span class='dark-red'>#{Float.to_string(post - pre, decimals: 2)}</span>)"
-  end
-  defp value(pre, post) when pre > post do
-    "#{post}(<span class='dark-red'>#{post - pre}</span>)"
-  end
-  defp value(pre, post) when pre < post and is_float(pre) and is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}(<span class='green'>+#{Float.to_string(post - pre, decimals: 2)}</span>)"
-  end
-  defp value(pre, post) when pre < post do
-    "#{post}(<span class='green'>+#{post - pre}</span>)"
-  end
-  defp value(_pre, post) when is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}"
-  end
-  defp value(_pre, post) do
-    "#{post}"
-  end
-
   defp list_forms(mobile, forms, limb) do
     alias ApathyDrive.Item
 
@@ -1247,6 +1174,11 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:look_at_mobile, looker}, mobile) do
     Commands.Look.look_at_mobile(mobile, looker)
+    {:noreply, mobile}
+  end
+
+  def handle_cast({:look_at_item, item}, mobile) do
+    Commands.Look.look_at_item(mobile, item)
     {:noreply, mobile}
   end
 
