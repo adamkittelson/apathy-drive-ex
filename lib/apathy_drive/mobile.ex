@@ -279,6 +279,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:look, args})
   end
 
+  def look_at_mobile(mobile, looker) do
+    GenServer.cast(mobile, {:look_at_mobile, looker})
+  end
+
   def look_at_item(%Mobile{} = mobile, item) do
     Mobile.send_scroll(mobile, "\n\n")
 
@@ -1239,6 +1243,11 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
     end
+  end
+
+  def handle_cast({:look_at_mobile, looker}, mobile) do
+    Commands.Look.look_at_mobile(mobile, looker)
+    {:noreply, mobile}
   end
 
   def handle_cast({:equip_item, item}, mobile) do

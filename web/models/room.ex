@@ -571,9 +571,9 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_cast({:mobile_present, %{intruder: mobile, look_name: name} = data}, room) do
+  def handle_cast({:mobile_present, %{intruder: mobile, look_name: look_name, name: name} = data}, room) do
     ApathyDrive.PubSub.broadcast_from! mobile, "rooms:#{room.id}:mobiles", {:monster_present, data}
-    {:noreply, put_in(room.also_here[mobile], name)}
+    {:noreply, put_in(room.also_here[mobile], %{look_name: look_name, name: name, keywords: String.split(name), pid: mobile})}
   end
 
   def handle_cast({:look, mobile, args}, %Room{} = room) do
@@ -581,8 +581,8 @@ defmodule Room do
 
     mobiles =
       room.also_here
-      |> Enum.reduce(%{}, fn({pid, name}, also_here) ->
-           if pid in present_mobiles, do: Map.put(also_here, pid, name), else: also_here
+      |> Enum.reduce(%{}, fn({pid, data}, also_here) ->
+           if pid in present_mobiles, do: Map.put(also_here, pid, data), else: also_here
          end)
 
     room = Map.put(room, :also_here, mobiles)

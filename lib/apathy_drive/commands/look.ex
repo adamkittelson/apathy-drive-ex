@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Doors, Mobile}
+  alias ApathyDrive.{Doors, Mobile, Match}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -50,8 +50,8 @@ defmodule ApathyDrive.Commands.Look do
       Enum.member?(@directions, Enum.join(arguments, " ")) ->
         room_exit = Room.get_exit(room, Enum.join(arguments, " "))
         execute(room, mobile_data, room_exit)
-      # target = mobile |> find_mobile_in_room(Enum.join(arguments, " ")) ->
-      #   look_at_mobile(mobile, target)
+      target = find_mobile_in_room(room, mobile, Enum.join(arguments, " ")) ->
+        Mobile.look_at_mobile(target.pid, %{name: mobile_data.name, looker: mobile})
       # target = mobile |> Mobile.room_id |> Room.find |> Room.find_item(Enum.join(arguments, " ")) ->
       #   look_at_item(mobile, target)
       # target = mobile |> Mobile.find_item(Enum.join(arguments, " ")) ->
@@ -102,10 +102,41 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def look_at_mobile(%Mobile{} = target, %{name: name, looker: mobile}) do
+    Mobile.send_scroll(target, "<p>#{name} looks you over.</p>")
+
+    hp_percentage = round(100 * (target.hp / target.max_hp))
+
+    hp_description = case hp_percentage do
+      _ when hp_percentage >= 100 ->
+        "unwounded"
+      _ when hp_percentage >= 90 ->
+        "slightly wounded"
+      _ when hp_percentage >= 60 ->
+        "moderately wounded"
+      _ when hp_percentage >= 40 ->
+        "heavily wounded"
+      _ when hp_percentage >= 20 ->
+        "severely wounded"
+      _ when hp_percentage >= 10 ->
+        "critically wounded"
+      _ ->
+        "very critically wounded"
+    end
+
+    hp_description =
+      "{{target:He/She/It}} appears to be #{hp_description}."
+      |> interpolate(%{"target" => target})
+
+    Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(target)}</p>")
+    Mobile.send_scroll(mobile, "<p>#{target.description}</p>")
+    Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
+  end
+
   def look_mobiles(%Room{also_here: mobiles}, mobile \\ nil) do
     mobiles_to_show =
       mobiles
-      |> Enum.reduce([], fn({pid, name}, list) ->
+      |> Enum.reduce([], fn({pid, %{look_name: name}}, list) ->
            if pid == mobile do
              list
            else
@@ -191,42 +222,18 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.any?(&(Map.has_key?(&1, "blinded")))
   end
 
-  #
-  # def look_at_mobile(mobile, target) do
-  #   target = World.mobile(target)
-  #
-  #   hp_percentage = round(100 * (target.hp / target.max_hp))
-  #
-  #   hp_description = case hp_percentage do
-  #     _ when hp_percentage >= 100 ->
-  #       "unwounded"
-  #     _ when hp_percentage >= 90 ->
-  #       "slightly wounded"
-  #     _ when hp_percentage >= 60 ->
-  #       "moderately wounded"
-  #     _ when hp_percentage >= 40 ->
-  #       "heavily wounded"
-  #     _ when hp_percentage >= 20 ->
-  #       "severely wounded"
-  #     _ when hp_percentage >= 10 ->
-  #       "critically wounded"
-  #     _ ->
-  #       "very critically wounded"
-  #   end
-  #
-  #   hp_description =
-  #     "{{target:He/She/It}} appears to be #{hp_description}."
-  #     |> interpolate(%{"target" => target})
-  #
-  #   Mobile.send_scroll(mobile, "<p><span class='cyan'>#{target.name}</span></p>")
-  #   Mobile.send_scroll(mobile, "<p>#{target.description}</p>")
-  #   Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
-  # end
-  #
-  # defp find_mobile_in_room(mobile, string) do
-  #   PubSub.subscribers("rooms:#{Mobile.room_id(mobile)}:mobiles")
-  #   |> Match.one(:name_contains, string)
-  # end
+  defp find_mobile_in_room(%Room{also_here: mobiles}, mobile, string) do
+    mobile =
+      mobiles
+      |> Map.values
+      |> Enum.find(&(&1.pid == mobile))
+
+    mobiles
+    |> Map.values
+    |> Enum.reject(&(&1 == mobile))
+    |> List.insert_at(-1, mobile)
+    |> Match.one(:name_contains, string)
+  end
   #
   # defp look_at_item(mobile, description) when is_binary(description) do
   #   Mobile.send_scroll mobile, "<p>#{description}</p>"
