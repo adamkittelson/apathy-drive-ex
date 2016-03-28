@@ -120,6 +120,10 @@ defmodule ApathyDrive.Mobile do
     |> ApathyDrive.Repo.all
   end
 
+  def purify_room(mobile) do
+    GenServer.cast(mobile, :purify_room)
+  end
+
   def add_experience(mobile, exp) when is_pid(mobile) do
     GenServer.cast(mobile, {:add_experience, exp})
   end
@@ -1122,6 +1126,11 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
     end
+  end
+
+  def handle_cast(:purify_room, mobile) do
+    Commands.Purify.execute(mobile)
+    {:noreply, mobile}
   end
 
   def handle_cast(:possession_successful, mobile) do
