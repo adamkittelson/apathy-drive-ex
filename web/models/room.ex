@@ -79,6 +79,19 @@ defmodule Room do
     |> validate_length(:name, min: 1, max: 30)
   end
 
+  def find_mobile_in_room(%Room{also_here: mobiles}, mobile, query) do
+    mobile =
+      mobiles
+      |> Map.values
+      |> Enum.find(&(&1.pid == mobile))
+
+    mobiles
+    |> Map.values
+    |> Enum.reject(&(&1 == mobile))
+    |> List.insert_at(-1, mobile)
+    |> Match.one(:name_contains, query)
+  end
+
   def datalist do
     __MODULE__
     |> Repo.all
@@ -118,6 +131,10 @@ defmodule Room do
     essences
     |> Map.values
     |> Enum.sum
+  end
+
+  def possess(room, query, spirit_id, class_name, socket, possessor) do
+    GenServer.cast(room, {:possess, query, spirit_id, class_name, socket, possessor})
   end
 
   def trigger_remote_action(room, remote_action_exit, from) do
@@ -184,7 +201,7 @@ defmodule Room do
     |> Map.get(:exits)
   end
 
-  def find_item(%Room{items: items, item_descriptions: item_descriptions} = room, item) do
+  def find_item(%Room{items: items, item_descriptions: item_descriptions}, item) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
                   |> Match.one(:keyword_starts_with, item)
@@ -532,6 +549,11 @@ defmodule Room do
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:possess, query, spirit_id, class_name, socket, possessor}, room) do
+    Commands.Possess.execute(room, query, spirit_id, class_name, socket, possessor)
+    {:noreply, room}
   end
 
   def handle_cast({:get_item, mobile, item}, room) do

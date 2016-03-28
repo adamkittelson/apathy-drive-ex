@@ -147,10 +147,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:add_form, item})
   end
 
-  def remove_effects(pid) do
-    GenServer.call(pid, :remove_effects)
-  end
-
   def execute_script(pid, script) do
     GenServer.cast(pid, {:execute_script, script})
   end
@@ -664,8 +660,16 @@ defmodule ApathyDrive.Mobile do
     GenServer.call(mobile, {:attack, target})
   end
 
-  def possess(mobile, spirit_id, unity, socket) when is_pid(mobile) do
-    GenServer.call(mobile, {:possess, spirit_id, unity, socket})
+  def possess(mobile, query) do
+    GenServer.cast(mobile, {:possess, query})
+  end
+
+  def become_possessed(mobile, spirit_id, class, socket, possessor) do
+    GenServer.cast(mobile, {:become_possessed, spirit_id, class, socket, possessor})
+  end
+
+  def possession_successful(mobile) do
+    GenServer.cast(mobile, :possession_successful)
   end
 
   def turn(mobile, unity, essence) when is_pid(mobile) do
@@ -1058,10 +1062,6 @@ defmodule ApathyDrive.Mobile do
        end)
   end
 
-  def handle_call(:remove_effects, _from, mobile) do
-    {:reply, :ok, Systems.Effect.remove_all(mobile)}
-  end
-
   def handle_call({:attack, target}, _from, mobile) do
     mobile =
       mobile
@@ -1095,54 +1095,6 @@ defmodule ApathyDrive.Mobile do
     {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, mobile}
   end
 
-  def handle_call({:possess, _spirit_id, _class, _socket}, _from, %Mobile{monster_template_id: nil} = mobile) do
-    {:reply, {:error, "You can't possess other players."}, mobile}
-  end
-  def handle_call({:possess, _spirit_id, "Angel", _socket}, _from, %Mobile{unity: unity} = mobile) when unity != "angel" do
-    {:reply, {:error, "You may only possess monsters who were spawned in a purified room."}, mobile}
-  end
-  def handle_call({:possess, spirit_id, _class, socket}, _from, %Mobile{spirit: nil, level: level} = mobile) do
-    spirit =
-      Repo.get!(Spirit, spirit_id)
-      |> Repo.preload(:class)
-
-    if spirit.level >= level do
-      ApathyDrive.PubSub.subscribe(self, "spirits:online")
-      ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
-      ApathyDrive.PubSub.subscribe(self, "chat:gossip")
-      ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
-      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spawned_at}:spawned_monsters")
-
-      mobile =
-        mobile
-        |> Map.put(:spirit, spirit)
-        |> Map.put(:socket, socket)
-        |> set_abilities
-        |> set_max_mana
-        |> set_mana
-        |> set_max_hp
-        |> set_hp
-        |> TimerManager.send_every({:monster_present, 4_000, :notify_presence})
-
-      send(socket, {:update_mobile, self})
-
-      send_scroll(mobile, "<p>You possess #{mobile.name}.")
-
-      Process.monitor(socket)
-      Process.unregister(:"spirit_#{spirit.id}")
-      Process.register(self, :"spirit_#{spirit.id}")
-
-      update_prompt(mobile)
-
-      {:reply, :ok, mobile}
-    else
-      {:reply, {:error, "You are too low level to possess #{mobile.name}."}, mobile}
-    end
-  end
-  def handle_call({:possess, _spirit_id, _class, _socket}, _from, mobile) do
-    {:reply, {:error, "#{mobile.name} is possessed by another player."}, mobile}
-  end
-
   def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = equipment
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -1170,6 +1122,19 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
     end
+  end
+
+  def handle_cast(:possession_successful, mobile) do
+    {:stop, :normal, Systems.Effect.remove_all(mobile)}
+  end
+
+  def handle_cast({:possess, query}, mobile) do
+    Commands.Possess.execute(mobile, query)
+    {:noreply, mobile}
+  end
+
+  def handle_cast({:become_possessed, spirit_id, class, socket, possessor}, mobile) do
+    {:noreply, Commands.Possess.become_possessed(mobile, spirit_id, class, socket, possessor)}
   end
 
   def handle_cast({:look_at_mobile, looker}, mobile) do
@@ -1753,7 +1718,7 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:monster_present, intruder_data}, %Mobile{spirit: nil} = mobile) do
+  def handle_info({:monster_present, %{} = intruder_data}, %Mobile{spirit: nil} = mobile) do
     mobile = ApathyDrive.Aggression.react(%{mobile: mobile,
                                             alignment: mobile.alignment,
                                             unity: mobile.unity || (mobile.spirit && mobile.spirit.unity),

@@ -50,7 +50,7 @@ defmodule ApathyDrive.Commands.Look do
       Enum.member?(@directions, Enum.join(arguments, " ")) ->
         room_exit = Room.get_exit(room, Enum.join(arguments, " "))
         execute(room, mobile_data, room_exit)
-      target = find_mobile_in_room(room, mobile, Enum.join(arguments, " ")) ->
+      target = Room.find_mobile_in_room(room, mobile, Enum.join(arguments, " ")) ->
         Mobile.look_at_mobile(target.pid, %{name: mobile_data.name, looker: mobile})
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
         look_at_item(mobile, target)
@@ -274,19 +274,6 @@ defmodule ApathyDrive.Commands.Look do
       item ->
         look_at_item(mobile, item)
     end
-  end
-
-  defp find_mobile_in_room(%Room{also_here: mobiles}, mobile, string) do
-    mobile =
-      mobiles
-      |> Map.values
-      |> Enum.find(&(&1.pid == mobile))
-
-    mobiles
-    |> Map.values
-    |> Enum.reject(&(&1 == mobile))
-    |> List.insert_at(-1, mobile)
-    |> Match.one(:name_contains, string)
   end
 
   defp value(pre, post) when pre > post and is_float(pre) and is_float(post) do
