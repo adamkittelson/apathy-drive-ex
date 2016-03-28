@@ -68,6 +68,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.start_link(__MODULE__, id, opts)
   end
 
+  def ask(mobile, target, question) do
+    GenServer.cast(mobile, {:ask, target, question})
+  end
+
   def bash(mobile, arguments) do
     GenServer.cast(mobile, {:bash, arguments})
   end
@@ -108,11 +112,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:display_enter_message, room, direction})
   end
 
-  def forms(mobile) when is_pid(mobile) do
-    mobile
-    |> World.mobile
-    |> forms
-  end
   def forms(%Mobile{spirit: nil}), do: nil
   def forms(%Mobile{spirit: spirit}) do
     spirit
@@ -158,13 +157,6 @@ defmodule ApathyDrive.Mobile do
   def display_abilities(pid) do
     GenServer.cast(pid, :display_abilities)
   end
-
-  def room_id(pid) when is_pid(pid) do
-    pid
-    |> World.mobile
-    |> room_id
-  end
-  def room_id(%Mobile{room_id: room_id}), do: room_id
 
   def name(pid) do
     pid
@@ -1126,6 +1118,12 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
     end
+  end
+
+
+  def handle_cast({:ask, target, question}, mobile) do
+    Commands.Ask.execute(mobile, target, question)
+    {:noreply, mobile}
   end
 
   def handle_cast(:purify_room, mobile) do

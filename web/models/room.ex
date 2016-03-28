@@ -133,6 +133,10 @@ defmodule Room do
     |> Enum.sum
   end
 
+  def ask(room, asker, target, question) do
+    GenServer.cast(room, {:ask, asker, target, question})
+  end
+
   def possess(room, query, spirit_id, class_name, socket, possessor) do
     GenServer.cast(room, {:possess, query, spirit_id, class_name, socket, possessor})
   end
@@ -549,6 +553,11 @@ defmodule Room do
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:ask, asker, target, question}, room) do
+    Commands.Ask.execute(room, asker, target, question)
+    {:noreply, room}
   end
 
   def handle_cast({:possess, query, spirit_id, class_name, socket, possessor}, room) do
