@@ -35,8 +35,6 @@ defmodule Room do
   end
 
   def init(id) do
-    :random.seed(:os.timestamp)
-
     room =
       Repo.get!(Room, id)
       |> Repo.preload(:room_unity)
@@ -76,8 +74,9 @@ defmodule Room do
         |> TimerManager.send_every({:execute_room_ability, 5_000, :execute_room_ability})
     end
 
-    room = TimerManager.send_every(room, {:increase_essence, 300_000, :increase_essence})
-
+    room =
+      room
+      |> TimerManager.send_every({:spread_essence, 60_000, :spread_essence})
 
     {:ok, room}
   end
@@ -144,13 +143,6 @@ defmodule Room do
 
   def all do
     PubSub.subscribers("rooms")
-  end
-
-  def essence(%Room{room_unity: nil}), do: 0
-  def essence(%Room{room_unity: %RoomUnity{essences: essences}}) do
-    essences
-    |> Map.values
-    |> Enum.sum
   end
 
   def ask(room, asker, target, question) do
@@ -716,7 +708,7 @@ defmodule Room do
     room = %{room | room_unity: room_unity}
 
     ApathyDrive.PubSub.subscribe(self, "angel-unity:rooms")
-    turn_spawned_monsters(room, "angel", essence(room))
+    #turn_spawned_monsters(room, "angel", essence(room))
     send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
 
     {:noreply, room}
@@ -746,7 +738,7 @@ defmodule Room do
         send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
         ApathyDrive.PubSub.subscribe(self, "angel-unity:rooms")
         ApathyDrive.PubSub.unsubscribe(self, "demon-unity:rooms")
-        turn_spawned_monsters(room, "angel", essence(room))
+#        turn_spawned_monsters(room, "angel", essence(room))
         room_unity = Map.put(room_unity, :unity, "angel")
         room = %{room | room_unity: Repo.save!(room_unity)}
         {:noreply, room}
@@ -880,19 +872,58 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info(:increase_essence, %Room{room_unity: nil} = room) do
-    {:noreply, room}
+  def handle_info(:spread_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences} = room_unity} = room) do
+    essences =
+      exits
+      |> Enum.reduce(essences, fn
+           %{"kind" => "RemoteAction"}, updated_essences ->
+             updated_essences
+           %{"destination" => dest}, updated_essences ->
+             essence_to_distribute =
+               Enum.reduce(updated_essences, %{}, fn({unity, essence}, essence_to_distribute) ->
+                 Map.put(essence_to_distribute, unity, div(essence, 100))
+               end)
+
+             updated_essence =
+               Enum.reduce(updated_essences, %{}, fn({unity, essence}, updated_essence) ->
+                 Map.put(updated_essence, unity, essence - essence_to_distribute[unity])
+               end)
+
+             if (default = default_essence(room)) > 0 do
+               updated_essence = Map.put(updated_essence, "default", default)
+             end
+
+             dest
+             |> Room.find
+             |> send({:spread_essence, essence_to_distribute})
+
+             updated_essence
+         end)
+
+    room_unity =
+      room_unity
+      |> Map.put(:essences, essences)
+      |> Repo.save!
+
+    {:noreply, Map.put(room, :room_unity, room_unity)}
   end
 
-  def handle_info(:increase_essence, %Room{room_unity: %RoomUnity{unity: _unity, essences: _essences}} = room) do
-    level =
-      room
-      |> essence()
-      |> ApathyDrive.Level.level_at_exp
+  def handle_info({:spread_essence, distribution}, %Room{room_unity: %RoomUnity{essences: essences} = unity} = room) do
+    updated_essences =
+      Enum.reduce(distribution, essences, fn({unity, essence}, updated_essences) ->
+        Map.put(updated_essences, unity, updated_essences[unity] + essence)
+      end)
 
-    send(self, {:add_essence, level * 100})
+    if (default = default_essence(room)) > 0 do
+      updated_essences = Map.put(updated_essences, "default", default)
+    end
 
-    {:noreply, room}
+    unity =
+      unity
+      |> Map.put(:essences, updated_essences)
+      |> Repo.save!
+
+    {:noreply, Map.put(room, :room_unity, unity)}
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
