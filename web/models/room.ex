@@ -31,7 +31,7 @@ defmodule Room do
     has_many   :mobiles, Mobile
     belongs_to :ability, Ability
     has_many   :lairs, ApathyDrive.LairMonster
-    has_many   :lair_monsters, through: [:lairs, :monster]
+    has_many   :lair_monsters, through: [:lairs, :monster_template]
   end
 
   def init(id) do
@@ -40,8 +40,18 @@ defmodule Room do
     room =
       Repo.get!(Room, id)
       |> Repo.preload(:room_unity)
+      |> Repo.preload(:lair_monsters)
 
-    if room.room_unity && room.room_unity.unity do
+    unless room.room_unity do
+      room_unity =
+        room
+        |> build_assoc(:room_unity, essences: %{"angel" => 0, "demon" => 0, "default" => default_essence(room)})
+        |> Repo.save!
+
+      room = %{room | room_unity: room_unity}
+    end
+
+    if room.room_unity.unity do
       ApathyDrive.PubSub.subscribe(self, "#{room.room_unity.unity}-unity:rooms")
     end
 
@@ -70,6 +80,16 @@ defmodule Room do
 
 
     {:ok, room}
+  end
+
+  def default_essence(%Room{lair_monsters: []}), do: 0
+  def default_essence(%Room{lair_monsters: lair_monsters}) do
+    lair_monsters
+    |> Enum.map(fn(mt) ->
+         ApathyDrive.Level.exp_at_level(mt.level)
+       end)
+    |> Enum.sum
+    |> div(length(lair_monsters))
   end
 
   def changeset(%Room{} = room, params \\ :empty) do

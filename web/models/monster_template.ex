@@ -116,7 +116,7 @@ defmodule MonsterTemplate do
     count(monster_template) >= game_limit
   end
 
-  def count(%MonsterTemplate{id: monster_template_id} = monster_template) do
+  def count(%MonsterTemplate{id: monster_template_id}) do
     ApathyDrive.Mobile
     |> where(monster_template_id: ^monster_template_id)
     |> select([m], count(m.id))
