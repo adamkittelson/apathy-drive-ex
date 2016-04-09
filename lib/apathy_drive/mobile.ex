@@ -158,12 +158,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, :display_abilities)
   end
 
-  def name(pid) do
-    pid
-    |> World.mobile
-    |> Map.get(:name)
-  end
-
   def enter_message(pid) do
     pid
     |> World.mobile

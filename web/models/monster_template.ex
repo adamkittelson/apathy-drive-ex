@@ -116,9 +116,11 @@ defmodule MonsterTemplate do
     count(monster_template) >= game_limit
   end
 
-  def count(%MonsterTemplate{} = monster_template) do
-    ApathyDrive.PubSub.subscribers("monster_templates:#{monster_template.id}:monsters")
-    |> Enum.count
+  def count(%MonsterTemplate{id: monster_template_id} = monster_template) do
+    ApathyDrive.Mobile
+    |> where(monster_template_id: ^monster_template_id)
+    |> select([m], count(m.id))
+    |> Repo.one
   end
 
   def name_with_adjective(name, nil), do: name
