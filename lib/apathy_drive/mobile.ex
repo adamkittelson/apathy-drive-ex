@@ -1,11 +1,9 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, World, Match}
+  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, World, Match, Class}
   use GenServer
   use ApathyDrive.Web, :model
   import Systems.Text
   import TimerManager, only: [seconds: 1]
-
-  @unity_hp_regen_bonus 100
 
   schema "mobiles" do
     belongs_to :room, Room
@@ -140,7 +138,7 @@ defmodule ApathyDrive.Mobile do
 
     if mobile.level < level do
       send_scroll mobile, "<p>You fall to level #{mobile.level}!"
-      ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity:mobiles", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
+      ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity:mobiles", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> descends to level #{mobile.level}!</p>"})
     end
 
     mobile
@@ -560,9 +558,8 @@ defmodule ApathyDrive.Mobile do
 
       if mobile.unity do
         ApathyDrive.PubSub.subscribe(self, "#{mobile.unity}-unity:mobiles")
+        mobile = TimerManager.send_every(mobile, {:unify_room,  60_000, :unify_room})
       end
-
-      ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spawned_at}:spawned_monsters")
 
       send(self, :notify_presence)
 
@@ -605,8 +602,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
-      |> move_after()
-      |> Systems.Effect.add(%{"hp_regen" => @unity_hp_regen_bonus})
+      |> TimerManager.send_every({:unify_room,  60_000, :unify_room})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -974,6 +970,14 @@ defmodule ApathyDrive.Mobile do
     |> Repo.save!
   end
 
+  defp unify_room(mobile, unity, essence) do
+    essence_to_distribute = div(essence, 100)
+
+    Room.add_essence_from_mobile({:global, :"room_#{mobile.room_id}"}, self(), unity, essence_to_distribute)
+
+    add_experience(mobile, -essence_to_distribute)
+  end
+
   defp jitter(time) do
     time
     |> :rand.uniform
@@ -1334,35 +1338,10 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_cast({:add_experience, exp}, %Mobile{spirit: nil, experience: _experience} = mobile) do
+  def handle_cast({:add_experience, exp}, %Mobile{} = mobile) do
     mobile = add_experience(mobile, exp)
 
     {:noreply, mobile}
-  end
-
-  def handle_cast({:add_experience, exp}, %Mobile{spirit: spirit} = mobile) do
-    new_spirit =
-      spirit
-      |> Spirit.add_experience(exp)
-
-    if new_spirit.level > spirit.level do
-      mobile = mobile
-               |> Map.put(:spirit, new_spirit)
-               |> Map.put(:level, new_spirit.level)
-               |> set_abilities
-               |> set_max_mana
-               |> set_max_hp
-
-      send_scroll(mobile, "<p>You've advanced to level #{new_spirit.level}!</p>")
-
-      {:noreply, mobile}
-    else
-      mobile =
-        mobile
-        |> Map.put(:spirit, new_spirit)
-
-      {:noreply, mobile}
-    end
   end
 
   def handle_cast({:construct_item, item_name}, mobile) do
@@ -1717,6 +1696,14 @@ defmodule ApathyDrive.Mobile do
     notify_presence(mobile)
 
     {:noreply, mobile}
+  end
+
+  def handle_info(:unify_room, %Mobile{spirit: nil, unity: unity, experience: essence} = mobile) when unity in ["demon", "angel"] do
+    {:noreply, unify_room(mobile, unity, essence)}
+  end
+
+  def handle_info(:unify_room, %Mobile{spirit: %Spirit{class: %Class{name: class}}, experience: essence} = mobile) when class in ["Demon", "Angel"] do
+    {:noreply, unify_room(mobile, String.downcase(class), essence)}
   end
 
   def handle_info({:monster_present, %{} = intruder_data}, %Mobile{spirit: nil} = mobile) do

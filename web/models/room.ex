@@ -49,10 +49,6 @@ defmodule Room do
       room = %{room | room_unity: room_unity}
     end
 
-    if room.room_unity.unity do
-      ApathyDrive.PubSub.subscribe(self, "#{room.room_unity.unity}-unity:rooms")
-    end
-
     PubSub.subscribe(self, "rooms")
     PubSub.subscribe(self, "rooms:#{room.id}")
 
@@ -60,6 +56,8 @@ defmodule Room do
     |> Enum.each(fn(room_exit) ->
          PubSub.subscribe(self, "rooms:#{room_exit["destination"]}:adjacent")
        end)
+
+    load_present_mobiles(self())
 
     if room.lair_size && Enum.any?(ApathyDrive.LairMonster.monsters_template_ids(id)) do
       send(self, :spawn_monsters)
@@ -89,6 +87,12 @@ defmodule Room do
        end)
     |> Enum.sum
     |> div(length(lair_monsters))
+  end
+
+  def save!(%Room{room_unity: room_unity} = room) do
+    room
+    |> Map.put(:room_unity, Repo.save!(room_unity))
+    |> Repo.save!
   end
 
   def changeset(%Room{} = room, params \\ :empty) do
@@ -143,6 +147,14 @@ defmodule Room do
 
   def all do
     PubSub.subscribers("rooms")
+  end
+
+  def load_present_mobiles(room) do
+    GenServer.cast(room, :load_present_mobiles)
+  end
+
+  def add_essence_from_mobile(room, mobile, unity, essence) do
+    GenServer.cast(room, {:add_essence_from_mobile, mobile, unity, essence})
   end
 
   def ask(room, asker, target, question) do
@@ -385,13 +397,18 @@ defmodule Room do
   def sound_direction("down"),    do: "below you"
   def sound_direction(direction), do: "to the #{direction}"
 
-  def spawned_monsters(room_id) when is_integer(room_id), do: PubSub.subscribers("rooms:#{room_id}:spawned_monsters")
-  def spawned_monsters(room),   do: PubSub.subscribers("rooms:#{World.room(room).id}:spawned_monsters")
+  def spawned_monster_count(room_id) do
+    ApathyDrive.Mobile
+    |> where(spawned_at: ^room_id)
+    |> select([m], count(m.id))
+    |> Repo.one
+  end
 
-  def turn_spawned_monsters(%Room{id: room_id}, unity, essence) do
-    room_id
-    |> spawned_monsters
-    |> Enum.each(&(Mobile.turn(&1, unity, essence)))
+  def mobiles_to_load(room_id) do
+    ApathyDrive.Mobile
+    |> where(room_id: ^room_id)
+    |> select([m], m.id)
+    |> Repo.all
   end
 
   # Value functions
@@ -545,7 +562,7 @@ defmodule Room do
         room =
           room
           |> Map.put(:items, List.delete(room.items, actual_item.item))
-          |> Repo.save!
+          |> save!
         {:reply, {:ok, actual_item.item}, room}
       true ->
         {:reply, :not_found, room}
@@ -565,6 +582,27 @@ defmodule Room do
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast(:load_present_mobiles, room) do
+    room.id
+    |> mobiles_to_load()
+    |> Enum.each(&ApathyDrive.Mobile.load/1)
+    {:noreply, room}
+  end
+
+  def handle_cast({:add_essence_from_mobile, mobile, unity, essence}, %Room{} = room) when unity in ["angel", "demon"] do
+    room = update_in room.room_unity.essences[unity], &(&1 + essence)
+
+    essence_to_send_back = div(room.room_unity.essences[unity], 100)
+
+    room = update_in(room.room_unity.essences[unity], &(&1 - essence_to_send_back))
+           |> set_unity
+           |> save!
+
+    Mobile.add_experience(mobile, essence_to_send_back)
+
+    {:noreply, room}
   end
 
   def handle_cast({:ask, asker, target, question}, room) do
@@ -699,56 +737,10 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_cast({:purify, amount}, %Room{room_unity: nil} = room) do
-    room_unity =
-      room
-      |> build_assoc(:room_unity, unity: "angel", essences: %{"angel" => amount})
-      |> Repo.save!
-
-    room = %{room | room_unity: room_unity}
-
-    ApathyDrive.PubSub.subscribe(self, "angel-unity:rooms")
-    #turn_spawned_monsters(room, "angel", essence(room))
-    send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
-
-    {:noreply, room}
-  end
-  def handle_cast({:purify, amount}, %Room{room_unity: room_unity} = room) do
-    angel = Map.get(room_unity.essences, "angel", 0)
-    demon = Map.get(room_unity.essences, "demon", 0)
-
-    essences =
-      room_unity.essences
-      |> Map.put("angel", angel + amount)
-      |> Map.put("demon", max(0, demon - amount))
-
-    room_unity = Map.put(room_unity, :essences, essences)
-
-    cond do
-      angel > demon ->
-        send_scroll(room, "<p><span class='white'>The aura of benevolence here grows stronger.</span></p>")
-        room = %{room | room_unity: Repo.save!(room_unity)}
-        {:noreply, room}
-      demon > angel + amount ->
-        send_scroll(room, "<p><span class='dark-red'>The malevolent aura here weakens.</span></p>")
-        room = %{room | room_unity: Repo.save!(room_unity)}
-        {:noreply, room}
-      (angel + amount) >= demon ->
-        send_scroll(room, "<p><span class='dark-red'>The malevolent aura here dissipates.</span></p>")
-        send_scroll(room, "<p><span class='white'>A benevolent aura settles over the area.</span></p>")
-        ApathyDrive.PubSub.subscribe(self, "angel-unity:rooms")
-        ApathyDrive.PubSub.unsubscribe(self, "demon-unity:rooms")
-#        turn_spawned_monsters(room, "angel", essence(room))
-        room_unity = Map.put(room_unity, :unity, "angel")
-        room = %{room | room_unity: Repo.save!(room_unity)}
-        {:noreply, room}
-    end
-  end
-
   def handle_cast({:add_item, item}, %Room{items: items} = room) do
     room =
       put_in(room.items, [item | items])
-      |> Repo.save!
+      |> save!
 
     {:noreply, room}
   end
@@ -756,7 +748,7 @@ defmodule Room do
   def handle_cast({:add_items, new_items}, %Room{items: items} = room) do
     room =
       put_in(room.items, new_items ++ items)
-      |> Repo.save!
+      |> save!
 
     {:noreply, room}
   end
@@ -872,7 +864,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info(:spread_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences} = room_unity} = room) do
+  def handle_info(:spread_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
     essences =
       exits
       |> Enum.reduce(essences, fn
@@ -900,15 +892,14 @@ defmodule Room do
              updated_essence
          end)
 
-    room_unity =
-      room_unity
-      |> Map.put(:essences, essences)
-      |> Repo.save!
+    room = put_in(room.room_unity.essences, essences)
+           |> set_unity
+           |> save!
 
-    {:noreply, Map.put(room, :room_unity, room_unity)}
+    {:noreply, room}
   end
 
-  def handle_info({:spread_essence, distribution}, %Room{room_unity: %RoomUnity{essences: essences} = unity} = room) do
+  def handle_info({:spread_essence, distribution}, %Room{room_unity: %RoomUnity{essences: essences}} = room) do
     updated_essences =
       Enum.reduce(distribution, essences, fn({unity, essence}, updated_essences) ->
         Map.put(updated_essences, unity, updated_essences[unity] + essence)
@@ -918,12 +909,11 @@ defmodule Room do
       updated_essences = Map.put(updated_essences, "default", default)
     end
 
-    unity =
-      unity
-      |> Map.put(:essences, updated_essences)
-      |> Repo.save!
+    room = put_in(room.room_unity.essences, updated_essences)
+           |> set_unity
+           |> save!
 
-    {:noreply, Map.put(room, :room_unity, unity)}
+    {:noreply, room}
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
@@ -971,52 +961,22 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_info({:add_essence, amount}, %Room{room_unity: room_unity} = room) when amount > 0 do
-    updated_essence =
-      room_unity.essences
-      |> Enum.reduce(%{}, fn({unity, total}, essences) ->
-           if unity == room_unity.unity do
-             Map.put(essences, unity, total + amount)
-           else
-             Map.put(essences, unity, max(0, total - amount))
-           end
-         end)
-
-    room_unity =
-      room_unity
-      |> Map.put(:essences, updated_essence)
-      |> Repo.save!
-
-    room = Map.put(room, :room_unity, room_unity)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:add_essence, amount}, %Room{room_unity: room_unity} = room) when amount < 0 do
-    updated_essence =
-      room_unity.essences
-      |> Enum.reduce(%{}, fn({unity, total}, essences) ->
-           if unity != room_unity.unity && room_unity.essences[unity] > room_unity.essences[room_unity.unity] do
-             essences
-             |> Map.put(unity, max(0, total + amount * 2))
-             |> Map.put(room_unity.unity, essences[room_unity.unity] - amount * 2)
-           else
-             Map.put(essences, unity, max(0, total + amount))
-           end
-         end)
-
-    room_unity =
-      room_unity
-      |> Map.put(:essences, updated_essence)
-      |> Repo.save!
-
-    room = Map.put(room, :room_unity, room_unity)
-
-    {:noreply, room}
-  end
-
   def handle_info(_message, room) do
     {:noreply, room}
+  end
+
+  defp set_unity(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
+    unity =
+      essences
+      |> Map.keys
+      |> Enum.sort_by(&Map.get(essences, &1, 0), &>=/2)
+      |> List.first
+
+    if unity == "default" || Map.get(essences, unity) == 0 do
+      put_in room.room_unity.unity, nil
+    else
+      put_in room.room_unity.unity, unity
+    end
   end
 
 end

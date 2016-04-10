@@ -15,7 +15,7 @@ defmodule ApathyDrive.Command do
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
      Commands.Possess, Commands.Protection, Commands.Remove,
      Commands.Say, Commands.Score, Commands.Search,
-     Commands.Unpossess, Commands.Wear, Commands.Who, Commands.Turn, Commands.Purify]
+     Commands.Unpossess, Commands.Wear, Commands.Who, Commands.Turn]
   end
 
   def execute(%Mobile{room_id: room_id}, command, arguments) do

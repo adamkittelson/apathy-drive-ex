@@ -19,7 +19,7 @@ defmodule ApathyDrive.Commands.Absorb do
         Repo.save!(mobile.spirit)
 
         exp = ApathyDrive.Item.deconstruction_experience(item)
-        Mobile.send_scroll(mobile, "<p>You disintegrate the #{name} and absorb #{exp} essence.</p>")
+        Mobile.send_scroll(mobile, "<p>You disintegrate the #{item["name"]} and absorb #{exp} essence.</p>")
         Mobile.add_experience(mobile, exp)
     end
   end

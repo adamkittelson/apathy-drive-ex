@@ -55,7 +55,6 @@ defmodule ApathyDrive.Commands.Possess do
       ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
       ApathyDrive.PubSub.subscribe(self, "chat:gossip")
       ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
-      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spawned_at}:spawned_monsters")
 
       mobile =
         mobile

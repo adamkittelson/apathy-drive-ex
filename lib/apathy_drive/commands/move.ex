@@ -7,7 +7,7 @@ defmodule ApathyDrive.Commands.Move do
     execute(room, mobile, room_exit, nil)
   end
 
-  def execute(%Room{}, mobile, %{"kind" => "Trap"} = room_exit, last_room) do
+  def execute(%Room{}, mobile, %{"kind" => kind} = room_exit, last_room) when kind in ["Trap", "Cast"] do
     Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"), last_room)
   end
 
