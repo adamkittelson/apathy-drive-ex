@@ -558,7 +558,7 @@ defmodule ApathyDrive.Mobile do
 
       if mobile.unity do
         ApathyDrive.PubSub.subscribe(self, "#{mobile.unity}-unity:mobiles")
-        mobile = TimerManager.send_every(mobile, {:unify_room,  60_000, :unify_room})
+        mobile = TimerManager.send_every(mobile, {:unify,  60_000, :unify})
       end
 
       send(self, :notify_presence)
@@ -602,7 +602,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
-      |> TimerManager.send_every({:unify_room,  60_000, :unify_room})
+      |> TimerManager.send_every({:unify,  60_000, :unify})
 
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -970,12 +970,13 @@ defmodule ApathyDrive.Mobile do
     |> Repo.save!
   end
 
-  defp unify_room(mobile, unity, essence) do
+  defp unify(mobile, unity, essence) do
     essence_to_distribute = div(essence, 100)
 
     Room.add_essence_from_mobile({:global, :"room_#{mobile.room_id}"}, self(), unity, essence_to_distribute)
+    ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
 
-    add_experience(mobile, -essence_to_distribute)
+    add_experience(mobile, -(essence_to_distribute * 2))
   end
 
   defp jitter(time) do
@@ -1698,12 +1699,12 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info(:unify_room, %Mobile{spirit: nil, unity: unity, experience: essence} = mobile) when unity in ["demon", "angel"] do
-    {:noreply, unify_room(mobile, unity, essence)}
+  def handle_info(:unify, %Mobile{spirit: nil, unity: unity, experience: essence} = mobile) when unity in ["demon", "angel"] do
+    {:noreply, unify(mobile, unity, essence)}
   end
 
-  def handle_info(:unify_room, %Mobile{spirit: %Spirit{class: %Class{name: class}}, experience: essence} = mobile) when class in ["Demon", "Angel"] do
-    {:noreply, unify_room(mobile, String.downcase(class), essence)}
+  def handle_info(:unify, %Mobile{spirit: %Spirit{class: %Class{name: class}}, experience: essence} = mobile) when class in ["Demon", "Angel"] do
+    {:noreply, unify(mobile, String.downcase(class), essence)}
   end
 
   def handle_info({:monster_present, %{} = intruder_data}, %Mobile{spirit: nil} = mobile) do
