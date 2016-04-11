@@ -181,6 +181,14 @@ defmodule Room do
     GenServer.cast(room, {:bash, mobile, direction})
   end
 
+  def close(room, mobile, direction) do
+    GenServer.cast(room, {:close, mobile, direction})
+  end
+
+  def mirror_close(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_close, mirror_room_id, room_exit})
+  end
+
   def mirror_bash(room, mirror_room_id, room_exit) do
     GenServer.cast(room, {:mirror_bash, mirror_room_id, room_exit})
   end
@@ -439,9 +447,6 @@ defmodule Room do
     ApathyDrive.PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, html}
   end
 
-  def open!(room, direction) when is_pid(room) do
-    GenServer.call(room, {:open, direction})
-  end
   def open!(%Room{} = room, direction) do
     if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
       Systems.Effect.add(room, %{open: direction}, open_duration)
@@ -458,9 +463,6 @@ defmodule Room do
     end
   end
 
-  def close!(room, direction) when is_pid(room) do
-    GenServer.call(room, {:close, direction})
-  end
   def close!(%Room{effects: effects} = room, direction) do
     room = effects
            |> Map.keys
@@ -485,9 +487,6 @@ defmodule Room do
     unlock!(room, direction)
   end
 
-  def lock!(room, direction) when is_pid(room) do
-    GenServer.call(room, {:lock, direction})
-  end
   def lock!(%Room{effects: effects} = room, direction) do
     effects
     |> Map.keys
@@ -577,16 +576,6 @@ defmodule Room do
     end
   end
 
-  def handle_call({:open, direction}, _from, room) do
-    room = open!(room, direction)
-    {:reply, room, room}
-  end
-
-  def handle_call({:close, direction}, _from, room) do
-    room = close!(room, direction)
-    {:reply, room, room}
-  end
-
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, room}
@@ -642,6 +631,17 @@ defmodule Room do
     {:noreply, room}
   end
 
+  def handle_cast({:mirror_close, mirror_room_id, room_exit}, %Room{id: id} = room) do
+    mirror_exit = mirror_exit(room, mirror_room_id)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just closed!</p>"}
+      {:noreply, Room.close!(room, mirror_exit["direction"])}
+    else
+      {:noreply, room}
+    end
+  end
+
   def handle_cast({:mirror_bash, mirror_room_id, room_exit}, %Room{id: id} = room) do
     mirror_exit = mirror_exit(room, mirror_room_id)
 
@@ -664,6 +664,11 @@ defmodule Room do
 
   def handle_cast({:bash, mobile, direction}, room) do
     room = Commands.Bash.execute(room, mobile, direction)
+    {:noreply, room}
+  end
+
+  def handle_cast({:close, mobile, direction}, room) do
+    room = Commands.Close.execute(room, mobile, direction)
     {:noreply, room}
   end
 

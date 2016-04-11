@@ -78,6 +78,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:ask, target, question})
   end
 
+  def close(mobile, arguments) do
+    GenServer.cast(mobile, {:close, arguments})
+  end
+
   def bash(mobile, arguments) do
     GenServer.cast(mobile, {:bash, arguments})
   end
@@ -1169,6 +1173,11 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_cast({:close, args}, mobile) do
+    Commands.Close.execute(mobile, args)
+    {:noreply, mobile}
+  end
+
   def handle_cast({:execute_room_command, scripts}, mobile) do
     unless confused(mobile) do
       scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
@@ -1819,6 +1828,16 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do
     send_scroll mobile, message
+    {:noreply, mobile}
+  end
+
+  def handle_info({:door_closed, %{closer: pid, type: type}}, mobile) when pid == self() do
+    Mobile.send_scroll(mobile, "<p>You closed the #{type}.</p>")
+    {:noreply, mobile}
+  end
+
+  def handle_info({:door_closed, %{name: name, type: type, description: description}}, mobile) do
+    Mobile.send_scroll(mobile, "<p>You see #{name} close the #{type} #{description}.</p>")
     {:noreply, mobile}
   end
 
