@@ -176,25 +176,15 @@ defmodule MonsterTemplate do
       spawned_at: room.id
     }
 
-    if monster.unity do
-      monster =
-        monster
-        |> Map.put(:experience, trunc(ApathyDrive.Level.exp_at_level(monster_template.level) * 0.9) |> max(100))
-
-      monster =
-        monster
-        |> Map.put(:level, ApathyDrive.Level.level_at_exp(monster.experience))
-        |> Map.put(:alignment, unity_alignment(monster.unity))
-    else
-      monster =
-        monster
-        |> Map.put(:level, monster_template.level)
-        |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level) |> max(100))
-    end
-
     monster =
       monster
+      |> Map.put(:level, monster_template.level)
+      |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level) |> max(100))
       |> Map.put(:keywords, String.split(monster.name))
+
+    if monster.unity do
+      monster = Map.put(monster, :alignment, unity_alignment(monster.unity))
+    end
 
     monster = Map.merge(%Mobile{}, monster)
 

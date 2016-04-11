@@ -161,6 +161,10 @@ defmodule Room do
     GenServer.cast(room, {:ask, asker, target, question})
   end
 
+  def attack(room, attacker, target) do
+    GenServer.cast(room, {:attacker, attacker, target})
+  end
+
   def possess(room, query, spirit_id, class_name, socket, possessor) do
     GenServer.cast(room, {:possess, query, spirit_id, class_name, socket, possessor})
   end
@@ -602,6 +606,11 @@ defmodule Room do
 
     Mobile.add_experience(mobile, essence_to_send_back)
 
+    {:noreply, room}
+  end
+
+  def handle_cast({:attacker, attacker, target}, room) do
+    Commands.Attack.execute(room, attacker, target)
     {:noreply, room}
   end
 

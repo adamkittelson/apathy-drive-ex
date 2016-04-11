@@ -1,19 +1,32 @@
 defmodule ApathyDrive.Commands.Attack do
   use ApathyDrive.Command
-  alias ApathyDrive.{PubSub, Match}
+  alias ApathyDrive.Mobile
 
   def keywords, do: ["a", "attack", "k", "kill"]
 
   def execute(mobile, []) do
     Mobile.send_scroll(mobile, "<p>Attack whom?</p>")
   end
-  def execute(mobile, arguments) do
-    target = find_mobile_in_room(mobile, Enum.join(arguments, " "))
 
-    attack(mobile, target)
+  def execute(mobile, arguments) when is_pid(mobile) do
+    target =
+      arguments
+      |> Enum.join(" ")
+      |> String.downcase
+
+    Mobile.attack(mobile, target)
   end
 
-  def attack(mobile, nil) do
+  def execute(%Mobile{room_id: room_id}, query) do
+    Room.attack({:global, :"room_#{room_id}"}, self(), query)
+  end
+
+  def execute(%Room{} = room, mobile, query) do
+    target = Room.find_mobile_in_room(room, mobile, query)
+    attack(mobile, target && target.pid)
+  end
+
+  def attack(mobile, nil) when is_pid(mobile) do
     Mobile.send_scroll(mobile, "<p>Attack whom?</p>")
   end
 
@@ -21,18 +34,15 @@ defmodule ApathyDrive.Commands.Attack do
     Mobile.send_scroll(mobile, "<p>Attack yourself?</p>")
   end
 
-  def attack(mobile, target) do
-    case Mobile.attack(mobile, target) do
-      :ok ->
-        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
-      {:error, error} ->
-        Mobile.send_scroll(mobile, "<p>#{error}</p>")
-    end
+  def attack(mobile, target) when is_pid(mobile) do
+    Mobile.attack(mobile, target)
   end
 
-  defp find_mobile_in_room(mobile, string) do
-    PubSub.subscribers("rooms:#{Mobile.room_id(mobile)}:mobiles")
-    |> Match.one(:name_contains, string)
+  def attack(%Mobile{} = mobile, target) do
+    mobile
+    |> Mobile.set_attack_target(target)
+    |> Mobile.initiate_combat
+    |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
   end
 
 end

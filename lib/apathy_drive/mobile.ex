@@ -643,7 +643,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def attack(mobile, target) do
-    GenServer.call(mobile, {:attack, target})
+    GenServer.cast(mobile, {:attack, target})
   end
 
   def possess(mobile, query) do
@@ -889,7 +889,7 @@ defmodule ApathyDrive.Mobile do
     |> Room.mobiles
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
          threat = Map.get(hate, potential_target, 0)
-         if threat > 0 and !(potential_target in ApathyDrive.PubSub.subscribers("#{mobile.unity}-unity:mobiles")) do
+         if threat > 0 do
            Map.put(targets, threat, potential_target)
          else
            targets
@@ -1057,15 +1057,6 @@ defmodule ApathyDrive.Mobile do
        end)
   end
 
-  def handle_call({:attack, target}, _from, mobile) do
-    mobile =
-      mobile
-      |> set_attack_target(target)
-      |> initiate_combat
-
-    {:reply, :ok, mobile}
-  end
-
   def handle_call(:unpossess, _from, %Mobile{monster_template_id: nil} = mobile) do
     {:reply, {:error, "You aren't possessing anything."}, mobile}
   end
@@ -1119,14 +1110,17 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
+  def handle_cast({:attack, target}, mobile) when is_pid(target) do
+    {:noreply, Commands.Attack.attack(mobile, target)}
+  end
 
-  def handle_cast({:ask, target, question}, mobile) do
-    Commands.Ask.execute(mobile, target, question)
+  def handle_cast({:attack, target}, mobile) do
+    Commands.Attack.execute(mobile, target)
     {:noreply, mobile}
   end
 
-  def handle_cast(:purify_room, mobile) do
-    Commands.Purify.execute(mobile)
+  def handle_cast({:ask, target, question}, mobile) do
+    Commands.Ask.execute(mobile, target, question)
     {:noreply, mobile}
   end
 
