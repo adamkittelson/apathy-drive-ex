@@ -53,18 +53,16 @@ defmodule ApathyDrive.Commands.Bash do
         mirror_bash!(room_exit, room.id)
         bash!(room, data)
       true ->
-        Mobile.send_scroll(mobile, "<p>Your attempts to bash through fail!</p>")
-        PubSub.subscribers("rooms:#{Room.id(room)}:mobiles", [mobile])
-        |> Enum.each(&(Mobile.send_scroll(&1, "<p>You see #{Mobile.name(mobile)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>")))
+        data = %{
+          basher: mobile,
+          name: mobile_name,
+          type: name,
+          description: ApathyDrive.Exit.direction_description(room_exit["direction"]),
+          direction: room_exit["direction"]
+        }
 
-        mirror_room = Room.find(room_exit["destination"])
-        mirror_exit = Room.mirror_exit(mirror_room, Room.id(room))
-
-        if mirror_exit["kind"] == room_exit["kind"] do
-          PubSub.subscribers("rooms:#{room_exit["destination"]}:mobiles")
-          |> Enum.each(&(Mobile.send_scroll(&1, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>")))
-
-        end
+        mirror_bash_fail!(room_exit, room.id)
+        bash_fail!(room, data)
     end
   end
 
@@ -86,6 +84,16 @@ defmodule ApathyDrive.Commands.Bash do
     destination
     |> Room.find
     |> Room.mirror_bash(room_id, room_exit)
+  end
+
+  defp bash_fail!(%Room{id: id}, data) do
+    PubSub.broadcast! "rooms:#{id}:mobiles", {:door_bash_failed, data}
+  end
+
+  defp mirror_bash_fail!(%{"destination" => destination} = room_exit, room_id) do
+    destination
+    |> Room.find
+    |> Room.mirror_bash_fail(room_id, room_exit)
   end
 
 end

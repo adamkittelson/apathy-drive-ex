@@ -185,6 +185,10 @@ defmodule Room do
     GenServer.cast(room, {:mirror_bash, mirror_room_id, room_exit})
   end
 
+  def mirror_bash_fail(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_bash_fail, mirror_room_id, room_exit})
+  end
+
   def execute_command(room, mobile, command, arguments) do
     GenServer.cast(room, {:execute_command, mobile, command, arguments})
   end
@@ -647,6 +651,15 @@ defmodule Room do
     else
       {:noreply, room}
     end
+  end
+
+  def handle_cast({:mirror_bash_fail, mirror_room_id, room_exit}, %Room{id: id} = room) do
+    mirror_exit = mirror_exit(room, mirror_room_id)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>"}
+    end
+    {:noreply, room}
   end
 
   def handle_cast({:bash, mobile, direction}, room) do

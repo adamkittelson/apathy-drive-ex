@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, World, Match, Class}
+  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, Class}
   use GenServer
   use ApathyDrive.Web, :model
   import Systems.Text
@@ -221,12 +221,6 @@ defmodule ApathyDrive.Mobile do
     "<span class='magenta'>#{name}</span>"
   end
 
-  def effects(mobile) do
-    mobile
-    |> World.mobile
-    |> Map.get(:effects)
-  end
-
   def look(mobile, args \\ []) do
     GenServer.cast(mobile, {:look, args})
   end
@@ -411,11 +405,6 @@ defmodule ApathyDrive.Mobile do
     true
   end
 
-  def silenced(mobile) when is_pid(mobile) do
-    mobile
-    |> World.mobile
-    |> silenced()
-  end
   def silenced(%Mobile{effects: effects} = mobile, %{"mana_cost" => cost}) when cost > 0 do
     effects
     |> Map.values
@@ -1840,6 +1829,16 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:door_bashed, %{name: name, type: type, description: description}}, mobile) do
     Mobile.send_scroll(mobile, "<p>You see #{name} bash open the #{type} #{description}.</p>")
+    {:noreply, mobile}
+  end
+
+  def handle_info({:door_bash_failed, %{basher: pid}}, mobile) when pid == self() do
+    Mobile.send_scroll(mobile, "<p>Your attempts to bash through fail!</p>")
+    {:noreply, mobile}
+  end
+
+  def handle_info({:door_bash_failed, %{name: name, type: type, description: description}}, mobile) do
+    Mobile.send_scroll(mobile, "<p>You see #{name} attempt to bash open the #{type} #{description}.</p>")
     {:noreply, mobile}
   end
 
