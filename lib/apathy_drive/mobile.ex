@@ -217,27 +217,6 @@ defmodule ApathyDrive.Mobile do
     "<span class='magenta'>#{name}</span>"
   end
 
-  def experience(mobile) do
-    mobile =
-      mobile
-      |> World.mobile
-
-    mobile.experience || mobile.spirit.experience
-  end
-
-  def turn_data(mobile) do
-    mobile =
-      mobile
-      |> World.mobile
-
-    %{
-      unity: mobile.spirit.unity,
-      essence: mobile.spirit.experience,
-      alignment: mobile.spirit.class.alignment,
-      turner: "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>"
-    }
-  end
-
   def say_data(mobile) do
     mobile =
       mobile
