@@ -66,6 +66,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.start_link(__MODULE__, id, opts)
   end
 
+  def say(mobile, message) do
+    GenServer.cast(mobile, {:say, message})
+  end
+
   def gossip(mobile, message) do
     GenServer.cast(mobile, {:gossip, message})
   end
@@ -215,14 +219,6 @@ defmodule ApathyDrive.Mobile do
   end
   def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "evil"}}}) do
     "<span class='magenta'>#{name}</span>"
-  end
-
-  def say_data(mobile) do
-    mobile =
-      mobile
-      |> World.mobile
-
-    %{name: mobile.name, unity: mobile.spirit && mobile.spirit.unity || mobile.unity}
   end
 
   def effects(mobile) do
@@ -1088,6 +1084,11 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:attack, target}, mobile) do
     Commands.Attack.execute(mobile, target)
+    {:noreply, mobile}
+  end
+
+  def handle_cast({:say, message}, mobile) do
+    Commands.Say.execute(mobile, message)
     {:noreply, mobile}
   end
 
