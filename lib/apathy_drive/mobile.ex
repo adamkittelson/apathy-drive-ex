@@ -66,6 +66,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.start_link(__MODULE__, id, opts)
   end
 
+  def gossip(mobile, message) do
+    GenServer.cast(mobile, {:gossip, message})
+  end
+
   def ask(mobile, target, question) do
     GenServer.cast(mobile, {:ask, target, question})
   end
@@ -156,24 +160,18 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, :display_abilities)
   end
 
-  def enter_message(pid) do
-    pid
-    |> World.mobile
-    |> Map.get(:enter_message)
-  end
-
-  def exit_message(pid) do
-    pid
-    |> World.mobile
-    |> Map.get(:exit_message)
-  end
-
   def display_cooldowns(pid) do
     GenServer.cast(pid, :display_cooldowns)
   end
 
   def show_score(pid) do
     GenServer.cast(pid, :show_score)
+  end
+
+  def sanitize(message) do
+    {:safe, message} = Phoenix.HTML.html_escape(message)
+
+    message
   end
 
   def score_data(mobile) do
@@ -209,11 +207,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, {:class_chat, message})
   end
 
-  def aligned_spirit_name(mobile) when is_pid(mobile) do
-    mobile
-    |> World.mobile
-    |> aligned_spirit_name()
-  end
   def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "good"}}}) do
     "<span class='white'>#{name}</span>"
   end
@@ -1116,6 +1109,11 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:attack, target}, mobile) do
     Commands.Attack.execute(mobile, target)
+    {:noreply, mobile}
+  end
+
+  def handle_cast({:gossip, message}, mobile) do
+    Commands.Gossip.execute(mobile, message)
     {:noreply, mobile}
   end
 
