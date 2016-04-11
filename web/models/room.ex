@@ -181,6 +181,14 @@ defmodule Room do
     GenServer.cast(room, {:bash, mobile, direction})
   end
 
+  def open(room, mobile, direction) do
+    GenServer.cast(room, {:open, mobile, direction})
+  end
+
+  def mirror_open(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_open, mirror_room_id, room_exit})
+  end
+
   def close(room, mobile, direction) do
     GenServer.cast(room, {:close, mobile, direction})
   end
@@ -341,9 +349,7 @@ defmodule Room do
     GenServer.cast(room, {:auto_move, mobile, last_room})
   end
 
-  def unlocked?(room, direction) do
-    %Room{effects: effects} = World.room(room)
-
+  def unlocked?(%Room{effects: effects}, direction) do
     effects
     |> Map.values
     |> Enum.filter(fn(effect) ->
@@ -642,6 +648,17 @@ defmodule Room do
     end
   end
 
+  def handle_cast({:mirror_open, mirror_room_id, room_exit}, %Room{id: id} = room) do
+    mirror_exit = mirror_exit(room, mirror_room_id)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just opened!</p>"}
+      {:noreply, Room.open!(room, mirror_exit["direction"])}
+    else
+      {:noreply, room}
+    end
+  end
+
   def handle_cast({:mirror_bash, mirror_room_id, room_exit}, %Room{id: id} = room) do
     mirror_exit = mirror_exit(room, mirror_room_id)
 
@@ -669,6 +686,11 @@ defmodule Room do
 
   def handle_cast({:close, mobile, direction}, room) do
     room = Commands.Close.execute(room, mobile, direction)
+    {:noreply, room}
+  end
+
+  def handle_cast({:open, mobile, direction}, room) do
+    room = Commands.Open.execute(room, mobile, direction)
     {:noreply, room}
   end
 
