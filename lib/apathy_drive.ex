@@ -10,8 +10,7 @@ defmodule ApathyDrive do
       worker(ApathyDrive.Endpoint, []),
       worker(ApathyDrive.Repo, []),
       worker(ApathyDrive.Migrator, [], restart: :temporary),
-      worker(ApathyDrive.Unity, []),
-      worker(ApathyDrive.World, [])
+      worker(ApathyDrive.Unity, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

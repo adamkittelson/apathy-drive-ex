@@ -1,22 +1,16 @@
-defmodule Commands.Say do
+defmodule ApathyDrive.Commands.Say do
   use ApathyDrive.Command
 
   def keywords, do: ["say"]
 
-  def execute(mobile, arguments) do
-    message = sanitize(arguments)
-
-    ApathyDrive.PubSub.broadcast_from! mobile, "rooms:#{Mobile.room_id(mobile)}:mobiles", {:say, Mobile.say_data(mobile), message}
-
-    Mobile.send_scroll(mobile, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
+  def execute(mobile, arguments) when is_pid(mobile) do
+    Mobile.say(mobile, Enum.join(arguments, " "))
   end
 
-  def sanitize(arguments) do
-    {:safe, message} = arguments
-                       |> Enum.join(" ")
-                       |> Phoenix.HTML.html_escape
-
-    message
+  def execute(%Mobile{} = mobile, message) do
+    message = Mobile.sanitize(message)
+    ApathyDrive.PubSub.broadcast_from! self(), "rooms:#{mobile.room_id}:mobiles", {:say, %{name: mobile.name, unity: mobile.spirit && mobile.spirit.unity || mobile.unity}, message}
+    Mobile.send_scroll(mobile, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
   end
 
 end

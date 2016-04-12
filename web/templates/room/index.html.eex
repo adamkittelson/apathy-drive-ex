@@ -35,11 +35,11 @@
           <div class="title"><%= room.name %>
           </div>
           <div class="description"><%= room.description %></div>
-          <div class="items"><%= {:safe, Room.look_items(room)} %></div>
-          <%= {:safe, Room.look_mobiles(room)} %>
-          <div class="exits"><%= {:safe, Room.look_directions(room)} %></div>
-          <%= if Room.light_desc(room.light) do %>
-            <%= {:safe, Room.light_desc(room.light)} %>
+          <div class="items"><%= {:safe, ApathyDrive.Commands.Look.look_items(room)} %></div>
+          <%= {:safe, ApathyDrive.Commands.Look.look_mobiles(room)} %>
+          <div class="exits"><%= {:safe, ApathyDrive.Commands.Look.look_directions(room)} %></div>
+          <%= if ApathyDrive.Commands.Look.light_desc(room.light) do %>
+            <%= {:safe, ApathyDrive.Commands.Look.light_desc(room.light)} %>
           <% end %>
         </div>
       </td>

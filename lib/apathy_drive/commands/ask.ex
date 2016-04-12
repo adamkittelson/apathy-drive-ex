@@ -1,6 +1,5 @@
-defmodule Commands.Ask do
+defmodule ApathyDrive.Commands.Ask do
   use ApathyDrive.Command
-  alias ApathyDrive.{PubSub, World, Match}
 
   def keywords, do: ["ask"]
 
@@ -13,14 +12,23 @@ defmodule Commands.Ask do
   def execute(mobile, arguments) do
     [target | question] = arguments
 
-    target = find_mobile_in_room(mobile, target)
-
     question =
       question
       |> Enum.join(" ")
       |> String.downcase
 
-    ask(mobile, target, question)
+    Mobile.ask(mobile, target, question)
+  end
+
+  def execute(%Mobile{room_id: room_id}, query, question) do
+    room_id
+    |> Room.find
+    |> Room.ask(self(), query, question)
+  end
+
+  def execute(%Room{} = room, mobile, query, question) do
+    target = Room.find_mobile_in_room(room, mobile, query)
+    ask(mobile, target && target.pid, question)
   end
 
   def ask(mobile, nil, _question) do
@@ -32,18 +40,15 @@ defmodule Commands.Ask do
   end
 
   def ask(mobile, target, question) do
-    target = World.mobile(target)
+    Mobile.answer(target, mobile, question)
+  end
 
+  def answer(%Mobile{} = target, mobile, question) do
     if target.questions |> Map.keys |> Enum.member?(question) do
       Mobile.execute_script(mobile, target.questions[question])
     else
       Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{target.name} has nothing to tell you!</span></p>")
     end
-  end
-
-  defp find_mobile_in_room(mobile, string) do
-    PubSub.subscribers("rooms:#{Mobile.room_id(mobile)}:mobiles")
-    |> Match.one(:name_contains, string)
   end
 
 end

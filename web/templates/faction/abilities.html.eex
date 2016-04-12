@@ -20,7 +20,7 @@
           <td><%= ability.command %></td>
           <td><%= ability.kind %></td>
           <td><%= ability.properties["mana_cost"] %></td>
-          <td><%= Ability.scale_properties(%Monster{level: ability.level}, "duration", ability.properties["duration"]) || "-" %></td>
+          <td><%= Ability.scale_properties(%ApathyDrive.Mobile{level: ability.level}, "duration", ability.properties["duration"]) || "-" %></td>
         </tr>
         <tr>
           <td colspan="4"><%= ability.description %></td>

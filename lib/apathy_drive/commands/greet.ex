@@ -1,6 +1,6 @@
-defmodule Commands.Greet do
+defmodule ApathyDrive.Commands.Greet do
   use ApathyDrive.Command
-  alias ApathyDrive.{PubSub, World, Match}
+  alias ApathyDrive.{PubSub, Match}
 
   def keywords, do: ["greet"]
 
@@ -20,16 +20,24 @@ defmodule Commands.Greet do
     Mobile.send_scroll(mobile, "<p>Greet yourself?</p>")
   end
 
+  def greet(%Mobile{} = target, %{name: name, pid: greeter}) do
+    Mobile.send_scroll(greeter, "<p>You greet #{target.name}.</p>")
+    Mobile.send_scroll(target, "<p>#{name} greets you.</p>")
+
+    PubSub.subscribers("rooms:#{target.room_id}:mobiles", [greeter, self])
+    |> Enum.each(&(Mobile.send_scroll(&1, "<p>#{name} greets #{target.name}.</p>")))
+
+    unless target.spirit do
+      Mobile.send_scroll(greeter, target.greeting)
+    end
+  end
+
+  def greet(%Mobile{} = mobile, target) do
+    Mobile.greet(target, %{name: mobile.name, pid: self()})
+  end
+
   def greet(mobile, target) do
-    mob = World.mobile(target)
-    target_greeting = 
-      mob.greeting || "You greet #{mob.name}."
-
-    Mobile.send_scroll(target, "<p>#{Mobile.name(mobile)} greets you.</p>")
-    Mobile.send_scroll(mobile, "<p>#{target_greeting}</p>")
-
-    PubSub.subscribers("rooms:#{Mobile.room_id(mobile)}:mobiles", [mobile, target])
-    |> Enum.each(&(Mobile.send_scroll(&1, "<p>#{Mobile.name(mobile)} greets #{Mobile.name(target)}.</p>")))
+    Mobile.greet(mobile, target)
   end
 
   defp find_mobile_in_room(mobile, string) do

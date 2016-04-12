@@ -1,4 +1,4 @@
-defmodule Commands.Class do
+defmodule ApathyDrive.Commands.Class do
   use ApathyDrive.Command
 
   def keywords do

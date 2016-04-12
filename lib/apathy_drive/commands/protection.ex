@@ -1,4 +1,4 @@
-defmodule Commands.Protection do
+defmodule ApathyDrive.Commands.Protection do
   use ApathyDrive.Command
 
   @protection_levels %{
@@ -21,28 +21,23 @@ defmodule Commands.Protection do
 
   def keywords, do: ["protection"]
 
-  def execute(%Spirit{} = spirit, _arguments) do
-    spirit
-    |> Spirit.send_scroll("<p>You need a body to do that.</p>")
-  end
-
-  def execute(%Monster{} = monster, _arguments) do
+  def execute(%Mobile{} = mobile, _arguments) do
     title = "Average Protection by Damage Type"
 
-    monster
-    |> Monster.send_scroll("<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
-    |> Monster.send_scroll("<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
-    |> Monster.send_scroll("<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
-    |> Monster.send_scroll("<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
-    |> Monster.send_scroll("<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    mobile
+    |> Mobile.send_scroll("<p><span class='dark-blue'>+-------------------------------------------+</span></p>")
+    |> Mobile.send_scroll("<p><span class='dark-blue'>|</span> <span class='yellow'>#{String.ljust(title, 42)}</span><span class='dark-blue'>|</span></p>")
+    |> Mobile.send_scroll("<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    |> Mobile.send_scroll("<p><span class='dark-blue'>|</span> <span class='yellow'>Damage Type</span>     <span class='dark-blue'>|</span> <span class='yellow'>Protection Level</span>        <span class='dark-blue'>|</span></p>")
+    |> Mobile.send_scroll("<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
 
     ["ice", "fire", "stone", "lightning", "normal", "water", "poison"]
     |> Enum.each(fn(damage_type) ->
-       {color, protection} = Monster.protection(monster, damage_type)
+       {color, protection} = Mobile.protection(mobile, damage_type)
                              |> protection_level
-       Monster.send_scroll(monster, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
+       Mobile.send_scroll(mobile, "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.ljust(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.ljust(protection, 24)}</span><span class='dark-blue'>|</span></p>")
        end)
-    Monster.send_scroll(monster, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
+    Mobile.send_scroll(mobile, "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>")
   end
 
   defp protection_level(protection_amount) do

@@ -46,7 +46,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%{"fail_flag" => %{"failure_message" => message, "flag" => flag}}, monster, script) do
     if Components.Flags.has_flag?(monster, flag) do
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     else
       execute_script(script, monster)
     end
@@ -78,7 +78,7 @@ defmodule ApathyDrive.Script do
     if Components.Alignment.value(monster) <= amount do
       execute_script(script, monster)
     else
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     end
   end
 
@@ -142,32 +142,19 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"spawn_monster" => monster_template_id}, %Mobile{} = mobile, script) do
-    room =
-      mobile.room_id
-      |> Room.find
-
-    monster =
-      monster_template_id
-      |> MonsterTemplate.create_monster(World.room(room))
-      |> Mobile.load
-
-    Task.start fn ->
-      ApathyDrive.Exits.Normal.display_enter_message(room, monster)
-    end
+    mobile.room_id
+    |> Room.find
+    |> Room.create_monster(monster_template_id)
 
     execute_script(script, mobile)
   end
 
   def execute_instruction(%{"min_level" => %{"failure_message" => message, "level" => level}}, monster, script) do
     if Components.Level.value(monster) < level do
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     else
       execute_script(script, monster)
     end
-  end
-
-  def execute_instruction(%{"add_experience" => _exp}, %Monster{spirit: nil} = monster, script) do
-    execute_script(script, monster)
   end
 
   def execute_instruction(%{"add_experience" => exp}, %Mobile{spirit: %Spirit{} = spirit} = mobile, script) do

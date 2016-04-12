@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Mobile, Ability, Match}
+  alias ApathyDrive.{Commands, Mobile, Match}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -13,71 +13,42 @@ defmodule ApathyDrive.Command do
      Commands.Cooldowns, Commands.Drop, Commands.Experience, Commands.Forms,
      Commands.Get, Commands.Gossip, Commands.Greet,
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
-     Commands.Possess, Commands.Protection, Commands.Remove, Commands.Reroll,
-     Commands.Say, Commands.Score, Commands.Search, Commands.Spawn,
-     Commands.Unpossess, Commands.Wear, Commands.Who, Commands.Turn, Commands.Purify]
+     Commands.Possess, Commands.Protection, Commands.Remove,
+     Commands.Say, Commands.Score, Commands.Search,
+     Commands.Unpossess, Commands.Wear, Commands.Who]
   end
 
-  def execute(mobile, command, arguments) do
-    room =
-      mobile
-      |> Mobile.room_id
-      |> Room.find
+  def execute(%Mobile{room_id: room_id}, command, arguments) do
+    room_id
+    |> Room.find
+    |> Room.execute_command(self, command, arguments)
+  end
 
+  def execute(%Room{} = room, mobile, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
 
     cond do
       command in @directions ->
-        ApathyDrive.Exit.move(mobile, Room.direction(command))
+        Commands.Move.execute(room, mobile, command)
       scripts = Room.command(room, full_command) ->
-        cond do
-          Mobile.confused(mobile) ->
-            nil
-          true ->
-            scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
-
-            Mobile.execute_script(mobile, scripts)
-        end
+        Mobile.execute_room_command(mobile, scripts)
       command_exit = Room.command_exit(room, full_command) ->
-        cond do
-          Mobile.confused(mobile) ->
-            nil
-          Mobile.held(mobile) ->
-            nil
-          true ->
-            ApathyDrive.Exits.Command.move_via_command(room, mobile, command_exit, nil)
-        end
+        Commands.Move.execute(room, mobile, Map.put(command_exit, "kind", "Action"), nil)
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
-        cond do
-          Mobile.confused(mobile) ->
-            nil
-          true ->
-            ApathyDrive.Exits.RemoteAction.trigger_remote_action(room, mobile, remote_action_exit)
-        end
+        Mobile.trigger_remote_action(mobile, remote_action_exit)
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
-        cmd.module.execute(mobile, arguments)
+        case cmd do
+          %ApathyDrive.Command{name: "look"} ->
+            Mobile.look(mobile, arguments)
+          %ApathyDrive.Command{name: "search"} ->
+            Commands.Search.execute(room, mobile, arguments)
+          _ ->
+            cmd.module.execute(mobile, arguments)
+        end
       true ->
         Mobile.use_ability(mobile, command, arguments)
     end
   end
-
-  def select_ability([]),                     do: nil
-  def select_ability([%Ability{} = ability]), do: ability
-  def select_ability(abilities) do
-    if Enum.all?(abilities, fn(ability) -> Map.has_key?(ability.properties, "attack_chance") end) do
-      roll = :random.uniform(100)
-
-      abilities
-      |> Enum.sort_by(&(&1.properties["attack_chance"]))
-      |> Enum.find(fn(%Ability{properties: %{"attack_chance" => chance}}) ->
-           chance >= roll
-         end)
-    else
-      abilities
-      |> Enum.random
-    end
-  end
-
 
   defmacro __using__(_opts) do
     quote do

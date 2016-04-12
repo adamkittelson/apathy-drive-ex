@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Factions do
   use GenServer
-  import Ecto.Query
+  #import Ecto.Query
   alias ApathyDrive.TimerManager
 
   def start_link do

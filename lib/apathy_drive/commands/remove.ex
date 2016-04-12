@@ -1,4 +1,4 @@
-defmodule Commands.Remove do
+defmodule ApathyDrive.Commands.Remove do
   use ApathyDrive.Command
 
   def keywords, do: ["remove", "unequip", "unwield"]

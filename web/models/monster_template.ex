@@ -116,9 +116,11 @@ defmodule MonsterTemplate do
     count(monster_template) >= game_limit
   end
 
-  def count(%MonsterTemplate{} = monster_template) do
-    ApathyDrive.PubSub.subscribers("monster_templates:#{monster_template.id}:monsters")
-    |> Enum.count
+  def count(%MonsterTemplate{id: monster_template_id}) do
+    ApathyDrive.Mobile
+    |> where(monster_template_id: ^monster_template_id)
+    |> select([m], count(m.id))
+    |> Repo.one
   end
 
   def name_with_adjective(name, nil), do: name
@@ -174,25 +176,20 @@ defmodule MonsterTemplate do
       spawned_at: room.id
     }
 
+    monster = Map.put(monster, :keywords, String.split(monster.name))
+
     if monster.unity do
       monster =
         monster
-        |> Map.put(:experience, trunc(ApathyDrive.Level.exp_at_level(monster_template.level) * 0.9) |> max(100))
-
-      monster =
-        monster
-        |> Map.put(:level, ApathyDrive.Level.level_at_exp(monster.experience))
+        |> Map.put(:level, ApathyDrive.Level.level_at_exp(room.room_unity.essences[monster.unity]))
+        |> Map.put(:experience, room.room_unity.essences[monster.unity])
         |> Map.put(:alignment, unity_alignment(monster.unity))
     else
       monster =
         monster
         |> Map.put(:level, monster_template.level)
-        |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level) |> max(100))
+        |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level))
     end
-
-    monster =
-      monster
-      |> Map.put(:keywords, String.split(monster.name))
 
     monster = Map.merge(%Mobile{}, monster)
 

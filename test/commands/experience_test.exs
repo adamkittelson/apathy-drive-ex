@@ -1,5 +1,6 @@
-defmodule Commands.ExperienceTest do
+defmodule ApathyDrive.Commands.ExperienceTest do
   use ApathyDrive.ChannelCase
+  alias ApathyDrive.Commands
 
   setup do
     {:ok, spirit_1: test_mobile(%{level: 1, experience: 0}),

@@ -1,60 +1,53 @@
 defmodule ApathyDrive.Match do
-  alias ApathyDrive.World
 
-  def all(pids, :match_name, string) do
-    Enum.filter(pids, &(match_name(string, &1)))
+  def all(list, :match_name, string) do
+    Enum.filter(list, &(match_name(string, &1)))
   end
 
-  def all(pids, :match_keyword, string) do
-    case all(pids, :match_name, string) do
-      []    -> Enum.filter(pids, &(match_keyword(string, &1)))
+  def all(list, :match_keyword, string) do
+    case all(list, :match_name, string) do
+      []    -> Enum.filter(list, &(match_keyword(string, &1)))
       value -> value
     end
   end
 
-  def all(pids, :name_starts_with, string) do
-    case all(pids, :match_keyword, string) do
-      []    -> Enum.filter(pids, &(name_starts_with(string, &1)))
+  def all(list, :name_starts_with, string) do
+    case all(list, :match_keyword, string) do
+      []    -> Enum.filter(list, &(name_starts_with(string, &1)))
       value -> value
     end
   end
 
-  def all(pids, :keyword_starts_with, string) do
-    case all(pids, :name_starts_with, string) do
-      []    -> Enum.filter(pids, &(keyword_starts_with(string, &1)))
+  def all(list, :keyword_starts_with, string) do
+    case all(list, :name_starts_with, string) do
+      []    -> Enum.filter(list, &(keyword_starts_with(string, &1)))
       value -> value
     end
   end
 
-  def all(pids, :name_contains, string) do
-    case all(pids, :keyword_starts_with, string) do
-      []    -> Enum.filter(pids, &(name_contains(string, &1)))
+  def all(list, :name_contains, string) do
+    case all(list, :keyword_starts_with, string) do
+      []    -> Enum.filter(list, &(name_contains(string, &1)))
       value -> value
     end
   end
 
-  def one(pids, match_level, string) do
+  def one(list, match_level, string) do
     {string, number} = string_number(string)
-    one(pids, match_level, string, number)
+    one(list, match_level, string, number)
   end
 
-  def one(pids, match_level, string, number) do
-    all(pids, match_level, string)
+  def one(list, match_level, string, number) do
+    all(list, match_level, string)
     |> Enum.at(number)
   end
 
   def match_name("", _pid), do: false
-  def match_name(string, pid) when is_pid(pid) do
-    match_name(string, match_data(pid))
-  end
   def match_name(string, %{name: name}) do
     String.downcase(string) == String.downcase(name)
   end
 
   def match_keyword("", _pid), do: false
-  def match_keyword(string, pid) when is_pid(pid) do
-    match_keyword(string, match_data(pid))
-  end
   def match_keyword(string, %{keywords: keywords}) do
     keywords
     |> Enum.any?(fn (keyword) ->
@@ -63,9 +56,6 @@ defmodule ApathyDrive.Match do
   end
 
   def keyword_starts_with("", _pid), do: false
-  def keyword_starts_with(string, pid) when is_pid(pid) do
-    keyword_starts_with(string, match_data(pid))
-  end
   def keyword_starts_with(string, %{keywords: keywords}) do
     keywords
     |> Enum.any?(fn (keyword) ->
@@ -74,9 +64,6 @@ defmodule ApathyDrive.Match do
   end
 
   def name_starts_with("", _pid), do: false
-  def name_starts_with(string, pid) when is_pid(pid) do
-    name_starts_with(string, match_data(pid))
-  end
   def name_starts_with(string, %{name: name}) do
     name
     |> String.downcase
@@ -84,9 +71,6 @@ defmodule ApathyDrive.Match do
   end
 
   def name_contains("", _pid), do: false
-  def name_contains(string, pid) when is_pid(pid) do
-    name_contains(string, match_data(pid))
-  end
   def name_contains(string, %{name: name}) do
     name
     |> String.downcase
@@ -114,12 +98,6 @@ defmodule ApathyDrive.Match do
     |> String.to_integer
     |> -(1)
     |> max(0)
-  end
-
-  defp match_data(pid) do
-    mobile = World.mobile(pid)
-
-    %{name: mobile.name, keywords: mobile.keywords}
   end
 
 end

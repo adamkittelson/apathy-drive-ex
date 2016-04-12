@@ -1,4 +1,4 @@
-defmodule Commands.Construct do
+defmodule ApathyDrive.Commands.Construct do
   use ApathyDrive.Command
 
   def keywords, do: ["construct"]

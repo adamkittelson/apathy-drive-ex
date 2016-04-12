@@ -1,6 +1,5 @@
 defmodule Systems.Text do
 
-
   def interpolate(nil, _opts), do: nil
   def interpolate(string, opts) do
 

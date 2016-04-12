@@ -1,18 +1,16 @@
-defmodule Commands.Abilities do
+defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
-  alias ApathyDrive.World
 
   def keywords, do: ["abilities", "spells"]
 
   def execute(mobile, _arguments) do
     Mobile.send_scroll(mobile, "<p><span class='white'>You have the following abilities:</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Mana   Command  Ability Name</span></p>")
-    display_abilities(mobile)
+    Mobile.display_abilities(mobile)
   end
 
-  def display_abilities(mobile) do
+  def display_abilities(%Mobile{} = mobile) do
     mobile
-    |> World.mobile
     |> Map.get(:abilities)
     |> Enum.reject(&(Map.get(&1, "command") == nil))
     |> Enum.uniq(&(Map.get(&1, "command")))

@@ -1,5 +1,6 @@
 defmodule ApathyDrive.MUDChannel do
   use ApathyDrive.Web, :channel
+  alias ApathyDrive.Mobile
 
   def join("mud:play", %{"spirit" => token}, socket) do
     case Phoenix.Token.verify(socket, "spirit", token, max_age: 1209600) do
@@ -38,7 +39,7 @@ defmodule ApathyDrive.MUDChannel do
 
     socket = assign(socket, :mobile, pid)
 
-    ApathyDrive.Command.execute(socket.assigns[:mobile], "look", [])
+    Mobile.look(pid)
 
     {:noreply, socket}
   end
@@ -46,7 +47,7 @@ defmodule ApathyDrive.MUDChannel do
   def handle_info(:after_join, socket) do
     send(socket.assigns[:mobile], {:set_socket, self})
 
-    ApathyDrive.Command.execute(socket.assigns[:mobile], "look", [])
+    Mobile.look(socket.assigns[:mobile])
 
     {:noreply, socket}
   end
@@ -94,7 +95,7 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_in("command", %{}, socket) do
-    ApathyDrive.Command.execute(socket.assigns[:mobile], "l", [])
+    Mobile.execute_command(socket.assigns[:mobile], "l", [])
 
     {:noreply, socket}
   end
@@ -102,9 +103,9 @@ defmodule ApathyDrive.MUDChannel do
   def handle_in("command", message, socket) do
     case String.split(message) do
       [command | arguments] ->
-        ApathyDrive.Command.execute(socket.assigns[:mobile], command, arguments)
+        Mobile.execute_command(socket.assigns[:mobile], command, arguments)
       [] ->
-        ApathyDrive.Command.execute(socket.assigns[:mobile], "l", [])
+        Mobile.execute_command(socket.assigns[:mobile], "l", [])
     end
 
     {:noreply, socket}
