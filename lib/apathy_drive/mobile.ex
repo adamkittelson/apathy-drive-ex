@@ -82,6 +82,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:close, arguments})
   end
 
+  def lock(mobile, arguments) do
+    GenServer.cast(mobile, {:lock, arguments})
+  end
+
   def open(mobile, arguments) do
     GenServer.cast(mobile, {:open, arguments})
   end
@@ -1187,6 +1191,11 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_cast({:lock, args}, mobile) do
+    Commands.Lock.execute(mobile, args)
+    {:noreply, mobile}
+  end
+
   def handle_cast({:execute_room_command, scripts}, mobile) do
     unless confused(mobile) do
       scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
@@ -1837,6 +1846,16 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do
     send_scroll mobile, message
+    {:noreply, mobile}
+  end
+
+  def handle_info({:door_locked, %{locker: pid, type: type}}, mobile) when pid == self() do
+    Mobile.send_scroll(mobile, "<p>The #{type} is now locked.</p>")
+    {:noreply, mobile}
+  end
+
+  def handle_info({:door_locked, %{name: name, type: type, description: description}}, mobile) do
+    Mobile.send_scroll(mobile, "<p>You see #{name} lock the #{type} #{description}.</p>")
     {:noreply, mobile}
   end
 

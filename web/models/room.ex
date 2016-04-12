@@ -185,6 +185,14 @@ defmodule Room do
     GenServer.cast(room, {:open, mobile, direction})
   end
 
+  def lock(room, mobile, direction) do
+    GenServer.cast(room, {:lock, mobile, direction})
+  end
+
+  def mirror_lock(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_lock, mirror_room_id, room_exit})
+  end
+
   def mirror_open(room, mirror_room_id, room_exit) do
     GenServer.cast(room, {:mirror_open, mirror_room_id, room_exit})
   end
@@ -637,6 +645,17 @@ defmodule Room do
     {:noreply, room}
   end
 
+  def handle_cast({:mirror_lock, mirror_room_id, room_exit}, %Room{id: id} = room) do
+    mirror_exit = mirror_exit(room, mirror_room_id)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>"}
+      {:noreply, Room.lock!(room, mirror_exit["direction"])}
+    else
+      {:noreply, room}
+    end
+  end
+
   def handle_cast({:mirror_close, mirror_room_id, room_exit}, %Room{id: id} = room) do
     mirror_exit = mirror_exit(room, mirror_room_id)
 
@@ -691,6 +710,11 @@ defmodule Room do
 
   def handle_cast({:open, mobile, direction}, room) do
     room = Commands.Open.execute(room, mobile, direction)
+    {:noreply, room}
+  end
+
+  def handle_cast({:lock, mobile, direction}, room) do
+    room = Commands.Lock.execute(room, mobile, direction)
     {:noreply, room}
   end
 
