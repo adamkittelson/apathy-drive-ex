@@ -52,7 +52,7 @@ defmodule ApathyDrive.Commands.Move do
     import Mobile
 
     if !held(mobile) do
-      Room.load(destination_id)
+      Room.find(destination_id)
       :timer.sleep(50)
 
       mobile.room_id
@@ -96,7 +96,7 @@ defmodule ApathyDrive.Commands.Move do
     import Mobile
 
     if !held(mobile) do
-      Room.load(destination_id)
+      Room.find(destination_id)
       :timer.sleep(50)
 
       Mobile.send_scroll(mobile, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")

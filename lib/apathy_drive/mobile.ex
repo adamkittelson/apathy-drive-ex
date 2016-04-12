@@ -1580,24 +1580,9 @@ defmodule ApathyDrive.Mobile do
 
     send_scroll(mobile, "<p>You gain #{exp} essence.</p>")
 
-    new_spirit =
-      spirit
-      |> Spirit.add_experience(exp)
+    mobile = add_experience(mobile, exp)
 
-    if new_spirit.level > spirit.level do
-      mobile = mobile
-               |> Map.put(:spirit, new_spirit)
-               |> set_abilities
-
-      send_scroll(mobile, "<p>You've advanced to level #{new_spirit.level}!</p>")
-
-      {:noreply, mobile}
-    else
-      mobile = mobile
-                |> Map.put(:spirit, new_spirit)
-
-      {:noreply, mobile}
-    end
+    {:noreply, mobile}
   end
 
   def handle_info({:gossip, name, message}, mobile) do
