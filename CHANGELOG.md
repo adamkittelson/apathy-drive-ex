@@ -172,3 +172,6 @@ CHANGELOG
 
 ---- 0.0.58 / 2016-01-03 / deploy-stuff ----------------------------------------
 * notes etc regarding releases
+
+---- 0.0.68 / 2016-04-11 / end-of-the-world ------------------------------------
+* remove world module
