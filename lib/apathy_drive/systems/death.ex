@@ -41,13 +41,7 @@ defmodule Systems.Death do
     kill(mobile, remaining_steps)
   end
   def kill(mobile, [:reward_monster_death_exp | remaining_steps]) do
-    recipient_count = length(ApathyDrive.PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [self]))
-
-    if recipient_count > 0 do
-      reward = div(ApathyDrive.Level.exp_reward(mobile.level), recipient_count)
-
-      ApathyDrive.PubSub.broadcast!("rooms:#{mobile.room_id}:mobiles", {:mobile_died, mobile: mobile, reward: reward})
-    end
+    ApathyDrive.PubSub.broadcast!("rooms:#{mobile.room_id}:mobiles", {:mobile_died, mobile: mobile, reward: ApathyDrive.Level.exp_reward(mobile.level)})
 
     kill(mobile, remaining_steps)
   end

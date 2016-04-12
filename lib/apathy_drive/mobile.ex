@@ -1571,7 +1571,7 @@ defmodule ApathyDrive.Mobile do
 
     {:noreply, mobile}
   end
-  def handle_info({:mobile_died, mobile: %Mobile{} = deceased, reward: exp}, %Mobile{spirit: %Spirit{} = spirit} = mobile) do
+  def handle_info({:mobile_died, mobile: %Mobile{} = deceased, reward: exp}, %Mobile{spirit: %Spirit{}} = mobile) do
     message = deceased.death_message
               |> interpolate(%{"name" => deceased.name})
               |> capitalize_first
