@@ -4,7 +4,7 @@ defmodule Room do
   use GenServer
   use Timex
   import Systems.Text
-  alias ApathyDrive.{Commands, PubSub, Mobile, TimerManager, Ability, World, Match, RoomUnity}
+  alias ApathyDrive.{Commands, PubSub, Mobile, TimerManager, Ability, Match, RoomUnity}
 
   schema "rooms" do
     field :name,                  :string
@@ -149,6 +149,10 @@ defmodule Room do
     PubSub.subscribers("rooms")
   end
 
+  def create_monster(room, monster_template_id) do
+    GenServer.cast(room, {:create_monster, monster_template_id})
+  end
+
   def load_present_mobiles(room) do
     GenServer.cast(room, :load_present_mobiles)
   end
@@ -249,18 +253,6 @@ defmodule Room do
     GenServer.call(room, {:destroy_item, item})
   end
 
-  def id(room) do
-    room
-    |> World.room
-    |> Map.get(:id)
-  end
-
-  def exits(room) do
-    room
-    |> World.room
-    |> Map.get(:exits)
-  end
-
   def find_item(%Room{items: items, item_descriptions: item_descriptions}, item) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -286,19 +278,6 @@ defmodule Room do
       true ->
         nil
     end
-  end
-
-  def item_names(room) do
-    room
-    |> World.room
-    |> Map.get(:items)
-    |> Enum.map(&(&1["name"]))
-  end
-
-  def get_exit(room, direction) when is_pid(room) do
-    room
-    |> World.room
-    |> get_exit(direction)
   end
 
   def get_exit(room, direction) do
@@ -369,11 +348,6 @@ defmodule Room do
     |> Enum.member?(direction)
   end
 
-  def temporarily_open?(room, direction) when is_pid(room) do
-    room
-    |> World.room
-    |> temporarily_open?(direction)
-  end
   def temporarily_open?(%Room{} = room, direction) do
     room
     |> Map.get(:effects)
@@ -396,20 +370,6 @@ defmodule Room do
        end)
     |> Enum.map(fn(effect) ->
          Map.get(effect, :searched)
-       end)
-    |> Enum.member?(direction)
-  end
-
-  def triggered?(room, direction) do
-    room
-    |> World.room
-    |> Map.get(:effects)
-    |> Map.values
-    |> Enum.filter(fn(effect) ->
-         Map.has_key?(effect, :triggered)
-       end)
-    |> Enum.map(fn(effect) ->
-         Map.get(effect, :triggered)
        end)
     |> Enum.member?(direction)
   end
@@ -595,10 +555,26 @@ defmodule Room do
     {:reply, room, room}
   end
 
+  def handle_cast({:create_monster, monster_template_id}, room) do
+    monster =
+      monster_template_id
+      |> MobileTemplate.create_monster(room)
+      |> Mobile.load
+
+    Mobile.display_enter_message(monster, self())
+
+    {:noreply, room}
+  end
+
   def handle_cast(:load_present_mobiles, room) do
     room.id
     |> mobiles_to_load()
-    |> Enum.each(&ApathyDrive.Mobile.load/1)
+    |> Enum.each(fn(mobile_id) ->
+         mobile_id
+         |> Mobile.load
+         |> Mobile.display_enter_message(self())
+
+       end)
     {:noreply, room}
   end
 

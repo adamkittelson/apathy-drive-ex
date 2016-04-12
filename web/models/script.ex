@@ -142,16 +142,9 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"spawn_monster" => monster_template_id}, %Mobile{} = mobile, script) do
-    room =
-      mobile.room_id
-      |> Room.find
-
-    monster =
-      monster_template_id
-      |> MobileTemplate.create_monster(World.room(room))
-      |> Mobile.load
-
-    Mobile.display_enter_message(monster, room)
+    mobile.room_id
+    |> Room.find
+    |> Room.create_monster(monster_template_id)
 
     execute_script(script, mobile)
   end
