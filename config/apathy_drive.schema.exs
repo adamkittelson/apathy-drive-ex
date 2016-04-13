@@ -250,30 +250,6 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Repo.extensions.Elixir.Extensions.JSON.library here.",
       hidden: true,
       to: "apathy_drive.Elixir.ApathyDrive.Repo.extensions.Elixir.Extensions.JSON.library"
-    ],
-    "apathy_drive.Elixir.ApathyDrive.Repo.size": [
-      commented: false,
-      datatype: :integer,
-      default: 10,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Repo.size here.",
-      hidden: false,
-      to: "apathy_drive.Elixir.ApathyDrive.Repo.size"
-    ],
-    "apathy_drive.Elixir.ApathyDrive.Repo.lazy": [
-      commented: false,
-      datatype: :atom,
-      default: false,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Repo.lazy here.",
-      hidden: true,
-      to: "apathy_drive.Elixir.ApathyDrive.Repo.lazy"
-    ],
-    "apathy_drive.Elixir.ApathyDrive.Repo.max_overflow": [
-      commented: false,
-      datatype: :integer,
-      default: 0,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Repo.max_overflow here.",
-      hidden: true,
-      to: "apathy_drive.Elixir.ApathyDrive.Repo.max_overflow"
     ]
   ],
   transforms: [],
