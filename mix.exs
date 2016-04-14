@@ -19,7 +19,7 @@ defmodule ApathyDrive.Mixfile do
       applications: [:postgrex, :ecto, :phoenix, :cowboy, :conform, :conform_exrm,
                      :logger, :oauth2, :phoenix_ecto, :comeonin, :runtime_tools,
                      :tzdata, :timex_ecto, :scrivener, :phoenix_live_reload,
-                     :phoenix_html, :inflex, :connection, :decimal, :neotoma, :ex_statsd]
+                     :phoenix_html, :inflex, :connection, :decimal, :neotoma, :ex_statsd, :phoenix_pubsub]
     ]
   end
 
@@ -28,7 +28,8 @@ defmodule ApathyDrive.Mixfile do
       {:cowboy,              "~> 1.0.0"},
       {:ecto,                "~> 1.1"},
       {:postgrex,            "~> 0.10"},
-      {:phoenix,             "~> 1.1"},
+      {:phoenix,             "~> 1.1.4"},
+      {:phoenix_pubsub, github: "phoenixframework/phoenix_pubsub"},
       {:phoenix_live_reload, "~> 1.0.1"},
       {:phoenix_ecto,        "~> 2.0"},
       {:phoenix_html,        "~> 2.3"},

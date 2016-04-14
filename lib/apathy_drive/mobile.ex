@@ -518,16 +518,16 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> move_after()
 
-      ApathyDrive.PubSub.subscribe(self, "mobiles")
-      ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
-      ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
+      ApathyDrive.PubSub.subscribe("mobiles")
+      ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
+      ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
       if mobile.monster_template_id do
-        ApathyDrive.PubSub.subscribe(self, "monster_templates:#{mobile.monster_template_id}:monsters")
+        ApathyDrive.PubSub.subscribe("monster_templates:#{mobile.monster_template_id}:monsters")
       end
 
       if mobile.unity do
-        ApathyDrive.PubSub.subscribe(self, "#{mobile.unity}-unity:mobiles")
+        ApathyDrive.PubSub.subscribe("#{mobile.unity}-unity:mobiles")
         mobile = TimerManager.send_every(mobile, {:unify,  60_000, :unify})
       end
 
@@ -544,16 +544,14 @@ defmodule ApathyDrive.Mobile do
     spirit = Repo.get(Spirit, spirit_id)
              |> Repo.preload(:class)
 
-    ApathyDrive.PubSub.subscribe(self, "mobiles")
-    ApathyDrive.PubSub.subscribe(self, "spirits:online")
-    ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
-    ApathyDrive.PubSub.subscribe(self, "chat:gossip")
-    ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
-    ApathyDrive.PubSub.subscribe(self, "rooms:#{spirit.room_id}:spirits")
+    ApathyDrive.PubSub.subscribe("mobiles")
+    ApathyDrive.PubSub.subscribe("spirits:online")
+    ApathyDrive.PubSub.subscribe("spirits:#{spirit.id}")
+    ApathyDrive.PubSub.subscribe("chat:gossip")
+    ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
+    ApathyDrive.PubSub.subscribe("rooms:#{spirit.room_id}:spirits")
 
-    ApathyDrive.PubSub.subscribe(socket, "spirits:#{spirit.id}:socket")
-
-    ApathyDrive.PubSub.subscribe(self, "#{spirit.unity}-unity:mobiles")
+    ApathyDrive.PubSub.subscribe("#{spirit.unity}-unity:mobiles")
 
     mobile =
       mobile
@@ -575,8 +573,8 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> TimerManager.send_every({:unify,  60_000, :unify})
 
-    ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
-    ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
+    ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
+    ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
     update_prompt(mobile)
 
@@ -1046,10 +1044,10 @@ defmodule ApathyDrive.Mobile do
 
       Process.unregister(:"spirit_#{spirit.id}")
 
-      ApathyDrive.PubSub.unsubscribe(self, "spirits:online")
-      ApathyDrive.PubSub.unsubscribe(self, "spirits:#{spirit.id}")
-      ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
-      ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+      ApathyDrive.PubSub.unsubscribe("spirits:online")
+      ApathyDrive.PubSub.unsubscribe("spirits:#{spirit.id}")
+      ApathyDrive.PubSub.unsubscribe("chat:gossip")
+      ApathyDrive.PubSub.unsubscribe("chat:#{String.downcase(spirit.class.name)}")
 
     {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, mobile}
   end
@@ -1286,7 +1284,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:experience, essence)
       |> Repo.save!
 
-    ApathyDrive.PubSub.subscribe(self, "#{unity}-unity:mobiles")
+    ApathyDrive.PubSub.subscribe("#{unity}-unity:mobiles")
 
     {:noreply, mobile}
   end
@@ -1717,10 +1715,10 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> Map.put(:spirit, nil)
 
-      ApathyDrive.PubSub.unsubscribe(self, "spirits:online")
-      ApathyDrive.PubSub.unsubscribe(self, "spirits:#{spirit.id}")
-      ApathyDrive.PubSub.unsubscribe(self, "chat:gossip")
-      ApathyDrive.PubSub.unsubscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+      ApathyDrive.PubSub.unsubscribe("spirits:online")
+      ApathyDrive.PubSub.unsubscribe("spirits:#{spirit.id}")
+      ApathyDrive.PubSub.unsubscribe("chat:gossip")
+      ApathyDrive.PubSub.unsubscribe("chat:#{String.downcase(spirit.class.name)}")
 
     {:noreply, mobile}
   end

@@ -50,12 +50,12 @@ defmodule Room do
       room = %{room | room_unity: room_unity}
     end
 
-    PubSub.subscribe(self, "rooms")
-    PubSub.subscribe(self, "rooms:#{room.id}")
+    PubSub.subscribe("rooms")
+    PubSub.subscribe("rooms:#{room.id}")
 
     room.exits
     |> Enum.each(fn(room_exit) ->
-         PubSub.subscribe(self, "rooms:#{room_exit["destination"]}:adjacent")
+         PubSub.subscribe("rooms:#{room_exit["destination"]}:adjacent")
        end)
 
     load_present_mobiles(self())
@@ -65,7 +65,7 @@ defmodule Room do
     end
 
     if room.ability_id do
-      PubSub.subscribe(self, "rooms:abilities")
+      PubSub.subscribe("rooms:abilities")
 
       room =
         room
@@ -924,7 +924,7 @@ defmodule Room do
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: nil} = room) do
-    ApathyDrive.PubSub.unsubscribe(self, "rooms:abilities")
+    ApathyDrive.PubSub.unsubscribe("rooms:abilities")
 
     {:noreply, room}
   end

@@ -59,8 +59,8 @@ defmodule ApathyDrive.Commands.Move do
       |> Room.find
       |> Room.display_exit_message(%{name: look_name(mobile), mobile: self, message: mobile.exit_message, to: destination_id})
 
-      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles")
-      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
+      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
+      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
       ApathyDrive.PubSub.broadcast!("rooms:#{destination_id}:adjacent", {:audible_movement, destination_id, mobile.room_id})
 
       mobile =
@@ -68,13 +68,13 @@ defmodule ApathyDrive.Commands.Move do
         |> Map.put(:room_id, destination_id)
         |> Map.put(:last_room, last_room)
 
-      ApathyDrive.PubSub.subscribe(self, "rooms:#{destination_id}:mobiles")
-      ApathyDrive.PubSub.subscribe(self, "rooms:#{destination_id}:mobiles:#{mobile.alignment}")
+      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
+      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
 
       if mobile.spirit do
-        ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
+        ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
         mobile = put_in(mobile.spirit.room_id, mobile.room_id)
-        ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
+        ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
       end
 
       destination = Room.find(destination_id)
@@ -105,8 +105,8 @@ defmodule ApathyDrive.Commands.Move do
       |> Room.find
       |> Room.display_exit_message(%{name: look_name(mobile), mobile: self, message: room_exit["from_message"], to: destination_id})
 
-      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles")
-      ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
+      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
+      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
       ApathyDrive.PubSub.broadcast!("rooms:#{destination_id}:adjacent", {:audible_movement, destination_id, mobile.room_id})
 
       mobile =
@@ -114,13 +114,13 @@ defmodule ApathyDrive.Commands.Move do
         |> Map.put(:room_id, destination_id)
         |> Map.put(:last_room, last_room)
 
-      ApathyDrive.PubSub.subscribe(self, "rooms:#{destination_id}:mobiles")
-      ApathyDrive.PubSub.subscribe(self, "rooms:#{destination_id}:mobiles:#{mobile.alignment}")
+      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
+      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
 
       if mobile.spirit do
-        ApathyDrive.PubSub.unsubscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
+        ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
         mobile = put_in(mobile.spirit.room_id, mobile.room_id)
-        ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.spirit.room_id}:spirits")
+        ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
       end
 
       destination = Room.find(destination_id)

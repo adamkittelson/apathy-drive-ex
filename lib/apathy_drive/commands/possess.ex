@@ -51,10 +51,10 @@ defmodule ApathyDrive.Commands.Possess do
       |> Repo.preload(:class)
 
     if spirit.level >= level do
-      ApathyDrive.PubSub.subscribe(self, "spirits:online")
-      ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
-      ApathyDrive.PubSub.subscribe(self, "chat:gossip")
-      ApathyDrive.PubSub.subscribe(self, "chat:#{String.downcase(spirit.class.name)}")
+      ApathyDrive.PubSub.subscribe("spirits:online")
+      ApathyDrive.PubSub.subscribe("spirits:#{spirit.id}")
+      ApathyDrive.PubSub.subscribe("chat:gossip")
+      ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
 
       mobile =
         mobile

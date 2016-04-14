@@ -44,7 +44,7 @@ defmodule Systems.Effect do
     end
 
     if Map.has_key?(effect, "member") do
-      ApathyDrive.PubSub.subscribe(self, effect["member"])
+      ApathyDrive.PubSub.subscribe(effect["member"])
     end
 
     effects = Map.put(effects, key, effect)
@@ -85,7 +85,7 @@ defmodule Systems.Effect do
         end
 
         if Map.has_key?(effects[key], "member") do
-          ApathyDrive.PubSub.unsubscribe(self, effects[key]["member"])
+          ApathyDrive.PubSub.unsubscribe(effects[key]["member"])
         end
 
         if Map.has_key?(effects[key], "timers") do

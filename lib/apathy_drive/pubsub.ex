@@ -29,16 +29,16 @@ defmodule ApathyDrive.PubSub do
     :ok
   end
 
-  def subscribe(pid, topic, opts \\ []) do
-    Phoenix.PubSub.subscribe(:pub_sub, pid, topic, opts)
+  def subscribe(topic, opts \\ []) do
+    Phoenix.PubSub.subscribe(:pub_sub, topic, opts)
   end
 
   def subscribers(topic, exceptions \\ []) do
     Phoenix.PubSub.Local.subscribers(:pub_sub, topic, 0) -- exceptions
   end
 
-  def unsubscribe(pid, topic) do
-    Phoenix.PubSub.unsubscribe(:pub_sub, pid, topic)
+  def unsubscribe(topic) do
+    Phoenix.PubSub.unsubscribe(:pub_sub, topic)
   end
 
 end
