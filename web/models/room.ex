@@ -814,7 +814,7 @@ defmodule Room do
   end
 
   def handle_info(:save, room) do
-    Process.send_after(self, :save, jitter(:timer.minutes(10)))
+    Process.send_after(self, :save, jitter(:timer.minutes(30)))
     {:noreply, save!(room)}
   end
 

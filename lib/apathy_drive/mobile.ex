@@ -1436,7 +1436,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:save, mobile) do
-    Process.send_after(self, :save, jitter(:timer.minutes(5)))
+    Process.send_after(self, :save, jitter(:timer.minutes(10)))
     {:noreply, save(mobile)}
   end
 
