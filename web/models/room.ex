@@ -76,6 +76,8 @@ defmodule Room do
       room
       |> TimerManager.send_every({:spread_essence, 60_000, :spread_essence})
 
+    send(self, :save)
+
     {:ok, room}
   end
 
@@ -594,7 +596,6 @@ defmodule Room do
 
     room = update_in(room.room_unity.essences[unity], &(&1 - essence_to_send_back))
            |> set_unity
-           |> save!
 
     Mobile.add_experience(mobile, essence_to_send_back)
 
@@ -811,6 +812,11 @@ defmodule Room do
     {:noreply, room}
   end
 
+  def handle_info(:save, room) do
+    Process.send_after(self, :save, jitter(:timer.minutes(10)))
+    {:noreply, save!(room)}
+  end
+
   def handle_info(:spawn_monsters,
                   %{:lair_next_spawn_at => lair_next_spawn_at} = room) do
 
@@ -952,7 +958,6 @@ defmodule Room do
 
     room = put_in(room.room_unity.essences, essences)
            |> set_unity
-           |> save!
 
     {:noreply, room}
   end
@@ -969,7 +974,6 @@ defmodule Room do
 
     room = put_in(room.room_unity.essences, updated_essences)
            |> set_unity
-           |> save!
 
     {:noreply, room}
   end
@@ -1021,6 +1025,12 @@ defmodule Room do
 
   def handle_info(_message, room) do
     {:noreply, room}
+  end
+
+  defp jitter(time) do
+    time
+    |> :rand.uniform
+    |> Kernel.+(time)
   end
 
   defp set_unity(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
