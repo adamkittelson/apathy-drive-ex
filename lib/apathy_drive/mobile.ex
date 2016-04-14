@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, Class}
+  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, Class, MobileSupervisor}
   use GenServer
   use ApathyDrive.Web, :model
   import Systems.Text
@@ -591,7 +591,7 @@ defmodule ApathyDrive.Mobile do
 
   def load(id) do
     ExStatsD.timing "mobiles.load_time", fn ->
-      case Supervisor.start_child(ApathyDrive.Supervisor, {"mobile##{id}", {GenServer, :start_link, [Mobile, id, [name: {:global, "mobile##{id}"}]]}, :transient, 5000, :worker, [Mobile]}) do
+      case MobileSupervisor.launch(id) do
         {:error, {:already_started, pid}} ->
           pid
         {:ok, pid} ->
@@ -946,7 +946,7 @@ defmodule ApathyDrive.Mobile do
   defp unify(mobile, unity, essence) do
     essence_to_distribute = div(essence, 100)
 
-    Room.add_essence_from_mobile({:global, :"room_#{mobile.room_id}"}, self(), unity, essence_to_distribute)
+    Room.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unity, essence_to_distribute)
     ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
 
     add_experience(mobile, -(essence_to_distribute * 2))

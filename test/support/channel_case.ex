@@ -40,7 +40,7 @@ defmodule ApathyDrive.ChannelCase do
 
         # Hack to prevent it from trying to load rooms that don't exist
         Task.start(fn ->
-          :global.register_name(:"room_#{room.id}", self())
+          :global.register_name("room_#{room.id}", self())
           receive do end
         end)
 

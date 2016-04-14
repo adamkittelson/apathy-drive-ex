@@ -4,7 +4,7 @@ defmodule Room do
   use GenServer
   use Timex
   import Systems.Text
-  alias ApathyDrive.{Commands, PubSub, Mobile, TimerManager, Ability, Match, RoomUnity}
+  alias ApathyDrive.{Commands, PubSub, Mobile, TimerManager, Ability, Match, RoomUnity, RoomSupervisor}
 
   schema "rooms" do
     field :name,                  :string
@@ -131,7 +131,7 @@ defmodule Room do
   end
 
   def find(id) do
-    case :global.whereis_name(:"room_#{id}") do
+    case :global.whereis_name("room_#{id}") do
       :undefined ->
         load(id)
       room ->
@@ -141,7 +141,7 @@ defmodule Room do
 
   def load(id) do
     pid = ExStatsD.timing "rooms.load_time", fn ->
-      case Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, id, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]}) do
+      case RoomSupervisor.launch(id) do
         {:error, {:already_started, pid}} ->
           pid
         {:ok, pid} ->
