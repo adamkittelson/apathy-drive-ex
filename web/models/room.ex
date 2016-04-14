@@ -149,7 +149,7 @@ defmodule Room do
     "rooms"
     |> ApathyDrive.PubSub.subscribers
     |> length()
-    |> ExStatsD.counter("rooms")
+    |> ExStatsD.gauge("rooms")
 
     pid
   end

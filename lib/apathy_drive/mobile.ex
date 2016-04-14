@@ -590,7 +590,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def load(id) do
-    ExStatsD.timing "rooms.load_time", fn ->
+    ExStatsD.timing "mobiles.load_time", fn ->
       case Supervisor.start_child(ApathyDrive.Supervisor, {"mobile##{id}", {GenServer, :start_link, [Mobile, id, [name: {:global, "mobile##{id}"}]]}, :transient, 5000, :worker, [Mobile]}) do
         {:error, {:already_started, pid}} ->
           pid
