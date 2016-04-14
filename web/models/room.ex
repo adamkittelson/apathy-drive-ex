@@ -24,6 +24,7 @@ defmodule Room do
     field :items,                 ApathyDrive.JSONB, default: []
     field :last_effect_key,       :any, virtual: true, default: 0
     field :also_here,             :map, virtual: true, default: %{}
+    field :area,                  :string
 
     timestamps
 
