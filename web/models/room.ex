@@ -137,12 +137,21 @@ defmodule Room do
   end
 
   def load(id) do
-    case Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, id, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]}) do
-      {:error, {:already_started, pid}} ->
-        pid
-      {:ok, pid} ->
-        pid
+    pid = ExStatsD.timing "rooms.load_time", fn ->
+      case Supervisor.start_child(ApathyDrive.Supervisor, {:"room_#{id}", {GenServer, :start_link, [Room, id, [name: {:global, :"room_#{id}"}]]}, :permanent, 5000, :worker, [Room]}) do
+        {:error, {:already_started, pid}} ->
+          pid
+        {:ok, pid} ->
+          pid
+      end
     end
+
+    "rooms"
+    |> ApathyDrive.PubSub.subscribers
+    |> length()
+    |> ExStatsD.gauge("rooms")
+
+    pid
   end
 
   def all do

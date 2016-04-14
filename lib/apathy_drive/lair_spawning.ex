@@ -19,6 +19,11 @@ defmodule ApathyDrive.LairSpawning do
         spawn_lair(room)
       end
     end
+
+    "mobiles"
+    |> ApathyDrive.PubSub.subscribers
+    |> length()
+    |> ExStatsD.gauge("mobiles")
   end
 
   def select_lair_monster(monster_ids) do
