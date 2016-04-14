@@ -518,6 +518,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> move_after()
 
+      ApathyDrive.PubSub.subscribe(self, "mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.subscribe(self, "rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
@@ -543,6 +544,7 @@ defmodule ApathyDrive.Mobile do
     spirit = Repo.get(Spirit, spirit_id)
              |> Repo.preload(:class)
 
+    ApathyDrive.PubSub.subscribe(self, "mobiles")
     ApathyDrive.PubSub.subscribe(self, "spirits:online")
     ApathyDrive.PubSub.subscribe(self, "spirits:#{spirit.id}")
     ApathyDrive.PubSub.subscribe(self, "chat:gossip")
@@ -588,11 +590,13 @@ defmodule ApathyDrive.Mobile do
   end
 
   def load(id) do
-    case Supervisor.start_child(ApathyDrive.Supervisor, {"mobile##{id}", {GenServer, :start_link, [Mobile, id, [name: {:global, "mobile##{id}"}]]}, :transient, 5000, :worker, [Mobile]}) do
-      {:error, {:already_started, pid}} ->
-        pid
-      {:ok, pid} ->
-        pid
+    ExStatsD.timing "rooms.load_time", fn ->
+      case Supervisor.start_child(ApathyDrive.Supervisor, {"mobile##{id}", {GenServer, :start_link, [Mobile, id, [name: {:global, "mobile##{id}"}]]}, :transient, 5000, :worker, [Mobile]}) do
+        {:error, {:already_started, pid}} ->
+          pid
+        {:ok, pid} ->
+          pid
+      end
     end
   end
 
