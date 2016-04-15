@@ -822,7 +822,10 @@ defmodule Room do
                   %{:lair_next_spawn_at => lair_next_spawn_at} = room) do
 
     if Date.to_secs(Date.now) >= lair_next_spawn_at do
-      ApathyDrive.LairSpawning.spawn_lair(room)
+
+      Task.start_link fn ->
+        ApathyDrive.LairSpawning.spawn_lair(room)
+      end
 
       room = room
              |> Map.put(:lair_next_spawn_at, Date.now
