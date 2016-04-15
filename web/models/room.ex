@@ -77,7 +77,9 @@ defmodule Room do
       room
       |> TimerManager.send_every({:spread_essence, 60_000, :spread_essence})
 
-    send(self, :save)
+
+    send(self(), :spread_essence)
+    send(self(), :save)
 
     {:ok, room}
   end
@@ -815,7 +817,7 @@ defmodule Room do
 
   def handle_info(:save, room) do
     Process.send_after(self, :save, jitter(:timer.minutes(30)))
-    {:noreply, save!(room)}
+    {:noreply, save!(room), :hibernate}
   end
 
   def handle_info(:spawn_monsters,
