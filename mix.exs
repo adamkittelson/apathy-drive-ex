@@ -28,8 +28,7 @@ defmodule ApathyDrive.Mixfile do
       {:cowboy,              "~> 1.0.0"},
       {:ecto,                "~> 1.1"},
       {:postgrex,            "~> 0.10"},
-      {:phoenix,             "~> 1.1.4"},
-      {:phoenix_pubsub, github: "phoenixframework/phoenix_pubsub"},
+      {:phoenix,             github: "phoenixframework/phoenix", override: true},
       {:phoenix_live_reload, "~> 1.0.1"},
       {:phoenix_ecto,        "~> 2.0"},
       {:phoenix_html,        "~> 2.3"},
@@ -39,9 +38,9 @@ defmodule ApathyDrive.Mixfile do
       {:oauth2,              "~> 0.5"},
       {:scrivener,           "~> 1.0"},
       {:comeonin,            "~> 1.2.2"},
-      {:exrm,                "1.0.0-rc7", override: true},
-      {:conform,             "1.0.0-rc8", override: true},
-      {:conform_exrm,        "0.2.0"},
+      {:exrm,                "1.0.3"},
+      {:conform,             "2.0.0"},
+      {:conform_exrm,        "1.0.0"},
       {:ex_statsd,           "~> 0.5.3"},
       {:shouldi,             "0.3.0", only: :test}
     ]
