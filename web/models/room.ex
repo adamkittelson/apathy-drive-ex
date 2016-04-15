@@ -78,8 +78,9 @@ defmodule Room do
       |> TimerManager.send_every({:spread_essence, 60_000, :spread_essence})
 
 
-    send(self(), :spread_essence)
-    send(self(), :save)
+    self()
+    |> Process.send_after(:spread_essence, 1000)
+    |> Process.send_after(:save, 2000)
 
     {:ok, room}
   end
