@@ -141,21 +141,12 @@ defmodule Room do
   end
 
   def load(id) do
-    pid = ExStatsD.timing "rooms.load_time", fn ->
-      case RoomSupervisor.launch(id) do
-        {:error, {:already_started, pid}} ->
-          pid
-        {:ok, pid} ->
-          pid
-      end
+    case RoomSupervisor.launch(id) do
+      {:error, {:already_started, pid}} ->
+        pid
+      {:ok, pid} ->
+        pid
     end
-
-    "rooms"
-    |> ApathyDrive.PubSub.subscribers
-    |> length()
-    |> ExStatsD.gauge("rooms")
-
-    pid
   end
 
   def all do

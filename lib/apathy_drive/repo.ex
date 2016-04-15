@@ -21,15 +21,11 @@ defmodule ApathyDrive.Repo do
            end
          end)
 
-    ExStatsD.increment "repo.saves"
-
-    ExStatsD.timing "repo.save_time", fn ->
-      struct
-      |> Map.merge(model
-                   |> Ecto.Changeset.change(changes)
-                   |> insert_or_update!
-                   |> Map.take([:id, :__meta__]))
-    end
+    struct
+    |> Map.merge(model
+                 |> Ecto.Changeset.change(changes)
+                 |> insert_or_update!
+                 |> Map.take([:id, :__meta__]))
   end
 
   def drop_world! do

@@ -588,13 +588,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   def load(id) do
-    ExStatsD.timing "mobiles.load_time", fn ->
-      case MobileSupervisor.launch(id) do
-        {:error, {:already_started, pid}} ->
-          pid
-        {:ok, pid} ->
-          pid
-      end
+    case MobileSupervisor.launch(id) do
+      {:error, {:already_started, pid}} ->
+        pid
+      {:ok, pid} ->
+        pid
     end
   end
 
