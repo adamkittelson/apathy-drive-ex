@@ -338,15 +338,15 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def execute(%Mobile{room_id: room_id} = mobile, %{} = ability, []) do
+  def execute(%Mobile{} = mobile, _ability, []) do
     Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
   end
 
-  def execute(%Mobile{room_id: room_id} = mobile, %{"kind" => kind} = ability, "") when kind in ["attack", "curse"] do
+  def execute(%Mobile{} = mobile, %{"kind" => kind}, "") when kind in ["attack", "curse"] do
     Mobile.send_scroll(mobile, "<p>You must specify a target.</p>")
   end
 
-  def execute(%Mobile{room_id: room_id} = mobile, %{"kind" => kind} = ability, "") do
+  def execute(%Mobile{} = mobile, ability, "") do
     execute(mobile, ability, [self()])
   end
 

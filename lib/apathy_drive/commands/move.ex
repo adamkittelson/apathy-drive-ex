@@ -52,9 +52,6 @@ defmodule ApathyDrive.Commands.Move do
     import Mobile
 
     if !held(mobile) do
-      Room.find(destination_id)
-      :timer.sleep(50)
-
       mobile.room_id
       |> Room.find
       |> Room.display_exit_message(%{name: look_name(mobile), mobile: self, message: mobile.exit_message, to: destination_id})
@@ -96,9 +93,6 @@ defmodule ApathyDrive.Commands.Move do
     import Mobile
 
     if !held(mobile) do
-      Room.find(destination_id)
-      :timer.sleep(50)
-
       Mobile.send_scroll(mobile, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
 
       mobile.room_id
