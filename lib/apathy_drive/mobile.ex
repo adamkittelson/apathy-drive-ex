@@ -1447,6 +1447,8 @@ defmodule ApathyDrive.Mobile do
     ability = case ability do
       %{"global_cooldown" => nil} ->
         ability
+        |> Map.delete("global_cooldown")
+        |> Map.put("ignores_global_cooldown", true)
       %{"global_cooldown" => cooldown} ->
         if cooldown > time do
           Map.put(ability, "global_cooldown", cooldown - time)

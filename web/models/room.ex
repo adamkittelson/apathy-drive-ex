@@ -225,6 +225,10 @@ defmodule Room do
     GenServer.cast(room, {:execute_command, mobile, command, arguments})
   end
 
+  def execute_ability(room, ability, query) do
+    GenServer.cast(room, {:execute_ability, self(), ability, query})
+  end
+
   def notify_presence(room, data) do
     GenServer.cast(room, {:mobile_present, data})
   end
@@ -699,6 +703,23 @@ defmodule Room do
 
   def handle_cast({:execute_command, mobile, command, arguments}, room) do
     ApathyDrive.Command.execute(room, mobile, command, arguments)
+    {:noreply, room}
+  end
+
+  def handle_cast({:execute_ability, mobile, %{"kind" => kind} = ability, query}, %Room{also_here: mobiles} = room) when kind in ["attack", "curse"] do
+    mobile =
+      mobiles
+      |> Map.values
+      |> Enum.find(&(&1.pid == mobile))
+
+   target =
+     mobiles
+     |> Map.values
+     |> Enum.reject(&(&1 == mobile))
+     |> Match.one(:name_contains, query)
+
+    send(mobile.pid, {:execute_ability, ability, List.wrap(target && target.pid)})
+
     {:noreply, room}
   end
 

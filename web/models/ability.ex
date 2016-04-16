@@ -338,14 +338,22 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def execute(%Mobile{} = mobile, %{} = ability, target) when is_binary(target) do
+  def execute(%Mobile{room_id: room_id} = mobile, %{} = ability, []) do
+    Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
+  end
+
+  def execute(%Mobile{room_id: room_id} = mobile, %{"kind" => kind} = ability, "") when kind in ["attack", "curse"] do
+    Mobile.send_scroll(mobile, "<p>You must specify a target.</p>")
+  end
+
+  def execute(%Mobile{room_id: room_id} = mobile, %{"kind" => kind} = ability, "") do
+    execute(mobile, ability, [self()])
+  end
+
+  def execute(%Mobile{room_id: room_id} = mobile, %{} = ability, target) when is_binary(target) do
     if can_execute?(mobile, ability) do
-      case targets(mobile, ability, target) do
-        [] ->
-          Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
-        targets ->
-          execute(mobile, ability, targets)
-      end
+      Room.execute_ability({:global, "room_#{room_id}"}, ability, target)
+      mobile
     else
       mobile
     end
@@ -357,7 +365,8 @@ defmodule ApathyDrive.Ability do
     2..times |> Enum.each(fn(_) ->
       ability = ability
                 |> Map.delete("pre-cast_message")
-                |> Map.put("global_cooldown", nil)
+                |> Map.delete("global_cooldown")
+                |> Map.put("ignores_global_cooldown", true)
 
       send(self, {:execute_ability, ability, targets})
     end)
