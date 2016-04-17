@@ -25,6 +25,8 @@ defmodule MonsterTemplate do
     field :regen_time_in_minutes,  :integer
     field :permanent,              :boolean
     field :movement,               :string
+    field :minimum_essence,        :integer, default: 0
+    field :unities,                {:array, :string}
 
     has_many :monsters, Monster
     has_many :lairs, ApathyDrive.LairMonster
@@ -171,9 +173,10 @@ defmodule MonsterTemplate do
       flags: monster_template.flags,
       chance_to_follow: monster_template.chance_to_follow,
       movement: monster_template.movement,
-      unities: room |> Room.unity() |> List.wrap |> List.delete("default"),
+      unities: monster_template.unities || (room |> Room.unity() |> List.wrap |> List.delete("default")),
       alignment: monster_template.alignment,
-      spawned_at: room.id
+      spawned_at: room.id,
+      minimum_essence: monster_template.minimum_essence
     }
 
     monster = Map.put(monster, :keywords, String.split(monster.name))
@@ -187,13 +190,13 @@ defmodule MonsterTemplate do
       monster =
         monster
         |> Map.put(:level, ApathyDrive.Level.level_at_exp(experience))
-        |> Map.put(:experience, experience)
+        |> Map.put(:experience, max(experience, monster_template.minimum_essence))
         |> Map.put(:alignment, unity_alignment(monster.unities))
     else
       monster =
         monster
         |> Map.put(:level, monster_template.level)
-        |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level))
+        |> Map.put(:experience, max(ApathyDrive.Level.exp_at_level(monster_template.level), monster_template.minimum_essence))
     end
 
     monster = Map.merge(%Mobile{}, monster)

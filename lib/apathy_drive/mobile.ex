@@ -25,6 +25,7 @@ defmodule ApathyDrive.Mobile do
     field :unities,              {:array, :string}, default: []
     field :movement,             :string
     field :spawned_at,           :integer
+    field :minimum_essence,      :integer,          default: 0
 
     field :spirit,             :any,     virtual: true
     field :socket,             :any,     virtual: true
@@ -147,7 +148,7 @@ defmodule ApathyDrive.Mobile do
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
     mobile =
       mobile
-      |> Map.put(:experience, experience + exp)
+      |> Map.put(:experience, max(experience + exp, mobile.minimum_essence))
       |> ApathyDrive.Level.advance
       |> Map.put(:spirit, Spirit.add_experience(mobile.spirit, exp))
 
