@@ -152,8 +152,8 @@ defmodule MonsterTemplate do
     ["good", "neutral", "evil"]
   end
 
-  def unity_alignment("angel"), do: "good"
-  def unity_alignment("demon"), do: "evil"
+  def unity_alignment(["angel"]), do: "good"
+  def unity_alignment(["demon"]), do: "evil"
   def unity_alignment(_),       do: nil
 
   def handle_call({:create_monster, %Room{} = room}, _from, monster_template) do
@@ -171,19 +171,24 @@ defmodule MonsterTemplate do
       flags: monster_template.flags,
       chance_to_follow: monster_template.chance_to_follow,
       movement: monster_template.movement,
-      unity: room.room_unity && room.room_unity.unity,
+      unities: room |> Room.unity() |> List.wrap |> List.delete("default"),
       alignment: monster_template.alignment,
       spawned_at: room.id
     }
 
     monster = Map.put(monster, :keywords, String.split(monster.name))
 
-    if monster.unity do
+    if length(monster.unities) > 0 do
+      experience =
+        Enum.reduce(monster.unities, 0, fn(unity, exp) ->
+          exp + div(room.room_unity.essences[unity], length(monster.unities))
+        end)
+
       monster =
         monster
-        |> Map.put(:level, ApathyDrive.Level.level_at_exp(room.room_unity.essences[monster.unity]))
-        |> Map.put(:experience, room.room_unity.essences[monster.unity])
-        |> Map.put(:alignment, unity_alignment(monster.unity))
+        |> Map.put(:level, ApathyDrive.Level.level_at_exp(experience))
+        |> Map.put(:experience, experience)
+        |> Map.put(:alignment, unity_alignment(monster.unities))
     else
       monster =
         monster

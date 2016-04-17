@@ -11,6 +11,7 @@ defmodule ApathyDrive.Class do
     field :agility_per_level, :integer
     field :will, :integer
     field :will_per_level, :integer
+    field :unities, {:array, :string}
 
     has_many :spirits, Spirit
     has_many :class_abilities, ApathyDrive.ClassAbility

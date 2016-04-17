@@ -22,7 +22,7 @@ defmodule ApathyDrive.Mobile do
     field :experience,           :integer
     field :auto_attack_interval, :float,            default: 4.0
     field :questions,            ApathyDrive.JSONB
-    field :unity,                :string
+    field :unities,              {:array, :string}, default: []
     field :movement,             :string
     field :spawned_at,           :integer
 
@@ -153,12 +153,10 @@ defmodule ApathyDrive.Mobile do
 
     if mobile.level > level do
       send_scroll mobile, "<p>You ascend to level #{mobile.level}!"
-      ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity:mobiles", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> ascends to level #{mobile.level}!</p>"})
     end
 
     if mobile.level < level do
       send_scroll mobile, "<p>You fall to level #{mobile.level}!"
-      ApathyDrive.Endpoint.broadcast!("#{mobile.unity}-unity:mobiles", "scroll", %{:html => "<p>[<span class='yellow'>unity</span>]: <span class='#{Mobile.alignment_color(mobile)}'>#{mobile.name}</span> descends to level #{mobile.level}!</p>"})
     end
 
     mobile
@@ -516,6 +514,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
+      |> TimerManager.send_every({:unify,  60_000, :unify})
       |> move_after()
 
       ApathyDrive.PubSub.subscribe("mobiles")
@@ -526,10 +525,9 @@ defmodule ApathyDrive.Mobile do
         ApathyDrive.PubSub.subscribe("monster_templates:#{mobile.monster_template_id}:monsters")
       end
 
-      if mobile.unity do
-        ApathyDrive.PubSub.subscribe("#{mobile.unity}-unity:mobiles")
-        mobile = TimerManager.send_every(mobile, {:unify,  60_000, :unify})
-      end
+      Enum.each(mobile.unities, fn(unity) ->
+        ApathyDrive.PubSub.subscribe("#{unity}-unity:mobiles")
+      end)
 
       send(self, :notify_presence)
 
@@ -551,7 +549,9 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
     ApathyDrive.PubSub.subscribe("rooms:#{spirit.room_id}:spirits")
 
-    ApathyDrive.PubSub.subscribe("#{spirit.unity}-unity:mobiles")
+    Enum.each(spirit.class.unities, fn(unity) ->
+      ApathyDrive.PubSub.subscribe("#{unity}-unity:mobiles")
+    end)
 
     mobile =
       mobile
@@ -562,6 +562,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:name, spirit.name)
       |> Map.put(:experience, spirit.experience)
       |> Map.put(:level, spirit.level)
+      |> Map.put(:unities, spirit.class.unities)
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -625,10 +626,6 @@ defmodule ApathyDrive.Mobile do
 
   def possession_successful(mobile) do
     GenServer.cast(mobile, :possession_successful)
-  end
-
-  def turn(mobile, unity, essence) when is_pid(mobile) do
-    GenServer.cast(mobile, {:turn, unity, essence})
   end
 
   def answer(mobile, asker, question) do
@@ -914,7 +911,7 @@ defmodule ApathyDrive.Mobile do
     data = %{
       intruder: self,
       alignment: mobile.alignment,
-      unity: mobile.unity || (mobile.spirit && mobile.spirit.unity),
+      unities: mobile.unities,
       spawned_at: mobile.spawned_at,
       name: mobile.name,
       look_name: look_name(mobile)
@@ -1272,21 +1269,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:turn, unity, essence}, %Mobile{} = mobile) do
-    mobile =
-      mobile
-      |> Map.put(:attack_target, nil)
-      |> Map.put(:hate, %{})
-      |> Map.put(:unity, unity)
-      |> Map.put(:alignment, (if unity == "angel", do: "good", else: "evil"))
-      |> Map.put(:experience, essence)
-      |> Repo.save!
-
-    ApathyDrive.PubSub.subscribe("#{unity}-unity:mobiles")
-
-    {:noreply, mobile}
-  end
-
   def handle_cast({:execute_script, script}, mobile) do
     {:noreply, ApathyDrive.Script.execute(script, mobile)}
   end
@@ -1565,7 +1547,7 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:mobile_died, mobile: %Mobile{}, reward: _exp}, %Mobile{unity: nil, spirit: nil} = mobile) do
+  def handle_info({:mobile_died, mobile: %Mobile{}, reward: _exp}, %Mobile{unities: [], spirit: nil} = mobile) do
     {:noreply, mobile}
   end
   def handle_info({:mobile_died, mobile: %Mobile{} = _deceased, reward: exp}, %Mobile{spirit: nil} = mobile) do
@@ -1674,18 +1656,32 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info(:unify, %Mobile{spirit: nil, unity: unity, experience: essence} = mobile) when unity in ["demon", "angel"] do
-    {:noreply, unify(mobile, unity, essence)}
+  def handle_info(:unify, %Mobile{spirit: nil, unities: unities} = mobile) do
+    mobile =
+      unities
+      |> Enum.shuffle
+      |> Enum.reduce(mobile, fn(unity, updated_mobile) ->
+           unify(mobile, unity, updated_mobile.experience)
+         end)
+
+    {:noreply, mobile}
   end
 
-  def handle_info(:unify, %Mobile{spirit: %Spirit{class: %Class{name: class}}, experience: essence} = mobile) when class in ["Demon", "Angel"] do
-    {:noreply, unify(mobile, String.downcase(class), essence)}
+  def handle_info(:unify, %Mobile{spirit: %Spirit{class: %Class{unities: unities}}} = mobile) do
+    mobile =
+      unities
+      |> Enum.shuffle
+      |> Enum.reduce(mobile, fn(unity, updated_mobile) ->
+           unify(mobile, unity, updated_mobile.experience)
+         end)
+
+    {:noreply, mobile}
   end
 
   def handle_info({:monster_present, %{} = intruder_data}, %Mobile{spirit: nil} = mobile) do
     mobile = ApathyDrive.Aggression.react(%{mobile: mobile,
                                             alignment: mobile.alignment,
-                                            unity: mobile.unity || (mobile.spirit && mobile.spirit.unity),
+                                            unities: mobile.unities,
                                             spawned_at: mobile.spawned_at,
                                             name: mobile.name
                                           },
@@ -1803,30 +1799,7 @@ defmodule ApathyDrive.Mobile do
        end
   end
 
-  def handle_info({:say, %{name: _speaker, unity: speaker_unity}, "stay"}, %Mobile{spirit: nil, unity: unity} = mobile) when unity == speaker_unity do
-    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}:mobiles", "scroll", %{html: "<p>#{capitalize_first(mobile.name)} says: <span class='dark-green'>\"Ok.\"</span></p>"}
-
-    mobile =
-      mobile
-      |> Map.put(:movement, "stationary")
-      |> Repo.save!
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:say, %{name: _speaker, unity: speaker_unity}, "hunt"}, %Mobile{spirit: nil, unity: unity} = mobile) when unity == speaker_unity do
-    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}:mobiles", "scroll", %{html: "<p>#{capitalize_first(mobile.name)} says: <span class='dark-green'>\"Ok.\"</span></p>"}
-
-    mobile =
-      mobile
-      |> Map.put(:movement, "solo")
-      |> Map.put(:last_room, nil)
-      |> Repo.save!
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:say, %{name: speaker, unity: _speaker_unity}, message}, %Mobile{} = mobile) do
+  def handle_info({:say, %{name: speaker}, message}, %Mobile{} = mobile) do
     Mobile.send_scroll(mobile, "<p>#{capitalize_first(speaker)} says: <span class='dark-green'>\"#{message}\"</span></p>")
     {:noreply, mobile}
   end

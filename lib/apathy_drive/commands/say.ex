@@ -9,7 +9,7 @@ defmodule ApathyDrive.Commands.Say do
 
   def execute(%Mobile{} = mobile, message) do
     message = Mobile.sanitize(message)
-    ApathyDrive.PubSub.broadcast_from! self(), "rooms:#{mobile.room_id}:mobiles", {:say, %{name: mobile.name, unity: mobile.spirit && mobile.spirit.unity || mobile.unity}, message}
+    ApathyDrive.PubSub.broadcast_from! self(), "rooms:#{mobile.room_id}:mobiles", {:say, %{name: mobile.name}, message}
     Mobile.send_scroll(mobile, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
   end
 

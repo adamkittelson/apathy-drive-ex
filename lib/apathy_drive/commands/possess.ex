@@ -40,7 +40,7 @@ defmodule ApathyDrive.Commands.Possess do
     mobile
   end
 
-  def become_possessed(%Mobile{unity: unity} = mobile, _spirit_id, "Angel", _socket, possessor) when unity != "angel" do
+  def become_possessed(%Mobile{unities: ["angel"]} = mobile, _spirit_id, "Angel", _socket, possessor) do
     Mobile.send_scroll(possessor, "<p>You may only possess monsters who were spawned in a purified room.</p>")
     mobile
   end

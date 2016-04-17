@@ -83,6 +83,13 @@ defmodule Room do
     {:ok, room}
   end
 
+  def unity(%Room{} = room) do
+    room.room_unity.essences
+    |> Map.keys
+    |> Enum.sort_by(&Map.get(room.room_unity.essences, &1, 0), &>=/2)
+    |> List.first
+  end
+
   def default_essence(%Room{lair_monsters: []}), do: 0
   def default_essence(%Room{lair_monsters: lair_monsters}) do
     lair_monsters
@@ -592,7 +599,6 @@ defmodule Room do
     essence_to_send_back = div(room.room_unity.essences[unity], 100)
 
     room = update_in(room.room_unity.essences[unity], &(&1 - essence_to_send_back))
-           |> set_unity
 
     Mobile.add_experience(mobile, essence_to_send_back)
 
@@ -974,7 +980,6 @@ defmodule Room do
          end)
 
     room = put_in(room.room_unity.essences, essences)
-           |> set_unity
 
     {:noreply, room}
   end
@@ -990,7 +995,6 @@ defmodule Room do
     end
 
     room = put_in(room.room_unity.essences, updated_essences)
-           |> set_unity
 
     {:noreply, room}
   end
@@ -1048,20 +1052,6 @@ defmodule Room do
     time
     |> :rand.uniform
     |> Kernel.+(time)
-  end
-
-  defp set_unity(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
-    unity =
-      essences
-      |> Map.keys
-      |> Enum.sort_by(&Map.get(essences, &1, 0), &>=/2)
-      |> List.first
-
-    if unity == "default" || Map.get(essences, unity) == 0 do
-      put_in room.room_unity.unity, nil
-    else
-      put_in room.room_unity.unity, unity
-    end
   end
 
 end
