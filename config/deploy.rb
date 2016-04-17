@@ -54,6 +54,15 @@ end
 
 namespace :deploy do
 
+  desc "Reset game state" do
+    task :reset do
+      on roles(:app) do |host|
+        execute :sudo, "stop", "apathy_drive"
+        execute :sudo, "start", "apathy_drive", "RESET_GAME=true"
+      end
+    end
+  end
+
   desc "Restart application"
   task :restart do
     on roles(:app) do |host|
