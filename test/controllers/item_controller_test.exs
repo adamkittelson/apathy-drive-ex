@@ -8,7 +8,7 @@ defmodule ApathyDrive.ItemControllerTest do
 
   having "admin privledges" do
     setup context do
-      conn = conn()
+      conn = build_conn()
              |> assign(:admin?, true)
 
       Dict.put context, :conn, conn

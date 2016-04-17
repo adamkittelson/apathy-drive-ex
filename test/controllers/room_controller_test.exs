@@ -7,7 +7,7 @@ defmodule ApathyDrive.RoomControllerTest do
 
   having "admin privledges" do
     setup context do
-      conn = conn()
+      conn = build_conn()
              |> assign(:admin?, true)
 
       Dict.put context, :conn, conn
@@ -68,7 +68,7 @@ defmodule ApathyDrive.RoomControllerTest do
 
   having "no admin privledges" do
     setup context do
-      conn = conn()
+      conn = build_conn()
 
       Dict.put context, :conn, conn
     end
