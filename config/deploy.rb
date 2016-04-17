@@ -54,12 +54,11 @@ end
 
 namespace :deploy do
 
-  desc "Reset game state" do
-    task :reset do
-      on roles(:app) do |host|
-        execute :sudo, "stop", "apathy_drive"
-        execute :sudo, "start", "apathy_drive", "RESET_GAME=true"
-      end
+  desc "Reset game state"
+  task :reset do
+    on roles(:app) do |host|
+      execute :sudo, "stop", "apathy_drive"
+      execute :sudo, "start", "apathy_drive", "RESET_GAME=true"
     end
   end
 
