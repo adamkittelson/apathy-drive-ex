@@ -160,6 +160,16 @@ defmodule ApathyDrive.Mobile do
       send_scroll mobile, "<p>You fall to level #{mobile.level}!"
     end
 
+    if mobile.level != level do
+      mobile =
+        mobile
+        |> set_abilities
+        |> set_max_mana
+        |> set_mana
+        |> set_max_hp
+        |> set_hp
+    end
+
     mobile
   end
 
