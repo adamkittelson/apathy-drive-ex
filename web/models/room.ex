@@ -77,7 +77,7 @@ defmodule Room do
       room
       |> TimerManager.send_every({:spread_essence, 60_000, :spread_essence})
 
-    Process.send_after(self(), :spread_essence, 1000)
+    if Application.get_env(:apathy_drive, :quick_load), do: Process.send_after(self(), :spread_essence, 1000)
     Process.send_after(self(), :save, 2000)
 
     {:ok, room}
