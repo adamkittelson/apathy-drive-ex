@@ -13,7 +13,7 @@ defmodule ApathyDrive.Command do
      Commands.Cooldowns, Commands.Drop, Commands.Experience, Commands.Forms,
      Commands.Get, Commands.Gossip, Commands.Greet,
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
-     Commands.Possess, Commands.Protection, Commands.Remove,
+     Commands.Possess, Commands.Protection, Commands.Remove, Commands.Return,
      Commands.Say, Commands.Score, Commands.Search,
      Commands.Unpossess, Commands.Wear, Commands.Who]
   end
