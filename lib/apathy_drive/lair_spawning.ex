@@ -12,7 +12,7 @@ defmodule ApathyDrive.LairSpawning do
         monster = MonsterTemplate.create_monster(monster_template, room)
                   |> Mobile.load
 
-        ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:adjacent", {:audible_movement, room.id, nil})
+        Room.audible_movement({:global, "room_#{room.id}"}, nil)
 
         Mobile.display_enter_message(monster, self)
 

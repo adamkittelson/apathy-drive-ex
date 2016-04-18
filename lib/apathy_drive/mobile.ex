@@ -947,6 +947,10 @@ defmodule ApathyDrive.Mobile do
     |> Repo.save!
   end
 
+  defp sound_direction("up"),      do: "above you"
+  defp sound_direction("down"),    do: "below you"
+  defp sound_direction(direction), do: "to the #{direction}"
+
   defp unify(mobile, unity, essence) do
     essence_to_distribute = div(essence, 100)
 
@@ -1407,6 +1411,11 @@ defmodule ApathyDrive.Mobile do
     class_name = String.downcase(spirit.class.name)
 
     ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
+    {:noreply, mobile}
+  end
+
+  def handle_info({:audible_movement, direction}, mobile) do
+    send_scroll(mobile, "<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
     {:noreply, mobile}
   end
 

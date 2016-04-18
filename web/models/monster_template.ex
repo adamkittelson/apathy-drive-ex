@@ -156,7 +156,7 @@ defmodule MonsterTemplate do
 
   def unity_alignment(["angel"]), do: "good"
   def unity_alignment(["demon"]), do: "evil"
-  def unity_alignment(_),       do: nil
+  def unity_alignment(_),       do: "neutral"
 
   def handle_call({:create_monster, %Room{} = room}, _from, monster_template) do
     monster = %{

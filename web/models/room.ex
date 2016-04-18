@@ -160,6 +160,10 @@ defmodule Room do
     PubSub.subscribers("rooms")
   end
 
+  def audible_movement(room, except_direction) do
+    GenServer.cast(room, {:audible_movement, except_direction})
+  end
+
   def create_monster(room, monster_template_id) do
     GenServer.cast(room, {:create_monster, monster_template_id})
   end
@@ -398,10 +402,6 @@ defmodule Room do
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
 
-  def sound_direction("up"),      do: "above you"
-  def sound_direction("down"),    do: "below you"
-  def sound_direction(direction), do: "to the #{direction}"
-
   def spawned_monster_count(room_id) do
     ApathyDrive.Mobile
     |> where(spawned_at: ^room_id)
@@ -570,6 +570,16 @@ defmodule Room do
     {:reply, room, room}
   end
 
+  def handle_cast({:audible_movement, except_direction}, %Room{exits: exits} = room) do
+    exits
+    |> Enum.each(fn
+         %{"direction" => direction, "kind" => kind, "destination" => dest} when kind in ["Normal", "Action", "Door", "Gate"] and direction != except_direction ->
+           PubSub.broadcast("rooms:#{dest}:mobiles", {:audible_movement, ApathyDrive.Exit.reverse_direction(direction)})
+         _ -> :noop
+       end)
+
+    {:noreply, room}
+  end
   def handle_cast({:create_monster, monster_template_id}, room) do
     monster =
       monster_template_id
@@ -1032,16 +1042,6 @@ defmodule Room do
 
   def handle_info({:room_updated, %{changes: changes}}, room) do
     {:noreply, Map.merge(room, changes)}
-  end
-
-  def handle_info({:audible_movement, room_id, exception_room_id}, %Room{id: id} = room) when id != exception_room_id do
-    case Enum.find(room.exits, &(&1["destination"] == room_id)) do
-      %{"direction" => direction} ->
-        send_scroll(room, "<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
-      _ ->
-        :noop
-    end
-    {:noreply, room}
   end
 
   def handle_info(_message, room) do

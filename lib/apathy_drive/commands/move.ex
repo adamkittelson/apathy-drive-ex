@@ -48,7 +48,7 @@ defmodule ApathyDrive.Commands.Move do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
   end
 
-  def execute(%Mobile{} = mobile, _room, %{"kind" => "Normal", "destination" => destination_id}, last_room) do
+  def execute(%Mobile{} = mobile, _room, %{"kind" => "Normal", "destination" => destination_id} = room_exit, last_room) do
     import Mobile
 
     if !held(mobile) do
@@ -58,7 +58,6 @@ defmodule ApathyDrive.Commands.Move do
 
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
-      ApathyDrive.PubSub.broadcast!("rooms:#{destination_id}:adjacent", {:audible_movement, destination_id, mobile.room_id})
 
       mobile =
         mobile
@@ -75,6 +74,8 @@ defmodule ApathyDrive.Commands.Move do
       end
 
       destination = Room.find(destination_id)
+
+      Room.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
 
       Mobile.look(self)
 
@@ -101,7 +102,6 @@ defmodule ApathyDrive.Commands.Move do
 
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
-      ApathyDrive.PubSub.broadcast!("rooms:#{destination_id}:adjacent", {:audible_movement, destination_id, mobile.room_id})
 
       mobile =
         mobile
@@ -118,6 +118,8 @@ defmodule ApathyDrive.Commands.Move do
       end
 
       destination = Room.find(destination_id)
+
+      Room.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
 
       Mobile.look(self)
 
