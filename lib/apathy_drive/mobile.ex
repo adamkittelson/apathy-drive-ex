@@ -148,7 +148,7 @@ defmodule ApathyDrive.Mobile do
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
     mobile =
       mobile
-      |> Map.put(:experience, max(experience + exp, mobile.minimum_essence))
+      |> Map.put(:experience, max(experience + exp, mobile.minimum_essence || 0))
       |> ApathyDrive.Level.advance
       |> Map.put(:spirit, Spirit.add_experience(mobile.spirit, exp))
 

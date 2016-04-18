@@ -176,7 +176,7 @@ defmodule MonsterTemplate do
       unities: monster_template.unities || (room |> Room.unity() |> List.wrap |> List.delete("default")),
       alignment: monster_template.alignment,
       spawned_at: room.id,
-      minimum_essence: monster_template.minimum_essence
+      minimum_essence: monster_template.minimum_essence || 0
     }
 
     monster = Map.put(monster, :keywords, String.split(monster.name))
