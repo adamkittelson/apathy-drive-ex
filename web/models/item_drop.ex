@@ -41,6 +41,7 @@ defmodule ApathyDrive.ItemDrop do
     end
   end
 
+  def monster_drops(nil), do: []
   def monster_drops(monster_template_id) do
     query = from drop in __MODULE__,
             where: drop.monster_id == ^monster_template_id,

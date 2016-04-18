@@ -68,7 +68,7 @@ defmodule Systems.Death do
     kill(mobile, remaining_steps)
   end
   def kill(mobile, [:generate_loot | remaining_steps]) do
-    ApathyDrive.PubSub.broadcast!("rooms:#{mobile.room_id}:spirits", {:generate_loot, mobile.monster_template_id, Mobile.level(mobile)})
+    ApathyDrive.PubSub.broadcast!("rooms:#{mobile.room_id}:spirits", {:generate_loot, mobile.monster_template_id, Mobile.level(mobile), 50})
 
     kill(mobile, remaining_steps)
   end

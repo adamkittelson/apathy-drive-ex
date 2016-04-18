@@ -33,6 +33,7 @@ defmodule Spirit do
     field :admin,             :boolean
     field :inventory,         ApathyDrive.JSONB, default: []
     field :equipment,         ApathyDrive.JSONB, default: []
+    field :loot_essence,      :integer, default: 0, virtual: true
 
     timestamps
   end
@@ -95,10 +96,23 @@ defmodule Spirit do
     spirit = spirit
              |> Map.put(:experience, spirit.experience + exp)
              |> ApathyDrive.Level.advance
+             |> add_loot_essence(exp)
              |> Spirit.save
 
     spirit
   end
+
+  defp add_loot_essence(spirit, exp) when exp > 0 do
+    spirit = put_in spirit.loot_essence, spirit.loot_essence + exp
+
+    if spirit.loot_essence >= div(spirit.experience, 10) do
+      send(self(), {:generate_loot, nil, spirit.level, 100})
+      put_in spirit.loot_essence, 0
+    else
+      spirit
+    end
+  end
+  defp add_loot_essence(spirit, _exp), do: spirit
 
   def online do
     PubSub.subscribers("spirits:online")

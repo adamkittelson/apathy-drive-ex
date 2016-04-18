@@ -1766,12 +1766,12 @@ defmodule ApathyDrive.Mobile do
     {:noreply, Ability.execute(mobile, ability, [self])}
   end
 
-  def handle_info({:generate_loot, monster_template_id, level}, mobile) do
+  def handle_info({:generate_loot, monster_template_id, level, global_chance}, mobile) do
     ItemDrop.monster_drops(monster_template_id)
     |> Enum.map(fn(%{item_id: item_id, chance: chance}) ->
          ApathyDrive.Item.generate_item(%{chance: chance, item_id: item_id, level: level})
        end)
-    |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: 50, item_id: :global, level: level}))
+    |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: global_chance, item_id: :global, level: level}))
     |> Enum.reject(&is_nil/1)
     |> case do
          [] ->
