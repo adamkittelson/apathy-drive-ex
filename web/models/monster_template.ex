@@ -190,13 +190,13 @@ defmodule MonsterTemplate do
       monster =
         monster
         |> Map.put(:level, ApathyDrive.Level.level_at_exp(experience))
-        |> Map.put(:experience, max(experience, monster_template.minimum_essence))
+        |> Map.put(:experience, max(experience, monster_template.minimum_essence || 0))
         |> Map.put(:alignment, unity_alignment(monster.unities))
     else
       monster =
         monster
         |> Map.put(:level, monster_template.level)
-        |> Map.put(:experience, max(ApathyDrive.Level.exp_at_level(monster_template.level), monster_template.minimum_essence))
+        |> Map.put(:experience, max(ApathyDrive.Level.exp_at_level(monster_template.level), monster_template.minimum_essence || 0))
     end
 
     monster = Map.merge(%Mobile{}, monster)
