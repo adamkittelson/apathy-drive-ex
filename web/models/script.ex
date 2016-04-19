@@ -74,11 +74,11 @@ defmodule ApathyDrive.Script do
     execute_script([new_script | script], monster)
   end
 
-  def execute_instruction(%{"max_evil_points" => %{"failure_message" => message, "amount" => amount}}, monster, script) do
-    if Components.Alignment.value(monster) <= amount do
-      execute_script(script, monster)
+  def execute_instruction(%{"allowed_alignments" => %{"failure_message" => message, "alignments" => alignments}}, %Mobile{alignment: alignment} = mobile, script) do
+    if alignment in alignments do
+      execute_script(script, mobile)
     else
-      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{message}</p>")
     end
   end
 
