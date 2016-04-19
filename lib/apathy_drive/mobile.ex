@@ -119,8 +119,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, {:auto_move, exit_and_last_room})
   end
 
-  def greet(mobile, target) do
-    GenServer.cast(mobile, {:greet, target})
+  def greet(mobile, query) do
+    GenServer.cast(mobile, {:greet, query})
   end
 
   def list_forms(mobile, slot \\ "all") do
@@ -1283,7 +1283,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_cast({:greet, target}, mobile) do
-    Commands.Greet.greet(mobile, target)
+    Commands.Greet.execute(mobile, target)
     {:noreply, mobile}
   end
 

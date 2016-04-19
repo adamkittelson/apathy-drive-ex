@@ -160,6 +160,10 @@ defmodule Room do
     PubSub.subscribers("rooms")
   end
 
+  def greet(room, greeter, query) do
+    GenServer.cast(room, {:greet, greeter, query})
+  end
+
   def audible_movement(room, except_direction) do
     GenServer.cast(room, {:audible_movement, except_direction})
   end
@@ -568,6 +572,11 @@ defmodule Room do
   def handle_call({:lock, direction}, _from, room) do
     room = lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:greet, greeter, query}, %Room{} = room) do
+    Commands.Greet.execute(room, greeter, query)
+    {:noreply, room}
   end
 
   def handle_cast({:audible_movement, except_direction}, %Room{exits: exits} = room) do
