@@ -44,7 +44,7 @@ defmodule Room do
     unless room.room_unity do
       room_unity =
         room
-        |> build_assoc(:room_unity, essences: %{"angel" => 0, "demon" => 0, "default" => default_essence(room)})
+        |> build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => default_essence(room)})
         |> Repo.save!
 
       room = %{room | room_unity: room_unity}
@@ -612,7 +612,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_cast({:add_essence_from_mobile, mobile, unity, essence}, %Room{} = room) when unity in ["angel", "demon"] do
+  def handle_cast({:add_essence_from_mobile, mobile, unity, essence}, %Room{} = room) when unity in ["good", "evil"] do
     room = update_in room.room_unity.essences[unity], &(&1 + essence)
 
     essence_to_send_back = div(room.room_unity.essences[unity], 100)

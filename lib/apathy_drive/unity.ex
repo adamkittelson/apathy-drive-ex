@@ -6,7 +6,7 @@ defmodule ApathyDrive.Unity do
   @interval 60_000
 
   def start_link do
-    GenServer.start_link(__MODULE__, %{"demon" => %{}, "angel" => %{}}, name: __MODULE__)
+    GenServer.start_link(__MODULE__, %{"evil" => %{}, "good" => %{}}, name: __MODULE__)
   end
 
   def init(contributions) do
@@ -19,7 +19,7 @@ defmodule ApathyDrive.Unity do
     GenServer.cast(__MODULE__, {:contribute, contributor, unity, contribution})
   end
 
-  def handle_cast({:contribute, contributor, unity, contribution}, contributions) when unity in ["demon", "angel"] do
+  def handle_cast({:contribute, contributor, unity, contribution}, contributions) when unity in ["evil", "good"] do
     contributions = update_in contributions, [unity, contributor], &((&1 || 0) + contribution)
     {:noreply, contributions}
   end
@@ -37,7 +37,7 @@ defmodule ApathyDrive.Unity do
 
     Process.send_after(self, :redistribute_essence, @interval)
 
-    {:noreply, %{"demon" => %{}, "angel" => %{}}}
+    {:noreply, %{"evil" => %{}, "good" => %{}}}
   end
 
   def calculate_distributions(contributions) do

@@ -27,19 +27,19 @@ defmodule ApathyDrive.Commands.Look do
   def execute(%Room{} = room, %{mobile: mobile}, []) do
     name_color =
       case Room.unity(room) do
-        "demon" ->
+        "evil" ->
           "magenta"
-        "angel" ->
+        "good" ->
           "white"
         _ ->
           "cyan"
       end
 
-    angel   = Map.get(room.room_unity.essences, "angel", 0)
-    demon   = Map.get(room.room_unity.essences, "demon", 0)
+    good   = Map.get(room.room_unity.essences, "good", 0)
+    evil   = Map.get(room.room_unity.essences, "evil", 0)
     default = Map.get(room.room_unity.essences, "default", 0)
 
-    Mobile.send_scroll(mobile, "<p><span class='#{name_color}'>#{room.name}</span> (<span class='white'>#{angel}</span>/<span class='cyan'>#{default}</span>/<span class='magenta'>#{demon}</span>)</p>")
+    Mobile.send_scroll(mobile, "<p><span class='#{name_color}'>#{room.name}</span> (<span class='white'>#{good}</span>/<span class='cyan'>#{default}</span>/<span class='magenta'>#{evil}</span>)</p>")
     Mobile.send_scroll(mobile, "<p>    #{room.description}</p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
     Mobile.send_scroll(mobile, look_mobiles(room, mobile))
