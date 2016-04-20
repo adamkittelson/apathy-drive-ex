@@ -34,6 +34,7 @@ defmodule Spirit do
     field :inventory,         ApathyDrive.JSONB, default: []
     field :equipment,         ApathyDrive.JSONB, default: []
     field :loot_essence,      :integer, default: 0, virtual: true
+    field :flags,             :map, default: %{}
 
     timestamps
   end

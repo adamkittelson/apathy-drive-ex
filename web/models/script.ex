@@ -44,29 +44,49 @@ defmodule ApathyDrive.Script do
     execute_script(script, mobile)
   end
 
-  def execute_instruction(%{"fail_flag" => %{"failure_message" => message, "flag" => flag}}, monster, script) do
-    if Components.Flags.has_flag?(monster, flag) do
-      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+  def execute_instruction(%{"fail_flag" => %{"failure_message" => _message, "flag" => _flag}}, %Mobile{spirit: nil} = mobile, _script) do
+    mobile
+  end
+
+  def execute_instruction(%{"fail_flag" => %{"failure_message" => message, "flag" => flag}}, %Mobile{spirit: spirit} = mobile, script) do
+    if Map.has_key?(spirit.flags, flag) do
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{message}</p>")
     else
-      execute_script(script, monster)
+      execute_script(script, mobile)
     end
   end
 
-  def execute_instruction(%{"give_flag" => %{"flag" => flag, "value" => value}}, monster, script) do
-    Components.Flags.set_flag(monster, flag, value)
-    Entities.save!(monster)
-    execute_script(script, monster)
+  def execute_instruction(%{"give_flag" => %{"flag" => _flag, "value" => _value}}, %Mobile{spirit: nil} = mobile, _script) do
+    mobile
   end
 
-  def execute_instruction(%{"flag_equals" => %{"flag" => flag, "value" => value}}, monster, script) do
-    if Components.Flags.flag_equals?(monster, flag, value) do
-      execute_script(script, monster)
+  def execute_instruction(%{"give_flag" => %{"flag" => flag, "value" => value}}, %Mobile{} = mobile, script) do
+    mobile =
+      put_in(mobile.spirit.flags[flag], value)
+      |> Mobile.save
+
+    execute_script(script, mobile)
+  end
+
+  def execute_instruction(%{"flag_equals" => %{"flag" => _flag, "value" => _value}}, %Mobile{spirit: nil} = mobile, _script) do
+    mobile
+  end
+
+  def execute_instruction(%{"flag_equals" => %{"flag" => flag, "value" => value}}, %Mobile{spirit: spirit} = mobile, script) do
+    if value == spirit.flags[flag] do
+      execute_script(script, mobile)
+    else
+      mobile
     end
   end
 
-  def execute_instruction(%{"flag_at_least" => %{"flag" => flag, "value" => value}}, monster, script) do
-    if Components.Flags.flag_at_least?(monster, flag, value) do
-      execute_script(script, monster)
+  def execute_instruction(%{"flag_at_least" => %{"flag" => _flag, "value" => _value}}, %Mobile{spirit: nil} = mobile, _script) do
+    mobile
+  end
+
+  def execute_instruction(%{"flag_at_least" => %{"flag" => flag, "value" => value}}, mobile, script) do
+    if mobile.spirit.flags[flag] && mobile.spirit.flags[flag] >= value do
+      execute_script(script, mobile)
     end
   end
 
@@ -116,14 +136,6 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%{"min_evil_points" => %{"amount" => amount, "failure_message" => failure_message}}, %Mobile{} = mobile, script) do
-    if Mobile.evil_points(mobile) < amount do
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")
-    else
-      execute_script(script, mobile)
-    end
-  end
-
   def execute_instruction(%{"give_item" => item_template_id}, %Mobile{} = mobile, script) do
     item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: mobile.level})
 
@@ -149,11 +161,11 @@ defmodule ApathyDrive.Script do
     execute_script(script, mobile)
   end
 
-  def execute_instruction(%{"min_level" => %{"failure_message" => message, "level" => level}}, monster, script) do
-    if Components.Level.value(monster) < level do
-      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+  def execute_instruction(%{"min_level" => %{"failure_message" => message, "level" => level}}, mobile, script) do
+    if mobile.level < level do
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{message}</p>")
     else
-      execute_script(script, monster)
+      execute_script(script, mobile)
     end
   end
 
@@ -217,6 +229,12 @@ defmodule ApathyDrive.Script do
       instructions ->
         execute_script(instructions, mobile)
     end
+  end
+
+  def execute_instruction(%{"teleport" => room_id}, %Mobile{} = mobile, script) do
+    Mobile.teleport(self(), room_id)
+
+    execute_script(script, mobile)
   end
 
   def execute_instruction(instruction, mobile, _script) do

@@ -67,6 +67,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.start_link(__MODULE__, id, opts)
   end
 
+  def teleport(mobile, room_id) do
+    GenServer.cast(mobile, {:teleport, room_id})
+  end
+
   def say(mobile, message) do
     GenServer.cast(mobile, {:say, message})
   end
@@ -1092,6 +1096,50 @@ defmodule ApathyDrive.Mobile do
                    |> set_hp
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
+    end
+  end
+
+  def handle_cast({:teleport, room_id}, mobile) do
+    if !held(mobile) do
+      mobile.room_id
+      |> Room.find
+      |> Room.display_exit_message(%{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} vanishes into thin air!</span>", to: nil})
+
+      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
+      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
+
+      destination_id =
+        if room_id == :home do
+          mobile.spirit.class.start_room_id
+        else
+          room_id
+        end
+
+      mobile =
+        mobile
+        |> Map.put(:room_id, destination_id)
+        |> Map.put(:last_room, nil)
+
+      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
+      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
+
+      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
+      mobile = put_in(mobile.spirit.room_id, mobile.room_id)
+      ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
+
+      destination = Room.find(destination_id)
+
+      Room.audible_movement({:global, "room_#{destination_id}"}, nil)
+
+      Mobile.look(self)
+
+      Room.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} appears out of thin air!</span>", from: nil})
+
+      notify_presence(mobile)
+
+      {:noreply, mobile}
+    else
+      {:noreply, mobile}
     end
   end
 
