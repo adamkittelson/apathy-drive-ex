@@ -16,5 +16,5 @@
 
 ## misc db commands
 * create db: `cap production db:create`
-* run migrations: `cap production db:migrate`
 * drop / restore world data: `cap production db:reload`
+* reset world data (map control / mobiles): `cap production deploy:reset`
