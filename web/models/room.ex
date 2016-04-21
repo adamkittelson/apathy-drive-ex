@@ -89,7 +89,7 @@ defmodule Room do
       |> div(50)
       |> max(1)
 
-    evil_to_remove
+    evil_to_remove =
       evil
       |> div(50)
       |> max(1)
