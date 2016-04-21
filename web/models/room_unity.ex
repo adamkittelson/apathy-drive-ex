@@ -3,6 +3,7 @@ defmodule ApathyDrive.RoomUnity do
   use Timex
 
   schema "room_unities" do
+    field :controlled_by, :string
     field :essences,   ApathyDrive.JSONB, default: %{}
     field :expires_at, Timex.Ecto.DateTime
 
