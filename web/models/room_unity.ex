@@ -18,4 +18,11 @@ defmodule ApathyDrive.RoomUnity do
     |> select([ru], ru.room_id)
   end
 
+  def controlled_by_counts do
+    __MODULE__
+    |> group_by([ru], ru.controlled_by)
+    |> select([ru], {ru.controlled_by, count(ru.controlled_by)})
+    |> Repo.all
+  end
+
 end
