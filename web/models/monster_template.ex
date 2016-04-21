@@ -173,7 +173,7 @@ defmodule MonsterTemplate do
       flags: monster_template.flags,
       chance_to_follow: monster_template.chance_to_follow,
       movement: monster_template.movement,
-      unities: monster_template.unities || (room |> Room.unity() |> List.wrap |> List.delete("default")),
+      unities: monster_template.unities || (room |> Room.controlled_by |> List.wrap |> List.delete("default")),
       alignment: monster_template.alignment,
       spawned_at: room.id,
       minimum_essence: monster_template.minimum_essence || 0

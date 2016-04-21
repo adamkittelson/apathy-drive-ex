@@ -83,11 +83,35 @@ defmodule Room do
     {:ok, room}
   end
 
-  def unity(%Room{} = room) do
-    room.room_unity.essences
-    |> Map.keys
-    |> Enum.sort_by(&Map.get(room.room_unity.essences, &1, 0), &>=/2)
-    |> List.first
+  def controlled_by(%Room{} = room) do
+    room.room_unity.controlled_by
+  end
+
+  def update_controlled_by(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
+    controlled_by = room.room_unity.controlled_by
+
+    highest_essence =
+      essences
+      |> Map.keys
+      |> Enum.sort_by(&Map.get(essences, &1, 0), &>=/2)
+      |> List.first
+
+    new_controlled_by =
+      cond do
+        highest_essence == "good" and (essences["good"] * 0.9) > essences["evil"] ->
+          "good"
+        highest_essence == "evil" and (essences["evil"] * 0.9) > essences["good"] ->
+          "evil"
+        true ->
+          nil
+      end
+
+    if controlled_by != new_controlled_by do
+      put_in(room.room_unity.controlled_by, new_controlled_by)
+      |> save!
+    else
+      room
+    end
   end
 
   def default_essence(%Room{lair_monsters: []}), do: 0
@@ -613,11 +637,13 @@ defmodule Room do
   end
 
   def handle_cast({:add_essence_from_mobile, mobile, unity, essence}, %Room{} = room) when unity in ["good", "evil"] do
-    room = update_in room.room_unity.essences[unity], &(&1 + essence)
+    room = update_in(room.room_unity.essences[unity], &(&1 + essence))
 
     essence_to_send_back = div(room.room_unity.essences[unity], 100)
 
-    room = update_in(room.room_unity.essences[unity], &(&1 - essence_to_send_back))
+    room =
+      update_in(room.room_unity.essences[unity], &(&1 - essence_to_send_back))
+      |> update_controlled_by
 
     Mobile.add_experience(mobile, essence_to_send_back)
 
@@ -998,7 +1024,9 @@ defmodule Room do
              updated_essence
          end)
 
-    room = put_in(room.room_unity.essences, essences)
+    room =
+      put_in(room.room_unity.essences, essences)
+      |> update_controlled_by()
 
     {:noreply, room}
   end
@@ -1013,7 +1041,9 @@ defmodule Room do
       updated_essences = Map.put(updated_essences, "default", default)
     end
 
-    room = put_in(room.room_unity.essences, updated_essences)
+    room =
+      put_in(room.room_unity.essences, updated_essences)
+      |> update_controlled_by()
 
     {:noreply, room}
   end
