@@ -84,20 +84,17 @@ defmodule Room do
   end
 
   def essence_reaction(%Room{room_unity: %RoomUnity{essences: %{"good" => good, "evil" => evil}}} = room) when good > 0 and evil > 0 do
-    amount_to_remove =
-      if good > evil do
-        good
-        |> div(100)
-        |> min(evil)
-        |> max(1)
-      else
-        evil
-        |> div(100)
-        |> min(good)
-        |> max(1)
-      end
+    good_to_remove =
+      good
+      |> div(50)
+      |> max(1)
 
-    update_in(room.room_unity.essences, &(&1 |> Map.put("good", good - amount_to_remove) |> Map.put("evil", evil - amount_to_remove)))
+    evil_to_remove
+      evil
+      |> div(50)
+      |> max(1)
+
+    update_in(room.room_unity.essences, &(&1 |> Map.put("good", good - good_to_remove) |> Map.put("evil", evil - evil_to_remove)))
   end
   def essence_reaction(%Room{} = room), do: room
 
