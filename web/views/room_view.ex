@@ -13,7 +13,7 @@ defmodule ApathyDrive.RoomView do
   def exit_directions(conn, %Room{} = room) do
     room.exits
     |> Enum.map(fn(room_exit) ->
-         direction_link(conn, room_exit, :"Elixir.ApathyDrive.Exits.#{room_exit["kind"]}".display_direction(room, room_exit))
+         direction_link(conn, room_exit, ApathyDrive.Commands.Look.display_direction(room_exit, room))
        end)
     |> Enum.reject(&(&1 == nil))
   end
