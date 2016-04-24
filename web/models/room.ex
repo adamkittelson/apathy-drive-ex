@@ -1015,9 +1015,9 @@ defmodule Room do
     essences =
       exits
       |> Enum.reduce(essences, fn
-           %{"kind" => "RemoteAction"}, updated_essences ->
+           %{"kind" => kind}, updated_essences when kind in ["Cast", "RemoteAction"] ->
              updated_essences
-           %{"destination" => dest}, updated_essences ->
+           %{"destination" => dest, "direction" => direction, "kind" => kind}, updated_essences ->
              essence_to_distribute =
                Enum.reduce(updated_essences, %{}, fn({unity, essence}, essence_to_distribute) ->
                  Map.put(essence_to_distribute, unity, div(essence, 100))
@@ -1032,9 +1032,19 @@ defmodule Room do
                updated_essence = Map.put(updated_essence, "default", default)
              end
 
+             payload = %{
+               essence: essence_to_distribute,
+               room_id: room.id,
+               direction: direction,
+               kind: kind,
+               legacy_id: room.legacy_id,
+               area: room.area,
+               controlled_by: room.room_unity.controlled_by
+             }
+
              dest
              |> Room.find
-             |> send({:spread_essence, essence_to_distribute})
+             |> send({:spread_essence, payload})
 
              updated_essence
          end)
@@ -1049,7 +1059,7 @@ defmodule Room do
 
   def handle_info({:spread_essence, distribution}, %Room{room_unity: %RoomUnity{essences: essences}} = room) do
     updated_essences =
-      Enum.reduce(distribution, essences, fn({unity, essence}, updated_essences) ->
+      Enum.reduce(distribution.essence, essences, fn({unity, essence}, updated_essences) ->
         Map.put(updated_essences, unity, updated_essences[unity] + essence)
       end)
 
@@ -1057,9 +1067,30 @@ defmodule Room do
       updated_essences = Map.put(updated_essences, "default", default)
     end
 
-    room =
-      put_in(room.room_unity.essences, updated_essences)
-      |> update_controlled_by()
+    mirror_exit =
+      mirror_exit(room, distribution.room_id)
+
+    unless mirror_exit do
+      expected_direction = ApathyDrive.Exit.reverse_direction(distribution.direction)
+
+      if room.exits |> Enum.map(&(&1["direction"])) |> Enum.member?(expected_direction) do
+        Logger.info "CONFLICTING DIRECTION"
+      else
+        new_exit = %{"kind" => distribution.kind, "direction" => expected_direction, "destination" => distribution.room_id}
+        Logger.info "auto-creating exit: #{inspect new_exit}"
+
+        if distribution.kind == "Normal" do
+          put_in(room.exits, [new_exit | room.exits])
+          |> Repo.save!
+        end
+      end
+
+      raise "expected exit #{expected_direction} from #{room.id} (#{room.legacy_id}) to #{distribution.room_id} (#{distribution.legacy_id})"
+    end
+
+    room = put_in(room.room_unity.essences, updated_essences)
+    room = put_in(room.room_unity.exits[mirror_exit["direction"]], %{"area" => distribution.area, "controlled_by" => distribution.controlled_by})
+           |> update_controlled_by()
 
     {:noreply, room}
   end
