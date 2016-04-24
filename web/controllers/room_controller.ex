@@ -10,6 +10,7 @@ defmodule ApathyDrive.RoomController do
     page =
       Room
       |> where([r], ilike(r.name, ^query))
+      |> Ecto.Query.preload(:room_unity)
       |> order_by([r], asc: r.id)
       |> Repo.paginate(params)
 
@@ -24,6 +25,7 @@ defmodule ApathyDrive.RoomController do
   def index(conn, params) do
     page =
       Room
+      |> Ecto.Query.preload(:room_unity)
       |> order_by([r], asc: r.id)
       |> Repo.paginate(params)
 
@@ -60,6 +62,7 @@ defmodule ApathyDrive.RoomController do
       room
       |> Ecto.Model.assoc(:lairs)
       |> Ecto.Query.preload(:monster_template)
+      |> Ecto.Query.preload(:room_unity)
       |> Repo.all
 
     render(conn, "show.html", room: room, lairs: lairs)
