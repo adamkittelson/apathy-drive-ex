@@ -652,7 +652,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def unpossess(mobile) when is_pid(mobile) do
-    GenServer.call(mobile, :unpossess)
+    GenServer.cast(mobile, :unpossess)
   end
 
   def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
@@ -677,14 +677,11 @@ defmodule ApathyDrive.Mobile do
     spirit_abilities =
      ApathyDrive.ClassAbility.for_spirit(spirit)
      |> add_abilities_from_equipment(spirit.equipment)
-     |> Enum.filter(fn(ability) ->
-          !!Map.get(ability, "passive")
-        end)
 
     monster_abilities = MonsterTemplate.abilities(mt_id)
 
     mobile
-    |> Map.put(:abilities, spirit_abilities ++ monster_abilities)
+    |> Map.put(:abilities, monster_abilities ++ spirit_abilities)
     |> set_passive_effects
     |> adjust_mana_costs
   end
@@ -744,7 +741,7 @@ defmodule ApathyDrive.Mobile do
 
     Map.put(mobile, :abilities, abilities)
   end
-  def adjust_mana_cost(%Mobile{} = mobile, %{"mana_cost" => base} = ability) do
+  def adjust_mana_cost(%Mobile{} = _mobile, %{"mana_cost" => base} = ability) do
     Map.put(ability, "mana_cost",  base) #trunc(base + base * ((level(mobile) * 0.1) * ((level(mobile) * 0.1)))))
   end
   def adjust_mana_cost(%Mobile{}, %{} = ability), do: ability
@@ -835,17 +832,12 @@ defmodule ApathyDrive.Mobile do
   end
 
   def attribute(%Mobile{} = mobile, attribute) do
-    spirit_attribute =
-      mobile
-      |> Map.put(:monster_template_id, nil)
-      |> attribute(attribute)
-
     mobile_attribute =
       mobile
       |> Map.put(:spirit, nil)
       |> attribute(attribute)
 
-    div((spirit_attribute + mobile_attribute), 2)
+    attribute_from_equipment(mobile, attribute) + mobile_attribute
   end
 
   def attribute_from_equipment(%Mobile{spirit: nil}, _), do: 0
@@ -1046,30 +1038,6 @@ defmodule ApathyDrive.Mobile do
        end)
   end
 
-  def handle_call(:unpossess, _from, %Mobile{monster_template_id: nil} = mobile) do
-    {:reply, {:error, "You aren't possessing anything."}, mobile}
-  end
-  def handle_call(:unpossess, _from, %Mobile{socket: _socket, spirit: spirit} = mobile) do
-    mobile =
-      mobile
-      |> Map.put(:spirit, nil)
-      |> Map.put(:socket, nil)
-      |> set_abilities
-      |> set_max_mana
-      |> set_mana
-      |> set_max_hp
-      |> set_hp
-
-      Process.unregister(:"spirit_#{spirit.id}")
-
-      ApathyDrive.PubSub.unsubscribe("spirits:online")
-      ApathyDrive.PubSub.unsubscribe("spirits:#{spirit.id}")
-      ApathyDrive.PubSub.unsubscribe("chat:gossip")
-      ApathyDrive.PubSub.unsubscribe("chat:#{String.downcase(spirit.class.name)}")
-
-    {:reply, {:ok, spirit: spirit, mobile_name: mobile.name}, mobile}
-  end
-
   def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = equipment
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
@@ -1178,6 +1146,10 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:possess, query}, mobile) do
     Commands.Possess.execute(mobile, query)
     {:noreply, mobile}
+  end
+
+  def handle_cast(:unpossess, mobile) do
+    {:noreply, Commands.Unpossess.execute(mobile)}
   end
 
   def handle_cast({:become_possessed, spirit_id, class, socket, possessor}, mobile) do

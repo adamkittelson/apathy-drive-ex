@@ -13,6 +13,8 @@ defmodule ApathyDrive.Commands.Possess do
   end
 
   def execute(%Mobile{monster_template_id: nil, room_id: room_id} = mobile, query) do
+    Mobile.save(mobile)
+
     room_id
     |> Room.find
     |> Room.possess(query, mobile.spirit.id, mobile.spirit.class.name, mobile.socket, self())
@@ -45,44 +47,39 @@ defmodule ApathyDrive.Commands.Possess do
     mobile
   end
 
-  def become_possessed(%Mobile{spirit: nil, level: level} = mobile, spirit_id, _class, socket, possessor) do
+  def become_possessed(%Mobile{spirit: nil} = mobile, spirit_id, _class, socket, possessor) do
     spirit =
       Repo.get!(Spirit, spirit_id)
       |> Repo.preload(:class)
 
-    if spirit.level >= level do
-      ApathyDrive.PubSub.subscribe("spirits:online")
-      ApathyDrive.PubSub.subscribe("spirits:#{spirit.id}")
-      ApathyDrive.PubSub.subscribe("chat:gossip")
-      ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
+    ApathyDrive.PubSub.subscribe("spirits:online")
+    ApathyDrive.PubSub.subscribe("spirits:#{spirit.id}")
+    ApathyDrive.PubSub.subscribe("chat:gossip")
+    ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
 
-      mobile =
-        mobile
-        |> Map.put(:spirit, spirit)
-        |> Map.put(:socket, socket)
-        |> Mobile.set_abilities
-        |> Mobile.set_max_mana
-        |> Mobile.set_mana
-        |> Mobile.set_max_hp
-        |> Mobile.set_hp
-
-      send(socket, {:update_mobile, self})
-
-      Mobile.send_scroll(mobile, "<p>You possess #{mobile.name}.")
-
-      Process.monitor(socket)
-      Process.unregister(:"spirit_#{spirit.id}")
-      Process.register(self, :"spirit_#{spirit.id}")
-
-      Mobile.update_prompt(mobile)
-
-      Mobile.possession_successful(possessor)
-
+    mobile =
       mobile
-    else
-      Mobile.send_scroll(possessor, "<p>You are too low level to possess #{mobile.name}.</p>")
-      mobile
-    end
+      |> Map.put(:spirit, spirit)
+      |> Map.put(:socket, socket)
+      |> Mobile.set_abilities
+      |> Mobile.set_max_mana
+      |> Mobile.set_mana
+      |> Mobile.set_max_hp
+      |> Mobile.set_hp
+
+    send(socket, {:update_mobile, self})
+
+    Mobile.send_scroll(mobile, "<p>You possess #{mobile.name}.")
+
+    Process.monitor(socket)
+    Process.unregister(:"spirit_#{spirit.id}")
+    Process.register(self, :"spirit_#{spirit.id}")
+
+    Mobile.update_prompt(mobile)
+
+    Mobile.possession_successful(possessor)
+
+    mobile
   end
 
   def become_possessed(mobile, _spirit_id, _class, _socket, possessor) do
