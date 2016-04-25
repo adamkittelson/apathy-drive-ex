@@ -394,8 +394,8 @@ defmodule Room do
     GenServer.cast(room, {:add_items, items})
   end
 
-  def auto_move(room, mobile, last_room) do
-    GenServer.cast(room, {:auto_move, mobile, last_room})
+  def auto_move(room, mobile, unities) do
+    GenServer.cast(room, {:auto_move, mobile, unities})
   end
 
   def unlocked?(%Room{effects: effects}, direction) do
@@ -810,39 +810,23 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_cast({:auto_move, mobile, last_room}, %Room{} = room) do
+  def handle_cast({:auto_move, mobile, unities}, %Room{} = room) do
     case room.exits do
       nil ->
-        nil
+        Mobile.auto_move(mobile, [])
       exits ->
-        case last_room do
-          %{id: last_room_id, name: last_room_name} ->
-            exit_to_last_room = Enum.find(exits, &(&1["destination"] == last_room_id))
-
-            words_in_common =
-              MapSet.intersection(MapSet.new(Regex.scan(~r/\w+/, last_room_name)
-                                      |> List.flatten
-                                      |> Enum.uniq),
-                           MapSet.new(Regex.scan(~r/\w+/, room.name)
-                                      |> List.flatten
-                                      |> Enum.uniq))
-
-            if Enum.any?(words_in_common) do
-              new_exits =
-                exits
-                |> Enum.reject(&(&1 == exit_to_last_room))
-
-              if Enum.any?(new_exits) do
-                Mobile.auto_move(mobile, %{new_exit: Enum.random(new_exits), last_room: %{id: room.id, name: room.name}})
-              else
-                Mobile.auto_move(mobile, %{new_exit: exit_to_last_room, last_room: last_room})
-              end
-            else
-              Mobile.auto_move(mobile, %{new_exit: exit_to_last_room, last_room: %{id: room.id, name: last_room.name}})
-            end
-          nil ->
-            if Enum.any?(exits), do: Mobile.auto_move(mobile, %{new_exit: Enum.random(exits), last_room: %{id: room.id, name: room.name}})
-        end
+        valid_exits =
+          case unities do
+            [] ->
+              Enum.filter(exits, fn(%{"direction" => direction}) ->
+                room.room_unity.exits[direction] && room.room_unity.exits[direction]["area"] == room.area
+              end)
+            unities ->
+              Enum.filter(exits, fn(%{"direction" => direction}) ->
+                room.room_unity.exits[direction] && room.room_unity.exits[direction]["controlled_by"] in unities
+              end)
+          end
+      Mobile.auto_move(mobile, valid_exits)
     end
 
     {:noreply, room}
@@ -902,8 +886,10 @@ defmodule Room do
 
     if Date.to_secs(Date.now) >= lair_next_spawn_at do
 
+      room_pid = self()
+
       Task.start_link fn ->
-        ApathyDrive.LairSpawning.spawn_lair(room)
+        ApathyDrive.LairSpawning.spawn_lair(room, room_pid)
       end
 
       room = room

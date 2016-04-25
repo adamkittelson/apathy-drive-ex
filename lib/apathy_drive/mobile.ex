@@ -119,8 +119,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, {:use_ability, command, arguments})
   end
 
-  def auto_move(pid, exit_and_last_room) do
-    GenServer.cast(pid, {:auto_move, exit_and_last_room})
+  def auto_move(pid, valid_exits) do
+    GenServer.cast(pid, {:auto_move, valid_exits})
   end
 
   def greet(mobile, query) do
@@ -1309,14 +1309,16 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:auto_move, %{new_exit: room_exit, last_room: _last_room}}, mobile) do
+  def handle_cast({:auto_move, []}, mobile) do
+    {:noreply, mobile}
+  end
+  def handle_cast({:auto_move, exits}, mobile) do
+    room_exit = Enum.random(exits)
+
     mobile.room_id
     |> Room.find
     |> Room.execute_command(self, room_exit["direction"], [])
-    #Commands.Move.execute(Room.find(mobile.room_id), self, room_exit, last_room)
-    {:noreply, mobile}
-  end
-  def handle_cast({:auto_move, _}, mobile) do
+
     {:noreply, mobile}
   end
 
@@ -1544,7 +1546,7 @@ defmodule ApathyDrive.Mobile do
   end
   def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
     if should_move?(mobile) && (room = Room.find(mobile.room_id)) do
-      Room.auto_move(room, self, mobile.last_room)
+      Room.auto_move(room, self, mobile.unities)
     end
     {:noreply, move_after(mobile)}
   end

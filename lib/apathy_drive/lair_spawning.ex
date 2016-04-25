@@ -1,7 +1,7 @@
 defmodule ApathyDrive.LairSpawning do
   alias ApathyDrive.Mobile
 
-  def spawn_lair(room) do
+  def spawn_lair(room, room_pid) do
     lair_monsters = ApathyDrive.LairMonster.monsters_template_ids(room.id)
 
     if room.lair_size > (room.id |> Room.spawned_monster_count) do
@@ -14,9 +14,9 @@ defmodule ApathyDrive.LairSpawning do
 
         Room.audible_movement({:global, "room_#{room.id}"}, nil)
 
-        Mobile.display_enter_message(monster, self)
+        Mobile.display_enter_message(monster, room_pid)
 
-        spawn_lair(room)
+        spawn_lair(room, room_pid)
       end
     end
 
