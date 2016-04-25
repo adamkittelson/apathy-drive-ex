@@ -745,7 +745,7 @@ defmodule ApathyDrive.Mobile do
     Map.put(mobile, :abilities, abilities)
   end
   def adjust_mana_cost(%Mobile{} = mobile, %{"mana_cost" => base} = ability) do
-    Map.put(ability, "mana_cost",  trunc(base + base * ((level(mobile) * 0.1) * ((level(mobile) * 0.1)))))
+    Map.put(ability, "mana_cost",  base) #trunc(base + base * ((level(mobile) * 0.1) * ((level(mobile) * 0.1)))))
   end
   def adjust_mana_cost(%Mobile{}, %{} = ability), do: ability
 
