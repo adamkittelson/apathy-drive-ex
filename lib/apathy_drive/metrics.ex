@@ -20,6 +20,7 @@ defmodule ApathyDrive.Metrics do
     ApathyDrive.RoomUnity.controlled_by_counts
     |> Enum.each(fn({controlled_by, count}) ->
          unless controlled_by == nil do
+           ApathyDrive.PubSub.broadcast("spirits:online", {:territory, controlled_by, count})
            ExStatsD.gauge(count, "rooms.#{controlled_by}")
          end
        end)

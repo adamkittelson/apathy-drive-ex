@@ -826,6 +826,7 @@ defmodule ApathyDrive.Mobile do
   def attribute(%Mobile{spirit: nil, will:    will}, :will),     do: will
 
   def attribute(%Mobile{spirit: spirit, monster_template_id: nil} = mobile, attribute) do
+    unity_bonus(mobile) +
     ((level(mobile) - 1) * Map.get(spirit.class, :"#{attribute}_per_level")) +
     Map.get(spirit.class, :"#{attribute}") +
     attribute_from_equipment(mobile, attribute)
@@ -844,6 +845,15 @@ defmodule ApathyDrive.Mobile do
   def attribute_from_equipment(%Mobile{spirit: %Spirit{equipment: equipment}}, attribute) do
     Enum.reduce(equipment, 0, &(&2 + apply(ApathyDrive.Item, attribute, [&1])))
   end
+
+  def unity_bonus(%Mobile{spirit: %Spirit{unity_bonus: unity_bonus}}) when map_size(unity_bonus) > 0 do
+    unity_bonus
+    |> Map.values
+    |> Enum.sum
+    |> div(map_size(unity_bonus))
+    |> trunc
+  end
+  def unity_bonus(_mobile), do: 0
 
   def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
     modifier = 1 + effect_bonus(mobile, "hp_regen") / 100
@@ -1441,6 +1451,13 @@ defmodule ApathyDrive.Mobile do
     class_name = String.downcase(spirit.class.name)
 
     ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
+    {:noreply, mobile}
+  end
+
+  def handle_info({:territory, controlled_by, count}, %Mobile{spirit: %Spirit{}} = mobile) do
+    if controlled_by in mobile.spirit.class.unities do
+      mobile = put_in(mobile.spirit.unity_bonus[controlled_by], count)
+    end
     {:noreply, mobile}
   end
 
