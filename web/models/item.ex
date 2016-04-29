@@ -146,8 +146,8 @@ defmodule ApathyDrive.Item do
   def agility(%{level: level, grade: "heavy"}),            do: 1 + div(level, 2)
   def agility(%{level: level, grade: "blunt"}),            do: 1 + div(level, 2)
   def agility(%{level: level, grade: "blade"}),            do: 1 + div(level, 2)
-  def agility(%{level: level, grade: "two handed blunt"}), do: 2 + level
-  def agility(%{level: level, grade: "two handed blade"}), do: 2 + level
+  def agility(%{level: level, grade: "two handed blunt"}), do: trunc(0.5 + div(level, 4))
+  def agility(%{level: level, grade: "two handed blade"}), do: trunc(0.5 + div(level, 4))
   def agility(%{"agility" => agi}),                        do: agi
   def agility(%{"level" => level, "grade" => grade}),      do: agility(%{level: level, grade: grade})
 
@@ -156,8 +156,8 @@ defmodule ApathyDrive.Item do
   def will(%{level: level, grade: "heavy"}),            do: 1 + div(level, 2)
   def will(%{level: level, grade: "blunt"}),            do: 1 + div(level, 2)
   def will(%{level: level, grade: "blade"}),            do: 1 + div(level, 2)
-  def will(%{level: level, grade: "two handed blunt"}), do: 2 + level
-  def will(%{level: level, grade: "two handed blade"}), do: 2 + level
+  def will(%{level: level, grade: "two handed blunt"}), do: 1 + div(level, 2)
+  def will(%{level: level, grade: "two handed blade"}), do: 1 + div(level, 2)
   def will(%{"will" => will}),                          do: will
   def will(%{"level" => level, "grade" => grade}),      do: will(%{level: level, grade: grade})
 
