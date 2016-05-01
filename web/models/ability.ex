@@ -303,7 +303,7 @@ defmodule ApathyDrive.Ability do
 
     Mobile.send_scroll(mobile, cast_messages["user"])
 
-    PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile])
+    PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid])
     |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
 
   end
@@ -338,16 +338,17 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def execute(%Mobile{} = mobile, _ability, []) do
-    Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
+  def execute(%Mobile{} = mobile, %{"kind" => kind} = ability, []) do
+    if kind in ["attack", "curse"] do
+      Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
+    else
+      display_pre_cast_message(mobile, ability, [])
+      mobile
+    end
   end
 
   def execute(%Mobile{} = mobile, %{"kind" => kind}, "") when kind in ["attack", "curse"] do
     Mobile.send_scroll(mobile, "<p>You must specify a target.</p>")
-  end
-
-  def execute(%Mobile{} = mobile, ability, "") do
-    execute(mobile, ability, [self()])
   end
 
   def execute(%Mobile{room_id: room_id} = mobile, %{} = ability, target) when is_binary(target) do

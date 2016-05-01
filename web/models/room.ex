@@ -789,9 +789,32 @@ defmodule Room do
     {:noreply, room}
   end
 
+  def handle_cast({:execute_ability, mobile, %{"kind" => kind} = ability, _query}, %Room{also_here: mobiles} = room) when kind in ["room attack", "room curse"] do
+    mobile =
+      mobiles
+      |> Map.values
+      |> Enum.find(&(&1.pid == mobile))
+
+   targets =
+     mobiles
+     |> Map.values
+     |> Enum.reject(&(&1.unities == mobile.unities))
+     |> Enum.map(&(&1.pid))
+
+    send(mobile.pid, {:execute_ability, ability, targets})
+
+    {:noreply, room}
+  end
+
+  def handle_cast({:execute_ability, mobile, %{"kind" => _kind} = ability, _query}, %Room{also_here: _mobiles} = room) do
+    send(mobile, {:execute_ability, ability, [mobile]})
+
+    {:noreply, room}
+  end
+
   def handle_cast({:mobile_present, %{intruder: mobile, look_name: look_name, name: name} = data}, room) do
     ApathyDrive.PubSub.broadcast_from! mobile, "rooms:#{room.id}:mobiles", {:monster_present, data}
-    {:noreply, put_in(room.also_here[mobile], %{look_name: look_name, name: name, keywords: String.split(name), pid: mobile})}
+    {:noreply, put_in(room.also_here[mobile], %{look_name: look_name, name: name, keywords: String.split(name), pid: mobile, unities: data.unities})}
   end
 
   def handle_cast({:look, mobile, args}, %Room{} = room) do
