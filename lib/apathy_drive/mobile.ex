@@ -1825,40 +1825,70 @@ defmodule ApathyDrive.Mobile do
            {:noreply, mobile}
          items ->
            Mobile.send_scroll(mobile, "<p>\n<span class='white'>A wild surge of spirtual essence coalesces into:</span></p>")
-           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>STR | AGI | WIL | Item Name</span></p>")
-           Enum.each(items, fn(item) ->
+           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>   STR  |   AGI  |   WIL  | Item Name</span></p>")
+           mobile =
+             Enum.reduce(items, mobile, fn(item, updated_mobile) ->
+               current_data =
+                 updated_mobile
+                 |> Mobile.score_data
 
-             current =
-               mobile
-               |> Mobile.score_data
+               equipped =
+                 updated_mobile
+                 |> Mobile.equip_item(item)
 
-             %{equipped: _, mobile: equipped} =
-               mobile
-               |> Mobile.equip_item(item)
+               equipped_data = Mobile.score_data(equipped.mobile)
 
-             equipped = Mobile.score_data(equipped)
+               data =
+                 current_data
+                 |> Map.take([:strength, :agility, :will])
+                 |> Enum.reduce(%{}, fn({key, val}, values) ->
+                      diff = equipped_data[key] - val
+                      color = cond do
+                        diff > 0 ->
+                          "green"
+                        diff < 0 ->
+                          "dark-red"
+                        true ->
+                          "dark-cyan"
+                      end
+                      value =
+                        apply(Item, key, [item])
+                        |> to_string
+                        |> String.rjust(3)
 
-             color =
-               current
-               |> Map.take([:strength, :agility, :will])
-               |> Enum.reduce(%{}, fn({key, val}, values) ->
-                    diff = equipped[key] - val
-                    color = cond do
-                      diff > 0 ->
-                        "green"
-                      diff < 0 ->
-                        "dark-red"
-                      true ->
-                        "dark-cyan"
-                    end
-                    Map.put(values, key, color)
-                  end)
+                      diff =
+                        String.ljust("(#{diff})", 5)
 
+                      Map.put(values, key, "#{value}<span class='#{color}'>#{diff}</span>")
+                    end)
 
-             Mobile.send_scroll(mobile, "<p><span class='#{color[:strength]}'>#{String.rjust(to_string(Item.strength(item)), 3)}</span> <span class='dark-cyan'>|</span> <span class='#{color[:agility]}'>#{String.rjust(to_string(Item.agility(item)), 3)}</span> <span class='dark-cyan'>|</span> <span class='#{color[:will]}'>#{String.rjust(to_string(Item.will(item)), 3)}</span> <span class='dark-cyan'>| #{item["name"]}</span></p>")
-           end)
+               Mobile.send_scroll(updated_mobile, "<p><span class='dark-cyan'>#{data.strength}|#{data.agility}|#{data.will}| #{item["name"]}</span></p>")
 
-           mobile = put_in(mobile.spirit.inventory, items ++ mobile.spirit.inventory)
+               if (equipped_data.strength + equipped_data.agility + equipped_data.will) > (current_data.strength + current_data.agility + current_data.will) do
+                 if Map.has_key?(equipped, :unequipped) do
+                   Enum.each(equipped.unequipped, fn(unequipped_item) ->
+                     Mobile.send_scroll(updated_mobile, "<p>You remove #{unequipped_item["name"]}.</p>")
+                   end)
+                 end
+
+                 Mobile.send_scroll(updated_mobile, "<p>You are now wearing #{item["name"]}.</p>")
+                 equipped.mobile
+
+                 if Map.has_key?(equipped, :unequipped) do
+                   Enum.reduce(equipped.unequipped, equipped.mobile, fn(unequipped_item, unequipped_mobile) ->
+                      exp = ApathyDrive.Item.deconstruction_experience(unequipped_item)
+                      Mobile.send_scroll(unequipped_mobile, "<p>You disintegrate the #{unequipped_item["name"]} and absorb #{exp} essence.</p>")
+                      Mobile.add_experience(unequipped_mobile, exp)
+                   end)
+                 else
+                   equipped.mobile
+                 end
+               else
+                 exp = ApathyDrive.Item.deconstruction_experience(item)
+                 Mobile.send_scroll(updated_mobile, "<p>You disintegrate the #{item["name"]} and absorb #{exp} essence.</p>")
+                 Mobile.add_experience(updated_mobile, exp)
+               end
+             end)
 
            Repo.save!(mobile.spirit)
 
