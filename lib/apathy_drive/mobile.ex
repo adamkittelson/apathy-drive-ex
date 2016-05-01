@@ -268,9 +268,9 @@ defmodule ApathyDrive.Mobile do
     "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
   end
 
-  def alignment_color(%{alignment: "evil"}),    do: "magenta"
-  def alignment_color(%{alignment: "good"}),    do: "white"
-  def alignment_color(%{alignment: "neutral"}), do: "dark-cyan"
+  def alignment_color(%{unities: ["evil"]}), do: "magenta"
+  def alignment_color(%{unities: ["good"]}), do: "white"
+  def alignment_color(%{unities: _}),        do: "dark-cyan"
 
   def evil_points(%{alignment: "evil"}),    do: 250
   def evil_points(%{alignment: "good"}),    do: -215
