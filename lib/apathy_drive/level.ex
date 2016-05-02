@@ -36,8 +36,14 @@ defmodule ApathyDrive.Level do
     advance(entity, level_at_exp(entity.experience))
   end
 
-  def advance(entity, level) do
-    put_in(entity.level, level)
+  def advance(%{level: current_level, experience: experience} = entity, level) do
+    # don't de-level if exp just dips below the current level, prevents bouncing back and
+    # forth when spreading essence around
+    if (level < current_level) and (experience > (exp_at_level(current_level) * 0.95)) do
+      entity
+    else
+      put_in(entity.level, level)
+    end
   end
 
   def display_exp_table do
