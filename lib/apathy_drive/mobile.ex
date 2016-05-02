@@ -1878,7 +1878,9 @@ defmodule ApathyDrive.Mobile do
                    Enum.reduce(equipped.unequipped, equipped.mobile, fn(unequipped_item, unequipped_mobile) ->
                       exp = ApathyDrive.Item.deconstruction_experience(unequipped_item)
                       Mobile.send_scroll(unequipped_mobile, "<p>You disintegrate the #{unequipped_item["name"]} and absorb #{exp} essence.</p>")
-                      Mobile.add_experience(unequipped_mobile, exp)
+
+                      put_in(unequipped_mobile.spirit.inventory, List.delete(unequipped_mobile.spirit.inventory, unequipped_item))
+                      |> Mobile.add_experience(exp)
                    end)
                  else
                    equipped.mobile
