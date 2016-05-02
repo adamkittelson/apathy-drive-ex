@@ -48,7 +48,7 @@
           </ul>
         </div>
       </li>
-      <%= if admin?(@conn) do %>
+      <%= if @conn.assigns[:admin?] do %>
         <li class="navbar-item">
           <a class="navbar-link" href="#system" data-popover="#systemPopover">System</a>
           <div id="systemPopover" class="popover">
@@ -70,6 +70,11 @@
               </li>
             </ul>
           </div>
+        </li>
+      <% end %>
+      <%= if @conn.assigns[:current_spirit] do %>
+        <li class="navbar-item">
+          <%= link "Sign out", to: session_path(@conn, :delete, @conn.assigns[:current_spirit]), method: :delete, class: "navbar-link" %>
         </li>
       <% end %>
     </ul>

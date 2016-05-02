@@ -28,6 +28,12 @@ defmodule ApathyDrive.SessionController do
     end
   end
 
+  def delete(conn, _params) do
+    conn
+    |> put_session(:current_spirit, nil)
+    |> redirect(to: "/")
+  end
+
   defp email_or_password_incorrect(conn) do
     changeset = Spirit.sign_up_changeset(%Spirit{})
 
