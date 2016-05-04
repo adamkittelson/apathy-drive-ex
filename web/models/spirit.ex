@@ -3,7 +3,7 @@ defmodule Spirit do
 
   require Logger
   import Comeonin.Bcrypt
-  alias ApathyDrive.PubSub
+  alias ApathyDrive.{Mobile, PubSub}
 
   @idle_threshold 60
 
@@ -94,12 +94,21 @@ defmodule Spirit do
   def save(%Spirit{} = spirit), do: spirit
 
   def add_experience(nil, _exp), do: nil
-  def add_experience(%Spirit{} = spirit, exp) do
-    spirit = spirit
-             |> Map.put(:experience, spirit.experience + exp)
-             |> ApathyDrive.Level.advance
-             |> add_loot_essence(exp)
-             |> Spirit.save
+  def add_experience(%Spirit{level: level} = spirit, exp) do
+    spirit = 
+      spirit
+      |> Map.put(:experience, spirit.experience + exp)
+      |> ApathyDrive.Level.advance
+      |> add_loot_essence(exp)
+      |> Spirit.save
+
+    if spirit.level > level do
+      Mobile.send_scroll self(), "<p>You ascend to level #{spirit.level}!"
+    end
+
+    if spirit.level < level do
+      Mobile.send_scroll self(), "<p>You fall to level #{spirit.level}!"
+    end
 
     spirit
   end

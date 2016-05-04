@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, Class, MobileSupervisor}
+  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor}
   use GenServer
   use ApathyDrive.Web, :model
   import Systems.Text
@@ -150,21 +150,16 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:add_experience, exp})
   end
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
+    initial_spirit_level = mobile.spirit && mobile.spirit.level
+
     mobile =
       mobile
       |> Map.put(:experience, max(experience + exp, mobile.minimum_essence || 0))
       |> ApathyDrive.Level.advance
       |> Map.put(:spirit, Spirit.add_experience(mobile.spirit, exp))
 
-    if mobile.level > level do
-      send_scroll mobile, "<p>You ascend to level #{mobile.level}!"
-    end
 
-    if mobile.level < level do
-      send_scroll mobile, "<p>You fall to level #{mobile.level}!"
-    end
-
-    if mobile.level != level do
+    if (mobile.level != level) or (initial_spirit_level != (mobile.spirit && mobile.spirit.level)) do
       mobile =
         mobile
         |> set_abilities
@@ -961,13 +956,29 @@ defmodule ApathyDrive.Mobile do
   defp sound_direction("down"),    do: "below you"
   defp sound_direction(direction), do: "to the #{direction}"
 
-  defp unify(mobile, unity, essence) do
+  defp unify(%Mobile{spirit: nil, unities: []} = mobile) do
+    mobile
+  end
+  defp unify(%Mobile{spirit: nil, experience: essence, unities: unities} = mobile) do
     essence_to_distribute = div(essence, 100)
 
-    Room.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unity, essence_to_distribute)
-    ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
+    Room.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence_to_distribute)
+    Enum.each(unities, fn(unity) ->
+      ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
+    end)
 
-    add_experience(mobile, -(essence_to_distribute * 2))
+    add_experience(mobile, -(essence_to_distribute * (1 + length(unities))))
+  end
+
+  defp unify(%Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} = mobile) do
+    essence_to_distribute = div(essence, 100)
+
+    Room.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence_to_distribute)
+    Enum.each(unities, fn(unity) ->
+      ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
+    end)
+
+    put_in mobile.spirit, Spirit.add_experience(mobile.spirit, -(essence_to_distribute * (1 + length(unities))))
   end
 
   defp jitter(time) do
@@ -1723,26 +1734,8 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info(:unify, %Mobile{spirit: nil, unities: unities} = mobile) do
-    mobile =
-      unities
-      |> Enum.shuffle
-      |> Enum.reduce(mobile, fn(unity, updated_mobile) ->
-           unify(mobile, unity, updated_mobile.experience)
-         end)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info(:unify, %Mobile{spirit: %Spirit{class: %Class{unities: unities}}} = mobile) do
-    mobile =
-      unities
-      |> Enum.shuffle
-      |> Enum.reduce(mobile, fn(unity, updated_mobile) ->
-           unify(mobile, unity, updated_mobile.experience)
-         end)
-
-    {:noreply, mobile}
+  def handle_info(:unify, mobile) do
+    {:noreply, unify(mobile)}
   end
 
   def handle_info({:monster_present, %{} = intruder_data}, %Mobile{spirit: nil} = mobile) do

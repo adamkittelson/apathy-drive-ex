@@ -651,7 +651,7 @@ defmodule Room do
     {:noreply, room}
   end
 
-  def handle_cast({:add_essence_from_mobile, mobile, unity, essence}, %Room{} = room) when unity in ["good", "evil"] do
+  def handle_cast({:add_essence_from_mobile, mobile, [unity], essence}, %Room{} = room) do
     room = update_in(room.room_unity.essences[unity], &(&1 + essence))
 
     essence_to_send_back = div(room.room_unity.essences[unity], 100)
@@ -661,6 +661,41 @@ defmodule Room do
       |> update_controlled_by
 
     Mobile.add_experience(mobile, essence_to_send_back)
+
+    {:noreply, room}
+  end
+
+  def handle_cast({:add_essence_from_mobile, mobile, unities, essence}, %Room{} = room) do
+    highest =
+      unities
+      |> Enum.map(&(room.room_unity.essences[&1]))
+      |> Enum.sort
+      |> List.last
+
+    %{room: room, unused: unused} =
+      unities
+      |> Enum.reduce(%{room: room, unused: essence},
+                     fn(unity, %{room: updated_room, unused: essence_remaining}) ->
+                       amount_to_add =
+                         essence_remaining
+                         |> min(highest - updated_room.room_unity.essences[unity])
+                         |> max(0)
+
+                       %{
+                         room: update_in(updated_room.room_unity.essences[unity], &(&1 + amount_to_add)),
+                         unused: essence_remaining - amount_to_add
+                        }
+                     end)
+
+    amount_to_extract = div(essence - unused, length(unities))
+    room =
+      unities
+      |> Enum.reduce(room, fn(unity, updated_room) ->
+           update_in(updated_room.room_unity.essences[unity], &(&1 - amount_to_extract))
+         end)
+      |> update_controlled_by()
+
+    Mobile.add_experience(mobile, essence)
 
     {:noreply, room}
   end
