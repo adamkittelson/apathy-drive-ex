@@ -1,4 +1,5 @@
 defmodule Spirit do
+  use Ecto.Schema
   use ApathyDrive.Web, :model
 
   require Logger
@@ -29,7 +30,7 @@ defmodule Spirit do
     field :disabled_hints,    {:array, :string}, default: []
     field :monster,           :any, virtual: true
     field :abilities,         :any, virtual: true
-    field :timers,            :any, virtual: true, default: %{}
+    field :timers,            :map, virtual: true, default: %{}
     field :admin,             :boolean
     field :inventory,         ApathyDrive.JSONB, default: []
     field :equipment,         ApathyDrive.JSONB, default: []
@@ -46,7 +47,7 @@ defmodule Spirit do
   If `params` are nil, an invalid changeset is returned
   with no validation performed.
   """
-  def changeset(spirit, params \\ :empty) do
+  def changeset(spirit, params \\ %{}) do
     spirit
     |> cast(params, ~w(name class_id), ~w(gender))
     |> validate_inclusion(:class_id, ApathyDrive.Class.ids)
@@ -56,7 +57,7 @@ defmodule Spirit do
     |> validate_length(:name, min: 1, max: 12)
   end
 
-  def sign_up_changeset(model, params \\ :empty) do
+  def sign_up_changeset(model, params \\ %{}) do
     model
     |> cast(params, ~w(email password), [])
     |> validate_format(:email, ~r/@/)
@@ -95,7 +96,7 @@ defmodule Spirit do
 
   def add_experience(nil, _exp), do: nil
   def add_experience(%Spirit{level: level} = spirit, exp) do
-    spirit = 
+    spirit =
       spirit
       |> Map.put(:experience, spirit.experience + exp)
       |> ApathyDrive.Level.advance

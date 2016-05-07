@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
-  alias ApathyDrive.Mobile
   use ApathyDrive.Web, :model
+  alias ApathyDrive.Mobile
 
   schema "scripts" do
     field :instructions, ApathyDrive.JSONB, default: []

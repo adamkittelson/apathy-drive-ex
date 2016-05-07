@@ -68,13 +68,13 @@ defmodule ApathyDrive.MonsterController do
 
     lairs =
       monster
-      |> Ecto.Model.assoc(:lairs)
+      |> Ecto.assoc(:lairs)
       |> Ecto.Query.preload(:room)
       |> Repo.all
 
     monster_abilities =
       monster
-      |> Ecto.Model.assoc(:monster_abilities)
+      |> Ecto.assoc(:monster_abilities)
       |> Ecto.Query.preload(:ability)
       |> Repo.all
 

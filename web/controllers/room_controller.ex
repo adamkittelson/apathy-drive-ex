@@ -60,7 +60,7 @@ defmodule ApathyDrive.RoomController do
 
     lairs =
       room
-      |> Ecto.Model.assoc(:lairs)
+      |> Ecto.assoc(:lairs)
       |> Ecto.Query.preload(:monster_template)
       |> Ecto.Query.preload(:room_unity)
       |> Repo.all

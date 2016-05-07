@@ -18,22 +18,22 @@ defmodule ApathyDrive.Mixfile do
       mod: { ApathyDrive, [] },
       applications: [:postgrex, :ecto, :phoenix, :cowboy, :conform, :conform_exrm,
                      :logger, :oauth2, :phoenix_ecto, :comeonin, :runtime_tools,
-                     :tzdata, :timex_ecto, :scrivener, :phoenix_live_reload,
-                     :phoenix_html, :inflex, :connection, :decimal, :neotoma, :ex_statsd, :phoenix_pubsub]
+                     :tzdata, :timex_ecto, :scrivener, :phoenix_live_reload, :ex_statsd,
+                     :phoenix_html, :inflex, :connection, :decimal, :neotoma, :phoenix_pubsub]
     ]
   end
 
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:ecto,                "~> 1.1"},
-      {:postgrex,            "~> 0.10"},
-      {:phoenix,             github: "phoenixframework/phoenix", override: true},
-      {:phoenix_live_reload, "~> 1.0.1"},
-      {:phoenix_ecto,        "~> 2.0"},
-      {:phoenix_html,        "~> 2.3"},
-      {:timex,               "~> 1.0.0-rc4"},
-      {:timex_ecto,          "~> 0.7.0"},
+      {:ecto,                "2.0.0-rc.4", override: true},
+      {:postgrex,            "~> 0.11.1"},
+      {:phoenix,             "~> 1.2.0-rc"},
+      {:phoenix_pubsub,      "~> 1.0.0-rc"},
+      {:phoenix_live_reload, "~> 1.0.5"},
+      {:phoenix_ecto,        "~> 3.0-rc"},
+      {:phoenix_html,        "~> 2.5.1"},
+      {:timex_ecto,          github: "bitwalker/timex_ecto"},
       {:inflex,              "~> 0.2.8"},
       {:oauth2,              "~> 0.5"},
       {:scrivener,           "~> 1.0"},

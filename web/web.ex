@@ -21,6 +21,8 @@ defmodule ApathyDrive.Web do
 
       # Import URL helpers from the router
       import ApathyDrive.Router.Helpers
+      import ApathyDrive.ErrorHelpers
+      import ApathyDrive.Gettext
 
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
@@ -78,8 +80,9 @@ defmodule ApathyDrive.Web do
       # Alias the data repository and import query/model functions
       alias ApathyDrive.Repo
       import Ecto
-      import Ecto.Query, only: [from: 1, from: 2]
+      import Ecto.Query
       import ApathyDrive.Router.Helpers
+      import ApathyDrive.Gettext
     end
   end
 
@@ -89,7 +92,6 @@ defmodule ApathyDrive.Web do
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      use Timex.Ecto.Timestamps
       alias ApathyDrive.Repo
     end
   end
@@ -106,7 +108,8 @@ defmodule ApathyDrive.Web do
       # Alias the data repository and import query/model functions
       alias ApathyDrive.Repo
       import Ecto
-      import Ecto.Query, only: [from: 1, from: 2]
+      import Ecto.Query
+      import ApathyDrive.Gettext
     end
   end
 

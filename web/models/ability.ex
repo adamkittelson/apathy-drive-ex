@@ -29,7 +29,7 @@ defmodule ApathyDrive.Ability do
   end
 
 
-  def changeset(model, params \\ :empty) do
+  def changeset(model, params \\ %{}) do
     model
     |> cast(params, @required_fields, @optional_fields)
   end

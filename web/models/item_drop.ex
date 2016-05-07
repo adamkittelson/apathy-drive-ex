@@ -12,7 +12,7 @@ defmodule ApathyDrive.ItemDrop do
   @required_fields ~w(monster_id item_id chance)
   @optional_fields ~w()
 
-  def changeset(model, params \\ :empty) do
+  def changeset(model, params \\ %{}) do
     updated_params = update_params(params)
 
     model

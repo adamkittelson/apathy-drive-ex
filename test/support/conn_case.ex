@@ -22,7 +22,7 @@ defmodule ApathyDrive.ConnCase do
 
       # Alias the data repository and import query/model functions
       alias ApathyDrive.Repo
-      import Ecto.Model
+      import Ecto
       import Ecto.Query, only: [from: 2]
 
       # Import URL helpers from the router
@@ -34,10 +34,12 @@ defmodule ApathyDrive.ConnCase do
   end
 
   setup tags do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(ApathyDrive.Repo)
+
     unless tags[:async] do
-      Ecto.Adapters.SQL.restart_test_transaction(ApathyDrive.Repo, [])
+      Ecto.Adapters.SQL.Sandbox.mode(ApathyDrive.Repo, {:shared, self()})
     end
 
-    :ok
+    {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

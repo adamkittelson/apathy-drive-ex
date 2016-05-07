@@ -2445,7 +2445,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 // ## Duplicate Join Subscriptions
 //
 // While the client may join any number of topics on any number of channels,
-// the client may only hold a single subcription for each unique topic at any
+// the client may only hold a single subscription for each unique topic at any
 // given time. When attempting to create a duplicate subscription,
 // the server will close the existing channel, log a warning, and
 // spawn a new channel for the topic. The client will have their
@@ -2481,7 +2481,7 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 // ### onError hooks
 //
 // `onError` hooks are invoked if the socket connection drops, or the channel
-// crashes on the server. In either case, a channel rejoin is attemtped
+// crashes on the server. In either case, a channel rejoin is attempted
 // automatically in an exponential backoff manner.
 //
 // ### onClose hooks

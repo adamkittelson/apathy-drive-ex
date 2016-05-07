@@ -2,78 +2,86 @@
 
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below:</p>
-      <ul>
-        <%= for {attr, message} <- f.errors do %>
-          <li><%= humanize(attr) %> <%= message %></li>
-        <% end %>
-      </ul>
+      <p>Oops, something went wrong! Please check the errors below.</p>
     </div>
   <% end %>
 
   <div class="form-group">
     <%= label f, :name, "Name", class: "control-label" %>
     <%= text_input f, :name, class: "form-control" %>
+    <%= error_tag f, :name %>
   </div>
 
   <div class="form-group">
     <%= label f, :description, "Description", class: "control-label" %>
     <%= textarea f, :description, class: "u-full-width" %>
+    <%= error_tag f, :description %>
   </div>
 
   <div class="form-group">
     <%= label f, :death_message, "Death Message", class: "control-label" %>
     <%= textarea f, :death_message, class: "u-full-width" %>
+    <%= error_tag f, :death_message %>
   </div>
 
   <div class="form-group">
     <%= label f, :enter_message, "Enter Message", class: "control-label" %>
     <%= textarea f, :enter_message, class: "u-full-width" %>
+    <%= error_tag f, :enter_message %>
   </div>
 
   <div class="form-group">
     <%= label f, :exit_message, "Exit Message", class: "control-label" %>
     <%= textarea f, :exit_message, class: "u-full-width" %>
+    <%= error_tag f, :exit_message %>
   </div>
 
   <div class="form-group">
     <%= label f, :greeting, "Greeting", class: "control-label" %>
     <%= textarea f, :greeting, class: "u-full-width" %>
+    <%= error_tag f, :greeting %>
   </div>
 
   <div class="form-group">
     <%= label f, :gender, "Gender", class: "control-label" %>
     <%= select f, :gender, @genders, class: "form-control" %>
+    <%= error_tag f, :gender %>
   </div>
 
   <div class="form-group">
     <%= label f, :alignment, "Alignment", class: "control-label" %>
     <%= select f, :alignment, @alignments, class: "form-control" %>
+    <%= error_tag f, :alignment %>
   </div>
 
   <div class="form-group">
     <%= label f, :level, "Level", class: "control-label" %>
     <%= number_input f, :level, class: "form-control" %>
+    <%= error_tag f, :level %>
   </div>
 
   <div class="form-group">
     <%= label f, :experience, "Experience", class: "control-label" %>
     <%= number_input f, :experience, class: "form-control" %>
+    <%= error_tag f, :experience %>
   </div>
 
   <div class="form-group">
     <%= label f, :game_limit, "Limit (Maximum number existing at once time)", class: "control-label" %>
     <%= text_input f, :game_limit, class: "form-control" %>
+    <%= error_tag f, :game_limit %>
   </div>
 
   <div class="form-group">
     <%= label f, :permanent, "Permanent", class: "control-label" %>
     <%= checkbox f, :permanent%>
+    <%= error_tag f, :permanent %>
   </div>
 
   <div class="form-group">
     <%= label f, :questions, "Questions", class: "control-label" %>
     <%= jsonarea f, :questions, class: "u-full-width" %>
+    <%= error_tag f, :questions %>
   </div>
 
   <div class="form-group">

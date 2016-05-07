@@ -24,7 +24,6 @@ defmodule ApathyDrive.Commands.Greet do
   end
 
   def execute(%Room{} = room, %{name: _name, pid: pid} = mobile, query) do
-    IO.puts "query: #{inspect query}"
     target = Room.find_mobile_in_room(room, pid, query)
     greet(mobile, target && target.pid)
   end

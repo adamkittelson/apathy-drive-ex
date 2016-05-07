@@ -20,8 +20,9 @@ defmodule ApathyDrive.ChannelCase do
       # Import conveniences for testing with channels
       use Phoenix.ChannelTest
       alias ApathyDrive.Repo
-      import Ecto.Model
-      import Ecto.Query, only: [from: 2]
+      import Ecto
+      import Ecto.Changeset
+      import Ecto.Query
 
       # The default endpoint for testing
       @endpoint ApathyDrive.Endpoint
@@ -36,7 +37,8 @@ defmodule ApathyDrive.ChannelCase do
                                                 agility: 40,
                                                 agility_per_level: 5,
                                                 will: 40,
-                                                will_per_level: 5})
+                                                will_per_level: 5,
+                                                unities: ["evil"]})
 
         # Hack to prevent it from trying to load rooms that don't exist
         Task.start(fn ->
@@ -59,9 +61,12 @@ defmodule ApathyDrive.ChannelCase do
   end
 
   setup tags do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(ApathyDrive.Repo)
+
     unless tags[:async] do
-      Ecto.Adapters.SQL.restart_test_transaction(ApathyDrive.Repo, [])
+      Ecto.Adapters.SQL.Sandbox.mode(ApathyDrive.Repo, {:shared, self()})
     end
+
     :ok
   end
 end

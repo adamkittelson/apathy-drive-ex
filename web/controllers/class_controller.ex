@@ -33,7 +33,7 @@ defmodule ApathyDrive.ClassController do
 
     class_abilities =
       class
-      |> Ecto.Model.assoc(:class_abilities)
+      |> Ecto.assoc(:class_abilities)
       |> Ecto.Query.preload(:ability)
       |> Ecto.Query.order_by(:level)
       |> Repo.all

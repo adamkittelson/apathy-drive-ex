@@ -36,16 +36,16 @@ defmodule ApathyDrive.Mobile do
     field :will,               :integer, virtual: true
     field :mana,               :float,   virtual: true
     field :max_mana,           :integer, virtual: true
-    field :effects,            :any,     virtual: true, default: %{}
+    field :effects,            :map,     virtual: true, default: %{}
     field :pid,                :any,     virtual: true
     field :keywords,           :any,     virtual: true, default: []
     field :abilities,          :any,     virtual: true, default: []
-    field :hate,               :any,     virtual: true, default: %{}
-    field :timers,             :any,     virtual: true, default: %{}
+    field :hate,               :map,     virtual: true, default: %{}
+    field :timers,             :map,     virtual: true, default: %{}
     field :attack_target,      :any,     virtual: true
     field :combo,              :any,     virtual: true
     field :delayed,            :boolean, virtual: true, default: false
-    field :last_effect_key,    :any,     virtual: true, default: 0
+    field :last_effect_key,    :integer, virtual: true, default: 0
     field :chance_to_follow,   :integer, virtual: true, default: 0
     field :movement_frequency, :integer, virtual: true, default: 60
     field :last_room,          :any,     virtual: true
@@ -138,7 +138,7 @@ defmodule ApathyDrive.Mobile do
   def forms(%Mobile{spirit: nil}), do: nil
   def forms(%Mobile{spirit: spirit}) do
     spirit
-    |> Ecto.Model.assoc(:recipe_items)
+    |> assoc(:recipe_items)
     |> ApathyDrive.Repo.all
   end
 

@@ -1,112 +1,69 @@
 <%= form_for @changeset, @action, fn f -> %>
-  <div class="row">
-    <div class="four columns">
-      <%= if f.errors[:name] do %>
-        <label for="name" class="error">Name <%= f.errors[:name]%></label>
-      <% else %>
-        <label for="name">Name</label>
-      <% end %>
-      <%= text_input f, :name, class: "u-full-width" %>
+
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
     </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= label f, :name, "Name", class: "control-label" %>
+    <%= text_input f, :name, class: "form-control" %>
+    <%= error_tag f, :name %>
   </div>
 
-  <div class="row">
-    <div class="ten columns">
-      <%= if f.errors[:description] do %>
-        <label for="description" class="error">Description <%= f.errors[:description]%></label>
-      <% else %>
-        <label for="description">Description</label>
-      <% end %>
-      <%= textarea f, :description, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :description, "Description", class: "control-label" %>
+    <%= textarea f, :description, class: "form-control" %>
+    <%= error_tag f, :description %>
   </div>
 
-  <div class="row">
-    <div class="ten columns">
-      <%= if f.errors[:exits] do %>
-        <label for="exits" class="error">Exits <%= f.errors[:exits]%></label>
-      <% else %>
-        <label for="exits">Exits</label>
-      <% end %>
-      <%= jsonarea f, :exits, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :exits, "Exits", class: "control-label" %>
+    <%= jsonarea f, :exits, class: "form-control" %>
+    <%= error_tag f, :exits %>
   </div>
 
-  <div class="row">
-    <div class="four columns">
-      <%= if f.errors[:light] do %>
-        <label for="light" class="error">Light <%= f.errors[:light]%></label>
-      <% else %>
-        <label for="light">Light</label>
-      <% end %>
-      <%= number_input f, :light, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :light, "Light", class: "control-label" %>
+    <%= number_input f, :light, class: "form-control" %>
+    <%= error_tag f, :light %>
   </div>
 
-  <div class="row">
-    <div class="ten columns">
-      <%= if f.errors[:item_descriptions] do %>
-        <label for="item_descriptions" class="error">Item Descriptions <%= f.errors[:item_descriptions]%></label>
-      <% else %>
-        <label for="item_descriptions">Item Descriptions</label>
-      <% end %>
-      <%= jsonarea f, :item_descriptions, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :item_descriptions, "Item Descriptions", class: "control-label" %>
+    <%= jsonarea f, :item_descriptions, class: "form-control" %>
+    <%= error_tag f, :item_descriptions %>
   </div>
 
-  <div class="row">
-    <div class="four columns">
-      <%= if f.errors[:lair_size] do %>
-        <label for="lair_size" class="error">Lair Size <%= f.errors[:lair_size]%></label>
-      <% else %>
-        <label for="lair_size">Lair Size</label>
-      <% end %>
-      <%= number_input f, :lair_size, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :lair_size, "Lair Size", class: "control-label" %>
+    <%= number_input f, :lair_size, class: "form-control" %>
+    <%= error_tag f, :lair_size %>
   </div>
 
-  <div class="row">
-    <div class="four columns">
-      <%= if f.errors[:lair_frequency] do %>
-        <label for="lair_frequency" class="error">Lair Frequency <%= f.errors[:lair_frequency]%></label>
-      <% else %>
-        <label for="lair_frequency">Lair Frequency</label>
-      <% end %>
-      <%= number_input f, :lair_frequency, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :lair_frequency, "Lair Frequency", class: "control-label" %>
+    <%= number_input f, :lair_frequency, class: "form-control" %>
+    <%= error_tag f, :lair_frequency %>
   </div>
 
-  <div class="row">
-    <div class="four columns">
-      <%= if f.errors[:lair_faction] do %>
-        <label for="lair_faction" class="error">Lair Faction <%= f.errors[:lair_faction]%></label>
-      <% else %>
-        <label for="lair_faction">Lair Faction</label>
-      <% end %>
-      <%= text_input f, :lair_faction, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :lair_faction, "Lair Faction", class: "control-label" %>
+    <%= text_input f, :lair_faction, class: "form-control" %>
+    <%= error_tag f, :lair_faction %>
   </div>
 
-  <div class="row">
-    <div class="ten columns">
-      <%= if f.errors[:commands] do %>
-        <label for="commands" class="error">Commands <%= f.errors[:commands]%></label>
-      <% else %>
-        <label for="commands">Commands</label>
-      <% end %>
-      <%= jsonarea f, :commands, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :commands, "Commands", class: "control-label" %>
+    <%= jsonarea f, :commands, class: "form-control" %>
+    <%= error_tag f, :commands %>
   </div>
 
-  <div class="row">
-    <div class="four columns">
-      <%= if f.errors[:ability_id] do %>
-        <label for="ability_id" class="error">Room Ability <%= f.errors[:ability_id]%></label>
-      <% else %>
-        <label for="ability_id">Room Ability</label>
-      <% end %>
-      <%= number_input f, :ability_id, class: "u-full-width" %>
-    </div>
+  <div class="form-group">
+    <%= label f, :ability_id, "Room Ability", class: "control-label" %>
+    <%= number_input f, :ability_id, class: "form-control" %>
+    <%= error_tag f, :ability_id %>
   </div>
 
   <div class="form-group">

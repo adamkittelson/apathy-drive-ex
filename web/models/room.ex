@@ -10,19 +10,19 @@ defmodule Room do
     field :name,                  :string
     field :keywords,              {:array, :string}
     field :description,           :string
-    field :effects,               :any, virtual: true, default: %{}
+    field :effects,               :map, virtual: true, default: %{}
     field :light,                 :integer
     field :item_descriptions,     ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
     field :lair_size,             :integer
     field :lair_frequency,        :integer, default: 5
-    field :lair_next_spawn_at,    :any, virtual: true, default: 0
+    field :lair_next_spawn_at,    :integer, virtual: true, default: 0
     field :exits,                 ApathyDrive.JSONB, default: []
     field :commands,              ApathyDrive.JSONB, default: %{}
     field :legacy_id,             :string
-    field :timers,                :any, virtual: true, default: %{}
+    field :timers,                :map, virtual: true, default: %{}
     field :room_ability,          :any, virtual: true
     field :items,                 ApathyDrive.JSONB, default: []
-    field :last_effect_key,       :any, virtual: true, default: 0
+    field :last_effect_key,       :integer, virtual: true, default: 0
     field :also_here,             :map, virtual: true, default: %{}
     field :area,                  :string
 
@@ -145,7 +145,7 @@ defmodule Room do
     |> Repo.save!
   end
 
-  def changeset(%Room{} = room, params \\ :empty) do
+  def changeset(%Room{} = room, params \\ %{}) do
     room
     |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_frequency commands legacy_id))
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
@@ -942,7 +942,7 @@ defmodule Room do
   def handle_info(:spawn_monsters,
                   %{:lair_next_spawn_at => lair_next_spawn_at} = room) do
 
-    if Date.to_secs(Date.now) >= lair_next_spawn_at do
+    if Date.to_secs(DateTime.now) >= lair_next_spawn_at do
 
       room_pid = self()
 
@@ -951,9 +951,9 @@ defmodule Room do
       end
 
       room = room
-             |> Map.put(:lair_next_spawn_at, Date.now
-                                             |> Date.shift(mins: room.lair_frequency)
-                                             |> Date.to_secs)
+             |> Map.put(:lair_next_spawn_at, DateTime.now
+                                             |> DateTime.shift(minutes: room.lair_frequency)
+                                             |> DateTime.to_secs)
     end
 
     :erlang.send_after(5000, self, :spawn_monsters)

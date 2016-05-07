@@ -29,7 +29,7 @@ defmodule ApathyDrive.Class do
   If no params are provided, an invalid changeset is returned
   with no validation performed.
   """
-  def changeset(model, params \\ :empty) do
+  def changeset(model, params \\ %{}) do
     updated_params = update_params(params)
 
     model

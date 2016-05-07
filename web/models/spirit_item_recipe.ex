@@ -11,7 +11,7 @@ defmodule ApathyDrive.SpiritItemRecipe do
   @required_fields ~w(spirit_id item_id)
   @optional_fields ~w()
 
-  def changeset(model, params \\ :empty) do
+  def changeset(model, params \\ %{}) do
     model
     |> cast(params, @required_fields, @optional_fields)
     |> unique_constraint(:item_id, name: :spirit_item_recipes_spirit_id_item_id_index)

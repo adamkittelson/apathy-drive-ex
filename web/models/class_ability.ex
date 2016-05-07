@@ -13,7 +13,7 @@ defmodule ApathyDrive.ClassAbility do
   @required_fields ~w(class_id ability_id level)
   @optional_fields ~w()
 
-  def changeset(model, params \\ :empty) do
+  def changeset(model, params \\ %{}) do
     updated_params = update_params(params)
 
     model

@@ -2,23 +2,20 @@
 
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below:</p>
-      <ul>
-        <%= for {attr, message} <- f.errors do %>
-          <li><%= humanize(attr) %> <%= message %></li>
-        <% end %>
-      </ul>
+      <p>Oops, something went wrong! Please check the errors below.</p>
     </div>
   <% end %>
 
   <div class="form-group">
     <%= label f, :name, "Name", class: "control-label" %>
     <%= text_input f, :name, class: "form-control" %>
+    <%= error_tag f, :name %>
   </div>
 
   <div class="form-group">
     <%= label f, :alignment, "Alignment", class: "control-label" %>
     <%= select f, :alignment, ["good", "neutral", "evil"], class: "form-control" %>
+    <%= error_tag f, :alignment %>
   </div>
 
   <div class="form-group">
@@ -29,36 +26,43 @@
     </datalist>
     <%= label f, :start_room_id, "Starting Room", class: "control-label" %>
     <%= text_input f, :start_room_id, class: "form-control", list: "rooms" %>
+    <%= error_tag f, :start_room_id %>
   </div>
 
   <div class="form-group">
     <%= label f, :strength, "Starting Strength", class: "control-label" %>
     <%= number_input f, :strength, class: "form-control" %>
+    <%= error_tag f, :strength %>
   </div>
 
   <div class="form-group">
     <%= label f, :strength_per_level, "Strength/lvl", class: "control-label" %>
     <%= number_input f, :strength_per_level, class: "form-control" %>
+    <%= error_tag f, :strength_per_level %>
   </div>
 
   <div class="form-group">
     <%= label f, :agility, "Starting Agility", class: "control-label" %>
     <%= number_input f, :agility, class: "form-control" %>
+    <%= error_tag f, :agility %>
   </div>
 
   <div class="form-group">
     <%= label f, :agility_per_level, "Agility/lvl", class: "control-label" %>
     <%= number_input f, :agility_per_level, class: "form-control" %>
+    <%= error_tag f, :agility_per_level %>
   </div>
 
   <div class="form-group">
     <%= label f, :will, "Starting Will", class: "control-label" %>
     <%= number_input f, :will, class: "form-control" %>
+    <%= error_tag f, :will %>
   </div>
 
   <div class="form-group">
     <%= label f, :will_per_level, "Will/lvl", class: "control-label" %>
     <%= number_input f, :will_per_level, class: "form-control" %>
+    <%= error_tag f, :will_per_level %>
   </div>
 
   <div class="form-group">

@@ -15,16 +15,24 @@ defmodule ApathyDrive.ModelCase do
     quote do
       # Alias the data repository and import query/model functions
       alias ApathyDrive.Repo
-      import Ecto.Model
-      import Ecto.Query, only: [from: 2]
+      import Ecto
+      import Ecto.Changeset
+      import Ecto.Query
+      import ApathyDrive.ModelCase
     end
   end
 
   setup tags do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(ApathyDrive.Repo)
+
     unless tags[:async] do
-      Ecto.Adapters.SQL.restart_test_transaction(ApathyDrive.Repo, [])
+      Ecto.Adapters.SQL.Sandbox.mode(ApathyDrive.Repo, {:shared, self()})
     end
 
     :ok
+  end
+
+  def errors_on(struct, data) do
+    struct.__struct__.changeset(struct, data).errors
   end
 end

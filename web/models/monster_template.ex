@@ -45,7 +45,7 @@ defmodule MonsterTemplate do
     {:ok, mt}
   end
 
-  def changeset(%MonsterTemplate{} = monster_template, params \\ :empty) do
+  def changeset(%MonsterTemplate{} = monster_template, params \\ %{}) do
     monster_template
     |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting gender alignment level game_limit experience), ~w())
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
@@ -108,10 +108,10 @@ defmodule MonsterTemplate do
   def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: nil}), do: false
   def on_cooldown?(%MonsterTemplate{last_killed_at: nil}),        do: false
   def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: regen_time, last_killed_at: last_killed_at}) do
-    respawn_at = Date.now
-                 |> Date.shift(mins: -regen_time)
+    respawn_at = DateTime.now
+                 |> DateTime.shift(minutes: -regen_time)
 
-    -1 == Date.compare(respawn_at, last_killed_at)
+    -1 == DateTime.compare(respawn_at, last_killed_at)
   end
 
   def limit_reached?(%MonsterTemplate{game_limit: game_limit} = monster_template) do
@@ -213,7 +213,7 @@ defmodule MonsterTemplate do
   def handle_cast(:set_last_killed_at, monster_template) do
     mt =
       monster_template
-      |> Map.put(:last_killed_at, Timex.Date.now)
+      |> Map.put(:last_killed_at, Timex.DateTime.now)
       |> Repo.save!
 
     {:noreply, mt}
