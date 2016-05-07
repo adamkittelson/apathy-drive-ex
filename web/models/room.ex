@@ -25,6 +25,7 @@ defmodule Room do
     field :last_effect_key,       :integer, virtual: true, default: 0
     field :also_here,             :map, virtual: true, default: %{}
     field :area,                  :string
+    field :default_essence,       :integer, virtual: true
 
     timestamps
 
@@ -39,12 +40,13 @@ defmodule Room do
     room =
       Repo.get!(Room, id)
       |> Repo.preload(:room_unity)
-      |> Repo.preload(:lair_monsters)
+
+    room = Map.put(room, :default_essence, default_essence(room))
 
     unless room.room_unity do
       room_unity =
         room
-        |> build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => default_essence(room)})
+        |> build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => room.default_essence})
         |> Repo.save!
 
       room = %{room | room_unity: room_unity}
@@ -122,8 +124,14 @@ defmodule Room do
     end
   end
 
-  def default_essence(%Room{lair_monsters: []}), do: 0
-  def default_essence(%Room{lair_monsters: lair_monsters}) do
+  def default_essence(%Room{} = room) do
+    room
+    |> assoc(:lair_monsters)
+    |> Repo.all
+    |> default_essence()
+  end
+  def default_essence([]), do: 0
+  def default_essence(lair_monsters) do
     lair_monsters
     |> Enum.map(fn(mt) ->
          ApathyDrive.Level.exp_at_level(mt.level)
@@ -1059,7 +1067,7 @@ defmodule Room do
                  Map.put(updated_essence, unity, essence - essence_to_distribute[unity])
                end)
 
-             if (default = default_essence(room)) > 0 do
+             if (default = room.default_essence) > 0 do
                updated_essence = Map.put(updated_essence, "default", default)
              end
 
@@ -1094,8 +1102,8 @@ defmodule Room do
         Map.put(updated_essences, unity, updated_essences[unity] + essence)
       end)
 
-    if (default = default_essence(room)) > 0 do
-      updated_essences = Map.put(updated_essences, "default", default)
+    if room.default_essence > 0 do
+      updated_essences = Map.put(updated_essences, "default", room.default_essence)
     end
 
     mirror_exit =
