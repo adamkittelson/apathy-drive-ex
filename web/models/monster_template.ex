@@ -41,6 +41,12 @@ defmodule MonsterTemplate do
     GenServer.start_link(__MODULE__, mt, opts)
   end
 
+  def questions(mt_id) do
+    mt_id
+    |> find()
+    |> GenServer.call(:questions)
+  end
+
   def init(mt) do
     {:ok, mt}
   end
@@ -169,7 +175,6 @@ defmodule MonsterTemplate do
       gender: monster_template.gender,
       greeting: monster_template.greeting,
       monster_template_id: monster_template.id,
-      questions: monster_template.questions,
       flags: monster_template.flags,
       chance_to_follow: monster_template.chance_to_follow,
       movement: monster_template.movement,
@@ -208,6 +213,10 @@ defmodule MonsterTemplate do
 
   def handle_call(:value, _from, monster_template) do
     {:reply, monster_template, monster_template}
+  end
+
+  def handle_call(:questions, _from, monster_template) do
+    {:reply, monster_template.questions, monster_template}
   end
 
   def handle_cast(:set_last_killed_at, monster_template) do

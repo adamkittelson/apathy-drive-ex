@@ -44,8 +44,10 @@ defmodule ApathyDrive.Commands.Ask do
   end
 
   def answer(%Mobile{} = target, mobile, question) do
-    if target.questions |> Map.keys |> Enum.member?(question) do
-      Mobile.execute_script(mobile, target.questions[question])
+    questions = MonsterTemplate.questions(target.monster_template_id)
+
+    if questions |> Map.keys |> Enum.member?(question) do
+      Mobile.execute_script(mobile, questions[question])
     else
       Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{target.name} has nothing to tell you!</span></p>")
     end

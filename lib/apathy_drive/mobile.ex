@@ -21,7 +21,6 @@ defmodule ApathyDrive.Mobile do
     field :flags,                {:array, :string}, default: []
     field :experience,           :integer
     field :auto_attack_interval, :float,            default: 4.0
-    field :questions,            ApathyDrive.JSONB
     field :unities,              {:array, :string}, default: []
     field :movement,             :string
     field :spawned_at,           :integer
