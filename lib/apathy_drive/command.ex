@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Commands, Mobile, Match}
+  alias ApathyDrive.{Commands, Mobile, Match, Room, RoomServer}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -20,8 +20,8 @@ defmodule ApathyDrive.Command do
 
   def execute(%Mobile{room_id: room_id}, command, arguments) do
     room_id
-    |> Room.find
-    |> Room.execute_command(self, command, arguments)
+    |> RoomServer.find
+    |> RoomServer.execute_command(self, command, arguments)
   end
 
   def execute(%Room{} = room, mobile, command, arguments) do
@@ -52,8 +52,8 @@ defmodule ApathyDrive.Command do
 
   defmacro __using__(_opts) do
     quote do
-      import Systems.Text
-      alias ApathyDrive.Mobile
+      import ApathyDrive.Text
+      alias ApathyDrive.{Mobile, Room, RoomServer}
 
       def name do
         __MODULE__

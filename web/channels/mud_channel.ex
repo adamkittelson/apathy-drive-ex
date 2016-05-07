@@ -11,7 +11,7 @@ defmodule ApathyDrive.MUDChannel do
           %Spirit{} = spirit ->
             case Process.whereis(:"spirit_#{spirit.id}") do
               nil ->
-                {:ok, pid} = ApathyDrive.Mobile.start(%ApathyDrive.Mobile{spirit: spirit.id, socket: self})
+                {:ok, pid} = Mobile.start(%Mobile{spirit: spirit.id, socket: self})
                 socket = assign(socket, :mobile, pid)
                 send(self, :after_join)
                 {:ok, socket}
@@ -35,7 +35,7 @@ defmodule ApathyDrive.MUDChannel do
   def handle_info({:respawn, spirit: spirit}, socket) do
     spirit = Repo.save!(spirit)
 
-    {:ok, pid} = ApathyDrive.Mobile.start(%ApathyDrive.Mobile{spirit: spirit.id, socket: self})
+    {:ok, pid} = Mobile.start(%Mobile{spirit: spirit.id, socket: self})
 
     socket = assign(socket, :mobile, pid)
 

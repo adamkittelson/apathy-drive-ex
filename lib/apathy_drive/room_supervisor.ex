@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomSupervisor do
   use Supervisor
   require Ecto.Query
-  alias ApathyDrive.Repo
+  alias ApathyDrive.{Repo, Room, RoomServer}
 
   def start_link(children, opts) do
     Supervisor.start_link(__MODULE__, children, opts)
@@ -14,7 +14,7 @@ defmodule ApathyDrive.RoomSupervisor do
   def launch(id) do
     id
     |> find_supervisor()
-    |> Supervisor.start_child({"room_#{id}", {GenServer, :start_link, [Room, id, [name: {:global, "room_#{id}"}]]}, :permanent, 5000, :worker, [Room]})
+    |> Supervisor.start_child({"room_#{id}", {GenServer, :start_link, [RoomServer, id, [name: {:global, "room_#{id}"}]]}, :permanent, 5000, :worker, [RoomServer]})
   end
 
   def find_supervisor(id) do

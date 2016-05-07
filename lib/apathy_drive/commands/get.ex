@@ -32,8 +32,8 @@ defmodule ApathyDrive.Commands.Get do
 
   def execute(%Mobile{room_id: room_id}, item) do
     room_id
-    |> Room.find
-    |> Room.get_item(self, item)
+    |> RoomServer.find
+    |> RoomServer.get_item(self, item)
   end
 
   def execute(%Room{items: items} = room, mobile, "all") do

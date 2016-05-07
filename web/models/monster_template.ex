@@ -3,7 +3,7 @@ defmodule MonsterTemplate do
   use GenServer
   use Timex
 
-  alias ApathyDrive.{Mobile,Repo}
+  alias ApathyDrive.{Mobile, Repo, Room}
 
   schema "monster_templates" do
     field :name,                   :string

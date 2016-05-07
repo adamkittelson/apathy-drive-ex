@@ -15,8 +15,8 @@ defmodule ApathyDrive.Commands.Lock do
       |> Room.direction
 
     room_id
-    |> Room.find
-    |> Room.lock(%{pid: self(), name: Mobile.look_name(mobile)}, direction)
+    |> RoomServer.find
+    |> RoomServer.lock(%{pid: self(), name: Mobile.look_name(mobile)}, direction)
   end
 
   def execute(mobile, arguments) do
@@ -70,7 +70,7 @@ defmodule ApathyDrive.Commands.Lock do
 
   defp mirror_lock!(%{"destination" => destination} = room_exit, room_id) do
     destination
-    |> Room.find
-    |> Room.mirror_lock(room_id, room_exit)
+    |> RoomServer.find
+    |> RoomServer.mirror_lock(room_id, room_exit)
   end
 end

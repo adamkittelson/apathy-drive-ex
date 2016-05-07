@@ -1,7 +1,7 @@
 defmodule ApathyDrive.ClassController do
   use ApathyDrive.Web, :controller
 
-  alias ApathyDrive.Class
+  alias ApathyDrive.{Class, Room}
 
   plug :scrub_params, "class" when action in [:create, :update]
 

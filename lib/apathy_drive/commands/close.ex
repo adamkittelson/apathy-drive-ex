@@ -15,8 +15,8 @@ defmodule ApathyDrive.Commands.Close do
       |> Room.direction
 
     room_id
-    |> Room.find
-    |> Room.close(%{pid: self(), name: Mobile.look_name(mobile)}, direction)
+    |> RoomServer.find
+    |> RoomServer.close(%{pid: self(), name: Mobile.look_name(mobile)}, direction)
   end
 
   def execute(mobile, arguments) do
@@ -66,7 +66,7 @@ defmodule ApathyDrive.Commands.Close do
 
   defp mirror_close!(%{"destination" => destination} = room_exit, room_id) do
     destination
-    |> Room.find
-    |> Room.mirror_close(room_id, room_exit)
+    |> RoomServer.find
+    |> RoomServer.mirror_close(room_id, room_exit)
   end
 end

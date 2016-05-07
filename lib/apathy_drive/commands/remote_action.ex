@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Commands.RemoteAction do
-  alias ApathyDrive.Doors
+  alias ApathyDrive.{Doors, Room}
 
   def execute(%Room{} = room, %{"direction" => direction} = room_exit, from) do
     exit_to_trigger = exit_to_trigger(room, room_exit, from)

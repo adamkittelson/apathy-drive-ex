@@ -1,6 +1,7 @@
 defmodule ApathyDrive.RoomControllerTest do
   use ApathyDrive.ConnCase
   use ShouldI
+  alias ApathyDrive.Room
 
   @valid_params room: %{"name" => "test room", "description" => "this is the description"}
   @invalid_params room: %{}

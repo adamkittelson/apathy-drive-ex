@@ -1,4 +1,4 @@
-defmodule Systems.Text do
+defmodule ApathyDrive.Text do
 
   def interpolate(nil, _opts), do: nil
   def interpolate(string, opts) do

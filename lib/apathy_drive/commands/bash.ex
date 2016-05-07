@@ -15,8 +15,8 @@ defmodule ApathyDrive.Commands.Bash do
       |> Room.direction
 
     room_id
-    |> Room.find
-    |> Room.bash(%{pid: self(), strength: Mobile.strength(mobile), name: Mobile.look_name(mobile)}, direction)
+    |> RoomServer.find
+    |> RoomServer.bash(%{pid: self(), strength: Mobile.strength(mobile), name: Mobile.look_name(mobile)}, direction)
   end
 
   def execute(mobile, arguments) do
@@ -82,8 +82,8 @@ defmodule ApathyDrive.Commands.Bash do
 
   defp mirror_bash!(%{"destination" => destination} = room_exit, room_id) do
     destination
-    |> Room.find
-    |> Room.mirror_bash(room_id, room_exit)
+    |> RoomServer.find
+    |> RoomServer.mirror_bash(room_id, room_exit)
   end
 
   defp bash_fail!(%Room{id: id}, data) do
@@ -92,8 +92,8 @@ defmodule ApathyDrive.Commands.Bash do
 
   defp mirror_bash_fail!(%{"destination" => destination} = room_exit, room_id) do
     destination
-    |> Room.find
-    |> Room.mirror_bash_fail(room_id, room_exit)
+    |> RoomServer.find
+    |> RoomServer.mirror_bash_fail(room_id, room_exit)
   end
 
 end

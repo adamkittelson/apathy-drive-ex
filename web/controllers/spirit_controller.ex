@@ -2,7 +2,7 @@ defmodule ApathyDrive.SpiritController do
   use ApathyDrive.Web, :controller
   import Comeonin.Bcrypt
   import Ecto.Changeset
-  import Systems.Text
+  import ApathyDrive.Text
 
   plug :scrub_params, "spirit" when action in [:create, :update]
 

@@ -1,5 +1,5 @@
 defmodule Systems.Death do
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, RoomServer, Text}
 
   # Player not possessing a monster
   def kill(%Mobile{monster_template_id: nil, spirit: %Spirit{}} = mobile) do
@@ -30,8 +30,8 @@ defmodule Systems.Death do
   end
   def kill(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment} = spirit} = mobile, [:drop_equipment | remaining_steps]) do
     mobile.room_id
-    |> Room.find
-    |> Room.add_items(inventory ++ equipment)
+    |> RoomServer.find
+    |> RoomServer.add_items(inventory ++ equipment)
 
     spirit =
       Map.merge(spirit, %{inventory: [], equipment: []})
@@ -60,8 +60,8 @@ defmodule Systems.Death do
     send(mobile.socket, {:scroll, "<p>You leave the body of #{mobile.name}.</p>"})
 
     message = mobile.death_message
-              |> Systems.Text.interpolate(%{"name" => mobile.name})
-              |> Systems.Text.capitalize_first
+              |> Text.interpolate(%{"name" => mobile.name})
+              |> Text.capitalize_first
 
     send(mobile.socket, {:scroll, "<p>#{message}</p>"})
 

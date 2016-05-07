@@ -1,5 +1,6 @@
 defmodule ApathyDrive.RoomView do
   use ApathyDrive.Web, :view
+  alias ApathyDrive.{Commands, Room}
 
   def look_directions(conn, %Room{} = room) do
     case exit_directions(conn, room) do
@@ -13,7 +14,7 @@ defmodule ApathyDrive.RoomView do
   def exit_directions(conn, %Room{} = room) do
     room.exits
     |> Enum.map(fn(room_exit) ->
-         direction_link(conn, room_exit, ApathyDrive.Commands.Look.display_direction(room_exit, room))
+         direction_link(conn, room_exit, Commands.Look.display_direction(room_exit, room))
        end)
     |> Enum.reject(&(&1 == nil))
   end

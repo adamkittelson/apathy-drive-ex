@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Doors, Mobile, Match}
+  alias ApathyDrive.{Doors, Mobile, Match, RoomServer}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -14,8 +14,8 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(mobile, "<p>You are blind.</p>")
     else
       room_id
-      |> Room.find
-      |> Room.look(%{mobile: self, name: Mobile.look_name(mobile), room_id: mobile.room_id}, args)
+      |> RoomServer.find
+      |> RoomServer.look(%{mobile: self, name: Mobile.look_name(mobile), room_id: mobile.room_id}, args)
     end
   end
 
@@ -89,8 +89,8 @@ defmodule ApathyDrive.Commands.Look do
 
   def execute(%Room{}, mobile_data, %{"destination" => destination}) do
     destination
-    |> Room.find
-    |> Room.look(mobile_data, [])
+    |> RoomServer.find
+    |> RoomServer.look(mobile_data, [])
   end
 
   def peek(%Room{id: id} = room, name, room_id) do

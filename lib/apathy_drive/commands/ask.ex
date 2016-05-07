@@ -22,8 +22,8 @@ defmodule ApathyDrive.Commands.Ask do
 
   def execute(%Mobile{room_id: room_id}, query, question) do
     room_id
-    |> Room.find
-    |> Room.ask(self(), query, question)
+    |> RoomServer.find
+    |> RoomServer.ask(self(), query, question)
   end
 
   def execute(%Room{} = room, mobile, query, question) do

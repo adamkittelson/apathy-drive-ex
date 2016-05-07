@@ -19,8 +19,8 @@ defmodule ApathyDrive.Commands.Greet do
 
   def execute(%Mobile{room_id: room_id} = mobile, query) do
     room_id
-    |> Room.find
-    |> Room.greet(%{name: Mobile.look_name(mobile), pid: self()}, query)
+    |> RoomServer.find
+    |> RoomServer.greet(%{name: Mobile.look_name(mobile), pid: self()}, query)
   end
 
   def execute(%Room{} = room, %{name: _name, pid: pid} = mobile, query) do

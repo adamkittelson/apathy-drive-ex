@@ -19,7 +19,7 @@ defmodule ApathyDrive.ChannelCase do
     quote do
       # Import conveniences for testing with channels
       use Phoenix.ChannelTest
-      alias ApathyDrive.Repo
+      alias ApathyDrive.{Mobile, Repo, Room}
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
@@ -27,7 +27,7 @@ defmodule ApathyDrive.ChannelCase do
       # The default endpoint for testing
       @endpoint ApathyDrive.Endpoint
 
-      def test_mobile(map \\ %{}, room \\ Repo.insert!(%Room{})) do
+      def test_mobile(map \\ %{}, room \\ Repo.insert!(%ApathyDrive.Room{})) do
         class = Repo.insert!(%ApathyDrive.Class{alignment: "evil",
                                                 name: "Demon",
                                                 start_room_id: room.id,

@@ -1,6 +1,13 @@
 defmodule ApathyDrive.Repo do
   use Ecto.Repo, otp_app: :apathy_drive
   use Scrivener, page_size: 3
+  alias ApathyDrive.Room
+
+  def save(%Room{room_unity: room_unity} = room) do
+    room
+    |> Map.put(:room_unity, save!(room_unity))
+    |> save!()
+  end
 
   def save!(struct) do
     module    = struct.__struct__

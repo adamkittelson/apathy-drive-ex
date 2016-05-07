@@ -16,8 +16,8 @@ defmodule ApathyDrive.Commands.Possess do
     Mobile.save(mobile)
 
     room_id
-    |> Room.find
-    |> Room.possess(query, mobile.spirit.id, mobile.spirit.class.name, mobile.socket, self())
+    |> RoomServer.find
+    |> RoomServer.possess(query, mobile.spirit.id, mobile.spirit.class.name, mobile.socket, self())
   end
 
   def execute(%Mobile{monster_template_id: _, name: name} = mobile, _args) do

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, RoomServer}
 
   schema "scripts" do
     field :instructions, ApathyDrive.JSONB, default: []
@@ -146,8 +146,8 @@ defmodule ApathyDrive.Script do
       Repo.save!(mobile.spirit)
     else
       mobile.spirit.room_id
-      |> Room.find
-      |> Room.add_item(item)
+      |> RoomServer.find
+      |> RoomServer.add_item(item)
     end
 
     execute_script(script, mobile)
@@ -155,8 +155,8 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%{"spawn_monster" => monster_template_id}, %Mobile{} = mobile, script) do
     mobile.room_id
-    |> Room.find
-    |> Room.create_monster(monster_template_id)
+    |> RoomServer.find
+    |> RoomServer.create_monster(monster_template_id)
 
     execute_script(script, mobile)
   end
@@ -186,9 +186,9 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"room_item" => %{"failure_message" => failure_message, "item" => item_name}}, %Mobile{room_id: room_id} = mobile, script) do
-    room = Room.find(room_id)
+    room = RoomServer.find(room_id)
 
-    if Room.find_item(room, item_name) do
+    if RoomServer.find_item(room, item_name) do
       execute_script(script, mobile)
     else
       Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")

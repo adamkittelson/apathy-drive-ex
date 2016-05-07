@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Commands.Move do
-  alias ApathyDrive.{Mobile, Doors}
+  alias ApathyDrive.{Doors, Mobile, Room, RoomServer}
 
   def execute(%Room{} = room, mobile, command) do
     direction = Room.direction(command)
@@ -53,8 +53,8 @@ defmodule ApathyDrive.Commands.Move do
 
     if !held(mobile) do
       mobile.room_id
-      |> Room.find
-      |> Room.display_exit_message(%{name: look_name(mobile), mobile: self, message: mobile.exit_message, to: destination_id})
+      |> RoomServer.find
+      |> RoomServer.display_exit_message(%{name: look_name(mobile), mobile: self, message: mobile.exit_message, to: destination_id})
 
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -73,13 +73,13 @@ defmodule ApathyDrive.Commands.Move do
         ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
       end
 
-      destination = Room.find(destination_id)
+      destination = RoomServer.find(destination_id)
 
-      Room.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
+      RoomServer.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
 
       Mobile.look(self)
 
-      Room.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: mobile.enter_message, from: mobile.room_id})
+      RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: mobile.enter_message, from: mobile.room_id})
 
       notify_presence(mobile)
 
@@ -97,8 +97,8 @@ defmodule ApathyDrive.Commands.Move do
       Mobile.send_scroll(mobile, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
 
       mobile.room_id
-      |> Room.find
-      |> Room.display_exit_message(%{name: look_name(mobile), mobile: self, message: room_exit["from_message"], to: destination_id})
+      |> RoomServer.find
+      |> RoomServer.display_exit_message(%{name: look_name(mobile), mobile: self, message: room_exit["from_message"], to: destination_id})
 
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -117,13 +117,13 @@ defmodule ApathyDrive.Commands.Move do
         ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
       end
 
-      destination = Room.find(destination_id)
+      destination = RoomServer.find(destination_id)
 
-      Room.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
+      RoomServer.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
 
       Mobile.look(self)
 
-      Room.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: room_exit["to_message"], from: mobile.room_id})
+      RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: room_exit["to_message"], from: mobile.room_id})
 
       notify_presence(mobile)
 

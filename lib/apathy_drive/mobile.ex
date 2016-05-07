@@ -1,8 +1,7 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor}
-  use GenServer
+  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor, RoomServer, Room}
   use ApathyDrive.Web, :model
-  import Systems.Text
+  import ApathyDrive.Text
   import TimerManager, only: [seconds: 1]
 
   schema "mobiles" do
@@ -858,8 +857,8 @@ defmodule ApathyDrive.Mobile do
   end
 
   def local_hated_targets(%Mobile{hate: hate} = mobile) do
-    mobile
-    |> Room.mobiles
+    "rooms:#{mobile.room_id}:mobiles"
+    |> PubSub.subscribers
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
          threat = Map.get(hate, potential_target, 0)
          if threat > 0 do
@@ -925,8 +924,8 @@ defmodule ApathyDrive.Mobile do
     }
 
     room_id
-    |> Room.find
-    |> Room.notify_presence(data)
+    |> RoomServer.find
+    |> RoomServer.notify_presence(data)
   end
 
   def save(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
@@ -953,7 +952,7 @@ defmodule ApathyDrive.Mobile do
   defp unify(%Mobile{spirit: nil, experience: essence, unities: unities} = mobile) do
     essence_to_distribute = div(essence, 100)
 
-    Room.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence_to_distribute)
+    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence_to_distribute)
     Enum.each(unities, fn(unity) ->
       ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
     end)
@@ -964,7 +963,7 @@ defmodule ApathyDrive.Mobile do
   defp unify(%Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} = mobile) do
     essence_to_distribute = div(essence, 100)
 
-    Room.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence_to_distribute)
+    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence_to_distribute)
     Enum.each(unities, fn(unity) ->
       ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
     end)
@@ -1082,8 +1081,8 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:teleport, room_id}, mobile) do
     if !held(mobile) do
       mobile.room_id
-      |> Room.find
-      |> Room.display_exit_message(%{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} vanishes into thin air!</span>", to: nil})
+      |> RoomServer.find
+      |> RoomServer.display_exit_message(%{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} vanishes into thin air!</span>", to: nil})
 
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -1107,13 +1106,13 @@ defmodule ApathyDrive.Mobile do
       mobile = put_in(mobile.spirit.room_id, mobile.room_id)
       ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
 
-      destination = Room.find(destination_id)
+      destination = RoomServer.find(destination_id)
 
-      Room.audible_movement({:global, "room_#{destination_id}"}, nil)
+      RoomServer.audible_movement({:global, "room_#{destination_id}"}, nil)
 
       Mobile.look(self)
 
-      Room.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} appears out of thin air!</span>", from: nil})
+      RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} appears out of thin air!</span>", from: nil})
 
       notify_presence(mobile)
 
@@ -1207,8 +1206,8 @@ defmodule ApathyDrive.Mobile do
           Mobile.send_scroll(mobile, "<p>You drop #{item["name"]}.</p>")
 
           mobile.room_id
-          |> Room.find
-          |> Room.add_item(item)
+          |> RoomServer.find
+          |> RoomServer.add_item(item)
 
         {:noreply, save(mobile)}
     end
@@ -1260,8 +1259,8 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:trigger_remote_action, remote_action_exit}, mobile) do
     unless confused(mobile) do
       remote_action_exit["destination"]
-      |> Room.find
-      |> Room.trigger_remote_action(remote_action_exit, mobile.room_id)
+      |> RoomServer.find
+      |> RoomServer.trigger_remote_action(remote_action_exit, mobile.room_id)
 
       mobile.room_id
       |> Room.send_scroll(%{
@@ -1289,7 +1288,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_cast({:display_enter_message, room, _direction}, mobile) do
-    Room.display_enter_message(room, %{name: look_name(mobile), mobile: mobile, message: mobile.enter_message, from: mobile.room_id})
+    RoomServer.display_enter_message(room, %{name: look_name(mobile), mobile: mobile, message: mobile.enter_message, from: mobile.room_id})
     {:noreply, mobile}
   end
 
@@ -1300,8 +1299,8 @@ defmodule ApathyDrive.Mobile do
     room_exit = Enum.random(exits)
 
     mobile.room_id
-    |> Room.find
-    |> Room.execute_command(self, room_exit["direction"], [])
+    |> RoomServer.find
+    |> RoomServer.execute_command(self, room_exit["direction"], [])
 
     {:noreply, mobile}
   end
@@ -1536,8 +1535,8 @@ defmodule ApathyDrive.Mobile do
     {:noreply, move_after(mobile)}
   end
   def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
-    if should_move?(mobile) && (room = Room.find(mobile.room_id)) do
-      Room.auto_move(room, self, mobile.unities)
+    if should_move?(mobile) && (room = RoomServer.find(mobile.room_id)) do
+      RoomServer.auto_move(room, self, mobile.unities)
     end
     {:noreply, move_after(mobile)}
   end

@@ -1,4 +1,5 @@
 defmodule ApathyDrive.Doors do
+  alias ApathyDrive.Room
 
   def name, do: "door"
 

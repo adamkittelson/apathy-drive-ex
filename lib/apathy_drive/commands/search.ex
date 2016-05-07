@@ -30,7 +30,7 @@ defmodule ApathyDrive.Commands.Search do
         Mobile.send_scroll(mobile, "<p>#{message}</p>")
       end
 
-      Room.search(self, room_exit["direction"])
+      RoomServer.search(self, room_exit["direction"])
     end
   end
 

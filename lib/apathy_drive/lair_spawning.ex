@@ -1,10 +1,11 @@
 defmodule ApathyDrive.LairSpawning do
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, Repo, RoomServer}
+  require Ecto.Query
 
   def spawn_lair(room, room_pid) do
     lair_monsters = ApathyDrive.LairMonster.monsters_template_ids(room.id)
 
-    if room.lair_size > (room.id |> Room.spawned_monster_count) do
+    if room.lair_size > spawned_monster_count(room.id) do
       monster_templates = eligible_monsters(lair_monsters)
       if Enum.any?(monster_templates) do
         {mt_id, monster_template} = select_lair_monster(monster_templates)
@@ -12,7 +13,7 @@ defmodule ApathyDrive.LairSpawning do
         monster = MonsterTemplate.create_monster(monster_template, room)
                   |> Mobile.load
 
-        Room.audible_movement({:global, "room_#{room.id}"}, nil)
+        RoomServer.audible_movement({:global, "room_#{room.id}"}, nil)
 
         Mobile.display_enter_message(monster, room_pid)
 
@@ -35,6 +36,13 @@ defmodule ApathyDrive.LairSpawning do
 
          MonsterTemplate.on_cooldown?(mt) or MonsterTemplate.limit_reached?(mt)
        end)
+  end
+
+  defp spawned_monster_count(room_id) do
+    ApathyDrive.Mobile
+    |> Ecto.Query.where(spawned_at: ^room_id)
+    |> Ecto.Query.select([m], count(m.id))
+    |> Repo.one
   end
 
 end

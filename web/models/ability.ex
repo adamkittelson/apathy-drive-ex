@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, Match}
-  import Systems.Text
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, Match, RoomServer}
+  import ApathyDrive.Text
   import ApathyDrive.TimerManager, only: [seconds: 1]
 
   schema "abilities" do
@@ -353,7 +353,7 @@ defmodule ApathyDrive.Ability do
 
   def execute(%Mobile{room_id: room_id} = mobile, %{} = ability, target) when is_binary(target) do
     if can_execute?(mobile, ability) do
-      Room.execute_ability({:global, "room_#{room_id}"}, ability, target)
+      RoomServer.execute_ability({:global, "room_#{room_id}"}, ability, target)
       mobile
     else
       mobile

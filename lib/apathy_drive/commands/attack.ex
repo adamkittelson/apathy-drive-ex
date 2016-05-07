@@ -18,7 +18,7 @@ defmodule ApathyDrive.Commands.Attack do
   end
 
   def execute(%Mobile{room_id: room_id}, query) do
-    Room.attack({:global, "room_#{room_id}"}, self(), query)
+    RoomServer.attack({:global, "room_#{room_id}"}, self(), query)
   end
 
   def execute(%Room{} = room, mobile, query) do

@@ -1,6 +1,7 @@
 defmodule ApathyDrive.RoomController do
   use ApathyDrive.Web, :controller
   import Ecto.Query
+  alias ApathyDrive.Room
 
   plug :scrub_params, "room" when action in [:create, :update]
 

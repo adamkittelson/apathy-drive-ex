@@ -15,8 +15,8 @@ defmodule ApathyDrive.Commands.Open do
       |> Room.direction
 
     room_id
-    |> Room.find
-    |> Room.open(%{pid: self(), name: Mobile.look_name(mobile)}, direction)
+    |> RoomServer.find
+    |> RoomServer.open(%{pid: self(), name: Mobile.look_name(mobile)}, direction)
   end
 
   def execute(mobile, arguments) do
@@ -70,8 +70,8 @@ defmodule ApathyDrive.Commands.Open do
 
   defp mirror_open!(%{"destination" => destination} = room_exit, room_id) do
     destination
-    |> Room.find
-    |> Room.mirror_open(room_id, room_exit)
+    |> RoomServer.find
+    |> RoomServer.mirror_open(room_id, room_exit)
   end
 
 end
