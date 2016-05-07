@@ -942,7 +942,7 @@ defmodule Room do
   def handle_info(:spawn_monsters,
                   %{:lair_next_spawn_at => lair_next_spawn_at} = room) do
 
-    if Date.to_secs(DateTime.now) >= lair_next_spawn_at do
+    if DateTime.to_secs(DateTime.now) >= lair_next_spawn_at do
 
       room_pid = self()
 
