@@ -53,11 +53,6 @@ defmodule Room do
     PubSub.subscribe("rooms")
     PubSub.subscribe("rooms:#{room.id}")
 
-    room.exits
-    |> Enum.each(fn(room_exit) ->
-         PubSub.subscribe("rooms:#{room_exit["destination"]}:adjacent")
-       end)
-
     load_present_mobiles(self())
 
     if room.lair_size && Enum.any?(ApathyDrive.LairMonster.monsters_template_ids(id)) do
