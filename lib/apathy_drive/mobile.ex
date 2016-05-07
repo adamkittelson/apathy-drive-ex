@@ -535,10 +535,6 @@ defmodule ApathyDrive.Mobile do
         ApathyDrive.PubSub.subscribe("monster_templates:#{mobile.monster_template_id}:monsters")
       end
 
-      Enum.each(mobile.unities, fn(unity) ->
-        ApathyDrive.PubSub.subscribe("#{unity}-unity:mobiles")
-      end)
-
       send(self, :notify_presence)
 
       send(self, :save)
@@ -558,10 +554,6 @@ defmodule ApathyDrive.Mobile do
     ApathyDrive.PubSub.subscribe("chat:gossip")
     ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
     ApathyDrive.PubSub.subscribe("rooms:#{spirit.room_id}:spirits")
-
-    Enum.each(spirit.class.unities, fn(unity) ->
-      ApathyDrive.PubSub.subscribe("#{unity}-unity:mobiles")
-    end)
 
     mobile =
       mobile

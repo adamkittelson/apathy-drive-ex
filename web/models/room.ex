@@ -60,8 +60,6 @@ defmodule Room do
     end
 
     if room.ability_id do
-      PubSub.subscribe("rooms:abilities")
-
       room =
         room
         |> Map.put(:room_ability, ApathyDrive.Repo.get(Ability, room.ability_id).properties)
@@ -1041,12 +1039,6 @@ defmodule Room do
 
   def handle_info({:mirror_lock, room_exit}, room) do
     room = lock!(room, room_exit["direction"])
-    {:noreply, room}
-  end
-
-  def handle_info(:execute_room_ability, %Room{room_ability: nil} = room) do
-    ApathyDrive.PubSub.unsubscribe("rooms:abilities")
-
     {:noreply, room}
   end
 
