@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Who do
   use ApathyDrive.Command
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, Presence}
 
   def keywords, do: ["who"]
 
@@ -8,6 +8,10 @@ defmodule ApathyDrive.Commands.Who do
     Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>==============================================================</span></p>")
 
-    ApathyDrive.PubSub.broadcast("spirits:online", {:who_request, mobile})
+    "spirits:online"
+    |> Presence.metas
+    |> Enum.each(fn(metadata) ->
+         Mobile.send_scroll(mobile, "<p>#{metadata.name}</p>")
+       end)
   end
 end

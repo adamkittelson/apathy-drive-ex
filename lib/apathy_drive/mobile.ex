@@ -1,8 +1,9 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor, RoomServer, Room}
+  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor, RoomServer, Room, Presence}
   use ApathyDrive.Web, :model
   import ApathyDrive.Text
   import TimerManager, only: [seconds: 1]
+  use GenServer
 
   schema "mobiles" do
     belongs_to :room, Room
@@ -584,6 +585,10 @@ defmodule ApathyDrive.Mobile do
     update_prompt(mobile)
 
     ApathyDrive.Endpoint.broadcast_from! self, "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
+
+    {:ok, _} = Presence.track(self(), "spirits:online", :"spirit_#{spirit_id}", %{
+      name: Mobile.look_name(mobile)
+    })
 
     send(self, :notify_presence)
 
@@ -1475,11 +1480,6 @@ defmodule ApathyDrive.Mobile do
   def handle_info(:save, mobile) do
     Process.send_after(self, :save, jitter(:timer.minutes(10)))
     {:noreply, save(mobile), :hibernate}
-  end
-
-  def handle_info({:who_request, who}, mobile) do
-    Mobile.send_scroll(who, "<p>#{Mobile.look_name(mobile)}</p>")
-    {:noreply, mobile}
   end
 
   def handle_info({:timer_cast_ability, %{ability: ability, timer: time, target: target}}, mobile) do
