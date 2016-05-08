@@ -109,6 +109,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:move, room, room_exit, last_room})
   end
 
+  def average_essence(mobile, essence) do
+    GenServer.cast(mobile, {:average_essence, essence})
+  end
+
   def execute_command(mobile, command, arguments) do
     GenServer.cast(mobile, {:execute_command, command, arguments})
   end
@@ -946,31 +950,6 @@ defmodule ApathyDrive.Mobile do
   defp sound_direction("down"),    do: "below you"
   defp sound_direction(direction), do: "to the #{direction}"
 
-  defp unify(%Mobile{spirit: nil, unities: []} = mobile) do
-    mobile
-  end
-  defp unify(%Mobile{spirit: nil, experience: essence, unities: unities} = mobile) do
-    essence_to_distribute = div(essence, 100)
-
-    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence_to_distribute)
-    Enum.each(unities, fn(unity) ->
-      ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
-    end)
-
-    add_experience(mobile, -(essence_to_distribute * (1 + length(unities))))
-  end
-
-  defp unify(%Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} = mobile) do
-    essence_to_distribute = div(essence, 100)
-
-    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence_to_distribute)
-    Enum.each(unities, fn(unity) ->
-      ApathyDrive.Unity.contribute(self(), unity, essence_to_distribute)
-    end)
-
-    put_in mobile.spirit, Spirit.add_experience(mobile.spirit, -(essence_to_distribute * (1 + length(unities))))
-  end
-
   defp jitter(time) do
     time
     |> :rand.uniform
@@ -1076,6 +1055,18 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
     end
+  end
+
+  def handle_cast({:average_essence, average}, %Mobile{spirit: nil, experience: essence} = mobile) do
+    difference = average - essence
+
+    {:noreply, add_experience(mobile, div(difference, 100))}
+  end
+
+  def handle_cast({:average_essence, average}, %Mobile{spirit: %Spirit{experience: essence}} = mobile) do
+    difference = average - essence
+
+    {:noreply, add_experience(mobile, div(difference, 100))}
   end
 
   def handle_cast({:teleport, room_id}, mobile) do
@@ -1724,8 +1715,26 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info(:unify, mobile) do
-    {:noreply, unify(mobile)}
+  def handle_info(:unify, %Mobile{spirit: nil, unities: []} = mobile) do
+    {:noreply, mobile}
+  end
+
+  def handle_info(:unify, %Mobile{spirit: nil, experience: essence, unities: unities} = mobile) do
+    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, unities, essence)
+
+    Enum.each(unities, fn(unity) ->
+      ApathyDrive.Unity.contribute(self(), unity, essence)
+    end)
+    {:noreply, mobile}
+  end
+
+  def handle_info(:unify, %Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} = mobile) do
+    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, unities, essence)
+
+    Enum.each(unities, fn(unity) ->
+      ApathyDrive.Unity.contribute(self(), unity, essence)
+    end)
+    {:noreply, mobile}
   end
 
   def handle_info({:monster_present, %{} = intruder_data}, %Mobile{spirit: nil} = mobile) do

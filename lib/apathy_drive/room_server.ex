@@ -39,8 +39,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, :load_present_mobiles)
   end
 
-  def add_essence_from_mobile(room, mobile, unity, essence) do
-    GenServer.cast(room, {:add_essence_from_mobile, mobile, unity, essence})
+  def add_essence_from_mobile(room, unity, essence) do
+    GenServer.cast(room, {:add_essence_from_mobile, unity, essence})
   end
 
   def ask(room, asker, target, question) do
@@ -276,28 +276,29 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:add_essence_from_mobile, mobile, [unity], essence}, %Room{} = room) do
-    room = update_in(room.room_unity.essences[unity], &(&1 + essence))
-
-    essence_to_send_back = div(room.room_unity.essences[unity], 100)
-
-    room =
-      update_in(room.room_unity.essences[unity], &(&1 - essence_to_send_back))
-      |> Room.update_controlled_by
-
-    Mobile.add_experience(mobile, essence_to_send_back)
-
-    {:noreply, room}
+  def handle_cast({:add_essence_from_mobile, [unity], essence}, %Room{} = room) do
+    if essence > room.room_unity.essences[unity] do
+      room =
+        update_in(room.room_unity.essences[unity], fn(current) ->
+          min(essence, current + div(essence, 100))
+        end)
+        |> Room.update_controlled_by
+      {:noreply, room}
+    else
+      {:noreply, room}
+    end
   end
 
-  def handle_cast({:add_essence_from_mobile, mobile, unities, essence}, %Room{} = room) do
+  def handle_cast({:add_essence_from_mobile, unities, essence}, %Room{} = room) do
+    essence = div(essence, 100)
+
     highest =
       unities
       |> Enum.map(&(room.room_unity.essences[&1]))
       |> Enum.sort
       |> List.last
 
-    %{room: room, unused: unused} =
+    %{room: room} =
       unities
       |> Enum.reduce(%{room: room, unused: essence},
                      fn(unity, %{room: updated_room, unused: essence_remaining}) ->
@@ -312,17 +313,7 @@ defmodule ApathyDrive.RoomServer do
                         }
                      end)
 
-    amount_to_extract = div(essence - unused, length(unities))
-    room =
-      unities
-      |> Enum.reduce(room, fn(unity, updated_room) ->
-           update_in(updated_room.room_unity.essences[unity], &(&1 - amount_to_extract))
-         end)
-      |> Room.update_controlled_by
-
-    Mobile.add_experience(mobile, essence)
-
-    {:noreply, room}
+    {:noreply, Room.update_controlled_by(room)}
   end
 
   def handle_cast({:attacker, attacker, target}, room) do
