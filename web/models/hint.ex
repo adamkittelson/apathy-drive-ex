@@ -25,7 +25,6 @@ defmodule Hint do
 
   def random([]),         do: nil
   def random(hint_names) do
-    :random.seed(:os.timestamp)
     hint_names
     |> Enum.random
     |> find_by_name

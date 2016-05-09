@@ -2,6 +2,8 @@ defmodule ApathyDrive.RoomUnity do
   use ApathyDrive.Web, :model
   use Timex
 
+  alias ApathyDrive.Room
+
   schema "room_unities" do
     field :controlled_by, :string
     field :essences,   ApathyDrive.JSONB, default: %{}

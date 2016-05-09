@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Possess do
   use ApathyDrive.Command
-  alias ApathyDrive.Repo
+  alias ApathyDrive.{Presence, Repo}
 
   def keywords, do: ["possess"]
 
@@ -76,6 +76,10 @@ defmodule ApathyDrive.Commands.Possess do
     Process.register(self, :"spirit_#{spirit.id}")
 
     Mobile.update_prompt(mobile)
+
+    {:ok, _} = Presence.track(self(), "spirits:online", "spirit_#{spirit_id}", %{
+      name: Spirit.look_name(spirit)
+    })
 
     Mobile.possession_successful(possessor)
 

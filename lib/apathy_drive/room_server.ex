@@ -757,7 +757,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Room{timers: timers} = room) do
-    jitter = trunc(time / 2) + :random.uniform(time)
+    jitter = trunc(time / 2) + :rand.uniform(time)
 
     new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
 

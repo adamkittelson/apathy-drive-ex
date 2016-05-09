@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.Unpossess do
   use ApathyDrive.Command
+  alias ApathyDrive.Presence
 
   def keywords, do: ["unpossess"]
 
@@ -23,6 +24,8 @@ defmodule ApathyDrive.Commands.Unpossess do
       |> Mobile.set_hp
 
     Process.unregister(:"spirit_#{spirit.id}")
+
+    Presence.untrack(self(), "spirits:online", "spirit_#{spirit.id}")
 
     ApathyDrive.PubSub.unsubscribe("spirits:online")
     ApathyDrive.PubSub.unsubscribe("spirits:#{spirit.id}")

@@ -86,8 +86,9 @@ defmodule ApathyDrive.Commands.Bash do
     |> RoomServer.mirror_bash(room_id, room_exit)
   end
 
-  defp bash_fail!(%Room{id: id}, data) do
+  defp bash_fail!(%Room{id: id} = room, data) do
     PubSub.broadcast! "rooms:#{id}:mobiles", {:door_bash_failed, data}
+    room
   end
 
   defp mirror_bash_fail!(%{"destination" => destination} = room_exit, room_id) do

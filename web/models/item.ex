@@ -61,7 +61,7 @@ defmodule ApathyDrive.Item do
   end
 
   def generate_item(%{chance: chance, item_id: _item_id, level: _level} = opts) do
-    if :random.uniform(100) <= chance do
+    if :rand.uniform(100) <= chance do
       opts
       |> Map.delete(:chance)
       |> generate_item
@@ -92,7 +92,7 @@ defmodule ApathyDrive.Item do
   def roll_stats(nil, _rolls),   do: nil
   def roll_stats(%{} = item, 0), do: item
   def roll_stats(%{} = item, rolls) do
-    if :random.uniform(10) > 7 do
+    if :rand.uniform(10) > 7 do
       item
       |> enhance
       |> roll_stats(rolls)
@@ -106,7 +106,7 @@ defmodule ApathyDrive.Item do
     agi = agility(item)
     will = will(item)
 
-    case :random.uniform(str + agi + will) do
+    case :rand.uniform(str + agi + will) do
       roll when roll > (str + agi) ->
         Map.put(item, "will", will + 1)
       roll when roll <= str ->

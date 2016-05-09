@@ -446,7 +446,7 @@ defmodule ApathyDrive.Mobile do
     effects
     |> Map.values
     |> Enum.find(fn(effect) ->
-         Map.has_key?(effect, "confused") && (effect["confused"] >= :random.uniform(100))
+         Map.has_key?(effect, "confused") && (effect["confused"] >= :rand.uniform(100))
        end)
     |> held(mobile)
   end
@@ -584,9 +584,7 @@ defmodule ApathyDrive.Mobile do
 
     update_prompt(mobile)
 
-    ApathyDrive.Endpoint.broadcast_from! self, "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just entered the Realm.</p>"}
-
-    {:ok, _} = Presence.track(self(), "spirits:online", :"spirit_#{spirit_id}", %{
+    {:ok, _} = Presence.track(self(), "spirits:online", "spirit_#{spirit.id}", %{
       name: Mobile.look_name(mobile)
     })
 
@@ -918,8 +916,13 @@ defmodule ApathyDrive.Mobile do
     send(self, :execute_auto_attack)
   end
 
-  def look_name(%Mobile{} = mobile) do
-    "<span class='#{alignment_color(mobile)}'>#{mobile.name}</span>"
+  def look_name(%Mobile{} = mobile, opts \\ []) do
+    name =
+      mobile.name
+      |> String.ljust(opts[:ljust] || 0)
+      |> String.rjust(opts[:rjust] || 0)
+
+    "<span class='#{alignment_color(mobile)}'>#{name}</span>"
   end
 
   def notify_presence(%Mobile{room_id: room_id} = mobile) do
@@ -950,6 +953,8 @@ defmodule ApathyDrive.Mobile do
     |> Map.put(:spirit, Repo.save!(spirit))
     |> Repo.save!
   end
+
+  defp handle_diff(%Mobile{}, "spirits:online", %{joins: _joins, leaves: _leaves}), do: :noop
 
   defp sound_direction("up"),      do: "above you"
   defp sound_direction("down"),    do: "below you"
@@ -1539,6 +1544,11 @@ defmodule ApathyDrive.Mobile do
     {:noreply, ApathyDrive.Script.execute(script, Map.put(mobile, :delayed, false))}
   end
 
+  def handle_info(%Phoenix.Socket.Broadcast{topic: topic, event: "presence_diff", payload: diff}, %Mobile{} = mobile) do
+    handle_diff(mobile, topic, diff)
+    {:noreply, mobile}
+  end
+
   def handle_info(%Phoenix.Socket.Broadcast{}, %Mobile{socket: nil} = mobile) do
     {:noreply, mobile}
   end
@@ -1572,7 +1582,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Mobile{timers: timers} = mobile) do
-    jitter = trunc(time / 2) + :random.uniform(time)
+    jitter = trunc(time / 2) + :rand.uniform(time)
 
     new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
 
@@ -1760,12 +1770,14 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:disconnected, %Mobile{monster_template_id: nil, spirit: spirit, socket: nil} = mobile) do
-    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
+    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{Spirit.look_name(spirit)} just left the Realm.</p>"}
     {:stop, :normal, save(mobile)}
   end
 
   def handle_info(:disconnected, %Mobile{spirit: spirit, socket: nil} = mobile) do
-    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{spirit.name} just left the Realm.</p>"}
+    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{Spirit.look_name(spirit)} just left the Realm.</p>"}
+    Presence.untrack(self(), "spirits:online", "spirit_#{spirit.id}")
+
     mobile =
       mobile
       |> Map.put(:spirit, nil)

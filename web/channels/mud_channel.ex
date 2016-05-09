@@ -11,6 +11,8 @@ defmodule ApathyDrive.MUDChannel do
           %Spirit{} = spirit ->
             case Process.whereis(:"spirit_#{spirit.id}") do
               nil ->
+                spirit = Repo.preload(spirit, :class)
+                ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{Spirit.look_name(spirit)} just entered the Realm.</p>"}
                 {:ok, pid} = Mobile.start(%Mobile{spirit: spirit.id, socket: self})
                 socket = assign(socket, :mobile, pid)
                 send(self, :after_join)

@@ -94,6 +94,15 @@ defmodule Spirit do
   end
   def save(%Spirit{} = spirit), do: spirit
 
+  def look_name(%Spirit{} = spirit, opts \\ []) do
+    name =
+      spirit.name
+      |> String.ljust(opts[:ljust] || 0)
+      |> String.rjust(opts[:rjust] || 0)
+
+    "<span class='#{Mobile.alignment_color(spirit.class)}'>#{name}</span>"
+  end
+
   def add_experience(nil, _exp), do: nil
   def add_experience(%Spirit{level: level} = spirit, exp) do
     spirit =

@@ -542,7 +542,7 @@ defmodule ApathyDrive.Ability do
     if dodge > 0 do
       chance = dodge_chance(dodge, accuracy)
 
-      :random.uniform(100) < trunc(chance)
+      :rand.uniform(100) < trunc(chance)
     else
       false
     end
@@ -578,7 +578,7 @@ defmodule ApathyDrive.Ability do
       |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")))
 
       2000
-      |> :random.uniform
+      |> :rand.uniform
       |> :erlang.send_after(self, :think)
 
       put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
@@ -601,7 +601,7 @@ defmodule ApathyDrive.Ability do
     ability = reduce_damage(ability, mobile, ability_user)
 
     2000
-    |> :random.uniform
+    |> :rand.uniform
     |> :erlang.send_after(self, :think)
 
     ability = display_cast_message(mobile, ability, ability_user)

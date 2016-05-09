@@ -134,8 +134,6 @@ defmodule MonsterTemplate do
   def name_with_adjective(name, nil), do: name
   def name_with_adjective(name, []),  do: name
   def name_with_adjective(name, adjectives) do
-    :random.seed(:os.timestamp)
-
     adjective = adjectives
                 |> Enum.random
 
