@@ -24,7 +24,6 @@ defmodule ApathyDrive.Mobile do
     field :unities,              {:array, :string}, default: []
     field :movement,             :string
     field :spawned_at,           :integer
-    field :minimum_essence,      :integer,          default: 0
 
     field :spirit,             :any,     virtual: true
     field :socket,             :any,     virtual: true
@@ -157,7 +156,7 @@ defmodule ApathyDrive.Mobile do
 
     mobile =
       mobile
-      |> Map.put(:experience, max(experience + exp, mobile.minimum_essence || 0))
+      |> Map.put(:experience, experience + exp)
       |> ApathyDrive.Level.advance
       |> Map.put(:spirit, Spirit.add_experience(mobile.spirit, exp))
 
@@ -1730,7 +1729,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:unify, %Mobile{spirit: nil, experience: essence, unities: unities} = mobile) do
-    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, unities, essence)
+    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence)
 
     Enum.each(unities, fn(unity) ->
       ApathyDrive.Unity.contribute(self(), unity, essence)
@@ -1739,7 +1738,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:unify, %Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} = mobile) do
-    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, unities, essence)
+    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence)
 
     Enum.each(unities, fn(unity) ->
       ApathyDrive.Unity.contribute(self(), unity, essence)

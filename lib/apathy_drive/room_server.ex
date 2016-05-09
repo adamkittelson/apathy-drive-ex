@@ -39,8 +39,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, :load_present_mobiles)
   end
 
-  def add_essence_from_mobile(room, unity, essence) do
-    GenServer.cast(room, {:add_essence_from_mobile, unity, essence})
+  def add_essence_from_mobile(room, mobile, unity, essence) do
+    GenServer.cast(room, {:add_essence_from_mobile, mobile, unity, essence})
   end
 
   def ask(room, asker, target, question) do
@@ -276,7 +276,7 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:add_essence_from_mobile, [unity], essence}, %Room{} = room) do
+  def handle_cast({:add_essence_from_mobile, mobile, [unity], essence}, %Room{} = room) do
     if essence > room.room_unity.essences[unity] do
       room =
         update_in(room.room_unity.essences[unity], fn(current) ->
@@ -285,11 +285,14 @@ defmodule ApathyDrive.RoomServer do
         |> Room.update_controlled_by
       {:noreply, room}
     else
+      updated_mobile_essence = min(essence, essence + div(room.room_unity.essences[unity], 100))
+
+      Mobile.add_experience(mobile, essence - updated_mobile_essence)
       {:noreply, room}
     end
   end
 
-  def handle_cast({:add_essence_from_mobile, unities, essence}, %Room{} = room) do
+  def handle_cast({:add_essence_from_mobile, _mobile, unities, essence}, %Room{} = room) do
     essence = div(essence, 100)
 
     highest =
