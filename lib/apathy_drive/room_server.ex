@@ -669,42 +669,64 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:spread_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
+  def handle_info(:spread_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences, exits: ru_exits}} = room) do
     essences =
       exits
       |> Enum.reduce(essences, fn
            %{"kind" => kind}, updated_essences when kind in ["Cast", "RemoteAction"] ->
              updated_essences
            %{"destination" => dest, "direction" => direction, "kind" => kind}, updated_essences ->
-             essence_to_distribute =
-               Enum.reduce(updated_essences, %{}, fn({unity, essence}, essence_to_distribute) ->
-                 Map.put(essence_to_distribute, unity, div(essence, 100))
-               end)
+             cond do
+               !Map.has_key?(ru_exits, direction) ->
+                 essence_to_distribute =
+                   Enum.reduce(updated_essences, %{}, fn({unity, _essence}, essence_to_distribute) ->
+                     Map.put(essence_to_distribute, unity, 0)
+                   end)
 
-             updated_essence =
-               Enum.reduce(updated_essences, %{}, fn({unity, essence}, updated_essence) ->
-                 Map.put(updated_essence, unity, essence - essence_to_distribute[unity])
-               end)
+                 payload = %{
+                   essence: essence_to_distribute,
+                   room_id: room.id,
+                   direction: direction,
+                   kind: kind,
+                   legacy_id: room.legacy_id,
+                   area: room.area,
+                   controlled_by: room.room_unity.controlled_by
+                 }
 
-             if (default = room.default_essence) > 0 do
-               updated_essence = Map.put(updated_essence, "default", default)
+                 dest
+                 |> find()
+                 |> send({:spread_essence, payload})
+
+                 updated_essences
+               (ru_exits[direction]["area"] == room.area) ->
+                 essence_to_distribute =
+                   Enum.reduce(updated_essences, %{}, fn({unity, essence}, essence_to_distribute) ->
+                     Map.put(essence_to_distribute, unity, div(essence, 100))
+                   end)
+
+                 updated_essence =
+                   Enum.reduce(updated_essences, %{}, fn({unity, essence}, updated_essence) ->
+                     Map.put(updated_essence, unity, essence - essence_to_distribute[unity])
+                   end)
+
+                 payload = %{
+                   essence: essence_to_distribute,
+                   room_id: room.id,
+                   direction: direction,
+                   kind: kind,
+                   legacy_id: room.legacy_id,
+                   area: room.area,
+                   controlled_by: room.room_unity.controlled_by
+                 }
+
+                 dest
+                 |> find()
+                 |> send({:spread_essence, payload})
+
+                 updated_essence
+               true ->
+                 updated_essences
              end
-
-             payload = %{
-               essence: essence_to_distribute,
-               room_id: room.id,
-               direction: direction,
-               kind: kind,
-               legacy_id: room.legacy_id,
-               area: room.area,
-               controlled_by: room.room_unity.controlled_by
-             }
-
-             dest
-             |> find()
-             |> send({:spread_essence, payload})
-
-             updated_essence
          end)
 
     room =

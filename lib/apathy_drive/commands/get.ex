@@ -80,6 +80,6 @@ defmodule ApathyDrive.Commands.Get do
   end
 
   defp get_all(item_names, mobile) do
-    Enum.each(item_names, &Room.get_item(self, mobile, &1))
+    Enum.each(item_names, &RoomServer.get_item(self, mobile, &1))
   end
 end

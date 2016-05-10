@@ -91,7 +91,6 @@ defmodule ApathyDrive.Room do
          ApathyDrive.Level.exp_at_level(mt.level)
        end)
     |> Enum.sum
-    |> div(length(lair_monsters))
   end
 
   def changeset(%Room{} = room, params \\ %{}) do

@@ -1040,7 +1040,7 @@ defmodule ApathyDrive.Mobile do
   def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
     item = equipment
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Match.one(:keyword_starts_with, item)
+           |> Match.one(:name_contains, item)
 
     case item do
       nil ->
