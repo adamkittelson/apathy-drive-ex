@@ -1,5 +1,6 @@
 defmodule ApathyDrive.LairMonster do
   use ApathyDrive.Web, :model
+  alias ApathyDrive.Room
 
   schema "lair_monsters" do
     belongs_to :room, Room

@@ -262,7 +262,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def prompt(%Mobile{} = mobile) do
-    "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
+    "[ES=#{mobile.spirit.experience}/HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
   end
 
   def alignment_color(%{unities: ["evil"]}), do: "magenta"
@@ -761,8 +761,7 @@ defmodule ApathyDrive.Mobile do
     Map.put(mobile, :max_hp, trunc(attr * (0.6 + (0.06 * level(mobile)))))
   end
 
-  def level(%Mobile{spirit: nil, level: level}),     do: level
-  def level(%Mobile{spirit: %Spirit{level: level}}), do: level
+  def level(%Mobile{level: level}), do: level
 
   def weapon(%Mobile{spirit: nil}), do: nil
   def weapon(%Mobile{spirit: %Spirit{equipment: equipment}}) do

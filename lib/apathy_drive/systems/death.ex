@@ -7,11 +7,11 @@ defmodule Systems.Death do
   end
   # Player possessing a monster
   def kill(%Mobile{unities: [], monster_template_id: _, spirit: %Spirit{}} = mobile) do
-    kill(mobile, [:reward_monster_death_exp, :respawn_spirit, :unpossess, :set_last_killed_at, :delete])
+    kill(mobile, [:reward_monster_death_exp, :unpossess, :respawn_spirit, :set_last_killed_at, :delete])
   end
   # Player possessing a turned monster
   def kill(%Mobile{monster_template_id: _, spirit: %Spirit{}} = mobile) do
-    kill(mobile, [:reward_monster_death_exp, :respawn_spirit, :unpossess, :set_last_killed_at, :delete])
+    kill(mobile, [:reward_monster_death_exp, :unpossess, :respawn_spirit, :set_last_killed_at, :delete])
   end
   # Monster not possessed by a player
   def kill(%Mobile{unities: [], spirit: nil} = mobile) do
@@ -57,6 +57,7 @@ defmodule Systems.Death do
     kill(mobile, remaining_steps)
   end
   def kill(mobile, [:unpossess | remaining_steps]) do
+    Process.unregister(:"spirit_#{mobile.spirit.id}")
     send(mobile.socket, {:scroll, "<p>You leave the body of #{mobile.name}.</p>"})
 
     message = mobile.death_message

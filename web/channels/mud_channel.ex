@@ -8,6 +8,8 @@ defmodule ApathyDrive.MUDChannel do
         case Repo.get!(Spirit, spirit_id) do
           nil ->
             {:error, %{reason: "unauthorized"}}
+          %Spirit{name: nil} -> # spirit has been reset, probably due to a game wipe
+            {:error, %{reason: "unauthorized"}}
           %Spirit{} = spirit ->
             case Process.whereis(:"spirit_#{spirit.id}") do
               nil ->

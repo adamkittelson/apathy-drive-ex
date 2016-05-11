@@ -115,7 +115,7 @@ defmodule ApathyDrive.MonsterController do
   end
 
   def delete(conn, %{"id" => id}) do
-    room = Repo.get(Room, id)
+    room = Repo.get(ApathyDrive.Room, id)
     Repo.delete!(room)
 
     conn

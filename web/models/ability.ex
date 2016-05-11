@@ -650,7 +650,16 @@ defmodule ApathyDrive.Ability do
     apply_instant_effects(mobile, Map.delete(effects, "drain"), ability_user)
   end
   def apply_instant_effects(%Mobile{} = mobile, %{"damage" => damage} = effects, %Mobile{} = ability_user) do
-    mobile = put_in(mobile.hp, mobile.hp - damage)
+    mobile =
+      if mobile.monster_template_id do
+        Map.put(mobile, :hp, mobile.hp - damage)
+      else
+        hp_damage = trunc(damage * (mobile.hp / mobile.max_hp))
+        essence_damage = damage - hp_damage
+
+        put_in(mobile.spirit.experience, max(0, mobile.spirit.experience - essence_damage))
+        |> Map.put(:hp, mobile.hp - hp_damage)
+      end
 
     unless mobile.pid == ability_user.pid do
       enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))

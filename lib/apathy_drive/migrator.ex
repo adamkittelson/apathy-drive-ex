@@ -7,6 +7,7 @@ defmodule ApathyDrive.Migrator do
     if System.get_env("RESET_GAME") do
       Repo.delete_all(Mobile)
       Repo.delete_all(RoomUnity)
+      Repo.update_all(Spirit, set: [name: nil, class_id: nil, gender: nil, level: 1, experience: 0, inventory: [], equipment: []])
     end
 
     Task.start_link(fn ->
