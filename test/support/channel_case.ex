@@ -47,7 +47,7 @@ defmodule ApathyDrive.ChannelCase do
         end)
 
         spirit =
-          %Spirit{room_id: room.id, class_id: class.id}
+          %Spirit{name: "testy", room_id: room.id, class_id: class.id}
           |> Map.merge(map)
           |> Repo.insert!
 
