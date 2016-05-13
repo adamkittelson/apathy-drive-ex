@@ -37,7 +37,9 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_info({:respawn, spirit: spirit}, socket) do
-    spirit = Repo.save!(spirit)
+    spirit =
+      update_in(spirit.experience, &(max(&1, 0)))
+      |> Repo.save!
 
     {:ok, pid} = Mobile.start(%Mobile{spirit: spirit.id, socket: self})
 

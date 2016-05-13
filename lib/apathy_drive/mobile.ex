@@ -156,7 +156,7 @@ defmodule ApathyDrive.Mobile do
 
     mobile =
       mobile
-      |> Map.put(:experience, max(experience + exp, 0))
+      |> Map.put(:experience, experience + exp)
       |> ApathyDrive.Level.advance
       |> Map.put(:spirit, Spirit.add_experience(mobile.spirit, exp))
 
@@ -1567,7 +1567,7 @@ defmodule ApathyDrive.Mobile do
 
       Mobile.update_prompt(mobile)
 
-      if mobile.hp < 1 do
+      if mobile.hp < 1 or (mobile.spirit && mobile.spirit.experience < -99) do
         {:noreply, Systems.Death.kill(mobile)}
       else
         {:noreply, mobile}
