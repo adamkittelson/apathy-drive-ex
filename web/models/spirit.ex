@@ -107,7 +107,7 @@ defmodule Spirit do
   def add_experience(%Spirit{level: level} = spirit, exp) do
     spirit =
       spirit
-      |> Map.put(:experience, spirit.experience + exp)
+      |> Map.put(:experience, max(spirit.experience + exp, 0))
       |> ApathyDrive.Level.advance
       |> add_loot_essence(exp)
       |> Spirit.save
