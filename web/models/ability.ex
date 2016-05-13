@@ -657,8 +657,9 @@ defmodule ApathyDrive.Ability do
         hp_damage = trunc(damage * (mobile.hp / mobile.max_hp))
         essence_damage = (damage - hp_damage) * mobile.spirit.level
 
-        put_in(mobile.spirit.experience, max(0, mobile.spirit.experience - essence_damage))
+        mobile
         |> Map.put(:hp, mobile.hp - hp_damage)
+        |> Mobile.add_experience(-essence_damage)
       end
 
     unless mobile.pid == ability_user.pid do
