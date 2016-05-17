@@ -23,6 +23,10 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def find_item_for_script(room, item, mobile, script, failure_message) do
+    GenServer.cast(room, {:find_item_for_script, item, mobile, script, failure_message})
+  end
+
   def greet(room, greeter, query) do
     GenServer.cast(room, {:greet, greeter, query})
   end
@@ -236,6 +240,15 @@ defmodule ApathyDrive.RoomServer do
   def handle_call({:lock, direction}, _from, room) do
     room = Room.lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:find_item_for_script, item, mobile, script, failure_message}, %Room{} = room) do
+    if Room.find_item(room, item) do
+      Mobile.execute_script(mobile, script)
+    else
+      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")
+    end
+    {:noreply, room}
   end
 
   def handle_cast({:greet, greeter, query}, %Room{} = room) do

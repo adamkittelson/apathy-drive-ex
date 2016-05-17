@@ -185,14 +185,10 @@ defmodule ApathyDrive.Script do
     execute_script(script, mobile)
   end
 
-  def execute_instruction(%{"room_item" => %{"failure_message" => failure_message, "item" => item_name}}, %Mobile{room_id: room_id} = mobile, script) do
-    room = RoomServer.find(room_id)
-
-    if RoomServer.find_item(room, item_name) do
-      execute_script(script, mobile)
-    else
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")
-    end
+  def execute_instruction(%{"room_item" => %{"failure_message" => failure_message, "item" => item_name}}, %Mobile{room_id: room_id}, script) do
+    room_id
+    |> RoomServer.find
+    |> RoomServer.find_item_for_script(item_name, self(), script, failure_message)
   end
 
   def execute_instruction(%{"price" => %{"failure_message" => failure_message, "price_in_copper" => _price}}, %Mobile{spirit: nil} = mobile, _script) do

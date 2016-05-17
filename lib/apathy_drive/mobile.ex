@@ -1249,7 +1249,7 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:execute_room_command, scripts}, mobile) do
     unless confused(mobile) do
       scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
-      Mobile.execute_script(mobile, scripts)
+      ApathyDrive.Script.execute(scripts, mobile)
     end
 
     {:noreply, mobile}
