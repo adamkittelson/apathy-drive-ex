@@ -196,12 +196,9 @@ defmodule ApathyDrive.RoomServer do
         |> TimerManager.send_every({:execute_room_ability, 5_000, :execute_room_ability})
     end
 
-    room =
-      room
-      |> TimerManager.send_every({:spread_essence, 60_000, :spread_essence})
-
-    if Application.get_env(:apathy_drive, :quick_load), do: Process.send_after(self(), :spread_essence, 1000)
     Process.send_after(self(), :save, 2000)
+
+    room = TimerManager.send_after(room, {:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
 
     {:ok, room}
   end
@@ -296,6 +293,7 @@ defmodule ApathyDrive.RoomServer do
           min(essence, current + div(essence, 100))
         end)
         |> Room.update_controlled_by
+        |> report_essence()
       {:noreply, room}
     else
       updated_mobile_essence = min(essence, essence + div(room.room_unity.essences[unity], 100))
@@ -682,108 +680,38 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:spread_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences, exits: ru_exits}} = room) do
-    essences =
-      exits
-      |> Enum.reduce(essences, fn
-           %{"kind" => kind}, updated_essences when kind in ["Cast", "RemoteAction"] ->
-             updated_essences
-           %{"destination" => dest, "direction" => direction, "kind" => kind}, updated_essences ->
-             cond do
-               !Map.has_key?(ru_exits, direction) ->
-                 essence_to_distribute =
-                   Enum.reduce(updated_essences, %{}, fn({unity, _essence}, essence_to_distribute) ->
-                     Map.put(essence_to_distribute, unity, 0)
-                   end)
+  def handle_info(:report_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
+    Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
+      unless kind in ["Cast", "RemoteAction"] do
+        report = %{
+          essences: essences,
+          room_id: room.id,
+          direction: direction,
+          kind: kind,
+          legacy_id: room.legacy_id,
+          area: room.area,
+          controlled_by: room.room_unity.controlled_by
+        }
 
-                 payload = %{
-                   essence: essence_to_distribute,
-                   room_id: room.id,
-                   direction: direction,
-                   kind: kind,
-                   legacy_id: room.legacy_id,
-                   area: room.area,
-                   controlled_by: room.room_unity.controlled_by
-                 }
-
-                 dest
-                 |> find()
-                 |> send({:spread_essence, payload})
-
-                 updated_essences
-               (ru_exits[direction]["area"] == room.area) ->
-                 essence_to_distribute =
-                   Enum.reduce(updated_essences, %{}, fn({unity, essence}, essence_to_distribute) ->
-                     Map.put(essence_to_distribute, unity, div(essence, 100))
-                   end)
-
-                 updated_essence =
-                   Enum.reduce(updated_essences, %{}, fn({unity, essence}, updated_essence) ->
-                     Map.put(updated_essence, unity, essence - essence_to_distribute[unity])
-                   end)
-
-                 payload = %{
-                   essence: essence_to_distribute,
-                   room_id: room.id,
-                   direction: direction,
-                   kind: kind,
-                   legacy_id: room.legacy_id,
-                   area: room.area,
-                   controlled_by: room.room_unity.controlled_by
-                 }
-
-                 dest
-                 |> find()
-                 |> send({:spread_essence, payload})
-
-                 updated_essence
-               true ->
-                 updated_essences
-             end
-         end)
-
-    room =
-      put_in(room.room_unity.essences, essences)
-      |> Room.essence_reaction
-      |> Room.update_controlled_by
+        dest
+        |> find()
+        |> send({:essence_report, report})
+      end
+    end)
 
     {:noreply, room}
   end
 
-  def handle_info({:spread_essence, distribution}, %Room{room_unity: %RoomUnity{essences: essences}} = room) do
-    updated_essences =
-      Enum.reduce(distribution.essence, essences, fn({unity, essence}, updated_essences) ->
-        Map.put(updated_essences, unity, updated_essences[unity] + essence)
-      end)
+  def handle_info({:essence_report, report}, %Room{room_unity: %RoomUnity{essences: essences}} = room) do
+    mirror_exit = Room.mirror_exit(room, report.room_id)
 
-    if room.default_essence > 0 do
-      updated_essences = Map.put(updated_essences, "default", room.default_essence)
-    end
-
-    mirror_exit =
-      Room.mirror_exit(room, distribution.room_id)
-
-    unless mirror_exit do
-      expected_direction = ApathyDrive.Exit.reverse_direction(distribution.direction)
-
-      if room.exits |> Enum.map(&(&1["direction"])) |> Enum.member?(expected_direction) do
-        Logger.info "CONFLICTING DIRECTION"
-      else
-        new_exit = %{"kind" => distribution.kind, "direction" => expected_direction, "destination" => distribution.room_id}
-        Logger.info "auto-creating exit: #{inspect new_exit}"
-
-        if distribution.kind == "Normal" do
-          put_in(room.exits, [new_exit | room.exits])
-          |> Repo.save!
-        end
-      end
-
-      raise "expected exit #{expected_direction} from #{room.id} (#{room.legacy_id}) to #{distribution.room_id} (#{distribution.legacy_id})"
-    end
-
-    room = put_in(room.room_unity.essences, updated_essences)
-    room = put_in(room.room_unity.exits[mirror_exit["direction"]], %{"area" => distribution.area, "controlled_by" => distribution.controlled_by})
+    room = put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
+           |> average_essences()
            |> Room.update_controlled_by
+
+    if room.room_unity.essences != essences do
+      room = report_essence(room)
+    end
 
     {:noreply, room}
   end
@@ -825,6 +753,41 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info(_message, room) do
     {:noreply, room}
+  end
+
+  defp average_essences(%Room{room_unity: %RoomUnity{essences: essences, exits: exits}} = room) do
+    if map_size(exits) > 0 do
+      average_essence =
+        exits
+        |> Map.values
+        |> Enum.map(&(&1["essences"]))
+        |> Enum.reduce(%{"good" => 0, "evil" => 0, "default" => 0}, fn(exit_essences, adjacent_essences) ->
+             adjacent_essences
+             |> update_in(["good"], &(&1 + div(exit_essences["good"], map_size(exits))))
+             |> update_in(["evil"], &(&1 + div(exit_essences["evil"], map_size(exits))))
+             |> update_in(["default"], &(&1 + div(exit_essences["default"], map_size(exits))))
+           end)
+
+      Enum.reduce(average_essence, room, fn({essence, amount}, updated_room) ->
+        amount_to_shift = div(amount, 100)
+
+        if amount > essences[essence] do
+          update_in(updated_room.room_unity.essences[essence], &(min(amount, &1 + amount_to_shift)))
+        else
+          update_in(updated_room.room_unity.essences[essence], &(max(amount, &1 - amount_to_shift)))
+        end
+      end)
+    else
+      room
+    end
+  end
+
+  defp report_essence(room) do
+    if !TimerManager.time_remaining(room, :report_essence) do
+      TimerManager.send_after(room, {:report_essence, 60_000, :report_essence})
+    else
+      room
+    end
   end
 
   defp jitter(time) do
