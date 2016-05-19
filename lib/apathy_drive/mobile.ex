@@ -47,6 +47,7 @@ defmodule ApathyDrive.Mobile do
     field :chance_to_follow,   :integer, virtual: true, default: 0
     field :movement_frequency, :integer, virtual: true, default: 60
     field :last_room,          :any,     virtual: true
+    field :room_ability,       :any,     virtual: true
 
     timestamps
   end
@@ -577,6 +578,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> TimerManager.send_every({:unify,  60_000, :unify})
+      |> TimerManager.send_every({:execute_room_ability,  5_000, :execute_room_ability})
 
     ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -616,6 +618,10 @@ defmodule ApathyDrive.Mobile do
   def initiate_combat(%Mobile{} = mobile) do
     send(mobile.pid, :execute_auto_attack)
     mobile
+  end
+
+  def execute_room_ability(mobile, ability) do
+    GenServer.cast(mobile, {:execute_room_ability, ability})
   end
 
   def return(mobile) do
@@ -1063,6 +1069,17 @@ defmodule ApathyDrive.Mobile do
 
         {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
     end
+  end
+
+  def handle_cast({:execute_room_ability, nil}, mobile) do
+    mobile = Map.put(mobile, :room_ability, :none)
+    {:noreply, mobile}
+  end
+
+  def handle_cast({:execute_room_ability, ability}, mobile) do
+    mobile = Map.put(mobile, :room_ability, ability)
+    send(self(), :execute_room_ability)
+    {:noreply, mobile}
   end
 
   def handle_cast({:average_essence, average}, %Mobile{spirit: nil, experience: essence} = mobile) do
@@ -1809,10 +1826,22 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:execute_room_ability, ability}, mobile) do
-    ability = Map.put(ability, "ignores_global_cooldown", true)
+  def handle_info(:execute_room_ability, %Mobile{spirit: nil} = mobile) do
+    TimerManager.cancel_timer(mobile, :execute_room_ability)
+    {:noreply, mobile}
+  end
 
-    {:noreply, Ability.execute(mobile, ability, [self])}
+  def handle_info(:execute_room_ability, %Mobile{room_ability: :none} = mobile) do
+    {:noreply, mobile}
+  end
+
+  def handle_info(:execute_room_ability, %Mobile{room_id: room_id, room_ability: nil} = mobile) do
+    RoomServer.execute_room_ability({:global, "room_#{room_id}"}, self())
+    {:noreply, mobile}
+  end
+
+  def handle_info(:execute_room_ability, %Mobile{room_ability: room_ability} = mobile) do
+    {:noreply, Ability.execute(mobile, room_ability, [self()])}
   end
 
   def handle_info({:generate_loot, monster_template_id, level, global_chance}, mobile) do

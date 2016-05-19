@@ -155,6 +155,10 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:auto_move, mobile, unities})
   end
 
+  def execute_room_ability(room, mobile) do
+    GenServer.cast(room, {:execute_room_ability, mobile})
+  end
+
   def mobiles_to_load(room_id) do
     require Ecto.Query
 
@@ -190,10 +194,13 @@ defmodule ApathyDrive.RoomServer do
     end
 
     if room.ability_id do
+      ability =
+        Repo.get(Ability, room.ability_id).properties
+        |> Map.put("ignores_global_cooldown", true)
+
       room =
         room
-        |> Map.put(:room_ability, Repo.get(Ability, room.ability_id).properties)
-        |> TimerManager.send_every({:execute_room_ability, 5_000, :execute_room_ability})
+        |> Map.put(:room_ability, ability)
     end
 
     Process.send_after(self(), :save, 2000)
@@ -237,6 +244,11 @@ defmodule ApathyDrive.RoomServer do
   def handle_call({:lock, direction}, _from, room) do
     room = Room.lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:execute_room_ability, mobile}, %Room{room_ability: room_ability} = room) do
+    Mobile.execute_room_ability(mobile, room_ability)
+    {:noreply, room}
   end
 
   def handle_cast({:find_item_for_script, item, mobile, script, failure_message}, %Room{} = room) do
@@ -756,20 +768,26 @@ defmodule ApathyDrive.RoomServer do
   end
 
   defp average_essences(%Room{room_unity: %RoomUnity{essences: essences, exits: exits}} = room) do
-    if map_size(exits) > 0 do
+    area_exits =
+      Enum.filter(exits, fn({_direction, data}) ->
+        data["area"] == room.area
+      end)
+      |> Enum.into(%{})
+
+    if map_size(area_exits) > 0 do
       average_essence =
-        exits
+        area_exits
         |> Map.values
         |> Enum.map(&(&1["essences"]))
         |> Enum.reduce(%{"good" => 0, "evil" => 0, "default" => 0}, fn(exit_essences, adjacent_essences) ->
              adjacent_essences
-             |> update_in(["good"], &(&1 + div(exit_essences["good"], map_size(exits))))
-             |> update_in(["evil"], &(&1 + div(exit_essences["evil"], map_size(exits))))
-             |> update_in(["default"], &(&1 + div(exit_essences["default"], map_size(exits))))
+             |> update_in(["good"], &(&1 + div(exit_essences["good"], map_size(area_exits))))
+             |> update_in(["evil"], &(&1 + div(exit_essences["evil"], map_size(area_exits))))
+             |> update_in(["default"], &(&1 + div(exit_essences["default"], map_size(area_exits))))
            end)
 
       Enum.reduce(average_essence, room, fn({essence, amount}, updated_room) ->
-        amount_to_shift = div(amount, 100)
+        amount_to_shift = max(1, div(amount, 100))
 
         if amount > essences[essence] do
           update_in(updated_room.room_unity.essences[essence], &(min(amount, &1 + amount_to_shift)))

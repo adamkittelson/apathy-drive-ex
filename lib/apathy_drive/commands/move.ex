@@ -63,6 +63,7 @@ defmodule ApathyDrive.Commands.Move do
         mobile
         |> Map.put(:room_id, destination_id)
         |> Map.put(:last_room, last_room)
+        |> Map.put(:room_ability, nil)
 
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
@@ -107,6 +108,7 @@ defmodule ApathyDrive.Commands.Move do
         mobile
         |> Map.put(:room_id, destination_id)
         |> Map.put(:last_room, last_room)
+        |> Map.put(:room_ability, nil)
 
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
