@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Possess do
   use ApathyDrive.Command
-  alias ApathyDrive.{Presence, Repo}
+  alias ApathyDrive.{Presence, Repo, TimerManager}
 
   def keywords, do: ["possess"]
 
