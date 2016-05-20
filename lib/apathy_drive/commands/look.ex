@@ -158,31 +158,16 @@ defmodule ApathyDrive.Commands.Look do
   def light_desc(_light_level), do: nil
 
   def display_direction(%{"kind" => "Gate", "direction" => direction} = room_exit, room) do
-    text = if Doors.open?(room, room_exit), do: "open gate #{direction}", else: "closed gate #{direction}"
-
-    aligned(text, room, direction)
+    if Doors.open?(room, room_exit), do: "open gate #{direction}", else: "closed gate #{direction}"
   end
   def display_direction(%{"kind" => "Door", "direction" => direction} = room_exit, room) do
-    text = if Doors.open?(room, room_exit), do: "open door #{direction}", else: "closed door #{direction}"
-
-    aligned(text, room, direction)
+    if Doors.open?(room, room_exit), do: "open door #{direction}", else: "closed door #{direction}"
   end
-  def display_direction(%{"kind" => "Hidden", "description" => description, "direction" => direction} = room_exit, room) do
-    if Doors.open?(room, room_exit), do: aligned(description, room, direction)
+  def display_direction(%{"kind" => "Hidden", "description" => description} = room_exit, room) do
+    if Doors.open?(room, room_exit), do: description
   end
   def display_direction(%{"kind" => kind}, _room) when kind in ["Command", "RemoteAction"], do: nil
-  def display_direction(%{"direction" => direction}, room), do: aligned(direction, room, direction)
-
-  def aligned(text, room, direction) do
-    case room.room_unity.exits[direction] do
-      %{"controlled_by" => "good"} ->
-        "<span class='white'>#{text}</span>"
-      %{"controlled_by" => "evil"} ->
-        "<span class='magenta'>#{text}</span>"
-      _ ->
-        text
-    end
-  end
+  def display_direction(%{"direction" => direction}, _room), do: direction
 
   def exit_directions(%Room{} = room) do
     room.exits
