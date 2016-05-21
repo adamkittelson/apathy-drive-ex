@@ -22,7 +22,6 @@ defmodule ApathyDrive.Room do
     field :also_here,             :map, virtual: true, default: %{}
     field :area,                  :string
     field :default_essence,       :integer, virtual: true
-    field :adjacent,              {:array, :map}, virtual: true, default: []
 
     timestamps
 
