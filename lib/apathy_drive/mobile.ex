@@ -257,7 +257,6 @@ defmodule ApathyDrive.Mobile do
   end
 
   def update_prompt(%Mobile{socket: nil}), do: :noop
-
   def update_prompt(%Mobile{socket: socket} = mobile) do
     send(socket, {:update_prompt, prompt(mobile)})
   end
@@ -1468,6 +1467,12 @@ defmodule ApathyDrive.Mobile do
     class_name = String.downcase(spirit.class.name)
 
     ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
+    {:noreply, mobile}
+  end
+
+  def handle_info({:update_room_essence, _essence}, %Mobile{socket: nil} = mobile), do: {:noreply, mobile}
+  def handle_info({:update_room_essence, essence}, %Mobile{socket: socket} = mobile) do
+    send(socket, {:update_room_essence, essence})
     {:noreply, mobile}
   end
 

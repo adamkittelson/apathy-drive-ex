@@ -22,6 +22,7 @@ defmodule ApathyDrive.Room do
     field :also_here,             :map, virtual: true, default: %{}
     field :area,                  :string
     field :default_essence,       :integer, virtual: true
+    field :adjacent,              {:array, :map}, virtual: true, default: []
 
     timestamps
 
@@ -49,6 +50,15 @@ defmodule ApathyDrive.Room do
 
   def controlled_by(%Room{} = room) do
     room.room_unity.controlled_by
+  end
+
+  def adjacent_room_data(%Room{} = room, data \\ %{}) do
+    Map.merge(data, %{
+      essences: room.room_unity.essences,
+      room_id: room.id,
+      area: room.area,
+      controlled_by: room.room_unity.controlled_by
+    })
   end
 
   def update_controlled_by(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
@@ -86,11 +96,13 @@ defmodule ApathyDrive.Room do
   end
   def default_essence([]), do: 0
   def default_essence(lair_monsters) do
-    lair_monsters
-    |> Enum.map(fn(mt) ->
-         ApathyDrive.Level.exp_at_level(mt.level)
-       end)
-    |> Enum.sum
+    total =
+      lair_monsters
+      |> Enum.map(fn(mt) ->
+           ApathyDrive.Level.exp_at_level(mt.level)
+         end)
+      |> Enum.sum
+    div(total, length(lair_monsters))
   end
 
   def changeset(%Room{} = room, params \\ %{}) do

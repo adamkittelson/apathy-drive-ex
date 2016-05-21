@@ -185,7 +185,7 @@ defmodule MonsterTemplate do
     if length(monster.unities) > 0 do
       experience =
         Enum.reduce(monster.unities, 0, fn(unity, exp) ->
-          exp + div(room.room_unity.essences[unity], length(monster.unities))
+          exp + div(trunc(room.room_unity.essences[unity]), length(monster.unities))
         end)
 
       monster =
@@ -194,10 +194,12 @@ defmodule MonsterTemplate do
         |> Map.put(:experience, experience)
         |> Map.put(:alignment, unity_alignment(monster.unities))
     else
+      experience = trunc(room.room_unity.essences["default"])
+
       monster =
         monster
-        |> Map.put(:level, monster_template.level)
-        |> Map.put(:experience, ApathyDrive.Level.exp_at_level(monster_template.level))
+        |> Map.put(:level, ApathyDrive.Level.level_at_exp(experience))
+        |> Map.put(:experience, experience)
     end
 
     monster = Map.merge(%Mobile{}, monster)

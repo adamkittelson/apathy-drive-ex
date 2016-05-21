@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Ability, Commands, LairMonster, Match, Mobile, PubSub,
+  alias ApathyDrive.{Ability, Commands, LairMonster, Match, Mobile, PubSub, Presence,
                      Repo, Room, RoomSupervisor, RoomUnity, Text, TimerManager}
   use Timex
   require Logger
@@ -43,8 +43,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, :load_present_mobiles)
   end
 
-  def add_essence_from_mobile(room, mobile, unity, essence) do
-    GenServer.cast(room, {:add_essence_from_mobile, mobile, unity, essence})
+  def add_essence_from_mobile(_room, _mobile, _unity, _essence) do
+    #GenServer.cast(room, {:add_essence_from_mobile, mobile, unity, essence})
   end
 
   def ask(room, asker, target, question) do
@@ -178,7 +178,7 @@ defmodule ApathyDrive.RoomServer do
     unless room.room_unity do
       room_unity =
         room
-        |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => room.default_essence})
+        |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => 0})
         |> Repo.save!
 
       room = %{room | room_unity: room_unity}
@@ -205,7 +205,17 @@ defmodule ApathyDrive.RoomServer do
 
     Process.send_after(self(), :save, 2000)
 
-    room = TimerManager.send_after(room, {:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
+    Enum.each(room.exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
+      unless kind in ["Cast", "RemoteAction"] do
+        {:ok, _} = Presence.track(self(), "rooms:#{dest}:adjacent", "room_#{room.id}", Room.adjacent_room_data(room, %{direction: direction, kind: kind}))
+      end
+    end)
+
+    room =
+      room
+      |> TimerManager.send_after({:load_neighbors, Application.get_env(:apathy_drive, :initial_essence_delay), :load_neighbors})
+      |> TimerManager.send_every({:update_essence,  1_000, :update_essence})
+      |> TimerManager.send_every({:update_adjacent,  300_000, :update_adjacent})
 
     {:ok, room}
   end
@@ -305,7 +315,6 @@ defmodule ApathyDrive.RoomServer do
           min(essence, current + div(essence, 100))
         end)
         |> Room.update_controlled_by
-        |> report_essence()
       {:noreply, room}
     else
       updated_mobile_essence = min(essence, essence + div(room.room_unity.essences[unity], 100))
@@ -519,11 +528,11 @@ defmodule ApathyDrive.RoomServer do
           case unities do
             [] ->
               Enum.filter(exits, fn(%{"direction" => direction}) ->
-                room.room_unity.exits[direction] && room.room_unity.exits[direction]["area"] == room.area
+                Enum.any?(room.adjacent, &(&1.direction == direction and &1.area == room.area))
               end)
             unities ->
               Enum.filter(exits, fn(%{"direction" => direction}) ->
-                room.room_unity.exits[direction] && room.room_unity.exits[direction]["controlled_by"] in unities
+                Enum.any?(room.adjacent, &(&1.direction == direction and &1.controlled_by in unities))
               end)
           end
       Mobile.auto_move(mobile, valid_exits)
@@ -692,37 +701,30 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:report_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
-    Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
+  def handle_info(:load_neighbors, %Room{exits: exits} = room) do
+    Enum.each(exits, fn(%{"destination" => dest, "kind" => kind}) ->
       unless kind in ["Cast", "RemoteAction"] do
-        report = %{
-          essences: essences,
-          room_id: room.id,
-          direction: direction,
-          kind: kind,
-          legacy_id: room.legacy_id,
-          area: room.area,
-          controlled_by: room.room_unity.controlled_by
-        }
-
         dest
         |> find()
-        |> send({:essence_report, report})
+        |> send(:update_adjacent)
       end
     end)
 
     {:noreply, room}
   end
 
-  def handle_info({:essence_report, report}, %Room{room_unity: %RoomUnity{essences: essences}} = room) do
-    mirror_exit = Room.mirror_exit(room, report.room_id)
-
-    room = put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
-           |> average_essences()
-           |> Room.update_controlled_by
+  def handle_info(:update_essence, %Room{room_unity: %RoomUnity{essences: essences}} = room) do
+    room =
+      room
+      |> average_essences()
+      |> Room.update_controlled_by
 
     if room.room_unity.essences != essences do
-      room = report_essence(room)
+      ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:update_room_essence, %{room_id: room.id,
+                                                                                         good: trunc(room.room_unity.essences["good"]),
+                                                                                         default: trunc(room.room_unity.essences["default"]),
+                                                                                         evil: trunc(room.room_unity.essences["evil"]),
+                                                                                         }})
     end
 
     {:noreply, room}
@@ -763,49 +765,55 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, Map.merge(room, changes)}
   end
 
+  def handle_info(:update_adjacent, room) do
+    Enum.each(room.exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
+      unless kind in ["Cast", "RemoteAction"] do
+        {:ok, _} = Presence.update(self(), "rooms:#{dest}:adjacent", "room_#{room.id}", Room.adjacent_room_data(room, %{direction: direction, kind: kind}))
+      end
+    end)
+
+    {:noreply, Map.put(room, :adjacent, Presence.metas("rooms:#{room.id}:adjacent"))}
+  end
+
   def handle_info(_message, room) do
     {:noreply, room}
   end
 
-  defp average_essences(%Room{room_unity: %RoomUnity{essences: essences, exits: exits}} = room) do
+  defp average_essences(%Room{adjacent: adjacent} = room) do
+
     area_exits =
-      Enum.filter(exits, fn({_direction, data}) ->
-        data["area"] == room.area
+      Enum.filter(adjacent, fn(data) ->
+        data.area == room.area
       end)
-      |> Enum.into(%{})
 
-    if map_size(area_exits) > 0 do
-      average_essence =
-        area_exits
-        |> Map.values
-        |> Enum.map(&(&1["essences"]))
-        |> Enum.reduce(%{"good" => 0, "evil" => 0, "default" => 0}, fn(exit_essences, adjacent_essences) ->
-             adjacent_essences
-             |> update_in(["good"], &(&1 + div(exit_essences["good"], map_size(area_exits))))
-             |> update_in(["evil"], &(&1 + div(exit_essences["evil"], map_size(area_exits))))
-             |> update_in(["default"], &(&1 + div(exit_essences["default"], map_size(area_exits))))
-           end)
+    essences =
+      area_exits
+      |> Enum.map(&(&1.essences))
+      |> Enum.reduce(%{"good" => [], "evil" => [], "default" => []}, fn(exit_essences, adjacent_essences) ->
+           adjacent_essences
+           |> update_in(["good"], &([exit_essences["good"] | &1]))
+           |> update_in(["evil"], &([exit_essences["evil"] | &1]))
+           |> update_in(["default"], &([exit_essences["default"] | &1]))
+         end)
 
-      Enum.reduce(average_essence, room, fn({essence, amount}, updated_room) ->
-        amount_to_shift = max(1, div(amount, 100))
+    essences =
+      if room.default_essence > 0 do
+        update_in(essences["default"], &([room.default_essence | &1]))
+      else
+        essences
+      end
 
-        if amount > essences[essence] do
-          update_in(updated_room.room_unity.essences[essence], &(min(amount, &1 + amount_to_shift)))
-        else
-          update_in(updated_room.room_unity.essences[essence], &(max(amount, &1 - amount_to_shift)))
-        end
-      end)
-    else
-      room
-    end
-  end
+    essences =
+      essences
+      |> update_in(["good"], &([-(room.room_unity.essences["evil"] + room.room_unity.essences["default"]) | &1]))
+      |> update_in(["evil"], &([-(room.room_unity.essences["good"] + room.room_unity.essences["default"]) | &1]))
+      |> update_in(["default"], &([-(room.room_unity.essences["evil"] + room.room_unity.essences["good"]) | &1]))
 
-  defp report_essence(room) do
-    if !TimerManager.time_remaining(room, :report_essence) do
-      TimerManager.send_after(room, {:report_essence, 60_000, :report_essence})
-    else
-      room
-    end
+    Enum.reduce(essences, room, fn({essence, list}, updated_room) ->
+      amount_to_shift = ((Enum.sum(list) / length(list)) - updated_room.room_unity.essences[essence]) / 60 / 60
+
+      update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+    end)
   end
 
   defp jitter(time) do
