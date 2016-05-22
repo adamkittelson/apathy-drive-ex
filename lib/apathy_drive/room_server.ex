@@ -208,7 +208,6 @@ defmodule ApathyDrive.RoomServer do
     room =
       room
       |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-      |> update_essence_targets()
 
     {:ok, room}
   end
@@ -723,19 +722,19 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
-      |> update_essence_targets
+      |> update_essence_targets()
 
     {:noreply, room}
   end
 
   def handle_info({:update_essence, percentage}, %Room{room_unity: %RoomUnity{essences: essences, essence_targets: essence_targets}} = room) do
-
     room =
       essences
       |> Enum.reduce(room, fn({essence, amount}, updated_room) ->
-           amount_to_shift = (essence_targets[essence] - amount) * percentage
+           amount_to_shift = (Map.get(essence_targets, essence, 0) - amount) * percentage
            update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
          end)
+      |> update_essence_targets()
       |> Room.update_controlled_by
 
     room = report_essence(room)
@@ -808,8 +807,8 @@ defmodule ApathyDrive.RoomServer do
       |> Enum.map(&(&1["essences"]))
       |> Enum.reduce(%{"good" => [], "evil" => [], "default" => []}, fn(exit_essences, adjacent_essences) ->
            adjacent_essences
-           |> update_in(["good"], &([exit_essences["good"] | &1]))
-           |> update_in(["evil"], &([exit_essences["evil"] | &1]))
+           |> update_in(["good"],    &([exit_essences["good"] | &1]))
+           |> update_in(["evil"],    &([exit_essences["evil"] | &1]))
            |> update_in(["default"], &([exit_essences["default"] | &1]))
          end)
 
