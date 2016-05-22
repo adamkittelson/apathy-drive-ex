@@ -793,7 +793,7 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  defp update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits}} = room) do
+  defp update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do
     area_exits =
       exits
       |> Enum.filter(fn({_direction, data}) ->
@@ -813,10 +813,13 @@ defmodule ApathyDrive.RoomServer do
          end)
 
     essences =
-      if room.default_essence > 0 do
-        update_in(essences["default"], &([room.default_essence | &1]))
-      else
-        essences
+      cond do
+        room.default_essence > 0 and controlled_by == nil ->
+          update_in(essences["default"], &([room.default_essence | &1]))
+        room.default_essence > current_essences[controlled_by] ->
+          update_in(essences[controlled_by], &([room.default_essence | &1]))
+        true ->
+          essences
       end
 
     essences =
