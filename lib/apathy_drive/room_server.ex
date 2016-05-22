@@ -173,7 +173,10 @@ defmodule ApathyDrive.RoomServer do
       Repo.get!(Room, id)
       |> Repo.preload(:room_unity)
 
-    room = Map.put(room, :default_essence, Room.default_essence(room))
+    room =
+      room
+      |> Map.put(:default_essence, Room.default_essence(room))
+      |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
 
     unless room.room_unity do
       room_unity =
@@ -208,6 +211,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       room
       |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
+      |> TimerManager.send_every({:report_essence, 300_000, :report_essence})
 
     {:ok, room}
   end
@@ -490,22 +494,23 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:mobile_present, %{intruder: mobile, look_name: look_name, name: name} = data}, room) do
+  def handle_cast({:mobile_present, %{intruder: mobile, name: name} = data}, room) do
     ApathyDrive.PubSub.broadcast_from! mobile, "rooms:#{room.id}:mobiles", {:monster_present, data}
-    {:noreply, put_in(room.also_here[mobile], %{look_name: look_name, name: name, keywords: String.split(name), pid: mobile, unities: data.unities})}
+
+    data =
+      data
+      |> Map.put(:keywords, String.split(name))
+      |> Map.put(:pid, mobile)
+      |> Map.delete(:intruder)
+
+    room =
+      put_in(room.also_here[mobile], data)
+      |> update_essence()
+
+    {:noreply, room}
   end
 
   def handle_cast({:look, mobile, args}, %Room{} = room) do
-    present_mobiles = PubSub.subscribers("rooms:#{room.id}:mobiles")
-
-    mobiles =
-      room.also_here
-      |> Enum.reduce(%{}, fn({pid, data}, also_here) ->
-           if pid in present_mobiles, do: Map.put(also_here, pid, data), else: also_here
-         end)
-
-    room = Map.put(room, :also_here, mobiles)
-
     Commands.Look.execute(room, mobile, args)
 
     {:noreply, room}
@@ -556,6 +561,20 @@ defmodule ApathyDrive.RoomServer do
                    "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
                  })
               |> Text.capitalize_first
+
+    present_mobiles = PubSub.subscribers("rooms:#{room.id}:mobiles")
+
+    mobiles =
+      room.also_here
+      |> Enum.reduce(%{}, fn({pid, data}, also_here) ->
+           if pid in present_mobiles and pid != mobile, do: Map.put(also_here, pid, data), else: also_here
+         end)
+
+    room = Map.put(room, :also_here, mobiles)
+
+    if !Room.spirits_present?(room) and TimerManager.time_remaining(room, :update_essence) do
+      TimerManager.cancel(room, :update_essence)
+    end
 
     ApathyDrive.PubSub.broadcast! "rooms:#{room.id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room.id, message: "<p><span class='grey'>#{message}</span></p>"}}
     {:noreply, room}
@@ -694,6 +713,8 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:report_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
+    room = Room.update_essence(room)
+
     Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
       unless kind in ["Cast", "RemoteAction"] do
         report = %{
@@ -712,8 +733,6 @@ defmodule ApathyDrive.RoomServer do
       end
     end)
 
-    send(self(), {:update_essence, 1 / 12})
-
     {:noreply, room}
   end
 
@@ -722,27 +741,8 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
-      |> update_essence_targets()
+      |> Room.update_essence_targets
 
-    {:noreply, room}
-  end
-
-  def handle_info({:update_essence, percentage}, %Room{room_unity: %RoomUnity{essences: essences, essence_targets: essence_targets}} = room) do
-    room =
-      essences
-      |> Enum.reduce(room, fn({essence, amount}, updated_room) ->
-           amount_to_shift = (Map.get(essence_targets, essence, 0) - amount) * percentage
-           update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
-         end)
-      |> update_essence_targets()
-      |> Room.update_controlled_by
-
-    room = report_essence(room)
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:update_room_essence, %{room_id: room.id,
-                                                                                       good: trunc(room.room_unity.essences["good"]),
-                                                                                       default: trunc(room.room_unity.essences["default"]),
-                                                                                       evil: trunc(room.room_unity.essences["evil"]),
-                                                                                       }})
     {:noreply, room}
   end
 
@@ -781,86 +781,31 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, Map.merge(room, changes)}
   end
 
+  def handle_info(:update_essence, room) do
+    room = Room.update_essence(room)
+
+    data =
+      %{
+        room_id: room.id,
+        good: trunc(room.room_unity.essences["good"]),
+        default: trunc(room.room_unity.essences["default"]),
+        evil: trunc(room.room_unity.essences["evil"]),
+      }
+
+    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:update_room_essence, data})
+
+    {:noreply, room}
+  end
+
   def handle_info(_message, room) do
     {:noreply, room}
   end
 
-  defp report_essence(room) do
-    if !TimerManager.time_remaining(room, :report_essence) do
-      TimerManager.send_after(room, {:report_essence, 300_000, :report_essence})
+  defp update_essence(room) do
+    if Room.spirits_present?(room) and !TimerManager.time_remaining(room, :update_essence) do
+      TimerManager.send_every(room, {:update_essence, 1_000, :update_essence})
     else
       room
-    end
-  end
-
-  defp update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do
-    area_exits =
-      exits
-      |> Enum.filter(fn({_direction, data}) ->
-           data["area"] == room.area
-         end)
-      |> Enum.into(%{})
-
-    essences =
-      area_exits
-      |> Map.values
-      |> Enum.map(&(&1["essences"]))
-      |> Enum.reduce(%{"good" => [], "evil" => [], "default" => []}, fn(exit_essences, adjacent_essences) ->
-           adjacent_essences
-           |> update_in(["good"],    &([exit_essences["good"] | &1]))
-           |> update_in(["evil"],    &([exit_essences["evil"] | &1]))
-           |> update_in(["default"], &([exit_essences["default"] | &1]))
-         end)
-
-    essences =
-      cond do
-        room.default_essence > 0 and controlled_by == nil ->
-          update_in(essences["default"], &([room.default_essence | &1]))
-        room.default_essence > current_essences[controlled_by] ->
-          update_in(essences[controlled_by], &([room.default_essence | &1]))
-        true ->
-          essences
-      end
-
-    essences =
-      essences
-      |> add_competing_essence("good", room)
-      |> add_competing_essence("evil", room)
-      |> add_competing_essence("default", room)
-
-    Enum.reduce(essences, room, fn({essence, list}, updated_room) ->
-      if length(list) > 0 do
-        put_in(updated_room.room_unity.essence_targets[essence], Enum.sum(list) / length(list))
-      else
-        put_in(updated_room.room_unity.essence_targets[essence], 0)
-      end
-    end)
-  end
-
-  defp add_competing_essence(essences, "good", room) do
-    competition = room.room_unity.essences["evil"] + room.room_unity.essences["default"]
-    if competition != 0 do
-      update_in(essences, ["good"], &([-competition | &1]))
-    else
-      essences
-    end
-  end
-
-  defp add_competing_essence(essences, "evil", room) do
-    competition = room.room_unity.essences["good"] + room.room_unity.essences["default"]
-    if competition != 0 do
-      update_in(essences, ["evil"], &([-competition | &1]))
-    else
-      essences
-    end
-  end
-
-  defp add_competing_essence(essences, "default", room) do
-    competition = room.room_unity.essences["evil"] + room.room_unity.essences["good"]
-    if competition != 0 do
-      update_in(essences, ["default"], &([-competition | &1]))
-    else
-      essences
     end
   end
 

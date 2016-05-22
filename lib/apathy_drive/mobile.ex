@@ -525,7 +525,6 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_regen,    1_000, :regen})
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
-      |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> TimerManager.send_every({:unify,  60_000, :unify})
       |> move_after()
 
@@ -575,10 +574,8 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_regen,    1_000, :regen})
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
-      |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> TimerManager.send_every({:unify,  60_000, :unify})
       |> TimerManager.send_every({:execute_room_ability,  5_000, :execute_room_ability})
-      |> TimerManager.send_every({:update_room_essence, 1_000, :update_room_essence})
 
     ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -929,11 +926,14 @@ defmodule ApathyDrive.Mobile do
     "<span class='#{alignment_color(mobile)}'>#{name}</span>"
   end
 
-  def notify_presence(%Mobile{room_id: room_id} = mobile) do
+  def notify_presence(%Mobile{room_id: room_id, spirit: spirit} = mobile) do
     data = %{
       intruder: self,
       alignment: mobile.alignment,
       unities: mobile.unities,
+      essence: mobile.experience,
+      spirit_unities: spirit && spirit.class.unities,
+      spirit_essence: spirit && spirit.experience,
       spawned_at: mobile.spawned_at,
       name: mobile.name,
       look_name: look_name(mobile)
@@ -1848,18 +1848,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info(:execute_room_ability, %Mobile{room_ability: room_ability} = mobile) do
     {:noreply, Ability.execute(mobile, room_ability, [self()])}
-  end
-
-  def handle_info(:update_room_essence, %Mobile{spirit: nil} = mobile) do
-    TimerManager.cancel_timer(mobile, :update_room_essence)
-    {:noreply, mobile}
-  end
-
-  def handle_info(:update_room_essence, %Mobile{room_id: room_id} = mobile) do
-    room_id
-    |> RoomServer.find
-    |> send({:update_essence, 1 / 60 / 60})
-    {:noreply, mobile}
   end
 
   def handle_info({:generate_loot, monster_template_id, level, global_chance}, mobile) do

@@ -25,6 +25,8 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def execute(%Room{} = room, %{mobile: mobile}, []) do
+    room = Room.update_essence(room)
+
     name_color =
       case Room.controlled_by(room) do
         "evil" ->

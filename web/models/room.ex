@@ -3,25 +3,26 @@ defmodule ApathyDrive.Room do
   alias ApathyDrive.{Match, Mobile, Room, RoomUnity}
 
   schema "rooms" do
-    field :name,                  :string
-    field :keywords,              {:array, :string}
-    field :description,           :string
-    field :effects,               :map, virtual: true, default: %{}
-    field :light,                 :integer
-    field :item_descriptions,     ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
-    field :lair_size,             :integer
-    field :lair_frequency,        :integer, default: 5
-    field :lair_next_spawn_at,    :integer, virtual: true, default: 0
-    field :exits,                 ApathyDrive.JSONB, default: []
-    field :commands,              ApathyDrive.JSONB, default: %{}
-    field :legacy_id,             :string
-    field :timers,                :map, virtual: true, default: %{}
-    field :room_ability,          :any, virtual: true
-    field :items,                 ApathyDrive.JSONB, default: []
-    field :last_effect_key,       :integer, virtual: true, default: 0
-    field :also_here,             :map, virtual: true, default: %{}
-    field :area,                  :string
-    field :default_essence,       :integer, virtual: true
+    field :name,                    :string
+    field :keywords,                {:array, :string}
+    field :description,             :string
+    field :effects,                 :map, virtual: true, default: %{}
+    field :light,                   :integer
+    field :item_descriptions,       ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
+    field :lair_size,               :integer
+    field :lair_frequency,          :integer, default: 5
+    field :lair_next_spawn_at,      :integer, virtual: true, default: 0
+    field :exits,                   ApathyDrive.JSONB, default: []
+    field :commands,                ApathyDrive.JSONB, default: %{}
+    field :legacy_id,               :string
+    field :timers,                  :map, virtual: true, default: %{}
+    field :room_ability,            :any, virtual: true
+    field :items,                   ApathyDrive.JSONB, default: []
+    field :last_effect_key,         :integer, virtual: true, default: 0
+    field :also_here,               :map, virtual: true, default: %{}
+    field :area,                    :string
+    field :default_essence,         :integer, virtual: true
+    field :essence_last_updated_at, :integer, virtual: true
 
     timestamps
 
@@ -32,20 +33,11 @@ defmodule ApathyDrive.Room do
     has_many   :lair_monsters, through: [:lairs, :monster_template]
   end
 
-  def essence_reaction(%Room{room_unity: %RoomUnity{essences: %{"good" => good, "evil" => evil}}} = room) when good > 0 and evil > 0 do
-    good_to_remove =
-      good
-      |> div(50)
-      |> max(1)
-
-    evil_to_remove =
-      evil
-      |> div(50)
-      |> max(1)
-
-    update_in(room.room_unity.essences, &(&1 |> Map.put("good", good - good_to_remove) |> Map.put("evil", evil - evil_to_remove)))
+  def spirits_present?(%Room{also_here: also_here}) do
+    also_here
+    |> Map.values
+    |> Enum.any?(&(&1.spirit_essence != nil))
   end
-  def essence_reaction(%Room{} = room), do: room
 
   def controlled_by(%Room{} = room) do
     room.room_unity.controlled_by
@@ -356,6 +348,90 @@ defmodule ApathyDrive.Room do
         "down"
       direction ->
         direction
+    end
+  end
+
+  def update_essence(%Room{essence_last_updated_at: last_update, room_unity: %RoomUnity{essences: essences, essence_targets: essence_targets}} = room) do
+    time = Timex.DateTime.to_secs(Timex.DateTime.now)
+
+    essences
+    |> Enum.reduce(room, fn({essence, amount}, updated_room) ->
+         amount_to_shift = (Map.get(essence_targets, essence, 0) - amount) / 60 / 60 * (time - last_update)
+         update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+       end)
+    |> update_essence_targets()
+    |> Room.update_controlled_by
+    |> Map.put(:essence_last_updated_at, time)
+  end
+
+  def update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do
+    area_exits =
+      exits
+      |> Enum.filter(fn({_direction, data}) ->
+           data["area"] == room.area
+         end)
+      |> Enum.into(%{})
+
+    essences =
+      area_exits
+      |> Map.values
+      |> Enum.map(&(&1["essences"]))
+      |> Enum.reduce(%{"good" => [], "evil" => [], "default" => []}, fn(exit_essences, adjacent_essences) ->
+           adjacent_essences
+           |> update_in(["good"],    &([exit_essences["good"] | &1]))
+           |> update_in(["evil"],    &([exit_essences["evil"] | &1]))
+           |> update_in(["default"], &([exit_essences["default"] | &1]))
+         end)
+
+    essences =
+      cond do
+        room.default_essence > 0 and controlled_by == nil ->
+          update_in(essences["default"], &([room.default_essence | &1]))
+        room.default_essence > current_essences[controlled_by] ->
+          update_in(essences[controlled_by], &([room.default_essence | &1]))
+        true ->
+          essences
+      end
+
+    essences =
+      essences
+      |> add_competing_essence("good", room)
+      |> add_competing_essence("evil", room)
+      |> add_competing_essence("default", room)
+
+    Enum.reduce(essences, room, fn({essence, list}, updated_room) ->
+      if length(list) > 0 do
+        put_in(updated_room.room_unity.essence_targets[essence], Enum.sum(list) / length(list))
+      else
+        put_in(updated_room.room_unity.essence_targets[essence], 0)
+      end
+    end)
+  end
+
+  defp add_competing_essence(essences, "good", room) do
+    competition = room.room_unity.essences["evil"] + room.room_unity.essences["default"]
+    if competition != 0 do
+      update_in(essences, ["good"], &([-competition | &1]))
+    else
+      essences
+    end
+  end
+
+  defp add_competing_essence(essences, "evil", room) do
+    competition = room.room_unity.essences["good"] + room.room_unity.essences["default"]
+    if competition != 0 do
+      update_in(essences, ["evil"], &([-competition | &1]))
+    else
+      essences
+    end
+  end
+
+  defp add_competing_essence(essences, "default", room) do
+    competition = room.room_unity.essences["evil"] + room.room_unity.essences["good"]
+    if competition != 0 do
+      update_in(essences, ["default"], &([-competition | &1]))
+    else
+      essences
     end
   end
 
