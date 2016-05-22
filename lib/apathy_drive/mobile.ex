@@ -578,6 +578,7 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> TimerManager.send_every({:unify,  60_000, :unify})
       |> TimerManager.send_every({:execute_room_ability,  5_000, :execute_room_ability})
+      |> TimerManager.send_every({:update_room_essence, 1_000, :update_room_essence})
 
     ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -1847,6 +1848,18 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info(:execute_room_ability, %Mobile{room_ability: room_ability} = mobile) do
     {:noreply, Ability.execute(mobile, room_ability, [self()])}
+  end
+
+  def handle_info(:update_room_essence, %Mobile{spirit: nil} = mobile) do
+    TimerManager.cancel_timer(mobile, :update_room_essence)
+    {:noreply, mobile}
+  end
+
+  def handle_info(:update_room_essence, %Mobile{room_id: room_id} = mobile) do
+    room_id
+    |> RoomServer.find
+    |> send({:update_essence, 1 / 60 / 60})
+    {:noreply, mobile}
   end
 
   def handle_info({:generate_loot, monster_template_id, level, global_chance}, mobile) do

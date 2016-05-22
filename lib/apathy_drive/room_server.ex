@@ -208,7 +208,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       room
       |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-      |> TimerManager.send_every({:update_essence,  1_000, :update_essence})
+      |> update_essence_targets()
 
     {:ok, room}
   end
@@ -713,6 +713,8 @@ defmodule ApathyDrive.RoomServer do
       end
     end)
 
+    send(self(), {:update_essence, 1 / 12})
+
     {:noreply, room}
   end
 
@@ -721,25 +723,27 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
+      |> update_essence_targets
 
     {:noreply, room}
   end
 
-  def handle_info(:update_essence, %Room{room_unity: %RoomUnity{essences: essences}} = room) do
+  def handle_info({:update_essence, percentage}, %Room{room_unity: %RoomUnity{essences: essences, essence_targets: essence_targets}} = room) do
+
     room =
-      room
-      |> average_essences()
+      essences
+      |> Enum.reduce(room, fn({essence, amount}, updated_room) ->
+           amount_to_shift = (essence_targets[essence] - amount) * percentage
+           update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+         end)
       |> Room.update_controlled_by
 
-    if room.room_unity.essences != essences do
-      room = report_essence(room)
-      ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:update_room_essence, %{room_id: room.id,
-                                                                                         good: trunc(room.room_unity.essences["good"]),
-                                                                                         default: trunc(room.room_unity.essences["default"]),
-                                                                                         evil: trunc(room.room_unity.essences["evil"]),
-                                                                                         }})
-    end
-
+    room = report_essence(room)
+    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:update_room_essence, %{room_id: room.id,
+                                                                                       good: trunc(room.room_unity.essences["good"]),
+                                                                                       default: trunc(room.room_unity.essences["default"]),
+                                                                                       evil: trunc(room.room_unity.essences["evil"]),
+                                                                                       }})
     {:noreply, room}
   end
 
@@ -790,7 +794,7 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  defp average_essences(%Room{room_unity: %RoomUnity{exits: exits}} = room) do
+  defp update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits}} = room) do
     area_exits =
       exits
       |> Enum.filter(fn({_direction, data}) ->
@@ -823,9 +827,7 @@ defmodule ApathyDrive.RoomServer do
       |> update_in(["default"], &([-(room.room_unity.essences["evil"] + room.room_unity.essences["good"]) | &1]))
 
     Enum.reduce(essences, room, fn({essence, list}, updated_room) ->
-      amount_to_shift = ((Enum.sum(list) / length(list)) - updated_room.room_unity.essences[essence]) / 60 / 60
-
-      update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+      put_in(updated_room.room_unity.essence_targets[essence], Enum.sum(list) / length(list))
     end)
   end
 

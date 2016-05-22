@@ -9,6 +9,7 @@ defmodule ApathyDrive.RoomUnity do
     field :essences,   ApathyDrive.JSONB, default: %{}
     field :expires_at, Timex.Ecto.DateTime
     field :exits, :map, virtual: true, default: %{}
+    field :essence_targets, :map, virtual: true, default: %{}
 
     timestamps
 
