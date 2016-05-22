@@ -826,7 +826,11 @@ defmodule ApathyDrive.RoomServer do
       |> add_competing_essence("default", room)
 
     Enum.reduce(essences, room, fn({essence, list}, updated_room) ->
-      put_in(updated_room.room_unity.essence_targets[essence], Enum.sum(list) / length(list))
+      if length(list) > 0 do
+        put_in(updated_room.room_unity.essence_targets[essence], Enum.sum(list) / length(list))
+      else
+        put_in(updated_room.room_unity.essence_targets[essence], 0)
+      end
     end)
   end
 
