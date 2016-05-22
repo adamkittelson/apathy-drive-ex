@@ -821,13 +821,40 @@ defmodule ApathyDrive.RoomServer do
 
     essences =
       essences
-      |> update_in(["good"], &([-(room.room_unity.essences["evil"] + room.room_unity.essences["default"]) | &1]))
-      |> update_in(["evil"], &([-(room.room_unity.essences["good"] + room.room_unity.essences["default"]) | &1]))
-      |> update_in(["default"], &([-(room.room_unity.essences["evil"] + room.room_unity.essences["good"]) | &1]))
+      |> add_competing_essence("good", room)
+      |> add_competing_essence("evil", room)
+      |> add_competing_essence("default", room)
 
     Enum.reduce(essences, room, fn({essence, list}, updated_room) ->
       put_in(updated_room.room_unity.essence_targets[essence], Enum.sum(list) / length(list))
     end)
+  end
+
+  defp add_competing_essence(essences, "good", room) do
+    competition = room.room_unity.essences["evil"] + room.room_unity.essences["default"]
+    if competition != 0 do
+      update_in(essences, ["good"], &([-competition | &1]))
+    else
+      essences
+    end
+  end
+
+  defp add_competing_essence(essences, "evil", room) do
+    competition = room.room_unity.essences["good"] + room.room_unity.essences["default"]
+    if competition != 0 do
+      update_in(essences, ["evil"], &([-competition | &1]))
+    else
+      essences
+    end
+  end
+
+  defp add_competing_essence(essences, "default", room) do
+    competition = room.room_unity.essences["evil"] + room.room_unity.essences["good"]
+    if competition != 0 do
+      update_in(essences, ["default"], &([-competition | &1]))
+    else
+      essences
+    end
   end
 
   defp jitter(time) do
