@@ -733,7 +733,7 @@ defmodule ApathyDrive.RoomServer do
       end
     end)
 
-    {:noreply, room}
+    {:noreply, room, :hibernate}
   end
 
   def handle_info({:essence_report, report}, %Room{} = room) do
@@ -743,7 +743,7 @@ defmodule ApathyDrive.RoomServer do
       put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
       |> Room.update_essence_targets
 
-    {:noreply, room}
+    {:noreply, room, :hibernate}
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
