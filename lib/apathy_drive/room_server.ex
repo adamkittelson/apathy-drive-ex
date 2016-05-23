@@ -23,6 +23,10 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def mobile_died(room, mobile) do
+    GenServer.cast(room, {:mobile_died, mobile})
+  end
+
   def find_item_for_script(room, item, mobile, script, failure_message) do
     GenServer.cast(room, {:find_item_for_script, item, mobile, script, failure_message})
   end
@@ -250,6 +254,23 @@ defmodule ApathyDrive.RoomServer do
   def handle_call({:lock, direction}, _from, room) do
     room = Room.lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:mobile_died, mobile}, room) do
+    present_mobiles = PubSub.subscribers("rooms:#{room.id}:mobiles")
+
+    mobiles =
+      room.also_here
+      |> Enum.reduce(%{}, fn({pid, data}, also_here) ->
+           if pid in present_mobiles and pid != mobile, do: Map.put(also_here, pid, data), else: also_here
+         end)
+
+    room =
+      room
+      |> Map.put(:also_here, mobiles)
+      |> Room.update_essence
+
+    {:noreply, room}
   end
 
   def handle_cast({:execute_room_ability, mobile}, %Room{room_ability: room_ability} = room) do
@@ -570,7 +591,10 @@ defmodule ApathyDrive.RoomServer do
            if pid in present_mobiles and pid != mobile, do: Map.put(also_here, pid, data), else: also_here
          end)
 
-    room = Map.put(room, :also_here, mobiles)
+    room =
+      room
+      |> Map.put(:also_here, mobiles)
+      |> Room.update_essence
 
     if !Room.spirits_present?(room) and TimerManager.time_remaining(room, :update_essence) do
       TimerManager.cancel(room, :update_essence)

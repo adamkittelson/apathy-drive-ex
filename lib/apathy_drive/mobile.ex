@@ -1591,7 +1591,7 @@ defmodule ApathyDrive.Mobile do
       Mobile.update_prompt(mobile)
 
       if mobile.hp < 1 or (mobile.spirit && mobile.spirit.experience < -99) do
-        {:noreply, Systems.Death.kill(mobile)}
+        {:stop, :normal, Systems.Death.kill(mobile)}
       else
         {:noreply, mobile}
       end

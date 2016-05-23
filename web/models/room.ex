@@ -394,6 +394,22 @@ defmodule ApathyDrive.Room do
       end
 
     essences =
+      room.also_here
+      |> Map.values
+      |> Enum.reduce(essences, fn
+           %{spirit_essence: nil, unities: []} = mobile, updated_essences ->
+             update_in(updated_essences["default"], &([mobile.essence | &1]))
+           %{spirit_essence: nil} = mobile, updated_essences ->
+             Enum.reduce(mobile.unities, updated_essences, fn(unity, updated_essences) ->
+               update_in(updated_essences[unity], &([mobile.essence | &1]))
+             end)
+           mobile, updated_essences ->
+             Enum.reduce(mobile.spirit_unities, updated_essences, fn(unity, updated_essences) ->
+               update_in(updated_essences[unity], &([mobile.spirit_essence | &1]))
+             end)
+         end)
+
+    essences =
       essences
       |> add_competing_essence("good", room)
       |> add_competing_essence("evil", room)

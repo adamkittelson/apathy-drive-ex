@@ -83,8 +83,9 @@ defmodule Systems.Death do
 
     kill(mobile, remaining_steps)
   end
-  def kill(_mobile, []) do
-    Process.exit(self, :normal)
+  def kill(mobile, []) do
+    RoomServer.mobile_died({:global, "room_#{mobile.room_id}"}, self())
+    mobile
   end
 
 end
