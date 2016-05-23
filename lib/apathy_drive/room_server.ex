@@ -211,7 +211,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       room
       |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-      |> TimerManager.send_every({:report_essence, 300_000, :report_essence})
+      |> TimerManager.send_every({:report_essence, 600_000, :report_essence})
 
     {:ok, room}
   end
@@ -733,7 +733,7 @@ defmodule ApathyDrive.RoomServer do
       end
     end)
 
-    {:noreply, room, :hibernate}
+    {:noreply, room}
   end
 
   def handle_info({:essence_report, report}, %Room{} = room) do
