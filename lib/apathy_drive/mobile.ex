@@ -1874,7 +1874,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:execute_room_ability, %Mobile{spirit: nil} = mobile) do
-    TimerManager.cancel_timer(mobile, :execute_room_ability)
+    TimerManager.cancel(mobile, :execute_room_ability)
     {:noreply, mobile}
   end
 
