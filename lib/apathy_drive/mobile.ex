@@ -968,16 +968,10 @@ defmodule ApathyDrive.Mobile do
 
     target_essence = target_essence(mobile)
 
-    if target_essence do
-      amount_to_shift = (target_essence - current_essence) / 60 / 60 * (time - last_update)
-
-      if amount_to_shift > 1 do
-        mobile
-        |> add_experience(amount_to_shift)
-        |> Map.put(:essence_last_updated_at, time)
-      else
-        mobile
-      end
+    if target_essence && trunc(amount_to_shift = (target_essence - current_essence) / 60 / 60 * (time - last_update)) != 0 do
+      mobile
+      |> add_experience(amount_to_shift)
+      |> Map.put(:essence_last_updated_at, time)
     else
       mobile
     end
