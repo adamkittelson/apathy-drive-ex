@@ -1,26 +1,40 @@
 defmodule ApathyDrive.Unity do
   use GenServer
   require Logger
-  alias ApathyDrive.Mobile
 
   @interval 60_000
 
   def start_link do
-    GenServer.start_link(__MODULE__, %{"evil" => nil, "good" => nil}, name: __MODULE__)
+    GenServer.start_link(__MODULE__, %{"evil" => [], "good" => []}, name: __MODULE__)
   end
 
-  def init(average_essences) do
-    {:ok, average_essences}
+  def init(essences) do
+    Process.send_after(self(), :update_mobiles, @interval)
+    {:ok, essences}
   end
 
-  def contribute(contributor, unity, essence) do
-    GenServer.cast(__MODULE__, {:contribute, contributor, unity, essence})
+  def contribute(unity, essence) do
+    GenServer.cast(__MODULE__, {:contribute, unity, essence})
   end
 
-  def handle_cast({:contribute, contributor, unity, essence}, average_essences) when unity in ["evil", "good"] do
-    average_essences = update_in average_essences, [unity], &(div((&1 || essence) + essence, 2))
-    Mobile.average_essence(contributor, average_essences[unity])
-    {:noreply, average_essences}
+  def handle_cast({:contribute, unity, essence}, essences) when unity in ["evil", "good"] do
+    essences = update_in(essences, [unity], &([essence | &1]))
+
+    {:noreply, essences}
+  end
+
+  def handle_info(:update_mobiles, essences) do
+    essences
+    |> Enum.each(fn
+         {_unity, []} -> :noop
+         {unity, list} ->
+           average = Enum.sum(list) / length(list)
+           ApathyDrive.PubSub.broadcast("mobiles", {:update_unity_essence, unity, average})
+       end)
+
+    Process.send_after(self(), :update_mobiles, @interval)
+
+    {:noreply, %{"evil" => [], "good" => []}}
   end
 
 end

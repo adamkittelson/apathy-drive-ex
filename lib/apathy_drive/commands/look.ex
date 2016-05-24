@@ -38,13 +38,10 @@ defmodule ApathyDrive.Commands.Look do
       end
 
     good        = Map.get(room.room_unity.essences, "good", 0)
-    good_target = Map.get(room.room_unity.essence_targets, "good", 0)
     evil   = Map.get(room.room_unity.essences, "evil", 0)
-    evil_target = Map.get(room.room_unity.essence_targets, "evil", 0)
     default = Map.get(room.room_unity.essences, "default", 0)
-    default_target = Map.get(room.room_unity.essence_targets, "default", 0)
 
-    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{room.area},</span> <span class='#{name_color}'>#{room.name}</span> (<span class='white room-#{room.id}-good'>#{trunc(good)}</span>(#{trunc(good_target)})/<span class='cyan room-#{room.id}-default'>#{trunc(default)}</span>(#{trunc(default_target)})/<span class='magenta room-#{room.id}-evil'>#{trunc(evil)}</span>(#{trunc(evil_target)}))</p>")
+    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{room.area},</span> <span class='#{name_color}'>#{room.name}</span> (<span class='white room-#{room.id}-good'>#{trunc(good)}</span>/<span class='cyan room-#{room.id}-default'>#{trunc(default)}</span>/<span class='magenta room-#{room.id}-evil'>#{trunc(evil)}</span>)</p>")
     Mobile.send_scroll(mobile, "<p>    #{room.description}</p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
     Mobile.send_scroll(mobile, look_mobiles(room, mobile))

@@ -48,6 +48,9 @@ defmodule ApathyDrive.Mobile do
     field :movement_frequency, :integer, virtual: true, default: 60
     field :last_room,          :any,     virtual: true
     field :room_ability,       :any,     virtual: true
+    field :room_essences,      :map,     virtual: true, default: %{}
+    field :unity_essences,     :map,     virtual: true, default: %{}
+    field :essence_last_updated_at, :integer, virtual: true
 
     timestamps
   end
@@ -110,10 +113,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:move, room, room_exit, last_room})
   end
 
-  def average_essence(mobile, essence) do
-    GenServer.cast(mobile, {:average_essence, essence})
-  end
-
   def execute_command(mobile, command, arguments) do
     GenServer.cast(mobile, {:execute_command, command, arguments})
   end
@@ -153,6 +152,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:add_experience, exp})
   end
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
+    exp = trunc(exp)
+
     initial_spirit_level = mobile.spirit && mobile.spirit.level
 
     mobile =
@@ -517,6 +518,7 @@ defmodule ApathyDrive.Mobile do
     mobile =
       mobile
       |> Map.put(:pid, self)
+      |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -566,6 +568,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:experience, spirit.experience)
       |> Map.put(:level, spirit.level)
       |> Map.put(:unities, spirit.class.unities)
+      |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -958,6 +961,52 @@ defmodule ApathyDrive.Mobile do
     |> Repo.save!
   end
 
+  defp update_essence(%Mobile{spirit: spirit, essence_last_updated_at: last_update} = mobile) do
+    time = Timex.DateTime.to_secs(Timex.DateTime.now)
+
+    current_essence = (spirit && spirit.experience) || mobile.experience
+
+    target_essence = target_essence(mobile)
+
+    if target_essence do
+      amount_to_shift = (target_essence - current_essence) / 60 / 60 * (time - last_update)
+
+      if amount_to_shift > 1 do
+        mobile
+        |> add_experience(amount_to_shift)
+        |> Map.put(:essence_last_updated_at, time)
+      else
+        mobile
+      end
+    else
+      mobile
+    end
+  end
+
+  defp target_essence(%Mobile{spirit: spirit, room_essences: room_essences, unity_essences: unity_essences} = mobile) do
+    unities = (spirit && spirit.class.unities) || mobile.unities
+
+    essences =
+      case unities do
+        [] ->
+          if room_essences["default"] do
+            [room_essences["default"]]
+          else
+            []
+          end
+        unities ->
+          unities
+          |> Enum.reduce([], fn(unity, essences) ->
+               essences = if room_essences[unity], do: [room_essences[unity] | essences], else: essences
+               if unity_essences[unity], do: [unity_essences[unity] | essences], else: essences
+             end)
+      end
+
+    if length(essences) > 0 do
+      Enum.sum(essences) / length(essences)
+    end
+  end
+
   defp handle_diff(%Mobile{}, "spirits:online", %{joins: _joins, leaves: _leaves}), do: :noop
 
   defp sound_direction("up"),      do: "above you"
@@ -1080,18 +1129,6 @@ defmodule ApathyDrive.Mobile do
     mobile = Map.put(mobile, :room_ability, ability)
     send(self(), :execute_room_ability)
     {:noreply, mobile}
-  end
-
-  def handle_cast({:average_essence, average}, %Mobile{spirit: nil, experience: essence} = mobile) do
-    difference = average - essence
-
-    {:noreply, add_experience(mobile, div(difference, 100))}
-  end
-
-  def handle_cast({:average_essence, average}, %Mobile{spirit: %Spirit{experience: essence}} = mobile) do
-    difference = average - essence
-
-    {:noreply, add_experience(mobile, div(difference, 100))}
   end
 
   def handle_cast({:teleport, room_id}, mobile) do
@@ -1471,9 +1508,23 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:update_room_essence, _essence}, %Mobile{socket: nil} = mobile), do: {:noreply, mobile}
+  def handle_info({:update_unity_essence, unity, essence}, mobile) do
+    {:noreply, put_in(mobile.unity_essences[unity], essence)}
+  end
+
   def handle_info({:update_room_essence, essence}, %Mobile{socket: socket} = mobile) do
-    send(socket, {:update_room_essence, essence})
+    room_essences =
+      essence
+      |> Map.drop([:room_id])
+      |> Enum.reduce(%{}, fn({k,v}, re) -> Map.put(re, to_string(k), v) end)
+
+    mobile =
+      mobile
+      |> Map.put(:room_essences, room_essences)
+      |> update_essence()
+
+    if socket, do: send(socket, {:update_room_essence, essence})
+
     {:noreply, mobile}
   end
 
@@ -1751,19 +1802,15 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:unify, %Mobile{spirit: nil, experience: essence, unities: unities} = mobile) do
-    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence)
-
     Enum.each(unities, fn(unity) ->
-      ApathyDrive.Unity.contribute(self(), unity, essence)
+      ApathyDrive.Unity.contribute(unity, essence)
     end)
     {:noreply, mobile}
   end
 
   def handle_info(:unify, %Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} = mobile) do
-    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence)
-
     Enum.each(unities, fn(unity) ->
-      ApathyDrive.Unity.contribute(self(), unity, essence)
+      ApathyDrive.Unity.contribute(unity, essence)
     end)
     {:noreply, mobile}
   end

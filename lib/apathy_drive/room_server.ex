@@ -47,10 +47,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, :load_present_mobiles)
   end
 
-  def add_essence_from_mobile(_room, _mobile, _unity, _essence) do
-    #GenServer.cast(room, {:add_essence_from_mobile, mobile, unity, essence})
-  end
-
   def ask(room, asker, target, question) do
     GenServer.cast(room, {:ask, asker, target, question})
   end
@@ -323,49 +319,6 @@ defmodule ApathyDrive.RoomServer do
 
        end)
     {:noreply, room}
-  end
-
-  def handle_cast({:add_essence_from_mobile, mobile, [unity], essence}, %Room{} = room) do
-    if essence > room.room_unity.essences[unity] do
-      room =
-        update_in(room.room_unity.essences[unity], fn(current) ->
-          min(essence, current + div(essence, 100))
-        end)
-        |> Room.update_controlled_by
-      {:noreply, room}
-    else
-      updated_mobile_essence = min(essence, essence + div(room.room_unity.essences[unity], 100))
-
-      Mobile.add_experience(mobile, essence - updated_mobile_essence)
-      {:noreply, room}
-    end
-  end
-
-  def handle_cast({:add_essence_from_mobile, _mobile, unities, essence}, %Room{} = room) do
-    essence = div(essence, 100)
-
-    highest =
-      unities
-      |> Enum.map(&(room.room_unity.essences[&1]))
-      |> Enum.sort
-      |> List.last
-
-    %{room: room} =
-      unities
-      |> Enum.reduce(%{room: room, unused: essence},
-                     fn(unity, %{room: updated_room, unused: essence_remaining}) ->
-                       amount_to_add =
-                         essence_remaining
-                         |> min(highest - updated_room.room_unity.essences[unity])
-                         |> max(0)
-
-                       %{
-                         room: update_in(updated_room.room_unity.essences[unity], &(&1 + amount_to_add)),
-                         unused: essence_remaining - amount_to_add
-                        }
-                     end)
-
-    {:noreply, Room.update_controlled_by(room)}
   end
 
   def handle_cast({:attacker, attacker, target}, room) do
@@ -757,7 +710,7 @@ defmodule ApathyDrive.RoomServer do
       end
     end)
 
-    {:noreply, room}
+    {:noreply, room, :hibernate}
   end
 
   def handle_info({:essence_report, report}, %Room{} = room) do
@@ -765,9 +718,8 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
-      |> Room.update_essence_targets
 
-    {:noreply, room, :hibernate}
+    {:noreply, room}
   end
 
   def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
@@ -816,7 +768,7 @@ defmodule ApathyDrive.RoomServer do
         evil: trunc(room.room_unity.essences["evil"]),
       }
 
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:update_room_essence, data})
+    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:mobiles", {:update_room_essence, data})
 
     {:noreply, room}
   end
