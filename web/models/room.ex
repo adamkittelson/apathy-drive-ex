@@ -412,15 +412,11 @@ defmodule ApathyDrive.Room do
       |> Presence.metas()
       |> Enum.reduce(essences, fn
            %{spirit_essence: nil, unities: []} = mobile, updated_essences ->
-             update_in(updated_essences["default"], &([mobile.essence | &1]))
+             add_mobile_essence(updated_essences, ["default"], mobile.essence)
            %{spirit_essence: nil} = mobile, updated_essences ->
-             Enum.reduce(mobile.unities, updated_essences, fn(unity, updated_essences) ->
-               update_in(updated_essences[unity], &([mobile.essence | &1]))
-             end)
+             add_mobile_essence(updated_essences, mobile.unities, mobile.essence)
            mobile, updated_essences ->
-             Enum.reduce(mobile.spirit_unities, updated_essences, fn(unity, updated_essences) ->
-               update_in(updated_essences[unity], &([mobile.spirit_essence | &1]))
-             end)
+             add_mobile_essence(updated_essences, mobile.spirit_unities, mobile.spirit_essence)
          end)
 
     essences =
@@ -430,10 +426,21 @@ defmodule ApathyDrive.Room do
       |> add_competing_essence("default", room)
 
     Enum.reduce(essences, room, fn({essence, list}, updated_room) ->
-      if length(list) > 0 do
-        put_in(updated_room.room_unity.essence_targets[essence], Enum.sum(list) / length(list))
+      put_in(updated_room.room_unity.essence_targets[essence], average(list))
+    end)
+  end
+
+  def average([]), do: 0
+  def average(list) do
+    Enum.sum(list) / length(list)
+  end
+
+  defp add_mobile_essence(essences, mobile_unities, mobile_essence) do
+    Enum.reduce(essences, essences, fn({unity, _list}, updated_essences) ->
+      if unity in mobile_unities do
+        update_in(updated_essences[unity], &([mobile_essence | &1]))
       else
-        put_in(updated_room.room_unity.essence_targets[essence], 0)
+        update_in(updated_essences[unity], &([-mobile_essence | &1]))
       end
     end)
   end
