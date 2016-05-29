@@ -438,9 +438,13 @@ defmodule ApathyDrive.Room do
   defp add_mobile_essence(essences, mobile_unities, mobile_essence) do
     Enum.reduce(essences, essences, fn({unity, _list}, updated_essences) ->
       if unity in mobile_unities do
-        update_in(updated_essences[unity], &([mobile_essence | &1]))
+        updated_essences
+        |> update_in([unity], &([mobile_essence | &1]))
+        |> update_in([unity], &([mobile_essence | &1]))
       else
-        update_in(updated_essences[unity], &([-mobile_essence | &1]))
+        updated_essences
+        |> update_in([unity], &([-mobile_essence | &1]))
+        |> update_in([unity], &([-mobile_essence | &1]))
       end
     end)
   end
