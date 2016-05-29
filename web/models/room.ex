@@ -444,7 +444,6 @@ defmodule ApathyDrive.Room do
       else
         updated_essences
         |> update_in([unity], &([-mobile_essence | &1]))
-        |> update_in([unity], &([-mobile_essence | &1]))
       end
     end)
   end
