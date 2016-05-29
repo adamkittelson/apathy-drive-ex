@@ -356,13 +356,26 @@ defmodule ApathyDrive.Room do
 
     room = update_essence_targets(room)
 
-    essences
-    |> Enum.reduce(room, fn({essence, amount}, updated_room) ->
-         amount_to_shift = (Map.get(essence_targets, essence, 0) - amount) / 60 / 60 * (time - last_update)
-         update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
-       end)
-    |> Room.update_controlled_by
-    |> Map.put(:essence_last_updated_at, time)
+    room =
+      essences
+      |> Enum.reduce(room, fn({essence, amount}, updated_room) ->
+           amount_to_shift = (Map.get(essence_targets, essence, 0) - amount) / 60 / 60 * (time - last_update)
+           update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+         end)
+      |> Room.update_controlled_by
+      |> Map.put(:essence_last_updated_at, time)
+
+    data =
+      %{
+        room_id: room.id,
+        good: trunc(room.room_unity.essences["good"]),
+        default: trunc(room.room_unity.essences["default"]),
+        evil: trunc(room.room_unity.essences["evil"]),
+      }
+
+    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:mobiles", {:update_room_essence, data})
+
+    room
   end
 
   def update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do

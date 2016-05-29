@@ -760,16 +760,6 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:update_essence, room) do
     room = Room.update_essence(room)
 
-    data =
-      %{
-        room_id: room.id,
-        good: trunc(room.room_unity.essences["good"]),
-        default: trunc(room.room_unity.essences["default"]),
-        evil: trunc(room.room_unity.essences["evil"]),
-      }
-
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:mobiles", {:update_room_essence, data})
-
     {:noreply, room}
   end
 
