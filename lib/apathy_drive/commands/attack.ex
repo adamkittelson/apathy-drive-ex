@@ -23,7 +23,7 @@ defmodule ApathyDrive.Commands.Attack do
 
   def execute(%Room{} = room, mobile, query) do
     target = Room.find_mobile_in_room(room, mobile, query)
-    attack(mobile, target && target.pid)
+    attack(mobile, target && target.mobile)
   end
 
   def attack(mobile, nil) when is_pid(mobile) do

@@ -6,7 +6,7 @@ defmodule ApathyDrive.Commands.Possess do
 
   def execute(%Room{} = room, query, spirit_id, class_name, socket, possessor) do
     if target = Room.find_mobile_in_room(room, possessor, query) do
-      Mobile.become_possessed(target.pid, spirit_id, class_name, socket, possessor)
+      Mobile.become_possessed(target.mobile, spirit_id, class_name, socket, possessor)
     else
       Mobile.send_scroll(possessor, "<p>Possess what?</p>")
     end

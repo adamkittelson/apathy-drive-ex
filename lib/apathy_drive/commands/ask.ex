@@ -28,7 +28,7 @@ defmodule ApathyDrive.Commands.Ask do
 
   def execute(%Room{} = room, mobile, query, question) do
     target = Room.find_mobile_in_room(room, mobile, query)
-    ask(mobile, target && target.pid, question)
+    ask(mobile, target && target.mobile, question)
   end
 
   def ask(mobile, nil, _question) do

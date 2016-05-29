@@ -253,7 +253,8 @@ defmodule ApathyDrive.RoomServer do
       Room.spirits_present?(room) and !TimerManager.time_remaining(room, :update_essence) ->
         {:noreply, TimerManager.send_every(room, {:update_essence, 1_000, :update_essence})}
       !Room.spirits_present?(room) and TimerManager.time_remaining(room, :update_essence) ->
-        {:noreply, TimerManager.cancel(room, :update_essence)}
+        TimerManager.cancel(room, :update_essence)
+        {:noreply, room}
       true ->
         {:noreply, room}
     end
