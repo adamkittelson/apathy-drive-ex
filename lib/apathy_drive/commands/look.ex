@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Doors, Mobile, Match, RoomServer}
+  alias ApathyDrive.{Doors, Mobile, Match, RoomServer, Presence}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -57,7 +57,7 @@ defmodule ApathyDrive.Commands.Look do
         room_exit = Room.get_exit(room, Enum.join(arguments, " "))
         execute(room, mobile_data, room_exit)
       target = Room.find_mobile_in_room(room, mobile, Enum.join(arguments, " ")) ->
-        Mobile.look_at_mobile(target.pid, %{name: mobile_data.name, looker: mobile})
+        Mobile.look_at_mobile(target.mobile, %{name: mobile_data.name, looker: mobile})
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
         look_at_item(mobile, target)
       true ->
@@ -137,10 +137,13 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
   end
 
-  def look_mobiles(%Room{also_here: mobiles}, mobile \\ nil) do
+  def look_mobiles(%Room{} = room, mobile \\ nil) do
+    mobiles =
+      Presence.metas("rooms:#{room.id}:mobiles")
+    
     mobiles_to_show =
       mobiles
-      |> Enum.reduce([], fn({pid, %{look_name: name}}, list) ->
+      |> Enum.reduce([], fn(%{mobile: pid, look_name: name}, list) ->
            if pid == mobile do
              list
            else

@@ -84,7 +84,9 @@ defmodule Systems.Death do
     kill(mobile, remaining_steps)
   end
   def kill(mobile, []) do
-    RoomServer.mobile_died({:global, "room_#{mobile.room_id}"}, self())
+    mobile.room_id
+    |> RoomServer.find
+    |> Process.send_after(:update_essence, 1000)
     mobile
   end
 

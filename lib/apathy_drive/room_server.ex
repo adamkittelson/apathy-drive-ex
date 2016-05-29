@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Ability, Commands, LairMonster, Match, Mobile, PubSub,
+  alias ApathyDrive.{Ability, Commands, LairMonster, Match, Mobile, Presence, PubSub,
                      Repo, Room, RoomSupervisor, RoomUnity, Text, TimerManager}
   use Timex
   require Logger
@@ -23,8 +23,8 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  def mobile_died(room, mobile) do
-    GenServer.cast(room, {:mobile_died, mobile})
+  def toggle_rapid_essence_updates(room) do
+    GenServer.cast(room, :toggle_rapid_essence_updates)
   end
 
   def find_item_for_script(room, item, mobile, script, failure_message) do
@@ -109,10 +109,6 @@ defmodule ApathyDrive.RoomServer do
 
   def execute_ability(room, ability, query) do
     GenServer.cast(room, {:execute_ability, self(), ability, query})
-  end
-
-  def notify_presence(room, data) do
-    GenServer.cast(room, {:mobile_present, data})
   end
 
   def look(room, mobile, args \\ []) do
@@ -252,21 +248,15 @@ defmodule ApathyDrive.RoomServer do
     {:reply, room, room}
   end
 
-  def handle_cast({:mobile_died, mobile}, room) do
-    present_mobiles = PubSub.subscribers("rooms:#{room.id}:mobiles")
-
-    mobiles =
-      room.also_here
-      |> Enum.reduce(%{}, fn({pid, data}, also_here) ->
-           if pid in present_mobiles and pid != mobile, do: Map.put(also_here, pid, data), else: also_here
-         end)
-
-    room =
-      room
-      |> Map.put(:also_here, mobiles)
-      |> Room.update_essence
-
-    {:noreply, room}
+  def handle_cast(:toggle_rapid_essence_updates, %Room{} = room) do
+    cond do
+      Room.spirits_present?(room) and !TimerManager.time_remaining(room, :update_essence) ->
+        {:noreply, TimerManager.send_every(room, {:update_essence, 1_000, :update_essence})}
+      !Room.spirits_present?(room) and TimerManager.time_remaining(room, :update_essence) ->
+        {:noreply, TimerManager.cancel(room, :update_essence)}
+      true ->
+        {:noreply, room}
+    end
   end
 
   def handle_cast({:execute_room_ability, mobile}, %Room{room_ability: room_ability} = room) do
@@ -428,58 +418,44 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:execute_ability, mobile, %{"kind" => kind} = ability, query}, %Room{also_here: mobiles} = room) when kind in ["attack", "curse"] do
+  def handle_cast({:execute_ability, mobile, %{"kind" => kind} = ability, query}, %Room{} = room) when kind in ["attack", "curse"] do
+    mobiles =
+      Presence.metas("rooms:#{room.id}:mobiles")
+
     mobile =
       mobiles
-      |> Map.values
-      |> Enum.find(&(&1.pid == mobile))
+      |> Enum.find(&(&1.mobile == mobile))
 
    target =
      mobiles
-     |> Map.values
      |> Enum.reject(&(&1 == mobile))
      |> Match.one(:name_contains, query)
 
-    send(mobile.pid, {:execute_ability, ability, List.wrap(target && target.pid)})
+    send(mobile.mobile, {:execute_ability, ability, List.wrap(target && target.mobile)})
 
     {:noreply, room}
   end
 
-  def handle_cast({:execute_ability, mobile, %{"kind" => kind} = ability, _query}, %Room{also_here: mobiles} = room) when kind in ["room attack", "room curse"] do
+  def handle_cast({:execute_ability, mobile, %{"kind" => kind} = ability, _query}, %Room{} = room) when kind in ["room attack", "room curse"] do
+    mobiles =
+      Presence.metas("rooms:#{room.id}:mobiles")
+
     mobile =
       mobiles
-      |> Map.values
-      |> Enum.find(&(&1.pid == mobile))
+      |> Enum.find(&(&1.mobile == mobile))
 
    targets =
      mobiles
-     |> Map.values
      |> Enum.reject(&(&1.unities == mobile.unities))
-     |> Enum.map(&(&1.pid))
+     |> Enum.map(&(&1.mobile))
 
-    send(mobile.pid, {:execute_ability, ability, targets})
+    send(mobile.mobile, {:execute_ability, ability, targets})
 
     {:noreply, room}
   end
 
-  def handle_cast({:execute_ability, mobile, %{"kind" => _kind} = ability, _query}, %Room{also_here: _mobiles} = room) do
+  def handle_cast({:execute_ability, mobile, %{"kind" => _kind} = ability, _query}, %Room{} = room) do
     send(mobile, {:execute_ability, ability, [mobile]})
-
-    {:noreply, room}
-  end
-
-  def handle_cast({:mobile_present, %{intruder: mobile, name: name} = data}, room) do
-    ApathyDrive.PubSub.broadcast_from! mobile, "rooms:#{room.id}:mobiles", {:monster_present, data}
-
-    data =
-      data
-      |> Map.put(:keywords, String.split(name))
-      |> Map.put(:pid, mobile)
-      |> Map.delete(:intruder)
-
-    room =
-      put_in(room.also_here[mobile], data)
-      |> update_essence()
 
     {:noreply, room}
   end
@@ -536,24 +512,11 @@ defmodule ApathyDrive.RoomServer do
                  })
               |> Text.capitalize_first
 
-    present_mobiles = PubSub.subscribers("rooms:#{room.id}:mobiles")
-
-    mobiles =
-      room.also_here
-      |> Enum.reduce(%{}, fn({pid, data}, also_here) ->
-           if pid in present_mobiles and pid != mobile, do: Map.put(also_here, pid, data), else: also_here
-         end)
-
     room =
       room
-      |> Map.put(:also_here, mobiles)
       |> Room.update_essence
 
-    if !Room.spirits_present?(room) and TimerManager.time_remaining(room, :update_essence) do
-      TimerManager.cancel(room, :update_essence)
-    end
-
-    ApathyDrive.PubSub.broadcast! "rooms:#{room.id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room.id, message: "<p><span class='grey'>#{message}</span></p>"}}
+      ApathyDrive.PubSub.broadcast! "rooms:#{room.id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room.id, message: "<p><span class='grey'>#{message}</span></p>"}}
     {:noreply, room}
   end
 
@@ -765,14 +728,6 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info(_message, room) do
     {:noreply, room}
-  end
-
-  defp update_essence(room) do
-    if Room.spirits_present?(room) and !TimerManager.time_remaining(room, :update_essence) do
-      TimerManager.send_every(room, {:update_essence, 1_000, :update_essence})
-    else
-      room
-    end
   end
 
   defp jitter(time) do

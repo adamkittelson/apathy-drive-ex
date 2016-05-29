@@ -59,11 +59,15 @@ defmodule ApathyDrive.Commands.Move do
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
+      Mobile.untrack(mobile)
+
       mobile =
         mobile
         |> Map.put(:room_id, destination_id)
         |> Map.put(:last_room, last_room)
         |> Map.put(:room_ability, nil)
+
+      Mobile.track(mobile)
 
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
@@ -81,8 +85,6 @@ defmodule ApathyDrive.Commands.Move do
       Mobile.look(self)
 
       RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: mobile.enter_message, from: mobile.room_id})
-
-      notify_presence(mobile)
 
       mobile
 
@@ -104,11 +106,15 @@ defmodule ApathyDrive.Commands.Move do
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
       ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
 
+      Mobile.untrack(mobile)
+
       mobile =
         mobile
         |> Map.put(:room_id, destination_id)
         |> Map.put(:last_room, last_room)
         |> Map.put(:room_ability, nil)
+
+      Mobile.track(mobile)
 
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
@@ -126,8 +132,6 @@ defmodule ApathyDrive.Commands.Move do
       Mobile.look(self)
 
       RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: room_exit["to_message"], from: mobile.room_id})
-
-      notify_presence(mobile)
 
       mobile
 

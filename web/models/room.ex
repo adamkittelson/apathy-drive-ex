@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Match, Mobile, Room, RoomUnity}
+  alias ApathyDrive.{Match, Mobile, Room, RoomUnity, Presence}
 
   schema "rooms" do
     field :name,                    :string
@@ -19,7 +19,6 @@ defmodule ApathyDrive.Room do
     field :room_ability,            :any, virtual: true
     field :items,                   ApathyDrive.JSONB, default: []
     field :last_effect_key,         :integer, virtual: true, default: 0
-    field :also_here,               :map, virtual: true, default: %{}
     field :area,                    :string
     field :default_essence,         :integer, virtual: true
     field :essence_last_updated_at, :integer, virtual: true
@@ -33,9 +32,9 @@ defmodule ApathyDrive.Room do
     has_many   :lair_monsters, through: [:lairs, :monster_template]
   end
 
-  def spirits_present?(%Room{also_here: also_here}) do
-    also_here
-    |> Map.values
+  def spirits_present?(%Room{} = room) do
+    "rooms:#{room.id}:mobiles"
+    |> Presence.metas
     |> Enum.any?(&(&1.spirit_essence != nil))
   end
 
@@ -103,14 +102,15 @@ defmodule ApathyDrive.Room do
     |> validate_length(:name, min: 1, max: 30)
   end
 
-  def find_mobile_in_room(%Room{also_here: mobiles}, mobile, query) do
+  def find_mobile_in_room(%Room{} = room, mobile, query) do
+    mobiles =
+      Presence.metas("rooms:#{room.id}:mobiles")
+
     mobile =
       mobiles
-      |> Map.values
-      |> Enum.find(&(&1.pid == mobile))
+      |> Enum.find(&(&1.mobile == mobile))
 
     mobiles
-    |> Map.values
     |> Enum.reject(&(&1 == mobile))
     |> List.insert_at(-1, mobile)
     |> Match.one(:name_contains, query)
@@ -408,8 +408,8 @@ defmodule ApathyDrive.Room do
       end
 
     essences =
-      room.also_here
-      |> Map.values
+      "rooms:#{room.id}:mobiles"
+      |> Presence.metas()
       |> Enum.reduce(essences, fn
            %{spirit_essence: nil, unities: []} = mobile, updated_essences ->
              update_in(updated_essences["default"], &([mobile.essence | &1]))
