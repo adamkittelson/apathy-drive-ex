@@ -352,22 +352,17 @@ defmodule ApathyDrive.Room do
     end
   end
 
-  def update_essence(%Room{essence_last_updated_at: last_update, room_unity: %RoomUnity{essences: essences, essence_targets: essence_targets}} = room) do
+  def update_essence(%Room{essence_last_updated_at: last_update, room_unity: %RoomUnity{essences: essences}} = room) do
     time = Timex.DateTime.to_secs(Timex.DateTime.now)
 
-    rate =
-      if spirits_present?(room) do
-        1 / 2 / 60
-      else
-        1 / 60 / 60
-      end
+    rate = 1 / 10 / 60
 
     room = update_essence_targets(room)
 
     room =
       essences
-      |> Enum.reduce(room, fn({essence, amount}, updated_room) ->
-           amount_to_shift = (Map.get(essence_targets, essence, 0) - amount) * rate * (time - last_update)
+      |> Enum.reduce(room, fn({essence, amount}, %Room{room_unity: %RoomUnity{essence_targets: essence_targets}} = updated_room) ->
+           amount_to_shift = (get_in(essence_targets, [essence, "target"]) - amount) * rate * (time - last_update)
            update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
          end)
       |> Room.update_controlled_by
@@ -387,6 +382,17 @@ defmodule ApathyDrive.Room do
   end
 
   def update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do
+    initial_essences =
+      %{"good"    => %{"adjacent" => [],
+                       "mobile" => [],
+                       "local" => []},
+        "evil"    => %{"adjacent" => [],
+                       "mobile" => [],
+                       "local" => []},
+        "default" => %{"adjacent" => [],
+                       "mobile" => [],
+                       "local" => []}}
+
     area_exits =
       exits
       |> Enum.filter(fn({_direction, data}) ->
@@ -398,19 +404,19 @@ defmodule ApathyDrive.Room do
       area_exits
       |> Map.values
       |> Enum.map(&(&1["essences"]))
-      |> Enum.reduce(%{"good" => [], "evil" => [], "default" => []}, fn(exit_essences, adjacent_essences) ->
+      |> Enum.reduce(initial_essences, fn(exit_essences, adjacent_essences) ->
            adjacent_essences
-           |> update_in(["good"],    &([exit_essences["good"] | &1]))
-           |> update_in(["evil"],    &([exit_essences["evil"] | &1]))
-           |> update_in(["default"], &([exit_essences["default"] | &1]))
+           |> update_in(["good", "adjacent"],    &([exit_essences["good"] | &1]))
+           |> update_in(["evil", "adjacent"],    &([exit_essences["evil"] | &1]))
+           |> update_in(["default", "adjacent"], &([exit_essences["default"] | &1]))
          end)
 
     essences =
       cond do
         room.default_essence > 0 and controlled_by == nil ->
-          update_in(essences["default"], &([room.default_essence | &1]))
+          put_in(essences["default"]["lair"], room.default_essence)
         room.default_essence > current_essences[controlled_by] ->
-          update_in(essences[controlled_by], &([room.default_essence | &1]))
+          put_in(essences[controlled_by]["lair"], room.default_essence)
         true ->
           essences
       end
@@ -433,9 +439,24 @@ defmodule ApathyDrive.Room do
       |> add_competing_essence("evil", room)
       |> add_competing_essence("default", room)
 
-    Enum.reduce(essences, room, fn({essence, list}, updated_room) ->
-      put_in(updated_room.room_unity.essence_targets[essence], average(list))
-    end)
+    essences =
+      Enum.reduce(essences, essences, fn({unity, %{"adjacent" => adj, "mobile" => mobile, "local" => local} = map}, updated_essences) ->
+        local = if map["lair"] do
+          average([Map.get(map, "lair") | local])
+        else
+          average(local)
+        end
+
+        mobile = average(mobile)
+        adj = average(adj)
+
+        # weight influences local > mobile > adjacent
+        target = average([adj, mobile, mobile, local, local, local])
+
+        put_in(updated_essences[unity]["target"], target)
+      end)
+
+    put_in(room.room_unity.essence_targets, essences)
   end
 
   def average([]), do: 0
@@ -447,40 +468,27 @@ defmodule ApathyDrive.Room do
     Enum.reduce(essences, essences, fn({unity, _list}, updated_essences) ->
       if unity in mobile_unities do
         updated_essences
-        |> update_in([unity], &([mobile_essence | &1]))
-        |> update_in([unity], &([mobile_essence | &1]))
+        |> update_in([unity, "mobile"], &([mobile_essence | &1]))
       else
         updated_essences
-        |> update_in([unity], &([-mobile_essence | &1]))
+        |> update_in([unity, "mobile"], &([-mobile_essence | &1]))
       end
     end)
   end
 
   defp add_competing_essence(essences, "good", room) do
-    competition = room.room_unity.essences["evil"] + room.room_unity.essences["default"]
-    if competition != 0 do
-      update_in(essences, ["good"], &([-competition | &1]))
-    else
-      essences
-    end
+    competition = room.room_unity.essences["good"] - (room.room_unity.essences["evil"] + room.room_unity.essences["default"])
+    update_in(essences, ["good", "local"], &([competition | &1]))
   end
 
   defp add_competing_essence(essences, "evil", room) do
-    competition = room.room_unity.essences["good"] + room.room_unity.essences["default"]
-    if competition != 0 do
-      update_in(essences, ["evil"], &([-competition | &1]))
-    else
-      essences
-    end
+    competition = room.room_unity.essences["evil"] - (room.room_unity.essences["good"] + room.room_unity.essences["default"])
+    update_in(essences, ["evil", "local"], &([competition | &1]))
   end
 
   defp add_competing_essence(essences, "default", room) do
-    competition = room.room_unity.essences["evil"] + room.room_unity.essences["good"]
-    if competition != 0 do
-      update_in(essences, ["default"], &([-competition | &1]))
-    else
-      essences
-    end
+    competition = room.room_unity.essences["default"] - (room.room_unity.essences["good"] + room.room_unity.essences["evil"])
+    update_in(essences, ["default", "local"], &([competition | &1]))
   end
 
 end

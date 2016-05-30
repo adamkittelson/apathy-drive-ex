@@ -135,6 +135,10 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:get_item, mobile, item})
   end
 
+  def delve(room, mobile) do
+    GenServer.cast(room, {:delve, mobile})
+  end
+
   def destroy_item(room, item) do
     GenServer.call(room, {:destroy_item, item})
   end
@@ -329,6 +333,11 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast({:get_item, mobile, item}, room) do
     {:noreply, Commands.Get.execute(room, mobile, item)}
+  end
+
+  def handle_cast({:delve, mobile}, room) do
+    Commands.Delve.execute(room, mobile)
+    {:noreply, room}
   end
 
   def handle_cast({:trigger_remote_action, remote_action_exit, from}, room) do

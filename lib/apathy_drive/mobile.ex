@@ -302,6 +302,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:get_item, item})
   end
 
+  def delve(mobile) do
+    GenServer.cast(mobile, :delve)
+  end
+
   def display_inventory(mobile) when is_pid(mobile) do
     GenServer.cast(mobile, :display_inventory)
   end
@@ -1254,6 +1258,11 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:get_item, %{} = item}, mobile) do
     {:noreply, Commands.Get.execute(mobile, item)}
+  end
+
+  def handle_cast(:delve, mobile) do
+    Commands.Delve.execute(mobile)
+    {:noreply, mobile}
   end
 
   def handle_cast({:get_item, item}, mobile) do
