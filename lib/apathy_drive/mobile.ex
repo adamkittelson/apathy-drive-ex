@@ -173,8 +173,6 @@ defmodule ApathyDrive.Mobile do
         |> set_hp
     end
 
-    update(mobile)
-
     mobile
   end
 
@@ -1832,6 +1830,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:unify, %Mobile{spirit: nil, unities: []} = mobile) do
+    update(mobile)
     {:noreply, mobile}
   end
 
@@ -1839,6 +1838,7 @@ defmodule ApathyDrive.Mobile do
     Enum.each(unities, fn(unity) ->
       ApathyDrive.Unity.contribute(unity, essence)
     end)
+    update(mobile)
     {:noreply, mobile}
   end
 
