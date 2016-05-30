@@ -250,10 +250,10 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast(:toggle_rapid_essence_updates, %Room{} = room) do
     cond do
-      Room.spirits_present?(room) and !TimerManager.time_remaining(room, :update_essence) ->
-        {:noreply, TimerManager.send_every(room, {:update_essence, 1_000, :update_essence})}
-      !Room.spirits_present?(room) and TimerManager.time_remaining(room, :update_essence) ->
-        TimerManager.cancel(room, :update_essence)
+      Room.spirits_present?(room) and !TimerManager.time_remaining(room, :rapid_essence_update) ->
+        {:noreply, TimerManager.send_every(room, {:rapid_essence_update, 1_000, :report_essence})}
+      !Room.spirits_present?(room) and TimerManager.time_remaining(room, :rapid_essence_update) ->
+        TimerManager.cancel(room, :rapid_essence_update)
         {:noreply, room}
       true ->
         {:noreply, room}
@@ -665,7 +665,8 @@ defmodule ApathyDrive.RoomServer do
           kind: kind,
           legacy_id: room.legacy_id,
           area: room.area,
-          controlled_by: room.room_unity.controlled_by
+          controlled_by: room.room_unity.controlled_by,
+          report_back?: Room.spirits_present?(room)
         }
 
         dest
@@ -674,7 +675,9 @@ defmodule ApathyDrive.RoomServer do
       end
     end)
 
-    {:noreply, room, :hibernate}
+    room = Map.put(room, :essence_last_reported_at, Timex.DateTime.to_secs(Timex.DateTime.now))
+
+    {:noreply, room}
   end
 
   def handle_info({:essence_report, report}, %Room{} = room) do
@@ -682,6 +685,10 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
+
+    if report.report_back? and room.essence_last_reported_at < (Timex.DateTime.to_secs(Timex.DateTime.now) - 60) do
+      send(self(), :report_essence)
+    end
 
     {:noreply, room}
   end
@@ -719,12 +726,6 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:room_updated, %{changes: changes}}, room) do
     {:noreply, Map.merge(room, changes)}
-  end
-
-  def handle_info(:update_essence, room) do
-    room = Room.update_essence(room)
-
-    {:noreply, room}
   end
 
   def handle_info(_message, room) do

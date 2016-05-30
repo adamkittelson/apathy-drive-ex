@@ -3,25 +3,26 @@ defmodule ApathyDrive.Room do
   alias ApathyDrive.{Match, Mobile, Room, RoomUnity, Presence}
 
   schema "rooms" do
-    field :name,                    :string
-    field :keywords,                {:array, :string}
-    field :description,             :string
-    field :effects,                 :map, virtual: true, default: %{}
-    field :light,                   :integer
-    field :item_descriptions,       ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
-    field :lair_size,               :integer
-    field :lair_frequency,          :integer, default: 5
-    field :lair_next_spawn_at,      :integer, virtual: true, default: 0
-    field :exits,                   ApathyDrive.JSONB, default: []
-    field :commands,                ApathyDrive.JSONB, default: %{}
-    field :legacy_id,               :string
-    field :timers,                  :map, virtual: true, default: %{}
-    field :room_ability,            :any, virtual: true
-    field :items,                   ApathyDrive.JSONB, default: []
-    field :last_effect_key,         :integer, virtual: true, default: 0
-    field :area,                    :string
-    field :default_essence,         :integer, virtual: true
-    field :essence_last_updated_at, :integer, virtual: true
+    field :name,                     :string
+    field :keywords,                 {:array, :string}
+    field :description,              :string
+    field :effects,                  :map, virtual: true, default: %{}
+    field :light,                    :integer
+    field :item_descriptions,        ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
+    field :lair_size,                :integer
+    field :lair_frequency,           :integer, default: 5
+    field :lair_next_spawn_at,       :integer, virtual: true, default: 0
+    field :exits,                    ApathyDrive.JSONB, default: []
+    field :commands,                 ApathyDrive.JSONB, default: %{}
+    field :legacy_id,                :string
+    field :timers,                   :map, virtual: true, default: %{}
+    field :room_ability,             :any, virtual: true
+    field :items,                    ApathyDrive.JSONB, default: []
+    field :last_effect_key,          :integer, virtual: true, default: 0
+    field :area,                     :string
+    field :default_essence,          :integer, virtual: true
+    field :essence_last_updated_at,  :integer, virtual: true
+    field :essence_last_reported_at, :integer, virtual: true, default: 0
 
     timestamps
 
