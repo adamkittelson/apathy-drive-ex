@@ -354,12 +354,19 @@ defmodule ApathyDrive.Room do
   def update_essence(%Room{essence_last_updated_at: last_update, room_unity: %RoomUnity{essences: essences, essence_targets: essence_targets}} = room) do
     time = Timex.DateTime.to_secs(Timex.DateTime.now)
 
+    rate =
+      if spirits_present?(room) do
+        1 / 10 / 60
+      else
+        1 / 60 / 60
+      end
+
     room = update_essence_targets(room)
 
     room =
       essences
       |> Enum.reduce(room, fn({essence, amount}, updated_room) ->
-           amount_to_shift = (Map.get(essence_targets, essence, 0) - amount) / 60 / 60 * (time - last_update)
+           amount_to_shift = (Map.get(essence_targets, essence, 0) - amount) * rate * (time - last_update)
            update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
          end)
       |> Room.update_controlled_by
