@@ -173,6 +173,8 @@ defmodule ApathyDrive.Mobile do
         |> set_hp
     end
 
+    update(mobile)
+
     mobile
   end
 
@@ -933,9 +935,29 @@ defmodule ApathyDrive.Mobile do
     "<span class='#{alignment_color(mobile)}'>#{name}</span>"
   end
 
-  def track(%Mobile{spirit: spirit} = mobile) do
+  def track(%Mobile{} = mobile) do
     send(self(), {:also_here, Presence.metas("rooms:#{mobile.room_id}:mobiles")})
-    {:ok, _} = Presence.track(self(), "rooms:#{mobile.room_id}:mobiles", self(), %{
+    {:ok, _} = Presence.track(self(), "rooms:#{mobile.room_id}:mobiles", self(), track_data(mobile))
+
+    mobile.room_id
+    |> RoomServer.find
+    |> RoomServer.toggle_rapid_essence_updates
+  end
+
+  def update(%Mobile{} = mobile) do
+    Presence.update(self(), "rooms:#{mobile.room_id}:mobiles", self(), track_data(mobile))
+  end
+
+  def untrack(%Mobile{} = mobile) do
+    Presence.untrack(self(), "rooms:#{mobile.room_id}:mobiles", self())
+
+    mobile.room_id
+    |> RoomServer.find
+    |> RoomServer.toggle_rapid_essence_updates
+  end
+
+  def track_data(%Mobile{spirit: spirit} = mobile) do
+    %{
       mobile: self(),
       alignment: mobile.alignment,
       unities: mobile.unities,
@@ -946,19 +968,7 @@ defmodule ApathyDrive.Mobile do
       name: mobile.name,
       keywords: String.split(mobile.name),
       look_name: look_name(mobile)
-    })
-
-    mobile.room_id
-    |> RoomServer.find
-    |> RoomServer.toggle_rapid_essence_updates
-  end
-
-  def untrack(%Mobile{} = mobile) do
-    Presence.untrack(self(), "rooms:#{mobile.room_id}:mobiles", self())
-
-    mobile.room_id
-    |> RoomServer.find
-    |> RoomServer.toggle_rapid_essence_updates
+    }
   end
 
   def save(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
