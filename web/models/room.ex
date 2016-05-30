@@ -356,7 +356,7 @@ defmodule ApathyDrive.Room do
 
     rate =
       if spirits_present?(room) do
-        1 / 10 / 60
+        1 / 2 / 60
       else
         1 / 60 / 60
       end
