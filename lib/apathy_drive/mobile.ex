@@ -1846,6 +1846,7 @@ defmodule ApathyDrive.Mobile do
     Enum.each(unities, fn(unity) ->
       ApathyDrive.Unity.contribute(unity, essence)
     end)
+    update(mobile)
     {:noreply, mobile}
   end
 

@@ -25,7 +25,11 @@ defmodule ApathyDrive.Metrics do
          end
        end)
 
-    :timer.sleep 5000
+    Task.start fn ->
+      Enum.each(:erlang.processes, &:erlang.garbage_collect/1)
+    end
+
+    :timer.sleep 10000
 
     record_metrics()
   end
