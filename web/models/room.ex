@@ -446,7 +446,10 @@ defmodule ApathyDrive.Room do
         adj = average(adj)
 
         # weight influences local > mobile > adjacent
-        target = average([adj, mobile, mobile, mobile, local, local])
+        target =
+          [adj, mobile, mobile, mobile, local, local]
+          |> Enum.reject(&(&1 == 0))
+          |> average()
 
         put_in(updated_essences[unity]["target"], target)
       end)
