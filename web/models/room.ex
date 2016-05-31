@@ -440,18 +440,13 @@ defmodule ApathyDrive.Room do
       |> add_competing_essence("default", room)
 
     essences =
-      Enum.reduce(essences, essences, fn({unity, %{"adjacent" => adj, "mobile" => mobile, "local" => local} = map}, updated_essences) ->
-        local = if map["lair"] do
-          average([Map.get(map, "lair") | local])
-        else
-          average(local)
-        end
-
+      Enum.reduce(essences, essences, fn({unity, %{"adjacent" => adj, "mobile" => mobile, "local" => local}}, updated_essences) ->
+        local = average(local)
         mobile = average(mobile)
         adj = average(adj)
 
         # weight influences local > mobile > adjacent
-        target = average([adj, mobile, mobile, local, local, local])
+        target = average([adj, mobile, mobile, mobile, local, local])
 
         put_in(updated_essences[unity]["target"], target)
       end)
@@ -477,17 +472,35 @@ defmodule ApathyDrive.Room do
   end
 
   defp add_competing_essence(essences, "good", room) do
-    competition = room.room_unity.essences["good"] - (room.room_unity.essences["evil"] + room.room_unity.essences["default"])
+    local = if essences["good"]["lair"] do
+      essences["good"]["lair"]
+    else
+      room.room_unity.essences["good"]
+    end
+
+    competition = local - (room.room_unity.essences["evil"] + room.room_unity.essences["default"])
     update_in(essences, ["good", "local"], &([competition | &1]))
   end
 
   defp add_competing_essence(essences, "evil", room) do
-    competition = room.room_unity.essences["evil"] - (room.room_unity.essences["good"] + room.room_unity.essences["default"])
+    local = if essences["evil"]["lair"] do
+      essences["evil"]["lair"]
+    else
+      room.room_unity.essences["evil"]
+    end
+
+    competition = local - (room.room_unity.essences["good"] + room.room_unity.essences["default"])
     update_in(essences, ["evil", "local"], &([competition | &1]))
   end
 
   defp add_competing_essence(essences, "default", room) do
-    competition = room.room_unity.essences["default"] - (room.room_unity.essences["good"] + room.room_unity.essences["evil"])
+    local = if essences["default"]["lair"] do
+      essences["default"]["lair"]
+    else
+      room.room_unity.essences["default"]
+    end
+
+    competition = local - (room.room_unity.essences["good"] + room.room_unity.essences["evil"])
     update_in(essences, ["default", "local"], &([competition | &1]))
   end
 
