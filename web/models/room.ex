@@ -448,16 +448,16 @@ defmodule ApathyDrive.Room do
         # weight influences local > mobile > adjacent
         target =
           [adj, mobile, mobile, mobile, local, local]
-          |> Enum.reject(&(&1 == 0))
+          |> Enum.reject(&(&1 == nil))
           |> average()
 
-        put_in(updated_essences[unity]["target"], target)
+        put_in(updated_essences[unity]["target"], target || 0)
       end)
 
     put_in(room.room_unity.essence_targets, essences)
   end
 
-  def average([]), do: 0
+  def average([]), do: nil
   def average(list) do
     Enum.sum(list) / length(list)
   end
