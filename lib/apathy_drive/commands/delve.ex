@@ -21,7 +21,7 @@ defmodule ApathyDrive.Commands.Delve do
         "good" ->
           Mobile.send_scroll(mobile, "<p><span class='white'>Good Influence:</span></p>")
         "default" ->
-          Mobile.send_scroll(mobile, "<p><span class='cyan'>Default Influence:</span></p>")
+          Mobile.send_scroll(mobile, "<p><span class='cyan'>Natural Influence:</span></p>")
         "evil" ->
           Mobile.send_scroll(mobile, "<p><span class='magenta'>Evil Influence:</span></p>")
       end
