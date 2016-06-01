@@ -46,7 +46,6 @@ defmodule ApathyDrive.Mobile do
     field :last_effect_key,    :integer, virtual: true, default: 0
     field :chance_to_follow,   :integer, virtual: true, default: 0
     field :movement_frequency, :integer, virtual: true, default: 60
-    field :last_room,          :any,     virtual: true
     field :room_ability,       :any,     virtual: true
     field :room_essences,      :map,     virtual: true, default: %{}
     field :unity_essences,     :map,     virtual: true, default: %{}
@@ -109,8 +108,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:trigger_remote_action, remote_action_exit})
   end
 
-  def move(mobile, room, room_exit, last_room) do
-    GenServer.cast(mobile, {:move, room, room_exit, last_room})
+  def move(mobile, room, room_exit) do
+    GenServer.cast(mobile, {:move, room, room_exit})
   end
 
   def execute_command(mobile, command, arguments) do
@@ -1191,7 +1190,6 @@ defmodule ApathyDrive.Mobile do
       mobile =
         mobile
         |> Map.put(:room_id, destination_id)
-        |> Map.put(:last_room, nil)
 
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
@@ -1369,8 +1367,8 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:move, room, room_exit, last_room}, mobile) do
-    mobile = Commands.Move.execute(mobile, room, room_exit, last_room)
+  def handle_cast({:move, room, room_exit}, mobile) do
+    mobile = Commands.Move.execute(mobile, room, room_exit)
     {:noreply, mobile}
   end
 
