@@ -83,8 +83,11 @@ defmodule Systems.Death do
 
     kill(mobile, remaining_steps)
   end
-  def kill(_mobile, []) do
-    Process.exit(self, :normal)
+  def kill(mobile, []) do
+    mobile.room_id
+    |> RoomServer.find
+    |> Process.send_after(:update_essence, 1000)
+    mobile
   end
 
 end

@@ -178,3 +178,6 @@ CHANGELOG
 
 ---- 0.0.69 / 2016-04-13 / datadog ---------------------------------------------
 * add datadog metrics
+
+---- 0.0.70 / 2016-05-31 / frequent-essence-updates ----------------------------
+* update essence more frequently for players

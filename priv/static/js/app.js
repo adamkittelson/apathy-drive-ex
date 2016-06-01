@@ -3718,6 +3718,13 @@ chan.on("update prompt", function (message) {
   $("#prompt").html(message.html);
 });
 
+chan.on("update room essence", function (message) {
+  console.log("updating room essence");
+  $(".room-" + message.room_id + "-default").text(message["default"]);
+  $(".room-" + message.room_id + "-good").text(message.good);
+  $(".room-" + message.room_id + "-evil").text(message.evil);
+});
+
 chan.on("redirect", function (message) {
   window.location = "" + window.location.origin + message.url;
 });

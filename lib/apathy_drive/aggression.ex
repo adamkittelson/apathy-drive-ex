@@ -5,7 +5,7 @@ defmodule ApathyDrive.Aggression do
     mobile
   end
 
-  def react(%{mobile: %Mobile{} = mobile, alignment: "good"}, %{intruder: intruder, alignment: "evil"}) do
+  def react(%{mobile: %Mobile{} = mobile, alignment: "good"}, %{mobile: intruder, alignment: "evil"}) do
     attack(mobile, intruder)
   end
 
@@ -17,16 +17,16 @@ defmodule ApathyDrive.Aggression do
     mobile
   end
 
-  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", unities: unities}, %{intruder: _intruder, alignment: "evil", unities: intruder_unities}) when length(unities) > 0 and unities == intruder_unities do
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", unities: unities}, %{mobile: _intruder, alignment: "evil", unities: intruder_unities}) when length(unities) > 0 and unities == intruder_unities do
     mobile
   end
 
-  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", spawned_at: spawned_at}, %{intruder: _intruder, alignment: "evil", spawned_at: intruder_spawned_at}) when spawned_at == intruder_spawned_at do
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", spawned_at: spawned_at}, %{mobile: _intruder, alignment: "evil", spawned_at: intruder_spawned_at}) when spawned_at == intruder_spawned_at do
     mobile
   end
 
   # evil monsters will attack each other if their names aren't similar enough, superficial bastards
-  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", name: name}, %{intruder: intruder, alignment: "evil", name: intruder_name}) do
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil", name: name}, %{mobile: intruder, alignment: "evil", name: intruder_name}) do
     if String.jaro_distance(name, intruder_name) < 0.65 do
       attack(mobile, intruder)
     else
@@ -34,7 +34,7 @@ defmodule ApathyDrive.Aggression do
     end
   end
 
-  def react(%{mobile: %Mobile{} = mobile, alignment: "evil"}, %{intruder: intruder, alignment: _alignment}) do
+  def react(%{mobile: %Mobile{} = mobile, alignment: "evil"}, %{mobile: intruder, alignment: _alignment}) do
     attack(mobile, intruder)
   end
 

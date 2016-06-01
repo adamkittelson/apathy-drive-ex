@@ -25,7 +25,7 @@ defmodule ApathyDrive.Commands.Greet do
 
   def execute(%Room{} = room, %{name: _name, pid: pid} = mobile, query) do
     target = Room.find_mobile_in_room(room, pid, query)
-    greet(mobile, target && target.pid)
+    greet(mobile, target && target.mobile)
   end
 
   def greet(%Mobile{} = target, %{name: name, pid: greeter}) do

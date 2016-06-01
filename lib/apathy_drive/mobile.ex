@@ -48,6 +48,9 @@ defmodule ApathyDrive.Mobile do
     field :movement_frequency, :integer, virtual: true, default: 60
     field :last_room,          :any,     virtual: true
     field :room_ability,       :any,     virtual: true
+    field :room_essences,      :map,     virtual: true, default: %{}
+    field :unity_essences,     :map,     virtual: true, default: %{}
+    field :essence_last_updated_at, :integer, virtual: true
 
     timestamps
   end
@@ -110,10 +113,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:move, room, room_exit, last_room})
   end
 
-  def average_essence(mobile, essence) do
-    GenServer.cast(mobile, {:average_essence, essence})
-  end
-
   def execute_command(mobile, command, arguments) do
     GenServer.cast(mobile, {:execute_command, command, arguments})
   end
@@ -153,6 +152,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:add_experience, exp})
   end
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
+    exp = trunc(exp)
+
     initial_spirit_level = mobile.spirit && mobile.spirit.level
 
     mobile =
@@ -257,7 +258,6 @@ defmodule ApathyDrive.Mobile do
   end
 
   def update_prompt(%Mobile{socket: nil}), do: :noop
-
   def update_prompt(%Mobile{socket: socket} = mobile) do
     send(socket, {:update_prompt, prompt(mobile)})
   end
@@ -300,6 +300,10 @@ defmodule ApathyDrive.Mobile do
 
   def get_item(mobile, item) do
     GenServer.cast(mobile, {:get_item, item})
+  end
+
+  def delve(mobile) do
+    GenServer.cast(mobile, :delve)
   end
 
   def display_inventory(mobile) when is_pid(mobile) do
@@ -518,6 +522,7 @@ defmodule ApathyDrive.Mobile do
     mobile =
       mobile
       |> Map.put(:pid, self)
+      |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -526,9 +531,10 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_regen,    1_000, :regen})
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
-      |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> TimerManager.send_every({:unify,  60_000, :unify})
       |> move_after()
+
+      track(mobile)
 
       ApathyDrive.PubSub.subscribe("mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
@@ -537,8 +543,6 @@ defmodule ApathyDrive.Mobile do
       if mobile.monster_template_id do
         ApathyDrive.PubSub.subscribe("monster_templates:#{mobile.monster_template_id}:monsters")
       end
-
-      send(self, :notify_presence)
 
       send(self, :save)
 
@@ -568,6 +572,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:experience, spirit.experience)
       |> Map.put(:level, spirit.level)
       |> Map.put(:unities, spirit.class.unities)
+      |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -576,9 +581,10 @@ defmodule ApathyDrive.Mobile do
       |> TimerManager.send_every({:monster_regen,    1_000, :regen})
       |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       |> TimerManager.send_every({:monster_ai,       5_000, :think})
-      |> TimerManager.send_every({:monster_present,  4_000, :notify_presence})
       |> TimerManager.send_every({:unify,  60_000, :unify})
       |> TimerManager.send_every({:execute_room_ability,  5_000, :execute_room_ability})
+
+    track(mobile)
 
     ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
     ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
@@ -588,8 +594,6 @@ defmodule ApathyDrive.Mobile do
     {:ok, _} = Presence.track(self(), "spirits:online", "spirit_#{spirit.id}", %{
       name: Mobile.look_name(mobile)
     })
-
-    send(self, :notify_presence)
 
     send(self, :save)
 
@@ -929,19 +933,40 @@ defmodule ApathyDrive.Mobile do
     "<span class='#{alignment_color(mobile)}'>#{name}</span>"
   end
 
-  def notify_presence(%Mobile{room_id: room_id} = mobile) do
-    data = %{
-      intruder: self,
+  def track(%Mobile{} = mobile) do
+    send(self(), {:also_here, Presence.metas("rooms:#{mobile.room_id}:mobiles")})
+    {:ok, _} = Presence.track(self(), "rooms:#{mobile.room_id}:mobiles", self(), track_data(mobile))
+
+    mobile.room_id
+    |> RoomServer.find
+    |> RoomServer.toggle_rapid_essence_updates
+  end
+
+  def update(%Mobile{} = mobile) do
+    Presence.update(self(), "rooms:#{mobile.room_id}:mobiles", self(), track_data(mobile))
+  end
+
+  def untrack(%Mobile{} = mobile) do
+    Presence.untrack(self(), "rooms:#{mobile.room_id}:mobiles", self())
+
+    mobile.room_id
+    |> RoomServer.find
+    |> RoomServer.toggle_rapid_essence_updates
+  end
+
+  def track_data(%Mobile{spirit: spirit} = mobile) do
+    %{
+      mobile: self(),
       alignment: mobile.alignment,
       unities: mobile.unities,
+      essence: mobile.experience,
+      spirit_unities: spirit && spirit.class.unities,
+      spirit_essence: spirit && spirit.experience,
       spawned_at: mobile.spawned_at,
       name: mobile.name,
+      keywords: String.split(mobile.name),
       look_name: look_name(mobile)
     }
-
-    room_id
-    |> RoomServer.find
-    |> RoomServer.notify_presence(data)
   end
 
   def save(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
@@ -958,7 +983,72 @@ defmodule ApathyDrive.Mobile do
     |> Repo.save!
   end
 
-  defp handle_diff(%Mobile{}, "spirits:online", %{joins: _joins, leaves: _leaves}), do: :noop
+  defp react_to_mobiles(%Mobile{} = mobile, mobiles) do
+    mobiles
+    |> Enum.reduce(mobile, fn(intruder, mobile) ->
+         ApathyDrive.Aggression.react(%{mobile: mobile,
+                                        alignment: mobile.alignment,
+                                        unities: mobile.unities,
+                                        spawned_at: mobile.spawned_at,
+                                        name: mobile.name
+                                      },
+                                      intruder)
+       end)
+  end
+
+  defp update_essence(%Mobile{spirit: spirit, essence_last_updated_at: last_update} = mobile) do
+    time = Timex.DateTime.to_secs(Timex.DateTime.now)
+
+    current_essence = (spirit && spirit.experience) || mobile.experience
+
+    target_essence = target_essence(mobile)
+
+    rate =
+      if target_essence && (target_essence > current_essence) do
+        1 / 10 / 60
+      else
+        1 / 60 / 60
+      end
+
+    if target_essence && trunc(amount_to_shift = (target_essence - current_essence) * rate * (time - last_update)) != 0 do
+      mobile
+      |> add_experience(amount_to_shift)
+      |> Map.put(:essence_last_updated_at, time)
+    else
+      mobile
+    end
+  end
+
+  defp target_essence(%Mobile{spirit: spirit, room_essences: room_essences, unity_essences: unity_essences} = mobile) do
+    unities = (spirit && spirit.class.unities) || mobile.unities
+
+    essences =
+      case unities do
+        [] ->
+          if room_essences["default"] do
+            [room_essences["default"]]
+          else
+            []
+          end
+        unities ->
+          unities
+          |> Enum.reduce([], fn(unity, essences) ->
+               essences = if room_essences[unity], do: [room_essences[unity] | essences], else: essences
+               if unity_essences[unity], do: [unity_essences[unity] | essences], else: essences
+             end)
+      end
+
+    if length(essences) > 0 do
+      essences = [Enum.max(essences) | essences]
+
+      Enum.sum(essences) / length(essences)
+    end
+  end
+
+  defp handle_diff(%Mobile{} = mobile, "spirits:online", %{joins: _joins, leaves: _leaves}), do: mobile
+  defp handle_diff(%Mobile{room_id: _room_id} = mobile, "rooms:" <> _, %{joins: joins, leaves: _leaves}) do
+    react_to_mobiles(mobile, Presence.metas(joins))
+  end
 
   defp sound_direction("up"),      do: "above you"
   defp sound_direction("down"),    do: "below you"
@@ -1082,18 +1172,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:average_essence, average}, %Mobile{spirit: nil, experience: essence} = mobile) do
-    difference = average - essence
-
-    {:noreply, add_experience(mobile, div(difference, 100))}
-  end
-
-  def handle_cast({:average_essence, average}, %Mobile{spirit: %Spirit{experience: essence}} = mobile) do
-    difference = average - essence
-
-    {:noreply, add_experience(mobile, div(difference, 100))}
-  end
-
   def handle_cast({:teleport, room_id}, mobile) do
     if !held(mobile) do
       mobile.room_id
@@ -1129,8 +1207,6 @@ defmodule ApathyDrive.Mobile do
       Mobile.look(self)
 
       RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} appears out of thin air!</span>", from: nil})
-
-      notify_presence(mobile)
 
       {:noreply, mobile}
     else
@@ -1199,6 +1275,11 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:get_item, %{} = item}, mobile) do
     {:noreply, Commands.Get.execute(mobile, item)}
+  end
+
+  def handle_cast(:delve, mobile) do
+    Commands.Delve.execute(mobile)
+    {:noreply, mobile}
   end
 
   def handle_cast({:get_item, item}, mobile) do
@@ -1471,6 +1552,26 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
+  def handle_info({:update_unity_essence, unity, essence}, mobile) do
+    {:noreply, put_in(mobile.unity_essences[unity], essence)}
+  end
+
+  def handle_info({:update_room_essence, essence}, %Mobile{socket: socket} = mobile) do
+    room_essences =
+      essence
+      |> Map.drop([:room_id])
+      |> Enum.reduce(%{}, fn({k,v}, re) -> Map.put(re, to_string(k), v) end)
+
+    mobile =
+      mobile
+      |> Map.put(:room_essences, room_essences)
+      |> update_essence()
+
+    if socket, do: send(socket, {:update_room_essence, essence})
+
+    {:noreply, mobile}
+  end
+
   def handle_info({:territory, controlled_by, count}, %Mobile{spirit: %Spirit{}} = mobile) do
     if controlled_by in mobile.spirit.class.unities do
       mobile = put_in(mobile.spirit.unity_bonus[controlled_by], count)
@@ -1560,8 +1661,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{topic: topic, event: "presence_diff", payload: diff}, %Mobile{} = mobile) do
-    handle_diff(mobile, topic, diff)
-    {:noreply, mobile}
+    {:noreply, handle_diff(mobile, topic, diff)}
+  end
+
+  def handle_info({:also_here, mobiles}, %Mobile{} = mobile) do
+    {:noreply, react_to_mobiles(mobile, mobiles)}
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{}, %Mobile{socket: nil} = mobile) do
@@ -1585,7 +1689,7 @@ defmodule ApathyDrive.Mobile do
       Mobile.update_prompt(mobile)
 
       if mobile.hp < 1 or (mobile.spirit && mobile.spirit.experience < -99) do
-        {:noreply, Systems.Death.kill(mobile)}
+        {:stop, :normal, Systems.Death.kill(mobile)}
       else
         {:noreply, mobile}
       end
@@ -1734,43 +1838,24 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_info(:notify_presence, %Mobile{} = mobile) do
-    notify_presence(mobile)
-
-    {:noreply, mobile}
-  end
-
   def handle_info(:unify, %Mobile{spirit: nil, unities: []} = mobile) do
+    update(mobile)
     {:noreply, mobile}
   end
 
   def handle_info(:unify, %Mobile{spirit: nil, experience: essence, unities: unities} = mobile) do
-    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence)
-
     Enum.each(unities, fn(unity) ->
-      ApathyDrive.Unity.contribute(self(), unity, essence)
+      ApathyDrive.Unity.contribute(unity, essence)
     end)
+    update(mobile)
     {:noreply, mobile}
   end
 
   def handle_info(:unify, %Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} = mobile) do
-    RoomServer.add_essence_from_mobile({:global, "room_#{mobile.room_id}"}, self(), unities, essence)
-
     Enum.each(unities, fn(unity) ->
-      ApathyDrive.Unity.contribute(self(), unity, essence)
+      ApathyDrive.Unity.contribute(unity, essence)
     end)
-    {:noreply, mobile}
-  end
-
-  def handle_info({:monster_present, %{} = intruder_data}, %Mobile{spirit: nil} = mobile) do
-    mobile = ApathyDrive.Aggression.react(%{mobile: mobile,
-                                            alignment: mobile.alignment,
-                                            unities: mobile.unities,
-                                            spawned_at: mobile.spawned_at,
-                                            name: mobile.name
-                                          },
-                                          intruder_data)
-
+    update(mobile)
     {:noreply, mobile}
   end
 
@@ -1827,7 +1912,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:execute_room_ability, %Mobile{spirit: nil} = mobile) do
-    TimerManager.cancel_timer(mobile, :execute_room_ability)
+    TimerManager.cancel(mobile, :execute_room_ability)
     {:noreply, mobile}
   end
 
