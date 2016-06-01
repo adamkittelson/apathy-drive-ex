@@ -1003,7 +1003,14 @@ defmodule ApathyDrive.Mobile do
 
     target_essence = target_essence(mobile)
 
-    if target_essence && trunc(amount_to_shift = (target_essence - current_essence) / 10 / 60 * (time - last_update)) != 0 do
+    rate =
+      if target_essence && (target_essence > current_essence) do
+        1 / 10 / 60
+      else
+        1 / 60 / 60
+      end
+
+    if target_essence && trunc(amount_to_shift = (target_essence - current_essence) * rate * (time - last_update)) != 0 do
       mobile
       |> add_experience(amount_to_shift)
       |> Map.put(:essence_last_updated_at, time)
@@ -1032,6 +1039,8 @@ defmodule ApathyDrive.Mobile do
       end
 
     if length(essences) > 0 do
+      essences = [Enum.max(essences) | essences]
+
       Enum.sum(essences) / length(essences)
     end
   end
