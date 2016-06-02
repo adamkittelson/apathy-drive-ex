@@ -12,3 +12,5 @@ config :apathy_drive, ApathyDrive.Repo,
   adapter: Ecto.Adapters.Postgres,
   extensions: [{Extensions.JSON, library: Poison}],
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :rollbax, enabled: :log
