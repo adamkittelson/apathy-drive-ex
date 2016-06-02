@@ -480,17 +480,22 @@ defmodule ApathyDrive.RoomServer do
     case room.exits do
       nil ->
         Mobile.auto_move(mobile, [])
-      exits ->
+      _exits ->
         valid_exits =
           case unities do
             [] ->
-              Enum.filter(exits, fn(%{"direction" => direction}) ->
-                room.room_unity.exits[direction] && room.room_unity.exits[direction]["area"] == room.area
-              end)
+              exits_in_area(room)
             unities ->
-              Enum.filter(exits, fn(%{"direction" => direction}) ->
-                room.room_unity.exits[direction] && room.room_unity.exits[direction]["controlled_by"] in unities
-              end)
+              if room.room_unity.controlled_by in unities do
+                case non_unity_controlled_exits(room, unities) do
+                  [] ->
+                    unity_controlled_exits(room, unities)
+                  result ->
+                    result
+                  end
+              else
+                unity_controlled_exits(room, unities)
+              end
           end
       Mobile.auto_move(mobile, valid_exits)
     end
@@ -745,6 +750,25 @@ defmodule ApathyDrive.RoomServer do
     time
     |> :rand.uniform
     |> Kernel.+(time)
+  end
+
+  defp exits_in_area(%Room{exits: exits} = room) do
+    Enum.filter(exits, fn(%{"direction" => direction}) ->
+      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area)
+    end)
+  end
+
+  defp unity_controlled_exits(%Room{exits: exits} = room, unities) do
+    Enum.filter(exits, fn(%{"direction" => direction}) ->
+      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities)
+    end)
+  end
+
+  defp non_unity_controlled_exits(%Room{exits: exits} = room, unities) do
+    Enum.filter(exits, fn(%{"direction" => direction}) ->
+      (room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area)) and
+      !(room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities))
+    end)
   end
 
 end
