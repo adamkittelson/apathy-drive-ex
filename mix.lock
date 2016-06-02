@@ -38,6 +38,7 @@
   "providers": {:hex, :providers, "1.6.0"},
   "ranch": {:hex, :ranch, "1.2.1"},
   "relx": {:hex, :relx, "3.19.0"},
+  "rollbax": {:hex, :rollbax, "0.5.4"},
   "scrivener": {:hex, :scrivener, "1.1.4"},
   "shouldi": {:hex, :shouldi, "0.3.0"},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.0"},

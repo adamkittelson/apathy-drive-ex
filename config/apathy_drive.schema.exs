@@ -52,6 +52,22 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
   extends: [],
   import: [],
   mappings: [
+    "rollbax.access_token": [
+      commented: false,
+      datatype: :binary,
+      default: "set me",
+      doc: "access token for rollbax error logging",
+      hidden: false,
+      to: "rollbax.access_token"
+    ],
+    "rollbax.environment:": [
+      commented: false,
+      datatype: :binary,
+      default: "set me",
+      doc: "environment for rollbax error logging",
+      hidden: false,
+      to: "rollbax.environment"
+    ],
     "logger.console.format": [
       commented: false,
       datatype: :binary,
