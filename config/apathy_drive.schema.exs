@@ -60,7 +60,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "rollbax.access_token"
     ],
-    "rollbax.environment:": [
+    "rollbax.environment": [
       commented: false,
       datatype: :binary,
       default: "set me",
