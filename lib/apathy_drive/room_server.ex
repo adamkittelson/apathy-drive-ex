@@ -766,7 +766,7 @@ defmodule ApathyDrive.RoomServer do
 
   defp non_unity_controlled_exits(%Room{exits: exits} = room, unities) do
     Enum.filter(exits, fn(%{"direction" => direction}) ->
-      (room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area)) and
+      (room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area)) &&
       !(room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities))
     end)
   end
