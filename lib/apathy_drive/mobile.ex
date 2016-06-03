@@ -623,6 +623,10 @@ defmodule ApathyDrive.Mobile do
     mobile
   end
 
+  def set(mobile, args) do
+    GenServer.cast(mobile, {:set, args})
+  end
+
   def execute_room_ability(mobile, ability) do
     GenServer.cast(mobile, {:execute_room_ability, ability})
   end
@@ -1160,6 +1164,11 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
+  def handle_cast({:set, args}, mobile) do
+    Commands.Set.execute(mobile, args)
+    {:noreply, mobile}
+  end
+  
   def handle_cast({:execute_room_ability, nil}, mobile) do
     mobile = Map.put(mobile, :room_ability, :none)
     {:noreply, mobile}

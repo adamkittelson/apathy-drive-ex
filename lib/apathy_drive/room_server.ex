@@ -23,6 +23,10 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def set(room, mobile, args) do
+    GenServer.cast(room, {:set, mobile, args})
+  end
+
   def toggle_rapid_essence_updates(room) do
     GenServer.cast(room, :toggle_rapid_essence_updates)
   end
@@ -250,6 +254,12 @@ defmodule ApathyDrive.RoomServer do
   def handle_call({:lock, direction}, _from, room) do
     room = Room.lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_cast({:set, mobile, args}, %Room{} = room) do
+    room = Commands.Set.execute(room, mobile, args)
+
+    {:noreply, room}
   end
 
   def handle_cast(:toggle_rapid_essence_updates, %Room{} = room) do

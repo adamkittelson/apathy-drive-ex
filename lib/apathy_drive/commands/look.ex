@@ -41,7 +41,12 @@ defmodule ApathyDrive.Commands.Look do
     evil   = Map.get(room.room_unity.essences, "evil", 0)
     default = Map.get(room.room_unity.essences, "default", 0)
 
-    Mobile.send_scroll(mobile, "<p><span class='cyan'>#{room.area},</span> <span class='#{name_color}'>#{room.name}</span> (<span class='white room-#{room.id}-good'>#{trunc(good)}</span>/<span class='cyan room-#{room.id}-default'>#{trunc(default)}</span>/<span class='magenta room-#{room.id}-evil'>#{trunc(evil)}</span>)</p>")
+    room_name =
+      [room.area, room.name]
+      |> Enum.reject(&(&1 in [nil, ""]))
+      |> Enum.join(", ")
+
+    Mobile.send_scroll(mobile, "<p><span class='#{name_color}'>#{room_name}</span> (<span class='white room-#{room.id}-good'>#{trunc(good)}</span>/<span class='cyan room-#{room.id}-default'>#{trunc(default)}</span>/<span class='magenta room-#{room.id}-evil'>#{trunc(evil)}</span>)</p>")
     Mobile.send_scroll(mobile, "<p>    #{room.description}</p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
     Mobile.send_scroll(mobile, look_mobiles(room, mobile))
@@ -140,7 +145,7 @@ defmodule ApathyDrive.Commands.Look do
   def look_mobiles(%Room{} = room, mobile \\ nil) do
     mobiles =
       Presence.metas("rooms:#{room.id}:mobiles")
-    
+
     mobiles_to_show =
       mobiles
       |> Enum.reduce([], fn(%{mobile: pid, look_name: name}, list) ->
