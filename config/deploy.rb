@@ -43,6 +43,21 @@ namespace :db do
     end
     invoke "deploy:restart"
   end
+
+  desc "Dump / download World Data"
+  task :download do
+    on roles(:app) do |host|
+      execute :pg_dump, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "--table=abilities", "--table=class_abilities", "--table=classes", "--table=item_drops", "--table=items", "--table=lair_monsters", "--table=monster_abilities", "--table=monster_templates", "--table=rooms", "--table=scripts", "--data-only", "--dbname=apathy_drive", "-Fc > /home/deploy/data.dump"
+    end
+    run_locally do
+      execute :scp, "apotheos.is:/home/deploy/data.dump", "priv/data.dump"
+      execute :mix, "drop_world"
+      execute :pg_restore, "--dbname=apathy_drive", "-w", "-h localhost", "priv/data.dump"
+      execute :git,  "add priv/data.dump"
+      execute :git, "commit",  "-m 'update data from production'"
+      execute :git, "push"
+    end
+  end
 end
 
 namespace :deploy do

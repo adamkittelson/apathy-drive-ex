@@ -2,7 +2,7 @@ defmodule Mix.Tasks.AddAdmin do
   use Mix.Task
 
   def run([name]) do
-    ApathyDrive.Repo.start_link
+    Mix.Ecto.ensure_started(ApathyDrive.Repo, [])
     case ApathyDrive.Repo.get_by(Spirit, name: name) do
       %Spirit{admin: true} ->
         Mix.shell.info "#{name} is already an admin"
