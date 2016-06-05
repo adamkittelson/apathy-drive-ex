@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Match, Mobile, Room, RoomUnity, Presence}
+  alias ApathyDrive.{Area, Match, Mobile, Room, RoomUnity, Presence}
 
   schema "rooms" do
     field :name,                     :string
@@ -19,7 +19,6 @@ defmodule ApathyDrive.Room do
     field :room_ability,             :any, virtual: true
     field :items,                    ApathyDrive.JSONB, default: []
     field :last_effect_key,          :integer, virtual: true, default: 0
-    field :area,                     :string
     field :default_essence,          :integer, virtual: true
     field :essence_last_updated_at,  :integer, virtual: true
     field :essence_last_reported_at, :integer, virtual: true, default: 0
@@ -29,6 +28,7 @@ defmodule ApathyDrive.Room do
     has_one    :room_unity, RoomUnity
     has_many   :mobiles, Mobile
     belongs_to :ability, Ability
+    belongs_to :area, ApathyDrive.Area
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
   end
@@ -47,7 +47,7 @@ defmodule ApathyDrive.Room do
     Map.merge(data, %{
       essences: room.room_unity.essences,
       room_id: room.id,
-      area: room.area,
+      area: room.area.name,
       controlled_by: room.room_unity.controlled_by
     })
   end
@@ -79,21 +79,8 @@ defmodule ApathyDrive.Room do
     end
   end
 
-  def default_essence(%Room{} = room) do
-    room
-    |> assoc(:lair_monsters)
-    |> Repo.all
-    |> default_essence()
-  end
-  def default_essence([]), do: 0
-  def default_essence(lair_monsters) do
-    total =
-      lair_monsters
-      |> Enum.map(fn(mt) ->
-           ApathyDrive.Level.exp_at_level(mt.level)
-         end)
-      |> Enum.sum
-    div(total, length(lair_monsters))
+  def default_essence(%Room{area: %Area{level: level}}) do
+    ApathyDrive.Level.exp_at_level(level)
   end
 
   def changeset(%Room{} = room, params \\ %{}) do
@@ -396,7 +383,7 @@ defmodule ApathyDrive.Room do
     area_exits =
       exits
       |> Enum.filter(fn({_direction, data}) ->
-           data["area"] == room.area
+           data["area"] == room.area.name
          end)
       |> Enum.into(%{})
 
@@ -414,9 +401,9 @@ defmodule ApathyDrive.Room do
     essences =
       cond do
         room.default_essence > 0 and controlled_by == nil ->
-          put_in(essences["default"]["lair"], room.default_essence)
+          put_in(essences["default"]["control"], room.default_essence)
         room.default_essence > current_essences[controlled_by] ->
-          put_in(essences[controlled_by]["lair"], room.default_essence)
+          put_in(essences[controlled_by]["control"], room.default_essence)
         true ->
           essences
       end
@@ -475,8 +462,8 @@ defmodule ApathyDrive.Room do
   end
 
   defp add_competing_essence(essences, "good", room) do
-    local = if essences["good"]["lair"] do
-      essences["good"]["lair"]
+    local = if essences["good"]["control"] do
+      essences["good"]["control"]
     else
       room.room_unity.essences["good"]
     end
@@ -486,8 +473,8 @@ defmodule ApathyDrive.Room do
   end
 
   defp add_competing_essence(essences, "evil", room) do
-    local = if essences["evil"]["lair"] do
-      essences["evil"]["lair"]
+    local = if essences["evil"]["control"] do
+      essences["evil"]["control"]
     else
       room.room_unity.essences["evil"]
     end
@@ -497,8 +484,8 @@ defmodule ApathyDrive.Room do
   end
 
   defp add_competing_essence(essences, "default", room) do
-    local = if essences["default"]["lair"] do
-      essences["default"]["lair"]
+    local = if essences["default"]["control"] do
+      essences["default"]["control"]
     else
       room.room_unity.essences["default"]
     end

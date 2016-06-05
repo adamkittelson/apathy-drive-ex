@@ -47,7 +47,7 @@ namespace :db do
   desc "Dump / download World Data"
   task :download do
     on roles(:app) do |host|
-      execute :pg_dump, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "--table=abilities", "--table=class_abilities", "--table=classes", "--table=item_drops", "--table=items", "--table=lair_monsters", "--table=monster_abilities", "--table=monster_templates", "--table=rooms", "--table=scripts", "--data-only", "--dbname=apathy_drive", "-Fc > /home/deploy/data.dump"
+      execute :pg_dump, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "--table=abilities", "--table=areas", "--table=class_abilities", "--table=classes", "--table=item_drops", "--table=items", "--table=lair_monsters", "--table=monster_abilities", "--table=monster_templates", "--table=rooms", "--table=scripts", "--data-only", "--dbname=apathy_drive", "-Fc > /home/deploy/data.dump"
     end
     run_locally do
       execute :scp, "apotheos.is:/home/deploy/data.dump", "priv/data.dump"

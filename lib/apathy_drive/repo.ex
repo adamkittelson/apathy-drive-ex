@@ -36,7 +36,7 @@ defmodule ApathyDrive.Repo do
   end
 
   def drop_world! do
-    ["class_abilities", "item_drops", "lair_monsters", "monster_abilities",
+    ["areas", "class_abilities", "item_drops", "lair_monsters", "monster_abilities",
      "abilities", "classes", "items", "monster_templates", "rooms", "scripts"]
     |> Enum.each(&(Ecto.Adapters.SQL.query!(ApathyDrive.Repo, "DELETE FROM #{&1}", [])))
   end

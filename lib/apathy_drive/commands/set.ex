@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Set do
   use ApathyDrive.Command
-  alias ApathyDrive.{Mobile, Repo}
+  alias ApathyDrive.{Area, Mobile, Repo}
 
   def keywords, do: ["set"]
 
@@ -22,15 +22,26 @@ defmodule ApathyDrive.Commands.Set do
     Mobile.send_scroll(mobile, "<p>You do not have permission to do that.</p>")
   end
 
-  def execute(%Room{area: old_area} = room, mobile, ["area" | area]) do
-    room =
-      room
-      |> Map.put(:area, Enum.join(area, " "))
-      |> Repo.save!
+  def execute(%Room{area: %Area{name: old_area}} = room, mobile, ["area" | area]) do
+    area
+    |> Enum.join(" ")
+    |> Area.find_by_name
+    |> Repo.one
+    |> case do
+         %Area{} = area ->
+           room =
+             room
+             |> Map.put(:area, area)
+             |> Map.put(:area_id, area.id)
+             |> Repo.save!
 
-    Mobile.send_scroll(mobile, "<p>Area changed from \"#{old_area}\" to \"#{room.area}\".</p>")
-
-    room
+           Mobile.send_scroll(mobile, "<p>Area changed from \"#{old_area}\" to \"#{room.area.name}\".</p>")
+           room
+         res ->
+           IO.inspect(res)
+           Mobile.send_scroll(mobile, "<p>Could not find an area named \"#{area}\".")
+           room
+       end
   end
 
   def execute(%Room{name: old_name} = room, mobile, ["name" | room_name]) do

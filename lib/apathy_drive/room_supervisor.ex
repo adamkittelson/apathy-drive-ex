@@ -20,8 +20,9 @@ defmodule ApathyDrive.RoomSupervisor do
   def find_supervisor(id) do
     area =
       Room
-      |> Ecto.Query.where([r], r.id == ^id)
-      |> Ecto.Query.select([r], r.area)
+      |> Ecto.Query.where(id: ^id)
+      |> Ecto.Query.join(:left, [r], a in assoc(r, :area))
+      |> Ecto.Query.select([r, a], a.name)
       |> Repo.one
 
     case Supervisor.start_child(__MODULE__, supervisor(__MODULE__, [[], [name: String.to_atom(area)]], [id: area])) do

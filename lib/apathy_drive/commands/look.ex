@@ -42,7 +42,7 @@ defmodule ApathyDrive.Commands.Look do
     default = Map.get(room.room_unity.essences, "default", 0)
 
     room_name =
-      [room.area, room.name]
+      [room.area.name, room.name]
       |> Enum.reject(&(&1 in [nil, ""]))
       |> Enum.join(", ")
 

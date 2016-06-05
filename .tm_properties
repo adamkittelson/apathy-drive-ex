@@ -1,0 +1,2 @@
+excludeInFolderSearch = "{$excludeInFolderSearch,_build,deps,rel,node_modules,priv/static}"
+excludeInFileChooser = "{$excludeInFileChooser,_build,deps,rel,node_modules,priv/static}"

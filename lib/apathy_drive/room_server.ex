@@ -176,6 +176,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       Repo.get!(Room, id)
       |> Repo.preload(:room_unity)
+      |> Repo.preload(:area)
 
     room =
       room
@@ -185,7 +186,7 @@ defmodule ApathyDrive.RoomServer do
     unless room.room_unity do
       room_unity =
         room
-        |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => 0})
+        |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => room.default_essence})
         |> Repo.save!
 
       room = %{room | room_unity: room_unity}
@@ -688,7 +689,7 @@ defmodule ApathyDrive.RoomServer do
           direction: direction,
           kind: kind,
           legacy_id: room.legacy_id,
-          area: room.area,
+          area: room.area.name,
           controlled_by: room.room_unity.controlled_by,
           report_back?: Room.spirits_present?(room)
         }
@@ -764,7 +765,7 @@ defmodule ApathyDrive.RoomServer do
 
   defp exits_in_area(%Room{exits: exits} = room) do
     Enum.filter(exits, fn(%{"direction" => direction}) ->
-      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area)
+      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name)
     end)
   end
 
@@ -776,7 +777,7 @@ defmodule ApathyDrive.RoomServer do
 
   defp non_unity_controlled_exits(%Room{exits: exits} = room, unities) do
     Enum.filter(exits, fn(%{"direction" => direction}) ->
-      (room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area)) &&
+      (room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name)) &&
       !(room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities))
     end)
   end
