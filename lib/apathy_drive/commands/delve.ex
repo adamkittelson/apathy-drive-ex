@@ -16,7 +16,7 @@ defmodule ApathyDrive.Commands.Delve do
 
   def execute(%Room{room_unity: %RoomUnity{essence_targets: targets}}, mobile) do
 
-    Enum.each(targets, fn({unity, %{"adjacent" => adj, "mobile" => mob, "local" => loc, "target" => target} = essence}) ->
+    Enum.each(targets, fn({unity, %{"adjacent" => adj, "mobile" => mob, "local" => loc, "target" => target}}) ->
       case unity do
         "good" ->
           Mobile.send_scroll(mobile, "<p><span class='white'>Good Influence:</span></p>")
