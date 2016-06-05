@@ -3,6 +3,6 @@ defmodule Mix.Tasks.DropWorld do
 
   def run(_) do
     Mix.Ecto.ensure_started(ApathyDrive.Repo, [])
-    ApathyDrive.Repo.drop_world!
+    ApathyDrive.System.drop_world!
   end
 end

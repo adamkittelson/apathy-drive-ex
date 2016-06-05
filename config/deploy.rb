@@ -38,7 +38,7 @@ namespace :db do
   task :reload do
     on roles(:app) do |host|
       last_release = capture("ls #{fetch(:deploy_to)}/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
-      execute "#{fetch(:deploy_to)}/bin/apathy_drive", "rpc", "Elixir.ApathyDrive.Repo", "drop_world!", "\"[].\""
+      execute "#{fetch(:deploy_to)}/bin/apathy_drive", "rpc", "Elixir.ApathyDrive.System", "drop_world!", "\"[].\""
       execute :pg_restore, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "#{fetch(:deploy_to)}/lib/apathy_drive-#{last_release}/priv/data.dump"
     end
     invoke "deploy:restart"
