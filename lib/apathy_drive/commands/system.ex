@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
-  alias ApathyDrive.{Area, Mobile, Repo}
+  alias ApathyDrive.{Area, Mobile, PubSub, Repo}
 
   def keywords, do: ["system", "sys"]
 
@@ -20,6 +20,13 @@ defmodule ApathyDrive.Commands.System do
 
   def execute(%Mobile{} = mobile, _args) do
     Mobile.send_scroll(mobile, "<p>You do not have permission to do that.</p>")
+  end
+
+  def execute(%Room{area: %Area{level: old_level} = area} = room, mobile, <<"set area level ", level :: binary>>) do
+    area = Area.update_level(area, level)
+    PubSub.broadcast!("areas:#{area.id}", {:update_area, area})
+    Mobile.send_scroll(mobile, "<p>#{area.name} updated from level #{old_level} to #{level}.</p>")
+    room
   end
 
   def execute(%Room{area: %Area{} = old_area} = room, mobile, <<"set area ", area :: binary>>) do

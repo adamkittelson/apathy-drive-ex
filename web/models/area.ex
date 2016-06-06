@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Area do
   use ApathyDrive.Web, :model
+  alias ApathyDrive.Area
 
   schema "areas" do
     field :name, :string
@@ -23,5 +24,12 @@ defmodule ApathyDrive.Area do
     |> validate_length(:name, min: 1, max: 20)
     |> unique_constraint(:name)
   end
+
+  def update_level(%Area{} = area, level) when is_integer(level) do
+    area
+    |> Map.put(:level, level)
+    |> Repo.save!
+  end
+  def update_level(area, level), do: update_level(area, String.to_integer(level))
 
 end

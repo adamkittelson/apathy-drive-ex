@@ -194,6 +194,7 @@ defmodule ApathyDrive.RoomServer do
 
     PubSub.subscribe("rooms")
     PubSub.subscribe("rooms:#{room.id}")
+    PubSub.subscribe("areas:#{room.area_id}")
 
     load_present_mobiles(self())
 
@@ -559,6 +560,13 @@ defmodule ApathyDrive.RoomServer do
       put_in(room.items, new_items ++ items)
       |> Repo.save
 
+    {:noreply, room}
+  end
+
+  def handle_info({:update_area, area}, room) do
+    PubSub.unsubscribe("areas:#{room.area_id}")
+    room = Room.update_area(room, area)
+    PubSub.subscribe("areas:#{area.id}")
     {:noreply, room}
   end
 

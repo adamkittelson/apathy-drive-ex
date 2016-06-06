@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Area, Match, Mobile, Room, RoomUnity, Presence}
+  alias ApathyDrive.{Area, Match, Mobile, Room, RoomUnity, Presence, PubSub}
 
   schema "rooms" do
     field :name,                     :string
@@ -44,13 +44,21 @@ defmodule ApathyDrive.Room do
   end
 
   def update_area(%Room{} = room, %Area{} = area) do
+    PubSub.unsubscribe("areas:#{room.area_id}")
+    room =
+      room
+      |> Map.put(:area, area)
+      |> Map.put(:area_id, area.id)
+      |> set_default_essence()
+      |> Repo.save!
+    PubSub.subscribe("areas:#{area.id}")
     room
-    |> Map.put(:area, area)
-    |> Map.put(:area_id, area.id)
-    |> set_default_essence()
-    |> Repo.save!
   end
 
+  def set_default_essence(%Room{room_unity: %RoomUnity{controlled_by: nil}} = room) do
+    room = Map.put(room, :default_essence, default_essence(room))
+    put_in(room.room_unity.essences["default"], room.default_essence)
+  end
   def set_default_essence(%Room{} = room) do
     Map.put(room, :default_essence, default_essence(room))
   end
