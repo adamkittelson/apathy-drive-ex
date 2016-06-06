@@ -32,9 +32,26 @@ defmodule ApathyDrive.Commands.System do
 
            Mobile.send_scroll(mobile, "<p>Area changed from \"#{old_area.name}\"(#{old_area.level}) to \"#{room.area.name}\"(#{room.area.level}).</p>")
            room
-         res ->
-           IO.inspect(res)
+         nil ->
            Mobile.send_scroll(mobile, "<p>Could not find an area named \"#{area}\".")
+           room
+       end
+  end
+
+  def execute(%Room{} = room, mobile, <<"create area ", area :: binary>>) do
+    area
+    |> Area.changeset
+    |> Repo.insert
+    |> case do
+         %Area{name: name} = area ->
+           room = Room.update_area(room, area)
+           Mobile.send_scroll(mobile, "<p>\"#{name}\" created!</p>")
+           room
+         {:error, %Ecto.Changeset{errors: errors}} ->
+           Enum.each(errors, fn {field, error} ->
+             message = ApathyDrive.ErrorHelpers.translate_error(error)
+             Mobile.send_scroll(mobile, "<p>Error: #{field} #{message}</p>")
+           end)
            room
        end
   end
