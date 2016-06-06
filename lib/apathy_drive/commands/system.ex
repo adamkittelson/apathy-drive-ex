@@ -1,30 +1,29 @@
-defmodule ApathyDrive.Commands.Set do
+defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
   alias ApathyDrive.{Area, Mobile, Repo}
 
-  def keywords, do: ["set"]
+  def keywords, do: ["system", "sys"]
 
   def execute(mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Set what?</p>")
+    Mobile.send_scroll(mobile, "<p>Invalid system command.</p>")
   end
 
   def execute(mobile, args) when is_pid(mobile) do
-    Mobile.set(mobile, args)
+    Mobile.system(mobile, Enum.join(args, " "))
   end
 
   def execute(%Mobile{spirit: %Spirit{admin: true}, room_id: room_id}, args) do
     room_id
     |> RoomServer.find
-    |> RoomServer.set(self, args)
+    |> RoomServer.system(self, args)
   end
 
   def execute(%Mobile{} = mobile, _args) do
     Mobile.send_scroll(mobile, "<p>You do not have permission to do that.</p>")
   end
 
-  def execute(%Room{area: %Area{name: old_area}} = room, mobile, ["area" | area]) do
+  def execute(%Room{area: %Area{name: old_area}} = room, mobile, <<"set area ", area :: binary>>) do
     area
-    |> Enum.join(" ")
     |> Area.find_by_name
     |> Repo.one
     |> case do
@@ -44,10 +43,10 @@ defmodule ApathyDrive.Commands.Set do
        end
   end
 
-  def execute(%Room{name: old_name} = room, mobile, ["name" | room_name]) do
+  def execute(%Room{name: old_name} = room, mobile, <<"set room name ", room_name :: binary>>) do
     room =
       room
-      |> Map.put(:name, Enum.join(room_name, " "))
+      |> Map.put(:name, room_name)
       |> Repo.save!
 
     Mobile.send_scroll(mobile, "<p>Room name changed from \"#{old_name}\" to \"#{room.name}\".</p>")
@@ -56,7 +55,7 @@ defmodule ApathyDrive.Commands.Set do
   end
 
   def execute(%Room{} = room, mobile, _args) do
-    Mobile.send_scroll(mobile, "<p>Set what?</p>")
+    Mobile.send_scroll(mobile, "<p>Invalid system command.</p>")
 
     room
   end

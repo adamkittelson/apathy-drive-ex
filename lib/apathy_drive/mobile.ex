@@ -623,8 +623,8 @@ defmodule ApathyDrive.Mobile do
     mobile
   end
 
-  def set(mobile, args) do
-    GenServer.cast(mobile, {:set, args})
+  def system(mobile, command) do
+    GenServer.cast(mobile, {:system, command})
   end
 
   def execute_room_ability(mobile, ability) do
@@ -1164,8 +1164,8 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_cast({:set, args}, mobile) do
-    Commands.Set.execute(mobile, args)
+  def handle_cast({:system, command}, mobile) do
+    Commands.System.execute(mobile, command)
     {:noreply, mobile}
   end
   
