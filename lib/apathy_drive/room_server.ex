@@ -180,7 +180,7 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       room
-      |> Map.put(:default_essence, Room.default_essence(room))
+      |> Room.set_default_essence
       |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
 
     unless room.room_unity do

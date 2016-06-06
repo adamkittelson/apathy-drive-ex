@@ -22,19 +22,15 @@ defmodule ApathyDrive.Commands.System do
     Mobile.send_scroll(mobile, "<p>You do not have permission to do that.</p>")
   end
 
-  def execute(%Room{area: %Area{name: old_area}} = room, mobile, <<"set area ", area :: binary>>) do
+  def execute(%Room{area: %Area{} = old_area} = room, mobile, <<"set area ", area :: binary>>) do
     area
     |> Area.find_by_name
     |> Repo.one
     |> case do
          %Area{} = area ->
-           room =
-             room
-             |> Map.put(:area, area)
-             |> Map.put(:area_id, area.id)
-             |> Repo.save!
+           room = Room.update_area(room, area)
 
-           Mobile.send_scroll(mobile, "<p>Area changed from \"#{old_area}\" to \"#{room.area.name}\".</p>")
+           Mobile.send_scroll(mobile, "<p>Area changed from \"#{old_area.name}\"(#{old_area.level}) to \"#{room.area.name}\"(#{room.area.level}).</p>")
            room
          res ->
            IO.inspect(res)

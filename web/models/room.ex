@@ -43,6 +43,18 @@ defmodule ApathyDrive.Room do
     room.room_unity.controlled_by
   end
 
+  def update_area(%Room{} = room, %Area{} = area) do
+    room
+    |> Map.put(:area, area)
+    |> Map.put(:area_id, area.id)
+    |> set_default_essence()
+    |> Repo.save!
+  end
+
+  def set_default_essence(%Room{} = room) do
+    Map.put(room, :default_essence, default_essence(room))
+  end
+
   def adjacent_room_data(%Room{} = room, data \\ %{}) do
     Map.merge(data, %{
       essences: room.room_unity.essences,
