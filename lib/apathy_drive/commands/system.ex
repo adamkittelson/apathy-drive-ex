@@ -9,7 +9,7 @@ defmodule ApathyDrive.Commands.System do
   end
 
   def execute(mobile, args) when is_pid(mobile) do
-    Mobile.system(mobile, Enum.join(args, " "))
+    Mobile.system(mobile, args)
   end
 
   def execute(%Mobile{spirit: %Spirit{admin: true}, room_id: room_id}, args) do
@@ -22,14 +22,16 @@ defmodule ApathyDrive.Commands.System do
     Mobile.send_scroll(mobile, "<p>You do not have permission to do that.</p>")
   end
 
-  def execute(%Room{area: %Area{level: old_level} = area} = room, mobile, <<"set area level ", level :: binary>>) do
+  def execute(%Room{area: %Area{level: old_level} = area} = room, mobile, ["set", "area", "level", level]) do
     area = Area.update_level(area, level)
     PubSub.broadcast!("areas:#{area.id}", {:update_area, area})
     Mobile.send_scroll(mobile, "<p>#{area.name} updated from level #{old_level} to #{level}.</p>")
     room
   end
 
-  def execute(%Room{area: %Area{} = old_area} = room, mobile, <<"set area ", area :: binary>>) do
+  def execute(%Room{area: %Area{} = old_area} = room, mobile, ["set", "area" | area]) do
+    area = Enum.join(area, " ")
+
     area
     |> Area.find_by_name
     |> Repo.one
@@ -45,12 +47,14 @@ defmodule ApathyDrive.Commands.System do
        end
   end
 
-  def execute(%Room{} = room, mobile, <<"create area ", area :: binary>>) do
+  def execute(%Room{} = room, mobile, ["create", "area" | area]) do
+    area = Enum.join(area, " ")
+
     area
     |> Area.changeset
     |> Repo.insert
     |> case do
-         %Area{name: name} = area ->
+         {:ok, %Area{name: name} = area} ->
            room = Room.update_area(room, area)
            Mobile.send_scroll(mobile, "<p>\"#{name}\" created!</p>")
            room
@@ -63,10 +67,10 @@ defmodule ApathyDrive.Commands.System do
        end
   end
 
-  def execute(%Room{name: old_name} = room, mobile, <<"set room name ", room_name :: binary>>) do
+  def execute(%Room{name: old_name} = room, mobile, ["set", "room", "name" | room_name]) do
     room =
       room
-      |> Map.put(:name, room_name)
+      |> Map.put(:name, Enum.join(room_name, " "))
       |> Repo.save!
 
     Mobile.send_scroll(mobile, "<p>Room name changed from \"#{old_name}\" to \"#{room.name}\".</p>")
