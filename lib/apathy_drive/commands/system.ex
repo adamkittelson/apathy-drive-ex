@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
-  alias ApathyDrive.{Area, Mobile, PubSub, Repo}
+  alias ApathyDrive.{Area, Mobile, PubSub, Repo, Room}
 
   def keywords, do: ["system", "sys"]
 
@@ -75,6 +75,20 @@ defmodule ApathyDrive.Commands.System do
 
     Mobile.send_scroll(mobile, "<p>Room name changed from \"#{old_name}\" to \"#{room.name}\".</p>")
 
+    room
+  end
+
+  def execute(%Room{} = room, mobile, ["list", "areas"]) do
+    Area.list_with_room_counts
+    |> Repo.all
+    |> Enum.chunk(10)
+    |> Enum.each(fn chunk ->
+         Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Level</span> <span class='dark-green'>|</span> <span class='dark-magenta'>Rooms</span> <span class='dark-green'>|</span> <span class='dark-magenta'>Area</span></p>")
+         Enum.each(chunk, fn [area, room_count] ->
+           Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{to_string(area.level) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{to_string(room_count) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='black'>#{area.name}</span></p>")
+         end)
+
+       end)
     room
   end
 

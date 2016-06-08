@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Area do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.Area
+  alias ApathyDrive.{Area, Room}
 
   schema "areas" do
     field :name, :string
@@ -14,6 +14,14 @@ defmodule ApathyDrive.Area do
   def find_by_name(name) do
     __MODULE__
     |> where(name: ^name)
+  end
+
+  def list_with_room_counts do
+    from room in Room,
+    join: area in assoc(room, :area),
+    group_by: area.id,
+    order_by: [area.level, area.name],
+    select: [area, count(area.id)]
   end
 
   def changeset(name) do
