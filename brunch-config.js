@@ -2,7 +2,10 @@ exports.config = {
   // See http://brunch.io/#documentation for docs.
   files: {
     javascripts: {
-      joinTo: 'js/app.js',
+      joinTo: {
+        'js/app.js': /^(?!pixi)/,
+        'js/pixi.js': /pixi/
+      },
       order: {
         before: [
           'web/static/vendor/js/jquery-1.10.2.min.js'
@@ -11,7 +14,10 @@ exports.config = {
 
     },
     stylesheets: {
-      joinTo: 'css/app.css',
+      joinTo: {
+        'css/map.css': /map/,
+        'css/app.css': /^(?!map)/
+      },
       order: {
         before: [
           'web/static/vendor/css/normalize.css',

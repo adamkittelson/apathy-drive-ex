@@ -1415,5 +1415,14 @@ textarea { resize:both; }
 .linedwrap .codelines .lineselect {
 	color: red;
 }
+/* line 1, stdin */
+html, body {
+  height: 100%;
+  width: 100%;
+  background-color: #000;
+  color: silver;
+  margin: 0;
+  padding: 0; }
+
 
 /*# sourceMappingURL=app.css.map*/

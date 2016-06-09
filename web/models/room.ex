@@ -22,6 +22,7 @@ defmodule ApathyDrive.Room do
     field :default_essence,          :integer, virtual: true
     field :essence_last_updated_at,  :integer, virtual: true
     field :essence_last_reported_at, :integer, virtual: true, default: 0
+    field :coordinates,              :map
 
     timestamps
 
@@ -31,6 +32,14 @@ defmodule ApathyDrive.Room do
     belongs_to :area, ApathyDrive.Area
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
+  end
+  
+  def world_map do
+    from room in Room,
+    where: not is_nil(room.coordinates),
+    join: area in assoc(room, :area),
+    join: room_unity in assoc(room, :room_unity),
+    select: %{id: room.id, coords: room.coordinates, area: area.name, controlled_by: room_unity.controlled_by, exits: room.exits}
   end
 
   def spirits_present?(%Room{} = room) do

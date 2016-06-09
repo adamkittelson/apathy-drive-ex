@@ -22,6 +22,7 @@ defmodule ApathyDrive.Router do
     get "/angels", FactionController, :angels
     get "/demons", FactionController, :demons
     get "/elementals", FactionController, :elementals
+    resources "/map", MapController, only: [:show], singleton: true
     resources "/sessions", SessionController
     resources "/spirits", SpiritController, only: [:create, :edit, :update],
                                             singleton: true
