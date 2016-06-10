@@ -4612,16 +4612,21 @@ var Socket = require("deps/phoenix/web/static/js/phoenix").Socket;
 $(document).ready(function () {
 
   // Autodetect, create and append the renderer to the body element
-  var renderer = PIXI.autoDetectRenderer(1200, 720, { backgroundColor: 0, antialias: true });
+  var renderer = PIXI.autoDetectRenderer(1200, 800, { backgroundColor: 0, antialias: true });
   document.body.appendChild(renderer.view);
 
   // Create the main stage for your display objects
   var stage = new PIXI.Container();
 
-  var zoom = 1;
+  var zoom = 0.1;
+  stage.scale.x = zoom;
+  stage.scale.y = zoom;
 
   // Initialize the pixi Graphics class
   var graphics = new PIXI.Graphics();
+
+  // Add the graphics to the stage
+  stage.addChild(graphics);
 
   // Start animating
   animate();
@@ -4646,8 +4651,8 @@ $(document).ready(function () {
 
       // Draw a rectangle
       // drawRect(x, y, width, height)
-      var x = room.coords.x * 32 + 500;
-      var y = room.coords.y * 32 + 3000;
+      var x = room.coords.x * 32 + 2650;
+      var y = room.coords.y * 32 + 7600;
 
       var start_x;
       var start_y;
@@ -4713,12 +4718,6 @@ $(document).ready(function () {
       });
 
       graphics.endFill();
-
-      // Add the graphics to the stage
-      stage.addChild(graphics);
-
-      stage.scale.x = zoom;
-      stage.scale.y = zoom;
     }
   };
 
@@ -4744,11 +4743,11 @@ $(document).ready(function () {
   $(document).on("keyup", function (event) {
     event.preventDefault();
     if (event.which === 187) {
-      zoom = zoom + 0.1;
+      zoom = zoom + 0.01;
       stage.scale.x = zoom;
       stage.scale.y = zoom;
     } else if (event.which === 189) {
-      zoom = zoom - 0.1;
+      zoom = zoom - 0.01;
       stage.scale.x = zoom;
       stage.scale.y = zoom;
     } else if (event.which === 38) {
