@@ -9,26 +9,22 @@ defmodule ApathyDrive.MapChannel do
   end
 
   def handle_info(:after_join, socket) do
-    rooms =
-      Room.world_map
-      |> Repo.all
-      |> Enum.reduce(%{}, fn map, rooms ->
-           directions =
-             map.exits
-             |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate"]))
-             |> Enum.map(&(&1["direction"]))
+    Room.world_map
+    |> Repo.all
+    |> Enum.each(fn room ->
+         directions =
+           room.exits
+           |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate"]))
+           |> Enum.map(&(&1["direction"]))
 
-           map =
-             map
-             |> Map.put(:directions, directions)
-             |> Map.delete(:exits)
+         room =
+           room
+           |> Map.put(:directions, directions)
+           |> Map.delete(:exits)
 
+         push socket, "update_room", room
+       end)
 
-           [%{"destination" => 6319, "direction" => "south", "kind" => "Normal"}, %{"destination" => 6317, "direction" => "southwest", "kind" => "Normal"}]
-           Map.put(rooms, to_string(map.id), Map.delete(map, :id))
-         end)
-
-    push socket, "full_map", rooms
     {:noreply, socket}
   end
 

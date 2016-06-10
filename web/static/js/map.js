@@ -9,22 +9,66 @@ $(document).ready(function() {
   // Create the main stage for your display objects
   var stage = new PIXI.Container();
 
+  stage.interactive = true;
+
+  var dragging = false;
+  var position;
+  var mouse_data;
+
+  var onDragStart = function(event) {
+    dragging = true;
+    mouse_data = event.data;
+    position = mouse_data.getLocalPosition(stage);
+  }
+
+  var onDragEnd = function(event) {
+    dragging = false;
+    mouse_data = null;
+  }
+
+  var onDragMove = function(event) {
+    if (dragging) {
+      var newPosition = mouse_data.getLocalPosition(stage);
+      var x_diff = newPosition.x - position.x;
+      var y_diff = newPosition.y - position.y;
+      stage.x = stage.x + (x_diff * zoom);
+      stage.y = stage.y + (y_diff * zoom);
+      position = newPosition;
+    }
+  }
+
+  stage
+  .on('mousedown',  onDragStart)
+  .on('touchstart', onDragStart)
+  .on('mousemove',  onDragMove)
+  .on('touchmove',  onDragMove)
+  .on('mouseup', onDragEnd)
+  .on('mouseupoutside', onDragEnd)
+  .on('touchend', onDragEnd)
+  .on('touchendoutside', onDragEnd);
+
+
   var zoom = 0.1;
   stage.scale.x = zoom;
   stage.scale.y = zoom;
 
   // Initialize the pixi Graphics class
   var graphics = new PIXI.Graphics();
-  
+
   // Add the graphics to the stage
   stage.addChild(graphics);
+
+  graphics.beginFill(0x000000);
+  // graphics.lineStyle(0, 0xFFFFFF, 1);
+  graphics.drawRect(0, 0, 1200 / zoom, 800 / zoom);
+  graphics.endFill();
 
   // Start animating
   animate();
   function animate() {
-      //Render the stage
-      renderer.render(stage);
-      requestAnimationFrame(animate);
+    //Render the stage
+    renderer.render(stage);
+    requestAnimationFrame(animate);
   }
 
   var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
@@ -51,6 +95,8 @@ $(document).ready(function() {
       var end_y;
 
       graphics.drawRect(x, y, 16, 16);
+
+      graphics.endFill();
 
       room.directions.forEach(function(direction) {
         switch (direction) {
@@ -108,28 +154,11 @@ $(document).ready(function() {
         graphics.lineTo(end_x, end_y);
       });
 
-      graphics.endFill();
-
     }
   }
 
   chan.on("update_room", function(room){
-    console.log(room);
     draw_room(room)
-  });
-
-  chan.on("presence_diff", function(message){
-    for (var key in message.joins) {
-      message.joins[key].metas.forEach(function(room) {
-        draw_room(room)
-      });
-    }
-  });
-
-  chan.on("full_map", function(world){
-    for (var room_id in world) {
-      draw_room(world[room_id])
-    }
   });
 
   $(document).on('keyup', function(event) {
