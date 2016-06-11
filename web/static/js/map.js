@@ -12,29 +12,30 @@ $(document).ready(function() {
   stage.interactive = true;
 
   var dragging = false;
-  var position;
-  var mouse_data;
+  var prevX, prevY;
 
   var onDragStart = function(event) {
+    var pos = event.data.global;
+    prevX = pos.x; prevY = pos.y;
     dragging = true;
-    mouse_data = event.data;
-    position = mouse_data.getLocalPosition(stage);
   }
 
   var onDragEnd = function(event) {
     dragging = false;
-    mouse_data = null;
   }
 
   var onDragMove = function(event) {
-    if (dragging) {
-      var newPosition = mouse_data.getLocalPosition(stage);
-      var x_diff = newPosition.x - position.x;
-      var y_diff = newPosition.y - position.y;
-      stage.x = stage.x + (x_diff * zoom);
-      stage.y = stage.y + (y_diff * zoom);
-      position = newPosition;
+    if (!dragging) {
+      return;
     }
+
+    var pos = event.data.global;
+    var dx = pos.x - prevX;
+    var dy = pos.y - prevY;
+
+    stage.position.x += dx;
+    stage.position.y += dy;
+    prevX = pos.x; prevY = pos.y;
   }
 
   stage
