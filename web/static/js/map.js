@@ -159,28 +159,42 @@ $(document).ready(function() {
 
   chan.join()
 
-  var max_z = 0;
-  var min_z = 0;
+  var map = {};
 
-  var areas = {};
+  var createArea = function(name) {
+    var area = new PIXI.Graphics();
+    // area.interactive = true;
+    area.name = name;
+    area.rooms = {};
+    // area.on('mouseover', onAreaOver)
+    stage.addChild(area);
+    return area;
+  }
 
-  var draw_room = function(room) {
+  var add_room = function(room) {
     if (room.coords) {
+      map[room.area] = map[room.area] || createArea(room.area)
+      var area = map[room.area]
+      area["rooms"][room.id] = room
+    }
+  }
 
-      areas[room.area] = areas[room.area] || {
-        rooms: {},
-        graphics: new PIXI.Graphics()
-      }
+  window.highlight_area = function(area_name) {
+    if (map[area_name]) {
+      draw_area(map[area_name], true)
+    }
+  }
 
-      areas[room.area]["rooms"][room.id] = room
+  var draw_area = function(area, highlight) {
+    area.clear();
 
-      // Set a new fill color
-      areas[room.area]["graphics"].beginFill(0x000000); // Blue
+    if (highlight) {
+      area.lineStyle(2, 0x0000FF, 1);
+    } else {
+      area.lineStyle(2, 0xFFFFFF, 1);
+    }
 
-      areas[room.area]["graphics"].lineStyle(2, 0xFFFFFF, 1);
-
-      // Draw a rectangle
-       // drawRect(x, y, width, height)
+    $.each(area.rooms, function(room_id, room) {
       var x = (room.coords.x * 32) + 2650
       var y = (room.coords.y * 32) + 7600
 
@@ -189,9 +203,17 @@ $(document).ready(function() {
       var end_x;
       var end_y;
 
-      areas[room.area]["graphics"].drawRect(x, y, 16, 16);
+      if (room.controlled_by == "good") {
+        area.beginFill(0xFFFFFF);
+      } else if (room.controlled_by == "evil") {
+        area.beginFill(0xFF00FF);
+      } else {
+        area.beginFill(0x008080);
+      }
 
-      areas[room.area]["graphics"].endFill();
+      area.drawRect(x, y, 16, 16);
+
+      area.endFill();
 
       room.directions.forEach(function(direction) {
         switch (direction) {
@@ -245,16 +267,15 @@ $(document).ready(function() {
             break;
         }
 
-        areas[room.area]["graphics"].moveTo(start_x, start_y);
-        areas[room.area]["graphics"].lineTo(end_x, end_y);
+        area.moveTo(start_x, start_y);
+        area.lineTo(end_x, end_y);
       });
-
-      stage.addChild(areas[room.area]["graphics"]);
-    }
+    });
   }
 
   chan.on("update_room", function(room){
-    draw_room(room)
+    add_room(room)
+    draw_area(map[room.area])
   });
 
   $(document).on('keyup', function(event) {
