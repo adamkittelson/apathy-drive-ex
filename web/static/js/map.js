@@ -134,16 +134,16 @@ $(document).ready(function() {
   stage.scale.x = zoom;
   stage.scale.y = zoom;
 
-  // Initialize the pixi Graphics class
-  var graphics = new PIXI.Graphics();
+  var background = new PIXI.Graphics();
+
+  background.beginFill(0x000000);
+  background.drawRect(0, 0, 1200 / zoom, 800 / zoom);
+  background.endFill();
 
   // Add the graphics to the stage
-  stage.addChild(graphics);
+  stage.addChild(background);
 
-  graphics.beginFill(0x000000);
-  // graphics.lineStyle(0, 0xFFFFFF, 1);
-  graphics.drawRect(0, 0, 1200 / zoom, 800 / zoom);
-  graphics.endFill();
+
 
   // Start animating
   animate();
@@ -159,12 +159,25 @@ $(document).ready(function() {
 
   chan.join()
 
+  var max_z = 0;
+  var min_z = 0;
+
+  var areas = {};
+
   var draw_room = function(room) {
     if (room.coords) {
-      // Set a new fill color
-      graphics.beginFill(0x000000); // Blue
 
-      graphics.lineStyle(2, 0xFFFFFF, 1);
+      areas[room.area] = areas[room.area] || {
+        rooms: {},
+        graphics: new PIXI.Graphics()
+      }
+
+      areas[room.area]["rooms"][room.id] = room
+
+      // Set a new fill color
+      areas[room.area]["graphics"].beginFill(0x000000); // Blue
+
+      areas[room.area]["graphics"].lineStyle(2, 0xFFFFFF, 1);
 
       // Draw a rectangle
        // drawRect(x, y, width, height)
@@ -176,9 +189,9 @@ $(document).ready(function() {
       var end_x;
       var end_y;
 
-      graphics.drawRect(x, y, 16, 16);
+      areas[room.area]["graphics"].drawRect(x, y, 16, 16);
 
-      graphics.endFill();
+      areas[room.area]["graphics"].endFill();
 
       room.directions.forEach(function(direction) {
         switch (direction) {
@@ -232,10 +245,11 @@ $(document).ready(function() {
             break;
         }
 
-        graphics.moveTo(start_x, start_y);
-        graphics.lineTo(end_x, end_y);
+        areas[room.area]["graphics"].moveTo(start_x, start_y);
+        areas[room.area]["graphics"].lineTo(end_x, end_y);
       });
 
+      stage.addChild(areas[room.area]["graphics"]);
     }
   }
 

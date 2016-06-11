@@ -18,4 +18,5 @@ _build
 /rel
 relx
 apathy_drive.tar.gz
-/priv/static
+/priv/static/css
+/priv/static/js
