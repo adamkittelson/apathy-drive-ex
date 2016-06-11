@@ -3,7 +3,7 @@ exports.config = {
   files: {
     javascripts: {
       joinTo: {
-        'js/app.js': /^(?!pixi)/,
+        'js/app.js': /^((?!pixi).)*$/,
         'js/pixi.js': /pixi/
       },
       order: {
@@ -16,7 +16,7 @@ exports.config = {
     stylesheets: {
       joinTo: {
         'css/map.css': /map/,
-        'css/app.css': /^(?!map)/
+        'css/app.css': /^((?!map).)*$/
       },
       order: {
         before: [
