@@ -16,9 +16,9 @@ defmodule ApathyDrive.Mixfile do
   def application do
     [
       mod: { ApathyDrive, [] },
-      applications: [:rollbax, :postgrex, :ecto, :phoenix, :cowboy, :conform, :conform_exrm,
-                     :logger, :oauth2, :phoenix_ecto, :comeonin, :runtime_tools,
-                     :tzdata, :timex_ecto, :scrivener, :phoenix_live_reload, :ex_statsd,
+      applications: [:logger, :rollbax, :postgrex, :ecto, :phoenix, :cowboy, :conform,
+                     :conform_exrm, :oauth2, :phoenix_ecto, :comeonin, :runtime_tools,
+                     :tzdata, :timex_ecto, :scrivener, :ex_statsd,
                      :phoenix_html, :inflex, :connection, :decimal, :neotoma, :phoenix_pubsub]
     ]
   end
@@ -30,7 +30,7 @@ defmodule ApathyDrive.Mixfile do
       {:postgrex,            "~> 0.11.1"},
       {:phoenix,             "~> 1.2.0-rc"},
       {:phoenix_pubsub,      "~> 1.0.0-rc"},
-      {:phoenix_live_reload, "~> 1.0.5"},
+      {:phoenix_live_reload, "~> 1.0.5", only: :dev},
       {:phoenix_ecto,        "~> 3.0-rc"},
       {:phoenix_html,        "~> 2.5.1"},
       {:timex_ecto,          github: "bitwalker/timex_ecto"},
@@ -42,7 +42,7 @@ defmodule ApathyDrive.Mixfile do
       {:conform,             "2.0.0"},
       {:conform_exrm,        "1.0.0"},
       {:ex_statsd,           "~> 0.5.3"},
-      {:rollbax,             github: "elixir-addicts/rollbax"},
+      {:rollbax,             github: "elixir-addicts/rollbax", ref: "21f53b18c55379ffd55fb23de7d0c79f1bc5221e"},
       {:shouldi,             "0.3.0", only: :test}
     ]
   end
