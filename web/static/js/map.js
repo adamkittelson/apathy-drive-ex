@@ -92,11 +92,29 @@ $(document).ready(function() {
 
   stage.interactive = true;
 
+  var findAreaByCoords = function(point) {
+    for (var area in map) {
+      for (var i = 0; i < map[area].graphicsData.length; i++) {
+        if (map[area].graphicsData[i].shape.constructor.name == "Rectangle") {
+          var shape = map[area].graphicsData[i].shape;
+          if (((shape.x <= point.x + 16) && ((shape.x + shape.width) >= point.x - 16)) && ((shape.y <= point.y + 16) && ((shape.y + shape.height) >= point.y - 16))) {
+            return area;
+          } else {
+            continue;
+          }
+        } else {
+          continue;
+        }
+      }
+    }
+  }
+
   var dragging = false;
   var prevX, prevY;
 
   var onDragStart = function(event) {
     var pos = event.data.global;
+
     prevX = pos.x; prevY = pos.y;
     dragging = true;
   }
@@ -107,6 +125,13 @@ $(document).ready(function() {
 
   var onDragMove = function(event) {
     if (!dragging) {
+      var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
+
+      var area = findAreaByCoords(local)
+
+      if (area) {
+        highlight_area(area);
+      }
       return;
     }
 
@@ -159,7 +184,7 @@ $(document).ready(function() {
 
   chan.join()
 
-  var map = {};
+  window.map = {};
 
   var createArea = function(name) {
     var area = new PIXI.Graphics();
@@ -179,8 +204,15 @@ $(document).ready(function() {
     }
   }
 
-  window.highlight_area = function(area_name) {
+  var highlighted_area;
+
+  var highlight_area = function(area_name) {
     if (map[area_name]) {
+      if (highlighted_area) {
+        draw_area(map[highlighted_area], false)
+      }
+      $("#info").text(area_name);
+      highlighted_area = area_name;
       draw_area(map[area_name], true)
     }
   }
@@ -214,6 +246,8 @@ $(document).ready(function() {
       area.drawRect(x, y, 16, 16);
 
       area.endFill();
+
+      var rect = area.graphicsData[area.graphicsData.length - 1]
 
       room.directions.forEach(function(direction) {
         switch (direction) {
