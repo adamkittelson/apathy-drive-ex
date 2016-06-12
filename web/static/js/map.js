@@ -214,6 +214,11 @@ $(document).ready(function() {
       $("#info").text(area_name);
       highlighted_area = area_name;
       draw_area(map[area_name], true)
+      
+      // puts them at the beginning of the children array
+      // which draws them above other areas on the map
+      stage.removeChild(map[area_name])
+      stage.addChild(map[area_name])
     }
   }
 
