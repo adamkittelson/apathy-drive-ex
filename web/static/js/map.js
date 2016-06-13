@@ -92,19 +92,14 @@ $(document).ready(function() {
 
   stage.interactive = true;
 
-  var findAreaByCoords = function(point) {
-    for (var area in map) {
-      for (var i = 0; i < map[area].graphicsData.length; i++) {
-        if (map[area].graphicsData[i].shape.constructor.name == "Rectangle") {
-          var shape = map[area].graphicsData[i].shape;
-          if (((shape.x <= point.x + 16) && ((shape.x + shape.width) >= point.x - 16)) && ((shape.y <= point.y + 16) && ((shape.y + shape.height) >= point.y - 16))) {
-            return area;
-          } else {
-            continue;
-          }
-        } else {
-          continue;
-        }
+  var findRoomByCoords = function(point) {
+    for (var room_id in rooms) {
+      var room = rooms[room_id];
+      var shape = room.shape;
+      if (((shape.x <= point.x + 16) && ((shape.x + shape.width) >= point.x - 16)) && ((shape.y <= point.y + 16) && ((shape.y + shape.height) >= point.y - 16))) {
+        return room;
+      } else {
+        continue;
       }
     }
   }
@@ -127,10 +122,10 @@ $(document).ready(function() {
     if (!dragging) {
       var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
 
-      var area = findAreaByCoords(local)
+      var room = findRoomByCoords(local)
 
-      if (area) {
-        highlight_area(area);
+      if (room) {
+        highlight_area(room);
       }
       return;
     }
@@ -168,8 +163,6 @@ $(document).ready(function() {
   // Add the graphics to the stage
   stage.addChild(background);
 
-
-
   // Start animating
   animate();
   function animate() {
@@ -184,54 +177,54 @@ $(document).ready(function() {
 
   chan.join()
 
-  window.map = {};
+  window.rooms = {};
+  window.areas = {};
 
-  var createArea = function(name) {
-    var area = new PIXI.Graphics();
-    // area.interactive = true;
-    area.name = name;
-    area.rooms = {};
-    // area.on('mouseover', onAreaOver)
-    stage.addChild(area);
-    return area;
-  }
-
-  var add_room = function(room) {
-    if (room.coords) {
-      map[room.area] = map[room.area] || createArea(room.area)
-      var area = map[room.area]
-      area["rooms"][room.id] = room
+  var add_room = function(room_id, room_data) {
+    if (room_data.coords) {
+      rooms[room_id] = room_data
+      areas[room_data.area] = areas[room_data.area] || {
+        map: new PIXI.Graphics(),
+        rooms: {}
+      }
+      areas[room_data.area].rooms[room_id] = room_data
     }
   }
 
   var highlighted_area;
 
-  var highlight_area = function(area_name) {
-    if (map[area_name]) {
-      if (highlighted_area) {
-        draw_area(map[highlighted_area], false)
+  var highlight_area = function(room) {
+    if (highlighted_area != room.area) {
+      var old_highlighted_area = highlighted_area;
+      highlighted_area = room.area;
+
+      if (old_highlighted_area) {
+        draw_area(old_highlighted_area);
       }
-      $("#info").text(area_name);
-      highlighted_area = area_name;
-      draw_area(map[area_name], true)
-      
-      // puts them at the beginning of the children array
-      // which draws them above other areas on the map
-      stage.removeChild(map[area_name])
-      stage.addChild(map[area_name])
+
+      stage.removeChild(areas[highlighted_area].map)
+      draw_area(highlighted_area);
+    }
+    $("#info").text(room.area + ", " + room.name);
+    // puts them at the beginning of the children array
+    // which draws them above other areas on the map
+  }
+
+  var draw_map = function() {
+    for (var area in areas) {
+      draw_area(area);
     }
   }
 
-  var draw_area = function(area, highlight) {
-    area.clear();
+  var draw_area = function(area) {
+    var map = areas[area].map;
 
-    if (highlight) {
-      area.lineStyle(2, 0x0000FF, 1);
-    } else {
-      area.lineStyle(2, 0xFFFFFF, 1);
-    }
+    stage.addChild(map);
+    map.clear();
 
-    $.each(area.rooms, function(room_id, room) {
+    for (var room_id in areas[area].rooms) {
+
+      var room = rooms[room_id]
       var x = (room.coords.x * 32) + 2650
       var y = (room.coords.y * 32) + 7600
 
@@ -241,18 +234,25 @@ $(document).ready(function() {
       var end_y;
 
       if (room.controlled_by == "good") {
-        area.beginFill(0xFFFFFF);
+        map.beginFill(0xFFFFFF);
       } else if (room.controlled_by == "evil") {
-        area.beginFill(0xFF00FF);
+        map.beginFill(0xFF00FF);
       } else {
-        area.beginFill(0x008080);
+        map.beginFill(0x008080);
       }
 
-      area.drawRect(x, y, 16, 16);
+      if (highlighted_area == room.area) {
+        map.lineStyle(2, 0x0000FF, 1);
+      } else {
+        map.lineStyle(2, 0xFFFFFF, 1);
+      }
 
-      area.endFill();
+      map.drawRect(x, y, 16, 16);
 
-      var rect = area.graphicsData[area.graphicsData.length - 1]
+      map.endFill();
+
+      var rect = map.graphicsData[map.graphicsData.length - 1].shape;
+      rooms[room_id].shape = rect;
 
       room.directions.forEach(function(direction) {
         switch (direction) {
@@ -306,36 +306,21 @@ $(document).ready(function() {
             break;
         }
 
-        area.moveTo(start_x, start_y);
-        area.lineTo(end_x, end_y);
+        map.moveTo(start_x, start_y);
+        map.lineTo(end_x, end_y);
       });
-    });
-  }
+    };
+  };
 
-  chan.on("update_room", function(room){
-    add_room(room)
-    draw_area(map[room.area])
-  });
-
-  $(document).on('keyup', function(event) {
-    event.preventDefault();
-    if (event.which === 187) {
-      zoom = zoom + 0.01;
-      stage.scale.x = zoom;
-      stage.scale.y = zoom;
-    } else if (event.which === 189) {
-      zoom = zoom - 0.01;
-      stage.scale.x = zoom;
-      stage.scale.y = zoom;
-    } else if (event.which === 38) {
-      stage.y = stage.y + 100;
-    } else if (event.which === 39) {
-      stage.x = stage.x - 100;
-    } else if (event.which === 40) {
-      stage.y = stage.y - 100;
-    } else if (event.which === 37) {
-      stage.x = stage.x + 100;
+  chan.on("update_map", function(rooms){
+    $("#info").text("Apotheosis");
+    console.log("received rooms");
+    for (var room_id in rooms) {
+      add_room(parseInt(room_id), rooms[room_id]);
     }
+    console.log("organized rooms");
+    draw_map();
+    console.log("done!");
   });
 
 });
