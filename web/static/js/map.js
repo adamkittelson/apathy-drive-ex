@@ -62,17 +62,52 @@ $(document).ready(function() {
   }
 
 // Autodetect, create and append the renderer to the body element
-  var renderer = PIXI.autoDetectRenderer(1200, 800, { backgroundColor: 0x000000, antialias: true });
+  window.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, { backgroundColor: 0x000000, antialias: true });
   document.body.appendChild(renderer.view);
 
   // Create the main stage for your display objects
-  var stage = new PIXI.Container();
+  window.stage = new PIXI.Container();
+
+
+  window.zoom = 0.1;
+  stage.scale.x = zoom;
+  stage.scale.y = zoom;
+
+  window.background = new PIXI.Graphics();
+
+  background.beginFill(0x000000);
+  background.drawRect(0, 0, window.innerWidth / zoom, window.innerHeight / zoom);
+  background.endFill();
+
+  // Add the graphics to the stage
+  stage.addChild(background);
+
+
+  window.onresize = function(event) {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+
+    //this part resizes the canvas but keeps ratio the same
+    renderer.view.style.width = w + "px";
+    renderer.view.style.height = h + "px";
+
+    background.width = w / zoom;
+    background.height = h / zoom;
+
+    //this part adjusts the ratio:
+    renderer.resize(w,h);
+  }
 
   function doZoom(x, y, isZoomIn) {
     var direction = isZoomIn ? 1 : -1;
     var factor = (1 + direction * 0.05);
     stage.scale.x *= factor;
     stage.scale.y *= factor;
+
+    zoom = stage.scale.x;
+    
+    background.width = window.innerWidth / zoom;
+    background.height = window.innerHeight / zoom;
 
     var beforeTransform = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: { x: x, y: y}});
     renderer.render(stage);
@@ -82,7 +117,9 @@ $(document).ready(function() {
     var y_diff = afterTransform.y - beforeTransform.y
 
     stage.position.x += x_diff * stage.scale.x;
+    background.position.x = -(stage.position.x / stage.scale.x)
     stage.position.y += y_diff * stage.scale.y;
+    background.position.y = -(stage.position.y / stage.scale.y)
     renderer.render(stage);
   }
 
@@ -92,11 +129,24 @@ $(document).ready(function() {
 
   stage.interactive = true;
 
+  var pointInRoom = function(point, room) {
+    var shape = room.shape;
+    return ((shape.x <= point.x + 16) && ((shape.x + shape.width) >= point.x - 16)) && ((shape.y <= point.y + 16) && ((shape.y + shape.height) >= point.y - 16));
+  }
+
   var findRoomByCoords = function(point) {
+    for (var i = 0; i < highlighted_rooms.length; i++) {
+      var room = rooms[highlighted_rooms[i]];
+      if (pointInRoom(point, room)) {
+        return room;
+      } else {
+        continue;
+      }
+    }
+
     for (var room_id in rooms) {
       var room = rooms[room_id];
-      var shape = room.shape;
-      if (((shape.x <= point.x + 16) && ((shape.x + shape.width) >= point.x - 16)) && ((shape.y <= point.y + 16) && ((shape.y + shape.height) >= point.y - 16))) {
+      if (pointInRoom(point, room)) {
         return room;
       } else {
         continue;
@@ -136,6 +186,8 @@ $(document).ready(function() {
 
     stage.position.x += dx;
     stage.position.y += dy;
+    background.position.x = -(stage.position.x / stage.scale.x)
+    background.position.y = -(stage.position.y / stage.scale.y)
     prevX = pos.x; prevY = pos.y;
   }
 
@@ -148,20 +200,6 @@ $(document).ready(function() {
   .on('mouseupoutside', onDragEnd)
   .on('touchend', onDragEnd)
   .on('touchendoutside', onDragEnd);
-
-
-  var zoom = 0.1;
-  stage.scale.x = zoom;
-  stage.scale.y = zoom;
-
-  var background = new PIXI.Graphics();
-
-  background.beginFill(0x000000);
-  background.drawRect(0, 0, 1200 / zoom, 800 / zoom);
-  background.endFill();
-
-  // Add the graphics to the stage
-  stage.addChild(background);
 
   // Start animating
   animate();
@@ -192,6 +230,7 @@ $(document).ready(function() {
   }
 
   var highlighted_area;
+  var highlighted_rooms = [];
 
   var highlight_area = function(room) {
     if (highlighted_area != room.area) {
@@ -221,6 +260,7 @@ $(document).ready(function() {
 
     stage.addChild(map);
     map.clear();
+    highlighted_rooms = [];
 
     for (var room_id in areas[area].rooms) {
 
@@ -242,6 +282,7 @@ $(document).ready(function() {
       }
 
       if (highlighted_area == room.area) {
+        highlighted_rooms.push(room_id)
         map.lineStyle(2, 0x0000FF, 1);
       } else {
         map.lineStyle(2, 0xFFFFFF, 1);
@@ -314,13 +355,10 @@ $(document).ready(function() {
 
   chan.on("update_map", function(rooms){
     $("#info").text("Apotheosis");
-    console.log("received rooms");
     for (var room_id in rooms) {
       add_room(parseInt(room_id), rooms[room_id]);
     }
-    console.log("organized rooms");
     draw_map();
-    console.log("done!");
   });
 
 });
