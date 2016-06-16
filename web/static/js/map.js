@@ -62,7 +62,7 @@ $(document).ready(function() {
   }
 
 // Autodetect, create and append the renderer to the body element
-  window.renderer = PIXI.autoDetectRenderer(window.innerWidth, window.innerHeight, { backgroundColor: 0x000000, antialias: true });
+  window.renderer = PIXI.autoDetectRenderer(400, 300, { backgroundColor: 0x000000, antialias: true });
   document.body.appendChild(renderer.view);
 
   // Create the main stage for your display objects
@@ -76,27 +76,22 @@ $(document).ready(function() {
   window.background = new PIXI.Graphics();
 
   background.beginFill(0x000000);
-  background.drawRect(0, 0, window.innerWidth / zoom, window.innerHeight / zoom);
+  background.drawRect(0, 0, $("canvas").innerWidth() / zoom, $("canvas").innerHeight() / zoom);
   background.endFill();
 
   // Add the graphics to the stage
   stage.addChild(background);
 
+  window.title = new PIXI.Graphics();
+  var title_height = 20;
 
-  window.onresize = function(event) {
-    var w = window.innerWidth;
-    var h = window.innerHeight;
+  title.beginFill(0xFFFFFF);
+  title.drawRect(0, 0, $("canvas").innerWidth() / zoom, title_height / zoom);
+  title.endFill();
 
-    //this part resizes the canvas but keeps ratio the same
-    renderer.view.style.width = w + "px";
-    renderer.view.style.height = h + "px";
+  stage.addChild(title);
 
-    background.width = w / zoom;
-    background.height = h / zoom;
 
-    //this part adjusts the ratio:
-    renderer.resize(w,h);
-  }
 
   function doZoom(x, y, isZoomIn) {
     var direction = isZoomIn ? 1 : -1;
@@ -105,9 +100,12 @@ $(document).ready(function() {
     stage.scale.y *= factor;
 
     zoom = stage.scale.x;
-    
-    background.width = window.innerWidth / zoom;
-    background.height = window.innerHeight / zoom;
+
+    background.width = $("canvas").innerWidth() / zoom;
+    background.height = $("canvas").innerHeight() / zoom;
+    title.width = $("canvas").innerWidth() / zoom;
+    title.height = title_height / zoom;
+
 
     var beforeTransform = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: { x: x, y: y}});
     renderer.render(stage);
@@ -118,8 +116,10 @@ $(document).ready(function() {
 
     stage.position.x += x_diff * stage.scale.x;
     background.position.x = -(stage.position.x / stage.scale.x)
+    title.position.x = -(stage.position.x / stage.scale.x)
     stage.position.y += y_diff * stage.scale.y;
     background.position.y = -(stage.position.y / stage.scale.y)
+    title.position.y = -(stage.position.y / stage.scale.y)
     renderer.render(stage);
   }
 
@@ -154,24 +154,35 @@ $(document).ready(function() {
     }
   }
 
-  var dragging = false;
+  var mouseDown = false;
+  var pointInTitle = false;
   var prevX, prevY;
+
+  var mouseOverTitle = function(point) {
+    return ((title.position.x <= point.x) && ((title.position.x + title.width) >= point.x)) && ((title.position.y <= point.y) && ((title.position.y + title.height) >= point.y));
+  }
 
   var onDragStart = function(event) {
     var pos = event.data.global;
+    var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
 
     prevX = pos.x; prevY = pos.y;
-    dragging = true;
+    mouseDown = true;
+    pointInTitle = mouseOverTitle(local);
   }
 
   var onDragEnd = function(event) {
-    dragging = false;
+    mouseDown = false;
+    pointInTitle = false;
   }
 
-  var onDragMove = function(event) {
-    if (!dragging) {
-      var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
+  var interactEvent;
 
+  var onDragMove = function(event) {
+
+    if (!mouseDown) {
+      var pos = event.data.global;
+      var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
       var room = findRoomByCoords(local)
 
       if (room) {
@@ -180,15 +191,34 @@ $(document).ready(function() {
       return;
     }
 
-    var pos = event.data.global;
-    var dx = pos.x - prevX;
-    var dy = pos.y - prevY;
+    if (pointInTitle && interactEvent) {
+      var target = interactEvent.target,
+          // keep the dragged position in the data-x/data-y attributes
+          x = (parseFloat(target.getAttribute('data-x')) || 0) + interactEvent.dx,
+          y = (parseFloat(target.getAttribute('data-y')) || 0) + interactEvent.dy;
 
-    stage.position.x += dx;
-    stage.position.y += dy;
-    background.position.x = -(stage.position.x / stage.scale.x)
-    background.position.y = -(stage.position.y / stage.scale.y)
-    prevX = pos.x; prevY = pos.y;
+      // translate the element
+      target.style.webkitTransform =
+      target.style.transform =
+        'translate(' + x + 'px, ' + y + 'px)';
+
+      // update the posiion attributes
+      target.setAttribute('data-x', x);
+      target.setAttribute('data-y', y);
+      return;
+    } else {
+      var pos = event.data.global;
+      var dx = pos.x - prevX;
+      var dy = pos.y - prevY;
+
+      stage.position.x += dx;
+      stage.position.y += dy;
+      background.position.x = -(stage.position.x / stage.scale.x)
+      background.position.y = -(stage.position.y / stage.scale.y)
+      title.position.x = -(stage.position.x / stage.scale.x)
+      title.position.y = -(stage.position.y / stage.scale.y)
+      prevX = pos.x; prevY = pos.y;
+    }
   }
 
   stage
@@ -259,6 +289,8 @@ $(document).ready(function() {
     var map = areas[area].map;
 
     stage.addChild(map);
+    stage.removeChild(title);
+    stage.addChild(title);
     map.clear();
     highlighted_rooms = [];
 
@@ -360,5 +392,57 @@ $(document).ready(function() {
     }
     draw_map();
   });
+
+  function dragMoveListener (event) {
+    interactEvent = event;
+    return;
+    // if (event.shiftKey) {
+    //
+    // }
+  }
+
+  interact('canvas')
+    .draggable({
+      onmove: dragMoveListener
+    })
+    .resizable({
+      preserveAspectRatio: false,
+      edges: { left: true, right: true, bottom: true, top: true }
+    })
+    .on('resizemove', function (event) {
+      var target = event.target,
+          x = (parseFloat(target.getAttribute('data-x')) || 0),
+          y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+      // update the element's style
+      target.style.width  = event.rect.width + 'px';
+      target.style.height = event.rect.height + 'px';
+
+      // translate when resizing from top or left edges
+      x += event.deltaRect.left;
+      y += event.deltaRect.top;
+
+      target.style.webkitTransform = target.style.transform =
+          'translate(' + x + 'px,' + y + 'px)';
+
+      target.setAttribute('data-x', x);
+      target.setAttribute('data-y', y);
+
+      var w = $("canvas").innerWidth();
+      var h = $("canvas").innerHeight();
+
+      //this part resizes the canvas but keeps ratio the same
+      renderer.view.style.width = w + "px";
+      renderer.view.style.height = h + "px";
+
+      background.width = w / zoom;
+      background.height = h / zoom;
+      title.width = w / zoom;
+      title.height = title_height / zoom;
+
+      //this part adjusts the ratio:
+      renderer.resize(w,h);
+    });
+
 
 });

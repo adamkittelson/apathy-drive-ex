@@ -3,8 +3,8 @@ exports.config = {
   files: {
     javascripts: {
       joinTo: {
-        'js/app.js': /^((?!pixi).)*$/,
-        'js/pixi.js': /pixi/
+        'js/app.js': /^((?!pixi|interact).)*$/,
+        'js/pixi.js': /pixi|interact/
       },
       order: {
         before: [
