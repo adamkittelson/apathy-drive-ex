@@ -11,6 +11,5 @@
   <script>require("deps/phoenix_html/web/static/js/phoenix_html");</script>
 </head>
 <body>
-  <p id="info">Loading...</p>
 </body>
 </html>

@@ -82,8 +82,17 @@ $(document).ready(function() {
   // Add the graphics to the stage
   stage.addChild(background);
 
+  window.text = new PIXI.Text('Loading...',{font: '16px Arial', fill: 0x333333, align: 'center', padding: 1});
+
+  var text_left_padding = 5;
+
+  text.scale.x = 1 / zoom;
+  text.scale.y = 1 / zoom;
+  text.position.x = text_left_padding / zoom;
+
   window.title = new PIXI.Graphics();
-  var title_height = 20;
+
+  var title_height = text.height * zoom;
 
   title.beginFill(0xFFFFFF);
   title.drawRect(0, 0, $("canvas").innerWidth() / zoom, title_height / zoom);
@@ -91,7 +100,7 @@ $(document).ready(function() {
 
   stage.addChild(title);
 
-
+  stage.addChild(text);
 
   function doZoom(x, y, isZoomIn) {
     var direction = isZoomIn ? 1 : -1;
@@ -105,6 +114,8 @@ $(document).ready(function() {
     background.height = $("canvas").innerHeight() / zoom;
     title.width = $("canvas").innerWidth() / zoom;
     title.height = title_height / zoom;
+    text.scale.x = 1 / zoom;
+    text.scale.y = 1 / zoom;
 
 
     var beforeTransform = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: { x: x, y: y}});
@@ -115,11 +126,15 @@ $(document).ready(function() {
     var y_diff = afterTransform.y - beforeTransform.y
 
     stage.position.x += x_diff * stage.scale.x;
-    background.position.x = -(stage.position.x / stage.scale.x)
-    title.position.x = -(stage.position.x / stage.scale.x)
+    background.position.x = -(stage.position.x / stage.scale.x);
+    title.position.x = -(stage.position.x / stage.scale.x);
+    text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
+
     stage.position.y += y_diff * stage.scale.y;
-    background.position.y = -(stage.position.y / stage.scale.y)
-    title.position.y = -(stage.position.y / stage.scale.y)
+    background.position.y = -(stage.position.y / stage.scale.y);
+    title.position.y = -(stage.position.y / stage.scale.y);
+    text.position.y = -(stage.position.y / stage.scale.y);
+
     renderer.render(stage);
   }
 
@@ -213,10 +228,12 @@ $(document).ready(function() {
 
       stage.position.x += dx;
       stage.position.y += dy;
-      background.position.x = -(stage.position.x / stage.scale.x)
-      background.position.y = -(stage.position.y / stage.scale.y)
-      title.position.x = -(stage.position.x / stage.scale.x)
-      title.position.y = -(stage.position.y / stage.scale.y)
+      background.position.x = -(stage.position.x / stage.scale.x);
+      background.position.y = -(stage.position.y / stage.scale.y);
+      title.position.x = -(stage.position.x / stage.scale.x);
+      title.position.y = -(stage.position.y / stage.scale.y);
+      text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
+      text.position.y = -(stage.position.y / stage.scale.y);
       prevX = pos.x; prevY = pos.y;
     }
   }
@@ -274,7 +291,7 @@ $(document).ready(function() {
       stage.removeChild(areas[highlighted_area].map)
       draw_area(highlighted_area);
     }
-    $("#info").text(room.area + ", " + room.name);
+    text.text = room.area + ", " + room.name;
     // puts them at the beginning of the children array
     // which draws them above other areas on the map
   }
@@ -291,6 +308,7 @@ $(document).ready(function() {
     stage.addChild(map);
     stage.removeChild(title);
     stage.addChild(title);
+    stage.addChild(text);
     map.clear();
     highlighted_rooms = [];
 
@@ -386,7 +404,7 @@ $(document).ready(function() {
   };
 
   chan.on("update_map", function(rooms){
-    $("#info").text("Apotheosis");
+    text.text = "Apotheosis";
     for (var room_id in rooms) {
       add_room(parseInt(room_id), rooms[room_id]);
     }
