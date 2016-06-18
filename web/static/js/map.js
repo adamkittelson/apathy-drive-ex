@@ -219,6 +219,8 @@ $(document).ready(function() {
 
         if (room) {
           highlight_area(room);
+        } else {
+          highlight_area(player.room);
         }
         return;
       }
@@ -258,6 +260,8 @@ $(document).ready(function() {
 
   window.center_on_room = function(room_id) {
     if (rooms[room_id]) {
+      player.room = rooms[room_id];
+      highlight_area(rooms[room_id]);
       var pos = rooms[room_id].shape;
       stage.position.x = (-((pos.x * stage.scale.x) - (($("canvas").innerWidth()) / 2) + ((pos.width * stage.scale.x) / 2)));
       stage.position.y = (-((pos.y * stage.scale.y) - (($("canvas").innerHeight()) / 2) + ((pos.height * stage.scale.y) / 2)));
@@ -316,6 +320,9 @@ $(document).ready(function() {
   var highlighted_rooms = [];
 
   var highlight_area = function(room) {
+    if (!room) {
+      return;
+    }
     if (highlighted_area != room.area) {
       var old_highlighted_area = highlighted_area;
       highlighted_area = room.area;
@@ -359,19 +366,27 @@ $(document).ready(function() {
       var end_x;
       var end_y;
 
-      if (room.controlled_by == "good") {
-        map.beginFill(0xFFFFFF);
-      } else if (room.controlled_by == "evil") {
-        map.beginFill(0xFF00FF);
-      } else {
-        map.beginFill(0x008080);
-      }
-
       if (highlighted_area == room.area) {
         highlighted_rooms.push(room_id)
-        map.lineStyle(2, 0x0000FF, 1);
-      } else {
         map.lineStyle(2, 0xFFFFFF, 1);
+
+        if (room.controlled_by == "good") {
+          map.beginFill(0xFFFFFF);
+        } else if (room.controlled_by == "evil") {
+          map.beginFill(0xFF00FF);
+        } else {
+          map.beginFill(0x008080);
+        }
+      } else {
+        map.lineStyle(2, 0x999999, 1);
+
+        if (room.controlled_by == "good") {
+          map.beginFill(0x999999);
+        } else if (room.controlled_by == "evil") {
+          map.beginFill(0x990099);
+        } else {
+          map.beginFill(0x002020);
+        }
       }
 
       map.drawRect(x, y, 16, 16);
