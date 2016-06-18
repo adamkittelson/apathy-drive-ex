@@ -83,6 +83,11 @@ $(document).ready(function() {
   // Add the graphics to the stage
   stage.addChild(background);
 
+  window.player = new PIXI.Graphics();
+  player.beginFill(0x000000);
+  player.drawCircle(0, 0, 5)
+  player.endFill();
+
   window.text = new PIXI.Text('Loading...',{font: '16px Arial', fill: 0x333333, align: 'center', padding: 1});
 
   var text_left_padding = 5;
@@ -252,17 +257,21 @@ $(document).ready(function() {
   }
 
   window.center_on_room = function(room_id) {
-    console.log(room_id);
-    var pos = rooms[room_id].shape;
-    stage.position.x = (-((pos.x * stage.scale.x) - (($("canvas").innerWidth()) / 2) + ((pos.width * stage.scale.x) / 2)));
-    stage.position.y = (-((pos.y * stage.scale.y) - (($("canvas").innerHeight()) / 2) + ((pos.height * stage.scale.y) / 2)));
+    if (rooms[room_id]) {
+      var pos = rooms[room_id].shape;
+      stage.position.x = (-((pos.x * stage.scale.x) - (($("canvas").innerWidth()) / 2) + ((pos.width * stage.scale.x) / 2)));
+      stage.position.y = (-((pos.y * stage.scale.y) - (($("canvas").innerHeight()) / 2) + ((pos.height * stage.scale.y) / 2)));
 
-    background.position.x = -(stage.position.x / stage.scale.x);
-    background.position.y = -(stage.position.y / stage.scale.y);
-    title.position.x = -(stage.position.x / stage.scale.x);
-    title.position.y = -(stage.position.y / stage.scale.y);
-    text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
-    text.position.y = -(stage.position.y / stage.scale.y);
+      background.position.x = -(stage.position.x / stage.scale.x);
+      background.position.y = -(stage.position.y / stage.scale.y);
+      title.position.x = -(stage.position.x / stage.scale.x);
+      title.position.y = -(stage.position.y / stage.scale.y);
+      text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
+      text.position.y = -(stage.position.y / stage.scale.y);
+      player.position.x = pos.x + 8;
+      player.position.y = pos.y + 8;
+      stage.addChild(player);
+    }
   }
 
   stage

@@ -72,7 +72,6 @@ chan.on("update prompt", function(message){
 });
 
 chan.on("update room essence", function(message) {
-  console.log("updating room essence");
   $('.room-' + message.room_id + '-default').text(message.default);
   $('.room-' + message.room_id + '-good').text(message.good);
   $('.room-' + message.room_id + '-evil').text(message.evil);
@@ -159,7 +158,7 @@ $(document).on('keyup', "input", function(event) {
     command = $(event.target).val();
     setFocus("#command").select();
     addToScroll($("#scroll"), "<p>" + $("#prompt").html() + " <span class='dark-yellow'>" + command + "</span></p>")
-    return push(event.target.id, command);
+    return window.push(event.target.id, command);
   } else if (event.which === 38) {
     return command_history("up");
   } else if (event.which === 40) {
