@@ -1225,6 +1225,7 @@ defmodule ApathyDrive.Mobile do
       RoomServer.audible_movement({:global, "room_#{destination_id}"}, nil)
 
       Mobile.look(self)
+      Mobile.update_room(self)
 
       RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} appears out of thin air!</span>", from: nil})
 
