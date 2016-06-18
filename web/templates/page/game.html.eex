@@ -5,5 +5,7 @@
 <script>var spiritID = "<%= Phoenix.Token.sign(@conn, "spirit", @current_spirit) %>"</script>
 
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script src="<%= static_path(@conn, "/js/pixi.js") %>"></script>
 <script>require("web/static/js/app")</script>
+<script>require("web/static/js/map")</script>
 <script>require("web/static/js/nav")</script>

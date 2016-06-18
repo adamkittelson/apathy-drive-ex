@@ -72,6 +72,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:teleport, room_id})
   end
 
+  def update_room(mobile) do
+    GenServer.cast(mobile, :update_room)
+  end
+
   def say(mobile, message) do
     GenServer.cast(mobile, {:say, message})
   end
@@ -1164,11 +1168,20 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
+  def handle_cast(:update_room, %Mobile{socket: nil} = mobile) do
+    {:noreply, mobile}
+  end
+  
+  def handle_cast(:update_room, %Mobile{socket: socket} = mobile) when is_pid(socket) do
+    send(socket, {:update_room, mobile.room_id})
+    {:noreply, mobile}
+  end
+
   def handle_cast({:system, command}, mobile) do
     Commands.System.execute(mobile, command)
     {:noreply, mobile}
   end
-  
+
   def handle_cast({:execute_room_ability, nil}, mobile) do
     mobile = Map.put(mobile, :room_ability, :none)
     {:noreply, mobile}

@@ -2,16 +2,12 @@ exports.config = {
   // See http://brunch.io/#documentation for docs.
   files: {
     javascripts: {
-      joinTo: {
-        'js/app.js': /^((?!pixi|interact).)*$/,
-        'js/pixi.js': /pixi|interact/
-      },
+      joinTo: 'js/app.js',
       order: {
         before: [
           'web/static/vendor/js/jquery-1.10.2.min.js'
         ]
       }
-
     },
     stylesheets: {
       joinTo: {

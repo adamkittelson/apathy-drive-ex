@@ -82,6 +82,7 @@ defmodule ApathyDrive.Commands.Move do
       RoomServer.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
 
       Mobile.look(self)
+      Mobile.update_room(self)
 
       RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: mobile.enter_message, from: mobile.room_id})
 
@@ -128,6 +129,7 @@ defmodule ApathyDrive.Commands.Move do
       RoomServer.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
 
       Mobile.look(self)
+      Mobile.update_room(self)
 
       RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: room_exit["to_message"], from: mobile.room_id})
 

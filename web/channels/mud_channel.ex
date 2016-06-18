@@ -54,12 +54,19 @@ defmodule ApathyDrive.MUDChannel do
     send(socket.assigns[:mobile], {:set_socket, self})
 
     Mobile.look(socket.assigns[:mobile])
+    Mobile.update_room(socket.assigns[:mobile])
 
     {:noreply, socket}
   end
 
   def handle_info({:disable_element, elem}, socket) do
     Phoenix.Channel.push socket, "disable", %{:html => elem}
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:update_room, room_id}, socket) do
+    Phoenix.Channel.push socket, "update_room", %{:room_id => room_id}
 
     {:noreply, socket}
   end
@@ -87,7 +94,7 @@ defmodule ApathyDrive.MUDChannel do
 
     {:noreply, socket}
   end
-  
+
   def handle_info({:update_room_essence, essence}, socket) do
     Phoenix.Channel.push socket, "update room essence", essence
 
@@ -120,6 +127,11 @@ defmodule ApathyDrive.MUDChannel do
         Mobile.execute_command(socket.assigns[:mobile], "l", [])
     end
 
+    {:noreply, socket}
+  end
+
+  def handle_in("map", "request_room_id", socket) do
+    Mobile.update_room(socket.assigns[:mobile])
     {:noreply, socket}
   end
 

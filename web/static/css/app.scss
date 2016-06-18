@@ -32,6 +32,7 @@ html, body {
   select {
     color: black;
   }
+  margin: 0 0 0 25px;
 }
 
 .header {
@@ -393,3 +394,10 @@ textarea.json {
 .linedwrap { margin-bottom: 2em;}
 
 form.link { margin-bottom: 0;}
+
+canvas {
+  position: absolute;
+  left: 70%;
+  top: 80px;
+  z-index: 1;
+}

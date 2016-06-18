@@ -63,7 +63,7 @@ $(document).ready(function() {
 
 // Autodetect, create and append the renderer to the body element
   window.renderer = PIXI.autoDetectRenderer(400, 300, { backgroundColor: 0x000000, antialias: true });
-  document.body.appendChild(renderer.view);
+  $('nav').prepend(renderer.view);
 
   // Create the main stage for your display objects
   window.stage = new PIXI.Container();
@@ -76,6 +76,7 @@ $(document).ready(function() {
   window.background = new PIXI.Graphics();
 
   background.beginFill(0x000000);
+  background.lineStyle(2, 0xFFFFFF, 1);
   background.drawRect(0, 0, $("canvas").innerWidth() / zoom, $("canvas").innerHeight() / zoom);
   background.endFill();
 
@@ -139,6 +140,7 @@ $(document).ready(function() {
   }
 
   addWheelListener($("canvas").get(0), function(e) {
+    e.preventDefault();
     doZoom(e.clientX, e.clientY, e.deltaY < 0);
   });
 
@@ -192,53 +194,65 @@ $(document).ready(function() {
   }
 
   var interactEvent;
+  var mouseOverMap = false;
+
+  $("canvas").mouseenter(function(){
+    mouseOverMap = true;
+  }).mouseleave(function(){
+    setTimeout(function(){
+      mouseOverMap = false;
+    }, 1000);
+  });
 
   var onDragMove = function(event) {
 
-    if (!mouseDown) {
-      var pos = event.data.global;
-      var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
-      var room = findRoomByCoords(local)
+    if (mouseOverMap) {
+      if (!mouseDown) {
+        var pos = event.data.global;
+        var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
+        var room = findRoomByCoords(local)
 
-      if (room) {
-        highlight_area(room);
+        if (room) {
+          highlight_area(room);
+        }
+        return;
       }
-      return;
-    }
 
-    if (pointInTitle && interactEvent) {
-      var target = interactEvent.target,
-          // keep the dragged position in the data-x/data-y attributes
-          x = (parseFloat(target.getAttribute('data-x')) || 0) + interactEvent.dx,
-          y = (parseFloat(target.getAttribute('data-y')) || 0) + interactEvent.dy;
+      if (pointInTitle && interactEvent) {
+        var target = interactEvent.target,
+            // keep the dragged position in the data-x/data-y attributes
+            x = (parseFloat(target.getAttribute('data-x')) || 0) + interactEvent.dx,
+            y = (parseFloat(target.getAttribute('data-y')) || 0) + interactEvent.dy;
 
-      // translate the element
-      target.style.webkitTransform =
-      target.style.transform =
-        'translate(' + x + 'px, ' + y + 'px)';
+        // translate the element
+        target.style.webkitTransform =
+        target.style.transform =
+          'translate(' + x + 'px, ' + y + 'px)';
 
-      // update the posiion attributes
-      target.setAttribute('data-x', x);
-      target.setAttribute('data-y', y);
-      return;
-    } else {
-      var pos = event.data.global;
-      var dx = pos.x - prevX;
-      var dy = pos.y - prevY;
+        // update the posiion attributes
+        target.setAttribute('data-x', x);
+        target.setAttribute('data-y', y);
+        return;
+      } else {
+        var pos = event.data.global;
+        var dx = pos.x - prevX;
+        var dy = pos.y - prevY;
 
-      stage.position.x += dx;
-      stage.position.y += dy;
-      background.position.x = -(stage.position.x / stage.scale.x);
-      background.position.y = -(stage.position.y / stage.scale.y);
-      title.position.x = -(stage.position.x / stage.scale.x);
-      title.position.y = -(stage.position.y / stage.scale.y);
-      text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
-      text.position.y = -(stage.position.y / stage.scale.y);
-      prevX = pos.x; prevY = pos.y;
+        stage.position.x += dx;
+        stage.position.y += dy;
+        background.position.x = -(stage.position.x / stage.scale.x);
+        background.position.y = -(stage.position.y / stage.scale.y);
+        title.position.x = -(stage.position.x / stage.scale.x);
+        title.position.y = -(stage.position.y / stage.scale.y);
+        text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
+        text.position.y = -(stage.position.y / stage.scale.y);
+        prevX = pos.x; prevY = pos.y;
+      }
     }
   }
 
   window.center_on_room = function(room_id) {
+    console.log(room_id);
     var pos = rooms[room_id].shape;
     stage.position.x = (-((pos.x * stage.scale.x) - (($("canvas").innerWidth()) / 2) + ((pos.width * stage.scale.x) / 2)));
     stage.position.y = (-((pos.y * stage.scale.y) - (($("canvas").innerHeight()) / 2) + ((pos.height * stage.scale.y) / 2)));
@@ -422,14 +436,12 @@ $(document).ready(function() {
       add_room(parseInt(room_id), rooms[room_id]);
     }
     draw_map();
+    push("map", "request_room_id")
   });
 
   function dragMoveListener (event) {
     interactEvent = event;
     return;
-    // if (event.shiftKey) {
-    //
-    // }
   }
 
   interact('canvas')

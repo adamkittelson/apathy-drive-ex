@@ -47,8 +47,12 @@ var chan = socket.channel("mud:play", {spirit: spiritID});
 
 chan.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
 
-chan.on("room", function(message){
-  updateRoom(message.html);
+// chan.on("room", function(message){
+//   updateRoom(message.html);
+// });
+
+chan.on("update_room", function(message){
+  center_on_room(message.room_id);
 });
 
 chan.on("clear scroll", function(message){
@@ -86,7 +90,7 @@ chan.on("scroll", function(message){
   addToScroll("#scroll", message.html);
 });
 
-push = function(event, message) {
+window.push = function(event, message) {
    chan.push(event, message)
   };
 
