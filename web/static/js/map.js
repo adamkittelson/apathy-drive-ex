@@ -219,6 +219,7 @@ $(document).ready(function() {
 
         if (room) {
           highlight_area(room);
+          text.text = room.area + " - " + room.name;
         } else {
           highlight_area(player.room);
         }
@@ -334,7 +335,7 @@ $(document).ready(function() {
       stage.removeChild(areas[highlighted_area].map)
       draw_area(highlighted_area);
     }
-    text.text = room.area + ", " + room.name;
+    text.text = room.area;
     // puts them at the beginning of the children array
     // which draws them above other areas on the map
   }
