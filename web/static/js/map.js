@@ -69,7 +69,7 @@ $(document).ready(function() {
   window.stage = new PIXI.Container();
 
 
-  window.zoom = 0.1;
+  window.zoom = 1;
   stage.scale.x = zoom;
   stage.scale.y = zoom;
 
@@ -236,6 +236,19 @@ $(document).ready(function() {
       text.position.y = -(stage.position.y / stage.scale.y);
       prevX = pos.x; prevY = pos.y;
     }
+  }
+
+  window.center_on_room = function(room_id) {
+    var pos = rooms[room_id].shape;
+    stage.position.x = (-((pos.x * stage.scale.x) - (($("canvas").innerWidth()) / 2) + ((pos.width * stage.scale.x) / 2)));
+    stage.position.y = (-((pos.y * stage.scale.y) - (($("canvas").innerHeight()) / 2) + ((pos.height * stage.scale.y) / 2)));
+
+    background.position.x = -(stage.position.x / stage.scale.x);
+    background.position.y = -(stage.position.y / stage.scale.y);
+    title.position.x = -(stage.position.x / stage.scale.x);
+    title.position.y = -(stage.position.y / stage.scale.y);
+    text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
+    text.position.y = -(stage.position.y / stage.scale.y);
   }
 
   stage
