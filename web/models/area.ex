@@ -18,6 +18,7 @@ defmodule ApathyDrive.Area do
 
   def list_with_room_counts do
     from room in Room,
+    where: not is_nil(room.coordinates),
     join: area in assoc(room, :area),
     group_by: area.id,
     order_by: [area.level, area.name],
