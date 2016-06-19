@@ -203,11 +203,13 @@ $(document).ready(function() {
     onDragMove(event);
   }).mousedown(function(event) {
     onDragStart(event);
-  }).mouseup(function(event) {
-    onDragEnd(event);
   }).mouseleave(function(event) {
     highlight_area(player.room);
   });
+
+  $(document).mouseup(function(event) {
+    onDragEnd(event);
+  })
 
   var onDragMove = function(event) {
 
