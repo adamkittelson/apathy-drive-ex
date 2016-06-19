@@ -185,10 +185,9 @@ $(document).ready(function() {
   }
 
   var onDragStart = function(event) {
-    var pos = event.data.global;
-    var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
+    var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: { x: event.clientX, y: event.clientY}});
 
-    prevX = pos.x; prevY = pos.y;
+    prevX = event.clientX; prevY = event.clientY;
     mouseDown = true;
     pointInTitle = mouseOverTitle(local);
   }
@@ -199,63 +198,62 @@ $(document).ready(function() {
   }
 
   var interactEvent;
-  var mouseOverMap = false;
 
-  $("canvas").mouseenter(function(){
-    mouseOverMap = true;
-  }).mouseleave(function(){
-    setTimeout(function(){
-      mouseOverMap = false;
-    }, 1000);
+  $("canvas").mousemove(function(event) {
+    onDragMove(event);
+  }).mousedown(function(event) {
+    onDragStart(event);
+  }).mouseup(function(event) {
+    onDragEnd(event);
+  }).mouseleave(function(event) {
+    highlight_area(player.room);
   });
 
   var onDragMove = function(event) {
 
-    if (mouseOverMap) {
-      if (!mouseDown) {
-        var pos = event.data.global;
-        var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
-        var room = findRoomByCoords(local)
+    var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: { x: event.clientX, y: event.clientY}});
 
-        if (room) {
-          highlight_area(room);
-          text.text = room.area + " - " + room.name;
-        } else {
-          highlight_area(player.room);
-        }
-        return;
+    if (!mouseDown) {
+      // var pos = event.data.global;
+      // var local = renderer.plugins.interaction.mouse.getLocalPosition(stage, {global: pos});
+      var room = findRoomByCoords(local)
+
+      if (room) {
+        highlight_area(room);
+        text.text = room.area + " - " + room.name;
       }
+      return;
+    }
 
-      if (pointInTitle && interactEvent) {
-        var target = interactEvent.target,
-            // keep the dragged position in the data-x/data-y attributes
-            x = (parseFloat(target.getAttribute('data-x')) || 0) + interactEvent.dx,
-            y = (parseFloat(target.getAttribute('data-y')) || 0) + interactEvent.dy;
+    if (pointInTitle && interactEvent) {
+      var target = interactEvent.target,
+          // keep the dragged position in the data-x/data-y attributes
+          x = (parseFloat(target.getAttribute('data-x')) || 0) + interactEvent.dx,
+          y = (parseFloat(target.getAttribute('data-y')) || 0) + interactEvent.dy;
 
-        // translate the element
-        target.style.webkitTransform =
-        target.style.transform =
-          'translate(' + x + 'px, ' + y + 'px)';
+      // translate the element
+      target.style.webkitTransform =
+      target.style.transform =
+        'translate(' + x + 'px, ' + y + 'px)';
 
-        // update the posiion attributes
-        target.setAttribute('data-x', x);
-        target.setAttribute('data-y', y);
-        return;
-      } else {
-        var pos = event.data.global;
-        var dx = pos.x - prevX;
-        var dy = pos.y - prevY;
+      // update the posiion attributes
+      target.setAttribute('data-x', x);
+      target.setAttribute('data-y', y);
+      return;
+    } else {
+      var pos = { x: event.clientX, y: event.clientY };
+      var dx = pos.x - prevX;
+      var dy = pos.y - prevY;
 
-        stage.position.x += dx;
-        stage.position.y += dy;
-        background.position.x = -(stage.position.x / stage.scale.x);
-        background.position.y = -(stage.position.y / stage.scale.y);
-        title.position.x = -(stage.position.x / stage.scale.x);
-        title.position.y = -(stage.position.y / stage.scale.y);
-        text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
-        text.position.y = -(stage.position.y / stage.scale.y);
-        prevX = pos.x; prevY = pos.y;
-      }
+      stage.position.x += dx;
+      stage.position.y += dy;
+      background.position.x = -(stage.position.x / stage.scale.x);
+      background.position.y = -(stage.position.y / stage.scale.y);
+      title.position.x = -(stage.position.x / stage.scale.x);
+      title.position.y = -(stage.position.y / stage.scale.y);
+      text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
+      text.position.y = -(stage.position.y / stage.scale.y);
+      prevX = pos.x; prevY = pos.y;
     }
   }
 
@@ -278,16 +276,6 @@ $(document).ready(function() {
       stage.addChild(player);
     }
   }
-
-  stage
-  .on('mousedown',  onDragStart)
-  .on('touchstart', onDragStart)
-  .on('mousemove',  onDragMove)
-  .on('touchmove',  onDragMove)
-  .on('mouseup', onDragEnd)
-  .on('mouseupoutside', onDragEnd)
-  .on('touchend', onDragEnd)
-  .on('touchendoutside', onDragEnd);
 
   // Start animating
   animate();
@@ -336,6 +324,7 @@ $(document).ready(function() {
       draw_area(highlighted_area);
     }
     text.text = room.area;
+    stage.addChild(player);
     // puts them at the beginning of the children array
     // which draws them above other areas on the map
   }
