@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
+  require Ecto.Query
   alias ApathyDrive.{Area, Mobile, PubSub, Repo, Room}
 
   def keywords, do: ["system", "sys"]
@@ -90,6 +91,29 @@ defmodule ApathyDrive.Commands.System do
 
        end)
     room
+  end
+
+  def execute(%Room{} = room, mobile, ["goto" | area]) do
+    area = Enum.join(area, " ")
+
+
+    area
+    |> Area.find_by_name
+    |> Repo.one
+    |> case do
+         %Area{} = area ->
+           %Room{id: room_id} =
+             Ecto.assoc(area, :rooms)
+             |> Ecto.Query.limit(1)
+             |> Ecto.Query.select([:id])
+             |> ApathyDrive.Repo.one
+
+           Mobile.teleport(mobile, room_id)
+           room
+         nil ->
+           Mobile.send_scroll(mobile, "<p>Could not find an area named \"#{area}\".")
+           room
+       end
   end
 
   def execute(%Room{} = room, mobile, _args) do

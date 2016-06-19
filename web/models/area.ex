@@ -21,7 +21,7 @@ defmodule ApathyDrive.Area do
     where: not is_nil(room.coordinates),
     join: area in assoc(room, :area),
     group_by: area.id,
-    order_by: [area.level, area.name],
+    order_by: [desc: area.level, desc: count(area.id), asc: area.name],
     select: [area, count(area.id)]
   end
 
