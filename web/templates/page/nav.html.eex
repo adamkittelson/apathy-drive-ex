@@ -31,23 +31,6 @@
           </ul>
         </div>
       </li>
-      <li class="navbar-item"><a class="navbar-link" href="/#the-war">The War</a></li>
-      <li class="navbar-item">
-        <a class="navbar-link" href="#factions" data-popover="#factionsPopover">Factions</a>
-        <div id="factionsPopover" class="popover">
-          <ul class="popover-list">
-            <li class="popover-item">
-              <a class="popover-link" href="/angels">Angels</a>
-            </li>
-            <li class="popover-item">
-              <a class="popover-link" href="/demons">Demons</a>
-            </li>
-            <li class="popover-item">
-              <a class="popover-link" href="/elementals">Elementals</a>
-            </li>
-          </ul>
-        </div>
-      </li>
       <%= if @conn.assigns[:admin?] do %>
         <li class="navbar-item">
           <a class="navbar-link" href="#system" data-popover="#systemPopover">System</a>
