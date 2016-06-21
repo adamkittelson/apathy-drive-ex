@@ -22,7 +22,6 @@ defmodule ApathyDrive.MapChannel do
              room
              |> Map.put(:directions, directions)
              |> Map.delete(:exits)
-             |> Map.delete(:id)
 
            Map.put(map, to_string(id), room)
          end)

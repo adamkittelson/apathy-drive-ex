@@ -74,6 +74,8 @@ defmodule ApathyDrive.Commands.System do
       |> Map.put(:name, Enum.join(room_name, " "))
       |> Repo.save!
 
+    ApathyDrive.Endpoint.broadcast!("map", "room name change", %{room_id: room.id, name: room.name})
+
     Mobile.send_scroll(mobile, "<p>Room name changed from \"#{old_name}\" to \"#{room.name}\".</p>")
 
     room
