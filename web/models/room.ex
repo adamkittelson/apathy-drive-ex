@@ -52,7 +52,7 @@ defmodule ApathyDrive.Room do
     room.room_unity.controlled_by
   end
 
-  def update_area(%Room{} = room, %Area{} = area) do
+  def update_area(%Room{area: %Area{name: old_area}} = room, %Area{} = area) do
     PubSub.unsubscribe("areas:#{room.area_id}")
     room =
       room
@@ -61,6 +61,7 @@ defmodule ApathyDrive.Room do
       |> set_default_essence()
       |> Repo.save!
     PubSub.subscribe("areas:#{area.id}")
+    ApathyDrive.Endpoint.broadcast!("map", "area_change", %{room_id: room.id, old_area: old_area, new_area: area.name})
     room
   end
 

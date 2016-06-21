@@ -693,7 +693,6 @@ defmodule ApathyDrive.RoomServer do
       if room.coordinates do
         room
       else
-        ApathyDrive.Endpoint.broadcast!("map", "update_room", %{area: room.area.name, controlled_by: room.room_unity.controlled_by, coords: %{"x" => 0, "y" => 0, "z" => 0}})
         room
         |> Map.put(:coordinates, %{"x" => 0, "y" => 0, "z" => 0})
         |> Repo.save!
@@ -762,7 +761,6 @@ defmodule ApathyDrive.RoomServer do
       if room.coordinates do
         room
       else
-        ApathyDrive.Endpoint.broadcast!("map", "update_room", %{area: room.area.name, controlled_by: room.room_unity.controlled_by, coords: report.set_coords})
         room
         |> Map.put(:coordinates, report.set_coords)
         |> Repo.save!

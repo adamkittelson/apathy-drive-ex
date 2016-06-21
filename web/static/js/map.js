@@ -455,6 +455,17 @@ $(document).ready(function() {
     push("map", "request_room_id")
   });
 
+  chan.on("area_change", function(data) {
+    var room = areas[data.old_area].rooms[data.room_id]
+    room.area = data.new_area
+    delete areas[data.old_area].rooms[data.room_id]
+    add_room(data.room_id, room)
+
+    draw_area(data.old_area)
+    draw_area(data.new_area)
+    center_on_room(data.room_id)
+  });
+
   function dragMoveListener (event) {
     interactEvent = event;
     return;
