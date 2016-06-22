@@ -68,6 +68,10 @@ defmodule ApathyDrive.Mobile do
     GenServer.start_link(__MODULE__, id, opts)
   end
 
+  def toggle_invisibility(mobile) do
+    GenServer.cast(mobile, :toggle_invisibility)
+  end
+
   def teleport(mobile, room_id) do
     GenServer.cast(mobile, {:teleport, room_id})
   end
@@ -935,6 +939,11 @@ defmodule ApathyDrive.Mobile do
     "<span class='#{alignment_color(mobile)}'>#{name}</span>"
   end
 
+  def track(%Mobile{spirit: %Spirit{invisible: true}} = mobile) do
+    mobile.room_id
+    |> RoomServer.find
+    |> RoomServer.toggle_rapid_essence_updates
+  end
   def track(%Mobile{} = mobile) do
     send(self(), {:also_here, Presence.metas("rooms:#{mobile.room_id}:mobiles")})
     {:ok, _} = Presence.track(self(), "rooms:#{mobile.room_id}:mobiles", self(), track_data(mobile))
@@ -1187,6 +1196,18 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:execute_room_ability, ability}, mobile) do
     mobile = Map.put(mobile, :room_ability, ability)
     send(self(), :execute_room_ability)
+    {:noreply, mobile}
+  end
+
+  def handle_cast(:toggle_invisibility, %Mobile{spirit: %Spirit{invisible: true}} = mobile) do
+    send_scroll(mobile, "<p>You are no longer invisible.</p>")
+    mobile = put_in(mobile.spirit.invisible, false)
+    {:noreply, mobile}
+  end
+
+  def handle_cast(:toggle_invisibility, %Mobile{spirit: %Spirit{invisible: false}} = mobile) do
+    send_scroll(mobile, "<p>You are now invisible.</p>")
+    mobile = put_in(mobile.spirit.invisible, true)
     {:noreply, mobile}
   end
 

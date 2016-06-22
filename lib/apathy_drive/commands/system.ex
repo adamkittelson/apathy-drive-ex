@@ -29,6 +29,11 @@ defmodule ApathyDrive.Commands.System do
     Mobile.send_scroll(mobile, "<p>#{area.name} updated from level #{old_level} to #{level}.</p>")
     room
   end
+  
+  def execute(room, mobile, ["invis"]) do
+    Mobile.toggle_invisibility(mobile)
+    room
+  end
 
   def execute(%Room{area: %Area{} = old_area} = room, mobile, ["set", "area" | area]) do
     area = Enum.join(area, " ")

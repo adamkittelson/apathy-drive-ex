@@ -37,8 +37,8 @@ defmodule ApathyDrive.Commands.Look do
           "cyan"
       end
 
-    good        = Map.get(room.room_unity.essences, "good", 0)
-    evil   = Map.get(room.room_unity.essences, "evil", 0)
+    good = Map.get(room.room_unity.essences, "good", 0)
+    evil = Map.get(room.room_unity.essences, "evil", 0)
     default = Map.get(room.room_unity.essences, "default", 0)
 
     Mobile.send_scroll(mobile, "<p><span class='#{name_color}'>#{room.name}</span> (<span class='white room-#{room.id}-good'>#{trunc(good)}</span>/<span class='cyan room-#{room.id}-default'>#{trunc(default)}</span>/<span class='magenta room-#{room.id}-evil'>#{trunc(evil)}</span>)</p>")

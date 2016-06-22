@@ -22,6 +22,7 @@ defmodule Spirit do
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
+    field :invisible,         :boolean, virtual: true, default: false
     field :socket,            :any, virtual: true
     field :socket_pid,        :any, virtual: true
     field :pid,               :any, virtual: true
