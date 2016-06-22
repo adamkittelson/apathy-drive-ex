@@ -96,7 +96,7 @@ defmodule ApathyDrive.Match do
   def indexify_number(number) do
     number
     |> String.to_integer
-    |> -(1)
+    |> Kernel.-(1)
     |> max(0)
   end
 

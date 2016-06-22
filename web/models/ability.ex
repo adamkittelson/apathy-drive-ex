@@ -97,45 +97,6 @@ defmodule ApathyDrive.Ability do
   def scale_effect(%Mobile{} = _mobile, value) when is_number(value), do: value
   def scale_effect(%Mobile{} = _mobile, value) when is_binary(value), do: value
 
-  def scale_effect(%Mobile{} = mobile, effect_name, %{"scaling" => scaling} = effect) do
-    cap_min = Map.get(effect, "cap_min", :infinity)
-    cap_max = Map.get(effect, "cap_max", :infinity)
-
-    effect = scaling
-             |> Map.keys
-             |> Enum.reduce(effect, fn(skill_name, effect) ->
-                  skill = if skill_name == "level" do
-                    case mobile do
-                      %Mobile{spirit: %Spirit{level: level}} ->
-                        level
-                      %Mobile{level: level} ->
-                        level
-                    end
-                  else
-                    Mobile.modified_skill(mobile, skill_name)
-                  end
-
-
-                  min = if scaling[skill_name]["min_every"] do
-                    trunc(skill / scaling[skill_name]["min_every"]) * scaling[skill_name]["min_increase"]
-                  else
-                    0
-                  end
-
-                  max = if scaling[skill_name]["max_every"] do
-                    trunc(skill / scaling[skill_name]["max_every"]) * scaling[skill_name]["max_increase"]
-                  else
-                    0
-                  end
-
-                  effect
-                  |> update_in(["base_min"], fn(base_min) -> min(base_min + min, cap_min) end)
-                  |> update_in(["base_max"], fn(base_max) -> min(base_max + max, cap_max) end)
-                end)
-             |> Map.drop(["scaling"])
-    scale_effect(mobile, effect_name, effect)
-  end
-
   def scale_effect(%Mobile{} = mobile, "damage", %{"base_min" => base_min, "base_max" => base_max}) do
     base_max = base_max + Mobile.effect_bonus(mobile, "increase max damage")
     base_min..base_max
@@ -390,22 +351,25 @@ defmodule ApathyDrive.Ability do
 
     display_pre_cast_message(mobile, ability, targets)
 
-    if mobile.combo && mobile.combo == get_in(ability, ["combo", "previous"]) do
-      ability =
+    ability =
+      if mobile.combo && mobile.combo == get_in(ability, ["combo", "previous"]) do
         ability
         |> Map.merge(ability["combo"])
         |> Map.delete("previous")
-    end
+      else
+        ability
+      end
 
     mobile = mobile
              |> apply_cooldown(ability)
              |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
 
-    if ability["set_combo"] do
-      mobile =
+    mobile = 
+      if ability["set_combo"] do
+        Map.put(mobile, :combo, ability["set_combo"])
+      else
         mobile
-        |> Map.put(:combo, ability["set_combo"])
-    end
+      end
 
     Mobile.update_prompt(mobile)
 
@@ -535,7 +499,7 @@ defmodule ApathyDrive.Ability do
            total + Mobile.attribute(attacker, String.to_existing_atom(stat))
          end)
       |> div(length(stats))
-      |> +(Mobile.effect_bonus(mobile, "Accuracy"))
+      |> Kernel.+(Mobile.effect_bonus(mobile, "Accuracy"))
 
     dodge = Mobile.agility(mobile) + Mobile.effect_bonus(mobile, "Dodge")
 
@@ -662,11 +626,14 @@ defmodule ApathyDrive.Ability do
         |> Mobile.add_experience(-essence_damage)
       end
 
-    unless mobile.pid == ability_user.pid do
-      enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))
+    mobile =
+      if mobile.pid == ability_user.pid do
+        mobile
+      else
+        enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))
 
-      mobile = put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + enmity end))
-    end
+        put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + enmity end))
+      end
 
     trigger_damage_shields(mobile, ability_user)
 
@@ -800,9 +767,12 @@ defmodule ApathyDrive.Ability do
                              } = ability,
                             ability_user) do
 
-     if Map.has_key? effects, "after_cast" do
-       effects = put_in effects, ["after_cast", "ability_user"], ability_user
-     end
+     effects = 
+       if Map.has_key? effects, "after_cast" do
+         put_in effects, ["after_cast", "ability_user"], ability_user
+       else
+         effects
+       end
 
      mobile
      |> Systems.Effect.add(effects, Map.get(ability, "duration", 0))

@@ -167,16 +167,15 @@ defmodule ApathyDrive.Mobile do
 
 
     if (mobile.level != level) or (initial_spirit_level != (mobile.spirit && mobile.spirit.level)) do
-      mobile =
-        mobile
-        |> set_abilities
-        |> set_max_mana
-        |> set_mana
-        |> set_max_hp
-        |> set_hp
+      mobile
+      |> set_abilities
+      |> set_max_mana
+      |> set_mana
+      |> set_max_hp
+      |> set_hp
+    else
+      mobile
     end
-
-    mobile
   end
 
   def add_form(mobile, item) do
@@ -1017,7 +1016,9 @@ defmodule ApathyDrive.Mobile do
         1 / 60 / 60
       end
 
-    if target_essence && trunc(amount_to_shift = (target_essence - current_essence) * rate * (time - last_update)) != 0 do
+    amount_to_shift = (target_essence - current_essence) * rate * (time - last_update)
+
+    if target_essence && trunc(amount_to_shift) != 0 do
       mobile
       |> add_experience(amount_to_shift)
       |> Map.put(:essence_last_updated_at, time)
@@ -1171,7 +1172,7 @@ defmodule ApathyDrive.Mobile do
   def handle_cast(:update_room, %Mobile{socket: nil} = mobile) do
     {:noreply, mobile}
   end
-  
+
   def handle_cast(:update_room, %Mobile{socket: socket} = mobile) when is_pid(socket) do
     send(socket, {:update_room, mobile.room_id})
     {:noreply, mobile}
@@ -1595,9 +1596,10 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:territory, controlled_by, count}, %Mobile{spirit: %Spirit{}} = mobile) do
     if controlled_by in mobile.spirit.class.unities do
-      mobile = put_in(mobile.spirit.unity_bonus[controlled_by], count)
+      {:noreply, put_in(mobile.spirit.unity_bonus[controlled_by], count)}
+    else
+      {:noreply, mobile}
     end
-    {:noreply, mobile}
   end
 
   def handle_info({:audible_movement, direction}, mobile) do
@@ -1668,8 +1670,9 @@ defmodule ApathyDrive.Mobile do
     {:noreply, move_after(mobile)}
   end
   def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
-    if should_move?(mobile) && (room = RoomServer.find(mobile.room_id)) do
-      RoomServer.auto_move(room, self, mobile.unities)
+    if should_move?(mobile) do
+      room = RoomServer.find(mobile.room_id)
+      if room, do: RoomServer.auto_move(room, self, mobile.unities)
     end
     {:noreply, move_after(mobile)}
   end

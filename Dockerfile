@@ -1,4 +1,4 @@
-FROM trenpixster/elixir:1.2.0
+FROM trenpixster/elixir:1.3.0
 
 ADD . /usr/src/app
 WORKDIR /usr/src/app

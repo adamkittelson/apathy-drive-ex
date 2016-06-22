@@ -1,7 +1,7 @@
 defmodule ApathyDrive.LairController do
   use ApathyDrive.Web, :controller
 
-  alias ApathyDrive.LairMonster
+  alias ApathyDrive.{LairMonster, Room}
 
   plug :scrub_params, "lair_monster" when action in [:create, :update]
 

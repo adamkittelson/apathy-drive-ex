@@ -13,7 +13,7 @@ defmodule ApathyDrive.Command do
      Commands.Cooldowns, Commands.Delve, Commands.Drop, Commands.Experience,
      Commands.Forms, Commands.Get, Commands.Gossip, Commands.Greet,
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
-     Commands.Possess, Commands.Protection, Commands.Remove, Commands.Return,
+     Commands.Possess, Commands.Remove, Commands.Return,
      Commands.Say, Commands.Score, Commands.Search, Commands.System,
      Commands.Unpossess, Commands.Wear, Commands.Who]
   end
@@ -33,7 +33,7 @@ defmodule ApathyDrive.Command do
       scripts = Room.command(room, full_command) ->
         Mobile.execute_room_command(mobile, scripts)
       command_exit = Room.command_exit(room, full_command) ->
-        Commands.Move.execute(room, mobile, Map.put(command_exit, "kind", "Action"), nil)
+        Commands.Move.execute(room, mobile, Map.put(command_exit, "kind", "Action"))
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
         Mobile.trigger_remote_action(mobile, remote_action_exit)
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->

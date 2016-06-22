@@ -51,10 +51,17 @@ defmodule ApathyDrive.Router do
     spirit_id = conn
                 |> get_session(:current_spirit)
 
-    if spirit_id && (spirit = ApathyDrive.Repo.get(Spirit, spirit_id)) do
-      conn
-      |> assign(:current_spirit, spirit_id)
-      |> assign(:admin?, spirit.admin)
+    if spirit_id do
+      spirit = ApathyDrive.Repo.get(Spirit, spirit_id)
+
+      if spirit do
+        conn
+        |> assign(:current_spirit, spirit_id)
+        |> assign(:admin?, spirit.admin)
+      else
+        conn
+        |> put_session(:current_spirit, nil)
+      end
     else
       conn
       |> put_session(:current_spirit, nil)

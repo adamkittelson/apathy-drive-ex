@@ -183,13 +183,15 @@ defmodule ApathyDrive.RoomServer do
       |> Room.set_default_essence
       |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
 
-    unless room.room_unity do
+    if room.room_unity do
+      room
+    else
       room_unity =
         room
         |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => room.default_essence})
         |> Repo.save!
 
-      room = %{room | room_unity: room_unity}
+      %{room | room_unity: room_unity}
     end
 
     PubSub.subscribe("rooms")
@@ -202,15 +204,17 @@ defmodule ApathyDrive.RoomServer do
       send(self, :spawn_monsters)
     end
 
-    if room.ability_id do
-      ability =
-        Repo.get(Ability, room.ability_id).properties
-        |> Map.put("ignores_global_cooldown", true)
+    room =
+      if room.ability_id do
+        ability =
+          Repo.get(Ability, room.ability_id).properties
+          |> Map.put("ignores_global_cooldown", true)
 
-      room =
         room
         |> Map.put(:room_ability, ability)
-    end
+      else
+        room
+      end
 
     Process.send_after(self(), :save, 2000)
 
@@ -246,7 +250,7 @@ defmodule ApathyDrive.RoomServer do
         room =
           room
           |> Map.put(:items, List.delete(room.items, actual_item.item))
-          |> Room.save!
+          |> Repo.save
         {:reply, {:ok, actual_item.item}, room}
       true ->
         {:reply, :not_found, room}
@@ -308,7 +312,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_cast({:create_monster, monster_template_id}, room) do
     monster =
       monster_template_id
-      |> MobileTemplate.create_monster(room)
+      |> MonsterTemplate.create_monster(room)
       |> Mobile.load
 
     Mobile.display_enter_message(monster, self())
@@ -550,7 +554,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_cast({:add_item, item}, %Room{items: items} = room) do
     room =
       put_in(room.items, [item | items])
-      |> Room.save!
+      |> Repo.save
 
     {:noreply, room}
   end
@@ -579,6 +583,8 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:spawn_monsters,
                   %{:lair_next_spawn_at => lair_next_spawn_at} = room) do
 
+    :erlang.send_after(5000, self, :spawn_monsters)
+
     if DateTime.to_secs(DateTime.now) >= lair_next_spawn_at do
 
       room_pid = self()
@@ -591,11 +597,12 @@ defmodule ApathyDrive.RoomServer do
              |> Map.put(:lair_next_spawn_at, DateTime.now
                                              |> DateTime.shift(minutes: room.lair_frequency)
                                              |> DateTime.to_secs)
+
+      {:noreply, room}
+    else
+      {:noreply, room}
     end
 
-    :erlang.send_after(5000, self, :spawn_monsters)
-
-    {:noreply, room}
   end
 
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do
@@ -603,7 +610,7 @@ defmodule ApathyDrive.RoomServer do
 
     room_exit = Room.get_exit(room, direction)
 
-    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+    {mirror_room, mirror_exit} = Room.mirror_exit(room, room_exit["destination"])
 
     if mirror_exit["kind"] == room_exit["kind"] do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_bash, mirror_exit})
@@ -620,7 +627,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:door_bash_failed, %{direction: direction}}, room) do
     room_exit = Room.get_exit(room, direction)
 
-    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+    {mirror_room, mirror_exit} = Room.mirror_exit(room, room_exit["destination"])
 
     if mirror_exit["kind"] == room_exit["kind"] do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_bash_failed, mirror_exit})
@@ -632,9 +639,9 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:door_opened, %{direction: direction}}, room) do
     room = Room.open!(room, direction)
 
-    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+    room_exit = Room.get_exit(room, direction)
 
-    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+    {mirror_room, mirror_exit} = Room.mirror_exit(room, room_exit["destination"])
 
     if mirror_exit["kind"] == room_exit["kind"] do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_open, mirror_exit})
@@ -651,9 +658,9 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:door_closed, %{direction: direction}}, room) do
     room = Room.close!(room, direction)
 
-    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+    room_exit = Room.get_exit(room, direction)
 
-    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+    {mirror_room, mirror_exit} = Room.mirror_exit(room, room_exit["destination"])
 
     if mirror_exit["kind"] == room_exit["kind"] do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_close, mirror_exit})
@@ -670,9 +677,9 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:door_locked, %{direction: direction}}, room) do
     room = Room.lock!(room, direction)
 
-    room_exit = ApathyDrive.Exit.get_exit_by_direction(room, direction)
+    room_exit = Room.get_exit(room, direction)
 
-    {mirror_room, mirror_exit} = ApathyDrive.Exit.mirror(room, room_exit)
+    {mirror_room, mirror_exit} = Room.mirror_exit(room, room_exit["destination"])
 
     if mirror_exit["kind"] == room_exit["kind"] do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_lock, mirror_exit})
@@ -682,7 +689,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info({:mirror_lock, room_exit}, room) do
-    room = Repo.lock!(room, room_exit["direction"])
+    room = Room.lock!(room, room_exit["direction"])
     {:noreply, room}
   end
 

@@ -139,16 +139,21 @@ defmodule ApathyDrive.Script do
   def execute_instruction(%{"give_item" => item_template_id}, %Mobile{} = mobile, script) do
     item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: mobile.level})
 
-    if Mobile.remaining_encumbrance(mobile) >= item["weight"] do
-      mobile =
-        put_in(mobile.spirit.inventory, [item | mobile.spirit.inventory])
+    mobile =
+      if Mobile.remaining_encumbrance(mobile) >= item["weight"] do
+        mobile =
+          put_in(mobile.spirit.inventory, [item | mobile.spirit.inventory])
 
-      Repo.save!(mobile.spirit)
-    else
-      mobile.spirit.room_id
-      |> RoomServer.find
-      |> RoomServer.add_item(item)
-    end
+        Repo.save!(mobile.spirit)
+
+        mobile
+      else
+        mobile.spirit.room_id
+        |> RoomServer.find
+        |> RoomServer.add_item(item)
+
+        mobile
+      end
 
     execute_script(script, mobile)
   end

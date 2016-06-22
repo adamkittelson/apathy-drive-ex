@@ -71,11 +71,15 @@ defmodule ApathyDrive.Commands.Move do
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
 
-      if mobile.spirit do
-        ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
-        mobile = put_in(mobile.spirit.room_id, mobile.room_id)
-        ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
-      end
+      mobile =
+        if mobile.spirit do
+          ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
+          mobile = put_in(mobile.spirit.room_id, mobile.room_id)
+          ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
+          mobile
+        else
+          mobile
+        end
 
       destination = RoomServer.find(destination_id)
 
@@ -118,11 +122,15 @@ defmodule ApathyDrive.Commands.Move do
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
 
-      if mobile.spirit do
-        ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
-        mobile = put_in(mobile.spirit.room_id, mobile.room_id)
-        ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
-      end
+      mobile = 
+        if mobile.spirit do
+          ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
+          mobile = put_in(mobile.spirit.room_id, mobile.room_id)
+          ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
+          mobile
+        else
+          mobile
+        end
 
       destination = RoomServer.find(destination_id)
 

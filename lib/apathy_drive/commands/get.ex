@@ -23,8 +23,8 @@ defmodule ApathyDrive.Commands.Get do
       Mobile.save(mobile)
     else
       room_id
-      |> Room.find
-      |> Room.add_item(item)
+      |> RoomServer.find
+      |> RoomServer.add_item(item)
 
       Mobile.send_scroll(mobile, "<p>#{capitalize_first(item["name"])} is too heavy.</p>")
     end

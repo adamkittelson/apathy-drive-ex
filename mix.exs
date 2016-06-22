@@ -4,7 +4,7 @@ defmodule ApathyDrive.Mixfile do
   def project do
     [ app: :apathy_drive,
       version: "#{version()}+#{build()}",
-      elixir: "~> 1.2.0",
+      elixir: "~> 1.3.0",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
       deps: deps,
@@ -75,7 +75,7 @@ defmodule ApathyDrive.Mixfile do
       [_version, build] ->
         build
         |> String.to_integer
-        |> +(1)
+        |> Kernel.+(1)
         |> to_string
         |> String.rjust(5, ?0)
     end

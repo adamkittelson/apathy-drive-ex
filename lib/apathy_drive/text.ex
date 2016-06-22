@@ -3,63 +3,68 @@ defmodule ApathyDrive.Text do
   def interpolate(nil, _opts), do: nil
   def interpolate(string, opts) do
 
-    if opts["user"] do
-      user = opts["user"]
-      if Map.has_key?(user, :gender) do
-        string = case user.gender do
-                   "male"   ->
-                     string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                            string, fn(_, m, _, _) -> m end)
-                     string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                            string, fn(_, m, _, _) -> capitalize_first(m) end)
-                   "female" ->
-                     string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, f, _) -> f end)
-                     string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, f, _) -> capitalize_first(f) end)
-                   _other ->
-                     string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, _, o) -> o end)
-                     Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                   string, fn(_, _, _, o) -> capitalize_first(o) end)
-                 end
+    string = 
+      if opts["user"] do
+        user = opts["user"]
+        if Map.has_key?(user, :gender) do
+          case user.gender do
+            "male"   ->
+              string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                     string, fn(_, m, _, _) -> m end)
+              Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                     string, fn(_, m, _, _) -> capitalize_first(m) end)
+            "female" ->
+              string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                      string, fn(_, _, f, _) -> f end)
+              Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                      string, fn(_, _, f, _) -> capitalize_first(f) end)
+            _other ->
+              string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                      string, fn(_, _, _, o) -> o end)
+              Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                            string, fn(_, _, _, o) -> capitalize_first(o) end)
+          end
+        else
+          string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                  string, fn(_, _, _, o) -> o end)
+          Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                  string, fn(_, _, _, o) -> capitalize_first(o) end)
+        end
       else
-        string = Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                string, fn(_, _, _, o) -> o end)
-        string = Regex.replace(~r/\{\{User:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                string, fn(_, _, _, o) -> capitalize_first(o) end)
-      end
-    end
-
-
-    if opts["target"] do
-      target = opts["target"]
-      if Map.has_key?(target, :gender) do
-        string = case target.gender do
-                   "male"   ->
-                     string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                            string, fn(_, m, _, _) -> m end)
-                     string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                            string, fn(_, m, _, _) -> capitalize_first(m) end)
-                   "female" ->
-                     string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, f, _) -> f end)
-                     string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, f, _) -> capitalize_first(f) end)
-                   _other ->
-                     string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                             string, fn(_, _, _, o) -> o end)
-                     Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                   string, fn(_, _, _, o) -> capitalize_first(o) end)
-                 end
-      else
-        string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                string, fn(_, _, _, o) -> o end)
-        string = Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
-                                string, fn(_, _, _, o) -> capitalize_first(o) end)
+        string
       end
 
-    end
+
+    string = 
+      if opts["target"] do
+        target = opts["target"]
+        if Map.has_key?(target, :gender) do
+          case target.gender do
+            "male"   ->
+              string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                     string, fn(_, m, _, _) -> m end)
+              Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                     string, fn(_, m, _, _) -> capitalize_first(m) end)
+            "female" ->
+              string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                      string, fn(_, _, f, _) -> f end)
+              Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                      string, fn(_, _, f, _) -> capitalize_first(f) end)
+            _other ->
+              string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                      string, fn(_, _, _, o) -> o end)
+              Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                            string, fn(_, _, _, o) -> capitalize_first(o) end)
+          end
+        else
+          string = Regex.replace(~r/\{\{target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                  string, fn(_, _, _, o) -> o end)
+          Regex.replace(~r/\{\{Target:(.+?)\/(.+?)\/(.+?)\}\}/,
+                                  string, fn(_, _, _, o) -> capitalize_first(o) end)
+        end
+      else
+        string
+      end
 
     opts
     |> Map.keys
