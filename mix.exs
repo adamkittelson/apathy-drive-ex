@@ -42,7 +42,7 @@ defmodule ApathyDrive.Mixfile do
       {:conform,             "2.0.0"},
       {:conform_exrm,        "1.0.0"},
       {:ex_statsd,           "~> 0.5.3"},
-      {:rollbax,             github: "elixir-addicts/rollbax", ref: "21f53b18c55379ffd55fb23de7d0c79f1bc5221e"},
+      {:rollbax,             "~> 0.6.1"},
       {:shouldi,             "0.3.0", only: :test}
     ]
   end
