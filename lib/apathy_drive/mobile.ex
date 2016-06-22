@@ -634,10 +634,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:execute_room_ability, ability})
   end
 
-  def return(mobile) do
-    GenServer.cast(mobile, :return)
-  end
-
   def attack(mobile, target) do
     GenServer.cast(mobile, {:attack, target})
   end
@@ -1234,10 +1230,6 @@ defmodule ApathyDrive.Mobile do
     else
       {:noreply, mobile}
     end
-  end
-
-  def handle_cast(:return, mobile) do
-    {:noreply, Commands.Return.execute(mobile)}
   end
 
   def handle_cast({:attack, target}, mobile) when is_pid(target) do
