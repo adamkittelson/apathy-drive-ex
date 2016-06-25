@@ -1216,10 +1216,14 @@ defmodule ApathyDrive.Mobile do
           room_id
         end
 
+      Mobile.untrack(mobile)
+
       mobile =
         mobile
         |> Map.put(:room_id, destination_id)
 
+      Mobile.track(mobile)
+        
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
 
