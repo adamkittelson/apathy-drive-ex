@@ -598,7 +598,8 @@ defmodule ApathyDrive.Mobile do
     update_prompt(mobile)
 
     {:ok, _} = Presence.track(self(), "spirits:online", "spirit_#{spirit.id}", %{
-      name: Mobile.look_name(mobile)
+      name: Mobile.look_name(mobile),
+      invisible?: mobile.spirit && mobile.spirit.invisible
     })
 
     send(self, :save)
@@ -939,11 +940,6 @@ defmodule ApathyDrive.Mobile do
     "<span class='#{alignment_color(mobile)}'>#{name}</span>"
   end
 
-  def track(%Mobile{spirit: %Spirit{invisible: true}} = mobile) do
-    mobile.room_id
-    |> RoomServer.find
-    |> RoomServer.toggle_rapid_essence_updates
-  end
   def track(%Mobile{} = mobile) do
     send(self(), {:also_here, Presence.metas("rooms:#{mobile.room_id}:mobiles")})
     {:ok, _} = Presence.track(self(), "rooms:#{mobile.room_id}:mobiles", self(), track_data(mobile))
@@ -976,7 +972,8 @@ defmodule ApathyDrive.Mobile do
       spawned_at: mobile.spawned_at,
       name: mobile.name,
       keywords: String.split(mobile.name),
-      look_name: look_name(mobile)
+      look_name: look_name(mobile),
+      invisible?: spirit && spirit.invisible
     }
   end
 
@@ -994,6 +991,7 @@ defmodule ApathyDrive.Mobile do
     |> Repo.save!
   end
 
+  defp react_to_mobiles(%Mobile{spirit: %Spirit{invisible: true}} = mobile, _mobiles), do: mobile
   defp react_to_mobiles(%Mobile{} = mobile, mobiles) do
     mobiles
     |> Enum.reduce(mobile, fn(intruder, mobile) ->
@@ -1202,12 +1200,20 @@ defmodule ApathyDrive.Mobile do
   def handle_cast(:toggle_invisibility, %Mobile{spirit: %Spirit{invisible: true}} = mobile) do
     send_scroll(mobile, "<p>You are no longer invisible.</p>")
     mobile = put_in(mobile.spirit.invisible, false)
+    {:ok, _} = Presence.update(self(), "spirits:online", "spirit_#{mobile.spirit.id}", %{
+      name: Mobile.look_name(mobile),
+      invisible?: false
+    })
     {:noreply, mobile}
   end
 
   def handle_cast(:toggle_invisibility, %Mobile{spirit: %Spirit{invisible: false}} = mobile) do
     send_scroll(mobile, "<p>You are now invisible.</p>")
     mobile = put_in(mobile.spirit.invisible, true)
+    {:ok, _} = Presence.update(self(), "spirits:online", "spirit_#{mobile.spirit.id}", %{
+      name: Mobile.look_name(mobile),
+      invisible?: true
+    })
     {:noreply, mobile}
   end
 

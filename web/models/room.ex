@@ -443,6 +443,8 @@ defmodule ApathyDrive.Room do
       "rooms:#{room.id}:mobiles"
       |> Presence.metas()
       |> Enum.reduce(essences, fn
+           %{invisible?: true}, updated_essences ->
+             updated_essences
            %{spirit_essence: nil, unities: []} = mobile, updated_essences ->
              add_mobile_essence(updated_essences, ["default"], mobile.essence)
            %{spirit_essence: nil} = mobile, updated_essences ->

@@ -1,6 +1,8 @@
 defmodule ApathyDrive.Aggression do
   alias ApathyDrive.Mobile
 
+  def react(%{mobile: %Mobile{} = mobile}, %{invisible?: true}), do: mobile
+
   def react(%{mobile: %Mobile{} = mobile, unities: unities}, %{unities: intruder_unities}) when length(unities) > 0 and unities == intruder_unities do
     mobile
   end

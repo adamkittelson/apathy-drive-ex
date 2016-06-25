@@ -11,8 +11,8 @@ defmodule ApathyDrive.Commands.Who do
     "spirits:online"
     |> Presence.metas
     |> Enum.each(fn
-         %{name: name} ->
-           Mobile.send_scroll(mobile, "<p>#{name}</p>")
+         %{name: name, invisible?: invisible?} ->
+           unless invisible?, do: Mobile.send_scroll(mobile, "<p>#{name}</p>")
        end)
   end
 end

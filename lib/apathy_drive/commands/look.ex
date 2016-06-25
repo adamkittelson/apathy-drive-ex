@@ -143,8 +143,8 @@ defmodule ApathyDrive.Commands.Look do
 
     mobiles_to_show =
       mobiles
-      |> Enum.reduce([], fn(%{mobile: pid, look_name: name}, list) ->
-           if pid == mobile do
+      |> Enum.reduce([], fn(%{mobile: pid, look_name: name, invisible?: invisible?}, list) ->
+           if pid == mobile or invisible? do
              list
            else
              [name | list]
