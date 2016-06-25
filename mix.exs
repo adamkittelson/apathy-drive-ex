@@ -3,7 +3,7 @@ defmodule ApathyDrive.Mixfile do
 
   def project do
     [ app: :apathy_drive,
-      version: "#{version()}+#{build()}",
+      version: version(),
       elixir: "~> 1.3.0",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
@@ -52,33 +52,6 @@ defmodule ApathyDrive.Mixfile do
     |> Regex.scan(File.read!("VERSION.yml"))
     |> List.flatten
     |> Enum.join(".")
-  end
-
-  defp build do
-    case System.cmd("ls", ["rel/apathy_drive/releases"]) do
-      {"", _exit_status} ->
-        "00000"
-      {result, 0} ->
-        result
-        |> String.split("\n")
-        |> Enum.filter(&(&1 =~ ~r/\d+\.\d+\.\d+/))
-        |> List.last
-        |> build()
-    end
-  end
-
-  defp build(nil), do: "00000"
-  defp build(version) do
-    case String.split(version, "+") do
-      [_version] ->
-        "00000"
-      [_version, build] ->
-        build
-        |> String.to_integer
-        |> Kernel.+(1)
-        |> to_string
-        |> String.rjust(5, ?0)
-    end
   end
 
   defp elixirc_paths(:test), do: ["lib", "web", "test/matchers", "test/support"]

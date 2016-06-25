@@ -1,3 +1,2 @@
 _build/*
-/rel/apathy_drive/bin
-/rel/apathy_drive/erts-*
+deps/comeonin
