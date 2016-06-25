@@ -29,7 +29,7 @@ defmodule ApathyDrive.Commands.System do
     Mobile.send_scroll(mobile, "<p>#{area.name} updated from level #{old_level} to #{level}.</p>")
     room
   end
-  
+
   def execute(room, mobile, ["invis"]) do
     Mobile.toggle_invisibility(mobile)
     room
@@ -82,6 +82,23 @@ defmodule ApathyDrive.Commands.System do
     ApathyDrive.Endpoint.broadcast!("map", "room name change", %{room_id: room.id, name: room.name})
 
     Mobile.send_scroll(mobile, "<p>Room name changed from \"#{old_name}\" to \"#{room.name}\".</p>")
+
+    room
+  end
+
+  def execute(%Room{coordinates: old_coords} = room, mobile, ["set", "room", "coords", x, y, z]) do
+    x = String.to_integer(x)
+    y = String.to_integer(y)
+    z = String.to_integer(z)
+
+    room =
+      room
+      |> Map.put(:coordinates, %{"x" => x, "y" => y, "z" => z})
+      |> Repo.save!
+
+    ApathyDrive.Endpoint.broadcast!("map", "room coords change", %{room_id: room.id, x: x, y: y, z: z})
+
+    Mobile.send_scroll(mobile, "<p>Room coordinates changed from \"#{inspect(old_coords)}\" to \"#{inspect(room.coordinates)}\".</p>")
 
     room
   end

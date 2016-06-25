@@ -477,6 +477,16 @@ $(document).ready(function() {
     center_on_room(player.room.id);
   });
 
+  chan.on("room coords change", function(data) {
+    var room = rooms[data.room_id];
+    room.coords = {x: data.x, y: data.y, z: data.z};
+    add_room(data.room_id, room);
+
+    draw_area(room.area);
+    draw_area(player.room.area);
+    center_on_room(player.room.id);
+  });
+
   function dragMoveListener (event) {
     interactEvent = event;
     return;
