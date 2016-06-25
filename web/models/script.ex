@@ -39,6 +39,12 @@ defmodule ApathyDrive.Script do
 
   def execute_script(instruction, %Mobile{} = mobile), do: execute_instruction(instruction, mobile, nil)
 
+  def execute_instruction(%{"message" => %{"user" => user_message, "spectator" => spectator_message}}, %Mobile{} = mobile, script) do
+    Mobile.send_scroll(mobile, "<p>#{user_message}</p>")
+    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}", "scroll", %{:html => "<p>#{ApathyDrive.Text.interpolate(spectator_message, %{"user" => mobile})}</p>"}
+    execute_script(script, mobile)
+  end
+
   def execute_instruction(%{"message" => message}, %Mobile{} = mobile, script) do
     Mobile.send_scroll(mobile, "<p>#{message}</p>")
     execute_script(script, mobile)
@@ -130,6 +136,14 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%{"check_hitpoints" => %{"modifier" => amount, "failure_script" => failure_script}}, %Mobile{hp: hp} = mobile, script) do
     if hp < :rand.uniform(100 + amount) do
+      execute_script(find(failure_script), mobile)
+    else
+      execute_script(script, mobile)
+    end
+  end
+
+  def execute_instruction(%{"check_stat" => %{"stat" => "agility", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
+    if Mobile.agility(mobile) < :rand.uniform(100 + amount) do
       execute_script(find(failure_script), mobile)
     else
       execute_script(script, mobile)
