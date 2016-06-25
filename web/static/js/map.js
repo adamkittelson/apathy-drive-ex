@@ -370,7 +370,7 @@ $(document).ready(function() {
           map.beginFill(0x008080);
         }
       } else {
-        map.lineStyle(2, 0x999999, 1);
+        map.lineStyle(2, 0x666666, 1);
 
         if (room.controlled_by == "good") {
           map.beginFill(0x999999);
