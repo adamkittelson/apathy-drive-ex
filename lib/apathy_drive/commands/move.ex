@@ -64,7 +64,6 @@ defmodule ApathyDrive.Commands.Move do
       mobile =
         mobile
         |> Map.put(:room_id, destination_id)
-        |> Map.put(:room_ability, nil)
 
       Mobile.track(mobile)
 
@@ -115,7 +114,6 @@ defmodule ApathyDrive.Commands.Move do
       mobile =
         mobile
         |> Map.put(:room_id, destination_id)
-        |> Map.put(:room_ability, nil)
 
       Mobile.track(mobile)
 

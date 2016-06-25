@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Possess do
   use ApathyDrive.Command
-  alias ApathyDrive.{Presence, Repo, TimerManager}
+  alias ApathyDrive.{Presence, Repo}
 
   def keywords, do: ["possess"]
 
@@ -66,7 +66,6 @@ defmodule ApathyDrive.Commands.Possess do
       |> Mobile.set_mana
       |> Mobile.set_max_hp
       |> Mobile.set_hp
-      |> TimerManager.send_every({:execute_room_ability,  5_000, :execute_room_ability})
 
     send(socket, {:update_mobile, self})
 

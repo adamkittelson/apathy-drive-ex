@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Ability, Commands, LairMonster, Match, Mobile, Presence, PubSub,
+  alias ApathyDrive.{Commands, LairMonster, Match, Mobile, Presence, PubSub,
                      Repo, Room, RoomSupervisor, RoomUnity, Text, TimerManager}
   use Timex
   require Logger
@@ -159,10 +159,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:auto_move, mobile, unities})
   end
 
-  def execute_room_ability(room, mobile) do
-    GenServer.cast(room, {:execute_room_ability, mobile})
-  end
-
   def mobiles_to_load(room_id) do
     require Ecto.Query
 
@@ -203,18 +199,6 @@ defmodule ApathyDrive.RoomServer do
     if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
       send(self, :spawn_monsters)
     end
-
-    room =
-      if room.ability_id do
-        ability =
-          Repo.get(Ability, room.ability_id).properties
-          |> Map.put("ignores_global_cooldown", true)
-
-        room
-        |> Map.put(:room_ability, ability)
-      else
-        room
-      end
 
     Process.send_after(self(), :save, 2000)
 
@@ -278,11 +262,6 @@ defmodule ApathyDrive.RoomServer do
       true ->
         {:noreply, room}
     end
-  end
-
-  def handle_cast({:execute_room_ability, mobile}, %Room{room_ability: room_ability} = room) do
-    Mobile.execute_room_ability(mobile, room_ability)
-    {:noreply, room}
   end
 
   def handle_cast({:find_item_for_script, item, mobile, script, failure_message}, %Room{} = room) do
@@ -772,12 +751,6 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:coordinates, report.set_coords)
         |> Repo.save!
       end
-
-    {:noreply, room}
-  end
-
-  def handle_info(:execute_room_ability, %Room{room_ability: ability} = room) do
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:spirits", {:execute_room_ability, ability})
 
     {:noreply, room}
   end

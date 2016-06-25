@@ -16,7 +16,6 @@ defmodule ApathyDrive.Room do
     field :commands,                 ApathyDrive.JSONB, default: %{}
     field :legacy_id,                :string
     field :timers,                   :map, virtual: true, default: %{}
-    field :room_ability,             :any, virtual: true
     field :items,                    ApathyDrive.JSONB, default: []
     field :last_effect_key,          :integer, virtual: true, default: 0
     field :default_essence,          :integer, virtual: true

@@ -126,13 +126,18 @@ defmodule ApathyDrive.Commands.System do
     |> Repo.one
     |> case do
          %Area{} = area ->
-           %Room{id: room_id} =
-             Ecto.assoc(area, :rooms)
-             |> Ecto.Query.limit(1)
-             |> Ecto.Query.select([:id])
-             |> ApathyDrive.Repo.one
+           Ecto.assoc(area, :rooms)
+           |> Ecto.Query.limit(1)
+           |> Ecto.Query.select([:id])
+           |> ApathyDrive.Repo.one
+           |> case do
+                %Room{id: room_id} ->
+                  Mobile.teleport(mobile, room_id)
+                _ ->
+                  Mobile.send_scroll(mobile, "<p>#{area.name} has no rooms!</p>")
+              end
 
-           Mobile.teleport(mobile, room_id)
+           
            room
          nil ->
            Mobile.send_scroll(mobile, "<p>Could not find an area named \"#{area}\".")
