@@ -29,7 +29,7 @@ defmodule ApathyDrive.Area do
     %__MODULE__{}
     |> cast(%{name: name}, ~w(name))
     |> validate_required(:name)
-    |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
+    |> validate_format(:name, ~r/^[a-zA-Z\d ,]+$/)
     |> validate_length(:name, min: 1, max: 20)
     |> unique_constraint(:name)
   end
