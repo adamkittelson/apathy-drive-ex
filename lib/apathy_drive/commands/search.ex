@@ -22,11 +22,11 @@ defmodule ApathyDrive.Commands.Search do
     end
   end
 
-  defp search(%Room{} = room, mobile, %{"direction" => direction, "message_when_revealed" => message, "searchable" => searchable?} = room_exit) do
+  defp search(%Room{} = room, mobile, %{"direction" => direction, "searchable" => searchable?} = room_exit) do
     if Room.searched?(room, room_exit) || !searchable? || :rand.uniform(100) < 75 do
       Mobile.send_scroll(mobile, "<p>You notice nothing different #{ApathyDrive.Exit.direction_description(direction)}.</p>")
     else
-      if message do
+      if message = room_exit["message_when_revealed"] do
         Mobile.send_scroll(mobile, "<p>#{message}</p>")
       end
 
