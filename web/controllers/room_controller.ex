@@ -63,7 +63,6 @@ defmodule ApathyDrive.RoomController do
       room
       |> Ecto.assoc(:lairs)
       |> Ecto.Query.preload(:monster_template)
-      |> Ecto.Query.preload(:room_unity)
       |> Repo.all
 
     render(conn, "show.html", room: room, lairs: lairs)
