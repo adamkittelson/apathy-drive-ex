@@ -48,7 +48,7 @@ namespace :db do
   desc "Drop / Load Game World State"
   task :reload do
     on roles(:app) do |host|
-      last_release = capture("ls #{fetch(:deploy_to)}/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
+      last_release = capture("ls #{fetch(:deploy_to)}/app/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
       execute "#{fetch(:deploy_to)}/app/bin/apathy_drive", "rpc", "Elixir.ApathyDrive.System", "drop_world!", "\"[].\""
       execute :pg_restore, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "#{fetch(:deploy_to)}/app/lib/apathy_drive-#{last_release}/priv/data.dump"
     end
