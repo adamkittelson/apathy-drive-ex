@@ -45,7 +45,8 @@ defmodule ApathyDrive.MUDChannel do
 
     socket = assign(socket, :mobile, pid)
 
-    Mobile.look(pid)
+    Mobile.look(socket.assigns[:mobile])
+    Mobile.update_room(socket.assigns[:mobile])
 
     {:noreply, socket}
   end
