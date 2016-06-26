@@ -168,8 +168,8 @@ defmodule ApathyDrive.Commands.Look do
   def display_direction(%{"kind" => "Door", "direction" => direction} = room_exit, room) do
     if Doors.open?(room, room_exit), do: "open door #{direction}", else: "closed door #{direction}"
   end
-  def display_direction(%{"kind" => "Hidden", "description" => description} = room_exit, room) do
-    if Doors.open?(room, room_exit), do: description
+  def display_direction(%{"kind" => "Hidden"} = room_exit, room) do
+    if Doors.open?(room, room_exit), do: room_exit["description"]
   end
   def display_direction(%{"kind" => kind}, _room) when kind in ["Command", "RemoteAction"], do: nil
   def display_direction(%{"direction" => direction}, _room), do: direction
