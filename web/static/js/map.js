@@ -222,7 +222,7 @@ $(document).ready(function() {
 
       if (room) {
         highlight_area(room);
-        text.text = room.area + " - " + room.name;
+        text.text = room.area + " - " + room.id + " - " + room.name;
       }
       return;
     }
