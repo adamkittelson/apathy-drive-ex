@@ -150,6 +150,10 @@ defmodule ApathyDrive.Script do
     end
   end
 
+  def execute_instruction(%{"no_monsters" => _}, %Mobile{} = mobile, script) do
+    execute_script(script, mobile)
+  end
+
   def execute_instruction(%{"give_item" => item_template_id}, %Mobile{} = mobile, script) do
     item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: mobile.level})
 
