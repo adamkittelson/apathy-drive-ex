@@ -35,6 +35,23 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
+  def execute(%Room{area: %Area{} = old_area} = room, mobile, ["merge", "area" | area]) do
+    area = Enum.join(area, " ")
+
+    area
+    |> Area.find_by_name
+    |> Repo.one
+    |> case do
+         %Area{} = area ->
+           PubSub.broadcast!("areas:#{old_area.id}", {:update_area, area})
+           Mobile.send_scroll(mobile, "<p>#{old_area.name} merged into #{area.name}.</p>")
+           room
+         nil ->
+           Mobile.send_scroll(mobile, "<p>Could not find an area named \"#{area}\".")
+           room
+       end
+  end
+
   def execute(%Room{area: %Area{} = old_area} = room, mobile, ["set", "area" | area]) do
     area = Enum.join(area, " ")
 
@@ -137,7 +154,7 @@ defmodule ApathyDrive.Commands.System do
                   Mobile.send_scroll(mobile, "<p>#{area.name} has no rooms!</p>")
               end
 
-           
+
            room
          nil ->
            Mobile.send_scroll(mobile, "<p>Could not find an area named \"#{area}\".")

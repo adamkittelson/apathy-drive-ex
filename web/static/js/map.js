@@ -315,7 +315,7 @@ $(document).ready(function() {
     if (!room) {
       return;
     }
-    if (highlighted_area != room.area || highlighted_z != room.coords.z) {
+    if (highlighted_area != room.area || highlighted_z != room.coords.z || highlighted_rooms.indexOf("" + room.id + "") === -1) {
       var old_highlighted_area = highlighted_area;
       highlighted_z = room.coords.z;
 
@@ -483,9 +483,6 @@ $(document).ready(function() {
     delete areas[data.old_area].rooms[data.room_id];
     add_room(data.room_id, room);
 
-    draw_area(data.old_area);
-    draw_area(data.new_area);
-    draw_area(player.room.area);
     center_on_room(player.room.id);
   });
 
@@ -494,8 +491,6 @@ $(document).ready(function() {
     room.name = data.name;
     add_room(data.room_id, room);
 
-    draw_area(room.area);
-    draw_area(player.room.area);
     center_on_room(player.room.id);
   });
 
