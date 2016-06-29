@@ -308,22 +308,25 @@ $(document).ready(function() {
   }
 
   var highlighted_area;
+  var highlighted_z;
   var highlighted_rooms = [];
 
   var highlight_area = function(room) {
     if (!room) {
       return;
     }
-    if (highlighted_area != room.area) {
+    if (highlighted_area != room.area || highlighted_z != room.coords.z) {
       var old_highlighted_area = highlighted_area;
-      highlighted_area = room.area;
+      highlighted_z = room.coords.z;
 
-      if (old_highlighted_area) {
+      if (old_highlighted_area && old_highlighted_area != room.highlighted_area) {
         draw_area(old_highlighted_area);
       }
 
+      highlighted_area = room.area;
+
       stage.removeChild(areas[highlighted_area].map)
-      draw_area(highlighted_area);
+      draw_area(highlighted_area, room.coords.z);
     }
     text.text = room.area;
     stage.addChild(player);
@@ -337,7 +340,7 @@ $(document).ready(function() {
     }
   }
 
-  var draw_area = function(area) {
+  var draw_area = function(area, z) {
     var map = areas[area].map;
 
     stage.addChild(map);
@@ -346,105 +349,124 @@ $(document).ready(function() {
     stage.addChild(text);
     map.clear();
     highlighted_rooms = [];
+    var unhighlighted_rooms = [];
 
     for (var room_id in areas[area].rooms) {
+      var room = rooms[room_id];
 
-      var room = rooms[room_id]
-      var x = (room.coords.x * 32) + 2650
-      var y = (room.coords.y * 32) + 7600
-
-      var start_x;
-      var start_y;
-      var end_x;
-      var end_y;
-
-      if (highlighted_area == room.area) {
-        highlighted_rooms.push(room_id)
-        map.lineStyle(2, 0xFFFFFF, 1);
-
-        if (room.controlled_by == "good") {
-          map.beginFill(0xFFFFFF);
-        } else if (room.controlled_by == "evil") {
-          map.beginFill(0xFF00FF);
-        } else {
-          map.beginFill(0x008080);
-        }
+      if (highlighted_area == room.area && z == room.coords.z) {
+        highlighted_rooms.push(room_id);
       } else {
-        map.lineStyle(2, 0x666666, 1);
+        unhighlighted_rooms.push(room_id);
+      }
+    }
 
-        if (room.controlled_by == "good") {
-          map.beginFill(0x999999);
-        } else if (room.controlled_by == "evil") {
-          map.beginFill(0x990099);
-        } else {
-          map.beginFill(0x002020);
-        }
+    for (var i = 0; i < unhighlighted_rooms.length; i++) {
+      draw_room(map, unhighlighted_rooms[i], false);
+    }
+
+    for (var i = 0; i < highlighted_rooms.length; i++) {
+      draw_room(map, highlighted_rooms[i], true);
+    }
+
+  };
+
+  var draw_room = function(map, room_id, highlighted) {
+    var room = rooms[room_id];
+
+    var x = (room.coords.x * 32) + 2650
+    var y = (room.coords.y * 32) + 7600
+
+    var start_x;
+    var start_y;
+    var end_x;
+    var end_y;
+
+    if (highlighted) {
+      map.lineStyle(2, 0xFFFFFF, 1);
+
+      if (room.controlled_by == "good") {
+        map.beginFill(0xFFFFFF);
+      } else if (room.controlled_by == "evil") {
+        map.beginFill(0xFF00FF);
+      } else {
+        map.beginFill(0x008080);
+      }
+    } else {
+      map.lineStyle(2, 0x666666, 1);
+
+      if (room.controlled_by == "good") {
+        map.beginFill(0x999999);
+      } else if (room.controlled_by == "evil") {
+        map.beginFill(0x990099);
+      } else {
+        map.beginFill(0x002020);
+      }
+    }
+
+    map.drawRect(x, y, 16, 16);
+
+    map.endFill();
+
+    var rect = map.graphicsData[map.graphicsData.length - 1].shape;
+    rooms[room_id].shape = rect;
+
+    room.directions.forEach(function(direction) {
+      switch (direction) {
+        case 'north':
+          start_x = x + 8;
+          start_y = y;
+          end_x   = x + 8;
+          end_y   = y + 8 - 16;
+          break;
+        case 'northeast':
+          start_x = x + 16;
+          start_y = y;
+          end_x   = x + 8 + 16;
+          end_y   = y + 8 - 16;
+          break;
+        case 'east':
+          start_x = x + 16;
+          start_y = y + 8;
+          end_x   = x + 8 + 16;
+          end_y   = y + 8;
+          break;
+        case 'southeast':
+          start_x = x + 16;
+          start_y = y + 16;
+          end_x   = x + 8 + 16;
+          end_y   = y + 8 + 16;
+          break;
+        case 'south':
+          start_x = x + 8;
+          start_y = y + 16;
+          end_x   = x + 8;
+          end_y   = y + 8 + 16;
+          break;
+        case 'southwest':
+          start_x = x;
+          start_y = y + 16;
+          end_x   = x + 8 - 16;
+          end_y   = y + 8 + 16;
+          break;
+        case 'west':
+          start_x = x;
+          start_y = y + 8;
+          end_x   = x + 8 - 16;
+          end_y   = y + 8;
+          break;
+        case 'northwest':
+          start_x = x;
+          start_y = y;
+          end_x   = x + 8 - 16;
+          end_y   = y + 8 - 16;
+          break;
       }
 
-      map.drawRect(x, y, 16, 16);
-
-      map.endFill();
-
-      var rect = map.graphicsData[map.graphicsData.length - 1].shape;
-      rooms[room_id].shape = rect;
-
-      room.directions.forEach(function(direction) {
-        switch (direction) {
-          case 'north':
-            start_x = x + 8;
-            start_y = y;
-            end_x   = x + 8;
-            end_y   = y + 8 - 16;
-            break;
-          case 'northeast':
-            start_x = x + 16;
-            start_y = y;
-            end_x   = x + 8 + 16;
-            end_y   = y + 8 - 16;
-            break;
-          case 'east':
-            start_x = x + 16;
-            start_y = y + 8;
-            end_x   = x + 8 + 16;
-            end_y   = y + 8;
-            break;
-          case 'southeast':
-            start_x = x + 16;
-            start_y = y + 16;
-            end_x   = x + 8 + 16;
-            end_y   = y + 8 + 16;
-            break;
-          case 'south':
-            start_x = x + 8;
-            start_y = y + 16;
-            end_x   = x + 8;
-            end_y   = y + 8 + 16;
-            break;
-          case 'southwest':
-            start_x = x;
-            start_y = y + 16;
-            end_x   = x + 8 - 16;
-            end_y   = y + 8 + 16;
-            break;
-          case 'west':
-            start_x = x;
-            start_y = y + 8;
-            end_x   = x + 8 - 16;
-            end_y   = y + 8;
-            break;
-          case 'northwest':
-            start_x = x;
-            start_y = y;
-            end_x   = x + 8 - 16;
-            end_y   = y + 8 - 16;
-            break;
-        }
-
-        map.moveTo(start_x, start_y);
-        map.lineTo(end_x, end_y);
-      });
-    };
-  };
+      map.moveTo(start_x, start_y);
+      map.lineTo(end_x, end_y);
+    });
+  }
 
   chan.on("update_map", function(rooms){
     text.text = "Apotheosis";
