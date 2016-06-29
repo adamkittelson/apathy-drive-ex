@@ -1,25 +1,36 @@
 defmodule ApathyDrive.Commands.RemoteAction do
   alias ApathyDrive.{Doors, Room}
 
-  def execute(%Room{} = room, %{"direction" => direction} = room_exit, from) do
-    exit_to_trigger = exit_to_trigger(room, room_exit, from)
-
-    room =
+  def execute(%Room{} = room, %{"direction" => direction} = room_exit, from, opts) do
+    if opts[:open_remotely] do
       room
-      |> clear_triggers?(exit_to_trigger, room_exit)
-      |> trigger(%{direction: exit_to_trigger["direction"], remote_exit: %{"direction" => direction, "room" => from}})
+      |> open(direction)
+    else
+      exit_to_trigger = exit_to_trigger(room, room_exit, from)
 
-    if Doors.open?(room, exit_to_trigger) do
-      if exit_to_trigger["message_when_revealed"] do
-        Room.send_scroll(room, "<p><span class='white'>#{exit_to_trigger["message_when_revealed"]}</span></p>")
+      room =
+        room
+        |> clear_triggers?(exit_to_trigger, room_exit)
+        |> trigger(%{direction: exit_to_trigger["direction"], remote_exit: %{"direction" => direction, "room" => from}})
+
+      if Doors.open?(room, exit_to_trigger) do
+        if exit_to_trigger["message_when_revealed"] do
+          Room.send_scroll(room, "<p><span class='white'>#{exit_to_trigger["message_when_revealed"]}</span></p>")
+        end
       end
+
+      room
     end
-    room
   end
 
   defp trigger(room, exit_to_trigger) do
     room
     |> Systems.Effect.add(%{:triggered => exit_to_trigger, "stack_key" => exit_to_trigger, "stack_count" => 1}, 300)
+  end
+
+  defp open(room, direction) do
+    room
+    |> Systems.Effect.add(%{:opened_remotely => direction, "stack_key" => "open-#{direction}", "stack_count" => 1}, 300)
   end
 
   defp exit_to_trigger(%Room{exits: exits}, %{"direction" => direction}, from) do

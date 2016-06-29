@@ -63,8 +63,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:possess, query, spirit_id, class_name, socket, possessor})
   end
 
-  def trigger_remote_action(room, remote_action_exit, from) do
-    GenServer.cast(room, {:trigger_remote_action, remote_action_exit, from})
+  def trigger_remote_action(room, remote_action_exit, from, opts) do
+    GenServer.cast(room, {:trigger_remote_action, remote_action_exit, from, opts})
   end
 
   def search(room, direction) do
@@ -335,8 +335,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:trigger_remote_action, remote_action_exit, from}, room) do
-    room = Commands.RemoteAction.execute(room, remote_action_exit, from)
+  def handle_cast({:trigger_remote_action, remote_action_exit, from, opts}, room) do
+    room = Commands.RemoteAction.execute(room, remote_action_exit, from, opts)
     {:noreply, room}
   end
 

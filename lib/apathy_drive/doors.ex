@@ -55,9 +55,17 @@ defmodule ApathyDrive.Doors do
        end)
   end
 
-  def opened_remotely?(_room, _room_exit) do
-    false
-    #!!reactor.timer(self, :opened_remotely)
+  def opened_remotely?(room, %{"direction" => direction}) do
+    room
+    |> Map.get(:effects)
+    |> Map.values
+    |> Enum.filter(fn(effect) ->
+         Map.has_key?(effect, :opened_remotely)
+       end)
+    |> Enum.map(fn(effect) ->
+          effect.opened_remotely
+       end)
+    |> Enum.member?(direction)
   end
 
 end

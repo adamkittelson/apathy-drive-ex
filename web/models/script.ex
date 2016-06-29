@@ -166,6 +166,11 @@ defmodule ApathyDrive.Script do
     end
   end
 
+  def execute_instruction(%{"remote_action" => %{"direction" => direction, "message" => message, "room_id" => room_id}}, %Mobile{} = mobile, script) do
+    Mobile.trigger_remote_action(self(), %{"destination" => room_id, "message" => message, "direction" => direction}, open_remotely: true)
+    execute_script(script, mobile)
+  end
+
   def execute_instruction(%{"no_monsters" => _}, %Mobile{} = mobile, script) do
     execute_script(script, mobile)
   end
