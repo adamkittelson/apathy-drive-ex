@@ -73,9 +73,9 @@
   </div>
 
   <div class="form-group">
-    <%= label f, :permanent, "Permanent", class: "control-label" %>
-    <%= checkbox f, :permanent%>
-    <%= error_tag f, :permanent %>
+    <%= label f, :movement, "Movement", class: "control-label" %>
+    <%= select f, :movement, @movements, class: "form-control" %>
+    <%= error_tag f, :movement %>
   </div>
 
   <div class="form-group">

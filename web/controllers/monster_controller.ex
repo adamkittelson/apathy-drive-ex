@@ -90,7 +90,8 @@ defmodule ApathyDrive.MonsterController do
     render(conn, "edit.html", monster: monster,
                               changeset: changeset,
                               genders: MonsterTemplate.genders,
-                              alignments: MonsterTemplate.alignments)
+                              alignments: MonsterTemplate.alignments,
+                              movements: MonsterTemplate.movements)
   end
 
   def update(conn, %{"id" => id, "monster_template" => monster_params}) do

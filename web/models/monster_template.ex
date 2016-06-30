@@ -156,6 +156,10 @@ defmodule MonsterTemplate do
   def alignments do
     ["good", "neutral", "evil"]
   end
+  
+  def movements do
+    ["stationary", "solo", "leader", "follower"]
+  end
 
   def unity_alignment(["good"]), do: "good"
   def unity_alignment(["evil"]), do: "evil"

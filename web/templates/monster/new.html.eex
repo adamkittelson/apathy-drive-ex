@@ -7,6 +7,7 @@
 <%= render "form.html", changeset: @changeset,
                         genders: @genders,
                         alignments: @alignments,
+                        movements: @movements,
                         action: monster_path(@conn, :create) %>
 
 <%= link "Back", to: monster_path(@conn, :index) %>
