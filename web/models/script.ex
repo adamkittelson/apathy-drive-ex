@@ -109,11 +109,12 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"check_item" => %{"failure_message" => message, "item" => item_template_id}}, %Mobile{} = mobile, script) do
-    if Mobile.has_item?(mobile, item_template_id) do
-      execute_script(script, mobile)
-    else
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{message}</p>")
-    end
+    execute_script(script, mobile)
+    # if Mobile.has_item?(mobile, item_template_id) do
+    #   execute_script(script, mobile)
+    # else
+    #   Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{message}</p>")
+    # end
   end
 
   def execute_instruction(%{"take_item" => %{"failure_message" => message, "item" => item_template_id}}, %Mobile{} = mobile, script) do
