@@ -108,7 +108,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%{"check_item" => %{"failure_message" => message, "item" => item_template_id}}, %Mobile{} = mobile, script) do
+  def execute_instruction(%{"check_item" => %{"failure_message" => _message, "item" => _item_template_id}}, %Mobile{} = mobile, script) do
     execute_script(script, mobile)
     # if Mobile.has_item?(mobile, item_template_id) do
     #   execute_script(script, mobile)

@@ -179,16 +179,17 @@ defmodule ApathyDrive.RoomServer do
       |> Room.set_default_essence
       |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
 
-    if room.room_unity do
-      room
-    else
-      room_unity =
+    room = 
+      if room.room_unity do
         room
-        |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => room.default_essence})
-        |> Repo.save!
+      else
+        room_unity =
+          room
+          |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => room.default_essence})
+          |> Repo.save!
 
-      %{room | room_unity: room_unity}
-    end
+        %{room | room_unity: room_unity}
+      end
 
     PubSub.subscribe("rooms")
     PubSub.subscribe("rooms:#{room.id}")
