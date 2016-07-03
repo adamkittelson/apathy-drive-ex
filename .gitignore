@@ -20,3 +20,4 @@ relx
 apathy_drive.tar.gz
 /priv/static/css
 /priv/static/js
+!priv/static/themes

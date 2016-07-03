@@ -8,6 +8,12 @@ defmodule ApathyDrive.Script do
     timestamps
   end
 
+  def changeset(script, params \\ %{}) do
+    script
+    |> cast(params, ~w(instructions), ~w())
+  end
+
+
   def find(id) do
     ApathyDrive.Repo.get(__MODULE__, id)
     |> Map.get(:instructions)

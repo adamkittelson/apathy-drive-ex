@@ -1,16 +1,19 @@
-import {formatJson} from "web/static/js/json-format";
+import {formatJson} from "web/static/js/admin/json-format";
 
-$(".json").linedtextarea()
+$(document).ready(function() {
+  $(".json").linedtextarea()
 
-$('textarea.json').each(function(index, textarea) {
+  $('textarea.json').each(function(index, textarea) {
 
-  reformat(textarea);
+    reformat(textarea);
 
+  });
+
+  $('textarea.json').on('change', function() {
+    validate($(this).context);
+  });
 });
 
-$('textarea.json').on('change', function() {
-  validate($(this).context);
-});
 
 function reformat(field) {
   field.value = formatJson(field.value);

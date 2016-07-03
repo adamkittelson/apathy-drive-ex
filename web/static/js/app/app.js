@@ -1,5 +1,6 @@
 import "deps/phoenix_html/web/static/js/phoenix_html"
 import {Socket} from "deps/phoenix/web/static/js/phoenix"
+import $ from "web/static/js/app/jquery-1.10.2.min";
 
 var pruneBackscroll, addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, history_marker, setFocus, updateRoom, socket, push;
 focus = null;

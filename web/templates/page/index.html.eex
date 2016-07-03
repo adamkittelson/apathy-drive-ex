@@ -56,6 +56,3 @@
   <h6 class="docs-header">Getting Stronger</h6>
   <p>You get more powerful by gaining levels, and you gain levels by gaining experience. One way to gain experience is by killing monsters. You can see your progress toward your next level with the experience command by typing <code>experience</code>. When your level increases you'll be able to possess more powerful monsters, and you will learn new abilities.</p>
 </div>
-
-<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
-<script>require("web/static/js/nav")</script>

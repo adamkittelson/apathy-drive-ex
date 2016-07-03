@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Router do
   use Phoenix.Router
+  use ExAdmin.Router
 
   pipeline :browser do
     plug :accepts, ~w(html)
@@ -36,6 +37,11 @@ defmodule ApathyDrive.Router do
     resources "/class_abilities",   ClassAbilityController
     resources "/monster_abilities", MonsterAbilityController
     resources "/abilities",         AbilityController
+  end
+
+  scope "/admin", ExAdmin do
+    pipe_through [:browser, :admin]
+    admin_routes
   end
 
   scope "/auth", alias: ApathyDrive do
