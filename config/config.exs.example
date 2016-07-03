@@ -27,6 +27,7 @@ config :ex_admin,
     ApathyDrive.ExAdmin.Dashboard,
     ApathyDrive.ExAdmin.Ability,
     ApathyDrive.ExAdmin.Class,
+    ApathyDrive.ExAdmin.Item,
     ApathyDrive.ExAdmin.Script
   ]
 
