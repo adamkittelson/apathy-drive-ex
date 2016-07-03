@@ -11,7 +11,7 @@ defmodule ApathyDrive.Class do
     field :agility_per_level, :integer
     field :will, :integer
     field :will_per_level, :integer
-    field :unities, {:array, :string}
+    field :unities, ApathyDrive.JSONB, default: []
 
     has_many :spirits, Spirit
     has_many :class_abilities, ApathyDrive.ClassAbility
@@ -20,7 +20,7 @@ defmodule ApathyDrive.Class do
     timestamps
   end
 
-  @required_fields ~w(name alignment strength strength_per_level agility agility_per_level will will_per_level start_room_id)
+  @required_fields ~w(name alignment strength strength_per_level agility agility_per_level will will_per_level start_room_id unities)
   @optional_fields ~w()
 
   @doc """
@@ -30,10 +30,8 @@ defmodule ApathyDrive.Class do
   with no validation performed.
   """
   def changeset(model, params \\ %{}) do
-    updated_params = update_params(params)
-
     model
-    |> cast(updated_params, @required_fields, @optional_fields)
+    |> cast(params, @required_fields, @optional_fields)
   end
 
   def ids do
@@ -61,24 +59,6 @@ defmodule ApathyDrive.Class do
     |> Enum.map(fn(class) ->
          "#{class.name} - #{class.id}"
        end)
-  end
-
-
-  defp update_params(:empty), do: :empty
-  defp update_params(params) do
-    params
-    |> Map.put("start_room_id", get_number(Map.get(params, "start_room_id")))
-  end
-
-  defp get_number(nil), do: nil
-  defp get_number(""),  do: nil
-  defp get_number(string) do
-    case Regex.run(~r/\d+$/, string) do
-      nil ->
-        nil
-      [number] ->
-        number
-    end
   end
 
 end
