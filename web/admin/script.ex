@@ -24,11 +24,6 @@ defmodule ApathyDrive.ExAdmin.Script do
         end
 
       end
-
-
-
-
-
     end
 
   end
