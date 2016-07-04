@@ -3,6 +3,22 @@ defmodule ApathyDrive.ExAdmin.Room do
 
   register_resource ApathyDrive.Room do
 
+    controller do
+      after_filter :after_update, only: [:update]
+
+      def after_update(conn, _params, %Room{id: id} = room, :update) do
+        changes =
+          room
+          |> Map.from_struct
+          |> Map.take(Room.__schema__(:fields))
+          |> Map.drop([:inserted_at, :updated_at, :id])
+
+        ApathyDrive.PubSub.broadcast!("rooms:#{id}", {:room_updated, changes})
+
+        conn
+      end
+    end
+
     form room do
       inputs do
 

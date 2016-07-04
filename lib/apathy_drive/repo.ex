@@ -9,13 +9,15 @@ defmodule ApathyDrive.Repo do
     |> save!()
   end
 
-  def save!(struct) do
-    module    = struct.__struct__
-    model     = struct(struct.__struct__, [id: struct.id, __meta__: struct.__meta__])
-    changes   = struct |> Map.from_struct
-                       |> Map.take(module.__schema__(:fields))
-                       |> Map.drop([:inserted_at, :updated_at, :id])
+  def save!(%{:__struct__ => module} = current_struct) do
+    [pkey] = module.__schema__(:primary_key)
+    model = struct(module, [{pkey, Map.get(current_struct, pkey)}, {:__meta__, current_struct.__meta__}])
 
+    changes =
+      current_struct
+      |> Map.from_struct
+      |> Map.take(module.__schema__(:fields))
+      |> Map.drop([:inserted_at, :updated_at, pkey])
 
     model =
       changes
@@ -28,11 +30,11 @@ defmodule ApathyDrive.Repo do
            end
          end)
 
-    struct
+    current_struct
     |> Map.merge(model
                  |> Ecto.Changeset.change(changes)
                  |> insert_or_update!
-                 |> Map.take([:id, :__meta__]))
+                 |> Map.take([pkey, :__meta__]))
   end
 
 end
