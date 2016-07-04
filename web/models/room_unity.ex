@@ -8,8 +8,10 @@ defmodule ApathyDrive.RoomUnity do
     field :controlled_by, :string
     field :essences,   ApathyDrive.JSONB, default: %{}
     field :expires_at, Timex.Ecto.DateTime
+    field :items, ApathyDrive.JSONB, default: []
     field :exits, :map, virtual: true, default: %{}
     field :essence_targets, :map, virtual: true, default: %{}
+    
 
     timestamps
 

@@ -29,6 +29,7 @@ config :ex_admin,
     ApathyDrive.ExAdmin.Class,
     ApathyDrive.ExAdmin.Item,
     ApathyDrive.ExAdmin.MonsterTemplate,
+    ApathyDrive.ExAdmin.Room,
     ApathyDrive.ExAdmin.Script
   ]
 

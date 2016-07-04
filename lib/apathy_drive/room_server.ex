@@ -211,7 +211,7 @@ defmodule ApathyDrive.RoomServer do
     {:ok, room}
   end
 
-  def handle_call({:destroy_item, item}, _from, %Room{items: items, item_descriptions: item_descriptions} = room) do
+  def handle_call({:destroy_item, item}, _from, %Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions} = room) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
                   |> Match.one(:name_contains, item)
@@ -233,8 +233,7 @@ defmodule ApathyDrive.RoomServer do
         {:reply, {:cant_destroy, hidden_item.name}, room}
       actual_item ->
         room =
-          room
-          |> Map.put(:items, List.delete(room.items, actual_item.item))
+          put_in(room.room_unity.items, List.delete(room.room_unity.items, actual_item.item))
           |> Repo.save
         {:reply, {:ok, actual_item.item}, room}
       true ->
@@ -531,17 +530,17 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:add_item, item}, %Room{items: items} = room) do
+  def handle_cast({:add_item, item}, %Room{room_unity: %RoomUnity{items: items}} = room) do
     room =
-      put_in(room.items, [item | items])
+      put_in(room.room_unity.items, [item | items])
       |> Repo.save
 
     {:noreply, room}
   end
 
-  def handle_cast({:add_items, new_items}, %Room{items: items} = room) do
+  def handle_cast({:add_items, new_items}, %Room{room_unity: %RoomUnity{items: items}} = room) do
     room =
-      put_in(room.items, new_items ++ items)
+      put_in(room.room_unity.items, new_items ++ items)
       |> Repo.save
 
     {:noreply, room}

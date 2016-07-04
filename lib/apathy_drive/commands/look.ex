@@ -195,7 +195,7 @@ defmodule ApathyDrive.Commands.Look do
     psuedo_items = room.item_descriptions["visible"]
                    |> Map.keys
 
-    items = case room.items do
+    items = case room.room_unity.items do
       nil ->
         []
       items ->

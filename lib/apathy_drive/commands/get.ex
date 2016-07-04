@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
-  alias ApathyDrive.{Mobile, Match, Repo}
+  alias ApathyDrive.{Mobile, Match, Repo, RoomUnity}
 
   def keywords, do: ["get"]
 
@@ -36,7 +36,7 @@ defmodule ApathyDrive.Commands.Get do
     |> RoomServer.get_item(self, item)
   end
 
-  def execute(%Room{items: items} = room, mobile, "all") do
+  def execute(%Room{room_unity: %RoomUnity{items: items}} = room, mobile, "all") do
     items
     |> Enum.map(&(&1["name"]))
     |> get_all(mobile)
@@ -44,7 +44,7 @@ defmodule ApathyDrive.Commands.Get do
     room
   end
 
-  def execute(%Room{items: items, item_descriptions: item_descriptions} = room, mobile, item) do
+  def execute(%Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions} = room, mobile, item) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
                   |> Match.one(:name_contains, item)
@@ -66,8 +66,7 @@ defmodule ApathyDrive.Commands.Get do
       actual_item ->
         Mobile.get_item(mobile, actual_item.item)
 
-        room
-        |> Map.put(:items, List.delete(room.items, actual_item.item))
+        put_in(room.room_unity.items, List.delete(room.room_unity.items, actual_item.item))
         |> Repo.save!
       true ->
         Mobile.send_scroll(mobile, "<p>You don't see \"#{item}\" here.</p>")
