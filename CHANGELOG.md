@@ -181,3 +181,6 @@ CHANGELOG
 
 ---- 0.0.70 / 2016-05-31 / frequent-essence-updates ----------------------------
 * update essence more frequently for players
+
+---- 0.0.71 / 2016-07-03 / ex_admin --------------------------------------------
+* use ex_admin for admin pages
