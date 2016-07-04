@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.Ask do
   use ApathyDrive.Command
+  alias ApathyDrive.MonsterTemplate
 
   def keywords, do: ["ask"]
 

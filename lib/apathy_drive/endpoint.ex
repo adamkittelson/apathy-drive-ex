@@ -5,7 +5,7 @@ defmodule ApathyDrive.Endpoint do
 
   plug Plug.Static,
     at: "/", from: :apathy_drive, gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt)
+    only: ~w(css fonts images js themes favicon.ico robots.txt)
 
   # Code reloading will only work if the :code_reloader key of
   # the :phoenix application is set to true in your config file.

@@ -1,0 +1,19 @@
+textarea.json {
+  height: 500px;
+  margin: 0;
+  width: -moz-calc(100% - 60px) !important;
+  width: -webkit-calc(100% - 60px) !important;
+  width: calc(100% - 60px) !important;
+  border: none;
+  font-size: 10pt;
+  font-family: monospace;
+  padding: 0;
+  text-indent: 0px;
+  line-height: normal !important;
+}
+
+.linedwrap {
+  margin-bottom: 2em;
+  width: 100%;
+  overflow: auto;
+}

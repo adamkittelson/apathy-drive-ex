@@ -30,7 +30,6 @@ defmodule ApathyDrive.System do
         spirit
         |> Map.put(:admin, false)
         |> Repo.save!
-        |> IO.inspect
 
         Logger.info "#{name} is no longer an admin"
       %Spirit{} ->

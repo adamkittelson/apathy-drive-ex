@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Repo do
   use Ecto.Repo, otp_app: :apathy_drive
-  use Scrivener, page_size: 3
+  use Scrivener, page_size: 10
   alias ApathyDrive.Room
 
   def save(%Room{room_unity: room_unity} = room) do

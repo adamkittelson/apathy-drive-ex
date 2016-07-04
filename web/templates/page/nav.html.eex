@@ -33,26 +33,7 @@
       </li>
       <%= if @conn.assigns[:admin?] do %>
         <li class="navbar-item">
-          <a class="navbar-link" href="#system" data-popover="#systemPopover">System</a>
-          <div id="systemPopover" class="popover">
-            <ul class="popover-list">
-              <li class="popover-item">
-                <a class="popover-link" href="/system/abilities">Abilities</a>
-              </li>
-              <li class="popover-item">
-                <a class="popover-link" href="/system/classes">Classes</a>
-              </li>
-              <li class="popover-item">
-                <a class="popover-link" href="/system/items">Items</a>
-              </li>
-              <li class="popover-item">
-                <a class="popover-link" href="/system/monsters">Monsters</a>
-              </li>
-              <li class="popover-item">
-                <a class="popover-link" href="/system/rooms">Rooms</a>
-              </li>
-            </ul>
-          </div>
+          <a class="navbar-link" href="/admin" target="_blank">Admin</a>
         </li>
       <% end %>
       <%= if @conn.assigns[:current_spirit] do %>

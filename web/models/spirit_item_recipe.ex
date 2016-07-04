@@ -1,5 +1,6 @@
 defmodule ApathyDrive.SpiritItemRecipe do
   use ApathyDrive.Web, :model
+  alias ApathyDrive.MonsterTemplate
 
   schema "spirit_item_recipes" do
     belongs_to :spirit, Spirit

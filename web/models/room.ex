@@ -1,27 +1,26 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Area, Match, Mobile, Room, RoomUnity, Presence, PubSub}
+  alias ApathyDrive.{Ability, Area, Match, Mobile, Room, RoomUnity, Presence, PubSub}
 
   schema "rooms" do
     field :name,                     :string
-    field :keywords,                 {:array, :string}
     field :description,              :string
-    field :effects,                  :map, virtual: true, default: %{}
     field :light,                    :integer
     field :item_descriptions,        ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
     field :lair_size,                :integer
     field :lair_frequency,           :integer, default: 5
-    field :lair_next_spawn_at,       :integer, virtual: true, default: 0
     field :exits,                    ApathyDrive.JSONB, default: []
     field :commands,                 ApathyDrive.JSONB, default: %{}
     field :legacy_id,                :string
+    field :coordinates,              :map
+
+    field :effects,                  :map, virtual: true, default: %{}
+    field :lair_next_spawn_at,       :integer, virtual: true, default: 0
     field :timers,                   :map, virtual: true, default: %{}
-    field :items,                    ApathyDrive.JSONB, default: []
     field :last_effect_key,          :integer, virtual: true, default: 0
     field :default_essence,          :integer, virtual: true
     field :essence_last_updated_at,  :integer, virtual: true
     field :essence_last_reported_at, :integer, virtual: true, default: 0
-    field :coordinates,              :map
 
     timestamps
 
@@ -32,7 +31,7 @@ defmodule ApathyDrive.Room do
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
   end
-  
+
   def world_map do
     from room in Room,
     where: not is_nil(room.coordinates),
@@ -145,7 +144,7 @@ defmodule ApathyDrive.Room do
     ApathyDrive.Config.get(:start_room)
   end
 
-  def find_item(%Room{items: items, item_descriptions: item_descriptions}, item) do
+  def find_item(%Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions}, item) do
     actual_item = items
                   |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
                   |> Match.one(:keyword_starts_with, item)

@@ -15,7 +15,7 @@ defmodule ApathyDrive.Item do
   end
 
   @required_fields ~w(name description weight worn_on level grade)
-  @optional_fields ~w()
+  @optional_fields ~w(abilities global_drop)
 
   @doc """
   Creates a changeset based on the `model` and `params`.

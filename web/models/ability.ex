@@ -7,7 +7,7 @@ defmodule ApathyDrive.Ability do
   schema "abilities" do
     field :properties,      ApathyDrive.JSONB
 
-    has_many :rooms, Room
+    has_many :rooms, ApathyDrive.Room
 
     timestamps
   end

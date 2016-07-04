@@ -1,6 +1,6 @@
 defmodule ApathyDrive.MonsterAbility do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.Ability
+  alias ApathyDrive.{Ability, MonsterTemplate}
 
   schema "monster_abilities" do
     belongs_to :monster_template, MonsterTemplate

@@ -26,23 +26,23 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:ecto,                "2.0.0-rc.6", override: true},
+      {:ecto,                "2.0.2", override: true},
       {:postgrex,            "~> 0.11.2"},
-      {:phoenix,             "~> 1.2.0-rc"},
-      {:phoenix_pubsub,      "~> 1.0.0-rc"},
+      {:phoenix,             "~> 1.2.0"},
+      {:phoenix_pubsub,      "~> 1.0.0"},
       {:phoenix_live_reload, "~> 1.0.5", only: :dev},
       {:phoenix_ecto,        "~> 3.0.0"},
       {:phoenix_html,        "~> 2.6.0"},
       {:timex_ecto,          "~> 1.1.3"},
-      {:inflex,              "~> 0.2.8"},
+      {:inflex,              "~> 1.7"},
       {:oauth2,              "~> 0.5"},
-      {:scrivener,           "~> 1.2.1"},
       {:comeonin,            "~> 1.2.2"},
       {:exrm,                "1.0.3"},
       {:conform,             "2.0.0"},
       {:conform_exrm,        "1.0.0"},
       {:ex_statsd,           "~> 0.5.3"},
       {:rollbax,             "~> 0.6.1"},
+      {:ex_admin, github: "smpallen99/ex_admin"},
       {:shouldi,             "0.3.0", only: :test}
     ]
   end
