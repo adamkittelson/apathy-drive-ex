@@ -1,9 +1,9 @@
-defmodule MonsterTemplate do
+defmodule ApathyDrive.MonsterTemplate do
   use ApathyDrive.Web, :model
   use GenServer
   use Timex
 
-  alias ApathyDrive.{Mobile, Repo, Room}
+  alias ApathyDrive.{Mobile, Monster, MonsterTemplate, Repo, Room}
 
   schema "monster_templates" do
     field :name,                   :string
@@ -14,26 +14,33 @@ defmodule MonsterTemplate do
     field :greeting,               :string
     field :gender,                 :string
     field :game_limit,             :integer
-    field :adjectives,             {:array, :string}, default: []
+    field :adjectives,             ApathyDrive.JSONB, default: []
     field :chance_to_follow,       :integer
     field :alignment,              :string
     field :level,                  :integer
     field :questions,              ApathyDrive.JSONB
-    field :flags,                  {:array, :string}, default: []
+    field :flags,                  ApathyDrive.JSONB, default: []
     field :experience,             :integer
-    field :last_killed_at,         Timex.Ecto.DateTime
-    field :regen_time_in_minutes,  :integer
     field :permanent,              :boolean
     field :movement,               :string
-    field :unities,                {:array, :string}
+    field :unities,                ApathyDrive.JSONB
 
-    has_many :monsters, Monster
+    has_many :mobiles, Mobile
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
     has_many :monster_abilities, ApathyDrive.MonsterAbility
     has_many :abilities, through: [:monster_abilities, :ability]
 
     timestamps
+  end
+
+  def changeset(%MonsterTemplate{} = monster_template, params \\ %{}) do
+    monster_template
+    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting adjectives alignment level experience), ~w(gender game_limit chance_to_follow))
+    |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
+    |> validate_length(:name, min: 1, max: 30)
+    |> validate_inclusion(:gender, MonsterTemplate.genders)
+    |> validate_inclusion(:alignment, MonsterTemplate.alignments)
   end
 
   def start_link(mt, opts \\ []) do
@@ -48,15 +55,6 @@ defmodule MonsterTemplate do
 
   def init(mt) do
     {:ok, mt}
-  end
-
-  def changeset(%MonsterTemplate{} = monster_template, params \\ %{}) do
-    monster_template
-    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting gender alignment level game_limit experience), ~w())
-    |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
-    |> validate_length(:name, min: 1, max: 30)
-    |> validate_inclusion(:gender, MonsterTemplate.genders)
-    |> validate_inclusion(:alignment, MonsterTemplate.alignments)
   end
 
   def find(id) do
@@ -110,15 +108,6 @@ defmodule MonsterTemplate do
     |> Enum.map(&Map.get(&1, :properties))
   end
 
-  def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: nil}), do: false
-  def on_cooldown?(%MonsterTemplate{last_killed_at: nil}),        do: false
-  def on_cooldown?(%MonsterTemplate{regen_time_in_minutes: regen_time, last_killed_at: last_killed_at}) do
-    respawn_at = DateTime.now
-                 |> DateTime.shift(minutes: -regen_time)
-
-    -1 == DateTime.compare(respawn_at, last_killed_at)
-  end
-
   def limit_reached?(%MonsterTemplate{game_limit: game_limit} = monster_template) do
     count(monster_template) >= game_limit
   end
@@ -143,12 +132,6 @@ defmodule MonsterTemplate do
     GenServer.call(monster, :value)
   end
 
-  def set_last_killed_at(%Mobile{monster_template_id: id}) do
-    id
-    |> find
-    |> GenServer.cast(:set_last_killed_at)
-  end
-
   def genders do
     [nil, "male", "female"]
   end
@@ -156,7 +139,7 @@ defmodule MonsterTemplate do
   def alignments do
     ["good", "neutral", "evil"]
   end
-  
+
   def movements do
     ["stationary", "solo", "leader", "follower"]
   end
@@ -186,7 +169,7 @@ defmodule MonsterTemplate do
 
     monster = Map.put(monster, :keywords, String.split(monster.name))
 
-    monster = 
+    monster =
       if length(monster.unities) > 0 do
         experience =
           Enum.reduce(monster.unities, 0, fn(unity, exp) ->
@@ -218,15 +201,6 @@ defmodule MonsterTemplate do
 
   def handle_call(:questions, _from, monster_template) do
     {:reply, monster_template.questions, monster_template}
-  end
-
-  def handle_cast(:set_last_killed_at, monster_template) do
-    mt =
-      monster_template
-      |> Map.put(:last_killed_at, Timex.DateTime.now)
-      |> Repo.save!
-
-    {:noreply, mt}
   end
 
 end

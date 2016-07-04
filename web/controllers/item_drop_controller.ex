@@ -1,8 +1,7 @@
 defmodule ApathyDrive.ItemDropController do
   use ApathyDrive.Web, :controller
 
-  alias ApathyDrive.Item
-  alias ApathyDrive.ItemDrop
+  alias ApathyDrive.{Item, ItemDrop, MonsterTemplate}
 
   plug :scrub_params, "item_drop" when action in [:create, :update]
 

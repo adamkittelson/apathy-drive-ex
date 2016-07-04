@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Commands, LairMonster, Match, Mobile, Presence, PubSub,
+  alias ApathyDrive.{Commands, LairMonster, Match, Mobile, Presence, PubSub, MonsterTemplate,
                      Repo, Room, RoomSupervisor, RoomUnity, Text, TimerManager}
   use Timex
   require Logger

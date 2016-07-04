@@ -2,8 +2,7 @@ defmodule ApathyDrive.MonsterController do
   use ApathyDrive.Web, :controller
   import Ecto.Query
 
-  alias ApathyDrive.Repo
-  alias ApathyDrive.ItemDrop
+  alias ApathyDrive.{ItemDrop, MonsterTemplate, Repo}
 
   plug :scrub_params, "monster_template" when action in [:create, :update]
 

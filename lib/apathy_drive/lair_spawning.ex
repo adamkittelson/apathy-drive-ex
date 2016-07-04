@@ -1,5 +1,5 @@
 defmodule ApathyDrive.LairSpawning do
-  alias ApathyDrive.{Mobile, Repo, RoomServer}
+  alias ApathyDrive.{MonsterTemplate, Mobile, Repo, RoomServer}
   require Ecto.Query
 
   def spawn_lair(room, room_pid) do
@@ -34,7 +34,7 @@ defmodule ApathyDrive.LairSpawning do
     |> Enum.reject(fn({_mt_id, mt}) ->
          mt = MonsterTemplate.value(mt)
 
-         MonsterTemplate.on_cooldown?(mt) or MonsterTemplate.limit_reached?(mt)
+         MonsterTemplate.limit_reached?(mt)
        end)
   end
 

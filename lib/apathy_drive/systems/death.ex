@@ -7,19 +7,19 @@ defmodule Systems.Death do
   end
   # Player possessing a monster
   def kill(%Mobile{unities: [], monster_template_id: _, spirit: %Spirit{}} = mobile) do
-    kill(mobile, [:reward_monster_death_exp, :unpossess, :respawn_spirit, :set_last_killed_at, :delete])
+    kill(mobile, [:reward_monster_death_exp, :unpossess, :respawn_spirit, :delete])
   end
   # Player possessing a turned monster
   def kill(%Mobile{monster_template_id: _, spirit: %Spirit{}} = mobile) do
-    kill(mobile, [:reward_monster_death_exp, :unpossess, :respawn_spirit, :set_last_killed_at, :delete])
+    kill(mobile, [:reward_monster_death_exp, :unpossess, :respawn_spirit, :delete])
   end
   # Monster not possessed by a player
   def kill(%Mobile{unities: [], spirit: nil} = mobile) do
-    kill(mobile, [:reward_monster_death_exp, :generate_loot, :set_last_killed_at, :delete])
+    kill(mobile, [:reward_monster_death_exp, :generate_loot, :delete])
   end
   # Turned monster not possessed by a player
   def kill(%Mobile{spirit: nil} = mobile) do
-    kill(mobile, [:reward_monster_death_exp, :generate_loot, :set_last_killed_at, :delete])
+    kill(mobile, [:reward_monster_death_exp, :generate_loot, :delete])
   end
 
   def kill(mobile, [:send_home | remaining_steps]) do
@@ -70,11 +70,6 @@ defmodule Systems.Death do
   end
   def kill(mobile, [:generate_loot | remaining_steps]) do
     ApathyDrive.PubSub.broadcast!("rooms:#{mobile.room_id}:spirits", {:generate_loot, mobile.monster_template_id, Mobile.level(mobile), 50})
-
-    kill(mobile, remaining_steps)
-  end
-  def kill(mobile, [:set_last_killed_at | remaining_steps]) do
-    MonsterTemplate.set_last_killed_at(mobile)
 
     kill(mobile, remaining_steps)
   end

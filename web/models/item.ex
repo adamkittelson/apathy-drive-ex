@@ -14,8 +14,8 @@ defmodule ApathyDrive.Item do
     timestamps
   end
 
-  @required_fields ~w(name description weight worn_on level grade global_drop)
-  @optional_fields ~w(abilities)
+  @required_fields ~w(name description weight worn_on level grade)
+  @optional_fields ~w(abilities global_drop)
 
   @doc """
   Creates a changeset based on the `model` and `params`.

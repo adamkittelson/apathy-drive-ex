@@ -1,5 +1,6 @@
 defmodule ApathyDrive.ItemDrop do
   use ApathyDrive.Web, :model
+  alias ApathyDrive.MonsterTemplate
 
   schema "item_drops" do
     field :monster_id, :integer
