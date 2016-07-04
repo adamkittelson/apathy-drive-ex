@@ -3,67 +3,67 @@ defmodule ApathyDrive.ExAdmin.MonsterTemplate do
 
   register_resource ApathyDrive.MonsterTemplate do
 
-    form monster_template do
+    form monstertemplate do
       inputs do
 
-        input monster_template, :name
-        input monster_template, :description
-        input monster_template, :death_message
-        input monster_template, :enter_message
-        input monster_template, :exit_message
-        input monster_template, :greeting
-        input monster_template, :gender, collection: %{"Male" => "male", "Female" => "female"}
-        input monster_template, :game_limit
+        input monstertemplate, :name
+        input monstertemplate, :description
+        input monstertemplate, :death_message
+        input monstertemplate, :enter_message
+        input monstertemplate, :exit_message
+        input monstertemplate, :greeting
+        input monstertemplate, :gender, collection: %{"Male" => "male", "Female" => "female"}
+        input monstertemplate, :game_limit
         content do
           ~s(
-          <div id="monster_template_adjectives_input" class="form-group">
-            <label class="col-sm-2 control-label" for="monster_template_adjectives">
+          <div id="monstertemplate_adjectives_input" class="form-group">
+            <label class="col-sm-2 control-label" for="monstertemplate_adjectives">
               Adjectives<abbr class="required" title="required">*</abbr>
             </label>
             <div class="col-sm-10">
-              <textarea id="monster_template_adjectives" name="monster_template[adjectives]" class="json">#{Poison.encode!(monster_template.adjectives)}</textarea>
+              <textarea id="monstertemplate_adjectives" name="monstertemplate[adjectives]" class="json">#{Poison.encode!(monstertemplate.adjectives)}</textarea>
             </div>
           </div>
           )
         end
-        input monster_template, :chance_to_follow, type: :number
-        input monster_template, :alignment
-        input monster_template, :level
+        input monstertemplate, :chance_to_follow, type: :number
+        input monstertemplate, :alignment
+        input monstertemplate, :level
         content do
           ~s(
-          <div id="monster_template_questions_input" class="form-group">
-            <label class="col-sm-2 control-label" for="monster_template_questions">
+          <div id="monstertemplate_questions_input" class="form-group">
+            <label class="col-sm-2 control-label" for="monstertemplate_questions">
               Questions<abbr class="required" title="required">*</abbr>
             </label>
             <div class="col-sm-10">
-              <textarea id="monster_template_questions" name="monster_template[questions]" class="json">#{Poison.encode!(monster_template.questions)}</textarea>
+              <textarea id="monstertemplate_questions" name="monstertemplate[questions]" class="json">#{Poison.encode!(monstertemplate.questions)}</textarea>
             </div>
           </div>
           )
         end
         content do
           ~s(
-          <div id="monster_template_flags" class="form-group">
-            <label class="col-sm-2 control-label" for="monster_template_flags">
+          <div id="monstertemplate_flags" class="form-group">
+            <label class="col-sm-2 control-label" for="monstertemplate_flags">
               Flags<abbr class="required" title="required">*</abbr>
             </label>
             <div class="col-sm-10">
-              <textarea id="monster_template_flags" name="monster_template[flags]" class="json">#{Poison.encode!(monster_template.flags)}</textarea>
+              <textarea id="monstertemplate_flags" name="monstertemplate[flags]" class="json">#{Poison.encode!(monstertemplate.flags)}</textarea>
             </div>
           </div>
           )
         end
-        input monster_template, :experience
-        input monster_template, :permanent
-        input monster_template, :movement
+        input monstertemplate, :experience
+        input monstertemplate, :permanent
+        input monstertemplate, :movement
         content do
           ~s(
-          <div id="monster_template_unities" class="form-group">
-            <label class="col-sm-2 control-label" for="monster_template_unities">
+          <div id="monstertemplate_unities" class="form-group">
+            <label class="col-sm-2 control-label" for="monstertemplate_unities">
               Unities<abbr class="required" title="required">*</abbr>
             </label>
             <div class="col-sm-10">
-              <textarea id="monster_template_unities" name="monster_template[unities]" class="json">#{Poison.encode!(monster_template.unities)}</textarea>
+              <textarea id="monstertemplate_unities" name="monstertemplate[unities]" class="json">#{Poison.encode!(monstertemplate.unities)}</textarea>
             </div>
           </div>
           )
