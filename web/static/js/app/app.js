@@ -82,6 +82,10 @@ chan.on("redirect", function(message){
   window.location = "" + window.location.origin + message.url;
 });
 
+chan.on("open tab", function(message){
+  window.open(window.location.origin + message.url, "_blank")
+});
+
 chan.on("up", function(message){
   command_history("up");
 });

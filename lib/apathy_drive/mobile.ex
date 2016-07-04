@@ -936,7 +936,7 @@ defmodule ApathyDrive.Mobile do
 
   def track(%Mobile{} = mobile) do
     send(self(), {:also_here, Presence.metas("rooms:#{mobile.room_id}:mobiles")})
-    {:ok, _} = Presence.track(self(), "rooms:#{mobile.room_id}:mobiles", "mobile_#{mobile.id || mobile.name}", track_data(mobile))
+    {:ok, _} = Presence.track(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()), track_data(mobile))
 
     mobile.room_id
     |> RoomServer.find
@@ -944,11 +944,11 @@ defmodule ApathyDrive.Mobile do
   end
 
   def update(%Mobile{} = mobile) do
-    Presence.update(self(), "rooms:#{mobile.room_id}:mobiles", self(), track_data(mobile))
+    Presence.update(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()), track_data(mobile))
   end
 
   def untrack(%Mobile{} = mobile) do
-    Presence.untrack(self(), "rooms:#{mobile.room_id}:mobiles", self())
+    Presence.untrack(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()))
 
     mobile.room_id
     |> RoomServer.find

@@ -108,6 +108,14 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:open_tab, path}, socket) do
+    Phoenix.Channel.push socket, "open tab", %{:url => path}
+
+    {:noreply, socket}
+  end
+
+
+
   def handle_info(%Phoenix.Socket.Broadcast{event: event, payload: payload}, socket) do
     Phoenix.Channel.push socket, event, payload
 

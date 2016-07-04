@@ -13,6 +13,10 @@ defmodule ApathyDrive.Commands.System do
     Mobile.system(mobile, args)
   end
 
+  def execute(%Mobile{socket: socket, spirit: %Spirit{admin: true}, room_id: room_id}, ["edit", "room"]) do
+    send(socket, {:open_tab, "/admin/rooms/#{room_id}"})
+  end
+
   def execute(%Mobile{spirit: %Spirit{admin: true}, room_id: room_id}, args) do
     room_id
     |> RoomServer.find
