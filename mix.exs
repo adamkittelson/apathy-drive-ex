@@ -17,8 +17,8 @@ defmodule ApathyDrive.Mixfile do
     [
       mod: { ApathyDrive, [] },
       applications: [:logger, :rollbax, :postgrex, :ecto, :phoenix, :cowboy, :conform,
-                     :conform_exrm, :oauth2, :phoenix_ecto, :comeonin, :runtime_tools,
-                     :tzdata, :timex_ecto, :scrivener, :ex_statsd,
+                     :conform_exrm, :oauth2, :phoenix_ecto, :comeonin, :runtime_tools, :csvlixir,
+                     :tzdata, :timex_ecto, :scrivener, :scrivener_ecto, :ex_statsd, :ex_admin,
                      :phoenix_html, :inflex, :connection, :decimal, :neotoma, :phoenix_pubsub]
     ]
   end
@@ -42,6 +42,7 @@ defmodule ApathyDrive.Mixfile do
       {:conform_exrm,        "1.0.0"},
       {:ex_statsd,           "~> 0.5.3"},
       {:rollbax,             "~> 0.6.1"},
+      {:scrivener_ecto,      "~> 1.0.0", override: true},
       {:ex_admin, github: "smpallen99/ex_admin"},
       {:shouldi,             "0.3.0", only: :test}
     ]

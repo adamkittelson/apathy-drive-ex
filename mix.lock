@@ -47,7 +47,7 @@
   "relx": {:hex, :relx, "3.19.0", "286dd5244b4786f56aac75d5c8e2d1fb4cfd306810d4ec8548f3ae1b3aadb8f7", [:rebar3], [{:providers, "1.6.0", [hex: :providers, optional: false]}, {:getopt, "0.8.2", [hex: :getopt, optional: false]}, {:erlware_commons, "0.19.0", [hex: :erlware_commons, optional: false]}, {:cf, "0.2.1", [hex: :cf, optional: false]}, {:bbmustache, "1.0.4", [hex: :bbmustache, optional: false]}]},
   "rollbax": {:hex, :rollbax, "0.6.1", "412065ca6544a8a654dd636ea825f329b12a02f124f2c61058e49e5c7fc15040", [:mix], [{:poison, "~> 1.4 or ~> 2.0", [hex: :poison, optional: false]}, {:hackney, "~> 1.1", [hex: :hackney, optional: false]}]},
   "scrivener": {:hex, :scrivener, "2.0.0", "38e59a1c37e989c40a22c019da245a86b257182aee45a074292c9038fab39678", [:mix], []},
-  "scrivener_ecto": {:git, "https://github.com/drewolson/scrivener_ecto.git", "dd9b485c05cafafa90724a54c3fde07cc73acd96", []},
+  "scrivener_ecto": {:hex, :scrivener_ecto, "1.0.0", "66a0c4cf722e965cd4fc8b5ad48c09409c19a5a125bf2435d2f3fb18d0d72f50", [:mix], [{:postgrex, "~> 0.11.2", [hex: :postgrex, optional: true]}, {:ecto, "~> 2.0", [hex: :ecto, optional: false]}, {:scrivener, "~> 2.0", [hex: :scrivener, optional: false]}]},
   "shouldi": {:hex, :shouldi, "0.3.0", "ae3fb3cec3328057377a0aa750aa1bb9f8b321ba054e1e2c7211512c383fb6ff", [:mix], []},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.0", "edee20847c42e379bf91261db474ffbe373f8acb56e9079acb6038d4e0bf414f", [:rebar, :make], []},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"},
