@@ -29,9 +29,7 @@ defmodule Systems.Death do
     kill(mobile, remaining_steps)
   end
   def kill(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment} = spirit} = mobile, [:drop_equipment | remaining_steps]) do
-    mobile.room_id
-    |> RoomServer.find
-    |> RoomServer.add_items(inventory ++ equipment)
+    RoomServer.add_items({:global, "room_#{mobile.room_id}"}, inventory ++ equipment)
 
     spirit =
       Map.merge(spirit, %{inventory: [], equipment: []})
@@ -79,9 +77,6 @@ defmodule Systems.Death do
     kill(mobile, remaining_steps)
   end
   def kill(mobile, []) do
-    mobile.room_id
-    |> RoomServer.find
-    |> Process.send_after(:update_essence, 1000)
     mobile
   end
 

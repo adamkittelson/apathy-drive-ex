@@ -783,6 +783,10 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:room_updated, changes}, room) do
     {:noreply, Map.merge(room, changes)}
   end
+  
+  def handle_info(:room_deleted, room) do
+    {:stop, :normal, room}
+  end
 
   def handle_info(_message, room) do
     {:noreply, room}

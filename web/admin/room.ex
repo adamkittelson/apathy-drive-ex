@@ -4,7 +4,16 @@ defmodule ApathyDrive.ExAdmin.Room do
   register_resource ApathyDrive.Room do
 
     controller do
+      before_filter :before_delete, only: [:destroy]
       after_filter :after_update, only: [:update]
+
+      def before_delete(%Plug.Conn{assigns: %{resource: %Room{id: id}}} = conn, _params) do
+
+        :global.send("room_#{id}", :room_deleted)
+        ApathyDrive.PubSub.broadcast!("rooms:#{id}:mobiles", :die)
+
+        conn
+      end
 
       def after_update(conn, _params, %Room{id: id} = room, :update) do
         changes =
