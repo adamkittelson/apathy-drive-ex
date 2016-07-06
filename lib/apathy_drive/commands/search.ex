@@ -28,6 +28,8 @@ defmodule ApathyDrive.Commands.Search do
     else
       if message = room_exit["message_when_revealed"] do
         Mobile.send_scroll(mobile, "<p>#{message}</p>")
+      else
+        Mobile.send_scroll(mobile, "<p>You found an exit #{ApathyDrive.Exit.direction_description(direction)}!</p>")
       end
 
       RoomServer.search(self, room_exit["direction"])
