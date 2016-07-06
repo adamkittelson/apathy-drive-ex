@@ -505,6 +505,19 @@ $(document).ready(function() {
     center_on_room(player.room.id);
   });
 
+  chan.on("room admin updated", function(data) {
+    var room = rooms[data.id];
+    room.name = data.name;
+    room.coords = data.coords;
+    room.directions = data.directions;
+
+    add_room(room.id, room);
+
+    draw_area(room.area);
+    draw_area(player.room.area);
+    center_on_room(player.room.id);
+  });
+
   function dragMoveListener (event) {
     interactEvent = event;
     return;
