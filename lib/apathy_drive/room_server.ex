@@ -675,40 +675,8 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:report_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
     room = Room.update_essence(room)
 
-    room =
-      if room.coordinates do
-        room
-      else
-        room
-        |> Map.put(:coordinates, %{"x" => 0, "y" => 0, "z" => 0})
-        |> Repo.save!
-      end
-
     Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
       unless kind in ["Cast", "RemoteAction"] do
-        set_coords =
-          case direction do
-            "north" ->
-              %{"x" => room.coordinates["x"], "y" => room.coordinates["y"] - 1, "z" => room.coordinates["z"]}
-            "northeast" ->
-              %{"x" => room.coordinates["x"] + 1, "y" => room.coordinates["y"] - 1, "z" => room.coordinates["z"]}
-            "east" ->
-              %{"x" => room.coordinates["x"] + 1, "y" => room.coordinates["y"], "z" => room.coordinates["z"]}
-            "southeast" ->
-              %{"x" => room.coordinates["x"] + 1, "y" => room.coordinates["y"] + 1, "z" => room.coordinates["z"]}
-            "south" ->
-              %{"x" => room.coordinates["x"], "y" => room.coordinates["y"] + 1, "z" => room.coordinates["z"]}
-            "southwest" ->
-              %{"x" => room.coordinates["x"] - 1, "y" => room.coordinates["y"] + 1, "z" => room.coordinates["z"]}
-            "west" ->
-              %{"x" => room.coordinates["x"] - 1, "y" => room.coordinates["y"], "z" => room.coordinates["z"]}
-            "northwest" ->
-              %{"x" => room.coordinates["x"] - 1, "y" => room.coordinates["y"] - 1, "z" => room.coordinates["z"]}
-            "up" ->
-              %{"x" => room.coordinates["x"], "y" => room.coordinates["y"], "z" => room.coordinates["z"] - 1}
-            "down" ->
-              %{"x" => room.coordinates["x"], "y" => room.coordinates["y"], "z" => room.coordinates["z"] + 1}
-          end
 
         report = %{
           essences: essences,
@@ -718,8 +686,7 @@ defmodule ApathyDrive.RoomServer do
           legacy_id: room.legacy_id,
           area: room.area.name,
           controlled_by: room.room_unity.controlled_by,
-          report_back?: Room.spirits_present?(room),
-          set_coords: set_coords
+          report_back?: Room.spirits_present?(room)
         }
 
         dest
@@ -742,15 +709,6 @@ defmodule ApathyDrive.RoomServer do
     if report.report_back? and room.essence_last_reported_at < (Timex.DateTime.to_secs(Timex.DateTime.now) - 60) do
       send(self(), :report_essence)
     end
-
-    room =
-      if room.coordinates do
-        room
-      else
-        room
-        |> Map.put(:coordinates, report.set_coords)
-        |> Repo.save!
-      end
 
     {:noreply, room}
   end

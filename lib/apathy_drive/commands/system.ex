@@ -148,6 +148,7 @@ defmodule ApathyDrive.Commands.System do
     |> case do
          %Area{} = area ->
            Ecto.assoc(area, :rooms)
+           |> Ecto.Query.where([r], not is_nil(r.coordinates))
            |> Ecto.Query.limit(1)
            |> Ecto.Query.select([:id])
            |> ApathyDrive.Repo.one
