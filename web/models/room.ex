@@ -112,7 +112,7 @@ defmodule ApathyDrive.Room do
 
   def changeset(%Room{} = room, params \\ %{}) do
     room
-    |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_frequency commands legacy_id))
+    |> cast(params, ~w(name description exits), ~w(light item_descriptions lair_size lair_frequency commands legacy_id coordinates))
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
   end
