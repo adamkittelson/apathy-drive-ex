@@ -123,6 +123,18 @@ defmodule ApathyDrive.Commands.System do
 
     room
   end
+  def execute(%Room{coordinates: old_coords} = room, mobile, ["set", "room", "coords" | []]) do
+    room =
+      room
+      |> Map.put(:coordinates, nil)
+      |> Repo.save!
+
+    ApathyDrive.Endpoint.broadcast!("map", "room coords change", %{room_id: room.id, x: 0, y: 0, z: 0})
+
+    Mobile.send_scroll(mobile, "<p>Room coordinates unset from \"#{inspect(old_coords)}\".</p>")
+
+    room
+  end
 
   def execute(%Room{} = room, mobile, ["list", "areas"]) do
     Area.list_with_room_counts
