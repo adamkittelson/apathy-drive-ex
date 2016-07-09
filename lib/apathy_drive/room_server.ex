@@ -179,7 +179,7 @@ defmodule ApathyDrive.RoomServer do
       |> Room.set_default_essence
       |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
 
-    room = 
+    room =
       if room.room_unity do
         room
       else
@@ -741,7 +741,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:room_updated, changes}, room) do
     {:noreply, Map.merge(room, changes)}
   end
-  
+
   def handle_info(:room_deleted, room) do
     {:stop, :normal, room}
   end

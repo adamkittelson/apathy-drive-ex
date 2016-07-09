@@ -12,7 +12,7 @@ defmodule ApathyDrive.Room do
     field :exits,                    ApathyDrive.JSONB, default: []
     field :commands,                 ApathyDrive.JSONB, default: %{}
     field :legacy_id,                :string
-    field :coordinates,              :map
+    field :coordinates,              ApathyDrive.JSONB
 
     field :effects,                  :map, virtual: true, default: %{}
     field :lair_next_spawn_at,       :integer, virtual: true, default: 0
