@@ -36,7 +36,7 @@ defmodule ApathyDrive.MonsterTemplate do
 
   def changeset(%MonsterTemplate{} = monster_template, params \\ %{}) do
     monster_template
-    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting adjectives alignment level experience), ~w(gender game_limit chance_to_follow unities))
+    |> cast(params, ~w(name description death_message enter_message enter_message exit_message greeting adjectives alignment level experience movement), ~w(gender game_limit chance_to_follow unities))
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
     |> validate_inclusion(:gender, MonsterTemplate.genders)

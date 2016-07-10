@@ -12,7 +12,7 @@ defmodule ApathyDrive.ExAdmin.MonsterTemplate do
         input monstertemplate, :enter_message
         input monstertemplate, :exit_message
         input monstertemplate, :greeting
-        input monstertemplate, :gender, collection: %{"Male" => "male", "Female" => "female"}
+        input monstertemplate, :gender, collection: %{"male" => "Male", "female" => "Female"}
         input monstertemplate, :game_limit
         content do
           ~s(
@@ -55,7 +55,7 @@ defmodule ApathyDrive.ExAdmin.MonsterTemplate do
         end
         input monstertemplate, :experience
         input monstertemplate, :permanent
-        input monstertemplate, :movement
+        input monstertemplate, :movement, collection: %{"solo" => "Solo", "leader" => "Leader", "follower" => "Follower", "stationary" => "Stationary"}
         content do
           ~s(
           <div id="monstertemplate_unities" class="form-group">
