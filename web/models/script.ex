@@ -13,7 +13,6 @@ defmodule ApathyDrive.Script do
     |> cast(params, ~w(instructions), ~w())
   end
 
-
   def find(id) do
     ApathyDrive.Repo.get(__MODULE__, id)
     |> Map.get(:instructions)
@@ -155,7 +154,7 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"check_stat" => %{"stat" => "strength", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
-    if Mobile.strength(mobile) < :rand.uniform(100 + amount) do
+    if Mobile.strength(mobile) < (:rand.uniform(100) + amount) do
       execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
@@ -163,7 +162,7 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"check_stat" => %{"stat" => "agility", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
-    if Mobile.agility(mobile) < :rand.uniform(100 + amount) do
+    if Mobile.agility(mobile) < (:rand.uniform(100) + amount) do
       execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
@@ -171,7 +170,7 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"check_stat" => %{"stat" => "intellect", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
-    if Mobile.will(mobile) < :rand.uniform(100 + amount) do
+    if Mobile.will(mobile) < (:rand.uniform(100) + amount) do
       execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
@@ -179,7 +178,7 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"check_stat" => %{"stat" => "wisdom", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
-    if Mobile.will(mobile) < :rand.uniform(100 + amount) do
+    if Mobile.will(mobile) < (:rand.uniform(100) + amount) do
       execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
