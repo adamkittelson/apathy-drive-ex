@@ -26,7 +26,7 @@ defmodule ApathyDrive.ExAdmin.Room do
 
         directions =
           changes.exits
-          |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap"]))
+          |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"]))
           |> Enum.map(&(&1["direction"]))
 
         ApathyDrive.Endpoint.broadcast!("map", "room admin updated", %{id: id, name: changes.name, coords: changes.coordinates, directions: directions})

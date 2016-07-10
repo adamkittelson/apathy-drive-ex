@@ -15,7 +15,7 @@ defmodule ApathyDrive.MapChannel do
       |> Enum.reduce(%{}, fn %{id: id} = room, map ->
            directions =
              room.exits
-             |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap"]))
+             |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"]))
              |> Enum.map(&(&1["direction"]))
 
            room =
