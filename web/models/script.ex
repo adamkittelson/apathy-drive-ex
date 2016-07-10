@@ -42,6 +42,11 @@ defmodule ApathyDrive.Script do
 
   def execute_script([], mobile),   do: mobile
   def execute_script(nil, _mobile), do: false
+  def execute_script(script_id, mobile) when is_integer(script_id) do
+    script_id
+    |> find()
+    |> execute_script(mobile)
+  end
 
   def execute_script(instruction, %Mobile{} = mobile), do: execute_instruction(instruction, mobile, nil)
 
@@ -143,7 +148,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%{"check_hitpoints" => %{"modifier" => amount, "failure_script" => failure_script}}, %Mobile{hp: hp} = mobile, script) do
     if hp < :rand.uniform(100 + amount) do
-      execute_script(find(failure_script), mobile)
+      execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
     end
@@ -151,7 +156,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%{"check_stat" => %{"stat" => "strength", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
     if Mobile.strength(mobile) < :rand.uniform(100 + amount) do
-      execute_script(find(failure_script), mobile)
+      execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
     end
@@ -159,7 +164,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%{"check_stat" => %{"stat" => "agility", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
     if Mobile.agility(mobile) < :rand.uniform(100 + amount) do
-      execute_script(find(failure_script), mobile)
+      execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
     end
@@ -167,7 +172,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%{"check_stat" => %{"stat" => "intellect", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
     if Mobile.will(mobile) < :rand.uniform(100 + amount) do
-      execute_script(find(failure_script), mobile)
+      execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
     end
@@ -175,7 +180,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%{"check_stat" => %{"stat" => "wisdom", "modifier" => amount, "failure_script" => failure_script}}, %Mobile{} = mobile, script) do
     if Mobile.will(mobile) < :rand.uniform(100 + amount) do
-      execute_script(find(failure_script), mobile)
+      execute_script(failure_script, mobile)
     else
       execute_script(script, mobile)
     end
