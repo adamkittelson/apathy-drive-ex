@@ -36,7 +36,8 @@ defmodule ApathyDrive.Room do
     from room in Room,
     where: not is_nil(room.coordinates),
     join: area in assoc(room, :area),
-    select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, controlled_by: nil, exits: room.exits}
+    join: room_unity in assoc(room, :room_unity),
+    select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, controlled_by: room_unity.controlled_by, exits: room.exits}
   end
 
   def spirits_present?(%Room{} = room) do
