@@ -91,15 +91,17 @@ defmodule ApathyDrive.Room do
 
     new_controlled_by =
       cond do
-        highest_essence == "good" and (essences["good"] * 0.9) > essences["evil"] ->
+        highest_essence == "good" and essences["good"] > 0 and (essences["good"] * 0.9) > essences["evil"] ->
           "good"
-        highest_essence == "evil" and (essences["evil"] * 0.9) > essences["good"] ->
+        highest_essence == "evil" and essences["evil"] > 0 and (essences["evil"] * 0.9) > essences["good"] ->
           "evil"
         true ->
           nil
       end
 
     if controlled_by != new_controlled_by do
+      ApathyDrive.Endpoint.broadcast!("map", "room control change", %{room_id: room.id, controlled_by: new_controlled_by})
+
       put_in(room.room_unity.controlled_by, new_controlled_by)
       |> Repo.save
     else
