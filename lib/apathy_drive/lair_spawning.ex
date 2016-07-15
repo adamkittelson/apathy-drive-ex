@@ -38,7 +38,7 @@ defmodule ApathyDrive.LairSpawning do
        end)
   end
 
-  defp spawned_monster_count(room_id) do
+  def spawned_monster_count(room_id) do
     ApathyDrive.Mobile
     |> Ecto.Query.where(spawned_at: ^room_id)
     |> Ecto.Query.select([m], count(m.id))

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Commands, LairMonster, Match, Mobile, Presence, PubSub, MonsterTemplate,
+  alias ApathyDrive.{Commands, LairMonster, LairSpawning, Match, Mobile, Presence, PubSub, MonsterTemplate,
                      Repo, Room, RoomSupervisor, RoomUnity, Text, TimerManager}
   use Timex
   require Logger
@@ -25,6 +25,10 @@ defmodule ApathyDrive.RoomServer do
 
   def system(room, mobile, args) do
     GenServer.cast(room, {:system, mobile, args})
+  end
+
+  def convert?(room, unity) do
+    GenServer.cast(room, {:convert?, unity})
   end
 
   def toggle_rapid_essence_updates(room) do
@@ -251,6 +255,19 @@ defmodule ApathyDrive.RoomServer do
 
     {:noreply, room}
   end
+
+  def handle_cast({:convert?, unity}, %Room{room_unity: %RoomUnity{essences: essences, controlled_by: controlled_by}} = room) when unity != controlled_by do
+    if LairSpawning.spawned_monster_count(room.id) == 0 do
+      room =
+        put_in(room.room_unity.essences, Map.merge(essences, %{controlled_by || "default" => 0, unity => room.default_essence}))
+        |> Room.update_controlled_by
+
+      {:noreply, room}
+    else
+      {:noreply, room}
+    end
+  end
+  def handle_cast({:convert?, _unity}, room), do: {:noreply, room}
 
   def handle_cast(:toggle_rapid_essence_updates, %Room{} = room) do
     cond do

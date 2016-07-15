@@ -5,7 +5,7 @@ defmodule ApathyDrive.Ability do
   import ApathyDrive.TimerManager, only: [seconds: 1]
 
   schema "abilities" do
-    field :properties,      ApathyDrive.JSONB
+    field :properties, ApathyDrive.JSONB
 
     has_many :rooms, ApathyDrive.Room
 
