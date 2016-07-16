@@ -210,7 +210,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       room
       |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-      |> TimerManager.send_every({:report_essence, 60_000, :report_essence})
+      |> TimerManager.send_every({:report_essence, 600_000, :report_essence})
 
     {:ok, room}
   end
