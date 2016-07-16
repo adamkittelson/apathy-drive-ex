@@ -498,7 +498,7 @@ defmodule ApathyDrive.Room do
     local = if essences["good"]["control"] do
       essences["good"]["control"]
     else
-      room.room_unity.essences["good"]
+      0
     end
 
     competition = local - (room.room_unity.essences["evil"] + room.room_unity.essences["default"])
@@ -509,7 +509,7 @@ defmodule ApathyDrive.Room do
     local = if essences["evil"]["control"] do
       essences["evil"]["control"]
     else
-      room.room_unity.essences["evil"]
+      0
     end
 
     competition = local - (room.room_unity.essences["good"] + room.room_unity.essences["default"])
@@ -520,7 +520,7 @@ defmodule ApathyDrive.Room do
     local = if essences["default"]["control"] do
       essences["default"]["control"]
     else
-      room.room_unity.essences["default"]
+      0
     end
 
     competition = local - (room.room_unity.essences["good"] + room.room_unity.essences["evil"])
