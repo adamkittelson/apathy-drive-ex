@@ -7,6 +7,7 @@ defmodule ApathyDrive.Area do
     field :level, :integer, default: 1
 
     has_many :rooms, ApathyDrive.Room
+    has_many :lair_monsters, through: [:rooms, :lairs, :monster_template]
 
     timestamps
   end
@@ -23,6 +24,24 @@ defmodule ApathyDrive.Area do
     group_by: area.id,
     order_by: [desc: area.level, desc: count(area.id), asc: area.name],
     select: [area, count(area.id)]
+  end
+
+  def set_levels! do
+    list_with_room_counts
+    |> ApathyDrive.Repo.all
+    |> Enum.each(fn [area, _count] ->
+         max =
+           area
+           |> Ecto.assoc(:lair_monsters)
+           |> ApathyDrive.Repo.all
+           |> Enum.map(&(&1.level))
+           |> List.insert_at(0, 1)
+           |> Enum.max
+
+         area
+         |> Map.put(:level, max)
+         |> ApathyDrive.Repo.save!
+       end)
   end
 
   def changeset(name) do
