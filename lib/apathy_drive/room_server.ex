@@ -298,7 +298,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_cast({:audible_movement, except_direction}, %Room{exits: exits} = room) do
     exits
     |> Enum.each(fn
-         %{"direction" => direction, "kind" => kind, "destination" => dest} when kind in ["Normal", "Action", "Door", "Gate"] and direction != except_direction ->
+         %{"direction" => direction, "kind" => kind, "destination" => dest} when kind in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"] and direction != except_direction ->
            PubSub.broadcast("rooms:#{dest}:mobiles", {:audible_movement, ApathyDrive.Exit.reverse_direction(direction)})
          _ -> :noop
        end)
@@ -774,22 +774,26 @@ defmodule ApathyDrive.RoomServer do
   end
 
   defp exits_in_area(%Room{exits: exits} = room) do
-    Enum.filter(exits, fn(%{"direction" => direction}) ->
-      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name)
+    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
+      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name) && passable?(room, room_exit)
     end)
   end
 
   defp unity_controlled_exits(%Room{exits: exits} = room, unities) do
-    Enum.filter(exits, fn(%{"direction" => direction}) ->
-      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities)
+    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
+      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities) && passable?(room, room_exit)
     end)
   end
 
   defp non_unity_controlled_exits(%Room{exits: exits} = room, unities) do
-    Enum.filter(exits, fn(%{"direction" => direction}) ->
+    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
       (room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name)) &&
-      !(room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities))
+      !(room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities)) && passable?(room, room_exit)
     end)
   end
+
+  defp passable?(room, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"], do: ApathyDrive.Doors.open?(room, room_exit)
+  defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"], do: true
+  defp passable?(_room, _room_exit), do: false
 
 end
