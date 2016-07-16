@@ -18,7 +18,7 @@ defmodule ApathyDrive.Commands.Delve do
     Mobile.send_scroll(mobile, "\n\n<p><span class='dark-green'>Room:</span> <span class='dark-cyan'>#{room.id}</span>  <span class='dark-green'>Area:</span> <span class='dark-cyan'>#{room.area.name} (Level #{room.area.level})</span>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>x:</span> <span class='dark-cyan'>#{room.coordinates["x"]}</span> <span class='dark-green'>y:</span> <span class='dark-cyan'>#{room.coordinates["y"]}</span> <span class='dark-green'>z:</span> <span class='dark-cyan'>#{room.coordinates["z"]}</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>==================================================</span></p>")
-    Enum.each(targets, fn({unity, %{"adjacent" => adj, "mobile" => mob, "local" => loc, "target" => target}}) ->
+    Enum.each(targets, fn({unity, %{"adjacent" => adj, "mobile" => mob, "target" => target} = targets}) ->
       case unity do
         "good" ->
           Mobile.send_scroll(mobile, "<p><span class='white'>Good Influence:</span></p>")
@@ -28,16 +28,12 @@ defmodule ApathyDrive.Commands.Delve do
           Mobile.send_scroll(mobile, "<p><span class='magenta'>Evil Influence:</span></p>")
       end
 
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>From Adjacent Rooms:</span> <span class='dark-cyan'>#{average(adj)}</span><p>")
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>From Mobiles:</span> <span class='dark-cyan'>#{average(mob)}</span><p>")
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>From Room Essence:</span> <span class='dark-cyan'>#{average(loc)}</span><p>")
+      if targets["control"], do: Mobile.send_scroll(mobile, "<p><span class='dark-green'>Nexus:</span> <span class='dark-cyan'>#{trunc(targets["control"])}</span><p>")
+      if adj, do: Mobile.send_scroll(mobile, "<p><span class='dark-green'>Adjacent:</span> <span class='dark-cyan'>#{trunc(adj)}</span><p>")
+      if mob, do: Mobile.send_scroll(mobile, "<p><span class='dark-green'>Mobiles:</span> <span class='dark-cyan'>#{trunc(mob)}</span><p>")
+      
       Mobile.send_scroll(mobile, "<p><span class='dark-green'>Target Essence:</span> <span class='dark-cyan'>#{max(0, trunc(target))}</span></p>\n")
     end)
-  end
-
-  defp average([]), do: 0
-  defp average(list) do
-    trunc(Enum.sum(list) / length(list))
   end
 
 end

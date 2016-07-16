@@ -402,14 +402,11 @@ defmodule ApathyDrive.Room do
   def update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do
     initial_essences =
       %{"good"    => %{"adjacent" => [],
-                       "mobile" => [],
-                       "local" => []},
+                       "mobile" => []},
         "evil"    => %{"adjacent" => [],
-                       "mobile" => [],
-                       "local" => []},
+                       "mobile" => []},
         "default" => %{"adjacent" => [],
-                       "mobile" => [],
-                       "local" => []}}
+                       "mobile" => []}}
 
     area_exits =
       exits
@@ -418,26 +415,26 @@ defmodule ApathyDrive.Room do
          end)
       |> Enum.into(%{})
 
+    {essences, control_amount} =
+      cond do
+        room.lair_next_spawn_at > 0 and room.default_essence > 0 and controlled_by == nil ->
+          {put_in(initial_essences["default"]["control"], room.default_essence), room.default_essence}
+        room.lair_next_spawn_at > 0 and room.default_essence > current_essences[controlled_by] ->
+          {put_in(initial_essences[controlled_by]["control"], room.default_essence), room.default_essence}
+        true ->
+          {initial_essences, nil}
+      end
+
     essences =
       area_exits
       |> Map.values
       |> Enum.map(&(&1["essences"]))
-      |> Enum.reduce(initial_essences, fn(exit_essences, adjacent_essences) ->
+      |> Enum.reduce(essences, fn(exit_essences, adjacent_essences) ->
            adjacent_essences
            |> update_in(["good", "adjacent"],    &([exit_essences["good"] | &1]))
            |> update_in(["evil", "adjacent"],    &([exit_essences["evil"] | &1]))
            |> update_in(["default", "adjacent"], &([exit_essences["default"] | &1]))
          end)
-
-    essences =
-      cond do
-        room.lair_next_spawn_at > 0 and room.default_essence > 0 and controlled_by == nil ->
-          put_in(essences["default"]["control"], room.default_essence)
-        room.lair_next_spawn_at > 0 and room.default_essence > current_essences[controlled_by] ->
-          put_in(essences[controlled_by]["control"], room.default_essence)
-        true ->
-          essences
-      end
 
     essences =
       "rooms:#{room.id}:mobiles"
@@ -455,24 +452,35 @@ defmodule ApathyDrive.Room do
 
     essences =
       essences
-      |> add_competing_essence("good", room)
-      |> add_competing_essence("evil", room)
-      |> add_competing_essence("default", room)
+      |> Enum.reduce(essences, fn({unity, %{"adjacent" => adj, "mobile" => mobile}}, updated_essences) ->
+           updated_essences
+           |> put_in([unity, "adjacent"], average(adj))
+           |> put_in([unity, "mobile"], average(mobile))
+         end)
 
     essences =
-      Enum.reduce(essences, essences, fn({unity, %{"adjacent" => adj, "mobile" => mobile, "local" => local}}, updated_essences) ->
-        local = average(local)
-        mobile = average(mobile)
-        adj = average(adj)
+      essences
+      |> Enum.reduce(essences, fn
+           {_unity, %{"control" => _control}}, updated_essences ->
+             updated_essences
+           {unity, _targets}, updated_essences ->
+             if control_amount && updated_essences[unity]["adjacent"] do
+               update_in(updated_essences, [unity, "adjacent"], &(max(0, &1 - control_amount)))
+             else
+               updated_essences
+             end
+         end)
 
-        # weight influences local > mobile > adjacent
-        target =
-          [adj, mobile, mobile, mobile, local, local]
-          |> Enum.reject(&(&1 == nil))
-          |> average()
+    essences =
+      essences
+      |> Enum.reduce(essences, fn({unity, %{} = targets}, updated_essences) ->
+           target =
+             [targets["adjacent"], targets["mobile"], targets["control"] || nil]
+             |> Enum.reject(&(&1 == nil))
+             |> average()
 
-        put_in(updated_essences[unity]["target"], target || 0)
-      end)
+           put_in(updated_essences[unity]["target"], target || 0)
+         end)
 
     put_in(room.room_unity.essence_targets, essences)
   end
@@ -489,42 +497,8 @@ defmodule ApathyDrive.Room do
         |> update_in([unity, "mobile"], &([mobile_essence | &1]))
       else
         updated_essences
-        |> update_in([unity, "mobile"], &([-mobile_essence | &1]))
       end
     end)
-  end
-
-  defp add_competing_essence(essences, "good", room) do
-    local = if essences["good"]["control"] do
-      essences["good"]["control"]
-    else
-      0
-    end
-
-    competition = local - (room.room_unity.essences["evil"] + room.room_unity.essences["default"])
-    update_in(essences, ["good", "local"], &([competition | &1]))
-  end
-
-  defp add_competing_essence(essences, "evil", room) do
-    local = if essences["evil"]["control"] do
-      essences["evil"]["control"]
-    else
-      0
-    end
-
-    competition = local - (room.room_unity.essences["good"] + room.room_unity.essences["default"])
-    update_in(essences, ["evil", "local"], &([competition | &1]))
-  end
-
-  defp add_competing_essence(essences, "default", room) do
-    local = if essences["default"]["control"] do
-      essences["default"]["control"]
-    else
-      0
-    end
-
-    competition = local - (room.room_unity.essences["good"] + room.room_unity.essences["evil"])
-    update_in(essences, ["default", "local"], &([competition | &1]))
   end
 
 end
