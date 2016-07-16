@@ -431,9 +431,9 @@ defmodule ApathyDrive.Room do
 
     essences =
       cond do
-        room.default_essence > 0 and controlled_by == nil ->
+        room.lair_next_spawn_at > 0 and room.default_essence > 0 and controlled_by == nil ->
           put_in(essences["default"]["control"], room.default_essence)
-        room.default_essence > current_essences[controlled_by] ->
+        room.lair_next_spawn_at > 0 and room.default_essence > current_essences[controlled_by] ->
           put_in(essences[controlled_by]["control"], room.default_essence)
         true ->
           essences
