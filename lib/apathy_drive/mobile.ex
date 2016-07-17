@@ -67,8 +67,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.start_link(__MODULE__, id, opts)
   end
 
-  def toggle_invisibility(mobile) do
-    GenServer.cast(mobile, :toggle_invisibility)
+  def body_required(mobile) do
+    Mobile.send_scroll(mobile, "<p>You need a body to do that. Find a monster and <span class='green'>possess</span> it.</p>")
   end
 
   def teleport(mobile, room_id) do
@@ -267,6 +267,9 @@ defmodule ApathyDrive.Mobile do
     send(socket, {:update_prompt, prompt(mobile)})
   end
 
+  def prompt(%Mobile{monster_template_id: nil} = mobile) do
+    "[ES=#{mobile.spirit.experience}]:"
+  end
   def prompt(%Mobile{} = mobile) do
     "[ES=#{mobile.spirit.experience}/HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
   end
@@ -596,8 +599,7 @@ defmodule ApathyDrive.Mobile do
     update_prompt(mobile)
 
     {:ok, _} = Presence.track(self(), "spirits:online", "spirit_#{spirit.id}", %{
-      name: Mobile.look_name(mobile),
-      invisible?: mobile.spirit && mobile.spirit.invisible
+      name: Mobile.look_name(mobile)
     })
 
     send(self, :save)
@@ -657,15 +659,9 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, :unpossess)
   end
 
-  def set_abilities(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
-    abilities =
-     ApathyDrive.ClassAbility.for_spirit(spirit)
-     |> add_abilities_from_equipment(spirit.equipment)
-
+  def set_abilities(%Mobile{monster_template_id: nil, spirit: _spirit} = mobile) do
     mobile
-    |> Map.put(:abilities, abilities)
-    |> set_passive_effects
-    |> adjust_mana_costs
+    |> Map.put(:abilities, [])
   end
   def set_abilities(%Mobile{monster_template_id: mt_id, spirit: nil} = mobile) do
     abilities = MonsterTemplate.abilities(mt_id)
@@ -736,6 +732,7 @@ defmodule ApathyDrive.Mobile do
     |> Enum.filter(&(String.starts_with?(to_string(&1), "passive")))
   end
 
+  def adjust_mana_costs(%Mobile{monster_template_id: nil} = mobile), do: mobile
   def adjust_mana_costs(%Mobile{} = mobile) do
     abilities =
       mobile.abilities
@@ -748,6 +745,7 @@ defmodule ApathyDrive.Mobile do
   end
   def adjust_mana_cost(%Mobile{}, %{} = ability), do: ability
 
+  def set_mana(%Mobile{monster_template_id: nil} = mobile), do: mobile
   def set_mana(%Mobile{mana: nil, max_mana: max_mana} = mobile) do
     Map.put(mobile, :mana, max_mana)
   end
@@ -755,11 +753,13 @@ defmodule ApathyDrive.Mobile do
     Map.put(mobile, :mana, min(mana, max_mana))
   end
 
+  def set_max_mana(%Mobile{monster_template_id: nil} = mobile), do: mobile
   def set_max_mana(%Mobile{} = mobile) do
     attr = div((will(mobile) * 2) + agility(mobile), 3)
     Map.put(mobile, :max_mana, trunc(attr * (0.18 + (0.018 * level(mobile)))))
   end
 
+  def set_hp(%Mobile{monster_template_id: nil} = mobile), do: mobile
   def set_hp(%Mobile{hp: nil, max_hp: max_hp} = mobile) do
     Map.put(mobile, :hp, max_hp)
   end
@@ -767,6 +767,7 @@ defmodule ApathyDrive.Mobile do
     Map.put(mobile, :hp, min(hp, max_hp))
   end
 
+  def set_max_hp(%Mobile{monster_template_id: nil} = mobile), do: mobile
   def set_max_hp(%Mobile{} = mobile) do
     attr = div((strength(mobile) * 2) + agility(mobile), 3)
     Map.put(mobile, :max_hp, trunc(attr * (0.6 + (0.06 * level(mobile)))))
@@ -826,10 +827,7 @@ defmodule ApathyDrive.Mobile do
   def attribute(%Mobile{spirit: nil, agility:  agi}, :agility),  do: agi
   def attribute(%Mobile{spirit: nil, will:    will}, :will),     do: will
 
-  def attribute(%Mobile{spirit: spirit, monster_template_id: nil} = mobile, attribute) do
-    unity_bonus(mobile) +
-    ((level(mobile) - 1) * Map.get(spirit.class, :"#{attribute}_per_level")) +
-    Map.get(spirit.class, :"#{attribute}") +
+  def attribute(%Mobile{monster_template_id: nil} = mobile, attribute) do
     attribute_from_equipment(mobile, attribute)
   end
 
@@ -846,15 +844,6 @@ defmodule ApathyDrive.Mobile do
   def attribute_from_equipment(%Mobile{spirit: %Spirit{equipment: equipment}}, attribute) do
     Enum.reduce(equipment, 0, &(&2 + apply(ApathyDrive.Item, attribute, [&1])))
   end
-
-  def unity_bonus(%Mobile{spirit: %Spirit{unity_bonus: unity_bonus}}) when map_size(unity_bonus) > 0 do
-    unity_bonus
-    |> Map.values
-    |> Enum.sum
-    |> div(map_size(unity_bonus))
-    |> trunc
-  end
-  def unity_bonus(_mobile), do: 0
 
   def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
     modifier = 1 + effect_bonus(mobile, "hp_regen") / 100
@@ -967,7 +956,7 @@ defmodule ApathyDrive.Mobile do
       name: mobile.name,
       keywords: String.split(mobile.name),
       look_name: look_name(mobile),
-      invisible?: spirit && spirit.invisible
+      invisible?: !mobile.monster_template_id
     }
   end
 
@@ -985,7 +974,7 @@ defmodule ApathyDrive.Mobile do
     |> Repo.save!
   end
 
-  defp react_to_mobiles(%Mobile{spirit: %Spirit{invisible: true}} = mobile, _mobiles), do: mobile
+  defp react_to_mobiles(%Mobile{monster_template_id: nil} = mobile, _mobiles), do: mobile
   defp react_to_mobiles(%Mobile{} = mobile, mobiles) do
     mobiles
     |> Enum.reduce(mobile, fn(intruder, mobile) ->
@@ -1180,26 +1169,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast(:toggle_invisibility, %Mobile{spirit: %Spirit{invisible: true}} = mobile) do
-    send_scroll(mobile, "<p>You are no longer invisible.</p>")
-    mobile = put_in(mobile.spirit.invisible, false)
-    {:ok, _} = Presence.update(self(), "spirits:online", "spirit_#{mobile.spirit.id}", %{
-      name: Mobile.look_name(mobile),
-      invisible?: false
-    })
-    {:noreply, mobile}
-  end
-
-  def handle_cast(:toggle_invisibility, %Mobile{spirit: %Spirit{invisible: false}} = mobile) do
-    send_scroll(mobile, "<p>You are now invisible.</p>")
-    mobile = put_in(mobile.spirit.invisible, true)
-    {:ok, _} = Presence.update(self(), "spirits:online", "spirit_#{mobile.spirit.id}", %{
-      name: Mobile.look_name(mobile),
-      invisible?: true
-    })
-    {:noreply, mobile}
-  end
-
   def handle_cast({:teleport, room_id}, mobile) do
     if !held(mobile) do
       mobile.room_id
@@ -1223,7 +1192,7 @@ defmodule ApathyDrive.Mobile do
         |> Map.put(:room_id, destination_id)
 
       Mobile.track(mobile)
-        
+
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
 
@@ -1600,14 +1569,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:territory, controlled_by, count}, %Mobile{spirit: %Spirit{}} = mobile) do
-    if controlled_by in mobile.spirit.class.unities do
-      {:noreply, put_in(mobile.spirit.unity_bonus[controlled_by], count)}
-    else
-      {:noreply, mobile}
-    end
-  end
-
   def handle_info({:audible_movement, direction}, mobile) do
     send_scroll(mobile, "<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
     {:noreply, mobile}
@@ -1711,6 +1672,9 @@ defmodule ApathyDrive.Mobile do
     {:noreply, ApathyDrive.AI.think(mobile)}
   end
 
+  def handle_info({:apply_ability, %{} = _ability, %Mobile{} = _ability_user}, %Mobile{monster_template_id: nil} = mobile) do
+    {:noreply, mobile}
+  end
   def handle_info({:apply_ability, %{} = ability, %Mobile{} = ability_user}, mobile) do
     if Ability.affects_target?(mobile, ability) do
       mobile = mobile
@@ -1752,6 +1716,12 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:remove_effect, key}, mobile) do
     mobile = Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
+    {:noreply, mobile}
+  end
+
+  def handle_info(:regen, %Mobile{monster_template_id: nil} = mobile) do
+    update_prompt(mobile)
+
     {:noreply, mobile}
   end
 

@@ -21,6 +21,9 @@ defmodule ApathyDrive.Commands.Ask do
     Mobile.ask(mobile, target, question)
   end
 
+  def execute(%Mobile{monster_template_id: nil} = mobile, _query, _question) do
+    Mobile.body_required(mobile)
+  end
   def execute(%Mobile{room_id: room_id}, query, question) do
     room_id
     |> RoomServer.find

@@ -5,12 +5,6 @@ defmodule ApathyDrive.Class do
     field :name, :string
     field :alignment, :string
     field :start_room_id, :integer
-    field :strength, :integer
-    field :strength_per_level, :integer
-    field :agility, :integer
-    field :agility_per_level, :integer
-    field :will, :integer
-    field :will_per_level, :integer
     field :unities, ApathyDrive.JSONB, default: []
 
     has_many :spirits, Spirit

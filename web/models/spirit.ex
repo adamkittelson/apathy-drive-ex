@@ -22,7 +22,6 @@ defmodule Spirit do
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
-    field :invisible,         :boolean, virtual: true, default: false
     field :socket,            :any, virtual: true
     field :socket_pid,        :any, virtual: true
     field :pid,               :any, virtual: true
@@ -37,7 +36,6 @@ defmodule Spirit do
     field :equipment,         ApathyDrive.JSONB, default: []
     field :loot_essence,      :integer, default: 0, virtual: true
     field :flags,             :map, default: %{}
-    field :unity_bonus,       :map, virtual: true, default: %{}
 
     timestamps
   end
