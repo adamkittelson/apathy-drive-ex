@@ -14,7 +14,7 @@ defmodule ApathyDrive.Class do
     timestamps
   end
 
-  @required_fields ~w(name alignment strength strength_per_level agility agility_per_level will will_per_level start_room_id unities)
+  @required_fields ~w(name alignment start_room_id unities)
   @optional_fields ~w()
 
   @doc """

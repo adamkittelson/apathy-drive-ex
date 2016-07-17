@@ -9,18 +9,6 @@
     <th>Alignment</th>
     <td><%= @class.alignment %></td>
   </tr>
-  <tr>
-    <th>Strength</th>
-    <td><%= @class.strength %> + <%= @class.strength_per_level %>/lvl</td>
-  </tr>
-  <tr>
-    <th>Agility</th>
-    <td><%= @class.agility %> + <%= @class.agility_per_level %>/lvl</td>
-  </tr>
-  <tr>
-    <th>Will</th>
-    <td><%= @class.will %> + <%= @class.will_per_level %>/lvl</td>
-  </tr>
 </table>
 
 <p>

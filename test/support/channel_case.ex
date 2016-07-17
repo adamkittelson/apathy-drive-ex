@@ -32,12 +32,6 @@ defmodule ApathyDrive.ChannelCase do
                                                 name: "Demon",
                                                 start_room_id: room.id,
                                                 abilities: [],
-                                                strength: 40,
-                                                strength_per_level: 5,
-                                                agility: 40,
-                                                agility_per_level: 5,
-                                                will: 40,
-                                                will_per_level: 5,
                                                 unities: ["evil"]})
 
         # Hack to prevent it from trying to load rooms that don't exist
