@@ -31,10 +31,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:convert?, unity})
   end
 
-  def toggle_rapid_essence_updates(room) do
-    GenServer.cast(room, :toggle_rapid_essence_updates)
-  end
-
   def find_item_for_script(room, item, mobile, script, failure_message) do
     GenServer.cast(room, {:find_item_for_script, item, mobile, script, failure_message})
   end
@@ -181,7 +177,6 @@ defmodule ApathyDrive.RoomServer do
     room =
       room
       |> Room.set_default_essence
-      |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
 
     room =
       if room.room_unity do
@@ -209,8 +204,8 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       room
-      |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-      |> TimerManager.send_every({:report_essence, 600_000, :report_essence})
+      # |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
+      |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
 
     {:ok, room}
   end
@@ -268,18 +263,6 @@ defmodule ApathyDrive.RoomServer do
     end
   end
   def handle_cast({:convert?, _unity}, room), do: {:noreply, room}
-
-  def handle_cast(:toggle_rapid_essence_updates, %Room{} = room) do
-    cond do
-      Room.spirits_present?(room) and !TimerManager.time_remaining(room, :rapid_essence_update) ->
-        {:noreply, TimerManager.send_every(room, {:rapid_essence_update, 1_000, :report_essence})}
-      !Room.spirits_present?(room) and TimerManager.time_remaining(room, :rapid_essence_update) ->
-        TimerManager.cancel(room, :rapid_essence_update)
-        {:noreply, room}
-      true ->
-        {:noreply, room}
-    end
-  end
 
   def handle_cast({:find_item_for_script, item, mobile, script, failure_message}, %Room{} = room) do
     if Room.find_item(room, item) do
@@ -573,7 +556,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:save, room) do
     Process.send_after(self, :save, jitter(:timer.minutes(30)))
     room = Repo.save(room)
-    {:noreply, room, :hibernate}
+    {:noreply, room}
   end
 
   def handle_info(:spawn_monsters,
@@ -689,43 +672,56 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:report_essence, %Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
+  def handle_info(:update_essence, %Room{exits: _exits, room_unity: %RoomUnity{essences: essences}} = room) do
     room = Room.update_essence(room)
 
-    Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
-      unless kind in ["Cast", "RemoteAction"] do
-
-        report = %{
-          essences: essences,
-          room_id: room.id,
-          direction: direction,
-          kind: kind,
-          legacy_id: room.legacy_id,
-          area: room.area.name,
-          controlled_by: room.room_unity.controlled_by,
-          report_back?: Room.spirits_present?(room)
-        }
-
-        dest
-        |> find()
-        |> send({:essence_report, report})
+    room =
+      if room.room_unity.essences != essences do
+        if room.id == 2182 do
+          IO.puts "#{inspect essences} != #{inspect room.room_unity.essences}, will update again"
+        end
+        TimerManager.cancel(room, :update_essence)
+        TimerManager.send_after(room, {:update_essence, 1_000, :update_essence})
+      else
+        if room.id == 2182 do
+          IO.puts "#{inspect essences} == #{inspect room.room_unity.essences}, done updating, reporting"
+        end
+        Room.report_essence(room)
+        room
       end
-    end)
-
-    room = Map.put(room, :essence_last_reported_at, Timex.DateTime.to_secs(Timex.DateTime.now))
 
     {:noreply, room}
   end
 
-  def handle_info({:essence_report, report}, %Room{} = room) do
+  def handle_info(:report_essence, room) do
+    Room.report_essence(room)
+
+    {:noreply, room}
+  end
+
+  def handle_info({:essence_report, report}, %Room{room_unity: room_unity} = room) do
     mirror_exit = Room.mirror_exit(room, report.room_id)
 
-    room =
-      put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
+    room = put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
 
-    if report.report_back? and room.essence_last_reported_at < (Timex.DateTime.to_secs(Timex.DateTime.now) - 60) do
-      send(self(), :report_essence)
-    end
+    room =
+      if room_unity == room.room_unity do
+        if room.id == 2182 do
+          IO.puts "received updated report, but not updating targets"
+        end
+        room
+      else
+        if room.id == 2182 do
+          IO.puts "received updated report, updating targets"
+        end
+        update_essence_targets(room)
+      end
+
+    {:noreply, room}
+  end
+
+  def handle_info(:update_essence_targets, room) do
+    room = update_essence_targets(room)
 
     {:noreply, room}
   end
@@ -795,5 +791,13 @@ defmodule ApathyDrive.RoomServer do
   defp passable?(room, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"], do: ApathyDrive.Doors.open?(room, room_exit)
   defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"], do: true
   defp passable?(_room, _room_exit), do: false
+
+  defp update_essence_targets(room) do
+    TimerManager.cancel(room, :update_essence)
+
+    room
+    |> Room.update_essence_targets
+    |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
+  end
 
 end

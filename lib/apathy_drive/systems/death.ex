@@ -2,7 +2,7 @@ defmodule Systems.Death do
   alias ApathyDrive.{Class, Mobile, RoomServer, Text}
 
   def kill(mobile, killed_by \\ nil)
-  
+
   # Player not possessing a monster
   def kill(%Mobile{monster_template_id: nil, spirit: %Spirit{}} = mobile, killed_by) do
     kill(mobile, [:drop_equipment, :inform_player, :send_home, :respawn_spirit], killed_by)
@@ -97,8 +97,10 @@ defmodule Systems.Death do
   def kill(mobile, [], _killed_by) do
     mobile
   end
-  
+
   defp convert_lair(%{spawned_at: room_id}, unity) do
+    IO.puts "maybe converting room #{room_id} for #{unity}"
+
     room_id
     |> RoomServer.find
     |> RoomServer.convert?(unity)

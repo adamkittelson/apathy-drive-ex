@@ -48,7 +48,6 @@ defmodule ApathyDrive.Mobile do
     field :movement_frequency, :integer, virtual: true, default: 60
     field :room_essences,      :map,     virtual: true, default: %{}
     field :unity_essences,     :map,     virtual: true, default: %{}
-    field :essence_last_updated_at, :integer, virtual: true
 
     timestamps
   end
@@ -530,7 +529,6 @@ defmodule ApathyDrive.Mobile do
     mobile =
       mobile
       |> Map.put(:pid, self)
-      |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -580,7 +578,6 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:experience, spirit.experience)
       |> Map.put(:level, spirit.level)
       |> Map.put(:unities, spirit.class.unities)
-      |> Map.put(:essence_last_updated_at, Timex.DateTime.to_secs(Timex.DateTime.now))
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -929,11 +926,11 @@ defmodule ApathyDrive.Mobile do
 
     mobile.room_id
     |> RoomServer.find
-    |> RoomServer.toggle_rapid_essence_updates
+    |> send(:update_essence_targets)
   end
 
   def update(%Mobile{} = mobile) do
-    Presence.update(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()), track_data(mobile))
+    #Presence.update(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()), track_data(mobile))
   end
 
   def untrack(%Mobile{} = mobile) do
@@ -941,7 +938,7 @@ defmodule ApathyDrive.Mobile do
 
     mobile.room_id
     |> RoomServer.find
-    |> RoomServer.toggle_rapid_essence_updates
+    |> send(:update_essence_targets)
   end
 
   def track_data(%Mobile{spirit: spirit} = mobile) do
@@ -988,9 +985,7 @@ defmodule ApathyDrive.Mobile do
        end)
   end
 
-  defp update_essence(%Mobile{spirit: spirit, essence_last_updated_at: last_update} = mobile) do
-    time = Timex.DateTime.to_secs(Timex.DateTime.now)
-
+  defp update_essence(%Mobile{spirit: spirit} = mobile) do
     current_essence = (spirit && spirit.experience) || mobile.experience
 
     target_essence = target_essence(mobile)
@@ -1002,12 +997,11 @@ defmodule ApathyDrive.Mobile do
         1 / 60 / 60
       end
 
-    amount_to_shift = (target_essence - current_essence) * rate * (time - last_update)
+    amount_to_shift = (target_essence - current_essence) * rate
 
     if target_essence && trunc(amount_to_shift) != 0 do
       mobile
       |> add_experience(amount_to_shift)
-      |> Map.put(:essence_last_updated_at, time)
     else
       mobile
     end
@@ -1590,7 +1584,7 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info(:save, mobile) do
     Process.send_after(self, :save, jitter(:timer.minutes(10)))
-    {:noreply, save(mobile), :hibernate}
+    {:noreply, save(mobile)}
   end
 
   def handle_info({:timer_cast_ability, %{ability: ability, timer: time, target: target}}, mobile) do

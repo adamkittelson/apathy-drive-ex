@@ -12,11 +12,10 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def execute(%Room{} = room, mobile, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"] do
-    kind = String.downcase(kind)
     if Doors.open?(room, room_exit) do
       Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"))
     else
-      Mobile.send_scroll(mobile, "<p><span class='red'>The #{kind} is closed!</span></p>")
+      Mobile.move(mobile, self, room_exit)
     end
   end
 
@@ -46,6 +45,24 @@ defmodule ApathyDrive.Commands.Move do
 
   def execute(%Mobile{} = mobile, _room, %{"kind" => "RemoteAction"}) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+  end
+
+  def execute(%Mobile{monster_template_id: nil} = mobile, room, %{"kind" => "Door"} = room_exit) do
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>You pass right through the door.</span></p>")
+    execute(mobile, room, Map.put(room_exit, "kind", "Normal"))
+  end
+
+  def execute(%Mobile{} = mobile, _room, %{"kind" => "Door"}) do
+    Mobile.send_scroll(mobile, "<p><span class='red'>The door is closed!</span></p>")
+  end
+  
+  def execute(%Mobile{monster_template_id: nil} = mobile, room, %{"kind" => "Gate"} = room_exit) do
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>You pass right through the gate.</span></p>")
+    execute(mobile, room, Map.put(room_exit, "kind", "Normal"))
+  end
+
+  def execute(%Mobile{} = mobile, _room, %{"kind" => "Gate"}) do
+    Mobile.send_scroll(mobile, "<p><span class='red'>The gate is closed!</span></p>")
   end
 
   def execute(%Mobile{} = mobile, _room, %{"kind" => "Normal", "destination" => destination_id} = room_exit) do
@@ -120,7 +137,7 @@ defmodule ApathyDrive.Commands.Move do
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
       ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
 
-      mobile = 
+      mobile =
         if mobile.spirit do
           ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
           mobile = put_in(mobile.spirit.room_id, mobile.room_id)

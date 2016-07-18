@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Match, Mobile, Room, RoomUnity, Presence, PubSub}
+  alias ApathyDrive.{Ability, Area, Match, Mobile, Room, RoomServer, RoomUnity, Presence, PubSub}
 
   schema "rooms" do
     field :name,                     :string
@@ -19,8 +19,6 @@ defmodule ApathyDrive.Room do
     field :timers,                   :map, virtual: true, default: %{}
     field :last_effect_key,          :integer, virtual: true, default: 0
     field :default_essence,          :integer, virtual: true
-    field :essence_last_updated_at,  :integer, virtual: true
-    field :essence_last_reported_at, :integer, virtual: true, default: 0
 
     timestamps
 
@@ -38,12 +36,6 @@ defmodule ApathyDrive.Room do
     join: area in assoc(room, :area),
     join: room_unity in assoc(room, :room_unity),
     select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, controlled_by: room_unity.controlled_by, exits: room.exits}
-  end
-
-  def spirits_present?(%Room{} = room) do
-    "rooms:#{room.id}:mobiles"
-    |> Presence.metas
-    |> Enum.any?(&(&1.spirit_essence != nil))
   end
 
   def controlled_by(%Room{} = room) do
@@ -369,22 +361,46 @@ defmodule ApathyDrive.Room do
         direction
     end
   end
+  
+  def report_essence(%Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
+    Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
+      unless kind in ["Cast", "RemoteAction"] do
 
-  def update_essence(%Room{essence_last_updated_at: last_update, room_unity: %RoomUnity{essences: essences}} = room) do
-    time = Timex.DateTime.to_secs(Timex.DateTime.now)
+        report = %{
+          essences: essences,
+          room_id: room.id,
+          direction: direction,
+          kind: kind,
+          legacy_id: room.legacy_id,
+          area: room.area.name,
+          controlled_by: room.room_unity.controlled_by
+        }
 
-    rate = 1 / 10 / 60
+        dest
+        |> RoomServer.find()
+        |> send({:essence_report, report})
+      end
+    end)
+  end
 
-    room = update_essence_targets(room)
+  def update_essence(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
+    room = if Enum.any?(room.room_unity.essence_targets), do: room, else: update_essence_targets(room)
 
     room =
       essences
       |> Enum.reduce(room, fn({essence, amount}, %Room{room_unity: %RoomUnity{essence_targets: essence_targets}} = updated_room) ->
-           amount_to_shift = (get_in(essence_targets, [essence, "target"]) - amount) * rate * (time - last_update)
-           update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+           target = get_in(essence_targets, [essence, "target"])
+           difference = target - amount
+           amount_to_shift = difference / 10 / 60
+
+           if abs(amount_to_shift) < 1 or difference == 0 or (amount > 0 and (1 - (abs(difference) / amount)) < 0.01) do
+             if room.id == 2182, do: IO.puts "setting #{room.id} #{essence} from #{amount} to #{target}"
+             put_in(updated_room.room_unity.essences[essence], target)
+           else
+             update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+           end
          end)
       |> Room.update_controlled_by
-      |> Map.put(:essence_last_updated_at, time)
 
     data =
       %{

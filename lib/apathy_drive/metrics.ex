@@ -6,15 +6,20 @@ defmodule ApathyDrive.Metrics do
     end
   end
 
-  def record_metrics do
+  def record_metrics(gc_ran? \\ false) do
     "mobiles"
     |> ApathyDrive.PubSub.subscribers
     |> length()
     |> ExStatsD.gauge("mobiles")
 
-    "rooms"
-    |> ApathyDrive.PubSub.subscribers
-    |> length()
+    room_count =
+
+      "rooms"
+      |> ApathyDrive.PubSub.subscribers
+      |> length()
+      |> IO.inspect
+
+    room_count
     |> ExStatsD.gauge("rooms")
 
     ApathyDrive.RoomUnity.controlled_by_counts
@@ -24,12 +29,21 @@ defmodule ApathyDrive.Metrics do
          end
        end)
 
-    Task.start fn ->
-      Enum.each(:erlang.processes, &:erlang.garbage_collect/1)
-    end
+
+
+    gc_ran? =
+      if room_count > 19_700 and !gc_ran? do
+        Task.start fn ->
+          Enum.each(:erlang.processes, &:erlang.garbage_collect/1)
+        end
+        IO.puts "running gc"
+        true
+      else
+        gc_ran?
+      end
 
     :timer.sleep 10000
 
-    record_metrics()
+    record_metrics(gc_ran?)
   end
 end
