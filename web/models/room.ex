@@ -19,15 +19,28 @@ defmodule ApathyDrive.Room do
     field :timers,                   :map, virtual: true, default: %{}
     field :last_effect_key,          :integer, virtual: true, default: 0
     field :default_essence,          :integer, virtual: true
+    field :mobiles,                  :any, virtual: true, default: []
 
     timestamps
 
     has_one    :room_unity, RoomUnity
-    has_many   :mobiles, Mobile
+    has_many   :persisted_mobiles, Mobile
     belongs_to :ability, Ability
     belongs_to :area, ApathyDrive.Area
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
+  end
+
+  def find_spirit(%Room{mobiles: mobiles}, spirit_id) do
+    Enum.find(mobiles, &(&1.spirit && &1.spirit.id == spirit_id))
+  end
+
+  def update_mobile(%Room{} = room, %Mobile{} = mobile, update_fun) do
+    update_in(room.mobiles, fn mobiles ->
+      mobiles = List.delete(mobiles, mobile)
+      mobile = update_fun.(mobile)
+      [mobile | mobiles]
+    end)
   end
 
   def world_map do
@@ -394,7 +407,6 @@ defmodule ApathyDrive.Room do
            amount_to_shift = difference / 10 / 60
 
            if abs(amount_to_shift) < 1 or difference == 0 or (amount > 0 and (1 - (abs(difference) / amount)) < 0.01) do
-             if room.id == 2182, do: IO.puts "setting #{room.id} #{essence} from #{amount} to #{target}"
              put_in(updated_room.room_unity.essences[essence], target)
            else
              update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))

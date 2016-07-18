@@ -1,6 +1,6 @@
 defmodule ApathyDrive.MUDChannel do
   use ApathyDrive.Web, :channel
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, RoomServer}
 
   def join("mud:play", %{"spirit" => token}, socket) do
     case Phoenix.Token.verify(socket, "spirit", token, max_age: 1209600) do
@@ -10,24 +10,34 @@ defmodule ApathyDrive.MUDChannel do
             {:error, %{reason: "unauthorized"}}
           %Spirit{name: nil} -> # spirit has been reset, probably due to a game wipe
             {:error, %{reason: "unauthorized"}}
-          %Spirit{} = spirit ->
-            case Process.whereis(:"spirit_#{spirit.id}") do
-              nil ->
-                spirit = Repo.preload(spirit, :class)
-                ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{Spirit.look_name(spirit)} just entered the Realm.</p>"}
-                {:ok, pid} = Mobile.start(%Mobile{spirit: spirit.id, socket: self})
-                socket = assign(socket, :mobile, pid)
-                send(self, :after_join)
-                {:ok, socket}
-              pid ->
-                socket = assign(socket, :mobile, pid)
-                send(self, :after_join)
-                {:ok, socket}
-            end
+          %Spirit{room_id: room_id} = spirit ->
+
+            socket =
+              socket
+              |> assign(:room_id, room_id)
+              |> assign(:spirit_id, spirit.id)
+
+            room_id
+            |> RoomServer.find
+            |> RoomServer.spirit_connected(spirit, self())
+
+            send(self(), :after_join)
+
+            {:ok, socket}
         end
       {:error, _} ->
         {:error, %{reason: "unauthorized"}}
     end
+  end
+
+  def handle_info(:after_join, socket) do
+    socket.assigns[:room_id]
+    |> RoomServer.find
+    |> RoomServer.execute_command(socket.assigns[:spirit_id], "l", [])
+
+    update_room(socket)
+
+    {:noreply, socket}
   end
 
   def handle_info({:update_mobile, pid}, socket) do
@@ -51,15 +61,6 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info(:after_join, socket) do
-    send(socket.assigns[:mobile], {:set_socket, self})
-
-    Mobile.look(socket.assigns[:mobile])
-    Mobile.update_room(socket.assigns[:mobile])
-
-    {:noreply, socket}
-  end
-
   def handle_info({:disable_element, elem}, socket) do
     Phoenix.Channel.push socket, "disable", %{:html => elem}
 
@@ -67,7 +68,11 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_info({:update_room, room_id}, socket) do
-    Phoenix.Channel.push socket, "update_room", %{:room_id => room_id}
+    socket =
+      socket
+      |> assign(:room_id, room_id)
+
+    update_room(socket)
 
     {:noreply, socket}
   end
@@ -114,8 +119,6 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
-
-
   def handle_info(%Phoenix.Socket.Broadcast{event: event, payload: payload}, socket) do
     Phoenix.Channel.push socket, event, payload
 
@@ -123,7 +126,10 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_in("command", %{}, socket) do
-    Mobile.execute_command(socket.assigns[:mobile], "l", [])
+
+    socket.assigns[:room_id]
+    |> RoomServer.find
+    |> RoomServer.execute_command(socket.assigns[:spirit_id], "l", [])
 
     {:noreply, socket}
   end
@@ -131,9 +137,13 @@ defmodule ApathyDrive.MUDChannel do
   def handle_in("command", message, socket) do
     case String.split(message) do
       [command | arguments] ->
-        Mobile.execute_command(socket.assigns[:mobile], command, arguments)
+        socket.assigns[:room_id]
+        |> RoomServer.find
+        |> RoomServer.execute_command(socket.assigns[:spirit_id], command, arguments)
       [] ->
-        Mobile.execute_command(socket.assigns[:mobile], "l", [])
+        socket.assigns[:room_id]
+        |> RoomServer.find
+        |> RoomServer.execute_command(socket.assigns[:spirit_id], "l", [])
     end
 
     {:noreply, socket}
@@ -163,6 +173,10 @@ defmodule ApathyDrive.MUDChannel do
   def handle_out(event, payload, socket) do
     push socket, event, payload
     {:noreply, socket}
+  end
+
+  defp update_room(socket) do
+    Phoenix.Channel.push socket, "update_room", %{:room_id => socket.assigns[:room_id]}
   end
 
 end

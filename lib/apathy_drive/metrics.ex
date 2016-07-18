@@ -17,7 +17,6 @@ defmodule ApathyDrive.Metrics do
       "rooms"
       |> ApathyDrive.PubSub.subscribers
       |> length()
-      |> IO.inspect
 
     room_count
     |> ExStatsD.gauge("rooms")
@@ -36,7 +35,6 @@ defmodule ApathyDrive.Metrics do
         Task.start fn ->
           Enum.each(:erlang.processes, &:erlang.garbage_collect/1)
         end
-        IO.puts "running gc"
         true
       else
         gc_ran?

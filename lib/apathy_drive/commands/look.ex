@@ -9,24 +9,20 @@ defmodule ApathyDrive.Commands.Look do
 
   def keywords, do: ["look", "l"]
 
-  def execute(%Mobile{room_id: room_id} = mobile, args) do
+  def execute(%Room{} = room, %Mobile{} = mobile, args) do
     if blind?(mobile) do
       Mobile.send_scroll(mobile, "<p>You are blind.</p>")
     else
-      room_id
-      |> RoomServer.find
-      |> RoomServer.look(%{mobile: self, name: Mobile.look_name(mobile), room_id: mobile.room_id}, args)
+      look(room, mobile, args)
     end
   end
 
-  def execute(%Room{id: id} = room, %{mobile: mobile, room_id: room_id, name: name}, []) when id != room_id do
-    peek(room, name, room_id)
+  def look(%Room{id: id} = room, %Mobile{room_id: room_id} = mobile, []) when id != room_id do
+    peek(room, mobile.name, room_id)
     execute(room, %{mobile: mobile}, [])
   end
 
-  def execute(%Room{} = room, %{mobile: mobile}, []) do
-    room = Room.update_essence(room)
-
+  def look(%Room{} = room, %Mobile{} = mobile, []) do
     name_color =
       case Room.controlled_by(room) do
         "evil" ->

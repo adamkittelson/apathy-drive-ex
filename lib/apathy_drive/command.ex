@@ -24,8 +24,10 @@ defmodule ApathyDrive.Command do
     |> RoomServer.execute_command(self, command, arguments)
   end
 
-  def execute(%Room{} = room, mobile, command, arguments) do
+  def execute(%Room{} = room, spirit_id, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
+    
+    mobile = Room.find_spirit(room, spirit_id)
 
     cond do
       command in @directions ->
@@ -37,14 +39,7 @@ defmodule ApathyDrive.Command do
       scripts = Room.command(room, full_command) ->
         Mobile.execute_room_command(mobile, scripts)
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
-        case cmd do
-          %ApathyDrive.Command{name: "look"} ->
-            Mobile.look(mobile, arguments)
-          %ApathyDrive.Command{name: "search"} ->
-            Commands.Search.execute(room, mobile, arguments)
-          _ ->
-            cmd.module.execute(mobile, arguments)
-        end
+        cmd.module.execute(room, mobile, arguments)
       true ->
         Mobile.use_ability(mobile, command, arguments)
     end

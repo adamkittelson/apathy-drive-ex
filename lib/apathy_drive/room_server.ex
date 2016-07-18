@@ -6,8 +6,8 @@ defmodule ApathyDrive.RoomServer do
   require Logger
 
   def find(id) do
-    case :global.whereis_name("room_#{id}") do
-      :undefined ->
+    case Process.whereis(:"room_#{id}") do
+      nil ->
         load(id)
       room ->
         room
@@ -107,16 +107,16 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:mirror_bash_fail, mirror_room_id, room_exit})
   end
 
-  def execute_command(room, mobile, command, arguments) do
-    GenServer.cast(room, {:execute_command, mobile, command, arguments})
+  def execute_command(room, spirit_id, command, arguments) do
+    GenServer.cast(room, {:execute_command, spirit_id, command, arguments})
   end
 
   def execute_ability(room, ability, query) do
     GenServer.cast(room, {:execute_ability, self(), ability, query})
   end
 
-  def look(room, mobile, args \\ []) do
-    GenServer.cast(room, {:look, mobile, args})
+  def look(room, spirit_id, args \\ []) do
+    GenServer.cast(room, {:look, spirit_id, args})
   end
 
   def display_enter_message(room, data) do
@@ -145,6 +145,10 @@ defmodule ApathyDrive.RoomServer do
 
   def destroy_item(room, item) do
     GenServer.call(room, {:destroy_item, item})
+  end
+
+  def spirit_connected(room, spirit, socket) do
+    GenServer.call(room, {:spirit_connected, spirit, socket})
   end
 
   def add_item(room, item) do
@@ -194,11 +198,11 @@ defmodule ApathyDrive.RoomServer do
     PubSub.subscribe("rooms:#{room.id}")
     PubSub.subscribe("areas:#{room.area_id}")
 
-    load_present_mobiles(self())
+    # load_present_mobiles(self())
 
-    if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
-      send(self, :spawn_monsters)
-    end
+    # if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
+    #   send(self, :spawn_monsters)
+    # end
 
     Process.send_after(self(), :save, 2000)
 
@@ -243,6 +247,29 @@ defmodule ApathyDrive.RoomServer do
   def handle_call({:lock, direction}, _from, room) do
     room = Room.lock!(room, direction)
     {:reply, room, room}
+  end
+
+  def handle_call({:spirit_connected, %Spirit{id: id} = spirit, socket}, _from, room) do
+    if mobile = Room.find_spirit(room, id) do
+      room = Room.update_mobile(room, mobile, &(Map.put(&1, :socket, socket)))
+
+      room
+      |> Room.find_spirit(id)
+      |> Mobile.update_prompt
+
+      {:reply, :already_present, room}
+    else
+      spirit = Repo.preload(spirit, :class)
+
+      ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{Spirit.look_name(spirit)} just entered the Realm.</p>"}
+
+      mobile = Mobile.init(%Mobile{spirit: spirit, socket: socket})
+
+      Mobile.update_prompt(mobile)
+
+      room = update_in(room.mobiles, &([mobile | &1]))
+      {:reply, :ok, room}
+    end
   end
 
   def handle_cast({:system, mobile, command}, %Room{} = room) do
@@ -418,8 +445,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:execute_command, mobile, command, arguments}, room) do
-    ApathyDrive.Command.execute(room, mobile, command, arguments)
+  def handle_cast({:execute_command, spirit_id, command, arguments}, room) do
+    ApathyDrive.Command.execute(room, spirit_id, command, arguments)
     {:noreply, room}
   end
 
@@ -465,8 +492,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:look, mobile, args}, %Room{} = room) do
-    Commands.Look.execute(room, mobile, args)
+  def handle_cast({:look, spirit_id, args}, %Room{} = room) do
+    Commands.Look.execute(room, spirit_id, args)
 
     {:noreply, room}
   end
@@ -677,15 +704,9 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       if room.room_unity.essences != essences do
-        if room.id == 2182 do
-          IO.puts "#{inspect essences} != #{inspect room.room_unity.essences}, will update again"
-        end
         TimerManager.cancel(room, :update_essence)
         TimerManager.send_after(room, {:update_essence, 1_000, :update_essence})
       else
-        if room.id == 2182 do
-          IO.puts "#{inspect essences} == #{inspect room.room_unity.essences}, done updating, reporting"
-        end
         Room.report_essence(room)
         room
       end
@@ -706,14 +727,8 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       if room_unity == room.room_unity do
-        if room.id == 2182 do
-          IO.puts "received updated report, but not updating targets"
-        end
         room
       else
-        if room.id == 2182 do
-          IO.puts "received updated report, updating targets"
-        end
         update_essence_targets(room)
       end
 

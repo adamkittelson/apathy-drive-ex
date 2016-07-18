@@ -554,24 +554,10 @@ defmodule ApathyDrive.Mobile do
 
     {:ok, mobile}
   end
-  def init(%Mobile{spirit: spirit_id, socket: socket} = mobile) do
-    Process.monitor(socket)
-    Process.register(self, :"spirit_#{spirit_id}")
-
-    spirit = Repo.get(Spirit, spirit_id)
-             |> Repo.preload(:class)
-
-    ApathyDrive.PubSub.subscribe("mobiles")
-    ApathyDrive.PubSub.subscribe("spirits:online")
-    ApathyDrive.PubSub.subscribe("spirits:#{spirit.id}")
-    ApathyDrive.PubSub.subscribe("chat:gossip")
-    ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
-    ApathyDrive.PubSub.subscribe("rooms:#{spirit.room_id}:spirits")
-
+  def init(%Mobile{spirit: spirit} = mobile) do
     mobile =
       mobile
       |> Map.put(:spirit, spirit)
-      |> Map.put(:pid, self)
       |> Map.put(:room_id, spirit.room_id)
       |> Map.put(:alignment, spirit.class.alignment)
       |> Map.put(:name, spirit.name)
@@ -583,25 +569,12 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
-      |> TimerManager.send_every({:monster_regen,    1_000, :regen})
-      |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
-      |> TimerManager.send_every({:monster_ai,       5_000, :think})
-      |> TimerManager.send_every({:unify,  60_000, :unify})
+      # |> TimerManager.send_every({:monster_regen,    1_000, :regen})
+      # |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
+      # |> TimerManager.send_every({:monster_ai,       5_000, :think})
+      # |> TimerManager.send_every({:unify,  60_000, :unify})
 
-    track(mobile)
-
-    ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
-    ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
-
-    update_prompt(mobile)
-
-    {:ok, _} = Presence.track(self(), "spirits:online", "spirit_#{spirit.id}", %{
-      name: Mobile.look_name(mobile)
-    })
-
-    send(self, :save)
-
-    {:ok, mobile}
+    save(mobile)
   end
 
   def load(id) do
