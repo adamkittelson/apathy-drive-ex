@@ -270,11 +270,8 @@ defmodule ApathyDrive.Room do
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
 
-  def send_scroll(id, html) when is_integer(id) do
-    ApathyDrive.PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, html}
-  end
-  def send_scroll(%Room{id: id}, html) do
-    ApathyDrive.PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, html}
+  def send_scroll(%Room{mobiles: mobiles}, html) do
+    Enum.each(mobiles, &Mobile.send_scroll(&1, html))
   end
 
   def open!(%Room{} = room, direction) do

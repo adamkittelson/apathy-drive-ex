@@ -18,8 +18,8 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look(%Room{id: id} = room, %Mobile{room_id: room_id} = mobile, []) when id != room_id do
-    peek(room, mobile.name, room_id)
-    execute(room, %{mobile: mobile}, [])
+    peek(room, mobile, room_id)
+    look(room, Map.put(mobile, :room_id, id), [])
   end
 
   def look(%Room{} = room, %Mobile{} = mobile, []) do
@@ -47,13 +47,13 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def execute(%Room{} = room, %{mobile: mobile} = mobile_data, arguments) when is_list(arguments) do
+  def look(%Room{} = room, %Mobile{} = mobile, arguments) when is_list(arguments) do
     cond do
       Enum.member?(@directions, Enum.join(arguments, " ")) ->
         room_exit = Room.get_exit(room, Enum.join(arguments, " "))
-        execute(room, mobile_data, room_exit)
+        look(room, mobile, room_exit)
       target = Room.find_mobile_in_room(room, mobile, Enum.join(arguments, " ")) ->
-        Mobile.look_at_mobile(target.mobile, %{name: mobile_data.name, looker: mobile})
+        Mobile.look_at_mobile(target.mobile, %{name: mobile.name, looker: mobile})
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
         look_at_item(mobile, target)
       true ->
@@ -61,44 +61,43 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def execute(%Room{}, %{mobile: mobile}, nil) do
+  def look(%Room{}, %Mobile{} = mobile, nil) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
   end
 
-  def execute(%Room{}, %{mobile: mobile}, %{"kind" => kind}) when kind in ["RemoteAction", "Command"] do
+  def look(%Room{}, %Mobile{} = mobile, %{"kind" => kind}) when kind in ["RemoteAction", "Command"] do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
   end
 
-  def execute(%Room{} = room, %{mobile: mobile} = mobile_data, %{"kind" => "Door"} = room_exit) do
+  def look(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Door"} = room_exit) do
     if Doors.open?(room, room_exit) do
-      execute(room, mobile_data, Map.put(room_exit, "kind", "Normal"))
+      look(room, mobile, Map.put(room_exit, "kind", "Normal"))
     else
       Mobile.send_scroll(mobile, "<p>The door is closed in that direction!</p>")
     end
   end
 
-  def execute(%Room{} = room, %{mobile: mobile} = mobile_data, %{"kind" => "Hidden"} = room_exit) do
+  def look(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Hidden"} = room_exit) do
     if Doors.open?(room, room_exit) do
-      execute(room, mobile_data, Map.put(room_exit, "kind", "Normal"))
+      look(room, mobile, Map.put(room_exit, "kind", "Normal"))
     else
       Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
     end
   end
 
-  def execute(%Room{}, mobile_data, %{"destination" => destination}) do
+  def look(%Room{}, %Mobile{} = mobile, %{"destination" => destination}) do
     destination
     |> RoomServer.find
-    |> RoomServer.look(mobile_data, [])
+    |> RoomServer.look(mobile, [])
   end
 
   def peek(%Room{id: id} = room, name, room_id) do
     mirror_exit = Room.mirror_exit(room, room_id)
 
     if mirror_exit do
-      message = "#{name} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
-                 |> capitalize_first
+      message = "#{Mobile.look_name(name)} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
 
-      ApathyDrive.Endpoint.broadcast! "rooms:#{id}:mobiles", "scroll", %{:html => "<p><span class='dark-magenta'>#{message}</span></p>"}
+      Room.send_scroll(room, "<p><span class='dark-magenta'>#{message}</span></p>")
     end
   end
 
