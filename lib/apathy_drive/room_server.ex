@@ -67,10 +67,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:trigger_remote_action, remote_action_exit, from, opts})
   end
 
-  def search(room, direction) do
-    GenServer.cast(room, {:search, direction})
-  end
-
   def bash(room, mobile, direction) do
     GenServer.cast(room, {:bash, mobile, direction})
   end
@@ -360,11 +356,6 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast({:trigger_remote_action, remote_action_exit, from, opts}, room) do
     room = Commands.RemoteAction.execute(room, remote_action_exit, from, opts)
-    {:noreply, room}
-  end
-
-  def handle_cast({:search, direction}, room) do
-    room = Systems.Effect.add(room, %{searched: direction}, 300)
     {:noreply, room}
   end
 

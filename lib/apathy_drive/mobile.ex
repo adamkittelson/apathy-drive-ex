@@ -519,9 +519,6 @@ defmodule ApathyDrive.Mobile do
     |> Enum.sum
   end
 
-  def send_scroll(mobile, message) when is_pid(mobile) do
-    send mobile, {:send_scroll, message}
-  end
   def send_scroll(%Mobile{socket: nil} = mobile, _html),  do: mobile
   def send_scroll(%Mobile{socket: socket} = mobile, html) do
     send(socket, {:scroll, html})
@@ -1517,20 +1514,6 @@ defmodule ApathyDrive.Mobile do
 
     if socket, do: send(socket, {:update_room_essence, essence})
 
-    {:noreply, mobile}
-  end
-
-  def handle_info({:scroll, %{} = data}, mobile) do
-    if (mobile.spirit && mobile.spirit.id) in Map.keys(data) do
-      send_scroll(mobile, data[mobile.spirit.id])
-    else
-      send_scroll(mobile, data[:other])
-    end
-    {:noreply, mobile}
-  end
-
-  def handle_info({:scroll, html}, mobile) do
-    send_scroll(mobile, html)
     {:noreply, mobile}
   end
 
