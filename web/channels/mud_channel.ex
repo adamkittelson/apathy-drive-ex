@@ -12,14 +12,16 @@ defmodule ApathyDrive.MUDChannel do
             {:error, %{reason: "unauthorized"}}
           %Spirit{room_id: room_id} = spirit ->
 
+            ref =
+              room_id
+              |> RoomServer.find
+              |> RoomServer.spirit_connected(spirit, self())
+
             socket =
               socket
               |> assign(:room_id, room_id)
               |> assign(:spirit_id, spirit.id)
-
-            room_id
-            |> RoomServer.find
-            |> RoomServer.spirit_connected(spirit, self())
+              |> assign(:mobile_ref, ref)
 
             send(self(), :after_join)
 
@@ -33,7 +35,7 @@ defmodule ApathyDrive.MUDChannel do
   def handle_info(:after_join, socket) do
     socket.assigns[:room_id]
     |> RoomServer.find
-    |> RoomServer.execute_command(socket.assigns[:spirit_id], "l", [])
+    |> RoomServer.execute_command(socket.assigns[:mobile_ref], "l", [])
 
     update_room(socket)
 
@@ -79,7 +81,7 @@ defmodule ApathyDrive.MUDChannel do
 
   def handle_info({:scroll, %{} = data}, socket) do
     if socket.assigns[:spirit_id] in Map.keys(data) do
-      send_scroll(socket, data[socket.assigns[:spirit_id]])
+      send_scroll(socket, data[socket.assigns[:mobile_ref]])
     else
       send_scroll(socket, data[:other])
     end
@@ -139,7 +141,7 @@ defmodule ApathyDrive.MUDChannel do
 
     socket.assigns[:room_id]
     |> RoomServer.find
-    |> RoomServer.execute_command(socket.assigns[:spirit_id], "l", [])
+    |> RoomServer.execute_command(socket.assigns[:mobile_ref], "l", [])
 
     {:noreply, socket}
   end
@@ -149,11 +151,11 @@ defmodule ApathyDrive.MUDChannel do
       [command | arguments] ->
         socket.assigns[:room_id]
         |> RoomServer.find
-        |> RoomServer.execute_command(socket.assigns[:spirit_id], command, arguments)
+        |> RoomServer.execute_command(socket.assigns[:mobile_ref], command, arguments)
       [] ->
         socket.assigns[:room_id]
         |> RoomServer.find
-        |> RoomServer.execute_command(socket.assigns[:spirit_id], "l", [])
+        |> RoomServer.execute_command(socket.assigns[:mobile_ref], "l", [])
     end
 
     {:noreply, socket}

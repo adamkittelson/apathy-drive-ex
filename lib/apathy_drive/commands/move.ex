@@ -60,7 +60,7 @@ defmodule ApathyDrive.Commands.Move do
       |> RoomServer.find
       |> RoomServer.mobile_entered(mobile)
 
-      update_in(room.mobiles, &(List.delete(&1, mobile)))
+      put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
     else
       room
     end
@@ -77,7 +77,7 @@ defmodule ApathyDrive.Commands.Move do
 
       Room.display_exit_message(room, %{mobile: mobile, message: room_exit["from_message"], to: destination_id})
 
-      update_in(room.mobiles, &(List.delete(&1, mobile)))
+      put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
     else
       room
     end

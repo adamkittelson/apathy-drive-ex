@@ -19,7 +19,7 @@ defmodule ApathyDrive.Room do
     field :timers,                   :map, virtual: true, default: %{}
     field :last_effect_key,          :integer, virtual: true, default: 0
     field :default_essence,          :integer, virtual: true
-    field :mobiles,                  :any, virtual: true, default: []
+    field :mobiles,                  :map, virtual: true, default: %{}
 
     timestamps
 
@@ -32,20 +32,24 @@ defmodule ApathyDrive.Room do
   end
 
   def find_spirit(%Room{mobiles: mobiles}, spirit_id) do
-    Enum.find(mobiles, &(&1.spirit && &1.spirit.id == spirit_id))
+    mobiles
+    |> Map.values
+    |> Enum.find(&(&1.spirit && &1.spirit.id == spirit_id))
   end
 
   def load_present_mobiles(%Room{} = room) do
     room.id
     |> mobiles_to_load()
     |> Enum.reduce(room, fn(mobile_id, updated_room) ->
-         monster = Repo.get!(Mobile, mobile_id)
+         monster =
+           Repo.get!(Mobile, mobile_id)
+           |> Map.put(:ref, make_ref())
 
          Room.audible_movement(room, nil)
 
          Room.display_enter_message(room, monster)
 
-         update_in(updated_room.mobiles, &([monster | &1]))
+         put_in(updated_room.mobiles[monster.ref], monster)
        end)
   end
 
@@ -56,14 +60,6 @@ defmodule ApathyDrive.Room do
     |> Ecto.Query.where(room_id: ^room_id)
     |> Ecto.Query.select([m], m.id)
     |> Repo.all
-  end
-
-  def update_mobile(%Room{} = room, %Mobile{} = mobile, update_fun) do
-    update_in(room.mobiles, fn mobiles ->
-      mobiles = List.delete(mobiles, mobile)
-      mobile = update_fun.(mobile)
-      [mobile | mobiles]
-    end)
   end
 
   def display_enter_message(%Room{} = room, %Mobile{} = mobile, message \\ nil) do
@@ -347,9 +343,11 @@ defmodule ApathyDrive.Room do
   def enter_direction(direction), do: "the #{direction}"
 
   def send_scroll(%Room{mobiles: mobiles}, html, exclude_mobile \\ nil) do
-    Enum.each mobiles, fn mobile ->
-      if mobile != exclude_mobile, do: Mobile.send_scroll(mobile, html)
-    end
+    mobiles
+    |> Map.values
+    |> Enum.each(fn mobile ->
+         if mobile != exclude_mobile, do: Mobile.send_scroll(mobile, html)
+       end)
   end
 
   def open!(%Room{} = room, direction) do

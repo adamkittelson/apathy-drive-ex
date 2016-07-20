@@ -136,6 +136,7 @@ defmodule ApathyDrive.Commands.Look do
   def look_mobiles(%Room{mobiles: mobiles} = room, mobile \\ nil) do
     mobiles_to_show =
       mobiles
+      |> Map.values
       |> Enum.reduce([], fn(%{spirit: spirit, monster_template_id: mt_id} = room_mobile, list) ->
            if mobile == room_mobile or is_nil(mt_id) do
              list

@@ -48,6 +48,7 @@ defmodule ApathyDrive.Mobile do
     field :movement_frequency, :integer, virtual: true, default: 60
     field :room_essences,      :map,     virtual: true, default: %{}
     field :unity_essences,     :map,     virtual: true, default: %{}
+    field :ref,                :any,     virtual: true
 
     timestamps
   end
@@ -564,6 +565,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:experience, spirit.experience)
       |> Map.put(:level, spirit.level)
       |> Map.put(:unities, spirit.class.unities)
+      |> Map.put(:ref, make_ref())
       |> set_abilities
       |> set_max_mana
       |> set_mana

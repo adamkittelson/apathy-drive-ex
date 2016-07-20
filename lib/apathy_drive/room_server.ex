@@ -234,13 +234,14 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_call({:spirit_connected, %Spirit{id: id} = spirit, socket}, _from, room) do
     if mobile = Room.find_spirit(room, id) do
-      room = Room.update_mobile(room, mobile, &(Map.put(&1, :socket, socket)))
+      room = put_in(room.mobiles[mobile.ref].socket, socket)
 
-      room
-      |> Room.find_spirit(id)
-      |> Mobile.update_prompt
+      mobile =
+        room
+        |> Room.find_spirit(id)
+        |> Mobile.update_prompt
 
-      {:reply, :already_present, room}
+      {:reply, mobile.ref, room}
     else
       spirit = Repo.preload(spirit, :class)
 
@@ -250,8 +251,9 @@ defmodule ApathyDrive.RoomServer do
 
       Mobile.update_prompt(mobile)
 
-      room = update_in(room.mobiles, &([mobile | &1]))
-      {:reply, :ok, room}
+      room = put_in(room.mobiles[mobile.ref], mobile)
+
+      {:reply, mobile.ref, room}
     end
   end
 
@@ -407,8 +409,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:execute_command, spirit_id, command, arguments}, room) do
-    room = ApathyDrive.Command.execute(room, spirit_id, command, arguments)
+  def handle_cast({:execute_command, mobile_ref, command, arguments}, room) do
+    room = ApathyDrive.Command.execute(room, mobile_ref, command, arguments)
     {:noreply, room}
   end
 
@@ -507,7 +509,7 @@ defmodule ApathyDrive.RoomServer do
 
     Commands.Look.execute(room, mobile, [])
 
-    room = update_in(room.mobiles, &([mobile | &1]))
+    room = put_in(room.mobiles[mobile.ref], mobile)
 
     {:noreply, room}
   end

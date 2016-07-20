@@ -18,10 +18,10 @@ defmodule ApathyDrive.Command do
      Commands.Unpossess, Commands.Wear, Commands.Who]
   end
 
-  def execute(%Room{} = room, spirit_id, command, arguments) do
+  def execute(%Room{} = room, mobile_ref, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
-    
-    mobile = Room.find_spirit(room, spirit_id)
+
+    mobile = room.mobiles[mobile_ref]
 
     cond do
       command in @directions ->

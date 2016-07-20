@@ -14,13 +14,15 @@ defmodule ApathyDrive.LairSpawning do
       if Enum.any?(monster_templates) do
         {mt_id, monster_template} = select_lair_monster(monster_templates)
 
-        monster = MonsterTemplate.create_monster(monster_template, room)
+        monster =
+          MonsterTemplate.create_monster(monster_template, room)
+          |> Map.put(:ref, make_ref())
 
         Room.audible_movement(room, nil)
 
         Room.display_enter_message(room, monster)
 
-        room = update_in(room.mobiles, &([monster | &1]))
+        room = put_in(room.mobiles[monster.ref], monster)
 
         spawn_lair(room, lair_monsters)
       else
