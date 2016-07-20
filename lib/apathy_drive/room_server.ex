@@ -23,6 +23,10 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def send_scroll(room, html) do
+    GenServer.cast(room, {:send_scroll, html})
+  end
+
   def system(room, mobile, args) do
     GenServer.cast(room, {:system, mobile, args})
   end
@@ -37,10 +41,6 @@ defmodule ApathyDrive.RoomServer do
 
   def greet(room, greeter, query) do
     GenServer.cast(room, {:greet, greeter, query})
-  end
-
-  def audible_movement(room, except_direction) do
-    GenServer.cast(room, {:audible_movement, except_direction})
   end
 
   def create_monster(room, monster_template_id) do
@@ -119,12 +119,12 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:look, spirit_id, args})
   end
 
-  def display_enter_message(room, data) do
-    GenServer.cast(room, {:mobile_entered, data})
-  end
-
   def display_exit_message(room, data) do
     GenServer.cast(room, {:mobile_left, data})
+  end
+
+  def mobile_entered(room, mobile, message \\ nil) do
+    GenServer.cast(room, {:mobile_entered, mobile, message})
   end
 
   def mobile_movement(room, mobile, message) do
@@ -272,6 +272,12 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def handle_cast({:send_scroll, html}, %Room{} = room) do
+    Room.send_scroll(room, html)
+
+    {:noreply, room}
+  end
+
   def handle_cast({:system, mobile, command}, %Room{} = room) do
     room = Commands.System.execute(room, mobile, command)
 
@@ -305,16 +311,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:audible_movement, except_direction}, %Room{exits: exits} = room) do
-    exits
-    |> Enum.each(fn
-         %{"direction" => direction, "kind" => kind, "destination" => dest} when kind in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"] and direction != except_direction ->
-           PubSub.broadcast("rooms:#{dest}:mobiles", {:audible_movement, ApathyDrive.Exit.reverse_direction(direction)})
-         _ -> :noop
-       end)
-
-    {:noreply, room}
-  end
   def handle_cast({:create_monster, monster_template_id}, room) do
     monster =
       monster_template_id
@@ -446,7 +442,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_cast({:execute_command, spirit_id, command, arguments}, room) do
-    ApathyDrive.Command.execute(room, spirit_id, command, arguments)
+    room = ApathyDrive.Command.execute(room, spirit_id, command, arguments)
     {:noreply, room}
   end
 
@@ -529,31 +525,30 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:mobile_entered, %{name: name, mobile: mobile, message: message, from: from_room_id}}, room) do
-    message = message
-              |> Text.interpolate(%{
-                   "name" => name,
-                   "direction" => room |> Room.get_direction_by_destination(from_room_id) |> Room.enter_direction()
-                 })
-              |> Text.capitalize_first
-
-    ApathyDrive.PubSub.broadcast! "rooms:#{room.id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room.id, message: "<p><span class='grey'>#{message}</span></p>"}}
-    {:noreply, room}
-  end
-
-  def handle_cast({:mobile_left, %{name: name, mobile: mobile, message: message, to: to_room_id}}, room) do
-    message = message
-              |> Text.interpolate(%{
-                   "name" => name,
-                   "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
-                 })
-              |> Text.capitalize_first
-
-    room =
+  def handle_cast({:mobile_entered, %Mobile{} = mobile, message}, room) do
+    from_direction =
       room
-      |> Room.update_essence
+      |> Room.get_direction_by_destination(mobile.room_id)
+      |> Room.enter_direction()
 
-      ApathyDrive.PubSub.broadcast! "rooms:#{room.id}:mobiles", {:mobile_movement, %{mobile: mobile, room: room.id, message: "<p><span class='grey'>#{message}</span></p>"}}
+    message =
+      (message || mobile.enter_message)
+      |> Text.interpolate(%{
+           "name" => Mobile.look_name(mobile),
+           "direction" => from_direction
+         })
+      |> Text.capitalize_first
+
+    Room.send_scroll(room, "<p>#{message}</p>", mobile)
+
+    Room.audible_movement(room, from_direction)
+
+    mobile = Mobile.set_room_id(mobile, room.id)
+
+    Commands.Look.execute(room, mobile, [])
+
+    room = update_in(room.mobiles, &([mobile | &1]))
+
     {:noreply, room}
   end
 

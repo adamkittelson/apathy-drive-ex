@@ -150,7 +150,7 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_in("map", "request_room_id", socket) do
-    Mobile.update_room(socket.assigns[:mobile])
+    update_room(socket)
     {:noreply, socket}
   end
 

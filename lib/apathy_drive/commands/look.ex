@@ -15,6 +15,7 @@ defmodule ApathyDrive.Commands.Look do
     else
       look(room, mobile, args)
     end
+    room
   end
 
   def look(%Room{id: id} = room, %Mobile{room_id: room_id} = mobile, []) when id != room_id do
@@ -91,7 +92,7 @@ defmodule ApathyDrive.Commands.Look do
     |> RoomServer.look(mobile, [])
   end
 
-  def peek(%Room{id: id} = room, name, room_id) do
+  def peek(%Room{} = room, name, room_id) do
     mirror_exit = Room.mirror_exit(room, room_id)
 
     if mirror_exit do

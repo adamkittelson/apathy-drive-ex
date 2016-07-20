@@ -43,6 +43,17 @@ defmodule ApathyDrive.Room do
     end)
   end
 
+  def audible_movement(%Room{exits: exits}, from_direction) do
+    exits
+    |> Enum.each(fn
+         %{"direction" => direction, "kind" => kind, "destination" => dest} when kind in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"] and direction != from_direction ->
+           dest
+           |> RoomServer.find
+           |> RoomServer.send_scroll("<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
+         _ -> :noop
+       end)
+  end
+
   def world_map do
     from room in Room,
     where: not is_nil(room.coordinates),
@@ -270,8 +281,10 @@ defmodule ApathyDrive.Room do
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
 
-  def send_scroll(%Room{mobiles: mobiles}, html) do
-    Enum.each(mobiles, &Mobile.send_scroll(&1, html))
+  def send_scroll(%Room{mobiles: mobiles}, html, exclude_mobile \\ nil) do
+    Enum.each mobiles, fn mobile ->
+      if mobile != exclude_mobile, do: Mobile.send_scroll(mobile, html)
+    end
   end
 
   def open!(%Room{} = room, direction) do
@@ -371,7 +384,7 @@ defmodule ApathyDrive.Room do
         direction
     end
   end
-  
+
   def report_essence(%Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
     Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
       unless kind in ["Cast", "RemoteAction"] do
@@ -525,5 +538,9 @@ defmodule ApathyDrive.Room do
       end
     end)
   end
+
+  defp sound_direction("up"),      do: "above you"
+  defp sound_direction("down"),    do: "below you"
+  defp sound_direction(direction), do: "to the #{direction}"
 
 end

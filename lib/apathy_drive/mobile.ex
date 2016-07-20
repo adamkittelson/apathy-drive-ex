@@ -52,6 +52,17 @@ defmodule ApathyDrive.Mobile do
     timestamps
   end
 
+  def set_room_id(%Mobile{spirit: nil} = mobile, room_id) do
+    put_in(mobile.room_id, room_id)
+    |> save
+  end
+  def set_room_id(%Mobile{} = mobile, room_id) do
+    send(mobile.socket, {:update_room, room_id})
+    mobile = put_in(mobile.spirit.room_id, room_id)
+    put_in(mobile.room_id, room_id)
+    |> save
+  end
+
   def ids do
     __MODULE__
     |> distinct(true)
@@ -902,10 +913,6 @@ defmodule ApathyDrive.Mobile do
     |> send(:update_essence_targets)
   end
 
-  def update(%Mobile{} = mobile) do
-    #Presence.update(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()), track_data(mobile))
-  end
-
   def untrack(%Mobile{} = mobile) do
     Presence.untrack(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()))
 
@@ -1010,10 +1017,6 @@ defmodule ApathyDrive.Mobile do
   defp handle_diff(%Mobile{room_id: _room_id} = mobile, "rooms:" <> _, %{joins: joins, leaves: _leaves}) do
     react_to_mobiles(mobile, Presence.metas(joins))
   end
-
-  defp sound_direction("up"),      do: "above you"
-  defp sound_direction("down"),    do: "below you"
-  defp sound_direction(direction), do: "to the #{direction}"
 
   defp jitter(time) do
     time
@@ -1127,7 +1130,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_cast(:update_room, %Mobile{socket: socket} = mobile) when is_pid(socket) do
-    send(socket, {:update_room, mobile.room_id})
+    send(socket, {:noreply, mobile.room_id})
     {:noreply, mobile}
   end
 
@@ -1138,6 +1141,7 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:teleport, room_id}, mobile) do
     if !held(mobile) do
+
       mobile.room_id
       |> RoomServer.find
       |> RoomServer.display_exit_message(%{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} vanishes into thin air!</span>", to: nil})
@@ -1169,7 +1173,7 @@ defmodule ApathyDrive.Mobile do
 
       destination = RoomServer.find(destination_id)
 
-      RoomServer.audible_movement({:global, "room_#{destination_id}"}, nil)
+      Room.audible_movement(room_id, nil)
 
       Mobile.look(self)
       Mobile.update_room(self)
@@ -1536,11 +1540,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:audible_movement, direction}, mobile) do
-    send_scroll(mobile, "<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
-    {:noreply, mobile}
-  end
-
   def handle_info({:scroll, %{} = data}, mobile) do
     if self in Map.keys(data) do
       send_scroll(mobile, data[self])
@@ -1806,7 +1805,6 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info(:unify, %Mobile{spirit: nil, unities: []} = mobile) do
-    update(mobile)
     {:noreply, mobile}
   end
 
@@ -1814,7 +1812,6 @@ defmodule ApathyDrive.Mobile do
     Enum.each(unities, fn(unity) ->
       ApathyDrive.Unity.contribute(unity, essence)
     end)
-    update(mobile)
     {:noreply, mobile}
   end
 
@@ -1822,7 +1819,6 @@ defmodule ApathyDrive.Mobile do
     Enum.each(unities, fn(unity) ->
       ApathyDrive.Unity.contribute(unity, essence)
     end)
-    update(mobile)
     {:noreply, mobile}
   end
 

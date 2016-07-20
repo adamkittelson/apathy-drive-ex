@@ -1,166 +1,96 @@
 defmodule ApathyDrive.Commands.Move do
   alias ApathyDrive.{Doors, Mobile, Room, RoomServer}
 
-  def execute(%Room{} = room, mobile, command) when is_binary(command) do
+  def execute(%Room{} = room, %Mobile{} = mobile, command) when is_binary(command) do
     direction = Room.direction(command)
     room_exit = Room.get_exit(room, direction)
     execute(room, mobile, room_exit)
   end
 
-  def execute(%Room{}, mobile, %{"kind" => kind} = room_exit) when kind in ["Trap", "Cast"] do
-    Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"))
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind} = room_exit) when kind in ["Trap", "Cast"] do
+    execute(room, mobile, Map.put(room_exit, "kind", "Normal"))
   end
 
-  def execute(%Room{} = room, mobile, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"] do
+  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"] do
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>You pass right through the #{String.downcase(kind)}.</span></p>")
+    execute(room, mobile, Map.put(room_exit, "kind", "Normal"))
+  end
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"] do
     if Doors.open?(room, room_exit) do
-      Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"))
+      execute(room, mobile, Map.put(room_exit, "kind", "Normal"))
     else
-      Mobile.move(mobile, self, room_exit)
+      Mobile.send_scroll(mobile, "<p><span class='red'>The #{String.downcase(kind)} is closed!</span></p>")
+      room
     end
   end
 
-  def execute(%Room{}, mobile, %{"kind" => "Hidden", "passable_while_hidden" => true} = room_exit) do
-    Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"))
+  def execute(%Room{} = room, mobile, %{"kind" => "Hidden", "passable_while_hidden" => true} = room_exit) do
+    execute(room, mobile, Map.put(room_exit, "kind", "Normal"))
   end
 
-  def execute(%Room{} = room, mobile, %{"kind" => "Hidden", "passable_while_hidden" => false} = room_exit) do
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Hidden", "passable_while_hidden" => false} = room_exit) do
     if Doors.open?(room, room_exit) do
-      Mobile.move(mobile, self, Map.put(room_exit, "kind", "Normal"))
+      execute(room, mobile, Map.put(room_exit, "kind", "Normal"))
     else
       Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+      room
     end
   end
 
-  def execute(%Room{}, mobile, room_exit) do
-    Mobile.move(mobile, self, room_exit)
-  end
-
-  def execute(%Mobile{} = mobile, _room, nil) do
+  def execute(%Room{} = room, %Mobile{} = mobile, nil) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+    room
   end
 
-  def execute(%Mobile{} = mobile, _room, %{"kind" => "Command"}) do
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Command"}) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+    room
   end
 
-  def execute(%Mobile{} = mobile, _room, %{"kind" => "RemoteAction"}) do
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "RemoteAction"}) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction.</p>")
+    room
   end
 
-  def execute(%Mobile{monster_template_id: nil} = mobile, room, %{"kind" => "Door"} = room_exit) do
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>You pass right through the door.</span></p>")
-    execute(mobile, room, Map.put(room_exit, "kind", "Normal"))
-  end
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Normal", "destination" => destination_id}) do
+    if !Mobile.held(mobile) do
+      display_exit_message(room, %{mobile: mobile, message: mobile.exit_message, to: destination_id})
 
-  def execute(%Mobile{} = mobile, _room, %{"kind" => "Door"}) do
-    Mobile.send_scroll(mobile, "<p><span class='red'>The door is closed!</span></p>")
-  end
-  
-  def execute(%Mobile{monster_template_id: nil} = mobile, room, %{"kind" => "Gate"} = room_exit) do
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>You pass right through the gate.</span></p>")
-    execute(mobile, room, Map.put(room_exit, "kind", "Normal"))
-  end
-
-  def execute(%Mobile{} = mobile, _room, %{"kind" => "Gate"}) do
-    Mobile.send_scroll(mobile, "<p><span class='red'>The gate is closed!</span></p>")
-  end
-
-  def execute(%Mobile{} = mobile, _room, %{"kind" => "Normal", "destination" => destination_id} = room_exit) do
-    import Mobile
-
-    if !held(mobile) do
-      mobile.room_id
+      destination_id
       |> RoomServer.find
-      |> RoomServer.display_exit_message(%{name: look_name(mobile), mobile: self, message: mobile.exit_message, to: destination_id})
+      |> RoomServer.mobile_entered(mobile)
 
-      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
-      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
-
-      Mobile.untrack(mobile)
-
-      mobile =
-        mobile
-        |> Map.put(:room_id, destination_id)
-
-      Mobile.track(mobile)
-
-      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
-      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
-
-      mobile =
-        if mobile.spirit do
-          ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
-          mobile = put_in(mobile.spirit.room_id, mobile.room_id)
-          ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
-          mobile
-        else
-          mobile
-        end
-
-      destination = RoomServer.find(destination_id)
-
-      RoomServer.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
-
-      Mobile.look(self)
-      Mobile.update_room(self)
-
-      RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: mobile.enter_message, from: mobile.room_id})
-
-      mobile
-
+      update_in(room.mobiles, &(List.delete(&1, mobile)))
     else
-      mobile
+      room
     end
   end
 
-  def execute(%Mobile{} = mobile, _room, %{"kind" => "Action", "destination" => destination_id} = room_exit) do
-    import Mobile
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Action", "destination" => destination_id} = room_exit) do
+    if !Mobile.held(mobile) do
 
-    if !held(mobile) do
       Mobile.send_scroll(mobile, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
 
-      mobile.room_id
+      destination_id
       |> RoomServer.find
-      |> RoomServer.display_exit_message(%{name: look_name(mobile), mobile: self, message: room_exit["from_message"], to: destination_id})
+      |> RoomServer.mobile_entered(mobile, "<span class='yellow'>#{room_exit["to_message"]}</span>")
 
-      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
-      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
+      display_exit_message(room, %{mobile: mobile, message: room_exit["from_message"], to: destination_id})
 
-      Mobile.untrack(mobile)
-
-      mobile =
-        mobile
-        |> Map.put(:room_id, destination_id)
-
-      Mobile.track(mobile)
-
-      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
-      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
-
-      mobile =
-        if mobile.spirit do
-          ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
-          mobile = put_in(mobile.spirit.room_id, mobile.room_id)
-          ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
-          mobile
-        else
-          mobile
-        end
-
-      destination = RoomServer.find(destination_id)
-
-      RoomServer.audible_movement({:global, "room_#{destination_id}"}, ApathyDrive.Exit.reverse_direction(room_exit["direction"]))
-
-      Mobile.look(self)
-      Mobile.update_room(self)
-
-      RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: room_exit["to_message"], from: mobile.room_id})
-
-      mobile
-
+      update_in(room.mobiles, &(List.delete(&1, mobile)))
     else
-      mobile
+      room
     end
+  end
+
+  def display_exit_message(room, %{mobile: mobile, message: message, to: to_room_id}) do
+    message = message
+              |> ApathyDrive.Text.interpolate(%{
+                   "name" => Mobile.look_name(mobile),
+                   "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
+                 })
+
+    Room.send_scroll(room, "<p><span class='grey'>#{message}</span></p>", mobile)
   end
 
 end

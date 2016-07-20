@@ -18,12 +18,6 @@ defmodule ApathyDrive.Command do
      Commands.Unpossess, Commands.Wear, Commands.Who]
   end
 
-  def execute(%Mobile{room_id: room_id}, command, arguments) do
-    room_id
-    |> RoomServer.find
-    |> RoomServer.execute_command(self, command, arguments)
-  end
-
   def execute(%Room{} = room, spirit_id, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
     
@@ -32,7 +26,7 @@ defmodule ApathyDrive.Command do
     cond do
       command in @directions ->
         Commands.Move.execute(room, mobile, command)
-        command_exit = Room.command_exit(room, full_command) ->
+      command_exit = Room.command_exit(room, full_command) ->
         Commands.Move.execute(room, mobile, Map.put(command_exit, "kind", "Action"))
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
         Mobile.trigger_remote_action(mobile, remote_action_exit)
