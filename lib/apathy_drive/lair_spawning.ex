@@ -16,7 +16,7 @@ defmodule ApathyDrive.LairSpawning do
 
         monster =
           MonsterTemplate.create_monster(monster_template, room)
-          |> Map.put(:ref, make_ref())
+          |> Mobile.init
 
         Room.audible_movement(room, nil)
 

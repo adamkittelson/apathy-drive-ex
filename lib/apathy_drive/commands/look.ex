@@ -54,7 +54,7 @@ defmodule ApathyDrive.Commands.Look do
         room_exit = Room.get_exit(room, Enum.join(arguments, " "))
         look(room, mobile, room_exit)
       target = Room.find_mobile_in_room(room, mobile, Enum.join(arguments, " ")) ->
-        Mobile.look_at_mobile(target.mobile, %{name: mobile.name, looker: mobile})
+        look_at_mobile(target, mobile)
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
         look_at_item(mobile, target)
       true ->
@@ -102,7 +102,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_mobile(%Mobile{} = target, %{name: name, looker: mobile}) do
+  def look_at_mobile(%Mobile{} = target, %Mobile{} = mobile) do
     Mobile.send_scroll(target, "<p>#{name} looks you over.</p>")
 
     hp_percentage = round(100 * (target.hp / target.max_hp))

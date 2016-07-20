@@ -35,7 +35,6 @@ defmodule ApathyDrive.Mobile do
     field :mana,               :float,   virtual: true
     field :max_mana,           :integer, virtual: true
     field :effects,            :map,     virtual: true, default: %{}
-    field :pid,                :any,     virtual: true
     field :keywords,           :any,     virtual: true, default: []
     field :abilities,          :any,     virtual: true, default: []
     field :hate,               :map,     virtual: true, default: %{}
@@ -48,6 +47,7 @@ defmodule ApathyDrive.Mobile do
     field :movement_frequency, :integer, virtual: true, default: 60
     field :room_essences,      :map,     virtual: true, default: %{}
     field :unity_essences,     :map,     virtual: true, default: %{}
+    field :pid,                :any,     virtual: true
     field :ref,                :any,     virtual: true
 
     timestamps
@@ -255,10 +255,6 @@ defmodule ApathyDrive.Mobile do
 
   def look(mobile, args \\ []) do
     GenServer.cast(mobile, {:look, args})
-  end
-
-  def look_at_mobile(mobile, looker) do
-    GenServer.cast(mobile, {:look_at_mobile, looker})
   end
 
   def look_at_item(mobile, item) do
@@ -522,38 +518,22 @@ defmodule ApathyDrive.Mobile do
     mobile
   end
 
-  def init(id) when is_integer(id) do
-    Repo.get!(Mobile, id)
-    |> init()
-  end
   def init(%Mobile{spirit: nil} = mobile) do
     mobile =
       mobile
-      |> Map.put(:pid, self)
+      |> Map.put(:ref, make_ref())
       |> set_abilities
       |> set_max_mana
       |> set_mana
       |> set_max_hp
       |> set_hp
-      |> TimerManager.send_every({:monster_regen,    1_000, :regen})
-      |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
-      |> TimerManager.send_every({:monster_ai,       5_000, :think})
-      |> TimerManager.send_every({:unify,  60_000, :unify})
-      |> move_after()
+      # |> TimerManager.send_every({:monster_regen,    1_000, :regen})
+      # |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
+      # |> TimerManager.send_every({:monster_ai,       5_000, :think})
+      # |> TimerManager.send_every({:unify,  60_000, :unify})
+      # |> move_after()
 
-      track(mobile)
-
-      ApathyDrive.PubSub.subscribe("mobiles")
-      ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles")
-      ApathyDrive.PubSub.subscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
-
-      if mobile.monster_template_id do
-        ApathyDrive.PubSub.subscribe("monster_templates:#{mobile.monster_template_id}:monsters")
-      end
-
-      send(self, :save)
-
-    {:ok, mobile}
+      save(mobile)
   end
   def init(%Mobile{spirit: spirit} = mobile) do
     mobile =
@@ -1207,11 +1187,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:become_possessed, spirit_id, class, socket, possessor}, mobile) do
     {:noreply, Commands.Possess.become_possessed(mobile, spirit_id, class, socket, possessor)}
-  end
-
-  def handle_cast({:look_at_mobile, looker}, mobile) do
-    Commands.Look.look_at_mobile(mobile, looker)
-    {:noreply, mobile}
   end
 
   def handle_cast({:look_at_item, item}, mobile) do

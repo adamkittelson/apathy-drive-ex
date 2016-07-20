@@ -42,8 +42,9 @@ defmodule ApathyDrive.Room do
     |> mobiles_to_load()
     |> Enum.reduce(room, fn(mobile_id, updated_room) ->
          monster =
-           Repo.get!(Mobile, mobile_id)
-           |> Map.put(:ref, make_ref())
+           Mobile
+           |> Repo.get!(mobile_id)
+           |> Mobile.init
 
          Room.audible_movement(room, nil)
 
@@ -197,13 +198,10 @@ defmodule ApathyDrive.Room do
     |> validate_length(:name, min: 1, max: 30)
   end
 
-  def find_mobile_in_room(%Room{} = room, mobile, query) do
+  def find_mobile_in_room(%Room{mobiles: mobiles} = room, mobile, query) do
     mobiles =
-      Presence.metas("rooms:#{room.id}:mobiles")
-
-    mobile =
       mobiles
-      |> Enum.find(&(&1.mobile == mobile))
+      |> Map.values
 
     mobiles
     |> Enum.reject(&(&1 == mobile))
