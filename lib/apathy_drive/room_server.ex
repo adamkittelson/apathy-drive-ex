@@ -236,10 +236,8 @@ defmodule ApathyDrive.RoomServer do
     if mobile = Room.find_spirit(room, id) do
       room = put_in(room.mobiles[mobile.ref].socket, socket)
 
-      mobile =
-        room
-        |> Room.find_spirit(id)
-        |> Mobile.update_prompt
+      room.mobiles[mobile.ref]
+      |> Mobile.update_prompt
 
       {:reply, mobile.ref, room}
     else
