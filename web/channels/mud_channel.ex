@@ -77,8 +77,18 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:scroll, %{} = data}, socket) do
+    if socket.assigns[:spirit_id] in Map.keys(data) do
+      send_scroll(socket, data[socket.assigns[:spirit_id]])
+    else
+      send_scroll(socket, data[:other])
+    end
+
+    {:noreply, socket}
+  end
+
   def handle_info({:scroll, html}, socket) do
-    Phoenix.Channel.push socket, "scroll", %{:html => html}
+    send_scroll(socket, html)
 
     {:noreply, socket}
   end
@@ -177,6 +187,10 @@ defmodule ApathyDrive.MUDChannel do
 
   defp update_room(socket) do
     Phoenix.Channel.push socket, "update_room", %{:room_id => socket.assigns[:room_id]}
+  end
+
+  defp send_scroll(socket, html) do
+    Phoenix.Channel.push socket, "scroll", %{:html => html}
   end
 
 end

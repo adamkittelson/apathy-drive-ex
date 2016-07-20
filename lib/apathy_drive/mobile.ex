@@ -121,10 +121,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:execute_room_command, scripts})
   end
 
-  def trigger_remote_action(mobile, remote_action_exit, opts \\ []) do
-    GenServer.cast(mobile, {:trigger_remote_action, remote_action_exit, opts})
-  end
-
   def move(mobile, room, room_exit) do
     GenServer.cast(mobile, {:move, room, room_exit})
   end
@@ -1321,22 +1317,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:trigger_remote_action, remote_action_exit, opts}, mobile) do
-    unless confused(mobile) do
-      remote_action_exit["destination"]
-      |> RoomServer.find
-      |> RoomServer.trigger_remote_action(remote_action_exit, mobile.room_id, opts)
-
-      mobile.room_id
-      |> Room.send_scroll(%{
-        self => "<p>#{remote_action_exit["message"]}</p>",
-        :other => "<p>#{interpolate(remote_action_exit["room_message"], %{"name" => look_name(mobile)})}</span></p>"
-      })
-    end
-
-    {:noreply, mobile}
-  end
-
   def handle_cast({:move, room, room_exit}, mobile) do
     mobile = Commands.Move.execute(mobile, room, room_exit)
     {:noreply, mobile}
@@ -1541,8 +1521,8 @@ defmodule ApathyDrive.Mobile do
   end
 
   def handle_info({:scroll, %{} = data}, mobile) do
-    if self in Map.keys(data) do
-      send_scroll(mobile, data[self])
+    if (mobile.spirit && mobile.spirit.id) in Map.keys(data) do
+      send_scroll(mobile, data[mobile.spirit.id])
     else
       send_scroll(mobile, data[:other])
     end

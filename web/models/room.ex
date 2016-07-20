@@ -54,6 +54,21 @@ defmodule ApathyDrive.Room do
        end)
   end
 
+  def initiate_remote_action(room, mobile, remote_action_exit, opts \\ []) do
+    unless Mobile.confused(mobile) do
+      remote_action_exit["destination"]
+      |> RoomServer.find
+      |> RoomServer.trigger_remote_action(remote_action_exit, mobile.room_id, opts)
+
+      room
+      |> Room.send_scroll(%{
+           mobile.spirit.id => "<p>#{remote_action_exit["message"]}</p>",
+           :other => "<p>#{ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{"name" => Mobile.look_name(mobile)})}</span></p>"
+         })
+    end
+    room
+  end
+
   def world_map do
     from room in Room,
     where: not is_nil(room.coordinates),

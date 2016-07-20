@@ -29,7 +29,7 @@ defmodule ApathyDrive.Command do
       command_exit = Room.command_exit(room, full_command) ->
         Commands.Move.execute(room, mobile, Map.put(command_exit, "kind", "Action"))
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
-        Mobile.trigger_remote_action(mobile, remote_action_exit)
+        Room.initiate_remote_action(room, mobile, remote_action_exit)
       scripts = Room.command(room, full_command) ->
         Mobile.execute_room_command(mobile, scripts)
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
