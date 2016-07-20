@@ -195,10 +195,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, {:execute_script, script})
   end
 
-  def display_abilities(pid) do
-    GenServer.cast(pid, :display_abilities)
-  end
-
   def display_cooldowns(pid) do
     GenServer.cast(pid, :display_cooldowns)
   end
@@ -1359,11 +1355,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:greet, target}, mobile) do
     Commands.Greet.execute(mobile, target)
-    {:noreply, mobile}
-  end
-
-  def handle_cast(:display_abilities, mobile) do
-    Commands.Abilities.display_abilities(mobile)
     {:noreply, mobile}
   end
 
