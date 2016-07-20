@@ -577,15 +577,6 @@ defmodule ApathyDrive.Mobile do
     save(mobile)
   end
 
-  def load(id) do
-    case MobileSupervisor.launch(id) do
-      {:error, {:already_started, pid}} ->
-        pid
-      {:ok, pid} ->
-        pid
-    end
-  end
-
   def set_attack_target(%Mobile{attack_target: attack_target} = mobile, target) when attack_target == target do
     mobile
   end

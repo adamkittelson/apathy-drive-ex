@@ -133,17 +133,14 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
   end
 
-  def look_mobiles(%Room{} = room, mobile \\ nil) do
-    mobiles =
-      Presence.metas("rooms:#{room.id}:mobiles")
-
+  def look_mobiles(%Room{mobiles: mobiles} = room, mobile \\ nil) do
     mobiles_to_show =
       mobiles
-      |> Enum.reduce([], fn(%{mobile: pid, look_name: name, invisible?: invisible?}, list) ->
-           if pid == mobile or invisible? do
+      |> Enum.reduce([], fn(%{spirit: spirit, monster_template_id: mt_id} = room_mobile, list) ->
+           if mobile == room_mobile or is_nil(mt_id) do
              list
            else
-             [name | list]
+             [Mobile.look_name(room_mobile) | list]
            end
          end)
 

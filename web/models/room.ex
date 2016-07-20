@@ -35,12 +35,62 @@ defmodule ApathyDrive.Room do
     Enum.find(mobiles, &(&1.spirit && &1.spirit.id == spirit_id))
   end
 
+  def load_present_mobiles(%Room{} = room) do
+    room.id
+    |> mobiles_to_load()
+    |> Enum.reduce(room, fn(mobile_id, updated_room) ->
+         monster = Repo.get!(Mobile, mobile_id)
+
+         Room.audible_movement(room, nil)
+
+         Room.display_enter_message(room, monster)
+
+         update_in(updated_room.mobiles, &([monster | &1]))
+       end)
+  end
+
+  def mobiles_to_load(room_id) do
+    require Ecto.Query
+
+    Mobile
+    |> Ecto.Query.where(room_id: ^room_id)
+    |> Ecto.Query.select([m], m.id)
+    |> Repo.all
+  end
+
   def update_mobile(%Room{} = room, %Mobile{} = mobile, update_fun) do
     update_in(room.mobiles, fn mobiles ->
       mobiles = List.delete(mobiles, mobile)
       mobile = update_fun.(mobile)
       [mobile | mobiles]
     end)
+  end
+
+  def display_enter_message(%Room{} = room, %Mobile{} = mobile, message \\ nil) do
+    from_direction =
+      room
+      |> get_direction_by_destination(mobile.room_id)
+      |> enter_direction()
+
+    message =
+      (message || mobile.enter_message)
+      |> ApathyDrive.Text.interpolate(%{
+           "name" => Mobile.look_name(mobile),
+           "direction" => from_direction
+         })
+      |> ApathyDrive.Text.capitalize_first
+
+    send_scroll(room, "<p>#{message}</p>", mobile)
+  end
+
+  def display_exit_message(room, %{mobile: mobile, message: message, to: to_room_id}) do
+    message = message
+              |> ApathyDrive.Text.interpolate(%{
+                   "name" => Mobile.look_name(mobile),
+                   "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
+                 })
+
+    send_scroll(room, "<p><span class='grey'>#{message}</span></p>", mobile)
   end
 
   def audible_movement(%Room{exits: exits}, from_direction) do

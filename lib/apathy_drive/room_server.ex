@@ -22,7 +22,7 @@ defmodule ApathyDrive.RoomServer do
         pid
     end
   end
-  
+
   def send_scroll(room, html) do
     GenServer.cast(room, {:send_scroll, html})
   end
@@ -45,10 +45,6 @@ defmodule ApathyDrive.RoomServer do
 
   def create_monster(room, monster_template_id) do
     GenServer.cast(room, {:create_monster, monster_template_id})
-  end
-
-  def load_present_mobiles(room) do
-    GenServer.cast(room, :load_present_mobiles)
   end
 
   def ask(room, asker, target, question) do
@@ -159,15 +155,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:auto_move, mobile, unities})
   end
 
-  def mobiles_to_load(room_id) do
-    require Ecto.Query
-
-    Mobile
-    |> Ecto.Query.where(room_id: ^room_id)
-    |> Ecto.Query.select([m], m.id)
-    |> Repo.all
-  end
-
   def init(id) do
     room =
       Repo.get!(Room, id)
@@ -194,18 +181,18 @@ defmodule ApathyDrive.RoomServer do
     PubSub.subscribe("rooms:#{room.id}")
     PubSub.subscribe("areas:#{room.area_id}")
 
-    # load_present_mobiles(self())
+    send(self, :load_present_mobiles)
 
-    # if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
-    #   send(self, :spawn_monsters)
-    # end
+    if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
+      send(self, :spawn_monsters)
+    end
 
     Process.send_after(self(), :save, 2000)
 
     room =
       room
       # |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-      |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
+      #|> TimerManager.send_after({:update_essence, 1_000, :update_essence})
 
     {:ok, room}
   end
@@ -315,18 +302,6 @@ defmodule ApathyDrive.RoomServer do
 
     Mobile.display_enter_message(monster, self())
 
-    {:noreply, room}
-  end
-
-  def handle_cast(:load_present_mobiles, room) do
-    room.id
-    |> mobiles_to_load()
-    |> Enum.each(fn(mobile_id) ->
-         mobile_id
-         |> Mobile.load
-         |> Mobile.display_enter_message(self())
-
-       end)
     {:noreply, room}
   end
 
@@ -517,18 +492,12 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_cast({:mobile_entered, %Mobile{} = mobile, message}, room) do
+    Room.display_enter_message(room, mobile)
+
     from_direction =
       room
       |> Room.get_direction_by_destination(mobile.room_id)
       |> Room.enter_direction()
-
-    message =
-      (message || mobile.enter_message)
-      |> Text.interpolate(%{
-           "name" => Mobile.look_name(mobile),
-           "direction" => from_direction
-         })
-      |> Text.capitalize_first
 
     Room.send_scroll(room, "<p>#{message}</p>", mobile)
 
@@ -559,6 +528,10 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info(:load_present_mobiles, room) do
+    {:noreply, Room.load_present_mobiles(room)}
+  end
+
   def handle_info({:update_area, area}, room) do
     PubSub.unsubscribe("areas:#{room.area_id}")
     room = Room.update_area(room, area)
@@ -579,22 +552,20 @@ defmodule ApathyDrive.RoomServer do
 
     if DateTime.to_secs(DateTime.now) >= lair_next_spawn_at do
 
-      room_pid = self()
-
-      Task.start_link fn ->
-        ApathyDrive.LairSpawning.spawn_lair(room, room_pid)
-      end
-
-      room = room
-             |> Map.put(:lair_next_spawn_at, DateTime.now
-                                             |> DateTime.shift(minutes: room.lair_frequency)
-                                             |> DateTime.to_secs)
+      room =
+        room
+        |> ApathyDrive.LairSpawning.spawn_lair
+        |> Map.put(
+             :lair_next_spawn_at,
+             DateTime.now
+             |> DateTime.shift(minutes: room.lair_frequency)
+             |> DateTime.to_secs
+           )
 
       {:noreply, room}
     else
       {:noreply, room}
     end
-
   end
 
   def handle_info({:door_bashed_open, %{direction: direction}}, room) do

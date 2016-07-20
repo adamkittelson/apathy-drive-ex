@@ -192,7 +192,7 @@ defmodule ApathyDrive.MonsterTemplate do
 
     monster = Repo.save!(monster)
 
-    {:reply, monster.id, monster_template}
+    {:reply, monster, monster_template}
   end
 
   def handle_call(:value, _from, monster_template) do

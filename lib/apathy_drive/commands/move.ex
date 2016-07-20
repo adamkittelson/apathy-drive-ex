@@ -54,7 +54,7 @@ defmodule ApathyDrive.Commands.Move do
 
   def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Normal", "destination" => destination_id}) do
     if !Mobile.held(mobile) do
-      display_exit_message(room, %{mobile: mobile, message: mobile.exit_message, to: destination_id})
+      Room.display_exit_message(room, %{mobile: mobile, message: mobile.exit_message, to: destination_id})
 
       destination_id
       |> RoomServer.find
@@ -75,22 +75,12 @@ defmodule ApathyDrive.Commands.Move do
       |> RoomServer.find
       |> RoomServer.mobile_entered(mobile, "<span class='yellow'>#{room_exit["to_message"]}</span>")
 
-      display_exit_message(room, %{mobile: mobile, message: room_exit["from_message"], to: destination_id})
+      Room.display_exit_message(room, %{mobile: mobile, message: room_exit["from_message"], to: destination_id})
 
       update_in(room.mobiles, &(List.delete(&1, mobile)))
     else
       room
     end
-  end
-
-  def display_exit_message(room, %{mobile: mobile, message: message, to: to_room_id}) do
-    message = message
-              |> ApathyDrive.Text.interpolate(%{
-                   "name" => Mobile.look_name(mobile),
-                   "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
-                 })
-
-    Room.send_scroll(room, "<p><span class='grey'>#{message}</span></p>", mobile)
   end
 
 end
