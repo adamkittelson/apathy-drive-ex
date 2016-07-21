@@ -578,18 +578,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:attack, target})
   end
 
-  def possess(mobile, query) do
-    GenServer.cast(mobile, {:possess, query})
-  end
-
-  def become_possessed(mobile, spirit_id, class, socket, possessor) do
-    GenServer.cast(mobile, {:become_possessed, spirit_id, class, socket, possessor})
-  end
-
-  def possession_successful(mobile) do
-    GenServer.cast(mobile, :possession_successful)
-  end
-
   def answer(mobile, asker, question) do
     GenServer.cast(mobile, {:answer, asker, question})
   end
@@ -1179,10 +1167,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast(:unpossess, mobile) do
     {:noreply, Commands.Unpossess.execute(mobile)}
-  end
-
-  def handle_cast({:become_possessed, spirit_id, class, socket, possessor}, mobile) do
-    {:noreply, Commands.Possess.become_possessed(mobile, spirit_id, class, socket, possessor)}
   end
 
   def handle_cast({:look_at_item, item}, mobile) do

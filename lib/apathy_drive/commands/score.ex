@@ -30,10 +30,10 @@ defmodule ApathyDrive.Commands.Score do
   defp show_score(%Mobile{} = mobile) do
     score_data = Mobile.score_data(mobile)
 
-    hp = String.ljust("#{trunc(score_data.hp)}/#{score_data.max_hp}", 14)
+    hp = String.ljust("#{trunc(score_data.hp)}/#{score_data.max_hp}", 15)
     mana = "#{trunc(score_data.mana)}/#{score_data.max_mana}"
 
-    Mobile.send_scroll(mobile, "<p> <span class='dark-green'>Name:</span> <span class='dark-cyan'>#{String.ljust(score_data.name, 13)}</span><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{score_data.class}</span></p>")
+    Mobile.send_scroll(mobile, "<p> <span class='dark-green'>Name:</span> <span class='dark-cyan'>#{String.ljust(score_data.name, 15)}</span><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{score_data.class}</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.level), 15)}</span><span class='dark-green'>Essence:</span> <span class='dark-cyan'>#{score_data.experience}</span></p>")
     Mobile.send_scroll(mobile, "<p> <span class='dark-green'>Hits:</span> <span class='dark-cyan'>#{hp}</span><span class='dark-green'>Mana:</span> <span class='dark-cyan'>#{mana}</span></p>")
     Mobile.send_scroll(mobile, "\n\n")

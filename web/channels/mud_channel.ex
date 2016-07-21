@@ -42,8 +42,8 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:update_mobile, pid}, socket) do
-    socket = assign(socket, :mobile, pid)
+  def handle_info({:update_ref, ref}, socket) do
+    socket = assign(socket, :mobile_ref, ref)
 
     {:noreply, socket}
   end
