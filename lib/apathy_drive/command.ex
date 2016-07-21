@@ -3,6 +3,8 @@ defmodule ApathyDrive.Command do
   require Logger
   alias ApathyDrive.{Commands, Mobile, Match, Room, RoomServer}
 
+  @callback execute(Map :: %Room{}, Map :: %Mobile{}, List :: [any]) :: Map :: %Room{}
+
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
                "w", "west", "nw", "northwest", "u", "up", "d", "down"]
@@ -43,6 +45,8 @@ defmodule ApathyDrive.Command do
     quote do
       import ApathyDrive.Text
       alias ApathyDrive.{Mobile, Room, RoomServer}
+
+      @behaviour ApathyDrive.Command
 
       def name do
         __MODULE__

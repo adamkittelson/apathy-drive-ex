@@ -200,10 +200,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, :display_cooldowns)
   end
 
-  def show_score(pid) do
-    GenServer.cast(pid, :show_score)
-  end
-
   def sanitize(message) do
     {:safe, message} = Phoenix.HTML.html_escape(message)
 
@@ -1233,11 +1229,6 @@ defmodule ApathyDrive.Mobile do
 
         {:noreply, save(mobile)}
     end
-  end
-
-  def handle_cast(:show_score, mobile) do
-    Commands.Score.execute(mobile)
-    {:noreply, mobile}
   end
 
   def handle_cast({:absorb, item}, mobile) do
