@@ -233,7 +233,7 @@ defmodule ApathyDrive.Room do
     |> validate_length(:name, min: 1, max: 30)
   end
 
-  def find_mobile_in_room(%Room{mobiles: mobiles} = room, mobile, query) do
+  def find_mobile_in_room(%Room{mobiles: mobiles}, mobile, query) do
     mobiles =
       mobiles
       |> Map.values

@@ -1,5 +1,5 @@
 defmodule ApathyDrive.LairSpawning do
-  alias ApathyDrive.{MonsterTemplate, Mobile, Repo, Room, RoomServer}
+  alias ApathyDrive.{MonsterTemplate, Mobile, Repo, Room}
   require Ecto.Query
 
   def spawn_lair(%Room{} = room) do

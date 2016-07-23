@@ -196,10 +196,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(pid, {:execute_script, script})
   end
 
-  def display_cooldowns(pid) do
-    GenServer.cast(pid, :display_cooldowns)
-  end
-
   def sanitize(message) do
     {:safe, message} = Phoenix.HTML.html_escape(message)
 
@@ -1280,26 +1276,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:execute_script, script}, mobile) do
     {:noreply, ApathyDrive.Script.execute(script, mobile)}
-  end
-
-  def handle_cast(:display_cooldowns, mobile) do
-    mobile.effects
-    |> Map.values
-    |> Enum.filter(fn(effect) ->
-         Map.has_key?(effect, "cooldown")
-       end)
-    |> Enum.each(fn
-           %{"cooldown" => name} = effect when is_binary(name) ->
-             remaining =
-               mobile
-               |> ApathyDrive.TimerManager.time_remaining(effect["timers"] |> List.first)
-               |> div(1000)
-
-             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{name |> String.ljust(15)} #{remaining} seconds</span></p>")
-          _effect ->
-            :noop
-       end)
-    {:noreply, mobile}
   end
 
   def handle_cast({:add_experience, exp}, %Mobile{} = mobile) do

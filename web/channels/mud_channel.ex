@@ -1,6 +1,6 @@
 defmodule ApathyDrive.MUDChannel do
   use ApathyDrive.Web, :channel
-  alias ApathyDrive.{Mobile, RoomServer}
+  alias ApathyDrive.RoomServer
 
   def join("mud:play", %{"spirit" => token}, socket) do
     case Phoenix.Token.verify(socket, "spirit", token, max_age: 1209600) do
@@ -53,12 +53,16 @@ defmodule ApathyDrive.MUDChannel do
       update_in(spirit.experience, &(max(&1, 0)))
       |> Repo.save!
 
-    {:ok, pid} = Mobile.start(%Mobile{spirit: spirit.id, socket: self})
+    ref =
+      spirit.room_id
+      |> RoomServer.find
+      |> RoomServer.spirit_connected(spirit, self())
 
-    socket = assign(socket, :mobile, pid)
+    socket =
+      socket
+      |> assign(:mobile_ref, ref)
 
-    Mobile.look(socket.assigns[:mobile])
-    Mobile.update_room(socket.assigns[:mobile])
+    send(self(), :after_join)
 
     {:noreply, socket}
   end

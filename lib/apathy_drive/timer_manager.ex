@@ -19,9 +19,9 @@ defmodule ApathyDrive.TimerManager do
     |> Enum.reduce(entity, fn {name, %{send_at: send_at, message: message}}, updated_entity ->
          if send_at < now do
            send(self(), message)
-           update_in(entity.timers, &Map.delete(&1, name))
+           update_in(updated_entity.timers, &Map.delete(&1, name))
          else
-           entity
+           updated_entity
          end
        end)
   end

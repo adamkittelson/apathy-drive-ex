@@ -318,7 +318,7 @@ defmodule ApathyDrive.Ability do
     room
   end
 
-  def execute(%Room{} = room, %Mobile{room_id: room_id} = mobile, %{} = ability, query) when is_binary(query) do
+  def execute(%Room{} = room, %Mobile{} = mobile, %{} = ability, query) when is_binary(query) do
     if can_execute?(mobile, ability) do
 
       targets = get_targets(room, mobile, ability, query)
@@ -344,13 +344,11 @@ defmodule ApathyDrive.Ability do
     execute(room, mobile, ability, targets)
   end
 
-  def execute(%Room{} = room, %Mobile{mana: mana} = mobile,
-              %{"ignores_global_cooldown" => true, "mana_cost" => cost}, _) when cost > mana do
+  def execute(%Room{} = room, %Mobile{mana: mana}, %{"ignores_global_cooldown" => true, "mana_cost" => cost}, _) when cost > mana do
     room
   end
 
-  def execute(%Room{} = room, %Mobile{mana: mana} = mobile,
-              %{"mana_cost" => cost}, _) when cost > mana do
+  def execute(%Room{} = room, %Mobile{mana: mana} = mobile, %{"mana_cost" => cost}, _) when cost > mana do
 
     Mobile.send_scroll(mobile, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
     room
@@ -386,27 +384,26 @@ defmodule ApathyDrive.Ability do
 
     room = put_in(room.mobiles[mobile.ref], mobile)
 
-    room =
-      targets
-      |> Enum.reduce(room, fn(target, updated_room) ->
-           if affects_target?(target, ability) do
-             target = apply_ability(target, ability, mobile)
+    targets
+    |> Enum.reduce(room, fn(target, updated_room) ->
+         if affects_target?(target, ability) do
+           target = apply_ability(target, ability, mobile)
 
-             Mobile.update_prompt(target)
+           Mobile.update_prompt(target)
 
-             if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
-               #Systems.Death.kill(target, ability_user)
-               update_in(room.mobiles, &Map.delete(&1, target.ref))
-             else
-               put_in(room.mobiles[target.ref], target)
-             end
+           if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
+             #Systems.Death.kill(target, ability_user)
+             update_in(room.mobiles, &Map.delete(&1, target.ref))
            else
-             updated_room
+             put_in(room.mobiles[target.ref], target)
            end
-         end)
+         else
+           updated_room
+         end
+       end)
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind} = ability, query) when is_binary(query) and kind in ["attack", "curse"] do
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind}, query) when is_binary(query) and kind in ["attack", "curse"] do
     mobiles =
       room.mobiles
       |> Map.values
@@ -419,7 +416,7 @@ defmodule ApathyDrive.Ability do
     List.wrap(target)
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind} = ability, query)  when is_binary(query) and kind in ["room attack", "room curse"] do
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind}, query)  when is_binary(query) and kind in ["room attack", "room curse"] do
     mobiles =
       room.mobiles
       |> Map.values
@@ -432,7 +429,7 @@ defmodule ApathyDrive.Ability do
     List.wrap(target)
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => _kind} = ability, query) when is_binary(query) do
+  def get_targets(%Room{}, %Mobile{} = mobile, _ability, query) when is_binary(query) do
     [mobile]
   end
 

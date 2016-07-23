@@ -186,7 +186,10 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"remote_action" => %{"direction" => direction, "message" => message, "room_id" => room_id}}, %Mobile{} = mobile, script) do
-    #Room.initiate_remote_action(room, %{"destination" => room_id, "message" => message, "direction" => direction}, open_remotely: true)
+    room_id
+    |> RoomServer.find
+    |> RoomServer.initiate_remote_action(mobile, %{"destination" => room_id, "message" => message, "direction" => direction}, open_remotely: true)
+
     execute_script(script, mobile)
   end
 
