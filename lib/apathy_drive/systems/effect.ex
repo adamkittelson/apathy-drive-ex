@@ -3,17 +3,13 @@ defmodule Systems.Effect do
   alias ApathyDrive.{Mobile, TimerManager}
   import TimerManager, only: [seconds: 1]
 
-  def send_remove_effect(key) do
-    send(self, {:remove_effect, key})
-  end
-
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
     add_effect(entity, key + 1, effect)
   end
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect, duration) do
     key = key + 1
-    entity = TimerManager.call_after(entity, {{:effect, key}, duration |> seconds, [__MODULE__, :send_remove_effect, [key]]})
+    entity = TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, key}})
 
     effect = if effect && effect["timers"] do
       Map.put(effect, "timers", [{:effect, key} | effect["timers"]])

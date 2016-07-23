@@ -2,15 +2,6 @@ defmodule ApathyDrive.TimerManager do
 
   def seconds(seconds), do: seconds |> :timer.seconds |> trunc
 
-  def call_after(%{timers: timers} = entity, {name, time, [module, function, args]}) do
-    entity
-    # ref = :erlang.start_timer(time, self, {name, [module, function, args]})
-    #
-    # timers = Map.put(timers, name, ref)
-    #
-    # Map.put(entity, :timers, timers)
-  end
-
   def send_after(%{timers: timers} = entity, {name, time, term}) do
     send_at = time + (Timex.Time.now |> Timex.Time.to_milliseconds |> trunc)
 

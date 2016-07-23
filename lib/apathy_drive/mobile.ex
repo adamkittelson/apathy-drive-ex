@@ -818,10 +818,6 @@ defmodule ApathyDrive.Mobile do
   def top_threat([]),      do: nil
   def top_threat(targets), do: Enum.max(targets)
 
-  def send_execute_auto_attack do
-    send(self, :execute_auto_attack)
-  end
-
   def look_name(%Mobile{} = mobile, opts \\ []) do
     name =
       mobile.name
@@ -1567,7 +1563,7 @@ defmodule ApathyDrive.Mobile do
 
       interval = attack_interval || seconds(default_interval)
 
-      mobile = TimerManager.call_after(mobile, {:auto_attack_timer, interval, [__MODULE__, :send_execute_auto_attack, []]})
+      mobile = TimerManager.send_after(mobile, {:auto_attack_timer, interval, :execute_auto_attack})
 
       {:noreply, mobile}
     else
