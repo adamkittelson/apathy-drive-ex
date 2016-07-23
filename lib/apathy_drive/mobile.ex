@@ -313,10 +313,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, :display_inventory)
   end
 
-  def construct_item(mobile, item) do
-    GenServer.cast(mobile, {:construct_item, item})
-  end
-
   def absorb(mobile, item) do
     GenServer.cast(mobile, {:absorb, item})
   end
@@ -404,21 +400,6 @@ defmodule ApathyDrive.Mobile do
 
   def unequip_item(mobile, item) do
     GenServer.call(mobile, {:unequip_item, item})
-  end
-
-  def max_encumbrance(%Mobile{} = mobile) do
-    strength(mobile) * 48
-  end
-
-  def current_encumbrance(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}}) do
-    (inventory ++ equipment)
-    |> Enum.reduce(0, fn(item, encumbrance) ->
-        encumbrance + item["weight"]
-       end)
-  end
-
-  def remaining_encumbrance(%Mobile{} = mobile) do
-    max_encumbrance(mobile) - current_encumbrance(mobile)
   end
 
   def held(%Mobile{effects: effects} = mobile) do
@@ -1329,48 +1310,6 @@ defmodule ApathyDrive.Mobile do
     mobile = add_experience(mobile, exp)
 
     {:noreply, mobile}
-  end
-
-  def handle_cast({:construct_item, item_name}, mobile) do
-    alias ApathyDrive.Item
-
-    match =
-      mobile
-      |> forms()
-      |> Enum.map(&(%{name: &1.name, keywords: String.split(&1.name), item: &1}))
-      |> Match.one(:name_contains, item_name)
-
-    if match do
-      item = match.item
-
-      cost = Item.experience(Item.strength(item) + Item.agility(item) + Item.will(item)) * 10
-
-      cond do
-        remaining_encumbrance(mobile) < item.weight ->
-          Mobile.send_scroll(mobile, "<p>A #{item.name} would be too heavy for you to hold.</p>")
-          {:noreply, mobile}
-        cost > mobile.spirit.experience ->
-          Mobile.send_scroll(mobile, "<p>You don't have enough essence to construct #{item.name}.</p>")
-          {:noreply, mobile}
-        true ->
-          constructed_item = Item.generate_item(%{item_id: item.id, level: level(mobile)})
-
-          mobile =
-            put_in(mobile.spirit.experience, mobile.spirit.experience - cost)
-
-          mobile =
-            put_in(mobile.spirit.inventory, [constructed_item | mobile.spirit.inventory])
-
-            Repo.save!(mobile.spirit)
-
-          Mobile.send_scroll(mobile, "<p>You construct a #{item.name} using #{cost} of your essence.</p>")
-
-          {:noreply, mobile}
-      end
-    else
-      Mobile.send_scroll(mobile, "<p>You don't know how to construct a #{item_name}.</p>")
-      {:noreply, mobile}
-    end
   end
 
   def handle_cast({:list_forms, limb}, %Mobile{} = mobile) do

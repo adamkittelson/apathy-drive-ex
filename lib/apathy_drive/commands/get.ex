@@ -14,20 +14,12 @@ defmodule ApathyDrive.Commands.Get do
   end
 
   def execute(%Mobile{room_id: room_id, spirit: %Spirit{inventory: inventory}} = mobile, %{"weight" => weight} = item) do
-    if Mobile.remaining_encumbrance(mobile) >= weight do
-      mobile =
-        put_in(mobile.spirit.inventory, [item | inventory])
+    mobile =
+      put_in(mobile.spirit.inventory, [item | inventory])
 
-      Mobile.send_scroll(mobile, "<p>You get #{item["name"]}.</p>")
+    Mobile.send_scroll(mobile, "<p>You get #{item["name"]}.</p>")
 
-      Mobile.save(mobile)
-    else
-      room_id
-      |> RoomServer.find
-      |> RoomServer.add_item(item)
-
-      Mobile.send_scroll(mobile, "<p>#{capitalize_first(item["name"])} is too heavy.</p>")
-    end
+    Mobile.save(mobile)
   end
 
   def execute(%Mobile{room_id: room_id}, item) do

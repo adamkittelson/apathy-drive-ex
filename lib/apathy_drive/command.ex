@@ -52,12 +52,6 @@ defmodule ApathyDrive.Command do
     end
   end
 
-  defp use_ability(%Mobile{} = mobile, command, arguments) do
-
-  end
-
-
-
   defmacro __using__(_opts) do
     quote do
       import ApathyDrive.Text
