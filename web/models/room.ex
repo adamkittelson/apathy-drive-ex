@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Match, Mobile, Room, RoomServer, RoomUnity, Presence, PubSub}
+  alias ApathyDrive.{Ability, Area, Match, Mobile, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
 
   schema "rooms" do
     field :name,                     :string
@@ -20,6 +20,7 @@ defmodule ApathyDrive.Room do
     field :last_effect_key,          :integer, virtual: true, default: 0
     field :default_essence,          :integer, virtual: true
     field :mobiles,                  :map, virtual: true, default: %{}
+    field :timer,                    :any, virtual: true
 
     timestamps
 
@@ -29,6 +30,40 @@ defmodule ApathyDrive.Room do
     belongs_to :area, ApathyDrive.Area
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
+  end
+
+  def next_timer(%Room{} = room) do
+    [TimerManager.next_timer(room) | Enum.map(Map.values(room.mobiles), &TimerManager.next_timer/1)]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.sort
+    |> List.first
+  end
+
+  def apply_timers(%Room{} = room) do
+    room = TimerManager.apply_timers(room)
+
+    Enum.reduce(room.mobiles, room, fn {ref, mobile}, updated_room ->
+      put_in updated_room.mobiles[ref], TimerManager.apply_timers(mobile)
+    end)
+  end
+
+  def start_timer(%Room{timer: timer} = room) do
+    if next_timer = Room.next_timer(room) do
+      send_at = max(0, trunc(next_timer - Timex.Time.to_milliseconds(Timex.Time.now)))
+      cond do
+        is_nil(timer) ->
+          timer = Process.send_after(self, :tick, send_at)
+          Map.put(room, :timer, timer)
+        Process.read_timer(timer) > send_at ->
+          Process.cancel_timer(timer)
+          timer = Process.send_after(self, :tick, send_at)
+          Map.put(room, :timer, timer)
+        :else ->
+          room
+      end
+    else
+      room
+    end
   end
 
   def find_spirit(%Room{mobiles: mobiles}, spirit_id) do
@@ -348,6 +383,14 @@ defmodule ApathyDrive.Room do
        end)
   end
 
+  def broadcast!(%Room{mobiles: mobiles}, message) do
+    mobiles
+    |> Map.values
+    |> Enum.each(fn mobile ->
+         if mobile.socket, do: send(mobile.socket, message)
+       end)
+  end
+
   def open!(%Room{} = room, direction) do
     if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
       Systems.Effect.add(room, %{open: direction}, open_duration)
@@ -493,7 +536,7 @@ defmodule ApathyDrive.Room do
         evil: trunc(room.room_unity.essences["evil"]),
       }
 
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:mobiles", {:update_room_essence, data})
+    broadcast!(room, {:update_room_essence, data})
 
     room
   end
@@ -536,10 +579,11 @@ defmodule ApathyDrive.Room do
          end)
 
     essences =
-      "rooms:#{room.id}:mobiles"
-      |> Presence.metas()
+      room.mobiles
+      |> Map.values
+      |> Enum.map(&Mobile.track_data/1)
       |> Enum.reduce(essences, fn
-           %{invisible?: true}, updated_essences ->
+           %{invisible?: nil}, updated_essences ->
              updated_essences
            %{spirit_essence: nil, unities: []} = mobile, updated_essences ->
              add_mobile_essence(updated_essences, ["default"], mobile.essence)

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, Match, RoomServer}
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, Match, Room, RoomServer}
   import ApathyDrive.Text
   import ApathyDrive.TimerManager, only: [seconds: 1]
 
@@ -284,44 +284,52 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def execute(%Mobile{timers: timers} = mobile, %{"cast_time" => time} = ability, target) do
+  def execute(%Room{} = room, %Mobile{timers: timers} = mobile, %{"cast_time" => time} = ability, target) do
     if can_execute?(mobile, ability) do
-      if ref = Map.get(timers, :cast_timer) do
-        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You interrupt your spell.</span></p>")
-        :erlang.cancel_timer(ref)
-      end
+      mobile =
+        if Map.has_key?(timers, :cast_timer) do
+          Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You interrupt your spell.</span></p>")
+          Mobile.cancel_timer(mobile, :cast_timer)
+        else
+          mobile
+        end
 
       Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
 
-      TimerManager.send_after(mobile, {:cast_timer, time |> seconds, {:timer_cast_ability, %{ability: ability, timer: time, target: target}}})
+      mobile = TimerManager.send_after(mobile, {:cast_timer, time |> seconds, {:timer_cast_ability, %{caster: mobile.ref, ability: ability, timer: time, target: target}}})
+
+      put_in room.mobiles[mobile.ref], mobile
     else
-      mobile
+      room
     end
   end
 
-  def execute(%Mobile{} = mobile, %{"kind" => kind} = ability, []) do
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind} = ability, []) do
     if kind in ["attack", "curse"] do
       Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
     else
       display_pre_cast_message(mobile, ability, [])
-      mobile
     end
+    room
   end
 
-  def execute(%Mobile{} = mobile, %{"kind" => kind}, "") when kind in ["attack", "curse"] do
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind}, "") when kind in ["attack", "curse"] do
     Mobile.send_scroll(mobile, "<p>You must specify a target.</p>")
+    room
   end
 
-  def execute(%Mobile{room_id: room_id} = mobile, %{} = ability, target) when is_binary(target) do
+  def execute(%Room{} = room, %Mobile{room_id: room_id} = mobile, %{} = ability, query) when is_binary(query) do
     if can_execute?(mobile, ability) do
-      RoomServer.execute_ability({:global, "room_#{room_id}"}, ability, target)
-      mobile
+
+      targets = get_targets(room, mobile, ability, query)
+
+      execute(room, mobile, ability, targets)
     else
-      mobile
+      room
     end
   end
 
-  def execute(%Mobile{} = mobile, %{"multi-cast" => times} = ability, targets) do
+  def execute(%Room{} = room, %Mobile{} = mobile, %{"multi-cast" => times} = ability, targets) do
     ability = Map.delete(ability, "multi-cast")
 
     2..times |> Enum.each(fn(_) ->
@@ -330,24 +338,25 @@ defmodule ApathyDrive.Ability do
                 |> Map.delete("global_cooldown")
                 |> Map.put("ignores_global_cooldown", true)
 
-      send(self, {:execute_ability, ability, targets})
+      send(self, {:execute_ability, %{caster: mobile.ref, ability: ability, target: targets}})
     end)
 
-    execute(mobile, ability, targets)
+    execute(room, mobile, ability, targets)
   end
 
-  def execute(%Mobile{mana: mana} = mobile,
+  def execute(%Room{} = room, %Mobile{mana: mana} = mobile,
               %{"ignores_global_cooldown" => true, "mana_cost" => cost}, _) when cost > mana do
-    mobile
+    room
   end
 
-  def execute(%Mobile{mana: mana} = mobile,
+  def execute(%Room{} = room, %Mobile{mana: mana} = mobile,
               %{"mana_cost" => cost}, _) when cost > mana do
-    mobile
-    |> Mobile.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+
+    Mobile.send_scroll(mobile, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+    room
   end
 
-  def execute(%Mobile{} = mobile, %{} = ability, targets) do
+  def execute(%Room{} = room, %Mobile{} = mobile, %{} = ability, targets) do
 
     display_pre_cast_message(mobile, ability, targets)
 
@@ -364,7 +373,7 @@ defmodule ApathyDrive.Ability do
              |> apply_cooldown(ability)
              |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
 
-    mobile = 
+    mobile =
       if ability["set_combo"] do
         Map.put(mobile, :combo, ability["set_combo"])
       else
@@ -375,11 +384,56 @@ defmodule ApathyDrive.Ability do
 
     ability = scale_ability(mobile, nil, ability)
 
-    Enum.each(targets, fn(target) ->
-      send(target, {:apply_ability, ability, mobile})
-    end)
+    room = put_in(room.mobiles[mobile.ref], mobile)
 
-    mobile
+    room =
+      targets
+      |> Enum.reduce(room, fn(target, updated_room) ->
+           if affects_target?(target, ability) do
+             target = apply_ability(target, ability, mobile)
+
+             Mobile.update_prompt(target)
+
+             if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
+               #Systems.Death.kill(target, ability_user)
+               update_in(room.mobiles, &Map.delete(&1, target.ref))
+             else
+               put_in(room.mobiles[target.ref], target)
+             end
+           else
+             updated_room
+           end
+         end)
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind} = ability, query) when is_binary(query) and kind in ["attack", "curse"] do
+    mobiles =
+      room.mobiles
+      |> Map.values
+
+    target =
+      mobiles
+      |> Enum.reject(&(&1 == mobile))
+      |> Match.one(:name_contains, query)
+
+    List.wrap(target)
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => kind} = ability, query)  when is_binary(query) and kind in ["room attack", "room curse"] do
+    mobiles =
+      room.mobiles
+      |> Map.values
+
+    target =
+      mobiles
+      |> Enum.reject(&(&1.unities == mobile.unities))
+      |> Match.one(:name_contains, query)
+
+    List.wrap(target)
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => _kind} = ability, query) when is_binary(query) do
+    [mobile]
   end
 
   def attack_abilities(%Mobile{abilities: abilities} = mobile) do
@@ -767,7 +821,7 @@ defmodule ApathyDrive.Ability do
                              } = ability,
                             ability_user) do
 
-     effects = 
+     effects =
        if Map.has_key? effects, "after_cast" do
          put_in effects, ["after_cast", "ability_user"], ability_user
        else

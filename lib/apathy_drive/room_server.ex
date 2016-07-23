@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
   alias ApathyDrive.{Commands, LairMonster, LairSpawning, Match, Mobile, Presence, PubSub, MonsterTemplate,
-                     Repo, Room, RoomSupervisor, RoomUnity, Text, TimerManager}
+                     Repo, Room, RoomSupervisor, RoomUnity, Text, TimerManager, Ability}
   use Timex
   require Logger
 
@@ -101,10 +101,6 @@ defmodule ApathyDrive.RoomServer do
 
   def execute_command(room, spirit_id, command, arguments) do
     GenServer.cast(room, {:execute_command, spirit_id, command, arguments})
-  end
-
-  def execute_ability(room, ability, query) do
-    GenServer.cast(room, {:execute_ability, self(), ability, query})
   end
 
   def look(room, spirit_id, args \\ []) do
@@ -412,48 +408,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:execute_ability, mobile, %{"kind" => kind} = ability, query}, %Room{} = room) when kind in ["attack", "curse"] do
-    mobiles =
-      Presence.metas("rooms:#{room.id}:mobiles")
-
-    mobile =
-      mobiles
-      |> Enum.find(&(&1.mobile == mobile))
-
-   target =
-     mobiles
-     |> Enum.reject(&(&1 == mobile))
-     |> Match.one(:name_contains, query)
-
-    send(mobile.mobile, {:execute_ability, ability, List.wrap(target && target.mobile)})
-
-    {:noreply, room}
-  end
-
-  def handle_cast({:execute_ability, mobile, %{"kind" => kind} = ability, _query}, %Room{} = room) when kind in ["room attack", "room curse"] do
-    mobiles =
-      Presence.metas("rooms:#{room.id}:mobiles")
-
-    mobile =
-      mobiles
-      |> Enum.find(&(&1.mobile == mobile))
-
-   targets =
-     mobiles
-     |> Enum.reject(&(&1.unities == mobile.unities))
-     |> Enum.map(&(&1.mobile))
-
-    send(mobile.mobile, {:execute_ability, ability, targets})
-
-    {:noreply, room}
-  end
-
-  def handle_cast({:execute_ability, mobile, %{"kind" => _kind} = ability, _query}, %Room{} = room) do
-    send(mobile, {:execute_ability, ability, [mobile]})
-
-    {:noreply, room}
-  end
-
   def handle_cast({:look, spirit_id, args}, %Room{} = room) do
     Commands.Look.execute(room, spirit_id, args)
 
@@ -657,11 +611,11 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:update_essence, %Room{exits: _exits, room_unity: %RoomUnity{essences: essences}} = room) do
+    IO.puts "updating essence!"
     room = Room.update_essence(room)
 
     room =
       if room.room_unity.essences != essences do
-        TimerManager.cancel(room, :update_essence)
         TimerManager.send_after(room, {:update_essence, 1_000, :update_essence})
       else
         Room.report_essence(room)
@@ -703,6 +657,7 @@ defmodule ApathyDrive.RoomServer do
 
     new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
 
+    IO.puts "derp"
     timers = Map.put(timers, name, new_ref)
 
     apply module, function, args
@@ -731,7 +686,60 @@ defmodule ApathyDrive.RoomServer do
     {:stop, :normal, room}
   end
 
-  def handle_info(_message, room) do
+  def handle_info(:tick, room) do
+    room = Room.apply_timers(room)
+
+    {:noreply, room}
+  end
+
+  def handle_info(:start_timer, %Room{timer: timer} = room) do
+    room = Room.start_timer(room)
+
+    {:noreply, room}
+  end
+
+  def handle_info({:timer_cast_ability, %{caster: ref, ability: ability, timer: time, target: target}}, room) do
+    if mobile = room.mobiles[ref] do
+      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
+
+      ability = case ability do
+        %{"global_cooldown" => nil} ->
+          ability
+          |> Map.delete("global_cooldown")
+          |> Map.put("ignores_global_cooldown", true)
+        %{"global_cooldown" => cooldown} ->
+          if cooldown > time do
+            Map.put(ability, "global_cooldown", cooldown - time)
+          else
+            ability
+            |> Map.delete("global_cooldown")
+            |> Map.put("ignores_global_cooldown", true)
+          end
+        _ ->
+          ability
+      end
+
+      send(self, {:execute_ability, %{caster: ref, ability: Map.delete(ability, "cast_time"), target: target}})
+
+      {:noreply, room}
+    else
+      {:noreply, room}
+    end
+  end
+
+  def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
+    if mobile = room.mobiles[ref] do
+      IO.puts "casting spell"
+      room = Ability.execute(room, mobile, ability, target)
+      {:noreply, room}
+    else
+      IO.puts "caster not found"
+      {:noreply, room}
+    end
+  end
+
+  def handle_info(message, room) do
+    IO.inspect(message)
     {:noreply, room}
   end
 
@@ -765,8 +773,6 @@ defmodule ApathyDrive.RoomServer do
   defp passable?(_room, _room_exit), do: false
 
   defp update_essence_targets(room) do
-    TimerManager.cancel(room, :update_essence)
-
     room
     |> Room.update_essence_targets
     |> TimerManager.send_after({:update_essence, 1_000, :update_essence})

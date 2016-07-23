@@ -64,6 +64,10 @@ defmodule ApathyDrive.Mobile do
     |> save
   end
 
+  def cancel_timer(%Mobile{} = mobile, timer) do
+    update_in(mobile.timers, &Map.delete(&1, timer))
+  end
+
   def ids do
     __MODULE__
     |> distinct(true)
@@ -128,10 +132,6 @@ defmodule ApathyDrive.Mobile do
 
   def execute_command(mobile, command, arguments) do
     GenServer.cast(mobile, {:execute_command, command, arguments})
-  end
-
-  def use_ability(pid, command, arguments) do
-    GenServer.cast(pid, {:use_ability, command, arguments})
   end
 
   def auto_move(pid, valid_exits) do
@@ -1325,22 +1325,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:use_ability, command, args}, mobile) do
-
-    ability = mobile.abilities
-              |> Enum.find(fn(ability) ->
-                   ability["command"] == String.downcase(command)
-                 end)
-
-    if ability do
-      mobile = Ability.execute(mobile, ability, Enum.join(args, " "))
-      {:noreply, mobile}
-    else
-      Mobile.send_scroll(mobile, "<p>What?</p>")
-      {:noreply, mobile}
-    end
-  end
-
   def handle_cast({:add_experience, exp}, %Mobile{} = mobile) do
     mobile = add_experience(mobile, exp)
 
@@ -1456,31 +1440,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, save(mobile)}
   end
 
-  def handle_info({:timer_cast_ability, %{ability: ability, timer: time, target: target}}, mobile) do
-    Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
-
-    ability = case ability do
-      %{"global_cooldown" => nil} ->
-        ability
-        |> Map.delete("global_cooldown")
-        |> Map.put("ignores_global_cooldown", true)
-      %{"global_cooldown" => cooldown} ->
-        if cooldown > time do
-          Map.put(ability, "global_cooldown", cooldown - time)
-        else
-          ability
-          |> Map.delete("global_cooldown")
-          |> Map.put("ignores_global_cooldown", true)
-        end
-      _ ->
-        ability
-    end
-
-    send(self, {:execute_ability, Map.delete(ability, "cast_time"), target})
-
-    {:noreply, mobile}
-  end
-
   def handle_info({:execute_ability, ability}, monster) do
     {:noreply, Ability.execute(monster, ability, [self])}
   end
@@ -1555,26 +1514,6 @@ defmodule ApathyDrive.Mobile do
       Mobile.send_scroll(ability_user, "<p><span class='dark-cyan'>#{message}</span></p>")
       {:noreply, mobile}
     end
-  end
-
-  def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Mobile{timers: timers} = mobile) do
-    jitter = trunc(time / 2) + :rand.uniform(time)
-
-    new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
-
-    timers = Map.put(timers, name, new_ref)
-
-    apply module, function, args
-
-    {:noreply, Map.put(mobile, :timers, timers)}
-  end
-
-  def handle_info({:timeout, _ref, {name, [module, function, args]}}, %Mobile{timers: timers} = mobile) do
-    apply module, function, args
-
-    timers = Map.delete(timers, name)
-
-    {:noreply, Map.put(mobile, :timers, timers)}
   end
 
   def handle_info({:remove_effect, key}, mobile) do
