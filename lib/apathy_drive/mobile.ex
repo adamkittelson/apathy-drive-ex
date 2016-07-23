@@ -317,83 +317,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:drop_item, item})
   end
 
-  def equip_item(mobile, item) when is_pid(mobile) do
-    GenServer.cast(mobile, {:equip_item, item})
-  end
-
-  def equip_item(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile, %{"worn_on" => worn_on} = item) do
-    cond do
-      Enum.count(equipment, &(&1["worn_on"] == worn_on)) >= worn_on_max(item) ->
-        item_to_remove =
-          equipment
-          |> Enum.find(&(&1["worn_on"] == worn_on))
-
-        equipment =
-          equipment
-          |> List.delete(item_to_remove)
-          |> List.insert_at(-1, item)
-
-        inventory =
-          inventory
-          |> List.insert_at(-1, item_to_remove)
-          |> List.delete(item)
-
-          mobile = put_in(mobile.spirit.inventory, inventory)
-          mobile = put_in(mobile.spirit.equipment, equipment)
-                   |> set_abilities
-                   |> set_max_mana
-                   |> set_mana
-                   |> set_max_hp
-                   |> set_hp
-
-        %{equipped: item, unequipped: [item_to_remove], mobile: mobile}
-      conflicting_worn_on(worn_on) |> Enum.any? ->
-        items_to_remove =
-          equipment
-          |> Enum.filter(&(&1["worn_on"] in conflicting_worn_on(worn_on)))
-
-        equipment =
-          equipment
-          |> Enum.reject(&(&1 in items_to_remove))
-          |> List.insert_at(-1, item)
-
-        inventory =
-          items_to_remove
-          |> Enum.reduce(inventory, fn(item_to_remove, inv) ->
-               List.insert_at(inv, -1, item_to_remove)
-             end)
-          |> List.delete(item)
-
-          mobile = put_in(mobile.spirit.inventory, inventory)
-          mobile = put_in(mobile.spirit.equipment, equipment)
-                   |> set_abilities
-                   |> set_max_mana
-                   |> set_mana
-                   |> set_max_hp
-                   |> set_hp
-
-        %{equipped: item, unequipped: items_to_remove, mobile: mobile}
-      true ->
-        equipment =
-          equipment
-          |> List.insert_at(-1, item)
-
-        inventory =
-          inventory
-          |> List.delete(item)
-
-        mobile = put_in(mobile.spirit.inventory, inventory)
-        mobile = put_in(mobile.spirit.equipment, equipment)
-                 |> set_abilities
-                 |> set_max_mana
-                 |> set_mana
-                 |> set_max_hp
-                 |> set_hp
-
-        %{equipped: item, mobile: mobile}
-    end
-  end
-
   def unequip_item(mobile, item) do
     GenServer.call(mobile, {:unequip_item, item})
   end
@@ -977,15 +900,6 @@ defmodule ApathyDrive.Mobile do
   defp move_after(%Mobile{movement_frequency: frequency} = mobile) do
     TimerManager.send_after(mobile, {:monster_movement, jitter(:timer.seconds(frequency)), :auto_move})
   end
-
-  defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
-  defp worn_on_max(%{"worn_on" => "Wrist"}),  do: 2
-  defp worn_on_max(%{"worn_on" => _}),        do: 1
-
-  defp conflicting_worn_on("Weapon Hand"),     do: ["Two Handed"]
-  defp conflicting_worn_on("Off-Hand"),   do: ["Two Handed"]
-  defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
-  defp conflicting_worn_on(_), do: []
 
   defp list_forms(mobile, forms, limb) do
     alias ApathyDrive.Item
