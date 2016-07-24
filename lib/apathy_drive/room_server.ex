@@ -455,16 +455,17 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_cast({:mobile_entered, %Mobile{} = mobile, message}, room) do
-    Room.display_enter_message(room, mobile)
 
     from_direction =
       room
       |> Room.get_direction_by_destination(mobile.room_id)
       |> Room.enter_direction()
 
-    Room.send_scroll(room, "<p>#{message}</p>", mobile)
+    if mobile.monster_template_id do
+      Room.display_enter_message(room, mobile, message)
 
-    Room.audible_movement(room, from_direction)
+      Room.audible_movement(room, from_direction)
+    end
 
     mobile = Mobile.set_room_id(mobile, room.id)
 

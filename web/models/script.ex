@@ -283,7 +283,7 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%{"teleport" => room_id}, %Mobile{} = mobile, script) do
-    Mobile.teleport(self(), room_id)
+    #Mobile.teleport(self(), room_id)
 
     execute_script(script, mobile)
   end

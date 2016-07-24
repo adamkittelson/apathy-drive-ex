@@ -122,7 +122,11 @@ defmodule ApathyDrive.Room do
                    "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
                  })
 
-    send_scroll(room, "<p><span class='grey'>#{message}</span></p>", mobile)
+    if mobile.monster_template_id do
+      send_scroll(room, "<p><span class='grey'>#{message}</span></p>", mobile)
+    else
+      room
+    end
   end
 
   def audible_movement(%Room{exits: exits}, from_direction) do

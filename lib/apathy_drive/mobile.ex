@@ -86,10 +86,6 @@ defmodule ApathyDrive.Mobile do
     Mobile.send_scroll(mobile, "<p>You need a body to do that. Find a monster and <span class='green'>possess</span> it.</p>")
   end
 
-  def teleport(mobile, room_id) do
-    GenServer.cast(mobile, {:teleport, room_id})
-  end
-
   def update_room(mobile) do
     GenServer.cast(mobile, :update_room)
   end
@@ -937,53 +933,6 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:system, command}, mobile) do
     Commands.System.execute(mobile, command)
     {:noreply, mobile}
-  end
-
-  def handle_cast({:teleport, room_id}, mobile) do
-    if !held(mobile) do
-
-      mobile.room_id
-      |> RoomServer.find
-      |> RoomServer.display_exit_message(%{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} vanishes into thin air!</span>", to: nil})
-
-      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles")
-      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")
-
-      destination_id =
-        if room_id == :home do
-          mobile.spirit.class.start_room_id
-        else
-          room_id
-        end
-
-      Mobile.untrack(mobile)
-
-      mobile =
-        mobile
-        |> Map.put(:room_id, destination_id)
-
-      Mobile.track(mobile)
-
-      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles")
-      ApathyDrive.PubSub.subscribe("rooms:#{destination_id}:mobiles:#{mobile.alignment}")
-
-      ApathyDrive.PubSub.unsubscribe("rooms:#{mobile.spirit.room_id}:spirits")
-      mobile = put_in(mobile.spirit.room_id, mobile.room_id)
-      ApathyDrive.PubSub.subscribe("rooms:#{mobile.spirit.room_id}:spirits")
-
-      destination = RoomServer.find(destination_id)
-
-      Room.audible_movement(room_id, nil)
-
-      Mobile.look(self)
-      Mobile.update_room(self)
-
-      RoomServer.display_enter_message(destination, %{name: look_name(mobile), mobile: self, message: "<span class='blue'>{{Name}} appears out of thin air!</span>", from: nil})
-
-      {:noreply, mobile}
-    else
-      {:noreply, mobile}
-    end
   end
 
   def handle_cast({:attack, target}, mobile) when is_pid(target) do
