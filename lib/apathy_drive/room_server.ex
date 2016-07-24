@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
   alias ApathyDrive.{Commands, LairMonster, LairSpawning, Match, Mobile, PubSub, MonsterTemplate,
-                     Repo, Room, RoomSupervisor, RoomUnity, TimerManager, Ability}
+                     Repo, Room, RoomSupervisor, RoomUnity, TimerManager, Ability, Presence}
   use Timex
   require Logger
 
@@ -227,6 +227,8 @@ defmodule ApathyDrive.RoomServer do
       room.mobiles[mobile.ref]
       |> Mobile.update_prompt
 
+      {:ok, _} = Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)})
+
       {:reply, mobile.ref, room}
     else
       spirit = Repo.preload(spirit, :class)
@@ -238,6 +240,8 @@ defmodule ApathyDrive.RoomServer do
       Mobile.update_prompt(mobile)
 
       room = put_in(room.mobiles[mobile.ref], mobile)
+
+      {:ok, _} = Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)})
 
       {:reply, mobile.ref, room}
     end
