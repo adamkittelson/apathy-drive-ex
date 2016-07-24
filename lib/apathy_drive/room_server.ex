@@ -35,16 +35,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:convert?, unity})
   end
 
-  def find_item_for_script(room, item, mobile, script, failure_message) do
-    GenServer.cast(room, {:find_item_for_script, item, mobile, script, failure_message})
-  end
-
   def greet(room, greeter, query) do
     GenServer.cast(room, {:greet, greeter, query})
-  end
-
-  def create_monster(room, monster_template_id) do
-    GenServer.cast(room, {:create_monster, monster_template_id})
   end
 
   def ask(room, asker, target, question) do
@@ -61,10 +53,6 @@ defmodule ApathyDrive.RoomServer do
 
   def trigger_remote_action(room, remote_action_exit, from, opts) do
     GenServer.cast(room, {:trigger_remote_action, remote_action_exit, from, opts})
-  end
-
-  def initiate_remote_action(room, mobile, remote_action_exit, opts \\ []) do
-    GenServer.cast(room, {:initiate_remote_action, mobile, remote_action_exit, opts})
   end
 
   def bash(room, mobile, direction) do
@@ -280,28 +268,8 @@ defmodule ApathyDrive.RoomServer do
   end
   def handle_cast({:convert?, _unity}, room), do: {:noreply, room}
 
-  def handle_cast({:find_item_for_script, item, mobile, script, failure_message}, %Room{} = room) do
-    if Room.find_item(room, item) do
-      Mobile.execute_script(mobile, script)
-    else
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{failure_message}</p>")
-    end
-    {:noreply, room}
-  end
-
   def handle_cast({:greet, greeter, query}, %Room{} = room) do
     Commands.Greet.execute(room, greeter, query)
-    {:noreply, room}
-  end
-
-  def handle_cast({:create_monster, monster_template_id}, room) do
-    monster =
-      monster_template_id
-      |> MonsterTemplate.create_monster(room)
-      |> Mobile.load
-
-    Mobile.display_enter_message(monster, self())
-
     {:noreply, room}
   end
 
@@ -331,11 +299,6 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast({:trigger_remote_action, remote_action_exit, from, opts}, room) do
     room = Commands.RemoteAction.execute(room, remote_action_exit, from, opts)
-    {:noreply, room}
-  end
-
-  def handle_cast({:initiate_remote_action, room, mobile, remote_action_exit, opts}, room) do
-    room = Room.initiate_remote_action(room, mobile, remote_action_exit, opts)
     {:noreply, room}
   end
 
@@ -490,6 +453,12 @@ defmodule ApathyDrive.RoomServer do
       |> Repo.save
 
     {:noreply, room}
+  end
+
+  def handle_info({:delay_execute_script, mobile_ref, script}, room) do
+    mobile = room.mobiles[mobile_ref]
+    room = put_in(room.mobiles[mobile_ref], Map.put(mobile, :delayed, false))
+    {:noreply, ApathyDrive.Script.execute(room, mobile, script)}
   end
 
   def handle_info(:load_present_mobiles, room) do
@@ -732,6 +701,14 @@ defmodule ApathyDrive.RoomServer do
       send(self, {:execute_ability, %{caster: ref, ability: Map.delete(ability, "cast_time"), target: target}})
 
       {:noreply, room}
+    else
+      {:noreply, room}
+    end
+  end
+
+  def handle_info({:execute_script, mobile_ref, script}, room) do
+    if mobile = room.mobiles[mobile_ref] do
+      {:noreply, ApathyDrive.Script.execute(room, mobile, script)}
     else
       {:noreply, room}
     end

@@ -1210,10 +1210,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, move_after(mobile)}
   end
 
-  def handle_info({:execute_script, script}, mobile) do
-    {:noreply, ApathyDrive.Script.execute(script, Map.put(mobile, :delayed, false))}
-  end
-
   def handle_info(%Phoenix.Socket.Broadcast{topic: topic, event: "presence_diff", payload: diff}, %Mobile{} = mobile) do
     {:noreply, handle_diff(mobile, topic, diff)}
   end
