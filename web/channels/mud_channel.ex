@@ -11,6 +11,8 @@ defmodule ApathyDrive.MUDChannel do
           %Spirit{name: nil} -> # spirit has been reset, probably due to a game wipe
             {:error, %{reason: "unauthorized"}}
           %Spirit{room_id: room_id} = spirit ->
+            spirit =
+              Repo.preload(spirit, :class)
 
             ref =
               room_id
@@ -22,6 +24,9 @@ defmodule ApathyDrive.MUDChannel do
               |> assign(:room_id, room_id)
               |> assign(:spirit_id, spirit.id)
               |> assign(:mobile_ref, ref)
+
+              ApathyDrive.PubSub.subscribe("chat:gossip")
+              ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
 
             send(self(), :after_join)
 

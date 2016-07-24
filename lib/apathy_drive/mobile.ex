@@ -94,10 +94,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:say, message})
   end
 
-  def gossip(mobile, message) do
-    GenServer.cast(mobile, {:gossip, message})
-  end
-
   def ask(mobile, target, question) do
     GenServer.cast(mobile, {:ask, target, question})
   end
@@ -949,11 +945,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:gossip, message}, mobile) do
-    Commands.Gossip.execute(mobile, message)
-    {:noreply, mobile}
-  end
-
   def handle_cast({:ask, target, question}, mobile) do
     Commands.Ask.execute(mobile, target, question)
     {:noreply, mobile}
@@ -1146,16 +1137,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:class_chat, _message}, %Mobile{spirit: nil} = mobile) do
-    {:noreply, mobile}
-  end
-  def handle_cast({:class_chat, message}, %Mobile{spirit: spirit} = mobile) do
-    class_name = String.downcase(spirit.class.name)
-
-    ApathyDrive.PubSub.broadcast!("chat:#{class_name}", {String.to_atom(class_name), Mobile.aligned_spirit_name(mobile), message})
-    {:noreply, mobile}
-  end
-
   def handle_info({:update_unity_essence, unity, essence}, mobile) do
     {:noreply, put_in(mobile.unity_essences[unity], essence)}
   end
@@ -1296,12 +1277,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:gossip, name, message}, mobile) do
-    send_scroll(mobile, "<p>[<span class='dark-magenta'>gossip</span> : #{name}] #{message}</p>")
-
-    {:noreply, mobile}
-  end
-
   def handle_info({:angel, name, message}, mobile) do
     send_scroll(mobile, "<p>[<span class='white'>angel</span> : #{name}] #{message}</p>")
     {:noreply, mobile}
@@ -1420,8 +1395,6 @@ defmodule ApathyDrive.Mobile do
 
       ApathyDrive.PubSub.unsubscribe("spirits:online")
       ApathyDrive.PubSub.unsubscribe("spirits:#{spirit.id}")
-      ApathyDrive.PubSub.unsubscribe("chat:gossip")
-      ApathyDrive.PubSub.unsubscribe("chat:#{String.downcase(spirit.class.name)}")
 
     {:noreply, mobile}
   end

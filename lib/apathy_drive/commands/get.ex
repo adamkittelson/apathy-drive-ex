@@ -15,7 +15,7 @@ defmodule ApathyDrive.Commands.Get do
     |> get_all(room, mobile)
   end
 
-  def execute(%Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions} = room, %Mobile{room_id: room_id, spirit: %Spirit{inventory: inventory}} = mobile, args) do
+  def execute(%Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions} = room, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile, args) do
     item = Enum.join(args, " ")
 
     actual_item = items
