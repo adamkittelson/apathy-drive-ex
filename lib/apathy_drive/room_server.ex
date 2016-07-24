@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Commands, LairMonster, LairSpawning, Match, Mobile, PubSub, MonsterTemplate,
+  alias ApathyDrive.{Commands, LairMonster, LairSpawning, Match, Mobile, PubSub,
                      Repo, Room, RoomSupervisor, RoomUnity, TimerManager, Ability, Presence}
   use Timex
   require Logger
@@ -129,10 +129,6 @@ defmodule ApathyDrive.RoomServer do
 
   def spirit_connected(room, spirit, socket) do
     GenServer.call(room, {:spirit_connected, spirit, socket})
-  end
-
-  def add_item(room, item) do
-    GenServer.cast(room, {:add_item, item})
   end
 
   def add_items(room, items) do
@@ -439,14 +435,6 @@ defmodule ApathyDrive.RoomServer do
     Commands.Look.execute(room, mobile, [])
 
     room = put_in(room.mobiles[mobile.ref], mobile)
-
-    {:noreply, room}
-  end
-
-  def handle_cast({:add_item, item}, %Room{room_unity: %RoomUnity{items: items}} = room) do
-    room =
-      put_in(room.room_unity.items, [item | items])
-      |> Repo.save
 
     {:noreply, room}
   end

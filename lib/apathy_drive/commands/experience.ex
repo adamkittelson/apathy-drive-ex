@@ -4,18 +4,15 @@ defmodule ApathyDrive.Commands.Experience do
 
   def keywords, do: ["exp", "experience", "essence"]
 
-  def execute(mobile, _arguments) do
-    Mobile.display_experience(mobile)
-  end
-
-  def message(entity) do
-    level     = entity.level
-    exp       = entity.experience
-    remaining = max(Level.exp_to_next_level(entity), 0)
+  def execute(%Room{} = room, %Mobile{} = mobile, _arguments) do
+    level     = mobile.level
+    exp       = mobile.experience
+    remaining = max(Level.exp_to_next_level(mobile), 0)
     tolevel   = Level.exp_at_level(level + 1)
     percent   = ((exp / tolevel) * 100) |> round
 
-    "<p><span class='dark-green'>Essence:</span> <span class='dark-cyan'>#{exp}</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Essence needed for next level:</span> <span class='dark-cyan'>#{remaining} (#{tolevel}) [#{percent}%]</span></p>"
+    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Essence:</span> <span class='dark-cyan'>#{exp}</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{level}</span> <span class='dark-green'>Essence needed for next level:</span> <span class='dark-cyan'>#{remaining} (#{tolevel}) [#{percent}%]</span></p>")
+    room
   end
 
 end

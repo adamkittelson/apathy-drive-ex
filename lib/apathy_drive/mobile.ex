@@ -134,10 +134,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:greet, query})
   end
 
-  def list_forms(mobile, slot \\ "all") do
-    GenServer.cast(mobile, {:list_forms, slot})
-  end
-
   def display_enter_message(mobile, room, direction \\ nil) do
     GenServer.cast(mobile, {:display_enter_message, room, direction})
   end
@@ -180,10 +176,6 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def add_form(mobile, item) do
-    GenServer.cast(mobile, {:add_form, item})
-  end
-
   def execute_script(pid, script) do
     GenServer.cast(pid, {:execute_script, script})
   end
@@ -217,10 +209,6 @@ defmodule ApathyDrive.Mobile do
       magical_defense:  (1 - reduce_damage(mobile, "magical defense")) * 100,
       physical_damage: physical_damage(mobile),
       magical_damage: magical_damage(mobile)}
-  end
-
-  def display_experience(pid) do
-    GenServer.cast(pid, :display_experience)
   end
 
   def class_chat(pid, message) do
@@ -303,10 +291,6 @@ defmodule ApathyDrive.Mobile do
 
   def absorb(mobile, item) do
     GenServer.cast(mobile, {:absorb, item})
-  end
-
-  def drop_item(mobile, item) do
-    GenServer.cast(mobile, {:drop_item, item})
   end
 
   def held(%Mobile{effects: effects} = mobile) do
@@ -889,34 +873,6 @@ defmodule ApathyDrive.Mobile do
     TimerManager.send_after(mobile, {:monster_movement, jitter(:timer.seconds(frequency)), :auto_move})
   end
 
-  defp list_forms(mobile, forms, limb) do
-    alias ApathyDrive.Item
-
-    Mobile.send_scroll(mobile, "<p>\n<span class='white'>You know how to construct the following items:</span></p>")
-
-    forms
-    |> Enum.reduce(%{}, fn(item, items) ->
-         items
-         |> Map.put_new(item.worn_on, [])
-         |> update_in([item.worn_on], &([item | &1]))
-       end)
-    |> Enum.each(fn({slot, items}) ->
-         if String.downcase(slot) == String.downcase(limb) or limb == "" do
-           Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>#{slot}</span></p>")
-           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Essence Cost | STR | AGI | WIL | Item Name</span></p>")
-           Enum.each(items, fn(item) ->
-             exp =
-              (ApathyDrive.Item.experience(Item.strength(item) + Item.agility(item) + Item.will(item)) * 10)
-              |> to_string
-              |> String.ljust(12)
-
-             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{exp} | #{String.rjust(to_string(Item.strength(item)), 3)} | #{String.rjust(to_string(Item.agility(item)), 3)} | #{String.rjust(to_string(Item.will(item)), 3)} | #{item.name}</span></p>")
-           end)
-           Mobile.send_scroll(mobile, "<p>\n</p>")
-         end
-       end)
-  end
-
   def handle_cast(:update_room, %Mobile{socket: nil} = mobile) do
     {:noreply, mobile}
   end
@@ -984,29 +940,6 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:get_item, item}, mobile) do
     Commands.Get.execute(mobile, item)
     {:noreply, mobile}
-  end
-
-  def handle_cast({:drop_item, item_name}, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile) do
-    item = inventory
-           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Match.one(:name_contains, item_name)
-
-    case item do
-      nil ->
-        Mobile.send_scroll(mobile, "<p>You don't have \"#{item_name}\" to drop!</p>")
-        {:noreply, mobile}
-      %{item: item} ->
-        mobile =
-          put_in(mobile.spirit.inventory, List.delete(inventory, item))
-
-          Mobile.send_scroll(mobile, "<p>You drop #{item["name"]}.</p>")
-
-          mobile.room_id
-          |> RoomServer.find
-          |> RoomServer.add_item(item)
-
-        {:noreply, save(mobile)}
-    end
   end
 
   def handle_cast({:absorb, item}, mobile) do
@@ -1101,38 +1034,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:add_experience, exp}, %Mobile{} = mobile) do
     mobile = add_experience(mobile, exp)
-
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:list_forms, limb}, %Mobile{} = mobile) do
-    list_forms(mobile, forms(mobile), limb)
-
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:add_form, %{"id" => item_id, "name" => name}}, %Mobile{spirit: spirit} = mobile) do
-    alias ApathyDrive.SpiritItemRecipe
-
-    form =
-      %SpiritItemRecipe{}
-      |> SpiritItemRecipe.changeset(%{item_id: item_id, spirit_id: spirit.id})
-
-    case Repo.insert(form) do
-      {:ok, _recipe} ->
-        Mobile.send_scroll(mobile, "<p>You gain knowledge of #{name}'s <span class='green'>form</span>, allowing you to <span class='green'>construct</span> it from raw essence.</p>")
-      {:error, _} ->
-        :noop
-    end
-
-    {:noreply, mobile}
-  end
-
-  def handle_cast(:display_experience, %Mobile{spirit: nil} = mobile) do
-    {:noreply, mobile}
-  end
-  def handle_cast(:display_experience, %Mobile{spirit: spirit} = mobile) do
-    Mobile.send_scroll(mobile, Commands.Experience.message(spirit))
 
     {:noreply, mobile}
   end
