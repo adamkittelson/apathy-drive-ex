@@ -3,14 +3,18 @@ defmodule ApathyDrive.Commands.Say do
 
   def keywords, do: ["say"]
 
-  def execute(mobile, arguments) when is_pid(mobile) do
-    Mobile.say(mobile, Enum.join(arguments, " "))
+  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, _message) do
+    Mobile.body_required(mobile)
+
+    room
   end
 
-  def execute(%Mobile{} = mobile, message) do
+  def execute(%Room{} = room, %Mobile{} = mobile, message) do
     message = Mobile.sanitize(message)
-    ApathyDrive.PubSub.broadcast_from! self(), "rooms:#{mobile.room_id}:mobiles", {:say, %{name: mobile.name}, message}
+
+    Room.send_scroll(room, "<p>#{Mobile.look_name(mobile)} says: <span class='dark-green'>\"#{message}\"</span></p>", mobile)
     Mobile.send_scroll(mobile, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
+    room
   end
 
 end

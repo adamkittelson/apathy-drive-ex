@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Commands, LairMonster, LairSpawning, Match, Mobile, Presence, PubSub, MonsterTemplate,
-                     Repo, Room, RoomSupervisor, RoomUnity, Text, TimerManager, Ability}
+  alias ApathyDrive.{Commands, LairMonster, LairSpawning, Match, Mobile, PubSub, MonsterTemplate,
+                     Repo, Room, RoomSupervisor, RoomUnity, TimerManager, Ability}
   use Timex
   require Logger
 
@@ -701,7 +701,7 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:start_timer, %Room{timer: timer} = room) do
+  def handle_info(:start_timer, %Room{} = room) do
     room = Room.start_timer(room)
 
     {:noreply, room}

@@ -317,10 +317,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:drop_item, item})
   end
 
-  def unequip_item(mobile, item) do
-    GenServer.call(mobile, {:unequip_item, item})
-  end
-
   def held(%Mobile{effects: effects} = mobile) do
     effects
     |> Map.values
@@ -929,35 +925,6 @@ defmodule ApathyDrive.Mobile do
        end)
   end
 
-  def handle_call({:unequip_item, item}, _from, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
-    item = equipment
-           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-           |> Match.one(:name_contains, item)
-
-    case item do
-      nil ->
-        {:reply, :not_found, mobile}
-      %{item: item_to_remove} ->
-        equipment =
-          equipment
-          |> List.delete(item_to_remove)
-
-        inventory =
-          inventory
-          |> List.insert_at(-1, item_to_remove)
-
-          mobile = put_in(mobile.spirit.inventory, inventory)
-          mobile = put_in(mobile.spirit.equipment, equipment)
-                   |> set_abilities
-                   |> set_max_mana
-                   |> set_mana
-                   |> set_max_hp
-                   |> set_hp
-
-        {:reply, {:ok, %{unequipped: item_to_remove}}, save(mobile)}
-    end
-  end
-
   def handle_cast(:update_room, %Mobile{socket: nil} = mobile) do
     {:noreply, mobile}
   end
@@ -1556,7 +1523,7 @@ defmodule ApathyDrive.Mobile do
 
                equipped =
                  updated_mobile
-                 |> Mobile.equip_item(item)
+                 |> Commands.Wear.equip_item(item)
 
                equipped_data = Mobile.score_data(equipped.mobile)
 
@@ -1618,11 +1585,6 @@ defmodule ApathyDrive.Mobile do
 
            {:noreply, mobile}
        end
-  end
-
-  def handle_info({:say, %{name: speaker}, message}, %Mobile{} = mobile) do
-    Mobile.send_scroll(mobile, "<p>#{capitalize_first(speaker)} says: <span class='dark-green'>\"#{message}\"</span></p>")
-    {:noreply, mobile}
   end
 
   def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do

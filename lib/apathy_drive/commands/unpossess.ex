@@ -1,6 +1,5 @@
 defmodule ApathyDrive.Commands.Unpossess do
   use ApathyDrive.Command
-  alias ApathyDrive.Presence
 
   def keywords, do: ["unpossess"]
 
