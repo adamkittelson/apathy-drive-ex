@@ -58,7 +58,7 @@ defmodule ApathyDrive.Commands.Look do
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
         look_at_item(mobile, target)
       true ->
-        Mobile.look_at_item(mobile, Enum.join(arguments, " "))
+        look_at_item(mobile, Enum.join(arguments, " "))
     end
   end
 
@@ -211,10 +211,6 @@ defmodule ApathyDrive.Commands.Look do
     mobile.effects
     |> Map.values
     |> Enum.any?(&(Map.has_key?(&1, "blinded")))
-  end
-
-  def look_at_item(mobile, %{} = item) when is_pid(mobile) do
-    Mobile.look_at_item(mobile, item)
   end
 
   def look_at_item(mobile, %{description: description}) do

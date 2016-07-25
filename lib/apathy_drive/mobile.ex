@@ -197,10 +197,6 @@ defmodule ApathyDrive.Mobile do
     "<span class='magenta'>#{name}</span>"
   end
 
-  def look_at_item(mobile, item) do
-    GenServer.cast(mobile, {:look_at_item, item})
-  end
-
   def update_prompt(%Mobile{socket: nil}), do: :noop
   def update_prompt(%Mobile{socket: socket} = mobile) do
     send(socket, {:update_prompt, prompt(mobile)})
@@ -837,11 +833,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:attack, target}, mobile) do
     Commands.Attack.execute(mobile, target)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:look_at_item, item}, mobile) do
-    Commands.Look.look_at_item(mobile, item)
     {:noreply, mobile}
   end
 
