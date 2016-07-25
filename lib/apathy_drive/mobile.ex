@@ -102,10 +102,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:open, arguments})
   end
 
-  def bash(mobile, arguments) do
-    GenServer.cast(mobile, {:bash, arguments})
-  end
-
   def move(mobile, room, room_exit) do
     GenServer.cast(mobile, {:move, room, room_exit})
   end
@@ -849,11 +845,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:bash, args}, mobile) do
-    Commands.Bash.execute(mobile, args)
-    {:noreply, mobile}
-  end
-
   def handle_cast({:close, args}, mobile) do
     Commands.Close.execute(mobile, args)
     {:noreply, mobile}
@@ -1272,26 +1263,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:door_opened, %{name: name, type: type, description: description}}, mobile) do
     Mobile.send_scroll(mobile, "<p>You see #{name} open the #{type} #{description}.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_bashed, %{basher: pid, type: type}}, mobile) when pid == self() do
-    Mobile.send_scroll(mobile, "<p>You bashed the #{type} open.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_bashed, %{name: name, type: type, description: description}}, mobile) do
-    Mobile.send_scroll(mobile, "<p>You see #{name} bash open the #{type} #{description}.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_bash_failed, %{basher: pid}}, mobile) when pid == self() do
-    Mobile.send_scroll(mobile, "<p>Your attempts to bash through fail!</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_bash_failed, %{name: name, type: type, description: description}}, mobile) do
-    Mobile.send_scroll(mobile, "<p>You see #{name} attempt to bash open the #{type} #{description}.</p>")
     {:noreply, mobile}
   end
 
