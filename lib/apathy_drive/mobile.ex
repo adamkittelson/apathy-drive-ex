@@ -928,15 +928,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, save(mobile)}
   end
 
-  def handle_info({:execute_ability, ability}, monster) do
-    {:noreply, Ability.execute(monster, ability, [self])}
-  end
-
-  def handle_info({:execute_ability, ability, arg_string}, mobile) do
-    mobile = Ability.execute(mobile, ability, arg_string)
-    {:noreply, mobile}
-  end
-
   def handle_info({:send_scroll, message}, mobile) do
     send_scroll(mobile, message)
 
@@ -976,28 +967,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info(:think, mobile) do
     {:noreply, ApathyDrive.AI.think(mobile)}
-  end
-
-  def handle_info({:apply_ability, %{} = _ability, %Mobile{} = _ability_user}, %Mobile{monster_template_id: nil} = mobile) do
-    {:noreply, mobile}
-  end
-  def handle_info({:apply_ability, %{} = ability, %Mobile{} = ability_user}, mobile) do
-    if Ability.affects_target?(mobile, ability) do
-      mobile = mobile
-               |> Ability.apply_ability(ability, ability_user)
-
-      Mobile.update_prompt(mobile)
-
-      if mobile.hp < 1 or (mobile.spirit && mobile.spirit.experience < -99) do
-        {:stop, :normal, Systems.Death.kill(mobile, ability_user)}
-      else
-        {:noreply, mobile}
-      end
-    else
-      message = "#{mobile.name} is not affected by that ability." |> capitalize_first
-      Mobile.send_scroll(ability_user, "<p><span class='dark-cyan'>#{message}</span></p>")
-      {:noreply, mobile}
-    end
   end
 
   def handle_info({:remove_effect, key}, mobile) do

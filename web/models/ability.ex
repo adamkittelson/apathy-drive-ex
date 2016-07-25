@@ -398,6 +398,8 @@ defmodule ApathyDrive.Ability do
              put_in(updated_room.mobiles[target.ref], target)
            end
          else
+           message = "#{target.name} is not affected by that ability." |> capitalize_first
+           Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{message}</span></p>")
            updated_room
          end
        end)
