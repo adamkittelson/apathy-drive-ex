@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.Remove do
   use ApathyDrive.Command
+  alias ApathyDrive.Match
 
   def keywords, do: ["remove", "unequip", "unwield"]
 

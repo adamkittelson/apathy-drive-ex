@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Mobile, Room, RoomServer}
+  alias ApathyDrive.{Mobile, MonsterTemplate, Room, RoomServer}
 
   schema "scripts" do
     field :instructions, ApathyDrive.JSONB, default: []

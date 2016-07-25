@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Drop do
   use ApathyDrive.Command
-  alias ApathyDrive.RoomUnity
+  alias ApathyDrive.{Match, Repo, RoomUnity}
 
   def keywords, do: ["drop"]
 

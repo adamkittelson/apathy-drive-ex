@@ -39,16 +39,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:greet, greeter, query})
   end
 
-  def ask(room, asker, target, question) do
-    GenServer.cast(room, {:ask, asker, target, question})
-  end
-
   def attack(room, attacker, target) do
     GenServer.cast(room, {:attacker, attacker, target})
-  end
-
-  def possess(room, query, spirit_id, class_name, socket, possessor) do
-    GenServer.cast(room, {:possess, query, spirit_id, class_name, socket, possessor})
   end
 
   def trigger_remote_action(room, remote_action_exit, from, opts) do
@@ -117,10 +109,6 @@ defmodule ApathyDrive.RoomServer do
 
   def get_item(room, mobile, item) do
     GenServer.cast(room, {:get_item, mobile, item})
-  end
-
-  def delve(room, mobile) do
-    GenServer.cast(room, {:delve, mobile})
   end
 
   def destroy_item(room, item) do
@@ -278,23 +266,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:ask, asker, target, question}, room) do
-    Commands.Ask.execute(room, asker, target, question)
-    {:noreply, room}
-  end
-
-  def handle_cast({:possess, query, spirit_id, class_name, socket, possessor}, room) do
-    Commands.Possess.execute(room, query, spirit_id, class_name, socket, possessor)
-    {:noreply, room}
-  end
-
   def handle_cast({:get_item, mobile, item}, room) do
     {:noreply, Commands.Get.execute(room, mobile, item)}
-  end
-
-  def handle_cast({:delve, mobile}, room) do
-    Commands.Delve.execute(room, mobile)
-    {:noreply, room}
   end
 
   def handle_cast({:trigger_remote_action, remote_action_exit, from, opts}, room) do

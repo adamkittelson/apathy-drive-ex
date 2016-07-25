@@ -90,14 +90,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, :update_room)
   end
 
-  def say(mobile, message) do
-    GenServer.cast(mobile, {:say, message})
-  end
-
-  def ask(mobile, target, question) do
-    GenServer.cast(mobile, {:ask, target, question})
-  end
-
   def close(mobile, arguments) do
     GenServer.cast(mobile, {:close, arguments})
   end
@@ -114,16 +106,8 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:bash, arguments})
   end
 
-  def execute_room_command(mobile, scripts) do
-    GenServer.cast(mobile, {:execute_room_command, scripts})
-  end
-
   def move(mobile, room, room_exit) do
     GenServer.cast(mobile, {:move, room, room_exit})
-  end
-
-  def execute_command(mobile, command, arguments) do
-    GenServer.cast(mobile, {:execute_command, command, arguments})
   end
 
   def auto_move(pid, valid_exits) do
@@ -132,10 +116,6 @@ defmodule ApathyDrive.Mobile do
 
   def greet(mobile, query) do
     GenServer.cast(mobile, {:greet, query})
-  end
-
-  def display_enter_message(mobile, room, direction \\ nil) do
-    GenServer.cast(mobile, {:display_enter_message, room, direction})
   end
 
   def forms(%Mobile{spirit: nil}), do: nil
@@ -174,10 +154,6 @@ defmodule ApathyDrive.Mobile do
     else
       mobile
     end
-  end
-
-  def execute_script(pid, script) do
-    GenServer.cast(pid, {:execute_script, script})
   end
 
   def sanitize(message) do
@@ -223,10 +199,6 @@ defmodule ApathyDrive.Mobile do
   end
   def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "evil"}}}) do
     "<span class='magenta'>#{name}</span>"
-  end
-
-  def look(mobile, args \\ []) do
-    GenServer.cast(mobile, {:look, args})
   end
 
   def look_at_item(mobile, item) do
@@ -275,22 +247,6 @@ defmodule ApathyDrive.Mobile do
         put_in(mobile.spirit.equipment, List.delete(equipment, equipment_item))
       end
     end
-  end
-
-  def get_item(mobile, item) do
-    GenServer.cast(mobile, {:get_item, item})
-  end
-
-  def delve(mobile) do
-    GenServer.cast(mobile, :delve)
-  end
-
-  def display_inventory(mobile) when is_pid(mobile) do
-    GenServer.cast(mobile, :display_inventory)
-  end
-
-  def absorb(mobile, item) do
-    GenServer.cast(mobile, {:absorb, item})
   end
 
   def held(%Mobile{effects: effects} = mobile) do
@@ -448,14 +404,6 @@ defmodule ApathyDrive.Mobile do
 
   def attack(mobile, target) do
     GenServer.cast(mobile, {:attack, target})
-  end
-
-  def answer(mobile, asker, question) do
-    GenServer.cast(mobile, {:answer, asker, question})
-  end
-
-  def unpossess(mobile) when is_pid(mobile) do
-    GenServer.cast(mobile, :unpossess)
   end
 
   def set_abilities(%Mobile{monster_template_id: nil, spirit: _spirit} = mobile) do
@@ -896,58 +844,8 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:say, message}, mobile) do
-    Commands.Say.execute(mobile, message)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:ask, target, question}, mobile) do
-    Commands.Ask.execute(mobile, target, question)
-    {:noreply, mobile}
-  end
-
-  def handle_cast(:possession_successful, mobile) do
-    {:stop, :normal, Systems.Effect.remove_all(mobile)}
-  end
-
-  def handle_cast({:possess, query}, mobile) do
-    Commands.Possess.execute(mobile, query)
-    {:noreply, mobile}
-  end
-
-  def handle_cast(:unpossess, mobile) do
-    {:noreply, Commands.Unpossess.execute(mobile)}
-  end
-
   def handle_cast({:look_at_item, item}, mobile) do
     Commands.Look.look_at_item(mobile, item)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:equip_item, item}, mobile) do
-    {:noreply, Commands.Wear.execute(mobile, item)}
-  end
-
-  def handle_cast({:get_item, %{} = item}, mobile) do
-    {:noreply, Commands.Get.execute(mobile, item)}
-  end
-
-  def handle_cast(:delve, mobile) do
-    Commands.Delve.execute(mobile)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:get_item, item}, mobile) do
-    Commands.Get.execute(mobile, item)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:absorb, item}, mobile) do
-    {:noreply, Commands.Absorb.execute(mobile, item)}
-  end
-
-  def handle_cast(:display_inventory, mobile) do
-    Commands.Inventory.execute(mobile)
     {:noreply, mobile}
   end
 
@@ -971,32 +869,8 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:execute_room_command, scripts}, mobile) do
-    unless confused(mobile) do
-      scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
-      ApathyDrive.Script.execute(scripts, mobile)
-    end
-
-    {:noreply, mobile}
-  end
-
   def handle_cast({:move, room, room_exit}, mobile) do
     mobile = Commands.Move.execute(mobile, room, room_exit)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:execute_command, command, arguments}, mobile) do
-    ApathyDrive.Command.execute(mobile, command, arguments)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:look, args}, mobile) do
-    Commands.Look.execute(mobile, args)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:display_enter_message, room, _direction}, mobile) do
-    RoomServer.display_enter_message(room, %{name: look_name(mobile), mobile: mobile, message: mobile.enter_message, from: mobile.room_id})
     {:noreply, mobile}
   end
 
@@ -1013,11 +887,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_cast({:answer, asker, question}, mobile) do
-    Commands.Ask.answer(mobile, asker, question)
-    {:noreply, mobile}
-  end
-
   def handle_cast({:greet, %{name: _, pid: _} = greeter}, mobile) do
     Commands.Greet.greet(mobile, greeter)
     {:noreply, mobile}
@@ -1026,10 +895,6 @@ defmodule ApathyDrive.Mobile do
   def handle_cast({:greet, target}, mobile) do
     Commands.Greet.execute(mobile, target)
     {:noreply, mobile}
-  end
-
-  def handle_cast({:execute_script, script}, mobile) do
-    {:noreply, ApathyDrive.Script.execute(script, mobile)}
   end
 
   def handle_cast({:add_experience, exp}, %Mobile{} = mobile) do

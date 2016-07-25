@@ -33,7 +33,7 @@ defmodule ApathyDrive.Command do
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
         Room.initiate_remote_action(room, mobile, remote_action_exit)
       scripts = Room.command(room, full_command) ->
-        Mobile.execute_room_command(mobile, scripts)
+        execute_room_command(room, mobile, scripts)
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
         cmd.module.execute(room, mobile, arguments)
       true ->
@@ -49,6 +49,15 @@ defmodule ApathyDrive.Command do
           Mobile.send_scroll(mobile, "<p>What?</p>")
           room
         end
+    end
+  end
+
+  defp execute_room_command(room, mobile, scripts) do
+    if Mobile.confused(mobile) do
+      room
+    else
+      scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
+      ApathyDrive.Script.execute(room, mobile, scripts)
     end
   end
 

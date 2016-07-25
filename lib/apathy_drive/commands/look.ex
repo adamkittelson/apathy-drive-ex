@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Doors, Mobile, Match, RoomServer, Presence}
+  alias ApathyDrive.{Doors, Mobile, Match, RoomServer}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -133,11 +133,11 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
   end
 
-  def look_mobiles(%Room{mobiles: mobiles} = room, mobile \\ nil) do
+  def look_mobiles(%Room{mobiles: mobiles}, mobile \\ nil) do
     mobiles_to_show =
       mobiles
       |> Map.values
-      |> Enum.reduce([], fn(%{spirit: spirit, monster_template_id: mt_id} = room_mobile, list) ->
+      |> Enum.reduce([], fn(%{monster_template_id: mt_id} = room_mobile, list) ->
            if mobile == room_mobile or is_nil(mt_id) do
              list
            else
@@ -233,7 +233,7 @@ defmodule ApathyDrive.Commands.Look do
 
     %{equipped: _, mobile: equipped} =
       mobile
-      |> Mobile.equip_item(item)
+      |> ApathyDrive.Commands.Wear.equip_item(item)
 
     equipped = Mobile.score_data(equipped)
 
