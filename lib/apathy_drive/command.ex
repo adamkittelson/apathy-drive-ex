@@ -44,7 +44,7 @@ defmodule ApathyDrive.Command do
              end)
 
         if ability do
-          Ability.execute(room, mobile, ability, Enum.join(arguments, " "))
+          Ability.execute(room, mobile.ref, ability, Enum.join(arguments, " "))
         else
           Mobile.send_scroll(mobile, "<p>What?</p>")
           room

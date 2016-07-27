@@ -555,7 +555,6 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:update_essence, %Room{exits: _exits, room_unity: %RoomUnity{essences: essences}} = room) do
-    IO.puts "updating essence!"
     room = Room.update_essence(room)
 
     room =
@@ -631,7 +630,10 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:tick, room) do
-    room = Room.apply_timers(room)
+    room =
+      room
+      |> Room.apply_timers
+      |> Room.start_timer
 
     {:noreply, room}
   end
@@ -682,7 +684,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
     if mobile = room.mobiles[ref] do
       IO.puts "casting spell"
-      room = Ability.execute(room, mobile, ability, target)
+      room = Ability.execute(room, mobile.ref, ability, target)
       {:noreply, room}
     else
       IO.puts "caster not found"

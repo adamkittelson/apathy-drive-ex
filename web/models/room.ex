@@ -32,6 +32,14 @@ defmodule ApathyDrive.Room do
     has_many   :lair_monsters, through: [:lairs, :monster_template]
   end
 
+  def update_mobile(%Room{} = room, mobile_ref, fun) do
+    if mobile = room.mobiles[mobile_ref] do
+      put_in(room.mobiles[mobile_ref], fun.(mobile))
+    else
+      room
+    end
+  end
+
   def next_timer(%Room{} = room) do
     [TimerManager.next_timer(room) | Enum.map(Map.values(room.mobiles), &TimerManager.next_timer/1)]
     |> Enum.reject(&is_nil/1)
@@ -54,7 +62,7 @@ defmodule ApathyDrive.Room do
         is_nil(timer) ->
           timer = Process.send_after(self, :tick, send_at)
           Map.put(room, :timer, timer)
-        Process.read_timer(timer) > send_at ->
+        Process.read_timer(timer) >= send_at ->
           Process.cancel_timer(timer)
           timer = Process.send_after(self, :tick, send_at)
           Map.put(room, :timer, timer)
@@ -286,6 +294,10 @@ defmodule ApathyDrive.Room do
       true ->
         nil
     end
+  end
+
+  def get_mobile(%Room{mobiles: mobiles}, ref) do
+    mobiles[ref]
   end
 
   def get_exit(room, direction) do
