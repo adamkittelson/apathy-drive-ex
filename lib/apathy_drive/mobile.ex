@@ -2,7 +2,6 @@ defmodule ApathyDrive.Mobile do
   alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor, RoomServer, Room, Presence, MonsterTemplate}
   use ApathyDrive.Web, :model
   import ApathyDrive.Text
-  import TimerManager, only: [seconds: 1]
   use GenServer
 
   schema "mobiles" do
@@ -369,8 +368,6 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
-      # |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
-      # |> TimerManager.send_every({:monster_ai,       5_000, :think})
       # |> TimerManager.send_every({:unify,  60_000, :unify})
 
     save(mobile)
@@ -387,16 +384,12 @@ defmodule ApathyDrive.Mobile do
     mobile
   end
   def initiate_combat(%Mobile{} = mobile) do
-    send(mobile.pid, :execute_auto_attack)
+    send(self, {:execute_auto_attack, mobile.ref})
     mobile
   end
 
   def system(mobile, command) do
     GenServer.cast(mobile, {:system, command})
-  end
-
-  def attack(mobile, target) do
-    GenServer.cast(mobile, {:attack, target})
   end
 
   def set_abilities(%Mobile{monster_template_id: nil, spirit: _spirit} = mobile) do
@@ -792,24 +785,6 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  defp execute_auto_attack(%Mobile{} = mobile, target) do
-    attacks =
-      mobile.abilities
-      |> Enum.filter(&(&1["kind"] == "auto_attack"))
-
-    attack = if Enum.any?(attacks), do: Enum.random(attacks), else: nil
-
-    if attack do
-      attack =
-        attack
-        |> Map.put("ignores_global_cooldown", true)
-        |> Map.put("kind", "attack")
-
-      send(self, {:execute_ability, attack, [target]})
-      attack["attack_interval"] # return interval to change default auto_attack delay
-    end
-  end
-
   defp move_after(%Mobile{movement_frequency: frequency} = mobile) do
     TimerManager.send_after(mobile, {:monster_movement, jitter(:timer.seconds(frequency)), :auto_move})
   end
@@ -825,15 +800,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:system, command}, mobile) do
     Commands.System.execute(mobile, command)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:attack, target}, mobile) when is_pid(target) do
-    {:noreply, Commands.Attack.attack(mobile, target)}
-  end
-
-  def handle_cast({:attack, target}, mobile) do
-    Commands.Attack.execute(mobile, target)
     {:noreply, mobile}
   end
 
@@ -992,27 +958,6 @@ defmodule ApathyDrive.Mobile do
   def handle_info({:demon, name, message}, mobile) do
     send_scroll(mobile, "<p>[<span class='magenta'>demon</span> : #{name}] #{message}</p>")
     {:noreply, mobile}
-  end
-
-  def handle_info(:execute_auto_attack, %Mobile{attack_target: nil} = mobile) do
-    {:noreply, mobile}
-  end
-  def handle_info(:execute_auto_attack, %Mobile{attack_target: target, auto_attack_interval: default_interval} = mobile) do
-    if Process.alive?(target) and target in PubSub.subscribers("rooms:#{mobile.room_id}:mobiles") do
-      attack_interval = execute_auto_attack(mobile, target)
-
-      interval = attack_interval || seconds(default_interval)
-
-      mobile = TimerManager.send_after(mobile, {:auto_attack_timer, interval, :execute_auto_attack})
-
-      {:noreply, mobile}
-    else
-      mobile =
-        mobile
-        |> Map.put(:attack_target, nil)
-
-      {:noreply, mobile}
-    end
   end
 
   def handle_info(:unify, %Mobile{spirit: nil, unities: []} = mobile) do

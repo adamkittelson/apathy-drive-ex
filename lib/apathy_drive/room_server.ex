@@ -437,6 +437,45 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:execute_auto_attack, ref}, %Room{} = room) do
+    room =
+      Room.update_mobile(room, ref, fn
+        %Mobile{attack_target: nil} = mobile ->
+          mobile
+        %Mobile{attack_target: target_ref, auto_attack_interval: default_interval} = mobile ->
+          if room.mobiles[target_ref] do
+            attacks =
+              mobile.abilities
+              |> Enum.filter(&(&1["kind"] == "auto_attack"))
+
+            attack = if Enum.any?(attacks), do: Enum.random(attacks), else: nil
+
+            {updated_room, updated_interval} =
+              if attack do
+                attack =
+                  attack
+                  |> Map.put("ignores_global_cooldown", true)
+                  |> Map.put("kind", "attack")
+
+                room = Ability.execute(room, mobile.ref, attack, [target_ref])
+
+                {room, attack["attack_interval"]} # return interval to change default auto_attack delay
+              else
+                {room, nil}
+              end
+
+              interval = updated_interval || TimerManager.seconds(default_interval)
+
+              updated_mobile = TimerManager.send_after(mobile, {:auto_attack_timer, interval, {:execute_auto_attack, ref}})
+
+              put_in(updated_room.mobiles[mobile.ref], updated_mobile)
+          else
+            Map.put(mobile, :attack_target, nil)
+          end
+      end)
+    {:noreply, room}
+  end
+
   def handle_info({:apply_periodic_effects, ref}, room) do
 
     if mobile = Room.get_mobile(room, ref) do
