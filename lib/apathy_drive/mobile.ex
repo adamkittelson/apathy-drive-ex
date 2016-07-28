@@ -335,15 +335,17 @@ defmodule ApathyDrive.Mobile do
   end
 
   def init(%Mobile{spirit: nil} = mobile) do
+    ref = make_ref()
+
     mobile =
       mobile
-      |> Map.put(:ref, make_ref())
+      |> Map.put(:ref, ref)
       |> set_abilities
       |> set_max_mana
       |> set_mana
       |> set_max_hp
       |> set_hp
-      # |> TimerManager.send_every({:monster_regen,    1_000, :regen})
+      |> TimerManager.send_after({:monster_regen,    1_000, {:regen, ref}})
       # |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       # |> TimerManager.send_every({:monster_ai,       5_000, :think})
       # |> TimerManager.send_every({:unify,  60_000, :unify})
@@ -367,7 +369,6 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
-      # |> TimerManager.send_every({:monster_regen,    1_000, :regen})
       # |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
       # |> TimerManager.send_every({:monster_ai,       5_000, :think})
       # |> TimerManager.send_every({:unify,  60_000, :unify})
@@ -953,22 +954,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:remove_effect, key}, mobile) do
     mobile = Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
-    {:noreply, mobile}
-  end
-
-  def handle_info(:regen, %Mobile{monster_template_id: nil} = mobile) do
-    update_prompt(mobile)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info(:regen, %Mobile{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = mobile) do
-    mobile = mobile
-             |> Map.put(:hp,   min(  hp + hp_regen_per_second(mobile), max_hp))
-             |> Map.put(:mana, min(mana + mana_regen_per_second(mobile), max_mana))
-
-    update_prompt(mobile)
-
     {:noreply, mobile}
   end
 

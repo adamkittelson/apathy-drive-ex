@@ -420,6 +420,23 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:regen, mobile_ref}, room) do
+    room =
+      Room.update_mobile(room, mobile_ref, fn
+        %Mobile{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = mobile ->
+          mobile =
+            mobile
+            |> Map.put(:hp,   min(  hp + Mobile.hp_regen_per_second(mobile), max_hp))
+            |> Map.put(:mana, min(mana + Mobile.mana_regen_per_second(mobile), max_mana))
+            |> TimerManager.send_after({:monster_regen, 1_000, {:regen, mobile.ref}})
+
+            Mobile.update_prompt(mobile)
+          mobile
+      end)
+
+    {:noreply, room}
+  end
+
   def handle_info({:delay_execute_script, mobile_ref, script}, room) do
     mobile = room.mobiles[mobile_ref]
     room = put_in(room.mobiles[mobile_ref], Map.put(mobile, :delayed, false))
