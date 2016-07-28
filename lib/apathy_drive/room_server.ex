@@ -437,6 +437,65 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:apply_periodic_effects, ref}, room) do
+
+    if mobile = Room.get_mobile(room, ref) do
+      room =
+        mobile.effects
+        |> Map.values
+        |> Enum.filter(&(Map.has_key?(&1, "heal")))
+        |> Enum.reduce(room, fn(%{"heal" => heal, "effect_message" => message}, updated_room) ->
+             ability = %{
+               "kind" => "heal",
+               "ignores_global_cooldown" => true,
+               "flags" => [],
+               "instant_effects" => %{"heal" => heal},
+               "cast_message"    => %{"user" => message}
+             }
+
+             Ability.execute(updated_room, ref, ability, [ref])
+           end)
+
+      room =
+        mobile.effects
+        |> Map.values
+        |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
+        |> Enum.reduce(room, fn(%{"heal_mana" => heal, "effect_message" => message}, updated_room) ->
+             ability = %{
+               "kind" => "heal",
+               "ignores_global_cooldown" => true,
+               "flags" => [],
+               "instant_effects" => %{"heal_mana" => heal},
+               "cast_message"    => %{"user" => message}
+             }
+
+             Ability.execute(updated_room, ref, ability, [ref])
+           end)
+
+      room =
+        mobile.effects
+        |> Map.values
+        |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
+        |> Enum.reduce(room, fn(%{"damage" => damage, "effect_message" => message}, updated_room) ->
+             ability = %{
+               "kind" => "attack",
+               "ignores_global_cooldown" => true,
+               "flags" => [],
+               "instant_effects" => %{"damage" => damage},
+               "cast_message"    => %{"user" => message}
+             }
+
+             Ability.execute(updated_room, ref, ability, [ref])
+           end)
+
+      room = TimerManager.send_after(room, {:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
+
+      {:noreply, room}
+    else
+      {:noreply, room}
+    end
+  end
+
   def handle_info({:delay_execute_script, mobile_ref, script}, room) do
     mobile = room.mobiles[mobile_ref]
     room = put_in(room.mobiles[mobile_ref], Map.put(mobile, :delayed, false))
@@ -700,11 +759,9 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      IO.puts "casting spell"
       room = Ability.execute(room, mobile.ref, ability, target)
       {:noreply, room}
     else
-      IO.puts "caster not found"
       {:noreply, room}
     end
   end

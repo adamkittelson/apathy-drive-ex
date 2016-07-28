@@ -346,7 +346,7 @@ defmodule ApathyDrive.Mobile do
       |> set_max_hp
       |> set_hp
       |> TimerManager.send_after({:monster_regen,    1_000, {:regen, ref}})
-      # |> TimerManager.send_every({:periodic_effects, 3_000, :apply_periodic_effects})
+      |> TimerManager.send_after({:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
       # |> TimerManager.send_every({:monster_ai,       5_000, :think})
       # |> TimerManager.send_every({:unify,  60_000, :unify})
       # |> move_after()
@@ -991,45 +991,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:demon, name, message}, mobile) do
     send_scroll(mobile, "<p>[<span class='magenta'>demon</span> : #{name}] #{message}</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info(:apply_periodic_effects, mobile) do
-
-    # periodic damage
-    mobile.effects
-    |> Map.values
-    |> Enum.filter(&(Map.has_key?(&1, "damage")))
-    |> Enum.each(fn(%{"damage" => damage, "effect_message" => message}) ->
-         ability = %{"kind" => "attack",
-                     "ignores_global_cooldown" => true,
-                     "flags" => [],
-                     "instant_effects" => %{"damage" => damage},
-                     "cast_message"    => %{"user" => message}}
-
-         send(self, {:apply_ability, ability, mobile})
-       end)
-
-    # # periodic heal
-    # monster.effects
-    # |> Map.values
-    # |> Enum.filter(&(Map.has_key?(&1, "heal")))
-    # |> Enum.each(fn(%{"heal" => heal}) ->
-    #     ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal" => heal}}}
-    #
-    #     send(self, {:apply_ability, ability, monster})
-    #   end)
-    #
-    # # periodic heal_mana
-    # monster.effects
-    # |> Map.values
-    # |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
-    # |> Enum.each(fn(%{"heal_mana" => heal}) ->
-    #     ability = %Ability{kind: "heal", global_cooldown: nil, flags: [], properties: %{"instant_effects" => %{"heal_mana" => heal}}}
-    #
-    #     send(self, {:apply_ability, ability, monster})
-    #   end)
-
     {:noreply, mobile}
   end
 
