@@ -415,11 +415,12 @@ defmodule ApathyDrive.RoomServer do
               end
           end
 
-        room_exit = Enum.random(exits)
-
-        room = Commands.Move.execute(room, mobile, room_exit)
-
-        {:noreply, room}
+        if Enum.any?(exits) do
+          room_exit = Enum.random(exits)
+          {:noreply, Commands.Move.execute(room, mobile, room_exit)}
+        else
+          {:noreply, Room.move_after(room, ref)}
+        end
       else
         {:noreply, Room.move_after(room, ref)}
       end

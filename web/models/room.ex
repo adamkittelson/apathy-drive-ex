@@ -153,9 +153,7 @@ defmodule ApathyDrive.Room do
            |> Repo.get!(mobile_id)
            |> Mobile.init
 
-         updated_room = Room.mobile_entered(updated_room, monster)
-
-         put_in(updated_room.mobiles[monster.ref], monster)
+         Room.mobile_entered(updated_room, monster)
        end)
   end
 
