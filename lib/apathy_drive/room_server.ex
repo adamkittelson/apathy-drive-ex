@@ -123,10 +123,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:add_items, items})
   end
 
-  def auto_move(room, mobile, unities) do
-    GenServer.cast(room, {:auto_move, mobile, unities})
-  end
-
   def init(id) do
     room =
       Repo.get!(Room, id)
@@ -359,55 +355,12 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:auto_move, mobile, unities}, %Room{} = room) do
-    case room.exits do
-      nil ->
-        Mobile.auto_move(mobile, [])
-      _exits ->
-        valid_exits =
-          case unities do
-            [] ->
-              exits_in_area(room)
-            unities ->
-              if room.room_unity.controlled_by in unities do
-                case non_unity_controlled_exits(room, unities) do
-                  [] ->
-                    unity_controlled_exits(room, unities)
-                  result ->
-                    result
-                  end
-              else
-                unity_controlled_exits(room, unities)
-              end
-          end
-      Mobile.auto_move(mobile, valid_exits)
-    end
-
-    {:noreply, room}
-  end
-
   def handle_cast({:mobile_movement, _mobile, _message}, room) do
     {:noreply, room}
   end
 
   def handle_cast({:mobile_entered, %Mobile{} = mobile, message}, room) do
-
-    from_direction =
-      room
-      |> Room.get_direction_by_destination(mobile.room_id)
-      |> Room.enter_direction()
-
-    if mobile.monster_template_id do
-      Room.display_enter_message(room, mobile, message)
-
-      Room.audible_movement(room, from_direction)
-    end
-
-    mobile = Mobile.set_room_id(mobile, room.id)
-
-    Commands.Look.execute(room, mobile, [])
-
-    room = put_in(room.mobiles[mobile.ref], mobile)
+    room = Room.mobile_entered(room, mobile, message)
 
     {:noreply, room}
   end
@@ -433,6 +386,51 @@ defmodule ApathyDrive.RoomServer do
             Mobile.update_prompt(mobile)
           mobile
       end)
+
+    {:noreply, room}
+  end
+
+  def handle_info({:auto_move, ref}, room) do
+    if mobile = Room.get_mobile(room, ref) do
+      if should_move?(room, mobile) do
+        exits =
+          case room.exits do
+            nil ->
+              []
+            _exits ->
+              case mobile.unities do
+                [] ->
+                  exits_in_area(room)
+                unities ->
+                  if room.room_unity.controlled_by in unities do
+                    case non_unity_controlled_exits(room, unities) do
+                      [] ->
+                        unity_controlled_exits(room, unities)
+                      result ->
+                        result
+                      end
+                  else
+                    unity_controlled_exits(room, unities)
+                  end
+              end
+          end
+
+        room_exit = Enum.random(exits)
+
+        room = Commands.Move.execute(room, mobile, room_exit)
+
+        {:noreply, room}
+      else
+        {:noreply, Room.move_after(room, ref)}
+      end
+    else
+      {:noreply, room}
+    end
+  end
+
+
+  def handle_info({:think, ref}, room) do
+    room = ApathyDrive.AI.think(room, ref)
 
     {:noreply, room}
   end
@@ -844,5 +842,20 @@ defmodule ApathyDrive.RoomServer do
     |> Room.update_essence_targets
     |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
   end
+
+  defp should_move?(%Room{}, %Mobile{movement: "stationary"}), do: false
+  defp should_move?(%Room{} = room, %Mobile{spirit: nil} = mobile) do
+    cond do
+      # at least 80% health and no enemies present, go find something to kill
+      ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(Room.local_hated_targets(room, mobile)) ->
+        true
+      # 30% or less health and enemies present, run away!
+      ((mobile.hp / mobile.max_hp) <= 0.3) and Enum.any?(Room.local_hated_targets(room, mobile)) ->
+        true
+      true ->
+        false
+    end
+  end
+  defp should_move?(%Room{}, %Mobile{}), do: false
 
 end

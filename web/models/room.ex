@@ -45,6 +45,65 @@ defmodule ApathyDrive.Room do
     end
   end
 
+  def mobile_entered(%Room{} = room, %Mobile{} = mobile, message \\ nil) do
+    from_direction =
+      room
+      |> Room.get_direction_by_destination(mobile.room_id)
+      |> Room.enter_direction()
+
+    if mobile.monster_template_id do
+      Room.display_enter_message(room, mobile, message)
+
+      Room.audible_movement(room, from_direction)
+    end
+
+    mobile = Mobile.set_room_id(mobile, room.id)
+
+    ApathyDrive.Commands.Look.execute(room, mobile, [])
+
+    room = put_in(room.mobiles[mobile.ref], mobile)
+
+    room =
+      Enum.reduce(room.mobiles, room, fn {ref, _}, updated_room ->
+        Room.update_mobile(updated_room, ref, fn
+          %Mobile{monster_template_id: nil} = mobile_in_room ->
+            mobile_in_room
+          %Mobile{} = mobile_in_room ->
+            ApathyDrive.Aggression.react(
+              %{
+                mobile: mobile_in_room,
+                alignment: mobile_in_room.alignment,
+                unities: mobile_in_room.unities,
+                spawned_at: mobile_in_room.spawned_at,
+                name: mobile_in_room.name
+              },
+              Mobile.track_data(mobile)
+            )
+        end)
+      end)
+
+    Room.move_after(room, mobile.ref)
+  end
+
+  def move_after(%Room{} = room, ref) do
+    Room.update_mobile(room, ref, fn %Mobile{movement_frequency: frequency} = mobile ->
+      TimerManager.send_after(mobile, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
+    end)
+  end
+
+  def local_hated_targets(%Room{mobiles: mobiles}, %Mobile{hate: hate}) do
+    mobiles
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(potential_target, targets) ->
+         threat = Map.get(hate, potential_target, 0)
+         if threat > 0 do
+           Map.put(targets, threat, potential_target)
+         else
+           targets
+         end
+       end)
+  end
+
   def next_timer(%Room{} = room) do
     [TimerManager.next_timer(room) | Enum.map(Map.values(room.mobiles), &TimerManager.next_timer/1)]
     |> Enum.reject(&is_nil/1)
@@ -94,9 +153,7 @@ defmodule ApathyDrive.Room do
            |> Repo.get!(mobile_id)
            |> Mobile.init
 
-         Room.audible_movement(room, nil)
-
-         Room.display_enter_message(room, monster)
+         updated_room = Room.mobile_entered(updated_room, monster)
 
          put_in(updated_room.mobiles[monster.ref], monster)
        end)
@@ -668,5 +725,11 @@ defmodule ApathyDrive.Room do
   defp sound_direction("up"),      do: "above you"
   defp sound_direction("down"),    do: "below you"
   defp sound_direction(direction), do: "to the #{direction}"
+
+  defp jitter(time) do
+    time
+    |> :rand.uniform
+    |> Kernel.+(time)
+  end
 
 end

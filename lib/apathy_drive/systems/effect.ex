@@ -90,7 +90,7 @@ defmodule Systems.Effect do
           end)
         end
 
-        send(self, :think)
+        send(self, {:think, entity.ref})
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->
         found_key = effects

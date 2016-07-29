@@ -138,35 +138,30 @@ defmodule ApathyDrive.Ability do
 
   def scale_effect(%Mobile{}, _effect_name, effect), do: effect
 
-  def find_mobile_in_room(room_id, string, %Mobile{pid: pid} = mobile) do
-    PubSub.subscribers("rooms:#{room_id}:mobiles")
-    |> Enum.map(fn(mobile_pid) ->
-         if mobile_pid == pid do
-           mobile
-         else
-           mobile_pid
-         end
-       end)
-    |> Match.one(:name_contains, string)
+  def find_mobile_in_room(%Room{} = room, %Mobile{}, query) do
+    mobiles =
+      room.mobiles
+      |> Map.values
+
+    mobiles
+    |> Match.one(:name_contains, query)
   end
 
-  def find_other_mobile_in_room(room_id, string, %Mobile{pid: pid}) do
-    PubSub.subscribers("rooms:#{room_id}:mobiles", [pid])
-    |> Match.one(:name_contains, string)
+  def find_other_mobile_in_room(%Room{} = room, %Mobile{ref: mobile_ref}, query) do
+    mobiles =
+      room.mobiles
+      |> Map.values
+
+    mobiles
+    |> Enum.reject(&(&1.ref == mobile_ref))
+    |> Match.one(:name_contains, query)
   end
 
-  def alignment_enemies(%Mobile{} = mobile) do
-    case mobile.alignment do
-      "good" ->
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:neutral") ++
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:evil")
-      "neutral" ->
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:good") ++
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:evil")
-      "evil" ->
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:neutral") ++
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:good")
-    end
+  def alignment_enemies(%Room{} = room, %Mobile{} = mobile) do
+    room.mobiles
+    |> Map.values
+    |> Enum.reject(&(&1.alignment == mobile.alignment))
+    |> Enum.map(&Map.get(&1, :ref))
   end
 
   def wrap_target(nil),    do: []
@@ -177,87 +172,6 @@ defmodule ApathyDrive.Ability do
   def reject(%Mobile{pid: target_pid}, %Mobile{}), do: target_pid
   def reject(target_pid, %Mobile{pid: pid}) when pid == target_pid, do: nil
   def reject(target_pid, %Mobile{}), do: target_pid
-
-  def local_hated_targets(%Mobile{} = monster) do
-    monster
-    |> Mobile.local_hated_targets
-    |> Map.values
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "attack"}, "") do
-    mobile
-    |> Mobile.aggro_target
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "attack"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_other_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "blessing"}, "") do
-    mobile.pid
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind": "blessing"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "curse"}, "") do
-    mobile
-    |> Mobile.aggro_target
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "curse"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_other_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "heal"}, "") do
-    mobile.pid
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "heal"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "room attack"}, target) when is_binary(target) do
-    Enum.uniq(alignment_enemies(mobile) ++ local_hated_targets(mobile))
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "room blessing"}, target) when is_binary(target) do
-    Enum.uniq(PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")) --
-    local_hated_targets(mobile)
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "room curse"}, target) when is_binary(target) do
-    Enum.uniq(alignment_enemies(mobile) ++ local_hated_targets(mobile))
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "room heal"}, target) when is_binary(target) do
-    Enum.uniq(PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")) --
-    local_hated_targets(mobile)
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "utility"}, "") do
-    mobile.pid
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "utility"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
 
   def display_pre_cast_message(%Room{} = room, caster_ref, %{"pre-cast_message" => _} = ability) do
     mobile = Room.get_mobile(room, caster_ref)
@@ -409,34 +323,83 @@ defmodule ApathyDrive.Ability do
   end
   def execute_multi_cast(%Room{} = room, _caster_ref, %{} = _ability, _targets), do: room
 
-  def get_targets(%Room{} = room, mobile_ref, %{"kind" => kind}, query) when is_binary(query) and kind in ["attack", "curse"] do
-    mobiles =
-      room.mobiles
-      |> Map.values
-
-    target =
-      mobiles
-      |> Enum.reject(&(&1.ref == mobile_ref))
-      |> Match.one(:name_contains, query)
-
-    List.wrap(target && target.ref)
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "attack"}, "") do
+    room
+    |> Mobile.aggro_target(mobile)
+    |> wrap_target
   end
 
-  def get_targets(%Room{} = room, mobile_ref, %{"kind" => kind}, query)  when is_binary(query) and kind in ["room attack", "room curse"] do
-    mobiles =
-      room.mobiles
-      |> Map.values
-
-    target =
-      mobiles
-      |> Enum.reject(&(&1.unities == Room.get_mobile(room, mobile_ref).unities))
-      |> Match.one(:name_contains, query)
-
-    List.wrap(target && target.ref)
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "attack"}, query) do
+    find_other_mobile_in_room(room, mobile, query)
+    |> wrap_target
   end
 
-  def get_targets(%Room{}, mobile_ref, _ability, query) when is_binary(query) do
-    [mobile_ref]
+  def get_targets(%Room{}, %Mobile{ref: ref}, %{"kind" => "blessing"}, "") do
+    wrap_target(ref)
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind": "blessing"}, query) do
+    find_mobile_in_room(room, mobile, query)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "curse"}, "") do
+    room
+    |> Mobile.aggro_target(mobile)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "curse"}, query) do
+    room
+    |> find_other_mobile_in_room(mobile, query)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{}, %Mobile{} = mobile, %{"kind" => "heal"}, "") do
+    mobile.ref
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "heal"}, query) do
+    room
+    |> find_mobile_in_room(mobile, query)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room attack"}, _query) do
+    Enum.uniq(alignment_enemies(room, mobile) ++ Room.local_hated_targets(room, mobile))
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room blessing"}, _query) do
+    room.mobles
+    |> Map.values
+    |> Enum.filter(&(&1.alignment == mobile.alignment))
+    |> Enum.map(&Map.get(&1, :ref))
+    |> Kernel.--(Room.local_hated_targets(room, mobile))
+    |> Enum.uniq
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room curse"}, _query) do
+    Enum.uniq(alignment_enemies(room, mobile) ++ Room.local_hated_targets(room, mobile))
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room heal"}, _query) do
+    room.mobles
+    |> Map.values
+    |> Enum.filter(&(&1.alignment == mobile.alignment))
+    |> Enum.map(&Map.get(&1, :ref))
+    |> Kernel.--(Room.local_hated_targets(room, mobile))
+    |> Enum.uniq
+  end
+
+  def get_targets(%Room{}, %Mobile{} = mobile, %{"kind" => "utility"}, "") do
+    wrap_target(mobile.ref)
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "utility"}, query) do
+    room
+    |> find_mobile_in_room(mobile, query)
+    |> wrap_target
   end
 
   def attack_abilities(%Mobile{abilities: abilities} = mobile) do
@@ -690,7 +653,6 @@ defmodule ApathyDrive.Ability do
           target
         else
           enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))
-
           put_in(target.hate, Map.update(target.hate, caster_ref, damage, fn(hate) -> hate + enmity end))
         end
       end)

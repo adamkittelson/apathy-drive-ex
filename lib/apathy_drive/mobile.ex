@@ -105,10 +105,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, {:move, room, room_exit})
   end
 
-  def auto_move(pid, valid_exits) do
-    GenServer.cast(pid, {:auto_move, valid_exits})
-  end
-
   def greet(mobile, query) do
     GenServer.cast(mobile, {:greet, query})
   end
@@ -346,9 +342,8 @@ defmodule ApathyDrive.Mobile do
       |> set_hp
       |> TimerManager.send_after({:monster_regen,    1_000, {:regen, ref}})
       |> TimerManager.send_after({:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
-      # |> TimerManager.send_every({:monster_ai,       5_000, :think})
+      |> TimerManager.send_after({:monster_ai,       5_000, {:think, ref}})
       # |> TimerManager.send_every({:unify,  60_000, :unify})
-      # |> move_after()
 
       save(mobile)
   end
@@ -594,19 +589,6 @@ defmodule ApathyDrive.Mobile do
     max_mana * 0.01 * modifier
   end
 
-  def local_hated_targets(%Mobile{hate: hate} = mobile) do
-    "rooms:#{mobile.room_id}:mobiles"
-    |> PubSub.subscribers
-    |> Enum.reduce(%{}, fn(potential_target, targets) ->
-         threat = Map.get(hate, potential_target, 0)
-         if threat > 0 do
-           Map.put(targets, threat, potential_target)
-         else
-           targets
-         end
-       end)
-  end
-
   def global_hated_targets(%Mobile{hate: hate}) do
     hate
     |> Map.keys
@@ -620,8 +602,8 @@ defmodule ApathyDrive.Mobile do
        end)
   end
 
-  def aggro_target(%Mobile{} = mobile) do
-    targets = local_hated_targets(mobile)
+  def aggro_target(%Room{} = room, %Mobile{} = mobile) do
+    targets = Room.local_hated_targets(room, mobile)
 
     top_threat = targets
                  |> Map.keys
@@ -671,7 +653,7 @@ defmodule ApathyDrive.Mobile do
 
   def track_data(%Mobile{spirit: spirit} = mobile) do
     %{
-      mobile: self(),
+      mobile: mobile.ref,
       alignment: mobile.alignment,
       unities: mobile.unities,
       essence: mobile.experience,
@@ -697,20 +679,6 @@ defmodule ApathyDrive.Mobile do
     mobile
     |> Map.put(:spirit, Repo.save!(spirit))
     |> Repo.save!
-  end
-
-  defp react_to_mobiles(%Mobile{monster_template_id: nil} = mobile, _mobiles), do: mobile
-  defp react_to_mobiles(%Mobile{} = mobile, mobiles) do
-    mobiles
-    |> Enum.reduce(mobile, fn(intruder, mobile) ->
-         ApathyDrive.Aggression.react(%{mobile: mobile,
-                                        alignment: mobile.alignment,
-                                        unities: mobile.unities,
-                                        spawned_at: mobile.spawned_at,
-                                        name: mobile.name
-                                      },
-                                      intruder)
-       end)
   end
 
   defp update_essence(%Mobile{spirit: spirit} = mobile) do
@@ -761,32 +729,10 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  defp handle_diff(%Mobile{} = mobile, "spirits:online", %{joins: _joins, leaves: _leaves}), do: mobile
-  defp handle_diff(%Mobile{room_id: _room_id} = mobile, "rooms:" <> _, %{joins: joins, leaves: _leaves}) do
-    react_to_mobiles(mobile, Presence.metas(joins))
-  end
-
   defp jitter(time) do
     time
     |> :rand.uniform
     |> Kernel.+(time)
-  end
-
-  defp should_move?(%Mobile{spirit: nil} = mobile) do
-    cond do
-      # at least 80% health and no enemies present, go find something to kill
-      ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(local_hated_targets(mobile)) ->
-        true
-      # 30% or less health and enemies present, run away!
-      ((mobile.hp / mobile.max_hp) <= 0.3) and Enum.any?(local_hated_targets(mobile)) ->
-        true
-      true ->
-        false
-    end
-  end
-
-  defp move_after(%Mobile{movement_frequency: frequency} = mobile) do
-    TimerManager.send_after(mobile, {:monster_movement, jitter(:timer.seconds(frequency)), :auto_move})
   end
 
   def handle_cast(:update_room, %Mobile{socket: nil} = mobile) do
@@ -820,19 +766,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_cast({:move, room, room_exit}, mobile) do
     mobile = Commands.Move.execute(mobile, room, room_exit)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:auto_move, []}, mobile) do
-    {:noreply, mobile}
-  end
-  def handle_cast({:auto_move, exits}, mobile) do
-    room_exit = Enum.random(exits)
-
-    mobile.room_id
-    |> RoomServer.find
-    |> RoomServer.execute_command(self, room_exit["direction"], [])
-
     {:noreply, mobile}
   end
 
@@ -883,26 +816,8 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info(:auto_move, %Mobile{movement: "stationary"} = mobile) do
-    {:noreply, move_after(mobile)}
-  end
-  def handle_info(:auto_move, %Mobile{spirit: nil} = mobile) do
-    if should_move?(mobile) do
-      room = RoomServer.find(mobile.room_id)
-      if room, do: RoomServer.auto_move(room, self, mobile.unities)
-    end
-    {:noreply, move_after(mobile)}
-  end
-  def handle_info(:auto_move, mobile) do
-    {:noreply, move_after(mobile)}
-  end
-
-  def handle_info(%Phoenix.Socket.Broadcast{topic: topic, event: "presence_diff", payload: diff}, %Mobile{} = mobile) do
-    {:noreply, handle_diff(mobile, topic, diff)}
-  end
-
-  def handle_info({:also_here, mobiles}, %Mobile{} = mobile) do
-    {:noreply, react_to_mobiles(mobile, mobiles)}
+  def handle_info({:also_here, _mobiles}, %Mobile{} = mobile) do
+    {:noreply, mobile}
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{}, %Mobile{socket: nil} = mobile) do
@@ -912,10 +827,6 @@ defmodule ApathyDrive.Mobile do
     send(socket, message)
 
     {:noreply, mobile}
-  end
-
-  def handle_info(:think, mobile) do
-    {:noreply, ApathyDrive.AI.think(mobile)}
   end
 
   def handle_info({:remove_effect, key}, mobile) do

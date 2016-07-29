@@ -18,11 +18,7 @@ defmodule ApathyDrive.LairSpawning do
           MonsterTemplate.create_monster(monster_template, room)
           |> Mobile.init
 
-        Room.audible_movement(room, nil)
-
-        Room.display_enter_message(room, monster)
-
-        room = put_in(room.mobiles[monster.ref], monster)
+        room = Room.mobile_entered(room, monster)
 
         spawn_lair(room, lair_monsters)
       else

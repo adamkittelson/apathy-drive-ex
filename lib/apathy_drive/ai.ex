@@ -1,76 +1,81 @@
 defmodule ApathyDrive.AI do
-  alias ApathyDrive.{Mobile, Ability}
+  alias ApathyDrive.{Room, Mobile, Ability, TimerManager}
 
-  def think(%Mobile{} = mobile) do
-    mobile =
-      mobile
-      |> calm_down()
+  def think(%Room{} = room, mobile_ref) do
+    Room.update_mobile(room, mobile_ref, fn mobile ->
+      mobile =
+        room
+        |> calm_down(mobile)
+        |> TimerManager.send_after({:monster_ai, 5_000, {:think, mobile_ref}})
 
-    if casting?(mobile) do
-      mobile
-    else
-      heal(mobile) || bless(mobile) || curse(mobile) || attack(mobile) || mobile
-    end
+      if casting?(mobile) do
+        mobile
+      else
+        heal(room, mobile) || bless(room, mobile) || curse(room, mobile) || attack(room, mobile) || mobile
+      end
+    end)
   end
 
-  def calm_down(%Mobile{hate: hate, room_id: room_id} = mobile) do
-    mobiles_in_room = ApathyDrive.PubSub.subscribers("rooms:#{room_id}:mobiles")
-                      |> Enum.into(HashSet.new)
+  def calm_down(%Room{mobiles: mobiles}, %Mobile{hate: hate} = mobile) do
+    mobiles_in_room =
+      mobiles
+      |> Map.keys
+      |> Enum.into(HashSet.new)
 
-    hate = hate
-           |> Map.keys
-           |> Enum.into(HashSet.new)
-           |> HashSet.difference(mobiles_in_room)
-           |> Enum.reduce(hate, fn(enemy, new_hate) ->
-                current = Map.get(new_hate, enemy)
-                if current > 5 do
-                  Map.put(new_hate, enemy, current - 5)
-                else
-                  Map.delete(new_hate, enemy)
-                end
-              end)
+    hate =
+      hate
+      |> Map.keys
+      |> Enum.into(HashSet.new)
+      |> HashSet.difference(mobiles_in_room)
+      |> Enum.reduce(hate, fn(enemy, new_hate) ->
+           current = Map.get(new_hate, enemy)
+           if current > 5 do
+             Map.put(new_hate, enemy, current - 5)
+           else
+             Map.delete(new_hate, enemy)
+           end
+         end)
 
     Map.put(mobile, :hate, hate)
   end
 
-  def heal(%Mobile{hp: hp, max_hp: max_hp, spirit: nil} = mobile) do
+  def heal(%Room{} = room, %Mobile{hp: hp, max_hp: max_hp, spirit: nil} = mobile) do
     unless Ability.on_global_cooldown?(mobile) do
       chance = trunc((max_hp - hp) / max_hp * 100)
 
       roll = :rand.uniform(100)
 
       if chance > roll do
-        ability = mobile
-                  |> Ability.heal_abilities
-                  |> random_ability(mobile)
+        ability =
+          mobile
+          |> Ability.heal_abilities
+          |> random_ability(mobile)
 
         if ability do
-          send(self, {:execute_ability, ability})
-          mobile
+          Ability.execute(room, mobile.ref, ability, [mobile.ref])
         end
       end
     end
   end
-  def heal(%Mobile{}), do: nil
+  def heal(%Room{}, %Mobile{}), do: nil
 
-  def bless(%Mobile{spirit: nil} = mobile) do
+  def bless(%Room{} = room, %Mobile{spirit: nil} = mobile) do
     unless Ability.on_global_cooldown?(mobile) do
       ability = mobile
                 |> Ability.bless_abilities
                 |> random_ability(mobile)
 
       if ability do
-        send(self, {:execute_ability, ability})
-        mobile
+        Ability.execute(room, mobile.ref, ability, [mobile.ref])
       end
     end
   end
-  def bless(%Mobile{}), do: nil
+  def bless(%Room{}, %Mobile{}), do: nil
 
-  def curse(%Mobile{spirit: nil} = mobile) do
+  def curse(%Room{} = room, %Mobile{spirit: nil} = mobile) do
     if :rand.uniform(100) > 95 do
-      if target = Mobile.aggro_target(mobile) do
-        curse = 
+      if target = Mobile.aggro_target(room, mobile) do
+        curse =
           if !Ability.on_global_cooldown?(mobile) do
 
             mobile
@@ -79,17 +84,15 @@ defmodule ApathyDrive.AI do
           end
 
         if curse do
-          send(self, {:execute_ability, curse, [target]})
-          mobile
+          Ability.execute(room, mobile.ref, curse, [target])
         end
       end
     end
   end
-  def curse(%Mobile{}), do: nil
+  def curse(%Room{}, %Mobile{}), do: nil
 
-  def attack(%Mobile{spirit: nil} = mobile) do
-    if target = Mobile.aggro_target(mobile) do
-
+  def attack(%Room{} = room, %Mobile{spirit: nil} = mobile) do
+    if target = Mobile.aggro_target(room, mobile) do
       attack = cond do
         !Ability.on_global_cooldown?(mobile) ->
            mobile
@@ -100,10 +103,14 @@ defmodule ApathyDrive.AI do
       end
 
       if attack do
-        send(self, {:execute_ability, attack, [target]})
-        mobile
-        |> Mobile.set_attack_target(target)
-        |> Mobile.initiate_combat
+        room = Ability.execute(room, mobile.ref, attack, [target])
+
+        mobile =
+          mobile
+          |> Mobile.set_attack_target(target)
+          |> Mobile.initiate_combat
+
+        put_in(room.mobiles[mobile.ref], mobile)
       else
         mobile
         |> Mobile.set_attack_target(target)
@@ -111,8 +118,8 @@ defmodule ApathyDrive.AI do
       end
     end
   end
-  def attack(%{spirit: _} = mobile) do
-    if target = Mobile.aggro_target(mobile) do
+  def attack(%Room{} = room, %{spirit: _} = mobile) do
+    if target = Mobile.aggro_target(room, mobile) do
 
       mobile
       |> Mobile.set_attack_target(target)
