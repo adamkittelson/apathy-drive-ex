@@ -712,6 +712,7 @@ defmodule ApathyDrive.Room do
          end)
 
     put_in(room.room_unity.essence_targets, essences)
+    |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
   end
 
   def average([]), do: nil
