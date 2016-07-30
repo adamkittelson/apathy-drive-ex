@@ -669,23 +669,6 @@ defmodule ApathyDrive.Mobile do
     "<span class='#{alignment_color(mobile)}'>#{name}</span>"
   end
 
-  def track(%Mobile{} = mobile) do
-    send(self(), {:also_here, Presence.metas("rooms:#{mobile.room_id}:mobiles")})
-    {:ok, _} = Presence.track(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()), track_data(mobile))
-
-    mobile.room_id
-    |> RoomServer.find
-    |> send(:update_essence_targets)
-  end
-
-  def untrack(%Mobile{} = mobile) do
-    Presence.untrack(self(), "rooms:#{mobile.room_id}:mobiles", inspect(self()))
-
-    mobile.room_id
-    |> RoomServer.find
-    |> send(:update_essence_targets)
-  end
-
   def track_data(%Mobile{spirit: spirit} = mobile) do
     %{
       mobile: mobile.ref,

@@ -160,7 +160,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       room
       |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-      |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
+      |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
 
     {:ok, room}
   end
@@ -706,7 +706,7 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       if room.room_unity.essences != essences do
-        TimerManager.send_after(room, {:update_essence, 1_000, :update_essence})
+        TimerManager.send_after(room, {:update_essence, Room.essence_update_interval(room), :update_essence})
       else
         Room.report_essence(room)
         room
@@ -730,14 +730,8 @@ defmodule ApathyDrive.RoomServer do
       if room_unity == room.room_unity do
         room
       else
-        update_essence_targets(room)
+        Room.update_essence_targets(room)
       end
-
-    {:noreply, room}
-  end
-
-  def handle_info(:update_essence_targets, room) do
-    room = update_essence_targets(room)
 
     {:noreply, room}
   end
@@ -880,12 +874,6 @@ defmodule ApathyDrive.RoomServer do
   defp passable?(room, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"], do: ApathyDrive.Doors.open?(room, room_exit)
   defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"], do: true
   defp passable?(_room, _room_exit), do: false
-
-  defp update_essence_targets(room) do
-    room
-    |> Room.update_essence_targets
-    |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
-  end
 
   defp should_move?(%Room{}, %Mobile{movement: "stationary"}), do: false
   defp should_move?(%Room{} = room, %Mobile{spirit: nil} = mobile) do

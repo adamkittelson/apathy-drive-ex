@@ -584,6 +584,14 @@ defmodule ApathyDrive.Room do
     end)
   end
 
+  def essence_update_interval(%Room{mobiles: mobiles}) do
+    if Enum.any?(mobiles, fn {_ref, mobile} -> !is_nil(mobile.spirit) end) do
+      1000
+    else
+      10_000
+    end
+  end
+
   def update_essence(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
     room = if Enum.any?(room.room_unity.essence_targets), do: room, else: update_essence_targets(room)
 
@@ -712,7 +720,7 @@ defmodule ApathyDrive.Room do
          end)
 
     put_in(room.room_unity.essence_targets, essences)
-    |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
+    |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
   end
 
   def average([]), do: nil
