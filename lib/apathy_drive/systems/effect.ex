@@ -9,7 +9,13 @@ defmodule Systems.Effect do
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect, duration) do
     key = key + 1
-    entity = TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, key}})
+    entity = 
+      case entity do
+        %{ref: ref} ->
+          TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, ref, key}})
+        %{} ->
+          TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, key}})
+      end
 
     effect = if effect && effect["timers"] do
       Map.put(effect, "timers", [{:effect, key} | effect["timers"]])

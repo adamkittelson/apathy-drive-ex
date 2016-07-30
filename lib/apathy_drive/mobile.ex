@@ -911,11 +911,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:remove_effect, key}, mobile) do
-    mobile = Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
-    {:noreply, mobile}
-  end
-
   def handle_info({:angel, name, message}, mobile) do
     send_scroll(mobile, "<p>[<span class='white'>angel</span> : #{name}] #{message}</p>")
     {:noreply, mobile}

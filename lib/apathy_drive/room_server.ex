@@ -722,6 +722,13 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:remove_effect, ref, key}, room) do
+    room = Room.update_mobile(room, ref, fn mobile ->
+      Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
+    end)
+    {:noreply, room}
+  end
+
   def handle_info({:room_updated, changes}, room) do
     {:noreply, Map.merge(room, changes)}
   end
