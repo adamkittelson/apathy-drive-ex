@@ -25,9 +25,11 @@ defmodule ApathyDrive.Death do
   def kill(%Room{} = room, victim_ref, [:drop_equipment | remaining_steps], killed_by) do
     room =
       Room.update_mobile(room, victim_ref, fn(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}}) ->
-        room
-        |> Room.add_items(inventory ++ equipment)
-        |> update_in(room.mobiles[victim_ref].spirit, &Map.merge(&1, %{inventory: [], equipment: []}))
+        room =
+          room
+          |> Room.add_items(inventory ++ equipment)
+
+        update_in(room.mobiles[victim_ref].spirit, &Map.merge(&1, %{inventory: [], equipment: []}))
       end)
 
     kill(room, victim_ref, remaining_steps, killed_by)
@@ -119,8 +121,6 @@ defmodule ApathyDrive.Death do
   end
 
   defp convert_lair(%{spawned_at: room_id}, unity) do
-    IO.puts "maybe converting room #{room_id} for #{unity}"
-
     room_id
     |> RoomServer.find
     |> RoomServer.convert?(unity)

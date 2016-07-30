@@ -46,7 +46,8 @@ defmodule ApathyDrive.Commands.Bash do
       true ->
         mirror_bash_fail!(room_exit, room.id)
         Mobile.send_scroll(mobile, "<p>Your attempts to bash through fail!</p>")
-        Room.send_scroll("<p>You see #{Mobile.look_name(mobile)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", mobile)
+        Room.send_scroll(room, "<p>You see #{Mobile.look_name(mobile)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", mobile)
+        room
     end
   end
 

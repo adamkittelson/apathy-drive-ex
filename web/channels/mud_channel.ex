@@ -55,7 +55,7 @@ defmodule ApathyDrive.MUDChannel do
 
   def handle_info({:respawn, spirit: spirit}, socket) do
     spirit =
-      update_in(spirit.experience, &(max(&1, 0)))
+      update_in(spirit.experience, &(max(trunc(&1), 0)))
       |> Repo.save!
 
     ref =
