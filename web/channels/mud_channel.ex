@@ -65,6 +65,7 @@ defmodule ApathyDrive.MUDChannel do
 
     socket =
       socket
+      |> assign(:room_id, spirit.room_id)
       |> assign(:mobile_ref, ref)
 
     send(self(), :after_join)

@@ -52,6 +52,90 @@ defmodule ApathyDrive.Mobile do
     timestamps
   end
 
+  def generate_loot(%Mobile{} = mobile, monster_template_id, level, global_chance) do
+    ItemDrop.monster_drops(monster_template_id)
+    |> Enum.map(fn(%{item_id: item_id, chance: chance}) ->
+         ApathyDrive.Item.generate_item(%{chance: chance, item_id: item_id, level: level})
+       end)
+    |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: global_chance, item_id: :global, level: level}))
+    |> Enum.reject(&is_nil/1)
+    |> case do
+         [] ->
+           mobile
+         items ->
+           Mobile.send_scroll(mobile, "<p>\n<span class='white'>A wild surge of spirtual essence coalesces into:</span></p>")
+           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>   STR  |   AGI  |   WIL  | Item Name</span></p>")
+           mobile =
+             Enum.reduce(items, mobile, fn(item, updated_mobile) ->
+               current_data =
+                 updated_mobile
+                 |> Mobile.score_data
+
+               equipped =
+                 updated_mobile
+                 |> Commands.Wear.equip_item(item)
+
+               equipped_data = Mobile.score_data(equipped.mobile)
+
+               data =
+                 current_data
+                 |> Map.take([:strength, :agility, :will])
+                 |> Enum.reduce(%{}, fn({key, val}, values) ->
+                      diff = equipped_data[key] - val
+                      color = cond do
+                        diff > 0 ->
+                          "green"
+                        diff < 0 ->
+                          "dark-red"
+                        true ->
+                          "dark-cyan"
+                      end
+                      value =
+                        apply(Item, key, [item])
+                        |> to_string
+                        |> String.rjust(3)
+
+                      diff =
+                        String.ljust("(#{diff})", 5)
+
+                      Map.put(values, key, "#{value}<span class='#{color}'>#{diff}</span>")
+                    end)
+
+               Mobile.send_scroll(updated_mobile, "<p><span class='dark-cyan'>#{data.strength}|#{data.agility}|#{data.will}| #{item["name"]}</span></p>")
+
+               if (equipped_data.strength + equipped_data.agility + equipped_data.will) > (current_data.strength + current_data.agility + current_data.will) do
+                 if Map.has_key?(equipped, :unequipped) do
+                   Enum.each(equipped.unequipped, fn(unequipped_item) ->
+                     Mobile.send_scroll(updated_mobile, "<p>You remove #{unequipped_item["name"]}.</p>")
+                   end)
+                 end
+
+                 Mobile.send_scroll(updated_mobile, "<p>You are now wearing #{item["name"]}.</p>")
+
+                 if Map.has_key?(equipped, :unequipped) do
+                   Enum.reduce(equipped.unequipped, equipped.mobile, fn(unequipped_item, unequipped_mobile) ->
+                      exp = ApathyDrive.Item.deconstruction_experience(unequipped_item)
+                      Mobile.send_scroll(unequipped_mobile, "<p>You disintegrate the #{unequipped_item["name"]} and absorb #{exp} essence.</p>")
+
+                      put_in(unequipped_mobile.spirit.inventory, List.delete(unequipped_mobile.spirit.inventory, unequipped_item))
+                      |> Mobile.add_experience(exp)
+                   end)
+                 else
+                   equipped.mobile
+                 end
+               else
+                 exp = ApathyDrive.Item.deconstruction_experience(item)
+                 Mobile.send_scroll(updated_mobile, "<p>You disintegrate the #{item["name"]} and absorb #{exp} essence.</p>")
+                 Mobile.add_experience(updated_mobile, exp)
+               end
+             end)
+
+           Repo.save!(mobile.spirit)
+
+           mobile
+       end
+  end
+
   def set_room_id(%Mobile{spirit: nil} = mobile, room_id) do
     put_in(mobile.room_id, room_id)
     |> save
@@ -120,9 +204,6 @@ defmodule ApathyDrive.Mobile do
     GenServer.cast(mobile, :purify_room)
   end
 
-  def add_experience(mobile, exp) when is_pid(mobile) do
-    GenServer.cast(mobile, {:add_experience, exp})
-  end
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
     exp = trunc(exp)
 
@@ -132,7 +213,8 @@ defmodule ApathyDrive.Mobile do
       mobile
       |> Map.put(:experience, experience + exp)
       |> ApathyDrive.Level.advance
-      |> Map.put(:spirit, Spirit.add_experience(mobile.spirit, exp))
+
+    mobile = Spirit.add_experience(mobile, exp)
 
 
     if (mobile.level != level) or (initial_spirit_level != (mobile.spirit && mobile.spirit.level)) do
@@ -340,8 +422,8 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
-      |> TimerManager.send_after({:monster_regen,    1_000, {:regen, ref}})
-      |> TimerManager.send_after({:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
+      # |> TimerManager.send_after({:monster_regen,    1_000, {:regen, ref}})
+      # |> TimerManager.send_after({:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
       |> TimerManager.send_after({:monster_ai,       5_000, {:think, ref}})
       # |> TimerManager.send_every({:unify,  60_000, :unify})
 
@@ -834,28 +916,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:mobile_died, mobile: %Mobile{}, reward: _exp}, %Mobile{unities: [], spirit: nil} = mobile) do
-    {:noreply, mobile}
-  end
-  def handle_info({:mobile_died, mobile: %Mobile{} = _deceased, reward: exp}, %Mobile{spirit: nil} = mobile) do
-    mobile = add_experience(mobile, exp)
-
-    {:noreply, mobile}
-  end
-  def handle_info({:mobile_died, mobile: %Mobile{} = deceased, reward: exp}, %Mobile{spirit: %Spirit{}} = mobile) do
-    message = deceased.death_message
-              |> interpolate(%{"name" => deceased.name})
-              |> capitalize_first
-
-    send_scroll(mobile, "<p>#{message}</p>")
-
-    send_scroll(mobile, "<p>You gain #{exp} essence.</p>")
-
-    mobile = add_experience(mobile, exp)
-
-    {:noreply, mobile}
-  end
-
   def handle_info({:angel, name, message}, mobile) do
     send_scroll(mobile, "<p>[<span class='white'>angel</span> : #{name}] #{message}</p>")
     {:noreply, mobile}
@@ -931,97 +991,6 @@ defmodule ApathyDrive.Mobile do
     if socket != old_socket, do: send(old_socket, :go_home)
 
     {:noreply, Map.put(mobile, :socket, socket)}
-  end
-
-  def handle_info(:die, mobile) do
-    Systems.Death.kill(mobile)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:generate_loot, monster_template_id, level, global_chance}, mobile) do
-    ItemDrop.monster_drops(monster_template_id)
-    |> Enum.map(fn(%{item_id: item_id, chance: chance}) ->
-         ApathyDrive.Item.generate_item(%{chance: chance, item_id: item_id, level: level})
-       end)
-    |> List.insert_at(0, ApathyDrive.Item.generate_item(%{chance: global_chance, item_id: :global, level: level}))
-    |> Enum.reject(&is_nil/1)
-    |> case do
-         [] ->
-           {:noreply, mobile}
-         items ->
-           Mobile.send_scroll(mobile, "<p>\n<span class='white'>A wild surge of spirtual essence coalesces into:</span></p>")
-           Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>   STR  |   AGI  |   WIL  | Item Name</span></p>")
-           mobile =
-             Enum.reduce(items, mobile, fn(item, updated_mobile) ->
-               current_data =
-                 updated_mobile
-                 |> Mobile.score_data
-
-               equipped =
-                 updated_mobile
-                 |> Commands.Wear.equip_item(item)
-
-               equipped_data = Mobile.score_data(equipped.mobile)
-
-               data =
-                 current_data
-                 |> Map.take([:strength, :agility, :will])
-                 |> Enum.reduce(%{}, fn({key, val}, values) ->
-                      diff = equipped_data[key] - val
-                      color = cond do
-                        diff > 0 ->
-                          "green"
-                        diff < 0 ->
-                          "dark-red"
-                        true ->
-                          "dark-cyan"
-                      end
-                      value =
-                        apply(Item, key, [item])
-                        |> to_string
-                        |> String.rjust(3)
-
-                      diff =
-                        String.ljust("(#{diff})", 5)
-
-                      Map.put(values, key, "#{value}<span class='#{color}'>#{diff}</span>")
-                    end)
-
-               Mobile.send_scroll(updated_mobile, "<p><span class='dark-cyan'>#{data.strength}|#{data.agility}|#{data.will}| #{item["name"]}</span></p>")
-
-               if (equipped_data.strength + equipped_data.agility + equipped_data.will) > (current_data.strength + current_data.agility + current_data.will) do
-                 if Map.has_key?(equipped, :unequipped) do
-                   Enum.each(equipped.unequipped, fn(unequipped_item) ->
-                     Mobile.send_scroll(updated_mobile, "<p>You remove #{unequipped_item["name"]}.</p>")
-                   end)
-                 end
-
-                 Mobile.send_scroll(updated_mobile, "<p>You are now wearing #{item["name"]}.</p>")
-                 equipped.mobile
-
-                 if Map.has_key?(equipped, :unequipped) do
-                   Enum.reduce(equipped.unequipped, equipped.mobile, fn(unequipped_item, unequipped_mobile) ->
-                      exp = ApathyDrive.Item.deconstruction_experience(unequipped_item)
-                      Mobile.send_scroll(unequipped_mobile, "<p>You disintegrate the #{unequipped_item["name"]} and absorb #{exp} essence.</p>")
-
-                      put_in(unequipped_mobile.spirit.inventory, List.delete(unequipped_mobile.spirit.inventory, unequipped_item))
-                      |> Mobile.add_experience(exp)
-                   end)
-                 else
-                   equipped.mobile
-                 end
-               else
-                 exp = ApathyDrive.Item.deconstruction_experience(item)
-                 Mobile.send_scroll(updated_mobile, "<p>You disintegrate the #{item["name"]} and absorb #{exp} essence.</p>")
-                 Mobile.add_experience(updated_mobile, exp)
-               end
-             end)
-
-           Repo.save!(mobile.spirit)
-
-           {:noreply, mobile}
-       end
   end
 
   def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do

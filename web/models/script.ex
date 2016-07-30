@@ -241,9 +241,8 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Mobile{spirit: %Spirit{} = spirit} = mobile, %{"add_experience" => exp}, script) do
-    spirit = Spirit.add_experience(spirit, exp)
-    mobile = Map.put(mobile, :spirit, spirit)
+  def execute_instruction(%Room{} = room, %Mobile{spirit: %Spirit{}} = mobile, %{"add_experience" => exp}, script) do
+    mobile = Spirit.add_experience(mobile, exp)
     room = put_in(room.mobiles[mobile.ref], mobile)
     execute_script(room, mobile, script)
   end
@@ -274,10 +273,9 @@ defmodule ApathyDrive.Script do
     room
   end
 
-  def execute_instruction(%Room{} = room, %Mobile{spirit: %Spirit{experience: exp} = spirit} = mobile, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, script) do
+  def execute_instruction(%Room{} = room, %Mobile{spirit: %Spirit{experience: exp}} = mobile, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, script) do
     if exp >= price do
-      spirit = Spirit.add_experience(spirit, -price)
-      mobile = Map.put(mobile, :spirit, spirit)
+      mobile = Spirit.add_experience(mobile, -price)
       room = put_in(room.mobiles[mobile.ref], mobile)
       execute_script(room, mobile, script)
     else

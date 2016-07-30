@@ -119,10 +119,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.call(room, {:spirit_connected, spirit, socket})
   end
 
-  def add_items(room, items) do
-    GenServer.cast(room, {:add_items, items})
-  end
-
   def init(id) do
     room =
       Repo.get!(Room, id)
@@ -365,14 +361,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:add_items, new_items}, %Room{room_unity: %RoomUnity{items: items}} = room) do
-    room =
-      put_in(room.room_unity.items, new_items ++ items)
-      |> Repo.save
-
-    {:noreply, room}
-  end
-
   def handle_info({:regen, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn
@@ -465,9 +453,9 @@ defmodule ApathyDrive.RoomServer do
 
               interval = updated_interval || TimerManager.seconds(default_interval)
 
-              updated_mobile = TimerManager.send_after(mobile, {:auto_attack_timer, interval, {:execute_auto_attack, ref}})
-
-              put_in(updated_room.mobiles[mobile.ref], updated_mobile)
+              Room.update_mobile(updated_room, ref, fn mob ->
+                TimerManager.send_after(mob, {:auto_attack_timer, interval, {:execute_auto_attack, ref}})
+              end)
           else
             Map.put(mobile, :attack_target, nil)
           end
@@ -714,7 +702,6 @@ defmodule ApathyDrive.RoomServer do
 
     new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
 
-    IO.puts "derp"
     timers = Map.put(timers, name, new_ref)
 
     apply module, function, args
@@ -740,6 +727,10 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:room_deleted, room) do
+    room =
+      Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
+        Room.update_mobile(room, ref, &ApathyDrive.Death.kill(updated_room, &1.ref))
+      end)
     {:stop, :normal, room}
   end
 

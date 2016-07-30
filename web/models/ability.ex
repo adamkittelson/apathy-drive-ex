@@ -143,8 +143,11 @@ defmodule ApathyDrive.Ability do
       room.mobiles
       |> Map.values
 
-    mobiles
-    |> Match.one(:name_contains, query)
+    target =
+      mobiles
+      |> Match.one(:name_contains, query)
+
+    target && target.ref
   end
 
   def find_other_mobile_in_room(%Room{} = room, %Mobile{ref: mobile_ref}, query) do
@@ -152,9 +155,12 @@ defmodule ApathyDrive.Ability do
       room.mobiles
       |> Map.values
 
-    mobiles
-    |> Enum.reject(&(&1.ref == mobile_ref))
-    |> Match.one(:name_contains, query)
+    target =
+      mobiles
+      |> Enum.reject(&(&1.ref == mobile_ref))
+      |> Match.one(:name_contains, query)
+
+    target && target.ref
   end
 
   def alignment_enemies(%Room{} = room, %Mobile{} = mobile) do
@@ -247,7 +253,7 @@ defmodule ApathyDrive.Ability do
     |> Room.get_mobile(caster_ref)
     |> can_execute?(ability)
     |> if do
-         targets = get_targets(room, caster_ref, ability, query)
+         targets = get_targets(room, Room.get_mobile(room, caster_ref), ability, query)
          execute(room, caster_ref, ability, targets)
        else
          room
@@ -281,7 +287,7 @@ defmodule ApathyDrive.Ability do
            updated_room |> Room.get_mobile(target_ref) |> affects_target?(ability) ->
              updated_room
              |> apply_ability(target_ref, ability, caster_ref)
-             |> kill_mobiles
+             |> kill_mobiles(caster_ref)
            target = Room.get_mobile(updated_room, target_ref) ->
              message = "#{target.name} is not affected by that ability." |> capitalize_first
              Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{message}</span></p>")
@@ -293,11 +299,11 @@ defmodule ApathyDrive.Ability do
     |> execute_multi_cast(caster_ref, ability, targets)
   end
 
-  def kill_mobiles(%Room{} = room) do
-    Enum.reduce(room.mobiles, room, fn {ref, target}, updated_room ->
+  def kill_mobiles(%Room{} = room, caster_ref) do
+    Enum.reduce(room.mobiles, room, fn {_ref, target}, updated_room ->
       if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
-        #Systems.Death.kill(target, ability_user)
-        update_in(updated_room.mobiles, &Map.delete(&1, ref))
+        ability_user = Room.get_mobile(room, caster_ref)
+        ApathyDrive.Death.kill(updated_room, target.ref, ability_user)
       else
         Mobile.update_prompt(target)
         updated_room

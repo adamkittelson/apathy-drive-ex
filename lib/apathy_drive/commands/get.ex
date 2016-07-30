@@ -37,9 +37,9 @@ defmodule ApathyDrive.Commands.Get do
         Mobile.send_scroll(mobile, "<p>#{item_name.name |> capitalize_first} cannot be picked up.</p>")
         room
       actual_item ->
-        mobile = put_in(mobile.spirit.inventory, [item | inventory])
+        mobile = put_in(mobile.spirit.inventory, [actual_item.item | inventory])
 
-        Mobile.send_scroll(mobile, "<p>You get #{item["name"]}.</p>")
+        Mobile.send_scroll(mobile, "<p>You get #{actual_item.name}.</p>")
 
         Mobile.save(mobile)
 
