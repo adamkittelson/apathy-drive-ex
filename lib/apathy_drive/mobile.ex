@@ -764,43 +764,4 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do
-    send_scroll mobile, message
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_locked, %{locker: pid, type: type}}, mobile) when pid == self() do
-    Mobile.send_scroll(mobile, "<p>The #{type} is now locked.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_locked, %{name: name, type: type, description: description}}, mobile) do
-    Mobile.send_scroll(mobile, "<p>You see #{name} lock the #{type} #{description}.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_closed, %{closer: pid, type: type}}, mobile) when pid == self() do
-    Mobile.send_scroll(mobile, "<p>You closed the #{type}.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_closed, %{name: name, type: type, description: description}}, mobile) do
-    Mobile.send_scroll(mobile, "<p>You see #{name} close the #{type} #{description}.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_opened, %{opener: pid, type: type}}, mobile) when pid == self() do
-    Mobile.send_scroll(mobile, "<p>You opened the #{type}.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:door_opened, %{name: name, type: type, description: description}}, mobile) do
-    Mobile.send_scroll(mobile, "<p>You see #{name} open the #{type} #{description}.</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info(_message, %Mobile{} = mobile) do
-    {:noreply, mobile}
-  end
-
 end

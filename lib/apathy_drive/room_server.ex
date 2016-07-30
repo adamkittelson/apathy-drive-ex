@@ -83,6 +83,10 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:mirror_bash_fail, mirror_room_id, room_exit})
   end
 
+  def mirror_open_fail(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_open_fail, mirror_room_id, room_exit})
+  end
+
   def execute_command(room, spirit_id, command, arguments) do
     GenServer.cast(room, {:execute_command, spirit_id, command, arguments})
   end
@@ -270,55 +274,64 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:mirror_lock, mirror_room_id, room_exit}, %Room{id: id} = room) do
+  def handle_cast({:mirror_lock, mirror_room_id, room_exit}, %Room{} = room) do
     mirror_exit = Room.mirror_exit(room, mirror_room_id)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>"}
+      Room.send_scroll(room, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>")
       {:noreply, Room.lock!(room, mirror_exit["direction"])}
     else
       {:noreply, room}
     end
   end
 
-  def handle_cast({:mirror_close, mirror_room_id, room_exit}, %Room{id: id} = room) do
+  def handle_cast({:mirror_close, mirror_room_id, room_exit}, %Room{} = room) do
     mirror_exit = Room.mirror_exit(room, mirror_room_id)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just closed!</p>"}
+      Room.send_scroll(room, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just closed!</p>")
       {:noreply, Room.close!(room, mirror_exit["direction"])}
     else
       {:noreply, room}
     end
   end
 
-  def handle_cast({:mirror_open, mirror_room_id, room_exit}, %Room{id: id} = room) do
+  def handle_cast({:mirror_open, mirror_room_id, room_exit}, %Room{} = room) do
     mirror_exit = Room.mirror_exit(room, mirror_room_id)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just opened!</p>"}
+      Room.send_scroll(room, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just opened!</p>")
       {:noreply, Room.open!(room, mirror_exit["direction"])}
     else
       {:noreply, room}
     end
   end
 
-  def handle_cast({:mirror_bash, mirror_room_id, room_exit}, %Room{id: id} = room) do
+  def handle_cast({:mirror_bash, mirror_room_id, room_exit}, %Room{} = room) do
     mirror_exit = Room.mirror_exit(room, mirror_room_id)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just flew open!</p>"}
+      Room.send_scroll(room, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just flew open!</p>")
       {:noreply, Room.open!(room, mirror_exit["direction"])}
     else
       {:noreply, room}
     end
   end
 
-  def handle_cast({:mirror_bash_fail, mirror_room_id, room_exit}, %Room{id: id} = room) do
+  def handle_cast({:mirror_bash_fail, mirror_room_id, room_exit}, %Room{} = room) do
     mirror_exit = Room.mirror_exit(room, mirror_room_id)
 
     if mirror_exit["kind"] == room_exit["kind"] do
-      PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>"}
+      Room.send_scroll(room, "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>")
+    end
+    {:noreply, room}
+  end
+
+  def handle_cast({:mirror_open_fail, mirror_room_id, room_exit}, %Room{} = room) do
+    mirror_exit = Room.mirror_exit(room, mirror_room_id)
+
+    if mirror_exit["kind"] == room_exit["kind"] do
+      Room.send_scroll(room, "<p>Someone tries to open the #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])}, but it's locked.</p>")
     end
     {:noreply, room}
   end
@@ -683,11 +696,6 @@ defmodule ApathyDrive.RoomServer do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_lock, mirror_exit})
     end
 
-    {:noreply, room}
-  end
-
-  def handle_info({:mirror_lock, room_exit}, room) do
-    room = Room.lock!(room, room_exit["direction"])
     {:noreply, room}
   end
 
