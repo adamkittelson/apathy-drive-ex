@@ -4,52 +4,46 @@ defmodule ApathyDrive.Commands.Greet do
 
   def keywords, do: ["greet"]
 
-  def execute(mobile, []) do
+  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, _args) do
+    Mobile.body_required(mobile)
+    room
+  end
+
+  def execute(%Room{} = room, %Mobile{} = mobile, []) do
     Mobile.send_scroll(mobile, "<p>Greet whom?</p>")
   end
 
-  def execute(mobile, arguments) when is_pid(mobile) do
+  def execute(%Room{} = room, %Mobile{} = mobile, arguments) do
     query =
       arguments
       |> Enum.join(" ")
       |> String.downcase
 
-    Mobile.greet(mobile, query)
+    target = Room.find_mobile_in_room(room, mobile, query)
+    greet(room, mobile, target)
+    room
   end
 
-  def execute(%Mobile{room_id: room_id} = mobile, query) do
-    room_id
-    |> RoomServer.find
-    |> RoomServer.greet(%{name: Mobile.look_name(mobile), pid: self()}, query)
+  def greet(%Room{}, %Mobile{} = greeter, nil) do
+    Mobile.send_scroll(greeter, "<p>Greet whom?</p>")
   end
 
-  def execute(%Room{} = room, %{name: _name, pid: pid} = mobile, query) do
-    target = Room.find_mobile_in_room(room, pid, query)
-    greet(mobile, target && target.mobile)
+  def greet(%Room{}, %Mobile{} = greeter, %Mobile{} = target) when greeter == target do
+    Mobile.send_scroll(greeter, "<p>Greet yourself?</p>")
   end
 
-  def greet(%Mobile{} = target, %{name: name, pid: greeter}) do
-    Mobile.send_scroll(greeter, "<p>You greet #{Mobile.look_name(target)}.</p>")
-    Mobile.send_scroll(target, "<p>#{name} greets you.</p>")
-
-    PubSub.subscribers("rooms:#{target.room_id}:mobiles", [greeter, self()])
-    |> Enum.each(&(Mobile.send_scroll(&1, "<p>#{name} greets #{Mobile.look_name(target)}.</p>")))
-
-    unless target.spirit do
-      Mobile.send_scroll(greeter, "<p>#{target.greeting}</p>")
-    end
+  def greet(%Room{} = room, %Mobile{} = greeter, %Mobile{} = target) do
+    room.mobiles
+    |> Enum.each(fn({_ref, mobile}) ->
+         cond do
+           mobile == greeter ->
+             Mobile.send_scroll(mobile, "<p>You greet #{Mobile.look_name(target)}.</p>")
+             Mobile.send_scroll(mobile, "<p>#{target.greeting}</p>")
+           mobile == target ->
+             Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(greeter)} greets you.</p>")
+           true ->
+             Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(greeter)} greets #{Mobile.look_name(target)}.</p>")
+         end
+       end)
   end
-
-  def greet(%{name: _name, pid: mobile}, nil) do
-    Mobile.send_scroll(mobile, "<p>Greet whom?</p>")
-  end
-
-  def greet(%{pid: mobile}, target) when mobile == target do
-    Mobile.send_scroll(mobile, "<p>Greet yourself?</p>")
-  end
-
-  def greet(%{name: _name, pid: _pid} = mobile, target) do
-    Mobile.greet(target, mobile)
-  end
-
 end

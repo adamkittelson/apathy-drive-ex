@@ -198,6 +198,9 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_call({:spirit_connected, %Spirit{id: id} = spirit, socket}, _from, room) do
     if mobile = Room.find_spirit(room, id) do
+
+      if mobile.socket != socket, do: send(mobile.socket, :go_home)
+
       room = put_in(room.mobiles[mobile.ref].socket, socket)
 
       room.mobiles[mobile.ref]

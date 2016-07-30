@@ -46,7 +46,7 @@ defmodule ApathyDrive.Commands.Get do
         room = put_in(room.room_unity.items, List.delete(room.room_unity.items, actual_item.item))
         room =
           put_in(room.mobiles[mobile.ref], mobile)
-          |> Repo.save!
+          |> Repo.save
       true ->
         Mobile.send_scroll(mobile, "<p>You don't see \"#{item}\" here.</p>")
         room

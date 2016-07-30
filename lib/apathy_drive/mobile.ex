@@ -2,7 +2,6 @@ defmodule ApathyDrive.Mobile do
   alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor, RoomServer, Room, Presence, MonsterTemplate}
   use ApathyDrive.Web, :model
   import ApathyDrive.Text
-  use GenServer
 
   schema "mobiles" do
     belongs_to :room, Room
@@ -155,51 +154,8 @@ defmodule ApathyDrive.Mobile do
     |> select([m], %{id: m.id, room_id: m.room_id, monster_template_id: m.monster_template_id})
   end
 
-  def start(%Mobile{} = mobile, opts \\ []) do
-    GenServer.start(__MODULE__, mobile, opts)
-  end
-
-  def start_link(id, opts \\ []) do
-    GenServer.start_link(__MODULE__, id, opts)
-  end
-
   def body_required(mobile) do
     Mobile.send_scroll(mobile, "<p>You need a body to do that. Find a monster and <span class='green'>possess</span> it.</p>")
-  end
-
-  def update_room(mobile) do
-    GenServer.cast(mobile, :update_room)
-  end
-
-  def close(mobile, arguments) do
-    GenServer.cast(mobile, {:close, arguments})
-  end
-
-  def lock(mobile, arguments) do
-    GenServer.cast(mobile, {:lock, arguments})
-  end
-
-  def open(mobile, arguments) do
-    GenServer.cast(mobile, {:open, arguments})
-  end
-
-  def move(mobile, room, room_exit) do
-    GenServer.cast(mobile, {:move, room, room_exit})
-  end
-
-  def greet(mobile, query) do
-    GenServer.cast(mobile, {:greet, query})
-  end
-
-  def forms(%Mobile{spirit: nil}), do: nil
-  def forms(%Mobile{spirit: spirit}) do
-    spirit
-    |> assoc(:recipe_items)
-    |> ApathyDrive.Repo.all
-  end
-
-  def purify_room(mobile) do
-    GenServer.cast(mobile, :purify_room)
   end
 
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
@@ -256,10 +212,6 @@ defmodule ApathyDrive.Mobile do
       magical_damage: magical_damage(mobile)}
   end
 
-  def class_chat(pid, message) do
-    GenServer.cast(pid, {:class_chat, message})
-  end
-
   def aligned_spirit_name(%Mobile{spirit: %Spirit{name: name, class: %{alignment: "good"}}}) do
     "<span class='white'>#{name}</span>"
   end
@@ -279,7 +231,14 @@ defmodule ApathyDrive.Mobile do
     "[ES=#{trunc(mobile.spirit.experience)}]:"
   end
   def prompt(%Mobile{} = mobile) do
-    "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
+    cond do
+      mobile.hp / mobile.max_hp > 0.5 ->
+        "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
+      mobile.hp / mobile.max_hp > 0.20 ->
+        "[HP=<span class='dark-red'>#{trunc(mobile.hp)}</span>/MA=#{trunc(mobile.mana)}]:"
+      true ->
+        "[HP=<span class='red'>#{trunc(mobile.hp)}</span>/MA=#{trunc(mobile.mana)}]:"
+    end
   end
 
   def alignment_color(%{unities: ["evil"]}), do: "magenta"
@@ -461,10 +420,6 @@ defmodule ApathyDrive.Mobile do
   def initiate_combat(%Mobile{} = mobile) do
     send(self, {:execute_auto_attack, mobile.ref})
     mobile
-  end
-
-  def system(mobile, command) do
-    GenServer.cast(mobile, {:system, command})
   end
 
   def set_abilities(%Mobile{monster_template_id: nil, spirit: _spirit} = mobile) do
@@ -813,139 +768,6 @@ defmodule ApathyDrive.Mobile do
     time
     |> :rand.uniform
     |> Kernel.+(time)
-  end
-
-  def handle_cast(:update_room, %Mobile{socket: nil} = mobile) do
-    {:noreply, mobile}
-  end
-
-  def handle_cast(:update_room, %Mobile{socket: socket} = mobile) when is_pid(socket) do
-    send(socket, {:noreply, mobile.room_id})
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:system, command}, mobile) do
-    Commands.System.execute(mobile, command)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:close, args}, mobile) do
-    Commands.Close.execute(mobile, args)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:open, args}, mobile) do
-    Commands.Open.execute(mobile, args)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:lock, args}, mobile) do
-    Commands.Lock.execute(mobile, args)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:move, room, room_exit}, mobile) do
-    mobile = Commands.Move.execute(mobile, room, room_exit)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:greet, %{name: _, pid: _} = greeter}, mobile) do
-    Commands.Greet.greet(mobile, greeter)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:greet, target}, mobile) do
-    Commands.Greet.execute(mobile, target)
-    {:noreply, mobile}
-  end
-
-  def handle_cast({:add_experience, exp}, %Mobile{} = mobile) do
-    mobile = add_experience(mobile, exp)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info(:save, mobile) do
-    Process.send_after(self, :save, jitter(:timer.minutes(10)))
-    {:noreply, save(mobile)}
-  end
-
-  def handle_info({:send_scroll, message}, mobile) do
-    send_scroll(mobile, message)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:also_here, _mobiles}, %Mobile{} = mobile) do
-    {:noreply, mobile}
-  end
-
-  def handle_info(%Phoenix.Socket.Broadcast{}, %Mobile{socket: nil} = mobile) do
-    {:noreply, mobile}
-  end
-  def handle_info(%Phoenix.Socket.Broadcast{} = message, %Mobile{socket: socket} = mobile) do
-    send(socket, message)
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:angel, name, message}, mobile) do
-    send_scroll(mobile, "<p>[<span class='white'>angel</span> : #{name}] #{message}</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:elemental, name, message}, mobile) do
-    send_scroll(mobile, "<p>[<span class='dark-cyan'>elemental</span> : #{name}] #{message}</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:demon, name, message}, mobile) do
-    send_scroll(mobile, "<p>[<span class='magenta'>demon</span> : #{name}] #{message}</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info({:DOWN, _ref, :process, pid, {:normal, :timeout}}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
-    send(self, :disconnected)
-    {:noreply, Map.put(mobile, :socket, nil)}
-  end
-
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, %Mobile{spirit: _spirit, socket: socket} = mobile) when pid == socket do
-    Process.send_after(self, :disconnected, 30_000)
-    {:noreply, Map.put(mobile, :socket, nil)}
-  end
-
-  def handle_info(:disconnected, %Mobile{monster_template_id: nil, spirit: spirit, socket: nil} = mobile) do
-    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{Spirit.look_name(spirit)} just left the Realm.</p>"}
-    {:stop, :normal, save(mobile)}
-  end
-
-  def handle_info(:disconnected, %Mobile{spirit: spirit, socket: nil} = mobile) do
-    ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{Spirit.look_name(spirit)} just left the Realm.</p>"}
-    Presence.untrack(self(), "spirits:online", "spirit_#{spirit.id}")
-
-    mobile =
-      mobile
-      |> Map.put(:spirit, nil)
-
-      ApathyDrive.PubSub.unsubscribe("spirits:online")
-      ApathyDrive.PubSub.unsubscribe("spirits:#{spirit.id}")
-
-    {:noreply, mobile}
-  end
-
-  def handle_info({:set_socket, socket}, %Mobile{socket: nil} = mobile) do
-    Process.monitor(socket)
-    {:noreply, Map.put(mobile, :socket, socket)}
-  end
-
-  # already signed-in in another tab / browser / location whatever
-  # redirect old socket to the home page and give control to the new socket
-  def handle_info({:set_socket, socket}, %Mobile{socket: old_socket} = mobile) do
-    Process.monitor(socket)
-
-    if socket != old_socket, do: send(old_socket, :go_home)
-
-    {:noreply, Map.put(mobile, :socket, socket)}
   end
 
   def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do
