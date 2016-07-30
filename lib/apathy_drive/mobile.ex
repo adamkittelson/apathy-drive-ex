@@ -764,12 +764,6 @@ defmodule ApathyDrive.Mobile do
     end
   end
 
-  defp jitter(time) do
-    time
-    |> :rand.uniform
-    |> Kernel.+(time)
-  end
-
   def handle_info({:mobile_movement, %{mobile: mover, room: room, message: message}}, %Mobile{room_id: room_id} = mobile) when room == room_id and mover != self() do
     send_scroll mobile, message
     {:noreply, mobile}

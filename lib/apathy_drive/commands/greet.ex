@@ -1,6 +1,5 @@
 defmodule ApathyDrive.Commands.Greet do
   use ApathyDrive.Command
-  alias ApathyDrive.PubSub
 
   def keywords, do: ["greet"]
 
@@ -11,6 +10,7 @@ defmodule ApathyDrive.Commands.Greet do
 
   def execute(%Room{} = room, %Mobile{} = mobile, []) do
     Mobile.send_scroll(mobile, "<p>Greet whom?</p>")
+    room
   end
 
   def execute(%Room{} = room, %Mobile{} = mobile, arguments) do
