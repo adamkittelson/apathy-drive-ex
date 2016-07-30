@@ -279,7 +279,7 @@ defmodule ApathyDrive.Mobile do
     "[ES=#{trunc(mobile.spirit.experience)}]:"
   end
   def prompt(%Mobile{} = mobile) do
-    "[ES=#{trunc(mobile.spirit.experience)}/HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
+    "[HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
   end
 
   def alignment_color(%{unities: ["evil"]}), do: "magenta"
@@ -348,7 +348,7 @@ defmodule ApathyDrive.Mobile do
     |> Enum.find(fn(effect) ->
          Map.has_key?(effect, "confused") && (effect["confused"] >= :rand.uniform(100))
        end)
-    |> held(mobile)
+    |> confused(mobile)
   end
   def confused(nil, %Mobile{}), do: false
   def confused(%{"confusion_message" => %{"user" => user_message, "spectator" => spectator_message}}, %Mobile{} = mobile) do

@@ -479,25 +479,26 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def after_cast(%{"ability_user" => %Mobile{} = ability_user,
+  def after_cast(%{"ability_user" => caster_ref,
                    "ability" => after_cast_ability,
                    "chance" => chance}, targets) do
     if chance >= :rand.uniform(100) do
-      execute_after_cast(ability_user, after_cast_ability, targets)
+      execute_after_cast(caster_ref, after_cast_ability, targets)
     end
   end
-  def after_cast(%{"ability_user" => %Mobile{} = ability_user,
+  def after_cast(%{"ability_user" => caster_ref,
                    "ability"   => after_cast_ability}, targets) do
-    execute_after_cast(ability_user, after_cast_ability, targets)
+    execute_after_cast(caster_ref, after_cast_ability, targets)
   end
   def after_cast(%{}, _targets), do: false
 
-  def execute_after_cast(%Mobile{} = ability_user, after_cast_ability, targets) do
+  def execute_after_cast(caster_ref, after_cast_ability, targets) do
     ability =
       after_cast_ability
       |> find()
       |> Map.put("ignores_global_cooldown", true)
-    send(ability_user.pid, {:execute_ability, ability, targets})
+
+    send(self, {:execute_ability, %{caster: caster_ref, ability: ability, target: targets}})
   end
 
   def global_cooldown(%{"ignores_global_cooldown" => true}, %Mobile{}), do: nil

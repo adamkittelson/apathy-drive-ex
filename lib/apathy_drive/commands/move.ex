@@ -53,7 +53,7 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Normal", "destination" => destination_id}) do
-    if !Mobile.held(mobile) do
+    if !Mobile.held(mobile) and !Mobile.confused(mobile) do
       Room.display_exit_message(room, %{mobile: mobile, message: mobile.exit_message, to: destination_id})
 
       destination_id
@@ -61,13 +61,14 @@ defmodule ApathyDrive.Commands.Move do
       |> RoomServer.mobile_entered(mobile)
 
       put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
+      |> Room.update_essence_targets
     else
       room
     end
   end
 
   def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Action", "destination" => destination_id} = room_exit) do
-    if !Mobile.held(mobile) do
+    if !Mobile.held(mobile) and !Mobile.confused(mobile) do
 
       Mobile.send_scroll(mobile, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
 
@@ -78,6 +79,7 @@ defmodule ApathyDrive.Commands.Move do
       Room.display_exit_message(room, %{mobile: mobile, message: room_exit["from_message"], to: destination_id})
 
       put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
+      |> Room.update_essence_targets
     else
       room
     end

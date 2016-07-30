@@ -81,6 +81,7 @@ defmodule ApathyDrive.Room do
             )
         end)
       end)
+      |> Room.update_essence_targets
 
     Room.move_after(room, mobile.ref)
   end

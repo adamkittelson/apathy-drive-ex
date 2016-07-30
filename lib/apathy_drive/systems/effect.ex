@@ -79,7 +79,7 @@ defmodule Systems.Effect do
     case effects[key] do
       %{} ->
         if opts[:fire_after_cast] && Map.has_key?(effects[key], "after_cast") do
-          ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [self])
+          ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [entity.ref])
         end
 
         if opts[:show_expiration_message] && Map.has_key?(effects[key], "expiration_message") do
