@@ -207,6 +207,8 @@ defmodule ApathyDrive.Room do
     exits
     |> Enum.each(fn
          %{"direction" => direction, "kind" => kind, "destination" => dest} when kind in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"] and direction != from_direction ->
+           direction = ApathyDrive.Exit.reverse_direction(direction)
+
            dest
            |> RoomServer.find
            |> RoomServer.send_scroll("<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
