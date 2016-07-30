@@ -136,7 +136,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%Room{} = room, %Mobile{} = mobile, %{"take_item" => %{"failure_message" => message, "item" => item_template_id}}, script) do
     if mobile = Mobile.remove_item?(mobile, item_template_id) do
-      Spirit.save(mobile.spirit)
+      Mobile.save(mobile)
       execute_script(room, mobile, script)
     else
       Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{message}</p>")

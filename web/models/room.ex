@@ -464,14 +464,6 @@ defmodule ApathyDrive.Room do
        end)
   end
 
-  def broadcast!(%Room{mobiles: mobiles}, message) do
-    mobiles
-    |> Map.values
-    |> Enum.each(fn mobile ->
-         if mobile.socket, do: send(mobile.socket, message)
-       end)
-  end
-
   def open!(%Room{} = room, direction) do
     if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
       Systems.Effect.add(room, %{open: direction}, open_duration)
@@ -609,7 +601,7 @@ defmodule ApathyDrive.Room do
          end)
       |> Room.update_controlled_by
 
-    data =
+    essence =
       %{
         room_id: room.id,
         good: trunc(room.room_unity.essences["good"]),
@@ -617,9 +609,21 @@ defmodule ApathyDrive.Room do
         evil: trunc(room.room_unity.essences["evil"]),
       }
 
-    broadcast!(room, {:update_room_essence, data})
+    Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
+      Room.update_mobile(updated_room, ref, fn %Mobile{socket: socket} = mobile ->
 
-    room
+        if socket, do: send(socket, {:update_room_essence, essence})
+
+        room_essences =
+          essence
+          |> Map.drop([:room_id])
+          |> Enum.reduce(%{}, fn({k,v}, re) -> Map.put(re, to_string(k), v) end)
+
+        mobile
+        |> Map.put(:room_essences, room_essences)
+        |> Mobile.update_essence()
+      end)
+    end)
   end
 
   def update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do

@@ -361,6 +361,38 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:unify, ref}, room) do
+    case Room.get_mobile(room, ref) do
+      %Mobile{spirit: nil, unities: []} ->
+        :noop
+      %Mobile{spirit: nil, experience: essence, unities: unities} ->
+        Enum.each(unities, fn(unity) ->
+          ApathyDrive.Unity.contribute(unity, essence)
+        end)
+      %Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} ->
+        Enum.each(unities, fn(unity) ->
+          ApathyDrive.Unity.contribute(unity, essence)
+        end)
+    end
+
+    room = Room.update_mobile(room, ref, fn mobile ->
+      TimerManager.send_after(mobile, {:unify, 60_000, {:unify, ref}})
+    end)
+
+    {:noreply, room}
+  end
+
+  def handle_info({:update_unity_essence, unity, essence}, room) do
+    room =
+      Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
+        Room.update_mobile(updated_room, ref, fn mobile ->
+          put_in(mobile.unity_essences[unity], essence)
+        end)
+      end)
+
+    {:noreply, room}
+  end
+
   def handle_info({:regen, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn

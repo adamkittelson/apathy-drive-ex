@@ -105,7 +105,6 @@ defmodule Spirit do
       spirit
       |> Map.put(:experience, spirit.experience + exp)
       |> ApathyDrive.Level.advance
-      |> Spirit.save
 
     if spirit.level > level do
       Mobile.send_scroll mobile, "<p>You ascend to level #{spirit.level}!"

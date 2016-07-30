@@ -130,9 +130,7 @@ defmodule ApathyDrive.Mobile do
                end
              end)
 
-           Repo.save!(mobile.spirit)
-
-           mobile
+           Mobile.save(mobile)
        end
   end
 
@@ -205,8 +203,6 @@ defmodule ApathyDrive.Mobile do
   end
 
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
-    exp = trunc(exp)
-
     initial_spirit_level = mobile.spirit && mobile.spirit.level
 
     mobile =
@@ -280,10 +276,10 @@ defmodule ApathyDrive.Mobile do
   end
 
   def prompt(%Mobile{monster_template_id: nil} = mobile) do
-    "[ES=#{mobile.spirit.experience}]:"
+    "[ES=#{trunc(mobile.spirit.experience)}]:"
   end
   def prompt(%Mobile{} = mobile) do
-    "[ES=#{mobile.spirit.experience}/HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
+    "[ES=#{trunc(mobile.spirit.experience)}/HP=#{trunc(mobile.hp)}/MA=#{trunc(mobile.mana)}]:"
   end
 
   def alignment_color(%{unities: ["evil"]}), do: "magenta"
@@ -422,30 +418,32 @@ defmodule ApathyDrive.Mobile do
       |> set_mana
       |> set_max_hp
       |> set_hp
-      # |> TimerManager.send_after({:monster_regen,    1_000, {:regen, ref}})
-      # |> TimerManager.send_after({:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
+      |> TimerManager.send_after({:monster_regen,    1_000, {:regen, ref}})
+      |> TimerManager.send_after({:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
       |> TimerManager.send_after({:monster_ai,       5_000, {:think, ref}})
-      # |> TimerManager.send_every({:unify,  60_000, :unify})
+      |> TimerManager.send_after({:unify, 60_000, {:unify, ref}})
 
       save(mobile)
   end
   def init(%Mobile{spirit: spirit} = mobile) do
+    ref = make_ref()
+
     mobile =
       mobile
       |> Map.put(:spirit, spirit)
+      |> Map.put(:ref, ref)
       |> Map.put(:room_id, spirit.room_id)
       |> Map.put(:alignment, spirit.class.alignment)
       |> Map.put(:name, spirit.name)
       |> Map.put(:experience, spirit.experience)
       |> Map.put(:level, spirit.level)
       |> Map.put(:unities, spirit.class.unities)
-      |> Map.put(:ref, make_ref())
       |> set_abilities
       |> set_max_mana
       |> set_mana
       |> set_max_hp
       |> set_hp
-      # |> TimerManager.send_every({:unify,  60_000, :unify})
+      |> TimerManager.send_after({:unify, 60_000, {:unify, ref}})
 
     save(mobile)
   end
@@ -750,20 +748,21 @@ defmodule ApathyDrive.Mobile do
   end
 
   def save(%Mobile{monster_template_id: nil, spirit: spirit} = mobile) do
-    Map.put(mobile, :spirit, Repo.save!(spirit))
+    Map.put(mobile, :spirit, Repo.save!(Map.put(spirit, :experience, trunc(spirit.experience))))
   end
 
   def save(%Mobile{monster_template_id: _, spirit: nil} = mobile) do
-    Repo.save!(mobile)
+    Repo.save!(Map.put(mobile, :experience, trunc(mobile.experience)))
   end
 
   def save(%Mobile{monster_template_id: _, spirit: spirit} = mobile) do
     mobile
-    |> Map.put(:spirit, Repo.save!(spirit))
+    |> Map.put(:experience, trunc(mobile.experience))
+    |> Map.put(:spirit, Repo.save!(Map.put(spirit, :experience, trunc(spirit.experience))))
     |> Repo.save!
   end
 
-  defp update_essence(%Mobile{spirit: spirit} = mobile) do
+  def update_essence(%Mobile{spirit: spirit} = mobile) do
     current_essence = (spirit && spirit.experience) || mobile.experience
 
     target_essence = target_essence(mobile)
@@ -777,12 +776,11 @@ defmodule ApathyDrive.Mobile do
 
     amount_to_shift = (target_essence - current_essence) * rate
 
-    if target_essence && trunc(amount_to_shift) != 0 do
-      mobile
-      |> add_experience(amount_to_shift)
-    else
-      mobile
-    end
+    mobile = add_experience(mobile, amount_to_shift)
+
+    Mobile.update_prompt(mobile)
+
+    mobile
   end
 
   defp target_essence(%Mobile{spirit: spirit, room_essences: room_essences, unity_essences: unity_essences} = mobile) do
@@ -867,26 +865,6 @@ defmodule ApathyDrive.Mobile do
     {:noreply, mobile}
   end
 
-  def handle_info({:update_unity_essence, unity, essence}, mobile) do
-    {:noreply, put_in(mobile.unity_essences[unity], essence)}
-  end
-
-  def handle_info({:update_room_essence, essence}, %Mobile{socket: socket} = mobile) do
-    room_essences =
-      essence
-      |> Map.drop([:room_id])
-      |> Enum.reduce(%{}, fn({k,v}, re) -> Map.put(re, to_string(k), v) end)
-
-    mobile =
-      mobile
-      |> Map.put(:room_essences, room_essences)
-      |> update_essence()
-
-    if socket, do: send(socket, {:update_room_essence, essence})
-
-    {:noreply, mobile}
-  end
-
   def handle_info(:save, mobile) do
     Process.send_after(self, :save, jitter(:timer.minutes(10)))
     {:noreply, save(mobile)}
@@ -923,24 +901,6 @@ defmodule ApathyDrive.Mobile do
 
   def handle_info({:demon, name, message}, mobile) do
     send_scroll(mobile, "<p>[<span class='magenta'>demon</span> : #{name}] #{message}</p>")
-    {:noreply, mobile}
-  end
-
-  def handle_info(:unify, %Mobile{spirit: nil, unities: []} = mobile) do
-    {:noreply, mobile}
-  end
-
-  def handle_info(:unify, %Mobile{spirit: nil, experience: essence, unities: unities} = mobile) do
-    Enum.each(unities, fn(unity) ->
-      ApathyDrive.Unity.contribute(unity, essence)
-    end)
-    {:noreply, mobile}
-  end
-
-  def handle_info(:unify, %Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} = mobile) do
-    Enum.each(unities, fn(unity) ->
-      ApathyDrive.Unity.contribute(unity, essence)
-    end)
     {:noreply, mobile}
   end
 
