@@ -159,7 +159,7 @@ defmodule ApathyDrive.RoomServer do
 
     room =
       room
-      #|> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
+      |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
       |> TimerManager.send_after({:update_essence, 1_000, :update_essence})
 
     {:ok, room}
@@ -389,6 +389,8 @@ defmodule ApathyDrive.RoomServer do
         Enum.each(unities, fn(unity) ->
           ApathyDrive.Unity.contribute(unity, essence)
         end)
+      _ ->
+        :noop
     end
 
     room = Room.update_mobile(room, ref, fn mobile ->
