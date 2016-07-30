@@ -9,7 +9,7 @@ defmodule ApathyDrive.Commands.Get do
     room
   end
 
-  def execute(%Room{room_unity: %RoomUnity{items: items}} = room, %Mobile{} = mobile, "all") do
+  def execute(%Room{room_unity: %RoomUnity{items: items}} = room, %Mobile{} = mobile, ["all"]) do
     items
     |> Enum.map(&(&1["name"]))
     |> get_all(room, mobile)
