@@ -118,6 +118,7 @@ defmodule ApathyDrive.Death do
   end
   def kill(room, victim_ref, [], _killed_by) do
     update_in(room.mobiles, &Map.delete(&1, victim_ref))
+    |> Room.update_essence_targets
   end
 
   defp convert_lair(%{spawned_at: room_id}, unity) do
