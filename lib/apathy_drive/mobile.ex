@@ -162,13 +162,12 @@ defmodule ApathyDrive.Mobile do
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
     initial_spirit_level = mobile.spirit && mobile.spirit.level
 
-    mobile =
-      mobile
-      |> Map.put(:experience, experience + exp)
-      |> ApathyDrive.Level.advance
-
     mobile = Spirit.add_experience(mobile, exp)
 
+    mobile =
+      mobile
+      |> Map.put(:experience, (mobile.spirit && mobile.spirit.experience) || experience + exp)
+      |> ApathyDrive.Level.advance
 
     if (mobile.level != level) or (initial_spirit_level != (mobile.spirit && mobile.spirit.level)) do
       mobile
