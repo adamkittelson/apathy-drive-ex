@@ -98,23 +98,23 @@ defmodule ApathyDrive.Death do
 
     kill(room, victim_ref, remaining_steps, killed_by)
   end
-  def kill(room, victim_ref, [:convert_lair | remaining_steps], nil) do
-    kill(room, victim_ref, remaining_steps, nil)
-  end
-  def kill(room, victim_ref, [:convert_lair | remaining_steps], %Mobile{spirit: nil, unities: [unity]} = killed_by) do
-    Room.get_mobile(room, victim_ref)
-    |> convert_lair(unity)
-
-    kill(room, victim_ref, remaining_steps, killed_by)
-  end
-  def kill(room, victim_ref, [:convert_lair | remaining_steps], %Mobile{spirit: %Spirit{class: %Class{unities: [unity]}}} = killed_by) do
-    Room.get_mobile(room, victim_ref)
-    |> convert_lair(unity)
-
-    kill(room, victim_ref, remaining_steps, killed_by)
-  end
   def kill(room, victim_ref, [:convert_lair | remaining_steps], killed_by) do
-    kill(room, victim_ref, remaining_steps, killed_by)
+    case Room.get_mobile(room, killed_by) do
+      nil ->
+        kill(room, victim_ref, remaining_steps, killed_by)
+      %Mobile{unities: [unity]} ->
+        Room.get_mobile(room, victim_ref)
+        |> convert_lair(unity)
+
+        kill(room, victim_ref, remaining_steps, killed_by)
+      %Mobile{spirit: %Spirit{class: %Class{unities: [unity]}}} ->
+        Room.get_mobile(room, victim_ref)
+        |> convert_lair(unity)
+
+        kill(room, victim_ref, remaining_steps, killed_by)
+      _ ->
+        kill(room, victim_ref, remaining_steps, killed_by)
+    end
   end
   def kill(room, victim_ref, [], _killed_by) do
     update_in(room.mobiles, &Map.delete(&1, victim_ref))

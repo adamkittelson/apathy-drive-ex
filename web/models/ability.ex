@@ -302,8 +302,7 @@ defmodule ApathyDrive.Ability do
   def kill_mobiles(%Room{} = room, caster_ref) do
     Enum.reduce(room.mobiles, room, fn {_ref, target}, updated_room ->
       if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
-        ability_user = Room.get_mobile(room, caster_ref)
-        ApathyDrive.Death.kill(updated_room, target.ref, ability_user)
+        ApathyDrive.Death.kill(updated_room, target.ref, caster_ref)
       else
         Mobile.update_prompt(target)
         updated_room

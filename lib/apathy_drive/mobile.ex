@@ -22,6 +22,7 @@ defmodule ApathyDrive.Mobile do
     field :unities,              {:array, :string}, default: []
     field :movement,             :string
     field :spawned_at,           :integer
+    field :area_spawned_in,      :integer
 
     field :spirit,             :any,     virtual: true
     field :socket,             :any,     virtual: true
@@ -700,21 +701,25 @@ defmodule ApathyDrive.Mobile do
     |> Repo.save!
   end
 
-  def update_essence(%Mobile{spirit: spirit} = mobile) do
+  def update_essence(%Mobile{spirit: spirit} = mobile, %Room{} = room) do
     current_essence = (spirit && spirit.experience) || mobile.experience
 
     target_essence = target_essence(mobile)
 
-    rate =
-      if target_essence && (target_essence > current_essence) do
-        1 / 10 / 60
-      else
-        1 / 60 / 60
+    difference = target_essence - current_essence
+    amount_to_shift = difference / 5 / 60 * Room.essence_update_interval(room) / 1000
+
+    percent_difference = if current_essence == 0, do: 1, else: abs(difference) / current_essence
+
+    mobile =
+      cond do
+        percent_difference == 0 or amount_to_shift == 0 ->
+          mobile
+        percent_difference <= 0.10 ->
+          add_experience(mobile, difference)
+        true ->
+          add_experience(mobile, amount_to_shift)
       end
-
-    amount_to_shift = (target_essence - current_essence) * rate
-
-    mobile = add_experience(mobile, amount_to_shift)
 
     Mobile.update_prompt(mobile)
 

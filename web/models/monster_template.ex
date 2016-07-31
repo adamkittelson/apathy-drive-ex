@@ -164,7 +164,8 @@ defmodule ApathyDrive.MonsterTemplate do
       movement: monster_template.movement,
       unities: monster_template.unities || (room |> Room.controlled_by |> List.wrap |> List.delete("default")),
       alignment: monster_template.alignment,
-      spawned_at: room.id
+      spawned_at: room.id,
+      area_spawned_in: room.area_id
     }
 
     monster = Map.put(monster, :keywords, String.split(monster.name))

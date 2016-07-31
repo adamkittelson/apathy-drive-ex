@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Match, Mobile, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
+  alias ApathyDrive.{Ability, Area, Class, Match, Mobile, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
 
   schema "rooms" do
     field :name,                     :string
@@ -64,21 +64,17 @@ defmodule ApathyDrive.Room do
     room = put_in(room.mobiles[mobile.ref], mobile)
 
     room =
-      Enum.reduce(room.mobiles, room, fn {ref, _}, updated_room ->
-        Room.update_mobile(updated_room, ref, fn
-          %Mobile{monster_template_id: nil} = mobile_in_room ->
-            mobile_in_room
-          %Mobile{} = mobile_in_room ->
-            ApathyDrive.Aggression.react(
-              %{
-                mobile: mobile_in_room,
-                alignment: mobile_in_room.alignment,
-                unities: mobile_in_room.unities,
-                spawned_at: mobile_in_room.spawned_at,
-                name: mobile_in_room.name
-              },
-              Mobile.track_data(mobile)
-            )
+      Enum.reduce(room.mobiles, room, fn {ref, mobile_in_room}, updated_room ->
+        updated_room =
+          Room.update_mobile(updated_room, ref, fn
+            %Mobile{monster_template_id: nil} = mob_in_room ->
+              mob_in_room
+            %Mobile{} = mob_in_room ->
+              ApathyDrive.Aggression.react(mob_in_room, mobile)
+          end)
+
+        Room.update_mobile(updated_room, mobile.ref, fn mob ->
+          ApathyDrive.Aggression.react(mob, mobile_in_room)
         end)
       end)
       |> Room.update_essence_targets
@@ -602,12 +598,21 @@ defmodule ApathyDrive.Room do
       |> Enum.reduce(room, fn({essence, amount}, %Room{room_unity: %RoomUnity{essence_targets: essence_targets}} = updated_room) ->
            target = get_in(essence_targets, [essence, "target"])
            difference = target - amount
-           amount_to_shift = difference / 10 / 60
+           amount_to_shift = difference / 5 / 60 * Room.essence_update_interval(room) / 1000
 
-           if abs(amount_to_shift) < 1 or difference == 0 or (amount > 0 and (1 - (abs(difference) / amount)) < 0.01) do
-             put_in(updated_room.room_unity.essences[essence], target)
-           else
-             update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+           percent_difference = if amount == 0, do: 1, else: abs(difference) / amount
+
+           cond do
+             percent_difference == 0 or amount_to_shift == 0 ->
+               updated_room
+              percent_difference <= 0.10 ->
+                updated_room =
+                  put_in(updated_room.room_unity.essences[essence], target)
+                  |> Repo.save
+                Room.report_essence(updated_room)
+                updated_room
+              true ->
+                update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
            end
          end)
       |> Room.update_controlled_by
@@ -632,7 +637,7 @@ defmodule ApathyDrive.Room do
 
         mobile
         |> Map.put(:room_essences, room_essences)
-        |> Mobile.update_essence()
+        |> Mobile.update_essence(updated_room)
       end)
     end)
   end
@@ -684,6 +689,8 @@ defmodule ApathyDrive.Room do
              add_mobile_essence(updated_essences, ["default"], mobile.experience)
            %Mobile{spirit: nil} = mobile, updated_essences ->
              add_mobile_essence(updated_essences, mobile.unities, mobile.experience)
+           %Mobile{spirit: %Spirit{class: %Class{unities: [unity]}} = spirit}, updated_essences ->
+            add_mobile_essence(updated_essences, [unity], spirit.experience)
            %Mobile{spirit: spirit, unities: unities}, updated_essences ->
              unities =
                spirit.class.unities

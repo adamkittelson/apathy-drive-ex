@@ -21,7 +21,8 @@ defmodule ApathyDrive.Commands.Unpossess do
     send(socket, {:respawn, spirit: spirit})
     send(socket, {:scroll, "<p>You leave the body of #{Mobile.look_name(mobile)}.</p>"})
 
-    put_in room.mobiles[mobile.ref], mobile
+    put_in(room.mobiles[mobile.ref], mobile)
+    |> Room.update_essence_targets
   end
 
 end
