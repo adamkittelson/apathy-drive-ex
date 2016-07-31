@@ -1,7 +1,9 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Commands, Mobile, Match, Room, RoomServer}
+  alias ApathyDrive.{Ability, Commands, Mobile, Match, Room, RoomServer}
+
+  @callback execute(%Room{}, %Mobile{}, list) :: %Room{}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -9,44 +11,53 @@ defmodule ApathyDrive.Command do
 
   def all do
     [Commands.Abilities, Commands.Absorb, Commands.Ask, Commands.Attack,
-     Commands.Bash, Commands.Class, Commands.Close, Commands.Construct,
+     Commands.Bash, Commands.Class, Commands.Close,
      Commands.Cooldowns, Commands.Delve, Commands.Drop, Commands.Experience,
-     Commands.Forms, Commands.Get, Commands.Gossip, Commands.Greet,
+     Commands.Get, Commands.Gossip, Commands.Greet,
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
      Commands.Possess, Commands.Remove, Commands.Return,
      Commands.Say, Commands.Score, Commands.Search, Commands.System,
      Commands.Unpossess, Commands.Wear, Commands.Who]
   end
 
-  def execute(%Mobile{room_id: room_id}, command, arguments) do
-    room_id
-    |> RoomServer.find
-    |> RoomServer.execute_command(self, command, arguments)
-  end
-
-  def execute(%Room{} = room, mobile, command, arguments) do
+  def execute(%Room{} = room, mobile_ref, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
+
+    mobile = room.mobiles[mobile_ref]
 
     cond do
       command in @directions ->
         Commands.Move.execute(room, mobile, command)
-        command_exit = Room.command_exit(room, full_command) ->
+      command_exit = Room.command_exit(room, full_command) ->
         Commands.Move.execute(room, mobile, Map.put(command_exit, "kind", "Action"))
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
-        Mobile.trigger_remote_action(mobile, remote_action_exit)
+        Room.initiate_remote_action(room, mobile, remote_action_exit)
       scripts = Room.command(room, full_command) ->
-        Mobile.execute_room_command(mobile, scripts)
+        execute_room_command(room, mobile, scripts)
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
-        case cmd do
-          %ApathyDrive.Command{name: "look"} ->
-            Mobile.look(mobile, arguments)
-          %ApathyDrive.Command{name: "search"} ->
-            Commands.Search.execute(room, mobile, arguments)
-          _ ->
-            cmd.module.execute(mobile, arguments)
-        end
+        cmd.module.execute(room, mobile, arguments)
       true ->
-        Mobile.use_ability(mobile, command, arguments)
+        ability =
+          mobile.abilities
+          |> Enum.find(fn(ability) ->
+               ability["command"] == String.downcase(command)
+             end)
+
+        if ability do
+          Ability.execute(room, mobile.ref, ability, Enum.join(arguments, " "))
+        else
+          Mobile.send_scroll(mobile, "<p>What?</p>")
+          room
+        end
+    end
+  end
+
+  defp execute_room_command(room, mobile, scripts) do
+    if Mobile.confused(mobile) do
+      room
+    else
+      scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
+      ApathyDrive.Script.execute(room, mobile, scripts)
     end
   end
 
@@ -54,6 +65,8 @@ defmodule ApathyDrive.Command do
     quote do
       import ApathyDrive.Text
       alias ApathyDrive.{Mobile, Room, RoomServer}
+
+      @behaviour ApathyDrive.Command
 
       def name do
         __MODULE__

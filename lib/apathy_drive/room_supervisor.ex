@@ -14,7 +14,7 @@ defmodule ApathyDrive.RoomSupervisor do
   def launch(id) do
     id
     |> find_supervisor()
-    |> Supervisor.start_child({"room_#{id}", {GenServer, :start_link, [RoomServer, id, [name: {:global, "room_#{id}"}]]}, :transient, 5000, :worker, [RoomServer]})
+    |> Supervisor.start_child({"room_#{id}", {GenServer, :start_link, [RoomServer, id, [name: :"room_#{id}"]]}, :transient, 5000, :worker, [RoomServer]})
   end
 
   def find_supervisor(id) do

@@ -29,7 +29,7 @@ defmodule ApathyDrive.Unity do
          {_unity, []} -> :noop
          {unity, list} ->
            average = Enum.sum(list) / length(list)
-           ApathyDrive.PubSub.broadcast("mobiles", {:update_unity_essence, unity, average})
+           ApathyDrive.PubSub.broadcast("rooms", {:update_unity_essence, unity, average})
        end)
 
     Process.send_after(self(), :update_mobiles, @interval)

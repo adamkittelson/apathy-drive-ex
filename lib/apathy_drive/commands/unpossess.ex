@@ -1,18 +1,13 @@
 defmodule ApathyDrive.Commands.Unpossess do
   use ApathyDrive.Command
-  alias ApathyDrive.Presence
 
   def keywords, do: ["unpossess"]
 
-  def execute(mobile, _arguments) when is_pid(mobile) do
-    Mobile.unpossess(mobile)
-  end
-
-
-  def execute(%Mobile{monster_template_id: nil} = mobile) do
+  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, _args) do
     Mobile.send_scroll(mobile, "<p>You aren't possessing anything.</p>")
+    room
   end
-  def execute(%Mobile{socket: socket, spirit: spirit} = mobile) do
+  def execute(%Room{} = room, %Mobile{socket: socket, spirit: spirit} = mobile, _args) do
     mobile =
       mobile
       |> Map.put(:spirit, nil)
@@ -23,19 +18,11 @@ defmodule ApathyDrive.Commands.Unpossess do
       |> Mobile.set_max_hp
       |> Mobile.set_hp
 
-    Process.unregister(:"spirit_#{spirit.id}")
-
-    Presence.untrack(self(), "spirits:online", "spirit_#{spirit.id}")
-
-    ApathyDrive.PubSub.unsubscribe("spirits:online")
-    ApathyDrive.PubSub.unsubscribe("spirits:#{spirit.id}")
-    ApathyDrive.PubSub.unsubscribe("chat:gossip")
-    ApathyDrive.PubSub.unsubscribe("chat:#{String.downcase(spirit.class.name)}")
-
     send(socket, {:respawn, spirit: spirit})
     send(socket, {:scroll, "<p>You leave the body of #{Mobile.look_name(mobile)}.</p>"})
 
-    mobile
+    put_in(room.mobiles[mobile.ref], mobile)
+    |> Room.update_essence_targets
   end
 
 end

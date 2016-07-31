@@ -22,8 +22,6 @@ defmodule Spirit do
     field :external_id,       :string
     field :experience,        :integer, default: 0
     field :level,             :integer, default: 1
-    field :socket,            :any, virtual: true
-    field :socket_pid,        :any, virtual: true
     field :pid,               :any, virtual: true
     field :idle,              :integer, default: 0, virtual: true
     field :hints,             {:array, :string}, default: []
@@ -34,7 +32,6 @@ defmodule Spirit do
     field :admin,             :boolean
     field :inventory,         ApathyDrive.JSONB, default: []
     field :equipment,         ApathyDrive.JSONB, default: []
-    field :loot_essence,      :integer, default: 0, virtual: true
     field :flags,             :map, default: %{}
 
     timestamps
@@ -102,37 +99,23 @@ defmodule Spirit do
     "<span class='#{Mobile.alignment_color(spirit.class)}'>#{name}</span>"
   end
 
-  def add_experience(nil, _exp), do: nil
-  def add_experience(%Spirit{level: level} = spirit, exp) do
+  def add_experience(%Mobile{spirit: nil} = mobile, _exp), do: mobile
+  def add_experience(%Mobile{spirit: %Spirit{level: level} = spirit} = mobile, exp) do
     spirit =
       spirit
       |> Map.put(:experience, spirit.experience + exp)
       |> ApathyDrive.Level.advance
-      |> add_loot_essence(exp)
-      |> Spirit.save
 
     if spirit.level > level do
-      Mobile.send_scroll self(), "<p>You ascend to level #{spirit.level}!"
+      Mobile.send_scroll mobile, "<p>You ascend to level #{spirit.level}!"
     end
 
     if spirit.level < level do
-      Mobile.send_scroll self(), "<p>You fall to level #{spirit.level}!"
+      Mobile.send_scroll mobile, "<p>You fall to level #{spirit.level}!"
     end
 
-    spirit
+    Map.put(mobile, :spirit, spirit)
   end
-
-  defp add_loot_essence(spirit, exp) when exp > 0 do
-    spirit = put_in spirit.loot_essence, spirit.loot_essence + exp
-
-    if spirit.loot_essence >= div(spirit.experience, 10) do
-      send(self(), {:generate_loot, nil, spirit.level, 100})
-      put_in spirit.loot_essence, 0
-    else
-      spirit
-    end
-  end
-  defp add_loot_essence(spirit, _exp), do: spirit
 
   def online do
     PubSub.subscribers("spirits:online")

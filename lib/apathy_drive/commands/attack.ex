@@ -4,43 +4,35 @@ defmodule ApathyDrive.Commands.Attack do
 
   def keywords, do: ["a", "attack", "k", "kill"]
 
-  def execute(mobile, []) do
+  def execute(%Room{} = room, %Mobile{} = mobile, []) do
     Mobile.send_scroll(mobile, "<p>Attack whom?</p>")
+    room
   end
 
-  def execute(mobile, arguments) when is_pid(mobile) do
-    target =
+  def execute(%Room{} = room, %Mobile{} = mobile, arguments) do
+    query =
       arguments
       |> Enum.join(" ")
       |> String.downcase
 
-    Mobile.attack(mobile, target)
-  end
-
-  def execute(%Mobile{room_id: room_id}, query) do
-    RoomServer.attack({:global, "room_#{room_id}"}, self(), query)
-  end
-
-  def execute(%Room{} = room, mobile, query) do
     target = Room.find_mobile_in_room(room, mobile, query)
-    attack(mobile, target && target.mobile)
+
+    Room.update_mobile(room, mobile.ref, fn %Mobile{} = attacker ->
+      attack(attacker, target)
+    end)
   end
 
-  def attack(mobile, nil) when is_pid(mobile) do
+  def attack(%Mobile{} = mobile, nil) do
     Mobile.send_scroll(mobile, "<p>Attack whom?</p>")
   end
 
-  def attack(mobile, target) when mobile == target do
+  def attack(%Mobile{ref: attacker_ref} =  mobile, %Mobile{ref: target_ref}) when attacker_ref == target_ref do
     Mobile.send_scroll(mobile, "<p>Attack yourself?</p>")
   end
 
-  def attack(mobile, target) when is_pid(mobile) do
-    Mobile.attack(mobile, target)
-  end
-
-  def attack(%Mobile{} = mobile, target) do
+  def attack(%Mobile{} = mobile, %Mobile{ref: target_ref}) do
     mobile
-    |> Mobile.set_attack_target(target)
+    |> Mobile.set_attack_target(target_ref)
     |> Mobile.initiate_combat
     |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
   end

@@ -1,67 +1,54 @@
 defmodule ApathyDrive.Commands.Close do
   use ApathyDrive.Command
-  alias ApathyDrive.{Doors, PubSub}
+  alias ApathyDrive.Doors
 
-  def keywords, do: ["close", "shut"]
+  def keywords, do: ["close"]
 
-  def execute(mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Close what?</p>")
+  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, _message) do
+    Mobile.body_required(mobile)
+
+    room
   end
 
-  def execute(%Mobile{room_id: room_id} = mobile, arguments) do
+  def execute(%Room{} = room, %Mobile{} = mobile, []) do
+    Mobile.send_scroll(mobile, "<p>Close what?</p>")
+    room
+  end
+
+  def execute(%Room{} = room, %Mobile{} = mobile, arguments) do
     direction =
       arguments
       |> Enum.join(" ")
       |> Room.direction
 
-    room_id
-    |> RoomServer.find
-    |> RoomServer.close(%{pid: self(), name: Mobile.look_name(mobile)}, direction)
-  end
-
-  def execute(mobile, arguments) do
-    Mobile.close(mobile, arguments)
-  end
-
-  def execute(%Room{} = room, mobile_data, direction) do
     room
     |> Room.get_exit(direction)
-    |> close(mobile_data, room)
+    |> close(mobile, room)
   end
 
-  defp close(nil, %{pid: mobile}, %Room{} = room) do
+  defp close(nil, %Mobile{} = mobile, %Room{} = room) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
     room
   end
 
-  defp close(%{"kind" => kind} = room_exit, %{pid: mobile, name: mobile_name}, %Room{} = room) when kind in ["Door", "Gate"] do
+  defp close(%{"kind" => kind} = room_exit, %Mobile{} = mobile, %Room{} = room) when kind in ["Door", "Gate"] do
     name = String.downcase(kind)
 
-    if Doors.open?(room, room_exit) do
-      data = %{
-        closer: mobile,
-        name: mobile_name,
-        type: name,
-        description: ApathyDrive.Exit.direction_description(room_exit["direction"]),
-        direction: room_exit["direction"]
-      }
-
-      mirror_close!(room_exit, room.id)
-      close!(room, data)
-    else
-      Mobile.send_scroll(mobile, "<p>The #{name} is already closed.</p>")
-      room
+    cond do
+      Doors.open?(room, room_exit) ->
+        mirror_close!(room_exit, room.id)
+        Mobile.send_scroll(mobile, "<p>You closed the #{name}.</p>")
+        Room.send_scroll(room, "<p>You see #{Mobile.look_name(mobile)} close the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", mobile)
+        Room.close!(room, room_exit["direction"])
+      true ->
+        Mobile.send_scroll(mobile, "<p>The #{name} is already closed.</p>")
+        room
     end
   end
 
-  defp close(_room_exit, %{pid: mobile}, %Room{} = room) do
+  defp close(_room_exit, %Mobile{} = mobile, %Room{} = room) do
     Mobile.send_scroll(mobile, "<p>That exit has no door.</p>")
     room
-  end
-
-  defp close!(%Room{id: id} = room, data) do
-    PubSub.broadcast! "rooms:#{id}:mobiles", {:door_closed, data}
-    Room.close!(room, data.direction)
   end
 
   defp mirror_close!(%{"destination" => destination} = room_exit, room_id) do
@@ -69,4 +56,5 @@ defmodule ApathyDrive.Commands.Close do
     |> RoomServer.find
     |> RoomServer.mirror_close(room_id, room_exit)
   end
+
 end

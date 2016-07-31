@@ -5,36 +5,28 @@ defmodule ApathyDrive.Commands.System do
 
   def keywords, do: ["system", "sys"]
 
-  def execute(mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Invalid system command.</p>")
+  def execute(%Room{} = room, %Mobile{spirit: %Spirit{admin: true}} = mobile, args) do
+    system(room, mobile, args)
   end
 
-  def execute(mobile, args) when is_pid(mobile) do
-    Mobile.system(mobile, args)
-  end
-
-  def execute(%Mobile{socket: socket, spirit: %Spirit{admin: true}, room_id: room_id}, ["edit", "room"]) do
-    send(socket, {:open_tab, "/admin/rooms/#{room_id}"})
-  end
-
-  def execute(%Mobile{spirit: %Spirit{admin: true}, room_id: room_id}, args) do
-    room_id
-    |> RoomServer.find
-    |> RoomServer.system(self, args)
-  end
-
-  def execute(%Mobile{} = mobile, _args) do
+  def execute(%Room{} = room, %Mobile{} = mobile, _args) do
     Mobile.send_scroll(mobile, "<p>You do not have permission to do that.</p>")
+    room
   end
 
-  def execute(%Room{area: %Area{level: old_level} = area} = room, mobile, ["set", "area", "level", level]) do
+  def system(%Room{id: id} = room, %Mobile{spirit: %Spirit{admin: true}} = mobile, ["edit", "room"]) do
+    send(mobile.socket, {:open_tab, "/admin/rooms/#{id}"})
+    room
+  end
+
+  def system(%Room{area: %Area{level: old_level} = area} = room, mobile, ["set", "area", "level", level]) do
     area = Area.update_level(area, level)
     PubSub.broadcast!("areas:#{area.id}", {:update_area, area})
     Mobile.send_scroll(mobile, "<p>#{area.name} updated from level #{old_level} to #{level}.</p>")
     room
   end
 
-  def execute(%Room{area: %Area{} = old_area} = room, mobile, ["merge", "area" | area]) do
+  def system(%Room{area: %Area{} = old_area} = room, mobile, ["merge", "area" | area]) do
     area = Enum.join(area, " ")
 
     area
@@ -51,7 +43,7 @@ defmodule ApathyDrive.Commands.System do
        end
   end
 
-  def execute(%Room{area: %Area{} = old_area} = room, mobile, ["set", "area" | area]) do
+  def system(%Room{area: %Area{} = old_area} = room, mobile, ["set", "area" | area]) do
     area = Enum.join(area, " ")
 
     area
@@ -69,7 +61,7 @@ defmodule ApathyDrive.Commands.System do
        end
   end
 
-  def execute(%Room{} = room, mobile, ["create", "area" | area]) do
+  def system(%Room{} = room, mobile, ["create", "area" | area]) do
     area = Enum.join(area, " ")
 
     area
@@ -89,7 +81,7 @@ defmodule ApathyDrive.Commands.System do
        end
   end
 
-  def execute(%Room{name: old_name} = room, mobile, ["set", "room", "name" | room_name]) do
+  def system(%Room{name: old_name} = room, mobile, ["set", "room", "name" | room_name]) do
     room =
       room
       |> Map.put(:name, Enum.join(room_name, " "))
@@ -102,7 +94,7 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
-  def execute(%Room{coordinates: old_coords} = room, mobile, ["set", "room", "coords", x, y, z]) do
+  def system(%Room{coordinates: old_coords} = room, mobile, ["set", "room", "coords", x, y, z]) do
     x = String.to_integer(x)
     y = String.to_integer(y)
     z = String.to_integer(z)
@@ -118,7 +110,8 @@ defmodule ApathyDrive.Commands.System do
 
     room
   end
-  def execute(%Room{coordinates: old_coords} = room, mobile, ["set", "room", "coords" | []]) do
+
+  def system(%Room{coordinates: old_coords} = room, mobile, ["set", "room", "coords" | []]) do
     room =
       room
       |> Map.put(:coordinates, nil)
@@ -131,7 +124,7 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
-  def execute(%Room{} = room, mobile, ["list", "areas"]) do
+  def system(%Room{} = room, mobile, ["list", "areas"]) do
     Area.list_with_room_counts
     |> Repo.all
     |> Enum.chunk(10)
@@ -145,9 +138,8 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
-  def execute(%Room{} = room, mobile, ["goto" | area]) do
+  def system(%Room{} = room, mobile, ["goto" | area]) do
     area = Enum.join(area, " ")
-
 
     area
     |> Area.find_by_name
@@ -161,7 +153,16 @@ defmodule ApathyDrive.Commands.System do
            |> ApathyDrive.Repo.one
            |> case do
                 %Room{id: room_id} ->
-                  Mobile.teleport(mobile, room_id)
+                  room_exit =
+                    %{
+                      "kind" => "Action",
+                      "destination" => room_id,
+                      "mover_message" => "<span class='blue'>You vanish into thin air and reappear somewhere else!</span>",
+                      "from_message" => "<span class='blue'>{{Name}} vanishes into thin air!</span>",
+                      "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
+                    }
+
+                  ApathyDrive.Commands.Move.execute(room, mobile, room_exit)
                 _ ->
                   Mobile.send_scroll(mobile, "<p>#{area.name} has no rooms!</p>")
               end
@@ -174,7 +175,7 @@ defmodule ApathyDrive.Commands.System do
        end
   end
 
-  def execute(%Room{} = room, mobile, _args) do
+  def system(%Room{} = room, mobile, _args) do
     Mobile.send_scroll(mobile, "<p>Invalid system command.</p>")
 
     room

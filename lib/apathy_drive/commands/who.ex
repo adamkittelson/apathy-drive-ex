@@ -4,7 +4,7 @@ defmodule ApathyDrive.Commands.Who do
 
   def keywords, do: ["who"]
 
-  def execute(mobile, _arguments) do
+  def execute(%Room{} = room, %Mobile{} = mobile, _arguments) do
     Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>==============================================================</span></p>")
 
@@ -14,5 +14,7 @@ defmodule ApathyDrive.Commands.Who do
          %{name: name} ->
            Mobile.send_scroll(mobile, "<p>#{name}</p>")
        end)
+
+    room
   end
 end

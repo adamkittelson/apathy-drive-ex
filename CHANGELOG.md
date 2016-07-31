@@ -184,3 +184,6 @@ CHANGELOG
 
 ---- 0.0.71 / 2016-07-03 / ex_admin --------------------------------------------
 * use ex_admin for admin pages
+
+---- 0.0.72 / 2016-07-30 / remove-mobile-servers-redux -------------------------
+* don'\''t have genservers for monsters, make monster data part o room genservers

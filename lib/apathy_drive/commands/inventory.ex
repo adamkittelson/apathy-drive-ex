@@ -3,12 +3,7 @@ defmodule ApathyDrive.Commands.Inventory do
 
   def keywords, do: ["i", "inv", "inventory"]
 
-  def execute(mobile, _arguments) do
-    Mobile.display_inventory(mobile)
-  end
-
-  def execute(%Mobile{spirit: nil}), do: nil
-  def execute(%Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile) do
+  def execute(%Room{} = room, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile, _args) do
     if equipment |> Enum.any? do
       Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")
 
@@ -26,32 +21,7 @@ defmodule ApathyDrive.Commands.Inventory do
       Mobile.send_scroll(mobile, "<p>You are carrying nothing.</p>")
     end
 
-    display_encumbrance(mobile)
+    room
   end
 
-  defp display_encumbrance(%Mobile{spirit: nil}), do: nil
-
-  defp display_encumbrance(%Mobile{} = mobile) do
-    current = Mobile.current_encumbrance(mobile)
-    max     = Mobile.max_encumbrance(mobile)
-    percent = trunc((current / max) * 100)
-
-    display_encumbrance(mobile, current, max, percent)
-  end
-
-  defp display_encumbrance(%Mobile{} = mobile, current, max, percent) when percent < 17 do
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> None [#{percent}%]</p>")
-  end
-
-  defp display_encumbrance(%Mobile{} = mobile, current, max, percent) when percent < 34 do
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-green'>Light [#{percent}%]</span></p>")
-  end
-
-  defp display_encumbrance(%Mobile{} = mobile, current, max, percent) when percent < 67 do
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-yellow'>Medium [#{percent}%]</span></p>")
-  end
-
-  defp display_encumbrance(%Mobile{} = mobile, current, max, percent) do
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current}/#{max} -</span> <span class='dark-red'>Heavy [#{percent}%]</span></p>")
-  end
 end

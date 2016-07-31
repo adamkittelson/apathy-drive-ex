@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Match, Mobile, Room, RoomUnity, Presence, PubSub}
+  alias ApathyDrive.{Ability, Area, Class, Match, Mobile, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
 
   schema "rooms" do
     field :name,                     :string
@@ -19,17 +19,212 @@ defmodule ApathyDrive.Room do
     field :timers,                   :map, virtual: true, default: %{}
     field :last_effect_key,          :integer, virtual: true, default: 0
     field :default_essence,          :integer, virtual: true
-    field :essence_last_updated_at,  :integer, virtual: true
-    field :essence_last_reported_at, :integer, virtual: true, default: 0
+    field :mobiles,                  :map, virtual: true, default: %{}
+    field :timer,                    :any, virtual: true
 
     timestamps
 
     has_one    :room_unity, RoomUnity
-    has_many   :mobiles, Mobile
+    has_many   :persisted_mobiles, Mobile
     belongs_to :ability, Ability
     belongs_to :area, ApathyDrive.Area
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
+  end
+
+  def update_mobile(%Room{} = room, mobile_ref, fun) do
+    if mobile = room.mobiles[mobile_ref] do
+      case fun.(mobile) do
+        %Mobile{} = updated_mobile ->
+          put_in(room.mobiles[mobile_ref], updated_mobile)
+        %Room{} = updated_room ->
+          updated_room
+      end
+    else
+      room
+    end
+  end
+
+  def mobile_entered(%Room{} = room, %Mobile{} = mobile, message \\ nil) do
+    from_direction =
+      room
+      |> Room.get_direction_by_destination(mobile.room_id)
+      |> Room.enter_direction()
+
+    if mobile.monster_template_id do
+      Room.display_enter_message(room, mobile, message)
+
+      Room.audible_movement(room, from_direction)
+    end
+
+    mobile = Mobile.set_room_id(mobile, room.id)
+
+    ApathyDrive.Commands.Look.execute(room, mobile, [])
+
+    room = put_in(room.mobiles[mobile.ref], mobile)
+
+    room =
+      Enum.reduce(room.mobiles, room, fn {ref, mobile_in_room}, updated_room ->
+        updated_room =
+          Room.update_mobile(updated_room, ref, fn
+            %Mobile{monster_template_id: nil} = mob_in_room ->
+              mob_in_room
+            %Mobile{} = mob_in_room ->
+              ApathyDrive.Aggression.react(mob_in_room, mobile)
+          end)
+
+        Room.update_mobile(updated_room, mobile.ref, fn mob ->
+          ApathyDrive.Aggression.react(mob, mobile_in_room)
+        end)
+      end)
+      |> Room.update_essence_targets
+
+    Room.move_after(room, mobile.ref)
+  end
+
+  def move_after(%Room{} = room, ref) do
+    Room.update_mobile(room, ref, fn %Mobile{movement_frequency: frequency} = mobile ->
+      TimerManager.send_after(mobile, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
+    end)
+  end
+
+  def local_hated_targets(%Room{mobiles: mobiles}, %Mobile{hate: hate}) do
+    mobiles
+    |> Map.keys
+    |> Enum.reduce(%{}, fn(potential_target, targets) ->
+         threat = Map.get(hate, potential_target, 0)
+         if threat > 0 do
+           Map.put(targets, threat, potential_target)
+         else
+           targets
+         end
+       end)
+  end
+
+  def next_timer(%Room{} = room) do
+    [TimerManager.next_timer(room) | Enum.map(Map.values(room.mobiles), &TimerManager.next_timer/1)]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.sort
+    |> List.first
+  end
+
+  def apply_timers(%Room{} = room) do
+    room = TimerManager.apply_timers(room)
+
+    Enum.reduce(room.mobiles, room, fn {ref, mobile}, updated_room ->
+      put_in updated_room.mobiles[ref], TimerManager.apply_timers(mobile)
+    end)
+  end
+
+  def add_items(%Room{room_unity: %RoomUnity{items: items}} = room, new_items) do
+    put_in(room.room_unity.items, new_items ++ items)
+    |> Repo.save
+  end
+
+  def start_timer(%Room{timer: timer} = room) do
+    if next_timer = Room.next_timer(room) do
+      send_at = max(0, trunc(next_timer - Timex.Time.to_milliseconds(Timex.Time.now)))
+      cond do
+        is_nil(timer) ->
+          timer = Process.send_after(self, :tick, send_at)
+          Map.put(room, :timer, timer)
+        Process.read_timer(timer) >= send_at ->
+          Process.cancel_timer(timer)
+          timer = Process.send_after(self, :tick, send_at)
+          Map.put(room, :timer, timer)
+        :else ->
+          room
+      end
+    else
+      room
+    end
+  end
+
+  def find_spirit(%Room{mobiles: mobiles}, spirit_id) do
+    mobiles
+    |> Map.values
+    |> Enum.find(&(&1.spirit && &1.spirit.id == spirit_id))
+  end
+
+  def load_present_mobiles(%Room{} = room) do
+    room.id
+    |> mobiles_to_load()
+    |> Enum.reduce(room, fn(mobile_id, updated_room) ->
+         monster =
+           Mobile
+           |> Repo.get!(mobile_id)
+           |> Mobile.init
+
+         Room.mobile_entered(updated_room, monster)
+       end)
+  end
+
+  def mobiles_to_load(room_id) do
+    require Ecto.Query
+
+    Mobile
+    |> Ecto.Query.where(room_id: ^room_id)
+    |> Ecto.Query.select([m], m.id)
+    |> Repo.all
+  end
+
+  def display_enter_message(%Room{} = room, %Mobile{} = mobile, message \\ nil) do
+    from_direction =
+      room
+      |> get_direction_by_destination(mobile.room_id)
+      |> enter_direction()
+
+    message =
+      (message || mobile.enter_message)
+      |> ApathyDrive.Text.interpolate(%{
+           "name" => Mobile.look_name(mobile),
+           "direction" => from_direction
+         })
+      |> ApathyDrive.Text.capitalize_first
+
+    send_scroll(room, "<p>#{message}</p>", mobile)
+  end
+
+  def display_exit_message(room, %{mobile: mobile, message: message, to: to_room_id}) do
+    message = message
+              |> ApathyDrive.Text.interpolate(%{
+                   "name" => Mobile.look_name(mobile),
+                   "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
+                 })
+
+    if mobile.monster_template_id do
+      send_scroll(room, "<p><span class='grey'>#{message}</span></p>", mobile)
+    else
+      room
+    end
+  end
+
+  def audible_movement(%Room{exits: exits}, from_direction) do
+    exits
+    |> Enum.each(fn
+         %{"direction" => direction, "kind" => kind, "destination" => dest} when kind in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"] and direction != from_direction ->
+           direction = ApathyDrive.Exit.reverse_direction(direction)
+
+           dest
+           |> RoomServer.find
+           |> RoomServer.send_scroll("<p><span class='dark-magenta'>You hear movement #{sound_direction(direction)}.</span></p>")
+         _ -> :noop
+       end)
+  end
+
+  def initiate_remote_action(room, mobile, remote_action_exit, opts \\ []) do
+    unless Mobile.confused(mobile) do
+      remote_action_exit["destination"]
+      |> RoomServer.find
+      |> RoomServer.trigger_remote_action(remote_action_exit, mobile.room_id, opts)
+
+      room
+      |> Room.send_scroll(%{
+           mobile.spirit.id => "<p>#{remote_action_exit["message"]}</p>",
+           :other => "<p>#{ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{"name" => Mobile.look_name(mobile)})}</span></p>"
+         })
+    end
+    room
   end
 
   def world_map do
@@ -38,12 +233,6 @@ defmodule ApathyDrive.Room do
     join: area in assoc(room, :area),
     join: room_unity in assoc(room, :room_unity),
     select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, controlled_by: room_unity.controlled_by, exits: room.exits}
-  end
-
-  def spirits_present?(%Room{} = room) do
-    "rooms:#{room.id}:mobiles"
-    |> Presence.metas
-    |> Enum.any?(&(&1.spirit_essence != nil))
   end
 
   def controlled_by(%Room{} = room) do
@@ -120,13 +309,10 @@ defmodule ApathyDrive.Room do
     |> validate_length(:name, min: 1, max: 30)
   end
 
-  def find_mobile_in_room(%Room{} = room, mobile, query) do
+  def find_mobile_in_room(%Room{mobiles: mobiles}, mobile, query) do
     mobiles =
-      Presence.metas("rooms:#{room.id}:mobiles")
-
-    mobile =
       mobiles
-      |> Enum.find(&(&1.mobile == mobile))
+      |> Map.values
 
     mobiles
     |> Enum.reject(&(&1 == mobile))
@@ -172,6 +358,10 @@ defmodule ApathyDrive.Room do
       true ->
         nil
     end
+  end
+
+  def get_mobile(%Room{mobiles: mobiles}, ref) do
+    mobiles[ref]
   end
 
   def get_exit(room, direction) do
@@ -265,11 +455,12 @@ defmodule ApathyDrive.Room do
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
 
-  def send_scroll(id, html) when is_integer(id) do
-    ApathyDrive.PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, html}
-  end
-  def send_scroll(%Room{id: id}, html) do
-    ApathyDrive.PubSub.broadcast! "rooms:#{id}:mobiles", {:scroll, html}
+  def send_scroll(%Room{mobiles: mobiles}, html, exclude_mobile \\ nil) do
+    mobiles
+    |> Map.values
+    |> Enum.each(fn mobile ->
+         if mobile != exclude_mobile, do: Mobile.send_scroll(mobile, html)
+       end)
   end
 
   def open!(%Room{} = room, direction) do
@@ -370,23 +561,63 @@ defmodule ApathyDrive.Room do
     end
   end
 
-  def update_essence(%Room{essence_last_updated_at: last_update, room_unity: %RoomUnity{essences: essences}} = room) do
-    time = Timex.DateTime.to_secs(Timex.DateTime.now)
+  def report_essence(%Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
+    Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
+      unless kind in ["Cast", "RemoteAction"] do
 
-    rate = 1 / 10 / 60
+        report = %{
+          essences: essences,
+          room_id: room.id,
+          direction: direction,
+          kind: kind,
+          legacy_id: room.legacy_id,
+          area: room.area.name,
+          controlled_by: room.room_unity.controlled_by
+        }
 
-    room = update_essence_targets(room)
+        dest
+        |> RoomServer.find()
+        |> send({:essence_report, report})
+      end
+    end)
+  end
+
+  def essence_update_interval(%Room{mobiles: mobiles}) do
+    if Enum.any?(mobiles, fn {_ref, mobile} -> !is_nil(mobile.spirit) end) do
+      1000
+    else
+      10_000
+    end
+  end
+
+  def update_essence(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
+    room = if Enum.any?(room.room_unity.essence_targets), do: room, else: update_essence_targets(room)
 
     room =
       essences
       |> Enum.reduce(room, fn({essence, amount}, %Room{room_unity: %RoomUnity{essence_targets: essence_targets}} = updated_room) ->
-           amount_to_shift = (get_in(essence_targets, [essence, "target"]) - amount) * rate * (time - last_update)
-           update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+           target = get_in(essence_targets, [essence, "target"])
+           difference = target - amount
+           amount_to_shift = difference / 5 / 60 * Room.essence_update_interval(room) / 1000
+
+           percent_difference = if amount == 0, do: 1, else: abs(difference) / amount
+
+           cond do
+             percent_difference == 0 or amount_to_shift == 0 ->
+               updated_room
+              percent_difference <= 0.10 ->
+                updated_room =
+                  put_in(updated_room.room_unity.essences[essence], target)
+                  |> Repo.save
+                Room.report_essence(updated_room)
+                updated_room
+              true ->
+                update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+           end
          end)
       |> Room.update_controlled_by
-      |> Map.put(:essence_last_updated_at, time)
 
-    data =
+    essence =
       %{
         room_id: room.id,
         good: trunc(room.room_unity.essences["good"]),
@@ -394,9 +625,21 @@ defmodule ApathyDrive.Room do
         evil: trunc(room.room_unity.essences["evil"]),
       }
 
-    ApathyDrive.PubSub.broadcast!("rooms:#{room.id}:mobiles", {:update_room_essence, data})
+    Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
+      Room.update_mobile(updated_room, ref, fn %Mobile{socket: socket} = mobile ->
 
-    room
+        if socket, do: send(socket, {:update_room_essence, essence})
+
+        room_essences =
+          essence
+          |> Map.drop([:room_id])
+          |> Enum.reduce(%{}, fn({k,v}, re) -> Map.put(re, to_string(k), v) end)
+
+        mobile
+        |> Map.put(:room_essences, room_essences)
+        |> Mobile.update_essence(updated_room)
+      end)
+    end)
   end
 
   def update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do
@@ -437,17 +680,25 @@ defmodule ApathyDrive.Room do
          end)
 
     essences =
-      "rooms:#{room.id}:mobiles"
-      |> Presence.metas()
+      room.mobiles
+      |> Map.values
       |> Enum.reduce(essences, fn
-           %{invisible?: true}, updated_essences ->
+           %Mobile{monster_template_id: nil}, updated_essences ->
              updated_essences
-           %{spirit_essence: nil, unities: []} = mobile, updated_essences ->
-             add_mobile_essence(updated_essences, ["default"], mobile.essence)
-           %{spirit_essence: nil} = mobile, updated_essences ->
-             add_mobile_essence(updated_essences, mobile.unities, mobile.essence)
-           mobile, updated_essences ->
-             add_mobile_essence(updated_essences, mobile.spirit_unities, mobile.spirit_essence)
+           %Mobile{spirit: nil, unities: []} = mobile, updated_essences ->
+             add_mobile_essence(updated_essences, ["default"], mobile.experience)
+           %Mobile{spirit: nil} = mobile, updated_essences ->
+             add_mobile_essence(updated_essences, mobile.unities, mobile.experience)
+           %Mobile{spirit: %Spirit{class: %Class{unities: [unity]}} = spirit}, updated_essences ->
+            add_mobile_essence(updated_essences, [unity], spirit.experience)
+           %Mobile{spirit: spirit, unities: unities}, updated_essences ->
+             unities =
+               spirit.class.unities
+               |> MapSet.new
+               |> MapSet.intersection(MapSet.new(unities))
+               |> MapSet.to_list
+
+             add_mobile_essence(updated_essences, unities, spirit.experience)
          end)
 
     essences =
@@ -483,6 +734,7 @@ defmodule ApathyDrive.Room do
          end)
 
     put_in(room.room_unity.essence_targets, essences)
+    |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
   end
 
   def average([]), do: nil
@@ -499,6 +751,16 @@ defmodule ApathyDrive.Room do
         updated_essences
       end
     end)
+  end
+
+  defp sound_direction("up"),      do: "above you"
+  defp sound_direction("down"),    do: "below you"
+  defp sound_direction(direction), do: "to the #{direction}"
+
+  defp jitter(time) do
+    time
+    |> :rand.uniform
+    |> Kernel.+(time)
   end
 
 end

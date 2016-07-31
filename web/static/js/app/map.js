@@ -507,12 +507,18 @@ $(document).ready(function() {
 
   chan.on("room control change", function(data) {
     var room = rooms[data.room_id];
-    room.controlled_by = data.controlled_by;
-    add_room(data.room_id, room);
 
-    draw_area(room.area);
-    draw_area(player.room.area);
-    center_on_room(player.room.id);
+    if (room) {
+      room.controlled_by = data.controlled_by;
+      add_room(data.room_id, room);
+
+      draw_area(room.area);
+      draw_area(player.room.area);
+      center_on_room(player.room.id);
+    } else {
+      console.log("could not find room: " + data.room_id);
+      console.log(data);
+    }
   });
 
   chan.on("room admin updated", function(data) {

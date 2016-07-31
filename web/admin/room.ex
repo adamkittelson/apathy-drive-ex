@@ -10,7 +10,6 @@ defmodule ApathyDrive.ExAdmin.Room do
       def before_delete(%Plug.Conn{assigns: %{resource: %Room{id: id}}} = conn, _params) do
 
         :global.send("room_#{id}", :room_deleted)
-        ApathyDrive.PubSub.broadcast!("rooms:#{id}:mobiles", :die)
 
         conn
       end

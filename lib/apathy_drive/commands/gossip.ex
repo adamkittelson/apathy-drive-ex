@@ -3,13 +3,10 @@ defmodule ApathyDrive.Commands.Gossip do
 
   def keywords, do: ["gos"]
 
-  def execute(mobile, arguments) when is_pid(mobile) do
-    Mobile.gossip(mobile, Enum.join(arguments, " "))
-  end
-
-  def execute(%Mobile{} = mobile, message) do
+  def execute(%Room{} = room, %Mobile{} = mobile, message) do
     message = Mobile.sanitize(message)
-    ApathyDrive.PubSub.broadcast!("chat:gossip", {:gossip, Mobile.aligned_spirit_name(mobile), message})
+    ApathyDrive.Endpoint.broadcast!("chat:gossip", "scroll", %{html: "<p>[<span class='dark-magenta'>gossip</span> : #{Mobile.aligned_spirit_name(mobile)}] #{message}</p>"})
+    room
   end
 
 end

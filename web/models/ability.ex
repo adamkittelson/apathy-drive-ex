@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, Match, RoomServer}
+  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, Match, Room, RoomServer}
   import ApathyDrive.Text
   import ApathyDrive.TimerManager, only: [seconds: 1]
 
@@ -138,35 +138,36 @@ defmodule ApathyDrive.Ability do
 
   def scale_effect(%Mobile{}, _effect_name, effect), do: effect
 
-  def find_mobile_in_room(room_id, string, %Mobile{pid: pid} = mobile) do
-    PubSub.subscribers("rooms:#{room_id}:mobiles")
-    |> Enum.map(fn(mobile_pid) ->
-         if mobile_pid == pid do
-           mobile
-         else
-           mobile_pid
-         end
-       end)
-    |> Match.one(:name_contains, string)
+  def find_mobile_in_room(%Room{} = room, %Mobile{}, query) do
+    mobiles =
+      room.mobiles
+      |> Map.values
+
+    target =
+      mobiles
+      |> Match.one(:name_contains, query)
+
+    target && target.ref
   end
 
-  def find_other_mobile_in_room(room_id, string, %Mobile{pid: pid}) do
-    PubSub.subscribers("rooms:#{room_id}:mobiles", [pid])
-    |> Match.one(:name_contains, string)
+  def find_other_mobile_in_room(%Room{} = room, %Mobile{ref: mobile_ref}, query) do
+    mobiles =
+      room.mobiles
+      |> Map.values
+
+    target =
+      mobiles
+      |> Enum.reject(&(&1.ref == mobile_ref))
+      |> Match.one(:name_contains, query)
+
+    target && target.ref
   end
 
-  def alignment_enemies(%Mobile{} = mobile) do
-    case mobile.alignment do
-      "good" ->
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:neutral") ++
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:evil")
-      "neutral" ->
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:good") ++
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:evil")
-      "evil" ->
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:neutral") ++
-        PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:good")
-    end
+  def alignment_enemies(%Room{} = room, %Mobile{} = mobile) do
+    room.mobiles
+    |> Map.values
+    |> Enum.reject(&(&1.alignment == mobile.alignment))
+    |> Enum.map(&Map.get(&1, :ref))
   end
 
   def wrap_target(nil),    do: []
@@ -178,97 +179,16 @@ defmodule ApathyDrive.Ability do
   def reject(target_pid, %Mobile{pid: pid}) when pid == target_pid, do: nil
   def reject(target_pid, %Mobile{}), do: target_pid
 
-  def local_hated_targets(%Mobile{} = monster) do
-    monster
-    |> Mobile.local_hated_targets
-    |> Map.values
-  end
+  def display_pre_cast_message(%Room{} = room, caster_ref, %{"pre-cast_message" => _} = ability) do
+    mobile = Room.get_mobile(room, caster_ref)
 
-  def targets(%Mobile{} = mobile, %{"kind" => "attack"}, "") do
-    mobile
-    |> Mobile.aggro_target
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "attack"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_other_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "blessing"}, "") do
-    mobile.pid
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind": "blessing"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "curse"}, "") do
-    mobile
-    |> Mobile.aggro_target
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "curse"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_other_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "heal"}, "") do
-    mobile.pid
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "heal"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "room attack"}, target) when is_binary(target) do
-    Enum.uniq(alignment_enemies(mobile) ++ local_hated_targets(mobile))
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "room blessing"}, target) when is_binary(target) do
-    Enum.uniq(PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")) --
-    local_hated_targets(mobile)
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "room curse"}, target) when is_binary(target) do
-    Enum.uniq(alignment_enemies(mobile) ++ local_hated_targets(mobile))
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "room heal"}, target) when is_binary(target) do
-    Enum.uniq(PubSub.subscribers("rooms:#{mobile.room_id}:mobiles:#{mobile.alignment}")) --
-    local_hated_targets(mobile)
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "utility"}, "") do
-    mobile.pid
-    |> wrap_target
-  end
-
-  def targets(%Mobile{} = mobile, %{"kind" => "utility"}, target) when is_binary(target) do
-    mobile.room_id
-    |> find_mobile_in_room(target, mobile)
-    |> wrap_target
-  end
-
-  def display_pre_cast_message(%Mobile{} = mobile, %{"pre-cast_message" => _} = ability, _targets) do
     cast_messages = cast_messages(ability, mobile, mobile, %{}, "pre-cast_message")
 
     Mobile.send_scroll(mobile, cast_messages["user"])
 
-    PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid])
-    |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
-
+    Room.send_scroll(room, cast_messages["spectator"], mobile)
   end
-  def display_pre_cast_message(%Mobile{}, %{}, _targets), do: nil
+  def display_pre_cast_message(%Room{}, _caster_ref, %{}), do: nil
 
   def can_execute?(%Mobile{} = mobile, ability) do
     cond do
@@ -279,107 +199,212 @@ defmodule ApathyDrive.Ability do
         false
       Mobile.silenced(mobile, ability) ->
         false
+      not_enough_mana?(mobile, ability) ->
+        false
       true ->
         true
     end
   end
 
-  def execute(%Mobile{timers: timers} = mobile, %{"cast_time" => time} = ability, target) do
-    if can_execute?(mobile, ability) do
-      if ref = Map.get(timers, :cast_timer) do
+  def not_enough_mana?(%Mobile{mana: _mana}, %{"ignores_global_cooldown" => true}), do: false
+  def not_enough_mana?(%Mobile{mana: mana} = mobile, %{"mana_cost" => cost}) when cost > mana do
+    Mobile.send_scroll(mobile, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+    true
+  end
+  def not_enough_mana?(%Mobile{}, %{}), do: false
+
+  def cancel_cast_timer(%Room{} = room, mobile_ref) do
+    Room.update_mobile(room, mobile_ref, fn
+      %Mobile{timers: %{cast_timer: _}} = mobile ->
         Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You interrupt your spell.</span></p>")
-        :erlang.cancel_timer(ref)
-      end
-
-      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
-
-      TimerManager.send_after(mobile, {:cast_timer, time |> seconds, {:timer_cast_ability, %{ability: ability, timer: time, target: target}}})
-    else
-      mobile
-    end
-  end
-
-  def execute(%Mobile{} = mobile, %{"kind" => kind} = ability, []) do
-    if kind in ["attack", "curse"] do
-      Mobile.send_scroll(mobile, "<p><span class='red'>You don't see them here.</span></p>")
-    else
-      display_pre_cast_message(mobile, ability, [])
-      mobile
-    end
-  end
-
-  def execute(%Mobile{} = mobile, %{"kind" => kind}, "") when kind in ["attack", "curse"] do
-    Mobile.send_scroll(mobile, "<p>You must specify a target.</p>")
-  end
-
-  def execute(%Mobile{room_id: room_id} = mobile, %{} = ability, target) when is_binary(target) do
-    if can_execute?(mobile, ability) do
-      RoomServer.execute_ability({:global, "room_#{room_id}"}, ability, target)
-      mobile
-    else
-      mobile
-    end
-  end
-
-  def execute(%Mobile{} = mobile, %{"multi-cast" => times} = ability, targets) do
-    ability = Map.delete(ability, "multi-cast")
-
-    2..times |> Enum.each(fn(_) ->
-      ability = ability
-                |> Map.delete("pre-cast_message")
-                |> Map.delete("global_cooldown")
-                |> Map.put("ignores_global_cooldown", true)
-
-      send(self, {:execute_ability, ability, targets})
+        TimerManager.cancel(mobile, :cast_timer)
+      %Mobile{} = mobile ->
+        mobile
     end)
-
-    execute(mobile, ability, targets)
   end
 
-  def execute(%Mobile{mana: mana} = mobile,
-              %{"ignores_global_cooldown" => true, "mana_cost" => cost}, _) when cost > mana do
-    mobile
+  def start_cast_timer(%Room{} = room, mobile_ref, %{"cast_time" => time} = ability, target) do
+    Room.update_mobile(room, mobile_ref, fn mobile ->
+      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
+      TimerManager.send_after(mobile, {:cast_timer, time |> seconds, {:timer_cast_ability, %{caster: mobile.ref, ability: ability, timer: time, target: target}}})
+    end)
   end
 
-  def execute(%Mobile{mana: mana} = mobile,
-              %{"mana_cost" => cost}, _) when cost > mana do
-    mobile
-    |> Mobile.send_scroll("<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+  def execute(%Room{} = room, mobile_ref, %{"cast_time" => _time} = ability, target) do
+    with %Mobile{} = mobile <- room.mobiles[mobile_ref],
+         %Room{} = room <- cancel_cast_timer(room, mobile.ref) do
+      start_cast_timer(room, mobile_ref, ability, target)
+    else
+      _ ->
+        room
+    end
   end
 
-  def execute(%Mobile{} = mobile, %{} = ability, targets) do
+  def execute(%Room{} = room, caster_ref, %{"kind" => kind}, "") when kind in ["attack", "curse"] do
+    room
+    |> Room.get_mobile(caster_ref)
+    |> Mobile.send_scroll("<p>You must specify a target.</p>")
 
-    display_pre_cast_message(mobile, ability, targets)
+    room
+  end
+
+  def execute(%Room{} = room, caster_ref, %{} = ability, query) when is_binary(query) do
+    room
+    |> Room.get_mobile(caster_ref)
+    |> can_execute?(ability)
+    |> if do
+         targets = get_targets(room, Room.get_mobile(room, caster_ref), ability, query)
+         execute(room, caster_ref, ability, targets)
+       else
+         room
+       end
+  end
+
+  def execute(%Room{} = room, caster_ref, %{} = ability, targets) do
+    mobile = Room.get_mobile(room, caster_ref)
+
+    display_pre_cast_message(room, caster_ref, ability)
+
+    room =
+      Room.update_mobile(room, caster_ref, fn(mobile) ->
+        mobile =
+          mobile
+          |> apply_cooldown(ability)
+          |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
+
+          Mobile.update_prompt(mobile)
+        mobile
+      end)
 
     ability =
-      if mobile.combo && mobile.combo == get_in(ability, ["combo", "previous"]) do
-        ability
-        |> Map.merge(ability["combo"])
-        |> Map.delete("previous")
+      room
+      |> Room.get_mobile(caster_ref)
+      |> scale_ability(nil, ability)
+
+    targets
+    |> Enum.reduce(room, fn(target_ref, updated_room) ->
+         cond do
+           updated_room |> Room.get_mobile(target_ref) |> affects_target?(ability) ->
+             updated_room
+             |> apply_ability(target_ref, ability, caster_ref)
+             |> kill_mobiles(caster_ref)
+           target = Room.get_mobile(updated_room, target_ref) ->
+             message = "#{target.name} is not affected by that ability." |> capitalize_first
+             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{message}</span></p>")
+             updated_room
+           true ->
+             updated_room
+         end
+       end)
+    |> execute_multi_cast(caster_ref, ability, targets)
+  end
+
+  def kill_mobiles(%Room{} = room, caster_ref) do
+    Enum.reduce(room.mobiles, room, fn {_ref, target}, updated_room ->
+      if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
+        ApathyDrive.Death.kill(updated_room, target.ref, caster_ref)
       else
-        ability
+        Mobile.update_prompt(target)
+        updated_room
       end
-
-    mobile = mobile
-             |> apply_cooldown(ability)
-             |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
-
-    mobile = 
-      if ability["set_combo"] do
-        Map.put(mobile, :combo, ability["set_combo"])
-      else
-        mobile
-      end
-
-    Mobile.update_prompt(mobile)
-
-    ability = scale_ability(mobile, nil, ability)
-
-    Enum.each(targets, fn(target) ->
-      send(target, {:apply_ability, ability, mobile})
     end)
+  end
 
-    mobile
+  def execute_multi_cast(%Room{} = room, caster_ref, %{"multi-cast" => times} = ability, targets) do
+    ability = Map.delete(ability, "multi-cast")
+
+    room =
+      Enum.reduce(2..times, room, fn(_, updated_room) ->
+        ability =
+          ability
+          |> Map.delete("pre-cast_message")
+          |> Map.delete("global_cooldown")
+          |> Map.put("ignores_global_cooldown", true)
+
+        execute(updated_room, caster_ref, ability, targets)
+      end)
+
+    execute(room, caster_ref, ability, targets)
+  end
+  def execute_multi_cast(%Room{} = room, _caster_ref, %{} = _ability, _targets), do: room
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "attack"}, "") do
+    room
+    |> Mobile.aggro_target(mobile)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "attack"}, query) do
+    find_other_mobile_in_room(room, mobile, query)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{}, %Mobile{ref: ref}, %{"kind" => "blessing"}, "") do
+    wrap_target(ref)
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind": "blessing"}, query) do
+    find_mobile_in_room(room, mobile, query)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "curse"}, "") do
+    room
+    |> Mobile.aggro_target(mobile)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "curse"}, query) do
+    room
+    |> find_other_mobile_in_room(mobile, query)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{}, %Mobile{} = mobile, %{"kind" => "heal"}, "") do
+    mobile.ref
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "heal"}, query) do
+    room
+    |> find_mobile_in_room(mobile, query)
+    |> wrap_target
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room attack"}, _query) do
+    Enum.uniq(alignment_enemies(room, mobile) ++ Room.local_hated_targets(room, mobile))
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room blessing"}, _query) do
+    room.mobles
+    |> Map.values
+    |> Enum.filter(&(&1.alignment == mobile.alignment))
+    |> Enum.map(&Map.get(&1, :ref))
+    |> Kernel.--(Room.local_hated_targets(room, mobile))
+    |> Enum.uniq
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room curse"}, _query) do
+    Enum.uniq(alignment_enemies(room, mobile) ++ Room.local_hated_targets(room, mobile))
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room heal"}, _query) do
+    room.mobles
+    |> Map.values
+    |> Enum.filter(&(&1.alignment == mobile.alignment))
+    |> Enum.map(&Map.get(&1, :ref))
+    |> Kernel.--(Room.local_hated_targets(room, mobile))
+    |> Enum.uniq
+  end
+
+  def get_targets(%Room{}, %Mobile{} = mobile, %{"kind" => "utility"}, "") do
+    wrap_target(mobile.ref)
+  end
+
+  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "utility"}, query) do
+    room
+    |> find_mobile_in_room(mobile, query)
+    |> wrap_target
   end
 
   def attack_abilities(%Mobile{abilities: abilities} = mobile) do
@@ -453,25 +478,26 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def after_cast(%{"ability_user" => %Mobile{} = ability_user,
+  def after_cast(%{"ability_user" => caster_ref,
                    "ability" => after_cast_ability,
                    "chance" => chance}, targets) do
     if chance >= :rand.uniform(100) do
-      execute_after_cast(ability_user, after_cast_ability, targets)
+      execute_after_cast(caster_ref, after_cast_ability, targets)
     end
   end
-  def after_cast(%{"ability_user" => %Mobile{} = ability_user,
+  def after_cast(%{"ability_user" => caster_ref,
                    "ability"   => after_cast_ability}, targets) do
-    execute_after_cast(ability_user, after_cast_ability, targets)
+    execute_after_cast(caster_ref, after_cast_ability, targets)
   end
   def after_cast(%{}, _targets), do: false
 
-  def execute_after_cast(%Mobile{} = ability_user, after_cast_ability, targets) do
+  def execute_after_cast(caster_ref, after_cast_ability, targets) do
     ability =
       after_cast_ability
       |> find()
       |> Map.put("ignores_global_cooldown", true)
-    send(ability_user.pid, {:execute_ability, ability, targets})
+
+    send(self, {:execute_ability, %{caster: caster_ref, ability: ability, target: targets}})
   end
 
   def global_cooldown(%{"ignores_global_cooldown" => true}, %Mobile{}), do: nil
@@ -526,263 +552,299 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def apply_ability(%Mobile{} = mobile, %{"dodge_message" => _, "accuracy_stats" => _} = ability, %Mobile{} = ability_user) do
+  def apply_ability(%Room{} = room, target_ref, %{"dodge_message" => _, "accuracy_stats" => _} = ability, caster_ref) do
+    mobile = Room.get_mobile(room, target_ref)
+    ability_user = Room.get_mobile(room, caster_ref)
+
     if dodged?(mobile, ability, ability_user) do
 
-      user_message = interpolate(ability["dodge_message"]["user"], %{"user" => ability_user, "target" => mobile})
-      Mobile.send_scroll(ability_user, "<p><span class='dark-cyan'>#{user_message}</span></p>")
-
-      target_message = interpolate(ability["dodge_message"]["target"], %{"user" => ability_user, "target" => mobile})
-      unless ability_user.pid == self do
-        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{target_message}</span></p>")
-      end
-
-      spectator_message = interpolate(ability["dodge_message"]["spectator"], %{"user" => ability_user, "target" => mobile})
-      PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
-      |> Enum.each(&(Mobile.send_scroll(&1, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")))
+      Enum.each(room.mobiles, fn {ref, room_mobile} ->
+        cond do
+          ref == ability_user.ref ->
+            user_message = interpolate(ability["dodge_message"]["user"], %{"user" => ability_user, "target" => mobile})
+            Mobile.send_scroll(room_mobile, "<p><span class='dark-cyan'>#{user_message}</span></p>")
+          ref == mobile.ref ->
+            target_message = interpolate(ability["dodge_message"]["target"], %{"user" => ability_user, "target" => mobile})
+            Mobile.send_scroll(room_mobile, "<p><span class='dark-cyan'>#{target_message}</span></p>")
+          :else ->
+            spectator_message = interpolate(ability["dodge_message"]["spectator"], %{"user" => ability_user, "target" => mobile})
+            Mobile.send_scroll(room_mobile, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")
+        end
+      end)
 
       2000
       |> :rand.uniform
-      |> :erlang.send_after(self, :think)
+      |> :erlang.send_after(self, {:think, target_ref})
 
-      put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
+      Room.update_mobile(room, target_ref, fn target ->
+        put_in(target.hate, Map.update(target.hate, caster_ref, 1, fn(hate) -> hate + 1 end))
+      end)
     else
       ability =
         ability
         |> Map.drop(["dodge_message", "accuracy_stats"])
 
-      apply_ability(mobile, ability, ability_user)
+      apply_ability(room, target_ref, ability, caster_ref)
     end
   end
-  def apply_ability(%Mobile{} = mobile, %{} = ability, %Mobile{} = ability_user) do
+  def apply_ability(%Room{} = room, target_ref, %{} = ability, caster_ref) do
 
-    mobile = if Enum.member?(["curse", "room curse"], ability["kind"]) do
-      put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, 1, fn(hate) -> hate + 1 end))
+    room = if Enum.member?(["curse", "room curse"], ability["kind"]) do
+      Room.update_mobile(room, target_ref, fn target ->
+        put_in(target.hate, Map.update(target.hate, caster_ref, 1, fn(hate) -> hate + 1 end))
+      end)
     else
-      mobile
+      room
     end
 
-    ability = reduce_damage(ability, mobile, ability_user)
+    ability = reduce_damage(room, ability, target_ref, caster_ref)
 
     2000
     |> :rand.uniform
-    |> :erlang.send_after(self, :think)
+    |> :erlang.send_after(self, {:think, target_ref})
 
-    ability = display_cast_message(mobile, ability, ability_user)
+    display_cast_message(room, target_ref, ability, caster_ref)
 
-    mobile
-    |> apply_instant_effects(ability["instant_effects"], ability_user)
-    |> add_duration_effects(ability, ability_user)
+    room
+    |> apply_instant_effects(target_ref, ability["instant_effects"], caster_ref)
+    |> add_duration_effects(target_ref, ability, caster_ref)
   end
 
-  def reduce_damage(%{"instant_effects" => %{"damage" => damage}} = ability,
-                    %Mobile{} = mobile,
-                    %Mobile{} = ability_user) do
+  def reduce_damage(%Room{} = room, %{"instant_effects" => %{"damage" => damage}} = ability, target_ref, caster_ref) do
+    target = Room.get_mobile(room, target_ref)
+    caster = Room.get_mobile(room, caster_ref)
 
-    min_damage = trunc(80 * damage / 100)  + Mobile.effect_bonus(ability_user, "increase min damage")
-    max_damage = trunc(120 * damage / 100) + Mobile.effect_bonus(ability_user, "increase max damage")
+    min_damage = trunc(80 * damage / 100)  + Mobile.effect_bonus(caster, "increase min damage")
+    max_damage = trunc(120 * damage / 100) + Mobile.effect_bonus(caster, "increase max damage")
     damage = min_damage..max_damage |> Enum.random
 
-    damage = Mobile.reduce_damage(mobile, damage, ability["instant_effects"]["mitigated_by"])
+    damage = Mobile.reduce_damage(target, damage, ability["instant_effects"]["mitigated_by"])
 
     put_in(ability, ["instant_effects", "damage"], max(damage, 1))
   end
-  def reduce_damage(%{"instant_effects" => %{"drain" => drain}} = ability, mobile, ability_user) do
-    reduce_damage(put_in(ability, ["instant_effects", "damage"], drain), mobile, ability_user)
+  def reduce_damage(%Room{} = room, %{"instant_effects" => %{"drain" => drain}} = ability, target_ref, caster_ref) do
+    reduce_damage(room, put_in(ability, ["instant_effects", "damage"], drain), target_ref, caster_ref)
   end
-  def reduce_damage(%{} = ability, _mobile, _ability_user) do
+  def reduce_damage(%Room{}, %{} = ability, _target_ref, _caster_ref) do
     ability
   end
 
-  def trigger_damage_shields(%Mobile{pid: pid}, %Mobile{pid: attacker_pid}) when pid == attacker_pid, do: nil
-  def trigger_damage_shields(%Mobile{} = mobile, %Mobile{} = attacker) do
-    mobile.effects
+  def trigger_damage_shields(%Room{} = room, target_ref, caster_ref) when target_ref == caster_ref, do: room
+  def trigger_damage_shields(%Room{} = room, target_ref, caster_ref) do
+    room
+    |> Room.get_mobile(target_ref)
+    |> Map.get(:effects)
     |> Map.values
     |> Enum.filter(&(Map.has_key?(&1, "damage shield")))
-    |> Enum.each(fn(%{"damage shield" => damage, "damage shield message" => message, "damage shield type" => damage_type}) ->
-         ability = %{"kind" => "attack", "flags" => [], "instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => message}
-
-         send(attacker.pid, {:apply_ability, ability, mobile})
+    |> Enum.reduce(room, fn
+         %{"damage shield" => damage, "damage shield message" => message, "damage shield type" => damage_type}, updated_room ->
+           ability = %{"kind" => "attack", "flags" => [], "instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => message}
+           execute(updated_room, target_ref, ability, [caster_ref])
        end)
   end
 
-  def apply_instant_effects(%Mobile{} = mobile, nil, _ability_user), do: mobile
-  def apply_instant_effects(%Mobile{} = mobile, %{} = effects, _ability_user) when map_size(effects) == 0, do: mobile
-  def apply_instant_effects(%Mobile{} = mobile, %{"drain" => _} = effects, ability_user) do
-    send(ability_user.pid, {:apply_ability, %{"instant_effects" => %{"heal" => effects["damage"]}}, mobile})
-
-    apply_instant_effects(mobile, Map.delete(effects, "drain"), ability_user)
+  def apply_instant_effects(%Room{} = room, _target_ref, nil, _caster_ref), do: room
+  def apply_instant_effects(%Room{} = room, _target_ref, %{} = effects, _caster_ref) when map_size(effects) == 0, do: room
+  def apply_instant_effects(%Room{} = room, target_ref, %{"drain" => _} = effects, caster_ref) do
+    room
+    |> execute(caster_ref, %{"instant_effects" => %{"heal" => effects["damage"]}}, [caster_ref])
+    |> apply_instant_effects(target_ref, Map.delete(effects, "drain"), caster_ref)
   end
-  def apply_instant_effects(%Mobile{} = mobile, %{"damage" => damage} = effects, %Mobile{} = ability_user) do
-    mobile =
-      if mobile.monster_template_id do
-        Map.put(mobile, :hp, mobile.hp - damage)
-      else
-        hp_damage = trunc(damage * (mobile.hp / mobile.max_hp))
-        essence_damage = (damage - hp_damage) * mobile.spirit.level
+  def apply_instant_effects(%Room{} = room, target_ref, %{"damage" => damage} = effects, caster_ref) do
+    room =
+      Room.update_mobile(room, target_ref, fn target ->
+        target = Map.put(target, :hp, target.hp - damage)
 
-        mobile
-        |> Map.put(:hp, mobile.hp - hp_damage)
-        |> Mobile.add_experience(-essence_damage)
-      end
+        if target_ref == caster_ref do
+          target
+        else
+          enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))
+          put_in(target.hate, Map.update(target.hate, caster_ref, damage, fn(hate) -> hate + enmity end))
+        end
+      end)
 
-    mobile =
-      if mobile.pid == ability_user.pid do
-        mobile
-      else
-        enmity = trunc(damage * Map.get(effects, "hate_multiplier", 1.0))
-
-        put_in(mobile.hate, Map.update(mobile.hate, ability_user.pid, damage, fn(hate) -> hate + enmity end))
-      end
-
-    trigger_damage_shields(mobile, ability_user)
+    room = trigger_damage_shields(room, target_ref, caster_ref)
 
     effects =
       effects
       |> Map.delete("damage")
       |> Map.delete("hate_multiplier")
 
-    apply_instant_effects(mobile, effects, ability_user)
+    apply_instant_effects(room, target_ref, effects, caster_ref)
   end
-  def apply_instant_effects(%Mobile{} = mobile, %{"heal" => heal} = effects, ability_user) do
-    mobile = put_in(mobile.hp, min(mobile.max_hp, mobile.hp + heal))
-
-    apply_instant_effects(mobile, Map.delete(effects, "heal"), ability_user)
+  def apply_instant_effects(%Room{} = room, target_ref, %{"heal" => heal} = effects, caster_ref) do
+    room
+    |> Room.update_mobile(target_ref, fn mobile ->
+         put_in(mobile.hp, min(mobile.max_hp, mobile.hp + heal))
+       end)
+    |> apply_instant_effects(target_ref, Map.delete(effects, "heal"), caster_ref)
   end
-  def apply_instant_effects(%Mobile{} = monster, %{"heal_mana" => heal} = effects, ability_user) do
-    monster = put_in(monster.mana, min(monster.max_mana, monster.mana + heal))
-
-    apply_instant_effects(monster, Map.delete(effects, "heal_mana"), ability_user)
+  def apply_instant_effects(%Room{} = room, target_ref, %{"heal_mana" => heal} = effects, caster_ref) do
+    room
+    |> Room.update_mobile(target_ref, fn mobile ->
+         put_in(mobile.mana, min(mobile.max_mana, mobile.mana + heal))
+       end)
+    |> apply_instant_effects(target_ref, Map.delete(effects, "heal_mana"), caster_ref)
   end
-  def apply_instant_effects(%Mobile{} = mobile, %{"script" => script} = effects, ability_user) do
+  def apply_instant_effects(%Room{} = room, target_ref, %{"script" => script} = effects, caster_ref) do
     script = ApathyDrive.Script.find(script)
-    mobile = ApathyDrive.Script.execute(script, mobile)
 
-    apply_instant_effects(mobile, Map.delete(effects, "script"), ability_user)
+    room
+    |> Room.update_mobile(target_ref, fn mobile ->
+         ApathyDrive.Script.execute(room, mobile, script)
+       end)
+    |> apply_instant_effects(target_ref, Map.delete(effects, "script"), caster_ref)
   end
-  def apply_instant_effects(%Mobile{} = mobile, %{"remove abilities" => abilities} = effects, ability_user) do
-    mobile = Enum.reduce(abilities, mobile, fn(ability_id, updated_mobile) ->
-      Systems.Effect.remove_oldest_stack(updated_mobile, ability_id)
-    end)
-
-    apply_instant_effects(mobile, Map.delete(effects, "remove abilities"), ability_user)
+  def apply_instant_effects(%Room{} = room, target_ref, %{"remove abilities" => abilities} = effects, caster_ref) do
+    room
+    |> Room.update_mobile(target_ref, fn mobile ->
+         Enum.reduce(abilities, mobile, fn(ability_id, updated_mobile) ->
+           Systems.Effect.remove_oldest_stack(updated_mobile, ability_id)
+         end)
+       end)
+    |> apply_instant_effects(target_ref, Map.delete(effects, "remove abilities"), caster_ref)
   end
-  def apply_instant_effects(%Mobile{} = mobile, %{"teleport" => room_ids} = effects, ability_user) do
+  def apply_instant_effects(%Room{} = room, target_ref, %{"teleport" => room_ids} = effects, caster_ref) do
     destination = Enum.random(room_ids)
-    send(self, {:move_to, destination, nil})
 
-    Mobile.look(mobile.pid)
+    room_exit =
+      %{
+        "kind" => "Action",
+        "destination" => destination,
+        "mover_message" => "<span class='blue'>You vanish into thin air and reappear somewhere else!</span>",
+        "from_message" => "<span class='blue'>{{Name}} vanishes into thin air!</span>",
+        "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
+      }
 
-    apply_instant_effects(mobile, Map.delete(effects, "teleport"), ability_user)
+    mobile = Room.get_mobile(room, target_ref)
+
+    room = ApathyDrive.Commands.Move.execute(room, mobile, room_exit)
+
+    apply_instant_effects(room, target_ref, Map.delete(effects, "teleport"), caster_ref)
   end
-  def apply_instant_effects(%Mobile{} = mobile, %{"dispel" => effect_types} = effects, ability_user) do
-    mobile = Enum.reduce(effect_types, mobile, fn(type, updated_monster) ->
-      effects_with_type = mobile.effects
-                          |> Map.keys
-                          |> Enum.filter(fn(key) ->
-                               effect = mobile.effects[key]
-                               if key == "all" do
-                                 # match all temporary effects (effects with timers) for "all"
-                                  Map.has_key?(effect, "timers")
-                               else
-                                 # match all temporary effects with the matching key (e.g. poison, blinded)
-                                  Map.has_key?(effect, type) and Map.has_key?(effect, "timers")
-                               end
-                             end)
+  def apply_instant_effects(%Room{} = room, target_ref, %{"dispel" => effect_types} = effects, caster_ref) do
+    room
+    |> Room.update_mobile(target_ref, fn mobile ->
+         Enum.reduce(effect_types, mobile, fn(type, updated_monster) ->
+           effects_with_type =
+             mobile.effects
+             |> Map.keys
+             |> Enum.filter(fn(key) ->
+                  effect = mobile.effects[key]
+                  if key == "all" do
+                    # match all temporary effects (effects with timers) for "all"
+                     Map.has_key?(effect, "timers")
+                  else
+                    # match all temporary effects with the matching key (e.g. poison, blinded)
+                     Map.has_key?(effect, type) and Map.has_key?(effect, "timers")
+                  end
+                end)
 
-      Enum.reduce(effects_with_type, updated_monster, fn(ability_id, sub_updated_monster) ->
-        Systems.Effect.remove(sub_updated_monster, ability_id, show_expiration_message: true)
-      end)
-    end)
+           Enum.reduce(effects_with_type, updated_monster, fn(ability_id, sub_updated_monster) ->
+             Systems.Effect.remove(sub_updated_monster, ability_id, show_expiration_message: true)
+           end)
+         end)
+       end)
 
-    apply_instant_effects(mobile, Map.delete(effects, "dispel"), ability_user)
+    apply_instant_effects(room, target_ref, Map.delete(effects, "dispel"), caster_ref)
   end
-  def apply_instant_effects(%Mobile{} = mobile, %{} = effects, ability_user) do
-    Mobile.send_scroll(mobile, "<p><span class='red'>unrecognized instant effects: #{inspect Map.keys(effects)}</span></p>")
-    apply_instant_effects(mobile, %{}, ability_user)
-  end
+  def apply_instant_effects(%Room{} = room, target_ref, %{} = effects, caster_ref) do
+    room
+    |> Room.get_mobile(caster_ref)
+    |> Mobile.send_scroll("<p><span class='red'>unrecognized instant effects: #{inspect Map.keys(effects)}</span></p>")
 
-  def display_cast_message(%Mobile{} = mobile,
-                           %{"cast_message" => _, "instant_effects" => %{"heal" => heal}} = ability,
-                           %Mobile{} = ability_user) do
-
-    cast_messages = cast_messages(ability, ability_user, mobile, %{"amount" => heal})
-
-    Mobile.send_scroll(ability_user, cast_messages["user"])
-
-    unless ability_user.pid == self do
-      Mobile.send_scroll(mobile, cast_messages["target"])
-    end
-
-    PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
-    |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
-
-    ability
-  end
-
-  def display_cast_message(%Mobile{} = mobile,
-                           %{"cast_message" => _, "instant_effects" => %{"damage" => damage}} = ability,
-                           %Mobile{} = ability_user) do
-
-    cast_messages = cast_messages(ability, ability_user, mobile, %{"amount" => damage})
-
-    Mobile.send_scroll(ability_user, cast_messages["user"])
-
-    unless ability_user.pid == self do
-      Mobile.send_scroll(mobile, cast_messages["target"])
-    end
-
-    PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
-    |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
-
-    ability
+    apply_instant_effects(room, target_ref, %{}, caster_ref)
   end
 
-  def display_cast_message(%Mobile{} = mobile,
-                           %{"cast_message" => _} = ability,
-                           %Mobile{} = ability_user) do
+  def display_cast_message(room, target_ref, %{"cast_message" => _, "instant_effects" => %{"heal" => heal}} = ability, caster_ref) do
+    target = Room.get_mobile(room, target_ref)
+    caster = Room.get_mobile(room, caster_ref)
 
-    cast_messages = cast_messages(ability, ability_user, mobile)
+    cast_messages = cast_messages(ability, caster, target, %{"amount" => heal})
 
-    Mobile.send_scroll(ability_user, cast_messages["user"])
-
-    unless ability_user.pid == self do
-      Mobile.send_scroll(mobile, cast_messages["target"])
-    end
-
-    PubSub.subscribers("rooms:#{mobile.room_id}:mobiles", [mobile.pid, ability_user.pid])
-    |> Enum.each(&(Mobile.send_scroll(&1, cast_messages["spectator"])))
-
-    ability
+    room.mobiles
+    |> Enum.each(fn {ref, mobile} ->
+         cond do
+           ref == caster_ref ->
+             Mobile.send_scroll(mobile, cast_messages["user"])
+           ref == target_ref ->
+             Mobile.send_scroll(mobile, cast_messages["target"])
+           true ->
+             Mobile.send_scroll(mobile, cast_messages["spectator"])
+         end
+       end)
   end
 
-  def display_cast_message(%Mobile{}, %{} = ability, %Mobile{}), do: ability
+  def display_cast_message(room, target_ref, %{"cast_message" => _, "instant_effects" => %{"damage" => damage}} = ability, caster_ref) do
+    target = Room.get_mobile(room, target_ref)
+    caster = Room.get_mobile(room, caster_ref)
 
-  def add_duration_effects(%Mobile{} = mobile,
+    cast_messages = cast_messages(ability, caster, target, %{"amount" => damage})
+
+    room.mobiles
+    |> Enum.each(fn {ref, mobile} ->
+         cond do
+           ref == caster_ref ->
+             Mobile.send_scroll(mobile, cast_messages["user"])
+           ref == target_ref ->
+             Mobile.send_scroll(mobile, cast_messages["target"])
+           true ->
+             Mobile.send_scroll(mobile, cast_messages["spectator"])
+         end
+       end)
+  end
+
+  def display_cast_message(room, target_ref, %{"cast_message" => _} = ability, caster_ref) do
+    target = Room.get_mobile(room, target_ref)
+    caster = Room.get_mobile(room, caster_ref)
+
+    cast_messages = cast_messages(ability, caster, target)
+
+    room.mobiles
+    |> Enum.each(fn {ref, mobile} ->
+         cond do
+           ref == caster_ref ->
+             Mobile.send_scroll(mobile, cast_messages["user"])
+           ref == target_ref ->
+             Mobile.send_scroll(mobile, cast_messages["target"])
+           true ->
+             Mobile.send_scroll(mobile, cast_messages["spectator"])
+         end
+       end)
+  end
+
+  def display_cast_message(_room, _target_ref, %{} = _ability, _caster_ref), do: :noop
+
+  def add_duration_effects(%Room{} = room,
+                           target_ref,
                            %{
                                "duration_effects" => %{
                                  "stack_key"   => _stack_key,
                                  "stack_count" => _stack_count
                                } = effects
                              } = ability,
-                            ability_user) do
+                            caster_ref) do
 
-     effects = 
+     effects =
        if Map.has_key? effects, "after_cast" do
-         put_in effects, ["after_cast", "ability_user"], ability_user
+         put_in effects, ["after_cast", "ability_user"], caster_ref
        else
          effects
        end
 
-     mobile
-     |> Systems.Effect.add(effects, Map.get(ability, "duration", 0))
-     |> Mobile.send_scroll("<p><span class='#{Ability.color(ability)}'>#{effects["effect_message"]}</span></p>")
+
+    Room.update_mobile(room, target_ref, fn mobile ->
+      mobile
+      |> Systems.Effect.add(effects, Map.get(ability, "duration", 0))
+      |> Mobile.send_scroll("<p><span class='#{Ability.color(ability)}'>#{effects["effect_message"]}</span></p>")
+    end)
   end
-  def add_duration_effects(%Mobile{} = mobile,
+  def add_duration_effects(%Room{} = room,
+                           target_ref,
                            %{
                                "duration_effects" => effects
-                             } = ability,
-                             ability_user) do
+                           } = ability,
+                          caster_ref) do
 
     effects = effects
               |> Map.put("stack_key",   ability["name"])
@@ -790,9 +852,9 @@ defmodule ApathyDrive.Ability do
 
     ability = Map.put(ability, "duration_effects", effects)
 
-    add_duration_effects(mobile, ability, ability_user)
+    add_duration_effects(room, target_ref, ability, caster_ref)
   end
-  def add_duration_effects(%Mobile{} = mobile, %{}, _ability_user), do: mobile
+  def add_duration_effects(%Room{} = room, _target_ref, %{}, _caster_ref), do: room
 
   def affects_target?(%Mobile{flags: _monster_flags}, %{"flags" => nil}), do: true
   def affects_target?(%Mobile{flags: monster_flags}, %{"flags" => ability_flags}) do
@@ -810,5 +872,6 @@ defmodule ApathyDrive.Ability do
     end
   end
   def affects_target?(%Mobile{flags: _monster_flags}, %{}), do: true
+  def affects_target?(nil, %{}), do: false
 
 end

@@ -1,94 +1,53 @@
 defmodule ApathyDrive.Commands.Possess do
   use ApathyDrive.Command
-  alias ApathyDrive.{Presence, Repo}
 
   def keywords, do: ["possess"]
 
-  def execute(%Room{} = room, query, spirit_id, class_name, socket, possessor) do
-    if target = Room.find_mobile_in_room(room, possessor, query) do
-      Mobile.become_possessed(target.mobile, spirit_id, class_name, socket, possessor)
-    else
-      Mobile.send_scroll(possessor, "<p>Possess what?</p>")
+  def execute(%Room{} = room, %Mobile{} = mobile, []) do
+    Mobile.send_scroll(mobile, "<p>Possess what?</p>")
+    room
+  end
+
+  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, args) do
+    case Room.find_mobile_in_room(room, mobile, Enum.join(args, " ")) do
+      target when target == mobile ->
+        Mobile.send_scroll(mobile, "<p>Possess yourself?.</p>")
+        room
+      %Mobile{spirit: %Spirit{}} = mobile ->
+        Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(mobile.name)} is already possessed by another spirit.</p>")
+        room
+      %Mobile{ref: ref} ->
+        room =
+          update_in(room.mobiles[ref], fn(target) ->
+            target =
+              target
+              |> Map.put(:spirit, mobile.spirit)
+              |> Map.put(:socket, mobile.socket)
+              |> Mobile.set_abilities
+              |> Mobile.set_max_mana
+              |> Mobile.set_mana
+              |> Mobile.set_max_hp
+              |> Mobile.set_hp
+
+            send(mobile.socket, {:update_ref, target.ref})
+
+            Mobile.send_scroll(target, "<p>You possess #{Mobile.look_name(target)}.")
+            Mobile.update_prompt(target)
+
+            target
+          end)
+
+        put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
+        |> Room.update_essence_targets
+      _ ->
+        Mobile.send_scroll(mobile, "<p>You don't see that here.</p>")
+        room
     end
   end
 
-  def execute(%Mobile{monster_template_id: nil, room_id: room_id} = mobile, query) do
-    Mobile.save(mobile)
-
-    room_id
-    |> RoomServer.find
-    |> RoomServer.possess(query, mobile.spirit.id, mobile.spirit.class.name, mobile.socket, self())
-  end
-
-  def execute(%Mobile{monster_template_id: _, name: name} = mobile, _args) do
+  def execute(%Room{} = room, %Mobile{monster_template_id: _, name: name} = mobile, _args) do
     Mobile.send_scroll(mobile, "<p>You are already possessing #{name}.</p>")
-  end
-
-  def execute(mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Possess what?</p>")
-  end
-
-  def execute(mobile, arguments) do
-    Mobile.possess(mobile, Enum.join(arguments, " "))
-  end
-
-  def become_possessed(%Mobile{monster_template_id: nil} = mobile, _spirit_id, _class, _socket, possessor) when possessor == self() do
-    Mobile.send_scroll(possessor, "<p>Possess yourself?.</p>")
-    mobile
-  end
-
-  def become_possessed(%Mobile{monster_template_id: nil} = mobile, _spirit_id, _class, _socket, possessor) do
-    Mobile.send_scroll(possessor, "<p>You can't possess other players.</p>")
-    mobile
-  end
-
-  def become_possessed(%Mobile{unities: ["good"]} = mobile, _spirit_id, "Angel", _socket, possessor) do
-    Mobile.send_scroll(possessor, "<p>You may only possess monsters who were spawned in a purified room.</p>")
-    mobile
-  end
-
-  def become_possessed(%Mobile{spirit: nil} = mobile, spirit_id, _class, socket, possessor) do
-    spirit =
-      Repo.get!(Spirit, spirit_id)
-      |> Repo.preload(:class)
-
-    ApathyDrive.PubSub.subscribe("spirits:online")
-    ApathyDrive.PubSub.subscribe("spirits:#{spirit.id}")
-    ApathyDrive.PubSub.subscribe("chat:gossip")
-    ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
-
-    mobile =
-      mobile
-      |> Map.put(:spirit, spirit)
-      |> Map.put(:socket, socket)
-      |> Mobile.set_abilities
-      |> Mobile.set_max_mana
-      |> Mobile.set_mana
-      |> Mobile.set_max_hp
-      |> Mobile.set_hp
-
-    send(socket, {:update_mobile, self})
-
-    Mobile.send_scroll(mobile, "<p>You possess #{mobile.name}.")
-
-    Process.monitor(socket)
-    Process.unregister(:"spirit_#{spirit.id}")
-    Process.register(self, :"spirit_#{spirit.id}")
-
-    Mobile.update_prompt(mobile)
-
-    {:ok, _} = Presence.track(self(), "spirits:online", "spirit_#{spirit_id}", %{
-      name: Spirit.look_name(spirit)
-    })
-
-    Mobile.possession_successful(possessor)
-
-    mobile
-  end
-
-  def become_possessed(mobile, _spirit_id, _class, _socket, possessor) do
-    Mobile.send_scroll(possessor, "<p>#{mobile.name} is possessed by another player.</p>")
-    mobile
+    room
   end
 
 end

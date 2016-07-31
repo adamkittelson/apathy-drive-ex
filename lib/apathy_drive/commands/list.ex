@@ -3,7 +3,8 @@ defmodule ApathyDrive.Commands.List do
 
   def keywords, do: ["list"]
 
-  def execute(mobile, _arguments) do
+  def execute(%Room{} = room, %Mobile{} = mobile, _arguments) do
     Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You care not for mortal trinkets.</span></p>")
+    room
   end
 end

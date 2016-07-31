@@ -4,17 +4,7 @@ defmodule ApathyDrive.Commands.Delve do
 
   def keywords, do: ["delve"]
 
-  def execute(%Mobile{room_id: room_id}) do
-    room_id
-    |> RoomServer.find
-    |> RoomServer.delve(self)
-  end
-
-  def execute(mobile, _args) when is_pid(mobile) do
-    Mobile.delve(mobile)
-  end
-
-  def execute(%Room{room_unity: %RoomUnity{essence_targets: targets}} = room, mobile) do
+  def execute(%Room{room_unity: %RoomUnity{essence_targets: targets}} = room, %Mobile{} = mobile, _args) do
     Mobile.send_scroll(mobile, "\n\n<p><span class='dark-green'>Room:</span> <span class='dark-cyan'>#{room.id}</span>  <span class='dark-green'>Area:</span> <span class='dark-cyan'>#{room.area.name} (Level #{room.area.level})</span>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>x:</span> <span class='dark-cyan'>#{room.coordinates["x"]}</span> <span class='dark-green'>y:</span> <span class='dark-cyan'>#{room.coordinates["y"]}</span> <span class='dark-green'>z:</span> <span class='dark-cyan'>#{room.coordinates["z"]}</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>==================================================</span></p>")
@@ -34,6 +24,7 @@ defmodule ApathyDrive.Commands.Delve do
       
       Mobile.send_scroll(mobile, "<p><span class='dark-green'>Target Essence:</span> <span class='dark-cyan'>#{max(0, trunc(target))}</span></p>\n")
     end)
+    room
   end
 
 end

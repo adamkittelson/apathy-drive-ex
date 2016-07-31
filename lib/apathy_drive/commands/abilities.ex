@@ -3,10 +3,11 @@ defmodule ApathyDrive.Commands.Abilities do
 
   def keywords, do: ["abilities", "spells"]
 
-  def execute(mobile, _arguments) do
+  def execute(%Room{} = room, %Mobile{} = mobile, _arguments) do
     Mobile.send_scroll(mobile, "<p><span class='white'>You have the following abilities:</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Mana   Command  Ability Name</span></p>")
-    Mobile.display_abilities(mobile)
+    display_abilities(mobile)
+    room
   end
 
   def display_abilities(%Mobile{} = mobile) do

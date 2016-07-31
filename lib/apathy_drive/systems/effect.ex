@@ -3,17 +3,19 @@ defmodule Systems.Effect do
   alias ApathyDrive.{Mobile, TimerManager}
   import TimerManager, only: [seconds: 1]
 
-  def send_remove_effect(key) do
-    send(self, {:remove_effect, key})
-  end
-
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
     add_effect(entity, key + 1, effect)
   end
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect, duration) do
     key = key + 1
-    entity = TimerManager.call_after(entity, {{:effect, key}, duration |> seconds, [__MODULE__, :send_remove_effect, [key]]})
+    entity =
+      case entity do
+        %{ref: ref} ->
+          TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, ref, key}})
+        %{} ->
+          TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, key}})
+      end
 
     effect = if effect && effect["timers"] do
       Map.put(effect, "timers", [{:effect, key} | effect["timers"]])
@@ -77,7 +79,7 @@ defmodule Systems.Effect do
     case effects[key] do
       %{} ->
         if opts[:fire_after_cast] && Map.has_key?(effects[key], "after_cast") do
-          ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [self])
+          ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [entity.ref])
         end
 
         if opts[:show_expiration_message] && Map.has_key?(effects[key], "expiration_message") do
@@ -94,7 +96,8 @@ defmodule Systems.Effect do
           end)
         end
 
-        send(self, :think)
+        if Map.has_key?(entity, :ref), do: send(self, {:think, entity.ref})
+
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->
         found_key = effects
