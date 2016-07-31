@@ -677,16 +677,21 @@ defmodule ApathyDrive.Room do
     essences =
       room.mobiles
       |> Map.values
-      |> Enum.map(&Mobile.track_data/1)
       |> Enum.reduce(essences, fn
-           %{invisible?: nil}, updated_essences ->
+           %Mobile{monster_template_id: nil}, updated_essences ->
              updated_essences
-           %{spirit_essence: nil, unities: []} = mobile, updated_essences ->
-             add_mobile_essence(updated_essences, ["default"], mobile.essence)
-           %{spirit_essence: nil} = mobile, updated_essences ->
-             add_mobile_essence(updated_essences, mobile.unities, mobile.essence)
-           mobile, updated_essences ->
-             add_mobile_essence(updated_essences, mobile.spirit_unities, mobile.spirit_essence)
+           %Mobile{spirit: nil, unities: []} = mobile, updated_essences ->
+             add_mobile_essence(updated_essences, ["default"], mobile.experience)
+           %Mobile{spirit: nil} = mobile, updated_essences ->
+             add_mobile_essence(updated_essences, mobile.unities, mobile.experience)
+           %Mobile{spirit: spirit, unities: unities}, updated_essences ->
+             unities =
+               spirit.class.unities
+               |> MapSet.new
+               |> MapSet.intersection(MapSet.new(unities))
+               |> MapSet.to_list
+
+             add_mobile_essence(updated_essences, unities, spirit.experience)
          end)
 
     essences =
