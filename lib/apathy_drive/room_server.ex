@@ -216,8 +216,6 @@ defmodule ApathyDrive.RoomServer do
     else
       spirit = Repo.preload(spirit, :class)
 
-      ApathyDrive.Endpoint.broadcast! "spirits:online", "scroll", %{:html => "<p>#{Spirit.look_name(spirit)} just entered the Realm.</p>"}
-
       mobile = Mobile.init(%Mobile{spirit: spirit, socket: socket})
 
       Mobile.update_prompt(mobile)
