@@ -57,7 +57,10 @@ defmodule ApathyDrive.Room do
       Room.audible_movement(room, from_direction)
     end
 
-    mobile = Mobile.set_room_id(mobile, room.id)
+    mobile =
+      mobile
+      |> Mobile.set_room_id(room.id)
+      |> Mobile.remonitor
 
     ApathyDrive.Commands.Look.execute(room, mobile, [])
 
@@ -144,6 +147,12 @@ defmodule ApathyDrive.Room do
     mobiles
     |> Map.values
     |> Enum.find(&(&1.spirit && &1.spirit.id == spirit_id))
+  end
+
+  def find_monitor_ref(%Room{mobiles: mobiles}, ref) do
+    mobiles
+    |> Map.values
+    |> Enum.find(&(&1.spirit && &1.spirit.monitor_ref == ref))
   end
 
   def load_present_mobiles(%Room{} = room) do

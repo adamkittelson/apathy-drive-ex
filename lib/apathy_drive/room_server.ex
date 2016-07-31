@@ -203,9 +203,20 @@ defmodule ApathyDrive.RoomServer do
   def handle_call({:spirit_connected, %Spirit{id: id} = spirit, socket}, _from, room) do
     if mobile = Room.find_spirit(room, id) do
 
-      if mobile.socket != socket, do: send(mobile.socket, :go_home)
+      monitor_ref =
+        if mobile.socket != socket do
+          Process.demonitor(mobile.spirit.monitor_ref)
+          send(mobile.socket, :go_home)
+          Process.monitor(socket)
+        else
+          Process.monitor(socket)
+        end
 
-      room = put_in(room.mobiles[mobile.ref].socket, socket)
+      room =
+        Room.update_mobile(room, mobile.ref, fn(mob) ->
+          mob = Map.put(mob, :socket, socket)
+          put_in(mob.spirit.monitor_ref, monitor_ref)
+        end)
 
       room.mobiles[mobile.ref]
       |> Mobile.update_prompt
@@ -214,7 +225,12 @@ defmodule ApathyDrive.RoomServer do
 
       {:reply, mobile.ref, room}
     else
-      spirit = Repo.preload(spirit, :class)
+      monitor_ref = Process.monitor(socket)
+
+      spirit =
+        spirit
+        |> Map.put(:monitor_ref, monitor_ref)
+        |> Repo.preload(:class)
 
       mobile = Mobile.init(%Mobile{spirit: spirit, socket: socket})
 
@@ -371,6 +387,20 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast({:mobile_entered, %Mobile{} = mobile, message}, room) do
     room = Room.mobile_entered(room, mobile, message)
+
+    {:noreply, room}
+  end
+
+  def handle_info({:DOWN, monitor_ref, :process, _pid, _reason}, room) do
+    room =
+      case Room.find_monitor_ref(room, monitor_ref) do
+        # spirit not possessing a monster, just remove it
+        %Mobile{monster_template_id: nil} = mobile ->
+          update_in(room.mobiles, &Map.delete(&1, mobile.ref))
+        # possessed mobile, unpossess it
+        %Mobile{} = mobile ->
+          ApathyDrive.Commands.Unpossess.unpossess(room, mobile.ref)
+      end
 
     {:noreply, room}
   end

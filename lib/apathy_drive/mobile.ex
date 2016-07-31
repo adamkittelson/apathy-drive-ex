@@ -159,6 +159,12 @@ defmodule ApathyDrive.Mobile do
     Mobile.send_scroll(mobile, "<p>You need a body to do that. Find a monster and <span class='green'>possess</span> it.</p>")
   end
 
+  def remonitor(%Mobile{spirit: nil} = mobile), do: mobile
+  def remonitor(%Mobile{socket: socket, spirit: %Spirit{monitor_ref: ref}} = mobile) do
+    Process.demonitor(ref)
+    put_in(mobile.spirit.monitor_ref, Process.monitor(socket))
+  end
+
   def add_experience(%Mobile{experience: experience, level: level} = mobile, exp) do
     initial_spirit_level = mobile.spirit && mobile.spirit.level
 

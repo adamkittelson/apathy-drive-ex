@@ -33,6 +33,7 @@ defmodule Spirit do
     field :inventory,         ApathyDrive.JSONB, default: []
     field :equipment,         ApathyDrive.JSONB, default: []
     field :flags,             :map, default: %{}
+    field :monitor_ref,       :any, virtual: true
 
     timestamps
   end
