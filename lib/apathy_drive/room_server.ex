@@ -400,6 +400,8 @@ defmodule ApathyDrive.RoomServer do
         # possessed mobile, unpossess it
         %Mobile{} = mobile ->
           ApathyDrive.Commands.Unpossess.unpossess(room, mobile.ref)
+        nil ->
+          room
       end
 
     {:noreply, room}
