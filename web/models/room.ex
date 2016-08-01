@@ -627,7 +627,7 @@ defmodule ApathyDrive.Room do
       |> Room.update_controlled_by
 
     room =
-      if Enum.any?(room.room_unity.essences, &report_essence?(&1, room.room_unity.reported_essences)) do
+      if Enum.any?(room.room_unity.essences, &report_essence?(&1, room.room_unity.reported_essences, room.room_unity.essence_targets)) do
         Room.report_essence(room)
       else
         room
@@ -658,7 +658,7 @@ defmodule ApathyDrive.Room do
     end)
   end
 
-  def report_essence?({essence, amount}, last_reported_essences) do
+  def report_essence?({essence, amount}, last_reported_essences, targets) do
     case last_reported_essences[essence] do
       nil ->
         true
@@ -671,6 +671,8 @@ defmodule ApathyDrive.Room do
           difference == 0 ->
             false
           percent_difference >= 0.05 ->
+            true
+          amount == targets[essence]["target"] and amount != reported ->
             true
           true ->
             false
@@ -766,7 +768,7 @@ defmodule ApathyDrive.Room do
              |> Enum.reject(&(&1 == nil))
              |> average()
 
-           put_in(updated_essences[unity]["target"], target || 0)
+           put_in(updated_essences[unity]["target"], (target && trunc(target)) || 0)
          end)
 
     put_in(room.room_unity.essence_targets, essences)
