@@ -589,6 +589,8 @@ defmodule ApathyDrive.Room do
         |> send({:essence_report, report})
       end
     end)
+
+    put_in(room.room_unity.reported_essences, essences)
   end
 
   def essence_update_interval(%Room{mobiles: mobiles}) do
@@ -614,17 +616,22 @@ defmodule ApathyDrive.Room do
            cond do
              percent_difference == 0 or amount_to_shift == 0 ->
                updated_room
-              percent_difference <= 0.10 ->
-                updated_room =
-                  put_in(updated_room.room_unity.essences[essence], target)
-                  |> Repo.save
-                Room.report_essence(updated_room)
-                updated_room
-              true ->
-                update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
+             percent_difference <= 0.10 ->
+               updated_room =
+                 put_in(updated_room.room_unity.essences[essence], target)
+                 |> Repo.save
+             true ->
+               update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
            end
          end)
       |> Room.update_controlled_by
+
+    room =
+      if Enum.any?(room.room_unity.essences, &report_essence?(&1, room.room_unity.reported_essences)) do
+        Room.report_essence(room)
+      else
+        room
+      end
 
     essence =
       %{
@@ -649,6 +656,26 @@ defmodule ApathyDrive.Room do
         |> Mobile.update_essence(updated_room)
       end)
     end)
+  end
+
+  def report_essence?({essence, amount}, last_reported_essences) do
+    case last_reported_essences[essence] do
+      nil ->
+        true
+      reported ->
+        difference = amount - reported
+
+        percent_difference = if reported == 0, do: 1, else: abs(difference) / reported
+
+        cond do
+          difference == 0 ->
+            false
+          percent_difference >= 0.05 ->
+            true
+          true ->
+            false
+        end
+    end
   end
 
   def update_essence_targets(%Room{room_unity: %RoomUnity{exits: exits, essences: current_essences, controlled_by: controlled_by}} = room) do

@@ -737,14 +737,13 @@ defmodule ApathyDrive.RoomServer do
         TimerManager.send_after(room, {:update_essence, Room.essence_update_interval(room), :update_essence})
       else
         Room.report_essence(room)
-        room
       end
 
     {:noreply, room}
   end
 
   def handle_info(:report_essence, room) do
-    Room.report_essence(room)
+    room = Room.report_essence(room)
 
     {:noreply, room}
   end
