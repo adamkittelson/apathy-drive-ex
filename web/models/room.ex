@@ -700,7 +700,7 @@ defmodule ApathyDrive.Room do
       cond do
         room.lair_next_spawn_at > 0 and room.default_essence > 0 and controlled_by == nil ->
           {put_in(initial_essences["default"]["control"], room.default_essence), room.default_essence}
-        room.lair_next_spawn_at > 0 and room.default_essence > current_essences[controlled_by] ->
+        room.lair_next_spawn_at > 0 ->
           {put_in(initial_essences[controlled_by]["control"], room.default_essence), room.default_essence}
         true ->
           {initial_essences, nil}
@@ -763,8 +763,10 @@ defmodule ApathyDrive.Room do
     essences =
       essences
       |> Enum.reduce(essences, fn({unity, %{} = targets}, updated_essences) ->
+           control = if targets["control"] && targets["control"] > current_essences[unity], do: targets["control"]
+
            target =
-             [targets["adjacent"], targets["mobile"], targets["control"] || nil]
+             [targets["adjacent"], targets["mobile"], control]
              |> Enum.reject(&(&1 == nil))
              |> average()
 
