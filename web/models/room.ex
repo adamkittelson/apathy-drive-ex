@@ -621,6 +621,13 @@ defmodule ApathyDrive.Room do
                  put_in(updated_room.room_unity.essences[essence], target)
                  |> Repo.save
              true ->
+               amount_to_shift =
+                 if amount_to_shift > 0 do
+                   max(1, amount_to_shift)
+                 else
+                   min(-1, amount_to_shift)
+                 end
+
                update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
            end
          end)
