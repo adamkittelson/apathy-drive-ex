@@ -165,10 +165,8 @@ defmodule ApathyDrive.Commands.System do
                   ApathyDrive.Commands.Move.execute(room, mobile, room_exit)
                 _ ->
                   Mobile.send_scroll(mobile, "<p>#{area.name} has no rooms!</p>")
+                  room
               end
-
-
-           room
          nil ->
            Mobile.send_scroll(mobile, "<p>Could not find an area named \"#{area}\".")
            room
