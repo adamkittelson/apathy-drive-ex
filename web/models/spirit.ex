@@ -50,7 +50,7 @@ defmodule Spirit do
     |> validate_inclusion(:class_id, ApathyDrive.Class.ids)
     |> validate_inclusion(:gender, ["male", "female", nil])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
-    |> unique_constraint(:name, on: Repo)
+    |> unique_constraint(:name, name: :spirits_lower_name_index, on: Repo)
     |> validate_length(:name, min: 1, max: 12)
   end
 
@@ -60,6 +60,7 @@ defmodule Spirit do
     |> validate_format(:email, ~r/@/)
     |> validate_length(:email, min: 3, max: 100)
     |> validate_length(:password, min: 6)
+    |> unique_constraint(:email, name: :spirits_lower_email_index, on: Repo)
     |> validate_confirmation(:password)
   end
 

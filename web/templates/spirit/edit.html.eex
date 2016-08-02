@@ -5,36 +5,33 @@
 </div>
 
 <%= form_for @changeset, spirit_path(@conn, :update), fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
   <div class="row">
     <div class="four columns">
-      <%= if f.errors[:name] do %>
-        <label for="name" class="error">Name <%= f.errors[:name]%></label>
-      <% else %>
-        <label for="name">Name</label>
-      <% end %>
+      <label for="name">Name</label>
       <%= text_input f, :name, class: "u-full-width" %>
+      <%= error_tag f, :name %>
     </div>
   </div>
 
   <div class="row">
     <div class="four columns">
-      <%= if f.errors[:gender] do %>
-        <label for="faction" class="error">Gender <%= f.errors[:gender]%></label>
-      <% else %>
-        <label for="faction">Gender</label>
-      <% end %>
+      <label for="faction">Gender</label>
       <%= select(f, :gender, ["Male": "male", "Female": "female", "None": nil], prompt: "Choose Your Gender", class: "u-full-width") %>
+      <%= error_tag f, :gender %>
     </div>
   </div>
 
   <div class="row">
       <div class="four columns">
-        <%= if f.errors[:class_id] do %>
-          <label for="class" class="error">Class <%= f.errors[:class_id]%></label>
-        <% else %>
-          <label for="class">Class</label>
-        <% end %>
+        <label for="class">Class</label>
         <%= select(f, :class_id, ApathyDrive.Class.select, prompt: "Choose Your Class", class: "u-full-width") %>
+        <%= error_tag f, :class_id %>
       </div>
     </div>
 

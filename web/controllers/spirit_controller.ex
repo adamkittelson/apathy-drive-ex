@@ -9,24 +9,23 @@ defmodule ApathyDrive.SpiritController do
   def create(conn, %{"spirit" => spirit_params}) do
     changeset = Spirit.sign_up_changeset(%Spirit{}, spirit_params)
 
-    if changeset.valid? do
-      hashed_password =
-        changeset
-        |> get_field(:password)
-        |> hashpwsalt
+    hashed_password =
+      changeset
+      |> get_field(:password)
+      |> hashpwsalt
 
-      spirit =
-        changeset
-        |> put_change(:password, hashed_password)
-        |> Repo.insert!
+    changeset =
+      changeset
+      |> put_change(:password, hashed_password)
 
-      conn =
-        conn
-        |> put_session(:current_spirit, spirit.id)
-
-      redirect(conn, to: game_path(conn, :game))
-    else
-      render(conn, ApathyDrive.SessionView, "new.html", changeset: changeset)
+    case Repo.insert(changeset) do
+      {:ok, spirit} ->
+        conn =
+          conn
+          |> put_session(:current_spirit, spirit.id)
+          |> redirect(to: game_path(conn, :game))
+      {:error, changeset} ->
+        render(conn, ApathyDrive.SessionView, "new.html", changeset: changeset)
     end
   end
 
@@ -43,28 +42,21 @@ defmodule ApathyDrive.SpiritController do
       spirit_params
       |> Map.put("name", capitalize_first(spirit_params["name"] || ""))
 
-    changeset = Spirit.changeset(spirit, spirit_params)
+    changeset =
+      spirit
+      |> Spirit.changeset(spirit_params)
 
-    if changeset.valid? do
-      spirit =
-        changeset
-        |> put_change(:room_id, ApathyDrive.Class.start_room(changeset.changes.class_id))
-        |> Repo.update!
+    case Repo.update(changeset) do
+      {:ok, spirit} ->
+        spirit
+        |> Map.put(:room_id, ApathyDrive.Class.start_room(changeset.changes.class_id))
+        |> Repo.save!
 
-      case :global.whereis_name(:"spirit_#{spirit.id}") do
-        :undefined ->
-          conn
-          |> redirect(to: game_path(conn, :game))
-        pid ->
-          send(pid, {:reroll, name: spirit.name, faction: spirit.faction, alignment: spirit.alignment})
-
-          conn
-          |> redirect(to: game_path(conn, :game))
-      end
-    else
-      render conn, "edit.html", changeset: changeset
+        conn
+        |> redirect(to: game_path(conn, :game))
+      {:error, changeset} ->
+        render conn, "edit.html", changeset: changeset
     end
   end
-
 
 end
