@@ -54,6 +54,9 @@ defmodule ApathyDrive.Match do
          String.downcase(string) == String.downcase(keyword)
        end)
   end
+  def match_keyword(string, %{name: name} = map) do
+    match_keyword(string, Map.put_new(map, :keywords, keywords(name)))
+  end
 
   def keyword_starts_with("", _pid), do: false
   def keyword_starts_with(string, %{keywords: keywords}) do
@@ -61,6 +64,9 @@ defmodule ApathyDrive.Match do
     |> Enum.any?(fn (keyword) ->
       String.downcase(keyword) |> String.starts_with?(string |> String.downcase)
     end)
+  end
+  def keyword_starts_with(string, %{name: name} = map) do
+    keyword_starts_with(string, Map.put_new(map, :keywords, keywords(name)))
   end
 
   def name_starts_with("", _pid), do: false
@@ -98,6 +104,13 @@ defmodule ApathyDrive.Match do
     |> String.to_integer
     |> Kernel.-(1)
     |> max(0)
+  end
+
+  def keywords(name) do
+    name
+    |> String.downcase
+    |> String.replace(~r/[^a-z ]/, "")
+    |> String.split(" ")
   end
 
 end

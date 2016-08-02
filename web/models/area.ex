@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Area do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Area, Room}
+  alias ApathyDrive.{Area, Match, Room}
 
   schema "areas" do
     field :name, :string
@@ -15,6 +15,15 @@ defmodule ApathyDrive.Area do
   def find_by_name(name) do
     __MODULE__
     |> where(name: ^name)
+  end
+
+  def match_by_name(name) do
+    __MODULE__
+    |> where([area], not is_nil(area.name) and area.name != "")
+    |> distinct(true)
+    |> select([area], [:id, :name])
+    |> ApathyDrive.Repo.all
+    |> Match.one(:keyword_starts_with, name)
   end
 
   def list_with_room_counts do
