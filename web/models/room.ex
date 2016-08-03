@@ -81,7 +81,9 @@ defmodule ApathyDrive.Room do
         end)
       end)
 
-    Room.move_after(room, mobile.ref)
+    room
+    |> Room.move_after(mobile.ref)
+    |> TimerManager.send_after({:update_essence, 0, :update_essence})
   end
 
   def move_after(%Room{} = room, ref) do

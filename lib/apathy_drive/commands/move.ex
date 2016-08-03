@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Commands.Move do
-  alias ApathyDrive.{Doors, Mobile, Room, RoomServer, TimerManager}
+  alias ApathyDrive.{Doors, Mobile, Room, RoomServer}
 
   def execute(%Room{} = room, %Mobile{} = mobile, command) when is_binary(command) do
     direction = Room.direction(command)
@@ -61,7 +61,6 @@ defmodule ApathyDrive.Commands.Move do
       |> RoomServer.mobile_entered(mobile)
 
       put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
-      |> TimerManager.send_after({:update_essence, 0, :update_essence})
     else
       room
     end
@@ -79,7 +78,6 @@ defmodule ApathyDrive.Commands.Move do
       Room.display_exit_message(room, %{mobile: mobile, message: room_exit["from_message"], to: destination_id})
 
       put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
-      |> TimerManager.send_after({:update_essence, 0, :update_essence})
     else
       room
     end
