@@ -61,7 +61,7 @@ defmodule ApathyDrive.Commands.Move do
       |> RoomServer.mobile_entered(mobile)
 
       put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
-      |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
+      |> TimerManager.send_after({:update_essence, 0, :update_essence})
     else
       room
     end
@@ -79,7 +79,7 @@ defmodule ApathyDrive.Commands.Move do
       Room.display_exit_message(room, %{mobile: mobile, message: room_exit["from_message"], to: destination_id})
 
       put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
-      |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
+      |> TimerManager.send_after({:update_essence, 0, :update_essence})
     else
       room
     end
