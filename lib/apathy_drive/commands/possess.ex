@@ -62,7 +62,6 @@ defmodule ApathyDrive.Commands.Possess do
       end)
 
     put_in(room.mobiles, Map.delete(room.mobiles, mobile.ref))
-    |> Room.update_essence_targets
   end
 
 end

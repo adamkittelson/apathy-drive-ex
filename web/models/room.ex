@@ -80,7 +80,6 @@ defmodule ApathyDrive.Room do
           ApathyDrive.Aggression.react(mob, mobile_in_room)
         end)
       end)
-      |> Room.update_essence_targets
 
     Room.move_after(room, mobile.ref)
   end
@@ -597,12 +596,12 @@ defmodule ApathyDrive.Room do
     if Enum.any?(mobiles, fn {_ref, mobile} -> !is_nil(mobile.spirit) end) do
       1000
     else
-      10_000
+      60_000
     end
   end
 
   def update_essence(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
-    room = if Enum.any?(room.room_unity.essence_targets), do: room, else: update_essence_targets(room)
+    room = update_essence_targets(room)
 
     room =
       essences
@@ -619,7 +618,6 @@ defmodule ApathyDrive.Room do
              percent_difference <= 0.10 ->
                updated_room =
                  put_in(updated_room.room_unity.essences[essence], target)
-                 |> Repo.save
              true ->
                amount_to_shift =
                  if amount_to_shift > 0 do

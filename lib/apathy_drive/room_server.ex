@@ -731,15 +731,11 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:update_essence, %Room{exits: _exits, room_unity: %RoomUnity{essences: essences}} = room) do
-    room = Room.update_essence(room)
-
+  def handle_info(:update_essence, %Room{} = room) do
     room =
-      if room.room_unity.essences != essences do
-        TimerManager.send_after(room, {:update_essence, Room.essence_update_interval(room), :update_essence})
-      else
-        Room.report_essence(room)
-      end
+      room
+      |> Room.update_essence
+      |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
 
     {:noreply, room}
   end
@@ -750,17 +746,10 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:essence_report, report}, %Room{room_unity: room_unity} = room) do
+  def handle_info({:essence_report, report}, %Room{} = room) do
     mirror_exit = Room.mirror_exit(room, report.room_id)
 
     room = put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
-
-    room =
-      if room_unity == room.room_unity do
-        room
-      else
-        Room.update_essence_targets(room)
-      end
 
     {:noreply, room}
   end

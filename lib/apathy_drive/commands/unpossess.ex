@@ -25,7 +25,6 @@ defmodule ApathyDrive.Commands.Unpossess do
       |> Mobile.set_max_hp
       |> Mobile.set_hp
     end)
-    |> Room.update_essence_targets
   end
 
 end
