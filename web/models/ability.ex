@@ -789,7 +789,7 @@ defmodule ApathyDrive.Ability do
   def apply_criticals(%Room{} = room, _caster_ref, _target_ref, _damage, []), do: room
   def apply_criticals(%Room{} = room, caster_ref, target_ref, damage, crit_tables) do
     damage
-    |> ApathyDrive.Crits.abilities(crit_tables)
+    |> ApathyDrive.Crit.abilities(crit_tables)
     |> Enum.reduce(room, fn
          %{"kind" => kind} = ability, updated_room when kind in ["attack", "curse"] ->
            execute(updated_room, caster_ref, ability, [target_ref])

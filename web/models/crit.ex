@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Crits do
+defmodule ApathyDrive.Crit do
   use ApathyDrive.Web, :model
   use Timex
 
@@ -8,6 +8,12 @@ defmodule ApathyDrive.Crits do
     field :abilities, ApathyDrive.JSONB, default: []
 
     timestamps
+  end
+
+  def changeset(model, params \\ %{}) do
+    model
+    |> cast(params, ["crit_table", "letter", "abilities"], [])
+    |> validate_inclusion(:letter, ["A", "B", "C", "D", "E"])
   end
 
   def for_table(table) do
