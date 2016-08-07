@@ -360,9 +360,11 @@ defmodule ApathyDrive.Mobile do
     |> Enum.map(fn
          (%{} = effect) ->
            key =
-             Enum.find(effect, fn {key, _v} ->
-               String.downcase(to_string(key)) == String.downcase(to_string(name))
-             end)
+             effect
+             |> Map.keys
+             |> Enum.find(fn key ->
+                  String.downcase(to_string(key)) == String.downcase(to_string(name))
+                end)
 
            if key, do: Map.get(effect, key, 0), else: 0
          (_) ->
