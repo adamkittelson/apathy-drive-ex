@@ -325,7 +325,7 @@ defmodule ApathyDrive.Room do
       |> Map.values
 
     mobiles
-    |> Enum.reject(&(&1 == mobile))
+    |> Enum.reject(&(&1.ref == mobile.ref))
     |> List.insert_at(-1, mobile)
     |> Enum.reject(&(&1 == nil))
     |> Match.one(:name_contains, query)

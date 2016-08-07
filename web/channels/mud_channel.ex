@@ -139,8 +139,7 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff", payload: %{joins: joins, leaves: leaves}}, socket) do
-    joins
-    |> Presence.metas
+    (Presence.metas(joins) -- Presence.metas("spirits:online"))
     |> Enum.each(fn %{name: name} ->
          Phoenix.Channel.push socket, "scroll", %{:html => "<p>#{name} just entered the Realm.</p>"}
        end)

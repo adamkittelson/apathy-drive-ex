@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Mobile do
-  alias ApathyDrive.{Commands, Mobile, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor, RoomServer, Room, Presence, MonsterTemplate}
+  alias ApathyDrive.{Commands, Mobile, Class, Repo, Item, ItemDrop, PubSub, TimerManager, Ability, Match, MobileSupervisor, RoomServer, Room, Presence, MonsterTemplate}
   use ApathyDrive.Web, :model
   import ApathyDrive.Text
 
@@ -581,6 +581,19 @@ defmodule ApathyDrive.Mobile do
 
   def magical_damage(_str, agi, wil) do
     ((wil * 2) + agi) / 20
+  end
+
+  def auto_attack_crit_tables(%Mobile{monster_template_id: nil, unities: []}), do: []
+  def auto_attack_crit_tables(%Mobile{monster_template_id: nil, unities: ["good"]}), do: ["holy"]
+  def auto_attack_crit_tables(%Mobile{monster_template_id: nil, unities: ["evil"]}), do: ["disruption"]
+  def auto_attack_crit_tables(%Mobile{spirit: %Spirit{class: %Class{unities: ["good"]}}} = mobile) do
+    ["holy" | mobile |> Map.put(:monster_template_id, nil) |> auto_attack_crit_tables()]
+  end
+  def auto_attack_crit_tables(%Mobile{spirit: %Spirit{class: %Class{unities: ["evil"]}}} = mobile) do
+    ["disruption" | mobile |> Map.put(:monster_template_id, nil) |> auto_attack_crit_tables()]
+  end
+  def auto_attack_crit_tables(%Mobile{} = mobile) do
+    ["fire", "cold", "electricity", "vacuum"] ++ (mobile |> Map.put(:monster_template_id, nil) |> auto_attack_crit_tables())
   end
 
   def strength(%Mobile{} = mobile) do

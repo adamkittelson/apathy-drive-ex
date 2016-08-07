@@ -673,9 +673,14 @@ defmodule ApathyDrive.Ability do
         end
       end)
 
-    chance = trunc((damage / Room.get_mobile(room, target_ref).hp) * 100)
+    room =
+      if target = Room.get_mobile(room, target_ref) do
+        chance = trunc((damage / target.hp) * 100)
 
-    room = apply_criticals(room, caster_ref, target_ref, chance, effects["crit_tables"])
+        apply_criticals(room, caster_ref, target_ref, chance, effects["crit_tables"])
+      else
+        room
+      end
 
     room = trigger_damage_shields(room, target_ref, caster_ref)
 
@@ -762,6 +767,14 @@ defmodule ApathyDrive.Ability do
        end)
 
     apply_instant_effects(room, target_ref, Map.delete(effects, "dispel"), caster_ref)
+  end
+  def apply_instant_effects(%Room{} = room, target_ref, %{"kill" => true} = effects, caster_ref) do
+    room =
+      Room.update_mobile(room, target_ref, fn mobile ->
+        Map.put(mobile, :hp, 0)
+      end)
+
+    apply_instant_effects(room, target_ref, Map.delete(effects, "kill"), caster_ref)
   end
   def apply_instant_effects(%Room{} = room, target_ref, %{} = effects, caster_ref) do
     room

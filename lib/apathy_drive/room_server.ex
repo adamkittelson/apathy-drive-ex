@@ -523,7 +523,13 @@ defmodule ApathyDrive.RoomServer do
                   attack
                   |> Map.put("ignores_global_cooldown", true)
                   |> Map.put("kind", "attack")
-                  |> put_in(["instant_effects", "crit_tables"], ["holy"])
+                  |> update_in(["instant_effects", "crit_tables"], fn
+                       nil ->
+                         Mobile.auto_attack_crit_tables(mobile)
+                       tables ->
+                         (tables ++ Mobile.auto_attack_crit_tables(mobile))
+                         |> Enum.uniq
+                     end)
 
                 room = Ability.execute(room, mobile.ref, attack, [target_ref])
 
