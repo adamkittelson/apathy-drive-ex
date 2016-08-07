@@ -27,6 +27,7 @@ defmodule ApathyDrive.Crits do
         |> Repo.one
 
       __MODULE__
+      |> where(crit_table: ^table, letter: ^letter)
       |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
       |> select([crit], crit.abilities)
       |> Repo.one
