@@ -307,23 +307,23 @@ defmodule ApathyDrive.Mobile do
     send_scroll(mobile, "<p>#{message}</p>")
   end
 
-  def confused(%Mobile{effects: effects} = mobile) do
+  def confused(%Room{} = room, %Mobile{effects: effects} = mobile) do
     effects
     |> Map.values
     |> Enum.find(fn(effect) ->
          Map.has_key?(effect, "confused") && (effect["confused"] >= :rand.uniform(100))
        end)
-    |> confused(mobile)
+    |> confused(room, mobile)
   end
-  def confused(nil, %Mobile{}), do: false
-  def confused(%{"confusion_message" => %{"user" => user_message, "spectator" => spectator_message}}, %Mobile{} = mobile) do
-    send_scroll(mobile, "<p>#{user_message}</p>")
-    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}", "scroll", %{:html => "<p>#{interpolate(spectator_message, %{"user" => mobile})}</p>"}
+  def confused(nil, %Room{}, %Mobile{}), do: false
+  def confused(%{"confusion_message" => %{"user" => user_message} = message}, %Room{} = room, %Mobile{} = mobile) do
+    send_scroll(mobile, user_message)
+    if message["spectator"], do: Room.send_scroll(room, "#{interpolate(message["spectator"], %{"user" => mobile})}", mobile)
     true
   end
-  def confused(%{}, %Mobile{} = mobile) do
-    send_scroll(mobile, "<p>You fumble in confusion!</p>")
-    ApathyDrive.Endpoint.broadcast_from! self, "rooms:#{mobile.room_id}", "scroll", %{:html => "<p>#{interpolate("{{user}} fumbles in confusion!", %{"user" => mobile})}</p>"}
+  def confused(%{}, %Room{} = room, %Mobile{} = mobile) do
+    send_scroll(mobile, "<p><span class='cyan'>You fumble in confusion!</span></p>")
+    Room.send_scroll(room, "<p><span class='cyan'>#{interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => mobile})}</span></p>", mobile)
     true
   end
 
@@ -359,7 +359,12 @@ defmodule ApathyDrive.Mobile do
     |> Map.values
     |> Enum.map(fn
          (%{} = effect) ->
-           Map.get(effect, name, 0)
+           key =
+             Enum.find(effect, fn {key, _v} ->
+               String.downcase(to_string(key)) == String.downcase(to_string(name))
+             end)
+
+           if key, do: Map.get(effect, key, 0), else: 0
          (_) ->
            0
        end)
@@ -384,7 +389,7 @@ defmodule ApathyDrive.Mobile do
       |> set_max_hp
       |> set_hp
       |> TimerManager.send_after({:monster_regen,    1_000, {:regen, ref}})
-      |> TimerManager.send_after({:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
+      |> TimerManager.send_after({:periodic_effects, 1_000, {:apply_periodic_effects, ref}})
       |> TimerManager.send_after({:monster_ai,       5_000, {:think, ref}})
       |> TimerManager.send_after({:unify, 60_000, {:unify, ref}})
 
@@ -606,7 +611,7 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:spirit, nil)
       |> attribute(attribute)
 
-    attribute_from_equipment(mobile, attribute) + mobile_attribute
+    max(1, attribute_from_equipment(mobile, attribute) + mobile_attribute + effect_bonus(mobile, attribute))
   end
 
   def attribute_from_equipment(%Mobile{spirit: nil}, _), do: 0

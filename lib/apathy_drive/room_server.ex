@@ -523,6 +523,7 @@ defmodule ApathyDrive.RoomServer do
                   attack
                   |> Map.put("ignores_global_cooldown", true)
                   |> Map.put("kind", "attack")
+                  |> put_in(["instant_effects", "crit_tables"], ["holy"])
 
                 room = Ability.execute(room, mobile.ref, attack, [target_ref])
 
@@ -581,7 +582,7 @@ defmodule ApathyDrive.RoomServer do
       room =
         mobile.effects
         |> Map.values
-        |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
+        |> Enum.filter(&(Map.has_key?(&1, "damage")))
         |> Enum.reduce(room, fn(%{"damage" => damage, "effect_message" => message}, updated_room) ->
              ability = %{
                "kind" => "attack",
@@ -594,7 +595,7 @@ defmodule ApathyDrive.RoomServer do
              Ability.execute(updated_room, ref, ability, [ref])
            end)
 
-      room = TimerManager.send_after(room, {:periodic_effects, 3_000, {:apply_periodic_effects, ref}})
+      room = TimerManager.send_after(room, {:periodic_effects, 1_000, {:apply_periodic_effects, ref}})
 
       {:noreply, room}
     else

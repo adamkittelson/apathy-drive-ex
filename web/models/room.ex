@@ -223,7 +223,7 @@ defmodule ApathyDrive.Room do
   end
 
   def initiate_remote_action(room, mobile, remote_action_exit, opts \\ []) do
-    unless Mobile.confused(mobile) do
+    unless Mobile.confused(room, mobile) do
       remote_action_exit["destination"]
       |> RoomServer.find
       |> RoomServer.trigger_remote_action(remote_action_exit, mobile.room_id, opts)

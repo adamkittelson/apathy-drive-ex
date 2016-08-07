@@ -12,7 +12,6 @@ defmodule ApathyDrive.RoomUnity do
     field :exits, :map, virtual: true, default: %{}
     field :essence_targets, :map, virtual: true, default: %{}
     field :reported_essences, :map, virtual: true, default: %{}
-    
 
     timestamps
 

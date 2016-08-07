@@ -53,7 +53,7 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Normal", "destination" => destination_id}) do
-    if !Mobile.held(mobile) and !Mobile.confused(mobile) do
+    if !Mobile.held(mobile) and !Mobile.confused(room, mobile) do
       Room.display_exit_message(room, %{mobile: mobile, message: mobile.exit_message, to: destination_id})
 
       destination_id
@@ -67,7 +67,7 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def execute(%Room{} = room, %Mobile{} = mobile, %{"kind" => "Action", "destination" => destination_id} = room_exit) do
-    if !Mobile.held(mobile) and !Mobile.confused(mobile) do
+    if !Mobile.held(mobile) and !Mobile.confused(room, mobile) do
 
       Mobile.send_scroll(mobile, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
 

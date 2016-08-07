@@ -190,12 +190,12 @@ defmodule ApathyDrive.Ability do
   end
   def display_pre_cast_message(%Room{}, _caster_ref, %{}), do: nil
 
-  def can_execute?(%Mobile{} = mobile, ability) do
+  def can_execute?(%Room{} = room, %Mobile{} = mobile, ability) do
     cond do
       on_cooldown?(mobile, ability) ->
         Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You can't do that yet.</p>")
         false
-      Mobile.confused(mobile) ->
+      Mobile.confused(room, mobile) ->
         false
       Mobile.silenced(mobile, ability) ->
         false
@@ -249,9 +249,12 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %{} = ability, query) when is_binary(query) do
+    mobile =
+      room
+      |> Room.get_mobile(caster_ref)
+
     room
-    |> Room.get_mobile(caster_ref)
-    |> can_execute?(ability)
+    |> can_execute?(mobile, ability)
     |> if do
          targets = get_targets(room, Room.get_mobile(room, caster_ref), ability, query)
          execute(room, caster_ref, ability, targets)
@@ -263,40 +266,44 @@ defmodule ApathyDrive.Ability do
   def execute(%Room{} = room, caster_ref, %{} = ability, targets) do
     mobile = Room.get_mobile(room, caster_ref)
 
-    display_pre_cast_message(room, caster_ref, ability)
+    if mobile do
+      display_pre_cast_message(room, caster_ref, ability)
 
-    room =
-      Room.update_mobile(room, caster_ref, fn(mobile) ->
-        mobile =
+      room =
+        Room.update_mobile(room, caster_ref, fn(mobile) ->
+          mobile =
+            mobile
+            |> apply_cooldown(ability)
+            |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
+
+            Mobile.update_prompt(mobile)
           mobile
-          |> apply_cooldown(ability)
-          |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
+        end)
 
-          Mobile.update_prompt(mobile)
-        mobile
-      end)
+      ability =
+        room
+        |> Room.get_mobile(caster_ref)
+        |> scale_ability(nil, ability)
 
-    ability =
+      targets
+      |> Enum.reduce(room, fn(target_ref, updated_room) ->
+           cond do
+             updated_room |> Room.get_mobile(target_ref) |> affects_target?(ability) ->
+               updated_room
+               |> apply_ability(target_ref, ability, caster_ref)
+               |> kill_mobiles(caster_ref)
+             target = Room.get_mobile(updated_room, target_ref) ->
+               message = "#{target.name} is not affected by that ability." |> capitalize_first
+               Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{message}</span></p>")
+               updated_room
+             true ->
+               updated_room
+           end
+         end)
+      |> execute_multi_cast(caster_ref, ability, targets)
+    else
       room
-      |> Room.get_mobile(caster_ref)
-      |> scale_ability(nil, ability)
-
-    targets
-    |> Enum.reduce(room, fn(target_ref, updated_room) ->
-         cond do
-           updated_room |> Room.get_mobile(target_ref) |> affects_target?(ability) ->
-             updated_room
-             |> apply_ability(target_ref, ability, caster_ref)
-             |> kill_mobiles(caster_ref)
-           target = Room.get_mobile(updated_room, target_ref) ->
-             message = "#{target.name} is not affected by that ability." |> capitalize_first
-             Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{message}</span></p>")
-             updated_room
-           true ->
-             updated_room
-         end
-       end)
-    |> execute_multi_cast(caster_ref, ability, targets)
+    end
   end
 
   def kill_mobiles(%Room{} = room, caster_ref) do
@@ -631,16 +638,19 @@ defmodule ApathyDrive.Ability do
 
   def trigger_damage_shields(%Room{} = room, target_ref, caster_ref) when target_ref == caster_ref, do: room
   def trigger_damage_shields(%Room{} = room, target_ref, caster_ref) do
-    room
-    |> Room.get_mobile(target_ref)
-    |> Map.get(:effects)
-    |> Map.values
-    |> Enum.filter(&(Map.has_key?(&1, "damage shield")))
-    |> Enum.reduce(room, fn
-         %{"damage shield" => damage, "damage shield message" => message, "damage shield type" => damage_type}, updated_room ->
-           ability = %{"kind" => "attack", "flags" => [], "instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => message}
-           execute(updated_room, target_ref, ability, [caster_ref])
-       end)
+    if target = Room.get_mobile(room, target_ref) do
+      target
+      |> Map.get(:effects)
+      |> Map.values
+      |> Enum.filter(&(Map.has_key?(&1, "damage shield")))
+      |> Enum.reduce(room, fn
+           %{"damage shield" => damage, "damage shield message" => message, "damage shield type" => damage_type}, updated_room ->
+             ability = %{"kind" => "attack", "flags" => [], "instant_effects" => %{"damage" => damage}, "damage_type" => damage_type, "cast_message" => message}
+             execute(updated_room, target_ref, ability, [caster_ref])
+         end)
+    else
+      room
+    end
   end
 
   def apply_instant_effects(%Room{} = room, _target_ref, nil, _caster_ref), do: room
@@ -663,12 +673,17 @@ defmodule ApathyDrive.Ability do
         end
       end)
 
+    chance = trunc((damage / Room.get_mobile(room, target_ref).hp) * 100)
+
+    room = apply_criticals(room, caster_ref, target_ref, chance, effects["crit_tables"])
+
     room = trigger_damage_shields(room, target_ref, caster_ref)
 
     effects =
       effects
       |> Map.delete("damage")
       |> Map.delete("hate_multiplier")
+      |> Map.delete("crit_tables")
 
     apply_instant_effects(room, target_ref, effects, caster_ref)
   end
@@ -756,6 +771,20 @@ defmodule ApathyDrive.Ability do
     apply_instant_effects(room, target_ref, %{}, caster_ref)
   end
 
+  def apply_criticals(%Room{} = room, _caster_ref, _target_ref, damage, _crit_tables) when damage < 1, do: room
+  def apply_criticals(%Room{} = room, _caster_ref, _target_ref, _damage, nil), do: room
+  def apply_criticals(%Room{} = room, _caster_ref, _target_ref, _damage, []), do: room
+  def apply_criticals(%Room{} = room, caster_ref, target_ref, damage, crit_tables) do
+    damage
+    |> ApathyDrive.Crits.abilities(crit_tables)
+    |> Enum.reduce(room, fn
+         %{"kind" => kind} = ability, updated_room when kind in ["attack", "curse"] ->
+           execute(updated_room, caster_ref, ability, [target_ref])
+         %{} = ability, updated_room ->
+           execute(updated_room, caster_ref, ability, "")
+       end)
+  end
+
   def display_cast_message(room, target_ref, %{"cast_message" => _, "instant_effects" => %{"heal" => heal}} = ability, caster_ref) do
     target = Room.get_mobile(room, target_ref)
     caster = Room.get_mobile(room, caster_ref)
@@ -831,7 +860,6 @@ defmodule ApathyDrive.Ability do
        else
          effects
        end
-
 
     Room.update_mobile(room, target_ref, fn mobile ->
       mobile
