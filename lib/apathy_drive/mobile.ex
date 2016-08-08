@@ -23,6 +23,9 @@ defmodule ApathyDrive.Mobile do
     field :movement,             :string
     field :spawned_at,           :integer
     field :area_spawned_in,      :integer
+    field :limbs,                ApathyDrive.JSONB
+    field :crippled_limbs,       {:array, :string}, default: []
+    field :missing_limbs,        {:array, :string}, default: []
 
     field :spirit,             :any,     virtual: true
     field :socket,             :any,     virtual: true
@@ -50,6 +53,40 @@ defmodule ApathyDrive.Mobile do
     field :ref,                :any,     virtual: true
 
     timestamps
+  end
+
+  def uncrippled_limb(%Mobile{} = mobile, limb_type) do
+    mobile.limbs
+    |> Map.keys
+    |> Enum.filter(fn limb_name ->
+         (limb_type == "non_fatal" and !mobile.limbs[limb_name]["fatal"]) or
+         (limb_type == mobile.limbs[limb_name]["kind"]) or
+         (limb_type == limb_name)
+       end)
+    |> Enum.reject(&(&1 in (mobile.crippled_limbs ++ mobile.missing_limbs)))
+    |> case do
+         [] ->
+           nil
+         limbs ->
+           Enum.random(limbs)
+       end
+  end
+
+  def unsevered_limb(%Mobile{} = mobile, limb_type) do
+    mobile.limbs
+    |> Map.keys
+    |> Enum.filter(fn limb_name ->
+         (limb_type == "non_fatal" and !mobile.limbs[limb_name]["fatal"]) or
+         (limb_type == mobile.limbs[limb_name]["kind"]) or
+         (limb_type == limb_name)
+       end)
+    |> Enum.reject(&(&1 in mobile.missing_limbs))
+    |> case do
+         [] ->
+           nil
+         limbs ->
+           Enum.random(limbs)
+       end
   end
 
   def generate_loot(%Mobile{} = mobile, monster_template_id, level, global_chance) do

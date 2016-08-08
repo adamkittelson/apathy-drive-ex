@@ -776,6 +776,35 @@ defmodule ApathyDrive.Ability do
 
     apply_instant_effects(room, target_ref, Map.delete(effects, "kill"), caster_ref)
   end
+  def apply_instant_effects(%Room{} = room, target_ref, %{"limb_loss" => limb_loss} = effects, caster_ref) do
+
+    room =
+      Room.update_mobile(room, target_ref, fn mobile ->
+        Enum.reduce(limb_loss, mobile, fn
+          %{"kind" => "cripple", "limb" => limb}, updated_mobile ->
+            case Mobile.uncrippled_limb(updated_mobile, limb) do
+              nil ->
+                updated_mobile
+              limb ->
+                Mobile.send_scroll(updated_mobile, "<p>Your #{limb} is crippled!</p>")
+                Room.send_scroll(room, "<p>#{Mobile.look_name(updated_mobile)}'s #{limb} is crippled!</p>", updated_mobile)
+                update_in(updated_mobile.crippled_limbs, &([limb | &1]))
+            end
+          %{"kind" => "sever", "limb" => limb}, updated_mobile ->
+            case Mobile.unsevered_limb(updated_mobile, limb) do
+              nil ->
+                updated_mobile
+              limb ->
+                Mobile.send_scroll(updated_mobile, "<p>Your #{limb} has been severed!</p>")
+                Room.send_scroll(room, "<p>#{Mobile.look_name(updated_mobile)}'s #{limb} has been severed!</p>", updated_mobile)
+                update_in(updated_mobile.missing_limbs, &([limb | &1]))
+            end
+        end)
+
+      end)
+
+    apply_instant_effects(room, target_ref, Map.delete(effects, "limb_loss"), caster_ref)
+  end
   def apply_instant_effects(%Room{} = room, target_ref, %{} = effects, caster_ref) do
     room
     |> Room.get_mobile(caster_ref)

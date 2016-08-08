@@ -24,6 +24,7 @@ defmodule ApathyDrive.MonsterTemplate do
     field :permanent,              :boolean
     field :movement,               :string
     field :unities,                ApathyDrive.JSONB
+    field :limbs,                  ApathyDrive.JSONB
 
     has_many :mobiles, Mobile
     has_many :lairs, ApathyDrive.LairMonster
@@ -165,7 +166,14 @@ defmodule ApathyDrive.MonsterTemplate do
       unities: monster_template.unities || (room |> Room.controlled_by |> List.wrap |> List.delete("default")),
       alignment: monster_template.alignment,
       spawned_at: room.id,
-      area_spawned_in: room.area_id
+      area_spawned_in: room.area_id,
+      limbs: monster_template.limbs || %{
+        "head" => %{"fatal" => true, "kind" => "head"},
+        "left arm" => %{"kind" => "arm"},
+        "right arm" => %{"kind" => "arm"},
+        "left leg" => %{"kind" => "leg"},
+        "right leg" => %{"kind" => "leg"},
+      }
     }
 
     monster = Map.put(monster, :keywords, String.split(monster.name))
