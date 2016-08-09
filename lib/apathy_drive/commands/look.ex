@@ -102,7 +102,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_mobile(%Mobile{} = target, %Mobile{} = mobile) do
+  def look_at_mobile(%Mobile{crippled_limbs: crippled, missing_limbs: missing} = target, %Mobile{} = mobile) do
     Mobile.send_scroll(target, "<p>#{name} looks you over.</p>")
 
     hp_percentage = round(100 * (target.hp / target.max_hp))
@@ -128,8 +128,20 @@ defmodule ApathyDrive.Commands.Look do
       "{{target:He/She/It}} appears to be #{hp_description}."
       |> interpolate(%{"target" => target})
 
+    limbs =
+      Enum.reduce crippled, [], fn limb, limbs ->
+        ["{{target:His/Her/It's}} #{limb} appears to be crippled." |> interpolate(%{"target" => target}), limbs]
+      end
+
+    limbs =
+      Enum.reduce missing, limbs, fn limb, limbs ->
+        ["{{target:His/Her/It's}} #{limb} has been severed, and is bleeding profusely!" |> interpolate(%{"target" => target}), limbs]
+      end
+
+    limb_description = Enum.join(limbs, " ")
+
     Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(target)}</p>")
-    Mobile.send_scroll(mobile, "<p>#{target.description}</p>")
+    Mobile.send_scroll(mobile, "<p>#{target.description} #{limb_description}</p>")
     Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
   end
 

@@ -22,6 +22,8 @@ defmodule ApathyDrive.Commands.Score do
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility:</span>  <span class='dark-cyan'>#{score_data.agility}</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will:</span>     <span class='dark-cyan'>#{score_data.will}</span></p>")
 
+    limbs(mobile)
+
     Enum.each(score_data.effects, fn(effect_message) ->
       Mobile.send_scroll(mobile, "<p>#{effect_message}</p>")
     end)
@@ -45,9 +47,21 @@ defmodule ApathyDrive.Commands.Score do
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Agility:</span>  <span class='dark-cyan'>#{score_data.agility}</span></p>")
     Mobile.send_scroll(mobile, "<p><span class='dark-green'>Will:</span>     <span class='dark-cyan'>#{score_data.will}</span></p>")
 
+    limbs(mobile)
+
     Enum.each(score_data.effects, fn(effect_message) ->
       Mobile.send_scroll(mobile, "<p>#{effect_message}</p>")
     end)
+  end
+
+  defp limbs(%Mobile{missing_limbs: missing, crippled_limbs: crippled} = mobile) do
+    Enum.each crippled, fn limb ->
+      Mobile.send_scroll(mobile, "<p>Your #{limb} is crippled!</p>")
+    end
+
+    Enum.each missing, fn limb ->
+      Mobile.send_scroll(mobile, "<p>Your #{limb} has been severed!</p>")
+    end
   end
 
 end

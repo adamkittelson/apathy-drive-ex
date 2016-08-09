@@ -663,7 +663,13 @@ defmodule ApathyDrive.Mobile do
       |> Map.put(:spirit, nil)
       |> attribute(attribute)
 
-    max(1, attribute_from_equipment(mobile, attribute) + mobile_attribute + effect_bonus(mobile, attribute))
+    useless_limbs = (mobile.crippled_limbs ++ mobile.missing_limbs) |> Enum.uniq |> length
+    total_limbs = mobile.limbs |> Map.keys |> length
+
+    limb_modifier =
+      if total_limbs > useless_limbs, do: 1 - (useless_limbs / total_limbs), else: 1
+
+    trunc(max(1, attribute_from_equipment(mobile, attribute) + mobile_attribute + effect_bonus(mobile, attribute)) * limb_modifier)
   end
 
   def attribute_from_equipment(%Mobile{spirit: nil}, _), do: 0
@@ -671,7 +677,7 @@ defmodule ApathyDrive.Mobile do
     Enum.reduce(equipment, 0, &(&2 + apply(ApathyDrive.Item, attribute, [&1])))
   end
 
-  def hp_regen_per_second(%Mobile{max_hp: max_hp} = mobile) do
+  def hp_regen_per_second(%Mobile{max_hp: max_hp, missing_limbs: []} = mobile) do
     modifier = 1 + effect_bonus(mobile, "hp_regen") / 100
 
     normal_regen = max_hp * 0.01 * modifier
@@ -679,6 +685,9 @@ defmodule ApathyDrive.Mobile do
     poison = effect_bonus(mobile, "poison") / 10
 
     normal_regen - poison
+  end
+  def hp_regen_per_second(%Mobile{max_hp: max_hp, missing_limbs: missing_limbs}) do
+    -(length(missing_limbs) * 0.01 * max_hp)
   end
 
   def mana_regen_per_second(%Mobile{max_mana: max_mana} = mobile) do

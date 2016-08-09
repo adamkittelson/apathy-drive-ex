@@ -451,6 +451,12 @@ defmodule ApathyDrive.RoomServer do
             |> Map.put(:mana, min(mana + Mobile.mana_regen_per_second(mobile), max_mana))
             |> TimerManager.send_after({:monster_regen, 1_000, {:regen, mobile.ref}})
 
+            if Enum.any?(mobile.missing_limbs) and :rand.uniform(3) == 3 do
+              limb = Enum.random(mobile.missing_limbs)
+              Mobile.send_scroll(mobile, "<p><span class='red'>Blood</span> sprays wildly from your severed #{limb}!")
+              Room.send_scroll(room, "<p><span class='red'>Blood</span> sprays wildly from #{Mobile.look_name(mobile)}'s severed #{limb}!", mobile)
+            end
+
             Mobile.update_prompt(mobile)
           mobile
       end)
