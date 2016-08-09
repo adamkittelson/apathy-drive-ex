@@ -675,7 +675,7 @@ defmodule ApathyDrive.Ability do
 
     room =
       if target = Room.get_mobile(room, target_ref) do
-        chance = trunc((damage / target.hp) * 100)
+        chance = trunc((damage / max(1, target.hp)) * 100)
 
         apply_criticals(room, caster_ref, target_ref, chance, effects["crit_tables"])
       else
