@@ -2,7 +2,7 @@ defmodule ApathyDrive.AbilityController do
   use ApathyDrive.Web, :controller
   import Ecto.Query
 
-  alias ApathyDrive.{Ability,ClassAbility,MonsterAbility}
+  alias ApathyDrive.{Ability, MonsterAbility}
 
   plug :scrub_params, "ability" when action in [:create, :update]
 
@@ -69,12 +69,6 @@ defmodule ApathyDrive.AbilityController do
   def show(conn, %{"id" => id}) do
     ability = Repo.get!(Ability, id)
 
-    class_abilities =
-      id
-      |> ClassAbility.ability_classes
-      |> Repo.all
-      |> ClassAbility.names
-
     monster_abilities =
       id
       |> MonsterAbility.ability_monsters
@@ -82,7 +76,6 @@ defmodule ApathyDrive.AbilityController do
       |> MonsterAbility.names
 
     render(conn, "show.html", ability: ability,
-                              class_abilities: class_abilities,
                               monster_abilities: monster_abilities)
   end
 

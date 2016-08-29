@@ -34,7 +34,6 @@ defmodule ApathyDrive.Router do
     resources "/rooms",             RoomController
     resources "/item_drops",        ItemDropController
     resources "/lairs",             LairController
-    resources "/class_abilities",   ClassAbilityController
     resources "/monster_abilities", MonsterAbilityController
     resources "/abilities",         AbilityController
   end

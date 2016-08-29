@@ -3,7 +3,7 @@
 ## Notes
 
 ## local world data backup / restore
-* pg_dump --table=abilities --table=crits --table=areas --table=class_abilities --table=classes --table=item_drops --table=items --table=lair_monsters --table=monster_abilities --table=monster_templates --table=rooms --table=scripts --data-only --dbname=apathy_drive -Fc > priv/data.dump
+* pg_dump --table=abilities --table=crits --table=areas --table=classes --table=item_drops --table=items --table=lair_monsters --table=monster_abilities --table=monster_templates --table=rooms --table=scripts --data-only --dbname=apathy_drive -Fc > priv/data.dump
 * pg_restore --dbname=apathy_drive -U apathy_drive -W -h localhost priv/data.dump
 
 ## Setting up the build server

@@ -5,16 +5,15 @@ defmodule ApathyDrive.Class do
     field :name, :string
     field :alignment, :string
     field :start_room_id, :integer
+    field :abilities, ApathyDrive.JSONB, default: []
     field :unities, ApathyDrive.JSONB, default: []
 
     has_many :spirits, Spirit
-    has_many :class_abilities, ApathyDrive.ClassAbility
-    has_many :abilities, through: [:class_abilities, :ability]
 
     timestamps
   end
 
-  @required_fields ~w(name alignment start_room_id unities)
+  @required_fields ~w(name alignment start_room_id unities abilities)
   @optional_fields ~w()
 
   @doc """

@@ -31,14 +31,7 @@ defmodule ApathyDrive.ClassController do
   def show(conn, %{"id" => id}) do
     class = Repo.get!(Class, id)
 
-    class_abilities =
-      class
-      |> Ecto.assoc(:class_abilities)
-      |> Ecto.Query.preload(:ability)
-      |> Ecto.Query.order_by(:level)
-      |> Repo.all
-
-    render(conn, "show.html", class: class, class_abilities: class_abilities)
+    render(conn, "show.html", class: class)
   end
 
   def edit(conn, %{"id" => id}) do

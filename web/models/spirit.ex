@@ -27,7 +27,6 @@ defmodule Spirit do
     field :hints,             {:array, :string}, default: []
     field :disabled_hints,    {:array, :string}, default: []
     field :monster,           :any, virtual: true
-    field :abilities,         :any, virtual: true
     field :timers,            :map, virtual: true, default: %{}
     field :admin,             :boolean
     field :inventory,         ApathyDrive.JSONB, default: []

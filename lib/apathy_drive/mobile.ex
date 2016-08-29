@@ -486,7 +486,7 @@ defmodule ApathyDrive.Mobile do
   end
   def set_abilities(%Mobile{monster_template_id: mt_id, spirit: spirit} = mobile) do
     spirit_abilities =
-     ApathyDrive.ClassAbility.for_spirit(spirit)
+     spirit.class.abilities
      |> add_abilities_from_equipment(spirit.equipment)
 
     monster_abilities = MonsterTemplate.abilities(mt_id)

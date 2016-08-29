@@ -11,23 +11,5 @@
   </tr>
 </table>
 
-<p>
-  <div>Abilities:</div>
-  <table>
-    <thead>
-      <th>Level</th>
-      <th>Name</th>
-      <th><%= link "Add", to: class_ability_path(@conn, :new, from: class_path(@conn, :show, @class), class_id: @class.id) %></th>
-    </thead>
-    <%= for class_ability <- @class_abilities do %>
-      <tr>
-        <td><%= class_ability.level %></td>
-        <td><%= link class_ability.ability.properties["name"], to: ability_path(@conn, :show, class_ability.ability.id) %></td>
-        <td><%= link "Delete", to: class_ability_path(@conn, :delete, class_ability.id, from: class_path(@conn, :show, @class)), method: :delete %></td>
-      </tr>
-    <% end %>
-  </table>
-</p>
-
 <%= link "Edit", to: class_path(@conn, :edit, @class) %>
 <%= link "Back", to: class_path(@conn, :index) %>
