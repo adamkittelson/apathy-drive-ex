@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Repo.Migrations.AddPoeAttributesToMonsterTemplates do
   use Ecto.Migration
 
-  def change do
+  def up do
     alter table(:monster_templates) do
       add :might, :integer, default: 0
       add :constitution, :integer, default: 0
@@ -25,6 +25,33 @@ defmodule ApathyDrive.Repo.Migrations.AddPoeAttributesToMonsterTemplates do
       add :abilities, :jsonb
 
       remove :permanent
+    end
+  end
+
+  def down do
+    alter table(:monster_templates) do
+      remove :might
+      remove :constitution
+      remove :dexterity
+      remove :perception
+      remove :intellect
+      remove :resolve
+
+      remove :dr
+      remove :slash_dr
+      remove :pierce_dr
+      remove :crush_dr
+      remove :shock_dr
+      remove :burn_dr
+      remove :freeze_dr
+      remove :corrode_dr
+
+      remove :max_hp
+      remove :hp_regen
+
+      remove :abilities
+
+      add :permanent, :boolean
     end
   end
 end
