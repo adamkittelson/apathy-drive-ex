@@ -28,7 +28,7 @@ defmodule ApathyDrive.MapChannel do
 
     push socket, "update_map", map
 
-    {:noreply, socket}
+    {:noreply, socket, :hibernate}
   end
 
   # Channels can be used in a request/response fashion
