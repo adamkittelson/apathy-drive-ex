@@ -21,16 +21,33 @@ defmodule ApathyDrive.MonsterTemplate do
     field :questions,              ApathyDrive.JSONB
     field :flags,                  ApathyDrive.JSONB, default: []
     field :experience,             :integer
-    field :permanent,              :boolean
     field :movement,               :string
     field :unities,                ApathyDrive.JSONB
     field :limbs,                  ApathyDrive.JSONB
+    field :abilities,              ApathyDrive.JSONB
+
+    field :might, :integer, default: 0
+    field :constitution, :integer, default: 0
+    field :dexterity, :integer, default: 0
+    field :perception, :integer, default: 0
+    field :intellect, :integer, default: 0
+    field :resolve, :integer, default: 0
+
+    field :dr, :integer
+    field :slash_dr, :integer
+    field :pierce_dr, :integer
+    field :crush_dr, :integer
+    field :shock_dr, :integer
+    field :burn_dr, :integer
+    field :freeze_dr, :integer
+    field :corrode_dr, :integer
+
+    field :max_hp, :integer
+    field :hp_regen, :integer
 
     has_many :mobiles, Mobile
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
-    has_many :monster_abilities, ApathyDrive.MonsterAbility
-    has_many :abilities, through: [:monster_abilities, :ability]
 
     timestamps
   end
