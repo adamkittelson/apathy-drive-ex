@@ -3,12 +3,14 @@ defmodule ApathyDrive.Repo.Migrations.AddPoeAttributesToMonsterTemplates do
 
   def up do
     alter table(:monster_templates) do
-      add :might, :integer, default: 0
-      add :constitution, :integer, default: 0
-      add :dexterity, :integer, default: 0
-      add :perception, :integer, default: 0
-      add :intellect, :integer, default: 0
-      add :resolve, :integer, default: 0
+      add :accuracy, :integer, default: 25
+
+      add :fortitude, :integer, default: 20
+      add :reflex, :integer, default: 20
+      add :deflection, :integer, default: 20
+      add :will, :integer, default: 20
+
+      add :concentration, :integer, default: 50
 
       add :dr, :integer
       add :slash_dr, :integer
@@ -30,12 +32,14 @@ defmodule ApathyDrive.Repo.Migrations.AddPoeAttributesToMonsterTemplates do
 
   def down do
     alter table(:monster_templates) do
-      remove :might
-      remove :constitution
-      remove :dexterity
-      remove :perception
-      remove :intellect
-      remove :resolve
+      remove :accuracy
+
+      remove :fortitude
+      remove :reflex
+      remove :deflection
+      remove :will
+
+      remove :concentration
 
       remove :dr
       remove :slash_dr
