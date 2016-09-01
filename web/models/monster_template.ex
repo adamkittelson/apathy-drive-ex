@@ -26,12 +26,14 @@ defmodule ApathyDrive.MonsterTemplate do
     field :limbs,                  ApathyDrive.JSONB
     field :abilities,              ApathyDrive.JSONB
 
-    field :might, :integer, default: 0
-    field :constitution, :integer, default: 0
-    field :dexterity, :integer, default: 0
-    field :perception, :integer, default: 0
-    field :intellect, :integer, default: 0
-    field :resolve, :integer, default: 0
+    field :accuracy, :integer, default: 0
+
+    field :fortitude, :integer
+    field :reflex, :integer
+    field :deflection, :integer
+    field :will, :integer
+
+    field :concentration, :integer
 
     field :dr, :integer
     field :slash_dr, :integer
@@ -117,15 +119,6 @@ defmodule ApathyDrive.MonsterTemplate do
     GenServer.call(monster_template, {:create_monster, room})
   end
 
-  def abilities(monster_template_id) do
-    __MODULE__
-    |> where(id: ^monster_template_id)
-    |> Ecto.Query.preload(:abilities)
-    |> Repo.one!
-    |> Map.get(:abilities)
-    |> Enum.map(&Map.get(&1, :properties))
-  end
-
   def limit_reached?(%MonsterTemplate{game_limit: game_limit} = monster_template) do
     count(monster_template) >= game_limit
   end
@@ -169,6 +162,7 @@ defmodule ApathyDrive.MonsterTemplate do
   def handle_call({:create_monster, %Room{} = room}, _from, monster_template) do
     monster = %{
       name: name_with_adjective(monster_template.name, monster_template.adjectives),
+      abilities: monster_template.abilities,
       description: monster_template.description,
       enter_message: monster_template.enter_message,
       exit_message: monster_template.exit_message,
