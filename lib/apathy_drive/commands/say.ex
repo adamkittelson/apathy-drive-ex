@@ -9,8 +9,11 @@ defmodule ApathyDrive.Commands.Say do
     room
   end
 
-  def execute(%Room{} = room, %Mobile{} = mobile, message) do
-    message = Mobile.sanitize(message)
+  def execute(%Room{} = room, %Mobile{} = mobile, args) do
+    message =
+      args
+      |> Enum.join(" ")
+      |> Mobile.sanitize()
 
     Room.send_scroll(room, "<p>#{Mobile.look_name(mobile)} says: <span class='dark-green'>\"#{message}\"</span></p>", mobile)
     Mobile.send_scroll(mobile, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")

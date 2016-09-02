@@ -626,8 +626,12 @@ defmodule ApathyDrive.Mobile do
   def auto_attack_crit_tables(%Mobile{spirit: %Spirit{class: %Class{unities: ["evil"]}}} = mobile) do
     ["disruption" | mobile |> Map.put(:spirit, nil) |> auto_attack_crit_tables()]
   end
-  def auto_attack_crit_tables(%Mobile{} = mobile) do
-    ["fire", "cold", "electricity", "vacuum"] ++ (mobile |> Map.put(:monster_template_id, nil) |> auto_attack_crit_tables())
+  def auto_attack_crit_tables(%Mobile{spirit: %Spirit{class: %Class{unities: unities}}} = mobile) do
+    if "good" in unities and "evil" in unities do
+      ["fire", "cold", "electricity", "vacuum" | mobile |> Map.put(:spirit, nil) |> auto_attack_crit_tables()]
+    else
+      mobile |> Map.put(:spirit, nil) |> auto_attack_crit_tables()
+    end
   end
 
   def strength(%Mobile{} = mobile) do
