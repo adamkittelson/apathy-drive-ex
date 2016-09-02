@@ -476,23 +476,22 @@ defmodule ApathyDrive.Mobile do
     mobile
     |> Map.put(:abilities, [])
   end
-  def set_abilities(%Mobile{monster_template_id: mt_id, spirit: nil} = mobile) do
-    abilities = MonsterTemplate.abilities(mt_id)
 
+  def set_abilities(%Mobile{spirit: nil} = mobile) do
     mobile
-    |> Map.put(:abilities, abilities)
     |> set_passive_effects
     |> adjust_mana_costs
   end
-  def set_abilities(%Mobile{monster_template_id: mt_id, spirit: spirit} = mobile) do
+
+  def set_abilities(%Mobile{monster_template_id: id, spirit: spirit} = mobile) do
+    monster_abilities = MonsterTemplate.abilities(id)
+
     spirit_abilities =
      spirit.class.abilities
      |> add_abilities_from_equipment(spirit.equipment)
 
-    monster_abilities = MonsterTemplate.abilities(mt_id)
-
     mobile
-    |> Map.put(:abilities, monster_abilities ++ spirit_abilities)
+    |> Map.put(:abilities, spirit_abilities ++ monster_abilities)
     |> set_passive_effects
     |> adjust_mana_costs
   end

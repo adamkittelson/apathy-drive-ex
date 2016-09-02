@@ -21,16 +21,35 @@ defmodule ApathyDrive.MonsterTemplate do
     field :questions,              ApathyDrive.JSONB
     field :flags,                  ApathyDrive.JSONB, default: []
     field :experience,             :integer
-    field :permanent,              :boolean
     field :movement,               :string
     field :unities,                ApathyDrive.JSONB
     field :limbs,                  ApathyDrive.JSONB
+    field :abilities,              ApathyDrive.JSONB
+
+    field :accuracy, :integer, default: 0
+
+    field :fortitude, :integer
+    field :reflex, :integer
+    field :deflection, :integer
+    field :will, :integer
+
+    field :concentration, :integer
+
+    field :dr, :integer
+    field :slash_dr, :integer
+    field :pierce_dr, :integer
+    field :crush_dr, :integer
+    field :shock_dr, :integer
+    field :burn_dr, :integer
+    field :freeze_dr, :integer
+    field :corrode_dr, :integer
+
+    field :max_hp, :integer
+    field :hp_regen, :integer
 
     has_many :mobiles, Mobile
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
-    has_many :monster_abilities, ApathyDrive.MonsterAbility
-    has_many :abilities, through: [:monster_abilities, :ability]
 
     timestamps
   end
@@ -52,6 +71,13 @@ defmodule ApathyDrive.MonsterTemplate do
     mt_id
     |> find()
     |> GenServer.call(:questions)
+  end
+
+  def abilities(mt_id) do
+    MonsterTemplate
+    |> Ecto.Query.where([mt], mt.id == ^mt_id)
+    |> Ecto.Query.select([mt], mt.abilities)
+    |> Repo.one
   end
 
   def init(mt) do
@@ -98,15 +124,6 @@ defmodule ApathyDrive.MonsterTemplate do
 
   def create_monster(monster_template, room) do
     GenServer.call(monster_template, {:create_monster, room})
-  end
-
-  def abilities(monster_template_id) do
-    __MODULE__
-    |> where(id: ^monster_template_id)
-    |> Ecto.Query.preload(:abilities)
-    |> Repo.one!
-    |> Map.get(:abilities)
-    |> Enum.map(&Map.get(&1, :properties))
   end
 
   def limit_reached?(%MonsterTemplate{game_limit: game_limit} = monster_template) do

@@ -187,3 +187,6 @@ CHANGELOG
 
 ---- 0.0.72 / 2016-07-30 / remove-mobile-servers-redux -------------------------
 * don'\''t have genservers for monsters, make monster data part o room genservers
+
+---- 0.0.73 / 2016-09-02 / totally-rip-off-pillars-of-eternity -----------------
+* move abilities to monster templates, decided not to do the POE thing
