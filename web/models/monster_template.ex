@@ -73,6 +73,13 @@ defmodule ApathyDrive.MonsterTemplate do
     |> GenServer.call(:questions)
   end
 
+  def abilities(mt_id) do
+    MonsterTemplate
+    |> Ecto.Query.where([mt], mt.id == ^mt_id)
+    |> Ecto.Query.select([mt], mt.abilities)
+    |> Repo.one
+  end
+
   def init(mt) do
     {:ok, mt}
   end
@@ -162,7 +169,6 @@ defmodule ApathyDrive.MonsterTemplate do
   def handle_call({:create_monster, %Room{} = room}, _from, monster_template) do
     monster = %{
       name: name_with_adjective(monster_template.name, monster_template.adjectives),
-      abilities: monster_template.abilities,
       description: monster_template.description,
       enter_message: monster_template.enter_message,
       exit_message: monster_template.exit_message,
