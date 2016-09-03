@@ -26,27 +26,6 @@ defmodule ApathyDrive.MonsterTemplate do
     field :limbs,                  ApathyDrive.JSONB
     field :abilities,              ApathyDrive.JSONB
 
-    field :accuracy, :integer, default: 0
-
-    field :fortitude, :integer
-    field :reflex, :integer
-    field :deflection, :integer
-    field :will, :integer
-
-    field :concentration, :integer
-
-    field :dr, :integer
-    field :slash_dr, :integer
-    field :pierce_dr, :integer
-    field :crush_dr, :integer
-    field :shock_dr, :integer
-    field :burn_dr, :integer
-    field :freeze_dr, :integer
-    field :corrode_dr, :integer
-
-    field :max_hp, :integer
-    field :hp_regen, :integer
-
     has_many :mobiles, Mobile
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
