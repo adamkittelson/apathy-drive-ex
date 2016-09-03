@@ -25,6 +25,7 @@ defmodule ApathyDrive.MonsterTemplate do
     field :unities,                ApathyDrive.JSONB
     field :limbs,                  ApathyDrive.JSONB
     field :abilities,              ApathyDrive.JSONB
+    field :base_hp,               :integer
 
     has_many :mobiles, Mobile
     has_many :lairs, ApathyDrive.LairMonster
@@ -52,10 +53,10 @@ defmodule ApathyDrive.MonsterTemplate do
     |> GenServer.call(:questions)
   end
 
-  def abilities(mt_id) do
+  def mobile_virtual_fields(mt_id) do
     MonsterTemplate
     |> Ecto.Query.where([mt], mt.id == ^mt_id)
-    |> Ecto.Query.select([mt], mt.abilities)
+    |> Ecto.Query.select([mt], map(mt, [:abilities, :base_hp]))
     |> Repo.one
   end
 
@@ -162,6 +163,7 @@ defmodule ApathyDrive.MonsterTemplate do
       alignment: monster_template.alignment,
       spawned_at: room.id,
       area_spawned_in: room.area_id,
+      base_hp: monster_template.base_hp,
       limbs: monster_template.limbs || %{
         "head" => %{"fatal" => true, "kind" => "head"},
         "left arm" => %{"kind" => "arm"},

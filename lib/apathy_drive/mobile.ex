@@ -51,6 +51,7 @@ defmodule ApathyDrive.Mobile do
     field :unity_essences,     :map,     virtual: true, default: %{}
     field :pid,                :any,     virtual: true
     field :ref,                :any,     virtual: true
+    field :base_hp,            :integer, virtual: true
 
     timestamps
   end
@@ -418,10 +419,13 @@ defmodule ApathyDrive.Mobile do
 
   def init(%Mobile{spirit: nil} = mobile) do
     ref = make_ref()
+    
+    virtuals = MonsterTemplate.mobile_virtual_fields(mobile.monster_template_id)
 
     mobile =
       mobile
       |> Map.put(:ref, ref)
+      |> Map.put(:base_hp, virtuals.base_hp)
       |> set_abilities
       |> set_max_mana
       |> set_mana
@@ -484,7 +488,7 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_abilities(%Mobile{monster_template_id: id, spirit: spirit} = mobile) do
-    monster_abilities = MonsterTemplate.abilities(id)
+    monster_abilities = MonsterTemplate.mobile_virtual_fields(id).abilities
 
     spirit_abilities =
      spirit.class.abilities
@@ -580,9 +584,9 @@ defmodule ApathyDrive.Mobile do
   end
 
   def set_max_hp(%Mobile{monster_template_id: nil} = mobile), do: mobile
-  def set_max_hp(%Mobile{} = mobile) do
+  def set_max_hp(%Mobile{base_hp: base} = mobile) do
     attr = div((strength(mobile) * 2) + agility(mobile), 3)
-    Map.put(mobile, :max_hp, trunc(attr * (0.6 + (0.06 * level(mobile)))))
+    Map.put(mobile, :max_hp, base + trunc(attr * (0.6 + (0.06 * level(mobile)))))
   end
 
   def level(%Mobile{level: level}), do: level
