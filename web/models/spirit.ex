@@ -15,7 +15,6 @@ defmodule Spirit do
     has_many :recipe_items, through: [:recipes, :item]
 
     field :name,              :string
-    field :gender,            :string
     field :alignment,         :string, virtual: true
     field :email,             :string
     field :password,          :string
@@ -45,9 +44,8 @@ defmodule Spirit do
   """
   def changeset(spirit, params \\ %{}) do
     spirit
-    |> cast(params, ~w(name class_id), ~w(gender))
+    |> cast(params, ~w(name class_id), ~w())
     |> validate_inclusion(:class_id, ApathyDrive.Class.ids)
-    |> validate_inclusion(:gender, ["male", "female", nil])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, name: :spirits_lower_name_index, on: Repo)
     |> validate_length(:name, min: 1, max: 12)

@@ -20,14 +20,6 @@
   </div>
 
   <div class="row">
-    <div class="four columns">
-      <label for="faction">Gender</label>
-      <%= select(f, :gender, ["Male": "male", "Female": "female", "None": nil], prompt: "Choose Your Gender", class: "u-full-width") %>
-      <%= error_tag f, :gender %>
-    </div>
-  </div>
-
-  <div class="row">
       <div class="four columns">
         <label for="class">Class</label>
         <%= select(f, :class_id, ApathyDrive.Class.select, prompt: "Choose Your Class", class: "u-full-width") %>
