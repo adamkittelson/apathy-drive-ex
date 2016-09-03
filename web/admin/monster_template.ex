@@ -16,6 +16,18 @@ defmodule ApathyDrive.ExAdmin.MonsterTemplate do
         input monstertemplate, :game_limit
         content do
           ~s(
+          <div id="monstertemplate_abilities" class="form-group">
+            <label class="col-sm-2 control-label" for="monstertemplate_abilities">
+              Abilities<abbr class="required" title="required">*</abbr>
+            </label>
+            <div class="col-sm-10">
+              <textarea id="monstertemplate_abilities" name="monstertemplate[abilities]" class="json">#{Poison.encode!(monstertemplate.abilities)}</textarea>
+            </div>
+          </div>
+          )
+        end
+        content do
+          ~s(
           <div id="monstertemplate_adjectives_input" class="form-group">
             <label class="col-sm-2 control-label" for="monstertemplate_adjectives">
               Adjectives<abbr class="required" title="required">*</abbr>
