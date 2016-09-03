@@ -335,12 +335,6 @@ $(document).ready(function() {
     // which draws them above other areas on the map
   }
 
-  var draw_map = function() {
-    for (var area in areas) {
-      draw_area(area);
-    }
-  }
-
   var draw_area = function(area, z) {
     var map = areas[area].map;
 
@@ -469,12 +463,15 @@ $(document).ready(function() {
     });
   }
 
-  chan.on("update_map", function(rooms){
+  chan.on("update_map", function(area){
     text.text = "Apotheosis";
-    for (var room_id in rooms) {
-      add_room(parseInt(room_id), rooms[room_id]);
+    for (var area_name in area) {
+      for (var room_id in area[area_name]) {
+        add_room(parseInt(room_id), area[area_name][room_id]);
+      }
+      draw_area(area_name);
     }
-    draw_map();
+
     push("map", "request_room_id")
   });
 

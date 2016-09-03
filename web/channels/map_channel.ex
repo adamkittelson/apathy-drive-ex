@@ -11,26 +11,31 @@ defmodule ApathyDrive.MapChannel do
   def handle_info(:after_join, socket) do
 
     # Doing it in a task so it gets garbage collected right away
-    Task.start fn ->
-      map =
-        Room.world_map
-        |> Repo.all
-        |> Enum.reduce(%{}, fn %{id: id} = room, map ->
-             directions =
-               room.exits
-               |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"]))
-               |> Enum.map(&(&1["direction"]))
+    Room.world_map
+    |> Repo.all
+    |> Enum.each(fn area_id ->
+         Task.start fn ->
+           {area, map} =
+             area_id
+             |> Room.area_map
+             |> Repo.all
+             |> Enum.reduce({nil, %{}}, fn %{id: id, area: area} = room, {_, map} ->
+                  directions =
+                    room.exits
+                    |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"]))
+                    |> Enum.map(&(&1["direction"]))
 
-             room =
-               room
-               |> Map.put(:directions, directions)
-               |> Map.delete(:exits)
+                  room =
+                    room
+                    |> Map.put(:directions, directions)
+                    |> Map.delete(:exits)
 
-             Map.put(map, to_string(id), room)
-           end)
+                  {area, Map.put(map, to_string(id), room)}
+                end)
 
-      push socket, "update_map", map
-    end
+           if map_size(map) > 0, do: push socket, "update_map", %{area => map}
+         end
+       end)
 
     {:noreply, socket}
   end

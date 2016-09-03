@@ -238,8 +238,13 @@ defmodule ApathyDrive.Room do
   end
 
   def world_map do
+    from area in Area,
+    select: area.id
+  end
+
+  def area_map(area_id) do
     from room in Room,
-    where: not is_nil(room.coordinates),
+    where: room.area_id == ^area_id and not is_nil(room.coordinates),
     join: area in assoc(room, :area),
     join: room_unity in assoc(room, :room_unity),
     select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, controlled_by: room_unity.controlled_by, exits: room.exits}
