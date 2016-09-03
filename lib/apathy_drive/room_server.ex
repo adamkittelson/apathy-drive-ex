@@ -221,7 +221,12 @@ defmodule ApathyDrive.RoomServer do
       room.mobiles[mobile.ref]
       |> Mobile.update_prompt
 
-      {:ok, _} = Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)})
+      case Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)}) do
+        {:ok, _} ->
+          :ok
+        {:error, {:already_tracked, pid, topic, key}} ->
+          :ok
+      end
 
       {:reply, mobile.ref, room}
     else
@@ -238,7 +243,12 @@ defmodule ApathyDrive.RoomServer do
 
       room = put_in(room.mobiles[mobile.ref], mobile)
 
-      {:ok, _} = Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)})
+      case Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)}) do
+        {:ok, _} ->
+          :ok
+        {:error, {:already_tracked, pid, topic, key}} ->
+          :ok
+      end
 
       {:reply, mobile.ref, room}
     end
