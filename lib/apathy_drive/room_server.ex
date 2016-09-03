@@ -224,7 +224,7 @@ defmodule ApathyDrive.RoomServer do
       case Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)}) do
         {:ok, _} ->
           :ok
-        {:error, {:already_tracked, pid, topic, key}} ->
+        {:error, {:already_tracked, _pid, _topic, _key}} ->
           :ok
       end
 
@@ -246,7 +246,7 @@ defmodule ApathyDrive.RoomServer do
       case Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)}) do
         {:ok, _} ->
           :ok
-        {:error, {:already_tracked, pid, topic, key}} ->
+        {:error, {:already_tracked, _pid, _topic, _key}} ->
           :ok
       end
 
