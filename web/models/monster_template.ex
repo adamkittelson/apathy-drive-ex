@@ -77,7 +77,6 @@ defmodule ApathyDrive.MonsterTemplate do
     monster_template =
       MonsterTemplate
       |> Repo.get(id)
-      |> Repo.preload(:abilities)
 
     case Supervisor.start_child(ApathyDrive.Supervisor, worker(MonsterTemplate, [monster_template, [name: {:global, "monster_template_#{id}"}]], id: "monster_template_#{id}", restart: :permanent)) do
       {:error, {:already_started, pid}} ->
