@@ -12,6 +12,15 @@ textarea.json {
   line-height: normal !important;
 }
 
+textarea {
+  height: 100px;
+  margin: 0;
+  width: 100%;
+  line-height: normal !important;
+  border-color: #d2d6de;
+  padding: 6px 12px;
+}
+
 .linedwrap {
   margin-bottom: 2em;
   width: 100%;
