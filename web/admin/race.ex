@@ -29,7 +29,7 @@ defmodule ApathyDrive.ExAdmin.Race do
           ~s(
           <div id="race_description_input" class="form-group">
             <label class="col-sm-2 control-label" for="race_description">
-              Desription<abbr class="required" title="required">*</abbr>
+              Description<abbr class="required" title="required">*</abbr>
             </label>
             <div class="col-sm-10">
               <textarea id="race_description" name="race[description]">#{race.description}</textarea>
@@ -43,6 +43,18 @@ defmodule ApathyDrive.ExAdmin.Race do
         input race, :willpower
         input race, :health
         input race, :charm
+        content do
+          ~s(
+          <div id="race_abilities_input" class="form-group">
+            <label class="col-sm-2 control-label" for="race_abilities">
+              Abilities<abbr class="required" title="required">*</abbr>
+            </label>
+            <div class="col-sm-10">
+              <textarea id="race_abilities" name="race[abilities]" class="json">#{race.abilities}</textarea>
+            </div>
+          </div>
+          )
+        end
       end
     end
 

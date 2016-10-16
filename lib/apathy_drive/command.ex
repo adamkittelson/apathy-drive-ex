@@ -15,9 +15,8 @@ defmodule ApathyDrive.Command do
      Commands.Cooldowns, Commands.Delve, Commands.Drop, Commands.Experience,
      Commands.Get, Commands.Gossip, Commands.Greet,
      Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
-     Commands.Possess, Commands.Remove, Commands.Return,
-     Commands.Say, Commands.Score, Commands.Search, Commands.System,
-     ApathyDrive.Commands.Teleport, Commands.Unpossess, Commands.Wear, Commands.Who]
+     Commands.Remove, Commands.Return, Commands.Say, Commands.Score,
+     Commands.Search, Commands.System, Commands.Wear, Commands.Who]
   end
 
   def execute(%Room{} = room, mobile_ref, command, arguments) do

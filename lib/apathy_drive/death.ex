@@ -10,7 +10,7 @@ defmodule ApathyDrive.Death do
         kill(room, victim_ref, [:drop_equipment, :reward_monster_death_exp, :unpossess, :send_home, :respawn_spirit, :delete, :convert_lair], killed_by)
       # Monster not possessed by a player
       %Mobile{spirit: nil} ->
-        kill(room, victim_ref, [:reward_monster_death_exp, :generate_loot, :delete, :convert_lair], killed_by)
+        kill(room, victim_ref, [:reward_monster_death_exp, :generate_loot, :delete], killed_by)
     end
   end
 
@@ -98,33 +98,8 @@ defmodule ApathyDrive.Death do
 
     kill(room, victim_ref, remaining_steps, killed_by)
   end
-  def kill(room, victim_ref, [:convert_lair | remaining_steps], killed_by) do
-    case Room.get_mobile(room, killed_by) do
-      nil ->
-        kill(room, victim_ref, remaining_steps, killed_by)
-      %Mobile{unities: [unity]} ->
-        Room.get_mobile(room, victim_ref)
-        |> convert_lair(unity)
-
-        kill(room, victim_ref, remaining_steps, killed_by)
-      %Mobile{spirit: %Spirit{class: %Class{unities: [unity]}}} ->
-        Room.get_mobile(room, victim_ref)
-        |> convert_lair(unity)
-
-        kill(room, victim_ref, remaining_steps, killed_by)
-      _ ->
-        kill(room, victim_ref, remaining_steps, killed_by)
-    end
-  end
   def kill(room, victim_ref, [], _killed_by) do
     update_in(room.mobiles, &Map.delete(&1, victim_ref))
   end
-
-  defp convert_lair(%{spawned_at: room_id}, unity) do
-    room_id
-    |> RoomServer.find
-    |> RoomServer.convert?(unity)
-  end
-  defp convert_lair(_mobile, _unity), do: :noop
 
 end

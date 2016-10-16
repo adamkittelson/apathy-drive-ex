@@ -3,17 +3,15 @@ defmodule ApathyDrive.Class do
 
   schema "classes" do
     field :name, :string
-    field :alignment, :string
-    field :start_room_id, :integer
+    field :description, :string
+    field :armour, :string
+    field :weapon, :string
     field :abilities, ApathyDrive.JSONB, default: []
-    field :unities, ApathyDrive.JSONB, default: []
-
-    has_many :spirits, Spirit
 
     timestamps
   end
 
-  @required_fields ~w(name alignment start_room_id unities abilities)
+  @required_fields ~w(name description armour weapon abilities)
   @optional_fields ~w()
 
   @doc """

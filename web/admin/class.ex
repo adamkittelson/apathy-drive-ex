@@ -2,12 +2,34 @@ defmodule ApathyDrive.ExAdmin.Class do
   use ExAdmin.Register
 
   register_resource ApathyDrive.Class do
+    
+    index do
+      selectable_column
+
+      column :id
+      column :name
+      column :armour
+      column :weapon
+      actions
+    end
 
     form class do
       inputs do
         input class, :name
-        input class, :alignment
-        input class, :start_room_id
+        content do
+          ~s(
+          <div id="class_description_input" class="form-group">
+            <label class="col-sm-2 control-label" for="class_description">
+              Description<abbr class="required" title="required">*</abbr>
+            </label>
+            <div class="col-sm-10">
+              <textarea id="class_description" name="class[description]">#{class.description}</textarea>
+            </div>
+          </div>
+          )
+        end
+        input class, :armour, collection: ["Cloth", "Leather", "Chain", "Scale", "Plate"]
+        input class, :weapon, collection: ["Any", "Blunt", "Bladed", "One Handed", "One Handed Blunt", "One Handed Bladed", "Limited"]
 
         content do
           ~s(
@@ -17,19 +39,6 @@ defmodule ApathyDrive.ExAdmin.Class do
             </label>
             <div class="col-sm-10">
               <textarea id="class_abilities" name="class[abilities]" class="json">#{Poison.encode!(class.abilities)}</textarea>
-            </div>
-          </div>
-          )
-        end
-
-        content do
-          ~s(
-          <div id="class_unities_input" class="form-group">
-            <label class="col-sm-2 control-label" for="class_unities">
-              Properties<abbr class="required" title="required">*</abbr>
-            </label>
-            <div class="col-sm-10">
-              <textarea id="class_unities" name="class[unities]" class="json">#{Poison.encode!(class.unities)}</textarea>
             </div>
           </div>
           )
