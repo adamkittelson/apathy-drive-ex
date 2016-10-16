@@ -2,7 +2,7 @@ defmodule ApathyDrive.Repo.Migrations.Unities do
   use Ecto.Migration
 
   def change do
-    alter table(:mobiles) do
+    alter table(:monsters) do
       remove :unity
       add :unities, {:array, :string}
     end

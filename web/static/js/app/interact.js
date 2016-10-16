@@ -332,8 +332,8 @@
 
         globalEvents = {},
 
-        // Opera Mobile must be handled differently
-        isOperaMobile = navigator.appName == 'Opera' &&
+        // Opera Monster must be handled differently
+        isOperaMonster = navigator.appName == 'Opera' &&
             supportsTouch &&
             navigator.userAgent.match('Presto'),
 
@@ -655,8 +655,8 @@
     function getPageXY (pointer, page) {
         page = page || {};
 
-        // Opera Mobile handles the viewport and scrolling oddly
-        if (isOperaMobile && isNativePointer(pointer)) {
+        // Opera Monster handles the viewport and scrolling oddly
+        if (isOperaMonster && isNativePointer(pointer)) {
             getXY('screen', pointer, page);
 
             page.x += window.scrollX;
@@ -672,8 +672,8 @@
     function getClientXY (pointer, client) {
         client = client || {};
 
-        if (isOperaMobile && isNativePointer(pointer)) {
-            // Opera Mobile handles the viewport and scrolling oddly
+        if (isOperaMonster && isNativePointer(pointer)) {
+            // Opera Monster handles the viewport and scrolling oddly
             getXY('screen', pointer, client);
         }
         else {

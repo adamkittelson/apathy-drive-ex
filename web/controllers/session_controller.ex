@@ -1,10 +1,11 @@
 defmodule ApathyDrive.SessionController do
   use ApathyDrive.Web, :controller
+  alias ApathyDrive.Character
 
   plug :scrub_params, "session" when action in [:create]
 
   def new(conn, _params) do
-    changeset = Spirit.sign_up_changeset(%Spirit{})
+    changeset = Character.sign_up_changeset(%Character{})
     render(conn, "new.html", changeset: changeset)
   end
 
@@ -17,12 +18,12 @@ defmodule ApathyDrive.SessionController do
   end
 
   def create(conn, %{"session" => %{"email" => email, "password" => password}}) do
-    if spirit = Spirit.sign_in(email, password) do
+    if character = Character.sign_in(email, password) do
       conn =
         conn
-        |> put_session(:current_spirit, spirit.id)
+        |> put_session(:character, character.id)
 
-      redirect(conn, to: game_path(conn, :game, %{"spirit_id" => spirit.id}))
+      redirect(conn, to: game_path(conn, :game, %{}))
     else
       email_or_password_incorrect(conn)
     end
@@ -30,12 +31,12 @@ defmodule ApathyDrive.SessionController do
 
   def delete(conn, _params) do
     conn
-    |> put_session(:current_spirit, nil)
+    |> put_session(:character, nil)
     |> redirect(to: "/")
   end
 
   defp email_or_password_incorrect(conn) do
-    changeset = Spirit.sign_up_changeset(%Spirit{})
+    changeset = Character.sign_up_changeset(%Character{})
 
     conn
     |> put_flash(:sign_in, "email or password incorrect")

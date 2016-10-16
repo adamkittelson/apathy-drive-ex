@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{PubSub, Mobile, TimerManager, Ability, Match, Room, RoomServer}
+  alias ApathyDrive.{PubSub, Monster, TimerManager, Ability, Match, Room, RoomServer}
   import ApathyDrive.Text
   import ApathyDrive.TimerManager, only: [seconds: 1]
 
@@ -34,21 +34,21 @@ defmodule ApathyDrive.Ability do
     |> cast(params, @required_fields, @optional_fields)
   end
 
-  def useable(abilities, %Mobile{mana: mana}) do
+  def useable(abilities, %Monster{mana: mana}) do
     abilities
     |> Enum.reject(fn(ability) ->
          ability["mana_cost"] && ability["mana_cost"] > mana
        end)
   end
 
-  def removes_blessing?(%Mobile{} = mobile, %{"instant_effects" => %{"remove abilities" => abilities}} = ability) do
-    Systems.Effect.max_stacks?(mobile, ability) or
+  def removes_blessing?(%Monster{} = monster, %{"instant_effects" => %{"remove abilities" => abilities}} = ability) do
+    Systems.Effect.max_stacks?(monster, ability) or
     Enum.any?(abilities, fn(ability_id) ->
-      Systems.Effect.stack_count(mobile, ability_id) > 0
+      Systems.Effect.stack_count(monster, ability_id) > 0
     end)
   end
-  def removes_blessing?(mobile, ability) do
-    Systems.Effect.max_stacks?(mobile, ability)
+  def removes_blessing?(monster, ability) do
+    Systems.Effect.max_stacks?(monster, ability)
   end
 
   def color(%{"kind" => "attack"}),      do: "red"
@@ -58,7 +58,7 @@ defmodule ApathyDrive.Ability do
   def color(%{"kind" => _}),             do: "blue"
 
   def prep_message(nil, _, _, _, _), do: nil
-  def prep_message(message, %{} = ability, %Mobile{} = user, %Mobile{} = target, interpolations) do
+  def prep_message(message, %{} = ability, %Monster{} = user, %Monster{} = target, interpolations) do
     message = message
               |> interpolate(Map.merge(%{"user" => user, "target" => target}, interpolations))
               |> capitalize_first
@@ -66,8 +66,8 @@ defmodule ApathyDrive.Ability do
   end
 
   def cast_messages(%{} = ability,
-                    %Mobile{} = user,
-                    %Mobile{} = target,
+                    %Monster{} = user,
+                    %Monster{} = target,
                     interpolations \\ %{},
                     message_key \\ "cast_message") do
     %{
@@ -77,163 +77,163 @@ defmodule ApathyDrive.Ability do
     }
   end
 
-  def scale_ability(%Mobile{} = mobile, prop_name, %{"potency" => _} = ability) do
-    scale_effect(mobile, prop_name, ability)
+  def scale_ability(%Monster{} = monster, prop_name, %{"potency" => _} = ability) do
+    scale_effect(monster, prop_name, ability)
   end
-  def scale_ability(%Mobile{} = mobile, prop_name, %{"base_min" => _, "base_max" => _} = ability) do
-    scale_effect(mobile, prop_name, ability)
+  def scale_ability(%Monster{} = monster, prop_name, %{"base_min" => _, "base_max" => _} = ability) do
+    scale_effect(monster, prop_name, ability)
   end
-  def scale_ability(%Mobile{} = mobile, _prop_name, %{} = ability) do
+  def scale_ability(%Monster{} = monster, _prop_name, %{} = ability) do
     ability
     |> Map.keys
     |> Enum.reduce(%{}, fn(key, map) ->
-         Map.put(map, key, scale_ability(mobile, key, ability[key]))
+         Map.put(map, key, scale_ability(monster, key, ability[key]))
        end)
   end
-  def scale_ability(%Mobile{}, _prop_name, ability) do
+  def scale_ability(%Monster{}, _prop_name, ability) do
     ability
   end
 
-  def scale_effect(%Mobile{} = _mobile, value) when is_number(value), do: value
-  def scale_effect(%Mobile{} = _mobile, value) when is_binary(value), do: value
+  def scale_effect(%Monster{} = _monster, value) when is_number(value), do: value
+  def scale_effect(%Monster{} = _monster, value) when is_binary(value), do: value
 
-  def scale_effect(%Mobile{} = mobile, "damage", %{"base_min" => base_min, "base_max" => base_max}) do
-    base_max = base_max + Mobile.effect_bonus(mobile, "increase max damage")
+  def scale_effect(%Monster{} = monster, "damage", %{"base_min" => base_min, "base_max" => base_max}) do
+    base_max = base_max + Monster.effect_bonus(monster, "increase max damage")
     base_min..base_max
     |> Enum.random
   end
 
-  def scale_effect(%Mobile{}, _effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
+  def scale_effect(%Monster{}, _effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
     base_min..base_max
     |> Enum.random
   end
 
-  def scale_effect(%Mobile{} = mobile, "heal", %{"potency" => potency}) do
-    average = (potency/300) * ((Mobile.magical_damage(mobile)) + (0.2229 * Mobile.will(mobile)))
+  def scale_effect(%Monster{} = monster, "heal", %{"potency" => potency}) do
+    average = (potency/300) * ((Monster.magical_damage(monster)) + (0.2229 * Monster.will(monster)))
 
     modifier = (80..120 |> Enum.random) / 100
 
     trunc(average * modifier)
   end
 
-  def scale_effect(%Mobile{} = mobile, "damage", %{"potency" => potency, "type" => type}) do
+  def scale_effect(%Monster{} = monster, "damage", %{"potency" => potency, "type" => type}) do
     if type == "magical" do
-      trunc((potency/300) * (Mobile.magical_damage(mobile) + (0.2229 * Mobile.will(mobile))))
+      trunc((potency/300) * (Monster.magical_damage(monster) + (0.2229 * Monster.will(monster))))
     else
-      trunc((potency/300) * (Mobile.physical_damage(mobile) + (0.2229 * Mobile.strength(mobile))))
+      trunc((potency/300) * (Monster.physical_damage(monster) + (0.2229 * Monster.strength(monster))))
     end
   end
 
-  def scale_effect(%Mobile{} = mobile, "drain", %{"potency" => potency, "type" => type}) do
+  def scale_effect(%Monster{} = monster, "drain", %{"potency" => potency, "type" => type}) do
     if type == "magical" do
-      trunc((potency/300) * (Mobile.magical_damage(mobile) + (0.2229 * Mobile.will(mobile))))
+      trunc((potency/300) * (Monster.magical_damage(monster) + (0.2229 * Monster.will(monster))))
     else
-      trunc((potency/300) * (Mobile.physical_damage(mobile) + (0.2229 * Mobile.strength(mobile))))
+      trunc((potency/300) * (Monster.physical_damage(monster) + (0.2229 * Monster.strength(monster))))
     end
   end
 
-  def scale_effect(%Mobile{}, _effect_name, %{"potency" => potency}) do
+  def scale_effect(%Monster{}, _effect_name, %{"potency" => potency}) do
     potency
   end
 
-  def scale_effect(%Mobile{}, _effect_name, effect), do: effect
+  def scale_effect(%Monster{}, _effect_name, effect), do: effect
 
-  def find_mobile_in_room(%Room{} = room, %Mobile{}, query) do
-    mobiles =
-      room.mobiles
+  def find_monster_in_room(%Room{} = room, %Monster{}, query) do
+    monsters =
+      room.monsters
       |> Map.values
 
     target =
-      mobiles
+      monsters
       |> Match.one(:name_contains, query)
 
     target && target.ref
   end
 
-  def find_other_mobile_in_room(%Room{} = room, %Mobile{ref: mobile_ref}, query) do
-    mobiles =
-      room.mobiles
+  def find_other_monster_in_room(%Room{} = room, %Monster{ref: monster_ref}, query) do
+    monsters =
+      room.monsters
       |> Map.values
 
     target =
-      mobiles
-      |> Enum.reject(&(&1.ref == mobile_ref))
+      monsters
+      |> Enum.reject(&(&1.ref == monster_ref))
       |> Match.one(:name_contains, query)
 
     target && target.ref
   end
 
-  def alignment_enemies(%Room{} = room, %Mobile{} = mobile) do
-    room.mobiles
+  def alignment_enemies(%Room{} = room, %Monster{} = monster) do
+    room.monsters
     |> Map.values
-    |> Enum.reject(&(&1.alignment == mobile.alignment))
+    |> Enum.reject(&(&1.alignment == monster.alignment))
     |> Enum.map(&Map.get(&1, :ref))
   end
 
   def wrap_target(nil),    do: []
-  def wrap_target(%Mobile{pid: pid}), do: [pid]
+  def wrap_target(%Monster{pid: pid}), do: [pid]
   def wrap_target(target), do: [target]
 
-  def reject(%Mobile{pid: target_pid}, %Mobile{pid: pid}) when pid == target_pid, do: nil
-  def reject(%Mobile{pid: target_pid}, %Mobile{}), do: target_pid
-  def reject(target_pid, %Mobile{pid: pid}) when pid == target_pid, do: nil
-  def reject(target_pid, %Mobile{}), do: target_pid
+  def reject(%Monster{pid: target_pid}, %Monster{pid: pid}) when pid == target_pid, do: nil
+  def reject(%Monster{pid: target_pid}, %Monster{}), do: target_pid
+  def reject(target_pid, %Monster{pid: pid}) when pid == target_pid, do: nil
+  def reject(target_pid, %Monster{}), do: target_pid
 
   def display_pre_cast_message(%Room{} = room, caster_ref, %{"pre-cast_message" => _} = ability) do
-    mobile = Room.get_mobile(room, caster_ref)
+    monster = Room.get_monster(room, caster_ref)
 
-    cast_messages = cast_messages(ability, mobile, mobile, %{}, "pre-cast_message")
+    cast_messages = cast_messages(ability, monster, monster, %{}, "pre-cast_message")
 
-    Mobile.send_scroll(mobile, cast_messages["user"])
+    Monster.send_scroll(monster, cast_messages["user"])
 
-    Room.send_scroll(room, cast_messages["spectator"], mobile)
+    Room.send_scroll(room, cast_messages["spectator"], monster)
   end
   def display_pre_cast_message(%Room{}, _caster_ref, %{}), do: nil
 
-  def can_execute?(%Room{} = room, %Mobile{} = mobile, ability) do
+  def can_execute?(%Room{} = room, %Monster{} = monster, ability) do
     cond do
-      on_cooldown?(mobile, ability) ->
-        Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>You can't do that yet.</p>")
+      on_cooldown?(monster, ability) ->
+        Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
         false
-      Mobile.confused(room, mobile) ->
+      Monster.confused(room, monster) ->
         false
-      Mobile.silenced(mobile, ability) ->
+      Monster.silenced(monster, ability) ->
         false
-      not_enough_mana?(mobile, ability) ->
+      not_enough_mana?(monster, ability) ->
         false
       true ->
         true
     end
   end
 
-  def not_enough_mana?(%Mobile{mana: _mana}, %{"ignores_global_cooldown" => true}), do: false
-  def not_enough_mana?(%Mobile{mana: mana} = mobile, %{"mana_cost" => cost}) when cost > mana do
-    Mobile.send_scroll(mobile, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+  def not_enough_mana?(%Monster{mana: _mana}, %{"ignores_global_cooldown" => true}), do: false
+  def not_enough_mana?(%Monster{mana: mana} = monster, %{"mana_cost" => cost}) when cost > mana do
+    Monster.send_scroll(monster, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
     true
   end
-  def not_enough_mana?(%Mobile{}, %{}), do: false
+  def not_enough_mana?(%Monster{}, %{}), do: false
 
-  def cancel_cast_timer(%Room{} = room, mobile_ref) do
-    Room.update_mobile(room, mobile_ref, fn
-      %Mobile{timers: %{cast_timer: _}} = mobile ->
-        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You interrupt your spell.</span></p>")
-        TimerManager.cancel(mobile, :cast_timer)
-      %Mobile{} = mobile ->
-        mobile
+  def cancel_cast_timer(%Room{} = room, monster_ref) do
+    Room.update_monster(room, monster_ref, fn
+      %Monster{timers: %{cast_timer: _}} = monster ->
+        Monster.send_scroll(monster, "<p><span class='dark-yellow'>You interrupt your spell.</span></p>")
+        TimerManager.cancel(monster, :cast_timer)
+      %Monster{} = monster ->
+        monster
     end)
   end
 
-  def start_cast_timer(%Room{} = room, mobile_ref, %{"cast_time" => time} = ability, target) do
-    Room.update_mobile(room, mobile_ref, fn mobile ->
-      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
-      TimerManager.send_after(mobile, {:cast_timer, time |> seconds, {:timer_cast_ability, %{caster: mobile.ref, ability: ability, timer: time, target: target}}})
+  def start_cast_timer(%Room{} = room, monster_ref, %{"cast_time" => time} = ability, target) do
+    Room.update_monster(room, monster_ref, fn monster ->
+      Monster.send_scroll(monster, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
+      TimerManager.send_after(monster, {:cast_timer, time |> seconds, {:timer_cast_ability, %{caster: monster.ref, ability: ability, timer: time, target: target}}})
     end)
   end
 
-  def execute(%Room{} = room, mobile_ref, %{"cast_time" => _time} = ability, target) do
-    with %Mobile{} = mobile <- room.mobiles[mobile_ref],
-         %Room{} = room <- cancel_cast_timer(room, mobile.ref) do
-      start_cast_timer(room, mobile_ref, ability, target)
+  def execute(%Room{} = room, monster_ref, %{"cast_time" => _time} = ability, target) do
+    with %Monster{} = monster <- room.monsters[monster_ref],
+         %Room{} = room <- cancel_cast_timer(room, monster.ref) do
+      start_cast_timer(room, monster_ref, ability, target)
     else
       _ ->
         room
@@ -242,21 +242,21 @@ defmodule ApathyDrive.Ability do
 
   def execute(%Room{} = room, caster_ref, %{"kind" => kind}, "") when kind in ["attack", "curse"] do
     room
-    |> Room.get_mobile(caster_ref)
-    |> Mobile.send_scroll("<p>You must specify a target.</p>")
+    |> Room.get_monster(caster_ref)
+    |> Monster.send_scroll("<p>You must specify a target.</p>")
 
     room
   end
 
   def execute(%Room{} = room, caster_ref, %{} = ability, query) when is_binary(query) do
-    mobile =
+    monster =
       room
-      |> Room.get_mobile(caster_ref)
+      |> Room.get_monster(caster_ref)
 
     room
-    |> can_execute?(mobile, ability)
+    |> can_execute?(monster, ability)
     |> if do
-         targets = get_targets(room, Room.get_mobile(room, caster_ref), ability, query)
+         targets = get_targets(room, Room.get_monster(room, caster_ref), ability, query)
          execute(room, caster_ref, ability, targets)
        else
          room
@@ -264,37 +264,37 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %{} = ability, targets) do
-    mobile = Room.get_mobile(room, caster_ref)
+    monster = Room.get_monster(room, caster_ref)
 
-    if mobile do
+    if monster do
       display_pre_cast_message(room, caster_ref, ability)
 
       room =
-        Room.update_mobile(room, caster_ref, fn(mobile) ->
-          mobile =
-            mobile
+        Room.update_monster(room, caster_ref, fn(monster) ->
+          monster =
+            monster
             |> apply_cooldown(ability)
-            |> Map.put(:mana, mobile.mana - Map.get(ability, "mana_cost", 0))
+            |> Map.put(:mana, monster.mana - Map.get(ability, "mana_cost", 0))
 
-            Mobile.update_prompt(mobile)
-          mobile
+            Character.update_prompt(monster)
+          monster
         end)
 
       ability =
         room
-        |> Room.get_mobile(caster_ref)
+        |> Room.get_monster(caster_ref)
         |> scale_ability(nil, ability)
 
       targets
       |> Enum.reduce(room, fn(target_ref, updated_room) ->
            cond do
-             updated_room |> Room.get_mobile(target_ref) |> affects_target?(ability) ->
+             updated_room |> Room.get_monster(target_ref) |> affects_target?(ability) ->
                updated_room
                |> apply_ability(target_ref, ability, caster_ref)
-               |> kill_mobiles(caster_ref)
-             target = Room.get_mobile(updated_room, target_ref) ->
+               |> kill_monsters(caster_ref)
+             target = Room.get_monster(updated_room, target_ref) ->
                message = "#{target.name} is not affected by that ability." |> capitalize_first
-               Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{message}</span></p>")
+               Monster.send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
                updated_room
              true ->
                updated_room
@@ -306,12 +306,12 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def kill_mobiles(%Room{} = room, caster_ref) do
-    Enum.reduce(room.mobiles, room, fn {_ref, target}, updated_room ->
+  def kill_monsters(%Room{} = room, caster_ref) do
+    Enum.reduce(room.monsters, room, fn {_ref, target}, updated_room ->
       if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
         ApathyDrive.Death.kill(updated_room, target.ref, caster_ref)
       else
-        Mobile.update_prompt(target)
+        Character.update_prompt(target)
         updated_room
       end
     end)
@@ -335,153 +335,153 @@ defmodule ApathyDrive.Ability do
   end
   def execute_multi_cast(%Room{} = room, _caster_ref, %{} = _ability, _targets), do: room
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "attack"}, "") do
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "attack"}, "") do
     room
-    |> Mobile.aggro_target(mobile)
+    |> Monster.aggro_target(monster)
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "attack"}, query) do
-    find_other_mobile_in_room(room, mobile, query)
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "attack"}, query) do
+    find_other_monster_in_room(room, monster, query)
     |> wrap_target
   end
 
-  def get_targets(%Room{}, %Mobile{ref: ref}, %{"kind" => "blessing"}, "") do
+  def get_targets(%Room{}, %Monster{ref: ref}, %{"kind" => "blessing"}, "") do
     wrap_target(ref)
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind": "blessing"}, query) do
-    find_mobile_in_room(room, mobile, query)
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind": "blessing"}, query) do
+    find_monster_in_room(room, monster, query)
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "curse"}, "") do
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "curse"}, "") do
     room
-    |> Mobile.aggro_target(mobile)
+    |> Monster.aggro_target(monster)
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "curse"}, query) do
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "curse"}, query) do
     room
-    |> find_other_mobile_in_room(mobile, query)
+    |> find_other_monster_in_room(monster, query)
     |> wrap_target
   end
 
-  def get_targets(%Room{}, %Mobile{} = mobile, %{"kind" => "heal"}, "") do
-    mobile.ref
+  def get_targets(%Room{}, %Monster{} = monster, %{"kind" => "heal"}, "") do
+    monster.ref
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "heal"}, query) do
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "heal"}, query) do
     room
-    |> find_mobile_in_room(mobile, query)
+    |> find_monster_in_room(monster, query)
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room attack"}, _query) do
-    Enum.uniq(alignment_enemies(room, mobile) ++ Room.local_hated_targets(room, mobile))
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "room attack"}, _query) do
+    Enum.uniq(alignment_enemies(room, monster) ++ Room.local_hated_targets(room, monster))
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room blessing"}, _query) do
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "room blessing"}, _query) do
     room.mobles
     |> Map.values
-    |> Enum.filter(&(&1.alignment == mobile.alignment))
+    |> Enum.filter(&(&1.alignment == monster.alignment))
     |> Enum.map(&Map.get(&1, :ref))
-    |> Kernel.--(Room.local_hated_targets(room, mobile))
+    |> Kernel.--(Room.local_hated_targets(room, monster))
     |> Enum.uniq
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room curse"}, _query) do
-    Enum.uniq(alignment_enemies(room, mobile) ++ Room.local_hated_targets(room, mobile))
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "room curse"}, _query) do
+    Enum.uniq(alignment_enemies(room, monster) ++ Room.local_hated_targets(room, monster))
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "room heal"}, _query) do
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "room heal"}, _query) do
     room.mobles
     |> Map.values
-    |> Enum.filter(&(&1.alignment == mobile.alignment))
+    |> Enum.filter(&(&1.alignment == monster.alignment))
     |> Enum.map(&Map.get(&1, :ref))
-    |> Kernel.--(Room.local_hated_targets(room, mobile))
+    |> Kernel.--(Room.local_hated_targets(room, monster))
     |> Enum.uniq
   end
 
-  def get_targets(%Room{}, %Mobile{} = mobile, %{"kind" => "utility"}, "") do
-    wrap_target(mobile.ref)
+  def get_targets(%Room{}, %Monster{} = monster, %{"kind" => "utility"}, "") do
+    wrap_target(monster.ref)
   end
 
-  def get_targets(%Room{} = room, %Mobile{} = mobile, %{"kind" => "utility"}, query) do
+  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "utility"}, query) do
     room
-    |> find_mobile_in_room(mobile, query)
+    |> find_monster_in_room(monster, query)
     |> wrap_target
   end
 
-  def attack_abilities(%Mobile{abilities: abilities} = mobile) do
+  def attack_abilities(%Monster{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1["kind"] == "attack"))
-    |> useable(mobile)
+    |> useable(monster)
   end
 
-  def bless_abilities(%Mobile{abilities: abilities} = mobile) do
+  def bless_abilities(%Monster{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1["kind"] == "blessing"))
     |> Enum.reject(fn(ability) ->
-         Ability.removes_blessing?(mobile, ability)
+         Ability.removes_blessing?(monster, ability)
        end)
-    |> useable(mobile)
+    |> useable(monster)
   end
 
-  def curse_abilities(%Mobile{abilities: abilities} = mobile) do
+  def curse_abilities(%Monster{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1["kind"] == "curse"))
     |> Enum.reject(fn(ability) ->
-         Ability.removes_blessing?(mobile, ability)
+         Ability.removes_blessing?(monster, ability)
        end)
-    |> useable(mobile)
+    |> useable(monster)
   end
 
-  def heal_abilities(%Mobile{abilities: abilities} = mobile) do
+  def heal_abilities(%Monster{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1["kind"] == "heal"))
-    |> useable(mobile)
+    |> useable(monster)
   end
 
-  def on_cooldown?(%Mobile{effects: effects} = mobile, %{"cooldown" => _, "name" => name} = ability) do
+  def on_cooldown?(%Monster{effects: effects} = monster, %{"cooldown" => _, "name" => name} = ability) do
     effects
     |> Map.values
-    |> Enum.any?(&(&1["cooldown"] == name)) or on_global_cooldown?(mobile, ability)
+    |> Enum.any?(&(&1["cooldown"] == name)) or on_global_cooldown?(monster, ability)
   end
-  def on_cooldown?(%Mobile{} = mobile, %{} = ability) do
-    on_global_cooldown?(mobile, ability)
+  def on_cooldown?(%Monster{} = monster, %{} = ability) do
+    on_global_cooldown?(monster, ability)
   end
 
-  def on_global_cooldown?(%Mobile{},          %{"ignores_global_cooldown" => true}), do: false
-  def on_global_cooldown?(%Mobile{} = mobile, %{}), do: on_global_cooldown?(mobile)
-  def on_global_cooldown?(%Mobile{effects: effects}) do
+  def on_global_cooldown?(%Monster{},          %{"ignores_global_cooldown" => true}), do: false
+  def on_global_cooldown?(%Monster{} = monster, %{}), do: on_global_cooldown?(monster)
+  def on_global_cooldown?(%Monster{effects: effects}) do
     effects
     |> Map.values
     |> Enum.any?(&(&1["cooldown"] == :global))
   end
 
-  def apply_cooldown(%Mobile{} = mobile, %{"name" => "attack"} = ability) do
-    if gc = global_cooldown(ability, mobile) do
-      Systems.Effect.add(mobile, %{"cooldown" => :attack}, gc)
+  def apply_cooldown(%Monster{} = monster, %{"name" => "attack"} = ability) do
+    if gc = global_cooldown(ability, monster) do
+      Systems.Effect.add(monster, %{"cooldown" => :attack}, gc)
     else
-      mobile
+      monster
     end
   end
 
-  def apply_cooldown(%Mobile{} = mobile, %{"cooldown" => cooldown, "name" => name} = ability) do
-    mobile
+  def apply_cooldown(%Monster{} = monster, %{"cooldown" => cooldown, "name" => name} = ability) do
+    monster
     |> Systems.Effect.add(%{"cooldown" => name,
                             "expiration_message" => "#{capitalize_first(name)} is ready for use again."},
                           cooldown)
     |> apply_cooldown(Map.delete(ability, "cooldown"))
   end
 
-  def apply_cooldown(%Mobile{} = mobile, %{} = ability) do
-    if gc = global_cooldown(ability, mobile) do
-      Systems.Effect.add(mobile, %{"cooldown" => :global}, gc)
+  def apply_cooldown(%Monster{} = monster, %{} = ability) do
+    if gc = global_cooldown(ability, monster) do
+      Systems.Effect.add(monster, %{"cooldown" => :global}, gc)
     else
-      mobile
+      monster
     end
   end
 
@@ -507,8 +507,8 @@ defmodule ApathyDrive.Ability do
     send(self, {:execute_ability, %{caster: caster_ref, ability: ability, target: targets}})
   end
 
-  def global_cooldown(%{"ignores_global_cooldown" => true}, %Mobile{}), do: nil
-  def global_cooldown(%{"global_cooldown" => gc}, %Mobile{effects: effects}) do
+  def global_cooldown(%{"ignores_global_cooldown" => true}, %Monster{}), do: nil
+  def global_cooldown(%{"global_cooldown" => gc}, %Monster{effects: effects}) do
     speed_mods = effects
                  |> Map.values
                  |> Enum.filter(&(Map.has_key?(&1, "speed")))
@@ -516,7 +516,7 @@ defmodule ApathyDrive.Ability do
 
     gc * speed_modifier(speed_mods)
   end
-  def global_cooldown(%{}, %Mobile{}), do: nil
+  def global_cooldown(%{}, %Monster{}), do: nil
 
   def speed_modifier([]), do: 1
   def speed_modifier(speed_mods) do
@@ -525,16 +525,16 @@ defmodule ApathyDrive.Ability do
     Enum.sum(speed_mods) / count / 100
   end
 
-  def dodged?(%Mobile{} = mobile, %{"accuracy_stats" => stats}, %Mobile{} = attacker) do
+  def dodged?(%Monster{} = monster, %{"accuracy_stats" => stats}, %Monster{} = attacker) do
     accuracy =
       stats
       |> Enum.reduce(0, fn(stat, total) ->
-           total + Mobile.attribute(attacker, String.to_existing_atom(stat))
+           total + Monster.attribute(attacker, String.to_existing_atom(stat))
          end)
       |> div(length(stats))
-      |> Kernel.+(Mobile.effect_bonus(mobile, "Accuracy"))
+      |> Kernel.+(Monster.effect_bonus(monster, "Accuracy"))
 
-    dodge = Mobile.agility(mobile) + Mobile.effect_bonus(mobile, "Dodge")
+    dodge = Monster.agility(monster) + Monster.effect_bonus(monster, "Dodge")
 
     if dodge > 0 do
       chance = dodge_chance(dodge, accuracy)
@@ -560,22 +560,22 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_ability(%Room{} = room, target_ref, %{"dodge_message" => _, "accuracy_stats" => _} = ability, caster_ref) do
-    mobile = Room.get_mobile(room, target_ref)
-    ability_user = Room.get_mobile(room, caster_ref)
+    monster = Room.get_monster(room, target_ref)
+    ability_user = Room.get_monster(room, caster_ref)
 
-    if dodged?(mobile, ability, ability_user) do
+    if dodged?(monster, ability, ability_user) do
 
-      Enum.each(room.mobiles, fn {ref, room_mobile} ->
+      Enum.each(room.monsters, fn {ref, room_monster} ->
         cond do
           ref == ability_user.ref ->
-            user_message = interpolate(ability["dodge_message"]["user"], %{"user" => ability_user, "target" => mobile})
-            Mobile.send_scroll(room_mobile, "<p><span class='dark-cyan'>#{user_message}</span></p>")
-          ref == mobile.ref ->
-            target_message = interpolate(ability["dodge_message"]["target"], %{"user" => ability_user, "target" => mobile})
-            Mobile.send_scroll(room_mobile, "<p><span class='dark-cyan'>#{target_message}</span></p>")
+            user_message = interpolate(ability["dodge_message"]["user"], %{"user" => ability_user, "target" => monster})
+            Monster.send_scroll(room_monster, "<p><span class='dark-cyan'>#{user_message}</span></p>")
+          ref == monster.ref ->
+            target_message = interpolate(ability["dodge_message"]["target"], %{"user" => ability_user, "target" => monster})
+            Monster.send_scroll(room_monster, "<p><span class='dark-cyan'>#{target_message}</span></p>")
           :else ->
-            spectator_message = interpolate(ability["dodge_message"]["spectator"], %{"user" => ability_user, "target" => mobile})
-            Mobile.send_scroll(room_mobile, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")
+            spectator_message = interpolate(ability["dodge_message"]["spectator"], %{"user" => ability_user, "target" => monster})
+            Monster.send_scroll(room_monster, "<p><span class='dark-cyan'>#{spectator_message}</span></p>")
         end
       end)
 
@@ -583,7 +583,7 @@ defmodule ApathyDrive.Ability do
       |> :rand.uniform
       |> :erlang.send_after(self, {:think, target_ref})
 
-      Room.update_mobile(room, target_ref, fn target ->
+      Room.update_monster(room, target_ref, fn target ->
         put_in(target.hate, Map.update(target.hate, caster_ref, 1, fn(hate) -> hate + 1 end))
       end)
     else
@@ -597,7 +597,7 @@ defmodule ApathyDrive.Ability do
   def apply_ability(%Room{} = room, target_ref, %{} = ability, caster_ref) do
 
     room = if Enum.member?(["curse", "room curse"], ability["kind"]) do
-      Room.update_mobile(room, target_ref, fn target ->
+      Room.update_monster(room, target_ref, fn target ->
         put_in(target.hate, Map.update(target.hate, caster_ref, 1, fn(hate) -> hate + 1 end))
       end)
     else
@@ -618,14 +618,14 @@ defmodule ApathyDrive.Ability do
   end
 
   def reduce_damage(%Room{} = room, %{"instant_effects" => %{"damage" => damage}} = ability, target_ref, caster_ref) do
-    target = Room.get_mobile(room, target_ref)
-    caster = Room.get_mobile(room, caster_ref)
+    target = Room.get_monster(room, target_ref)
+    caster = Room.get_monster(room, caster_ref)
 
-    min_damage = trunc(80 * damage / 100)  + Mobile.effect_bonus(caster, "increase min damage")
-    max_damage = trunc(120 * damage / 100) + Mobile.effect_bonus(caster, "increase max damage")
+    min_damage = trunc(80 * damage / 100)  + Monster.effect_bonus(caster, "increase min damage")
+    max_damage = trunc(120 * damage / 100) + Monster.effect_bonus(caster, "increase max damage")
     damage = min_damage..max_damage |> Enum.random
 
-    damage = Mobile.reduce_damage(target, damage, ability["instant_effects"]["mitigated_by"])
+    damage = Monster.reduce_damage(target, damage, ability["instant_effects"]["mitigated_by"])
 
     put_in(ability, ["instant_effects", "damage"], max(damage, 1))
   end
@@ -638,7 +638,7 @@ defmodule ApathyDrive.Ability do
 
   def trigger_damage_shields(%Room{} = room, target_ref, caster_ref) when target_ref == caster_ref, do: room
   def trigger_damage_shields(%Room{} = room, target_ref, caster_ref) do
-    if target = Room.get_mobile(room, target_ref) do
+    if target = Room.get_monster(room, target_ref) do
       target
       |> Map.get(:effects)
       |> Map.values
@@ -662,7 +662,7 @@ defmodule ApathyDrive.Ability do
   end
   def apply_instant_effects(%Room{} = room, target_ref, %{"damage" => damage} = effects, caster_ref) do
     room =
-      Room.update_mobile(room, target_ref, fn target ->
+      Room.update_monster(room, target_ref, fn target ->
         target = Map.put(target, :hp, target.hp - damage)
 
         if target_ref == caster_ref do
@@ -674,7 +674,7 @@ defmodule ApathyDrive.Ability do
       end)
 
     room =
-      if target = Room.get_mobile(room, target_ref) do
+      if target = Room.get_monster(room, target_ref) do
         chance = trunc((damage / max(1, target.hp)) * 100)
 
         apply_criticals(room, caster_ref, target_ref, chance, effects["crit_tables"])
@@ -694,15 +694,15 @@ defmodule ApathyDrive.Ability do
   end
   def apply_instant_effects(%Room{} = room, target_ref, %{"heal" => heal} = effects, caster_ref) do
     room
-    |> Room.update_mobile(target_ref, fn mobile ->
-         put_in(mobile.hp, min(mobile.max_hp, mobile.hp + heal))
+    |> Room.update_monster(target_ref, fn monster ->
+         put_in(monster.hp, min(monster.max_hp, monster.hp + heal))
        end)
     |> apply_instant_effects(target_ref, Map.delete(effects, "heal"), caster_ref)
   end
   def apply_instant_effects(%Room{} = room, target_ref, %{"heal_mana" => heal} = effects, caster_ref) do
     room
-    |> Room.update_mobile(target_ref, fn mobile ->
-         put_in(mobile.mana, min(mobile.max_mana, mobile.mana + heal))
+    |> Room.update_monster(target_ref, fn monster ->
+         put_in(monster.mana, min(monster.max_mana, monster.mana + heal))
        end)
     |> apply_instant_effects(target_ref, Map.delete(effects, "heal_mana"), caster_ref)
   end
@@ -710,16 +710,16 @@ defmodule ApathyDrive.Ability do
     script = ApathyDrive.Script.find(script)
 
     room
-    |> Room.update_mobile(target_ref, fn mobile ->
-         ApathyDrive.Script.execute(room, mobile, script)
+    |> Room.update_monster(target_ref, fn monster ->
+         ApathyDrive.Script.execute(room, monster, script)
        end)
     |> apply_instant_effects(target_ref, Map.delete(effects, "script"), caster_ref)
   end
   def apply_instant_effects(%Room{} = room, target_ref, %{"remove abilities" => abilities} = effects, caster_ref) do
     room
-    |> Room.update_mobile(target_ref, fn mobile ->
-         Enum.reduce(abilities, mobile, fn(ability_id, updated_mobile) ->
-           Systems.Effect.remove_oldest_stack(updated_mobile, ability_id)
+    |> Room.update_monster(target_ref, fn monster ->
+         Enum.reduce(abilities, monster, fn(ability_id, updated_monster) ->
+           Systems.Effect.remove_oldest_stack(updated_monster, ability_id)
          end)
        end)
     |> apply_instant_effects(target_ref, Map.delete(effects, "remove abilities"), caster_ref)
@@ -736,21 +736,21 @@ defmodule ApathyDrive.Ability do
         "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
       }
 
-    mobile = Room.get_mobile(room, target_ref)
+    monster = Room.get_monster(room, target_ref)
 
-    room = ApathyDrive.Commands.Move.execute(room, mobile, room_exit)
+    room = ApathyDrive.Commands.Move.execute(room, monster, room_exit)
 
     apply_instant_effects(room, target_ref, Map.delete(effects, "teleport"), caster_ref)
   end
   def apply_instant_effects(%Room{} = room, target_ref, %{"dispel" => effect_types} = effects, caster_ref) do
     room
-    |> Room.update_mobile(target_ref, fn mobile ->
-         Enum.reduce(effect_types, mobile, fn(type, updated_monster) ->
+    |> Room.update_monster(target_ref, fn monster ->
+         Enum.reduce(effect_types, monster, fn(type, updated_monster) ->
            effects_with_type =
-             mobile.effects
+             monster.effects
              |> Map.keys
              |> Enum.filter(fn(key) ->
-                  effect = mobile.effects[key]
+                  effect = monster.effects[key]
                   if key == "all" do
                     # match all temporary effects (effects with timers) for "all"
                      Map.has_key?(effect, "timers")
@@ -770,8 +770,8 @@ defmodule ApathyDrive.Ability do
   end
   def apply_instant_effects(%Room{} = room, target_ref, %{"kill" => true} = effects, caster_ref) do
     room =
-      Room.update_mobile(room, target_ref, fn mobile ->
-        Map.put(mobile, :hp, 0)
+      Room.update_monster(room, target_ref, fn monster ->
+        Map.put(monster, :hp, 0)
       end)
 
     apply_instant_effects(room, target_ref, Map.delete(effects, "kill"), caster_ref)
@@ -779,25 +779,25 @@ defmodule ApathyDrive.Ability do
   def apply_instant_effects(%Room{} = room, target_ref, %{"limb_loss" => limb_loss} = effects, caster_ref) do
 
     room =
-      Room.update_mobile(room, target_ref, fn mobile ->
-        Enum.reduce(limb_loss, mobile, fn
-          %{"kind" => "cripple", "limb" => limb}, updated_mobile ->
-            case Mobile.uncrippled_limb(updated_mobile, limb) do
+      Room.update_monster(room, target_ref, fn monster ->
+        Enum.reduce(limb_loss, monster, fn
+          %{"kind" => "cripple", "limb" => limb}, updated_monster ->
+            case Monster.uncrippled_limb(updated_monster, limb) do
               nil ->
-                updated_mobile
+                updated_monster
               limb ->
-                Mobile.send_scroll(updated_mobile, "<p>Your #{limb} is crippled!</p>")
-                Room.send_scroll(room, "<p>#{Mobile.look_name(updated_mobile)}'s #{limb} is crippled!</p>", updated_mobile)
-                update_in(updated_mobile.crippled_limbs, &([limb | &1]))
+                Monster.send_scroll(updated_monster, "<p>Your #{limb} is crippled!</p>")
+                Room.send_scroll(room, "<p>#{Monster.look_name(updated_monster)}'s #{limb} is crippled!</p>", updated_monster)
+                update_in(updated_monster.crippled_limbs, &([limb | &1]))
             end
-          %{"kind" => "sever", "limb" => limb}, updated_mobile ->
-            case Mobile.unsevered_limb(updated_mobile, limb) do
+          %{"kind" => "sever", "limb" => limb}, updated_monster ->
+            case Monster.unsevered_limb(updated_monster, limb) do
               nil ->
-                updated_mobile
+                updated_monster
               limb ->
-                Mobile.send_scroll(updated_mobile, "<p>Your #{limb} has been severed!</p>")
-                Room.send_scroll(room, "<p>#{Mobile.look_name(updated_mobile)}'s #{limb} has been severed!</p>", updated_mobile)
-                update_in(updated_mobile.missing_limbs, &([limb | &1]))
+                Monster.send_scroll(updated_monster, "<p>Your #{limb} has been severed!</p>")
+                Room.send_scroll(room, "<p>#{Monster.look_name(updated_monster)}'s #{limb} has been severed!</p>", updated_monster)
+                update_in(updated_monster.missing_limbs, &([limb | &1]))
             end
         end)
 
@@ -807,8 +807,8 @@ defmodule ApathyDrive.Ability do
   end
   def apply_instant_effects(%Room{} = room, target_ref, %{} = effects, caster_ref) do
     room
-    |> Room.get_mobile(caster_ref)
-    |> Mobile.send_scroll("<p><span class='red'>unrecognized instant effects: #{inspect Map.keys(effects)}</span></p>")
+    |> Room.get_monster(caster_ref)
+    |> Monster.send_scroll("<p><span class='red'>unrecognized instant effects: #{inspect Map.keys(effects)}</span></p>")
 
     apply_instant_effects(room, target_ref, %{}, caster_ref)
   end
@@ -828,58 +828,58 @@ defmodule ApathyDrive.Ability do
   end
 
   def display_cast_message(room, target_ref, %{"cast_message" => _, "instant_effects" => %{"heal" => heal}} = ability, caster_ref) do
-    target = Room.get_mobile(room, target_ref)
-    caster = Room.get_mobile(room, caster_ref)
+    target = Room.get_monster(room, target_ref)
+    caster = Room.get_monster(room, caster_ref)
 
     cast_messages = cast_messages(ability, caster, target, %{"amount" => heal})
 
-    room.mobiles
-    |> Enum.each(fn {ref, mobile} ->
+    room.monsters
+    |> Enum.each(fn {ref, monster} ->
          cond do
            ref == caster_ref ->
-             Mobile.send_scroll(mobile, cast_messages["user"])
+             Monster.send_scroll(monster, cast_messages["user"])
            ref == target_ref ->
-             Mobile.send_scroll(mobile, cast_messages["target"])
+             Monster.send_scroll(monster, cast_messages["target"])
            true ->
-             Mobile.send_scroll(mobile, cast_messages["spectator"])
+             Monster.send_scroll(monster, cast_messages["spectator"])
          end
        end)
   end
 
   def display_cast_message(room, target_ref, %{"cast_message" => _, "instant_effects" => %{"damage" => damage}} = ability, caster_ref) do
-    target = Room.get_mobile(room, target_ref)
-    caster = Room.get_mobile(room, caster_ref)
+    target = Room.get_monster(room, target_ref)
+    caster = Room.get_monster(room, caster_ref)
 
     cast_messages = cast_messages(ability, caster, target, %{"amount" => damage})
 
-    room.mobiles
-    |> Enum.each(fn {ref, mobile} ->
+    room.monsters
+    |> Enum.each(fn {ref, monster} ->
          cond do
            ref == caster_ref ->
-             Mobile.send_scroll(mobile, cast_messages["user"])
+             Monster.send_scroll(monster, cast_messages["user"])
            ref == target_ref ->
-             Mobile.send_scroll(mobile, cast_messages["target"])
+             Monster.send_scroll(monster, cast_messages["target"])
            true ->
-             Mobile.send_scroll(mobile, cast_messages["spectator"])
+             Monster.send_scroll(monster, cast_messages["spectator"])
          end
        end)
   end
 
   def display_cast_message(room, target_ref, %{"cast_message" => _} = ability, caster_ref) do
-    target = Room.get_mobile(room, target_ref)
-    caster = Room.get_mobile(room, caster_ref)
+    target = Room.get_monster(room, target_ref)
+    caster = Room.get_monster(room, caster_ref)
 
     cast_messages = cast_messages(ability, caster, target)
 
-    room.mobiles
-    |> Enum.each(fn {ref, mobile} ->
+    room.monsters
+    |> Enum.each(fn {ref, monster} ->
          cond do
            ref == caster_ref ->
-             Mobile.send_scroll(mobile, cast_messages["user"])
+             Monster.send_scroll(monster, cast_messages["user"])
            ref == target_ref ->
-             Mobile.send_scroll(mobile, cast_messages["target"])
+             Monster.send_scroll(monster, cast_messages["target"])
            true ->
-             Mobile.send_scroll(mobile, cast_messages["spectator"])
+             Monster.send_scroll(monster, cast_messages["spectator"])
          end
        end)
   end
@@ -903,10 +903,10 @@ defmodule ApathyDrive.Ability do
          effects
        end
 
-    Room.update_mobile(room, target_ref, fn mobile ->
-      mobile
+    Room.update_monster(room, target_ref, fn monster ->
+      monster
       |> Systems.Effect.add(effects, Map.get(ability, "duration", 0))
-      |> Mobile.send_scroll("<p><span class='#{Ability.color(ability)}'>#{effects["effect_message"]}</span></p>")
+      |> Monster.send_scroll("<p><span class='#{Ability.color(ability)}'>#{effects["effect_message"]}</span></p>")
     end)
   end
   def add_duration_effects(%Room{} = room,
@@ -926,8 +926,8 @@ defmodule ApathyDrive.Ability do
   end
   def add_duration_effects(%Room{} = room, _target_ref, %{}, _caster_ref), do: room
 
-  def affects_target?(%Mobile{flags: _monster_flags}, %{"flags" => nil}), do: true
-  def affects_target?(%Mobile{flags: monster_flags}, %{"flags" => ability_flags}) do
+  def affects_target?(%Monster{flags: _monster_flags}, %{"flags" => nil}), do: true
+  def affects_target?(%Monster{flags: monster_flags}, %{"flags" => ability_flags}) do
     cond do
       Enum.member?(ability_flags, "affects-living") and Enum.member?(monster_flags, "non-living") ->
         false
@@ -941,7 +941,7 @@ defmodule ApathyDrive.Ability do
         true
     end
   end
-  def affects_target?(%Mobile{flags: _monster_flags}, %{}), do: true
+  def affects_target?(%Monster{flags: _monster_flags}, %{}), do: true
   def affects_target?(nil, %{}), do: false
 
 end

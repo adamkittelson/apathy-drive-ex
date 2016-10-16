@@ -3,46 +3,46 @@ defmodule ApathyDrive.Commands.Greet do
 
   def keywords, do: ["greet"]
 
-  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, _args) do
-    Mobile.body_required(mobile)
+  def execute(%Room{} = room, %Monster{monster_template_id: nil} = monster, _args) do
+    Monster.body_required(monster)
     room
   end
 
-  def execute(%Room{} = room, %Mobile{} = mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Greet whom?</p>")
+  def execute(%Room{} = room, %Monster{} = monster, []) do
+    Monster.send_scroll(monster, "<p>Greet whom?</p>")
     room
   end
 
-  def execute(%Room{} = room, %Mobile{} = mobile, arguments) do
+  def execute(%Room{} = room, %Monster{} = monster, arguments) do
     query =
       arguments
       |> Enum.join(" ")
       |> String.downcase
 
-    target = Room.find_mobile_in_room(room, mobile, query)
-    greet(room, mobile, target)
+    target = Room.find_monster_in_room(room, monster, query)
+    greet(room, monster, target)
     room
   end
 
-  def greet(%Room{}, %Mobile{} = greeter, nil) do
-    Mobile.send_scroll(greeter, "<p>Greet whom?</p>")
+  def greet(%Room{}, %Monster{} = greeter, nil) do
+    Monster.send_scroll(greeter, "<p>Greet whom?</p>")
   end
 
-  def greet(%Room{}, %Mobile{} = greeter, %Mobile{} = target) when greeter == target do
-    Mobile.send_scroll(greeter, "<p>Greet yourself?</p>")
+  def greet(%Room{}, %Monster{} = greeter, %Monster{} = target) when greeter == target do
+    Monster.send_scroll(greeter, "<p>Greet yourself?</p>")
   end
 
-  def greet(%Room{} = room, %Mobile{} = greeter, %Mobile{} = target) do
-    room.mobiles
-    |> Enum.each(fn({_ref, mobile}) ->
+  def greet(%Room{} = room, %Monster{} = greeter, %Monster{} = target) do
+    room.monsters
+    |> Enum.each(fn({_ref, monster}) ->
          cond do
-           mobile == greeter ->
-             Mobile.send_scroll(mobile, "<p>You greet #{Mobile.look_name(target)}.</p>")
-             Mobile.send_scroll(mobile, "<p>#{target.greeting}</p>")
-           mobile == target ->
-             Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(greeter)} greets you.</p>")
+           monster == greeter ->
+             Monster.send_scroll(monster, "<p>You greet #{Monster.look_name(target)}.</p>")
+             Monster.send_scroll(monster, "<p>#{target.greeting}</p>")
+           monster == target ->
+             Monster.send_scroll(monster, "<p>#{Monster.look_name(greeter)} greets you.</p>")
            true ->
-             Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(greeter)} greets #{Mobile.look_name(target)}.</p>")
+             Monster.send_scroll(monster, "<p>#{Monster.look_name(greeter)} greets #{Monster.look_name(target)}.</p>")
          end
        end)
   end

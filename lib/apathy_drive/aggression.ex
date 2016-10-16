@@ -1,36 +1,36 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.Monster
 
   # Don't attack spirits without bodies
-  def react(%Mobile{} = mobile, %Mobile{monster_template_id: nil}), do: mobile
+  def react(%Monster{} = monster, %Monster{monster_template_id: nil}), do: monster
 
-  # mobiles with unities attack mobiles with different unities
-  def react(%Mobile{unities: unities} = mobile, %Mobile{unities: intruder_unities} = intruder) when length(unities) > 0 and unities != intruder_unities do
-    attack(mobile, intruder)
+  # monsters with unities attack monsters with different unities
+  def react(%Monster{unities: unities} = monster, %Monster{unities: intruder_unities} = intruder) when length(unities) > 0 and unities != intruder_unities do
+    attack(monster, intruder)
   end
 
-  def react(%Mobile{unities: [], alignment: "good"} = mobile, %Mobile{alignment: "evil"} = intruder) do
-    attack(mobile, intruder)
+  def react(%Monster{unities: [], alignment: "good"} = monster, %Monster{alignment: "evil"} = intruder) do
+    attack(monster, intruder)
   end
 
-  def react(%Mobile{unities: [], alignment: "good"} = mobile, _) do
-    mobile
+  def react(%Monster{unities: [], alignment: "good"} = monster, _) do
+    monster
   end
 
-  def react(%Mobile{unities: [], alignment: "neutral"} = mobile, _) do
-    mobile
+  def react(%Monster{unities: [], alignment: "neutral"} = monster, _) do
+    monster
   end
 
-  def react(%Mobile{unities: [], alignment: "evil", area_spawned_in: mobile_area} = mobile, %Mobile{area_spawned_in: intruder_area, alignment: intruder_alignment} = intruder) when mobile_area != intruder_area or intruder_alignment != "evil" do
-    attack(mobile, intruder)
+  def react(%Monster{unities: [], alignment: "evil", area_spawned_in: monster_area} = monster, %Monster{area_spawned_in: intruder_area, alignment: intruder_alignment} = intruder) when monster_area != intruder_area or intruder_alignment != "evil" do
+    attack(monster, intruder)
   end
 
-  def react(%Mobile{} = mobile, _) do
-    mobile
+  def react(%Monster{} = monster, _) do
+    monster
   end
 
-  def attack(%Mobile{} = mobile, %Mobile{ref: ref}) do
-    update_in(mobile.hate[ref], &((&1 || 0) + 1))
+  def attack(%Monster{} = monster, %Monster{ref: ref}) do
+    update_in(monster.hate[ref], &((&1 || 0) + 1))
   end
 
 end

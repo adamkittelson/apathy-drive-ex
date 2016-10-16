@@ -1,18 +1,18 @@
 defmodule ApathyDrive.Commands.Who do
   use ApathyDrive.Command
-  alias ApathyDrive.{Mobile, Presence}
+  alias ApathyDrive.{Monster, Presence}
 
   def keywords, do: ["who"]
 
-  def execute(%Room{} = room, %Mobile{} = mobile, _arguments) do
-    Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>Name</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-green'>==============================================================</span></p>")
+  def execute(%Room{} = room, %Monster{} = monster, _arguments) do
+    Monster.send_scroll(monster, "<p><span class='dark-cyan'>Name</span></p>")
+    Monster.send_scroll(monster, "<p><span class='dark-green'>==============================================================</span></p>")
 
     "spirits:online"
     |> Presence.metas
     |> Enum.each(fn
          %{name: name} ->
-           Mobile.send_scroll(mobile, "<p>#{name}</p>")
+           Monster.send_scroll(monster, "<p>#{name}</p>")
        end)
 
     room

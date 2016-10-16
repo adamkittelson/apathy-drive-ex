@@ -9,7 +9,7 @@ defmodule ApathyDrive.Unity do
   end
 
   def init(essences) do
-    Process.send_after(self(), :update_mobiles, @interval)
+    Process.send_after(self(), :update_monsters, @interval)
     {:ok, essences}
   end
 
@@ -23,7 +23,7 @@ defmodule ApathyDrive.Unity do
     {:noreply, essences}
   end
 
-  def handle_info(:update_mobiles, essences) do
+  def handle_info(:update_monsters, essences) do
     essences
     |> Enum.each(fn
          {_unity, []} -> :noop
@@ -32,7 +32,7 @@ defmodule ApathyDrive.Unity do
            ApathyDrive.PubSub.broadcast("rooms", {:update_unity_essence, unity, average})
        end)
 
-    Process.send_after(self(), :update_mobiles, @interval)
+    Process.send_after(self(), :update_monsters, @interval)
 
     {:noreply, %{"evil" => [], "good" => []}}
   end

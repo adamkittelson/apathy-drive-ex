@@ -4,22 +4,22 @@ defmodule ApathyDrive.Commands.Ask do
 
   def keywords, do: ["ask"]
 
-  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, _args) do
-    Mobile.body_required(mobile)
+  def execute(%Room{} = room, %Monster{monster_template_id: nil} = monster, _args) do
+    Monster.body_required(monster)
     room
   end
 
-  def execute(%Room{} = room, %Mobile{} = mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Ask whom?</p>")
+  def execute(%Room{} = room, %Monster{} = monster, []) do
+    Monster.send_scroll(monster, "<p>Ask whom?</p>")
     room
   end
 
-  def execute(%Room{} = room, %Mobile{} = mobile, [_]) do
-    Mobile.send_scroll(mobile, "<p>Ask what?</p>")
+  def execute(%Room{} = room, %Monster{} = monster, [_]) do
+    Monster.send_scroll(monster, "<p>Ask what?</p>")
     room
   end
 
-  def execute(%Room{} = room, %Mobile{} = mobile, arguments) do
+  def execute(%Room{} = room, %Monster{} = monster, arguments) do
     [target | question] = arguments
 
     question =
@@ -27,27 +27,27 @@ defmodule ApathyDrive.Commands.Ask do
       |> Enum.join(" ")
       |> String.downcase
 
-    target = Room.find_mobile_in_room(room, mobile, target)
-    ask(room, mobile, target, question)
+    target = Room.find_monster_in_room(room, monster, target)
+    ask(room, monster, target, question)
   end
 
-  def ask(%Room{} = room, %Mobile{} = mobile, nil, _question) do
-    Mobile.send_scroll(mobile, "<p>Ask whom?</p>")
+  def ask(%Room{} = room, %Monster{} = monster, nil, _question) do
+    Monster.send_scroll(monster, "<p>Ask whom?</p>")
     room
   end
 
-  def ask(%Room{} = room, %Mobile{} = mobile, %Mobile{} = target, _question) when mobile == target do
-    Mobile.send_scroll(mobile, "<p>Ask yourself?</p>")
+  def ask(%Room{} = room, %Monster{} = monster, %Monster{} = target, _question) when monster == target do
+    Monster.send_scroll(monster, "<p>Ask yourself?</p>")
     room
   end
 
-  def ask(%Room{} = room, %Mobile{} = mobile, %Mobile{} = target, question) do
+  def ask(%Room{} = room, %Monster{} = monster, %Monster{} = target, question) do
     questions = MonsterTemplate.questions(target.monster_template_id)
 
     if questions |> Map.keys |> Enum.member?(question) do
-      ApathyDrive.Script.execute(room, mobile, questions[question])
+      ApathyDrive.Script.execute(room, monster, questions[question])
     else
-      Mobile.send_scroll(mobile, "<p><span class='dark-green'>#{target.name} has nothing to tell you!</span></p>")
+      Monster.send_scroll(monster, "<p><span class='dark-green'>#{target.name} has nothing to tell you!</span></p>")
       room
     end
   end

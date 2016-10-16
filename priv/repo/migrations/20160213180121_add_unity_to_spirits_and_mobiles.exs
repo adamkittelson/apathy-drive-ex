@@ -1,8 +1,8 @@
-defmodule ApathyDrive.Repo.Migrations.AddUnityToSpiritsAndMobiles do
+defmodule ApathyDrive.Repo.Migrations.AddUnityToSpiritsAndMonsters do
   use Ecto.Migration
 
   def change do
-    alter table(:mobiles) do
+    alter table(:monsters) do
       add :unity, :text
     end
     alter table(:spirits) do

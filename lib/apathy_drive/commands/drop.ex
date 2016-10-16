@@ -4,12 +4,12 @@ defmodule ApathyDrive.Commands.Drop do
 
   def keywords, do: ["drop"]
 
-  def execute(%Room{} = room, %Mobile{} = mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Drop what?</p>")
+  def execute(%Room{} = room, %Monster{} = monster, []) do
+    Monster.send_scroll(monster, "<p>Drop what?</p>")
     room
   end
 
-  def execute(%Room{room_unity: %RoomUnity{items: items}} = room, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile, arguments) do
+  def execute(%Room{room_unity: %RoomUnity{items: items}} = room, %Monster{spirit: %Spirit{inventory: inventory}} = monster, arguments) do
     item_name = Enum.join(arguments, " ")
 
     item = inventory
@@ -18,16 +18,16 @@ defmodule ApathyDrive.Commands.Drop do
 
     case item do
       nil ->
-        Mobile.send_scroll(mobile, "<p>You don't have \"#{item_name}\" to drop!</p>")
+        Monster.send_scroll(monster, "<p>You don't have \"#{item_name}\" to drop!</p>")
 
         room
       %{item: item} ->
-        mobile =
-          put_in(mobile.spirit.inventory, List.delete(inventory, item))
+        monster =
+          put_in(monster.spirit.inventory, List.delete(inventory, item))
 
-        room = put_in(room.mobiles[mobile.ref], mobile)
+        room = put_in(room.monsters[monster.ref], monster)
 
-        Mobile.send_scroll(mobile, "<p>You drop #{item["name"]}.</p>")
+        Monster.send_scroll(monster, "<p>You drop #{item["name"]}.</p>")
 
         put_in(room.room_unity.items, [item | items])
         |> Repo.save

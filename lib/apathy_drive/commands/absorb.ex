@@ -4,12 +4,12 @@ defmodule ApathyDrive.Commands.Absorb do
 
   def keywords, do: ["absorb", "disintegrate"]
 
-  def execute(%Room{} = room, %Mobile{} = mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Absorb what?</p>")
+  def execute(%Room{} = room, %Monster{} = monster, []) do
+    Monster.send_scroll(monster, "<p>Absorb what?</p>")
     room
   end
 
-  def execute(%Room{} = room, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile, arguments) do
+  def execute(%Room{} = room, %Monster{spirit: %Spirit{inventory: inventory}} = monster, arguments) do
     item_name = Enum.join(arguments, " ")
 
     item = inventory
@@ -18,17 +18,17 @@ defmodule ApathyDrive.Commands.Absorb do
 
     case item do
       nil ->
-        Mobile.send_scroll(mobile, "<p>You don't see \"#{item_name}\" here.</p>")
+        Monster.send_scroll(monster, "<p>You don't see \"#{item_name}\" here.</p>")
         room
       %{item: item} ->
-        mobile = put_in(mobile.spirit.inventory, List.delete(inventory, item))
+        monster = put_in(monster.spirit.inventory, List.delete(inventory, item))
 
         exp = ApathyDrive.Item.deconstruction_experience(item)
 
-        Mobile.send_scroll(mobile, "<p>You disintegrate the #{item["name"]} and absorb #{exp} essence.</p>")
-        mobile = Mobile.add_experience(mobile, exp)
+        Monster.send_scroll(monster, "<p>You disintegrate the #{item["name"]} and absorb #{exp} essence.</p>")
+        monster = Monster.add_experience(monster, exp)
 
-        put_in(room.mobiles[mobile.ref], mobile)
+        put_in(room.monsters[monster.ref], monster)
     end
   end
 

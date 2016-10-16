@@ -36,9 +36,9 @@
           <a class="navbar-link" href="/admin" target="_blank">Admin</a>
         </li>
       <% end %>
-      <%= if @conn.assigns[:current_spirit] do %>
+      <%= if @conn.assigns[:character] do %>
         <li class="navbar-item">
-          <%= link "Sign out", to: session_path(@conn, :delete, @conn.assigns[:current_spirit]), method: :delete, class: "navbar-link" %>
+          <%= link "Sign out", to: session_path(@conn, :delete, @conn.assigns[:character]), method: :delete, class: "navbar-link" %>
         </li>
       <% end %>
     </ul>

@@ -36,7 +36,7 @@
           </div>
           <div class="description"><%= room.description %></div>
           <div class="items"><%= {:safe, ApathyDrive.Commands.Look.look_items(room)} %></div>
-          <%= {:safe, ApathyDrive.Commands.Look.look_mobiles(room)} %>
+          <%= {:safe, ApathyDrive.Commands.Look.look_monsters(room)} %>
           <div class="exits"><%= {:safe, ApathyDrive.Commands.Look.look_directions(room)} %></div>
           <%= if ApathyDrive.Commands.Look.light_desc(room.light) do %>
             <%= {:safe, ApathyDrive.Commands.Look.light_desc(room.light)} %>

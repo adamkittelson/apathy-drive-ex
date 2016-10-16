@@ -4,21 +4,21 @@ defmodule ApathyDrive.Commands.Remove do
 
   def keywords, do: ["remove", "unequip", "unwield"]
 
-  def execute(%Room{} = room, %Mobile{} = mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Remove what?</p>")
+  def execute(%Room{} = room, %Monster{} = monster, []) do
+    Monster.send_scroll(monster, "<p>Remove what?</p>")
     room
   end
-  def execute(%Room{} = room, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile, arguments) do
+  def execute(%Room{} = room, %Monster{spirit: %Spirit{inventory: inventory, equipment: equipment}} = monster, arguments) do
     item = Enum.join(arguments, " ")
 
-    mobile =
+    monster =
       equipment
       |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
       |> Match.one(:name_contains, item)
       |> case do
            nil ->
-             Mobile.send_scroll(mobile, "<p>You don't have \"#{item}\" equipped.</p>")
-             mobile
+             Monster.send_scroll(monster, "<p>You don't have \"#{item}\" equipped.</p>")
+             monster
            %{item: item_to_remove} ->
              equipment =
                equipment
@@ -28,20 +28,20 @@ defmodule ApathyDrive.Commands.Remove do
                inventory
                |> List.insert_at(-1, item_to_remove)
 
-             mobile = put_in(mobile.spirit.inventory, inventory)
-             mobile = put_in(mobile.spirit.equipment, equipment)
-                      |> Mobile.set_abilities
-                      |> Mobile.set_max_mana
-                      |> Mobile.set_mana
-                      |> Mobile.set_max_hp
-                      |> Mobile.set_hp
-                      |> Mobile.save
+             monster = put_in(monster.spirit.inventory, inventory)
+             monster = put_in(monster.spirit.equipment, equipment)
+                      |> Monster.set_abilities
+                      |> Monster.set_max_mana
+                      |> Monster.set_mana
+                      |> Monster.set_max_hp
+                      |> Monster.set_hp
+                      |> Monster.save
 
-             Mobile.send_scroll(mobile, "<p>You remove #{item_to_remove["name"]}.</p>")
-             mobile
+             Monster.send_scroll(monster, "<p>You remove #{item_to_remove["name"]}.</p>")
+             monster
          end
 
-    put_in room.mobiles[mobile.ref], mobile
+    put_in room.monsters[monster.ref], monster
   end
 
 end

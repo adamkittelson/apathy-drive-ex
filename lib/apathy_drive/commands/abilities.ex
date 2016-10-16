@@ -3,15 +3,15 @@ defmodule ApathyDrive.Commands.Abilities do
 
   def keywords, do: ["abilities", "spells"]
 
-  def execute(%Room{} = room, %Mobile{} = mobile, _arguments) do
-    Mobile.send_scroll(mobile, "<p><span class='white'>You have the following abilities:</span></p>")
-    Mobile.send_scroll(mobile, "<p><span class='dark-magenta'>Mana   Command  Ability Name</span></p>")
-    display_abilities(mobile)
+  def execute(%Room{} = room, %Monster{} = monster, _arguments) do
+    Monster.send_scroll(monster, "<p><span class='white'>You have the following abilities:</span></p>")
+    Monster.send_scroll(monster, "<p><span class='dark-magenta'>Mana   Command  Ability Name</span></p>")
+    display_abilities(monster)
     room
   end
 
-  def display_abilities(%Mobile{} = mobile) do
-    mobile
+  def display_abilities(%Monster{} = monster) do
+    monster
     |> Map.get(:abilities)
     |> Enum.reject(&(Map.get(&1, "command") == nil))
     |> Enum.uniq(&(Map.get(&1, "command")))
@@ -25,7 +25,7 @@ defmodule ApathyDrive.Commands.Abilities do
                    |> to_string
                    |> String.ljust(8)
 
-         Mobile.send_scroll(mobile, "<p><span class='dark-cyan'>#{mana_cost} #{command} #{name}</span></p>")
+         Monster.send_scroll(monster, "<p><span class='dark-cyan'>#{mana_cost} #{command} #{name}</span></p>")
        end)
   end
 

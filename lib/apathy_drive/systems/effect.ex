@@ -1,6 +1,6 @@
 defmodule Systems.Effect do
   use Timex
-  alias ApathyDrive.{Mobile, TimerManager}
+  alias ApathyDrive.{Monster, TimerManager}
   import TimerManager, only: [seconds: 1]
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
@@ -114,15 +114,15 @@ defmodule Systems.Effect do
     end
   end
 
-  def max_stacks?(%Mobile{} = mobile, %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}) do
-    stack_count(mobile, stack_key) >= stack_count
+  def max_stacks?(%Monster{} = monster, %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}) do
+    stack_count(monster, stack_key) >= stack_count
   end
-  def max_stacks?(%Mobile{} = mobile, %{"duration_effects" => _} = ability) do
+  def max_stacks?(%Monster{} = monster, %{"duration_effects" => _} = ability) do
     ability = put_in(ability["duration_effects"]["stack_key"],   ability["name"])
     ability = put_in(ability["duration_effects"]["stack_count"], 1)
-    max_stacks?(mobile, ability)
+    max_stacks?(monster, ability)
   end
-  def max_stacks?(%Mobile{}, %{}), do: false
+  def max_stacks?(%Monster{}, %{}), do: false
 
   def stack_count(%{effects: _effects} = entity, stack_key) do
     stack(entity, stack_key)
@@ -137,8 +137,8 @@ defmodule Systems.Effect do
        end)
   end
 
-  def send_scroll(%Mobile{} = mobile, message) do
-    Mobile.send_scroll(mobile, message)
+  def send_scroll(%Monster{} = monster, message) do
+    Monster.send_scroll(monster, message)
   end
 
   def send_scroll(_, _), do: nil

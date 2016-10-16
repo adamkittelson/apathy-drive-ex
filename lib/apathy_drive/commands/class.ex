@@ -6,13 +6,13 @@ defmodule ApathyDrive.Commands.Class do
     ApathyDrive.Class.names |> Enum.map(&String.downcase/1)
   end
 
-  def execute(%Room{} = room, %Mobile{spirit: %Spirit{class: %Class{name: class}}} = mobile, args) do
+  def execute(%Room{} = room, %Monster{spirit: %Spirit{class: %Class{name: class}}} = monster, args) do
     class = String.downcase(class)
     message =
       args
       |> Enum.join(" ")
-      |> Mobile.sanitize()
-    ApathyDrive.Endpoint.broadcast!("chat:#{class}", "scroll", %{html: "<p>[<span class='#{color(class)}'>#{class}</span> : #{Mobile.aligned_spirit_name(mobile)}] #{message}</p>"})
+      |> Monster.sanitize()
+    ApathyDrive.Endpoint.broadcast!("chat:#{class}", "scroll", %{html: "<p>[<span class='#{color(class)}'>#{class}</span> : #{Monster.aligned_spirit_name(monster)}] #{message}</p>"})
     room
   end
 

@@ -7,10 +7,10 @@ defmodule ApathyDrive.Metrics do
   end
 
   def record_metrics(gc_ran? \\ false) do
-    "mobiles"
+    "monsters"
     |> ApathyDrive.PubSub.subscribers
     |> length()
-    |> ExStatsD.gauge("mobiles")
+    |> ExStatsD.gauge("monsters")
 
     room_count =
 

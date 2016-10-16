@@ -1,5 +1,5 @@
 defmodule ApathyDrive.LairSpawning do
-  alias ApathyDrive.{MonsterTemplate, Mobile, Repo, Room}
+  alias ApathyDrive.{MonsterTemplate, Monster, Repo, Room}
   require Ecto.Query
 
   def spawn_lair(%Room{} = room) do
@@ -16,9 +16,9 @@ defmodule ApathyDrive.LairSpawning do
 
         monster =
           MonsterTemplate.create_monster(monster_template, room)
-          |> Mobile.init
+          |> Monster.init
 
-        room = Room.mobile_entered(room, monster)
+        room = Room.monster_entered(room, monster)
 
         spawn_lair(room, lair_monsters)
       else
@@ -45,7 +45,7 @@ defmodule ApathyDrive.LairSpawning do
   end
 
   def spawned_monster_count(room_id) do
-    ApathyDrive.Mobile
+    ApathyDrive.Monster
     |> Ecto.Query.where(spawned_at: ^room_id)
     |> Ecto.Query.select([m], count(m.id))
     |> Repo.one

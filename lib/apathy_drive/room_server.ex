@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Commands, LairMonster, LairSpawning, Match, Mobile, PubSub,
+  alias ApathyDrive.{Character, Commands, LairMonster, LairSpawning, Match, Monster, PubSub,
                      Repo, Room, RoomSupervisor, RoomUnity, TimerManager, Ability, Presence}
   use Timex
   require Logger
@@ -119,8 +119,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.call(room, {:destroy_item, item})
   end
 
-  def spirit_connected(room, spirit, socket) do
-    GenServer.call(room, {:spirit_connected, spirit, socket})
+  def character_connected(room, character, socket) do
+    GenServer.call(room, {:character_connected, character, socket})
   end
 
   def init(id) do
@@ -149,18 +149,18 @@ defmodule ApathyDrive.RoomServer do
     PubSub.subscribe("rooms:#{room.id}")
     PubSub.subscribe("areas:#{room.area_id}")
 
-    send(self, :load_present_mobiles)
-
-    if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
-      send(self, :spawn_monsters)
-    end
+    # send(self, :load_present_mobiles)
+    #
+    # if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
+    #   send(self, :spawn_monsters)
+    # end
 
     Process.send_after(self(), :save, 2000)
 
-    room =
-      room
-      |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-      |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
+    # room =
+    #   room
+    #   |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
+    #   |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
 
     {:ok, room}
   end
@@ -200,13 +200,13 @@ defmodule ApathyDrive.RoomServer do
     {:reply, room, room}
   end
 
-  def handle_call({:spirit_connected, %Spirit{id: id} = spirit, socket}, _from, room) do
-    if mobile = Room.find_spirit(room, id) do
+  def handle_call({:character_connected, %Character{id: id} = character, socket}, _from, room) do
+    if mobile = Room.find_character(room, id) do
 
       monitor_ref =
         if mobile.socket != socket do
-          Process.demonitor(mobile.spirit.monitor_ref)
-          send(mobile.socket, :go_home)
+          Process.demonitor(character.monitor_ref)
+          send(character.socket, :go_home)
           Process.monitor(socket)
         else
           Process.monitor(socket)
@@ -215,42 +215,42 @@ defmodule ApathyDrive.RoomServer do
       room =
         Room.update_mobile(room, mobile.ref, fn(mob) ->
           mob = Map.put(mob, :socket, socket)
-          put_in(mob.spirit.monitor_ref, monitor_ref)
+          put_in(character.monitor_ref, monitor_ref)
         end)
 
       room.mobiles[mobile.ref]
-      |> Mobile.update_prompt
+      |> Character.update_prompt
 
-      case Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)}) do
+      case Presence.track(socket, "spirits:online", character.id, %{name: character.name}) do
         {:ok, _} ->
           :ok
         {:error, {:already_tracked, _pid, _topic, _key}} ->
           :ok
       end
 
-      {:reply, mobile.ref, room}
+      {:reply, character.ref, room}
     else
       monitor_ref = Process.monitor(socket)
 
-      spirit =
-        spirit
+      character =
+        character
         |> Map.put(:monitor_ref, monitor_ref)
         |> Repo.preload(:class)
+        |> Repo.preload(:race)
+        |> Map.put(:socket, socket)
 
-      mobile = Mobile.init(%Mobile{spirit: spirit, socket: socket})
+      Character.update_prompt(character)
 
-      Mobile.update_prompt(mobile)
+      room = put_in(room.mobiles[character.ref], character)
 
-      room = put_in(room.mobiles[mobile.ref], mobile)
-
-      case Presence.track(socket, "spirits:online", spirit.id, %{name: Mobile.look_name(mobile)}) do
+      case Presence.track(socket, "spirits:online", character.id, %{name: character.name}) do
         {:ok, _} ->
           :ok
         {:error, {:already_tracked, _pid, _topic, _key}} ->
           :ok
       end
 
-      {:reply, mobile.ref, room}
+      {:reply, character.ref, room}
     end
   end
 
@@ -395,7 +395,7 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:mobile_entered, %Mobile{} = mobile, message}, room) do
+  def handle_cast({:mobile_entered, %Monster{} = mobile, message}, room) do
     room = Room.mobile_entered(room, mobile, message)
 
     {:noreply, room}
@@ -404,12 +404,8 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:DOWN, monitor_ref, :process, _pid, _reason}, room) do
     room =
       case Room.find_monitor_ref(room, monitor_ref) do
-        # spirit not possessing a monster, just remove it
-        %Mobile{monster_template_id: nil} = mobile ->
-          update_in(room.mobiles, &Map.delete(&1, mobile.ref))
-        # possessed mobile, unpossess it
-        %Mobile{} = mobile ->
-          ApathyDrive.Commands.Unpossess.unpossess(room, mobile.ref)
+        %Character{ref: ref} ->
+          update_in(room.mobiles, &Map.delete(&1, ref))
         nil ->
           room
       end
@@ -419,13 +415,13 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:unify, ref}, room) do
     case Room.get_mobile(room, ref) do
-      %Mobile{spirit: nil, unities: []} ->
+      %Monster{spirit: nil, unities: []} ->
         :noop
-      %Mobile{spirit: nil, experience: essence, unities: unities} ->
+      %Monster{spirit: nil, experience: essence, unities: unities} ->
         Enum.each(unities, fn(unity) ->
           ApathyDrive.Unity.contribute(unity, essence)
         end)
-      %Mobile{spirit: %Spirit{experience: essence, class: %{unities: unities}}} ->
+      %Monster{spirit: %Spirit{experience: essence, class: %{unities: unities}}} ->
         Enum.each(unities, fn(unity) ->
           ApathyDrive.Unity.contribute(unity, essence)
         end)
@@ -454,20 +450,20 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:regen, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn
-        %Mobile{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = mobile ->
+        %Monster{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = mobile ->
           mobile =
             mobile
-            |> Map.put(:hp,   min(  hp + Mobile.hp_regen_per_second(mobile), max_hp))
-            |> Map.put(:mana, min(mana + Mobile.mana_regen_per_second(mobile), max_mana))
+            |> Map.put(:hp,   min(  hp + Monster.hp_regen_per_second(mobile), max_hp))
+            |> Map.put(:mana, min(mana + Monster.mana_regen_per_second(mobile), max_mana))
             |> TimerManager.send_after({:monster_regen, 1_000, {:regen, mobile.ref}})
 
             if Enum.any?(mobile.missing_limbs) and :rand.uniform(3) == 3 do
               limb = Enum.random(mobile.missing_limbs)
-              Mobile.send_scroll(mobile, "<p><span class='red'>Blood</span> sprays wildly from your severed #{limb}!")
-              Room.send_scroll(room, "<p><span class='red'>Blood</span> sprays wildly from #{Mobile.look_name(mobile)}'s severed #{limb}!", mobile)
+              Monster.send_scroll(mobile, "<p><span class='red'>Blood</span> sprays wildly from your severed #{limb}!")
+              Room.send_scroll(room, "<p><span class='red'>Blood</span> sprays wildly from #{Monster.look_name(mobile)}'s severed #{limb}!", mobile)
             end
 
-            Mobile.update_prompt(mobile)
+            Character.update_prompt(mobile)
           mobile
       end)
 
@@ -523,9 +519,9 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:execute_auto_attack, ref}, %Room{} = room) do
     room =
       Room.update_mobile(room, ref, fn
-        %Mobile{attack_target: nil} = mobile ->
+        %Monster{attack_target: nil} = mobile ->
           mobile
-        %Mobile{attack_target: target_ref, auto_attack_interval: default_interval} = mobile ->
+        %Monster{attack_target: target_ref, auto_attack_interval: default_interval} = mobile ->
           if room.mobiles[target_ref] do
             attacks =
               mobile.abilities
@@ -835,7 +831,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:timer_cast_ability, %{caster: ref, ability: ability, timer: time, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
+      Monster.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
 
       ability = case ability do
         %{"global_cooldown" => nil} ->
@@ -913,8 +909,8 @@ defmodule ApathyDrive.RoomServer do
   defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"], do: true
   defp passable?(_room, _room_exit), do: false
 
-  defp should_move?(%Room{}, %Mobile{movement: "stationary"}), do: false
-  defp should_move?(%Room{} = room, %Mobile{spirit: nil} = mobile) do
+  defp should_move?(%Room{}, %Monster{movement: "stationary"}), do: false
+  defp should_move?(%Room{} = room, %Monster{spirit: nil} = mobile) do
     cond do
       # at least 80% health and no enemies present, go find something to kill
       ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(Room.local_hated_targets(room, mobile)) ->
@@ -926,6 +922,6 @@ defmodule ApathyDrive.RoomServer do
         false
     end
   end
-  defp should_move?(%Room{}, %Mobile{}), do: false
+  defp should_move?(%Room{}, %Monster{}), do: false
 
 end

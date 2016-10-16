@@ -1,28 +1,28 @@
 defmodule ApathyDrive.PageController do
   use ApathyDrive.Web, :controller
-  alias ApathyDrive.Repo
+  alias ApathyDrive.{Character, Repo}
 
   def index(conn, _params) do
     render conn, "index.html"
   end
 
   def game(conn, _params) do
-    case get_session(conn, :current_spirit) do
+    case get_session(conn, :character) do
       nil ->
         conn
-        |> put_session(:current_spirit, nil)
+        |> put_session(:character, nil)
         |> redirect(to: "/")
       spirit_id ->
-        case Repo.get(Spirit, spirit_id) do
-          %Spirit{id: id, name: nil} ->
+        case Repo.get(Character, spirit_id) do
+          %Character{id: id, name: nil} ->
             conn
-            |> put_session(:current_spirit, id)
-            |> redirect(to: spirit_path(conn, :edit))
-          %Spirit{} ->
+            |> put_session(:character, id)
+            |> redirect(to: character_path(conn, :edit))
+          %Character{} ->
             render conn, "game.html", []
           nil ->
             conn
-            |> put_session(:current_spirit, nil)
+            |> put_session(:character, nil)
             |> redirect(to: "/")
         end
     end

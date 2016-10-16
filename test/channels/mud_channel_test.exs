@@ -2,7 +2,7 @@ defmodule ApathyDrive.MUDChannelTest do
   use ApathyDrive.ChannelCase
 
   setup do
-    {:ok, mobile: test_mobile()}
+    {:ok, monster: test_monster()}
   end
 
   # test "ping replies with status ok", %{socket: socket} do
@@ -15,8 +15,8 @@ defmodule ApathyDrive.MUDChannelTest do
   #   assert_broadcast "shout", %{"hello" => "all"}
   # end
   #
-  # test "broadcasts are pushed to the client", %{mobile: mobile} do
-  #   broadcast_from! Mobile.socket(mobile), "broadcast", %{"some" => "data"}
+  # test "broadcasts are pushed to the client", %{monster: monster} do
+  #   broadcast_from! Monster.socket(monster), "broadcast", %{"some" => "data"}
   #   assert_push "broadcast", %{"some" => "data"}
   # end
 end

@@ -2,7 +2,7 @@
 
 <div id="scroll">
 </div>
-<script>var spiritID = "<%= Phoenix.Token.sign(@conn, "spirit", @current_spirit) %>"</script>
+<script>var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"</script>
 
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script src="<%= static_path(@conn, "/js/pixi.js") %>"></script>

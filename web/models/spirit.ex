@@ -4,7 +4,7 @@ defmodule Spirit do
 
   require Logger
   import Comeonin.Bcrypt
-  alias ApathyDrive.{Mobile, PubSub, Room}
+  alias ApathyDrive.{Monster, PubSub, Room}
 
   @idle_threshold 60
 
@@ -95,25 +95,25 @@ defmodule Spirit do
       |> String.ljust(opts[:ljust] || 0)
       |> String.rjust(opts[:rjust] || 0)
 
-    "<span class='#{Mobile.alignment_color(spirit.class)}'>#{name}</span>"
+    "<span class='#{Monster.alignment_color(spirit.class)}'>#{name}</span>"
   end
 
-  def add_experience(%Mobile{spirit: nil} = mobile, _exp), do: mobile
-  def add_experience(%Mobile{spirit: %Spirit{level: level} = spirit} = mobile, exp) do
+  def add_experience(%Monster{spirit: nil} = monster, _exp), do: monster
+  def add_experience(%Monster{spirit: %Spirit{level: level} = spirit} = monster, exp) do
     spirit =
       spirit
       |> Map.put(:experience, spirit.experience + exp)
       |> ApathyDrive.Level.advance
 
     if spirit.level > level do
-      Mobile.send_scroll mobile, "<p>You ascend to level #{spirit.level}!"
+      Monster.send_scroll monster, "<p>You ascend to level #{spirit.level}!"
     end
 
     if spirit.level < level do
-      Mobile.send_scroll mobile, "<p>You fall to level #{spirit.level}!"
+      Monster.send_scroll monster, "<p>You fall to level #{spirit.level}!"
     end
 
-    Map.put(mobile, :spirit, spirit)
+    Map.put(monster, :spirit, spirit)
   end
 
   def online do
