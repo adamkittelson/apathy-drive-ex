@@ -27,8 +27,8 @@ defmodule ApathyDrive.Character do
     field :ref,         :any, virtual: true
     field :socket,      :any, virtual: true
     field :effects,     :map, virtual: true, default: %{}
-    field :hp,          :float, virtual: true, default: 100.0
-    field :mana,        :float, virtual: true, default: 100.0
+    field :hp,          :float, virtual: true, default: 1.0
+    field :mana,        :float, virtual: true, default: 1.0
 
     timestamps
   end
@@ -124,11 +124,50 @@ defmodule ApathyDrive.Character do
     end
   end
 
+  def hp_at_level(%Character{} = character, level) do
+    max_hp = Mobile.max_hp_at_level(character, level)
+
+    trunc(max_hp * character.hp)
+  end
+
+  def mana_at_level(%Character{} = character, level) do
+    max_mana = Mobile.max_mana_at_level(character, level)
+
+    trunc(max_mana * character.mana)
+  end
+
+  def score_data(%Character{} = character) do
+    effects =
+      character.effects
+      |> Map.values
+      |> Enum.filter(&(Map.has_key?(&1, "effect_message")))
+      |> Enum.map(&(&1["effect_message"]))
+
+    %{
+      name: character.name,
+      class: character.class.name,
+      race: character.race.name,
+      level: character.level,
+      experience: character.experience,
+      hp: hp_at_level(character, character.level),
+      max_hp: Mobile.max_hp_at_level(character, character.level),
+      hp: mana_at_level(character, character.level),
+      max_mana: Mobile.max_mana_at_level(character, character.level),
+      strength: Mobile.attribute_at_level(character, :strength, character.level),
+      agility: Mobile.attribute_at_level(character, :agility, character.level),
+      intellect: Mobile.attribute_at_level(character, :intellect, character.level),
+      willpower: Mobile.attribute_at_level(character, :willpower, character.level),
+      health: Mobile.attribute_at_level(character, :health, character.level),
+      charm: Mobile.attribute_at_level(character, :charm, character.level),
+      effects: effects
+    }
+  end
+
   defimpl ApathyDrive.Mobile, for: Character do
     def attribute_at_level(%Character{} = character, attribute, level) do
       base = Map.get(character.race, attribute)
-      
-      base + ((base / 10) * (level - 1))
+
+      trunc(base + ((base / 10) * (level - 1)))
     end
 
     def max_hp_at_level(mobile, level) do

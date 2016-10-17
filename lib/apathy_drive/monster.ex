@@ -231,31 +231,6 @@ defmodule ApathyDrive.Monster do
     message
   end
 
-  def score_data(monster) do
-    effects =
-      monster.effects
-      |> Map.values
-      |> Enum.filter(&(Map.has_key?(&1, "effect_message")))
-      |> Enum.map(&(&1["effect_message"]))
-
-    %{name: monster.spirit.name,
-      class: (monster.monster_template_id && monster.name) || monster.spirit.class.name,
-      level: level(monster),
-      experience: monster.spirit.experience,
-      hp: monster.hp,
-      max_hp: monster.max_hp,
-      mana: monster.mana,
-      max_mana: monster.max_mana,
-      strength: strength(monster),
-      agility: agility(monster),
-      will: will(monster),
-      effects: effects,
-      physical_defense: (1 - reduce_damage(monster, "physical defense")) * 100,
-      magical_defense:  (1 - reduce_damage(monster, "magical defense")) * 100,
-      physical_damage: physical_damage(monster),
-      magical_damage: magical_damage(monster)}
-  end
-
   def aligned_spirit_name(%Monster{spirit: %Spirit{name: name, class: %{alignment: "good"}}}) do
     "<span class='white'>#{name}</span>"
   end
