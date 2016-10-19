@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Score do
   use ApathyDrive.Command
-  alias ApathyDrive.Character
+  alias ApathyDrive.{Character, Mobile}
 
   def keywords, do: ["score", "stats", "status", "st"]
 
@@ -12,15 +12,15 @@ defmodule ApathyDrive.Commands.Score do
   defp show_score(%Character{} = character) do
     score_data = Character.score_data(character)
 
-    Character.send_scroll(character, "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{String.ljust(score_data.name, 13)}</span><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.level), 13)}</span></p>")
-    Character.send_scroll(character, "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>#{String.ljust(score_data.race, 13)}</span><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{score_data.class}</span></p>")
-    Character.send_scroll(character, "\n\n")
-    Character.send_scroll(character, "<p><span class='dark-green'>Strength:</span>  <span class='dark-cyan'>#{String.ljust(to_string(score_data.strength), 7)}</span> <span class='dark-green'>Agility:</span> <span class='dark-cyan'>#{score_data.agility}</span></p>")
-    Character.send_scroll(character, "<p><span class='dark-green'>Intellect:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.intellect), 7)}</span> <span class='dark-green'>Health:</span>  <span class='dark-cyan'>#{score_data.health}</span></p>")
-    Character.send_scroll(character, "<p><span class='dark-green'>Willpower:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.willpower), 7)}</span> <span class='dark-green'>Charm:</span>   <span class='dark-cyan'>#{score_data.charm}</span></p>")
+    Mobile.send_scroll(character, "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{String.ljust(score_data.name, 13)}</span><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.level), 13)}</span></p>")
+    Mobile.send_scroll(character, "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>#{String.ljust(score_data.race, 13)}</span><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{score_data.class}</span></p>")
+    Mobile.send_scroll(character, "\n\n")
+    Mobile.send_scroll(character, "<p><span class='dark-green'>Strength:</span>  <span class='dark-cyan'>#{String.ljust(to_string(score_data.strength), 7)}</span> <span class='dark-green'>Agility:</span> <span class='dark-cyan'>#{score_data.agility}</span></p>")
+    Mobile.send_scroll(character, "<p><span class='dark-green'>Intellect:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.intellect), 7)}</span> <span class='dark-green'>Health:</span>  <span class='dark-cyan'>#{score_data.health}</span></p>")
+    Mobile.send_scroll(character, "<p><span class='dark-green'>Willpower:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.willpower), 7)}</span> <span class='dark-green'>Charm:</span>   <span class='dark-cyan'>#{score_data.charm}</span></p>")
 
     Enum.each(score_data.effects, fn(effect_message) ->
-      Character.send_scroll(character, "<p>#{effect_message}</p>")
+      Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
   end
 

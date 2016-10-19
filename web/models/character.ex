@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Mobile}
+  alias ApathyDrive.{Character, Mobile, Room, Text}
 
   require Logger
   import Comeonin.Bcrypt
@@ -99,11 +99,6 @@ defmodule ApathyDrive.Character do
     character
   end
 
-  def send_scroll(%Character{socket: socket} = character, html) do
-    send(socket, {:scroll, html})
-    character
-  end
-
   def update_prompt(%Character{socket: socket} = character) do
     send(socket, {:update_prompt, prompt(character)})
   end
@@ -170,13 +165,76 @@ defmodule ApathyDrive.Character do
       trunc(base + ((base / 10) * (level - 1)))
     end
 
+    def confused(%Character{effects: effects} = character, %Room{} = room) do
+      effects
+      |> Map.values
+      |> Enum.find(fn(effect) ->
+           Map.has_key?(effect, "confused") && (effect["confused"] >= :rand.uniform(100))
+         end)
+      |> confused(character, room)
+    end
+    def confused(nil, %Character{}, %Room{}), do: false
+    def confused(%{"confusion_message" => %{"user" => user_message} = message}, %Character{} = character, %Room{} = room) do
+      Mobile.send_scroll(character, user_message)
+      if message["spectator"], do: Room.send_scroll(room, "#{Text.interpolate(message["spectator"], %{"user" => character})}", character)
+      true
+    end
+    def confused(%{}, %Character{} = character, %Room{} = room) do
+      send_scroll(character, "<p><span class='cyan'>You fumble in confusion!</span></p>")
+      Room.send_scroll(room, "<p><span class='cyan'>#{Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => character})}</span></p>", character)
+      true
+    end
+
+    def enter_message(%Character{name: name}) do
+      "<p><span class='yellow'>#{name}</span><span class='green'> walks off {{direction}}.</span></p>"
+    end
+
+    def exit_message(%Character{name: name}) do
+      "<p><span class='yellow'>#{name}</span><span class='green'> walks in from {{direction}}.</span></p>"
+    end
+
+    def look_name(%Character{name: name}) do
+      "<span class='dark-cyan'>#{name}</span>"
+    end
+
     def max_hp_at_level(mobile, level) do
-      trunc(20 * attribute_at_level(mobile, :health, level))
+      trunc(5 * attribute_at_level(mobile, :health, level))
     end
 
     def max_mana_at_level(mobile, level) do
-      trunc(20 * attribute_at_level(mobile, :intellect, level))
+      trunc(5 * attribute_at_level(mobile, :intellect, level))
     end
+
+    def held(%{effects: effects} = mobile) do
+      effects
+      |> Map.values
+      |> Enum.find(fn(effect) ->
+           Map.has_key?(effect, "held")
+         end)
+      |> held(mobile)
+    end
+    def held(nil, %{}), do: false
+    def held(%{"effect_message" => message}, %{} = mobile) do
+      send_scroll(mobile, "<p>#{message}</p>")
+      true
+    end
+
+    def send_scroll(%Character{socket: socket} = character, html) do
+      send(socket, {:scroll, html})
+      character
+    end
+
+    def set_room_id(%Character{socket: socket, monitor_ref: monitor_ref} = character, room_id) do
+      Process.demonitor(monitor_ref)
+
+      send(character.socket, {:update_room, room_id})
+
+      character
+      |> Map.put(:room_id, room_id)
+      |> Map.put(:monitor_ref, Process.monitor(socket))
+      |> Repo.save!
+    end
+
   end
 
 end

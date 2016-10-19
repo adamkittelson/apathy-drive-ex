@@ -395,7 +395,7 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:mobile_entered, %Monster{} = mobile, message}, room) do
+  def handle_cast({:mobile_entered, %{} = mobile, message}, room) do
     room = Room.mobile_entered(room, mobile, message)
 
     {:noreply, room}

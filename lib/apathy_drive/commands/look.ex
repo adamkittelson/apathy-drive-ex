@@ -11,7 +11,7 @@ defmodule ApathyDrive.Commands.Look do
 
   def execute(%Room{} = room, %Character{} = character, args) do
     if blind?(character) do
-      Character.send_scroll(character, "<p>You are blind.</p>")
+      Mobile.send_scroll(character, "<p>You are blind.</p>")
     else
       look(room, character, args)
     end
@@ -24,13 +24,13 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look(%Room{} = room, %Character{} = character, []) do
-    Character.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
-    Character.send_scroll(character, "<p>    #{room.description}</p>")
-    Character.send_scroll(character, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
-    Character.send_scroll(character, look_mobiles(room, character))
-    Character.send_scroll(character, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
+    Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
+    Mobile.send_scroll(character, "<p>    #{room.description}</p>")
+    Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
+    Mobile.send_scroll(character, look_mobiles(room, character))
+    Mobile.send_scroll(character, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
     if room.light do
-      Character.send_scroll(character, "<p>#{light_desc(room.light)}</p>")
+      Mobile.send_scroll(character, "<p>#{light_desc(room.light)}</p>")
     end
   end
 
@@ -49,18 +49,18 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look(%Room{}, %Character{} = character, nil) do
-    Character.send_scroll(character, "<p>There is no exit in that direction!</p>")
+    Mobile.send_scroll(character, "<p>There is no exit in that direction!</p>")
   end
 
   def look(%Room{}, %Character{} = character, %{"kind" => kind}) when kind in ["RemoteAction", "Command"] do
-    Character.send_scroll(character, "<p>There is no exit in that direction!</p>")
+    Mobile.send_scroll(character, "<p>There is no exit in that direction!</p>")
   end
 
   def look(%Room{} = room, %Character{} = character, %{"kind" => "Door"} = room_exit) do
     if Doors.open?(room, room_exit) do
       look(room, character, Map.put(room_exit, "kind", "Normal"))
     else
-      Character.send_scroll(character, "<p>The door is closed in that direction!</p>")
+      Mobile.send_scroll(character, "<p>The door is closed in that direction!</p>")
     end
   end
 
@@ -68,7 +68,7 @@ defmodule ApathyDrive.Commands.Look do
     if Doors.open?(room, room_exit) do
       look(room, character, Map.put(room_exit, "kind", "Normal"))
     else
-      Character.send_scroll(character, "<p>There is no exit in that direction!</p>")
+      Mobile.send_scroll(character, "<p>There is no exit in that direction!</p>")
     end
   end
 

@@ -25,7 +25,7 @@ defmodule ApathyDrive.Aggression do
     attack(monster, intruder)
   end
 
-  def react(%Monster{} = monster, _) do
+  def react(%{} = monster, _) do
     monster
   end
 

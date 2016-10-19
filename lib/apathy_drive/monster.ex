@@ -172,17 +172,6 @@ defmodule ApathyDrive.Monster do
        end
   end
 
-  def set_room_id(%Monster{spirit: nil} = monster, room_id) do
-    put_in(monster.room_id, room_id)
-    |> save
-  end
-  def set_room_id(%Monster{} = monster, room_id) do
-    send(monster.socket, {:update_room, room_id})
-    monster = put_in(monster.spirit.room_id, room_id)
-    put_in(monster.room_id, room_id)
-    |> save
-  end
-
   def cancel_timer(%Monster{} = monster, timer) do
     update_in(monster.timers, &Map.delete(&1, timer))
   end
@@ -273,20 +262,6 @@ defmodule ApathyDrive.Monster do
     end
   end
 
-  def held(%Monster{effects: effects} = monster) do
-    effects
-    |> Map.values
-    |> Enum.find(fn(effect) ->
-         Map.has_key?(effect, "held")
-       end)
-    |> held(monster)
-  end
-  def held(nil, %Monster{}), do: false
-  def held(%{"effect_message" => message}, %Monster{} = monster) do
-    send_scroll(monster, "<p>#{message}</p>")
-    true
-  end
-
   def silenced(%Monster{effects: effects} = monster, %{"mana_cost" => cost}) when cost > 0 do
     effects
     |> Map.values
@@ -299,26 +274,6 @@ defmodule ApathyDrive.Monster do
   def silenced(nil, %Monster{}), do: false
   def silenced(%{"effect_message" => message}, %Monster{} = monster) do
     send_scroll(monster, "<p>#{message}</p>")
-  end
-
-  def confused(%Room{} = room, %Monster{effects: effects} = monster) do
-    effects
-    |> Map.values
-    |> Enum.find(fn(effect) ->
-         Map.has_key?(effect, "confused") && (effect["confused"] >= :rand.uniform(100))
-       end)
-    |> confused(room, monster)
-  end
-  def confused(nil, %Room{}, %Monster{}), do: false
-  def confused(%{"confusion_message" => %{"user" => user_message} = message}, %Room{} = room, %Monster{} = monster) do
-    send_scroll(monster, user_message)
-    if message["spectator"], do: Room.send_scroll(room, "#{interpolate(message["spectator"], %{"user" => monster})}", monster)
-    true
-  end
-  def confused(%{}, %Room{} = room, %Monster{} = monster) do
-    send_scroll(monster, "<p><span class='cyan'>You fumble in confusion!</span></p>")
-    Room.send_scroll(room, "<p><span class='cyan'>#{interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => monster})}</span></p>", monster)
-    true
   end
 
   def reduce_damage(%Monster{} = monster, "physical defense") do

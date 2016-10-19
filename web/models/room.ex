@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Character, Class, Match, Monster, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
+  alias ApathyDrive.{Ability, Area, Character, Class, Match, Mobile, Monster, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
 
   schema "rooms" do
     field :name,                     :string
@@ -45,22 +45,19 @@ defmodule ApathyDrive.Room do
     end
   end
 
-  def mobile_entered(%Room{} = room, %Monster{} = mobile, message \\ nil) do
+  def mobile_entered(%Room{} = room, %{} = mobile, message \\ nil) do
     from_direction =
       room
       |> Room.get_direction_by_destination(mobile.room_id)
       |> Room.enter_direction()
 
-    if mobile.monster_template_id do
-      Room.display_enter_message(room, mobile, message)
+    Room.display_enter_message(room, mobile, message)
 
-      Room.audible_movement(room, from_direction)
-    end
+    Room.audible_movement(room, from_direction)
 
     mobile =
       mobile
-      |> Monster.set_room_id(room.id)
-      |> Monster.remonitor
+      |> Mobile.set_room_id(room.id)
 
     ApathyDrive.Commands.Look.execute(room, mobile, [])
 
@@ -70,10 +67,10 @@ defmodule ApathyDrive.Room do
       Enum.reduce(room.mobiles, room, fn {ref, mobile_in_room}, updated_room ->
         updated_room =
           Room.update_mobile(updated_room, ref, fn
-            %Monster{monster_template_id: nil} = mob_in_room ->
-              mob_in_room
-            %Monster{} = mob_in_room ->
-              ApathyDrive.Aggression.react(mob_in_room, mobile)
+            %Character{} = character ->
+              character
+            %Monster{} = monster ->
+              ApathyDrive.Aggression.react(monster, mobile)
           end)
 
         Room.update_mobile(updated_room, mobile.ref, fn mob ->
@@ -83,12 +80,14 @@ defmodule ApathyDrive.Room do
 
     room
     |> Room.move_after(mobile.ref)
-    |> TimerManager.send_after({:update_essence, 0, :update_essence})
   end
 
   def move_after(%Room{} = room, ref) do
-    Room.update_mobile(room, ref, fn %Monster{movement_frequency: frequency} = mobile ->
-      TimerManager.send_after(mobile, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
+    Room.update_mobile(room, ref, fn
+      %Monster{movement_frequency: frequency} = monster ->
+        TimerManager.send_after(monster, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
+      %Character{} = character -> 
+        character
     end)
   end
 
@@ -183,16 +182,16 @@ defmodule ApathyDrive.Room do
     |> Repo.all
   end
 
-  def display_enter_message(%Room{} = room, %Monster{} = mobile, message \\ nil) do
+  def display_enter_message(%Room{} = room, %{} = mobile, message \\ nil) do
     from_direction =
       room
       |> get_direction_by_destination(mobile.room_id)
       |> enter_direction()
 
     message =
-      (message || mobile.enter_message)
+      (message || Mobile.enter_message(mobile))
       |> ApathyDrive.Text.interpolate(%{
-           "name" => Monster.look_name(mobile),
+           "name" => Mobile.look_name(mobile),
            "direction" => from_direction
          })
       |> ApathyDrive.Text.capitalize_first
@@ -203,15 +202,11 @@ defmodule ApathyDrive.Room do
   def display_exit_message(room, %{mobile: mobile, message: message, to: to_room_id}) do
     message = message
               |> ApathyDrive.Text.interpolate(%{
-                   "name" => Monster.look_name(mobile),
+                   "name" => Mobile.look_name(mobile),
                    "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
                  })
 
-    if mobile.monster_template_id do
-      send_scroll(room, "<p><span class='grey'>#{message}</span></p>", mobile)
-    else
-      room
-    end
+    send_scroll(room, "<p><span class='grey'>#{message}</span></p>", mobile)
   end
 
   def audible_movement(%Room{exits: exits}, from_direction) do
