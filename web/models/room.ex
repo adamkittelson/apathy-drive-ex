@@ -28,6 +28,8 @@ defmodule ApathyDrive.Room do
     has_many   :persisted_mobiles, Monster
     belongs_to :ability, Ability
     belongs_to :area, ApathyDrive.Area
+    has_many   :shop_items, ApathyDrive.ShopItem
+    has_many   :items_for_sales, through: [:shop_items, :item]
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
   end
@@ -43,6 +45,12 @@ defmodule ApathyDrive.Room do
     else
       room
     end
+  end
+
+  def items_for_sale(%Room{} = room) do
+    room
+    |> assoc(:items_for_sales)
+    |> Repo.all
   end
 
   def mobile_entered(%Room{} = room, %{} = mobile, message \\ nil) do
@@ -86,7 +94,7 @@ defmodule ApathyDrive.Room do
     Room.update_mobile(room, ref, fn
       %Monster{movement_frequency: frequency} = monster ->
         TimerManager.send_after(monster, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
-      %Character{} = character -> 
+      %Character{} = character ->
         character
     end)
   end

@@ -11,6 +11,9 @@ defmodule ApathyDrive.Item do
     field :abilities, ApathyDrive.JSONB
     field :global_drop, :boolean
 
+    has_many :shop_items, ApathyDrive.ShopItem
+    has_many :shops, through: [:shop_items, :room]
+
     timestamps
   end
 
@@ -58,6 +61,11 @@ defmodule ApathyDrive.Item do
     |> Enum.map(fn(item) ->
          "#{item.name} - #{item.id}"
        end)
+  end
+
+  def all do
+    __MODULE__
+    |> Repo.all
   end
 
   def generate_item(%{chance: chance, item_id: _item_id, level: _level} = opts) do

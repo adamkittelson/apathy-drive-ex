@@ -3,7 +3,7 @@ defmodule ApathyDrive.Monster do
   use ApathyDrive.Web, :model
   import ApathyDrive.Text
   
-  schema "monsters" do
+  schema "mobiles" do
     belongs_to :room, Room
     belongs_to :monster_template, MonsterTemplate
 

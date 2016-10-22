@@ -27,7 +27,7 @@ defmodule ApathyDrive.MonsterTemplate do
     field :abilities,              ApathyDrive.JSONB
     field :base_hp,               :integer
 
-    has_many :monsters, Monster
+    has_many :mobiles, Monster
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
 

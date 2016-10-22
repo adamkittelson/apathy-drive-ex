@@ -3,37 +3,62 @@ defmodule ApathyDrive.ExAdmin.Room do
 
   register_resource ApathyDrive.Room do
 
-    controller do
-      before_filter :before_delete, only: [:destroy]
-      after_filter :after_update, only: [:update]
+    index do
+      selectable_column
 
-      def before_delete(%Plug.Conn{assigns: %{resource: %Room{id: id}}} = conn, _params) do
+      column :legacy_id
+      column :name
+      column :lair_size
 
-        :global.send("room_#{id}", :room_deleted)
-
-        conn
+      actions
+    end
+    
+    show room do
+      attributes_table do
+        row :legacy_id
+        row :name
+        row :lair_size
       end
 
-      def after_update(conn, _params, %Room{id: id} = room, :update) do
-        changes =
-          room
-          |> Map.from_struct
-          |> Map.take(Room.__schema__(:fields))
-          |> Map.drop([:inserted_at, :updated_at, :id])
-
-        ApathyDrive.PubSub.broadcast!("rooms:#{id}", {:room_updated, changes})
-
-        directions =
-          changes.exits
-          |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"]))
-          |> Enum.map(&(&1["direction"]))
-
-        ApathyDrive.Endpoint.broadcast!("map", "room admin updated", %{id: id, name: changes.name, coords: changes.coordinates, directions: directions})
-
-        conn
+      panel "Shop" do
+        table_for room.items_for_sales do
+          column :name, link: true
+        end
       end
     end
 
+
+    # controller do
+    #   before_filter :before_delete, only: [:destroy]
+    #   after_filter :after_update, only: [:update]
+    #
+    #   def before_delete(%Plug.Conn{assigns: %{resource: %Room{id: id}}} = conn, _params) do
+    #
+    #     :global.send("room_#{id}", :room_deleted)
+    #
+    #     conn
+    #   end
+    #
+    #   def after_update(conn, _params, %Room{id: id} = room, :update) do
+    #     changes =
+    #       room
+    #       |> Map.from_struct
+    #       |> Map.take(Room.__schema__(:fields))
+    #       |> Map.drop([:inserted_at, :updated_at, :id])
+    #
+    #     ApathyDrive.PubSub.broadcast!("rooms:#{id}", {:room_updated, changes})
+    #
+    #     directions =
+    #       changes.exits
+    #       |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"]))
+    #       |> Enum.map(&(&1["direction"]))
+    #
+    #     ApathyDrive.Endpoint.broadcast!("map", "room admin updated", %{id: id, name: changes.name, coords: changes.coordinates, directions: directions})
+    #
+    #     conn
+    #   end
+    # end
+    #
     form room do
       inputs do
 
@@ -93,7 +118,17 @@ defmodule ApathyDrive.ExAdmin.Room do
         end
 
       end
+
+      inputs "Shop Items" do
+        inputs :items_for_sales, collection: ApathyDrive.Repo.all(ApathyDrive.Item), as: :check_boxes#, fields: [:id, :name]
+      end
+
     end
 
+    query do
+      %{
+        all: [preload: [:items_for_sales]]
+      }
+    end
   end
 end
