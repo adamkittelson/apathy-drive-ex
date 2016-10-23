@@ -1,15 +1,22 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
+  alias ApathyDrive.{Character, Item, Mobile}
 
   schema "items" do
     field :name, :string
     field :description, :string
-    field :weight, :integer
     field :worn_on, :string
-    field :level, :integer
     field :grade, :string
     field :abilities, ApathyDrive.JSONB
     field :global_drop, :boolean
+    field :game_limit, :integer
+    field :rarity, :string
+    field :strength, :integer
+    field :agility, :integer
+    field :intellect, :integer
+    field :willpower, :integer
+    field :health, :integer
+    field :charm, :integer
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
@@ -19,6 +26,13 @@ defmodule ApathyDrive.Item do
 
   @required_fields ~w(name description weight worn_on level grade)
   @optional_fields ~w(abilities global_drop)
+  @rarity_cost_multipliers %{
+    "common" => 1,
+    "uncommon" => 2,
+    "rare" => 3,
+    "epic" => 4,
+    "legendary" => 5
+  }
 
   @doc """
   Creates a changeset based on the `model` and `params`.
@@ -168,5 +182,18 @@ defmodule ApathyDrive.Item do
   def will(%{level: level, grade: "two handed blade"}), do: 1 + div(level, 2)
   def will(%{"will" => will}),                          do: will
   def will(%{"level" => level, "grade" => grade}),      do: will(%{level: level, grade: grade})
+
+  def price_for_character(%Item{rarity: rarity} = item, %Character{level: level} = character) do
+    attributes = attributes_at_level(item, level)
+
+    max(0, trunc((attributes * @rarity_cost_multipliers[rarity]) - Mobile.attribute_at_level(character, :charm, character.level)))
+  end
+
+  def attributes_at_level(%Item{} = item, level) do
+    base = item.strength + item.agility + item.intellect + item.willpower + item.health + item.charm
+
+    base + (base / 10 * (level - 1))
+  end
+
 
 end
