@@ -25,7 +25,9 @@ defmodule ApathyDrive.Commands.List do
     |> Enum.each(fn(%Item{name: name} = item) ->
          price = Item.price_for_character(item, character)
          price = if price > 0, do: "#{price} gold", else: "FREE"
-         Mobile.send_scroll(character, "<p><span class='dark-green'>#{String.ljust(name, 30)}</span><span class='dark-cyan'>#{price}</span></p>")
+         name = Item.colored_name(item, ljust: 30)
+
+         Mobile.send_scroll(character, "<p>#{name}<span class='dark-cyan'>#{price}</span></p>")
        end)
   end
 end

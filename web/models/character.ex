@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Mobile, Room, Text}
+  alias ApathyDrive.{Character, CharacterItem, Item, Mobile, Room, Text}
 
   require Logger
   import Comeonin.Bcrypt
@@ -20,8 +20,6 @@ defmodule ApathyDrive.Character do
     field :level,       :integer, default: 1
     field :timers,      :map, virtual: true, default: %{}
     field :admin,       :boolean
-    field :inventory,   ApathyDrive.JSONB, default: []
-    field :equipment,   ApathyDrive.JSONB, default: []
     field :flags,       :map, default: %{}
     field :monitor_ref, :any, virtual: true
     field :ref,         :any, virtual: true
@@ -29,6 +27,10 @@ defmodule ApathyDrive.Character do
     field :effects,     :map, virtual: true, default: %{}
     field :hp,          :float, virtual: true, default: 1.0
     field :mana,        :float, virtual: true, default: 1.0
+    field :gold,        :integer, default: 0
+
+    has_many :characters_items, ApathyDrive.CharacterItem
+    has_many :items, through: [:characters_items, :item]
 
     timestamps
   end
@@ -156,6 +158,13 @@ defmodule ApathyDrive.Character do
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects
     }
+  end
+
+  def add_item(%Character{} = character, %Item{} = item, level) do
+    %CharacterItem{character_id: character.id, item_id: item.id, level: level}
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
   end
 
   defimpl ApathyDrive.Mobile, for: Character do

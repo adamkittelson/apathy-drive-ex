@@ -235,6 +235,7 @@ defmodule ApathyDrive.RoomServer do
       character =
         character
         |> Map.put(:monitor_ref, monitor_ref)
+        |> Map.put(:ref, make_ref())
         |> Repo.preload(:class)
         |> Repo.preload(:race)
         |> Map.put(:socket, socket)

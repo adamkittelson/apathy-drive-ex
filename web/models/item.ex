@@ -21,17 +21,35 @@ defmodule ApathyDrive.Item do
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
 
+    has_many :characters_items, ApathyDrive.CharacterItem
+    has_many :characters, through: [:characters_items, :character]
+
     timestamps
   end
 
   @required_fields ~w(name description weight worn_on level grade)
   @optional_fields ~w(abilities global_drop)
-  @rarity_cost_multipliers %{
-    "common" => 1,
-    "uncommon" => 2,
-    "rare" => 3,
-    "epic" => 4,
-    "legendary" => 5
+  @rarities %{
+    "common" => %{
+      cost_multiplier: 1,
+      color: "white"
+    },
+    "uncommon" => %{
+      cost_multiplier: 2,
+      color: "#1eff00"
+    },
+    "rare" => %{
+      cost_multiplier: 3,
+      color: "#0070ff"
+    },
+    "epic" => %{
+      cost_multiplier: 4,
+      color: "#a335ee"
+    },
+    "legendary" => %{
+      cost_multiplier: 5,
+      color: "#ff8000"
+    },
   }
 
   @doc """
@@ -186,7 +204,7 @@ defmodule ApathyDrive.Item do
   def price_for_character(%Item{rarity: rarity} = item, %Character{level: level} = character) do
     attributes = attributes_at_level(item, level)
 
-    max(0, trunc((attributes * @rarity_cost_multipliers[rarity]) - Mobile.attribute_at_level(character, :charm, character.level)))
+    max(0, trunc((attributes * @rarities[rarity].cost_multiplier) - Mobile.attribute_at_level(character, :charm, character.level)))
   end
 
   def attributes_at_level(%Item{} = item, level) do
@@ -195,5 +213,17 @@ defmodule ApathyDrive.Item do
     base + (base / 10 * (level - 1))
   end
 
+  def color(%Item{rarity: rarity}) do
+    @rarities[rarity].color
+  end
+  
+  def colored_name(%Item{name: name} = item, opts \\ []) do
+    name =
+      name
+      |> String.ljust(opts[:ljust] || 0)
+      |> String.rjust(opts[:rjust] || 0)
+
+    "<span style='color: #{color(item)}'>#{name}</span>"
+  end
 
 end
