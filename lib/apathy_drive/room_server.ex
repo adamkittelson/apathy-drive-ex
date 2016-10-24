@@ -238,6 +238,7 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:ref, make_ref())
         |> Repo.preload(:class)
         |> Repo.preload(:race)
+        |> Repo.preload([characters_items: :item])
         |> Map.put(:socket, socket)
 
       Character.update_prompt(character)
