@@ -32,7 +32,7 @@ defmodule ApathyDrive.Item do
   @rarities %{
     "common" => %{
       cost_multiplier: 1,
-      color: "white"
+      color: "teal"
     },
     "uncommon" => %{
       cost_multiplier: 2,

@@ -9,7 +9,8 @@ defmodule ApathyDrive.ExAdmin.Class do
       column :id
       column :name
       column :armour
-      column :weapon
+      column :weapon_hands
+      column :weapon_type
       actions
     end
 
@@ -29,7 +30,8 @@ defmodule ApathyDrive.ExAdmin.Class do
           )
         end
         input class, :armour, collection: ["Cloth", "Leather", "Chain", "Scale", "Plate"]
-        input class, :weapon, collection: ["Any", "Blunt", "Bladed", "One Handed", "One Handed Blunt", "One Handed Bladed", "Limited"]
+        input class, :weapon_hands, collection: ApathyDrive.Class.weapon_hands
+        input class, :weapon_type, collection: ApathyDrive.Class.weapon_types
 
         content do
           ~s(

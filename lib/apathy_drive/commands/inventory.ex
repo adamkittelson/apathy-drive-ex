@@ -4,9 +4,9 @@ defmodule ApathyDrive.Commands.Inventory do
 
   def keywords, do: ["i", "inv", "inventory"]
 
-  def execute(%Room{} = room, %Character{characters_items: items} = character, _args) do
-    inventory = Enum.filter(items, &(&1.equipped == false))
-    equipment = Enum.filter(items, &(&1.equipped == true))
+  def execute(%Room{} = room, %Character{} = character, _args) do
+    inventory = Character.inventory(character)
+    equipment = Character.equipment(character)
 
     if equipment |> Enum.any? do
       Mobile.send_scroll(character, "<p><span class='dark-yellow'>You are equipped with:</span></p><br>")

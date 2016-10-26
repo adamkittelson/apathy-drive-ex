@@ -5,13 +5,14 @@ defmodule ApathyDrive.Class do
     field :name, :string
     field :description, :string
     field :armour, :string
-    field :weapon, :string
+    field :weapon_hands, :string
+    field :weapon_type, :string
     field :abilities, ApathyDrive.JSONB, default: []
 
     timestamps
   end
 
-  @required_fields ~w(name description armour weapon abilities)
+  @required_fields ~w(name description armour weapon_hands weapon_type abilities)
   @optional_fields ~w()
 
   @doc """
@@ -23,6 +24,16 @@ defmodule ApathyDrive.Class do
   def changeset(model, params \\ %{}) do
     model
     |> cast(params, @required_fields, @optional_fields)
+    |> validate_inclusion(:weapon_hands, weapon_hands())
+    |> validate_inclusion(:weapon_type, weapon_types())
+  end
+
+  def weapon_hands do
+    ["Any", "One Handed", "Two Handed"]
+  end
+
+  def weapon_types do
+    ["Any", "Blunt", "Bladed", "Basic"]
   end
 
   def ids do

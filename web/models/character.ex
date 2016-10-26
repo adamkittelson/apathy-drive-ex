@@ -62,6 +62,14 @@ defmodule ApathyDrive.Character do
     |> validate_confirmation(:password)
   end
 
+  def inventory(%Character{characters_items: items} = character) do
+    Enum.filter(items, &(&1.equipped == false))
+  end
+
+  def equipment(%Character{characters_items: items} = character) do
+    Enum.filter(items, &(&1.equipped == true))
+  end
+
   def sign_in(email, password) do
     player = Repo.get_by(Character, email: email)
     sign_in?(player, password) && player
