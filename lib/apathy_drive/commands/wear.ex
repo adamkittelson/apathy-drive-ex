@@ -1,131 +1,138 @@
 defmodule ApathyDrive.Commands.Wear do
   use ApathyDrive.Command
-  alias ApathyDrive.Match
+  alias ApathyDrive.{Character, Match, Mobile, Repo}
 
   def keywords, do: ["wear", "equip", "wield"]
 
-  def execute(%Room{} = room, %Monster{} = monster, []) do
-    Monster.send_scroll(monster, "<p>Equip what?</p>")
+  def execute(%Room{} = room, %Character{} = character, []) do
+    Mobile.send_scroll(character, "<p>Equip what?</p>")
     room
   end
 
-  def execute(%Room{} = room, %Monster{ref: ref, spirit: %Spirit{inventory: inventory}}, ["all"]) do
-    inventory
-    |> Enum.map(&(&1["name"]))
+  def execute(%Room{} = room, %Character{ref: ref} = character, ["all"]) do
+    character
+    |> Character.inventory
+    |> Enum.map(&(&1.item.name))
     |> Enum.reduce(room, fn(item_name, updated_room) ->
-         monster = updated_room.monsters[ref]
-         execute(updated_room, monster, [item_name])
+         character = updated_room.mobiles[ref]
+         execute(updated_room, character, [item_name])
        end)
   end
 
-  def execute(%Room{} = room, %Monster{spirit: %Spirit{inventory: inventory}} = monster, args) do
+  def execute(%Room{} = room, %Character{} = character, args) do
+    inventory = Character.inventory(character)
+
     item_name = Enum.join(args, " ")
     item = inventory
-           |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+           |> Enum.map(&(%{name: &1.item.name, keywords: String.split(&1.item.name), item: &1}))
            |> Match.one(:name_contains, item_name)
 
     case item do
       nil ->
-       Monster.send_scroll(monster, "<p>You don't have \"#{item_name}\" left unequipped.</p>")
+       Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" left unequipped.</p>")
        room
      %{item: item} ->
-       monster =
-         case equip_item(monster, item) do
-           %{equipped: equipped, unequipped: unequipped, monster: monster} ->
+       character =
+         case equip_item(character, item) do
+           %{equipped: equipped, unequipped: unequipped, character: character} ->
              Enum.each(unequipped, fn(item) ->
-               Monster.send_scroll(monster, "<p>You remove #{item["name"]}.</p>")
+               Mobile.send_scroll(character, "<p>You remove #{item.item.name}.</p>")
              end)
-             Monster.send_scroll(monster, "<p>You are now wearing #{equipped["name"]}.</p>")
-             Monster.save(monster)
-             monster
-           %{equipped: equipped, monster: monster} ->
-             Monster.send_scroll(monster, "<p>You are now wearing #{equipped["name"]}.</p>")
-             monster
+             Mobile.send_scroll(character, "<p>You are now wearing #{equipped.item.name}.</p>")
+             character
+           %{equipped: equipped, character: character} ->
+             Mobile.send_scroll(character, "<p>You are now wearing #{equipped.item.name}.</p>")
+             character
          end
 
-       put_in(room.monsters[monster.ref], monster)
+       put_in(room.mobiles[character.ref], character)
     end
   end
 
-  def equip_item(%Monster{spirit: %Spirit{inventory: inventory, equipment: equipment}} = monster, %{"worn_on" => worn_on} = item) do
+  def equip_item(%Character{} = character, %{item: %{worn_on: worn_on}} = item) do
+    inventory = Character.inventory(character)
+    equipment = Character.equipment(character)
+
     cond do
-      Enum.count(equipment, &(&1["worn_on"] == worn_on)) >= worn_on_max(item) ->
+      Enum.count(equipment, &(&1.item.worn_on == worn_on)) >= worn_on_max(item.item) ->
         item_to_remove =
           equipment
-          |> Enum.find(&(&1["worn_on"] == worn_on))
+          |> Enum.find(&(&1.item.worn_on == worn_on))
 
-        equipment =
-          equipment
-          |> List.delete(item_to_remove)
-          |> List.insert_at(-1, item)
+        equipment = List.delete(equipment, item_to_remove)
 
-        inventory =
-          inventory
-          |> List.insert_at(-1, item_to_remove)
-          |> List.delete(item)
+        inventory = List.delete(inventory, item)
 
-          monster = put_in(monster.spirit.inventory, inventory)
-          monster = put_in(monster.spirit.equipment, equipment)
-                   |> Monster.set_abilities
-                   |> Monster.set_max_mana
-                   |> Monster.set_mana
-                   |> Monster.set_max_hp
-                   |> Monster.set_hp
+        item_to_remove =
+          put_in(item_to_remove.equipped, false)
+          |> Repo.save!
 
-        %{equipped: item, unequipped: [item_to_remove], monster: monster}
+        inventory = List.insert_at(inventory, -1, item_to_remove)
+
+        item =
+          put_in(item.equipped, true)
+          |> Repo.save!
+
+        equipment = List.insert_at(equipment, -1, item)
+
+        character = put_in(character.characters_items, equipment ++ inventory)
+
+        %{equipped: item, unequipped: [item_to_remove], character: character}
       conflicting_worn_on(worn_on) |> Enum.any? ->
         items_to_remove =
           equipment
-          |> Enum.filter(&(&1["worn_on"] in conflicting_worn_on(worn_on)))
+          |> Enum.filter(&(&1.item.worn_on in conflicting_worn_on(worn_on)))
 
-        equipment =
-          equipment
-          |> Enum.reject(&(&1 in items_to_remove))
-          |> List.insert_at(-1, item)
+        equipment = Enum.reject(equipment, &(&1 in items_to_remove))
+
+        inventory = List.delete(inventory, item)
+
+        items_to_remove =
+          Enum.map(items_to_remove, fn item_to_remove ->
+            put_in(item_to_remove.equipped, false)
+            |> Repo.save!
+          end)
 
         inventory =
           items_to_remove
           |> Enum.reduce(inventory, fn(item_to_remove, inv) ->
                List.insert_at(inv, -1, item_to_remove)
              end)
-          |> List.delete(item)
 
-          monster = put_in(monster.spirit.inventory, inventory)
-          monster = put_in(monster.spirit.equipment, equipment)
-                   |> Monster.set_abilities
-                   |> Monster.set_max_mana
-                   |> Monster.set_mana
-                   |> Monster.set_max_hp
-                   |> Monster.set_hp
+        item =
+          put_in(item.equipped, true)
+          |> Repo.save!
 
-        %{equipped: item, unequipped: items_to_remove, monster: monster}
+        equipment = List.insert_at(equipment, -1, item)
+
+        character = put_in(character.characters_items, equipment ++ inventory)
+
+        %{equipped: item, unequipped: items_to_remove, character: character}
       true ->
-        equipment =
-          equipment
-          |> List.insert_at(-1, item)
-
         inventory =
           inventory
           |> List.delete(item)
 
-        monster = put_in(monster.spirit.inventory, inventory)
-        monster = put_in(monster.spirit.equipment, equipment)
-                 |> Monster.set_abilities
-                 |> Monster.set_max_mana
-                 |> Monster.set_mana
-                 |> Monster.set_max_hp
-                 |> Monster.set_hp
+        item =
+          put_in(item.equipped, true)
+          |> Repo.save!
 
-        %{equipped: item, monster: monster}
+        equipment =
+          equipment
+          |> List.insert_at(-1, item)
+
+        character = put_in(character.characters_items, equipment ++ inventory)
+
+        %{equipped: item, character: character}
     end
   end
 
-  defp worn_on_max(%{"worn_on" => "Finger"}), do: 2
-  defp worn_on_max(%{"worn_on" => "Wrist"}),  do: 2
-  defp worn_on_max(%{"worn_on" => _}),        do: 1
+  defp worn_on_max(%{worn_on: "Finger"}), do: 2
+  defp worn_on_max(%{worn_on: "Wrist"}),  do: 2
+  defp worn_on_max(%{worn_on: _}),        do: 1
 
-  defp conflicting_worn_on("Weapon Hand"),     do: ["Two Handed"]
-  defp conflicting_worn_on("Off-Hand"),   do: ["Two Handed"]
+  defp conflicting_worn_on("Weapon Hand"), do: ["Two Handed"]
+  defp conflicting_worn_on("Off-Hand"), do: ["Two Handed"]
   defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
   defp conflicting_worn_on(_), do: []
 
