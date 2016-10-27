@@ -177,7 +177,16 @@ defmodule ApathyDrive.Character do
 
   defimpl ApathyDrive.Mobile, for: Character do
     def attribute_at_level(%Character{} = character, attribute, level) do
-      base = Map.get(character.race, attribute)
+      from_race = Map.get(character.race, attribute)
+
+      from_equipment =
+        character
+        |> Character.equipment
+        |> Enum.reduce(0, fn %{item: item}, total ->
+             total + Map.get(item, attribute)
+           end)
+
+      base = from_race + from_equipment
 
       trunc(base + ((base / 10) * (level - 1)))
     end
