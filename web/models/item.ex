@@ -204,7 +204,13 @@ defmodule ApathyDrive.Item do
   def price_for_character(%Item{rarity: rarity} = item, %Character{level: level} = character) do
     attributes = attributes_at_level(item, level)
 
-    max(0, trunc((attributes * @rarities[rarity].cost_multiplier) - Mobile.attribute_at_level(character, :charm, character.level)))
+    trunc((attributes * @rarities[rarity].cost_multiplier))
+  end
+
+  def sell_price(%Item{rarity: rarity} = item, level) do
+    attributes = attributes_at_level(item, level)
+
+    div(trunc((attributes * @rarities[rarity].cost_multiplier)), 10)
   end
 
   def attributes_at_level(%Item{} = item, level) do
@@ -216,7 +222,7 @@ defmodule ApathyDrive.Item do
   def color(%Item{rarity: rarity}) do
     @rarities[rarity].color
   end
-  
+
   def colored_name(%Item{name: name} = item, opts \\ []) do
     name =
       name

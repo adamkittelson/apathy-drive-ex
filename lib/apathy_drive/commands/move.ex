@@ -71,7 +71,7 @@ defmodule ApathyDrive.Commands.Move do
       |> RoomServer.find
       |> RoomServer.mobile_entered(character, "<span class='yellow'>#{room_exit["to_message"]}</span>")
 
-      Room.display_exit_message(room, %{character: character, message: room_exit["from_message"], to: destination_id})
+      Room.display_exit_message(room, %{mobile: character, message: room_exit["from_message"], to: destination_id})
 
       put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
     else

@@ -27,7 +27,7 @@ defmodule ApathyDrive.Character do
     field :effects,     :map, virtual: true, default: %{}
     field :hp,          :float, virtual: true, default: 1.0
     field :mana,        :float, virtual: true, default: 1.0
-    field :gold,        :integer, default: 0
+    field :gold,        :integer, default: 150
 
     has_many :characters_items, ApathyDrive.CharacterItem
     has_many :items, through: [:characters_items, :item]
