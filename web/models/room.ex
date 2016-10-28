@@ -32,6 +32,8 @@ defmodule ApathyDrive.Room do
     has_many   :items_for_sales, through: [:shop_items, :item]
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
+    has_many   :rooms_items, ApathyDrive.RoomItem
+    has_many   :items, through: [:rooms_items, :item]
   end
 
   def update_mobile(%Room{} = room, mobile_ref, fun) do

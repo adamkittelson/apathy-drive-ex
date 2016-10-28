@@ -24,6 +24,9 @@ defmodule ApathyDrive.Item do
     has_many :characters_items, ApathyDrive.CharacterItem
     has_many :characters, through: [:characters_items, :character]
 
+    has_many :rooms_items, ApathyDrive.RoomItem
+    has_many :rooms, through: [:rooms_items, :room]
+
     timestamps
   end
 

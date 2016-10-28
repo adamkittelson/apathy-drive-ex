@@ -128,6 +128,7 @@ defmodule ApathyDrive.RoomServer do
       Repo.get!(Room, id)
       |> Repo.preload(:room_unity)
       |> Repo.preload(:area)
+      |> Repo.preload([rooms_items: :item], [force: true])
 
     room =
       room

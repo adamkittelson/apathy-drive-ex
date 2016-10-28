@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Doors, Mobile, Match, RoomServer}
+  alias ApathyDrive.{Character, Doors, Item, Mobile, Match, RoomServer}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -186,13 +186,7 @@ defmodule ApathyDrive.Commands.Look do
     psuedo_items = room.item_descriptions["visible"]
                    |> Map.keys
 
-    items = case room.room_unity.items do
-      nil ->
-        []
-      items ->
-        items
-        |> Enum.map(&(&1["name"]))
-    end
+    items = Enum.map(room.rooms_items, &Item.colored_name(&1.item))
 
     items = items ++ psuedo_items
 
