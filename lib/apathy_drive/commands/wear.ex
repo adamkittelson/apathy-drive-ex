@@ -20,33 +20,32 @@ defmodule ApathyDrive.Commands.Wear do
   end
 
   def execute(%Room{} = room, %Character{} = character, args) do
-    inventory = Character.inventory(character)
-
     item_name = Enum.join(args, " ")
-    item = inventory
-           |> Enum.map(&(%{name: &1.item.name, keywords: String.split(&1.item.name), item: &1}))
-           |> Match.one(:name_contains, item_name)
 
-    case item do
-      nil ->
-       Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" left unequipped.</p>")
-       room
-     %{item: item} ->
-       character =
-         case equip_item(character, item) do
-           %{equipped: equipped, unequipped: unequipped, character: character} ->
-             Enum.each(unequipped, fn(item) ->
-               Mobile.send_scroll(character, "<p>You remove #{item.item.name}.</p>")
-             end)
-             Mobile.send_scroll(character, "<p>You are now wearing #{equipped.item.name}.</p>")
-             character
-           %{equipped: equipped, character: character} ->
-             Mobile.send_scroll(character, "<p>You are now wearing #{equipped.item.name}.</p>")
-             character
-         end
+    character
+    |> Character.inventory
+    |> Enum.map(&(%{name: &1.item.name, keywords: String.split(&1.item.name), item: &1}))
+    |> Match.one(:name_contains, item_name)
+    |> case do
+         nil ->
+           Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" left unequipped.</p>")
+           room
+         %{item: item} ->
+           character =
+             case equip_item(character, item) do
+               %{equipped: equipped, unequipped: unequipped, character: character} ->
+                 Enum.each(unequipped, fn(item) ->
+                   Mobile.send_scroll(character, "<p>You remove #{item.item.name}.</p>")
+                 end)
+                 Mobile.send_scroll(character, "<p>You are now wearing #{equipped.item.name}.</p>")
+                 character
+               %{equipped: equipped, character: character} ->
+                 Mobile.send_scroll(character, "<p>You are now wearing #{equipped.item.name}.</p>")
+                 character
+             end
 
-       put_in(room.mobiles[character.ref], character)
-    end
+           put_in(room.mobiles[character.ref], character)
+       end
   end
 
   def equip_item(%Character{} = character, %{item: %{worn_on: worn_on}} = item) do
