@@ -28,7 +28,6 @@ defmodule ApathyDrive.Commands.Drop do
            |> Ecto.Multi.insert(:rooms_items, %RoomItem{room_id: room.id, item_id: item.id, level: level})
            |> Ecto.Multi.delete(:characters_items, character_item)
            |> Repo.transaction
-           |> IO.inspect
 
            room
            |> Repo.preload([rooms_items: :item], [force: true])

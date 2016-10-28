@@ -1,25 +1,25 @@
 defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
-  alias ApathyDrive.{Monster, Match, Repo, RoomUnity}
+  alias ApathyDrive.{Character, CharacterItem, Item, Match, Mobile, Repo}
 
   def keywords, do: ["get"]
 
-  def execute(%Room{} = room, %Monster{} = monster, []) do
-    Monster.send_scroll(monster, "<p>Get what?</p>")
+  def execute(%Room{} = room, %Character{} = character, []) do
+    Mobile.send_scroll(character, "<p>Get what?</p>")
     room
   end
 
-  def execute(%Room{room_unity: %RoomUnity{items: items}} = room, %Monster{} = monster, ["all"]) do
+  def execute(%Room{rooms_items: items} = room, %Character{} = character, ["all"]) do
     items
-    |> Enum.map(&(&1["name"]))
-    |> get_all(room, monster)
+    |> Enum.map(&(&1.item.name))
+    |> get_all(room, character)
   end
 
-  def execute(%Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions} = room, %Monster{spirit: %Spirit{inventory: inventory}} = monster, args) do
+  def execute(%Room{rooms_items: items, item_descriptions: item_descriptions} = room, %Character{} = character, args) do
     item = Enum.join(args, " ")
 
     actual_item = items
-                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+                  |> Enum.map(&(%{name: &1.item.name, room_item: &1}))
                   |> Match.one(:name_contains, item)
 
     visible_item = item_descriptions["visible"]
@@ -32,37 +32,40 @@ defmodule ApathyDrive.Commands.Get do
                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
                   |> Match.one(:keyword_starts_with, item)
 
-    cond do
-      item_name = visible_item || hidden_item ->
-        Monster.send_scroll(monster, "<p>#{item_name.name |> capitalize_first} cannot be picked up.</p>")
+    case actual_item || visible_item || hidden_item do
+      %{room_item: %{level: level, item: %Item{} = item} = room_item} ->
+
+        Ecto.Multi.new
+        |> Ecto.Multi.insert(:characters_items, %CharacterItem{character_id: character.id, item_id: item.id, level: level})
+        |> Ecto.Multi.delete(:rooms_items, room_item)
+        |> Repo.transaction
+
         room
-      actual_item ->
-        monster = put_in(monster.spirit.inventory, [actual_item.item | inventory])
-
-        Monster.send_scroll(monster, "<p>You get #{actual_item.name}.</p>")
-
-        Monster.save(monster)
-
-        room = put_in(room.room_unity.items, List.delete(room.room_unity.items, actual_item.item))
-        room =
-          put_in(room.monsters[monster.ref], monster)
-          |> Repo.save
-      true ->
-        Monster.send_scroll(monster, "<p>You don't see \"#{item}\" here.</p>")
+        |> Repo.preload([rooms_items: :item], [force: true])
+        |> Room.update_mobile(character.ref, fn(char) ->
+             char
+             |> Repo.preload([characters_items: :item], [force: true])
+             |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
+           end)
+      %{name: psuedo_item} ->
+        Mobile.send_scroll(character, "<p>#{psuedo_item |> capitalize_first} cannot be picked up.</p>")
+        room
+      nil ->
+        Mobile.send_scroll(character, "<p>You don't see \"#{item}\" here.</p>")
         room
     end
   end
 
-  defp get_all([], room, monster) do
-    Monster.send_scroll(monster, "<p>There is nothing here to get.</p>")
+  defp get_all([], room, character) do
+    Mobile.send_scroll(character, "<p>There is nothing here to get.</p>")
     room
   end
 
-  defp get_all(item_names, room, monster) do
+  defp get_all(item_names, room, character) do
     item_names
     |> Enum.reduce(room, fn(item_name, updated_room) ->
-         monster = updated_room.monsters[monster.ref]
-         execute(updated_room, monster, [item_name])
+         character = updated_room.mobiles[character.ref]
+         execute(updated_room, character, [item_name])
        end)
   end
 end
