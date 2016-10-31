@@ -19,6 +19,7 @@ defprotocol ApathyDrive.Mobile do
   def send_scroll(mobile, html)
   def set_room_id(mobile, room_id)
   def spellcasting_at_level(mobile, level)
+  def spells_at_level(mobile, level)
   def stealth_at_level(mobile, level)
   def tracking_at_level(mobile, level)
 end

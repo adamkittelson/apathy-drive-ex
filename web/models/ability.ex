@@ -5,15 +5,22 @@ defmodule ApathyDrive.Ability do
   import ApathyDrive.TimerManager, only: [seconds: 1]
 
   schema "abilities" do
-    field :properties, ApathyDrive.JSONB
+    field :name, :string
+    field :description, :string
 
-    has_many :rooms, ApathyDrive.Room
+    has_many :spells_abilities, ApathyDrive.SpellAbility
+    has_many :spells, through: [:spells_abilities, :spell]
 
     timestamps
   end
 
-  @required_fields ~w(properties)
+  @required_fields ~w(name description)
   @optional_fields ~w()
+  
+  
+  #############
+  # OLD SHIT BELOW
+  ############
 
   def find(id) do
     ApathyDrive.Repo.get(__MODULE__, id)

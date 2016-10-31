@@ -7,10 +7,6 @@ defmodule ApathyDrive.Character do
   import Comeonin.Bcrypt
 
   schema "characters" do
-    belongs_to :room, Room
-    belongs_to :class, ApathyDrive.Class
-    belongs_to :race, ApathyDrive.Race
-
     field :name,        :string
     field :gender,      :string
     field :email,       :string
@@ -28,6 +24,10 @@ defmodule ApathyDrive.Character do
     field :hp,          :float, virtual: true, default: 1.0
     field :mana,        :float, virtual: true, default: 1.0
     field :gold,        :integer, default: 150
+
+    belongs_to :room, Room
+    belongs_to :class, ApathyDrive.Class
+    belongs_to :race, ApathyDrive.Race
 
     has_many :characters_items, ApathyDrive.CharacterItem
     has_many :items, through: [:characters_items, :item]
@@ -330,6 +330,13 @@ defmodule ApathyDrive.Character do
       will = attribute_at_level(character, :willpower, level)
       modifier = ability_value(character, "Spellcasting")
       trunc(will * (1 + (modifier / 100)))
+    end
+
+    def spells_at_level(character, level) do
+      character.class.classes_spells
+      |> Enum.filter(& &1.level <= level)
+      |> Enum.sort_by(& &1.level)
+      |> Enum.map(& &1.spell)
     end
 
     def stealth_at_level(character, level) do
