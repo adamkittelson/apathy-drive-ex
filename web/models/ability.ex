@@ -98,7 +98,7 @@ defmodule ApathyDrive.Ability do
   def scale_effect(%Monster{} = _monster, value) when is_binary(value), do: value
 
   def scale_effect(%Monster{} = monster, "damage", %{"base_min" => base_min, "base_max" => base_max}) do
-    base_max = base_max + Monster.effect_bonus(monster, "increase max damage")
+    base_max = base_max + Systems.Effect.effect_bonus(monster, "increase max damage")
     base_min..base_max
     |> Enum.random
   end
@@ -532,9 +532,9 @@ defmodule ApathyDrive.Ability do
            total + Monster.attribute(attacker, String.to_existing_atom(stat))
          end)
       |> div(length(stats))
-      |> Kernel.+(Monster.effect_bonus(monster, "Accuracy"))
+      |> Kernel.+(Systems.Effect.effect_bonus(monster, "Accuracy"))
 
-    dodge = Monster.agility(monster) + Monster.effect_bonus(monster, "Dodge")
+    dodge = Monster.agility(monster) + Systems.Effect.effect_bonus(monster, "Dodge")
 
     if dodge > 0 do
       chance = dodge_chance(dodge, accuracy)
@@ -621,8 +621,8 @@ defmodule ApathyDrive.Ability do
     target = Room.get_monster(room, target_ref)
     caster = Room.get_monster(room, caster_ref)
 
-    min_damage = trunc(80 * damage / 100)  + Monster.effect_bonus(caster, "increase min damage")
-    max_damage = trunc(120 * damage / 100) + Monster.effect_bonus(caster, "increase max damage")
+    min_damage = trunc(80 * damage / 100)  + Systems.Effect.effect_bonus(caster, "increase min damage")
+    max_damage = trunc(120 * damage / 100) + Systems.Effect.effect_bonus(caster, "increase max damage")
     damage = min_damage..max_damage |> Enum.random
 
     damage = Monster.reduce_damage(target, damage, ability["instant_effects"]["mitigated_by"])

@@ -42,7 +42,7 @@ defmodule Systems.Effect do
 
   def add_effect(%{effects: effects, last_effect_key: last_effect} = entity, key, effect) do
     if Map.has_key?(effect, "application_message") do
-      send_scroll(entity, "<p><span class='dark-yellow'>#{effect["application_message"]}</span></p>")
+      Mobile.send_scroll(entity, "<p><span class='dark-yellow'>#{effect["application_message"]}</span></p>")
     end
 
     if Map.has_key?(effect, "member") do
@@ -62,7 +62,7 @@ defmodule Systems.Effect do
              |> List.first
 
     if stack_key == :cast_timer do
-      send_scroll(entity, "<p><span class='dark-red'>You interrupt your other ability.</span></p>")
+      Mobile.send_scroll(entity, "<p><span class='dark-red'>You interrupt your other ability.</span></p>")
     end
     remove(entity, oldest)
   end
@@ -83,7 +83,7 @@ defmodule Systems.Effect do
         end
 
         if opts[:show_expiration_message] && Map.has_key?(effects[key], "expiration_message") do
-          send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["expiration_message"]}</span></p>")
+          Mobile.send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["expiration_message"]}</span></p>")
         end
 
         if Map.has_key?(effects[key], "member") do
@@ -137,10 +137,23 @@ defmodule Systems.Effect do
        end)
   end
 
-  def send_scroll(%Monster{} = monster, message) do
-    Monster.send_scroll(monster, message)
-  end
+  def effect_bonus(%{effects: effects}, name) do
+    effects
+    |> Map.values
+    |> Enum.map(fn
+         (%{} = effect) ->
+           key =
+             effect
+             |> Map.keys
+             |> Enum.find(fn key ->
+                  String.downcase(to_string(key)) == String.downcase(to_string(name))
+                end)
 
-  def send_scroll(_, _), do: nil
+           if key, do: Map.get(effect, key, 0), else: 0
+         (_) ->
+           0
+       end)
+    |> Enum.sum
+  end
 
 end

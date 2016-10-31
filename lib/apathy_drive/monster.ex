@@ -283,7 +283,7 @@ defmodule ApathyDrive.Monster do
     1 - (0.00044 * magical_defense(monster))
   end
   def reduce_damage(%Monster{} = monster, mitigator) do
-    1 - (0.01 * Monster.effect_bonus(monster, mitigator))
+    1 - (0.01 * Systems.Effect.effect_bonus(monster, mitigator))
   end
 
   def reduce_damage(%Monster{} = monster, damage, nil), do: reduce_damage(monster, damage, [])
@@ -296,30 +296,11 @@ defmodule ApathyDrive.Monster do
   end
 
   def physical_defense(%Monster{} = monster) do
-    (physical_damage(monster) * 2) * (4 + 0.01 * level(monster)) + effect_bonus(monster, "physical defense")
+    (physical_damage(monster) * 2) * (4 + 0.01 * level(monster)) + Systems.Effect.effect_bonus(monster, "physical defense")
   end
 
   def magical_defense(%Monster{} = monster) do
-    (magical_damage(monster) * 2) * (4 + 0.01 * level(monster)) + effect_bonus(monster, "magical defense")
-  end
-
-  def effect_bonus(%Monster{effects: effects}, name) do
-    effects
-    |> Map.values
-    |> Enum.map(fn
-         (%{} = effect) ->
-           key =
-             effect
-             |> Map.keys
-             |> Enum.find(fn key ->
-                  String.downcase(to_string(key)) == String.downcase(to_string(name))
-                end)
-
-           if key, do: Map.get(effect, key, 0), else: 0
-         (_) ->
-           0
-       end)
-    |> Enum.sum
+    (magical_damage(monster) * 2) * (4 + 0.01 * level(monster)) + Systems.Effect.effect_bonus(monster, "magical defense")
   end
 
   def send_scroll(%Monster{socket: nil} = monster, _html),  do: monster
@@ -570,7 +551,7 @@ defmodule ApathyDrive.Monster do
     limb_modifier =
       if total_limbs > useless_limbs, do: 1 - (useless_limbs / total_limbs), else: 1
 
-    trunc(max(1, attribute_from_equipment(monster, attribute) + monster_attribute + effect_bonus(monster, attribute)) * limb_modifier)
+    trunc(max(1, attribute_from_equipment(monster, attribute) + monster_attribute + Systems.Effect.effect_bonus(monster, attribute)) * limb_modifier)
   end
 
   def attribute_from_equipment(%Monster{spirit: nil}, _), do: 0
@@ -579,11 +560,11 @@ defmodule ApathyDrive.Monster do
   end
 
   def hp_regen_per_second(%Monster{max_hp: max_hp, missing_limbs: []} = monster) do
-    modifier = 1 + effect_bonus(monster, "hp_regen") / 100
+    modifier = 1 + Systems.Effect.effect_bonus(monster, "hp_regen") / 100
 
     normal_regen = max_hp * 0.01 * modifier
 
-    poison = effect_bonus(monster, "poison") / 10
+    poison = Systems.Effect.effect_bonus(monster, "poison") / 10
 
     normal_regen - poison
   end
@@ -592,7 +573,7 @@ defmodule ApathyDrive.Monster do
   end
 
   def mana_regen_per_second(%Monster{max_mana: max_mana} = monster) do
-    modifier = 1 + effect_bonus(monster, "mana_regen") / 100
+    modifier = 1 + Systems.Effect.effect_bonus(monster, "mana_regen") / 100
 
     max_mana * 0.01 * modifier
   end

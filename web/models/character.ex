@@ -154,9 +154,20 @@ defmodule ApathyDrive.Character do
       race: character.race.name,
       level: character.level,
       experience: character.experience,
+      perception: Mobile.perception_at_level(character, character.level),
+      accuracy: Mobile.accuracy_at_level(character, character.level),
+      spellcasting: Mobile.spellcasting_at_level(character, character.level),
+      crits: Mobile.crits_at_level(character, character.level),
+      dodge: Mobile.dodge_at_level(character, character.level),
+      stealth: Mobile.stealth_at_level(character, character.level),
+      tracking: Mobile.tracking_at_level(character, character.level),
+      physical_damage: Mobile.physical_damage_at_level(character, character.level),
+      physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
+      magical_damage: Mobile.magical_damage_at_level(character, character.level),
+      magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
       hp: hp_at_level(character, character.level),
       max_hp: Mobile.max_hp_at_level(character, character.level),
-      hp: mana_at_level(character, character.level),
+      mana: mana_at_level(character, character.level),
       max_mana: Mobile.max_mana_at_level(character, character.level),
       strength: Mobile.attribute_at_level(character, :strength, character.level),
       agility: Mobile.attribute_at_level(character, :agility, character.level),
@@ -176,6 +187,18 @@ defmodule ApathyDrive.Character do
   end
 
   defimpl ApathyDrive.Mobile, for: Character do
+
+    def ability_value(character, ability) do
+      # TODO: add race and class ability values
+      Systems.Effect.effect_bonus(character, ability)
+    end
+
+    def accuracy_at_level(character, level) do
+      int = attribute_at_level(character, :agility, level)
+      modifier = ability_value(character, "Accuracy")
+      trunc(int * (1 + (modifier / 100)))
+    end
+
     def attribute_at_level(%Character{} = character, attribute, level) do
       from_race = Map.get(character.race, attribute)
 
@@ -211,24 +234,24 @@ defmodule ApathyDrive.Character do
       true
     end
 
+    def crits_at_level(character, level) do
+      int = attribute_at_level(character, :intellect, level)
+      modifier = ability_value(character, "Crits")
+      trunc(int * (1 + (modifier / 100)))
+    end
+
+    def dodge_at_level(character, level) do
+      agi = attribute_at_level(character, :agility, level)
+      modifier = ability_value(character, "Dodge")
+      trunc(agi * (1 + (modifier / 100)))
+    end
+
     def enter_message(%Character{name: name}) do
       "<p><span class='yellow'>#{name}</span><span class='green'> walks off {{direction}}.</span></p>"
     end
 
     def exit_message(%Character{name: name}) do
       "<p><span class='yellow'>#{name}</span><span class='green'> walks in from {{direction}}.</span></p>"
-    end
-
-    def look_name(%Character{name: name}) do
-      "<span class='dark-cyan'>#{name}</span>"
-    end
-
-    def max_hp_at_level(mobile, level) do
-      trunc(5 * attribute_at_level(mobile, :health, level))
-    end
-
-    def max_mana_at_level(mobile, level) do
-      trunc(5 * attribute_at_level(mobile, :intellect, level))
     end
 
     def held(%{effects: effects} = mobile) do
@@ -245,6 +268,48 @@ defmodule ApathyDrive.Character do
       true
     end
 
+    def look_name(%Character{name: name}) do
+      "<span class='dark-cyan'>#{name}</span>"
+    end
+
+    def magical_damage_at_level(character, level) do
+      damage = attribute_at_level(character, :intellect, level)
+      modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
+      trunc(damage * (1 + (modifier / 100)))
+    end
+
+    def magical_resistance_at_level(character, level) do
+      resist = attribute_at_level(character, :willpower, level)
+      modifier = ability_value(character, "ModifyResistance") + ability_value(character, "ModifyMagicalResistance")
+      trunc(resist * (0.3 + (modifier / 100)))
+    end
+
+    def max_hp_at_level(mobile, level) do
+      trunc(5 * attribute_at_level(mobile, :health, level))
+    end
+
+    def max_mana_at_level(mobile, level) do
+      trunc(5 * attribute_at_level(mobile, :intellect, level))
+    end
+
+    def perception_at_level(character, level) do
+      int = attribute_at_level(character, :intellect, level)
+      modifier = ability_value(character, "Perception")
+      trunc(int * (1 + (modifier / 100)))
+    end
+
+    def physical_damage_at_level(character, level) do
+      damage = attribute_at_level(character, :strength, level)
+      modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyPhysicalDamage")
+      trunc(damage * (1 + (modifier / 100)))
+    end
+
+    def physical_resistance_at_level(character, level) do
+      resist = attribute_at_level(character, :strength, level)
+      modifier = ability_value(character, "ModifyResistance") + ability_value(character, "ModifyPhysicalResistance")
+      trunc(resist * (0.3 + (modifier / 100)))
+    end
+
     def send_scroll(%Character{socket: socket} = character, html) do
       send(socket, {:scroll, html})
       character
@@ -259,6 +324,24 @@ defmodule ApathyDrive.Character do
       |> Map.put(:room_id, room_id)
       |> Map.put(:monitor_ref, Process.monitor(socket))
       |> Repo.save!
+    end
+
+    def spellcasting_at_level(character, level) do
+      will = attribute_at_level(character, :willpower, level)
+      modifier = ability_value(character, "Spellcasting")
+      trunc(will * (1 + (modifier / 100)))
+    end
+
+    def stealth_at_level(character, level) do
+      agi = attribute_at_level(character, :agility, level)
+      modifier = ability_value(character, "Stealth")
+      trunc(agi * (modifier / 100))
+    end
+
+    def tracking_at_level(character, level) do
+      perception = perception_at_level(character, level)
+      modifier = ability_value(character, "Tracking")
+      trunc(perception * (modifier / 100))
     end
 
   end
