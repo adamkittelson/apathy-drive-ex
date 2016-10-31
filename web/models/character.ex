@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, CharacterItem, Item, Mobile, Room, Text}
+  alias ApathyDrive.{Ability, Character, CharacterItem, Item, Mobile, Room, Spell, SpellAbility, Text}
 
   require Logger
   import Comeonin.Bcrypt
@@ -24,6 +24,7 @@ defmodule ApathyDrive.Character do
     field :hp,          :float, virtual: true, default: 1.0
     field :mana,        :float, virtual: true, default: 1.0
     field :gold,        :integer, default: 150
+    field :spells,      :map, virtual: true, default: %{}
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
@@ -60,6 +61,21 @@ defmodule ApathyDrive.Character do
     |> validate_length(:password, min: 6)
     |> unique_constraint(:email, name: :characters_lower_email_index, on: Repo)
     |> validate_confirmation(:password)
+  end
+
+  def preload_spells(%Character{} = character) do
+    character = character |> ApathyDrive.Repo.preload(class: [classes_spells: [spell: [spells_abilities: :ability]]])
+    spells =
+      Enum.reduce(character.class.classes_spells, %{}, fn
+        %{level: level, spell: %Spell{spells_abilities: spells_abilities} = spell}, spells ->
+          spell =
+            put_in(spell.abilities, Enum.reduce(spells_abilities, %{}, fn %SpellAbility{ability: ability} = spell_ability, abilities ->
+              Map.put(abilities, ability.name, spell_ability.value)
+            end))
+            |> Map.put(:level, level)
+          Map.put(spells, spell.command, spell)
+      end)
+    Map.put(character, :spells, spells)
   end
 
   def inventory(%Character{characters_items: items} = character) do
@@ -246,6 +262,13 @@ defmodule ApathyDrive.Character do
       trunc(agi * (1 + (modifier / 100)))
     end
 
+    def enough_mana_for_spell?(character, %Spell{} =  spell) do
+      mana = Character.mana_at_level(character, character.level)
+      cost = Spell.mana_cost_at_level(spell, character.level)
+
+      mana >= cost
+    end
+
     def enter_message(%Character{name: name}) do
       "<p><span class='yellow'>#{name}</span><span class='green'> walks off {{direction}}.</span></p>"
     end
@@ -292,6 +315,10 @@ defmodule ApathyDrive.Character do
       trunc(5 * attribute_at_level(mobile, :intellect, level))
     end
 
+    def party_refs(character, _room) do
+      [character.refs]
+    end
+
     def perception_at_level(character, level) do
       int = attribute_at_level(character, :intellect, level)
       modifier = ability_value(character, "Perception")
@@ -326,17 +353,31 @@ defmodule ApathyDrive.Character do
       |> Repo.save!
     end
 
+    def silenced(%Character{effects: effects} = character, %Room{} = room) do
+      effects
+      |> Map.values
+      |> Enum.find(fn(effect) ->
+           Map.has_key?(effect, "Silence")
+         end)
+      |> silenced(character, room)
+    end
+    def silenced(nil, %Character{}, %Room{}), do: false
+    def silenced(%{}, %Character{} = character, %Room{} = room) do
+      Mobile.send_scroll(character, "<p><span class='cyan'>You are silenced!</span></p>")
+      true
+    end
+
     def spellcasting_at_level(character, level) do
       will = attribute_at_level(character, :willpower, level)
       modifier = ability_value(character, "Spellcasting")
       trunc(will * (1 + (modifier / 100)))
     end
 
-    def spells_at_level(character, level) do
-      character.class.classes_spells
+    def spells_at_level(%Character{spells: spells}, level) do
+      spells
+      |> Map.values
       |> Enum.filter(& &1.level <= level)
       |> Enum.sort_by(& &1.level)
-      |> Enum.map(& &1.spell)
     end
 
     def stealth_at_level(character, level) do
