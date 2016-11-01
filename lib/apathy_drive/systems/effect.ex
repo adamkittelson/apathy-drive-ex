@@ -12,9 +12,9 @@ defmodule Systems.Effect do
     entity =
       case entity do
         %{ref: ref} ->
-          TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, ref, key}})
+          TimerManager.send_after(entity, {{:effect, key}, duration, {:remove_effect, ref, key}})
         %{} ->
-          TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, key}})
+          TimerManager.send_after(entity, {{:effect, key}, duration, {:remove_effect, key}})
       end
 
     effect = if effect && effect["timers"] do
@@ -96,7 +96,7 @@ defmodule Systems.Effect do
           end)
         end
 
-        if Map.has_key?(entity, :ref), do: send(self, {:think, entity.ref})
+        #if Map.has_key?(entity, :ref), do: send(self, {:think, entity.ref})
 
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->

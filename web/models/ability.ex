@@ -186,17 +186,6 @@ defmodule ApathyDrive.Ability do
   def reject(target_pid, %Monster{pid: pid}) when pid == target_pid, do: nil
   def reject(target_pid, %Monster{}), do: target_pid
 
-  def display_pre_cast_message(%Room{} = room, caster_ref, %{"pre-cast_message" => _} = ability) do
-    monster = Room.get_monster(room, caster_ref)
-
-    cast_messages = cast_messages(ability, monster, monster, %{}, "pre-cast_message")
-
-    Monster.send_scroll(monster, cast_messages["user"])
-
-    Room.send_scroll(room, cast_messages["spectator"], monster)
-  end
-  def display_pre_cast_message(%Room{}, _caster_ref, %{}), do: nil
-
   def can_execute?(%Room{} = room, %Monster{} = monster, ability) do
     cond do
       on_cooldown?(monster, ability) ->
@@ -274,7 +263,7 @@ defmodule ApathyDrive.Ability do
     monster = Room.get_monster(room, caster_ref)
 
     if monster do
-      display_pre_cast_message(room, caster_ref, ability)
+      #display_pre_cast_message(room, caster_ref, ability)
 
       room =
         Room.update_monster(room, caster_ref, fn(monster) ->
@@ -283,7 +272,7 @@ defmodule ApathyDrive.Ability do
             |> apply_cooldown(ability)
             |> Map.put(:mana, monster.mana - Map.get(ability, "mana_cost", 0))
 
-            Character.update_prompt(monster)
+            Mobile.update_prompt(monster)
           monster
         end)
 
@@ -318,7 +307,7 @@ defmodule ApathyDrive.Ability do
       if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
         ApathyDrive.Death.kill(updated_room, target.ref, caster_ref)
       else
-        Character.update_prompt(target)
+        Mobile.update_prompt(target)
         updated_room
       end
     end)

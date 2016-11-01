@@ -683,7 +683,7 @@ defmodule ApathyDrive.Monster do
           add_experience(monster, amount_to_shift)
       end
 
-    Character.update_prompt(monster)
+    Mobile.update_prompt(monster)
 
     monster
   end

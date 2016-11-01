@@ -7,24 +7,25 @@ defmodule ApathyDrive.Character do
   import Comeonin.Bcrypt
 
   schema "characters" do
-    field :name,        :string
-    field :gender,      :string
-    field :email,       :string
-    field :password,    :string
-    field :external_id, :string
-    field :experience,  :integer, default: 0
-    field :level,       :integer, default: 1
-    field :timers,      :map, virtual: true, default: %{}
-    field :admin,       :boolean
-    field :flags,       :map, default: %{}
-    field :monitor_ref, :any, virtual: true
-    field :ref,         :any, virtual: true
-    field :socket,      :any, virtual: true
-    field :effects,     :map, virtual: true, default: %{}
-    field :hp,          :float, virtual: true, default: 1.0
-    field :mana,        :float, virtual: true, default: 1.0
-    field :gold,        :integer, default: 150
-    field :spells,      :map, virtual: true, default: %{}
+    field :name,            :string
+    field :gender,          :string
+    field :email,           :string
+    field :password,        :string
+    field :external_id,     :string
+    field :experience,      :integer, default: 0
+    field :level,           :integer, default: 1
+    field :timers,          :map, virtual: true, default: %{}
+    field :admin,           :boolean
+    field :flags,           :map, default: %{}
+    field :gold,            :integer, default: 150
+    field :monitor_ref,     :any, virtual: true
+    field :ref,             :any, virtual: true
+    field :socket,          :any, virtual: true
+    field :effects,         :map, virtual: true, default: %{}
+    field :last_effect_key, :integer, virtual: true, default: 0
+    field :hp,              :float, virtual: true, default: 1.0
+    field :mana,            :float, virtual: true, default: 1.0
+    field :spells,          :map, virtual: true, default: %{}
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
@@ -123,10 +124,6 @@ defmodule ApathyDrive.Character do
       Mobile.send_scroll character, "<p>You fall to level #{character.level}!"
     end
     character
-  end
-
-  def update_prompt(%Character{socket: socket} = character) do
-    send(socket, {:update_prompt, prompt(character)})
   end
 
   def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do
@@ -337,6 +334,24 @@ defmodule ApathyDrive.Character do
       trunc(resist * (0.3 + (modifier / 100)))
     end
 
+    def round_length_in_ms(character) do
+      base = 4000 - attribute_at_level(character, :agility, character.level)
+
+      speed_mods =
+        character.effects
+        |> Map.values
+        |> Enum.filter(&(Map.has_key?(&1, "Speed")))
+        |> Enum.map(&(Map.get(&1, "Speed")))
+
+      count = length(speed_mods)
+
+      if count > 0 do
+        trunc(base * (Enum.sum(speed_mods) / count / 100))
+      else
+        base
+      end
+    end
+
     def send_scroll(%Character{socket: socket} = character, html) do
       send(socket, {:scroll, html})
       character
@@ -386,12 +401,21 @@ defmodule ApathyDrive.Character do
       trunc(agi * (modifier / 100))
     end
 
+    def subtract_mana(character, spell) do
+      cost = Spell.mana_cost_at_level(spell, character.level)
+      percentage = cost / Mobile.max_mana_at_level(character, character.level)
+      update_in(character.mana, &(max(0, &1 - percentage)))
+    end
+
     def tracking_at_level(character, level) do
       perception = perception_at_level(character, level)
       modifier = ability_value(character, "Tracking")
       trunc(perception * (modifier / 100))
     end
 
+    def update_prompt(%Character{socket: socket} = character) do
+      send(socket, {:update_prompt, Character.prompt(character)})
+    end
   end
 
 end

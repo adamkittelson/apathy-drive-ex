@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Character, Commands, LairMonster, LairSpawning, Match, Monster, PubSub,
+  alias ApathyDrive.{Character, Commands, LairMonster, LairSpawning, Match, Mobile, Monster, PubSub,
                      Repo, Room, RoomSupervisor, RoomUnity, TimerManager, Ability, Presence}
   use Timex
   require Logger
@@ -220,7 +220,7 @@ defmodule ApathyDrive.RoomServer do
         end)
 
       room.mobiles[mobile.ref]
-      |> Character.update_prompt
+      |> Mobile.update_prompt
 
       case Presence.track(socket, "spirits:online", character.id, %{name: character.name}) do
         {:ok, _} ->
@@ -242,7 +242,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.preload_spells
         |> Map.put(:socket, socket)
 
-      Character.update_prompt(character)
+      Mobile.update_prompt(character)
 
       room = put_in(room.mobiles[character.ref], character)
 
@@ -466,7 +466,7 @@ defmodule ApathyDrive.RoomServer do
               Room.send_scroll(room, "<p><span class='red'>Blood</span> sprays wildly from #{Monster.look_name(mobile)}'s severed #{limb}!", mobile)
             end
 
-            Character.update_prompt(mobile)
+            Mobile.update_prompt(mobile)
           mobile
       end)
 
