@@ -41,12 +41,12 @@ defmodule ApathyDrive.Commands.Open do
       !Room.unlocked?(room, room_exit["direction"]) ->
         open_fail!(room_exit, room.id)
         Monster.send_scroll(monster, "<p>The #{name} is locked.</p>")
-        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} attempt to open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", monster)
+        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} attempt to open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", [monster])
         room
       true ->
         mirror_open!(room_exit, room.id)
         Monster.send_scroll(monster, "<p>You bashed the #{name} open.</p>")
-        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", monster)
+        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", [monster])
         Room.open!(room, room_exit["direction"])
     end
   end

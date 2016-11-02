@@ -82,34 +82,55 @@ defmodule ApathyDrive.Spell do
           |> apply_cooldowns(spell)
           |> Mobile.subtract_mana(spell)
 
-          Mobile.update_prompt(caster)
+        Mobile.update_prompt(caster)
 
-        # ability =
-        #   room
-        #   |> Room.get_monster(caster_ref)
-        #   |> scale_ability(nil, ability)
-        #
-        # targets
-        # |> Enum.reduce(room, fn(target_ref, updated_room) ->
-        #      cond do
-        #        updated_room |> Room.get_monster(target_ref) |> affects_target?(ability) ->
-        #          updated_room
-        #          |> apply_ability(target_ref, ability, caster_ref)
-        #          |> kill_monsters(caster_ref)
-        #        target = Room.get_monster(updated_room, target_ref) ->
-        #          message = "#{target.name} is not affected by that ability." |> capitalize_first
-        #          Monster.send_scroll(monster, "<p><span class='dark-cyan'>#{message}</span></p>")
-        #          updated_room
-        #        true ->
-        #          updated_room
-        #      end
-        #    end)
-        # |> execute_multi_cast(caster_ref, ability, targets)
-        caster
+        room = put_in(room.mobiles[caster_ref], caster)
+
+        targets
+        |> Enum.reduce(room, fn(target_ref, updated_room) ->
+             Room.update_mobile(updated_room, target_ref, fn target ->
+               if affects_target?(target, spell) do
+                 apply_spell(updated_room, caster, target, spell)
+               else
+                 message = "#{target.name} is not affected by that ability." |> Text.capitalize_first
+                 Mobile.send_scroll(caster, "<p><span class='dark-cyan'>#{message}</span></p>")
+                 updated_room
+               end
+             end)
+           end)
+        #|> execute_multi_cast(caster_ref, ability, targets)
+        room
       end)
     else
       room
     end
+  end
+
+  def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
+    display_cast_message(room, caster, target, spell)
+
+    room
+  end
+
+  def affects_target?(%{} = target, %Spell{} = spell) do
+    cond do
+      Spell.has_ability?(spell, "AffectsLiving") and Mobile.has_ability?(target, "NonLiving") ->
+        false
+      Spell.has_ability?(spell, "AffectsAnimals") and Mobile.has_ability?(target, "Animal") ->
+        false
+      Spell.has_ability?(spell, "AffectsUndead") and Mobile.has_ability?(target, "Undead") ->
+        false
+      Spell.has_ability?(spell, "Poison") and Mobile.has_ability?(target, "PoisonImmunity") ->
+        false
+      true ->
+        true
+    end
+  end
+
+  def has_ability?(%Spell{} = spell, ability_name) do
+    spell.abilities
+    |> Map.keys
+    |> Enum.member?(ability_name)
   end
 
   def apply_cooldowns(caster, %Spell{} = spell) do
@@ -128,6 +149,35 @@ defmodule ApathyDrive.Spell do
     cooldown = Mobile.round_length_in_ms(caster)
     Systems.Effect.add(caster, %{"cooldown" => :round}, cooldown)
   end
+
+  def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Spell{user_message: message} = spell) when is_binary(message) do
+    message =
+      message
+      |> Text.interpolate(%{"target" => target})
+      |> Text.capitalize_first
+
+    Mobile.send_scroll(caster, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+
+    display_cast_message(room, caster, target, Map.put(spell, :user_message, nil))
+  end
+  def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Spell{target_message: message} = spell) when is_binary(message) and caster != target do
+    message =
+      message
+      |> Text.interpolate(%{"user" => caster})
+      |> Text.capitalize_first
+
+    Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+
+    display_cast_message(room, caster, target, Map.put(spell, :target_message, nil))
+  end
+  def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Spell{spectator_message: message} = spell) when is_binary(message) do
+    message = message
+              |> Text.interpolate(%{"user" => caster, "target" => target})
+              |> Text.capitalize_first
+
+    Room.send_scroll(room, "<p><span class='#{message_color(spell)}'>#{message}</span></p>", [caster, target])
+  end
+  def display_cast_message(_room, _caster, _target, _spell), do: :noop
 
   def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest] = targets, %Spell{abilities: %{"PreCastMessage" => message}} = spell) do
     target = Room.get_mobile(target_ref)

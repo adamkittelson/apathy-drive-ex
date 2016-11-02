@@ -238,12 +238,12 @@ defmodule ApathyDrive.Character do
     def confused(nil, %Character{}, %Room{}), do: false
     def confused(%{"confusion_message" => %{"user" => user_message} = message}, %Character{} = character, %Room{} = room) do
       Mobile.send_scroll(character, user_message)
-      if message["spectator"], do: Room.send_scroll(room, "#{Text.interpolate(message["spectator"], %{"user" => character})}", character)
+      if message["spectator"], do: Room.send_scroll(room, "#{Text.interpolate(message["spectator"], %{"user" => character})}", [character])
       true
     end
     def confused(%{}, %Character{} = character, %Room{} = room) do
       send_scroll(character, "<p><span class='cyan'>You fumble in confusion!</span></p>")
-      Room.send_scroll(room, "<p><span class='cyan'>#{Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => character})}</span></p>", character)
+      Room.send_scroll(room, "<p><span class='cyan'>#{Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => character})}</span></p>", [character])
       true
     end
 
@@ -272,6 +272,11 @@ defmodule ApathyDrive.Character do
 
     def exit_message(%Character{name: name}) do
       "<p><span class='yellow'>#{name}</span><span class='green'> walks in from {{direction}}.</span></p>"
+    end
+
+    def has_ability?(%Character{} = character, ability_name) do
+      # TODO: check abilities from race, class, and spell effects
+      false
     end
 
     def held(%{effects: effects} = mobile) do

@@ -463,7 +463,7 @@ defmodule ApathyDrive.RoomServer do
             if Enum.any?(mobile.missing_limbs) and :rand.uniform(3) == 3 do
               limb = Enum.random(mobile.missing_limbs)
               Monster.send_scroll(mobile, "<p><span class='red'>Blood</span> sprays wildly from your severed #{limb}!")
-              Room.send_scroll(room, "<p><span class='red'>Blood</span> sprays wildly from #{Monster.look_name(mobile)}'s severed #{limb}!", mobile)
+              Room.send_scroll(room, "<p><span class='red'>Blood</span> sprays wildly from #{Monster.look_name(mobile)}'s severed #{limb}!", [mobile])
             end
 
             Mobile.update_prompt(mobile)

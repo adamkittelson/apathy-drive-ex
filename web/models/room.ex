@@ -39,10 +39,10 @@ defmodule ApathyDrive.Room do
   def update_mobile(%Room{} = room, mobile_ref, fun) do
     if mobile = room.mobiles[mobile_ref] do
       case fun.(mobile) do
-        %{} = updated_mobile ->
-          put_in(room.mobiles[mobile_ref], updated_mobile)
         %Room{} = updated_room ->
           updated_room
+        %{} = updated_mobile ->
+          put_in(room.mobiles[mobile_ref], updated_mobile)
       end
     else
       room
@@ -480,11 +480,11 @@ defmodule ApathyDrive.Room do
   def enter_direction("down"),    do: "below"
   def enter_direction(direction), do: "the #{direction}"
 
-  def send_scroll(%Room{mobiles: mobiles}, html, exclude_mobile \\ nil) do
+  def send_scroll(%Room{mobiles: mobiles}, html, exclude_mobiles \\ []) do
     mobiles
     |> Map.values
     |> Enum.each(fn mobile ->
-         if mobile != exclude_mobile, do: Monster.send_scroll(mobile, html)
+         if !(mobile in exclude_mobiles), do: Mobile.send_scroll(mobile, html)
        end)
   end
 

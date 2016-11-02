@@ -783,7 +783,7 @@ defmodule ApathyDrive.Ability do
                 updated_monster
               limb ->
                 Monster.send_scroll(updated_monster, "<p>Your #{limb} is crippled!</p>")
-                Room.send_scroll(room, "<p>#{Monster.look_name(updated_monster)}'s #{limb} is crippled!</p>", updated_monster)
+                Room.send_scroll(room, "<p>#{Monster.look_name(updated_monster)}'s #{limb} is crippled!</p>", [updated_monster])
                 update_in(updated_monster.crippled_limbs, &([limb | &1]))
             end
           %{"kind" => "sever", "limb" => limb}, updated_monster ->
@@ -792,7 +792,7 @@ defmodule ApathyDrive.Ability do
                 updated_monster
               limb ->
                 Monster.send_scroll(updated_monster, "<p>Your #{limb} has been severed!</p>")
-                Room.send_scroll(room, "<p>#{Monster.look_name(updated_monster)}'s #{limb} has been severed!</p>", updated_monster)
+                Room.send_scroll(room, "<p>#{Monster.look_name(updated_monster)}'s #{limb} has been severed!</p>", [updated_monster])
                 update_in(updated_monster.missing_limbs, &([limb | &1]))
             end
         end)

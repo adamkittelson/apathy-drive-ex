@@ -38,7 +38,7 @@ defmodule ApathyDrive.Commands.Close do
       Doors.open?(room, room_exit) ->
         mirror_close!(room_exit, room.id)
         Monster.send_scroll(monster, "<p>You closed the #{name}.</p>")
-        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} close the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", monster)
+        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} close the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", [monster])
         Room.close!(room, room_exit["direction"])
       true ->
         Monster.send_scroll(monster, "<p>The #{name} is already closed.</p>")

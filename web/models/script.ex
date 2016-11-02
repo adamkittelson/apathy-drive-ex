@@ -53,7 +53,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%Room{} = room, %Monster{} = monster, %{"message" => %{"user" => user_message, "spectator" => spectator_message}}, script) do
     Monster.send_scroll(monster, "<p>#{user_message}</p>")
-    Room.send_scroll(room, "<p>#{ApathyDrive.Text.interpolate(spectator_message, %{"user" => monster})}</p>", monster)
+    Room.send_scroll(room, "<p>#{ApathyDrive.Text.interpolate(spectator_message, %{"user" => monster})}</p>", [monster])
     execute_script(room, monster, script)
   end
 

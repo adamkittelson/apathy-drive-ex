@@ -15,7 +15,7 @@ defmodule ApathyDrive.Commands.Say do
       |> Enum.join(" ")
       |> Monster.sanitize()
 
-    Room.send_scroll(room, "<p>#{Monster.look_name(monster)} says: <span class='dark-green'>\"#{message}\"</span></p>", monster)
+    Room.send_scroll(room, "<p>#{Monster.look_name(monster)} says: <span class='dark-green'>\"#{message}\"</span></p>", [monster])
     Monster.send_scroll(monster, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
     room
   end

@@ -8,6 +8,7 @@ defprotocol ApathyDrive.Mobile do
   def enough_mana_for_spell?(mobile, spell)
   def enter_message(mobile)
   def exit_message(mobile)
+  def has_ability?(mobile, ability_name)
   def held(mobile)
   def look_name(mobile)
   def magical_damage_at_level(mobile, level)

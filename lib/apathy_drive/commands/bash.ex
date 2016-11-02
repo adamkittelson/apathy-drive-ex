@@ -41,12 +41,12 @@ defmodule ApathyDrive.Commands.Bash do
       bash?(room_exit, Monster.strength(monster)) ->
         mirror_bash!(room_exit, room.id)
         Monster.send_scroll(monster, "<p>You bashed the #{name} open.</p>")
-        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", monster)
+        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", [monster])
         Room.open!(room, room_exit["direction"])
       true ->
         mirror_bash_fail!(room_exit, room.id)
         Monster.send_scroll(monster, "<p>Your attempts to bash through fail!</p>")
-        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", monster)
+        Room.send_scroll(room, "<p>You see #{Monster.look_name(monster)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>", [monster])
         room
     end
   end
