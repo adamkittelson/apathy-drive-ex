@@ -118,10 +118,15 @@ defmodule ApathyDrive.Spell do
   end
 
   def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
-    target
-    |> apply_instant_abilities(spell, caster)
-    |> apply_duration_abilities(spell, caster)
-    |> display_cast_message(caster, spell, room)
+    target =
+      target
+      |> apply_instant_abilities(spell, caster)
+      |> apply_duration_abilities(spell, caster)
+      |> Mobile.update_prompt
+
+    room = put_in(room.mobiles[target.ref], target)
+
+    display_cast_message(room, caster, target, spell)
   end
 
   def apply_instant_abilities(%{} = target, %Spell{} = spell, %{} = caster) do
@@ -138,6 +143,16 @@ defmodule ApathyDrive.Spell do
 
     update_in(target.hp, &(min(&1 + percentage_healed, 1.0)))
     |> Map.put(:spell_shift, percentage_healed)
+  end
+  def apply_instant_ability({"MagicalDamage", value}, %{} = target, _spell, caster) do
+    target_level = Mobile.scaled_level(target, caster)
+
+    damage = Mobile.magical_damage_at_level(caster, caster.level) * (value / 100)
+    resist = Mobile.magical_resistance_at_level(target, target_level)
+    damage_percent = (damage - resist) / Mobile.max_hp_at_level(target, target_level)
+
+    update_in(target.hp, &(&1 - damage_percent))
+    |> Map.put(:spell_shift, damage_percent)
   end
   def apply_instant_ability({ability_name, _value}, %{} = target, _spell, caster) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
@@ -186,7 +201,7 @@ defmodule ApathyDrive.Spell do
     Systems.Effect.add(caster, %{"cooldown" => :round}, cooldown)
   end
 
-  def display_cast_message(%{} = target, %{} = caster, %Spell{} = spell, %Room{} = room) do
+  def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
     room.mobiles
     |> Map.values
     |> Enum.each(fn mobile ->
@@ -209,7 +224,7 @@ defmodule ApathyDrive.Spell do
                |> Text.capitalize_first
 
              Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
-           mobile and not is_nil(spell.spectator_message) ->
+           mobile && not is_nil(spell.spectator_message) ->
              amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level))
 
              message =
@@ -220,7 +235,7 @@ defmodule ApathyDrive.Spell do
              Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
          end
        end)
-    Map.put(target, :spell_shift, nil)
+    Map.put(target, :spell_shift, 0)
   end
 
   def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest] = targets, %Spell{abilities: %{"PreCastMessage" => message}} = spell) do

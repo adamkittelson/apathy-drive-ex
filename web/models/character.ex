@@ -26,7 +26,7 @@ defmodule ApathyDrive.Character do
     field :hp,              :float, virtual: true, default: 1.0
     field :mana,            :float, virtual: true, default: 1.0
     field :spells,          :map, virtual: true, default: %{}
-    field :spell_shift,     :float, virtual: true
+    field :spell_shift,     :float, virtual: true, default: 0
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
@@ -268,11 +268,11 @@ defmodule ApathyDrive.Character do
     end
 
     def enter_message(%Character{name: name}) do
-      "<p><span class='yellow'>#{name}</span><span class='green'> walks off {{direction}}.</span></p>"
+      "<p><span class='yellow'>#{name}</span><span class='dark-green'> walks in from {{direction}}.</span></p>"
     end
 
     def exit_message(%Character{name: name}) do
-      "<p><span class='yellow'>#{name}</span><span class='green'> walks in from {{direction}}.</span></p>"
+      "<p><span class='yellow'>#{name}</span><span class='dark-green'> walks off {{direction}}.</span></p>"
     end
 
     def has_ability?(%Character{} = character, ability_name) do
@@ -373,6 +373,8 @@ defmodule ApathyDrive.Character do
         base
       end
     end
+
+    def scaled_level(%Character{level: level}, _caster), do: level
 
     def send_scroll(%Character{socket: socket} = character, html) do
       send(socket, {:scroll, html})

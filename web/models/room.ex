@@ -207,7 +207,7 @@ defmodule ApathyDrive.Room do
          })
       |> ApathyDrive.Text.capitalize_first
 
-    send_scroll(room, "<p>#{message}</p>", mobile)
+    send_scroll(room, "<p>#{message}</p>", [mobile])
   end
 
   def display_exit_message(room, %{mobile: mobile, message: message, to: to_room_id}) do

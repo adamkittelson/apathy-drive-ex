@@ -21,6 +21,7 @@ defprotocol ApathyDrive.Mobile do
   def physical_resistance_at_level(mobile, level)
   def regenerate_hp_and_mana(mobile)
   def round_length_in_ms(mobile)
+  def scaled_level(target, caster)
   def send_scroll(mobile, html)
   def set_room_id(mobile, room_id)
   def silenced(mobile, room)
