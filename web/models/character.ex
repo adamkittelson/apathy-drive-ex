@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, CharacterItem, Item, Mobile, Room, Spell, SpellAbility, Text}
+  alias ApathyDrive.{Ability, Character, CharacterItem, Item, Mobile, Room, Spell, SpellAbility, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -26,6 +26,7 @@ defmodule ApathyDrive.Character do
     field :hp,              :float, virtual: true, default: 1.0
     field :mana,            :float, virtual: true, default: 1.0
     field :spells,          :map, virtual: true, default: %{}
+    field :spell_shift,     :float, virtual: true
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
@@ -339,6 +340,22 @@ defmodule ApathyDrive.Character do
       trunc(resist * (0.3 + (modifier / 100)))
     end
 
+    def regenerate_hp_and_mana(%Character{hp: hp, mana: mana} = character) do
+      max_hp = max_hp_at_level(character, character.level)
+      max_mana = max_mana_at_level(character, character.level)
+
+      base_regen_per_round = attribute_at_level(character, :willpower, character.level) / 5
+
+      hp_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(character, "HPRegen")) / max_hp
+      mana_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(character, "ManaRegen")) / max_mana
+
+      character
+      |> Map.put(:hp,   min(hp + hp_regen_percentage_per_round, 1.0))
+      |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
+      |> TimerManager.send_after({:regen, round_length_in_ms(character), {:regen, character.ref}})
+      |> update_prompt()
+    end
+
     def round_length_in_ms(character) do
       base = 4000 - attribute_at_level(character, :agility, character.level)
 
@@ -420,6 +437,7 @@ defmodule ApathyDrive.Character do
 
     def update_prompt(%Character{socket: socket} = character) do
       send(socket, {:update_prompt, Character.prompt(character)})
+      character
     end
   end
 

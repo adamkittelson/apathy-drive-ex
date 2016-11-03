@@ -19,6 +19,7 @@ defprotocol ApathyDrive.Mobile do
   def party_refs(mobile, room)
   def physical_damage_at_level(mobile, level)
   def physical_resistance_at_level(mobile, level)
+  def regenerate_hp_and_mana(mobile)
   def round_length_in_ms(mobile)
   def send_scroll(mobile, html)
   def set_room_id(mobile, room_id)

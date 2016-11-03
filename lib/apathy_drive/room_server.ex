@@ -233,14 +233,17 @@ defmodule ApathyDrive.RoomServer do
     else
       monitor_ref = Process.monitor(socket)
 
+      ref = make_ref()
+
       character =
         character
         |> Map.put(:monitor_ref, monitor_ref)
-        |> Map.put(:ref, make_ref())
+        |> Map.put(:ref, ref)
         |> Repo.preload(:race)
         |> Repo.preload([characters_items: :item])
         |> Character.preload_spells
         |> Map.put(:socket, socket)
+        |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
 
       Mobile.update_prompt(character)
 
@@ -452,22 +455,8 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:regen, mobile_ref}, room) do
     room =
-      Room.update_mobile(room, mobile_ref, fn
-        %Monster{hp: hp, max_hp: max_hp, mana: mana, max_mana: max_mana} = mobile ->
-          mobile =
-            mobile
-            |> Map.put(:hp,   min(  hp + Monster.hp_regen_per_second(mobile), max_hp))
-            |> Map.put(:mana, min(mana + Monster.mana_regen_per_second(mobile), max_mana))
-            |> TimerManager.send_after({:monster_regen, 1_000, {:regen, mobile.ref}})
-
-            if Enum.any?(mobile.missing_limbs) and :rand.uniform(3) == 3 do
-              limb = Enum.random(mobile.missing_limbs)
-              Monster.send_scroll(mobile, "<p><span class='red'>Blood</span> sprays wildly from your severed #{limb}!")
-              Room.send_scroll(room, "<p><span class='red'>Blood</span> sprays wildly from #{Monster.look_name(mobile)}'s severed #{limb}!", [mobile])
-            end
-
-            Mobile.update_prompt(mobile)
-          mobile
+      Room.update_mobile(room, mobile_ref, fn mobile ->
+        Mobile.regenerate_hp_and_mana(mobile)
       end)
 
     {:noreply, room}
