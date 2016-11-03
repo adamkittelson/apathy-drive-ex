@@ -90,6 +90,7 @@ defmodule ApathyDrive.Room do
 
     room
     |> Room.move_after(mobile.ref)
+    |> Room.start_timer
   end
 
   def move_after(%Room{} = room, ref) do
