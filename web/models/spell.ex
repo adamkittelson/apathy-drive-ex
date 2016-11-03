@@ -206,7 +206,7 @@ defmodule ApathyDrive.Spell do
     |> Map.values
     |> Enum.each(fn mobile ->
          cond do
-           mobile == caster and not is_nil(spell.user_message) ->
+           mobile.ref == caster.ref and not is_nil(spell.user_message) ->
              amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, caster.level))
 
              message =
@@ -214,8 +214,8 @@ defmodule ApathyDrive.Spell do
                |> Text.interpolate(%{"target" => target, "amount" => amount})
                |> Text.capitalize_first
 
-             Mobile.send_scroll(caster, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
-           mobile == target and not is_nil(spell.target_message) ->
+             Mobile.send_scroll(mobile, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+           mobile.ref == target.ref and not is_nil(spell.target_message) ->
              amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, target.level))
 
              message =
@@ -223,7 +223,7 @@ defmodule ApathyDrive.Spell do
                |> Text.interpolate(%{"user" => caster, "amount" => amount})
                |> Text.capitalize_first
 
-             Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+             Mobile.send_scroll(mobile, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
            mobile && not is_nil(spell.spectator_message) ->
              amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level))
 
@@ -232,7 +232,7 @@ defmodule ApathyDrive.Spell do
                |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
                |> Text.capitalize_first
 
-             Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+             Mobile.send_scroll(mobile, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
          end
        end)
     Map.put(target, :spell_shift, 0)
