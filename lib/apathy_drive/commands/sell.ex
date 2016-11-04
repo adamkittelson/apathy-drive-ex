@@ -36,7 +36,7 @@ defmodule ApathyDrive.Commands.Sell do
          matches ->
            Mobile.send_scroll(character, "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
            Enum.each(matches, fn(match) ->
-             Mobile.send_scroll(character, "<p>-- #{Item.colored_name(match)}</p>")
+             Mobile.send_scroll(character, "<p>-- #{Item.colored_name(match.character_item.item)}</p>")
            end)
            room
        end
