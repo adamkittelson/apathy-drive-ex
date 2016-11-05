@@ -18,6 +18,7 @@ defmodule ApathyDrive.Spell do
     field :level, :integer, virtual: true
     field :abilities, :map, virtual: true, default: %{}
     field :ignores_round_cooldown?, :boolean, virtual: true, default: false
+    field :result, :any, virtual: true
 
     has_many :characters, ApathyDrive.Character
 
@@ -44,6 +45,18 @@ defmodule ApathyDrive.Spell do
     "PoisonImmunity", "RemoveMessage", "ResistCold", "ResistFire", "ResistLightning", "ResistStone", "Root", "SeeHidden",
     "Shadowform", "Silence", "Speed", "Spellcasting", "StatusMessage", "Stealth", "Strength", "Tracking", "Willpower"
   ]
+
+  @resist_message %{
+    user: "You attempt to cast {{spell}} on {{target}}, but they resist!",
+    target: "{{user}} attempts to cast {{spell}} on you, but you resist!",
+    spectator: "{{user}} attempts to cast {{spell}} on {{target}}, but they resist!"
+  }
+
+  @deflect_message %{
+    user: "{{target}}'s armour deflects your feeble attack!",
+    target: "Your armour deflects {{target}}'s feeble attack!",
+    spectator: "{{target}}'s armour deflects {{target}}'s feeble attack!"
+  }
 
   @doc """
   Creates a changeset based on the `model` and `params`.
@@ -120,11 +133,11 @@ defmodule ApathyDrive.Spell do
   def duration(%Spell{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target) do
     target_level = Mobile.scaled_level(target, caster)
 
-    caster_sc = Mobile.spellcasting_at_level(caster, target_level)
+    caster_sc = Mobile.spellcasting_at_level(caster, caster.level)
 
     if kind == "curse" do
       target_mr = Mobile.magical_resistance_at_level(target, target_level)
-      trunc(duration * :math.pow(1.005, caster_sc) * :math.pow(0.995, target_mr))
+      trunc(duration * :math.pow(1.005, caster_sc) * :math.pow(0.985, target_mr))
     else
       trunc(duration * :math.pow(1.005, caster_sc))
     end
@@ -137,12 +150,22 @@ defmodule ApathyDrive.Spell do
 
     room = put_in(room.mobiles[target.ref], target)
 
-    display_cast_message(room, caster, target, spell)
+    duration = duration(spell, caster, target)
 
-    target
-    |> Map.put(:spell_shift, 0)
-    |> apply_duration_abilities(spell, caster)
-    |> Mobile.update_prompt
+    if spell.kind == "curse" and duration < 1000 do
+      display_cast_message(room, caster, target, Map.put(spell, :result, :resisted))
+
+      target
+      |> Map.put(:spell_shift, nil)
+      |> Mobile.update_prompt
+    else
+      display_cast_message(room, caster, target, spell)
+
+      target
+      |> Map.put(:spell_shift, nil)
+      |> apply_duration_abilities(spell, caster, duration)
+      |> Mobile.update_prompt
+    end
   end
 
   def apply_instant_abilities(%{} = target, %Spell{} = spell, %{} = caster) do
@@ -180,7 +203,7 @@ defmodule ApathyDrive.Spell do
     target
   end
 
-  def apply_duration_abilities(%{} = target, %Spell{} = spell, %{} = caster) do
+  def apply_duration_abilities(%{} = target, %Spell{} = spell, %{} = caster, duration) do
     effects =
       spell.abilities
       |> Map.take(@duration_abilities)
@@ -190,8 +213,6 @@ defmodule ApathyDrive.Spell do
     if message = effects["StatusMessage"] do
       Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
     end
-
-    duration = duration(spell, caster, target)
 
     Systems.Effect.add(target, effects, duration)
   end
@@ -234,38 +255,155 @@ defmodule ApathyDrive.Spell do
     Systems.Effect.add(caster, %{"cooldown" => :round}, cooldown)
   end
 
+  def caster_cast_message(%Spell{result: :resisted} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      @resist_message.user
+      |> Text.interpolate(%{"target" => target, "spell" => spell.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def caster_cast_message(%Spell{result: :deflected} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      @deflect_message.user
+      |> Text.interpolate(%{"target" => target})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-red'>#{message}</span></p>"
+  end
+  def caster_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: nil} = target, _mobile) do
+    message =
+      spell.user_message
+      |> Text.interpolate(%{"target" => target})
+      |> Text.capitalize_first
+
+    "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
+  end
+  def caster_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: shift} = target, mobile) do
+    amount = trunc(shift * Mobile.max_hp_at_level(target, mobile.level))
+
+    cond do
+      amount < 1 and has_ability?(spell, "PhysicalDamage") ->
+        spell
+        |> Map.put(:result, :deflected)
+        |> caster_cast_message(caster, target, mobile)
+      amount < 1 and has_ability?(spell, "MagicalDamage") ->
+        spell
+        |> Map.put(:result, :resisted)
+        |> caster_cast_message(caster, target, mobile)
+      :else ->
+        message =
+          spell.user_message
+          |> Text.interpolate(%{"target" => target, "amount" => amount})
+          |> Text.capitalize_first
+
+        "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
+    end
+  end
+
+  def target_cast_message(%Spell{result: :resisted} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      @resist_message.target
+      |> Text.interpolate(%{"user" => caster, "spell" => spell.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def target_cast_message(%Spell{result: :deflected} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      @deflect_message.target
+      |> Text.interpolate(%{"user" => caster})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-red'>#{message}</span></p>"
+  end
+  def target_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: nil} = target, _mobile) do
+    message =
+      spell.target_message
+      |> Text.interpolate(%{"user" => caster})
+      |> Text.capitalize_first
+
+    "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
+  end
+  def target_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: shift} = target, mobile) do
+    amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level))
+
+    cond do
+      amount < 1 and has_ability?(spell, "PhysicalDamage") ->
+        spell
+        |> Map.put(:result, :deflected)
+        |> target_cast_message(caster, target, mobile)
+      amount < 1 and has_ability?(spell, "MagicalDamage") ->
+        spell
+        |> Map.put(:result, :resisted)
+        |> target_cast_message(caster, target, mobile)
+      :else ->
+        message =
+          spell.target_message
+          |> Text.interpolate(%{"user" => caster, "amount" => amount})
+          |> Text.capitalize_first
+
+        "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
+    end
+  end
+
+  def spectator_cast_message(%Spell{result: :resisted} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      @resist_message.spectator
+      |> Text.interpolate(%{"user" => caster, "target" => target, "spell" => spell.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def spectator_cast_message(%Spell{result: :deflected} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      @deflect_message.spectator
+      |> Text.interpolate(%{"user" => caster, "target" => target})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-red'>#{message}</span></p>"
+  end
+  def spectator_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: nil} = target, _mobile) do
+    message =
+      spell.spectator_message
+      |> Text.interpolate(%{"user" => caster, "target" => target})
+      |> Text.capitalize_first
+
+    "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
+  end
+  def spectator_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: shift} = target, mobile) do
+    amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level))
+
+    cond do
+      amount < 1 and has_ability?(spell, "PhysicalDamage") ->
+        spell
+        |> Map.put(:result, :deflected)
+        |> spectator_cast_message(caster, target, mobile)
+      amount < 1 and has_ability?(spell, "MagicalDamage") ->
+        spell
+        |> Map.put(:result, :resisted)
+        |> spectator_cast_message(caster, target, mobile)
+      :else ->
+        message =
+          spell.spectator_message
+          |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
+          |> Text.capitalize_first
+
+        "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
+    end
+  end
+
   def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
     room.mobiles
     |> Map.values
     |> Enum.each(fn mobile ->
          cond do
            mobile.ref == caster.ref and not is_nil(spell.user_message) ->
-             amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, caster.level))
-
-             message =
-               spell.user_message
-               |> Text.interpolate(%{"target" => target, "amount" => amount})
-               |> Text.capitalize_first
-
-             Mobile.send_scroll(mobile, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+             Mobile.send_scroll(mobile, caster_cast_message(spell, caster, target, mobile))
            mobile.ref == target.ref and not is_nil(spell.target_message) ->
-             amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, target.level))
-
-             message =
-               spell.target_message
-               |> Text.interpolate(%{"user" => caster, "amount" => amount})
-               |> Text.capitalize_first
-
-             Mobile.send_scroll(mobile, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+             Mobile.send_scroll(mobile, target_cast_message(spell, caster, target, mobile))
            mobile && not is_nil(spell.spectator_message) ->
-             amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level))
-
-             message =
-               spell.spectator_message
-               |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
-               |> Text.capitalize_first
-
-             Mobile.send_scroll(mobile, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+             Mobile.send_scroll(mobile, spectator_cast_message(spell, caster, target, mobile))
          end
        end)
   end
