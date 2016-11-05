@@ -27,6 +27,7 @@ defmodule ApathyDrive.Character do
     field :mana,            :float, virtual: true, default: 1.0
     field :spells,          :map, virtual: true, default: %{}
     field :spell_shift,     :float, virtual: true, default: 0
+    field :attack_target,      :any,     virtual: true
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
