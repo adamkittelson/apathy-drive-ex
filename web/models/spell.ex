@@ -134,12 +134,15 @@ defmodule ApathyDrive.Spell do
     target =
       target
       |> apply_instant_abilities(spell, caster)
-      |> apply_duration_abilities(spell, caster)
-      |> Mobile.update_prompt
 
     room = put_in(room.mobiles[target.ref], target)
 
     display_cast_message(room, caster, target, spell)
+
+    target
+    |> Map.put(:spell_shift, 0)
+    |> apply_duration_abilities(spell, caster)
+    |> Mobile.update_prompt
   end
 
   def apply_instant_abilities(%{} = target, %Spell{} = spell, %{} = caster) do
@@ -265,7 +268,6 @@ defmodule ApathyDrive.Spell do
              Mobile.send_scroll(mobile, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
          end
        end)
-    Map.put(target, :spell_shift, 0)
   end
 
   def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest] = targets, %Spell{abilities: %{"PreCastMessage" => message}} = spell) do
