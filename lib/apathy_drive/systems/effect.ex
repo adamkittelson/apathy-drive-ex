@@ -1,6 +1,6 @@
 defmodule Systems.Effect do
   use Timex
-  alias ApathyDrive.{Monster, TimerManager}
+  alias ApathyDrive.{Mobile, TimerManager}
   import TimerManager, only: [seconds: 1]
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
@@ -82,8 +82,8 @@ defmodule Systems.Effect do
           ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [entity.ref])
         end
 
-        if opts[:show_expiration_message] && Map.has_key?(effects[key], "expiration_message") do
-          Mobile.send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["expiration_message"]}</span></p>")
+        if opts[:show_expiration_message] && Map.has_key?(effects[key], "RemoveMessage") do
+          Mobile.send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["RemoveMessage"]}</span></p>")
         end
 
         if Map.has_key?(effects[key], "member") do
@@ -114,15 +114,15 @@ defmodule Systems.Effect do
     end
   end
 
-  def max_stacks?(%Monster{} = monster, %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}) do
+  def max_stacks?(%{} = monster, %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}) do
     stack_count(monster, stack_key) >= stack_count
   end
-  def max_stacks?(%Monster{} = monster, %{"duration_effects" => _} = ability) do
+  def max_stacks?(%{} = monster, %{"duration_effects" => _} = ability) do
     ability = put_in(ability["duration_effects"]["stack_key"],   ability["name"])
     ability = put_in(ability["duration_effects"]["stack_count"], 1)
     max_stacks?(monster, ability)
   end
-  def max_stacks?(%Monster{}, %{}), do: false
+  def max_stacks?(%{}, %{}), do: false
 
   def stack_count(%{effects: _effects} = entity, stack_key) do
     stack(entity, stack_key)

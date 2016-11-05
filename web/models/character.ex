@@ -159,8 +159,8 @@ defmodule ApathyDrive.Character do
     effects =
       character.effects
       |> Map.values
-      |> Enum.filter(&(Map.has_key?(&1, "effect_message")))
-      |> Enum.map(&(&1["effect_message"]))
+      |> Enum.filter(&(Map.has_key?(&1, "StatusMessage")))
+      |> Enum.map(&(&1["StatusMessage"]))
 
     %{
       name: character.name,

@@ -117,6 +117,19 @@ defmodule ApathyDrive.Spell do
     end
   end
 
+  def duration(%Spell{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target) do
+    target_level = Mobile.scaled_level(target, caster)
+
+    caster_sc = Mobile.spellcasting_at_level(caster, target_level)
+
+    if kind == "curse" do
+      target_mr = Mobile.magical_resistance_at_level(target, target_level)
+      trunc(duration * :math.pow(1.005, caster_sc) * :math.pow(0.995, target_mr))
+    else
+      trunc(duration * :math.pow(1.005, caster_sc))
+    end
+  end
+
   def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
     target =
       target
@@ -137,6 +150,11 @@ defmodule ApathyDrive.Spell do
        end)
   end
 
+  def apply_instant_ability({"RemoveSpells", spell_ids}, %{} = target, _spell, caster) do
+    Enum.reduce(spell_ids, target, fn(spell_id, updated_target) ->
+      Systems.Effect.remove_oldest_stack(updated_target, spell_id)
+    end)
+  end
   def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster) do
     level = min(target.level, caster.level)
     percentage_healed = Mobile.magical_damage_at_level(caster, level) * (value / 100) / Mobile.max_hp_at_level(target, level)
@@ -160,7 +178,19 @@ defmodule ApathyDrive.Spell do
   end
 
   def apply_duration_abilities(%{} = target, %Spell{} = spell, %{} = caster) do
-    target
+    effects =
+      spell.abilities
+      |> Map.take(@duration_abilities)
+      |> Map.put("stack_key", spell.id)
+      |> Map.put("stack_count", 1)
+
+    if message = effects["StatusMessage"] do
+      Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
+    end
+
+    duration = duration(spell, caster, target)
+
+    Systems.Effect.add(target, effects, duration)
   end
 
   def affects_target?(%{} = target, %Spell{} = spell) do
@@ -192,7 +222,7 @@ defmodule ApathyDrive.Spell do
 
   def apply_spell_cooldown(caster, %Spell{cooldown_in_ms: nil}), do: caster
   def apply_spell_cooldown(caster, %Spell{cooldown_in_ms: cooldown, name: name}) do
-    Systems.Effect.add(caster, %{"cooldown" => name, "expiration_message" => "#{Text.capitalize_first(name)} is ready for use again."}, cooldown)
+    Systems.Effect.add(caster, %{"cooldown" => name, "RemoveMessage" => "#{Text.capitalize_first(name)} is ready for use again."}, cooldown)
   end
 
   def apply_round_cooldown(caster, %Spell{ignores_round_cooldown?: true}), do: caster
