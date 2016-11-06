@@ -33,6 +33,8 @@ defmodule ApathyDrive.TimerManager do
   def time_remaining(%{timers: timers}, name) do
     if timer = Map.get(timers, name) do
       timer.send_at - Timex.Time.to_milliseconds(Timex.Time.now)
+    else
+      0
     end
   end
 

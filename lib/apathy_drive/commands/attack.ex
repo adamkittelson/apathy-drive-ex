@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Attack do
   use ApathyDrive.Command
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Match, Mobile, TimerManager}
 
   def keywords, do: ["a", "attack", "k", "kill"]
 
@@ -31,9 +31,11 @@ defmodule ApathyDrive.Commands.Attack do
   end
 
   def attack(%{} = character, %{ref: target_ref}) do
+    time = min(Mobile.attack_interval(character), TimerManager.time_remaining(character, :auto_attack_timer))
+
     character
     |> Map.put(:attack_target, target_ref)
-    |> Mobile.initiate_combat
+    |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, character.ref}})
     |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
   end
 

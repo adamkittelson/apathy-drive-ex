@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
   alias ApathyDrive.{Character, Commands, LairMonster, LairSpawning, Match, Mobile, Monster, PubSub,
-                     Repo, Room, RoomSupervisor, RoomUnity, TimerManager, Ability, Presence}
+                     Repo, Room, RoomSupervisor, RoomUnity, Spell, TimerManager, Ability, Presence}
   use Timex
   require Logger
 
@@ -511,41 +511,18 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:execute_auto_attack, ref}, %Room{} = room) do
     room =
       Room.update_mobile(room, ref, fn
-        %Monster{attack_target: nil} = mobile ->
+        %{attack_target: nil} = mobile ->
           mobile
-        %Monster{attack_target: target_ref, auto_attack_interval: default_interval} = mobile ->
-          if room.mobiles[target_ref] do
-            attacks =
-              mobile.abilities
-              |> Enum.filter(&(&1["kind"] == "auto_attack"))
+        %{attack_target: target_ref} = mobile ->
+          if target = room.mobiles[target_ref] do
+            mobile = TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
+            room = put_in(room.mobiles[mobile.ref], mobile)
 
-            attack = if Enum.any?(attacks), do: Enum.random(attacks), else: nil
-
-            {updated_room, updated_interval} =
-              if attack do
-                attack =
-                  attack
-                  |> Map.put("ignores_global_cooldown", true)
-                  |> Map.put("kind", "attack")
-                  |> update_in(["instant_effects", "crit_tables"], fn
-                       _tables ->
-                         []
-                     end)
-
-                room = Ability.execute(room, mobile.ref, attack, [target_ref])
-
-                {room, attack["attack_interval"]} # return interval to change default auto_attack delay
-              else
-                {room, nil}
-              end
-
-              interval = updated_interval || TimerManager.seconds(default_interval)
-
-              Room.update_mobile(updated_room, ref, fn mob ->
-                TimerManager.send_after(mob, {:auto_attack_timer, interval, {:execute_auto_attack, ref}})
-              end)
+            Spell.execute(room, mobile.ref, Mobile.attack_spell(mobile), [target_ref])
           else
-            Map.put(mobile, :attack_target, nil)
+            mobile
+            |> Map.put(:attack_target, nil)
+            |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Off*</span></p>")
           end
       end)
     {:noreply, room}

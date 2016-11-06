@@ -26,7 +26,7 @@ defmodule ApathyDrive.Character do
     field :hp,              :float, virtual: true, default: 1.0
     field :mana,            :float, virtual: true, default: 1.0
     field :spells,          :map, virtual: true, default: %{}
-    field :spell_shift,     :float, virtual: true, default: 0
+    field :spell_shift,     :float, virtual: true
     field :attack_target,      :any,     virtual: true
 
     belongs_to :room, Room
@@ -227,6 +227,28 @@ defmodule ApathyDrive.Character do
       base = from_race + from_equipment
 
       trunc(base + ((base / 10) * (level - 1)))
+    end
+
+    def attack_interval(character) do
+      trunc(round_length_in_ms(character) / attacks_per_round(character))
+    end
+
+    def attack_spell(character) do
+      %Spell{
+        kind: "attack",
+        mana: 0,
+        user_message: "You punch {{target}} for {{amount}} damage!",
+        target_message: "{{user}} punches you for {{amount}} damage!",
+        spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
+        ignores_round_cooldown?: true,
+        abilities: %{
+          "PhysicalDamage" => 100 / attacks_per_round(character)
+        }
+      }
+    end
+
+    def attacks_per_round(_character) do
+      5
     end
 
     def confused(%Character{effects: effects} = character, %Room{} = room) do
