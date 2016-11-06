@@ -89,6 +89,13 @@ defmodule ApathyDrive.Character do
     Enum.filter(items, &(&1.equipped == true))
   end
 
+  def weapon(%Character{} = character) do
+    character
+    |> equipment()
+    |> Enum.map(&(&1.item))
+    |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
+  end
+
   def sign_in(email, password) do
     player = Repo.get_by(Character, email: email)
     sign_in?(player, password) && player
@@ -247,8 +254,23 @@ defmodule ApathyDrive.Character do
       }
     end
 
-    def attacks_per_round(_character) do
-      5
+    def attacks_per_round(character) do
+      case Character.weapon(character) do
+        nil ->
+          4
+        %Item{worn_on: "Weapon Hand", grade: "Basic"} ->
+          4
+        %Item{worn_on: "Two Handed", grade: "Basic"} ->
+          3
+        %Item{worn_on: "Weapon Hand", grade: "Bladed"} ->
+          3
+        %Item{worn_on: "Two Handed", grade: "Bladed"} ->
+          2
+        %Item{worn_on: "Weapon Hand", grade: "Blunt"} ->
+          2
+        %Item{worn_on: "Two Handed", grade: "Blunt"} ->
+          1
+      end
     end
 
     def confused(%Character{effects: effects} = character, %Room{} = room) do
