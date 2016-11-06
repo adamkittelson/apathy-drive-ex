@@ -201,8 +201,162 @@ defmodule ApathyDrive.Character do
     }
   end
 
-  def add_item(%Character{} = character, %Item{} = item, level) do
-    %CharacterItem{character_id: character.id, item_id: item.id, level: level}
+  def add_item(%Character{} = character, %Item{rarity: "common"} = item, level, :purchased) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: 3,
+      agility: 3,
+      intellect: 3,
+      willpower: 3,
+      health: 3,
+      charm: 3
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "common"} = item, level, :looted) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: Enum.random(2..4),
+      agility: Enum.random(2..4),
+      intellect: Enum.random(2..4),
+      willpower: Enum.random(2..4),
+      health: Enum.random(2..4),
+      charm: Enum.random(2..4)
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "uncommon"} = item, level, :purchased) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: 6,
+      agility: 6,
+      intellect: 6,
+      willpower: 6,
+      health: 6,
+      charm: 6
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "uncommon"} = item, level, :looted) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: Enum.random(5..7),
+      agility: Enum.random(5..7),
+      intellect: Enum.random(5..7),
+      willpower: Enum.random(5..7),
+      health: Enum.random(5..7),
+      charm: Enum.random(5..7)
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "rare"} = item, level, :purchased) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: 9,
+      agility: 9,
+      intellect: 9,
+      willpower: 9,
+      health: 9,
+      charm: 9
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "rare"} = item, level, :looted) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: Enum.random(8..10),
+      agility: Enum.random(8..10),
+      intellect: Enum.random(8..10),
+      willpower: Enum.random(8..10),
+      health: Enum.random(8..10),
+      charm: Enum.random(8..10)
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "epic"} = item, level, :purchased) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: 15,
+      agility: 15,
+      intellect: 15,
+      willpower: 15,
+      health: 15,
+      charm: 15
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "epic"} = item, level, :looted) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: Enum.random(11..19),
+      agility: Enum.random(11..19),
+      intellect: Enum.random(11..19),
+      willpower: Enum.random(11..19),
+      health: Enum.random(11..19),
+      charm: Enum.random(11..19)
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "legendary"} = item, level, :purchased) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: 24,
+      agility: 24,
+      intellect: 24,
+      willpower: 24,
+      health: 24,
+      charm: 24
+    }
+    |> Repo.insert!
+
+    Repo.preload(character, [characters_items: :item], [force: true])
+  end
+  def add_item(%Character{} = character, %Item{rarity: "legendary"} = item, level, :looted) do
+    %CharacterItem{
+      character_id: character.id,
+      item_id: item.id,
+      level: level,
+      strength: Enum.random(20..28),
+      agility: Enum.random(20..28),
+      intellect: Enum.random(20..28),
+      willpower: Enum.random(20..28),
+      health: Enum.random(20..28),
+      charm: Enum.random(20..28)
+    }
     |> Repo.insert!
 
     Repo.preload(character, [characters_items: :item], [force: true])
@@ -227,8 +381,8 @@ defmodule ApathyDrive.Character do
       from_equipment =
         character
         |> Character.equipment
-        |> Enum.reduce(0, fn %{item: item}, total ->
-             total + Map.get(item, attribute)
+        |> Enum.reduce(0, fn %{} = character_item, total ->
+             total + Map.get(character_item, attribute)
            end)
 
       base = from_race + from_equipment

@@ -6,6 +6,12 @@ defmodule ApathyDrive.CharacterItem do
     belongs_to :item, ApathyDrive.Item
     field :level, :integer
     field :equipped, :boolean, default: false
+    field :strength, :integer
+    field :agility, :integer
+    field :intellect, :integer
+    field :willpower, :integer
+    field :health, :integer
+    field :charm, :integer
 
     timestamps
   end

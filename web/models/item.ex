@@ -11,12 +11,6 @@ defmodule ApathyDrive.Item do
     field :global_drop, :boolean
     field :game_limit, :integer
     field :rarity, :string
-    field :strength, :integer
-    field :agility, :integer
-    field :intellect, :integer
-    field :willpower, :integer
-    field :health, :integer
-    field :charm, :integer
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
@@ -216,9 +210,24 @@ defmodule ApathyDrive.Item do
     div(trunc((attributes * @rarities[rarity].cost_multiplier)), 10)
   end
 
-  def attributes_at_level(%Item{} = item, level) do
-    base = item.strength + item.agility + item.intellect + item.willpower + item.health + item.charm
-
+  def attributes_at_level(%Item{rarity: "common"} = item, level) do
+    base = 18
+    base + (base / 10 * (level - 1))
+  end
+  def attributes_at_level(%Item{rarity: "uncommon"} = item, level) do
+    base = 36
+    base + (base / 10 * (level - 1))
+  end
+  def attributes_at_level(%Item{rarity: "rare"} = item, level) do
+    base = 54
+    base + (base / 10 * (level - 1))
+  end
+  def attributes_at_level(%Item{rarity: "epic"} = item, level) do
+    base = 90
+    base + (base / 10 * (level - 1))
+  end
+  def attributes_at_level(%Item{rarity: "legendary"} = item, level) do
+    base = 144
     base + (base / 10 * (level - 1))
   end
 

@@ -35,8 +35,21 @@ defmodule ApathyDrive.Commands.Get do
     case actual_item || visible_item || hidden_item do
       %{room_item: %{level: level, item: %Item{} = item} = room_item} ->
 
+        character_item =
+          %CharacterItem{
+            character_id: character.id,
+            item_id: item.id,
+            level: level,
+            strength: room_item.strength,
+            agility: room_item.agility,
+            intellect: room_item.intellect,
+            willpower: room_item.willpower,
+            health: room_item.health,
+            charm: room_item.charm
+          }
+
         Ecto.Multi.new
-        |> Ecto.Multi.insert(:characters_items, %CharacterItem{character_id: character.id, item_id: item.id, level: level})
+        |> Ecto.Multi.insert(:characters_items, character_item)
         |> Ecto.Multi.delete(:rooms_items, room_item)
         |> Repo.transaction
 

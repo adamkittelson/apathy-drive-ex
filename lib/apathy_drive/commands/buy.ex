@@ -27,7 +27,7 @@ defmodule ApathyDrive.Commands.Buy do
         else
           Room.update_mobile(room, character.ref, fn(char) ->
             update_in(char.gold, &(&1 - price))
-            |> Character.add_item(item, char.level)
+            |> Character.add_item(item, char.level, :purchased)
             |> Repo.save!
             |> Mobile.send_scroll("<p>You purchase #{Item.colored_name(item)} for #{price} gold.</p>")
           end)

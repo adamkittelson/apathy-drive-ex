@@ -5,6 +5,12 @@ defmodule ApathyDrive.RoomItem do
     belongs_to :room, ApathyDrive.Room
     belongs_to :item, ApathyDrive.Item
     field :level, :integer
+    field :strength, :integer
+    field :agility, :integer
+    field :intellect, :integer
+    field :willpower, :integer
+    field :health, :integer
+    field :charm, :integer
 
     timestamps
   end
