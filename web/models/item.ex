@@ -11,6 +11,8 @@ defmodule ApathyDrive.Item do
     field :global_drop, :boolean
     field :game_limit, :integer
     field :rarity, :string
+    field :hit_verbs, ApathyDrive.JSONB
+    field :miss_verbs, ApathyDrive.JSONB
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]

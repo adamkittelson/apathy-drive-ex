@@ -395,17 +395,33 @@ defmodule ApathyDrive.Character do
     end
 
     def attack_spell(character) do
-      %Spell{
-        kind: "attack",
-        mana: 0,
-        user_message: "You punch {{target}} for {{amount}} damage!",
-        target_message: "{{user}} punches you for {{amount}} damage!",
-        spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
-        ignores_round_cooldown?: true,
-        abilities: %{
-          "PhysicalDamage" => 100 / attacks_per_round(character)
-        }
-      }
+      case Character.weapon(character) do
+        nil ->
+          %Spell{
+            kind: "attack",
+            mana: 0,
+            user_message: "You punch {{target}} for {{amount}} damage!",
+            target_message: "{{user}} punches you for {{amount}} damage!",
+            spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
+            ignores_round_cooldown?: true,
+            abilities: %{
+              "PhysicalDamage" => 100 / attacks_per_round(character)
+            }
+          }
+        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_mess, plural_miss]} ->
+          [singular_hit, plural_hit] = Enum.random(hit_verbs)
+          %Spell{
+            kind: "attack",
+            mana: 0,
+            user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
+            target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
+            spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
+            ignores_round_cooldown?: true,
+            abilities: %{
+              "PhysicalDamage" => 100 / attacks_per_round(character)
+            }
+          }
+      end
     end
 
     def attacks_per_round(character) do
