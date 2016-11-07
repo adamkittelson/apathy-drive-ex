@@ -482,10 +482,13 @@ defmodule ApathyDrive.Room do
   def enter_direction(direction), do: "the #{direction}"
 
   def send_scroll(%Room{mobiles: mobiles} = room, html, exclude_mobiles \\ []) do
+    refs_to_exclude =
+      Enum.map(exclude_mobiles, &(&1.ref))
+
     mobiles
     |> Map.values
-    |> Enum.each(fn mobile ->
-         if !(mobile in exclude_mobiles), do: Mobile.send_scroll(mobile, html)
+    |> Enum.each(fn %{ref: ref} = mobile ->
+         if !(ref in refs_to_exclude), do: Mobile.send_scroll(mobile, html)
        end)
     room
   end

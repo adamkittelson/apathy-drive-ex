@@ -54,8 +54,8 @@ defmodule ApathyDrive.Spell do
 
   @deflect_message %{
     user: "{{target}}'s armour deflects your feeble attack!",
-    target: "Your armour deflects {{target}}'s feeble attack!",
-    spectator: "{{target}}'s armour deflects {{target}}'s feeble attack!"
+    target: "Your armour deflects {{user}}'s feeble attack!",
+    spectator: "{{target}}'s armour deflects {{user}}'s feeble attack!"
   }
 
   @doc """
@@ -166,6 +166,13 @@ defmodule ApathyDrive.Spell do
     else
       display_cast_message(room, caster, target, spell)
 
+      target =
+        if target.spell_shift do
+          Mobile.shift_hp(target, target.spell_shift, room)
+        else
+          target
+        end
+
       target
       |> Map.put(:spell_shift, nil)
       |> apply_duration_abilities(spell, caster, duration)
@@ -190,8 +197,7 @@ defmodule ApathyDrive.Spell do
     level = min(target.level, caster.level)
     percentage_healed = Mobile.magical_damage_at_level(caster, level) * (value / 100) / Mobile.max_hp_at_level(target, level)
 
-    update_in(target.hp, &(min(&1 + percentage_healed, 1.0)))
-    |> Map.put(:spell_shift, percentage_healed)
+    Map.put(target, :spell_shift, percentage_healed)
   end
   def apply_instant_ability({"MagicalDamage", value}, %{} = target, _spell, caster) do
     target_level = Mobile.scaled_level(target, caster)
@@ -200,8 +206,7 @@ defmodule ApathyDrive.Spell do
     resist = Mobile.magical_resistance_at_level(target, target_level)
     damage_percent = ((damage - resist) * (value / 100)) / Mobile.max_hp_at_level(target, target_level)
 
-    update_in(target.hp, &(&1 - damage_percent))
-    |> Map.put(:spell_shift, damage_percent)
+    Map.put(target, :spell_shift, -damage_percent)
   end
   def apply_instant_ability({"PhysicalDamage", value}, %{} = target, _spell, caster) do
     target_level = Mobile.scaled_level(target, caster)
@@ -210,8 +215,7 @@ defmodule ApathyDrive.Spell do
     resist = Mobile.physical_resistance_at_level(target, target_level)
     damage_percent = ((damage - resist) * (value / 100)) / Mobile.max_hp_at_level(target, target_level)
 
-    update_in(target.hp, &(&1 - damage_percent))
-    |> Map.put(:spell_shift, damage_percent)
+    Map.put(target, :spell_shift, -damage_percent)
   end
   def apply_instant_ability({ability_name, _value}, %{} = target, _spell, caster) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
@@ -295,7 +299,7 @@ defmodule ApathyDrive.Spell do
     "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
   end
   def caster_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: shift} = target, mobile) do
-    amount = trunc(shift * Mobile.max_hp_at_level(target, mobile.level))
+    amount = abs(trunc(shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
       amount < 1 and has_ability?(spell, "PhysicalDamage") ->

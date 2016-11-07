@@ -456,7 +456,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:regen, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn mobile ->
-        Mobile.regenerate_hp_and_mana(mobile)
+        Mobile.regenerate_hp_and_mana(mobile, room)
       end)
 
     {:noreply, room}

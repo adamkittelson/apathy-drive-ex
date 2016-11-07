@@ -91,24 +91,7 @@ defmodule ApathyDrive.Commands.Look do
   def look_at_mobile(%Monster{crippled_limbs: crippled, missing_limbs: missing} = target, %Monster{} = mobile) do
     Mobile.send_scroll(target, "<p>#{name} looks you over.</p>")
 
-    hp_percentage = round(100 * (target.hp / target.max_hp))
-
-    hp_description = case hp_percentage do
-      _ when hp_percentage >= 100 ->
-        "unwounded"
-      _ when hp_percentage >= 90 ->
-        "slightly wounded"
-      _ when hp_percentage >= 60 ->
-        "moderately wounded"
-      _ when hp_percentage >= 40 ->
-        "heavily wounded"
-      _ when hp_percentage >= 20 ->
-        "severely wounded"
-      _ when hp_percentage >= 10 ->
-        "critically wounded"
-      _ ->
-        "very critically wounded"
-    end
+    hp_description = Mobile.hp_description(mobile)
 
     hp_description =
       "{{target:He/She/It}} appears to be #{hp_description}."
@@ -135,7 +118,7 @@ defmodule ApathyDrive.Commands.Look do
     mobiles_to_show =
       mobiles
       |> Map.values
-      |> Enum.reduce([], fn 
+      |> Enum.reduce([], fn
            %Character{} = room_char, list when character == room_char ->
              list
            mobile, list ->

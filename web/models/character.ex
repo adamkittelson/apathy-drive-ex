@@ -527,6 +527,14 @@ defmodule ApathyDrive.Character do
       true
     end
 
+    def hp_description(%Character{hp: hp}) when hp >= 1.0, do: "unwounded"
+    def hp_description(%Character{hp: hp}) when hp >= 0.9, do: "slightly wounded"
+    def hp_description(%Character{hp: hp}) when hp >= 0.6, do: "moderately wounded"
+    def hp_description(%Character{hp: hp}) when hp >= 0.4, do: "heavily wounded"
+    def hp_description(%Character{hp: hp}) when hp >= 0.2, do: "severely wounded"
+    def hp_description(%Character{hp: hp}) when hp >= 0.1, do: "critically wounded"
+    def hp_description(%Character{hp: hp}), do: "very critically wounded"
+
     def look_name(%Character{name: name}) do
       "<span class='dark-cyan'>#{name}</span>"
     end
@@ -573,7 +581,7 @@ defmodule ApathyDrive.Character do
       trunc(resist * (0.3 + (modifier / 100)))
     end
 
-    def regenerate_hp_and_mana(%Character{hp: hp, mana: mana} = character) do
+    def regenerate_hp_and_mana(%Character{hp: hp, mana: mana} = character, room) do
       max_hp = max_hp_at_level(character, character.level)
       max_mana = max_mana_at_level(character, character.level)
 
@@ -583,7 +591,7 @@ defmodule ApathyDrive.Character do
       mana_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(character, "ManaRegen")) / max_mana
 
       character
-      |> Map.put(:hp,   min(hp + hp_regen_percentage_per_round, 1.0))
+      |> shift_hp(hp_regen_percentage_per_round, room)
       |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
       |> TimerManager.send_after({:regen, round_length_in_ms(character), {:regen, character.ref}})
       |> update_prompt()
@@ -623,6 +631,18 @@ defmodule ApathyDrive.Character do
       |> Map.put(:room_id, room_id)
       |> Map.put(:monitor_ref, Process.monitor(socket))
       |> Repo.save!
+    end
+
+    def shift_hp(character, percentage, room) do
+      hp_description = hp_description(character)
+      character = update_in(character.hp, &(min(1.0, &1 + percentage)))
+      updated_hp_description = hp_description(character)
+
+      if hp_description != updated_hp_description do
+        Room.send_scroll(room, "<p>#{look_name(character)} is #{updated_hp_description}.</p>")
+      end
+
+      character
     end
 
     def silenced(%Character{effects: effects} = character, %Room{} = room) do
