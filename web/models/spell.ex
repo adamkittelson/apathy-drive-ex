@@ -115,7 +115,12 @@ defmodule ApathyDrive.Spell do
         Enum.reduce(targets, room, fn(target_ref, updated_room) ->
           Room.update_mobile(updated_room, target_ref, fn target ->
             if affects_target?(target, spell) do
-              apply_spell(updated_room, caster, target, spell)
+              target = apply_spell(updated_room, caster, target, spell)
+              if target.hp < 0 do
+                Mobile.die(target, updated_room)
+              else
+                target
+              end
             else
               message = "#{target.name} is not affected by that ability." |> Text.capitalize_first
               Mobile.send_scroll(caster, "<p><span class='dark-cyan'>#{message}</span></p>")

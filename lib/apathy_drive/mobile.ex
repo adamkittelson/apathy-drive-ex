@@ -7,6 +7,7 @@ defprotocol ApathyDrive.Mobile do
   def attribute_at_level(mobile, attribute, level)
   def confused(mobile, room)
   def crits_at_level(mobile, level)
+  def die(mobile, room)
   def dodge_at_level(mobile, level)
   def enough_mana_for_spell?(mobile, spell)
   def enter_message(mobile)

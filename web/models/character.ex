@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, CharacterItem, Item, Mobile, Room, Spell, SpellAbility, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, CharacterItem, Item, Mobile, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -147,7 +147,7 @@ defmodule ApathyDrive.Character do
       hp_percent > 0.20 ->
         "[HP=<span class='dark-red'>#{hp}</span>/MA=#{mana}]:"
       true ->
-        "[HP=<span class='red'>#{hp}</span>/MA=#{mana}}]:"
+        "[HP=<span class='red'>#{hp}</span>/MA=#{mana}]:"
     end
   end
 
@@ -467,6 +467,24 @@ defmodule ApathyDrive.Character do
       int = attribute_at_level(character, :intellect, level)
       modifier = ability_value(character, "Crits")
       trunc(int * (1 + (modifier / 100)))
+    end
+
+    def die(character, room) do
+      character =
+        character
+        |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
+        |> Map.put(:hp, 1.0)
+        |> Map.put(:mana, 1.0)
+        |> Map.put(:effects, %{})
+        |> Map.put(:timers, %{})
+        |> Mobile.update_prompt
+
+      Room.start_room_id
+      |> RoomServer.find
+      |> RoomServer.mobile_entered(character)
+
+      put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+      |> Room.send_scroll("<p><span class='red'>#{character.name} has died.</span></p>")
     end
 
     def dodge_at_level(character, level) do
