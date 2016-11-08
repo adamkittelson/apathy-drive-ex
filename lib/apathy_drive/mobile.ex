@@ -5,6 +5,7 @@ defprotocol ApathyDrive.Mobile do
   def attacks_per_round(mobile)
   def accuracy_at_level(mobile, level)
   def attribute_at_level(mobile, attribute, level)
+  def caster_level(caster, target)
   def confused(mobile, room)
   def crits_at_level(mobile, level)
   def die(mobile, room)
@@ -26,7 +27,6 @@ defprotocol ApathyDrive.Mobile do
   def physical_resistance_at_level(mobile, level)
   def regenerate_hp_and_mana(mobile, room)
   def round_length_in_ms(mobile)
-  def scaled_level(target, caster)
   def send_scroll(mobile, html)
   def set_room_id(mobile, room_id)
   def shift_hp(mobile, percentage, room)
@@ -35,6 +35,7 @@ defprotocol ApathyDrive.Mobile do
   def spells_at_level(mobile, level)
   def stealth_at_level(mobile, level)
   def subtract_mana(mobile, spell)
+  def target_level(caster, target)
   def tracking_at_level(mobile, level)
   def update_prompt(mobile)
 end

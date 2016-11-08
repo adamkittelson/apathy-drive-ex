@@ -405,10 +405,14 @@ defmodule ApathyDrive.Character do
             spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             abilities: %{
-              "PhysicalDamage" => 100 / attacks_per_round(character)
+              "PhysicalDamage" => 100 / attacks_per_round(character),
+              "Dodgeable" => true,
+              "DodgeUserMessage" => "You throw a punch at {{target}}, but they dodge!",
+              "DodgeTargetMessage" => "{{user}} throws a punch at you, but you dodge!",
+              "DodgeSpectatorMessage" => "{{user}} throws a punch at {{target}}, but they dodge!"
             }
           }
-        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_mess, plural_miss]} ->
+        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss]} ->
           [singular_hit, plural_hit] = Enum.random(hit_verbs)
           %Spell{
             kind: "attack",
@@ -418,7 +422,11 @@ defmodule ApathyDrive.Character do
             spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             abilities: %{
-              "PhysicalDamage" => 100 / attacks_per_round(character)
+              "PhysicalDamage" => 100 / attacks_per_round(character),
+              "Dodgeable" => true,
+              "DodgeUserMessage" => "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
+              "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
+              "DodgeSpectatorMessage" => "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
             }
           }
       end
@@ -442,6 +450,8 @@ defmodule ApathyDrive.Character do
           1
       end
     end
+
+    def caster_level(%Character{level: caster_level}, %{} = _target), do: caster_level
 
     def confused(%Character{effects: effects} = character, %Room{} = room) do
       effects
@@ -615,8 +625,6 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def scaled_level(%Character{level: level}, _caster), do: level
-
     def send_scroll(%Character{socket: socket} = character, html) do
       send(socket, {:scroll, html})
       character
@@ -639,7 +647,7 @@ defmodule ApathyDrive.Character do
       updated_hp_description = hp_description(character)
 
       if hp_description != updated_hp_description do
-        Room.send_scroll(room, "<p>#{look_name(character)} is #{updated_hp_description}.</p>")
+        Room.send_scroll(room, "<p>#{look_name(character)} is #{updated_hp_description}.</p>", [character])
       end
 
       character
@@ -683,6 +691,9 @@ defmodule ApathyDrive.Character do
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
       update_in(character.mana, &(max(0, &1 - percentage)))
     end
+
+    def target_level(%Character{level: _caster_level}, %Character{level: target_level}), do: target_level
+    def target_level(%Character{level: caster_level}, %{level: _target_level}), do: caster_level
 
     def tracking_at_level(character, level) do
       perception = perception_at_level(character, level)

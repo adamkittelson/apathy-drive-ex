@@ -136,7 +136,7 @@ defmodule ApathyDrive.Spell do
   end
 
   def duration(%Spell{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target) do
-    target_level = Mobile.scaled_level(target, caster)
+    target_level = Mobile.target_level(caster, target)
 
     caster_sc = Mobile.spellcasting_at_level(caster, caster.level)
 
@@ -148,6 +148,26 @@ defmodule ApathyDrive.Spell do
     end
   end
 
+  def dodged?(%{} = caster, %{} = target) do
+    caster_level = Mobile.caster_level(caster, target)
+    accuracy = Mobile.accuracy_at_level(caster, caster_level)
+
+    target_level = Mobile.target_level(caster, target)
+    dodge = Mobile.dodge_at_level(target, target_level)
+
+    chance = 0.3 * :math.pow(1.005, dodge) * :math.pow(0.995, accuracy)
+
+    :rand.uniform(1000) < (chance * 1000)
+  end
+
+  def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{abilities: %{"Dodgeable" => true}} = spell) do
+    if dodged?(caster, target) do
+      display_cast_message(room, caster, target, Map.put(spell, :result, :dodged))
+      target
+    else
+      apply_spell(room, caster, target, update_in(spell.abilities, &Map.delete(&1, "Dodgeable")))
+    end
+  end
   def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
     target =
       target
@@ -200,7 +220,7 @@ defmodule ApathyDrive.Spell do
     Map.put(target, :spell_shift, percentage_healed)
   end
   def apply_instant_ability({"MagicalDamage", value}, %{} = target, _spell, caster) do
-    target_level = Mobile.scaled_level(target, caster)
+    target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.magical_damage_at_level(caster, caster.level)
     resist = Mobile.magical_resistance_at_level(target, target_level)
@@ -209,7 +229,7 @@ defmodule ApathyDrive.Spell do
     Map.put(target, :spell_shift, -damage_percent)
   end
   def apply_instant_ability({"PhysicalDamage", value}, %{} = target, _spell, caster) do
-    target_level = Mobile.scaled_level(target, caster)
+    target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.physical_damage_at_level(caster, caster.level)
     resist = Mobile.physical_resistance_at_level(target, target_level)
@@ -274,6 +294,14 @@ defmodule ApathyDrive.Spell do
     Systems.Effect.add(caster, %{"cooldown" => :round}, cooldown)
   end
 
+  def caster_cast_message(%Spell{result: :dodged} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      spell.abilities["DodgeUserMessage"]
+      |> Text.interpolate(%{"target" => target, "spell" => spell.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
   def caster_cast_message(%Spell{result: :resisted} = spell, %{} = caster, %{} = target, _mobile) do
     message =
       @resist_message.user
@@ -320,6 +348,14 @@ defmodule ApathyDrive.Spell do
     end
   end
 
+  def target_cast_message(%Spell{result: :dodged} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      spell.abilities["DodgeTargetMessage"]
+      |> Text.interpolate(%{"user" => caster, "spell" => spell.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
   def target_cast_message(%Spell{result: :resisted} = spell, %{} = caster, %{} = target, _mobile) do
     message =
       @resist_message.target
@@ -345,7 +381,7 @@ defmodule ApathyDrive.Spell do
     "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
   end
   def target_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: shift} = target, mobile) do
-    amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level))
+    amount = abs(trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
       amount < 1 and has_ability?(spell, "PhysicalDamage") ->
@@ -366,6 +402,14 @@ defmodule ApathyDrive.Spell do
     end
   end
 
+  def spectator_cast_message(%Spell{result: :dodged} = spell, %{} = caster, %{} = target, _mobile) do
+    message =
+      spell.abilities["DodgeSpectatorMessage"]
+      |> Text.interpolate(%{"user" => caster, "target" => target, "spell" => spell.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
   def spectator_cast_message(%Spell{result: :resisted} = spell, %{} = caster, %{} = target, _mobile) do
     message =
       @resist_message.spectator
@@ -391,7 +435,7 @@ defmodule ApathyDrive.Spell do
     "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
   end
   def spectator_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: shift} = target, mobile) do
-    amount = trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level))
+    amount = abs(trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
       amount < 1 and has_ability?(spell, "PhysicalDamage") ->
