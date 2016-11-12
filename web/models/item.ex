@@ -79,6 +79,19 @@ defmodule ApathyDrive.Item do
     |> Map.put(:entities_items_id, id)
   end
 
+  def attribute_for_character(%Item{rarity: "legendary"} = item, %Character{} = character, attribute) do
+    attribute_at_level(item, character.level, attribute)
+  end
+  def attribute_for_character(%Item{} = item, %Character{} = character, attribute) do
+    level = min(item.level, character.level)
+    attribute_at_level(item, level, attribute)
+  end
+
+  def attribute_at_level(%Item{} = item, level, attribute) do
+    base = Map.get(item, attribute)
+    base + ((base / 10) * (level - 1))
+  end
+
   def random_item_id_below_level(level) do
     count =
       __MODULE__

@@ -387,15 +387,15 @@ defmodule ApathyDrive.Character do
     def attribute_at_level(%Character{} = character, attribute, level) do
       from_race = Map.get(character.race, attribute)
 
+      from_race = from_race + ((from_race / 10) * (level - 1))
+
       from_equipment =
         character.equipment
-        |> Enum.reduce(0, fn %{} = character_item, total ->
-             total + Map.get(character_item, attribute)
+        |> Enum.reduce(0, fn %Item{} = item, total ->
+             total + Item.attribute_for_character(item, character, attribute)
            end)
 
-      base = from_race + from_equipment
-
-      trunc(base + ((base / 10) * (level - 1)))
+      trunc(from_race + from_equipment)
     end
 
     def attack_interval(character) do
