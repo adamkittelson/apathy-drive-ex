@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Drop do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Match, Mobile, Item, Repo, RoomItem}
+  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
 
   def keywords, do: ["drop"]
 
@@ -13,38 +13,22 @@ defmodule ApathyDrive.Commands.Drop do
     item_name = Enum.join(arguments, " ")
 
     inventory
-    |> Enum.map(& %{name: &1.item.name, character_item: &1})
     |> Match.one(:name_contains, item_name)
     |> case do
          nil ->
            Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" to drop!</p>")
+           room
+         %Item{level: level, entities_items_id: entities_items_id} = item ->
+
+           %EntityItem{id: entities_items_id}
+           |> Ecto.Changeset.change(%{assoc_table: "rooms", assoc_id: room.id})
+           |> Repo.update!
 
            room
-         %{character_item: %{level: level, item: %Item{} = item} = character_item} ->
-
-           room_item =
-             %RoomItem{
-               room_id: room.id,
-               item_id: item.id,
-               level: level,
-               strength: character_item.strength,
-               agility: character_item.agility,
-               intellect: character_item.intellect,
-               willpower: character_item.willpower,
-               health: character_item.health,
-               charm: character_item.charm
-             }
-
-           Ecto.Multi.new
-           |> Ecto.Multi.insert(:rooms_items, room_item)
-           |> Ecto.Multi.delete(:characters_items, character_item)
-           |> Repo.transaction
-
-           room
-           |> Repo.preload([rooms_items: :item], [force: true])
+           |> Room.load_items
            |> Room.update_mobile(character.ref, fn(char) ->
                 char
-                |> Repo.preload([characters_items: :item], [force: true])
+                |> Character.load_items
                 |> Mobile.send_scroll("<p>You drop #{Item.colored_name(item)}.</p>")
               end)
       end

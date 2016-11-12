@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Item, Mobile}
+  alias ApathyDrive.{Character, EntityItem, Item, Mobile}
 
   schema "items" do
     field :name, :string
@@ -13,6 +13,7 @@ defmodule ApathyDrive.Item do
     field :hit_verbs, ApathyDrive.JSONB
     field :miss_verbs, ApathyDrive.JSONB
     field :abilities, :map, virtual: true, default: %{}
+    field :level, :integer, virtual: true
     field :equipped, :boolean, virtual: true, default: false
     field :strength, :integer, virtual: true
     field :agility, :integer, virtual: true
@@ -20,15 +21,13 @@ defmodule ApathyDrive.Item do
     field :willpower, :integer, virtual: true
     field :health, :integer, virtual: true
     field :charm, :integer, virtual: true
+    field :entities_items_id, :integer, virtual: true
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
 
-    has_many :characters_items, ApathyDrive.CharacterItem
+    has_many :characters_items, ApathyDrive.EntityItem
     has_many :characters, through: [:characters_items, :character]
-
-    has_many :rooms_items, ApathyDrive.RoomItem
-    has_many :rooms, through: [:rooms_items, :room]
 
     has_many :items_abilities, ApathyDrive.ItemAbility
 
@@ -69,6 +68,15 @@ defmodule ApathyDrive.Item do
   def changeset(model, params \\ %{}) do
     model
     |> cast(params, @required_fields, @optional_fields)
+  end
+
+  def from_assoc(%EntityItem{id: id, item: item} = ei) do
+    values =
+      Map.take(ei, [:level, :equipped, :strength, :agility,
+                    :intellect, :willpower, :health, :charm])
+
+    Map.merge(item, values)
+    |> Map.put(:entities_items_id, id)
   end
 
   def random_item_id_below_level(level) do

@@ -21,6 +21,7 @@ defmodule ApathyDrive.Room do
     field :default_essence,          :integer, virtual: true
     field :mobiles,                  :map, virtual: true, default: %{}
     field :timer,                    :any, virtual: true
+    field :items,                    :any, virtual: true, default: []
 
     timestamps
 
@@ -32,8 +33,11 @@ defmodule ApathyDrive.Room do
     has_many   :items_for_sales, through: [:shop_items, :item]
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster_template]
-    has_many   :rooms_items, ApathyDrive.RoomItem
-    has_many   :items, through: [:rooms_items, :item]
+  end
+
+  def load_items(%Room{id: id} = room) do
+    items = ApathyDrive.EntityItem.load_items("rooms", id)
+    Map.put(room, :items, items)
   end
 
   def update_mobile(%Room{} = room, mobile_ref, fun) do

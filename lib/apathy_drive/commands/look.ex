@@ -169,7 +169,7 @@ defmodule ApathyDrive.Commands.Look do
     psuedo_items = room.item_descriptions["visible"]
                    |> Map.keys
 
-    items = Enum.map(room.rooms_items, &Item.colored_name(&1.item))
+    items = Enum.map(room.items, &Item.colored_name(&1))
 
     items = items ++ psuedo_items
 

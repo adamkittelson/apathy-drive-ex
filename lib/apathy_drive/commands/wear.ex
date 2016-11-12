@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Wear do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Item, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
 
   def keywords, do: ["wear", "equip", "wield"]
 
@@ -11,7 +11,7 @@ defmodule ApathyDrive.Commands.Wear do
 
   def execute(%Room{} = room, %Character{ref: ref} = character, ["all"]) do
     character.inventory
-    |> Enum.map(&(&1.item.name))
+    |> Enum.map(&(&1.name))
     |> Enum.reduce(room, fn(item_name, updated_room) ->
          character = updated_room.mobiles[ref]
          execute(updated_room, character, [item_name])
@@ -22,23 +22,22 @@ defmodule ApathyDrive.Commands.Wear do
     item_name = Enum.join(args, " ")
 
     character.inventory
-    |> Enum.map(&(%{name: &1.name, item: &1}))
     |> Match.one(:name_contains, item_name)
     |> case do
          nil ->
            Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" left unequipped.</p>")
            room
-         %{item: item} ->
+         %Item{} = item ->
            character =
              case equip_item(character, item) do
                %{equipped: equipped, unequipped: unequipped, character: character} ->
                  Enum.each(unequipped, fn(item) ->
-                   Mobile.send_scroll(character, "<p>You remove #{item.item.name}.</p>")
+                   Mobile.send_scroll(character, "<p>You remove #{Item.colored_name(item)}.</p>")
                  end)
-                 Mobile.send_scroll(character, "<p>You are now wearing #{equipped.item.name}.</p>")
+                 Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
                  character
                %{equipped: equipped, character: character} ->
-                 Mobile.send_scroll(character, "<p>You are now wearing #{equipped.item.name}.</p>")
+                 Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
                  character
              end
 
@@ -58,19 +57,22 @@ defmodule ApathyDrive.Commands.Wear do
 
         inventory = List.delete(inventory, item)
 
-        item_to_remove =
-          put_in(item_to_remove.equipped, false)
-          |> Repo.save!
+        %EntityItem{id: item_to_remove.entities_items_id}
+        |> Ecto.Changeset.change(%{equipped: false})
+        |> Repo.update!
 
         inventory = List.insert_at(inventory, -1, item_to_remove)
 
-        item =
-          put_in(item.equipped, true)
-          |> Repo.save!
+        %EntityItem{id: item.entities_items_id}
+        |> Ecto.Changeset.change(%{equipped: true})
+        |> Repo.update!
 
         equipment = List.insert_at(equipment, -1, item)
 
-        character = put_in(character.characters_items, equipment ++ inventory)
+        character =
+          character
+          |> Map.put(:inventory, inventory)
+          |> Map.put(:equipment, equipment)
 
         %{equipped: item, unequipped: [item_to_remove], character: character}
       conflicting_worn_on(worn_on) |> Enum.any? ->
@@ -82,11 +84,11 @@ defmodule ApathyDrive.Commands.Wear do
 
         inventory = List.delete(inventory, item)
 
-        items_to_remove =
-          Enum.map(items_to_remove, fn item_to_remove ->
-            put_in(item_to_remove.equipped, false)
-            |> Repo.save!
-          end)
+        Enum.each(items_to_remove, fn item_to_remove ->
+          %EntityItem{id: item_to_remove.entities_items_id}
+          |> Ecto.Changeset.change(%{equipped: false})
+          |> Repo.update!
+        end)
 
         inventory =
           items_to_remove
@@ -94,13 +96,16 @@ defmodule ApathyDrive.Commands.Wear do
                List.insert_at(inv, -1, item_to_remove)
              end)
 
-        item =
-          put_in(item.equipped, true)
-          |> Repo.save!
+        %EntityItem{id: item.entities_items_id}
+        |> Ecto.Changeset.change(%{equipped: true})
+        |> Repo.update!
 
         equipment = List.insert_at(equipment, -1, item)
 
-        character = put_in(character.characters_items, equipment ++ inventory)
+        character =
+          character
+          |> Map.put(:inventory, inventory)
+          |> Map.put(:equipment, equipment)
 
         %{equipped: item, unequipped: items_to_remove, character: character}
       true ->
@@ -108,15 +113,18 @@ defmodule ApathyDrive.Commands.Wear do
           inventory
           |> List.delete(item)
 
-        item =
-          put_in(item.equipped, true)
-          |> Repo.save!
+        %EntityItem{id: item.entities_items_id}
+        |> Ecto.Changeset.change(%{equipped: true})
+        |> Repo.update!
 
         equipment =
           equipment
           |> List.insert_at(-1, item)
 
-        character = put_in(character.characters_items, equipment ++ inventory)
+        character =
+          character
+          |> Map.put(:inventory, inventory)
+          |> Map.put(:equipment, equipment)
 
         %{equipped: item, character: character}
     end

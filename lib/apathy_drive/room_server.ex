@@ -128,7 +128,7 @@ defmodule ApathyDrive.RoomServer do
       Repo.get!(Room, id)
       |> Repo.preload(:room_unity)
       |> Repo.preload(:area)
-      |> Repo.preload([rooms_items: :item], [force: true])
+      |> Room.load_items
 
     room =
       room
@@ -241,7 +241,7 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:ref, ref)
         |> Repo.preload(:race)
         |> Character.preload_spells
-        |> Character.preload_items
+        |> Character.load_items
         |> Map.put(:socket, socket)
         |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
 

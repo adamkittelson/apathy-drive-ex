@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, CharacterItem, Item, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
 
   def keywords, do: ["get"]
 
@@ -9,17 +9,16 @@ defmodule ApathyDrive.Commands.Get do
     room
   end
 
-  def execute(%Room{rooms_items: items} = room, %Character{} = character, ["all"]) do
+  def execute(%Room{items: items} = room, %Character{} = character, ["all"]) do
     items
-    |> Enum.map(&(&1.item.name))
+    |> Enum.map(&(&1.name))
     |> get_all(room, character)
   end
 
-  def execute(%Room{rooms_items: items, item_descriptions: item_descriptions} = room, %Character{} = character, args) do
+  def execute(%Room{items: items, item_descriptions: item_descriptions} = room, %Character{} = character, args) do
     item = Enum.join(args, " ")
 
     actual_item = items
-                  |> Enum.map(&(%{name: &1.item.name, room_item: &1}))
                   |> Match.one(:name_contains, item)
 
     visible_item = item_descriptions["visible"]
@@ -33,31 +32,17 @@ defmodule ApathyDrive.Commands.Get do
                   |> Match.one(:keyword_starts_with, item)
 
     case actual_item || visible_item || hidden_item do
-      %{room_item: %{level: level, item: %Item{} = item} = room_item} ->
+      %Item{level: level, entities_items_id: entities_items_id} = item ->
 
-        character_item =
-          %CharacterItem{
-            character_id: character.id,
-            item_id: item.id,
-            level: level,
-            strength: room_item.strength,
-            agility: room_item.agility,
-            intellect: room_item.intellect,
-            willpower: room_item.willpower,
-            health: room_item.health,
-            charm: room_item.charm
-          }
-
-        Ecto.Multi.new
-        |> Ecto.Multi.insert(:characters_items, character_item)
-        |> Ecto.Multi.delete(:rooms_items, room_item)
-        |> Repo.transaction
+        %EntityItem{id: entities_items_id}
+        |> Ecto.Changeset.change(%{assoc_table: "characters", assoc_id: character.id})
+        |> Repo.update!
 
         room
-        |> Repo.preload([rooms_items: :item], [force: true])
+        |> Room.load_items
         |> Room.update_mobile(character.ref, fn(char) ->
              char
-             |> Repo.preload([characters_items: :item], [force: true])
+             |> Character.load_items
              |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
            end)
       %{name: psuedo_item} ->
