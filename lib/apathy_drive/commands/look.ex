@@ -258,7 +258,7 @@ defmodule ApathyDrive.Commands.Look do
     "#{post}"
   end
 
-  defp find_item(%Character{items: items}, item) do
+  defp find_item(%Character{inventory: items}, item) do
     item = (items)
            |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
            |> Match.one(:keyword_starts_with, item)

@@ -11,8 +11,7 @@ defmodule ApathyDrive.Commands.Remove do
   def execute(%Room{} = room, %Character{} = character, arguments) do
     item_name = Enum.join(arguments, " ")
 
-    character
-    |> Character.equipment
+    character.equipment
     |> Enum.map(&(%{name: &1.item.name, item: &1}))
     |> Match.one(:name_contains, item_name)
     |> case do

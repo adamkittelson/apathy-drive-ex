@@ -11,13 +11,16 @@ defmodule ApathyDrive.Ability do
     has_many :spells_abilities, ApathyDrive.SpellAbility
     has_many :spells, through: [:spells_abilities, :spell]
 
+    has_many :items_abilities, ApathyDrive.ItemAbility
+    has_many :items, through: [:items_abilities, :item]
+
     timestamps
   end
 
   @required_fields ~w(name description)
   @optional_fields ~w()
-  
-  
+
+
   #############
   # OLD SHIT BELOW
   ############

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Wear do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, Item, Match, Mobile, Repo}
 
   def keywords, do: ["wear", "equip", "wield"]
 
@@ -10,8 +10,7 @@ defmodule ApathyDrive.Commands.Wear do
   end
 
   def execute(%Room{} = room, %Character{ref: ref} = character, ["all"]) do
-    character
-    |> Character.inventory
+    character.inventory
     |> Enum.map(&(&1.item.name))
     |> Enum.reduce(room, fn(item_name, updated_room) ->
          character = updated_room.mobiles[ref]
@@ -22,9 +21,8 @@ defmodule ApathyDrive.Commands.Wear do
   def execute(%Room{} = room, %Character{} = character, args) do
     item_name = Enum.join(args, " ")
 
-    character
-    |> Character.inventory
-    |> Enum.map(&(%{name: &1.item.name, keywords: String.split(&1.item.name), item: &1}))
+    character.inventory
+    |> Enum.map(&(%{name: &1.name, item: &1}))
     |> Match.one(:name_contains, item_name)
     |> case do
          nil ->
@@ -48,15 +46,13 @@ defmodule ApathyDrive.Commands.Wear do
        end
   end
 
-  def equip_item(%Character{} = character, %{item: %{worn_on: worn_on}} = item) do
-    inventory = Character.inventory(character)
-    equipment = Character.equipment(character)
+  def equip_item(%Character{inventory: inventory, equipment: equipment} = character, %Item{worn_on: worn_on} = item) do
 
     cond do
-      Enum.count(equipment, &(&1.item.worn_on == worn_on)) >= worn_on_max(item.item) ->
+      Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
         item_to_remove =
           equipment
-          |> Enum.find(&(&1.item.worn_on == worn_on))
+          |> Enum.find(&(&1.worn_on == worn_on))
 
         equipment = List.delete(equipment, item_to_remove)
 

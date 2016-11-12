@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, CharacterItem, Item, Mobile, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, CharacterItem, Item, ItemAbility, Mobile, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -26,15 +26,16 @@ defmodule ApathyDrive.Character do
     field :hp,              :float, virtual: true, default: 1.0
     field :mana,            :float, virtual: true, default: 1.0
     field :spells,          :map, virtual: true, default: %{}
+    field :inventory,       :any, virtual: true, default: []
+    field :equipment,       :any, virtual: true, default: []
     field :spell_shift,     :float, virtual: true
-    field :attack_target,      :any,     virtual: true
+    field :attack_target,   :any, virtual: true
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
     belongs_to :race, ApathyDrive.Race
 
     has_many :characters_items, ApathyDrive.CharacterItem
-    has_many :items, through: [:characters_items, :item]
 
     timestamps
   end
@@ -81,17 +82,35 @@ defmodule ApathyDrive.Character do
     Map.put(character, :spells, spells)
   end
 
-  def inventory(%Character{characters_items: items} = character) do
-    Enum.filter(items, &(&1.equipped == false))
-  end
+  def preload_items(%Character{} = character) do
+    character =
+      character
+      |> ApathyDrive.Repo.preload([characters_items: [item: [items_abilities: :ability]]], [force: true])
+      |> Map.put(:inventory, [])
+      |> Map.put(:equipment, [])
 
-  def equipment(%Character{characters_items: items} = character) do
-    Enum.filter(items, &(&1.equipped == true))
+    Enum.reduce(character.characters_items, character, fn
+      %{equipped: equipped, item: %Item{items_abilities: items_abilities} = item} = character_item, updated_character ->
+        item =
+          put_in(item.abilities, Enum.reduce(items_abilities, %{}, fn %ItemAbility{ability: ability} = item_ability, abilities ->
+            Map.put(abilities, ability.name, item_ability.value)
+          end))
+          |> Map.put(:strength, character_item.strength)
+          |> Map.put(:intellect, character_item.intellect)
+          |> Map.put(:willpower, character_item.willpower)
+          |> Map.put(:agility, character_item.agility)
+          |> Map.put(:health, character_item.health)
+          |> Map.put(:charm, character_item.charm)
+        if equipped do
+          update_in(updated_character.equipment, &([item | &1]))
+        else
+          update_in(updated_character.inventory, &([item | &1]))
+        end
+    end)
   end
 
   def weapon(%Character{} = character) do
-    character
-    |> equipment()
+    character.equipment
     |> Enum.map(&(&1.item))
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
   end
@@ -215,7 +234,7 @@ defmodule ApathyDrive.Character do
     }
     |> Repo.insert!
 
-    Repo.preload(character, [characters_items: :item], [force: true])
+    Character.preload_items(character)
   end
   def add_item(%Character{} = character, %Item{rarity: "common"} = item, level, :looted) do
     %CharacterItem{
@@ -230,8 +249,7 @@ defmodule ApathyDrive.Character do
       charm: Enum.random(2..4)
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
   def add_item(%Character{} = character, %Item{rarity: "uncommon"} = item, level, :purchased) do
     %CharacterItem{
@@ -246,8 +264,7 @@ defmodule ApathyDrive.Character do
       charm: 6
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
   def add_item(%Character{} = character, %Item{rarity: "uncommon"} = item, level, :looted) do
     %CharacterItem{
@@ -262,8 +279,7 @@ defmodule ApathyDrive.Character do
       charm: Enum.random(5..7)
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
   def add_item(%Character{} = character, %Item{rarity: "rare"} = item, level, :purchased) do
     %CharacterItem{
@@ -278,8 +294,7 @@ defmodule ApathyDrive.Character do
       charm: 9
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
   def add_item(%Character{} = character, %Item{rarity: "rare"} = item, level, :looted) do
     %CharacterItem{
@@ -294,8 +309,7 @@ defmodule ApathyDrive.Character do
       charm: Enum.random(8..10)
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
   def add_item(%Character{} = character, %Item{rarity: "epic"} = item, level, :purchased) do
     %CharacterItem{
@@ -310,8 +324,7 @@ defmodule ApathyDrive.Character do
       charm: 15
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
   def add_item(%Character{} = character, %Item{rarity: "epic"} = item, level, :looted) do
     %CharacterItem{
@@ -326,8 +339,7 @@ defmodule ApathyDrive.Character do
       charm: Enum.random(11..19)
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
   def add_item(%Character{} = character, %Item{rarity: "legendary"} = item, level, :purchased) do
     %CharacterItem{
@@ -342,8 +354,7 @@ defmodule ApathyDrive.Character do
       charm: 24
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
   def add_item(%Character{} = character, %Item{rarity: "legendary"} = item, level, :looted) do
     %CharacterItem{
@@ -358,15 +369,23 @@ defmodule ApathyDrive.Character do
       charm: Enum.random(20..28)
     }
     |> Repo.insert!
-
-    Repo.preload(character, [characters_items: :item], [force: true])
+    |> Character.preload_items
   end
 
   defimpl ApathyDrive.Mobile, for: Character do
 
     def ability_value(character, ability) do
       # TODO: add race and class ability values
-      Systems.Effect.effect_bonus(character, ability)
+      equipment_bonus =
+        character.equipment
+        |> Enum.reduce(0, fn
+             %{abilities: %{^ability => value}}, total ->
+               total + value
+            _, total ->
+              total
+           end)
+      effect_bonus = Systems.Effect.effect_bonus(character, ability)
+      equipment_bonus + effect_bonus
     end
 
     def accuracy_at_level(character, level) do
@@ -379,8 +398,7 @@ defmodule ApathyDrive.Character do
       from_race = Map.get(character.race, attribute)
 
       from_equipment =
-        character
-        |> Character.equipment
+        character.equipment
         |> Enum.reduce(0, fn %{} = character_item, total ->
              total + Map.get(character_item, attribute)
            end)
@@ -557,8 +575,8 @@ defmodule ApathyDrive.Character do
 
     def magical_resistance_at_level(character, level) do
       resist = attribute_at_level(character, :willpower, level)
-      modifier = ability_value(character, "ModifyResistance") + ability_value(character, "ModifyMagicalResistance")
-      trunc(resist * (0.3 + (modifier / 100)))
+      modifier = ability_value(character, "MagicalResist")
+      trunc(resist * (modifier / 100))
     end
 
     def max_hp_at_level(mobile, level) do
@@ -587,8 +605,8 @@ defmodule ApathyDrive.Character do
 
     def physical_resistance_at_level(character, level) do
       resist = attribute_at_level(character, :strength, level)
-      modifier = ability_value(character, "ModifyResistance") + ability_value(character, "ModifyPhysicalResistance")
-      trunc(resist * (0.3 + (modifier / 100)))
+      modifier = ability_value(character, "AC")
+      trunc(resist * (modifier / 100))
     end
 
     def regenerate_hp_and_mana(%Character{hp: hp, mana: mana} = character, room) do

@@ -9,9 +9,7 @@ defmodule ApathyDrive.Commands.Drop do
     room
   end
 
-  def execute(%Room{} = room, %Character{} = character, arguments) do
-    inventory = Character.inventory(character)
-
+  def execute(%Room{} = room, %Character{inventory: inventory} = character, arguments) do
     item_name = Enum.join(arguments, " ")
 
     inventory

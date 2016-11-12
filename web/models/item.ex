@@ -7,12 +7,19 @@ defmodule ApathyDrive.Item do
     field :description, :string
     field :worn_on, :string
     field :grade, :string
-    field :abilities, ApathyDrive.JSONB
     field :global_drop, :boolean
     field :game_limit, :integer
     field :rarity, :string
     field :hit_verbs, ApathyDrive.JSONB
     field :miss_verbs, ApathyDrive.JSONB
+    field :abilities, :map, virtual: true, default: %{}
+    field :equipped, :boolean, virtual: true, default: false
+    field :strength, :integer, virtual: true
+    field :agility, :integer, virtual: true
+    field :intellect, :integer, virtual: true
+    field :willpower, :integer, virtual: true
+    field :health, :integer, virtual: true
+    field :charm, :integer, virtual: true
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
@@ -22,6 +29,8 @@ defmodule ApathyDrive.Item do
 
     has_many :rooms_items, ApathyDrive.RoomItem
     has_many :rooms, through: [:rooms_items, :room]
+
+    has_many :items_abilities, ApathyDrive.ItemAbility
 
     timestamps
   end

@@ -15,10 +15,10 @@ defmodule ApathyDrive.Commands.Buy do
 
   def buy(%Room{} = room, items, character, item_name) do
     case Match.all(items, :name_contains, item_name) do
-      [] ->
+      nil ->
         Mobile.send_scroll(character, "<p>\"#{item_name}\" does not appear to be for sale here.</p>")
         room
-      [%Item{} = item] ->
+      %Item{} = item ->
         price = Item.price_for_character(item, character)
 
         if price > character.gold do
