@@ -23,11 +23,17 @@ defmodule ApathyDrive.Commands.List do
 
     items
     |> Enum.each(fn(%Item{name: name} = item) ->
-         price = Item.price_for_character(item, character)
-         price = if price > 0, do: "#{price} gold", else: "FREE"
-         name = Item.colored_name(item, ljust: 30)
-
-         Mobile.send_scroll(character, "<p>#{name}<span class='dark-cyan'>#{price}</span></p>")
+        item
+        |> Map.put(:level, character.level)
+        |> Item.price
+        |> case do
+            "priceless" ->
+              :noop
+            price when price > 0 ->
+              Mobile.send_scroll(character, "<p>#{Item.colored_name(item, ljust: 30)}<span class='dark-cyan'>#{price} gold</span></p>")
+            _ ->
+              Mobile.send_scroll(character, "<p>#{Item.colored_name(item, ljust: 30)}<span class='dark-cyan'>FREE</span></p>")
+           end
        end)
   end
 end

@@ -78,7 +78,7 @@ defmodule ApathyDrive.Commands.Wear do
       conflicting_worn_on(worn_on) |> Enum.any? ->
         items_to_remove =
           equipment
-          |> Enum.filter(&(&1.item.worn_on in conflicting_worn_on(worn_on)))
+          |> Enum.filter(&(&1.worn_on in conflicting_worn_on(worn_on)))
 
         equipment = Enum.reject(equipment, &(&1 in items_to_remove))
 

@@ -19,15 +19,21 @@ defmodule ApathyDrive.Commands.Buy do
         Mobile.send_scroll(character, "<p>\"#{item_name}\" does not appear to be for sale here.</p>")
         room
       %Item{} = item ->
-        price = Item.price_for_character(item, character)
+        price =
+          item
+          |> Map.put(:level, character.level)
+          |> Item.price
 
         if price > character.gold do
           Mobile.send_scroll(character, "<p>You cannot afford to buy #{Item.colored_name(item)}.</p>")
           room
         else
           Room.update_mobile(room, character.ref, fn(char) ->
+
+            Item.generate_for_character!(item, character, :purchased)
+
             update_in(char.gold, &(&1 - price))
-            |> Character.add_item(item, char.level, :purchased)
+            |> Character.load_items
             |> Repo.save!
             |> Mobile.send_scroll("<p>You purchase #{Item.colored_name(item)} for #{price} gold.</p>")
           end)

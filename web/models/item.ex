@@ -39,23 +39,28 @@ defmodule ApathyDrive.Item do
   @rarities %{
     "common" => %{
       cost_multiplier: 1,
-      color: "teal"
+      color: "teal",
+      attribute_range: 2..4
     },
     "uncommon" => %{
       cost_multiplier: 2,
-      color: "#1eff00"
+      color: "#1eff00",
+      attribute_range: 5..7
     },
     "rare" => %{
       cost_multiplier: 3,
-      color: "#0070ff"
+      color: "#0070ff",
+      attribute_range: 8..10
     },
     "epic" => %{
       cost_multiplier: 4,
-      color: "#a335ee"
+      color: "#a335ee",
+      attribute_range: 11..19
     },
     "legendary" => %{
-      cost_multiplier: 5,
-      color: "#ff8000"
+      cost_multiplier: :infinity,
+      color: "#ff8000",
+      attribute_range: 20..28
     },
   }
 
@@ -88,7 +93,10 @@ defmodule ApathyDrive.Item do
   end
 
   def attribute_at_level(%Item{} = item, level, attribute) do
-    base = Map.get(item, attribute)
+    min..max = @rarities[item.rarity].attribute_range
+    average = div(min + max, 2)
+
+    base = Map.get(item, attribute) || average
     base + ((base / 10) * (level - 1))
   end
 
@@ -127,6 +135,45 @@ defmodule ApathyDrive.Item do
   def all do
     __MODULE__
     |> Repo.all
+  end
+
+  def generate_item_attributes(rarity, :purchased) do
+    min..max = @rarities[rarity].attribute_range
+
+    average = div(min + max, 2)
+
+    %{strength: average,
+      agility: average,
+      intellect: average,
+      willpower: average,
+      health: average,
+      charm: average
+    }
+  end
+
+  def generate_item_attributes(rarity, :looted) do
+    min..max = @rarities[rarity].attribute_range
+
+    [:strength, :agility, :intellect, :willpower, :health, :charm]
+    |> Enum.shuffle
+    |> Enum.chunk(2)
+    |> Enum.reduce(%{}, fn [attribute_1, attribute_2], attributes ->
+         roll = Enum.random(min..max)
+         attributes
+         |> Map.put(attribute_1, roll)
+         |> Map.put(attribute_2, max - roll + min)
+       end)
+  end
+
+  def generate_for_character!(%Item{rarity: rarity} = item, %Character{} = character, source) do
+    %EntityItem{
+      assoc_table: "characters",
+      assoc_id: character.id,
+      item_id: item.id,
+      level: character.level
+    }
+    |> Map.merge(generate_item_attributes(rarity, source))
+    |> Repo.insert!
   end
 
   def generate_item(%{chance: chance, item_id: _item_id, level: _level} = opts) do
@@ -230,37 +277,15 @@ defmodule ApathyDrive.Item do
   def will(%{"will" => will}),                          do: will
   def will(%{"level" => level, "grade" => grade}),      do: will(%{level: level, grade: grade})
 
-  def price_for_character(%Item{rarity: rarity} = item, %Character{level: level} = character) do
-    attributes = attributes_at_level(item, level)
+  def price(%Item{rarity: "legendary"}), do: "priceless"
+  def price(%Item{rarity: rarity, level: level} = item) do
+    attributes =
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.reduce(0, fn attribute, total ->
+           total + attribute_at_level(item, level, attribute)
+         end)
 
     trunc((attributes * @rarities[rarity].cost_multiplier))
-  end
-
-  def sell_price(%Item{rarity: rarity} = item, level) do
-    attributes = attributes_at_level(item, level)
-
-    div(trunc((attributes * @rarities[rarity].cost_multiplier)), 10)
-  end
-
-  def attributes_at_level(%Item{rarity: "common"} = item, level) do
-    base = 18
-    base + (base / 10 * (level - 1))
-  end
-  def attributes_at_level(%Item{rarity: "uncommon"} = item, level) do
-    base = 36
-    base + (base / 10 * (level - 1))
-  end
-  def attributes_at_level(%Item{rarity: "rare"} = item, level) do
-    base = 54
-    base + (base / 10 * (level - 1))
-  end
-  def attributes_at_level(%Item{rarity: "epic"} = item, level) do
-    base = 90
-    base + (base / 10 * (level - 1))
-  end
-  def attributes_at_level(%Item{rarity: "legendary"} = item, level) do
-    base = 144
-    base + (base / 10 * (level - 1))
   end
 
   def color(%Item{rarity: rarity}) do
