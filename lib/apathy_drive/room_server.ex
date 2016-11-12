@@ -240,7 +240,7 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:monitor_ref, monitor_ref)
         |> Map.put(:ref, ref)
         |> Repo.preload(:race)
-        |> Character.preload_spells
+        |> Character.load_spells
         |> Character.load_items
         |> Map.put(:socket, socket)
         |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})

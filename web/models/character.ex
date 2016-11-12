@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, EntityItem, Item, ItemAbility, Mobile, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, EntityAbility, EntityItem, Item, ItemAbility, Mobile, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -67,15 +67,13 @@ defmodule ApathyDrive.Character do
     |> validate_confirmation(:password)
   end
 
-  def preload_spells(%Character{} = character) do
-    character = character |> ApathyDrive.Repo.preload(class: [classes_spells: [spell: [spells_abilities: :ability]]])
+  def load_spells(%Character{} = character) do
+    character = character |> ApathyDrive.Repo.preload(class: [classes_spells: :spell])
     spells =
       Enum.reduce(character.class.classes_spells, %{}, fn
-        %{level: level, spell: %Spell{spells_abilities: spells_abilities} = spell}, spells ->
+        %{level: level, spell: %Spell{id: id} = spell}, spells ->
           spell =
-            put_in(spell.abilities, Enum.reduce(spells_abilities, %{}, fn %SpellAbility{ability: ability} = spell_ability, abilities ->
-              Map.put(abilities, ability.name, spell_ability.value)
-            end))
+            put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
             |> Map.put(:level, level)
           Map.put(spells, spell.command, spell)
       end)

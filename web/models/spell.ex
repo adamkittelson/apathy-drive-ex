@@ -22,8 +22,6 @@ defmodule ApathyDrive.Spell do
 
     has_many :characters, ApathyDrive.Character
 
-    has_many :spells_abilities, ApathyDrive.SpellAbility
-
     timestamps
   end
 
