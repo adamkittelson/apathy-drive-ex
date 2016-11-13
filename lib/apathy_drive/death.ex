@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Death do
-  alias ApathyDrive.{Class, Monster, Room, RoomServer, Text}
+  alias ApathyDrive.{Monster, Room, Text}
 
   def kill(room, monster, killed_by \\ nil)
 

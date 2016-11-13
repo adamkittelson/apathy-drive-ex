@@ -720,17 +720,6 @@ defmodule ApathyDrive.Room do
     Enum.sum(list) / length(list)
   end
 
-  defp add_mobile_essence(essences, mobile_unities, mobile_essence) do
-    Enum.reduce(essences, essences, fn({unity, _list}, updated_essences) ->
-      if unity in mobile_unities do
-        updated_essences
-        |> update_in([unity, "mobile"], &([mobile_essence | &1]))
-      else
-        updated_essences
-      end
-    end)
-  end
-
   defp sound_direction("up"),      do: "above you"
   defp sound_direction("down"),    do: "below you"
   defp sound_direction(direction), do: "to the #{direction}"
