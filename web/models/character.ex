@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, EntityAbility, EntityItem, Item, ItemAbility, Mobile, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, EntityAbility, EntityItem, Item, ItemAbility, Mobile, Race, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -18,6 +18,8 @@ defmodule ApathyDrive.Character do
     field :admin,           :boolean
     field :flags,           :map, default: %{}
     field :gold,            :integer, default: 150
+    field :race_id,         :integer
+    field :race,            :string, virtual: true
     field :monitor_ref,     :any, virtual: true
     field :ref,             :any, virtual: true
     field :socket,          :any, virtual: true
@@ -30,10 +32,15 @@ defmodule ApathyDrive.Character do
     field :equipment,       :any, virtual: true, default: []
     field :spell_shift,     :float, virtual: true
     field :attack_target,   :any, virtual: true
+    field :strength, :integer, virtual: true
+    field :agility, :integer, virtual: true
+    field :intellect, :integer, virtual: true
+    field :willpower, :integer, virtual: true
+    field :health, :integer, virtual: true
+    field :charm, :integer, virtual: true
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
-    belongs_to :race, ApathyDrive.Race
 
     has_many :characters_items, ApathyDrive.EntityItem
 
@@ -78,6 +85,22 @@ defmodule ApathyDrive.Character do
           Map.put(spells, spell.command, spell)
       end)
     Map.put(character, :spells, spells)
+  end
+
+  def load_race(%Character{race_id: race_id} = character) do
+    race = Repo.get(Race, race_id)
+
+    effect =
+      EntityAbility.load_abilities("races", race_id)
+      |> Map.put("stack_key", "race")
+
+    attributes =
+      Map.take(race, [:strength, :agility, :intellect, :willpower, :health, :charm])
+
+    character
+    |> Map.put(:race, race.name)
+    |> Map.merge(attributes)
+    |> Systems.Effect.add(effect)
   end
 
   def load_items(%Character{id: id} = character) do
@@ -170,7 +193,7 @@ defmodule ApathyDrive.Character do
     %{
       name: character.name,
       class: character.class.name,
-      race: character.race.name,
+      race: character.race,
       level: character.level,
       experience: character.experience,
       perception: Mobile.perception_at_level(character, character.level),
@@ -202,16 +225,7 @@ defmodule ApathyDrive.Character do
 
     def ability_value(character, ability) do
       # TODO: add race and class ability values
-      equipment_bonus =
-        character.equipment
-        |> Enum.reduce(0, fn
-             %{abilities: %{^ability => value}}, total ->
-               total + value
-            _, total ->
-              total
-           end)
-      effect_bonus = Systems.Effect.effect_bonus(character, ability)
-      equipment_bonus + effect_bonus
+      Systems.Effect.effect_bonus(character, ability)
     end
 
     def accuracy_at_level(character, level) do
@@ -223,7 +237,7 @@ defmodule ApathyDrive.Character do
     end
 
     def attribute_at_level(%Character{} = character, attribute, level) do
-      from_race = Map.get(character.race, attribute)
+      from_race = Map.get(character, attribute)
 
       from_race = from_race + ((from_race / 10) * (level - 1))
 
@@ -437,10 +451,14 @@ defmodule ApathyDrive.Character do
 
     def max_hp_at_level(mobile, level) do
       trunc(5 * attribute_at_level(mobile, :health, level))
+      modifier = ability_value(character, "MaxHP")
+      trunc(base * (1 + (modifier / 100)))
     end
 
     def max_mana_at_level(mobile, level) do
-      trunc(5 * attribute_at_level(mobile, :intellect, level))
+      base = trunc(5 * attribute_at_level(mobile, :intellect, level))
+      modifier = ability_value(character, "MaxMana")
+      trunc(base * (1 + (modifier / 100)))
     end
 
     def party_refs(character, _room) do
