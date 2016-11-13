@@ -402,7 +402,23 @@ defmodule ApathyDrive.Character do
 
     def magical_resistance_at_level(character, level) do
       resist = attribute_at_level(character, :willpower, level)
-      modifier = ability_value(character, "MagicalResist")
+      mr =
+        character.equipment
+        |> Enum.reduce(0, fn
+             %Item{grade: "Cloth"}, total ->
+               total + 5
+             %Item{grade: "Leather"}, total ->
+               total + 4
+             %Item{grade: "Chain"}, total ->
+               total + 3
+             %Item{grade: "Scale"}, total ->
+               total + 2
+             %Item{grade: "Plate"}, total ->
+               total + 1
+             _, total ->
+               total
+           end)
+      modifier = mr + ability_value(character, "MagicalResist")
       trunc(resist * (modifier / 100))
     end
 
@@ -432,7 +448,23 @@ defmodule ApathyDrive.Character do
 
     def physical_resistance_at_level(character, level) do
       resist = attribute_at_level(character, :strength, level)
-      modifier = ability_value(character, "AC")
+      ac =
+        character.equipment
+        |> Enum.reduce(0, fn
+             %Item{grade: "Cloth"}, total ->
+               total + 1
+             %Item{grade: "Leather"}, total ->
+               total + 2
+             %Item{grade: "Chain"}, total ->
+               total + 3
+             %Item{grade: "Scale"}, total ->
+               total + 4
+             %Item{grade: "Plate"}, total ->
+               total + 5
+             _, total ->
+               total
+           end)
+      modifier = ac + ability_value(character, "AC")
       trunc(resist * (modifier / 100))
     end
 
