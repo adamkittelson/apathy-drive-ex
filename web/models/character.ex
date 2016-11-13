@@ -90,7 +90,6 @@ defmodule ApathyDrive.Character do
 
   def weapon(%Character{} = character) do
     character.equipment
-    |> Enum.map(&(&1.item))
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
   end
 
@@ -396,7 +395,15 @@ defmodule ApathyDrive.Character do
 
     def magical_damage_at_level(character, level) do
       damage = attribute_at_level(character, :intellect, level)
-      modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
+      weapon_bonus =
+        case Character.weapon(character) do
+          %Item{worn_on: "Two Handed"} ->
+            10
+          _ ->
+            0
+          end
+
+      modifier = weapon_bonus + ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
       trunc(damage * (1 + (modifier / 100)))
     end
 
@@ -442,7 +449,15 @@ defmodule ApathyDrive.Character do
 
     def physical_damage_at_level(character, level) do
       damage = attribute_at_level(character, :strength, level)
-      modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyPhysicalDamage")
+      weapon_bonus =
+        case Character.weapon(character) do
+          %Item{worn_on: "Two Handed"} ->
+            10
+          _ ->
+            0
+          end
+
+      modifier = weapon_bonus + ability_value(character, "ModifyDamage") + ability_value(character, "ModifyPhysicalDamage")
       trunc(damage * (1 + (modifier / 100)))
     end
 
