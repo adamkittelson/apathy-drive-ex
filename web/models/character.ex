@@ -215,9 +215,11 @@ defmodule ApathyDrive.Character do
     end
 
     def accuracy_at_level(character, level) do
-      int = attribute_at_level(character, :agility, level)
+      agi = attribute_at_level(character, :agility, level)
+      cha = attribute_at_level(character, :charm, level)
+      agi = agi + (cha / 10)
       modifier = ability_value(character, "Accuracy")
-      trunc(int * (1 + (modifier / 100)))
+      trunc(agi * (1 + (modifier / 100)))
     end
 
     def attribute_at_level(%Character{} = character, attribute, level) do
@@ -319,6 +321,8 @@ defmodule ApathyDrive.Character do
 
     def crits_at_level(character, level) do
       int = attribute_at_level(character, :intellect, level)
+      cha = attribute_at_level(character, :charm, level)
+      int = int + (cha / 10)
       modifier = ability_value(character, "Crits")
       trunc(int * (1 + (modifier / 100)))
     end
@@ -343,6 +347,8 @@ defmodule ApathyDrive.Character do
 
     def dodge_at_level(character, level) do
       agi = attribute_at_level(character, :agility, level)
+      cha = attribute_at_level(character, :charm, level)
+      agi = agi + (cha / 10)
       modifier = ability_value(character, "Dodge")
       trunc(agi * (1 + (modifier / 100)))
     end
@@ -443,6 +449,8 @@ defmodule ApathyDrive.Character do
 
     def perception_at_level(character, level) do
       int = attribute_at_level(character, :intellect, level)
+      cha = attribute_at_level(character, :charm, level)
+      int = int + (cha / 10)
       modifier = ability_value(character, "Perception")
       trunc(int * (1 + (modifier / 100)))
     end
@@ -561,6 +569,8 @@ defmodule ApathyDrive.Character do
 
     def spellcasting_at_level(character, level) do
       will = attribute_at_level(character, :willpower, level)
+      cha = attribute_at_level(character, :charm, level)
+      will = will + (cha / 10)
       modifier = ability_value(character, "Spellcasting")
       trunc(will * (1 + (modifier / 100)))
     end
@@ -574,6 +584,8 @@ defmodule ApathyDrive.Character do
 
     def stealth_at_level(character, level) do
       agi = attribute_at_level(character, :agility, level)
+      cha = attribute_at_level(character, :charm, level)
+      agi = agi + (cha / 10)
       modifier = ability_value(character, "Stealth")
       trunc(agi * (modifier / 100))
     end
