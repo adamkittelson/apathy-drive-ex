@@ -240,6 +240,7 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:monitor_ref, monitor_ref)
         |> Map.put(:ref, ref)
         |> Character.load_race
+        |> Character.load_class
         |> Character.load_spells
         |> Character.load_items
         |> Map.put(:socket, socket)

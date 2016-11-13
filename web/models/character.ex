@@ -74,10 +74,15 @@ defmodule ApathyDrive.Character do
     |> validate_confirmation(:password)
   end
 
-  def load_spells(%Character{} = character) do
-    character = character |> ApathyDrive.Repo.preload(class: [classes_spells: :spell])
+  def load_spells(%Character{class_id: class_id} = character) do
+    classes_spells =
+      ApathyDrive.ClassSpell
+      |> Ecto.Query.where(class_id: ^class_id)
+      |> Ecto.Query.preload([:spell])
+      |> Repo.all
+
     spells =
-      Enum.reduce(character.class.classes_spells, %{}, fn
+      Enum.reduce(classes_spells, %{}, fn
         %{level: level, spell: %Spell{id: id} = spell}, spells ->
           spell =
             put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
@@ -100,6 +105,18 @@ defmodule ApathyDrive.Character do
     character
     |> Map.put(:race, race.name)
     |> Map.merge(attributes)
+    |> Systems.Effect.add(effect)
+  end
+
+  def load_class(%Character{class_id: class_id} = character) do
+    class = Repo.get(ApathyDrive.Class, class_id)
+
+    effect =
+      EntityAbility.load_abilities("classes", class_id)
+      |> Map.put("stack_key", "class")
+
+    character
+    |> Map.put(:class, class.name)
     |> Systems.Effect.add(effect)
   end
 
@@ -192,7 +209,7 @@ defmodule ApathyDrive.Character do
 
     %{
       name: character.name,
-      class: character.class.name,
+      class: character.class,
       race: character.race,
       level: character.level,
       experience: character.experience,
@@ -450,14 +467,14 @@ defmodule ApathyDrive.Character do
     end
 
     def max_hp_at_level(mobile, level) do
-      trunc(5 * attribute_at_level(mobile, :health, level))
-      modifier = ability_value(character, "MaxHP")
+      base = trunc(ability_value(mobile, "HPPerHealth") * attribute_at_level(mobile, :health, level))
+      modifier = ability_value(mobile, "MaxHP")
       trunc(base * (1 + (modifier / 100)))
     end
 
     def max_mana_at_level(mobile, level) do
       base = trunc(5 * attribute_at_level(mobile, :intellect, level))
-      modifier = ability_value(character, "MaxMana")
+      modifier = ability_value(mobile, "MaxMana")
       trunc(base * (1 + (modifier / 100)))
     end
 
