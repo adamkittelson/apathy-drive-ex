@@ -150,6 +150,8 @@ defmodule ApathyDrive.RoomServer do
     PubSub.subscribe("rooms:#{room.id}")
     PubSub.subscribe("areas:#{room.area_id}")
 
+    send(self, :load_monsters)
+
     # send(self, :load_present_mobiles)
     #
     # if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
@@ -594,8 +596,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, ApathyDrive.Script.execute(room, mobile, script)}
   end
 
-  def handle_info(:load_present_mobiles, room) do
-    {:noreply, Room.load_present_mobiles(room)}
+  def handle_info(:load_monsters, room) do
+    {:noreply, Room.load_monsters(room)}
   end
 
   def handle_info({:update_area, area}, room) do

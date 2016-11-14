@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Item, Monster, Room, Spell}
+  alias ApathyDrive.{Character, Item, Monster, Room, RoomMonster, Spell}
 
   require Logger
 
@@ -18,14 +18,33 @@ defmodule ApathyDrive.Monster do
     field :death_message,    :string
     field :adjectives,       ApathyDrive.JSONB
 
-    field :hp,      :float, virtual: true, default: 1.0
-    field :mana,    :float, virtual: true, default: 1.0
-    field :ref,     :any, virtual: true
-    field :timers,  :map, virtual: true, default: %{}
-    field :effects, :map, virtual: true, default: %{}
-    field :spells,  :map, virtual: true, default: %{}
+    field :hp,        :float, virtual: true, default: 1.0
+    field :mana,      :float, virtual: true, default: 1.0
+    field :ref,       :any, virtual: true
+    field :timers,    :map, virtual: true, default: %{}
+    field :effects,   :map, virtual: true, default: %{}
+    field :spells,    :map, virtual: true, default: %{}
+    field :strength,  :integer, virtual: true
+    field :agility,   :integer, virtual: true
+    field :intellect, :integer, virtual: true
+    field :willpower, :integer, virtual: true
+    field :health,    :integer, virtual: true
+    field :charm,     :integer, virtual: true
+    field :room_monster_id, :integer, virtual: true
+    field :room_id, :integer, virtual: true
 
     timestamps
+  end
+
+  def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm) do
+    monster = Repo.get(Monster, monster_id)
+
+    stats = Map.take(rm, [:strength, :agility, :intellect,
+                          :willpower, :health, :charm])
+
+    Map.merge(monster, stats)
+    |> Map.put(:room_monster_id, id)
+    |> Map.put(:ref, make_ref())
   end
 
   defimpl ApathyDrive.Mobile, for: Monster do

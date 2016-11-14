@@ -3,25 +3,26 @@ defmodule ApathyDrive.Room do
   alias ApathyDrive.{Ability, Area, Character, Class, Match, Mobile, Monster, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
 
   schema "rooms" do
-    field :name,                     :string
-    field :description,              :string
-    field :light,                    :integer
-    field :item_descriptions,        ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
-    field :lair_size,                :integer
-    field :lair_frequency,           :integer, default: 5
-    field :exits,                    ApathyDrive.JSONB, default: []
-    field :commands,                 ApathyDrive.JSONB, default: %{}
-    field :legacy_id,                :string
-    field :coordinates,              ApathyDrive.JSONB
+    field :name,               :string
+    field :description,        :string
+    field :light,              :integer
+    field :item_descriptions,  ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}}
+    field :lair_size,          :integer
+    field :lair_frequency,     :integer, default: 5
+    field :exits,              ApathyDrive.JSONB, default: []
+    field :commands,           ApathyDrive.JSONB, default: %{}
+    field :legacy_id,          :string
+    field :coordinates,        ApathyDrive.JSONB
+    field :permanent_npc,      :integer
 
-    field :effects,                  :map, virtual: true, default: %{}
-    field :lair_next_spawn_at,       :integer, virtual: true, default: 0
-    field :timers,                   :map, virtual: true, default: %{}
-    field :last_effect_key,          :integer, virtual: true, default: 0
-    field :default_essence,          :integer, virtual: true
-    field :mobiles,                  :map, virtual: true, default: %{}
-    field :timer,                    :any, virtual: true
-    field :items,                    :any, virtual: true, default: []
+    field :effects,            :map, virtual: true, default: %{}
+    field :lair_next_spawn_at, :integer, virtual: true, default: 0
+    field :timers,             :map, virtual: true, default: %{}
+    field :last_effect_key,    :integer, virtual: true, default: 0
+    field :default_essence,    :integer, virtual: true
+    field :mobiles,            :map, virtual: true, default: %{}
+    field :timer,              :any, virtual: true
+    field :items,              :any, virtual: true, default: []
 
     timestamps
 
@@ -59,7 +60,7 @@ defmodule ApathyDrive.Room do
     |> Repo.all
   end
 
-  def mobile_entered(%Room{} = room, %{} = mobile, message \\ nil) do
+  def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do
     from_direction =
       room
       |> Room.get_direction_by_destination(mobile.room_id)
@@ -73,7 +74,7 @@ defmodule ApathyDrive.Room do
       mobile
       |> Mobile.set_room_id(room.id)
 
-    ApathyDrive.Commands.Look.execute(room, mobile, [])
+    if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
 
     room = put_in(room.mobiles[mobile.ref], mobile)
 
@@ -99,8 +100,9 @@ defmodule ApathyDrive.Room do
 
   def move_after(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn
-      # %Monster{movement_frequency: frequency} = monster ->
-      #   TimerManager.send_after(monster, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
+      %Monster{} = monster ->
+        monster
+        #TimerManager.send_after(monster, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
       %Character{} = character ->
         character
     end)
@@ -175,25 +177,21 @@ defmodule ApathyDrive.Room do
     |> Enum.find(&(Map.get(&1, :monitor_ref) == ref))
   end
 
-  def load_present_mobiles(%Room{} = room) do
+  def load_monsters(%Room{} = room) do
     room.id
-    |> mobiles_to_load()
-    |> Enum.reduce(room, fn(mobile_id, updated_room) ->
-         monster =
-           Monster
-           |> Repo.get!(mobile_id)
-           |> Monster.init
+    |> monsters_to_load()
+    |> Enum.reduce(room, fn(room_monster, updated_room) ->
+         monster = Monster.from_room_monster(room_monster)
 
          Room.mobile_entered(updated_room, monster)
        end)
   end
 
-  def mobiles_to_load(room_id) do
+  def monsters_to_load(room_id) do
     require Ecto.Query
 
-    Monster
+    ApathyDrive.RoomMonster
     |> Ecto.Query.where(room_id: ^room_id)
-    |> Ecto.Query.select([m], m.id)
     |> Repo.all
   end
 
