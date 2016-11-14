@@ -3,12 +3,12 @@ defmodule ApathyDrive.Commands.Gossip do
 
   def keywords, do: ["gos"]
 
-  def execute(%Room{} = room, %Monster{} = monster, args) do
+  def execute(%Room{} = room, %Character{} = character, args) do
     message =
       args
       |> Enum.join(" ")
       |> Monster.sanitize()
-    ApathyDrive.Endpoint.broadcast!("chat:gossip", "scroll", %{html: "<p>[<span class='dark-magenta'>gossip</span> : #{Monster.aligned_spirit_name(monster)}] #{message}</p>"})
+    ApathyDrive.Endpoint.broadcast!("chat:gossip", "scroll", %{html: "<p>[<span class='dark-magenta'>gossip</span> : #{Mobile.look_name(character)}] #{message}</p>"})
     room
   end
 

@@ -3,20 +3,14 @@ defmodule ApathyDrive.Commands.Say do
 
   def keywords, do: ["say"]
 
-  def execute(%Room{} = room, %Monster{monster_template_id: nil} = monster, _message) do
-    Monster.body_required(monster)
-
-    room
-  end
-
-  def execute(%Room{} = room, %Monster{} = monster, args) do
+  def execute(%Room{} = room, %Character{} = character, args) do
     message =
       args
       |> Enum.join(" ")
       |> Monster.sanitize()
 
-    Room.send_scroll(room, "<p>#{Monster.look_name(monster)} says: <span class='dark-green'>\"#{message}\"</span></p>", [monster])
-    Monster.send_scroll(monster, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
+    Room.send_scroll(room, "<p>#{Mobile.look_name(character)} says: <span class='dark-green'>\"#{message}\"</span></p>", [character])
+    Mobile.send_scroll(character, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
     room
   end
 

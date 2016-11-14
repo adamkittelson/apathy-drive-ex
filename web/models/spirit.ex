@@ -98,8 +98,8 @@ defmodule Spirit do
     "<span class='#{Monster.alignment_color(spirit.class)}'>#{name}</span>"
   end
 
-  def add_experience(%Monster{spirit: nil} = monster, _exp), do: monster
-  def add_experience(%Monster{spirit: %Spirit{level: level} = spirit} = monster, exp) do
+  def add_experience(%{spirit: nil} = monster, _exp), do: monster
+  def add_experience(%{spirit: %Spirit{level: level} = spirit} = monster, exp) do
     spirit =
       spirit
       |> Map.put(:experience, spirit.experience + exp)

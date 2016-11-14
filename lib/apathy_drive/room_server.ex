@@ -422,13 +422,13 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:unify, ref}, room) do
     case Room.get_mobile(room, ref) do
-      %Monster{spirit: nil, unities: []} ->
+      %{spirit: nil, unities: []} ->
         :noop
-      %Monster{spirit: nil, experience: essence, unities: unities} ->
+      %{spirit: nil, experience: essence, unities: unities} ->
         Enum.each(unities, fn(unity) ->
           ApathyDrive.Unity.contribute(unity, essence)
         end)
-      %Monster{spirit: %Spirit{experience: essence, class: %{unities: unities}}} ->
+      %{spirit: %Spirit{experience: essence, class: %{unities: unities}}} ->
         Enum.each(unities, fn(unity) ->
           ApathyDrive.Unity.contribute(unity, essence)
         end)
@@ -879,8 +879,8 @@ defmodule ApathyDrive.RoomServer do
   defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"], do: true
   defp passable?(_room, _room_exit), do: false
 
-  defp should_move?(%Room{}, %Monster{movement: "stationary"}), do: false
-  defp should_move?(%Room{} = room, %Monster{spirit: nil} = mobile) do
+  defp should_move?(%Room{}, %{movement: "stationary"}), do: false
+  defp should_move?(%Room{} = room, %{spirit: nil} = mobile) do
     cond do
       # at least 80% health and no enemies present, go find something to kill
       ((mobile.hp / mobile.max_hp) >= 0.8) and !Enum.any?(Room.local_hated_targets(room, mobile)) ->
@@ -892,6 +892,6 @@ defmodule ApathyDrive.RoomServer do
         false
     end
   end
-  defp should_move?(%Room{}, %Monster{}), do: false
+  defp should_move?(%Room{}, %{}), do: false
 
 end

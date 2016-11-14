@@ -18,7 +18,7 @@ defmodule ApathyDrive.Script do
     |> Map.get(:instructions)
   end
 
-  def execute(%Room{} = room, %Monster{} = monster, scripts) do
+  def execute(%Room{} = room, %{} = monster, scripts) do
     result =
       scripts
       |> Enum.find_value(fn(script) ->
@@ -27,7 +27,7 @@ defmodule ApathyDrive.Script do
     result || room
   end
 
-  def execute_script(%Room{} = room, %Monster{} = monster, [instruction | rest]) when is_list(instruction) do
+  def execute_script(%Room{} = room, %{} = monster, [instruction | rest]) when is_list(instruction) do
     if room = execute_script(room, monster, instruction) do
       room
     else
@@ -35,13 +35,13 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_script(%Room{} = room, %Monster{} = monster, [instruction | script]) do
+  def execute_script(%Room{} = room, %{} = monster, [instruction | script]) do
     execute_instruction(room, monster, instruction, script)
   end
 
   def execute_script(%Room{} = room, _monster, []),   do: room
   def execute_script(_room, _monster, nil), do: false
-  def execute_script(%Room{} = room, %Monster{} = monster, script_id) when is_integer(script_id) do
+  def execute_script(%Room{} = room, %{} = monster, script_id) when is_integer(script_id) do
     script =
       script_id
       |> find()
@@ -49,24 +49,24 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, script)
   end
 
-  def execute_script(%Room{} = room, %Monster{} = monster, instruction), do: execute_instruction(room, monster, instruction, nil)
+  def execute_script(%Room{} = room, %{} = monster, instruction), do: execute_instruction(room, monster, instruction, nil)
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"message" => %{"user" => user_message, "spectator" => spectator_message}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"message" => %{"user" => user_message, "spectator" => spectator_message}}, script) do
     Monster.send_scroll(monster, "<p>#{user_message}</p>")
     Room.send_scroll(room, "<p>#{ApathyDrive.Text.interpolate(spectator_message, %{"user" => monster})}</p>", [monster])
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"message" => message},  script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"message" => message},  script) do
     Monster.send_scroll(monster, "<p>#{message}</p>")
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: nil}, %{"fail_flag" => %{"failure_message" => _message, "flag" => _flag}}, _script) do
+  def execute_instruction(%Room{} = room, %{spirit: nil}, %{"fail_flag" => %{"failure_message" => _message, "flag" => _flag}}, _script) do
     room
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: spirit} = monster, %{"fail_flag" => %{"failure_message" => message, "flag" => flag}}, script) do
+  def execute_instruction(%Room{} = room, %{spirit: spirit} = monster, %{"fail_flag" => %{"failure_message" => message, "flag" => flag}}, script) do
     if Map.has_key?(spirit.flags, flag) do
       Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
       room
@@ -75,11 +75,11 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: nil}, %{"give_flag" => %{"flag" => _flag, "value" => _value}}, _script) do
+  def execute_instruction(%Room{} = room, %{spirit: nil}, %{"give_flag" => %{"flag" => _flag, "value" => _value}}, _script) do
     room
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"give_flag" => %{"flag" => flag, "value" => value}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"give_flag" => %{"flag" => flag, "value" => value}}, script) do
     monster =
       put_in(monster.spirit.flags[flag], value)
       |> Monster.save
@@ -89,11 +89,11 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: nil}, %{"flag_equals" => %{"flag" => _flag, "value" => _value}}, _script) do
+  def execute_instruction(%Room{} = room, %{spirit: nil}, %{"flag_equals" => %{"flag" => _flag, "value" => _value}}, _script) do
     room
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: spirit} = monster, %{"flag_equals" => %{"flag" => flag, "value" => value}}, script) do
+  def execute_instruction(%Room{} = room, %{spirit: spirit} = monster, %{"flag_equals" => %{"flag" => flag, "value" => value}}, script) do
     if value == spirit.flags[flag] do
       execute_script(room, monster, script)
     else
@@ -101,7 +101,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: nil}, %{"flag_at_least" => %{"flag" => _flag, "value" => _value}}, _script) do
+  def execute_instruction(%Room{} = room, %{spirit: nil}, %{"flag_at_least" => %{"flag" => _flag, "value" => _value}}, _script) do
     room
   end
 
@@ -115,7 +115,7 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, [new_script | script])
   end
 
-  def execute_instruction(%Room{} = room, %Monster{alignment: alignment} = monster, %{"allowed_alignments" => %{"failure_message" => message, "alignments" => alignments}}, script) do
+  def execute_instruction(%Room{} = room, %{alignment: alignment} = monster, %{"allowed_alignments" => %{"failure_message" => message, "alignments" => alignments}}, script) do
     if alignment in alignments do
       execute_script(room, monster, script)
     else
@@ -124,7 +124,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"check_item" => %{"failure_message" => _message, "item" => _item_template_id}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"check_item" => %{"failure_message" => _message, "item" => _item_template_id}}, script) do
     execute_script(room, monster, script)
     # if Monster.has_item?(monster, item_template_id) do
     #   execute_script(room, monster, script)
@@ -134,7 +134,7 @@ defmodule ApathyDrive.Script do
     # end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"take_item" => %{"failure_message" => message, "item" => item_template_id}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"take_item" => %{"failure_message" => message, "item" => item_template_id}}, script) do
     if monster = Monster.remove_item?(monster, item_template_id) do
       Monster.save(monster)
       execute_script(room, monster, script)
@@ -144,7 +144,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{delayed: false} = monster, %{"add_delay" => delay}, script) do
+  def execute_instruction(%Room{} = room, %{delayed: false} = monster, %{"add_delay" => delay}, script) do
     monster =
       monster
       |> ApathyDrive.TimerManager.send_after({:delay_execute_script, delay * 1000, {:execute_script, monster.ref, script}})
@@ -154,11 +154,11 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, [])
   end
 
-  def execute_instruction(%Room{} = room, %Monster{delayed: true} = monster, %{"add_delay" => _delay}, _script) do
+  def execute_instruction(%Room{} = room, %{delayed: true} = monster, %{"add_delay" => _delay}, _script) do
     execute_script(room, monster, [])
   end
 
-  def execute_instruction(%Room{} = room, %Monster{hp: hp} = monster, %{"check_hitpoints" => %{"modifier" => amount, "failure_script" => failure_script}}, script) do
+  def execute_instruction(%Room{} = room, %{hp: hp} = monster, %{"check_hitpoints" => %{"modifier" => amount, "failure_script" => failure_script}}, script) do
     if hp < :rand.uniform(100 + amount) do
       execute_script(room, monster, failure_script)
     else
@@ -166,7 +166,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"check_stat" => %{"stat" => "strength", "modifier" => amount, "failure_script" => failure_script}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"check_stat" => %{"stat" => "strength", "modifier" => amount, "failure_script" => failure_script}}, script) do
     if Monster.strength(monster) < (:rand.uniform(100) + amount) do
       execute_script(room, monster, failure_script)
     else
@@ -174,7 +174,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"check_stat" => %{"stat" => "agility", "modifier" => amount, "failure_script" => failure_script}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"check_stat" => %{"stat" => "agility", "modifier" => amount, "failure_script" => failure_script}}, script) do
     if Monster.agility(monster) < (:rand.uniform(100) + amount) do
       execute_script(room, monster, failure_script)
     else
@@ -182,7 +182,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"check_stat" => %{"stat" => "intellect", "modifier" => amount, "failure_script" => failure_script}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"check_stat" => %{"stat" => "intellect", "modifier" => amount, "failure_script" => failure_script}}, script) do
     if Monster.will(monster) < (:rand.uniform(100) + amount) do
       execute_script(room, monster, failure_script)
     else
@@ -190,7 +190,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"check_stat" => %{"stat" => "wisdom", "modifier" => amount, "failure_script" => failure_script}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"check_stat" => %{"stat" => "wisdom", "modifier" => amount, "failure_script" => failure_script}}, script) do
     if Monster.will(monster) < (:rand.uniform(100) + amount) do
       execute_script(room, monster, failure_script)
     else
@@ -198,17 +198,17 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"remote_action" => %{"direction" => direction, "message" => message, "room_id" => room_id}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"remote_action" => %{"direction" => direction, "message" => message, "room_id" => room_id}}, script) do
     room = Room.initiate_remote_action(room, monster, %{"destination" => room_id, "message" => message, "direction" => direction}, open_remotely: true)
 
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"no_monsters" => _}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"no_monsters" => _}, script) do
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"give_item" => item_template_id}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"give_item" => item_template_id}, script) do
     item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: monster.level})
 
     monster =
@@ -221,7 +221,7 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"spawn_monster" => monster_template_id}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"spawn_monster" => monster_template_id}, script) do
     monster =
       monster_template_id
       |> MonsterTemplate.create_monster(room)
@@ -232,7 +232,7 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"min_level" => %{"failure_message" => message, "level" => level}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"min_level" => %{"failure_message" => message, "level" => level}}, script) do
     if monster.level < level do
       Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
       room
@@ -241,13 +241,13 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: %Spirit{}} = monster, %{"add_experience" => exp}, script) do
+  def execute_instruction(%Room{} = room, %{spirit: %Spirit{}} = monster, %{"add_experience" => exp}, script) do
     monster = Spirit.add_experience(monster, exp)
     room = put_in(room.monsters[monster.ref], monster)
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"cast_ability" => ability_id}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"cast_ability" => ability_id}, script) do
     case ApathyDrive.Ability.find(ability_id) do
       nil ->
         Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: Ability ##{ability_id}</span></p>")
@@ -259,7 +259,7 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"room_item" => %{"failure_message" => failure_message, "item" => item_name}}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"room_item" => %{"failure_message" => failure_message, "item" => item_name}}, script) do
     if Room.find_item(room, item_name) do
       execute_script(room, monster, script)
     else
@@ -268,12 +268,12 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: nil} = monster, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => _price}}, _script) do
+  def execute_instruction(%Room{} = room, %{spirit: nil} = monster, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => _price}}, _script) do
     Monster.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
     room
   end
 
-  def execute_instruction(%Room{} = room, %Monster{spirit: %Spirit{experience: exp}} = monster, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, script) do
+  def execute_instruction(%Room{} = room, %{spirit: %Spirit{experience: exp}} = monster, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, script) do
     if exp >= price do
       monster = Spirit.add_experience(monster, -price)
       room = put_in(room.monsters[monster.ref], monster)
@@ -308,7 +308,7 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %Monster{} = monster, %{"teleport" => room_id}, script) do
+  def execute_instruction(%Room{} = room, %{} = monster, %{"teleport" => room_id}, script) do
     room_exit =
       %{
         "kind" => "Action",

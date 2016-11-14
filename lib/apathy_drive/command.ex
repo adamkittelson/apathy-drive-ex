@@ -10,11 +10,9 @@ defmodule ApathyDrive.Command do
                "w", "west", "nw", "northwest", "u", "up", "d", "down"]
 
   def all do
-    [Commands.Abilities, Commands.Absorb, Commands.Ask, Commands.Attack,
-     Commands.Bash, Commands.Buy, Commands.Class, Commands.Close,
-     Commands.Cooldowns, Commands.Delve, Commands.Drop, Commands.Experience,
-     Commands.Get, Commands.Gossip, Commands.Greet,
-     Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
+    [Commands.Abilities, Commands.Attack, Commands.Buy, Commands.Class,
+     Commands.Cooldowns, Commands.Drop, Commands.Experience,
+     Commands.Get, Commands.Gossip, Commands.Inventory, Commands.List, Commands.Look,
      Commands.Remove, Commands.Return, Commands.Say, Commands.Score,
      Commands.Search, Commands.Sell, Commands.System, Commands.Wear, Commands.Who]
   end
@@ -59,7 +57,7 @@ defmodule ApathyDrive.Command do
   defmacro __using__(_opts) do
     quote do
       import ApathyDrive.Text
-      alias ApathyDrive.{Monster, Room, RoomServer}
+      alias ApathyDrive.{Character, Mobile, Room, RoomServer}
 
       @behaviour ApathyDrive.Command
 

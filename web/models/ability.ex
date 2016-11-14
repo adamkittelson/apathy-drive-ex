@@ -44,14 +44,14 @@ defmodule ApathyDrive.Ability do
     |> cast(params, @required_fields, @optional_fields)
   end
 
-  def useable(abilities, %Monster{mana: mana}) do
+  def useable(abilities, %{mana: mana}) do
     abilities
     |> Enum.reject(fn(ability) ->
          ability["mana_cost"] && ability["mana_cost"] > mana
        end)
   end
 
-  def removes_blessing?(%Monster{} = monster, %{"instant_effects" => %{"remove abilities" => abilities}} = ability) do
+  def removes_blessing?(%{} = monster, %{"instant_effects" => %{"remove abilities" => abilities}} = ability) do
     Systems.Effect.max_stacks?(monster, ability) or
     Enum.any?(abilities, fn(ability_id) ->
       Systems.Effect.stack_count(monster, ability_id) > 0
@@ -68,7 +68,7 @@ defmodule ApathyDrive.Ability do
   def color(%{"kind" => _}),             do: "blue"
 
   def prep_message(nil, _, _, _, _), do: nil
-  def prep_message(message, %{} = ability, %Monster{} = user, %Monster{} = target, interpolations) do
+  def prep_message(message, %{} = ability, %{} = user, %{} = target, interpolations) do
     message = message
               |> interpolate(Map.merge(%{"user" => user, "target" => target}, interpolations))
               |> capitalize_first
@@ -76,8 +76,8 @@ defmodule ApathyDrive.Ability do
   end
 
   def cast_messages(%{} = ability,
-                    %Monster{} = user,
-                    %Monster{} = target,
+                    %{} = user,
+                    %{} = target,
                     interpolations \\ %{},
                     message_key \\ "cast_message") do
     %{
@@ -87,38 +87,38 @@ defmodule ApathyDrive.Ability do
     }
   end
 
-  def scale_ability(%Monster{} = monster, prop_name, %{"potency" => _} = ability) do
+  def scale_ability(%{} = monster, prop_name, %{"potency" => _} = ability) do
     scale_effect(monster, prop_name, ability)
   end
-  def scale_ability(%Monster{} = monster, prop_name, %{"base_min" => _, "base_max" => _} = ability) do
+  def scale_ability(%{} = monster, prop_name, %{"base_min" => _, "base_max" => _} = ability) do
     scale_effect(monster, prop_name, ability)
   end
-  def scale_ability(%Monster{} = monster, _prop_name, %{} = ability) do
+  def scale_ability(%{} = monster, _prop_name, %{} = ability) do
     ability
     |> Map.keys
     |> Enum.reduce(%{}, fn(key, map) ->
          Map.put(map, key, scale_ability(monster, key, ability[key]))
        end)
   end
-  def scale_ability(%Monster{}, _prop_name, ability) do
+  def scale_ability(%{}, _prop_name, ability) do
     ability
   end
 
-  def scale_effect(%Monster{} = _monster, value) when is_number(value), do: value
-  def scale_effect(%Monster{} = _monster, value) when is_binary(value), do: value
+  def scale_effect(%{} = _monster, value) when is_number(value), do: value
+  def scale_effect(%{} = _monster, value) when is_binary(value), do: value
 
-  def scale_effect(%Monster{} = monster, "damage", %{"base_min" => base_min, "base_max" => base_max}) do
+  def scale_effect(%{} = monster, "damage", %{"base_min" => base_min, "base_max" => base_max}) do
     base_max = base_max + Systems.Effect.effect_bonus(monster, "increase max damage")
     base_min..base_max
     |> Enum.random
   end
 
-  def scale_effect(%Monster{}, _effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
+  def scale_effect(%{}, _effect_name, %{"base_min" => base_min, "base_max" => base_max}) do
     base_min..base_max
     |> Enum.random
   end
 
-  def scale_effect(%Monster{} = monster, "heal", %{"potency" => potency}) do
+  def scale_effect(%{} = monster, "heal", %{"potency" => potency}) do
     average = (potency/300) * ((Monster.magical_damage(monster)) + (0.2229 * Monster.will(monster)))
 
     modifier = (80..120 |> Enum.random) / 100
@@ -126,7 +126,7 @@ defmodule ApathyDrive.Ability do
     trunc(average * modifier)
   end
 
-  def scale_effect(%Monster{} = monster, "damage", %{"potency" => potency, "type" => type}) do
+  def scale_effect(%{} = monster, "damage", %{"potency" => potency, "type" => type}) do
     if type == "magical" do
       trunc((potency/300) * (Monster.magical_damage(monster) + (0.2229 * Monster.will(monster))))
     else
@@ -134,7 +134,7 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def scale_effect(%Monster{} = monster, "drain", %{"potency" => potency, "type" => type}) do
+  def scale_effect(%{} = monster, "drain", %{"potency" => potency, "type" => type}) do
     if type == "magical" do
       trunc((potency/300) * (Monster.magical_damage(monster) + (0.2229 * Monster.will(monster))))
     else
@@ -142,13 +142,13 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def scale_effect(%Monster{}, _effect_name, %{"potency" => potency}) do
+  def scale_effect(%{}, _effect_name, %{"potency" => potency}) do
     potency
   end
 
-  def scale_effect(%Monster{}, _effect_name, effect), do: effect
+  def scale_effect(%{}, _effect_name, effect), do: effect
 
-  def find_monster_in_room(%Room{} = room, %Monster{}, query) do
+  def find_monster_in_room(%Room{} = room, %{}, query) do
     monsters =
       room.monsters
       |> Map.values
@@ -160,7 +160,7 @@ defmodule ApathyDrive.Ability do
     target && target.ref
   end
 
-  def find_other_monster_in_room(%Room{} = room, %Monster{ref: monster_ref}, query) do
+  def find_other_monster_in_room(%Room{} = room, %{ref: monster_ref}, query) do
     monsters =
       room.monsters
       |> Map.values
@@ -173,7 +173,7 @@ defmodule ApathyDrive.Ability do
     target && target.ref
   end
 
-  def alignment_enemies(%Room{} = room, %Monster{} = monster) do
+  def alignment_enemies(%Room{} = room, %{} = monster) do
     room.monsters
     |> Map.values
     |> Enum.reject(&(&1.alignment == monster.alignment))
@@ -181,15 +181,15 @@ defmodule ApathyDrive.Ability do
   end
 
   def wrap_target(nil),    do: []
-  def wrap_target(%Monster{pid: pid}), do: [pid]
+  def wrap_target(%{pid: pid}), do: [pid]
   def wrap_target(target), do: [target]
 
-  def reject(%Monster{pid: target_pid}, %Monster{pid: pid}) when pid == target_pid, do: nil
-  def reject(%Monster{pid: target_pid}, %Monster{}), do: target_pid
-  def reject(target_pid, %Monster{pid: pid}) when pid == target_pid, do: nil
-  def reject(target_pid, %Monster{}), do: target_pid
+  def reject(%{pid: target_pid}, %{pid: pid}) when pid == target_pid, do: nil
+  def reject(%{pid: target_pid}, %{}), do: target_pid
+  def reject(target_pid, %{pid: pid}) when pid == target_pid, do: nil
+  def reject(target_pid, %{}), do: target_pid
 
-  def can_execute?(%Room{} = room, %Monster{} = monster, ability) do
+  def can_execute?(%Room{} = room, %{} = monster, ability) do
     cond do
       on_cooldown?(monster, ability) ->
         Monster.send_scroll(monster, "<p><span class='dark-cyan'>You can't do that yet.</p>")
@@ -205,19 +205,19 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def not_enough_mana?(%Monster{mana: _mana}, %{"ignores_global_cooldown" => true}), do: false
-  def not_enough_mana?(%Monster{mana: mana} = monster, %{"mana_cost" => cost}) when cost > mana do
+  def not_enough_mana?(%{mana: _mana}, %{"ignores_global_cooldown" => true}), do: false
+  def not_enough_mana?(%{mana: mana} = monster, %{"mana_cost" => cost}) when cost > mana do
     Monster.send_scroll(monster, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
     true
   end
-  def not_enough_mana?(%Monster{}, %{}), do: false
+  def not_enough_mana?(%{}, %{}), do: false
 
   def cancel_cast_timer(%Room{} = room, monster_ref) do
     Room.update_monster(room, monster_ref, fn
-      %Monster{timers: %{cast_timer: _}} = monster ->
+      %{timers: %{cast_timer: _}} = monster ->
         Monster.send_scroll(monster, "<p><span class='dark-yellow'>You interrupt your spell.</span></p>")
         TimerManager.cancel(monster, :cast_timer)
-      %Monster{} = monster ->
+      %{} = monster ->
         monster
     end)
   end
@@ -230,7 +230,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, monster_ref, %{"cast_time" => _time} = ability, target) do
-    with %Monster{} = monster <- room.monsters[monster_ref],
+    with %{} = monster <- room.monsters[monster_ref],
          %Room{} = room <- cancel_cast_timer(room, monster.ref) do
       start_cast_timer(room, monster_ref, ability, target)
     else
@@ -308,7 +308,7 @@ defmodule ApathyDrive.Ability do
   def kill_monsters(%Room{} = room, caster_ref) do
     Enum.reduce(room.monsters, room, fn {_ref, target}, updated_room ->
       if target.hp < 1 or (target.spirit && target.spirit.experience < -99) do
-        ApathyDrive.Death.kill(updated_room, target.ref, caster_ref)
+        #ApathyDrive.Death.kill(updated_room, target.ref, caster_ref)
       else
         Mobile.update_prompt(target)
         updated_room
@@ -334,54 +334,54 @@ defmodule ApathyDrive.Ability do
   end
   def execute_multi_cast(%Room{} = room, _caster_ref, %{} = _ability, _targets), do: room
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "attack"}, "") do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "attack"}, "") do
     room
     |> Monster.aggro_target(monster)
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "attack"}, query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "attack"}, query) do
     find_other_monster_in_room(room, monster, query)
     |> wrap_target
   end
 
-  def get_targets(%Room{}, %Monster{ref: ref}, %{"kind" => "blessing"}, "") do
+  def get_targets(%Room{}, %{ref: ref}, %{"kind" => "blessing"}, "") do
     wrap_target(ref)
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind": "blessing"}, query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind": "blessing"}, query) do
     find_monster_in_room(room, monster, query)
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "curse"}, "") do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "curse"}, "") do
     room
     |> Monster.aggro_target(monster)
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "curse"}, query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "curse"}, query) do
     room
     |> find_other_monster_in_room(monster, query)
     |> wrap_target
   end
 
-  def get_targets(%Room{}, %Monster{} = monster, %{"kind" => "heal"}, "") do
+  def get_targets(%Room{}, %{} = monster, %{"kind" => "heal"}, "") do
     monster.ref
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "heal"}, query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "heal"}, query) do
     room
     |> find_monster_in_room(monster, query)
     |> wrap_target
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "room attack"}, _query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "room attack"}, _query) do
     Enum.uniq(alignment_enemies(room, monster) ++ Room.local_hated_targets(room, monster))
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "room blessing"}, _query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "room blessing"}, _query) do
     room.mobles
     |> Map.values
     |> Enum.filter(&(&1.alignment == monster.alignment))
@@ -390,11 +390,11 @@ defmodule ApathyDrive.Ability do
     |> Enum.uniq
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "room curse"}, _query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "room curse"}, _query) do
     Enum.uniq(alignment_enemies(room, monster) ++ Room.local_hated_targets(room, monster))
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "room heal"}, _query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "room heal"}, _query) do
     room.mobles
     |> Map.values
     |> Enum.filter(&(&1.alignment == monster.alignment))
@@ -403,23 +403,23 @@ defmodule ApathyDrive.Ability do
     |> Enum.uniq
   end
 
-  def get_targets(%Room{}, %Monster{} = monster, %{"kind" => "utility"}, "") do
+  def get_targets(%Room{}, %{} = monster, %{"kind" => "utility"}, "") do
     wrap_target(monster.ref)
   end
 
-  def get_targets(%Room{} = room, %Monster{} = monster, %{"kind" => "utility"}, query) do
+  def get_targets(%Room{} = room, %{} = monster, %{"kind" => "utility"}, query) do
     room
     |> find_monster_in_room(monster, query)
     |> wrap_target
   end
 
-  def attack_abilities(%Monster{abilities: abilities} = monster) do
+  def attack_abilities(%{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1["kind"] == "attack"))
     |> useable(monster)
   end
 
-  def bless_abilities(%Monster{abilities: abilities} = monster) do
+  def bless_abilities(%{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1["kind"] == "blessing"))
     |> Enum.reject(fn(ability) ->
@@ -428,7 +428,7 @@ defmodule ApathyDrive.Ability do
     |> useable(monster)
   end
 
-  def curse_abilities(%Monster{abilities: abilities} = monster) do
+  def curse_abilities(%{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1["kind"] == "curse"))
     |> Enum.reject(fn(ability) ->
@@ -437,30 +437,30 @@ defmodule ApathyDrive.Ability do
     |> useable(monster)
   end
 
-  def heal_abilities(%Monster{abilities: abilities} = monster) do
+  def heal_abilities(%{abilities: abilities} = monster) do
     abilities
     |> Enum.filter(&(&1["kind"] == "heal"))
     |> useable(monster)
   end
 
-  def on_cooldown?(%Monster{effects: effects} = monster, %{"cooldown" => _, "name" => name} = ability) do
+  def on_cooldown?(%{effects: effects} = monster, %{"cooldown" => _, "name" => name} = ability) do
     effects
     |> Map.values
     |> Enum.any?(&(&1["cooldown"] == name)) or on_global_cooldown?(monster, ability)
   end
-  def on_cooldown?(%Monster{} = monster, %{} = ability) do
+  def on_cooldown?(%{} = monster, %{} = ability) do
     on_global_cooldown?(monster, ability)
   end
 
-  def on_global_cooldown?(%Monster{},          %{"ignores_global_cooldown" => true}), do: false
-  def on_global_cooldown?(%Monster{} = monster, %{}), do: on_global_cooldown?(monster)
-  def on_global_cooldown?(%Monster{effects: effects}) do
+  def on_global_cooldown?(%{},          %{"ignores_global_cooldown" => true}), do: false
+  def on_global_cooldown?(%{} = monster, %{}), do: on_global_cooldown?(monster)
+  def on_global_cooldown?(%{effects: effects}) do
     effects
     |> Map.values
     |> Enum.any?(&(&1["cooldown"] == :global))
   end
 
-  def apply_cooldown(%Monster{} = monster, %{"name" => "attack"} = ability) do
+  def apply_cooldown(%{} = monster, %{"name" => "attack"} = ability) do
     if gc = global_cooldown(ability, monster) do
       Systems.Effect.add(monster, %{"cooldown" => :attack}, gc)
     else
@@ -468,7 +468,7 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def apply_cooldown(%Monster{} = monster, %{"cooldown" => cooldown, "name" => name} = ability) do
+  def apply_cooldown(%{} = monster, %{"cooldown" => cooldown, "name" => name} = ability) do
     monster
     |> Systems.Effect.add(%{"cooldown" => name,
                             "expiration_message" => "#{capitalize_first(name)} is ready for use again."},
@@ -476,7 +476,7 @@ defmodule ApathyDrive.Ability do
     |> apply_cooldown(Map.delete(ability, "cooldown"))
   end
 
-  def apply_cooldown(%Monster{} = monster, %{} = ability) do
+  def apply_cooldown(%{} = monster, %{} = ability) do
     if gc = global_cooldown(ability, monster) do
       Systems.Effect.add(monster, %{"cooldown" => :global}, gc)
     else
@@ -506,8 +506,8 @@ defmodule ApathyDrive.Ability do
     send(self, {:execute_ability, %{caster: caster_ref, ability: ability, target: targets}})
   end
 
-  def global_cooldown(%{"ignores_global_cooldown" => true}, %Monster{}), do: nil
-  def global_cooldown(%{"global_cooldown" => gc}, %Monster{effects: effects}) do
+  def global_cooldown(%{"ignores_global_cooldown" => true}, %{}), do: nil
+  def global_cooldown(%{"global_cooldown" => gc}, %{effects: effects}) do
     speed_mods = effects
                  |> Map.values
                  |> Enum.filter(&(Map.has_key?(&1, "speed")))
@@ -515,7 +515,7 @@ defmodule ApathyDrive.Ability do
 
     gc * speed_modifier(speed_mods)
   end
-  def global_cooldown(%{}, %Monster{}), do: nil
+  def global_cooldown(%{}, %{}), do: nil
 
   def speed_modifier([]), do: 1
   def speed_modifier(speed_mods) do
@@ -524,7 +524,7 @@ defmodule ApathyDrive.Ability do
     Enum.sum(speed_mods) / count / 100
   end
 
-  def dodged?(%Monster{} = monster, %{"accuracy_stats" => stats}, %Monster{} = attacker) do
+  def dodged?(%{} = monster, %{"accuracy_stats" => stats}, %{} = attacker) do
     accuracy =
       stats
       |> Enum.reduce(0, fn(stat, total) ->
@@ -925,8 +925,8 @@ defmodule ApathyDrive.Ability do
   end
   def add_duration_effects(%Room{} = room, _target_ref, %{}, _caster_ref), do: room
 
-  def affects_target?(%Monster{flags: _monster_flags}, %{"flags" => nil}), do: true
-  def affects_target?(%Monster{flags: monster_flags}, %{"flags" => ability_flags}) do
+  def affects_target?(%{flags: _monster_flags}, %{"flags" => nil}), do: true
+  def affects_target?(%{flags: monster_flags}, %{"flags" => ability_flags}) do
     cond do
       Enum.member?(ability_flags, "affects-living") and Enum.member?(monster_flags, "non-living") ->
         false
@@ -940,7 +940,7 @@ defmodule ApathyDrive.Ability do
         true
     end
   end
-  def affects_target?(%Monster{flags: _monster_flags}, %{}), do: true
+  def affects_target?(%{flags: _monster_flags}, %{}), do: true
   def affects_target?(nil, %{}), do: false
 
 end

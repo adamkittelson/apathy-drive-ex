@@ -241,7 +241,6 @@ defmodule ApathyDrive.Character do
   defimpl ApathyDrive.Mobile, for: Character do
 
     def ability_value(character, ability) do
-      # TODO: add race and class ability values
       Systems.Effect.effect_bonus(character, ability)
     end
 

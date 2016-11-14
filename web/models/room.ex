@@ -99,14 +99,14 @@ defmodule ApathyDrive.Room do
 
   def move_after(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn
-      %Monster{movement_frequency: frequency} = monster ->
-        TimerManager.send_after(monster, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
+      # %Monster{movement_frequency: frequency} = monster ->
+      #   TimerManager.send_after(monster, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
       %Character{} = character ->
         character
     end)
   end
 
-  def local_hated_targets(%Room{mobiles: mobiles}, %Monster{hate: hate}) do
+  def local_hated_targets(%Room{mobiles: mobiles}, %{hate: hate}) do
     mobiles
     |> Map.keys
     |> Enum.reduce(%{}, fn(potential_target, targets) ->
@@ -673,7 +673,7 @@ defmodule ApathyDrive.Room do
       }
 
     Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
-      Room.update_mobile(updated_room, ref, fn %Monster{socket: socket} = mobile ->
+      Room.update_mobile(updated_room, ref, fn %{socket: socket} = mobile ->
 
         if socket, do: send(socket, {:update_room_essence, essence})
 

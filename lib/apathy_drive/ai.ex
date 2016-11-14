@@ -16,7 +16,7 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def calm_down(%Room{mobiles: monsters}, %Monster{hate: hate} = monster) do
+  def calm_down(%Room{mobiles: monsters}, %{hate: hate} = monster) do
     monsters_in_room =
       monsters
       |> Map.keys
@@ -41,7 +41,7 @@ defmodule ApathyDrive.AI do
 
   def heal(%Room{} = room, monster_ref) do
     case Room.get_monster(room, monster_ref) do
-      %Monster{hp: hp, max_hp: max_hp, spirit: nil} = monster ->
+      %{hp: hp, max_hp: max_hp, spirit: nil} = monster ->
         unless Ability.on_global_cooldown?(monster) do
           chance = trunc((max_hp - hp) / max_hp * 100)
 
@@ -65,7 +65,7 @@ defmodule ApathyDrive.AI do
 
   def bless(%Room{} = room, monster_ref) do
     case Room.get_monster(room, monster_ref) do
-      %Monster{spirit: nil} = monster ->
+      %{spirit: nil} = monster ->
         unless Ability.on_global_cooldown?(monster) do
           ability = monster
                     |> Ability.bless_abilities
@@ -82,7 +82,7 @@ defmodule ApathyDrive.AI do
 
   def curse(%Room{} = room, monster_ref) do
     case Room.get_monster(room, monster_ref) do
-      %Monster{spirit: nil} = monster ->
+      %{spirit: nil} = monster ->
         if :rand.uniform(100) > 95 do
           if target = Monster.aggro_target(room, monster) do
             curse =
@@ -105,7 +105,7 @@ defmodule ApathyDrive.AI do
 
   def attack(%Room{} = room, monster_ref) do
     case Room.get_monster(room, monster_ref) do
-      %Monster{spirit: nil} = monster ->
+      %{spirit: nil} = monster ->
         if target = Monster.aggro_target(room, monster) do
           attack = cond do
             !Ability.on_global_cooldown?(monster) ->
@@ -161,7 +161,7 @@ defmodule ApathyDrive.AI do
 
   defp casting?(%Room{} = room, monster_ref) do
     case Room.get_monster(room, monster_ref) do
-      %Monster{timers: timers} ->
+      %{timers: timers} ->
         !!Map.get(timers, :cast_timer)
       nil -> true
     end

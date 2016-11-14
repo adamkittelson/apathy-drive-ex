@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Doors, Item, Mobile, Match, RoomServer}
+  alias ApathyDrive.{Character, Doors, Item, Match, Mobile, Monster, RoomServer}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -88,7 +88,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_mobile(%Monster{crippled_limbs: crippled, missing_limbs: missing} = target, %Monster{} = mobile) do
+  def look_at_mobile(%Monster{} = target, %Monster{} = mobile) do
     Mobile.send_scroll(target, "<p>#{name} looks you over.</p>")
 
     hp_description = Mobile.hp_description(mobile)
@@ -97,20 +97,8 @@ defmodule ApathyDrive.Commands.Look do
       "{{target:He/She/It}} appears to be #{hp_description}."
       |> interpolate(%{"target" => target})
 
-    limbs =
-      Enum.reduce crippled, [], fn limb, limbs ->
-        ["{{target:His/Her/It's}} #{limb} appears to be crippled." |> interpolate(%{"target" => target}), limbs]
-      end
-
-    limbs =
-      Enum.reduce missing, limbs, fn limb, limbs ->
-        ["{{target:His/Her/It's}} #{limb} has been severed, and is bleeding profusely!" |> interpolate(%{"target" => target}), limbs]
-      end
-
-    limb_description = Enum.join(limbs, " ")
-
     Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(target)}</p>")
-    Mobile.send_scroll(mobile, "<p>#{target.description} #{limb_description}</p>")
+    Mobile.send_scroll(mobile, "<p>#{target.description}</p>")
     Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
   end
 
