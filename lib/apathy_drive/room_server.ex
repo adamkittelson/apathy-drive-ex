@@ -151,6 +151,7 @@ defmodule ApathyDrive.RoomServer do
     PubSub.subscribe("areas:#{room.area_id}")
 
     send(self, :load_monsters)
+    send(self, :spawn_permanent_npc)
 
     # send(self, :load_present_mobiles)
     #
@@ -598,6 +599,10 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info(:load_monsters, room) do
     {:noreply, Room.load_monsters(room)}
+  end
+
+  def handle_info(:spawn_permanent_npc, room) do
+    {:noreply, Room.spawn_permanent_npc(room)}
   end
 
   def handle_info({:update_area, area}, room) do

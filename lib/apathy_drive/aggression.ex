@@ -9,8 +9,13 @@ defmodule ApathyDrive.Aggression do
     attack(monster, intruder)
   end
 
-  def attack(%Monster{} = monster, %Monster{ref: ref}) do
-    update_in(monster.hate[ref], &((&1 || 0) + 1))
+  def react(%Monster{} = monster, %{} = intruder), do: monster
+
+  def react(%{} = mobile, %{}), do: mobile
+
+  def attack(%{} = attacker, %{ref: ref} = intruder) do
+    IO.puts "#{attacker.name} attacking #{intruder.name}"
+    attacker
   end
 
 end

@@ -187,6 +187,35 @@ defmodule ApathyDrive.Room do
        end)
   end
 
+  def spawn_permanent_npc(%Room{permanent_npc: nil} = room), do: room
+  def spawn_permanent_npc(%Room{permanent_npc: monster_id} = room) do
+    room.mobiles
+    |> Map.values
+    |> Enum.any?(&(&1.id == monster_id))
+    |> case do
+         false ->
+         #level = room.area.level
+
+           monster =
+             %ApathyDrive.RoomMonster{
+               room_id: room.id,
+               monster_id: monster_id,
+               strength: 25,
+               agility: 25,
+               intellect: 25,
+               willpower: 25,
+               health: 25,
+               charm: 25,
+             }
+             |> Repo.insert!
+             |> Monster.from_room_monster
+
+           mobile_entered(room, monster)
+         true ->
+           room
+       end
+  end
+
   def monsters_to_load(room_id) do
     require Ecto.Query
 
