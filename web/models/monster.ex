@@ -17,6 +17,7 @@ defmodule ApathyDrive.Monster do
     field :exit_message,     :string
     field :death_message,    :string
     field :adjectives,       ApathyDrive.JSONB
+    field :next_spawn_at,    :integer
 
     field :hp,        :float, virtual: true, default: 1.0
     field :mana,      :float, virtual: true, default: 1.0
@@ -31,21 +32,87 @@ defmodule ApathyDrive.Monster do
     field :health,    :integer, virtual: true
     field :charm,     :integer, virtual: true
     field :room_monster_id, :integer, virtual: true
-    field :room_id, :integer, virtual: true
+    field :room_id,   :integer, virtual: true
+    field :level,     :integer, virtual: true
 
     timestamps
   end
 
+  @grades %{
+    "weak" => 25,
+    "normal" => 50,
+    "strong" => 100,
+    "boss" => 200
+  }
+
+  def from_room_monster(%RoomMonster{id: nil, room_id: room_id, monster_id: monster_id} = rm) do
+    now =
+      DateTime.utc_now
+      |> DateTime.to_unix
+
+    monster =
+      Repo.get(Monster, monster_id)
+      |> Map.put(:room_id, room_id)
+      |> Map.put(:level, rm.level)
+
+    if spawnable?(monster, now) do
+      monster
+      |> Map.put(:ref, make_ref())
+      |> generate_monster_attributes()
+    end
+  end
   def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm) do
     monster = Repo.get(Monster, monster_id)
 
-    stats = Map.take(rm, [:strength, :agility, :intellect,
-                          :willpower, :health, :charm])
+    attributes = Map.take(rm, [:strength, :agility, :intellect,
+                               :willpower, :health, :charm])
 
-    Map.merge(monster, stats)
+    monster
+    |> Map.merge(attributes)
     |> Map.put(:room_monster_id, id)
     |> Map.put(:ref, make_ref())
+    |> Map.put(:level, rm.level)
   end
+
+  def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
+  def spawnable?(%Monster{}, _now), do: true
+
+  def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
+    base = @grades[grade] * (1 + (level / 10))
+    min = trunc(base * 0.75)
+    max = trunc(base * 1.25)
+
+    room_monster =
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.shuffle
+      |> Enum.chunk(2)
+      |> Enum.reduce(%RoomMonster{level: level, room_id: monster.room_id, monster_id: monster.id}, fn
+           [attribute_1, attribute_2], rm ->
+             roll = Enum.random(min..max)
+             rm
+             |> Map.put(attribute_1, roll)
+             |> Map.put(attribute_2, max - roll + min)
+           end)
+      |> Repo.insert!
+
+    if grade == "boss" do
+      # set to 100 years from now, e.g. don't spawn this monster again
+      # updated to something closer to now when the monster is killed
+      spawn_at =
+        DateTime.utc_now.year
+        |> update_in(&(&1 + 100))
+        |> DateTime.to_unix
+
+      %Monster{id: monster.id}
+      |> Ecto.Changeset.change(next_spawn_at: spawn_at)
+      |> Repo.update!
+    end
+
+    monster
+    |> Map.merge(Map.take(room_monster, [:strength, :agility, :intellect, :willpower, :health, :charm]))
+    |> Map.put(:room_monster_id, room_monster.id)
+  end
+  def generate_monster_attributes(%Monster{} = monster), do: monster
 
   defimpl ApathyDrive.Mobile, for: Monster do
 

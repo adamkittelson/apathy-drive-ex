@@ -194,23 +194,19 @@ defmodule ApathyDrive.Room do
     |> Enum.any?(&(&1.id == monster_id))
     |> case do
          false ->
-         #level = room.area.level
-
            monster =
              %ApathyDrive.RoomMonster{
                room_id: room.id,
                monster_id: monster_id,
-               strength: 25,
-               agility: 25,
-               intellect: 25,
-               willpower: 25,
-               health: 25,
-               charm: 25,
+               level: room.area.level
              }
-             |> Repo.insert!
              |> Monster.from_room_monster
 
-           mobile_entered(room, monster)
+           if monster do
+             mobile_entered(room, monster)
+           else
+             room
+           end
          true ->
            room
        end

@@ -11,6 +11,7 @@ defmodule ApathyDrive.RoomMonster do
     field :willpower, :integer
     field :health, :integer
     field :charm, :integer
+    field :level, :integer
 
     timestamps
   end
