@@ -153,7 +153,7 @@ defmodule ApathyDrive.RoomServer do
     send(self, :load_monsters)
     send(self, :spawn_permanent_npc)
 
-    if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
+    if room.lair_size && Enum.any?(LairMonster.monster_ids(id)) do
       send(self, :spawn_monsters)
     end
 

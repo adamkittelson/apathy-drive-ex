@@ -22,7 +22,7 @@ defmodule ApathyDrive.MonsterSpawning do
   end
 
   def spawn_lair(%Room{} = room) do
-    lair_monsters = LairMonster.monsters_template_ids(room.id)
+    lair_monsters = LairMonster.monster_ids(room.id)
     spawn_lair(room, lair_monsters)
   end
 
