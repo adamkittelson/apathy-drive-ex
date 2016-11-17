@@ -19,21 +19,22 @@ defmodule ApathyDrive.Monster do
     field :adjectives,       ApathyDrive.JSONB
     field :next_spawn_at,    :integer
 
-    field :hp,        :float, virtual: true, default: 1.0
-    field :mana,      :float, virtual: true, default: 1.0
-    field :ref,       :any, virtual: true
-    field :timers,    :map, virtual: true, default: %{}
-    field :effects,   :map, virtual: true, default: %{}
-    field :spells,    :map, virtual: true, default: %{}
-    field :strength,  :integer, virtual: true
-    field :agility,   :integer, virtual: true
-    field :intellect, :integer, virtual: true
-    field :willpower, :integer, virtual: true
-    field :health,    :integer, virtual: true
-    field :charm,     :integer, virtual: true
+    field :hp,         :float, virtual: true, default: 1.0
+    field :mana,       :float, virtual: true, default: 1.0
+    field :ref,        :any, virtual: true
+    field :timers,     :map, virtual: true, default: %{}
+    field :effects,    :map, virtual: true, default: %{}
+    field :spells,     :map, virtual: true, default: %{}
+    field :strength,   :integer, virtual: true
+    field :agility,    :integer, virtual: true
+    field :intellect,  :integer, virtual: true
+    field :willpower,  :integer, virtual: true
+    field :health,     :integer, virtual: true
+    field :charm,      :integer, virtual: true
     field :room_monster_id, :integer, virtual: true
-    field :room_id,   :integer, virtual: true
-    field :level,     :integer, virtual: true
+    field :room_id,    :integer, virtual: true
+    field :level,      :integer, virtual: true
+    field :spawned_at, :integer, virtual: true
 
     timestamps
   end
@@ -54,6 +55,7 @@ defmodule ApathyDrive.Monster do
       Repo.get(Monster, monster_id)
       |> Map.put(:room_id, room_id)
       |> Map.put(:level, rm.level)
+      |> Map.put(:spawned_at, rm.spawned_at)
 
     if spawnable?(monster, now) do
       monster
@@ -65,7 +67,7 @@ defmodule ApathyDrive.Monster do
     monster = Repo.get(Monster, monster_id)
 
     attributes = Map.take(rm, [:strength, :agility, :intellect,
-                               :willpower, :health, :charm])
+                               :willpower, :health, :charm, :name])
 
     monster
     |> Map.merge(attributes)
@@ -83,10 +85,19 @@ defmodule ApathyDrive.Monster do
     max = trunc(base * 1.25)
 
     room_monster =
+      %RoomMonster{
+        level: level,
+        room_id: monster.room_id,
+        monster_id: monster.id,
+        spawned_at: monster.spawned_at,
+        name: name_with_adjective(monster.name, monster.adjectives)
+      }
+
+    room_monster =
       [:strength, :agility, :intellect, :willpower, :health, :charm]
       |> Enum.shuffle
       |> Enum.chunk(2)
-      |> Enum.reduce(%RoomMonster{level: level, room_id: monster.room_id, monster_id: monster.id}, fn
+      |> Enum.reduce(room_monster, fn
            [attribute_1, attribute_2], rm ->
              roll = Enum.random(min..max)
              rm
@@ -109,10 +120,19 @@ defmodule ApathyDrive.Monster do
     end
 
     monster
-    |> Map.merge(Map.take(room_monster, [:strength, :agility, :intellect, :willpower, :health, :charm]))
+    |> Map.merge(Map.take(room_monster, [:strength, :agility, :intellect, :willpower, :health, :charm, :name]))
     |> Map.put(:room_monster_id, room_monster.id)
   end
   def generate_monster_attributes(%Monster{} = monster), do: monster
+
+  def name_with_adjective(name, nil), do: name
+  def name_with_adjective(name, []),  do: name
+  def name_with_adjective(name, adjectives) do
+    adjective = adjectives
+                |> Enum.random
+
+    "#{adjective} #{name}"
+  end
 
   defimpl ApathyDrive.Mobile, for: Monster do
 

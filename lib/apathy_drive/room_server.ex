@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Character, Commands, LairMonster, LairSpawning, Match, Mobile, Monster, PubSub,
-                     Repo, Room, RoomSupervisor, RoomUnity, Spell, TimerManager, Ability, Presence}
+  alias ApathyDrive.{Character, Commands, LairMonster, LairSpawning, Match, Mobile, Monster, MonsterSpawning,
+                     PubSub, Repo, Room, RoomSupervisor, RoomUnity, Spell, TimerManager, Ability, Presence}
   use Timex
   require Logger
 
@@ -153,11 +153,9 @@ defmodule ApathyDrive.RoomServer do
     send(self, :load_monsters)
     send(self, :spawn_permanent_npc)
 
-    # send(self, :load_present_mobiles)
-    #
-    # if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
-    #   send(self, :spawn_monsters)
-    # end
+    if room.lair_size && Enum.any?(LairMonster.monsters_template_ids(id)) do
+      send(self, :spawn_monsters)
+    end
 
     Process.send_after(self(), :save, 2000)
 
@@ -598,11 +596,11 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:load_monsters, room) do
-    {:noreply, Room.load_monsters(room)}
+    {:noreply, MonsterSpawning.load_monsters(room)}
   end
 
   def handle_info(:spawn_permanent_npc, room) do
-    {:noreply, Room.spawn_permanent_npc(room)}
+    {:noreply, MonsterSpawning.spawn_permanent_npc(room)}
   end
 
   def handle_info({:update_area, area}, room) do
@@ -627,7 +625,7 @@ defmodule ApathyDrive.RoomServer do
 
       room =
         room
-        |> ApathyDrive.LairSpawning.spawn_lair
+        |> ApathyDrive.MonsterSpawning.spawn_lair
         |> Map.put(
              :lair_next_spawn_at,
              DateTime.now

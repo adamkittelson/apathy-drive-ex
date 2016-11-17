@@ -221,15 +221,10 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"spawn_monster" => monster_template_id}, script) do
-    monster =
-      monster_template_id
-      |> MonsterTemplate.create_monster(room)
-      |> Monster.init
+  def execute_instruction(%Room{} = room, %{} = character, %{"spawn_monster" => monster_id}, script) do
+    room = ApathyDrive.MonsterSpawning.spawn_monster(room, monster_id) || room
 
-    room = Room.monster_entered(room, monster)
-
-    execute_script(room, monster, script)
+    execute_script(room, character, script)
   end
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"min_level" => %{"failure_message" => message, "level" => level}}, script) do

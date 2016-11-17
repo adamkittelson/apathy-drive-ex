@@ -177,49 +177,6 @@ defmodule ApathyDrive.Room do
     |> Enum.find(&(Map.get(&1, :monitor_ref) == ref))
   end
 
-  def load_monsters(%Room{} = room) do
-    room.id
-    |> monsters_to_load()
-    |> Enum.reduce(room, fn(room_monster, updated_room) ->
-         monster = Monster.from_room_monster(room_monster)
-
-         Room.mobile_entered(updated_room, monster)
-       end)
-  end
-
-  def spawn_permanent_npc(%Room{permanent_npc: nil} = room), do: room
-  def spawn_permanent_npc(%Room{permanent_npc: monster_id} = room) do
-    room.mobiles
-    |> Map.values
-    |> Enum.any?(&(&1.id == monster_id))
-    |> case do
-         false ->
-           monster =
-             %ApathyDrive.RoomMonster{
-               room_id: room.id,
-               monster_id: monster_id,
-               level: room.area.level
-             }
-             |> Monster.from_room_monster
-
-           if monster do
-             mobile_entered(room, monster)
-           else
-             room
-           end
-         true ->
-           room
-       end
-  end
-
-  def monsters_to_load(room_id) do
-    require Ecto.Query
-
-    ApathyDrive.RoomMonster
-    |> Ecto.Query.where(room_id: ^room_id)
-    |> Repo.all
-  end
-
   def display_enter_message(%Room{} = room, %{} = mobile, message \\ nil) do
     from_direction =
       room
