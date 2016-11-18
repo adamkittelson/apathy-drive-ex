@@ -178,15 +178,16 @@ defmodule ApathyDrive.Character do
     hp = trunc(max_hp * hp_percent)
     mana = trunc(max_mana * mana_percent)
 
-    cond do
-      hp_percent > 0.5 ->
-        "[HP=#{hp}/MA=#{mana}]:"
-      hp_percent > 0.20 ->
-        "[HP=<span class='dark-red'>#{hp}</span>/MA=#{mana}]:"
-      true ->
-        "[HP=<span class='red'>#{hp}</span>/MA=#{mana}]:"
+    if max_mana > 0 do
+      "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}]:"
+    else
+      "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>]:"
     end
   end
+
+  def hp_prompt_color(hp_percent) when hp_percent > 0.5, do: "grey"
+  def hp_prompt_color(hp_percent) when hp_percent > 0.2, do: "dark-red"
+  def hp_prompt_color(_hp_percent), do: "red"
 
   def hp_at_level(%Character{} = character, level) do
     max_hp = Mobile.max_hp_at_level(character, level)
@@ -472,7 +473,7 @@ defmodule ApathyDrive.Character do
     end
 
     def max_mana_at_level(mobile, level) do
-      base = trunc(5 * attribute_at_level(mobile, :intellect, level))
+      base = trunc(ability_value(mobile, "ManaPerIntellect") * attribute_at_level(mobile, :intellect, level))
       modifier = ability_value(mobile, "MaxMana")
       trunc(base * (1 + (modifier / 100)))
     end
@@ -531,8 +532,13 @@ defmodule ApathyDrive.Character do
 
       base_regen_per_round = attribute_at_level(character, :willpower, character.level) / 5
 
-      hp_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(character, "HPRegen")) / max_hp
-      mana_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(character, "ManaRegen")) / max_mana
+      hp_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(character, "HPRegen") / 100) / max_hp
+      mana_regen_percentage_per_round =
+        if max_mana > 0 do
+          base_regen_per_round * (1 + ability_value(character, "ManaRegen") / 100) / max_mana
+        else
+          0
+        end
 
       character
       |> shift_hp(hp_regen_percentage_per_round, room)

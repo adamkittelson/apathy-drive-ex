@@ -67,7 +67,8 @@ defmodule ApathyDrive.Spell do
     |> cast(params, @required_fields, @optional_fields)
   end
 
-  def base_mana_at_level(level), do: 500 + ((level - 1) * 50)
+  # equivilent to a character with 2 ManaPerIntellect and 100 intellect
+  def base_mana_at_level(level), do: 200 + ((level - 1) * 20)
 
   def mana_cost_at_level(%Spell{mana: mana} = spell, level) do
     trunc(base_mana_at_level(level) * (mana / 100))
