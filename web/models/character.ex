@@ -162,12 +162,24 @@ defmodule ApathyDrive.Character do
       |> Map.put(:experience, character.experience + exp)
       |> ApathyDrive.Level.advance
 
+    %Character{id: character.id}
+    |> Ecto.Changeset.change(%{experience: character.experience})
+    |> Repo.update!
+
     if character.level > level do
       Mobile.send_scroll character, "<p>You ascend to level #{character.level}!"
+
+      %Character{id: character.id}
+      |> Ecto.Changeset.change(%{level: character.level})
+      |> Repo.update!
     end
 
     if character.level < level do
       Mobile.send_scroll character, "<p>You fall to level #{character.level}!"
+
+      %Character{id: character.id}
+      |> Ecto.Changeset.change(%{level: character.level})
+      |> Repo.update!
     end
     character
   end
@@ -586,7 +598,7 @@ defmodule ApathyDrive.Character do
       character = update_in(character.hp, &(min(1.0, &1 + percentage)))
       updated_hp_description = hp_description(character)
 
-      if hp_description != updated_hp_description do
+      if character.hp > 0 and hp_description != updated_hp_description do
         Room.send_scroll(room, "<p>#{look_name(character)} is #{updated_hp_description}.</p>", [character])
       end
 

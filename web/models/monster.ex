@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Item, Monster, Room, RoomMonster, Spell}
+  alias ApathyDrive.{Character, Item, Mobile, Monster, Room, RoomMonster, Spell, Text}
 
   require Logger
 
@@ -24,6 +24,7 @@ defmodule ApathyDrive.Monster do
     field :ref,        :any, virtual: true
     field :timers,     :map, virtual: true, default: %{}
     field :effects,    :map, virtual: true, default: %{}
+    field :last_effect_key, :integer, virtual: true, default: 0
     field :spells,     :map, virtual: true, default: %{}
     field :strength,   :integer, virtual: true
     field :agility,    :integer, virtual: true
@@ -150,17 +151,9 @@ defmodule ApathyDrive.Monster do
     end
 
     def attribute_at_level(%Monster{} = monster, attribute, level) do
-      from_race = Map.get(monster, attribute)
+      base = Map.get(monster, attribute)
 
-      from_race = from_race + ((from_race / 10) * (level - 1))
-
-      from_equipment =
-        monster.equipment
-        |> Enum.reduce(0, fn %Item{} = item, total ->
-             total + Item.attribute_for_monster(item, monster, attribute)
-           end)
-
-      trunc(from_race + from_equipment)
+      trunc(base + ((base / 10) * (level - 1)))
     end
 
     def attack_interval(monster) do
@@ -255,21 +248,36 @@ defmodule ApathyDrive.Monster do
     end
 
     def die(monster, room) do
-      monster =
-        monster
-        |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
-        |> Map.put(:hp, 1.0)
-        |> Map.put(:mana, 1.0)
-        |> Map.put(:effects, %{})
-        |> Map.put(:timers, %{})
-        |> Mobile.update_prompt
+      room =
+        Enum.reduce(room.mobiles, room, fn
+          {ref, %Character{}}, updated_room ->
+            Room.update_mobile(updated_room, ref, fn(character) ->
+              level = Mobile.target_level(character, monster)
 
-      Room.start_room_id
-      |> RoomServer.find
-      |> RoomServer.mobile_entered(monster)
+              exp =
+                [:strength, :agility, :intellect, :willpower, :health, :charm]
+                |> Enum.map(&Mobile.attribute_at_level(monster, &1, level))
+                |> Enum.reduce(0, &(&1 + &2))
+                |> div(10)
+
+              message =
+                monster.death_message
+                |> Text.interpolate(%{"name" => monster.name})
+                |> Text.capitalize_first
+
+              Mobile.send_scroll(character, "<p>#{message}</p>")
+
+              Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
+
+              Character.add_experience(character, exp)
+            end)
+          _, updated_room ->
+            updated_room
+        end)
+
+      ApathyDrive.Repo.delete!(%RoomMonster{id: monster.room_monster_id})
 
       put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
-      |> Room.send_scroll("<p><span class='red'>#{monster.name} has died.</span></p>")
     end
 
     def dodge_at_level(monster, level) do
@@ -342,29 +350,24 @@ defmodule ApathyDrive.Monster do
 
     def magical_resistance_at_level(monster, level) do
       resist = attribute_at_level(monster, :willpower, level)
-      mr =
-        monster.equipment
-        |> Enum.reduce(0, fn
-             %Item{grade: "Cloth"}, total ->
-               total + 5
-             %Item{grade: "Leather"}, total ->
-               total + 4
-             %Item{grade: "Chain"}, total ->
-               total + 3
-             %Item{grade: "Scale"}, total ->
-               total + 2
-             %Item{grade: "Plate"}, total ->
-               total + 1
-             _, total ->
-               total
-           end)
-      modifier = mr + ability_value(monster, "MagicalResist")
+      modifier = ability_value(monster, "MagicalResist")
       trunc(resist * (modifier / 100))
     end
 
-    def max_hp_at_level(mobile, level) do
-      base = trunc(ability_value(mobile, "HPPerHealth") * attribute_at_level(mobile, :health, level))
-      modifier = ability_value(mobile, "MaxHP")
+    def max_hp_at_level(%Monster{grade: grade} = monster, level) do
+      base =
+        case grade do
+          "weak" ->
+            4
+          "normal" ->
+            8
+          "strong" ->
+            16
+          "boss" ->
+            32
+        end
+      base = trunc((base + ability_value(monster, "HPPerHealth")) * attribute_at_level(monster, :health, level))
+      modifier = ability_value(monster, "MaxHP")
       trunc(base * (1 + (modifier / 100)))
     end
 
@@ -402,23 +405,7 @@ defmodule ApathyDrive.Monster do
 
     def physical_resistance_at_level(monster, level) do
       resist = attribute_at_level(monster, :strength, level)
-      ac =
-        monster.equipment
-        |> Enum.reduce(0, fn
-             %Item{grade: "Cloth"}, total ->
-               total + 1
-             %Item{grade: "Leather"}, total ->
-               total + 2
-             %Item{grade: "Chain"}, total ->
-               total + 3
-             %Item{grade: "Scale"}, total ->
-               total + 4
-             %Item{grade: "Plate"}, total ->
-               total + 5
-             _, total ->
-               total
-           end)
-      modifier = ac + ability_value(monster, "AC")
+      modifier = ability_value(monster, "AC")
       trunc(resist * (modifier / 100))
     end
 
@@ -472,7 +459,7 @@ defmodule ApathyDrive.Monster do
       monster = update_in(monster.hp, &(min(1.0, &1 + percentage)))
       updated_hp_description = hp_description(monster)
 
-      if hp_description != updated_hp_description do
+      if monster.hp > 0 and hp_description != updated_hp_description do
         Room.send_scroll(room, "<p>#{look_name(monster)} is #{updated_hp_description}.</p>", [monster])
       end
 

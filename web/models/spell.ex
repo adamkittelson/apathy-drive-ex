@@ -92,6 +92,7 @@ defmodule ApathyDrive.Spell do
         room
         |> Room.get_mobile(caster_ref)
         |> Mobile.send_scroll("<p>Unable to cast #{spell.name} at \"#{query}\".</p>")
+        room
       targets ->
         execute(room, caster_ref, spell, targets)
     end
