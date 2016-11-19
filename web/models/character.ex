@@ -19,6 +19,7 @@ defmodule ApathyDrive.Character do
     field :flags,           :map, default: %{}
     field :gold,            :integer, default: 150
     field :race_id,         :integer
+    field :pity_modifier,   :integer, default: 0
     field :race,            :string, virtual: true
     field :monitor_ref,     :any, virtual: true
     field :ref,             :any, virtual: true

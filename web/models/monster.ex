@@ -19,23 +19,24 @@ defmodule ApathyDrive.Monster do
     field :adjectives,       ApathyDrive.JSONB
     field :next_spawn_at,    :integer
 
-    field :hp,         :float, virtual: true, default: 1.0
-    field :mana,       :float, virtual: true, default: 1.0
-    field :ref,        :any, virtual: true
-    field :timers,     :map, virtual: true, default: %{}
-    field :effects,    :map, virtual: true, default: %{}
+    field :hp,          :float, virtual: true, default: 1.0
+    field :mana,        :float, virtual: true, default: 1.0
+    field :ref,         :any, virtual: true
+    field :timers,      :map, virtual: true, default: %{}
+    field :effects,     :map, virtual: true, default: %{}
     field :last_effect_key, :integer, virtual: true, default: 0
-    field :spells,     :map, virtual: true, default: %{}
-    field :strength,   :integer, virtual: true
-    field :agility,    :integer, virtual: true
-    field :intellect,  :integer, virtual: true
-    field :willpower,  :integer, virtual: true
-    field :health,     :integer, virtual: true
-    field :charm,      :integer, virtual: true
+    field :spells,      :map, virtual: true, default: %{}
+    field :strength,    :integer, virtual: true
+    field :agility,     :integer, virtual: true
+    field :intellect,   :integer, virtual: true
+    field :willpower,   :integer, virtual: true
+    field :health,      :integer, virtual: true
+    field :charm,       :integer, virtual: true
     field :room_monster_id, :integer, virtual: true
-    field :room_id,    :integer, virtual: true
-    field :level,      :integer, virtual: true
-    field :spawned_at, :integer, virtual: true
+    field :room_id,     :integer, virtual: true
+    field :level,       :integer, virtual: true
+    field :spawned_at,  :integer, virtual: true
+    field :spell_shift, :float, virtual: true
 
     timestamps
   end
@@ -125,6 +126,86 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:room_monster_id, room_monster.id)
   end
   def generate_monster_attributes(%Monster{} = monster), do: monster
+
+  def generate_loot_for_character(%Monster{} = monster, %Character{} = character) do
+    rarity = random_loot_rarity(monster, character.pity_modifier)
+
+    if rarity do
+      power = Item.power_at_level(rarity, character.level)
+
+      slots =
+        case Item.slots_below_power(character, power) do
+          [] ->
+            Item.slots
+          slots ->
+            slots
+        end
+
+      slot = Enum.random(slots)
+
+      item_id = Item.random_item_id_for_slot_and_rarity(slot, rarity)
+
+      item =
+        Item
+        |> Repo.get(item_id)
+        |> Item.generate_for_character!(character, :looted)
+
+      Mobile.send_scroll(character, "<p>You receive #{Item.colored_name(item)}!</p>")
+    end
+  end
+
+  def random_loot_rarity(%Monster{grade: "weak"} = monster, pity_modifier) do
+    case :rand.uniform(1_000_000 - pity_modifier) do
+      roll when roll <= 10 ->
+        "legendary"
+      roll when roll <= 100 ->
+        "epic"
+      roll when roll <= 1000 ->
+        "rare"
+      roll when roll <= 10_000 ->
+        "uncommon"
+      roll when roll <= 100_000 ->
+        "common"
+      _ ->
+        nil
+    end
+  end
+  def random_loot_rarity(%Monster{grade: "normal"} = monster, pity_modifier) do
+    case :rand.uniform(1_000_000 - pity_modifier) do
+      roll when roll <= 100 ->
+        "legendary"
+      roll when roll <= 1000 ->
+        "epic"
+      roll when roll <= 10_000 ->
+        "rare"
+      roll when roll <= 100_000 ->
+        "uncommon"
+      _ ->
+        "common"
+    end
+  end
+  def random_loot_rarity(%Monster{grade: "strong"} = monster, pity_modifier) do
+    case :rand.uniform(1_000_000 - pity_modifier) do
+      roll when roll <= 1000 ->
+        "legendary"
+      roll when roll <= 10_000 ->
+        "epic"
+      roll when roll <= 100_000 ->
+        "rare"
+      _ ->
+        "uncommon"
+    end
+  end
+  def random_loot_rarity(%Monster{grade: "boss"} = monster, pity_modifier) do
+    case :rand.uniform(1_000_000 - pity_modifier) do
+      roll when roll <= 10_000 ->
+        "legendary"
+      roll when roll <= 100_000 ->
+        "epic"
+      _ ->
+        "rare"
+    end
+  end
 
   def name_with_adjective(name, nil), do: name
   def name_with_adjective(name, []),  do: name
@@ -269,7 +350,14 @@ defmodule ApathyDrive.Monster do
 
               Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
-              Character.add_experience(character, exp)
+
+              character = Character.add_experience(character, exp)
+
+              if Monster.generate_loot_for_character(monster, character) do
+                Character.load_items(character)
+              else
+                character
+              end
             end)
           _, updated_room ->
             updated_room

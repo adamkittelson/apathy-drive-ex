@@ -40,28 +40,33 @@ defmodule ApathyDrive.Item do
     "common" => %{
       cost_multiplier: 1,
       color: "teal",
-      attribute_range: 2..4
+      attribute_range: 2..4,
+      base_power: 18
     },
     "uncommon" => %{
       cost_multiplier: 2,
       color: "#1eff00",
-      attribute_range: 5..7
+      attribute_range: 5..7,
+      base_power: 36
     },
     "rare" => %{
       cost_multiplier: 3,
       color: "#0070ff",
-      attribute_range: 8..10
+      attribute_range: 8..10,
+      base_power: 54
     },
     "epic" => %{
       cost_multiplier: 4,
       color: "#a335ee",
-      attribute_range: 11..19
+      attribute_range: 11..19,
+      base_power: 90
     },
     "legendary" => %{
       cost_multiplier: :infinity,
       color: "#ff8000",
-      attribute_range: 20..28
-    },
+      attribute_range: 20..28,
+      base_power: 144
+    }
   }
 
   @doc """
@@ -100,20 +105,76 @@ defmodule ApathyDrive.Item do
     base + ((base / 10) * (level - 1))
   end
 
-  def random_item_id_below_level(level) do
+  def power_at_level(%Item{} = item, level) do
+    base = @rarities[item.rarity].base_power
+    base + ((base / 10) * (level - 1))
+  end
+  def power_at_level(rarity, level) do
+    power_at_level(%Item{rarity: rarity}, level)
+  end
+
+  def slots do
+    ["Arms", "Back", "Ears", "Feet", "Finger", "Finger", "Hands", "Head", "Two Handed",
+     "Legs", "Neck", "Off-Hand", "Torso", "Waist", "Weapon Hand", "Wrist", "Wrist"]
+  end
+
+  def slots_below_power(%Character{equipment: equipment, level: level} = character, power) do
+    upgradeable_slots =
+      slots()
+      |> Enum.reduce(equipment, fn slot, mapped_equipment ->
+           item =
+             Enum.find(mapped_equipment, fn
+               %Item{worn_on: worn_on} = item when worn_on == slot ->
+                 item
+               _ ->
+                 nil
+             end)
+
+           if item do
+             mapped_equipment =
+               mapped_equipment
+               |> List.delete(item)
+
+             [{slot, power_at_level(item, level)} | mapped_equipment]
+           else
+             [{slot, 0} | mapped_equipment]
+           end
+         end)
+      |> Enum.reject(&(elem(&1, 1) >= power))
+      |> Enum.map(&(elem(&1, 0)))
+
+    case Character.weapon(character) do
+      nil ->
+        upgradeable_slots
+      %Item{worn_on: "Weapon Hand"} ->
+        Enum.reject(upgradeable_slots, &(&1 == "Two Handed"))
+      %Item{worn_on: "Two Handed"} ->
+        Enum.reject(upgradeable_slots, &(&1 in ["Weapon Hand", "Off-Hand"]))
+    end
+  end
+
+  def random_item_id_for_slot_and_rarity(slot, rarity) do
     count =
       __MODULE__
-      |> below_level(level)
-      |> global_drops
+      |> worn_on(slot)
+      |> rarity(rarity)
       |> select([item], count(item.id))
       |> Repo.one
 
     __MODULE__
-    |> below_level(level)
-    |> global_drops
+    |> worn_on(slot)
+    |> rarity(rarity)
     |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
     |> select([item], item.id)
     |> Repo.one
+  end
+
+  def worn_on(query, slot) do
+    query |> where([item], item.worn_on == ^slot)
+  end
+
+  def rarity(query, rarity) do
+    query |> where([item], item.rarity == ^rarity)
   end
 
   def global_drops(query) do
@@ -174,6 +235,8 @@ defmodule ApathyDrive.Item do
     }
     |> Map.merge(generate_item_attributes(rarity, source))
     |> Repo.insert!
+
+    item
   end
 
   def generate_item(%{chance: chance, item_id: _item_id, level: _level} = opts) do
@@ -185,8 +248,8 @@ defmodule ApathyDrive.Item do
   end
 
   def generate_item(%{item_id: :global, level: level}) do
-    item_id = random_item_id_below_level(level)
-    generate_item(%{item_id: item_id, level: level})
+    # item_id = random_item_id_below_level(level)
+    # generate_item(%{item_id: item_id, level: level})
   end
 
   def generate_item(%{item_id: item_id, level: level}) do
