@@ -539,6 +539,11 @@ defmodule ApathyDrive.Character do
       trunc(resist * (modifier / 100))
     end
 
+    def power_at_level(%Character{} = character, level) do
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.reduce(0, & &2 + Mobile.attribute_at_level(character, &1, level))
+    end
+
     def regenerate_hp_and_mana(%Character{hp: hp, mana: mana} = character, room) do
       max_hp = max_hp_at_level(character, character.level)
       max_mana = max_mana_at_level(character, character.level)

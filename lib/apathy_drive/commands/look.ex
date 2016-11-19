@@ -78,13 +78,21 @@ defmodule ApathyDrive.Commands.Look do
     |> RoomServer.look(character, [])
   end
 
-  def peek(%Room{} = room, name, room_id) do
+  def peek(%Room{} = room, %Character{} = character, room_id) do
     mirror_exit = Room.mirror_exit(room, room_id)
 
     if mirror_exit do
-      message = "#{Mobile.look_name(name)} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
+      room.mobiles
+      |> Map.values
+      |> List.delete(character)
+      |> Enum.each(fn
+           %Character{} = observer ->
+             message = "#{Mobile.colored_name(character, observer)} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
 
-      Room.send_scroll(room, "<p><span class='dark-magenta'>#{message}</span></p>")
+             Mobile.send_scroll(observer, "<p><span class='dark-magenta'>#{message}</span></p>")
+           _ ->
+             :noop
+         end)
     end
   end
 
@@ -97,7 +105,7 @@ defmodule ApathyDrive.Commands.Look do
       "{{target:He/She/It}} appears to be #{hp_description}."
       |> interpolate(%{"target" => target})
 
-    Mobile.send_scroll(mobile, "<p>#{Mobile.look_name(target)}</p>")
+    Mobile.send_scroll(mobile, "<p>#{Mobile.colored_name(target, mobile)}</p>")
     Mobile.send_scroll(mobile, "<p>#{target.description}</p>")
     Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
   end
@@ -110,7 +118,7 @@ defmodule ApathyDrive.Commands.Look do
            %Character{} = room_char, list when character == room_char ->
              list
            mobile, list ->
-             [Mobile.look_name(mobile) | list]
+             [Mobile.colored_name(mobile, character) | list]
          end)
 
     if Enum.any?(mobiles_to_show) do

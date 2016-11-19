@@ -300,6 +300,27 @@ defmodule ApathyDrive.Monster do
 
     def caster_level(%Monster{}, %Character{level: level} = _target), do: level
 
+    def colored_name(%Monster{name: name} = monster, %Character{} = observer) do
+      level = target_level(monster, observer)
+      monster_power = Mobile.power_at_level(monster, level)
+      observer_power = Mobile.power_at_level(observer, level)
+
+      color =
+        cond do
+          monster_power < (observer_power * 0.75) ->
+            "teal"
+          monster_power < (observer_power * 1.5) ->
+            "#1eff00"
+          monster_power < (observer_power * 3.0) ->
+            "#0070ff"
+          monster_power < (observer_power * 6.0) ->
+            "#a335ee"
+          :else ->
+            "#ff8000"
+        end
+      "<span style='color: #{color};'>#{name}</span>"
+    end
+
     def confused(%Monster{effects: effects} = monster, %Room{} = room) do
       effects
       |> Map.values
@@ -495,6 +516,11 @@ defmodule ApathyDrive.Monster do
       resist = attribute_at_level(monster, :strength, level)
       modifier = ability_value(monster, "AC")
       trunc(resist * (modifier / 100))
+    end
+
+    def power_at_level(%Monster{} = monster, level) do
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.reduce(0, & &2 + Mobile.attribute_at_level(monster, &1, level))
     end
 
     def regenerate_hp_and_mana(%Monster{hp: hp, mana: mana} = monster, room) do

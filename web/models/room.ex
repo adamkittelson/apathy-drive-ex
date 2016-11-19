@@ -183,25 +183,40 @@ defmodule ApathyDrive.Room do
       |> get_direction_by_destination(mobile.room_id)
       |> enter_direction()
 
-    message =
-      (message || Mobile.enter_message(mobile))
-      |> ApathyDrive.Text.interpolate(%{
-           "name" => Mobile.look_name(mobile),
-           "direction" => from_direction
-         })
-      |> ApathyDrive.Text.capitalize_first
-
-    send_scroll(room, "<p>#{message}</p>", [mobile])
+    room.mobiles
+    |> Map.values
+    |> List.delete(mobile)
+    |> Enum.each(fn
+         %Character{} = observer ->
+           message =
+             (message || Mobile.enter_message(mobile))
+             |> ApathyDrive.Text.interpolate(%{
+                  "name" => Mobile.colored_name(mobile, observer),
+                  "direction" => from_direction
+                })
+             |> ApathyDrive.Text.capitalize_first
+           Mobile.send_scroll(observer, "<p>#{message}</p>")
+         _ ->
+           :noop
+       end)
   end
 
   def display_exit_message(room, %{mobile: mobile, message: message, to: to_room_id}) do
-    message = message
-              |> ApathyDrive.Text.interpolate(%{
-                   "name" => Mobile.look_name(mobile),
-                   "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
-                 })
-
-    send_scroll(room, "<p><span class='grey'>#{message}</span></p>", [mobile])
+    room.mobiles
+    |> Map.values
+    |> List.delete(mobile)
+    |> Enum.each(fn
+         %Character{} = observer ->
+           message =
+             message
+             |> ApathyDrive.Text.interpolate(%{
+                  "name" => Mobile.colored_name(mobile, observer),
+                  "direction" => room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction
+                })
+           Mobile.send_scroll(observer, "<p>#{message}</p>")
+         _ ->
+           :noop
+       end)
   end
 
   def audible_movement(%Room{exits: exits}, from_direction) do
