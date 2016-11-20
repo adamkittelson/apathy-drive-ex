@@ -57,15 +57,19 @@ defmodule ApathyDrive.Commands.Wear do
 
         inventory = List.delete(inventory, item)
 
-        %EntityItem{id: item_to_remove.entities_items_id}
-        |> Ecto.Changeset.change(%{equipped: false})
-        |> Repo.update!
+        if persist do
+          %EntityItem{id: item_to_remove.entities_items_id}
+          |> Ecto.Changeset.change(%{equipped: false})
+          |> Repo.update!
+        end
 
         inventory = List.insert_at(inventory, -1, item_to_remove)
 
-        %EntityItem{id: item.entities_items_id}
-        |> Ecto.Changeset.change(%{equipped: true})
-        |> Repo.update!
+        if persist do
+          %EntityItem{id: item.entities_items_id}
+          |> Ecto.Changeset.change(%{equipped: true})
+          |> Repo.update!
+        end
 
         equipment = List.insert_at(equipment, -1, item)
 
@@ -84,11 +88,13 @@ defmodule ApathyDrive.Commands.Wear do
 
         inventory = List.delete(inventory, item)
 
-        Enum.each(items_to_remove, fn item_to_remove ->
-          %EntityItem{id: item_to_remove.entities_items_id}
-          |> Ecto.Changeset.change(%{equipped: false})
-          |> Repo.update!
-        end)
+        if persist do
+          Enum.each(items_to_remove, fn item_to_remove ->
+            %EntityItem{id: item_to_remove.entities_items_id}
+            |> Ecto.Changeset.change(%{equipped: false})
+            |> Repo.update!
+          end)
+        end
 
         inventory =
           items_to_remove
@@ -96,9 +102,11 @@ defmodule ApathyDrive.Commands.Wear do
                List.insert_at(inv, -1, item_to_remove)
              end)
 
-        %EntityItem{id: item.entities_items_id}
-        |> Ecto.Changeset.change(%{equipped: true})
-        |> Repo.update!
+        if persist do
+          %EntityItem{id: item.entities_items_id}
+          |> Ecto.Changeset.change(%{equipped: true})
+          |> Repo.update!
+        end
 
         equipment = List.insert_at(equipment, -1, item)
 
@@ -113,9 +121,11 @@ defmodule ApathyDrive.Commands.Wear do
           inventory
           |> List.delete(item)
 
-        %EntityItem{id: item.entities_items_id}
-        |> Ecto.Changeset.change(%{equipped: true})
-        |> Repo.update!
+        if persist do
+          %EntityItem{id: item.entities_items_id}
+          |> Ecto.Changeset.change(%{equipped: true})
+          |> Repo.update!
+        end
 
         equipment =
           equipment
