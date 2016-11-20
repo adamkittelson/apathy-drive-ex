@@ -45,7 +45,7 @@ defmodule ApathyDrive.Commands.Wear do
        end
   end
 
-  def equip_item(%Character{inventory: inventory, equipment: equipment} = character, %Item{worn_on: worn_on} = item) do
+  def equip_item(%Character{inventory: inventory, equipment: equipment} = character, %Item{worn_on: worn_on} = item, persist \\ true) do
 
     cond do
       Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
