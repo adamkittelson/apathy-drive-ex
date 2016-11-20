@@ -11,7 +11,7 @@ defmodule ApathyDrive.Commands.Inventory do
 
       equipment
       |> Enum.each(fn(item) ->
-           Mobile.send_scroll(character, "<p><span class='dark-green'>#{Item.colored_name(item, ljust: 23)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
+           Mobile.send_scroll(character, "<p><span class='dark-green'>#{Item.colored_name(item, ljust: 30)}</span><span class='dark-cyan'>(#{item.worn_on})</span></p>")
          end)
       Mobile.send_scroll(character, "<br>")
     end
