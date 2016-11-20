@@ -363,6 +363,27 @@ defmodule ApathyDrive.Character do
       true
     end
 
+    def colored_name(%Character{name: name} = character, %{} = observer) do
+      level = target_level(character, observer)
+      character_power = Mobile.power_at_level(character, level)
+      observer_power = Mobile.power_at_level(observer, level)
+
+      color =
+        cond do
+          character_power < (observer_power * 0.75) ->
+            "teal"
+          character_power < (observer_power * 1.5) ->
+            "#1eff00"
+          character_power < (observer_power * 3.0) ->
+            "#0070ff"
+          character_power < (observer_power * 6.0) ->
+            "#a335ee"
+          :else ->
+            "#ff8000"
+        end
+      "<span style='color: #{color};'>#{name}</span>"
+    end
+
     def crits_at_level(character, level) do
       int = attribute_at_level(character, :intellect, level)
       cha = attribute_at_level(character, :charm, level)

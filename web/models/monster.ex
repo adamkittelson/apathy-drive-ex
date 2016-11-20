@@ -377,6 +377,10 @@ defmodule ApathyDrive.Monster do
       trunc(int * (1 + (modifier / 100)))
     end
 
+    def description(monster, _observer) do
+      monster.description
+    end
+
     def die(monster, room) do
       room =
         Enum.reduce(room.mobiles, room, fn

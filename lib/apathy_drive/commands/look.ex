@@ -96,18 +96,18 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_mobile(%Monster{} = target, %Monster{} = mobile) do
-    Mobile.send_scroll(target, "<p>#{name} looks you over.</p>")
+  def look_at_mobile(%{} = target, %Character{} = character) do
+    Mobile.send_scroll(target, "<p>#{Mobile.colored_name(character, target)} looks you over.</p>")
 
-    hp_description = Mobile.hp_description(mobile)
+    hp_description = Mobile.hp_description(target)
 
     hp_description =
       "{{target:He/She/It}} appears to be #{hp_description}."
       |> interpolate(%{"target" => target})
 
-    Mobile.send_scroll(mobile, "<p>#{Mobile.colored_name(target, mobile)}</p>")
-    Mobile.send_scroll(mobile, "<p>#{target.description}</p>")
-    Mobile.send_scroll(mobile, "<p>#{hp_description}</p>")
+    Mobile.send_scroll(character, "<p>#{Mobile.colored_name(target, character)}</p>")
+    Mobile.send_scroll(character, "<p>#{Mobile.description(target, character)}</p>")
+    Mobile.send_scroll(character, "<p>#{hp_description}</p>")
   end
 
   def look_mobiles(%Room{mobiles: mobiles}, character \\ nil) do
