@@ -150,9 +150,37 @@ defmodule ApathyDrive.Monster do
         |> Repo.get(item_id)
         |> Item.generate_for_character!(character, :looted)
 
-      Mobile.send_scroll(character, "<p>You receive #{Item.colored_name(item)}!</p>")
+      character =
+        if rarity == "legendary" do
+          character = put_in(character.pity_modifier, 0)
+
+          %Character{id: character.id}
+          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+          |> Repo.update!
+
+          character
+        else
+          character
+        end
+
+      character
+      |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
+      |> Character.load_items
+    else
+      character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
+
+      %Character{id: character.id}
+      |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+      |> Repo.update!
+
+      character
     end
   end
+
+  def pity_bonus(%Monster{grade: "weak"}), do: 10
+  def pity_bonus(%Monster{grade: "normal"}), do: 100
+  def pity_bonus(%Monster{grade: "strong"}), do: 1_000
+  def pity_bonus(%Monster{grade: "boss"}), do: 10_000
 
   def random_loot_rarity(%Monster{grade: "weak"} = monster, pity_modifier) do
     case :rand.uniform(1_000_000 - pity_modifier) do
@@ -374,11 +402,7 @@ defmodule ApathyDrive.Monster do
 
               character = Character.add_experience(character, exp)
 
-              if Monster.generate_loot_for_character(monster, character) do
-                Character.load_items(character)
-              else
-                character
-              end
+              Monster.generate_loot_for_character(monster, character)
             end)
           _, updated_room ->
             updated_room
@@ -574,7 +598,15 @@ defmodule ApathyDrive.Monster do
       updated_hp_description = hp_description(monster)
 
       if monster.hp > 0 and hp_description != updated_hp_description do
-        Room.send_scroll(room, "<p>#{look_name(monster)} is #{updated_hp_description}.</p>", [monster])
+        room.mobiles
+        |> Map.values
+        |> List.delete(monster)
+        |> Enum.each(fn
+             %Character{} = observer ->
+               Mobile.send_scroll(observer, "<p>#{Mobile.colored_name(monster, observer)} is #{updated_hp_description}.</p>")
+             _ ->
+               :noop
+           end)
       end
 
       monster

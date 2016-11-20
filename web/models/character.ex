@@ -605,7 +605,15 @@ defmodule ApathyDrive.Character do
       updated_hp_description = hp_description(character)
 
       if character.hp > 0 and hp_description != updated_hp_description do
-        Room.send_scroll(room, "<p>#{look_name(character)} is #{updated_hp_description}.</p>", [character])
+        room.mobiles
+        |> Map.values
+        |> List.delete(character)
+        |> Enum.each(fn
+             %Character{} = observer ->
+               Mobile.send_scroll(observer, "<p>#{Mobile.colored_name(character, observer)} is #{updated_hp_description}.</p>")
+             _ ->
+               :noop
+           end)
       end
 
       character
