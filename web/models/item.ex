@@ -39,13 +39,13 @@ defmodule ApathyDrive.Item do
   @rarities %{
     "common" => %{
       cost_multiplier: 1,
-      color: "teal",
+      color: "darkgrey",
       attribute_range: 2..4,
       base_power: 18
     },
     "uncommon" => %{
       cost_multiplier: 2,
-      color: "#1eff00",
+      color: "teal",
       attribute_range: 5..7,
       base_power: 36
     },
@@ -153,24 +153,69 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def random_item_id_for_slot_and_rarity(slot, rarity) do
+  def grade_for_character(%Character{weapon_type: type}, slot) when slot in ["Weapon Hand", "Two Handed"] and type != "Any" do
+    type
+  end
+  def grade_for_character(%Character{}, slot) when slot in ["Weapon Hand", "Two Handed"], do: nil
+  def grade_for_character(%Character{armour: grade}, _slot), do: grade
+
+  def random_item_id_for_slot_and_rarity(%Character{} = character, slot, rarity) do
+    grade = grade_for_character(character, slot)
+
+    if grade do
+      random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity)
+    else
+      count =
+        __MODULE__
+        |> worn_on(slot)
+        |> rarity(rarity)
+        |> select([item], count(item.id))
+        |> Repo.one
+
+      __MODULE__
+      |> worn_on(slot)
+      |> rarity(rarity)
+      |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+      |> select([item], item.id)
+      |> Repo.one
+    end
+  end
+
+  def random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity) do
     count =
       __MODULE__
+      |> grade(grade)
       |> worn_on(slot)
       |> rarity(rarity)
       |> select([item], count(item.id))
       |> Repo.one
 
-    __MODULE__
-    |> worn_on(slot)
-    |> rarity(rarity)
-    |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-    |> select([item], item.id)
-    |> Repo.one
+    cond do
+      count > 0 ->
+        __MODULE__
+        |> grade(grade)
+        |> worn_on(slot)
+        |> rarity(rarity)
+        |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+        |> select([item], item.id)
+        |> Repo.one
+      grade == "Plate" ->
+        random_item_id_for_grade_and_slot_and_rarity("Scale", slot, rarity)
+      grade == "Scale" ->
+        random_item_id_for_grade_and_slot_and_rarity("Chain", slot, rarity)
+      grade == "Chain" ->
+        random_item_id_for_grade_and_slot_and_rarity("Leather", slot, rarity)
+      grade == "Leather" ->
+        random_item_id_for_grade_and_slot_and_rarity("Cloth", slot, rarity)
+    end
   end
 
   def worn_on(query, slot) do
     query |> where([item], item.worn_on == ^slot)
+  end
+
+  def grade(query, grade) do
+    query |> where([item], item.grade == ^grade)
   end
 
   def rarity(query, rarity) do

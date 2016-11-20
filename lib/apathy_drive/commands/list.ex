@@ -23,6 +23,7 @@ defmodule ApathyDrive.Commands.List do
 
     items
     |> Enum.each(fn(%Item{name: name} = item) ->
+        can_use? = if Character.can_equip_item?(character, item), do: "", else: " (You can't use)"
         item
         |> Map.put(:level, character.level)
         |> Item.price
@@ -30,9 +31,9 @@ defmodule ApathyDrive.Commands.List do
             "priceless" ->
               :noop
             price when price > 0 ->
-              Mobile.send_scroll(character, "<p>#{Item.colored_name(item, ljust: 30)}<span class='dark-cyan'>#{price} gold</span></p>")
+              Mobile.send_scroll(character, "<p>#{Item.colored_name(item, ljust: 30)}<span class='dark-cyan'>#{price} gold#{can_use?}</span></p>")
             _ ->
-              Mobile.send_scroll(character, "<p>#{Item.colored_name(item, ljust: 30)}<span class='dark-cyan'>FREE</span></p>")
+              Mobile.send_scroll(character, "<p>#{Item.colored_name(item, ljust: 30)}<span class='dark-cyan'>FREE</span>#{can_use?}</p>")
            end
        end)
   end

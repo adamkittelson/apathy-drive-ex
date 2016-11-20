@@ -39,6 +39,8 @@ defmodule ApathyDrive.Commands.Wear do
                %{equipped: equipped, character: character} ->
                  Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
                  character
+               false ->
+                 Mobile.send_scroll(character, "<p>You can't equip #{Item.colored_name(item)}.</p>")
              end
 
            put_in(room.mobiles[character.ref], character)
@@ -48,6 +50,8 @@ defmodule ApathyDrive.Commands.Wear do
   def equip_item(%Character{inventory: inventory, equipment: equipment} = character, %Item{worn_on: worn_on} = item, persist \\ true) do
 
     cond do
+      !Character.can_equip_item?(character, item) ->
+        false
       Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
         item_to_remove =
           equipment

@@ -39,6 +39,9 @@ defmodule ApathyDrive.Character do
     field :willpower, :integer, virtual: true
     field :health, :integer, virtual: true
     field :charm, :integer, virtual: true
+    field :armour, :string, virtual: true
+    field :weapon_hands, :string, virtual: true
+    field :weapon_type, :string, virtual: true
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
@@ -74,6 +77,36 @@ defmodule ApathyDrive.Character do
     |> unique_constraint(:email, name: :characters_lower_email_index, on: Repo)
     |> validate_confirmation(:password)
   end
+
+  def can_equip_item?(%Character{armour: "Cloth"}, %Item{grade: grade}) when grade in ["Plate", "Scale", "Chain", "Leather"] do
+    false
+  end
+  def can_equip_item?(%Character{armour: "Leather"}, %Item{grade: grade}) when grade in ["Plate", "Scale", "Chain"] do
+    false
+  end
+  def can_equip_item?(%Character{armour: "Chain"}, %Item{grade: grade}) when grade in ["Plate", "Scale"] do
+    false
+  end
+  def can_equip_item?(%Character{armour: "Scale"}, %Item{grade: "Plate"}) do
+    false
+  end
+  def can_equip_item?(%Character{weapon_hands: "One Handed"}, %Item{worn_on: "Two Handed"}) do
+    false
+  end
+  def can_equip_item?(%Character{weapon_hands: "Two Handed"}, %Item{worn_on: "Weapon Hand"}) do
+    false
+  end
+  def can_equip_item?(%Character{weapon_type: "Blunt"}, %Item{grade: "Bladed"}) do
+    false
+  end
+  def can_equip_item?(%Character{weapon_type: "Bladed"}, %Item{grade: "Blunt"}) do
+    false
+  end
+  def can_equip_item?(%Character{weapon_type: "Basic"}, %Item{grade: grade}) when grade in ["Blunt", "Bladed"] do
+    false
+  end
+  def can_equip_item?(_character, _item), do: true
+
 
   def load_spells(%Character{class_id: class_id} = character) do
     classes_spells =
@@ -118,6 +151,9 @@ defmodule ApathyDrive.Character do
 
     character
     |> Map.put(:class, class.name)
+    |> Map.put(:armour, class.armour)
+    |> Map.put(:weapon_hands, class.weapon_hands)
+    |> Map.put(:weapon_type, class.weapon_type)
     |> Systems.Effect.add(effect)
   end
 
@@ -371,9 +407,9 @@ defmodule ApathyDrive.Character do
       color =
         cond do
           character_power < (observer_power * 0.75) ->
-            "teal"
+            "darkgrey"
           character_power < (observer_power * 1.5) ->
-            "#1eff00"
+            "teal"
           character_power < (observer_power * 3.0) ->
             "#0070ff"
           character_power < (observer_power * 6.0) ->

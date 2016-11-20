@@ -186,34 +186,36 @@ defmodule ApathyDrive.Commands.Look do
   def look_at_item(%Character{} = character, %Item{} = item) do
     Mobile.send_scroll(character, "\n\n")
 
-    Mobile.send_scroll(character, "<p>#{Item.colored_name(item)}</p>")
-    Mobile.send_scroll(character, "<p>#{item.description}</p>\n\n")
-
     current = Character.score_data(character)
+    case ApathyDrive.Commands.Wear.equip_item(character, item, false) do
+      false ->
+        Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} <span class='dark-cyan'>(You can't use)</span></p>")
+        Mobile.send_scroll(character, "<p>#{item.description}</p>\n\n")
+      %{equipped: _, character: equipped} ->
+        Mobile.send_scroll(character, "<p>#{Item.colored_name(item)}</p>")
+        Mobile.send_scroll(character, "<p>#{item.description}</p>\n\n")
+        equipped = Character.score_data(equipped)
 
-    %{equipped: _, character: equipped} = ApathyDrive.Commands.Wear.equip_item(character, item, false)
+        score_data =
+          current
+          |> Enum.reduce(%{}, fn({key, val}, values) ->
+               Map.put(values, key, %{color: color(val, equipped[key]), value: equipped[key]})
+             end)
 
-    equipped = Character.score_data(equipped)
+        hits = Enum.join([score_data.hp.value, score_data.max_hp.value], "/") |> String.ljust(13)
+        mana = Enum.join([score_data.mana.value, score_data.max_mana.value], "/") |> String.ljust(13)
 
-    score_data =
-      current
-      |> Enum.reduce(%{}, fn({key, val}, values) ->
-           Map.put(values, key, %{color: color(val, equipped[key]), value: equipped[key]})
-         end)
-
-    hits = Enum.join([score_data.hp.value, score_data.max_hp.value], "/") |> String.ljust(13)
-    mana = Enum.join([score_data.mana.value, score_data.max_mana.value], "/") |> String.ljust(13)
-
-    Mobile.send_scroll(character, "<p><span class='dark-yellow'>Changes if Equipped:</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>Name:</span> <span class='#{score_data.name.color}'>#{String.ljust(score_data.name.value, 13)}</span><span class='dark-green'>Level:</span> <span class='#{score_data.level.color}'>#{String.ljust(to_string(score_data.level.value), 13)}</span><span class='dark-green'>Exp:</span> <span class='#{score_data.experience.color}'>#{String.rjust(to_string(score_data.experience.value), 13)}</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>Race:</span> <span class='#{score_data.race.color}'>#{String.ljust(score_data.race.value, 13)}</span><span class='dark-green'>Physical Dmg:</span> <span class='#{score_data.physical_damage.color}'>#{String.ljust(to_string(score_data.physical_damage.value), 6)}</span><span class='dark-green'>Perception:</span> <span class='#{score_data.perception.color}'>#{String.rjust(to_string(score_data.perception.value), 6)}</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>Class:</span> <span class='#{score_data.class.color}'>#{String.ljust(to_string(score_data.class.value), 12)}</span><span class='dark-green'>Physical Res:</span> <span class='#{score_data.physical_resistance.color}'>#{String.ljust(to_string(score_data.physical_resistance.value), 6)}</span><span class='dark-green'>Stealth:</span> <span class='#{score_data.stealth.color}'>#{String.rjust(to_string(score_data.stealth.value), 9)}</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>Hits:</span> <span class='#{score_data.max_hp.color}'>#{hits}</span><span class='dark-green'>Magical Dmg:</span> <span class='#{score_data.magical_damage.color}'>#{String.ljust(to_string(score_data.magical_damage.value), 7)}</span><span class='dark-green'>Tracking:</span> <span class='#{score_data.tracking.color}'>#{String.rjust(to_string(score_data.tracking.value), 8)}</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>Mana:</span> <span class='#{score_data.max_mana.color}'>#{mana}</span><span class='dark-green'>Magical Res:</span> <span class='#{score_data.magical_resistance.color}'>#{String.ljust(to_string(score_data.magical_resistance.value), 7)}</span><span class='dark-green'>Accuracy:</span> <span class='#{score_data.accuracy.color}'>#{String.rjust(to_string(score_data.accuracy.value), 8)}</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>#{String.rjust("Dodge:", 45)}</span> <span class='#{score_data.dodge.color}'>#{String.rjust(to_string(score_data.dodge.value), 11)}</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>Strength:</span>  <span class='#{score_data.strength.color}'>#{String.ljust(to_string(score_data.strength.value), 7)}</span> <span class='dark-green'>Agility:</span> <span class='#{score_data.agility.color}'>#{String.ljust(to_string(score_data.agility.value), 11)}</span><span class='dark-green'>Spellcasting:</span> <span class='#{score_data.spellcasting.color}'>#{String.rjust(to_string(score_data.spellcasting.value), 4)}</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>Intellect:</span> <span class='#{score_data.intellect.color}'>#{String.ljust(to_string(score_data.intellect.value), 7)}</span> <span class='dark-green'>Health:</span>  <span class='#{score_data.health.color}'>#{String.ljust(to_string(score_data.health.value), 11)}</span><span class='dark-green'>Crits:</span> <span class='#{score_data.crits.color}'>#{String.rjust(to_string(score_data.crits.value), 11)}</span></p>")
-    Mobile.send_scroll(character, "<p><span class='dark-green'>Willpower:</span> <span class='#{score_data.willpower.color}'>#{String.ljust(to_string(score_data.willpower.value), 7)}</span> <span class='dark-green'>Charm:</span>   <span class='#{score_data.charm.color}'>#{score_data.charm.value}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-yellow'>Changes if Equipped:</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Name:</span> <span class='#{score_data.name.color}'>#{String.ljust(score_data.name.value, 13)}</span><span class='dark-green'>Level:</span> <span class='#{score_data.level.color}'>#{String.ljust(to_string(score_data.level.value), 13)}</span><span class='dark-green'>Exp:</span> <span class='#{score_data.experience.color}'>#{String.rjust(to_string(score_data.experience.value), 13)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Race:</span> <span class='#{score_data.race.color}'>#{String.ljust(score_data.race.value, 13)}</span><span class='dark-green'>Physical Dmg:</span> <span class='#{score_data.physical_damage.color}'>#{String.ljust(to_string(score_data.physical_damage.value), 6)}</span><span class='dark-green'>Perception:</span> <span class='#{score_data.perception.color}'>#{String.rjust(to_string(score_data.perception.value), 6)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Class:</span> <span class='#{score_data.class.color}'>#{String.ljust(to_string(score_data.class.value), 12)}</span><span class='dark-green'>Physical Res:</span> <span class='#{score_data.physical_resistance.color}'>#{String.ljust(to_string(score_data.physical_resistance.value), 6)}</span><span class='dark-green'>Stealth:</span> <span class='#{score_data.stealth.color}'>#{String.rjust(to_string(score_data.stealth.value), 9)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Hits:</span> <span class='#{score_data.max_hp.color}'>#{hits}</span><span class='dark-green'>Magical Dmg:</span> <span class='#{score_data.magical_damage.color}'>#{String.ljust(to_string(score_data.magical_damage.value), 7)}</span><span class='dark-green'>Tracking:</span> <span class='#{score_data.tracking.color}'>#{String.rjust(to_string(score_data.tracking.value), 8)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Mana:</span> <span class='#{score_data.max_mana.color}'>#{mana}</span><span class='dark-green'>Magical Res:</span> <span class='#{score_data.magical_resistance.color}'>#{String.ljust(to_string(score_data.magical_resistance.value), 7)}</span><span class='dark-green'>Accuracy:</span> <span class='#{score_data.accuracy.color}'>#{String.rjust(to_string(score_data.accuracy.value), 8)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>#{String.rjust("Dodge:", 45)}</span> <span class='#{score_data.dodge.color}'>#{String.rjust(to_string(score_data.dodge.value), 11)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Strength:</span>  <span class='#{score_data.strength.color}'>#{String.ljust(to_string(score_data.strength.value), 7)}</span> <span class='dark-green'>Agility:</span> <span class='#{score_data.agility.color}'>#{String.ljust(to_string(score_data.agility.value), 11)}</span><span class='dark-green'>Spellcasting:</span> <span class='#{score_data.spellcasting.color}'>#{String.rjust(to_string(score_data.spellcasting.value), 4)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Intellect:</span> <span class='#{score_data.intellect.color}'>#{String.ljust(to_string(score_data.intellect.value), 7)}</span> <span class='dark-green'>Health:</span>  <span class='#{score_data.health.color}'>#{String.ljust(to_string(score_data.health.value), 11)}</span><span class='dark-green'>Crits:</span> <span class='#{score_data.crits.color}'>#{String.rjust(to_string(score_data.crits.value), 11)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Willpower:</span> <span class='#{score_data.willpower.color}'>#{String.ljust(to_string(score_data.willpower.value), 7)}</span> <span class='dark-green'>Charm:</span>   <span class='#{score_data.charm.color}'>#{score_data.charm.value}</span></p>")
+    end
   end
 
   def look_at_item(mobile, %{description: description}) do

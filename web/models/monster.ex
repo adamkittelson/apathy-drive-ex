@@ -42,9 +42,9 @@ defmodule ApathyDrive.Monster do
   end
 
   @grades %{
-    "weak" => 25,
-    "normal" => 50,
-    "strong" => 100,
+    "weak" => 50,
+    "normal" => 100,
+    "strong" => 150,
     "boss" => 200
   }
 
@@ -143,7 +143,7 @@ defmodule ApathyDrive.Monster do
 
       slot = Enum.random(slots)
 
-      item_id = Item.random_item_id_for_slot_and_rarity(slot, rarity)
+      item_id = Item.random_item_id_for_slot_and_rarity(character, slot, rarity)
 
       item =
         Item
@@ -336,9 +336,9 @@ defmodule ApathyDrive.Monster do
       color =
         cond do
           monster_power < (observer_power * 0.75) ->
-            "teal"
+            "darkgrey"
           monster_power < (observer_power * 1.5) ->
-            "#1eff00"
+            "teal"
           monster_power < (observer_power * 3.0) ->
             "#0070ff"
           monster_power < (observer_power * 6.0) ->
@@ -413,6 +413,18 @@ defmodule ApathyDrive.Monster do
         end)
 
       ApathyDrive.Repo.delete!(%RoomMonster{id: monster.room_monster_id})
+
+      if monster.grade == "boss" do
+        # set to 6 hours from now so the boss won't respawn until then
+        spawn_at =
+          DateTime.utc_now.year
+          |> DateTime.to_unix
+          |> Kernel.+(6 * 60 * 60)
+
+        %Monster{id: monster.id}
+        |> Ecto.Changeset.change(next_spawn_at: spawn_at)
+        |> Repo.update!
+      end
 
       put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
     end
@@ -659,7 +671,8 @@ defmodule ApathyDrive.Monster do
       update_in(monster.mana, &(max(0, &1 - percentage)))
     end
 
-    def target_level(%Monster{}, %Character{level: target_level}), do: target_level
+    def target_level(%Monster{level: monster_level}, %Character{level: target_level}) when target_level > monster_level, do: target_level
+    def target_level(%Monster{level: monster_level}, %Character{level: target_level}), do: monster_level
 
     def tracking_at_level(monster, level) do
       perception = perception_at_level(monster, level)
