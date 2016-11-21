@@ -257,7 +257,7 @@ defmodule ApathyDrive.Room do
     where: room.area_id == ^area_id and not is_nil(room.coordinates),
     join: area in assoc(room, :area),
     join: room_unity in assoc(room, :room_unity),
-    select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, controlled_by: room_unity.controlled_by, exits: room.exits}
+    select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, level: area.level, controlled_by: room_unity.controlled_by, exits: room.exits}
   end
 
   def controlled_by(%Room{} = room) do

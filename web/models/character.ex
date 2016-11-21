@@ -648,7 +648,7 @@ defmodule ApathyDrive.Character do
     def set_room_id(%Character{socket: socket, monitor_ref: monitor_ref} = character, room_id) do
       Process.demonitor(monitor_ref)
 
-      send(character.socket, {:update_room, room_id})
+      send(character.socket, {:update_character, %{room_id: room_id, power: Mobile.power_at_level(character, character.level)}})
 
       character
       |> Map.put(:room_id, room_id)

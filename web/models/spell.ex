@@ -110,6 +110,25 @@ defmodule ApathyDrive.Spell do
 
         Mobile.update_prompt(caster)
 
+        caster =
+          if spell.kind in ["attack", "curse"] do
+            [target_ref | _] = targets
+
+            if is_nil(caster.attack_target) do
+              time = min(Mobile.attack_interval(caster), TimerManager.time_remaining(caster, :auto_attack_timer))
+
+              caster
+              |> Map.put(:attack_target, target_ref)
+              |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, caster.ref}})
+              |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+            else
+              caster
+              |> Map.put(:attack_target, target_ref)
+            end
+          else
+            caster
+          end
+
         room = put_in(room.mobiles[caster_ref], caster)
 
         Enum.reduce(targets, room, fn(target_ref, updated_room) ->

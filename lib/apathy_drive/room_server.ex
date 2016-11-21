@@ -230,7 +230,7 @@ defmodule ApathyDrive.RoomServer do
           :ok
       end
 
-      {:reply, character.ref, room}
+      {:reply, character, room}
     else
       monitor_ref = Process.monitor(socket)
 
@@ -258,7 +258,7 @@ defmodule ApathyDrive.RoomServer do
           :ok
       end
 
-      {:reply, character.ref, room}
+      {:reply, character, room}
     end
   end
 

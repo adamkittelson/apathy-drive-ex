@@ -280,6 +280,12 @@ $(document).ready(function() {
     }
   }
 
+  window.draw_map = function() {
+    for (var area_name in areas) {
+      draw_area(area_name);
+    };
+  }
+
   // Start animating
   animate();
   function animate() {
@@ -380,22 +386,39 @@ $(document).ready(function() {
     if (highlighted) {
       map.lineStyle(2, 0xFFFFFF, 1);
 
-      if (room.controlled_by == "good") {
-        map.beginFill(0xFFFFFF);
-      } else if (room.controlled_by == "evil") {
-        map.beginFill(0xFF00FF);
-      } else {
+      if (room.power < (player.power * 0.75)) {
+        map.beginFill(0xA9A9A9);
+      }
+      else if (room.power < (player.power * 1.5)) {
         map.beginFill(0x008080);
       }
-    } else {
+      else if (room.power < (player.power * 3.0)) {
+        map.beginFill(0x0070FF);
+      }
+      else if (room.power < (player.power * 6.0)) {
+        map.beginFill(0xA335EE);
+      }
+      else {
+        map.beginFill(0xFF8000);
+      }
+    }
+    else {
       map.lineStyle(2, 0x666666, 1);
 
-      if (room.controlled_by == "good") {
-        map.beginFill(0x999999);
-      } else if (room.controlled_by == "evil") {
-        map.beginFill(0x990099);
-      } else {
+      if (room.power < (player.power * 0.75)) {
+        map.beginFill(0x434343);
+      }
+      else if (room.power < (player.power * 1.5)) {
         map.beginFill(0x002020);
+      }
+      else if (room.power < (player.power * 3.0)) {
+        map.beginFill(0x001099);
+      }
+      else if (room.power < (player.power * 6.0)) {
+        map.beginFill(0x400188);
+      }
+      else {
+        map.beginFill(0x992000);
       }
     }
 
@@ -469,8 +492,9 @@ $(document).ready(function() {
       for (var room_id in area[area_name]) {
         add_room(parseInt(room_id), area[area_name][room_id]);
       }
-      draw_area(area_name);
     }
+
+    window.draw_map();
 
     push("map", "request_room_id")
   });

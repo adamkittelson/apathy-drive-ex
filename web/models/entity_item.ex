@@ -22,6 +22,7 @@ defmodule ApathyDrive.EntityItem do
   def load_items(table, id) do
     __MODULE__
     |> where([ei], ei.assoc_table == ^table and ei.assoc_id == ^id)
+    |> order_by([ei], desc: ei.updated_at)
     |> preload(:item)
     |> Repo.all
     |> Enum.map(&Item.from_assoc/1)

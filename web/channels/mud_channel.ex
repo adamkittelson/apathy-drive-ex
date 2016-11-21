@@ -1,6 +1,6 @@
 defmodule ApathyDrive.MUDChannel do
   use ApathyDrive.Web, :channel
-  alias ApathyDrive.{Character, Presence, RoomServer}
+  alias ApathyDrive.{Character, Mobile, Presence, RoomServer}
 
   def join("mud:play", %{"character" => token}, socket) do
     case Phoenix.Token.verify(socket, "character", token, max_age: 1209600) do
@@ -12,9 +12,6 @@ defmodule ApathyDrive.MUDChannel do
             {:error, %{reason: "unauthorized"}}
           %Character{room_id: room_id} = character ->
             character =
-              Repo.preload(character, :class)
-
-            ref =
               room_id
               |> RoomServer.find
               |> RoomServer.character_connected(character, self())
@@ -23,11 +20,12 @@ defmodule ApathyDrive.MUDChannel do
               socket
               |> assign(:room_id, room_id)
               |> assign(:character, character.id)
-              |> assign(:monster_ref, ref)
+              |> assign(:power, Mobile.power_at_level(character, character.level))
+              |> assign(:monster_ref, character.ref)
 
               ApathyDrive.PubSub.subscribe("spirits:online")
               ApathyDrive.PubSub.subscribe("chat:gossip")
-              ApathyDrive.PubSub.subscribe("chat:#{String.downcase(character.class.name)}")
+              ApathyDrive.PubSub.subscribe("chat:#{String.downcase(character.class)}")
 
             send(self(), :after_join)
 
@@ -76,10 +74,11 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:update_room, room_id}, socket) do
+  def handle_info({:update_character, %{room_id: room_id, power: power}}, socket) do
     socket =
       socket
       |> assign(:room_id, room_id)
+      |> assign(:power, power)
 
     update_room(socket)
 
@@ -210,7 +209,7 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   defp update_room(socket) do
-    Phoenix.Channel.push socket, "update_room", %{:room_id => socket.assigns[:room_id]}
+    Phoenix.Channel.push socket, "update_room", %{room_id: socket.assigns[:room_id], power: socket.assigns[:power]}
   end
 
   defp send_scroll(socket, html) do

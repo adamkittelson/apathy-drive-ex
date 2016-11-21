@@ -81,6 +81,12 @@ defmodule ApathyDrive.Monster do
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
   def spawnable?(%Monster{}, _now), do: true
 
+  def base_monster_power_at_level(level) do
+    base = @grades["normal"] * 6 * (1 + (level / 10))
+
+    trunc(base + ((base / 10) * (level - 1)))
+  end
+
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
     base = @grades[grade] * (1 + (level / 10))
     min = trunc(base * 0.75)
@@ -417,7 +423,7 @@ defmodule ApathyDrive.Monster do
       if monster.grade == "boss" do
         # set to 6 hours from now so the boss won't respawn until then
         spawn_at =
-          DateTime.utc_now.year
+          DateTime.utc_now
           |> DateTime.to_unix
           |> Kernel.+(6 * 60 * 60)
 
