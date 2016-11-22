@@ -7,8 +7,8 @@ defmodule ApathyDrive.Commands.Gossip do
     message =
       args
       |> Enum.join(" ")
-      |> Monster.sanitize()
-    ApathyDrive.Endpoint.broadcast!("chat:gossip", "scroll", %{html: "<p>[<span class='dark-magenta'>gossip</span> : #{Mobile.look_name(character)}] #{message}</p>"})
+      |> Character.sanitize()
+    ApathyDrive.Endpoint.broadcast!("chat:gossip", "scroll", %{html: "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{message}</p>"})
     room
   end
 

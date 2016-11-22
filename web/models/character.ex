@@ -165,6 +165,12 @@ defmodule ApathyDrive.Character do
     |> Map.put(:equipment, Enum.filter(items, &(&1.equipped)))
   end
 
+  def sanitize(message) do
+    {:safe, message} = Phoenix.HTML.html_escape(message)
+
+    message
+  end
+
   def weapon(%Character{} = character) do
     character.equipment
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))

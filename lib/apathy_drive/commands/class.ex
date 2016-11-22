@@ -11,8 +11,8 @@ defmodule ApathyDrive.Commands.Class do
     message =
       args
       |> Enum.join(" ")
-      |> Monster.sanitize()
-    ApathyDrive.Endpoint.broadcast!("chat:#{class}", "scroll", %{html: "<p>[<span class='blue'>#{class}</span> : #{character.name}}] #{message}</p>"})
+      |> Character.sanitize()
+    ApathyDrive.Endpoint.broadcast!("chat:#{class}", "scroll", %{html: "<p>[<span class='blue'>#{class}</span> : #{character.name}] #{message}</p>"})
     room
   end
 

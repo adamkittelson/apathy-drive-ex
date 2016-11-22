@@ -214,12 +214,6 @@
 #     end
 #   end
 #
-#   def sanitize(message) do
-#     {:safe, message} = Phoenix.HTML.html_escape(message)
-#
-#     message
-#   end
-#
 #   def aligned_spirit_name(%Monster{spirit: %Spirit{name: name, class: %{alignment: "good"}}}) do
 #     "<span class='white'>#{name}</span>"
 #   end
