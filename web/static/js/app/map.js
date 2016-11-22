@@ -387,38 +387,38 @@ $(document).ready(function() {
       map.lineStyle(2, 0xFFFFFF, 1);
 
       if (room.power < (player.power * 0.75)) {
-        map.beginFill(0xA9A9A9);
-      }
-      else if (room.power < (player.power * 1.5)) {
         map.beginFill(0x008080);
       }
+      else if (room.power < (player.power * 1.5)) {
+        map.beginFill(0x7fff00);
+      }
       else if (room.power < (player.power * 3.0)) {
-        map.beginFill(0x0070FF);
+        map.beginFill(0x0000ff);
       }
       else if (room.power < (player.power * 6.0)) {
-        map.beginFill(0xA335EE);
+        map.beginFill(0x8b008b);
       }
       else {
-        map.beginFill(0xFF8000);
+        map.beginFill(0xFF0000);
       }
     }
     else {
       map.lineStyle(2, 0x666666, 1);
 
       if (room.power < (player.power * 0.75)) {
-        map.beginFill(0x434343);
-      }
-      else if (room.power < (player.power * 1.5)) {
         map.beginFill(0x002020);
       }
+      else if (room.power < (player.power * 1.5)) {
+        map.beginFill(0x006400);
+      }
       else if (room.power < (player.power * 3.0)) {
-        map.beginFill(0x001099);
+        map.beginFill(0x00008b);
       }
       else if (room.power < (player.power * 6.0)) {
-        map.beginFill(0x400188);
+        map.beginFill(0x240024);
       }
       else {
-        map.beginFill(0x992000);
+        map.beginFill(0x8b0000);
       }
     }
 

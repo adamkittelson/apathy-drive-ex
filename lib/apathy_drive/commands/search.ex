@@ -35,7 +35,7 @@ defmodule ApathyDrive.Commands.Search do
         Mobile.send_scroll(character, "<p>You found an exit #{ApathyDrive.Exit.direction_description(direction)}!</p>")
       end
 
-      Systems.Effect.add(room, %{searched: direction}, 300)
+      Systems.Effect.add(room, %{searched: direction}, 300_000)
     end
   end
 

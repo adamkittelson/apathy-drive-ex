@@ -407,15 +407,15 @@ defmodule ApathyDrive.Character do
       color =
         cond do
           character_power < (observer_power * 0.75) ->
-            "darkgrey"
-          character_power < (observer_power * 1.5) ->
             "teal"
+          character_power < (observer_power * 1.5) ->
+            "chartreuse"
           character_power < (observer_power * 3.0) ->
-            "#0070ff"
+            "blue"
           character_power < (observer_power * 6.0) ->
-            "#a335ee"
+            "darkmagenta"
           :else ->
-            "#ff8000"
+            "red"
         end
       "<span style='color: #{color};'>#{name}</span>"
     end

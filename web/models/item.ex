@@ -39,31 +39,31 @@ defmodule ApathyDrive.Item do
   @rarities %{
     "common" => %{
       cost_multiplier: 1,
-      color: "darkgrey",
+      color: "teal",
       attribute_range: 2..4,
       base_power: 18
     },
     "uncommon" => %{
       cost_multiplier: 2,
-      color: "teal",
+      color: "chartreuse",
       attribute_range: 5..7,
       base_power: 36
     },
     "rare" => %{
       cost_multiplier: 3,
-      color: "#0070ff",
+      color: "blue",
       attribute_range: 8..10,
       base_power: 54
     },
     "epic" => %{
       cost_multiplier: 4,
-      color: "#a335ee",
+      color: "darkmagenta",
       attribute_range: 11..19,
       base_power: 90
     },
     "legendary" => %{
       cost_multiplier: :infinity,
-      color: "#ff8000",
+      color: "red",
       attribute_range: 20..28,
       base_power: 144
     }

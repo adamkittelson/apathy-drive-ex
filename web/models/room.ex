@@ -233,16 +233,21 @@ defmodule ApathyDrive.Room do
   end
 
   def initiate_remote_action(room, mobile, remote_action_exit, opts \\ []) do
-    unless Monster.confused(room, mobile) do
+    unless Mobile.confused(mobile, room) do
       remote_action_exit["destination"]
       |> RoomServer.find
       |> RoomServer.trigger_remote_action(remote_action_exit, mobile.room_id, opts)
 
-      room
-      |> Room.send_scroll(%{
-           mobile.spirit.id => "<p>#{remote_action_exit["message"]}</p>",
-           :other => "<p>#{ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{"name" => Monster.look_name(mobile)})}</span></p>"
-         })
+      Mobile.send_scroll(mobile, "<p>#{remote_action_exit["message"]}</p>")
+      room.mobiles
+      |> Map.values
+      |> List.delete(mobile)
+      |> Enum.each(fn
+           %Character{} = observer ->
+             Mobile.send_scroll(observer, "<p>#{ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{"name" => Mobile.colored_name(mobile, observer)})}</span></p>")
+           _ ->
+             :noop
+         end)
     end
     room
   end

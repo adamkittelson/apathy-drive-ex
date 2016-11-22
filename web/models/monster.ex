@@ -342,15 +342,15 @@ defmodule ApathyDrive.Monster do
       color =
         cond do
           monster_power < (observer_power * 0.75) ->
-            "darkgrey"
-          monster_power < (observer_power * 1.5) ->
             "teal"
+          monster_power < (observer_power * 1.5) ->
+            "chartreuse"
           monster_power < (observer_power * 3.0) ->
-            "#0070ff"
+            "blue"
           monster_power < (observer_power * 6.0) ->
-            "#a335ee"
+            "darkmagenta"
           :else ->
-            "#ff8000"
+            "red"
         end
       "<span style='color: #{color};'>#{name}</span>"
     end
