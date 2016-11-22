@@ -46,7 +46,7 @@ defmodule ApathyDrive.Command do
   end
 
   defp execute_room_command(room, monster, scripts) do
-    if Monster.confused(room, monster) do
+    if Mobile.confused(monster, room) do
       room
     else
       scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)

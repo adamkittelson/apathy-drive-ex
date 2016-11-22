@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Spell do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Match, Mobile, Room, Spell, Text, TimerManager}
+  alias ApathyDrive.{EntityAbility, Match, Mobile, Room, Spell, Text, TimerManager}
 
   schema "spells" do
     field :name, :string
@@ -67,6 +67,14 @@ defmodule ApathyDrive.Spell do
     |> cast(params, @required_fields, @optional_fields)
   end
 
+  def find(id) do
+    spell = ApathyDrive.Repo.get(__MODULE__, id)
+
+    if spell do
+      put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
+    end
+  end
+
   # equivilent to a character with 2 ManaPerIntellect and 100 intellect
   def base_mana_at_level(level), do: 200 + ((level - 1) * 20)
 
@@ -111,7 +119,7 @@ defmodule ApathyDrive.Spell do
         Mobile.update_prompt(caster)
 
         caster =
-          if spell.kind in ["attack", "curse"] do
+          if spell.kind in ["attack", "curse"] and !(caster.ref in targets) do
             [target_ref | _] = targets
 
             if is_nil(caster.attack_target) do
@@ -182,7 +190,13 @@ defmodule ApathyDrive.Spell do
   def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{abilities: %{"Dodgeable" => true}} = spell) do
     if dodged?(caster, target) do
       display_cast_message(room, caster, target, Map.put(spell, :result, :dodged))
-      target
+
+      effects =
+        %{"Dodge" => -10}
+        |> Map.put("stack_key", "dodge-limiter")
+        |> Map.put("stack_count", 5)
+
+      Systems.Effect.add(target, effects, Mobile.round_length_in_ms(target))
     else
       apply_spell(room, caster, target, update_in(spell.abilities, &Map.delete(&1, "Dodgeable")))
     end

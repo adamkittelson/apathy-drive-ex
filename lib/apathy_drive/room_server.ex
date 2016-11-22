@@ -841,9 +841,9 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
+  def handle_info({:execute_spell, %{caster: ref, spell: spell, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      room = Ability.execute(room, mobile.ref, ability, target)
+      room = Spell.execute(room, mobile.ref, spell, target)
       {:noreply, room}
     else
       {:noreply, room}

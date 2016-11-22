@@ -135,7 +135,7 @@ defmodule ApathyDrive.Item do
                mapped_equipment
                |> List.delete(item)
 
-             [{slot, power_at_level(item, level)} | mapped_equipment]
+             [{slot, power_at_level(item, item.level)} | mapped_equipment]
            else
              [{slot, 0} | mapped_equipment]
            end

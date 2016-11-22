@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Item, Mobile, Monster, Room, RoomMonster, Spell, Text}
+  alias ApathyDrive.{Character, Item, Mobile, Monster, Room, RoomMonster, Spell, Text, TimerManager}
 
   require Logger
 
@@ -60,9 +60,11 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:spawned_at, rm.spawned_at)
 
     if spawnable?(monster, now) do
+      ref = make_ref()
       monster
-      |> Map.put(:ref, make_ref())
+      |> Map.put(:ref, ref)
       |> generate_monster_attributes()
+      |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
     end
   end
   def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm) do
@@ -71,11 +73,13 @@ defmodule ApathyDrive.Monster do
     attributes = Map.take(rm, [:strength, :agility, :intellect,
                                :willpower, :health, :charm, :name])
 
+    ref = make_ref()
     monster
     |> Map.merge(attributes)
     |> Map.put(:room_monster_id, id)
-    |> Map.put(:ref, make_ref())
+    |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
+    |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
   end
 
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
@@ -166,6 +170,12 @@ defmodule ApathyDrive.Monster do
 
           character
         else
+          character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
+
+          %Character{id: character.id}
+          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+          |> Repo.update!
+
           character
         end
 

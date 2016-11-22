@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Monster, MonsterTemplate, Room, RoomServer}
+  alias ApathyDrive.{Mobile, Monster, MonsterTemplate, Room, RoomServer, Spell}
 
   schema "scripts" do
     field :instructions, ApathyDrive.JSONB, default: []
@@ -52,13 +52,13 @@ defmodule ApathyDrive.Script do
   def execute_script(%Room{} = room, %{} = monster, instruction), do: execute_instruction(room, monster, instruction, nil)
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"message" => %{"user" => user_message, "spectator" => spectator_message}}, script) do
-    Monster.send_scroll(monster, "<p>#{user_message}</p>")
+    Mobile.send_scroll(monster, "<p>#{user_message}</p>")
     Room.send_scroll(room, "<p>#{ApathyDrive.Text.interpolate(spectator_message, %{"user" => monster})}</p>", [monster])
     execute_script(room, monster, script)
   end
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"message" => message},  script) do
-    Monster.send_scroll(monster, "<p>#{message}</p>")
+    Mobile.send_scroll(monster, "<p>#{message}</p>")
     execute_script(room, monster, script)
   end
 
@@ -68,7 +68,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%Room{} = room, %{spirit: spirit} = monster, %{"fail_flag" => %{"failure_message" => message, "flag" => flag}}, script) do
     if Map.has_key?(spirit.flags, flag) do
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
       room
     else
       execute_script(room, monster, script)
@@ -119,7 +119,7 @@ defmodule ApathyDrive.Script do
     if alignment in alignments do
       execute_script(room, monster, script)
     else
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
       room
     end
   end
@@ -129,7 +129,7 @@ defmodule ApathyDrive.Script do
     # if Monster.has_item?(monster, item_template_id) do
     #   execute_script(room, monster, script)
     # else
-    #   Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+    #   Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
     #   room
     # end
   end
@@ -139,7 +139,7 @@ defmodule ApathyDrive.Script do
       Monster.save(monster)
       execute_script(room, monster, script)
     else
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
       room
     end
   end
@@ -229,7 +229,7 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"min_level" => %{"failure_message" => message, "level" => level}}, script) do
     if monster.level < level do
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
       room
     else
       execute_script(room, monster, script)
@@ -243,13 +243,13 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"cast_ability" => ability_id}, script) do
-    case ApathyDrive.Ability.find(ability_id) do
+    case ApathyDrive.Spell.find(ability_id) do
       nil ->
-        Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: Ability ##{ability_id}</span></p>")
-      ability ->
-        ability = Map.put(ability, "ignores_global_cooldown", true)
+        Mobile.send_scroll(monster, "<p><span class='red'>Not Implemented: Spell ##{ability_id}</span></p>")
+      %Spell{} = spell ->
+        spell = Map.put(spell, :ignores_round_cooldown?, true)
 
-        send(self, {:execute_ability, %{caster: monster.ref, ability: ability, target: [monster]}})
+        send(self, {:execute_spell, %{caster: monster.ref, spell: spell, target: [monster.ref]}})
     end
     execute_script(room, monster, script)
   end
@@ -258,13 +258,13 @@ defmodule ApathyDrive.Script do
     if Room.find_item(room, item_name) do
       execute_script(room, monster, script)
     else
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
       room
     end
   end
 
   def execute_instruction(%Room{} = room, %{spirit: nil} = monster, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => _price}}, _script) do
-    Monster.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
+    Mobile.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
     room
   end
 
@@ -274,7 +274,7 @@ defmodule ApathyDrive.Script do
       room = put_in(room.monsters[monster.ref], monster)
       execute_script(room, monster, script)
     else
-      Monster.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
       room
     end
   end
@@ -323,7 +323,7 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(room, monster, instruction, _script) do
-    Monster.send_scroll(monster, "<p><span class='red'>Not Implemented: #{inspect instruction}</span></p>")
+    Mobile.send_scroll(monster, "<p><span class='red'>Not Implemented: #{inspect instruction}</span></p>")
     execute_script(room, monster, [])
   end
 

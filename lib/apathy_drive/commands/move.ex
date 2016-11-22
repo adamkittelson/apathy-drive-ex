@@ -12,12 +12,7 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def execute(%Room{} = room, %Character{} = character, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"] do
-    if Doors.open?(room, room_exit) do
-      execute(room, character, Map.put(room_exit, "kind", "Normal"))
-    else
-      Mobile.send_scroll(character, "<p><span class='red'>The #{String.downcase(kind)} is closed!</span></p>")
-      room
-    end
+    execute(room, character, Map.put(room_exit, "kind", "Normal"))
   end
 
   def execute(%Room{} = room, character, %{"kind" => "Hidden", "passable_while_hidden" => true} = room_exit) do

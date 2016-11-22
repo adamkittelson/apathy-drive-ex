@@ -22,7 +22,7 @@ defmodule ApathyDrive.Commands.System do
   def system(%Room{area: %Area{level: old_level} = area} = room, character, ["set", "area", "level", level]) do
     area = Area.update_level(area, level)
     PubSub.broadcast!("areas:#{area.id}", {:update_area, area})
-    Character.send_scroll(character, "<p>#{area.name} updated from level #{old_level} to #{level}.</p>")
+    Mobile.send_scroll(character, "<p>#{area.name} updated from level #{old_level} to #{level}.</p>")
     room
   end
 
