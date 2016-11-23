@@ -11,9 +11,6 @@ defmodule ApathyDrive.Class do
 
     has_many :characters, ApathyDrive.Character
 
-    has_many :classes_spells, ApathyDrive.ClassSpell
-    has_many :spells, through: [:classes_spells, :spell]
-
     timestamps
   end
 

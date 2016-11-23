@@ -107,16 +107,15 @@ defmodule ApathyDrive.Character do
   end
   def can_equip_item?(_character, _item), do: true
 
-
   def load_spells(%Character{class_id: class_id} = character) do
-    classes_spells =
-      ApathyDrive.ClassSpell
-      |> Ecto.Query.where(class_id: ^class_id)
+    entities_spells =
+      ApathyDrive.EntitySpell
+      |> Ecto.Query.where(assoc_id: ^class_id, assoc_table: "classes")
       |> Ecto.Query.preload([:spell])
       |> Repo.all
 
     spells =
-      Enum.reduce(classes_spells, %{}, fn
+      Enum.reduce(entities_spells, %{}, fn
         %{level: level, spell: %Spell{id: id} = spell}, spells ->
           spell =
             put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
@@ -629,7 +628,14 @@ defmodule ApathyDrive.Character do
     end
 
     def round_length_in_ms(character) do
-      base = 4000 - attribute_at_level(character, :agility, character.level)
+      agility = attribute_at_level(character, :agility, character.level)
+
+      base =
+        if agility > 1000 do
+          4000 * :math.pow(0.9997, 1000) * :math.pow(0.999925, agility - 1000)
+        else
+          4000 * :math.pow(0.9997, agility)
+        end
 
       speed_mods =
         character.effects

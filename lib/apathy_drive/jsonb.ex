@@ -20,6 +20,7 @@ defmodule ApathyDrive.JSONB do
     case Poison.decode(json) do
       {:ok, any} -> {:ok, any}
       {:error, {:invalid, _}} -> {:ok, json}
+      {:error, :invalid} -> {:ok, json}
       _ -> :error
     end
   end

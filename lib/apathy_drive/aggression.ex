@@ -14,8 +14,7 @@ defmodule ApathyDrive.Aggression do
   def react(%{} = mobile, %{}), do: mobile
 
   def attack(%{} = attacker, %{ref: ref} = intruder) do
-    IO.puts "#{attacker.name} attacking #{intruder.name}"
-    attacker
+    ApathyDrive.Commands.Attack.attack(attacker, intruder)
   end
 
 end

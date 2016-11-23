@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Item, Mobile, Monster, Room, RoomMonster, Spell, Text, TimerManager}
+  alias ApathyDrive.{Character, EntityAbility, Item, Mobile, Monster, Room, RoomMonster, Spell, Text, TimerManager}
 
   require Logger
 
@@ -37,6 +37,7 @@ defmodule ApathyDrive.Monster do
     field :level,       :integer, virtual: true
     field :spawned_at,  :integer, virtual: true
     field :spell_shift, :float, virtual: true
+    field :attack_target, :any, virtual: true
 
     timestamps
   end
@@ -64,6 +65,7 @@ defmodule ApathyDrive.Monster do
       monster
       |> Map.put(:ref, ref)
       |> generate_monster_attributes()
+      |> load_spells()
       |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
     end
   end
@@ -79,11 +81,30 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:room_monster_id, id)
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
+    |> load_spells()
     |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
   end
 
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
   def spawnable?(%Monster{}, _now), do: true
+
+  def load_spells(%Monster{id: id} = monster) do
+    entities_spells =
+      ApathyDrive.EntitySpell
+      |> Ecto.Query.where(assoc_id: ^id, assoc_table: "monsters")
+      |> Ecto.Query.preload([:spell])
+      |> Repo.all
+
+    spells =
+      Enum.reduce(entities_spells, %{}, fn
+        %{level: level, spell: %Spell{id: id} = spell}, spells ->
+          spell =
+            put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
+            |> Map.put(:level, level)
+          Map.put(spells, spell.command, spell)
+      end)
+    Map.put(monster, :spells, spells)
+  end
 
   def base_monster_power_at_level(level) do
     base = @grades["normal"] * 6 * (1 + (level / 10))
@@ -286,41 +307,12 @@ defmodule ApathyDrive.Monster do
     end
 
     def attack_spell(monster) do
-      case Monster.weapon(monster) do
-        nil ->
-          %Spell{
-            kind: "attack",
-            mana: 0,
-            user_message: "You punch {{target}} for {{amount}} damage!",
-            target_message: "{{user}} punches you for {{amount}} damage!",
-            spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
-            ignores_round_cooldown?: true,
-            abilities: %{
-              "PhysicalDamage" => 100 / attacks_per_round(monster),
-              "Dodgeable" => true,
-              "DodgeUserMessage" => "You throw a punch at {{target}}, but they dodge!",
-              "DodgeTargetMessage" => "{{user}} throws a punch at you, but you dodge!",
-              "DodgeSpectatorMessage" => "{{user}} throws a punch at {{target}}, but they dodge!"
-            }
-          }
-        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss]} ->
-          [singular_hit, plural_hit] = Enum.random(hit_verbs)
-          %Spell{
-            kind: "attack",
-            mana: 0,
-            user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
-            target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
-            spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
-            ignores_round_cooldown?: true,
-            abilities: %{
-              "PhysicalDamage" => 100 / attacks_per_round(monster),
-              "Dodgeable" => true,
-              "DodgeUserMessage" => "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
-              "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
-              "DodgeSpectatorMessage" => "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
-            }
-          }
-      end
+      monster.spells
+      |> Map.values
+      |> Enum.filter(&(&1.kind == "auto attack"))
+      |> Enum.random
+      |> Map.put(:kind, "attack")
+      |> Map.put(:ignores_round_cooldown?, true)
     end
 
     def attacks_per_round(monster) do
@@ -541,15 +533,7 @@ defmodule ApathyDrive.Monster do
 
     def physical_damage_at_level(monster, level) do
       damage = attribute_at_level(monster, :strength, level)
-      weapon_bonus =
-        case Monster.weapon(monster) do
-          %Item{worn_on: "Two Handed"} ->
-            10
-          _ ->
-            0
-          end
-
-      modifier = weapon_bonus + ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyPhysicalDamage")
+      modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyPhysicalDamage")
       trunc(damage * (1 + (modifier / 100)))
     end
 
@@ -581,7 +565,14 @@ defmodule ApathyDrive.Monster do
     end
 
     def round_length_in_ms(monster) do
-      base = 4000 - attribute_at_level(monster, :agility, monster.level)
+      agility = attribute_at_level(monster, :agility, monster.level)
+
+      base =
+        if agility > 1000 do
+          4000 * :math.pow(0.9997, 1000) * :math.pow(0.999925, agility - 1000)
+        else
+          4000 * :math.pow(0.9997, agility)
+        end
 
       speed_mods =
         monster.effects
