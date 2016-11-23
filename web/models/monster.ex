@@ -324,22 +324,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def attacks_per_round(monster) do
-      case Monster.weapon(monster) do
-        nil ->
-          4
-        %Item{worn_on: "Weapon Hand", grade: "Basic"} ->
-          4
-        %Item{worn_on: "Two Handed", grade: "Basic"} ->
-          3
-        %Item{worn_on: "Weapon Hand", grade: "Bladed"} ->
-          3
-        %Item{worn_on: "Two Handed", grade: "Bladed"} ->
-          2
-        %Item{worn_on: "Weapon Hand", grade: "Blunt"} ->
-          2
-        %Item{worn_on: "Two Handed", grade: "Blunt"} ->
-          1
-      end
+      1
     end
 
     def caster_level(%Monster{}, %Character{level: level} = _target), do: level
