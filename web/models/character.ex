@@ -382,13 +382,8 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def auto_attack_target(%Character{attack_target: target} = character, room) do
-      if target && room.mobiles[target] do
-        target
-      else
-        Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Off*</span></p>")
-        nil
-      end
+    def auto_attack_target(%Character{attack_target: target} = character, room, _attack_spell) do
+      if room.mobiles[target], do: target
     end
 
     def caster_level(%Character{level: caster_level}, %{} = _target), do: caster_level
@@ -685,7 +680,7 @@ defmodule ApathyDrive.Character do
       if character.hp > 0 and hp_description != updated_hp_description do
         room.mobiles
         |> Map.values
-        |> List.delete(character)
+        |> Enum.reject(& &1.ref == character.ref)
         |> Enum.each(fn
              %Character{} = observer ->
                Mobile.send_scroll(observer, "<p>#{Mobile.colored_name(character, observer)} is #{updated_hp_description}.</p>")

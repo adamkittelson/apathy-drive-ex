@@ -280,12 +280,42 @@ defmodule ApathyDrive.Monster do
     "#{adjective} #{name}"
   end
 
-  def auto_attack_target(_monster, [], _room) do
+  def auto_attack_target(_monster, [], _room, _attack_spell) do
     nil
   end
 
-  def auto_attack_target(_monster, enemies, _room) do
+  # weak monsters attack enemy with lowest % hp remaining
+  def auto_attack_target(%Monster{grade: "weak"}, enemies, room, _attack_spell) do
+    enemies
+    |> Enum.map(& room.mobiles[&1])
+    |> Enum.sort_by(& &1.hp)
+    |> List.first
+    |> Map.get(:ref)
+  end
+
+  # normal monsters attack a random enemy
+  def auto_attack_target(%Monster{grade: "normal"}, enemies, _room, _attack_spell) do
     Enum.random(enemies)
+  end
+
+  # strong monsters attack enemy with highest % hp remaining
+  def auto_attack_target(%Monster{grade: "strong"}, enemies, room, _attack_spell) do
+    enemies
+    |> Enum.map(& room.mobiles[&1])
+    |> Enum.sort_by(& &1.hp)
+    |> List.last
+    |> Map.get(:ref)
+  end
+
+  # boss monsters attack enemy who will be damaged the least
+  def auto_attack_target(%Monster{grade: "boss"} = monster, enemies, room, attack_spell) do
+    enemies
+    |> Enum.map(fn enemy ->
+         Spell.apply_instant_abilities(room.mobiles[enemy], attack_spell, monster)
+       end)
+    |> Enum.sort_by(& &1.spell_shift)
+    |> List.last
+    |> Map.get(:ref)
   end
 
   defimpl ApathyDrive.Mobile, for: Monster do
@@ -326,7 +356,7 @@ defmodule ApathyDrive.Monster do
       1
     end
 
-    def auto_attack_target(%Monster{} = monster, room) do
+    def auto_attack_target(%Monster{} = monster, room, attack_spell) do
       enemies =
         monster.effects
         |> Map.values
@@ -334,7 +364,7 @@ defmodule ApathyDrive.Monster do
         |> Enum.map(&(Map.get(&1, "Aggro")))
         |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
 
-      Monster.auto_attack_target(monster, enemies, room)
+      Monster.auto_attack_target(monster, enemies, room, attack_spell)
     end
 
     def caster_level(%Monster{}, %Character{level: level} = _target), do: level
