@@ -382,6 +382,15 @@ defmodule ApathyDrive.Character do
       end
     end
 
+    def auto_attack_target(%Character{attack_target: target} = character, room) do
+      if target && room.mobiles[target] do
+        target
+      else
+        Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Off*</span></p>")
+        nil
+      end
+    end
+
     def caster_level(%Character{level: caster_level}, %{} = _target), do: caster_level
 
     def confused(%Character{effects: effects} = character, %Room{} = room) do

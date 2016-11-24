@@ -513,18 +513,14 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:execute_auto_attack, ref}, %Room{} = room) do
     room =
       Room.update_mobile(room, ref, fn
-        %{attack_target: nil} = mobile ->
-          mobile
-        %{attack_target: target_ref} = mobile ->
-          if target = room.mobiles[target_ref] do
+        %{} = mobile ->
+          if target_ref = Mobile.auto_attack_target(mobile, room) do
             mobile = TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
             room = put_in(room.mobiles[mobile.ref], mobile)
 
             Spell.execute(room, mobile.ref, Mobile.attack_spell(mobile), [target_ref])
           else
             mobile
-            |> Map.put(:attack_target, nil)
-            |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Off*</span></p>")
           end
       end)
     {:noreply, room}

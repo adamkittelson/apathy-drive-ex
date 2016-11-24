@@ -122,16 +122,20 @@ defmodule ApathyDrive.Spell do
           if spell.kind in ["attack", "curse"] and !(caster.ref in targets) do
             [target_ref | _] = targets
 
-            if is_nil(caster.attack_target) do
-              time = min(Mobile.attack_interval(caster), TimerManager.time_remaining(caster, :auto_attack_timer))
+            if Map.has_key?(caster, :attack_target) do
+              if is_nil(caster.attack_target) do
+                time = min(Mobile.attack_interval(caster), TimerManager.time_remaining(caster, :auto_attack_timer))
 
-              caster
-              |> Map.put(:attack_target, target_ref)
-              |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, caster.ref}})
-              |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+                caster
+                |> Map.put(:attack_target, target_ref)
+                |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, caster.ref}})
+                |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+              else
+                caster
+                |> Map.put(:attack_target, target_ref)
+              end
             else
               caster
-              |> Map.put(:attack_target, target_ref)
             end
           else
             caster

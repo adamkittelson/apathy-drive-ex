@@ -1,5 +1,6 @@
 defprotocol ApathyDrive.Mobile do
   def ability_value(mobile, ability)
+  def auto_attack_target(mobile, room)
   def attack_interval(mobile)
   def attack_spell(mobile)
   def attacks_per_round(mobile)

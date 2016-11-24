@@ -37,7 +37,6 @@ defmodule ApathyDrive.Monster do
     field :level,       :integer, virtual: true
     field :spawned_at,  :integer, virtual: true
     field :spell_shift, :float, virtual: true
-    field :attack_target, :any, virtual: true
 
     timestamps
   end
@@ -281,6 +280,14 @@ defmodule ApathyDrive.Monster do
     "#{adjective} #{name}"
   end
 
+  def auto_attack_target(_monster, [], _room) do
+    nil
+  end
+
+  def auto_attack_target(_monster, enemies, _room) do
+    Enum.random(enemies)
+  end
+
   defimpl ApathyDrive.Mobile, for: Monster do
 
     def ability_value(monster, ability) do
@@ -317,6 +324,17 @@ defmodule ApathyDrive.Monster do
 
     def attacks_per_round(monster) do
       1
+    end
+
+    def auto_attack_target(%Monster{} = monster, room) do
+      enemies =
+        monster.effects
+        |> Map.values
+        |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
+        |> Enum.map(&(Map.get(&1, "Aggro")))
+        |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
+
+      Monster.auto_attack_target(monster, enemies, room)
     end
 
     def caster_level(%Monster{}, %Character{level: level} = _target), do: level
@@ -557,11 +575,15 @@ defmodule ApathyDrive.Monster do
       hp_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(monster, "HPRegen")) / max_hp
       mana_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(monster, "ManaRegen")) / max_mana
 
-      monster
-      |> shift_hp(hp_regen_percentage_per_round, room)
-      |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
-      |> TimerManager.send_after({:regen, round_length_in_ms(monster), {:regen, monster.ref}})
-      |> update_prompt()
+      monster =
+        monster
+        |> shift_hp(hp_regen_percentage_per_round, room)
+        |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
+        |> TimerManager.send_after({:regen, round_length_in_ms(monster), {:regen, monster.ref}})
+
+      room = put_in(room.mobiles[monster.ref], monster)
+
+      ApathyDrive.Aggression.react(room, monster)
     end
 
     def round_length_in_ms(monster) do

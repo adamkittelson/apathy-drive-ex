@@ -78,21 +78,6 @@ defmodule ApathyDrive.Room do
 
     room = put_in(room.mobiles[mobile.ref], mobile)
 
-    room =
-      Enum.reduce(room.mobiles, room, fn {ref, mobile_in_room}, updated_room ->
-        updated_room =
-          Room.update_mobile(updated_room, ref, fn
-            %Character{} = character ->
-              character
-            %Monster{} = monster ->
-              ApathyDrive.Aggression.react(monster, mobile)
-          end)
-
-        Room.update_mobile(updated_room, mobile.ref, fn mob ->
-          ApathyDrive.Aggression.react(mob, mobile_in_room)
-        end)
-      end)
-
     room
     |> Room.move_after(mobile.ref)
     |> Room.start_timer
