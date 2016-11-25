@@ -55,9 +55,12 @@ chan.join().receive("error", ({reason}) => window.location = "" + window.locatio
 chan.on("update_room", function(message){
   if (player.power != message.power) {
     player.power = message.power;
-    window.draw_map();
-  };
-  center_on_room(message.room_id);
+    draw_map(message.room_id);
+  }
+  else {
+    center_on_room(message.room_id)
+  }
+
 });
 
 chan.on("clear scroll", function(message){

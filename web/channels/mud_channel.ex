@@ -41,8 +41,6 @@ defmodule ApathyDrive.MUDChannel do
     |> RoomServer.find
     |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
 
-    update_room(socket)
-
     {:noreply, socket}
   end
 

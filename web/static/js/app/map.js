@@ -280,10 +280,11 @@ $(document).ready(function() {
     }
   }
 
-  window.draw_map = function() {
+  window.draw_map = function(room_id) {
     for (var area_name in areas) {
       draw_area(area_name);
     };
+    center_on_room(room_id);
   }
 
   // Start animating
@@ -493,10 +494,10 @@ $(document).ready(function() {
         add_room(parseInt(room_id), area[area_name][room_id]);
       }
     }
+  });
 
-    window.draw_map();
-
-    push("map", "request_room_id")
+  chan.on("request_room_id", function() {
+    push("map", "request_room_id");
   });
 
   chan.on("area_change", function(data) {
