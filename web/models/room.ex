@@ -86,7 +86,7 @@ defmodule ApathyDrive.Room do
 
     room =
       if Map.has_key?(mobile, :leader) and is_nil(room.mobiles[mobile.leader]) do
-        put_in(room.mobiles[mobile.ref], put_in(mobile.leader, nil))
+        put_in(room.mobiles[mobile.ref], put_in(mobile.leader, mobile.ref))
       else
         room
       end

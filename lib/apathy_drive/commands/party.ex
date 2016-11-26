@@ -1,15 +1,8 @@
 defmodule ApathyDrive.Commands.Party do
   use ApathyDrive.Command
-  alias ApathyDrive.Character
+  alias ApathyDrive.{Character, Party}
 
   def keywords, do: ["party", "par"]
-
-  # not in a party
-  def execute(%Room{} = room, %Character{leader: nil, invitees: []} = character, _arguments) do
-    Mobile.send_scroll(character, "<p><span class='red'>You are not in a party at the present time.</span></p>")
-    show_party_member(character, character, "red")
-    room
-  end
 
   # party leader
   def execute(%Room{} = room, %Character{ref: ref, leader: ref, invitees: invitees} = character, _arguments) do
@@ -19,23 +12,20 @@ defmodule ApathyDrive.Commands.Party do
 
   # party follower
   def execute(%Room{} = room, %Character{} = character, _arguments) do
-    Mobile.send_scroll(character, "<p><span class='cyan'>You are following Shaitan.</span></p>")
+    leader = Party.leader(room, character)
+    Mobile.send_scroll(character, "<p><span class='cyan'>You are following #{leader.name}.</span></p>")
     show_party_members(character, room)
     room
   end
 
   defp show_party_members(%Character{} = character, room) do
     Mobile.send_scroll(character, "<p>The following people are in your travel party:</p>")
-    leader = room.mobiles[character.leader]
 
-    room.mobiles
-    |> Map.values
-    |> Enum.filter(& Map.get(&1, :leader) == character.leader)
-    |> Enum.each(&show_party_member(character, &1, "grey"))
+    members = Party.members(room, character)
+    invitees = Party.invitees(room, character)
 
-    leader.invitees
-    |> Enum.uniq
-    |> Enum.each(&show_invitee(character, room.mobiles[&1]))
+    Enum.each(members, &show_party_member(character, &1, "grey"))
+    Enum.each(invitees, &show_invitee(character, room.mobiles[&1]))
   end
 
   defp show_invitee(character, nil), do: :noop
@@ -56,6 +46,6 @@ defmodule ApathyDrive.Commands.Party do
       mana: trunc(member.mana * 100) |> to_string |> String.rjust(3)
     }
 
-    Mobile.send_scroll(character, "<p><span class='#{color}'>#{data.name}#{data.class}[M:#{data.mana}%] [H:#{data.hp}%]</span></p>")
+    Mobile.send_scroll(character, "<p><span class='#{color}'>#{data.name}#{data.class}[H:#{data.hp}%] [M:#{data.mana}%]</span></p>")
   end
 end
