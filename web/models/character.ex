@@ -6,6 +6,12 @@ defmodule ApathyDrive.Character do
   require Logger
   import Comeonin.Bcrypt
 
+  @behaviour Access
+  defdelegate get_and_update(container, key, fun), to: Map
+  defdelegate fetch(container, key), to: Map
+  defdelegate get(container, key, default), to: Map
+  defdelegate pop(container, key), to: Map
+
   schema "characters" do
     field :name,            :string
     field :gender,          :string
@@ -33,15 +39,17 @@ defmodule ApathyDrive.Character do
     field :equipment,       :any, virtual: true, default: []
     field :spell_shift,     :float, virtual: true
     field :attack_target,   :any, virtual: true
-    field :strength, :integer, virtual: true
-    field :agility, :integer, virtual: true
-    field :intellect, :integer, virtual: true
-    field :willpower, :integer, virtual: true
-    field :health, :integer, virtual: true
-    field :charm, :integer, virtual: true
-    field :armour, :string, virtual: true
-    field :weapon_hands, :string, virtual: true
-    field :weapon_type, :string, virtual: true
+    field :strength,        :integer, virtual: true
+    field :agility,         :integer, virtual: true
+    field :intellect,       :integer, virtual: true
+    field :willpower,       :integer, virtual: true
+    field :health,          :integer, virtual: true
+    field :charm,           :integer, virtual: true
+    field :armour,          :string, virtual: true
+    field :weapon_hands,    :string, virtual: true
+    field :weapon_type,     :string, virtual: true
+    field :leader,          :any, virtual: true
+    field :invitees,        :any, virtual: true, default: []
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class

@@ -510,6 +510,15 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:expire_invite, ref, invitee_ref}, %Room{} = room) do
+    room =
+      Room.update_mobile(room, ref, fn mobile ->
+        update_in(mobile.invitees, &List.delete(&1, invitee_ref))
+      end)
+
+    {:noreply, room}
+  end
+
   def handle_info({:execute_auto_attack, ref}, %Room{} = room) do
     room =
       Room.update_mobile(room, ref, fn

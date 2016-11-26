@@ -2,6 +2,12 @@ defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
   alias ApathyDrive.{Ability, Area, Character, Class, Match, Mobile, Monster, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
 
+  @behaviour Access
+  defdelegate get_and_update(container, key, fun), to: Map
+  defdelegate fetch(container, key), to: Map
+  defdelegate get(container, key, default), to: Map
+  defdelegate pop(container, key), to: Map
+
   schema "rooms" do
     field :name,               :string
     field :description,        :string
@@ -77,6 +83,13 @@ defmodule ApathyDrive.Room do
     if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
 
     room = put_in(room.mobiles[mobile.ref], mobile)
+
+    room =
+      if Map.has_key?(mobile, :leader) and is_nil(room.mobiles[mobile.leader]) do
+        put_in(room.mobiles[mobile.ref], put_in(mobile.leader, nil))
+      else
+        room
+      end
 
     room
     |> Room.move_after(mobile.ref)

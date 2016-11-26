@@ -4,6 +4,7 @@ defmodule ApathyDrive.Commands.Move do
   def execute(%Room{} = room, %Character{} = character, command) when is_binary(command) do
     direction = Room.direction(command)
     room_exit = Room.get_exit(room, direction)
+
     execute(room, character, room_exit)
   end
 
@@ -43,7 +44,7 @@ defmodule ApathyDrive.Commands.Move do
     room
   end
 
-  def execute(%Room{} = room, %Character{} = character, %{"kind" => "Normal", "destination" => destination_id}) do
+  def execute(%Room{} = room, %Character{} = character, %{"kind" => "Normal", "destination" => destination_id} = room_exit) do
     if !Mobile.held(character) and !Mobile.confused(character, room) do
       Room.display_exit_message(room, %{mobile: character, message: Mobile.exit_message(character), to: destination_id})
 
@@ -52,6 +53,7 @@ defmodule ApathyDrive.Commands.Move do
       |> RoomServer.mobile_entered(character)
 
       put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+      |> party_move(character, room_exit)
     else
       room
     end
@@ -69,9 +71,26 @@ defmodule ApathyDrive.Commands.Move do
       Room.display_exit_message(room, %{mobile: character, message: room_exit["from_message"], to: destination_id})
 
       put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+      |> party_move(character, room_exit)
     else
       room
     end
+  end
+
+  def party_move(room, %Character{leader: ref, ref: ref} = character, %{"direction" => direction} = room_exit) do
+    room.mobiles
+    |> Map.values
+    |> Enum.reduce(room, fn
+         %Character{leader: ^ref} = party_member, updated_room ->
+           Mobile.send_scroll(party_member, "<p> -- Following your Party leader #{direction} --</p>")
+           execute(updated_room, party_member, room_exit)
+         _, updated_room ->
+           updated_room
+       end)
+  end
+
+  def party_move(room, character, _room_exit) do
+    room
   end
 
 end
