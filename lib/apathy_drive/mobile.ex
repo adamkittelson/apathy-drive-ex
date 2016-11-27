@@ -17,6 +17,7 @@ defprotocol ApathyDrive.Mobile do
   def enter_message(mobile)
   def exit_message(mobile)
   def has_ability?(mobile, ability_name)
+  def heartbeat(mobile, room)
   def held(mobile)
   def hp_description(mobile)
   def look_name(mobile)

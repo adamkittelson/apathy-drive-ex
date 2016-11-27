@@ -6,7 +6,24 @@ defmodule ApathyDrive.Companion do
   defstruct [:gender, :description, :enter_message, :exit_message, :death_message,
              :hp, :mana, :timers, :effects, :last_effect_key, :spells,
              :strength, :agility, :intellect, :willpower, :health, :charm,
-             :name, :room_id, :level, :monster_id, :character_id, :leader]
+             :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target]
+
+  def character(%Companion{character_id: id}, %Room{} = room) do
+    room.mobiles
+    |> Map.values
+    |> Enum.find(& &1.__struct__ == Character and &1.id == id)
+  end
+
+  def toggle_combat(%Companion{} = companion, room) do
+    time = min(Mobile.attack_interval(companion), TimerManager.time_remaining(companion, :auto_attack_timer))
+
+    if Mobile.auto_attack_target(companion, room, nil) do
+      companion
+      |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, companion.ref}})
+    else
+      companion
+    end
+  end
 
   def hire_price(%Character{} = character) do
     character
@@ -81,7 +98,7 @@ defmodule ApathyDrive.Companion do
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
     |> load_spells()
-    |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
+    |> TimerManager.send_after({:heartbeat, 1_000, {:heartbeat, ref}})
   end
 
   defimpl ApathyDrive.Mobile, for: Companion do
@@ -122,12 +139,12 @@ defmodule ApathyDrive.Companion do
     end
 
     def auto_attack_target(%Companion{} = companion, room, attack_spell) do
-      leader_target =
-        room
-        |> Party.leader(companion)
+      character_target =
+        companion
+        |> Companion.character(room)
         |> Mobile.auto_attack_target(room, attack_spell)
 
-      leader_target || companion.attack_target
+      character_target || companion.attack_target
     end
 
     def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
@@ -224,6 +241,15 @@ defmodule ApathyDrive.Companion do
       false
     end
 
+    def heartbeat(%Companion{} = companion, %Room{} = room) do
+      Room.update_mobile(room, companion.ref, fn companion ->
+        companion
+        |> regenerate_hp_and_mana(room)
+        |> Companion.toggle_combat(room)
+        |> TimerManager.send_after({:heartbeat, round_length_in_ms(companion), {:heartbeat, companion.ref}})
+      end)
+    end
+
     def held(%{effects: effects} = mobile) do
       effects
       |> Map.values
@@ -309,13 +335,9 @@ defmodule ApathyDrive.Companion do
       hp_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(companion, "HPRegen")) / max_hp
       mana_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(companion, "ManaRegen")) / max_mana
 
-      companion =
-        companion
-        |> shift_hp(hp_regen_percentage_per_round, room)
-        |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
-        |> TimerManager.send_after({:regen, round_length_in_ms(companion), {:regen, companion.ref}})
-
-      room = put_in(room.mobiles[companion.ref], companion)
+      companion
+      |> shift_hp(hp_regen_percentage_per_round, room)
+      |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
     end
 
     def round_length_in_ms(companion) do
@@ -358,7 +380,7 @@ defmodule ApathyDrive.Companion do
 
     def shift_hp(companion, percentage, room) do
       hp_description = hp_description(companion)
-      monster = update_in(companion.hp, &(min(1.0, &1 + percentage)))
+      companion = update_in(companion.hp, &(min(1.0, &1 + percentage)))
       updated_hp_description = hp_description(companion)
 
       if companion.hp > 0 and hp_description != updated_hp_description do

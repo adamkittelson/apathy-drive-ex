@@ -467,6 +467,15 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:heartbeat, mobile_ref}, room) do
+    room =
+      Room.update_mobile(room, mobile_ref, fn mobile ->
+        Mobile.heartbeat(mobile, room)
+      end)
+
+    {:noreply, room}
+  end
+
   def handle_info({:auto_move, ref}, room) do
     if mobile = Room.get_mobile(room, ref) do
       if should_move?(room, mobile) do
