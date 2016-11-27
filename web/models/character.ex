@@ -451,7 +451,11 @@ defmodule ApathyDrive.Character do
         |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
         |> Map.put(:hp, 1.0)
         |> Map.put(:mana, 1.0)
-        |> Map.put(:effects, %{})
+        |> update_in([:effects], fn(effects) ->
+             effects
+             |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
+             |> Enum.into(%{})
+           end)
         |> Map.put(:timers, %{})
         |> Mobile.update_prompt
 
