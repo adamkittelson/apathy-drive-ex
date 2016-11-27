@@ -378,7 +378,8 @@ defmodule ApathyDrive.Monster do
       Monster.auto_attack_target(monster, enemies, room, attack_spell)
     end
 
-    def caster_level(%Monster{}, %Character{level: level} = _target), do: level
+    def caster_level(%Monster{level: level}, %Monster{} = _target), do: level
+    def caster_level(%Monster{}, %{level: level} = _target), do: level
 
     def colored_name(%Monster{name: name} = monster, %Character{} = observer) do
       level = target_level(monster, observer)
@@ -578,8 +579,8 @@ defmodule ApathyDrive.Monster do
       trunc(base * (1 + (modifier / 100)))
     end
 
-    def party_refs(monster, _room) do
-      [monster.refs]
+    def party_refs(monster, room) do
+      Party.refs(room, monster)
     end
 
     def perception_at_level(monster, level) do
@@ -657,10 +658,12 @@ defmodule ApathyDrive.Monster do
     end
 
     def set_room_id(%Monster{} = monster, room_id) do
+      %RoomMonster{id: monster.room_monster_id}
+      |> Ecto.Changeset.change(%{room_id: room_id})
+      |> Repo.update!
+
       monster
       |> Map.put(:room_id, room_id)
-      # TODO: update rooms_monsters record instead
-      #|> Repo.save!
     end
 
     def shift_hp(monster, percentage, room) do
@@ -726,8 +729,9 @@ defmodule ApathyDrive.Monster do
       update_in(monster.mana, &(max(0, &1 - percentage)))
     end
 
-    def target_level(%Monster{level: monster_level}, %Character{level: target_level}) when target_level > monster_level, do: target_level
-    def target_level(%Monster{level: monster_level}, %Character{level: target_level}), do: monster_level
+    def target_level(%Monster{level: monster_level}, %Monster{level: _target_level}), do: monster_level
+    def target_level(%Monster{level: monster_level}, %{level: target_level}) when target_level > monster_level, do: target_level
+    def target_level(%Monster{level: monster_level}, %{level: target_level}), do: monster_level
 
     def tracking_at_level(monster, level) do
       perception = perception_at_level(monster, level)

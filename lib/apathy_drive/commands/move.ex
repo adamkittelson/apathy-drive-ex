@@ -1,18 +1,18 @@
 defmodule ApathyDrive.Commands.Move do
-  alias ApathyDrive.{Doors, Character, Mobile, Room, RoomServer}
+  alias ApathyDrive.{Character, Companion, Doors, Mobile, Room, RoomServer}
 
-  def execute(%Room{} = room, %Character{} = character, command) when is_binary(command) do
+  def execute(%Room{} = room, %{} = character, command) when is_binary(command) do
     direction = Room.direction(command)
     room_exit = Room.get_exit(room, direction)
 
     execute(room, character, room_exit)
   end
 
-  def execute(%Room{} = room, %Character{} = character, %{"kind" => kind} = room_exit) when kind in ["Trap", "Cast"] do
+  def execute(%Room{} = room, %{} = character, %{"kind" => kind} = room_exit) when kind in ["Trap", "Cast"] do
     execute(room, character, Map.put(room_exit, "kind", "Normal"))
   end
 
-  def execute(%Room{} = room, %Character{} = character, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"] do
+  def execute(%Room{} = room, %{} = character, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"] do
     execute(room, character, Map.put(room_exit, "kind", "Normal"))
   end
 
@@ -20,7 +20,7 @@ defmodule ApathyDrive.Commands.Move do
     execute(room, character, Map.put(room_exit, "kind", "Normal"))
   end
 
-  def execute(%Room{} = room, %Character{} = character, %{"kind" => "Hidden", "passable_while_hidden" => false} = room_exit) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Hidden", "passable_while_hidden" => false} = room_exit) do
     if Doors.open?(room, room_exit) do
       execute(room, character, Map.put(room_exit, "kind", "Normal"))
     else
@@ -29,22 +29,22 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
-  def execute(%Room{} = room, %Character{} = character, nil) do
+  def execute(%Room{} = room, %{} = character, nil) do
     Mobile.send_scroll(character, "<p>There is no exit in that direction.</p>")
     room
   end
 
-  def execute(%Room{} = room, %Character{} = character, %{"kind" => "Command"}) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Command"}) do
     Mobile.send_scroll(character, "<p>There is no exit in that direction.</p>")
     room
   end
 
-  def execute(%Room{} = room, %Character{} = character, %{"kind" => "RemoteAction"}) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "RemoteAction"}) do
     Mobile.send_scroll(character, "<p>There is no exit in that direction.</p>")
     room
   end
 
-  def execute(%Room{} = room, %Character{} = character, %{"kind" => "Normal", "destination" => destination_id} = room_exit) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Normal", "destination" => destination_id} = room_exit) do
     if !Mobile.held(character) and !Mobile.confused(character, room) do
       Room.display_exit_message(room, %{mobile: character, message: Mobile.exit_message(character), to: destination_id})
 
@@ -59,7 +59,7 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
-  def execute(%Room{} = room, %Character{} = character, %{"kind" => "Action", "destination" => destination_id} = room_exit) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Action", "destination" => destination_id} = room_exit) do
     if !Mobile.held(character) and !Mobile.confused(character, room) do
 
       Mobile.send_scroll(character, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
@@ -77,12 +77,14 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
-  def party_move(room, %Character{leader: ref, ref: ref} = character, %{"direction" => direction} = room_exit) do
+  def party_move(room, %{leader: ref, ref: ref} = character, %{"direction" => direction} = room_exit) do
     room.mobiles
     |> Map.values
     |> Enum.reduce(room, fn
          %Character{leader: ^ref} = party_member, updated_room ->
            Mobile.send_scroll(party_member, "<p> -- Following your Party leader #{direction} --</p>")
+           execute(updated_room, party_member, room_exit)
+         %Companion{leader: ^ref} = party_member, updated_room ->
            execute(updated_room, party_member, room_exit)
          _, updated_room ->
            updated_room

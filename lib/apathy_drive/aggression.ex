@@ -4,10 +4,10 @@ defmodule ApathyDrive.Aggression do
 
   def react(%Room{} = room, %Monster{} = monster) do
     Enum.reduce(room.mobiles, room, fn
-      {ref, %Character{} = character}, updated_room ->
-        put_in(updated_room.mobiles[monster.ref], ApathyDrive.Aggression.react(monster, character))
-      {ref, %Monster{}}, updated_room ->
+    {ref, %Monster{}}, updated_room ->
         updated_room
+    {ref, %{} = mobile}, updated_room ->
+      put_in(updated_room.mobiles[monster.ref], ApathyDrive.Aggression.react(monster, mobile))
     end)
   end
 

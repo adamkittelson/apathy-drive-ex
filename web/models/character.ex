@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, EntityAbility, EntityItem, Item, ItemAbility, Mobile, Race, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, Companion, EntityAbility, EntityItem, Item, ItemAbility, Mobile, Race, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -569,8 +569,8 @@ defmodule ApathyDrive.Character do
       trunc(base * (1 + (modifier / 100)))
     end
 
-    def party_refs(character, _room) do
-      [character.refs]
+    def party_refs(character, room) do
+      Party.refs(room, character)
     end
 
     def perception_at_level(character, level) do
@@ -748,6 +748,7 @@ defmodule ApathyDrive.Character do
     end
 
     def target_level(%Character{level: _caster_level}, %Character{level: target_level}), do: target_level
+    def target_level(%Character{level: _caster_level}, %Companion{level: target_level}), do: target_level
     def target_level(%Character{level: caster_level}, %{level: _target_level}), do: caster_level
 
     def tracking_at_level(character, level) do

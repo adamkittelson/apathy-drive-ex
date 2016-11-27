@@ -5,6 +5,7 @@ defmodule ApathyDrive.RoomMonster do
   schema "rooms_monsters" do
     belongs_to :room, ApathyDrive.Room
     belongs_to :monster, ApathyDrive.Monster
+    belongs_to :character, ApathyDrive.Character
     field :strength, :integer
     field :agility, :integer
     field :intellect, :integer

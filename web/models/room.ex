@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Character, Class, Match, Mobile, Monster, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
+  alias ApathyDrive.{Ability, Area, Character, Class, Companion, Match, Mobile, Monster, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
 
   @behaviour Access
   defdelegate get_and_update(container, key, fun), to: Map
@@ -103,6 +103,8 @@ defmodule ApathyDrive.Room do
         #TimerManager.send_after(monster, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
       %Character{} = character ->
         character
+      %Companion{} = companion ->
+        companion
     end)
   end
 
