@@ -48,6 +48,22 @@ defmodule ApathyDrive.Monster do
     "boss" => 200
   }
 
+  def enemies(%Monster{} = monster, room) do
+    monster.effects
+    |> Map.values
+    |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
+    |> Enum.map(&(Map.get(&1, "Aggro")))
+    |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
+  end
+
+  def hireable?(%Monster{} = monster, character, room) do
+    !(Mobile.has_ability?(monster, "NonLiving") or
+      Mobile.has_ability?(monster, "Animal") or
+      Mobile.has_ability?(monster, "Undead") or
+      monster.hostile or
+      character.ref in enemies(monster, room))
+  end
+
   def from_room_monster(%RoomMonster{id: nil, room_id: room_id, monster_id: monster_id} = rm) do
     now =
       DateTime.utc_now
@@ -357,12 +373,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def auto_attack_target(%Monster{} = monster, room, attack_spell) do
-      enemies =
-        monster.effects
-        |> Map.values
-        |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
-        |> Enum.map(&(Map.get(&1, "Aggro")))
-        |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
+      enemies = Monster.enemies(monster, room)
 
       Monster.auto_attack_target(monster, enemies, room, attack_spell)
     end
