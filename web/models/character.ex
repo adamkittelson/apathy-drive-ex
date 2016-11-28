@@ -59,12 +59,12 @@ defmodule ApathyDrive.Character do
     timestamps
   end
 
-  @doc """
-  Creates a changeset based on the `model` and `params`.
+  def companion(%Character{id: id}, %Room{} = room) do
+    room.mobiles
+    |> Map.values
+    |> Enum.find(& Map.get(&1, :character_id) == id)
+  end
 
-  If `params` are nil, an invalid changeset is returned
-  with no validation performed.
-  """
   def changeset(character, params \\ %{}) do
     character
     |> cast(params, ~w(name race_id class_id gender), ~w())
@@ -323,7 +323,7 @@ defmodule ApathyDrive.Character do
       from_equipment =
         character.equipment
         |> Enum.reduce(0, fn %Item{} = item, total ->
-             total + Item.attribute_for_character(item, character, attribute)
+             total + Item.attribute_at_level(item, level, attribute)
            end)
 
       trunc(from_race + from_equipment)

@@ -89,15 +89,8 @@ defmodule ApathyDrive.Item do
     |> Map.put(:entities_items_id, id)
   end
 
-  def attribute_for_character(%Item{rarity: "legendary"} = item, %Character{} = character, attribute) do
-    attribute_at_level(item, character.level, attribute)
-  end
-  def attribute_for_character(%Item{} = item, %Character{} = character, attribute) do
-    level = min(item.level, character.level)
-    attribute_at_level(item, level, attribute)
-  end
-
   def attribute_at_level(%Item{} = item, level, attribute) do
+    level = min(item.level, level)
     min..max = @rarities[item.rarity].attribute_range
     average = div(min + max, 2)
 
@@ -276,7 +269,7 @@ defmodule ApathyDrive.Item do
       assoc_table: "characters",
       assoc_id: character.id,
       item_id: item.id,
-      level: character.level
+      level: (if rarity == "legendary", do: :infinity, else: character.level)
     }
     |> Map.merge(generate_item_attributes(rarity, source))
     |> Repo.insert!

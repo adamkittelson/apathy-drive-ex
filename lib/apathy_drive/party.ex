@@ -12,6 +12,12 @@ defmodule ApathyDrive.Party do
     |> Enum.filter(& Map.get(&1, :leader) == ref)
   end
 
+  def size(%Room{} = room, member) do
+    room
+    |> members(member)
+    |> Enum.count
+  end
+
   def refs(%Room{} = room, member) do
     room
     |> members(member)

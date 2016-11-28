@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Hire do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Companion, Monster, Repo, RoomMonster, TimerManager}
+  alias ApathyDrive.{Character, Companion, Monster, Party, Repo, RoomMonster, TimerManager}
 
   def keywords, do: ["hire"]
 
@@ -12,22 +12,26 @@ defmodule ApathyDrive.Commands.Hire do
         if Monster.hireable?(monster, character, room) do
           price = Companion.hire_price(character)
 
-          if price > character.gold do
-            Mobile.send_scroll(character, "<p>You cannot afford to hire #{Mobile.colored_name(monster, character)}.</p>")
-            room
-          else
-            %Character{id: character.id}
-            |> Ecto.Changeset.change(%{gold: character.gold - price})
-            |> Repo.update!
+          cond do
+            price > character.gold ->
+              Mobile.send_scroll(character, "<p>You cannot afford to hire #{Mobile.colored_name(monster, character)}.</p>")
+              room
+            companion = Character.companion(character, room) ->
+              Mobile.send_scroll(character, "<p>You must <span class='green'>dismiss</span> #{Mobile.colored_name(companion, character)} before you can hire #{Mobile.colored_name(monster, character)}.</p>")
+              room
+            Party.size(room, character) > 5 ->
+              Mobile.send_scroll(character, "<p>Your party is already full.</p>")
+              room
+            true ->
+              %Character{id: character.id}
+              |> Ecto.Changeset.change(%{gold: character.gold - price})
+              |> Repo.update!
 
-            %RoomMonster{id: monster.room_monster_id}
-            |> Ecto.Changeset.change(%{character_id: character.id})
-            |> Repo.update!
-
-            Room.update_mobile(room, character.ref, fn(char) ->
-              update_in(char.gold, &(&1 - price))
-              |> Mobile.send_scroll("<p>#{monster.name} started to follow you</p>")
-            end)
+              room
+              |> Room.update_mobile(character.ref, fn(char) ->
+                   update_in(char.gold, &(&1 - price))
+                 end)
+              |> Companion.convert_for_character(monster, character)
           end
         else
           Mobile.send_scroll(character, "<p>#{Mobile.colored_name(monster, character)} has no interest in joining your party.</p>")

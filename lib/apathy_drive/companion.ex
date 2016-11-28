@@ -25,10 +25,53 @@ defmodule ApathyDrive.Companion do
     end
   end
 
+  def conversion_power(%Character{} = character) do
+    base_power = Mobile.power_at_level(character, 1)
+    level =
+      character.equipment
+      |> Enum.sort_by(&(&1.level))
+      |> List.first
+      |> Map.get(:level)
+
+    power_at_level = trunc(base_power + ((base_power / 10) * (level - 1)))
+    {base_power, level, power_at_level}
+  end
+
   def hire_price(%Character{} = character) do
-    character
-    |> Mobile.power_at_level(character.level)
-    |> div(10)
+    {_base_power, _level, power_at_level} = conversion_power(character)
+
+    div(power_at_level, 10)
+  end
+
+  def convert_for_character(%Room{} = room, %Monster{} = monster, %Character{} = character) do
+    {base_power, level, _power_at_level} = conversion_power(character)
+
+    monster_base_power = Mobile.power_at_level(monster, 1)
+
+    diff = div((monster_base_power - base_power), 6)
+
+    room_monster =
+      RoomMonster
+      |> Repo.get!(monster.room_monster_id)
+
+    changes = %{
+      strength: room_monster.strength - diff,
+      agility: room_monster.agility - diff,
+      intellect: room_monster.intellect - diff,
+      willpower: room_monster.willpower - diff,
+      health: room_monster.health - diff,
+      charm: room_monster.charm - diff,
+      level: level,
+      character_id: character.id
+    }
+
+    room_monster
+    |> Ecto.Changeset.change(changes)
+    |> Repo.update!
+
+    Mobile.send_scroll(character, "<p>#{monster.name} started to follow you</p>")
+    load_for_character(room, character)
+    |> update_in([:mobiles], &Map.delete(&1, monster.ref))
   end
 
   def load_for_character(%Room{} = room, %Character{id: id} = character) do
