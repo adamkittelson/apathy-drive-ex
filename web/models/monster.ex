@@ -129,8 +129,8 @@ defmodule ApathyDrive.Monster do
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
     base = @grades[grade] * (1 + (level / 10))
-    min = trunc(base * 0.75)
-    max = trunc(base * 1.25)
+    min = trunc(base - 20)
+    max = trunc(base + 20)
 
     room_monster =
       %RoomMonster{

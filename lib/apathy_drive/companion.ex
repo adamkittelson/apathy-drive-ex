@@ -29,9 +29,10 @@ defmodule ApathyDrive.Companion do
     base_power = Mobile.power_at_level(character, 1)
     level =
       character.equipment
-      |> Enum.sort_by(&(&1.level))
+      |> Enum.map(&(&1.level))
+      |> List.insert_at(0, character.level)
+      |> Enum.sort
       |> List.first
-      |> Map.get(:level)
 
     power_at_level = trunc(base_power + ((base_power / 10) * (level - 1)))
     {base_power, level, power_at_level}
