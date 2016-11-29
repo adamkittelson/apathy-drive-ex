@@ -43,7 +43,7 @@ defmodule ApathyDrive.Mixfile do
       {:ex_statsd,           "~> 0.5.3"},
       {:rollbax,             "~> 0.6.1"},
       {:scrivener_ecto,      "~> 1.0.0", override: true},
-      {:ex_admin, github: "smpallen99/ex_admin"},
+      {:ex_admin,            "~> 0.8"},
       {:shouldi,             "0.3.0", only: :test}
     ]
   end

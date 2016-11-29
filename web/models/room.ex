@@ -39,7 +39,7 @@ defmodule ApathyDrive.Room do
     has_many   :shop_items, ApathyDrive.ShopItem
     has_many   :items_for_sales, through: [:shop_items, :item]
     has_many   :lairs, ApathyDrive.LairMonster
-    has_many   :lair_monsters, through: [:lairs, :monster_template]
+    has_many   :lair_monsters, through: [:lairs, :monster]
   end
 
   def load_items(%Room{id: id} = room) do

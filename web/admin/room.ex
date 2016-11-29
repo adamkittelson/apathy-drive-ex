@@ -12,7 +12,7 @@ defmodule ApathyDrive.ExAdmin.Room do
 
       actions
     end
-    
+
     show room do
       attributes_table do
         row :legacy_id
@@ -22,6 +22,14 @@ defmodule ApathyDrive.ExAdmin.Room do
 
       panel "Shop" do
         table_for room.items_for_sales do
+          column :id, link: true
+          column :name, link: true
+        end
+      end
+
+      panel "Lair" do
+        table_for room.lair_monsters do
+          column :id, link: true
           column :name, link: true
         end
       end
@@ -123,11 +131,15 @@ defmodule ApathyDrive.ExAdmin.Room do
         inputs :items_for_sales, collection: ApathyDrive.Repo.all(ApathyDrive.Item), as: :check_boxes#, fields: [:id, :name]
       end
 
+      inputs "Lair Monsters" do
+        inputs :lair_monsters, collection: ApathyDrive.Repo.all(ApathyDrive.Monster) |> Enum.sort_by(& &1.name), as: :check_boxes#, fields: [:id, :name]
+      end
+
     end
 
     query do
       %{
-        all: [preload: [:items_for_sales]]
+        all: [preload: [:items_for_sales, :lair_monsters]]
       }
     end
   end

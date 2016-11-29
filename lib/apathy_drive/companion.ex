@@ -6,7 +6,7 @@ defmodule ApathyDrive.Companion do
   defstruct [:gender, :description, :enter_message, :exit_message, :death_message,
              :hp, :mana, :timers, :effects, :last_effect_key, :spells,
              :strength, :agility, :intellect, :willpower, :health, :charm,
-             :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target]
+             :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target, :spell_shift]
 
   def character(%Companion{character_id: id}, %Room{} = room) do
     room.mobiles

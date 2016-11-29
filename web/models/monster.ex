@@ -39,6 +39,9 @@ defmodule ApathyDrive.Monster do
     field :spell_shift, :float, virtual: true
 
     timestamps
+
+    has_many :lairs, ApathyDrive.LairMonster
+    has_many :lair_rooms, through: [:lairs, :room]
   end
 
   @grades %{
