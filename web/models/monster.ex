@@ -51,6 +51,11 @@ defmodule ApathyDrive.Monster do
     "boss" => 200
   }
 
+  def changeset(%Monster{} = monster, params \\ %{}) do
+    monster
+    |> cast(params, ~w(), ~w())
+  end
+
   def enemies(%Monster{} = monster, room) do
     monster.effects
     |> Map.values

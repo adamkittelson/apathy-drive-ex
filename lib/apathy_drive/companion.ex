@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Companion do
-  alias ApathyDrive.{Character, Companion, EntityAbility, Mobile, Monster,
+  alias ApathyDrive.{Character, Companion, CompanionAI, EntityAbility, Mobile, Monster,
                      Party, Repo, Room, RoomMonster, Spell, Text, TimerManager}
   require Ecto.Query
 
@@ -7,6 +7,14 @@ defmodule ApathyDrive.Companion do
              :hp, :mana, :timers, :effects, :last_effect_key, :spells,
              :strength, :agility, :intellect, :willpower, :health, :charm,
              :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target, :spell_shift]
+
+  def enemies(%Companion{} = companion, room) do
+    companion.effects
+    |> Map.values
+    |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
+    |> Enum.map(&(Map.get(&1, "Aggro")))
+    |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
+  end
 
   def character(%Companion{character_id: id}, %Room{} = room) do
     room.mobiles
@@ -188,7 +196,15 @@ defmodule ApathyDrive.Companion do
         |> Companion.character(room)
         |> Mobile.auto_attack_target(room, attack_spell)
 
-      character_target || companion.attack_target
+      companion_target =
+        case Companion.enemies(companion, room) do
+          [] ->
+            nil
+          enemies ->
+            Enum.random(enemies)
+        end
+
+      character_target || companion_target
     end
 
     def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
@@ -286,12 +302,15 @@ defmodule ApathyDrive.Companion do
     end
 
     def heartbeat(%Companion{} = companion, %Room{} = room) do
-      Room.update_mobile(room, companion.ref, fn companion ->
-        companion
-        |> regenerate_hp_and_mana(room)
-        |> Companion.toggle_combat(room)
-        |> TimerManager.send_after({:heartbeat, round_length_in_ms(companion), {:heartbeat, companion.ref}})
-      end)
+      room =
+        Room.update_mobile(room, companion.ref, fn companion ->
+          companion
+          |> regenerate_hp_and_mana(room)
+          |> Companion.toggle_combat(room)
+          |> TimerManager.send_after({:heartbeat, round_length_in_ms(companion), {:heartbeat, companion.ref}})
+        end)
+
+      CompanionAI.think(companion.ref, room)
     end
 
     def held(%{effects: effects} = mobile) do

@@ -75,6 +75,12 @@ defmodule ApathyDrive.Spell do
     end
   end
 
+  def heal_spells(%{spells: spells} = mobile) do
+    spells
+    |> Map.values
+    |> Enum.filter(&(&1.kind == "heal"))
+  end
+
   # equivilent to a character with 2 ManaPerIntellect and 100 intellect
   def base_mana_at_level(level), do: 200 + ((level - 1) * 20)
 
@@ -200,7 +206,9 @@ defmodule ApathyDrive.Spell do
         |> Map.put("stack_key", "dodge-limiter")
         |> Map.put("stack_count", 5)
 
-      Systems.Effect.add(target, effects, Mobile.round_length_in_ms(target))
+      target
+      |> Systems.Effect.add(effects, Mobile.round_length_in_ms(target))
+      |> aggro_target(spell, caster)
     else
       apply_spell(room, caster, target, update_in(spell.abilities, &Map.delete(&1, "Dodgeable")))
     end
@@ -209,6 +217,7 @@ defmodule ApathyDrive.Spell do
     target =
       target
       |> apply_instant_abilities(spell, caster)
+      |> aggro_target(spell, caster)
 
     room = put_in(room.mobiles[target.ref], target)
 
@@ -236,6 +245,11 @@ defmodule ApathyDrive.Spell do
       |> Mobile.update_prompt
     end
   end
+
+  def aggro_target(%{ref: target_ref} = target, %Spell{kind: kind}, %{ref: caster_ref} = caster) when kind in ["attack", "curse"] and target_ref != caster_ref do
+    ApathyDrive.Aggression.attack(target, caster)
+  end
+  def aggro_target(%{} = target, %Spell{}, %{} = _caster), do: target
 
   def apply_instant_abilities(%{} = target, %Spell{} = spell, %{} = caster) do
     spell.abilities

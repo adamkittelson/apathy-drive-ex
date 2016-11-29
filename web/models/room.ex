@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Character, Class, Companion, Match, Mobile, Monster, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
+  alias ApathyDrive.{Ability, Area, Character, Class, Companion, Match, Mobile, Monster, MonsterSpawning, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
 
   @behaviour Access
   defdelegate get_and_update(container, key, fun), to: Map
@@ -92,6 +92,7 @@ defmodule ApathyDrive.Room do
       end
 
     room
+    |> MonsterSpawning.spawn_permanent_npc
     |> Room.move_after(mobile.ref)
     |> Room.start_timer
   end
