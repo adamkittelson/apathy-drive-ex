@@ -316,9 +316,14 @@ defmodule ApathyDrive.Character do
     end
 
     def attribute_at_level(%Character{} = character, attribute, level) do
-      from_race = Map.get(character, attribute)
+      growth =
+        [:strength, :agility, :intellect, :willpower, :health, :charm]
+        |> Enum.reduce(0, & &2 + Map.get(character, &1))
+        |> div(6)
 
-      from_race = from_race + ((from_race / 10) * (level - 1))
+      base = Map.get(character, attribute)
+
+      base = base + ((growth / 10) * (level - 1))
 
       from_equipment =
         character.equipment
@@ -326,7 +331,7 @@ defmodule ApathyDrive.Character do
              total + Item.attribute_at_level(item, level, attribute)
            end)
 
-      trunc(from_race + from_equipment)
+      trunc(base + from_equipment)
     end
 
     def attack_interval(character) do

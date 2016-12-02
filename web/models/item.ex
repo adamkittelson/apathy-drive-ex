@@ -94,8 +94,14 @@ defmodule ApathyDrive.Item do
     min..max = @rarities[item.rarity].attribute_range
     average = div(min + max, 2)
 
+    growth =
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.reduce(0, & &2 + (Map.get(item, &1) || average))
+      |> div(6)
+
     base = Map.get(item, attribute) || average
-    base + ((base / 10) * (level - 1))
+
+    base + ((growth / 10) * (level - 1))
   end
 
   def power_at_level(%Item{} = item, level) do

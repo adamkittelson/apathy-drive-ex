@@ -50,7 +50,7 @@ defmodule ApathyDrive.MonsterSpawning do
   defp permanent_npc_missing?(%Room{permanent_npc: monster_id} = room) do
     room.mobiles
     |> Map.values
-    |> Enum.all?(&(&1.id != monster_id))
+    |> Enum.all?(&(Map.get(&1, :id) != monster_id))
   end
 
   defp spawn_lair(%Room{} = room, lair_monsters) do

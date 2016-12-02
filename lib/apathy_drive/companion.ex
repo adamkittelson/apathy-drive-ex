@@ -168,9 +168,14 @@ defmodule ApathyDrive.Companion do
     end
 
     def attribute_at_level(%Companion{} = companion, attribute, level) do
+      growth =
+        [:strength, :agility, :intellect, :willpower, :health, :charm]
+        |> Enum.reduce(0, & &2 + Map.get(companion, &1))
+        |> div(6)
+
       base = Map.get(companion, attribute)
 
-      trunc(base + ((base / 10) * (level - 1)))
+      trunc(base + ((growth / 10) * (level - 1)))
     end
 
     def attack_interval(companion) do

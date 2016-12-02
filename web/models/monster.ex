@@ -252,10 +252,8 @@ defmodule ApathyDrive.Monster do
         "rare"
       roll when roll <= 10_000 ->
         "uncommon"
-      roll when roll <= 100_000 ->
-        "common"
       _ ->
-        nil
+        "common"
     end
   end
   def random_loot_rarity(%Monster{grade: "normal"} = monster, pity_modifier) do
@@ -358,9 +356,14 @@ defmodule ApathyDrive.Monster do
     end
 
     def attribute_at_level(%Monster{} = monster, attribute, level) do
+      growth =
+        [:strength, :agility, :intellect, :willpower, :health, :charm]
+        |> Enum.reduce(0, & &2 + Map.get(monster, &1))
+        |> div(6)
+
       base = Map.get(monster, attribute)
 
-      trunc(base + ((base / 10) * (level - 1)))
+      trunc(base + ((growth / 10) * (level - 1)))
     end
 
     def attack_interval(monster) do

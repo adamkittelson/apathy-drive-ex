@@ -543,7 +543,7 @@ defmodule ApathyDrive.RoomServer do
             Spell.execute(room, mobile.ref, attack, [target_ref])
           else
             case mobile do
-              %Character{} = character ->
+              %Character{attack_target: target} = character when is_reference(target) ->
                 Mobile.send_scroll(character, "<p><span class='dark-yellow'>*Combat Off*</span></p>")
                 Map.put(character, :attack_target, nil)
               mobile ->
