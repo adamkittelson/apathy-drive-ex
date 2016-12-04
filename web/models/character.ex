@@ -501,8 +501,11 @@ defmodule ApathyDrive.Character do
     end
 
     def has_ability?(%Character{} = character, ability_name) do
-      # TODO: check abilities from race, class, and spell effects
-      false
+      character.effects
+      |> Map.values
+      |> Enum.map(&Map.keys/1)
+      |> List.flatten
+      |> Enum.member?(ability_name)
     end
 
     def held(%{effects: effects} = mobile) do
@@ -744,11 +747,15 @@ defmodule ApathyDrive.Character do
     end
 
     def stealth_at_level(character, level) do
-      agi = attribute_at_level(character, :agility, level)
-      cha = attribute_at_level(character, :charm, level)
-      agi = agi + (cha / 10)
-      modifier = ability_value(character, "Stealth")
-      trunc(agi * (modifier / 100))
+      if Mobile.has_ability?(character, "Revealed") do
+        0
+      else
+        agi = attribute_at_level(character, :agility, level)
+        cha = attribute_at_level(character, :charm, level)
+        agi = agi + (cha / 10)
+        modifier = ability_value(character, "Stealth")
+        trunc(agi * (modifier / 100))
+      end
     end
 
     def subtract_mana(character, spell) do

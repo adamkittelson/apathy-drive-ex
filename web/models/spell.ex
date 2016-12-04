@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Spell do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{EntityAbility, Match, Mobile, Room, Spell, Text, TimerManager}
+  alias ApathyDrive.{EntityAbility, Match, Mobile, Room, Spell, Stealth, Text, TimerManager}
 
   schema "spells" do
     field :name, :string
@@ -147,12 +147,17 @@ defmodule ApathyDrive.Spell do
             caster
           end
 
+        caster = Stealth.reveal(caster)
+
         room = put_in(room.mobiles[caster_ref], caster)
 
         Enum.reduce(targets, room, fn(target_ref, updated_room) ->
           Room.update_mobile(updated_room, target_ref, fn target ->
             if affects_target?(target, spell) do
-              target = apply_spell(updated_room, caster, target, spell)
+              target = 
+                updated_room
+                |> apply_spell(caster, target, spell)
+                |> Stealth.reveal
               if target.hp < 0 do
                 Mobile.die(target, updated_room)
               else

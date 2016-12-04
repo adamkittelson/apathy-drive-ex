@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Doors, Item, Match, Mobile, Monster, RoomServer}
+  alias ApathyDrive.{Character, Doors, Item, Match, Mobile, Monster, RoomServer, Stealth}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -106,12 +106,9 @@ defmodule ApathyDrive.Commands.Look do
     mobiles_to_show =
       mobiles
       |> Map.values
-      |> Enum.reduce([], fn
-           %Character{} = room_char, list when character == room_char ->
-             list
-           mobile, list ->
-             [Mobile.colored_name(mobile, character) | list]
-         end)
+      |> List.delete(character)
+      |> Enum.filter(&Stealth.visible?(&1, character))
+      |> Enum.map(&Mobile.colored_name(&1, character))
 
     if Enum.any?(mobiles_to_show) do
       "<p><span class='dark-magenta'>Also here:</span> #{Enum.join(mobiles_to_show, ", ")}<span class='dark-magenta'>.</span></p>"

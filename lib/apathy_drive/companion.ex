@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Companion do
   alias ApathyDrive.{Character, Companion, CompanionAI, EntityAbility, Mobile, Monster,
-                     Party, Repo, Room, RoomMonster, Spell, Text, TimerManager}
+                     Party, Repo, Room, RoomMonster, Spell, Stealth, Text, TimerManager}
   require Ecto.Query
 
   defstruct [:gender, :description, :enter_message, :exit_message, :death_message,
@@ -34,11 +34,13 @@ defmodule ApathyDrive.Companion do
     companion_enemies =
       companion.effects
       |> Map.values
+      |> Enum.reject(&Stealth.invisible?(&1, companion))
       |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
       |> Enum.map(&(Map.get(&1, "Aggro")))
       |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
 
-    companion_enemies ++ character_enemies
+    (companion_enemies ++ character_enemies)
+    |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], companion))
   end
 
   def character(%Companion{character_id: id}, %Room{} = room) do
@@ -329,8 +331,11 @@ defmodule ApathyDrive.Companion do
     end
 
     def has_ability?(%Companion{} = companion, ability_name) do
-      # TODO: check abilities from race, class, and spell effects
-      false
+      companion.effects
+      |> Map.values
+      |> Enum.map(&Map.keys/1)
+      |> List.flatten
+      |> Enum.member?(ability_name)
     end
 
     def heartbeat(%Companion{} = companion, %Room{} = room) do
@@ -523,11 +528,15 @@ defmodule ApathyDrive.Companion do
     end
 
     def stealth_at_level(companion, level) do
-      agi = attribute_at_level(companion, :agility, level)
-      cha = attribute_at_level(companion, :charm, level)
-      agi = agi + (cha / 10)
-      modifier = ability_value(companion, "Stealth")
-      trunc(agi * (modifier / 100))
+      if Mobile.has_ability?(companion, "Revealed") do
+        0
+      else
+        agi = attribute_at_level(companion, :agility, level)
+        cha = attribute_at_level(companion, :charm, level)
+        agi = agi + (cha / 10)
+        modifier = ability_value(companion, "Stealth")
+        trunc(agi * (modifier / 100))
+      end
     end
 
     def subtract_mana(companion, spell) do

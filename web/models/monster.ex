@@ -1,7 +1,8 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, EntityAbility, Item, Mobile, Monster, Room, RoomMonster, Spell, Text, TimerManager}
+  alias ApathyDrive.{Character, EntityAbility, Item, Mobile, Monster, Room, RoomMonster,
+                     Spell, Stealth, Text, TimerManager}
 
   require Logger
 
@@ -62,6 +63,7 @@ defmodule ApathyDrive.Monster do
     |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
     |> Enum.map(&(Map.get(&1, "Aggro")))
     |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
+    |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], monster))
   end
 
   def hireable?(%Monster{} = monster, character, room) do
@@ -517,8 +519,11 @@ defmodule ApathyDrive.Monster do
     end
 
     def has_ability?(%Monster{} = monster, ability_name) do
-      # TODO: check abilities from race, class, and spell effects
-      false
+      monster.effects
+      |> Map.values
+      |> Enum.map(&Map.keys/1)
+      |> List.flatten
+      |> Enum.member?(ability_name)
     end
 
     def held(%{effects: effects} = mobile) do
@@ -727,11 +732,15 @@ defmodule ApathyDrive.Monster do
     end
 
     def stealth_at_level(monster, level) do
-      agi = attribute_at_level(monster, :agility, level)
-      cha = attribute_at_level(monster, :charm, level)
-      agi = agi + (cha / 10)
-      modifier = ability_value(monster, "Stealth")
-      trunc(agi * (modifier / 100))
+      if Mobile.has_ability?(monster, "Revealed") do
+        0
+      else
+        agi = attribute_at_level(monster, :agility, level)
+        cha = attribute_at_level(monster, :charm, level)
+        agi = agi + (cha / 10)
+        modifier = ability_value(monster, "Stealth")
+        trunc(agi * (modifier / 100))
+      end
     end
 
     def subtract_mana(monster, spell) do
