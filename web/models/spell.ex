@@ -173,9 +173,10 @@ defmodule ApathyDrive.Spell do
   end
 
   def duration(%Spell{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target) do
+    caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    caster_sc = Mobile.spellcasting_at_level(caster, caster.level)
+    caster_sc = Mobile.spellcasting_at_level(caster, caster_level)
 
     if kind == "curse" do
       target_mr = Mobile.magical_resistance_at_level(target, target_level)
@@ -192,9 +193,9 @@ defmodule ApathyDrive.Spell do
     target_level = Mobile.target_level(caster, target)
     dodge = Mobile.dodge_at_level(target, target_level)
 
-    chance = 0.3 * :math.pow(1.005, dodge) * :math.pow(0.995, accuracy)
+    chance = 30 + dodge - accuracy
 
-    :rand.uniform(1000) < (chance * 1000)
+    :rand.uniform(100) < chance
   end
 
   def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{abilities: %{"Dodgeable" => true}} = spell) do
@@ -266,31 +267,63 @@ defmodule ApathyDrive.Spell do
   end
   def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster) do
     level = min(target.level, caster.level)
-    percentage_healed = Mobile.magical_damage_at_level(caster, level) * (value / 100) / Mobile.max_hp_at_level(target, level)
+    healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
+    percentage_healed = calculate_damage(healing, 0, value) / Mobile.max_hp_at_level(target, level)
 
     Map.put(target, :spell_shift, percentage_healed)
   end
   def apply_instant_ability({"MagicalDamage", value}, %{} = target, _spell, caster) do
+    caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    damage = Mobile.magical_damage_at_level(caster, caster.level)
+    damage = Mobile.magical_damage_at_level(caster, caster_level)
     resist = Mobile.magical_resistance_at_level(target, target_level)
-    damage_percent = ((damage - resist) * (value / 100)) / Mobile.max_hp_at_level(target, target_level)
+    damage_percent = calculate_damage(damage, resist, value) / Mobile.max_hp_at_level(target, target_level)
 
     Map.put(target, :spell_shift, -damage_percent)
   end
   def apply_instant_ability({"PhysicalDamage", value}, %{} = target, _spell, caster) do
+    caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    damage = Mobile.physical_damage_at_level(caster, caster.level)
+    damage = Mobile.physical_damage_at_level(caster, caster_level)
     resist = Mobile.physical_resistance_at_level(target, target_level)
-    damage_percent = ((damage - resist) * (value / 100)) / Mobile.max_hp_at_level(target, target_level)
+
+    damage =
+      damage
+      |> calculate_damage(resist, value)
+      |> apply_crit(caster, caster_level, target, target_level)
+
+    damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
     Map.put(target, :spell_shift, -damage_percent)
   end
   def apply_instant_ability({ability_name, _value}, %{} = target, _spell, caster) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
     target
+  end
+
+  def apply_crit(damage, caster, caster_level, target, target_level) do
+    if crit?(caster, caster_level, target, target_level) do
+      damage * 2
+    else
+      damage
+    end
+  end
+
+  def crit?(caster, caster_level, target, target_level) do
+    caster_crit = Mobile.crits_at_level(caster, caster_level)
+    target_crit = Mobile.crits_at_level(target, target_level)
+
+    :rand.uniform(100) < crit_chance(caster_crit, target_crit)
+  end
+
+  def crit_chance(caster_crit, target_crit) do
+    10 + caster_crit - target_crit
+  end
+
+  def calculate_damage(damage, resist, modifier) do
+    (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
   end
 
   def apply_duration_abilities(%{} = target, %Spell{} = spell, %{} = caster, duration) do
