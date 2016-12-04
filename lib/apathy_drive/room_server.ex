@@ -130,6 +130,8 @@ defmodule ApathyDrive.RoomServer do
       |> Repo.preload(:area)
       |> Room.load_items
 
+    Logger.metadata(room: room.name <> "##{room.id}")
+
     room =
       room
       |> Room.set_default_essence

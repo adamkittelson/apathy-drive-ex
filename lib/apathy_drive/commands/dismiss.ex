@@ -9,15 +9,13 @@ defmodule ApathyDrive.Commands.Dismiss do
 
     case Room.find_mobile_in_room(room, character, query) do
       %Companion{} = companion ->
-        %RoomMonster{id: companion.room_monster_id}
-        |> Repo.delete!
-
         Mobile.send_scroll(character, "<p>You release #{Mobile.colored_name(companion, character)} from your service, and they wander off into the sunset.</p>")
 
-        update_in(room.mobiles, &Map.delete(&1, companion.ref))
+        Companion.dismiss(companion, room)
       _ ->
         Mobile.send_scroll(character, "<p>You don't see #{query} here!</p>")
         room
     end
   end
+
 end

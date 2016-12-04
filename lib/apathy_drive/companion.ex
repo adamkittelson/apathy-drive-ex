@@ -8,12 +8,37 @@ defmodule ApathyDrive.Companion do
              :strength, :agility, :intellect, :willpower, :health, :charm,
              :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target, :spell_shift]
 
-  def enemies(%Companion{} = companion, room) do
-    companion.effects
+  def dismiss(nil, %Room{} = room), do: room
+  def dismiss(%Companion{} = companion, %Room{} = room) do
+    %RoomMonster{id: companion.room_monster_id}
+    |> Repo.delete!
+
+    update_in(room.mobiles, &Map.delete(&1, companion.ref))
+  end
+
+  def character_enemies(nil, _room), do: []
+  def character_enemies(%Character{} = character, room) do
+    character.effects
     |> Map.values
     |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
     |> Enum.map(&(Map.get(&1, "Aggro")))
     |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
+  end
+
+  def enemies(%Companion{} = companion, room) do
+    character_enemies =
+      companion
+      |> character(room)
+      |> character_enemies(room)
+
+    companion_enemies =
+      companion.effects
+      |> Map.values
+      |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
+      |> Enum.map(&(Map.get(&1, "Aggro")))
+      |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
+
+    companion_enemies ++ character_enemies
   end
 
   def character(%Companion{character_id: id}, %Room{} = room) do
@@ -196,10 +221,12 @@ defmodule ApathyDrive.Companion do
     end
 
     def auto_attack_target(%Companion{} = companion, room, attack_spell) do
+      character = Companion.character(companion, room)
+
       character_target =
-        companion
-        |> Companion.character(room)
-        |> Mobile.auto_attack_target(room, attack_spell)
+        if character do
+          Mobile.auto_attack_target(character, room, attack_spell)
+        end
 
       companion_target =
         case Companion.enemies(companion, room) do

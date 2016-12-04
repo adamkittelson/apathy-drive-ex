@@ -119,7 +119,9 @@ defmodule ApathyDrive.Match do
 
   def remove_number_from_string(string, nil), do: string
   def remove_number_from_string(string, number) do
-    String.replace(string, " #{number}", "")
+    string
+    |> String.replace("#{number}", "")
+    |> String.trim_trailing
   end
 
   def indexify_number(nil), do: nil

@@ -22,6 +22,8 @@ defmodule ApathyDrive.Command do
 
     monster = room.mobiles[monster_ref]
 
+    Logger.info "#{monster && monster.name} command: #{full_command}"
+
     cond do
       command in @directions ->
         Commands.Move.execute(room, monster, command)

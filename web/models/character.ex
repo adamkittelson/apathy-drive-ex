@@ -468,6 +468,11 @@ defmodule ApathyDrive.Character do
       |> RoomServer.find
       |> RoomServer.mobile_entered(character)
 
+      room =
+        character
+        |> Character.companion(room)
+        |> Companion.dismiss(room)
+
       put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
       |> Room.send_scroll("<p><span class='red'>#{character.name} has died.</span></p>")
     end
