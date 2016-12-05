@@ -6,7 +6,7 @@ defmodule ApathyDrive.Companion do
   defstruct [:gender, :description, :enter_message, :exit_message, :death_message,
              :hp, :mana, :timers, :effects, :last_effect_key, :spells,
              :strength, :agility, :intellect, :willpower, :health, :charm,
-             :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target, :spell_shift]
+             :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target, :spell_shift, :spell_special]
 
   def dismiss(nil, %Room{} = room), do: room
   def dismiss(%Companion{} = companion, %Room{} = room) do
@@ -34,7 +34,6 @@ defmodule ApathyDrive.Companion do
     companion_enemies =
       companion.effects
       |> Map.values
-      |> Enum.reject(&Stealth.invisible?(&1, companion))
       |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
       |> Enum.map(&(Map.get(&1, "Aggro")))
       |> Enum.filter(&(&1 in Map.keys(room.mobiles)))

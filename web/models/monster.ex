@@ -38,6 +38,7 @@ defmodule ApathyDrive.Monster do
     field :level,       :integer, virtual: true
     field :spawned_at,  :integer, virtual: true
     field :spell_shift, :float, virtual: true
+    field :spell_special, :float, virtual: true
 
     timestamps
 
@@ -91,7 +92,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:ref, ref)
       |> generate_monster_attributes()
       |> load_spells()
-      |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
+      |> TimerManager.send_after({:heartbeat, 1_000, {:heartbeat, ref}})
     end
   end
   def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm) do
@@ -107,7 +108,7 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
     |> load_spells()
-    |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
+    |> TimerManager.send_after({:heartbeat, 1_000, {:heartbeat, ref}})
   end
 
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
@@ -623,6 +624,17 @@ defmodule ApathyDrive.Monster do
       [:strength, :agility, :intellect, :willpower, :health, :charm]
       |> Enum.reduce(0, & &2 + Mobile.attribute_at_level(monster, &1, level))
     end
+    
+    def heartbeat(%Monster{} = monster, %Room{} = room) do
+      room =
+        Room.update_mobile(room, monster.ref, fn monster ->
+          monster
+          |> regenerate_hp_and_mana(room)
+          |> TimerManager.send_after({:heartbeat, round_length_in_ms(monster), {:heartbeat, monster.ref}})
+        end)
+
+      ApathyDrive.Aggression.react(room, monster)
+    end
 
     def regenerate_hp_and_mana(%Monster{hp: hp, mana: mana} = monster, room) do
       max_hp = max_hp_at_level(monster, monster.level)
@@ -633,15 +645,9 @@ defmodule ApathyDrive.Monster do
       hp_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(monster, "HPRegen")) / max_hp
       mana_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(monster, "ManaRegen")) / max_mana
 
-      monster =
-        monster
-        |> shift_hp(hp_regen_percentage_per_round, room)
-        |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
-        |> TimerManager.send_after({:regen, round_length_in_ms(monster), {:regen, monster.ref}})
-
-      room = put_in(room.mobiles[monster.ref], monster)
-
-      ApathyDrive.Aggression.react(room, monster)
+      monster
+      |> shift_hp(hp_regen_percentage_per_round, room)
+      |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
     end
 
     def round_length_in_ms(monster) do

@@ -248,7 +248,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_spells
         |> Character.load_items
         |> Map.put(:socket, socket)
-        |> TimerManager.send_after({:regen, 1_000, {:regen, ref}})
+        |> TimerManager.send_after({:heartbeat, 1_000, {:heartbeat, ref}})
 
       Mobile.update_prompt(character)
 
@@ -455,15 +455,6 @@ defmodule ApathyDrive.RoomServer do
         Room.update_mobile(updated_room, ref, fn mobile ->
           put_in(mobile.unity_essences[unity], essence)
         end)
-      end)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:regen, mobile_ref}, room) do
-    room =
-      Room.update_mobile(room, mobile_ref, fn mobile ->
-        Mobile.regenerate_hp_and_mana(mobile, room)
       end)
 
     {:noreply, room}

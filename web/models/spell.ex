@@ -147,30 +147,31 @@ defmodule ApathyDrive.Spell do
             caster
           end
 
-        caster = Stealth.reveal(caster)
-
         room = put_in(room.mobiles[caster_ref], caster)
 
-        Enum.reduce(targets, room, fn(target_ref, updated_room) ->
-          Room.update_mobile(updated_room, target_ref, fn target ->
-            if affects_target?(target, spell) do
-              target = 
-                updated_room
-                |> apply_spell(caster, target, spell)
-                |> Stealth.reveal
-              if target.hp < 0 do
-                Mobile.die(target, updated_room)
+        room =
+          Enum.reduce(targets, room, fn(target_ref, updated_room) ->
+            Room.update_mobile(updated_room, target_ref, fn target ->
+              if affects_target?(target, spell) do
+                target =
+                  updated_room
+                  |> apply_spell(caster, target, spell)
+                  |> Stealth.reveal
+                if target.hp < 0 do
+                  Mobile.die(target, updated_room)
+                else
+                  target
+                end
               else
+                message = "#{target.name} is not affected by that ability." |> Text.capitalize_first
+                Mobile.send_scroll(caster, "<p><span class='dark-cyan'>#{message}</span></p>")
                 target
               end
-            else
-              message = "#{target.name} is not affected by that ability." |> Text.capitalize_first
-              Mobile.send_scroll(caster, "<p><span class='dark-cyan'>#{message}</span></p>")
-              target
-            end
+            end)
           end)
-        end)
-        #|> execute_multi_cast(caster_ref, ability, targets)
+          #|> execute_multi_cast(caster_ref, ability, targets)
+
+        Room.update_mobile(room, caster_ref, &Stealth.reveal/1)
       end)
     else
       room
@@ -234,6 +235,7 @@ defmodule ApathyDrive.Spell do
 
       target
       |> Map.put(:spell_shift, nil)
+      |> Map.put(:spell_special, nil)
       |> Mobile.update_prompt
     else
       display_cast_message(room, caster, target, spell)
@@ -247,6 +249,7 @@ defmodule ApathyDrive.Spell do
 
       target
       |> Map.put(:spell_shift, nil)
+      |> Map.put(:spell_special, nil)
       |> apply_duration_abilities(spell, caster, duration)
       |> Mobile.update_prompt
     end
@@ -273,7 +276,7 @@ defmodule ApathyDrive.Spell do
   def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
-    percentage_healed = calculate_damage(healing, 0, value) / Mobile.max_hp_at_level(target, level)
+    percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
 
     Map.put(target, :spell_shift, percentage_healed)
   end
@@ -283,9 +286,14 @@ defmodule ApathyDrive.Spell do
 
     damage = Mobile.magical_damage_at_level(caster, caster_level)
     resist = Mobile.magical_resistance_at_level(target, target_level)
-    damage_percent = calculate_damage(damage, resist, value) / Mobile.max_hp_at_level(target, target_level)
 
-    Map.put(target, :spell_shift, -damage_percent)
+    {special, damage} = calculate_damage(damage, resist, value, caster, target)
+
+    damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
+
+    target
+    |> Map.put(:spell_shift, -damage_percent)
+    |> Map.put(:spell_special, special)
   end
   def apply_instant_ability({"PhysicalDamage", value}, %{} = target, _spell, caster) do
     caster_level = Mobile.caster_level(caster, target)
@@ -294,26 +302,42 @@ defmodule ApathyDrive.Spell do
     damage = Mobile.physical_damage_at_level(caster, caster_level)
     resist = Mobile.physical_resistance_at_level(target, target_level)
 
-    damage =
-      damage
-      |> calculate_damage(resist, value)
-      |> apply_crit(caster, caster_level, target, target_level)
+    {special, damage} = calculate_damage(damage, resist, value, caster, target)
 
     damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
-    Map.put(target, :spell_shift, -damage_percent)
+    target
+    |> Map.put(:spell_shift, -damage_percent)
+    |> Map.put(:spell_special, special)
   end
   def apply_instant_ability({ability_name, _value}, %{} = target, _spell, caster) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
     target
   end
 
-  def apply_crit(damage, caster, caster_level, target, target_level) do
-    if crit?(caster, caster_level, target, target_level) do
-      damage * 2
-    else
-      damage
+  def calculate_damage(damage, resist, modifier, caster, target) do
+    caster_level = Mobile.caster_level(caster, target)
+    target_level = Mobile.target_level(caster, target)
+
+    cond do
+      surprise?(caster, target) ->
+        IO.puts "surprise motherfucker!"
+        # max modifier to make surprise attacks with fast weapons do a full round's worth of damage
+        damage = (damage - resist) * (max(modifier, 100) / 100) * (Enum.random(85..115) / 100)
+        {:surprise, damage * 2}
+      crit?(caster, caster_level, target, target_level) ->
+        IO.puts "crit!"
+        damage = (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
+        {:crit, damage * 2}
+      true ->
+        IO.puts "normal"
+        damage = (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
+        {:normal, damage}
     end
+  end
+
+  def surprise?(caster, target) do
+    IO.inspect(Stealth.invisible?(caster, target))
   end
 
   def crit?(caster, caster_level, target, target_level) do
@@ -327,8 +351,8 @@ defmodule ApathyDrive.Spell do
     10 + caster_crit - target_crit
   end
 
-  def calculate_damage(damage, resist, modifier) do
-    (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
+  def calculate_healing(damage, modifier) do
+    damage * (modifier / 100) * (Enum.random(95..105) / 100)
   end
 
   def apply_duration_abilities(%{} = target, %Spell{} = spell, %{} = caster, duration) do
@@ -428,8 +452,19 @@ defmodule ApathyDrive.Spell do
         |> Map.put(:result, :resisted)
         |> caster_cast_message(caster, target, mobile)
       :else ->
+        IO.puts "special: #{inspect target.spell_special}"
         message =
-          spell.user_message
+          case target.spell_special do
+            :surprise ->
+              String.replace_prefix(spell.user_message, "You ", "You surprise ")
+            :crit ->
+              String.replace_prefix(spell.user_message, "You ", "You critically ")
+            _ ->
+              spell.user_message
+          end
+
+        message =
+          message
           |> Text.interpolate(%{"target" => target, "amount" => amount})
           |> Text.capitalize_first
 
@@ -483,7 +518,16 @@ defmodule ApathyDrive.Spell do
         |> target_cast_message(caster, target, mobile)
       :else ->
         message =
-          spell.target_message
+          case target.spell_special do
+            :surprise ->
+              String.replace_prefix(spell.target_message, "{{user}} ", "{{user}} surprise ")
+            :crit ->
+              String.replace_prefix(spell.target_message, "{{user}} ", "{{user}} critically ")
+            _ ->
+              spell.target_message
+          end
+        message =
+          message
           |> Text.interpolate(%{"user" => caster, "amount" => amount})
           |> Text.capitalize_first
 
@@ -537,7 +581,17 @@ defmodule ApathyDrive.Spell do
         |> spectator_cast_message(caster, target, mobile)
       :else ->
         message =
-          spell.spectator_message
+          case target.spell_special do
+            :surprise ->
+              String.replace_prefix(spell.spectator_message, "{{user}} ", "{{user}} surprise ")
+            :crit ->
+              String.replace_prefix(spell.spectator_message, "{{user}} ", "{{user}} critically ")
+            _ ->
+              spell.spectator_message
+          end
+
+        message =
+          message
           |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
           |> Text.capitalize_first
 

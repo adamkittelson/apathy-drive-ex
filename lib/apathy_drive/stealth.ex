@@ -8,6 +8,8 @@ defmodule ApathyDrive.Stealth do
     observer_level = Mobile.caster_level(observer, sneaker)
     perception = Mobile.perception_at_level(observer, observer_level)
 
+    IO.puts "stealth: #{inspect stealth}, perception: #{inspect perception}"
+
     stealth < perception
   end
 
@@ -23,8 +25,6 @@ defmodule ApathyDrive.Stealth do
       "RemoveMessage" => "<span class='dark-grey'>You step into the shadows.</span>"
     }
 
-    duration = Mobile.round_length_in_ms(sneaker) * 2
-
-    Systems.Effect.add(sneaker, effect, duration)
+    Systems.Effect.add(sneaker, effect, 4000)
   end
 end

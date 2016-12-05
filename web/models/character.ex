@@ -38,6 +38,7 @@ defmodule ApathyDrive.Character do
     field :inventory,       :any, virtual: true, default: []
     field :equipment,       :any, virtual: true, default: []
     field :spell_shift,     :float, virtual: true
+    field :spell_special,   :float, virtual: true
     field :attack_target,   :any, virtual: true
     field :strength,        :integer, virtual: true
     field :agility,         :integer, virtual: true
@@ -508,6 +509,14 @@ defmodule ApathyDrive.Character do
       |> Enum.member?(ability_name)
     end
 
+    def heartbeat(%Character{} = character, %Room{} = room) do
+      Room.update_mobile(room, character.ref, fn character ->
+        character
+        |> regenerate_hp_and_mana(room)
+        |> TimerManager.send_after({:heartbeat, round_length_in_ms(character), {:heartbeat, character.ref}})
+      end)
+    end
+
     def held(%{effects: effects} = mobile) do
       effects
       |> Map.values
@@ -652,7 +661,6 @@ defmodule ApathyDrive.Character do
       character
       |> shift_hp(hp_regen_percentage_per_round, room)
       |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
-      |> TimerManager.send_after({:regen, round_length_in_ms(character), {:regen, character.ref}})
       |> update_prompt()
     end
 
