@@ -321,23 +321,20 @@ defmodule ApathyDrive.Spell do
 
     cond do
       surprise?(caster, target) ->
-        IO.puts "surprise motherfucker!"
         # max modifier to make surprise attacks with fast weapons do a full round's worth of damage
         damage = (damage - resist) * (max(modifier, 100) / 100) * (Enum.random(85..115) / 100)
         {:surprise, damage * 2}
       crit?(caster, caster_level, target, target_level) ->
-        IO.puts "crit!"
         damage = (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
         {:crit, damage * 2}
       true ->
-        IO.puts "normal"
         damage = (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
         {:normal, damage}
     end
   end
 
   def surprise?(caster, target) do
-    IO.inspect(Stealth.invisible?(caster, target))
+    Stealth.invisible?(caster, target)
   end
 
   def crit?(caster, caster_level, target, target_level) do
@@ -452,7 +449,6 @@ defmodule ApathyDrive.Spell do
         |> Map.put(:result, :resisted)
         |> caster_cast_message(caster, target, mobile)
       :else ->
-        IO.puts "special: #{inspect target.spell_special}"
         message =
           case target.spell_special do
             :surprise ->

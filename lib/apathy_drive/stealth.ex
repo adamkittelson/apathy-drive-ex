@@ -8,8 +8,6 @@ defmodule ApathyDrive.Stealth do
     observer_level = Mobile.caster_level(observer, sneaker)
     perception = Mobile.perception_at_level(observer, observer_level)
 
-    IO.puts "stealth: #{inspect stealth}, perception: #{inspect perception}"
-
     stealth < perception
   end
 

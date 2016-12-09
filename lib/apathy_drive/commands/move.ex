@@ -48,6 +48,10 @@ defmodule ApathyDrive.Commands.Move do
     if !Mobile.held(character) and !Mobile.confused(character, room) do
       Room.display_exit_message(room, %{mobile: character, message: Mobile.exit_message(character), to: destination_id})
 
+      if Mobile.stealth_at_level(character, character.level) > 0 do
+        Mobile.send_scroll(character, "<p>Sneaking...</p>")
+      end
+
       destination_id
       |> RoomServer.find
       |> RoomServer.mobile_entered(character)
@@ -62,6 +66,9 @@ defmodule ApathyDrive.Commands.Move do
   def execute(%Room{} = room, %{} = character, %{"kind" => "Action", "destination" => destination_id} = room_exit) do
     if !Mobile.held(character) and !Mobile.confused(character, room) do
 
+      if Mobile.stealth_at_level(character, character.level) > 0 do
+        Mobile.send_scroll(character, "<p>Sneaking...</p>")
+      end
       Mobile.send_scroll(character, "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>")
 
       destination_id
