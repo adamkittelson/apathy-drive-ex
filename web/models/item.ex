@@ -40,32 +40,27 @@ defmodule ApathyDrive.Item do
     "common" => %{
       cost_multiplier: 1,
       color: "teal",
-      attribute_range: 2..4,
-      base_power: 18
+      attributes: 3
     },
     "uncommon" => %{
       cost_multiplier: 2,
       color: "chartreuse",
-      attribute_range: 5..7,
-      base_power: 36
+      attributes: 6
     },
     "rare" => %{
       cost_multiplier: 3,
       color: "blue",
-      attribute_range: 8..10,
-      base_power: 54
+      attributes: 9
     },
     "epic" => %{
       cost_multiplier: 4,
       color: "darkmagenta",
-      attribute_range: 11..19,
-      base_power: 90
+      attributes: 15
     },
     "legendary" => %{
       cost_multiplier: :infinity,
       color: "red",
-      attribute_range: 20..28,
-      base_power: 144
+      attributes: 24
     }
   }
 
@@ -91,8 +86,7 @@ defmodule ApathyDrive.Item do
 
   def attribute_at_level(%Item{} = item, level, attribute) do
     level = min(item.level, level)
-    min..max = @rarities[item.rarity].attribute_range
-    average = div(min + max, 2)
+    average = @rarities[item.rarity].attributes
 
     growth =
       [:strength, :agility, :intellect, :willpower, :health, :charm]
@@ -105,7 +99,7 @@ defmodule ApathyDrive.Item do
   end
 
   def power_at_level(%Item{} = item, level) do
-    base = @rarities[item.rarity].base_power
+    base = @rarities[item.rarity].attributes * 6
     base + ((base / 10) * (level - 1))
   end
   def power_at_level(rarity, level) do
@@ -242,147 +236,32 @@ defmodule ApathyDrive.Item do
     |> Repo.all
   end
 
-  def generate_item_attributes(rarity, :purchased) do
-    min..max = @rarities[rarity].attribute_range
-
-    average = div(min + max, 2)
-
-    %{strength: average,
-      agility: average,
-      intellect: average,
-      willpower: average,
-      health: average,
-      charm: average
+  def generate_item_attributes(rarity) do
+    %{strength: @rarities[rarity].attributes,
+      agility: @rarities[rarity].attributes,
+      intellect: @rarities[rarity].attributes,
+      willpower: @rarities[rarity].attributes,
+      health: @rarities[rarity].attributes,
+      charm: @rarities[rarity].attributes
     }
   end
 
-  def generate_item_attributes(rarity, :looted) do
-    min..max = @rarities[rarity].attribute_range
+ def generate_for_character!(%Item{rarity: rarity} = item, %Character{} = character, persist?) do
+    ei =
+      %EntityItem{
+        assoc_table: "characters",
+        assoc_id: character.id,
+        item_id: item.id,
+        level: (if rarity == "legendary", do: :infinity, else: character.level)
+      }
+      |> Map.merge(generate_item_attributes(rarity))
 
-    [:strength, :agility, :intellect, :willpower, :health, :charm]
-    |> Enum.shuffle
-    |> Enum.chunk(2)
-    |> Enum.reduce(%{}, fn [attribute_1, attribute_2], attributes ->
-         roll = Enum.random(min..max)
-         attributes
-         |> Map.put(attribute_1, roll)
-         |> Map.put(attribute_2, max - roll + min)
-       end)
+    ei = if persist?, do: Repo.insert!(ei), else: ei
+
+    ei
+    |> Map.put(:item, item)
+    |> from_assoc()
   end
-
-  def generate_for_character!(%Item{rarity: rarity} = item, %Character{} = character, source) do
-    %EntityItem{
-      assoc_table: "characters",
-      assoc_id: character.id,
-      item_id: item.id,
-      level: (if rarity == "legendary", do: :infinity, else: character.level)
-    }
-    |> Map.merge(generate_item_attributes(rarity, source))
-    |> Repo.insert!
-
-    item
-  end
-
-  def generate_item(%{chance: chance, item_id: _item_id, level: _level} = opts) do
-    if :rand.uniform(100) <= chance do
-      opts
-      |> Map.delete(:chance)
-      |> generate_item
-    end
-  end
-
-  def generate_item(%{item_id: :global, level: level}) do
-    # item_id = random_item_id_below_level(level)
-    # generate_item(%{item_id: item_id, level: level})
-  end
-
-  def generate_item(%{item_id: item_id, level: level}) do
-    Repo.get(__MODULE__, item_id)
-    |> to_map
-    |> roll_stats(level)
-  end
-
-  def to_map(nil), do: nil
-  def to_map(%__MODULE__{} = item) do
-    item
-    |> Map.from_struct
-    |> Map.take([:name, :description, :weight, :worn_on,
-                 :level, :strength, :agility, :will, :grade, :abilities, :id])
-    |> Poison.encode! # dirty hack to
-    |> Poison.decode! # stringify the keys
-  end
-
-  def roll_stats(nil, _rolls),   do: nil
-  def roll_stats(%{} = item, 0), do: item
-  def roll_stats(%{} = item, rolls) do
-    if :rand.uniform(10) > 7 do
-      item
-      |> enhance
-      |> roll_stats(rolls)
-    else
-      roll_stats(item, rolls - 1)
-    end
-  end
-
-  def enhance(item) do
-    str = strength(item)
-    agi = agility(item)
-    will = will(item)
-
-    case :rand.uniform(str + agi + will) do
-      roll when roll > (str + agi) ->
-        Map.put(item, "will", will + 1)
-      roll when roll <= str ->
-        Map.put(item, "strength", str + 1)
-      _ ->
-        Map.put(item, "agility", agi + 1)
-    end
-  end
-
-  def deconstruction_experience(item) do
-    str = strength(item)
-    agi = agility(item)
-    will = will(item)
-
-    experience(str + agi + will)
-  end
-
-  def experience(num) do
-    (0..num)
-    |> Enum.reduce(0, fn(n, total) ->
-         total + n
-       end)
-  end
-
-  def strength(%{level: level, grade: "light"}),            do: 1 + div(level, 2)
-  def strength(%{level: level, grade: "medium"}),           do: 1 + div(level, 2)
-  def strength(%{level: level, grade: "heavy"}),            do: 2 + level
-  def strength(%{level: level, grade: "blunt"}),            do: 1 + div(level, 2)
-  def strength(%{level: level, grade: "blade"}),            do: 1 + div(level, 2)
-  def strength(%{level: level, grade: "two handed blunt"}), do: 2 + level
-  def strength(%{level: level, grade: "two handed blade"}), do: 2 + level
-  def strength(%{"strength" => str}),                       do: str
-  def strength(%{"level" => level, "grade" => grade}),      do: strength(%{level: level, grade: grade})
-
-  def agility(%{level: level, grade: "light"}),            do: 1 + div(level, 2)
-  def agility(%{level: level, grade: "medium"}),           do: 2 + level
-  def agility(%{level: level, grade: "heavy"}),            do: 1 + div(level, 2)
-  def agility(%{level: level, grade: "blunt"}),            do: 1 + div(level, 2)
-  def agility(%{level: level, grade: "blade"}),            do: 1 + div(level, 2)
-  def agility(%{level: level, grade: "two handed blunt"}), do: trunc(0.5 + div(level, 4))
-  def agility(%{level: level, grade: "two handed blade"}), do: trunc(0.5 + div(level, 4))
-  def agility(%{"agility" => agi}),                        do: agi
-  def agility(%{"level" => level, "grade" => grade}),      do: agility(%{level: level, grade: grade})
-
-  def will(%{level: level, grade: "light"}),            do: 2 + level
-  def will(%{level: level, grade: "medium"}),           do: 1 + div(level, 2)
-  def will(%{level: level, grade: "heavy"}),            do: 1 + div(level, 2)
-  def will(%{level: level, grade: "blunt"}),            do: 1 + div(level, 2)
-  def will(%{level: level, grade: "blade"}),            do: 1 + div(level, 2)
-  def will(%{level: level, grade: "two handed blunt"}), do: 1 + div(level, 2)
-  def will(%{level: level, grade: "two handed blade"}), do: 1 + div(level, 2)
-  def will(%{"will" => will}),                          do: will
-  def will(%{"level" => level, "grade" => grade}),      do: will(%{level: level, grade: grade})
 
   def price(%Item{rarity: "legendary"}), do: "priceless"
   def price(%Item{rarity: rarity, level: level} = item) do

@@ -30,7 +30,7 @@ defmodule ApathyDrive.Commands.Buy do
         else
           Room.update_mobile(room, character.ref, fn(char) ->
 
-            Item.generate_for_character!(item, character, :purchased)
+            Item.generate_for_character!(item, character, true)
 
             update_in(char.gold, &(&1 - price))
             |> Character.load_items

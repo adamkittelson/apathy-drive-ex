@@ -63,8 +63,11 @@ defmodule ApathyDrive.Monster do
     |> Map.values
     |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
     |> Enum.map(&(Map.get(&1, "Aggro")))
+    |> IO.inspect
     |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
+    |> IO.inspect
     |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], monster))
+    |> IO.inspect
   end
 
   def hireable?(%Monster{} = monster, character, room) do
@@ -190,22 +193,39 @@ defmodule ApathyDrive.Monster do
     if rarity do
       power = Item.power_at_level(rarity, character.level)
 
-      slots =
+      {loot_type, slot} =
         case Item.slots_below_power(character, power) do
           [] ->
-            Item.slots
+            Logger.info("no slots below power: #{power}, salvaging")
+            {:salvage, Enum.random(Item.slots)}
           slots ->
-            slots
+            Logger.info("slots below power #{power}: #{inspect slots}")
+            {:loot, Enum.random(slots)}
         end
-
-      slot = Enum.random(slots)
 
       item_id = Item.random_item_id_for_slot_and_rarity(character, slot, rarity)
 
-      item =
+      character =
         Item
         |> Repo.get(item_id)
-        |> Item.generate_for_character!(character, :looted)
+        |> Item.generate_for_character!(character, loot_type == :loot)
+        |> case do
+             %Item{entities_items_id: nil} = item ->
+               gold =
+                 item
+                 |> Item.price
+                 |> div(10)
+
+               character
+               |> Ecto.Changeset.change(%{gold: character.gold + gold})
+               |> Repo.update!
+               |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
+
+             %Item{entities_items_id: _id} = item ->
+               character
+               |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
+               |> Character.load_items
+           end
 
       character =
         if rarity == "legendary" do
@@ -225,10 +245,6 @@ defmodule ApathyDrive.Monster do
 
           character
         end
-
-      character
-      |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
-      |> Character.load_items
     else
       character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
 
@@ -388,6 +404,8 @@ defmodule ApathyDrive.Monster do
 
     def auto_attack_target(%Monster{} = monster, room, attack_spell) do
       enemies = Monster.enemies(monster, room)
+
+      Logger.info "#{monster.name} enemies: #{inspect enemies}"
 
       Monster.auto_attack_target(monster, enemies, room, attack_spell)
     end
@@ -624,16 +642,16 @@ defmodule ApathyDrive.Monster do
       [:strength, :agility, :intellect, :willpower, :health, :charm]
       |> Enum.reduce(0, & &2 + Mobile.attribute_at_level(monster, &1, level))
     end
-    
+
     def heartbeat(%Monster{} = monster, %Room{} = room) do
-      room =
-        Room.update_mobile(room, monster.ref, fn monster ->
+      Room.update_mobile(room, monster.ref, fn monster ->
+        monster =
           monster
           |> regenerate_hp_and_mana(room)
           |> TimerManager.send_after({:heartbeat, round_length_in_ms(monster), {:heartbeat, monster.ref}})
-        end)
-
-      ApathyDrive.Aggression.react(room, monster)
+        
+        ApathyDrive.Aggression.react(room, monster)
+      end)
     end
 
     def regenerate_hp_and_mana(%Monster{hp: hp, mana: mana} = monster, room) do
