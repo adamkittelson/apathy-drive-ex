@@ -63,11 +63,8 @@ defmodule ApathyDrive.Monster do
     |> Map.values
     |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
     |> Enum.map(&(Map.get(&1, "Aggro")))
-    |> IO.inspect
     |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
-    |> IO.inspect
     |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], monster))
-    |> IO.inspect
   end
 
   def hireable?(%Monster{} = monster, character, room) do
