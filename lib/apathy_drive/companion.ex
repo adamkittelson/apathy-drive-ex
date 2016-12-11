@@ -39,7 +39,7 @@ defmodule ApathyDrive.Companion do
       |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
 
     (companion_enemies ++ character_enemies)
-    |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], companion))
+    |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], companion, room))
   end
 
   def character(%Companion{character_id: id}, %Room{} = room) do
@@ -83,7 +83,7 @@ defmodule ApathyDrive.Companion do
 
     monster_base_power = Mobile.power_at_level(monster, 1)
 
-    diff = div((monster_base_power - base_power), 6)
+    diff = trunc((monster_base_power - base_power) / 6)
 
     room_monster =
       RoomMonster
@@ -185,10 +185,10 @@ defmodule ApathyDrive.Companion do
       Systems.Effect.effect_bonus(companion, ability)
     end
 
-    def accuracy_at_level(companion, level) do
+    def accuracy_at_level(companion, level, room) do
       agi = attribute_at_level(companion, :agility, level)
       cha = attribute_at_level(companion, :charm, level)
-      agi = agi + (cha / 10)
+      agi = agi + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "Accuracy")
       trunc(agi * (1 + (modifier / 100)))
     end
@@ -281,10 +281,10 @@ defmodule ApathyDrive.Companion do
       true
     end
 
-    def crits_at_level(companion, level) do
+    def crits_at_level(companion, level, room) do
       int = attribute_at_level(companion, :intellect, level)
       cha = attribute_at_level(companion, :charm, level)
-      int = int + (cha / 10)
+      int = int + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "Crits")
       trunc(int * (1 + (modifier / 100)))
     end
@@ -306,10 +306,10 @@ defmodule ApathyDrive.Companion do
       put_in(room.mobiles, Map.delete(room.mobiles, companion.ref))
     end
 
-    def dodge_at_level(companion, level) do
+    def dodge_at_level(companion, level, room) do
       agi = attribute_at_level(companion, :agility, level)
       cha = attribute_at_level(companion, :charm, level)
-      agi = agi + (cha / 10)
+      agi = agi + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "Dodge")
       trunc(agi * (1 + (modifier / 100)))
     end
@@ -371,14 +371,14 @@ defmodule ApathyDrive.Companion do
     def hp_description(%Companion{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Companion{hp: hp}), do: "very critically wounded"
 
-    def magical_damage_at_level(companion, level) do
-      damage = attribute_at_level(companion, :intellect, level)
+    def magical_damage_at_level(companion, level, room) do
+      damage = attribute_at_level(companion, :intellect, level) + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "ModifyDamage") + ability_value(companion, "ModifyMagicalDamage")
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def magical_resistance_at_level(companion, level, damage_type) do
-      resist = attribute_at_level(companion, :willpower, level)
+    def magical_resistance_at_level(companion, level, damage_type, room) do
+      resist = attribute_at_level(companion, :willpower, level) + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "MagicalResist") + ability_value(companion, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
@@ -400,22 +400,22 @@ defmodule ApathyDrive.Companion do
       Party.refs(room, companion)
     end
 
-    def perception_at_level(companion, level) do
+    def perception_at_level(companion, level, room) do
       int = attribute_at_level(companion, :intellect, level)
       cha = attribute_at_level(companion, :charm, level)
-      int = int + (cha / 10)
+      int = int + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "Perception")
       trunc(int * (1 + (modifier / 100)))
     end
 
-    def physical_damage_at_level(companion, level) do
-      damage = attribute_at_level(companion, :strength, level)
+    def physical_damage_at_level(companion, level, room) do
+      damage = attribute_at_level(companion, :strength, level) + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "ModifyDamage") + ability_value(companion, "ModifyPhysicalDamage")
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def physical_resistance_at_level(companion, level, damage_type) do
-      resist = attribute_at_level(companion, :strength, level)
+    def physical_resistance_at_level(companion, level, damage_type, room) do
+      resist = attribute_at_level(companion, :strength, level) + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "AC") + ability_value(companion, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
@@ -511,10 +511,10 @@ defmodule ApathyDrive.Companion do
       true
     end
 
-    def spellcasting_at_level(companion, level) do
+    def spellcasting_at_level(companion, level, room) do
       will = attribute_at_level(companion, :willpower, level)
       cha = attribute_at_level(companion, :charm, level)
-      will = will + (cha / 10)
+      will = will + (Party.charm_at_level(room, companion, level) / 10)
       modifier = ability_value(companion, "Spellcasting")
       trunc(will * (1 + (modifier / 100)))
     end
@@ -526,13 +526,13 @@ defmodule ApathyDrive.Companion do
       |> Enum.sort_by(& &1.level)
     end
 
-    def stealth_at_level(companion, level) do
+    def stealth_at_level(companion, level, room) do
       if Mobile.has_ability?(companion, "Revealed") do
         0
       else
         agi = attribute_at_level(companion, :agility, level)
         cha = attribute_at_level(companion, :charm, level)
-        agi = agi + (cha / 10)
+        agi = agi + (Party.charm_at_level(room, companion, level) / 10)
         modifier = ability_value(companion, "Stealth")
         trunc(agi * (modifier / 100))
       end
@@ -548,8 +548,8 @@ defmodule ApathyDrive.Companion do
     def target_level(%Companion{level: _caster_level}, %Companion{level: target_level}), do: target_level
     def target_level(%Companion{level: caster_level}, %{level: _target_level}), do: caster_level
 
-    def tracking_at_level(companion, level) do
-      perception = perception_at_level(companion, level)
+    def tracking_at_level(companion, level, room) do
+      perception = perception_at_level(companion, level, room)
       modifier = ability_value(companion, "Tracking")
       trunc(perception * (modifier / 100))
     end

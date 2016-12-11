@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, Companion, EntityAbility, EntityItem, Item, ItemAbility, Mobile, Race, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, Companion, EntityAbility, EntityItem, Item, ItemAbility, Mobile, Party, Race, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -264,7 +264,7 @@ defmodule ApathyDrive.Character do
     trunc(max_mana * character.mana)
   end
 
-  def score_data(%Character{} = character) do
+  def score_data(%Character{} = character, room) do
     effects =
       character.effects
       |> Map.values
@@ -277,17 +277,17 @@ defmodule ApathyDrive.Character do
       race: character.race,
       level: character.level,
       experience: character.experience,
-      perception: Mobile.perception_at_level(character, character.level),
-      accuracy: Mobile.accuracy_at_level(character, character.level),
-      spellcasting: Mobile.spellcasting_at_level(character, character.level),
-      crits: Mobile.crits_at_level(character, character.level),
-      dodge: Mobile.dodge_at_level(character, character.level),
-      stealth: Mobile.stealth_at_level(character, character.level),
-      tracking: Mobile.tracking_at_level(character, character.level),
-      physical_damage: Mobile.physical_damage_at_level(character, character.level),
-      physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil),
-      magical_damage: Mobile.magical_damage_at_level(character, character.level),
-      magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil),
+      perception: Mobile.perception_at_level(character, character.level, room),
+      accuracy: Mobile.accuracy_at_level(character, character.level, room),
+      spellcasting: Mobile.spellcasting_at_level(character, character.level, room),
+      crits: Mobile.crits_at_level(character, character.level, room),
+      dodge: Mobile.dodge_at_level(character, character.level, room),
+      stealth: Mobile.stealth_at_level(character, character.level, room),
+      tracking: Mobile.tracking_at_level(character, character.level, room),
+      physical_damage: Mobile.physical_damage_at_level(character, character.level, room),
+      physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil, room),
+      magical_damage: Mobile.magical_damage_at_level(character, character.level, room),
+      magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil, room),
       hp: hp_at_level(character, character.level),
       max_hp: Mobile.max_hp_at_level(character, character.level),
       mana: mana_at_level(character, character.level),
@@ -308,10 +308,10 @@ defmodule ApathyDrive.Character do
       Systems.Effect.effect_bonus(character, ability)
     end
 
-    def accuracy_at_level(character, level) do
+    def accuracy_at_level(character, level, room) do
       agi = attribute_at_level(character, :agility, level)
       cha = attribute_at_level(character, :charm, level)
-      agi = agi + (cha / 10)
+      agi = agi + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Accuracy")
       trunc(agi * (1 + (modifier / 100)))
     end
@@ -443,10 +443,10 @@ defmodule ApathyDrive.Character do
       "<span style='color: #{color};'>#{name}</span>"
     end
 
-    def crits_at_level(character, level) do
+    def crits_at_level(character, level, room) do
       int = attribute_at_level(character, :intellect, level)
       cha = attribute_at_level(character, :charm, level)
-      int = int + (cha / 10)
+      int = int + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Crits")
       trunc(int * (1 + (modifier / 100)))
     end
@@ -478,10 +478,10 @@ defmodule ApathyDrive.Character do
       |> Room.send_scroll("<p><span class='red'>#{character.name} has died.</span></p>")
     end
 
-    def dodge_at_level(character, level) do
+    def dodge_at_level(character, level, room) do
       agi = attribute_at_level(character, :agility, level)
       cha = attribute_at_level(character, :charm, level)
-      agi = agi + (cha / 10)
+      agi = agi + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Dodge")
       trunc(agi * (1 + (modifier / 100)))
     end
@@ -543,8 +543,8 @@ defmodule ApathyDrive.Character do
       "<span class='dark-cyan'>#{name}</span>"
     end
 
-    def magical_damage_at_level(character, level) do
-      damage = attribute_at_level(character, :intellect, level)
+    def magical_damage_at_level(character, level, room) do
+      damage = attribute_at_level(character, :intellect, level) + (Party.charm_at_level(room, character, level) / 10)
       weapon_bonus =
         case Character.weapon(character) do
           %Item{worn_on: "Two Handed"} ->
@@ -557,8 +557,8 @@ defmodule ApathyDrive.Character do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def magical_resistance_at_level(character, level, damage_type) do
-      resist = attribute_at_level(character, :willpower, level)
+    def magical_resistance_at_level(character, level, damage_type, room) do
+      resist = attribute_at_level(character, :willpower, level) + (Party.charm_at_level(room, character, level) / 10)
       mr =
         character.equipment
         |> Enum.reduce(0, fn
@@ -595,16 +595,16 @@ defmodule ApathyDrive.Character do
       Party.refs(room, character)
     end
 
-    def perception_at_level(character, level) do
+    def perception_at_level(character, level, room) do
       int = attribute_at_level(character, :intellect, level)
       cha = attribute_at_level(character, :charm, level)
-      int = int + (cha / 10)
+      int = int + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Perception")
       trunc(int * (1 + (modifier / 100)))
     end
 
-    def physical_damage_at_level(character, level) do
-      damage = attribute_at_level(character, :strength, level)
+    def physical_damage_at_level(character, level, room) do
+      damage = attribute_at_level(character, :strength, level) + (Party.charm_at_level(room, character, level) / 10)
       weapon_bonus =
         case Character.weapon(character) do
           %Item{worn_on: "Two Handed"} ->
@@ -617,8 +617,8 @@ defmodule ApathyDrive.Character do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def physical_resistance_at_level(character, level, damage_type) do
-      resist = attribute_at_level(character, :strength, level)
+    def physical_resistance_at_level(character, level, damage_type, room) do
+      resist = attribute_at_level(character, :strength, level) + (Party.charm_at_level(room, character, level) / 10)
       ac =
         character.equipment
         |> Enum.reduce(0, fn
@@ -739,10 +739,10 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def spellcasting_at_level(character, level) do
+    def spellcasting_at_level(character, level, room) do
       will = attribute_at_level(character, :willpower, level)
       cha = attribute_at_level(character, :charm, level)
-      will = will + (cha / 10)
+      will = will + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Spellcasting")
       trunc(will * (1 + (modifier / 100)))
     end
@@ -754,13 +754,13 @@ defmodule ApathyDrive.Character do
       |> Enum.sort_by(& &1.level)
     end
 
-    def stealth_at_level(character, level) do
+    def stealth_at_level(character, level, room) do
       if Mobile.has_ability?(character, "Revealed") do
         0
       else
         agi = attribute_at_level(character, :agility, level)
         cha = attribute_at_level(character, :charm, level)
-        agi = agi + (cha / 10)
+        agi = agi + (Party.charm_at_level(room, character, level) / 10)
         modifier = ability_value(character, "Stealth")
         trunc(agi * (modifier / 100))
       end
@@ -776,8 +776,8 @@ defmodule ApathyDrive.Character do
     def target_level(%Character{level: _caster_level}, %Companion{level: target_level}), do: target_level
     def target_level(%Character{level: caster_level}, %{level: _target_level}), do: caster_level
 
-    def tracking_at_level(character, level) do
-      perception = perception_at_level(character, level)
+    def tracking_at_level(character, level, room) do
+      perception = perception_at_level(character, level, room)
       modifier = ability_value(character, "Tracking")
       trunc(perception * (modifier / 100))
     end

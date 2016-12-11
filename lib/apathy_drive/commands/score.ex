@@ -5,12 +5,12 @@ defmodule ApathyDrive.Commands.Score do
   def keywords, do: ["score", "stats", "status", "st"]
 
   def execute(%Room{} = room, %Character{} = character, _arguments) do
-    show_score(character)
+    show_score(character, room)
     room
   end
 
-  defp show_score(%Character{} = character) do
-    score_data = Character.score_data(character)
+  defp show_score(%Character{} = character, room) do
+    score_data = Character.score_data(character, room)
     hits = Enum.join([score_data.hp, score_data.max_hp], "/") |> String.ljust(13)
     mana = Enum.join([score_data.mana, score_data.max_mana], "/") |> String.ljust(13)
 

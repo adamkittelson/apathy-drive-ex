@@ -42,9 +42,9 @@ defmodule ApathyDrive.Commands.Look do
       target = Room.find_mobile_in_room(room, character, Enum.join(arguments, " ")) ->
         look_at_mobile(target, character)
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
-        look_at_item(character, target)
+        look_at_item(character, target, room)
       true ->
-        look_at_item(character, Enum.join(arguments, " "))
+        look_at_item(character, Enum.join(arguments, " "), room)
     end
   end
 
@@ -102,12 +102,12 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(character, "<p>#{hp_description}</p>")
   end
 
-  def look_mobiles(%Room{mobiles: mobiles}, character \\ nil) do
+  def look_mobiles(%Room{mobiles: mobiles} = room, character \\ nil) do
     mobiles_to_show =
       mobiles
       |> Map.values
       |> List.delete(character)
-      |> Enum.filter(&Stealth.visible?(&1, character))
+      |> Enum.filter(&Stealth.visible?(&1, character, room))
       |> Enum.map(&Mobile.colored_name(&1, character))
 
     if Enum.any?(mobiles_to_show) do
@@ -166,10 +166,10 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.any?(&(Map.has_key?(&1, "blinded")))
   end
 
-  def look_at_item(%Character{} = character, %Item{} = item) do
+  def look_at_item(%Character{} = character, %Item{} = item, room) do
     Mobile.send_scroll(character, "\n\n")
 
-    current = Character.score_data(character)
+    current = Character.score_data(character, room)
     case ApathyDrive.Commands.Wear.equip_item(character, item, false) do
       false ->
         Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} <span class='dark-cyan'>(You can't use)</span></p>")
@@ -177,7 +177,7 @@ defmodule ApathyDrive.Commands.Look do
       %{equipped: _, character: equipped} ->
         Mobile.send_scroll(character, "<p>#{Item.colored_name(item)}</p>")
         Mobile.send_scroll(character, "<p>#{item.description}</p>\n\n")
-        equipped = Character.score_data(equipped)
+        equipped = Character.score_data(equipped, room)
 
         score_data =
           current
@@ -201,16 +201,16 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_item(mobile, %{description: description}) do
+  def look_at_item(mobile, %{description: description}, _room) do
     Mobile.send_scroll mobile, "<p>#{description}</p>"
   end
 
-  def look_at_item(%Character{} = mobile, item_name) do
+  def look_at_item(%Character{} = mobile, item_name, room) do
     case find_item(mobile, item_name) do
       nil ->
         Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
       item ->
-        look_at_item(mobile, item)
+        look_at_item(mobile, item, room)
     end
   end
 

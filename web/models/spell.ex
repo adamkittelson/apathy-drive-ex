@@ -185,26 +185,26 @@ defmodule ApathyDrive.Spell do
     end
   end
 
-  def duration(%Spell{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target) do
+  def duration(%Spell{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    caster_sc = Mobile.spellcasting_at_level(caster, caster_level)
+    caster_sc = Mobile.spellcasting_at_level(caster, caster_level, room)
 
     if kind == "curse" do
-      target_mr = Mobile.magical_resistance_at_level(target, target_level, nil)
+      target_mr = Mobile.magical_resistance_at_level(target, target_level, nil, room)
       trunc(duration * :math.pow(1.005, caster_sc) * :math.pow(0.985, target_mr))
     else
       trunc(duration * :math.pow(1.005, caster_sc))
     end
   end
 
-  def dodged?(%{} = caster, %{} = target) do
+  def dodged?(%{} = caster, %{} = target, room) do
     caster_level = Mobile.caster_level(caster, target)
-    accuracy = Mobile.accuracy_at_level(caster, caster_level)
+    accuracy = Mobile.accuracy_at_level(caster, caster_level, room)
 
     target_level = Mobile.target_level(caster, target)
-    dodge = Mobile.dodge_at_level(target, target_level)
+    dodge = Mobile.dodge_at_level(target, target_level, room)
 
     chance = 30 + dodge - accuracy
 
@@ -212,7 +212,7 @@ defmodule ApathyDrive.Spell do
   end
 
   def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{abilities: %{"Dodgeable" => true}} = spell) do
-    if dodged?(caster, target) do
+    if dodged?(caster, target, room) do
       display_cast_message(room, caster, target, Map.put(spell, :result, :dodged))
 
       effects =
@@ -240,7 +240,7 @@ defmodule ApathyDrive.Spell do
     room = put_in(room.mobiles[caster.ref], caster)
     room = put_in(room.mobiles[target.ref], target)
 
-    duration = duration(spell, caster, target)
+    duration = duration(spell, caster, target, room)
 
     target =
       if spell.kind == "curse" and duration < 1000 do
@@ -291,7 +291,7 @@ defmodule ApathyDrive.Spell do
   end
   def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster, room) do
     level = min(target.level, caster.level)
-    healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
+    healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
     percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
 
     {caster, Map.put(target, :spell_shift, percentage_healed)}
@@ -300,10 +300,10 @@ defmodule ApathyDrive.Spell do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    damage = Mobile.magical_damage_at_level(caster, caster_level)
-    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"])
+    damage = Mobile.magical_damage_at_level(caster, caster_level, room)
+    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
 
-    {special, damage} = calculate_damage(damage, resist, value, caster, target)
+    {special, damage} = calculate_damage(damage, resist, value, caster, target, room)
 
     damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
     heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
@@ -321,10 +321,10 @@ defmodule ApathyDrive.Spell do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    damage = Mobile.magical_damage_at_level(caster, caster_level)
-    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"])
+    damage = Mobile.magical_damage_at_level(caster, caster_level, room)
+    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
 
-    {special, damage} = calculate_damage(damage, resist, value, caster, target)
+    {special, damage} = calculate_damage(damage, resist, value, caster, target, room)
 
     damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
@@ -338,10 +338,10 @@ defmodule ApathyDrive.Spell do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    damage = Mobile.physical_damage_at_level(caster, caster_level)
-    resist = Mobile.physical_resistance_at_level(target, target_level, spell.abilities["DamageType"])
+    damage = Mobile.physical_damage_at_level(caster, caster_level, room)
+    resist = Mobile.physical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
 
-    {special, damage} = calculate_damage(damage, resist, value, caster, target)
+    {special, damage} = calculate_damage(damage, resist, value, caster, target, room)
 
     damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
@@ -356,16 +356,16 @@ defmodule ApathyDrive.Spell do
     {caster, target}
   end
 
-  def calculate_damage(damage, resist, modifier, caster, target) do
+  def calculate_damage(damage, resist, modifier, caster, target, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
     cond do
-      surprise?(caster, target) ->
+      surprise?(caster, target, room) ->
         # max modifier to make surprise attacks with fast weapons do a full round's worth of damage
         damage = (damage - resist) * (max(modifier, 100) / 100) * (Enum.random(85..115) / 100)
         {:surprise, damage * 2}
-      crit?(caster, caster_level, target, target_level) ->
+      crit?(caster, caster_level, target, target_level, room) ->
         damage = (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
         {:crit, damage * 2}
       true ->
@@ -374,13 +374,13 @@ defmodule ApathyDrive.Spell do
     end
   end
 
-  def surprise?(caster, target) do
-    Stealth.invisible?(caster, target)
+  def surprise?(caster, target, room) do
+    Stealth.invisible?(caster, target, room)
   end
 
-  def crit?(caster, caster_level, target, target_level) do
-    caster_crit = Mobile.crits_at_level(caster, caster_level)
-    target_crit = Mobile.crits_at_level(target, target_level)
+  def crit?(caster, caster_level, target, target_level, room) do
+    caster_crit = Mobile.crits_at_level(caster, caster_level, room)
+    target_crit = Mobile.crits_at_level(target, target_level, room)
 
     :rand.uniform(100) < crit_chance(caster_crit, target_crit)
   end

@@ -64,7 +64,7 @@ defmodule ApathyDrive.Monster do
     |> Enum.filter(&(Map.has_key?(&1, "Aggro")))
     |> Enum.map(&(Map.get(&1, "Aggro")))
     |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
-    |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], monster))
+    |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], monster, room))
   end
 
   def hireable?(%Monster{} = monster, character, room) do
@@ -364,7 +364,7 @@ defmodule ApathyDrive.Monster do
       Systems.Effect.effect_bonus(monster, ability)
     end
 
-    def accuracy_at_level(monster, level) do
+    def accuracy_at_level(monster, level, _room) do
       agi = attribute_at_level(monster, :agility, level)
       cha = attribute_at_level(monster, :charm, level)
       agi = agi + (cha / 10)
@@ -452,7 +452,7 @@ defmodule ApathyDrive.Monster do
       true
     end
 
-    def crits_at_level(monster, level) do
+    def crits_at_level(monster, level, _room) do
       int = attribute_at_level(monster, :intellect, level)
       cha = attribute_at_level(monster, :charm, level)
       int = int + (cha / 10)
@@ -513,7 +513,7 @@ defmodule ApathyDrive.Monster do
       put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
     end
 
-    def dodge_at_level(monster, level) do
+    def dodge_at_level(monster, level, _room) do
       agi = attribute_at_level(monster, :agility, level)
       cha = attribute_at_level(monster, :charm, level)
       agi = agi + (cha / 10)
@@ -570,8 +570,8 @@ defmodule ApathyDrive.Monster do
       "<span class='dark-cyan'>#{name}</span>"
     end
 
-    def magical_damage_at_level(monster, level) do
-      damage = attribute_at_level(monster, :intellect, level)
+    def magical_damage_at_level(monster, level, room) do
+      damage = attribute_at_level(monster, :intellect, level) + (attribute_at_level(monster, :charm, level) / 10)
       weapon_bonus =
         case Monster.weapon(monster) do
           %Item{worn_on: "Two Handed"} ->
@@ -584,8 +584,8 @@ defmodule ApathyDrive.Monster do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def magical_resistance_at_level(monster, level, damage_type) do
-      resist = attribute_at_level(monster, :willpower, level)
+    def magical_resistance_at_level(monster, level, damage_type, _room) do
+      resist = attribute_at_level(monster, :willpower, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "MagicalResist") + ability_value(monster, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
@@ -617,7 +617,7 @@ defmodule ApathyDrive.Monster do
       Party.refs(room, monster)
     end
 
-    def perception_at_level(monster, level) do
+    def perception_at_level(monster, level, _room) do
       int = attribute_at_level(monster, :intellect, level)
       cha = attribute_at_level(monster, :charm, level)
       int = int + (cha / 10)
@@ -625,13 +625,13 @@ defmodule ApathyDrive.Monster do
       trunc(int * (1 + (modifier / 100)))
     end
 
-    def physical_damage_at_level(monster, level) do
-      damage = attribute_at_level(monster, :strength, level)
+    def physical_damage_at_level(monster, level, room) do
+      damage = attribute_at_level(monster, :strength, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyPhysicalDamage")
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def physical_resistance_at_level(monster, level, damage_type) do
+    def physical_resistance_at_level(monster, level, damage_type, _room) do
       resist = attribute_at_level(monster, :strength, level)
       modifier = ability_value(monster, "AC") + ability_value(monster, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
@@ -738,7 +738,7 @@ defmodule ApathyDrive.Monster do
       true
     end
 
-    def spellcasting_at_level(monster, level) do
+    def spellcasting_at_level(monster, level, _room) do
       will = attribute_at_level(monster, :willpower, level)
       cha = attribute_at_level(monster, :charm, level)
       will = will + (cha / 10)
@@ -753,7 +753,7 @@ defmodule ApathyDrive.Monster do
       |> Enum.sort_by(& &1.level)
     end
 
-    def stealth_at_level(monster, level) do
+    def stealth_at_level(monster, level, _room) do
       if Mobile.has_ability?(monster, "Revealed") do
         0
       else
@@ -775,8 +775,8 @@ defmodule ApathyDrive.Monster do
     def target_level(%Monster{level: monster_level}, %{level: target_level}) when target_level > monster_level, do: target_level
     def target_level(%Monster{level: monster_level}, %{level: target_level}), do: monster_level
 
-    def tracking_at_level(monster, level) do
-      perception = perception_at_level(monster, level)
+    def tracking_at_level(monster, level, room) do
+      perception = perception_at_level(monster, level, room)
       modifier = ability_value(monster, "Tracking")
       trunc(perception * (modifier / 100))
     end
