@@ -332,7 +332,7 @@ defmodule ApathyDrive.Character do
              total + Item.attribute_at_level(item, level, attribute)
            end)
 
-      trunc(base + from_equipment)
+      base + from_equipment
     end
 
     def attack_interval(character) do

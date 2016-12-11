@@ -201,7 +201,7 @@ defmodule ApathyDrive.Companion do
 
       base = Map.get(companion, attribute)
 
-      trunc(base + ((growth / 10) * (level - 1)))
+      base + ((growth / 10) * (level - 1))
     end
 
     def attack_interval(companion) do

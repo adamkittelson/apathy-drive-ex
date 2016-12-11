@@ -111,19 +111,21 @@ defmodule ApathyDrive.Item do
      "Legs", "Neck", "Off-Hand", "Torso", "Waist", "Weapon Hand", "Wrist", "Wrist"]
   end
 
-  def slots_below_power(%Character{equipment: equipment, level: level} = character, power) do
+  def slots_below_power(%Character{equipment: equipment, inventory: inventory, level: level} = character, power) do
     upgradeable_slots =
       slots()
-      |> Enum.reduce(equipment, fn slot, mapped_equipment ->
-           item =
-             Enum.find(mapped_equipment, fn
+      |> Enum.reduce(equipment ++ inventory, fn slot, mapped_equipment ->
+           items =
+             Enum.filter(mapped_equipment, fn
                %Item{worn_on: worn_on} = item when worn_on == slot ->
                  item
                _ ->
-                 nil
+                 false
              end)
 
-           if item do
+           if Enum.any?(items) do
+             item = Enum.max_by(items, &power_at_level(&1, &1.level))
+
              mapped_equipment =
                mapped_equipment
                |> List.delete(item)
@@ -133,6 +135,7 @@ defmodule ApathyDrive.Item do
              [{slot, 0} | mapped_equipment]
            end
          end)
+      |> Enum.filter(&is_tuple/1)
       |> Enum.reject(&(elem(&1, 1) >= power))
       |> Enum.map(&(elem(&1, 0)))
 

@@ -2,13 +2,13 @@ defmodule ApathyDrive.Aggression do
   alias ApathyDrive.{Character, Mobile, Monster, Room, TimerManager}
   require Logger
 
-  def react(%Room{} = room, %Monster{} = monster) do
+  def react(%Room{} = room, monster_ref) do
     Enum.reduce(room.mobiles, room, fn
       {ref, %Monster{}}, updated_room ->
           updated_room
       {ref, %{} = mobile}, updated_room ->
-        monster = updated_room.mobiles[monster.ref]
-        put_in(updated_room.mobiles[monster.ref], ApathyDrive.Aggression.react(monster, mobile))
+        monster = updated_room.mobiles[monster_ref]
+        put_in(updated_room.mobiles[monster_ref], ApathyDrive.Aggression.react(monster, mobile))
     end)
   end
 

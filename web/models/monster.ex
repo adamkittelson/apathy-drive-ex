@@ -190,6 +190,8 @@ defmodule ApathyDrive.Monster do
     if rarity do
       power = Item.power_at_level(rarity, character.level)
 
+      Logger.info "spawning #{rarity} item for #{character.name} with power level #{inspect power}"
+
       {loot_type, slot} =
         case Item.slots_below_power(character, power) do
           [] ->
@@ -379,7 +381,7 @@ defmodule ApathyDrive.Monster do
 
       base = Map.get(monster, attribute)
 
-      trunc(base + ((growth / 10) * (level - 1)))
+      base + ((growth / 10) * (level - 1))
     end
 
     def attack_interval(monster) do
@@ -474,7 +476,8 @@ defmodule ApathyDrive.Monster do
                 [:strength, :agility, :intellect, :willpower, :health, :charm]
                 |> Enum.map(&Mobile.attribute_at_level(monster, &1, level))
                 |> Enum.reduce(0, &(&1 + &2))
-                |> div(10)
+                |> Kernel./(10)
+                |> trunc
 
               message =
                 monster.death_message
@@ -646,9 +649,8 @@ defmodule ApathyDrive.Monster do
           monster
           |> regenerate_hp_and_mana(room)
           |> TimerManager.send_after({:heartbeat, round_length_in_ms(monster), {:heartbeat, monster.ref}})
-        
-        ApathyDrive.Aggression.react(room, monster)
       end)
+      |> ApathyDrive.Aggression.react(monster.ref)
     end
 
     def regenerate_hp_and_mana(%Monster{hp: hp, mana: mana} = monster, room) do
