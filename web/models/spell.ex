@@ -153,9 +153,9 @@ defmodule ApathyDrive.Spell do
           Enum.reduce(targets, room, fn(target_ref, updated_room) ->
             Room.update_mobile(updated_room, target_ref, fn target ->
               if affects_target?(target, spell) do
-                target =
-                  updated_room
-                  |> apply_spell(caster, target, spell)
+                updated_room = apply_spell(updated_room, caster, target, spell)
+
+                target = updated_room.mobiles[target_ref]
 
                 target =
                   if spell.kind in ["attack", "curse"] do
@@ -167,7 +167,7 @@ defmodule ApathyDrive.Spell do
                 if target.hp < 0 do
                   Mobile.die(target, updated_room)
                 else
-                  target
+                  put_in(updated_room.mobiles[target.ref], target)
                 end
               else
                 message = "#{target.name} is not affected by that ability." |> Text.capitalize_first
@@ -220,46 +220,53 @@ defmodule ApathyDrive.Spell do
         |> Map.put("stack_key", "dodge-limiter")
         |> Map.put("stack_count", 5)
 
-      target
-      |> Systems.Effect.add(effects, Mobile.round_length_in_ms(target))
-      |> aggro_target(spell, caster)
+      target =
+        target
+        |> Systems.Effect.add(effects, Mobile.round_length_in_ms(target))
+        |> aggro_target(spell, caster)
+
+      put_in(room.mobiles[target.ref], target)
     else
       apply_spell(room, caster, target, update_in(spell.abilities, &Map.delete(&1, "Dodgeable")))
     end
   end
   def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
-    target =
+    {caster, target} =
       target
-      |> apply_instant_abilities(spell, caster)
-      |> aggro_target(spell, caster)
+      |> apply_instant_abilities(spell, caster, room)
 
+    target = aggro_target(target, spell, caster)
+
+    room = put_in(room.mobiles[caster.ref], caster)
     room = put_in(room.mobiles[target.ref], target)
 
     duration = duration(spell, caster, target)
 
-    if spell.kind == "curse" and duration < 1000 do
-      display_cast_message(room, caster, target, Map.put(spell, :result, :resisted))
+    target =
+      if spell.kind == "curse" and duration < 1000 do
+        display_cast_message(room, caster, target, Map.put(spell, :result, :resisted))
 
-      target
-      |> Map.put(:spell_shift, nil)
-      |> Map.put(:spell_special, nil)
-      |> Mobile.update_prompt
-    else
-      display_cast_message(room, caster, target, spell)
+        target
+        |> Map.put(:spell_shift, nil)
+        |> Map.put(:spell_special, nil)
+        |> Mobile.update_prompt
+      else
+        display_cast_message(room, caster, target, spell)
 
-      target =
-        if target.spell_shift do
-          Mobile.shift_hp(target, target.spell_shift, room)
-        else
-          target
-        end
+        target =
+          if target.spell_shift do
+            Mobile.shift_hp(target, target.spell_shift, room)
+          else
+            target
+          end
 
-      target
-      |> Map.put(:spell_shift, nil)
-      |> Map.put(:spell_special, nil)
-      |> apply_duration_abilities(spell, caster, duration)
-      |> Mobile.update_prompt
-    end
+        target
+        |> Map.put(:spell_shift, nil)
+        |> Map.put(:spell_special, nil)
+        |> apply_duration_abilities(spell, caster, duration)
+        |> Mobile.update_prompt
+      end
+    put_in(room.mobiles[target.ref], target)
   end
 
   def aggro_target(%{ref: target_ref} = target, %Spell{kind: kind}, %{ref: caster_ref} = caster) when kind in ["attack", "curse"] and target_ref != caster_ref do
@@ -267,27 +274,50 @@ defmodule ApathyDrive.Spell do
   end
   def aggro_target(%{} = target, %Spell{}, %{} = _caster), do: target
 
-  def apply_instant_abilities(%{} = target, %Spell{} = spell, %{} = caster) do
+  def apply_instant_abilities(%{} = target, %Spell{} = spell, %{} = caster, room) do
     spell.abilities
     |> Map.take(@instant_abilities)
-    |> Enum.reduce(target, fn ability, updated_target ->
-         apply_instant_ability(ability, updated_target, spell, caster)
+    |> Enum.reduce({caster, target}, fn ability, {updated_caster, updated_target} ->
+         apply_instant_ability(ability, updated_target, spell, caster, room)
        end)
   end
 
-  def apply_instant_ability({"RemoveSpells", spell_ids}, %{} = target, _spell, caster) do
-    Enum.reduce(spell_ids, target, fn(spell_id, updated_target) ->
-      Systems.Effect.remove_oldest_stack(updated_target, spell_id)
-    end)
+  def apply_instant_ability({"RemoveSpells", spell_ids}, %{} = target, _spell, caster, room) do
+    target =
+      Enum.reduce(spell_ids, target, fn(spell_id, updated_target) ->
+        Systems.Effect.remove_oldest_stack(updated_target, spell_id)
+      end)
+    {caster, target}
   end
-  def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster) do
+  def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster, room) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
     percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
 
-    Map.put(target, :spell_shift, percentage_healed)
+    {caster, Map.put(target, :spell_shift, percentage_healed)}
   end
-  def apply_instant_ability({"MagicalDamage", value}, %{} = target, spell, caster) do
+  def apply_instant_ability({"Drain", value}, %{} = target, spell, caster, room) do
+    caster_level = Mobile.caster_level(caster, target)
+    target_level = Mobile.target_level(caster, target)
+
+    damage = Mobile.magical_damage_at_level(caster, caster_level)
+    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"])
+
+    {special, damage} = calculate_damage(damage, resist, value, caster, target)
+
+    damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+    heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
+
+    target =
+      target
+      |> Map.put(:spell_shift, -damage_percent)
+      |> Map.put(:spell_special, special)
+
+    caster = Mobile.shift_hp(caster, heal_percent, room)
+
+    {caster, target}
+  end
+  def apply_instant_ability({"MagicalDamage", value}, %{} = target, spell, caster, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
@@ -298,11 +328,13 @@ defmodule ApathyDrive.Spell do
 
     damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
-    target
-    |> Map.put(:spell_shift, -damage_percent)
-    |> Map.put(:spell_special, special)
+    target =
+      target
+      |> Map.put(:spell_shift, -damage_percent)
+      |> Map.put(:spell_special, special)
+    {caster, target}
   end
-  def apply_instant_ability({"PhysicalDamage", value}, %{} = target, spell, caster) do
+  def apply_instant_ability({"PhysicalDamage", value}, %{} = target, spell, caster, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
@@ -313,13 +345,15 @@ defmodule ApathyDrive.Spell do
 
     damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
-    target
-    |> Map.put(:spell_shift, -damage_percent)
-    |> Map.put(:spell_special, special)
+    target =
+      target
+      |> Map.put(:spell_shift, -damage_percent)
+      |> Map.put(:spell_special, special)
+    {caster, target}
   end
-  def apply_instant_ability({ability_name, _value}, %{} = target, _spell, caster) do
+  def apply_instant_ability({ability_name, _value}, %{} = target, _spell, caster, room) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
-    target
+    {caster, target}
   end
 
   def calculate_damage(damage, resist, modifier, caster, target) do
