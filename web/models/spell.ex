@@ -156,7 +156,14 @@ defmodule ApathyDrive.Spell do
                 target =
                   updated_room
                   |> apply_spell(caster, target, spell)
-                  |> Stealth.reveal
+
+                target =
+                  if spell.kind in ["attack", "curse"] do
+                    Stealth.reveal(target)
+                  else
+                    target
+                  end
+
                 if target.hp < 0 do
                   Mobile.die(target, updated_room)
                 else
@@ -185,7 +192,7 @@ defmodule ApathyDrive.Spell do
     caster_sc = Mobile.spellcasting_at_level(caster, caster_level)
 
     if kind == "curse" do
-      target_mr = Mobile.magical_resistance_at_level(target, target_level)
+      target_mr = Mobile.magical_resistance_at_level(target, target_level, nil)
       trunc(duration * :math.pow(1.005, caster_sc) * :math.pow(0.985, target_mr))
     else
       trunc(duration * :math.pow(1.005, caster_sc))
@@ -280,12 +287,12 @@ defmodule ApathyDrive.Spell do
 
     Map.put(target, :spell_shift, percentage_healed)
   end
-  def apply_instant_ability({"MagicalDamage", value}, %{} = target, _spell, caster) do
+  def apply_instant_ability({"MagicalDamage", value}, %{} = target, spell, caster) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.magical_damage_at_level(caster, caster_level)
-    resist = Mobile.magical_resistance_at_level(target, target_level)
+    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"])
 
     {special, damage} = calculate_damage(damage, resist, value, caster, target)
 
@@ -295,12 +302,12 @@ defmodule ApathyDrive.Spell do
     |> Map.put(:spell_shift, -damage_percent)
     |> Map.put(:spell_special, special)
   end
-  def apply_instant_ability({"PhysicalDamage", value}, %{} = target, _spell, caster) do
+  def apply_instant_ability({"PhysicalDamage", value}, %{} = target, spell, caster) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.physical_damage_at_level(caster, caster_level)
-    resist = Mobile.physical_resistance_at_level(target, target_level)
+    resist = Mobile.physical_resistance_at_level(target, target_level, spell.abilities["DamageType"])
 
     {special, damage} = calculate_damage(damage, resist, value, caster, target)
 

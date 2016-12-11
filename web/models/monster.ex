@@ -198,7 +198,6 @@ defmodule ApathyDrive.Monster do
             Logger.info("no slots below power: #{power}, salvaging")
             {:salvage, Enum.random(Item.slots)}
           slots ->
-            Logger.info("slots below power #{power}: #{inspect slots}")
             {:loot, Enum.random(slots)}
         end
 
@@ -585,9 +584,9 @@ defmodule ApathyDrive.Monster do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def magical_resistance_at_level(monster, level) do
+    def magical_resistance_at_level(monster, level, damage_type) do
       resist = attribute_at_level(monster, :willpower, level)
-      modifier = ability_value(monster, "MagicalResist")
+      modifier = ability_value(monster, "MagicalResist") + ability_value(monster, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
 
@@ -632,9 +631,9 @@ defmodule ApathyDrive.Monster do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def physical_resistance_at_level(monster, level) do
+    def physical_resistance_at_level(monster, level, damage_type) do
       resist = attribute_at_level(monster, :strength, level)
-      modifier = ability_value(monster, "AC")
+      modifier = ability_value(monster, "AC") + ability_value(monster, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
 

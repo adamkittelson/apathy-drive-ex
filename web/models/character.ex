@@ -285,9 +285,9 @@ defmodule ApathyDrive.Character do
       stealth: Mobile.stealth_at_level(character, character.level),
       tracking: Mobile.tracking_at_level(character, character.level),
       physical_damage: Mobile.physical_damage_at_level(character, character.level),
-      physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
+      physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil),
       magical_damage: Mobile.magical_damage_at_level(character, character.level),
-      magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
+      magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil),
       hp: hp_at_level(character, character.level),
       max_hp: Mobile.max_hp_at_level(character, character.level),
       mana: mana_at_level(character, character.level),
@@ -557,7 +557,7 @@ defmodule ApathyDrive.Character do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def magical_resistance_at_level(character, level) do
+    def magical_resistance_at_level(character, level, damage_type) do
       resist = attribute_at_level(character, :willpower, level)
       mr =
         character.equipment
@@ -575,7 +575,7 @@ defmodule ApathyDrive.Character do
              _, total ->
                total
            end)
-      modifier = mr + ability_value(character, "MagicalResist")
+      modifier = mr + ability_value(character, "MagicalResist") + ability_value(character, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
 
@@ -617,7 +617,7 @@ defmodule ApathyDrive.Character do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def physical_resistance_at_level(character, level) do
+    def physical_resistance_at_level(character, level, damage_type) do
       resist = attribute_at_level(character, :strength, level)
       ac =
         character.equipment
@@ -635,7 +635,7 @@ defmodule ApathyDrive.Character do
              _, total ->
                total
            end)
-      modifier = ac + ability_value(character, "AC")
+      modifier = ac + ability_value(character, "AC") + ability_value(character, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
 

@@ -377,9 +377,9 @@ defmodule ApathyDrive.Companion do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def magical_resistance_at_level(companion, level) do
+    def magical_resistance_at_level(companion, level, damage_type) do
       resist = attribute_at_level(companion, :willpower, level)
-      modifier = ability_value(companion, "MagicalResist")
+      modifier = ability_value(companion, "MagicalResist") + ability_value(companion, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
 
@@ -414,9 +414,9 @@ defmodule ApathyDrive.Companion do
       trunc(damage * (1 + (modifier / 100)))
     end
 
-    def physical_resistance_at_level(companion, level) do
+    def physical_resistance_at_level(companion, level, damage_type) do
       resist = attribute_at_level(companion, :strength, level)
-      modifier = ability_value(companion, "AC")
+      modifier = ability_value(companion, "AC") + ability_value(companion, "Resist#{damage_type}")
       trunc(resist * (modifier / 100))
     end
 
