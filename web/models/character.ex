@@ -402,6 +402,12 @@ defmodule ApathyDrive.Character do
 
     def caster_level(%Character{level: caster_level}, %{} = _target), do: caster_level
 
+    def cpr(%Character{} = character) do
+      time = min(Mobile.round_length_in_ms(character), TimerManager.time_remaining(character, :heartbeat))
+
+      TimerManager.send_after(character, {:heartbeat, time, {:heartbeat, character.ref}})
+    end
+
     def confused(%Character{effects: effects} = character, %Room{} = room) do
       effects
       |> Map.values
@@ -513,7 +519,7 @@ defmodule ApathyDrive.Character do
       Room.update_mobile(room, character.ref, fn character ->
         character
         |> regenerate_hp_and_mana(room)
-        |> TimerManager.send_after({:heartbeat, round_length_in_ms(character), {:heartbeat, character.ref}})
+        |> TimerManager.send_after({:heartbeat, Mobile.round_length_in_ms(character), {:heartbeat, character.ref}})
       end)
     end
 

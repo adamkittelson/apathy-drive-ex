@@ -92,7 +92,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:ref, ref)
       |> generate_monster_attributes()
       |> load_spells()
-      |> TimerManager.send_after({:heartbeat, 1_000, {:heartbeat, ref}})
+      |> Mobile.cpr
     end
   end
   def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm) do
@@ -108,7 +108,7 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
     |> load_spells()
-    |> TimerManager.send_after({:heartbeat, 1_000, {:heartbeat, ref}})
+    |> Mobile.cpr
   end
 
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
@@ -350,7 +350,8 @@ defmodule ApathyDrive.Monster do
   def auto_attack_target(%Monster{grade: "boss"} = monster, enemies, room, attack_spell) do
     enemies
     |> Enum.map(fn enemy ->
-         Spell.apply_instant_abilities(room.mobiles[enemy], attack_spell, monster)
+         {_caster, target} = Spell.apply_instant_abilities(room.mobiles[enemy], attack_spell, monster, room)
+         target
        end)
     |> Enum.sort_by(& &1.spell_shift)
     |> List.last
@@ -450,6 +451,12 @@ defmodule ApathyDrive.Monster do
       send_scroll(monster, "<p><span class='cyan'>You fumble in confusion!</span></p>")
       Room.send_scroll(room, "<p><span class='cyan'>#{Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => monster})}</span></p>", [monster])
       true
+    end
+
+    def cpr(%Monster{} = monster) do
+      time = min(Mobile.round_length_in_ms(monster), TimerManager.time_remaining(monster, :heartbeat))
+
+      TimerManager.send_after(monster, {:heartbeat, time, {:heartbeat, monster.ref}})
     end
 
     def crits_at_level(monster, level, _room) do
@@ -647,7 +654,7 @@ defmodule ApathyDrive.Monster do
         monster =
           monster
           |> regenerate_hp_and_mana(room)
-          |> TimerManager.send_after({:heartbeat, round_length_in_ms(monster), {:heartbeat, monster.ref}})
+          |> TimerManager.send_after({:heartbeat, Mobile.round_length_in_ms(monster), {:heartbeat, monster.ref}})
       end)
       |> ApathyDrive.Aggression.react(monster.ref)
     end

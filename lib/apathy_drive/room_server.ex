@@ -248,7 +248,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_spells
         |> Character.load_items
         |> Map.put(:socket, socket)
-        |> TimerManager.send_after({:heartbeat, 1_000, {:heartbeat, ref}})
+        |> Mobile.cpr
 
       Mobile.update_prompt(character)
 

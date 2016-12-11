@@ -176,7 +176,7 @@ defmodule ApathyDrive.Companion do
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
     |> load_spells()
-    |> TimerManager.send_after({:heartbeat, 1_000, {:heartbeat, ref}})
+    |> Mobile.cpr
   end
 
   defimpl ApathyDrive.Mobile, for: Companion do
@@ -281,6 +281,12 @@ defmodule ApathyDrive.Companion do
       true
     end
 
+    def cpr(%Companion{} = companion) do
+      time = min(Mobile.round_length_in_ms(companion), TimerManager.time_remaining(companion, :heartbeat))
+
+      TimerManager.send_after(companion, {:heartbeat, time, {:heartbeat, companion.ref}})
+    end
+
     def crits_at_level(companion, level, room) do
       int = attribute_at_level(companion, :intellect, level)
       cha = attribute_at_level(companion, :charm, level)
@@ -343,7 +349,7 @@ defmodule ApathyDrive.Companion do
           companion
           |> regenerate_hp_and_mana(room)
           |> Companion.toggle_combat(room)
-          |> TimerManager.send_after({:heartbeat, round_length_in_ms(companion), {:heartbeat, companion.ref}})
+          |> TimerManager.send_after({:heartbeat, Mobile.round_length_in_ms(companion), {:heartbeat, companion.ref}})
         end)
 
       CompanionAI.think(companion.ref, room)

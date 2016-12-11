@@ -91,6 +91,8 @@ defmodule ApathyDrive.Room do
         room
       end
 
+    room = update_mobile(room, mobile.ref, &Mobile.cpr/1)
+
     room
     |> MonsterSpawning.spawn_permanent_npc
     |> Room.move_after(mobile.ref)
