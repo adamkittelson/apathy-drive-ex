@@ -1,6 +1,7 @@
 defmodule ApathyDrive.Spell do
   use ApathyDrive.Web, :model
   alias ApathyDrive.{EntityAbility, Match, Mobile, Room, Spell, Stealth, Text, TimerManager}
+  require Logger
 
   schema "spells" do
     field :name, :string
@@ -94,16 +95,12 @@ defmodule ApathyDrive.Spell do
     room
   end
 
-  def execute(%Room{} = room, caster_ref, %Spell{} = spell, "") do
-    execute(room, caster_ref, spell, List.wrap(caster_ref))
-  end
-
   def execute(%Room{} = room, caster_ref, %Spell{} = spell, query) when is_binary(query) do
     case get_targets(room, caster_ref, spell, query) do
       [] ->
         room
         |> Room.get_mobile(caster_ref)
-        |> Mobile.send_scroll("<p>Unable to cast #{spell.name} at \"#{query}\".</p>")
+        |> Mobile.send_scroll("<p>Your spell would affect no one.</p>")
         room
       targets ->
         execute(room, caster_ref, spell, targets)
@@ -151,6 +148,7 @@ defmodule ApathyDrive.Spell do
           Enum.reduce(targets, room, fn(target_ref, updated_room) ->
             Room.update_mobile(updated_room, target_ref, fn target ->
               if affects_target?(target, spell) do
+                Logger.info "#{caster.name}'s spell affecting #{target.name}"
                 updated_room = apply_spell(updated_room, caster, target, spell)
 
                 target = updated_room.mobiles[target_ref]
@@ -650,7 +648,7 @@ defmodule ApathyDrive.Spell do
   end
 
   def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest] = targets, %Spell{abilities: %{"PreCastMessage" => message}} = spell) do
-    target = Room.get_mobile(target_ref)
+    target = Room.get_mobile(room, target_ref)
 
     message =
       message
@@ -662,13 +660,13 @@ defmodule ApathyDrive.Spell do
     display_pre_cast_message(room, caster, targets, update_in(spell.abilities, &Map.delete(&1, "PreCastMessage")))
   end
   def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest], %Spell{abilities: %{"PreCastSpectatorMessage" => message}} = spell) do
-    target = Room.get_mobile(target_ref)
+    target = Room.get_mobile(room, target_ref)
 
     message = message
               |> Text.interpolate(%{"user" => caster, "target" => target})
               |> Text.capitalize_first
 
-    Room.send_scroll(room, "<p><span class='#{message_color(spell)}'>#{message}</span></p>", caster)
+    Room.send_scroll(room, "<p><span class='#{message_color(spell)}'>#{message}</span></p>", [caster])
   end
   def display_pre_cast_message(_room, _caster, _targets, _spell), do: :noop
 
@@ -749,13 +747,16 @@ defmodule ApathyDrive.Spell do
   end
   def get_targets(%Room{} = room, caster_ref, %Spell{targets: "full attack area"}, _query) do
     party =
-      caster_ref
-      |> Room.get_mobile
+      room
+      |> Room.get_mobile(caster_ref)
       |> Mobile.party_refs(room)
 
     room.mobiles
-    |> Map.values
+    |> Map.keys
     |> Kernel.--(party)
+  end
+  def get_targets(%Room{} = room, caster_ref, %Spell{targets: "self or single"}, "") do
+    List.wrap(caster_ref)
   end
   def get_targets(%Room{} = room, caster_ref, %Spell{targets: "self or single"}, query) do
     match =
