@@ -205,34 +205,36 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_call({:character_connected, %Character{id: id} = character, socket}, _from, room) do
-    if mobile = Room.find_character(room, id) do
+    if existing_character = Room.find_character(room, id) do
 
       monitor_ref =
-        if mobile.socket != socket do
-          Process.demonitor(character.monitor_ref)
-          send(character.socket, :go_home)
+        if existing_character.socket != socket do
+          Process.demonitor(existing_character.monitor_ref)
+          send(existing_character.socket, :go_home)
           Process.monitor(socket)
         else
           Process.monitor(socket)
         end
 
       room =
-        Room.update_mobile(room, mobile.ref, fn(mob) ->
-          mob = Map.put(mob, :socket, socket)
-          put_in(character.monitor_ref, monitor_ref)
+        Room.update_mobile(room, existing_character.ref, fn(mob) ->
+          mob
+          |> Map.put(:socket, socket)
+          |> TimerManager.cancel(:logout)
+          |> Map.put(:monitor_ref, monitor_ref)
         end)
 
-      room.mobiles[mobile.ref]
+      room.mobiles[existing_character.ref]
       |> Mobile.update_prompt
 
-      case Presence.track(socket, "spirits:online", character.id, %{name: character.name}) do
+      case Presence.track(socket, "spirits:online", existing_character.id, %{name: existing_character.name}) do
         {:ok, _} ->
           :ok
         {:error, {:already_tracked, _pid, _topic, _key}} ->
           :ok
       end
 
-      {:reply, character, room}
+      {:reply, room.mobiles[existing_character.ref], room}
     else
       monitor_ref = Process.monitor(socket)
 
@@ -418,10 +420,23 @@ defmodule ApathyDrive.RoomServer do
     room =
       case Room.find_monitor_ref(room, monitor_ref) do
         %Character{ref: ref} ->
-          update_in(room.mobiles, &Map.delete(&1, ref))
+          Room.update_mobile(room, ref, fn character ->
+            TimerManager.send_after(character, {:logout, 30_000, {:logout, ref}})
+          end)
         nil ->
           room
       end
+
+    {:noreply, room}
+  end
+
+  def handle_info({:logout, ref}, room) do
+    character = room.mobiles[ref]
+    companion = Character.companion(character, room)
+    room =
+      room
+      |> update_in([:mobiles], &Map.delete(&1, ref))
+      |> update_in([:mobiles], &Map.delete(&1, companion && companion.ref))
 
     {:noreply, room}
   end
