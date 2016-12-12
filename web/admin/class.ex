@@ -2,7 +2,7 @@ defmodule ApathyDrive.ExAdmin.Class do
   use ExAdmin.Register
 
   register_resource ApathyDrive.Class do
-    
+
     index do
       selectable_column
 

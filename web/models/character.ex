@@ -412,14 +412,14 @@ defmodule ApathyDrive.Character do
       effects
       |> Map.values
       |> Enum.find(fn(effect) ->
-           Map.has_key?(effect, "confused") && (effect["confused"] >= :rand.uniform(100))
+           Map.has_key?(effect, "Confusion") && (effect["Confusion"] >= :rand.uniform(100))
          end)
       |> confused(character, room)
     end
     def confused(nil, %Character{}, %Room{}), do: false
-    def confused(%{"confusion_message" => %{"user" => user_message} = message}, %Character{} = character, %Room{} = room) do
-      Mobile.send_scroll(character, user_message)
-      if message["spectator"], do: Room.send_scroll(room, "#{Text.interpolate(message["spectator"], %{"user" => character})}", [character])
+    def confused(%{"ConfusionMessage" => message} = effect, %Character{} = character, %Room{} = room) do
+      Mobile.send_scroll(character, "<p>#{message}</p>")
+      if effect["ConfusionSpectatorMessage"], do: Room.send_scroll(room, "<p>#{Text.interpolate(effect["ConfusionSpectatorMessage"], %{"user" => character})}</p>", [character])
       true
     end
     def confused(%{}, %Character{} = character, %Room{} = room) do

@@ -20,8 +20,6 @@ defmodule ApathyDrive.Spell do
     field :ignores_round_cooldown?, :boolean, virtual: true, default: false
     field :result, :any, virtual: true
 
-    has_many :characters, ApathyDrive.Character
-
     timestamps
   end
 

@@ -267,16 +267,18 @@ defmodule ApathyDrive.Companion do
       effects
       |> Map.values
       |> Enum.find(fn(effect) ->
-           Map.has_key?(effect, "confused") && (effect["confused"] >= :rand.uniform(100))
+           Map.has_key?(effect, "Confusion") && (effect["Confusion"] >= :rand.uniform(100))
          end)
       |> confused(companion, room)
     end
     def confused(nil, %Companion{}, %Room{}), do: false
-    def confused(%{"confusion_message" => %{"user" => user_message} = message}, %Companion{} = companion, %Room{} = room) do
-      if message["spectator"], do: Room.send_scroll(room, "#{Text.interpolate(message["spectator"], %{"user" => companion})}", [companion])
+    def confused(%{"ConfusionMessage" => message} = effect, %Companion{} = companion, %Room{} = room) do
+      Mobile.send_scroll(companion, "<p>#{message}</p>")
+      if effect["ConfusionSpectatorMessage"], do: Room.send_scroll(room, "<p>#{Text.interpolate(effect["ConfusionSpectatorMessage"], %{"user" => companion})}</p>", [companion])
       true
     end
     def confused(%{}, %Companion{} = companion, %Room{} = room) do
+      send_scroll(companion, "<p><span class='cyan'>You fumble in confusion!</span></p>")
       Room.send_scroll(room, "<p><span class='cyan'>#{Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => companion})}</span></p>", [companion])
       true
     end
