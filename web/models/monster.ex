@@ -579,15 +579,7 @@ defmodule ApathyDrive.Monster do
 
     def magical_damage_at_level(monster, level, room) do
       damage = attribute_at_level(monster, :intellect, level) + (attribute_at_level(monster, :charm, level) / 10)
-      weapon_bonus =
-        case Monster.weapon(monster) do
-          %Item{worn_on: "Two Handed"} ->
-            10
-          _ ->
-            0
-          end
-
-      modifier = weapon_bonus + ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyMagicalDamage")
+      modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyMagicalDamage")
       trunc(damage * (1 + (modifier / 100)))
     end
 

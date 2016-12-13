@@ -37,7 +37,8 @@ defmodule ApathyDrive.Spell do
 
   @duration_abilities [
     "AC", "Accuracy", "Agility", "Charm", "Blind", "Charm", "Confusion", "ConfusionMessage", "ConfusionSpectatorMessage",
-    "Crits", "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "HPRegen",
+    "Crits", "DamageShield", "DamageShieldUserMessage", "DamageShieldTargetMessage", "DamageShieldSpectatorMessage",
+    "DamageType", "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "HPRegen",
     "Intellect", "MagicalResist", "ManaRegen", "MaxHP", "MaxMana", "ModifyDamage", "Perception", "Picklocks",
     "PoisonImmunity", "RemoveMessage", "ResistCold", "ResistFire", "ResistLightning", "ResistStone", "Root", "SeeHidden",
     "Shadowform", "Silence", "Speed", "Spellcasting", "StatusMessage", "Stealth", "Strength", "Tracking", "Willpower"
@@ -238,31 +239,69 @@ defmodule ApathyDrive.Spell do
 
     duration = duration(spell, caster, target, room)
 
-    target =
-      if spell.kind == "curse" and duration < 1000 do
-        display_cast_message(room, caster, target, Map.put(spell, :result, :resisted))
+    if spell.kind == "curse" and duration < 1000 do
+      display_cast_message(room, caster, target, Map.put(spell, :result, :resisted))
 
+      target =
         target
         |> Map.put(:spell_shift, nil)
         |> Map.put(:spell_special, nil)
         |> Mobile.update_prompt
-      else
-        display_cast_message(room, caster, target, spell)
 
-        target =
-          if target.spell_shift do
-            Mobile.shift_hp(target, target.spell_shift, room)
-          else
-            target
-          end
+      room
+      |> put_in([:mobiles, target.ref], target)
+    else
+      display_cast_message(room, caster, target, spell)
 
+      room = trigger_damage_shields(room, caster.ref, target.ref, spell)
+
+      target =
+        if target.spell_shift do
+          Mobile.shift_hp(target, target.spell_shift, room)
+        else
+          target
+        end
+
+      target =
         target
         |> Map.put(:spell_shift, nil)
         |> Map.put(:spell_special, nil)
         |> apply_duration_abilities(spell, caster, duration)
         |> Mobile.update_prompt
-      end
-    put_in(room.mobiles[target.ref], target)
+
+      room
+      |> put_in([:mobiles, target.ref], target)
+    end
+  end
+
+  def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, spell) when target_ref == caster_ref, do: room
+  def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, spell) do
+    if (target = room.mobiles[target_ref]) && "PhysicalDamage" in Map.keys(spell.abilities) do
+      target
+      |> Map.get(:effects)
+      |> Map.values
+      |> Enum.filter(&(Map.has_key?(&1, "DamageShield")))
+      |> Enum.reduce(room, fn
+           %{"DamageShield" => damage, "DamageType" => damage_type} = shield, updated_room ->
+             reaction =
+               %Spell{
+                 kind: "attack",
+                 mana: 0,
+                 user_message: shield["DamageShieldUserMessage"],
+                 target_message: shield["DamageShieldTargetMessage"],
+                 spectator_message: shield["DamageShieldSpectatorMessage"],
+                 ignores_round_cooldown?: true,
+                 abilities: %{
+                   "MagicalDamage" => div(spell.abilities["PhysicalDamage"] * damage, 100),
+                   "DamageType" => damage_type
+                 }
+               }
+
+             apply_spell(updated_room, room.mobiles[target_ref], room.mobiles[caster_ref], reaction)
+         end)
+    else
+      room
+    end
   end
 
   def aggro_target(%{ref: target_ref} = target, %Spell{kind: kind}, %{ref: caster_ref} = caster) when kind in ["attack", "curse"] and target_ref != caster_ref do
@@ -310,6 +349,8 @@ defmodule ApathyDrive.Spell do
       |> Map.put(:spell_special, special)
 
     caster = Mobile.shift_hp(caster, heal_percent, room)
+
+    Mobile.update_prompt(caster)
 
     {caster, target}
   end
