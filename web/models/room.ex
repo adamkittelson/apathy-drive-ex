@@ -1,6 +1,7 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
   alias ApathyDrive.{Ability, Area, Character, Class, Companion, Match, Mobile, Monster, MonsterSpawning, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
+  require Logger
 
   @behaviour Access
   defdelegate get_and_update(container, key, fun), to: Map
@@ -91,8 +92,6 @@ defmodule ApathyDrive.Room do
         room
       end
 
-    room = update_mobile(room, mobile.ref, &Mobile.cpr/1)
-
     room
     |> MonsterSpawning.spawn_permanent_npc
     |> Room.move_after(mobile.ref)
@@ -134,8 +133,8 @@ defmodule ApathyDrive.Room do
   def apply_timers(%Room{} = room) do
     room = TimerManager.apply_timers(room)
 
-    Enum.reduce(room.mobiles, room, fn {ref, mobile}, updated_room ->
-      put_in updated_room.mobiles[ref], TimerManager.apply_timers(mobile)
+    Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
+      TimerManager.apply_timers(updated_room, ref)
     end)
   end
 

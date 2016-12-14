@@ -263,11 +263,11 @@ defmodule ApathyDrive.Monster do
     case :rand.uniform(1_000_000 - pity_modifier) do
       roll when roll <= 10 ->
         "legendary"
-      roll when roll <= 100 ->
+      roll when roll <= 500 ->
         "epic"
-      roll when roll <= 1000 ->
+      roll when roll <= 5000 ->
         "rare"
-      roll when roll <= 10_000 ->
+      roll when roll <= 50_000 ->
         "uncommon"
       _ ->
         "common"

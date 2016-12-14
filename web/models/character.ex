@@ -470,6 +470,7 @@ defmodule ApathyDrive.Character do
            end)
         |> Map.put(:timers, %{})
         |> Mobile.update_prompt
+        |> Mobile.cpr
 
       Room.start_room_id
       |> RoomServer.find
