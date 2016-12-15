@@ -1,6 +1,6 @@
 defmodule ApathyDrive.ExAdmin.Spell do
   use ExAdmin.Register
-  alias ApathyDrive.EntityAbility
+  alias ApathyDrive.{EntityAbility, Repo}
 
   register_resource ApathyDrive.Spell do
 
@@ -54,6 +54,44 @@ defmodule ApathyDrive.ExAdmin.Spell do
                 <tr>
                   <th style="width: 150px;">Ability</th>
                   <th class="th-value">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                #{rows}
+              </tbody>
+            </table>
+          )
+        end
+
+      end
+
+      panel "Casters" do
+        markup_contents do
+          rows =
+            spell
+            |> Ecto.assoc(:entity_spells)
+            |> Repo.all
+            |> Enum.map(fn entity_spell ->
+                 %{name: name} =
+                   Ecto.Query.from(es in entity_spell.assoc_table)
+                   |> Ecto.Query.where([c], c.id == ^entity_spell.assoc_id)
+                   |> Ecto.Query.select([:name])
+                   |> ApathyDrive.Repo.one
+
+                 ~s(
+                   <tr>
+                     <th>#{entity_spell.assoc_table}</th>
+                     <td>#{name}</td>
+                   </tr>
+                 )
+               end)
+
+          ~s(
+            <table border="0" cellspacing="0" cellpadding="0" class="table">
+              <thead>
+                <tr>
+                  <th style="width: 150px;">Table</th>
+                  <th class="th-value">Name</th>
                 </tr>
               </thead>
               <tbody>
