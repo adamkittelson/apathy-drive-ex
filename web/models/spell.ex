@@ -83,8 +83,8 @@ defmodule ApathyDrive.Spell do
     |> Enum.filter(&(&1.kind == "heal"))
   end
 
-  # equivilent to a character with 2 ManaPerIntellect and 100 intellect
-  def base_mana_at_level(level), do: 200 + ((level - 1) * 20)
+  # equivilent to a character with 2 ManaPerIntellect and 10 intellect
+  def base_mana_at_level(level), do: 20 + ((level - 1) * 2)
 
   def mana_cost_at_level(%Spell{mana: mana} = spell, level) do
     trunc(base_mana_at_level(level) * (mana / 100))
@@ -158,7 +158,7 @@ defmodule ApathyDrive.Spell do
 
                 target =
                   if spell.kind in ["attack", "curse"] do
-                    Stealth.reveal(target)
+                    Stealth.reveal(target, updated_room)
                   else
                     target
                   end
@@ -177,7 +177,7 @@ defmodule ApathyDrive.Spell do
           end)
           #|> execute_multi_cast(caster_ref, ability, targets)
 
-        Room.update_mobile(room, caster_ref, &Stealth.reveal/1)
+        Room.update_mobile(room, caster_ref, &Stealth.reveal(&1, room))
       end)
     else
       room
@@ -205,7 +205,12 @@ defmodule ApathyDrive.Spell do
     target_level = Mobile.target_level(caster, target)
     dodge = Mobile.dodge_at_level(target, target_level, room)
 
-    chance = 30 + dodge - accuracy
+    modifier = Mobile.ability_value(target, "Dodge")
+
+    chance = 30 + modifier + ((dodge - accuracy) * 10)
+
+    chance = min(chance, 60 + modifier)
+    chance = max(chance, 10 + modifier)
 
     :rand.uniform(100) < chance
   end
@@ -421,11 +426,15 @@ defmodule ApathyDrive.Spell do
     caster_crit = Mobile.crits_at_level(caster, caster_level, room)
     target_crit = Mobile.crits_at_level(target, target_level, room)
 
-    :rand.uniform(100) < crit_chance(caster_crit, target_crit)
-  end
+    caster_modifier = Mobile.ability_value(caster, "Crits")
+    target_modifier = Mobile.ability_value(target, "Crits")
 
-  def crit_chance(caster_crit, target_crit) do
-    10 + caster_crit - target_crit
+    chance = 30 + caster_modifier - target_modifier + ((caster_crit - target_crit) * 10)
+
+    chance = min(chance, 60 + caster_modifier - target_modifier)
+    chance = max(chance, 10 + caster_modifier - target_modifier)
+
+    :rand.uniform(100) < chance
   end
 
   def calculate_healing(damage, modifier) do

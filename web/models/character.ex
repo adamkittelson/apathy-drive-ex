@@ -313,7 +313,7 @@ defmodule ApathyDrive.Character do
       cha = attribute_at_level(character, :charm, level)
       agi = agi + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Accuracy")
-      trunc(agi * (1 + (modifier / 100)))
+      agi * (1 + (modifier / 100))
     end
 
     def attribute_at_level(%Character{} = character, attribute, level) do
@@ -332,7 +332,7 @@ defmodule ApathyDrive.Character do
              total + Item.attribute_at_level(item, level, attribute)
            end)
 
-      base + from_equipment
+      (base + from_equipment) / 10
     end
 
     def attack_interval(character) do
@@ -454,7 +454,7 @@ defmodule ApathyDrive.Character do
       cha = attribute_at_level(character, :charm, level)
       int = int + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Crits")
-      trunc(int * (1 + (modifier / 100)))
+      int * (1 + (modifier / 100))
     end
 
     def die(character, room) do
@@ -490,7 +490,7 @@ defmodule ApathyDrive.Character do
       cha = attribute_at_level(character, :charm, level)
       agi = agi + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Dodge")
-      trunc(agi * (1 + (modifier / 100)))
+      agi * (1 + (modifier / 100))
     end
 
     def enough_mana_for_spell?(character, %Spell{} =  spell) do
@@ -561,7 +561,7 @@ defmodule ApathyDrive.Character do
           end
 
       modifier = weapon_bonus + ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
-      trunc(damage * (1 + (modifier / 100)))
+      damage * (1 + (modifier / 100))
     end
 
     def magical_resistance_at_level(character, level, damage_type, room) do
@@ -583,7 +583,7 @@ defmodule ApathyDrive.Character do
                total
            end)
       modifier = mr + ability_value(character, "MagicalResist") + ability_value(character, "Resist#{damage_type}")
-      trunc(resist * (modifier / 100))
+      resist * (modifier / 100)
     end
 
     def max_hp_at_level(mobile, level) do
@@ -607,7 +607,7 @@ defmodule ApathyDrive.Character do
       cha = attribute_at_level(character, :charm, level)
       int = int + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Perception")
-      trunc(int * (1 + (modifier / 100)))
+      int * (1 + (modifier / 100))
     end
 
     def physical_damage_at_level(character, level, room) do
@@ -621,7 +621,7 @@ defmodule ApathyDrive.Character do
           end
 
       modifier = weapon_bonus + ability_value(character, "ModifyDamage") + ability_value(character, "ModifyPhysicalDamage")
-      trunc(damage * (1 + (modifier / 100)))
+      damage * (1 + (modifier / 100))
     end
 
     def physical_resistance_at_level(character, level, damage_type, room) do
@@ -643,7 +643,7 @@ defmodule ApathyDrive.Character do
                total
            end)
       modifier = ac + ability_value(character, "AC") + ability_value(character, "Resist#{damage_type}")
-      trunc(resist * (modifier / 100))
+      resist * (modifier / 100)
     end
 
     def power_at_level(%Character{} = character, level) do
@@ -751,7 +751,7 @@ defmodule ApathyDrive.Character do
       cha = attribute_at_level(character, :charm, level)
       will = will + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Spellcasting")
-      trunc(will * (1 + (modifier / 100)))
+      will * (1 + (modifier / 100))
     end
 
     def spells_at_level(%Character{spells: spells}, level) do
@@ -769,7 +769,7 @@ defmodule ApathyDrive.Character do
         cha = attribute_at_level(character, :charm, level)
         agi = agi + (Party.charm_at_level(room, character, level) / 10)
         modifier = ability_value(character, "Stealth")
-        trunc(agi * (modifier / 100))
+        agi * (modifier / 100)
       end
     end
 
@@ -786,7 +786,7 @@ defmodule ApathyDrive.Character do
     def tracking_at_level(character, level, room) do
       perception = perception_at_level(character, level, room)
       modifier = ability_value(character, "Tracking")
-      trunc(perception * (modifier / 100))
+      perception * (modifier / 100)
     end
 
     def update_prompt(%Character{socket: socket} = character) do

@@ -15,14 +15,18 @@ defmodule ApathyDrive.Stealth do
     !visible?(sneaker, observer, room)
   end
 
-  def reveal(sneaker) do
-    effect = %{
-      "Revealed" => true,
-      "stack_key" => :revealed,
-      "stack_count" => 1,
-      "RemoveMessage" => "<span class='dark-grey'>You step into the shadows.</span>"
-    }
+  def reveal(sneaker, room) do
+    if Mobile.has_ability?(sneaker, "Revealed") || Mobile.stealth_at_level(sneaker, sneaker.level, room) > 0 do
+      effect = %{
+        "Revealed" => true,
+        "stack_key" => :revealed,
+        "stack_count" => 1,
+        "RemoveMessage" => "<span class='dark-grey'>You step into the shadows.</span>"
+      }
 
-    Systems.Effect.add(sneaker, effect, 4000)
+      Systems.Effect.add(sneaker, effect, 4000)
+    else
+      sneaker
+    end
   end
 end
