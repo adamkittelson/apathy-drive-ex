@@ -1,6 +1,7 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
   alias ApathyDrive.{Character, EntityItem, Item, Mobile}
+  require Logger
 
   schema "items" do
     field :name, :string
@@ -178,6 +179,7 @@ defmodule ApathyDrive.Item do
   end
 
   def random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity) do
+    Logger.info "finding random #{inspect rarity} item with grade: #{inspect grade} for slot: #{inspect slot}"
     count =
       __MODULE__
       |> grade(grade)
