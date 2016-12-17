@@ -48,9 +48,9 @@ defmodule ApathyDrive.Monster do
 
   @grades %{
     "weak" => 50,
-    "normal" => 100,
-    "strong" => 150,
-    "boss" => 200
+    "normal" => 75,
+    "strong" => 100,
+    "boss" => 125
   }
 
   def changeset(%Monster{} = monster, params \\ %{}) do
