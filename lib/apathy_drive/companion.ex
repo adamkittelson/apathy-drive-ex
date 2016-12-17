@@ -243,23 +243,26 @@ defmodule ApathyDrive.Companion do
     def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
 
     def colored_name(%Companion{name: name} = companion, %Character{} = observer) do
-      level = target_level(companion, observer)
-      companion_power = Mobile.power_at_level(companion, level)
-      observer_power = Mobile.power_at_level(observer, level)
+      companion_level = Mobile.target_level(observer, companion)
+      observer_level = Mobile.caster_level(observer, companion)
+
+      companion_power = Mobile.power_at_level(companion, companion_level)
+      observer_power = Mobile.power_at_level(observer, observer_level)
 
       color =
         cond do
-          companion_power < (observer_power * 0.75) ->
+          companion_power < (observer_power * 0.66) ->
             "teal"
-          companion_power < (observer_power * 1.5) ->
+          companion_power < (observer_power * 1.33) ->
             "chartreuse"
-          companion_power < (observer_power * 3.0) ->
+          companion_power < (observer_power * 1.66) ->
             "blue"
-          companion_power < (observer_power * 6.0) ->
+          companion_power < (observer_power * 2.00) ->
             "darkmagenta"
           :else ->
             "red"
         end
+
       "<span style='color: #{color};'>#{name}</span>"
     end
 

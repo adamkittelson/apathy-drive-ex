@@ -413,19 +413,21 @@ defmodule ApathyDrive.Monster do
     def caster_level(%Monster{}, %{level: level} = _target), do: level
 
     def colored_name(%Monster{name: name} = monster, %Character{} = observer) do
-      level = target_level(monster, observer)
-      monster_power = Mobile.power_at_level(monster, level)
-      observer_power = Mobile.power_at_level(observer, level)
+      monster_level = Mobile.target_level(observer, monster)
+      observer_level = Mobile.caster_level(observer, monster)
+
+      monster_power = Mobile.power_at_level(monster, monster_level)
+      observer_power = Mobile.power_at_level(observer, observer_level)
 
       color =
         cond do
-          monster_power < (observer_power * 0.75) ->
+          monster_power < (observer_power * 0.66) ->
             "teal"
-          monster_power < (observer_power * 1.5) ->
+          monster_power < (observer_power * 1.33) ->
             "chartreuse"
-          monster_power < (observer_power * 3.0) ->
+          monster_power < (observer_power * 1.66) ->
             "blue"
-          monster_power < (observer_power * 6.0) ->
+          monster_power < (observer_power * 2.00) ->
             "darkmagenta"
           :else ->
             "red"

@@ -387,16 +387,16 @@ $(document).ready(function() {
     if (highlighted) {
       map.lineStyle(2, 0xFFFFFF, 1);
 
-      if (room.power < (player.power * 0.75)) {
+      if (room.power < (player.power * 0.66)) {
         map.beginFill(0x008080);
       }
-      else if (room.power < (player.power * 1.5)) {
+      else if (room.power < (player.power * 1.33)) {
         map.beginFill(0x7fff00);
       }
-      else if (room.power < (player.power * 3.0)) {
+      else if (room.power < (player.power * 1.66)) {
         map.beginFill(0x0000ff);
       }
-      else if (room.power < (player.power * 6.0)) {
+      else if (room.power < (player.power * 2.0)) {
         map.beginFill(0x8b008b);
       }
       else {
@@ -406,16 +406,16 @@ $(document).ready(function() {
     else {
       map.lineStyle(2, 0x666666, 1);
 
-      if (room.power < (player.power * 0.75)) {
+      if (room.power < (player.power * 0.66)) {
         map.beginFill(0x002020);
       }
-      else if (room.power < (player.power * 1.5)) {
+      else if (room.power < (player.power * 1.33)) {
         map.beginFill(0x006400);
       }
-      else if (room.power < (player.power * 3.0)) {
+      else if (room.power < (player.power * 1.66)) {
         map.beginFill(0x00008b);
       }
-      else if (room.power < (player.power * 6.0)) {
+      else if (room.power < (player.power * 2.0)) {
         map.beginFill(0x240024);
       }
       else {

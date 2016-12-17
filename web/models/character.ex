@@ -429,19 +429,21 @@ defmodule ApathyDrive.Character do
     end
 
     def colored_name(%Character{name: name} = character, %{} = observer) do
-      level = target_level(character, observer)
-      character_power = Mobile.power_at_level(character, level)
-      observer_power = Mobile.power_at_level(observer, level)
+      character_level = Mobile.target_level(observer, character)
+      observer_level = Mobile.caster_level(observer, character)
+
+      character_power = Mobile.power_at_level(character, character_level)
+      observer_power = Mobile.power_at_level(observer, observer_level)
 
       color =
         cond do
-          character_power < (observer_power * 0.75) ->
+          character_power < (observer_power * 0.66) ->
             "teal"
-          character_power < (observer_power * 1.5) ->
+          character_power < (observer_power * 1.33) ->
             "chartreuse"
-          character_power < (observer_power * 3.0) ->
+          character_power < (observer_power * 1.66) ->
             "blue"
-          character_power < (observer_power * 6.0) ->
+          character_power < (observer_power * 2.00) ->
             "darkmagenta"
           :else ->
             "red"
@@ -455,6 +457,37 @@ defmodule ApathyDrive.Character do
       int = int + (Party.charm_at_level(room, character, level) / 10)
       modifier = ability_value(character, "Crits")
       int * (1 + (modifier / 100))
+    end
+
+    def description(%Character{} = character, %Character{} = observer) do
+      character_level = Mobile.target_level(observer, character)
+      observer_level = Mobile.caster_level(observer, character)
+
+      descriptions =
+        [
+           strength:  ["puny", "weak", "slightly built", "moderately built", "well built", "muscular", "powerfully built", "heroically proportioned", "Herculean", "physically Godlike"],
+           health:    ["frail", "thin", "healthy", "stout", "solid", "massive", "gigantic", "colossal"],
+           agility:   ["slowly", "clumsily", "slugishly", "cautiously", "gracefully", "very swiftly", "with uncanny speed", "with catlike agility", "blindingly fast"],
+           charm:     ["openly hostile and quite revolting.", "hostile and unappealing.", "quite unfriendly and aloof.", "likeable in an unassuming sort of way.", "quite attractive and pleasant to be around.", "charismatic and outgoing. You can't help but like {{target:him/her/them}}.", "extremely likeable, and fairly radiates charisma.", "incredibly charismatic. You are almost overpowered by {{target:his/her/their}} strong personality.", "overwhelmingly charismatic. You almost drop to your knees in wonder at the sight of {{target:him/her/them}}!"],
+           intellect: ["utterly moronic", "quite stupid", "slightly dull", "intelligent", "bright", "extremely clever", "brilliant", "a genius", "all-knowing"],
+           willpower: ["selfish and hot-tempered", "sullen and impulsive", "a little naive", "looks fairly knowledgeable", "looks quite experienced and wise", "has a worldly air about {{target:him/her/them}}", "seems to possess a wisdom beyond {{target:his/her/their}} years", "seem to be in an enlightened state of mind", "looks like {{target:he is/she is/they are}} one with the Gods"]
+         ]
+         |> Enum.reduce(%{}, fn {stat, stat_descriptions}, descriptions ->
+              character_stat = Mobile.attribute_at_level(character, stat, character_level)
+              observer_stat = Mobile.attribute_at_level(observer, stat, observer_level)
+
+              if character_stat < observer_stat do
+                index = trunc((character_stat - observer_stat) / 2) + div(length(stat_descriptions), 2)
+                Logger.info "#{stat} index: #{inspect index}"
+                Map.put(descriptions, stat, Enum.at(stat_descriptions, index, Enum.at(stat_descriptions, 0)))
+              else
+                index = trunc((character_stat - observer_stat) / 2) + div(length(stat_descriptions), 2)
+                Logger.info "#{stat} index: #{inspect index}"
+                Map.put(descriptions, stat, Enum.at(stat_descriptions, index, Enum.at(stat_descriptions, -1)))
+              end
+            end)
+
+      "#{character.name} is a #{descriptions[:health]}, #{descriptions[:strength]} #{character.race}. {{target:He moves/She moves/They move}} #{descriptions[:agility]}, and {{target:is/is/are}} #{descriptions[:charm]} #{character.name} appears to be #{descriptions[:intellect]} and #{descriptions[:willpower]}."
     end
 
     def die(character, room) do
