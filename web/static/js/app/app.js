@@ -53,8 +53,9 @@ chan.join().receive("error", ({reason}) => window.location = "" + window.locatio
 // });
 
 chan.on("update_room", function(message){
-  if (player.power != message.power) {
+  if (player.power != message.power || player.level != message.level) {
     player.power = message.power;
+    player.level = message.level;
     draw_map(message.room_id);
   }
   else {

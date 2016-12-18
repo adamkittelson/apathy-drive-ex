@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, Companion, EntityAbility, EntityItem, Item, ItemAbility, Mobile, Party, Race, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, Companion, EntityAbility, EntityItem, Item, ItemAbility, Monster, Mobile, Party, Race, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -622,13 +622,13 @@ defmodule ApathyDrive.Character do
     def max_hp_at_level(mobile, level) do
       base = trunc(ability_value(mobile, "HPPerHealth") * attribute_at_level(mobile, :health, level))
       modifier = ability_value(mobile, "MaxHP")
-      trunc(base * (1 + (modifier / 100)))
+      base * (1 + (modifier / 100))
     end
 
     def max_mana_at_level(mobile, level) do
       base = trunc(ability_value(mobile, "ManaPerIntellect") * attribute_at_level(mobile, :intellect, level))
       modifier = ability_value(mobile, "MaxMana")
-      trunc(base * (1 + (modifier / 100)))
+      base * (1 + (modifier / 100))
     end
 
     def party_refs(character, room) do
@@ -737,7 +737,7 @@ defmodule ApathyDrive.Character do
     def set_room_id(%Character{socket: socket, monitor_ref: monitor_ref} = character, room_id) do
       Process.demonitor(monitor_ref)
 
-      send(character.socket, {:update_character, %{room_id: room_id, power: Mobile.power_at_level(character, character.level)}})
+      send(character.socket, {:update_character, %{room_id: room_id, power: Mobile.power_at_level(character, character.level), level: character.level}})
 
       character
       |> Map.put(:room_id, room_id)
@@ -814,7 +814,7 @@ defmodule ApathyDrive.Character do
 
     def target_level(%Character{level: _caster_level}, %Character{level: target_level}), do: target_level
     def target_level(%Character{level: _caster_level}, %Companion{level: target_level}), do: target_level
-    def target_level(%Character{level: caster_level}, %{level: _target_level}), do: caster_level
+    def target_level(%Character{level: caster_level}, %Monster{level: target_level}), do: max(caster_level, target_level)
 
     def tracking_at_level(character, level, room) do
       perception = perception_at_level(character, level, room)

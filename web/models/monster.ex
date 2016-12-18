@@ -132,12 +132,6 @@ defmodule ApathyDrive.Monster do
     Map.put(monster, :spells, spells)
   end
 
-  def base_monster_power_at_level(level) do
-    base = @grades["normal"] * 6 * (1 + (level / 10))
-
-    trunc((base + ((base / 10) * (level - 1))) / 10)
-  end
-
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
     base = @grades[grade] * (1 + (level / 10))
     min = trunc(base - 20)
@@ -604,13 +598,13 @@ defmodule ApathyDrive.Monster do
         end
       base = trunc((base + ability_value(monster, "HPPerHealth")) * attribute_at_level(monster, :health, level))
       modifier = ability_value(monster, "MaxHP")
-      trunc(base * (1 + (modifier / 100)))
+      base * (1 + (modifier / 100))
     end
 
     def max_mana_at_level(mobile, level) do
       base = trunc(5 * attribute_at_level(mobile, :intellect, level))
       modifier = ability_value(mobile, "MaxMana")
-      trunc(base * (1 + (modifier / 100)))
+      base * (1 + (modifier / 100))
     end
 
     def party_refs(monster, room) do

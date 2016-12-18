@@ -189,8 +189,8 @@ defmodule ApathyDrive.Commands.Look do
                Map.put(values, key, %{color: color(val, equipped[key]), value: equipped[key]})
              end)
 
-        hits = Enum.join([score_data.hp.value, score_data.max_hp.value], "/") |> String.ljust(13)
-        mana = Enum.join([score_data.mana.value, score_data.max_mana.value], "/") |> String.ljust(13)
+        hits = Enum.join([score_data.hp.value, trunc(score_data.max_hp.value)], "/") |> String.ljust(13)
+        mana = Enum.join([score_data.mana.value, trunc(score_data.max_mana.value)], "/") |> String.ljust(13)
 
         Mobile.send_scroll(character, "<p><span class='dark-yellow'>Changes if Equipped:</span></p>")
         Mobile.send_scroll(character, "<p><span class='dark-green'>Name:</span> <span class='#{score_data.name.color}'>#{String.ljust(score_data.name.value, 13)}</span><span class='dark-green'>Level:</span> <span class='#{score_data.level.color}'>#{String.ljust(to_string(score_data.level.value), 13)}</span><span class='dark-green'>Exp:</span> <span class='#{score_data.experience.color}'>#{String.rjust(to_string(score_data.experience.value), 13)}</span></p>")

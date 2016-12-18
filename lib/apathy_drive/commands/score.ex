@@ -11,8 +11,8 @@ defmodule ApathyDrive.Commands.Score do
 
   defp show_score(%Character{} = character, room) do
     score_data = Character.score_data(character, room)
-    hits = Enum.join([score_data.hp, score_data.max_hp], "/") |> String.ljust(13)
-    mana = Enum.join([score_data.mana, score_data.max_mana], "/") |> String.ljust(13)
+    hits = Enum.join([score_data.hp, trunc(score_data.max_hp)], "/") |> String.ljust(13)
+    mana = Enum.join([score_data.mana, trunc(score_data.max_mana)], "/") |> String.ljust(13)
 
     Mobile.send_scroll(character, "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{String.ljust(score_data.name, 13)}</span><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{String.ljust(to_string(score_data.level), 13)}</span><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{String.rjust(to_string(score_data.experience), 13)}</span></p>")
     Mobile.send_scroll(character, "<p><span class='dark-green'>Race:</span> <span class='dark-cyan'>#{String.ljust(score_data.race, 13)}</span><span class='dark-green'>Physical Dmg:</span> <span class='dark-cyan'>#{String.ljust(to_string(trunc(score_data.physical_damage)), 6)}</span><span class='dark-green'>Perception:</span> <span class='dark-cyan'>#{String.rjust(to_string(trunc(score_data.perception)), 6)}</span></p>")

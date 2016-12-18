@@ -373,6 +373,12 @@ $(document).ready(function() {
 
   };
 
+  window.room_power = function(room, level) {
+    var base = Math.floor(75 * (1 + (room.level / 10))) * 6;
+
+    return (base + ((base / 10) * (Math.max(room.level, level) - 1))) / 10;
+  }
+
   var draw_room = function(map, room_id, highlighted) {
     var room = rooms[room_id];
 
@@ -384,19 +390,25 @@ $(document).ready(function() {
     var end_x;
     var end_y;
 
+    var roompower = room_power(room, player.level);
+
+    if (player.room && (player.room.id === room_id)) {
+      console.log("room power: " + roompower + ", room level: " + room.level + ", player level: " + player.level);
+    }
+
     if (highlighted) {
       map.lineStyle(2, 0xFFFFFF, 1);
 
-      if (room.power < (player.power * 0.66)) {
+      if (roompower < (player.power * 0.66)) {
         map.beginFill(0x008080);
       }
-      else if (room.power < (player.power * 1.33)) {
+      else if (roompower < (player.power * 1.33)) {
         map.beginFill(0x7fff00);
       }
-      else if (room.power < (player.power * 1.66)) {
+      else if (roompower < (player.power * 1.66)) {
         map.beginFill(0x0000ff);
       }
-      else if (room.power < (player.power * 2.0)) {
+      else if (roompower < (player.power * 2.0)) {
         map.beginFill(0x8b008b);
       }
       else {
@@ -406,16 +418,16 @@ $(document).ready(function() {
     else {
       map.lineStyle(2, 0x666666, 1);
 
-      if (room.power < (player.power * 0.66)) {
+      if (roompower < (player.power * 0.66)) {
         map.beginFill(0x002020);
       }
-      else if (room.power < (player.power * 1.33)) {
+      else if (roompower < (player.power * 1.33)) {
         map.beginFill(0x006400);
       }
-      else if (room.power < (player.power * 1.66)) {
+      else if (roompower < (player.power * 1.66)) {
         map.beginFill(0x00008b);
       }
-      else if (room.power < (player.power * 2.0)) {
+      else if (roompower < (player.power * 2.0)) {
         map.beginFill(0x240024);
       }
       else {

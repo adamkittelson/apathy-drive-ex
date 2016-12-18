@@ -29,8 +29,6 @@ defmodule ApathyDrive.MapChannel do
                     room
                     |> Map.put(:directions, directions)
                     |> Map.delete(:exits)
-                    |> Map.put(:power, Monster.base_monster_power_at_level(room.level))
-                    |> Map.delete(:level)
 
                   {area, Map.put(map, to_string(id), room)}
                 end)

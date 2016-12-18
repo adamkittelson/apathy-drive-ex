@@ -398,13 +398,13 @@ defmodule ApathyDrive.Companion do
       base = 8
       base = trunc((base + ability_value(companion, "HPPerHealth")) * attribute_at_level(companion, :health, level))
       modifier = ability_value(companion, "MaxHP")
-      trunc(base * (1 + (modifier / 100)))
+      base * (1 + (modifier / 100))
     end
 
     def max_mana_at_level(mobile, level) do
       base = trunc(4 * attribute_at_level(mobile, :intellect, level))
       modifier = ability_value(mobile, "MaxMana")
-      trunc(base * (1 + (modifier / 100)))
+      base * (1 + (modifier / 100))
     end
 
     def party_refs(companion, room) do
@@ -557,7 +557,7 @@ defmodule ApathyDrive.Companion do
 
     def target_level(%Companion{level: _caster_level}, %Character{level: target_level}), do: target_level
     def target_level(%Companion{level: _caster_level}, %Companion{level: target_level}), do: target_level
-    def target_level(%Companion{level: caster_level}, %{level: _target_level}), do: caster_level
+    def target_level(%Companion{level: caster_level}, %Monster{level: target_level}), do: max(caster_level, target_level)
 
     def tracking_at_level(companion, level, room) do
       perception = perception_at_level(companion, level, room)

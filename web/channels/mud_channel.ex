@@ -21,6 +21,7 @@ defmodule ApathyDrive.MUDChannel do
               |> assign(:room_id, room_id)
               |> assign(:character, character.id)
               |> assign(:power, Mobile.power_at_level(character, character.level))
+              |> assign(:level, character.level)
               |> assign(:monster_ref, character.ref)
 
               ApathyDrive.PubSub.subscribe("spirits:online")
@@ -72,11 +73,12 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:update_character, %{room_id: room_id, power: power}}, socket) do
+  def handle_info({:update_character, %{room_id: room_id, power: power, level: level}}, socket) do
     socket =
       socket
       |> assign(:room_id, room_id)
       |> assign(:power, power)
+      |> assign(:level, level)
 
     update_room(socket)
 
@@ -207,7 +209,7 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   defp update_room(socket) do
-    Phoenix.Channel.push socket, "update_room", %{room_id: socket.assigns[:room_id], power: socket.assigns[:power]}
+    Phoenix.Channel.push socket, "update_room", %{room_id: socket.assigns[:room_id], power: socket.assigns[:power], level: socket.assigns[:level]}
   end
 
   defp send_scroll(socket, html) do
