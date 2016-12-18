@@ -92,6 +92,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:ref, ref)
       |> generate_monster_attributes()
       |> load_spells()
+      |> load_abilities()
       |> Mobile.cpr
     end
   end
@@ -108,11 +109,21 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
     |> load_spells()
+    |> load_abilities()
     |> Mobile.cpr
   end
 
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
   def spawnable?(%Monster{}, _now), do: true
+
+  def load_abilities(%Monster{id: id} = monster) do
+    effect =
+      EntityAbility.load_abilities("monsters", id)
+      |> Map.put("stack_key", "monster")
+
+    monster
+    |> Systems.Effect.add(effect)
+  end
 
   def load_spells(%Monster{id: id} = monster) do
     entities_spells =

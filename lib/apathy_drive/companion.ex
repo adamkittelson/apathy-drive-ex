@@ -135,6 +135,15 @@ defmodule ApathyDrive.Companion do
     end
   end
 
+  def load_abilities(%Companion{monster_id: id} = companion) do
+    effect =
+      EntityAbility.load_abilities("monsters", id)
+      |> Map.put("stack_key", "monster")
+
+    companion
+    |> Systems.Effect.add(effect)
+  end
+
   def load_spells(%Companion{monster_id: id} = companion) do
     entities_spells =
       ApathyDrive.EntitySpell
@@ -176,6 +185,7 @@ defmodule ApathyDrive.Companion do
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
     |> load_spells()
+    |> load_abilities()
     |> Mobile.cpr
   end
 
