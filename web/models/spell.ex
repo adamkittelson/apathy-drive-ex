@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Spell do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{EntityAbility, Match, Mobile, Room, Spell, Stealth, Text, TimerManager}
+  alias ApathyDrive.{EntityAbility, Match, Mobile, Monster, Room, Spell, Stealth, Text, TimerManager}
   require Logger
 
   schema "spells" do
@@ -459,9 +459,9 @@ defmodule ApathyDrive.Spell do
     cond do
       Spell.has_ability?(spell, "AffectsLiving") and Mobile.has_ability?(target, "NonLiving") ->
         false
-      Spell.has_ability?(spell, "AffectsAnimals") and Mobile.has_ability?(target, "Animal") ->
+      Spell.has_ability?(spell, "AffectsAnimals") and !Mobile.has_ability?(target, "Animal") ->
         false
-      Spell.has_ability?(spell, "AffectsUndead") and Mobile.has_ability?(target, "Undead") ->
+      Spell.has_ability?(spell, "AffectsUndead") and !Mobile.has_ability?(target, "Undead") ->
         false
       Spell.has_ability?(spell, "Poison") and Mobile.has_ability?(target, "PoisonImmunity") ->
         false
