@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Attack do
   use ApathyDrive.Command
-  alias ApathyDrive.{Match, Mobile, TimerManager}
+  alias ApathyDrive.{Match, Mobile, Party, TimerManager}
 
   def keywords, do: ["a", "attack", "k", "kill"]
 
@@ -15,10 +15,10 @@ defmodule ApathyDrive.Commands.Attack do
       |> Enum.join(" ")
       |> String.downcase
 
-    target =
+      target =
       room.mobiles
       |> Map.values
-      |> Enum.reject(& &1.ref == character.ref)
+      |> Enum.reject(& &1.ref in Party.refs(room, character))
       |> Match.one(:name_contains, query)
 
     Room.update_mobile(room, character.ref, fn %{} = attacker ->

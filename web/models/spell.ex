@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Spell do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Companion, EntityAbility, Match, Mobile, Monster, Room, Spell, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Character, Companion, EntityAbility, Match, Mobile, Monster, Party, Room, Spell, Stealth, Text, TimerManager}
   require Logger
 
   schema "spells" do
@@ -101,9 +101,17 @@ defmodule ApathyDrive.Spell do
   def execute(%Room{} = room, caster_ref, %Spell{} = spell, query) when is_binary(query) do
     case get_targets(room, caster_ref, spell, query) do
       [] ->
-        room
-        |> Room.get_mobile(caster_ref)
-        |> Mobile.send_scroll("<p>Your spell would affect no one.</p>")
+        case query do
+          "" ->
+            room
+            |> Room.get_mobile(caster_ref)
+            |> Mobile.send_scroll("<p>Your spell would affect no one.</p>")
+          _ ->
+            room
+            |> Room.get_mobile(caster_ref)
+            |> Mobile.send_scroll("<p>What?</p>")
+        end
+
         room
       targets ->
         execute(room, caster_ref, spell, targets)
@@ -787,10 +795,12 @@ defmodule ApathyDrive.Spell do
   end
 
   def get_targets(%Room{} = room, caster_ref, %Spell{targets: "monster or single"}, query) do
+    caster = room.mobiles[caster_ref]
+
     match =
       room.mobiles
       |> Map.values
-      |> Enum.reject(& &1.ref == caster_ref)
+      |> Enum.reject(& &1.ref in Party.refs(room, caster))
       |> Match.one(:name_contains, query)
 
     List.wrap(match && match.ref)
