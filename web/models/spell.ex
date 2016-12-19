@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Spell do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{EntityAbility, Match, Mobile, Monster, Room, Spell, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Character, Companion, EntityAbility, Match, Mobile, Monster, Room, Spell, Stealth, Text, TimerManager}
   require Logger
 
   schema "spells" do
@@ -156,17 +156,21 @@ defmodule ApathyDrive.Spell do
 
                 target = updated_room.mobiles[target_ref]
 
-                target =
-                  if spell.kind in ["attack", "curse"] do
-                    Stealth.reveal(target, updated_room)
-                  else
-                    target
-                  end
+                if target do
+                  target =
+                    if spell.kind in ["attack", "curse"] do
+                      Stealth.reveal(target, updated_room)
+                    else
+                      target
+                    end
 
-                if target.hp < 0 do
-                  Mobile.die(target, updated_room)
+                  if target.hp < 0 do
+                    Mobile.die(target, updated_room)
+                  else
+                    put_in(updated_room.mobiles[target.ref], target)
+                  end
                 else
-                  put_in(updated_room.mobiles[target.ref], target)
+                  updated_room
                 end
               else
                 message = "#{target.name} is not affected by that ability." |> Text.capitalize_first
@@ -232,6 +236,17 @@ defmodule ApathyDrive.Spell do
       put_in(room.mobiles[target.ref], target)
     else
       apply_spell(room, caster, target, update_in(spell.abilities, &Map.delete(&1, "Dodgeable")))
+    end
+  end
+  def apply_spell(%Room{} = room, %Character{} = caster, %{} = target, %Spell{abilities: %{"Enslave" => _}} = spell) do
+    display_cast_message(room, caster, target, spell)
+
+    if companion = Character.companion(caster, room) do
+      companion
+      |> Companion.dismiss(room)
+      |> Companion.convert_for_character(target, caster)
+    else
+      Companion.convert_for_character(room, target, caster)
     end
   end
   def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do

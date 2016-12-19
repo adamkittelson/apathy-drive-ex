@@ -10,6 +10,20 @@ defmodule ApathyDrive.Companion do
 
   def dismiss(nil, %Room{} = room), do: room
   def dismiss(%Companion{} = companion, %Room{} = room) do
+    character = Companion.character(companion, room)
+
+    Mobile.send_scroll(character, "<p>You release #{Mobile.colored_name(companion, character)} from your service, and they wander off into the sunset.</p>")
+
+    room.mobiles
+    |> Map.values
+    |> Enum.reject(& &1.ref == character.ref)
+    |> Enum.each(fn
+         %Character{} = observer ->
+           Mobile.send_scroll(observer, "<p>#{Mobile.colored_name(character, observer)} releases #{Mobile.colored_name(companion, observer)} from {{target:his/her/their}} service.</p>")
+         _ ->
+           :noop
+       end)
+
     %RoomMonster{id: companion.room_monster_id}
     |> Repo.delete!
 
@@ -83,7 +97,7 @@ defmodule ApathyDrive.Companion do
 
     monster_base_power = Mobile.power_at_level(monster, 1)
 
-    diff = trunc((monster_base_power - base_power) / 6)
+    diff = trunc((monster_base_power - base_power) / 6) * 10
 
     room_monster =
       RoomMonster
