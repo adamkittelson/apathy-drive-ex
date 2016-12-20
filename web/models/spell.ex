@@ -41,7 +41,7 @@ defmodule ApathyDrive.Spell do
     "AC", "Accuracy", "Agility", "Charm", "Blind", "Charm", "Confusion", "ConfusionMessage", "ConfusionSpectatorMessage",
     "Crits", "DamageShield", "DamageShieldUserMessage", "DamageShieldTargetMessage", "DamageShieldSpectatorMessage",
     "DamageType", "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "HPRegen",
-    "Intellect", "MagicalResist", "ManaRegen", "MaxHP", "MaxMana", "ModifyDamage", "Perception", "Picklocks",
+    "Intellect", "MagicalDamage", "MagicalResist", "ManaRegen", "MaxHP", "MaxMana", "ModifyDamage", "Perception", "Picklocks", "PhysicalDamage",
     "PoisonImmunity", "RemoveMessage", "ResistCold", "ResistFire", "ResistLightning", "ResistStone", "Root", "SeeHidden",
     "Shadowform", "Silence", "Speed", "Spellcasting", "StatusMessage", "Stealth", "Strength", "Tracking", "Willpower"
   ]
