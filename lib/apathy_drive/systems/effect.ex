@@ -156,4 +156,32 @@ defmodule Systems.Effect do
     |> Enum.sum
   end
 
+  def find_by_ref(%{effects: effects}, ref) do
+    Enum.find(effects, fn {key, effect} ->
+      effect["effect_ref"] == ref
+    end)
+  end
+
+  def time_to_next_periodic_effect(%{effects: effects} = mobile) do
+    effects
+    |> Map.values
+    |> Enum.sort_by(& &1["NextEffectAt"])
+    |> List.first
+    |> case do
+         %{"NextEffectAt" => time, "effect_ref" => ref} ->
+           %{time: time - System.monotonic_time(:milliseconds), ref: ref}
+         _ ->
+           nil
+       end
+  end
+
+  def schedule_next_periodic_effect(%{ref: ref} = mobile) do
+    case time_to_next_periodic_effect(mobile) do
+      %{ref: effect_ref, time: time} ->
+        TimerManager.send_after(mobile, {:periodic_effects, time, {:periodic_effects, ref, effect_ref}})
+      nil ->
+        mobile
+    end
+  end
+
 end

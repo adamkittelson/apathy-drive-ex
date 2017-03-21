@@ -564,63 +564,27 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:apply_periodic_effects, ref}, room) do
+  def handle_info({:periodic_effects, target_ref, effect_ref}, room) do
 
-    if mobile = Room.get_mobile(room, ref) do
-      room =
-        mobile.effects
-        |> Map.values
-        |> Enum.filter(&(Map.has_key?(&1, "heal")))
-        |> Enum.reduce(room, fn(%{"heal" => heal, "effect_message" => message}, updated_room) ->
-             ability = %{
-               "kind" => "heal",
-               "ignores_global_cooldown" => true,
-               "flags" => [],
-               "instant_effects" => %{"heal" => heal},
-               "cast_message"    => %{"user" => message}
-             }
+    room = Room.update_mobile(room, target_ref, fn mobile ->
+      case Systems.Effect.find_by_ref(mobile, effect_ref) do
+        {key, %{"Interval" => interval} = effect} ->
+          effect = Map.take(effect, ["Heal", "Damage"])
+          IO.inspect(effect)
 
-             Ability.execute(updated_room, ref, ability, [ref])
-           end)
+          room
+          |> Room.update_mobile(target_ref, fn mobile ->
+            mobile
+            |> put_in([Access.key!(:effects), key, "NextEffectAt"], System.monotonic_time(:milliseconds) + interval)
+            |> Systems.Effect.schedule_next_periodic_effect
+          end)
+          |> Spell.execute(target_ref, %Spell{abilities: effect, ignores_round_cooldown?: true}, [target_ref])
+        nil ->
+          room
+      end
+    end)
 
-      room =
-        mobile.effects
-        |> Map.values
-        |> Enum.filter(&(Map.has_key?(&1, "heal_mana")))
-        |> Enum.reduce(room, fn(%{"heal_mana" => heal, "effect_message" => message}, updated_room) ->
-             ability = %{
-               "kind" => "heal",
-               "ignores_global_cooldown" => true,
-               "flags" => [],
-               "instant_effects" => %{"heal_mana" => heal},
-               "cast_message"    => %{"user" => message}
-             }
-
-             Ability.execute(updated_room, ref, ability, [ref])
-           end)
-
-      room =
-        mobile.effects
-        |> Map.values
-        |> Enum.filter(&(Map.has_key?(&1, "damage")))
-        |> Enum.reduce(room, fn(%{"damage" => damage, "effect_message" => message}, updated_room) ->
-             ability = %{
-               "kind" => "attack",
-               "ignores_global_cooldown" => true,
-               "flags" => [],
-               "instant_effects" => %{"damage" => damage},
-               "cast_message"    => %{"user" => message}
-             }
-
-             Ability.execute(updated_room, ref, ability, [ref])
-           end)
-
-      room = TimerManager.send_after(room, {:periodic_effects, 1_000, {:apply_periodic_effects, ref}})
-
-      {:noreply, room}
-    else
-      {:noreply, room}
-    end
+    {:noreply, room}
   end
 
   def handle_info({:delay_execute_script, mobile_ref, script}, room) do

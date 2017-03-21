@@ -7,7 +7,7 @@ defmodule ApathyDrive.Spell do
     field :name, :string
     field :targets, :string
     field :kind, :string
-    field :mana, :integer
+    field :mana, :integer, default: 0
     field :command, :string
     field :description, :string
     field :user_message, :string
@@ -33,14 +33,14 @@ defmodule ApathyDrive.Spell do
   @target_required_targets ["monster or single", "monster", "single"]
 
   @instant_abilities [
-    "CurePoison", "DispelMagic", "Drain", "Enslave", "Freedom", "Heal", "HealMana", "KillSpell",
+    "CurePoison", "Damage", "DispelMagic", "Drain", "Enslave", "Freedom", "Heal", "HealMana", "KillSpell",
     "MagicalDamage", "PhysicalDamage", "Poison", "RemoveSpells", "Script", "Summon", "Teleport"
   ]
 
   @duration_abilities [
     "AC", "Accuracy", "Agility", "Charm", "Blind", "Charm", "Confusion", "ConfusionMessage", "ConfusionSpectatorMessage",
     "Crits", "DamageShield", "DamageShieldUserMessage", "DamageShieldTargetMessage", "DamageShieldSpectatorMessage",
-    "DamageType", "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "HPRegen",
+    "DamageType", "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "Heal", "HPRegen",
     "Intellect", "MagicalDamage", "MagicalResist", "ManaRegen", "MaxHP", "MaxMana", "ModifyDamage", "Perception", "Picklocks", "PhysicalDamage",
     "PoisonImmunity", "RemoveMessage", "ResistCold", "ResistFire", "ResistLightning", "ResistStone", "Root", "SeeHidden",
     "Shadowform", "Silence", "Speed", "Spellcasting", "StatusMessage", "Stealth", "Strength", "Tracking", "Willpower"
@@ -296,7 +296,7 @@ defmodule ApathyDrive.Spell do
         target
         |> Map.put(:spell_shift, nil)
         |> Map.put(:spell_special, nil)
-        |> apply_duration_abilities(spell, caster, duration)
+        |> apply_duration_abilities(spell, caster, duration, room)
         |> Mobile.update_prompt
 
       room
@@ -353,6 +353,14 @@ defmodule ApathyDrive.Spell do
         Systems.Effect.remove_oldest_stack(updated_target, spell_id)
       end)
     {caster, target}
+  end
+  def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster, room) when is_float(value) do
+    Logger.info "healing #{target.name} #{inspect value}"
+    {caster, Map.put(target, :spell_shift, value)}
+  end
+  def apply_instant_ability({"Damage", value}, %{} = target, _spell, caster, room) when is_float(value) do
+    Logger.info "damaging #{target.name} #{inspect value}"
+    {caster, Map.put(target, :spell_shift, -value)}
   end
   def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster, room) do
     level = min(target.level, caster.level)
@@ -464,18 +472,87 @@ defmodule ApathyDrive.Spell do
     damage * (modifier / 100) * (Enum.random(95..105) / 100)
   end
 
-  def apply_duration_abilities(%{} = target, %Spell{} = spell, %{} = caster, duration) do
+  def apply_duration_abilities(%{} = target, %Spell{} = spell, %{} = caster, duration, room) do
     effects =
       spell.abilities
       |> Map.take(@duration_abilities)
       |> Map.put("stack_key", spell.id)
       |> Map.put("stack_count", 1)
+      |> process_duration_abilities(target, caster, spell, room)
+      |> Map.put("effect_ref", make_ref())
 
     if message = effects["StatusMessage"] do
       Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
     end
+    
+    target
+    |> Systems.Effect.add(effects, duration)
+    |> Systems.Effect.schedule_next_periodic_effect
+  end
 
-    Systems.Effect.add(target, effects, duration)
+  def process_duration_abilities(effects, target, caster, spell, room) do
+    effects
+    |> Enum.reduce(effects, fn effect, updated_effects ->
+         process_duration_ability(effect, updated_effects, target, caster, spell, room)
+       end)
+  end
+
+  def process_duration_ability({"PhysicalDamage", modifier}, effects, target, caster, spell, room) do
+    caster_level = Mobile.caster_level(caster, target)
+    target_level = Mobile.target_level(caster, target)
+
+    damage = Mobile.physical_damage_at_level(caster, caster_level, room)
+    resist = Mobile.physical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
+
+    damage = (damage - resist) * (modifier / 100)
+
+    damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
+
+    effects
+    |> Map.delete("PhysicalDamage")
+    |> Map.put("Damage", damage_percent)
+    |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
+  end
+  def process_duration_ability({"MagicalDamage", modifier}, effects, target, caster, spell, room) do
+    caster_level = Mobile.caster_level(caster, target)
+    target_level = Mobile.target_level(caster, target)
+
+    damage = Mobile.magical_damage_at_level(caster, caster_level, room)
+    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
+
+    damage = (damage - resist) * (modifier / 100)
+
+    damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
+
+    effects
+    |> Map.delete("MagicalDamage")
+    |> Map.put("Damage", damage_percent)
+    |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
+  end
+  def process_duration_ability({"Heal", value}, effects, target, caster, spell, room) do
+    level = min(target.level, caster.level)
+    healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
+    percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
+
+    effects
+    |> Map.put("Heal", percentage_healed)
+    |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
+  end
+  def process_duration_ability({"HealMana", value}, effects, target, caster, spell, room) do
+    level = min(target.level, caster.level)
+    healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
+    percentage_healed = calculate_healing(healing, value) / Mobile.max_mana_at_level(target, level)
+
+    effects
+    |> Map.put("HealMana", percentage_healed)
+    |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
+  end
+  def process_duration_ability({ability, value}, effects, _target, _caster, _spell, _room) do
+    put_in(effects[ability], value)
   end
 
   def affects_target?(%{} = target, %Spell{} = spell) do
@@ -718,6 +795,8 @@ defmodule ApathyDrive.Spell do
              Mobile.send_scroll(mobile, target_cast_message(spell, caster, target, mobile))
            mobile && not is_nil(spell.spectator_message) ->
              Mobile.send_scroll(mobile, spectator_cast_message(spell, caster, target, mobile))
+           true ->
+             :noop
          end
        end)
   end
