@@ -115,7 +115,7 @@ defmodule ApathyDrive.CompanionAI do
       spell
     end
   end
-  def random_spell([], companion), do: nil
+  def random_spell([], _companion), do: nil
   def random_spell(spells, companion) do
     spells
     |> Enum.reject(&(Spell.on_cooldown?(companion, &1)))

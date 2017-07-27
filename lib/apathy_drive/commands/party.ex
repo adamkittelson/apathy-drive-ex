@@ -5,7 +5,7 @@ defmodule ApathyDrive.Commands.Party do
   def keywords, do: ["party", "par"]
 
   # party leader
-  def execute(%Room{} = room, %Character{ref: ref, leader: ref, invitees: invitees} = character, _arguments) do
+  def execute(%Room{} = room, %Character{ref: ref, leader: ref, invitees: _invitees} = character, _arguments) do
     show_party_members(character, room)
     room
   end

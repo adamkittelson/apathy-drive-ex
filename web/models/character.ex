@@ -310,8 +310,8 @@ defmodule ApathyDrive.Character do
 
     def accuracy_at_level(character, level, room) do
       agi = attribute_at_level(character, :agility, level)
-      cha = attribute_at_level(character, :charm, level)
-      agi = agi + (Party.charm_at_level(room, character, level) / 10)
+      cha = Party.charm_at_level(room, character, level)
+      agi = agi + (cha / 10)
       modifier = ability_value(character, "Accuracy")
       agi * (1 + (modifier / 100))
     end
@@ -396,7 +396,7 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def auto_attack_target(%Character{attack_target: target} = character, room, _attack_spell) do
+    def auto_attack_target(%Character{attack_target: target} = _character, room, _attack_spell) do
       if room.mobiles[target], do: target
     end
 
@@ -453,8 +453,8 @@ defmodule ApathyDrive.Character do
 
     def crits_at_level(character, level, room) do
       int = attribute_at_level(character, :intellect, level)
-      cha = attribute_at_level(character, :charm, level)
-      int = int + (Party.charm_at_level(room, character, level) / 10)
+      cha = Party.charm_at_level(room, character, level)
+      int = int + (cha / 10)
       modifier = ability_value(character, "Crits")
       int * (1 + (modifier / 100))
     end
@@ -520,8 +520,8 @@ defmodule ApathyDrive.Character do
 
     def dodge_at_level(character, level, room) do
       agi = attribute_at_level(character, :agility, level)
-      cha = attribute_at_level(character, :charm, level)
-      agi = agi + (Party.charm_at_level(room, character, level) / 10)
+      cha = Party.charm_at_level(room, character, level)
+      agi = agi + (cha / 10)
       modifier = ability_value(character, "Dodge")
       agi * (1 + (modifier / 100))
     end
@@ -577,11 +577,7 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: hp}) when hp >= 0.4, do: "heavily wounded"
     def hp_description(%Character{hp: hp}) when hp >= 0.2, do: "severely wounded"
     def hp_description(%Character{hp: hp}) when hp >= 0.1, do: "critically wounded"
-    def hp_description(%Character{hp: hp}), do: "very critically wounded"
-
-    def look_name(%Character{name: name}) do
-      "<span class='dark-cyan'>#{name}</span>"
-    end
+    def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
     def magical_damage_at_level(character, level, room) do
       damage = attribute_at_level(character, :intellect, level) + (Party.charm_at_level(room, character, level) / 10)
@@ -637,8 +633,8 @@ defmodule ApathyDrive.Character do
 
     def perception_at_level(character, level, room) do
       int = attribute_at_level(character, :intellect, level)
-      cha = attribute_at_level(character, :charm, level)
-      int = int + (Party.charm_at_level(room, character, level) / 10)
+      cha = Party.charm_at_level(room, character, level)
+      int = int + (cha / 10)
       modifier = ability_value(character, "Perception")
       int * (1 + (modifier / 100))
     end
@@ -684,7 +680,7 @@ defmodule ApathyDrive.Character do
       |> Enum.reduce(0, & &2 + Mobile.attribute_at_level(character, &1, level))
     end
 
-    def regenerate_hp_and_mana(%Character{hp: hp, mana: mana} = character, room) do
+    def regenerate_hp_and_mana(%Character{hp: _hp, mana: mana} = character, room) do
       max_hp = max_hp_at_level(character, character.level)
       max_mana = max_mana_at_level(character, character.level)
 
@@ -774,15 +770,15 @@ defmodule ApathyDrive.Character do
       |> silenced(character, room)
     end
     def silenced(nil, %Character{}, %Room{}), do: false
-    def silenced(%{}, %Character{} = character, %Room{} = room) do
+    def silenced(%{}, %Character{} = character, %Room{}) do
       Mobile.send_scroll(character, "<p><span class='cyan'>You are silenced!</span></p>")
       true
     end
 
     def spellcasting_at_level(character, level, room) do
       will = attribute_at_level(character, :willpower, level)
-      cha = attribute_at_level(character, :charm, level)
-      will = will + (Party.charm_at_level(room, character, level) / 10)
+      cha = Party.charm_at_level(room, character, level) 
+      will = will + (cha / 10)
       modifier = ability_value(character, "Spellcasting")
       will * (1 + (modifier / 100))
     end

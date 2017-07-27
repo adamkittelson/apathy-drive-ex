@@ -22,7 +22,7 @@ defmodule ApathyDrive.Commands.List do
     |> Mobile.send_scroll("<p><span class='dark-cyan'>───────────────────────────────────────────────────────────────────────────</span></p>")
 
     items
-    |> Enum.each(fn(%Item{name: name} = item) ->
+    |> Enum.each(fn(%Item{name: _name} = item) ->
         can_use? = if Character.can_equip_item?(character, item), do: "", else: " (You can't use)"
         item
         |> Map.put(:level, character.level)

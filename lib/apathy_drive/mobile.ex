@@ -21,7 +21,6 @@ defprotocol ApathyDrive.Mobile do
   def heartbeat(mobile, room)
   def held(mobile)
   def hp_description(mobile)
-  def look_name(mobile)
   def magical_damage_at_level(mobile, level, room)
   def magical_resistance_at_level(mobile, level, damage_type, room)
   def max_hp_at_level(mobile, level)

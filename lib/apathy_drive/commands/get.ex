@@ -32,7 +32,7 @@ defmodule ApathyDrive.Commands.Get do
                   |> Match.one(:keyword_starts_with, item)
 
     case actual_item || visible_item || hidden_item do
-      %Item{level: level, entities_items_id: entities_items_id} = item ->
+      %Item{level: _level, entities_items_id: entities_items_id} = item ->
 
         %EntityItem{id: entities_items_id}
         |> Ecto.Changeset.change(%{assoc_table: "characters", assoc_id: character.id})

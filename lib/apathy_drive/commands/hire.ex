@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Hire do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Companion, Monster, Party, Repo, RoomMonster, TimerManager}
+  alias ApathyDrive.{Character, Companion, Monster, Party, Repo, TimerManager}
 
   def keywords, do: ["hire"]
 

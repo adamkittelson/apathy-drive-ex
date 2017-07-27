@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Character, Commands, Companion, LairMonster, LairSpawning, Match, Mobile, Monster, MonsterSpawning,
-                     PubSub, Repo, Room, RoomSupervisor, RoomUnity, Spell, TimerManager, Ability, Presence}
+  alias ApathyDrive.{Character, Commands, Companion, LairMonster, Match, Mobile, Monster, MonsterSpawning,
+                     PubSub, Repo, Room, RoomSupervisor, RoomUnity, Spell, TimerManager, Presence}
   use Timex
   require Logger
 
@@ -29,14 +29,6 @@ defmodule ApathyDrive.RoomServer do
 
   def system(room, mobile, args) do
     GenServer.cast(room, {:system, mobile, args})
-  end
-
-  def convert?(room, unity) do
-    GenServer.cast(room, {:convert?, unity})
-  end
-
-  def greet(room, greeter, query) do
-    GenServer.cast(room, {:greet, greeter, query})
   end
 
   def attack(room, attacker, target) do
@@ -278,24 +270,6 @@ defmodule ApathyDrive.RoomServer do
   def handle_cast({:system, mobile, command}, %Room{} = room) do
     room = Commands.System.execute(room, mobile, command)
 
-    {:noreply, room}
-  end
-
-  def handle_cast({:convert?, unity}, %Room{room_unity: %RoomUnity{essences: essences, controlled_by: controlled_by}} = room) when unity != controlled_by do
-    if LairSpawning.spawned_monster_count(room.id) == 0 do
-      room =
-        put_in(room.room_unity.essences, Map.merge(essences, %{controlled_by || "default" => 0, unity => room.default_essence}))
-        |> Room.update_controlled_by
-
-      {:noreply, room}
-    else
-      {:noreply, room}
-    end
-  end
-  def handle_cast({:convert?, _unity}, room), do: {:noreply, room}
-
-  def handle_cast({:greet, greeter, query}, %Room{} = room) do
-    Commands.Greet.execute(room, greeter, query)
     {:noreply, room}
   end
 

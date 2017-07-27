@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Dismiss do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Companion, Monster, Repo, RoomMonster, TimerManager}
+  alias ApathyDrive.{Character, Companion}
 
   def keywords, do: ["dimiss", "fire"]
 

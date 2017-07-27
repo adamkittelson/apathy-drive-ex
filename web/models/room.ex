@@ -726,10 +726,4 @@ defmodule ApathyDrive.Room do
   defp sound_direction("down"),    do: "below you"
   defp sound_direction(direction), do: "to the #{direction}"
 
-  defp jitter(time) do
-    time
-    |> :rand.uniform
-    |> Kernel.+(time)
-  end
-
 end

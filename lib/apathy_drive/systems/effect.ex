@@ -1,7 +1,6 @@
 defmodule Systems.Effect do
   use Timex
   alias ApathyDrive.{Mobile, TimerManager}
-  import TimerManager, only: [seconds: 1]
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
     add_effect(entity, key + 1, effect)
@@ -157,12 +156,12 @@ defmodule Systems.Effect do
   end
 
   def find_by_ref(%{effects: effects}, ref) do
-    Enum.find(effects, fn {key, effect} ->
+    Enum.find(effects, fn {_key, effect} ->
       effect["effect_ref"] == ref
     end)
   end
 
-  def time_to_next_periodic_effect(%{effects: effects} = mobile) do
+  def time_to_next_periodic_effect(%{effects: effects} = _mobile) do
     effects
     |> Map.values
     |> Enum.sort_by(& &1["NextEffectAt"])

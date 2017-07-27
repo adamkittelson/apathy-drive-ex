@@ -3,7 +3,7 @@ defmodule ApathyDrive.ExAdmin.Monster do
 
   register_resource ApathyDrive.Monster do
 
-    form monster do
+    form _monster do
       inputs "Spells" do
         content do
           ~s(

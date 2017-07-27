@@ -211,8 +211,8 @@ defmodule ApathyDrive.Companion do
 
     def accuracy_at_level(companion, level, room) do
       agi = attribute_at_level(companion, :agility, level)
-      cha = attribute_at_level(companion, :charm, level)
-      agi = agi + (Party.charm_at_level(room, companion, level) / 10)
+      cha = Party.charm_at_level(room, companion, level)
+      agi = agi + (cha / 10)
       modifier = ability_value(companion, "Accuracy")
       agi * (1 + (modifier / 100))
     end
@@ -241,7 +241,7 @@ defmodule ApathyDrive.Companion do
       |> Map.put(:ignores_round_cooldown?, true)
     end
 
-    def attacks_per_round(companion) do
+    def attacks_per_round(_companion) do
       1
     end
 
@@ -318,8 +318,8 @@ defmodule ApathyDrive.Companion do
 
     def crits_at_level(companion, level, room) do
       int = attribute_at_level(companion, :intellect, level)
-      cha = attribute_at_level(companion, :charm, level)
-      int = int + (Party.charm_at_level(room, companion, level) / 10)
+      cha = Party.charm_at_level(room, companion, level)
+      int = int + (cha / 10)
       modifier = ability_value(companion, "Crits")
       int * (1 + (modifier / 100))
     end
@@ -343,8 +343,8 @@ defmodule ApathyDrive.Companion do
 
     def dodge_at_level(companion, level, room) do
       agi = attribute_at_level(companion, :agility, level)
-      cha = attribute_at_level(companion, :charm, level)
-      agi = agi + (Party.charm_at_level(room, companion, level) / 10)
+      cha = Party.charm_at_level(room, companion, level)
+      agi = agi + (cha / 10)
       modifier = ability_value(companion, "Dodge")
       agi * (1 + (modifier / 100))
     end
@@ -404,7 +404,7 @@ defmodule ApathyDrive.Companion do
     def hp_description(%Companion{hp: hp}) when hp >= 0.4, do: "heavily wounded"
     def hp_description(%Companion{hp: hp}) when hp >= 0.2, do: "severely wounded"
     def hp_description(%Companion{hp: hp}) when hp >= 0.1, do: "critically wounded"
-    def hp_description(%Companion{hp: hp}), do: "very critically wounded"
+    def hp_description(%Companion{hp: _hp}), do: "very critically wounded"
 
     def magical_damage_at_level(companion, level, room) do
       damage = attribute_at_level(companion, :intellect, level) + (Party.charm_at_level(room, companion, level) / 10)
@@ -437,8 +437,8 @@ defmodule ApathyDrive.Companion do
 
     def perception_at_level(companion, level, room) do
       int = attribute_at_level(companion, :intellect, level)
-      cha = attribute_at_level(companion, :charm, level)
-      int = int + (Party.charm_at_level(room, companion, level) / 10)
+      cha = Party.charm_at_level(room, companion, level)
+      int = int + (cha / 10)
       modifier = ability_value(companion, "Perception")
       int * (1 + (modifier / 100))
     end
@@ -460,7 +460,7 @@ defmodule ApathyDrive.Companion do
       |> Enum.reduce(0, & &2 + Mobile.attribute_at_level(companion, &1, level))
     end
 
-    def regenerate_hp_and_mana(%Companion{hp: hp, mana: mana} = companion, room) do
+    def regenerate_hp_and_mana(%Companion{hp: _hp, mana: mana} = companion, room) do
       max_hp = max_hp_at_level(companion, companion.level)
       max_mana = max_mana_at_level(companion, companion.level)
 
@@ -541,15 +541,15 @@ defmodule ApathyDrive.Companion do
       |> silenced(companion, room)
     end
     def silenced(nil, %Companion{}, %Room{}), do: false
-    def silenced(%{}, %Companion{} = companion, %Room{} = room) do
+    def silenced(%{}, %Companion{} = companion, %Room{}) do
       Mobile.send_scroll(companion, "<p><span class='cyan'>You are silenced!</span></p>")
       true
     end
 
     def spellcasting_at_level(companion, level, room) do
       will = attribute_at_level(companion, :willpower, level)
-      cha = attribute_at_level(companion, :charm, level)
-      will = will + (Party.charm_at_level(room, companion, level) / 10)
+      cha = Party.charm_at_level(room, companion, level)
+      will = will + (cha / 10)
       modifier = ability_value(companion, "Spellcasting")
       will * (1 + (modifier / 100))
     end

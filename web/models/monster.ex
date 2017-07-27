@@ -264,7 +264,7 @@ defmodule ApathyDrive.Monster do
   def pity_bonus(%Monster{grade: "strong"}), do: 1_000
   def pity_bonus(%Monster{grade: "boss"}), do: 10_000
 
-  def random_loot_rarity(%Monster{grade: "weak"} = monster, pity_modifier) do
+  def random_loot_rarity(%Monster{grade: "weak"}, pity_modifier) do
     case :rand.uniform(1_000_000 - pity_modifier) do
       roll when roll <= 10 ->
         "legendary"
@@ -278,7 +278,7 @@ defmodule ApathyDrive.Monster do
         "common"
     end
   end
-  def random_loot_rarity(%Monster{grade: "normal"} = monster, pity_modifier) do
+  def random_loot_rarity(%Monster{grade: "normal"}, pity_modifier) do
     case :rand.uniform(1_000_000 - pity_modifier) do
       roll when roll <= 100 ->
         "legendary"
@@ -292,7 +292,7 @@ defmodule ApathyDrive.Monster do
         "common"
     end
   end
-  def random_loot_rarity(%Monster{grade: "strong"} = monster, pity_modifier) do
+  def random_loot_rarity(%Monster{grade: "strong"}, pity_modifier) do
     case :rand.uniform(1_000_000 - pity_modifier) do
       roll when roll <= 1000 ->
         "legendary"
@@ -304,7 +304,7 @@ defmodule ApathyDrive.Monster do
         "uncommon"
     end
   end
-  def random_loot_rarity(%Monster{grade: "boss"} = monster, pity_modifier) do
+  def random_loot_rarity(%Monster{grade: "boss"}, pity_modifier) do
     case :rand.uniform(1_000_000 - pity_modifier) do
       roll when roll <= 10_000 ->
         "legendary"
@@ -402,7 +402,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:ignores_round_cooldown?, true)
     end
 
-    def attacks_per_round(monster) do
+    def attacks_per_round(_monster) do
       1
     end
 
@@ -577,13 +577,9 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: hp}) when hp >= 0.4, do: "heavily wounded"
     def hp_description(%Monster{hp: hp}) when hp >= 0.2, do: "severely wounded"
     def hp_description(%Monster{hp: hp}) when hp >= 0.1, do: "critically wounded"
-    def hp_description(%Monster{hp: hp}), do: "very critically wounded"
+    def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
-    def look_name(%Monster{name: name}) do
-      "<span class='dark-cyan'>#{name}</span>"
-    end
-
-    def magical_damage_at_level(monster, level, room) do
+    def magical_damage_at_level(monster, level, _room) do
       damage = attribute_at_level(monster, :intellect, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyMagicalDamage")
       damage * (1 + (modifier / 100))
@@ -630,7 +626,7 @@ defmodule ApathyDrive.Monster do
       int * (1 + (modifier / 100))
     end
 
-    def physical_damage_at_level(monster, level, room) do
+    def physical_damage_at_level(monster, level, _room) do
       damage = attribute_at_level(monster, :strength, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyPhysicalDamage")
       damage * (1 + (modifier / 100))
@@ -649,15 +645,14 @@ defmodule ApathyDrive.Monster do
 
     def heartbeat(%Monster{} = monster, %Room{} = room) do
       Room.update_mobile(room, monster.ref, fn monster ->
-        monster =
-          monster
-          |> regenerate_hp_and_mana(room)
-          |> TimerManager.send_after({:heartbeat, Mobile.round_length_in_ms(monster), {:heartbeat, monster.ref}})
+        monster
+        |> regenerate_hp_and_mana(room)
+        |> TimerManager.send_after({:heartbeat, Mobile.round_length_in_ms(monster), {:heartbeat, monster.ref}})
       end)
       |> ApathyDrive.Aggression.react(monster.ref)
     end
 
-    def regenerate_hp_and_mana(%Monster{hp: hp, mana: mana} = monster, room) do
+    def regenerate_hp_and_mana(%Monster{hp: _hp, mana: mana} = monster, room) do
       max_hp = max_hp_at_level(monster, monster.level)
       max_mana = max_mana_at_level(monster, monster.level)
 
@@ -738,7 +733,7 @@ defmodule ApathyDrive.Monster do
       |> silenced(monster, room)
     end
     def silenced(nil, %Monster{}, %Room{}), do: false
-    def silenced(%{}, %Monster{} = monster, %Room{} = room) do
+    def silenced(%{}, %Monster{} = monster, %Room{}) do
       Mobile.send_scroll(monster, "<p><span class='cyan'>You are silenced!</span></p>")
       true
     end
@@ -778,7 +773,7 @@ defmodule ApathyDrive.Monster do
 
     def target_level(%Monster{level: monster_level}, %Monster{level: _target_level}), do: monster_level
     def target_level(%Monster{level: monster_level}, %{level: target_level}) when target_level > monster_level, do: target_level
-    def target_level(%Monster{level: monster_level}, %{level: target_level}), do: monster_level
+    def target_level(%Monster{level: monster_level}, %{level: _target_level}), do: monster_level
 
     def tracking_at_level(monster, level, room) do
       perception = perception_at_level(monster, level, room)

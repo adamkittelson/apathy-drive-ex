@@ -112,7 +112,7 @@ defmodule ApathyDrive.Item do
      "Legs", "Neck", "Off-Hand", "Torso", "Waist", "Weapon Hand", "Wrist", "Wrist"]
   end
 
-  def slots_below_power(%Character{equipment: equipment, inventory: inventory, level: level} = character, power) do
+  def slots_below_power(%Character{equipment: equipment, inventory: inventory} = character, power) do
     upgradeable_slots =
       slots()
       |> Enum.reduce(equipment ++ inventory, fn slot, mapped_equipment ->

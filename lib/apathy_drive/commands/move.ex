@@ -84,7 +84,7 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
-  def party_move(room, %{leader: ref, ref: ref} = character, %{"direction" => direction} = room_exit) do
+  def party_move(room, %{leader: ref, ref: ref} = _character, %{"direction" => direction} = room_exit) do
     room.mobiles
     |> Map.values
     |> Enum.reduce(room, fn
@@ -98,7 +98,7 @@ defmodule ApathyDrive.Commands.Move do
        end)
   end
 
-  def party_move(room, character, _room_exit) do
+  def party_move(room, _character, _room_exit) do
     room
   end
 

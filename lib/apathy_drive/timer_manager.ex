@@ -1,5 +1,5 @@
 defmodule ApathyDrive.TimerManager do
-  alias ApathyDrive.{Mobile, Room, RoomServer}
+  alias ApathyDrive.{Room, RoomServer}
   require Logger
 
   def seconds(seconds), do: seconds |> :timer.seconds |> trunc
@@ -33,7 +33,7 @@ defmodule ApathyDrive.TimerManager do
   def apply_timers(%Room{} = room, mobile_ref) do
     now = Timex.Time.now |> Timex.Time.to_milliseconds
 
-    Room.update_mobile(room, mobile_ref, fn %{timers: timers} = mobile ->
+    Room.update_mobile(room, mobile_ref, fn %{timers: timers} ->
       timers
       |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
            if send_at < now do

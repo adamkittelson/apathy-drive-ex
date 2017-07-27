@@ -14,7 +14,7 @@ defmodule ApathyDrive.Commands.Abilities do
   def display_abilities(%Character{} = character) do
     character
     |> Mobile.spells_at_level(character.level)
-    |> Enum.each(fn(%{name: name, command: command, mana: mana} = spell) ->
+    |> Enum.each(fn(%{name: name, command: command, mana: _mana} = spell) ->
          mana_cost =
            spell
            |> Spell.mana_cost_at_level(character.level)

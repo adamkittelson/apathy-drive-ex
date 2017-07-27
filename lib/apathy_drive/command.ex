@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Ability, Commands, Monster, Match, Mobile, Room, RoomServer, Spell}
+  alias ApathyDrive.{Commands, Monster, Match, Mobile, Room, RoomServer, Spell}
 
   @callback execute(%Room{}, %Monster{}, list) :: %Room{}
 
