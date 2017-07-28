@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Join do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, TimerManager}
+  alias ApathyDrive.{Character, Party}
 
   def keywords, do: ["join", "follow"]
 
@@ -8,7 +8,7 @@ defmodule ApathyDrive.Commands.Join do
     query = Enum.join(arguments)
 
     case Room.find_mobile_in_room(room, character, query) do
-      %Character{name: name, invitees: invitees} = target ->
+      %Character{invitees: invitees} = target ->
         cond do
           Party.size(room, target) > 5 ->
             Mobile.send_scroll(character, "<p>#{Mobile.colored_name(target, character)}'s party is already full.</p>")
@@ -30,7 +30,7 @@ defmodule ApathyDrive.Commands.Join do
             room
         end
       mobile ->
-        Mobile.send_scroll(character, "<p>You don't see #{query} here!</p>")
+        Mobile.send_scroll(mobile, "<p>You don't see #{query} here!</p>")
         room
     end
   end

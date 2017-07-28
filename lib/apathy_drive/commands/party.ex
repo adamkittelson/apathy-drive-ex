@@ -28,7 +28,7 @@ defmodule ApathyDrive.Commands.Party do
     Enum.each(invitees, &show_invitee(character, room.mobiles[&1]))
   end
 
-  defp show_invitee(character, nil), do: :noop
+  defp show_invitee(_character, nil), do: :noop
   defp show_invitee(character, invitee) do
     data = %{
       name: String.ljust(invitee.name, 13),

@@ -628,69 +628,6 @@ defmodule ApathyDrive.Room do
     end
   end
 
-  def update_essence(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
-    room = update_essence_targets(room)
-
-    room =
-      essences
-      |> Enum.reduce(room, fn({essence, amount}, %Room{room_unity: %RoomUnity{essence_targets: essence_targets}} = updated_room) ->
-           target = get_in(essence_targets, [essence, "target"])
-           difference = target - amount
-           amount_to_shift = difference / 5 / 60 * Room.essence_update_interval(room) / 1000
-
-           percent_difference = if amount == 0, do: 1, else: abs(difference) / amount
-
-           cond do
-             percent_difference == 0 or amount_to_shift == 0 ->
-               updated_room
-             percent_difference <= 0.10 ->
-               updated_room =
-                 put_in(updated_room.room_unity.essences[essence], target)
-             true ->
-               amount_to_shift =
-                 if amount_to_shift > 0 do
-                   max(1, amount_to_shift)
-                 else
-                   min(-1, amount_to_shift)
-                 end
-
-               update_in(updated_room.room_unity.essences[essence], &(max(0, &1 + amount_to_shift)))
-           end
-         end)
-      |> Room.update_controlled_by
-
-    room =
-      if Enum.any?(room.room_unity.essences, &report_essence?(&1, room.room_unity.reported_essences, room.room_unity.essence_targets)) do
-        Room.report_essence(room)
-      else
-        room
-      end
-
-    essence =
-      %{
-        room_id: room.id,
-        good: trunc(room.room_unity.essences["good"]),
-        default: trunc(room.room_unity.essences["default"]),
-        evil: trunc(room.room_unity.essences["evil"]),
-      }
-
-    Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
-      Room.update_mobile(updated_room, ref, fn %{socket: socket} = mobile ->
-
-        if socket, do: send(socket, {:update_room_essence, essence})
-
-        room_essences =
-          essence
-          |> Map.drop([:room_id])
-          |> Enum.reduce(%{}, fn({k,v}, re) -> Map.put(re, to_string(k), v) end)
-
-        mobile
-        |> Map.put(:room_essences, room_essences)
-        |> Monster.update_essence(updated_room)
-      end)
-    end)
-  end
-
   def report_essence?({essence, amount}, last_reported_essences, targets) do
     case last_reported_essences[essence] do
       nil ->

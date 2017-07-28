@@ -897,8 +897,8 @@ defmodule ApathyDrive.Spell do
     List.wrap(match && match.ref)
   end
   def get_targets(%Room{} = room, caster_ref, %Spell{targets: "full party area"}, _query) do
-    caster_ref
-    |> Room.get_mobile
+    room
+    |> Room.get_mobile(caster_ref)
     |> Mobile.party_refs(room)
   end
   def get_targets(%Room{} = room, caster_ref, %Spell{targets: "full attack area"}, _query) do

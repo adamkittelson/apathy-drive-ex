@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Doors, Item, Match, Mobile, Monster, RoomServer, Stealth}
+  alias ApathyDrive.{Character, Doors, Item, Match, Mobile, RoomServer, Stealth}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
@@ -218,32 +218,13 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  defp value(pre, post) when pre > post and is_float(pre) and is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}(<span class='dark-red'>#{Float.to_string(post - pre, decimals: 2)}</span>)"
-  end
-  defp value(pre, post) when pre > post do
-    "#{post}(<span class='dark-red'>#{post - pre}</span>)"
-  end
-  defp value(pre, post) when pre < post and is_float(pre) and is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}(<span class='green'>+#{Float.to_string(post - pre, decimals: 2)}</span>)"
-  end
-  defp value(pre, post) when pre < post do
-    "#{post}(<span class='green'>+#{post - pre}</span>)"
-  end
-  defp value(_pre, post) when is_float(post) do
-    "#{Float.to_string(post, decimals: 2)}"
-  end
-  defp value(_pre, post) do
-    "#{post}"
-  end
-
   defp color(pre, post) when pre > post do
     "dark-red"
   end
   defp color(pre, post) when pre < post do
     "green"
   end
-  defp color(_pre, post) do
+  defp color(_pre, _post) do
     "dark-cyan"
   end
 

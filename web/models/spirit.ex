@@ -4,7 +4,7 @@ defmodule Spirit do
 
   require Logger
   import Comeonin.Bcrypt
-  alias ApathyDrive.{Monster, PubSub, Room}
+  alias ApathyDrive.{Mobile, Monster, PubSub, Room}
 
   @idle_threshold 60
 
@@ -97,11 +97,11 @@ defmodule Spirit do
       |> ApathyDrive.Level.advance
 
     if spirit.level > level do
-      Monster.send_scroll monster, "<p>You ascend to level #{spirit.level}!"
+      Mobile.send_scroll monster, "<p>You ascend to level #{spirit.level}!"
     end
 
     if spirit.level < level do
-      Monster.send_scroll monster, "<p>You fall to level #{spirit.level}!"
+      Mobile.send_scroll monster, "<p>You fall to level #{spirit.level}!"
     end
 
     Map.put(monster, :spirit, spirit)

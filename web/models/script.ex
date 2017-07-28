@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Mobile, Monster, MonsterTemplate, Room, RoomServer, Spell}
+  alias ApathyDrive.{Character, Mobile, Monster, MonsterTemplate, Room, RoomServer, Spell}
 
   schema "scripts" do
     field :instructions, ApathyDrive.JSONB, default: []
@@ -79,14 +79,14 @@ defmodule ApathyDrive.Script do
     room
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"give_flag" => %{"flag" => flag, "value" => value}}, script) do
-    monster =
-      put_in(monster.spirit.flags[flag], value)
-      |> Monster.save
+  def execute_instruction(%Room{} = room, %Character{} = character, %{"give_flag" => %{"flag" => flag, "value" => value}}, script) do
+    room =
+      Room.update_mobile(room, character.ref, fn(char) ->
+        update_in(char.flags, &Map.put(&1, flag, value))
+        |> Repo.save!
+      end)
 
-    room = put_in(room.monsters[monster.ref], monster)
-
-    execute_script(room, monster, script)
+    execute_script(room, room.mobiles[character.ref], script)
   end
 
   def execute_instruction(%Room{} = room, %{spirit: nil}, %{"flag_equals" => %{"flag" => _flag, "value" => _value}}, _script) do
@@ -134,14 +134,15 @@ defmodule ApathyDrive.Script do
     # end
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"take_item" => %{"failure_message" => message, "item" => item_template_id}}, script) do
-    if monster = Monster.remove_item?(monster, item_template_id) do
-      Monster.save(monster)
-      execute_script(room, monster, script)
-    else
-      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
-      room
-    end
+  def execute_instruction(%Room{} = room, %{} = monster, %{"take_item" => %{"failure_message" => _message, "item" => _item_template_id}}, script) do
+    execute_script(room, monster, script)
+    # if monster = Monster.remove_item?(monster, item_template_id) do
+    #   Monster.save(monster)
+    #   execute_script(room, monster, script)
+    # else
+    #   Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+    #   room
+    # end
   end
 
   def execute_instruction(%Room{} = room, %{delayed: false} = monster, %{"add_delay" => delay}, script) do
@@ -166,35 +167,35 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"check_stat" => %{"stat" => "strength", "modifier" => amount, "failure_script" => failure_script}}, script) do
-    if Monster.strength(monster) < (:rand.uniform(100) + amount) do
-      execute_script(room, monster, failure_script)
+  def execute_instruction(%Room{} = room, %{} = mobile, %{"check_stat" => %{"stat" => "strength", "modifier" => amount, "failure_script" => failure_script}}, script) do
+    if Mobile.attribute_at_level(mobile, :strength, Mobile.target_level(mobile, mobile)) < (:rand.uniform(100) + amount) do
+      execute_script(room, mobile, failure_script)
     else
-      execute_script(room, monster, script)
+      execute_script(room, mobile, script)
     end
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"check_stat" => %{"stat" => "agility", "modifier" => amount, "failure_script" => failure_script}}, script) do
-    if Monster.agility(monster) < (:rand.uniform(100) + amount) do
-      execute_script(room, monster, failure_script)
+  def execute_instruction(%Room{} = room, %{} = mobile, %{"check_stat" => %{"stat" => "agility", "modifier" => amount, "failure_script" => failure_script}}, script) do
+    if Mobile.attribute_at_level(mobile, :agility, Mobile.target_level(mobile, mobile)) < (:rand.uniform(100) + amount) do
+      execute_script(room, mobile, failure_script)
     else
-      execute_script(room, monster, script)
+      execute_script(room, mobile, script)
     end
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"check_stat" => %{"stat" => "intellect", "modifier" => amount, "failure_script" => failure_script}}, script) do
-    if Monster.will(monster) < (:rand.uniform(100) + amount) do
-      execute_script(room, monster, failure_script)
+  def execute_instruction(%Room{} = room, %{} = mobile, %{"check_stat" => %{"stat" => "intellect", "modifier" => amount, "failure_script" => failure_script}}, script) do
+    if Mobile.attribute_at_level(mobile, :intellect, Mobile.target_level(mobile, mobile)) < (:rand.uniform(100) + amount) do
+      execute_script(room, mobile, failure_script)
     else
-      execute_script(room, monster, script)
+      execute_script(room, mobile, script)
     end
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"check_stat" => %{"stat" => "wisdom", "modifier" => amount, "failure_script" => failure_script}}, script) do
-    if Monster.will(monster) < (:rand.uniform(100) + amount) do
-      execute_script(room, monster, failure_script)
+  def execute_instruction(%Room{} = room, %{} = mobile, %{"check_stat" => %{"stat" => "wisdom", "modifier" => amount, "failure_script" => failure_script}}, script) do
+    if Mobile.attribute_at_level(mobile, :wisdom, Mobile.target_level(mobile, mobile)) < (:rand.uniform(100) + amount) do
+      execute_script(room, mobile, failure_script)
     else
-      execute_script(room, monster, script)
+      execute_script(room, mobile, script)
     end
   end
 
@@ -208,15 +209,15 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"give_item" => item_template_id}, script) do
-    item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: monster.level})
-
-    monster =
-      put_in(monster.spirit.inventory, [item | monster.spirit.inventory])
-
-    Repo.save!(monster.spirit)
-
-    room = put_in(room.monsters[monster.ref], monster)
+  def execute_instruction(%Room{} = room, %{} = monster, %{"give_item" => _item_template_id}, script) do
+    # item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: monster.level})
+    #
+    # monster =
+    #   put_in(monster.spirit.inventory, [item | monster.spirit.inventory])
+    #
+    # Repo.save!(monster.spirit)
+    #
+    # room = put_in(room.monsters[monster.ref], monster)
 
     execute_script(room, monster, script)
   end

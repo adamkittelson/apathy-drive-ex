@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, EntityAbility, Item, Mobile, Monster, Room, RoomMonster,
+  alias ApathyDrive.{Character, EntityAbility, Item, Mobile, Monster, Party, Room, RoomMonster,
                      Spell, Stealth, Text, TimerManager}
 
   require Logger
@@ -535,10 +535,10 @@ defmodule ApathyDrive.Monster do
     end
 
     def enough_mana_for_spell?(monster, %Spell{} =  spell) do
-      mana = Monster.mana_at_level(monster, monster.level)
+      mana = Mobile.max_mana_at_level(monster, monster.level)
       cost = Spell.mana_cost_at_level(spell, monster.level)
 
-      mana >= cost
+      monster.mana >= (cost / mana)
     end
 
     def enter_message(%Monster{name: name}) do

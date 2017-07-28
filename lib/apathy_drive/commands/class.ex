@@ -1,6 +1,5 @@
 defmodule ApathyDrive.Commands.Class do
   use ApathyDrive.Command
-  alias ApathyDrive.Class
 
   def keywords do
     ApathyDrive.Class.names |> Enum.map(&String.downcase/1)

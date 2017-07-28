@@ -51,22 +51,6 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:respawn, spirit: spirit}, socket) do
-    ref =
-      spirit.room_id
-      |> RoomServer.find
-      |> RoomServer.spirit_connected(spirit, self())
-
-    socket =
-      socket
-      |> assign(:room_id, spirit.room_id)
-      |> assign(:monster_ref, ref)
-
-    send(self(), :after_join)
-
-    {:noreply, socket}
-  end
-
   def handle_info({:disable_element, elem}, socket) do
     Phoenix.Channel.push socket, "disable", %{:html => elem}
 

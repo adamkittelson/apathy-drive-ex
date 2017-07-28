@@ -25,7 +25,7 @@ defmodule ApathyDrive.Commands.Sell do
   def sell(%Room{} = room, _shop_items, character, %Item{entities_items_id: entities_items_id} = item) do
     case Item.price(item) do
       "priceless" ->
-        Mobile.send_scroll("<p><span class='red'>#{Item.colored_name(item)} is a priceless artifact and cannot be sold!</span></p>")
+        Mobile.send_scroll(character, "<p><span class='red'>#{Item.colored_name(item)} is a priceless artifact and cannot be sold!</span></p>")
        price ->
          price = div(price, 10)
          Repo.delete!(%EntityItem{id: entities_items_id})

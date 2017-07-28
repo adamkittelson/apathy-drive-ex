@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.Say do
   use ApathyDrive.Command
+  alias ApathyDrive.Mobile
 
   def keywords, do: ["say"]
 
@@ -7,7 +8,7 @@ defmodule ApathyDrive.Commands.Say do
     message =
       args
       |> Enum.join(" ")
-      |> Monster.sanitize()
+      |> Character.sanitize()
 
     room.mobiles
     |> Map.values

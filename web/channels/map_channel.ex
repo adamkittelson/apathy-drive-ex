@@ -1,6 +1,6 @@
 defmodule ApathyDrive.MapChannel do
   use ApathyDrive.Web, :channel
-  alias ApathyDrive.{Monster, Room, Repo}
+  alias ApathyDrive.{Room, Repo}
 
   def join("map", %{}, socket) do
     send(self, :after_join)

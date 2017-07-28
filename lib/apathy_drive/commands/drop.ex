@@ -18,7 +18,7 @@ defmodule ApathyDrive.Commands.Drop do
          nil ->
            Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" to drop!</p>")
            room
-         %Item{level: level, entities_items_id: entities_items_id} = item ->
+         %Item{entities_items_id: entities_items_id} = item ->
 
            %EntityItem{id: entities_items_id}
            |> Ecto.Changeset.change(%{assoc_table: "rooms", assoc_id: room.id})

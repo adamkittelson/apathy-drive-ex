@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Character, Commands, Companion, LairMonster, Match, Mobile, Monster, MonsterSpawning,
+  alias ApathyDrive.{Character, Commands, Companion, LairMonster, Match, Mobile, MonsterSpawning,
                      PubSub, Repo, Room, RoomSupervisor, RoomUnity, Spell, TimerManager, Presence}
   use Timex
   require Logger
@@ -37,46 +37,6 @@ defmodule ApathyDrive.RoomServer do
 
   def trigger_remote_action(room, remote_action_exit, from, opts) do
     GenServer.cast(room, {:trigger_remote_action, remote_action_exit, from, opts})
-  end
-
-  def bash(room, mobile, direction) do
-    GenServer.cast(room, {:bash, mobile, direction})
-  end
-
-  def open(room, mobile, direction) do
-    GenServer.cast(room, {:open, mobile, direction})
-  end
-
-  def lock(room, mobile, direction) do
-    GenServer.cast(room, {:lock, mobile, direction})
-  end
-
-  def mirror_lock(room, mirror_room_id, room_exit) do
-    GenServer.cast(room, {:mirror_lock, mirror_room_id, room_exit})
-  end
-
-  def mirror_open(room, mirror_room_id, room_exit) do
-    GenServer.cast(room, {:mirror_open, mirror_room_id, room_exit})
-  end
-
-  def close(room, mobile, direction) do
-    GenServer.cast(room, {:close, mobile, direction})
-  end
-
-  def mirror_close(room, mirror_room_id, room_exit) do
-    GenServer.cast(room, {:mirror_close, mirror_room_id, room_exit})
-  end
-
-  def mirror_bash(room, mirror_room_id, room_exit) do
-    GenServer.cast(room, {:mirror_bash, mirror_room_id, room_exit})
-  end
-
-  def mirror_bash_fail(room, mirror_room_id, room_exit) do
-    GenServer.cast(room, {:mirror_bash_fail, mirror_room_id, room_exit})
-  end
-
-  def mirror_open_fail(room, mirror_room_id, room_exit) do
-    GenServer.cast(room, {:mirror_open_fail, mirror_room_id, room_exit})
   end
 
   def execute_command(room, spirit_id, command, arguments) do
@@ -152,11 +112,6 @@ defmodule ApathyDrive.RoomServer do
     end
 
     Process.send_after(self(), :save, 2000)
-
-    # room =
-    #   room
-    #   |> TimerManager.send_after({:report_essence, Application.get_env(:apathy_drive, :initial_essence_delay), :report_essence})
-    #   |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
 
     {:ok, room}
   end
@@ -349,26 +304,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:bash, mobile, direction}, room) do
-    room = Commands.Bash.execute(room, mobile, direction)
-    {:noreply, room}
-  end
-
-  def handle_cast({:close, mobile, direction}, room) do
-    room = Commands.Close.execute(room, mobile, direction)
-    {:noreply, room}
-  end
-
-  def handle_cast({:open, mobile, direction}, room) do
-    room = Commands.Open.execute(room, mobile, direction)
-    {:noreply, room}
-  end
-
-  def handle_cast({:lock, mobile, direction}, room) do
-    room = Commands.Lock.execute(room, mobile, direction)
-    {:noreply, room}
-  end
-
   def handle_cast({:execute_command, mobile_ref, command, arguments}, room) do
     room = ApathyDrive.Command.execute(room, mobile_ref, command, arguments)
     {:noreply, room}
@@ -495,13 +430,6 @@ defmodule ApathyDrive.RoomServer do
     else
       {:noreply, room}
     end
-  end
-
-
-  def handle_info({:think, ref}, room) do
-    room = ApathyDrive.AI.think(room, ref)
-
-    {:noreply, room}
   end
 
   def handle_info({:expire_invite, ref, invitee_ref}, %Room{} = room) do
@@ -694,15 +622,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:update_essence, %Room{} = room) do
-    room =
-      room
-      |> Room.update_essence
-      |> TimerManager.send_after({:update_essence, Room.essence_update_interval(room), :update_essence})
-
-    {:noreply, room}
-  end
-
   def handle_info(:report_essence, room) do
     room = Room.report_essence(room)
 
@@ -756,7 +675,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:room_deleted, room) do
     room =
       Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
-        Room.update_mobile(room, ref, &ApathyDrive.Death.kill(updated_room, &1.ref))
+        Room.update_mobile(room, ref, &Mobile.die(&1, updated_room))
       end)
     {:stop, :normal, room}
   end
@@ -778,7 +697,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:timer_cast_ability, %{caster: ref, ability: ability, timer: time, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      Monster.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
+      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
 
       ability = case ability do
         %{"global_cooldown" => nil} ->
