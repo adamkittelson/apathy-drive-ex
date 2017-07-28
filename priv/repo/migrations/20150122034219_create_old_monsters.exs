@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Repo.Migrations.CreateMonsters do
+defmodule ApathyDrive.Repo.Migrations.CreateOldMonsters do
   use Ecto.Migration
 
   def up do
