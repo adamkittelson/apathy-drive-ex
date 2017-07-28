@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Repo.Migrations.AddLimbsToMonstersAndMonsterTemplates do
+defmodule ApathyDrive.Repo.Migrations.AddLimbsToMobilesAndMonsterTemplates do
   use Ecto.Migration
 
   def change do
@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.AddLimbsToMonstersAndMonsterTemplates do
       add :limbs, :jsonb
     end
 
-    alter table(:monsters) do
+    alter table(:mobiles) do
       add :limbs, :jsonb
       add :crippled_limbs, {:array, :string}
       add :missing_limbs, {:array, :string}

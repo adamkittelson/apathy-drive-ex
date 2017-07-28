@@ -7,7 +7,7 @@ defmodule ApathyDrive.Repo.Migrations.AddMinimumEssenceAndUnitiesToMonsterTempla
       add :minimum_essence, :bigint
     end
 
-    alter table(:monsters) do
+    alter table(:mobiles) do
       add :minimum_essence, :bigint
     end
   end

@@ -2,7 +2,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateMonsters do
   use Ecto.Migration
 
   def change do
-    create table(:monsters) do
+    create table(:mobiles) do
       add :room_id, references(:rooms)
       add :monster_template_id, references(:monster_templates)
 

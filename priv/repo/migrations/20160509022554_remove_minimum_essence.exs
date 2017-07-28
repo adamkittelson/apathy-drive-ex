@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveMinimumEssence do
       remove :minimum_essence
     end
 
-    alter table(:monsters) do
+    alter table(:mobiles) do
       remove :minimum_essence
     end
   end

@@ -2,7 +2,7 @@ defmodule ApathyDrive.Repo.Migrations.AddMovementToMonsterTemplatesAndMonsters d
   use Ecto.Migration
 
   def change do
-    alter table(:monsters) do
+    alter table(:mobiles) do
       add :movement, :text
     end
     alter table(:monster_templates) do
