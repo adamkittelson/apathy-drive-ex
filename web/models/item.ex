@@ -35,7 +35,7 @@ defmodule ApathyDrive.Item do
     timestamps
   end
 
-  @required_fields ~w(name description weight worn_on level grade)
+  @required_fields ~w(name description worn_on level grade)
   @optional_fields ~w(abilities global_drop)
   @rarities %{
     "common" => %{

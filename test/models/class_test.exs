@@ -3,7 +3,7 @@ defmodule ApathyDrive.ClassTest do
 
   alias ApathyDrive.Class
 
-  @valid_attrs %{"alignment" => "good", "name" => "Adam", "start_room_id" => 42, "unities" => ["good"]}
+  @valid_attrs %{"name" => "Warrior", "description" => "Weapons and such", "armour" => "Plate", "weapon_hands" => "Two Handed", "weapon_type" => "Any"}
   @invalid_attrs %{}
 
   test "changeset with valid attributes" do

@@ -28,11 +28,8 @@ defmodule ApathyDrive.ChannelCase do
       @endpoint ApathyDrive.Endpoint
 
       def test_monster(map \\ %{}, room \\ Repo.insert!(%ApathyDrive.Room{})) do
-        class = Repo.insert!(%ApathyDrive.Class{alignment: "evil",
-                                                name: "Demon",
-                                                start_room_id: room.id,
-                                                abilities: [],
-                                                unities: ["evil"]})
+        class = Repo.insert!(%ApathyDrive.Class{name: "Demon",
+                                                abilities: []})
 
         # Hack to prevent it from trying to load rooms that don't exist
         Task.start(fn ->
