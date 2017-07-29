@@ -190,3 +190,6 @@ CHANGELOG
 
 ---- 0.0.73 / 2016-09-02 / totally-rip-off-pillars-of-eternity -----------------
 * move abilities to monster templates, decided not to do the POE thing
+
+---- 0.0.74 / 2017-07-28 / another-revamp --------------------------------------
+* monsters scale to players level and about a billion other things
