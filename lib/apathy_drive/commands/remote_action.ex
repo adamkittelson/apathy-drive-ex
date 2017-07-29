@@ -25,12 +25,12 @@ defmodule ApathyDrive.Commands.RemoteAction do
 
   defp trigger(room, exit_to_trigger) do
     room
-    |> Systems.Effect.add(%{:triggered => exit_to_trigger, "stack_key" => exit_to_trigger, "stack_count" => 1}, 300)
+    |> Systems.Effect.add(%{:triggered => exit_to_trigger, "stack_key" => exit_to_trigger, "stack_count" => 1}, 300_000)
   end
 
   defp open(room, direction) do
     room
-    |> Systems.Effect.add(%{:opened_remotely => direction, "stack_key" => "open-#{direction}", "stack_count" => 1}, 300)
+    |> Systems.Effect.add(%{:opened_remotely => direction, "stack_key" => "open-#{direction}", "stack_count" => 1}, 300_000)
   end
 
   defp exit_to_trigger(%Room{exits: exits}, %{"direction" => direction}, from) do

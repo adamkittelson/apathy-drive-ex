@@ -1,47 +1,34 @@
 defmodule ApathyDrive.Commands.Remove do
   use ApathyDrive.Command
-  alias ApathyDrive.Match
+  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
 
   def keywords, do: ["remove", "unequip", "unwield"]
 
-  def execute(%Room{} = room, %Mobile{} = mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Remove what?</p>")
+  def execute(%Room{} = room, %Character{} = character, []) do
+    Mobile.send_scroll(character, "<p>Remove what?</p>")
     room
   end
-  def execute(%Room{} = room, %Mobile{spirit: %Spirit{inventory: inventory, equipment: equipment}} = mobile, arguments) do
-    item = Enum.join(arguments, " ")
+  def execute(%Room{} = room, %Character{} = character, arguments) do
+    item_name = Enum.join(arguments, " ")
 
-    mobile =
-      equipment
-      |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-      |> Match.one(:name_contains, item)
-      |> case do
-           nil ->
-             Mobile.send_scroll(mobile, "<p>You don't have \"#{item}\" equipped.</p>")
-             mobile
-           %{item: item_to_remove} ->
-             equipment =
-               equipment
-               |> List.delete(item_to_remove)
+    character.equipment
+    |> Match.one(:name_contains, item_name)
+    |> case do
+         nil ->
+           Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" equipped.</p>")
+           room
+         %Item{} = item_to_remove ->
 
-             inventory =
-               inventory
-               |> List.insert_at(-1, item_to_remove)
+           %EntityItem{id: item_to_remove.entities_items_id}
+           |> Ecto.Changeset.change(%{equipped: false})
+           |> Repo.update!
 
-             mobile = put_in(mobile.spirit.inventory, inventory)
-             mobile = put_in(mobile.spirit.equipment, equipment)
-                      |> Mobile.set_abilities
-                      |> Mobile.set_max_mana
-                      |> Mobile.set_mana
-                      |> Mobile.set_max_hp
-                      |> Mobile.set_hp
-                      |> Mobile.save
-
-             Mobile.send_scroll(mobile, "<p>You remove #{item_to_remove["name"]}.</p>")
-             mobile
-         end
-
-    put_in room.mobiles[mobile.ref], mobile
+           Room.update_mobile(room, character.ref, fn(char) ->
+             char
+             |> Character.load_items
+             |> Mobile.send_scroll("<p>You remove #{Item.colored_name(item_to_remove)}.</p>")
+           end)
+       end
   end
 
 end

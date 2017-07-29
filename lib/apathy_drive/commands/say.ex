@@ -1,22 +1,28 @@
 defmodule ApathyDrive.Commands.Say do
   use ApathyDrive.Command
+  alias ApathyDrive.Mobile
 
   def keywords, do: ["say"]
 
-  def execute(%Room{} = room, %Mobile{monster_template_id: nil} = mobile, _message) do
-    Mobile.body_required(mobile)
-
-    room
-  end
-
-  def execute(%Room{} = room, %Mobile{} = mobile, args) do
+  def execute(%Room{} = room, %Character{} = character, args) do
     message =
       args
       |> Enum.join(" ")
-      |> Mobile.sanitize()
+      |> Character.sanitize()
 
-    Room.send_scroll(room, "<p>#{Mobile.look_name(mobile)} says: <span class='dark-green'>\"#{message}\"</span></p>", mobile)
-    Mobile.send_scroll(mobile, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
+    room.mobiles
+    |> Map.values
+    |> List.delete(character)
+    |> Enum.each(fn
+         %Character{} = observer when character != observer ->
+           message = "<p>#{Mobile.colored_name(character, observer)} says: <span class='dark-green'>\"#{message}\"</span></p>"
+
+           Mobile.send_scroll(observer, "<p><span class='dark-magenta'>#{message}</span></p>")
+         _ ->
+           :noop
+       end)
+
+    Mobile.send_scroll(character, "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>")
     room
   end
 

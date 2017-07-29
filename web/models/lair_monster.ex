@@ -1,10 +1,10 @@
 defmodule ApathyDrive.LairMonster do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{MonsterTemplate, Room}
+  alias ApathyDrive.{Monster, Room}
 
   schema "lair_monsters" do
     belongs_to :room, Room
-    belongs_to :monster_template, MonsterTemplate
+    belongs_to :monster, Monster
 
     timestamps
   end
@@ -19,7 +19,7 @@ defmodule ApathyDrive.LairMonster do
     |> cast(updated_params, @required_fields, @optional_fields)
     |> unique_constraint(:monster_id, name: :lair_monsters_room_id_monster_template_id_index)
     |> foreign_key_constraint(:room_id)
-    |> foreign_key_constraint(:monster_template_id)
+    |> foreign_key_constraint(:monster_id)
   end
 
   def update_params(:empty), do: :empty
@@ -40,10 +40,10 @@ defmodule ApathyDrive.LairMonster do
     end
   end
 
-  def monsters_template_ids(room_id) do
+  def monster_ids(room_id) do
     query = from lair in __MODULE__,
             where: lair.room_id == ^room_id,
-            select: lair.monster_template_id
+            select: lair.monster_id
 
     query
     |> Repo.all

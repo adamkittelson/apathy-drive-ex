@@ -7,7 +7,7 @@ defmodule ApathyDrive.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :protect_from_forgery
-    plug :assign_current_spirit
+    plug :assign_character
     plug :put_secure_browser_headers
   end
 
@@ -21,21 +21,8 @@ defmodule ApathyDrive.Router do
     get "/", PageController, :index
     get  "/game", PageController, :game, as: :game
     resources "/sessions", SessionController
-    resources "/spirits", SpiritController, only: [:create, :edit, :update],
-                                            singleton: true
-  end
-
-  scope "/system", ApathyDrive do
-    pipe_through [:browser, :admin]
-
-    resources "/classes",           ClassController
-    resources "/items",             ItemController
-    resources "/monsters",          MonsterController
-    resources "/rooms",             RoomController
-    resources "/item_drops",        ItemDropController
-    resources "/lairs",             LairController
-    resources "/monster_abilities", MonsterAbilityController
-    resources "/abilities",         AbilityController
+    resources "/characters", CharacterController, only: [:create, :edit, :update],
+                                                  singleton: true
   end
 
   scope "/admin", ExAdmin do
@@ -52,24 +39,25 @@ defmodule ApathyDrive.Router do
   # Fetch the current user from the session and add it to `conn.assigns`. This
   # will allow you to have access to the current user in your views with
   # `@current_user`.
-  defp assign_current_spirit(conn, _) do
-    spirit_id = conn
-                |> get_session(:current_spirit)
+  defp assign_character(conn, _) do
+    character_id =
+      conn
+      |> get_session(:character)
 
-    if spirit_id do
-      spirit = ApathyDrive.Repo.get(Spirit, spirit_id)
+    if character_id do
+      character = ApathyDrive.Repo.get(ApathyDrive.Character, character_id)
 
-      if spirit do
+      if character do
         conn
-        |> assign(:current_spirit, spirit_id)
-        |> assign(:admin?, spirit.admin)
+        |> assign(:character, character_id)
+        |> assign(:admin?, !!character.admin)
       else
         conn
-        |> put_session(:current_spirit, nil)
+        |> put_session(:character, nil)
       end
     else
       conn
-      |> put_session(:current_spirit, nil)
+      |> put_session(:character, nil)
     end
   end
 

@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Repo.Migrations.AddUnityToSpiritsAndMobiles do
+defmodule ApathyDrive.Repo.Migrations.AddUnityToSpiritsAndMonsters do
   use Ecto.Migration
 
   def change do

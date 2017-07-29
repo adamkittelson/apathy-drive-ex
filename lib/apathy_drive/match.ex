@@ -1,32 +1,48 @@
 defmodule ApathyDrive.Match do
 
-  def all(list, :match_name, string) do
+  def all(list, match_level, string) do
+    case string_number(string) do
+      {string, nil} ->
+        case match_all(list, match_level, string) do
+          [] ->
+            nil
+          [match] ->
+            match
+          matches ->
+            matches
+        end
+      {string, number} ->
+        one(list, match_level, string, number)
+    end
+  end
+
+  def match_all(list, :match_name, string) do
     Enum.filter(list, &(match_name(string, &1)))
   end
 
-  def all(list, :match_keyword, string) do
-    case all(list, :match_name, string) do
+  def match_all(list, :match_keyword, string) do
+    case match_all(list, :match_name, string) do
       []    -> Enum.filter(list, &(match_keyword(string, &1)))
       value -> value
     end
   end
 
-  def all(list, :name_starts_with, string) do
-    case all(list, :match_keyword, string) do
+  def match_all(list, :name_starts_with, string) do
+    case match_all(list, :match_keyword, string) do
       []    -> Enum.filter(list, &(name_starts_with(string, &1)))
       value -> value
     end
   end
 
-  def all(list, :keyword_starts_with, string) do
-    case all(list, :name_starts_with, string) do
+  def match_all(list, :keyword_starts_with, string) do
+    case match_all(list, :name_starts_with, string) do
       []    -> Enum.filter(list, &(keyword_starts_with(string, &1)))
       value -> value
     end
   end
 
-  def all(list, :name_contains, string) do
-    case all(list, :keyword_starts_with, string) do
+  def match_all(list, :name_contains, string) do
+    case match_all(list, :keyword_starts_with, string) do
       []    -> Enum.filter(list, &(name_contains(string, &1)))
       value -> value
     end
@@ -37,9 +53,17 @@ defmodule ApathyDrive.Match do
     one(list, match_level, string, number)
   end
 
+  def one(list, match_level, string, nil) do
+    one(list, match_level, string, 0)
+  end
+
   def one(list, match_level, string, number) do
-    all(list, match_level, string)
-    |> Enum.at(number)
+    case all(list, match_level, string) do
+      matches when is_list(matches) ->
+        Enum.at(matches, number)
+      match ->
+        match
+    end
   end
 
   def match_name("", _pid), do: false
@@ -95,10 +119,12 @@ defmodule ApathyDrive.Match do
 
   def remove_number_from_string(string, nil), do: string
   def remove_number_from_string(string, number) do
-    String.replace(string, " #{number}", "")
+    string
+    |> String.replace("#{number}", "")
+    |> String.trim_trailing
   end
 
-  def indexify_number(nil), do: 0
+  def indexify_number(nil), do: nil
   def indexify_number(number) do
     number
     |> String.to_integer

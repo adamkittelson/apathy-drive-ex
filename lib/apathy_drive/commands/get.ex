@@ -1,25 +1,24 @@
 defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
-  alias ApathyDrive.{Mobile, Match, Repo, RoomUnity}
+  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
 
   def keywords, do: ["get"]
 
-  def execute(%Room{} = room, %Mobile{} = mobile, []) do
-    Mobile.send_scroll(mobile, "<p>Get what?</p>")
+  def execute(%Room{} = room, %Character{} = character, []) do
+    Mobile.send_scroll(character, "<p>Get what?</p>")
     room
   end
 
-  def execute(%Room{room_unity: %RoomUnity{items: items}} = room, %Mobile{} = mobile, ["all"]) do
+  def execute(%Room{items: items} = room, %Character{} = character, ["all"]) do
     items
-    |> Enum.map(&(&1["name"]))
-    |> get_all(room, mobile)
+    |> Enum.map(&(&1.name))
+    |> get_all(room, character)
   end
 
-  def execute(%Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions} = room, %Mobile{spirit: %Spirit{inventory: inventory}} = mobile, args) do
+  def execute(%Room{items: items, item_descriptions: item_descriptions} = room, %Character{} = character, args) do
     item = Enum.join(args, " ")
 
     actual_item = items
-                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
                   |> Match.one(:name_contains, item)
 
     visible_item = item_descriptions["visible"]
@@ -32,37 +31,39 @@ defmodule ApathyDrive.Commands.Get do
                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
                   |> Match.one(:keyword_starts_with, item)
 
-    cond do
-      item_name = visible_item || hidden_item ->
-        Mobile.send_scroll(mobile, "<p>#{item_name.name |> capitalize_first} cannot be picked up.</p>")
+    case actual_item || visible_item || hidden_item do
+      %Item{level: _level, entities_items_id: entities_items_id} = item ->
+
+        %EntityItem{id: entities_items_id}
+        |> Ecto.Changeset.change(%{assoc_table: "characters", assoc_id: character.id})
+        |> Repo.update!
+
         room
-      actual_item ->
-        mobile = put_in(mobile.spirit.inventory, [actual_item.item | inventory])
-
-        Mobile.send_scroll(mobile, "<p>You get #{actual_item.name}.</p>")
-
-        Mobile.save(mobile)
-
-        room = put_in(room.room_unity.items, List.delete(room.room_unity.items, actual_item.item))
-        room =
-          put_in(room.mobiles[mobile.ref], mobile)
-          |> Repo.save
-      true ->
-        Mobile.send_scroll(mobile, "<p>You don't see \"#{item}\" here.</p>")
+        |> Room.load_items
+        |> Room.update_mobile(character.ref, fn(char) ->
+             char
+             |> Character.load_items
+             |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
+           end)
+      %{name: psuedo_item} ->
+        Mobile.send_scroll(character, "<p>#{psuedo_item |> capitalize_first} cannot be picked up.</p>")
+        room
+      nil ->
+        Mobile.send_scroll(character, "<p>You don't see \"#{item}\" here.</p>")
         room
     end
   end
 
-  defp get_all([], room, mobile) do
-    Mobile.send_scroll(mobile, "<p>There is nothing here to get.</p>")
+  defp get_all([], room, character) do
+    Mobile.send_scroll(character, "<p>There is nothing here to get.</p>")
     room
   end
 
-  defp get_all(item_names, room, mobile) do
+  defp get_all(item_names, room, character) do
     item_names
     |> Enum.reduce(room, fn(item_name, updated_room) ->
-         mobile = updated_room.mobiles[mobile.ref]
-         execute(updated_room, mobile, [item_name])
+         character = updated_room.mobiles[character.ref]
+         execute(updated_room, character, [item_name])
        end)
   end
 end

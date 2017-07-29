@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Repo.Migrations.AddAreaSpawnedInToMobiles do
+defmodule ApathyDrive.Repo.Migrations.AddAreaSpawnedInToMonsters do
   use Ecto.Migration
 
   def change do

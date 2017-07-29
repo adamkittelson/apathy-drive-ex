@@ -13,8 +13,8 @@ defmodule ApathyDrive.MapChannel do
     # Doing it in a task so it gets garbage collected right away
     Room.world_map
     |> Repo.all
-    |> Enum.each(fn area_id ->
-         Task.start fn ->
+    |> Enum.map(fn area_id ->
+         Task.async fn ->
            {area, map} =
              area_id
              |> Room.area_map
@@ -36,6 +36,9 @@ defmodule ApathyDrive.MapChannel do
            if map_size(map) > 0, do: push socket, "update_map", %{area => map}
          end
        end)
+    |> Enum.map(&Task.await/1)
+
+    push(socket, "request_room_id", %{})
 
     {:noreply, socket}
   end

@@ -3,7 +3,7 @@ defmodule ApathyDrive.MonsterTemplate do
   use GenServer
   use Timex
 
-  alias ApathyDrive.{Mobile, Monster, MonsterTemplate, Repo, Room}
+  alias ApathyDrive.{Monster, Monster, MonsterTemplate, Repo, Room}
 
   schema "monster_templates" do
     field :name,                   :string
@@ -27,7 +27,7 @@ defmodule ApathyDrive.MonsterTemplate do
     field :abilities,              ApathyDrive.JSONB
     field :base_hp,               :integer
 
-    has_many :mobiles, Mobile
+    has_many :mobiles, Monster
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
 
@@ -53,7 +53,7 @@ defmodule ApathyDrive.MonsterTemplate do
     |> GenServer.call(:questions)
   end
 
-  def mobile_virtual_fields(mt_id) do
+  def monster_virtual_fields(mt_id) do
     MonsterTemplate
     |> Ecto.Query.where([mt], mt.id == ^mt_id)
     |> Ecto.Query.select([mt], map(mt, [:abilities, :base_hp]))
@@ -110,7 +110,7 @@ defmodule ApathyDrive.MonsterTemplate do
   end
 
   def count(%MonsterTemplate{id: monster_template_id}) do
-    ApathyDrive.Mobile
+    ApathyDrive.Monster
     |> where(monster_template_id: ^monster_template_id)
     |> select([m], count(m.id))
     |> Repo.one
@@ -194,7 +194,7 @@ defmodule ApathyDrive.MonsterTemplate do
         |> Map.put(:experience, experience)
       end
 
-    monster = Map.merge(%Mobile{}, monster)
+    monster = Map.merge(%Monster{}, monster)
 
     monster = Repo.save!(monster)
 

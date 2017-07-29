@@ -29,5 +29,4 @@ config :apathy_drive, ApathyDrive.Repo,
   username: "YOUR_DEV_USER",
   password: "YOUR_DEV_PASSWORD",
   hostname: "YOUR_DEV_HOST",
-  adapter: Ecto.Adapters.Postgres,
-  extensions: [{Extensions.JSON, library: Poison}]
+  adapter: Ecto.Adapters.Postgres

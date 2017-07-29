@@ -19,7 +19,7 @@ defmodule ApathyDrive.ChannelCase do
     quote do
       # Import conveniences for testing with channels
       use Phoenix.ChannelTest
-      alias ApathyDrive.{Mobile, Repo, Room}
+      alias ApathyDrive.{Monster, Repo, Room}
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
@@ -27,12 +27,9 @@ defmodule ApathyDrive.ChannelCase do
       # The default endpoint for testing
       @endpoint ApathyDrive.Endpoint
 
-      def test_mobile(map \\ %{}, room \\ Repo.insert!(%ApathyDrive.Room{})) do
-        class = Repo.insert!(%ApathyDrive.Class{alignment: "evil",
-                                                name: "Demon",
-                                                start_room_id: room.id,
-                                                abilities: [],
-                                                unities: ["evil"]})
+      def test_monster(map \\ %{}, room \\ Repo.insert!(%ApathyDrive.Room{})) do
+        class = Repo.insert!(%ApathyDrive.Class{name: "Demon",
+                                                abilities: []})
 
         # Hack to prevent it from trying to load rooms that don't exist
         Task.start(fn ->
@@ -49,7 +46,7 @@ defmodule ApathyDrive.ChannelCase do
 
           {:ok, _, socket} = socket() |> subscribe_and_join(ApathyDrive.MUDChannel, "mud:play", %{"spirit" => token})
 
-          socket.assigns[:mobile]
+          socket.assigns[:monster]
       end
     end
   end

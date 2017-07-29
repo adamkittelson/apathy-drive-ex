@@ -44,7 +44,7 @@ adjustScrollTop();
 
 var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
 socket.connect();
-var chan = socket.channel("mud:play", {spirit: spiritID});
+var chan = socket.channel("mud:play", {character: characterID});
 
 chan.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
 
@@ -53,7 +53,15 @@ chan.join().receive("error", ({reason}) => window.location = "" + window.locatio
 // });
 
 chan.on("update_room", function(message){
-  center_on_room(message.room_id);
+  if (player.power != message.power || player.level != message.level) {
+    player.power = message.power;
+    player.level = message.level;
+    draw_map(message.room_id);
+  }
+  else {
+    center_on_room(message.room_id)
+  }
+
 });
 
 chan.on("clear scroll", function(message){

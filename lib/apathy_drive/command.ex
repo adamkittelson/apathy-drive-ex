@@ -1,70 +1,65 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Ability, Commands, Mobile, Match, Room, RoomServer}
+  alias ApathyDrive.{Commands, Monster, Match, Mobile, Room, RoomServer, Spell}
 
-  @callback execute(%Room{}, %Mobile{}, list) :: %Room{}
+  @callback execute(%Room{}, %Monster{}, list) :: %Room{}
 
   @directions ["n", "north", "ne", "northeast", "e", "east",
               "se", "southeast", "s", "south", "sw", "southwest",
                "w", "west", "nw", "northwest", "u", "up", "d", "down"]
 
   def all do
-    [Commands.Abilities, Commands.Absorb, Commands.Ask, Commands.Attack,
-     Commands.Bash, Commands.Class, Commands.Close,
-     Commands.Cooldowns, Commands.Delve, Commands.Drop, Commands.Experience,
-     Commands.Get, Commands.Gossip, Commands.Greet,
-     Commands.Inventory, Commands.List, Commands.Lock, Commands.Look, Commands.Open,
-     Commands.Possess, Commands.Remove, Commands.Return,
-     Commands.Say, Commands.Score, Commands.Search, Commands.System,
-     ApathyDrive.Commands.Teleport, Commands.Unpossess, Commands.Wear, Commands.Who]
+    [Commands.Abilities, Commands.Attack, Commands.Buy, Commands.Class, Commands.Cooldowns,
+     Commands.Dismiss, Commands.Drop, Commands.Experience, Commands.Get, Commands.Gossip, Commands.Hire,
+     Commands.Inventory, Commands.Join, Commands.Invite, Commands.Leave, Commands.List,
+     Commands.Look, Commands.Party, Commands.Remove, Commands.Return, Commands.Say,
+     Commands.Score, Commands.Search, Commands.Sell, Commands.System, Commands.Wear, Commands.Who]
   end
 
-  def execute(%Room{} = room, mobile_ref, command, arguments) do
+  def execute(%Room{} = room, monster_ref, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
 
-    mobile = room.mobiles[mobile_ref]
+    monster = room.mobiles[monster_ref]
+
+    Logger.info "#{monster && monster.name} command: #{full_command}"
 
     cond do
       command in @directions ->
-        Commands.Move.execute(room, mobile, command)
+        Commands.Move.execute(room, monster, command)
       command_exit = Room.command_exit(room, full_command) ->
-        Commands.Move.execute(room, mobile, Map.put(command_exit, "kind", "Action"))
+        Commands.Move.execute(room, monster, Map.put(command_exit, "kind", "Action"))
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
-        Room.initiate_remote_action(room, mobile, remote_action_exit)
+        Room.initiate_remote_action(room, monster, remote_action_exit)
       scripts = Room.command(room, full_command) ->
-        execute_room_command(room, mobile, scripts)
+        execute_room_command(room, monster, scripts)
       cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
-        cmd.module.execute(room, mobile, arguments)
+        cmd.module.execute(room, monster, arguments)
       true ->
-        ability =
-          mobile.abilities
-          |> Enum.find(fn(ability) ->
-               ability["command"] == String.downcase(command)
-             end)
+        spell = monster.spells[String.downcase(command)]
 
-        if ability do
-          Ability.execute(room, mobile.ref, ability, Enum.join(arguments, " "))
+        if spell do
+          Spell.execute(room, monster.ref, spell, Enum.join(arguments, " "))
         else
-          Mobile.send_scroll(mobile, "<p>What?</p>")
+          Mobile.send_scroll(monster, "<p>What?</p>")
           room
         end
     end
   end
 
-  defp execute_room_command(room, mobile, scripts) do
-    if Mobile.confused(room, mobile) do
+  defp execute_room_command(room, monster, scripts) do
+    if Mobile.confused(monster, room) do
       room
     else
       scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
-      ApathyDrive.Script.execute(room, mobile, scripts)
+      ApathyDrive.Script.execute(room, monster, scripts)
     end
   end
 
   defmacro __using__(_opts) do
     quote do
       import ApathyDrive.Text
-      alias ApathyDrive.{Mobile, Room, RoomServer}
+      alias ApathyDrive.{Character, Mobile, Room, RoomServer}
 
       @behaviour ApathyDrive.Command
 

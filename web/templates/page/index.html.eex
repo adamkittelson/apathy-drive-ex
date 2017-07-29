@@ -1,6 +1,6 @@
 <section class="header">
   <h1 class="title">Apotheosis</h1>
-  <%= if assigns[:current_spirit] do %>
+  <%= if assigns[:character] do %>
     <a class="button button-primary" href="<%= game_path @conn, :game %>">Play</a>
   <% else %>
     <a class="button button-primary" href="<%= session_path @conn, :new %>">Sign in</a>

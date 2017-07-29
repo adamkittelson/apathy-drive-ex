@@ -32,11 +32,11 @@ defmodule ApathyDrive.AuthController do
     # Request the user's data with the access token
     user = AccessToken.get!(token, "/me")
 
-    spirit = Spirit.find_or_create_by_external_id(user.body["id"])
+    character = ApathyDrive.Character.find_or_create_by_external_id(user.body["id"])
 
     conn =
       conn
-      |> put_session(:current_spirit, spirit.id)
+      |> put_session(:character, character.id)
 
     redirect(conn, to: game_path(conn, :game))
   end

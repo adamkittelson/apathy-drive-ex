@@ -280,6 +280,13 @@ $(document).ready(function() {
     }
   }
 
+  window.draw_map = function(room_id) {
+    for (var area_name in areas) {
+      draw_area(area_name);
+    };
+    center_on_room(room_id);
+  }
+
   // Start animating
   animate();
   function animate() {
@@ -366,6 +373,12 @@ $(document).ready(function() {
 
   };
 
+  window.room_power = function(room, level) {
+    var base = Math.floor(75 * (1 + (room.level / 10))) * 6;
+
+    return (base + ((base / 10) * (Math.max(room.level, level) - 1))) / 10;
+  }
+
   var draw_room = function(map, room_id, highlighted) {
     var room = rooms[room_id];
 
@@ -377,25 +390,48 @@ $(document).ready(function() {
     var end_x;
     var end_y;
 
+    var roompower = room_power(room, player.level);
+
+    if (player.room && (player.room.id === room_id)) {
+      console.log("room power: " + roompower + ", room level: " + room.level + ", player level: " + player.level);
+    }
+
     if (highlighted) {
       map.lineStyle(2, 0xFFFFFF, 1);
 
-      if (room.controlled_by == "good") {
-        map.beginFill(0xFFFFFF);
-      } else if (room.controlled_by == "evil") {
-        map.beginFill(0xFF00FF);
-      } else {
+      if (roompower < (player.power * 0.66)) {
         map.beginFill(0x008080);
       }
-    } else {
+      else if (roompower < (player.power * 1.33)) {
+        map.beginFill(0x7fff00);
+      }
+      else if (roompower < (player.power * 1.66)) {
+        map.beginFill(0x0000ff);
+      }
+      else if (roompower < (player.power * 2.0)) {
+        map.beginFill(0x8b008b);
+      }
+      else {
+        map.beginFill(0xFF0000);
+      }
+    }
+    else {
       map.lineStyle(2, 0x666666, 1);
 
-      if (room.controlled_by == "good") {
-        map.beginFill(0x999999);
-      } else if (room.controlled_by == "evil") {
-        map.beginFill(0x990099);
-      } else {
+      if (roompower < (player.power * 0.66)) {
         map.beginFill(0x002020);
+      }
+      else if (roompower < (player.power * 1.33)) {
+        map.beginFill(0x006400);
+      }
+      else if (roompower < (player.power * 1.66)) {
+        map.beginFill(0x00008b);
+      }
+      else if (roompower < (player.power * 2.0)) {
+        map.beginFill(0x240024);
+      }
+      else {
+        map.beginFill(0x8b0000);
       }
     }
 
@@ -469,10 +505,11 @@ $(document).ready(function() {
       for (var room_id in area[area_name]) {
         add_room(parseInt(room_id), area[area_name][room_id]);
       }
-      draw_area(area_name);
     }
+  });
 
-    push("map", "request_room_id")
+  chan.on("request_room_id", function() {
+    push("map", "request_room_id");
   });
 
   chan.on("area_change", function(data) {

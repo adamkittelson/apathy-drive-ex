@@ -1,33 +1,32 @@
 defmodule ApathyDrive.MUDChannel do
   use ApathyDrive.Web, :channel
-  alias ApathyDrive.{Presence, RoomServer}
+  alias ApathyDrive.{Character, Mobile, Presence, RoomServer}
 
-  def join("mud:play", %{"spirit" => token}, socket) do
-    case Phoenix.Token.verify(socket, "spirit", token, max_age: 1209600) do
-      {:ok, spirit_id} ->
-        case Repo.get!(Spirit, spirit_id) do
+  def join("mud:play", %{"character" => token}, socket) do
+    case Phoenix.Token.verify(socket, "character", token, max_age: 1209600) do
+      {:ok, character_id} ->
+        case Repo.get!(Character, character_id) do
           nil ->
             {:error, %{reason: "unauthorized"}}
-          %Spirit{name: nil} -> # spirit has been reset, probably due to a game wipe
+          %Character{name: nil} -> # Character has been reset, probably due to a game wipe
             {:error, %{reason: "unauthorized"}}
-          %Spirit{room_id: room_id} = spirit ->
-            spirit =
-              Repo.preload(spirit, :class)
-
-            ref =
+          %Character{room_id: room_id} = character ->
+            character =
               room_id
               |> RoomServer.find
-              |> RoomServer.spirit_connected(spirit, self())
+              |> RoomServer.character_connected(character, self())
 
             socket =
               socket
               |> assign(:room_id, room_id)
-              |> assign(:spirit_id, spirit.id)
-              |> assign(:mobile_ref, ref)
+              |> assign(:character, character.id)
+              |> assign(:power, Mobile.power_at_level(character, character.level))
+              |> assign(:level, character.level)
+              |> assign(:monster_ref, character.ref)
 
               ApathyDrive.PubSub.subscribe("spirits:online")
               ApathyDrive.PubSub.subscribe("chat:gossip")
-              ApathyDrive.PubSub.subscribe("chat:#{String.downcase(spirit.class.name)}")
+              ApathyDrive.PubSub.subscribe("chat:#{String.downcase(character.class)}")
 
             send(self(), :after_join)
 
@@ -41,31 +40,13 @@ defmodule ApathyDrive.MUDChannel do
   def handle_info(:after_join, socket) do
     socket.assigns[:room_id]
     |> RoomServer.find
-    |> RoomServer.execute_command(socket.assigns[:mobile_ref], "l", [])
-
-    update_room(socket)
+    |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
 
     {:noreply, socket}
   end
 
   def handle_info({:update_ref, ref}, socket) do
-    socket = assign(socket, :mobile_ref, ref)
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:respawn, spirit: spirit}, socket) do
-    ref =
-      spirit.room_id
-      |> RoomServer.find
-      |> RoomServer.spirit_connected(spirit, self())
-
-    socket =
-      socket
-      |> assign(:room_id, spirit.room_id)
-      |> assign(:mobile_ref, ref)
-
-    send(self(), :after_join)
+    socket = assign(socket, :monster_ref, ref)
 
     {:noreply, socket}
   end
@@ -76,10 +57,12 @@ defmodule ApathyDrive.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:update_room, room_id}, socket) do
+  def handle_info({:update_character, %{room_id: room_id, power: power, level: level}}, socket) do
     socket =
       socket
       |> assign(:room_id, room_id)
+      |> assign(:power, power)
+      |> assign(:level, level)
 
     update_room(socket)
 
@@ -88,7 +71,7 @@ defmodule ApathyDrive.MUDChannel do
 
   def handle_info({:scroll, %{} = data}, socket) do
     if socket.assigns[:spirit_id] in Map.keys(data) do
-      send_scroll(socket, data[socket.assigns[:mobile_ref]])
+      send_scroll(socket, data[socket.assigns[:monster_ref]])
     else
       send_scroll(socket, data[:other])
     end
@@ -163,7 +146,7 @@ defmodule ApathyDrive.MUDChannel do
 
     socket.assigns[:room_id]
     |> RoomServer.find
-    |> RoomServer.execute_command(socket.assigns[:mobile_ref], "l", [])
+    |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
 
     {:noreply, socket}
   end
@@ -173,11 +156,11 @@ defmodule ApathyDrive.MUDChannel do
       [command | arguments] ->
         socket.assigns[:room_id]
         |> RoomServer.find
-        |> RoomServer.execute_command(socket.assigns[:mobile_ref], command, arguments)
+        |> RoomServer.execute_command(socket.assigns[:monster_ref], command, arguments)
       [] ->
         socket.assigns[:room_id]
         |> RoomServer.find
-        |> RoomServer.execute_command(socket.assigns[:mobile_ref], "l", [])
+        |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
     end
 
     {:noreply, socket}
@@ -210,7 +193,7 @@ defmodule ApathyDrive.MUDChannel do
   end
 
   defp update_room(socket) do
-    Phoenix.Channel.push socket, "update_room", %{:room_id => socket.assigns[:room_id]}
+    Phoenix.Channel.push socket, "update_room", %{room_id: socket.assigns[:room_id], power: socket.assigns[:power], level: socket.assigns[:level]}
   end
 
   defp send_scroll(socket, html) do

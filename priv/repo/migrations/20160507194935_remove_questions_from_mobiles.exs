@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Repo.Migrations.RemoveQuestionsFromMobiles do
+defmodule ApathyDrive.Repo.Migrations.RemoveQuestionsFromMonsters do
   use Ecto.Migration
 
   def change do

@@ -1,7 +1,6 @@
 defmodule Systems.Effect do
   use Timex
   alias ApathyDrive.{Mobile, TimerManager}
-  import TimerManager, only: [seconds: 1]
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
     add_effect(entity, key + 1, effect)
@@ -12,9 +11,9 @@ defmodule Systems.Effect do
     entity =
       case entity do
         %{ref: ref} ->
-          TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, ref, key}})
+          TimerManager.send_after(entity, {{:effect, key}, duration, {:remove_effect, ref, key}})
         %{} ->
-          TimerManager.send_after(entity, {{:effect, key}, duration |> seconds, {:remove_effect, key}})
+          TimerManager.send_after(entity, {{:effect, key}, duration, {:remove_effect, key}})
       end
 
     effect = if effect && effect["timers"] do
@@ -42,7 +41,7 @@ defmodule Systems.Effect do
 
   def add_effect(%{effects: effects, last_effect_key: last_effect} = entity, key, effect) do
     if Map.has_key?(effect, "application_message") do
-      send_scroll(entity, "<p><span class='dark-yellow'>#{effect["application_message"]}</span></p>")
+      Mobile.send_scroll(entity, "<p><span class='dark-yellow'>#{effect["application_message"]}</span></p>")
     end
 
     if Map.has_key?(effect, "member") do
@@ -62,7 +61,7 @@ defmodule Systems.Effect do
              |> List.first
 
     if stack_key == :cast_timer do
-      send_scroll(entity, "<p><span class='dark-red'>You interrupt your other ability.</span></p>")
+      Mobile.send_scroll(entity, "<p><span class='dark-red'>You interrupt your other ability.</span></p>")
     end
     remove(entity, oldest)
   end
@@ -79,11 +78,11 @@ defmodule Systems.Effect do
     case effects[key] do
       %{} ->
         if opts[:fire_after_cast] && Map.has_key?(effects[key], "after_cast") do
-          ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [entity.ref])
+          #ApathyDrive.Spell.after_cast(effects[key]["after_cast"], [entity.ref])
         end
 
-        if opts[:show_expiration_message] && Map.has_key?(effects[key], "expiration_message") do
-          send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["expiration_message"]}</span></p>")
+        if opts[:show_expiration_message] && Map.has_key?(effects[key], "RemoveMessage") do
+          Mobile.send_scroll(entity, "<p><span class='dark-yellow'>#{effects[key]["RemoveMessage"]}</span></p>")
         end
 
         if Map.has_key?(effects[key], "member") do
@@ -96,7 +95,7 @@ defmodule Systems.Effect do
           end)
         end
 
-        if Map.has_key?(entity, :ref), do: send(self, {:think, entity.ref})
+        #if Map.has_key?(entity, :ref), do: send(self, {:think, entity.ref})
 
         Map.put entity, :effects, Map.delete(effects, key)
       _ ->
@@ -114,15 +113,15 @@ defmodule Systems.Effect do
     end
   end
 
-  def max_stacks?(%Mobile{} = mobile, %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}) do
-    stack_count(mobile, stack_key) >= stack_count
+  def max_stacks?(%{} = monster, %{"duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}}) do
+    stack_count(monster, stack_key) >= stack_count
   end
-  def max_stacks?(%Mobile{} = mobile, %{"duration_effects" => _} = ability) do
+  def max_stacks?(%{} = monster, %{"duration_effects" => _} = ability) do
     ability = put_in(ability["duration_effects"]["stack_key"],   ability["name"])
     ability = put_in(ability["duration_effects"]["stack_count"], 1)
-    max_stacks?(mobile, ability)
+    max_stacks?(monster, ability)
   end
-  def max_stacks?(%Mobile{}, %{}), do: false
+  def max_stacks?(%{}, %{}), do: false
 
   def stack_count(%{effects: _effects} = entity, stack_key) do
     stack(entity, stack_key)
@@ -137,10 +136,51 @@ defmodule Systems.Effect do
        end)
   end
 
-  def send_scroll(%Mobile{} = mobile, message) do
-    Mobile.send_scroll(mobile, message)
+  def effect_bonus(%{effects: effects}, name) do
+    effects
+    |> Map.values
+    |> Enum.map(fn
+         (%{} = effect) ->
+           key =
+             effect
+             |> Map.keys
+             |> Enum.find(fn key ->
+                  String.downcase(to_string(key)) == String.downcase(to_string(name))
+                end)
+
+           if key, do: Map.get(effect, key, 0), else: 0
+         (_) ->
+           0
+       end)
+    |> Enum.sum
   end
 
-  def send_scroll(_, _), do: nil
+  def find_by_ref(%{effects: effects}, ref) do
+    Enum.find(effects, fn {_key, effect} ->
+      effect["effect_ref"] == ref
+    end)
+  end
+
+  def time_to_next_periodic_effect(%{effects: effects} = _mobile) do
+    effects
+    |> Map.values
+    |> Enum.sort_by(& &1["NextEffectAt"])
+    |> List.first
+    |> case do
+         %{"NextEffectAt" => time, "effect_ref" => ref} ->
+           %{time: time - System.monotonic_time(:milliseconds), ref: ref}
+         _ ->
+           nil
+       end
+  end
+
+  def schedule_next_periodic_effect(%{ref: ref} = mobile) do
+    case time_to_next_periodic_effect(mobile) do
+      %{ref: effect_ref, time: time} ->
+        TimerManager.send_after(mobile, {:periodic_effects, time, {:periodic_effects, ref, effect_ref}})
+      nil ->
+        mobile
+    end
+  end
 
 end

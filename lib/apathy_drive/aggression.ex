@@ -1,36 +1,38 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.Mobile
+  alias ApathyDrive.{Mobile, Monster, Room, TimerManager}
+  require Logger
 
-  # Don't attack spirits without bodies
-  def react(%Mobile{} = mobile, %Mobile{monster_template_id: nil}), do: mobile
-
-  # mobiles with unities attack mobiles with different unities
-  def react(%Mobile{unities: unities} = mobile, %Mobile{unities: intruder_unities} = intruder) when length(unities) > 0 and unities != intruder_unities do
-    attack(mobile, intruder)
+  def react(%Room{} = room, monster_ref) do
+    Enum.reduce(room.mobiles, room, fn
+      {_ref, %Monster{}}, updated_room ->
+        updated_room
+      {_ref, %{} = mobile}, updated_room ->
+        monster = updated_room.mobiles[monster_ref]
+        put_in(updated_room.mobiles[monster_ref], ApathyDrive.Aggression.react(monster, mobile))
+    end)
   end
 
-  def react(%Mobile{unities: [], alignment: "good"} = mobile, %Mobile{alignment: "evil"} = intruder) do
-    attack(mobile, intruder)
+  # Don't attack other monsters
+  def react(%Monster{} = monster, %Monster{}), do: monster
+
+  # attack non-monsters if hostile
+  def react(%Monster{hostile: true} = monster, %{} = intruder) do
+    attack(monster, intruder)
   end
 
-  def react(%Mobile{unities: [], alignment: "good"} = mobile, _) do
-    mobile
-  end
+  def react(%Monster{} = monster, %{} = _intruder), do: monster
 
-  def react(%Mobile{unities: [], alignment: "neutral"} = mobile, _) do
-    mobile
-  end
+  def react(%{} = mobile, %{}), do: mobile
 
-  def react(%Mobile{unities: [], alignment: "evil", area_spawned_in: mobile_area} = mobile, %Mobile{area_spawned_in: intruder_area, alignment: intruder_alignment} = intruder) when mobile_area != intruder_area or intruder_alignment != "evil" do
-    attack(mobile, intruder)
-  end
+  def attack(%{} = attacker, %{ref: ref} = intruder) do
+    Logger.info("#{attacker.name} attacking #{intruder.name} (#{inspect ref})")
+    time = min(Mobile.attack_interval(attacker), TimerManager.time_remaining(attacker, :auto_attack_timer))
 
-  def react(%Mobile{} = mobile, _) do
-    mobile
-  end
+    effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
 
-  def attack(%Mobile{} = mobile, %Mobile{ref: ref}) do
-    update_in(mobile.hate[ref], &((&1 || 0) + 1))
+    attacker
+    |> Systems.Effect.add(effect, 60_000)
+    |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, attacker.ref}})
   end
 
 end

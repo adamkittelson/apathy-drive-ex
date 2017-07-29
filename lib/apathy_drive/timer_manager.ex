@@ -1,4 +1,6 @@
 defmodule ApathyDrive.TimerManager do
+  alias ApathyDrive.{Room, RoomServer}
+  require Logger
 
   def seconds(seconds), do: seconds |> :timer.seconds |> trunc
 
@@ -12,18 +14,38 @@ defmodule ApathyDrive.TimerManager do
     Map.put(entity, :timers, timers)
   end
 
-  def apply_timers(%{timers: timers} = entity) do
+  def apply_timers(%Room{timers: timers} = room) do
     now = Timex.Time.now |> Timex.Time.to_milliseconds
 
     timers
-    |> Enum.reduce(entity, fn {name, %{send_at: send_at, message: message}}, updated_entity ->
+    |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
          if send_at < now do
-           send(self(), message)
-           update_in(updated_entity.timers, &Map.delete(&1, name))
+           updated_room = update_in(updated_room.timers, &Map.delete(&1, name))
+
+           {:noreply, updated_room} = RoomServer.handle_info(message, updated_room)
+           updated_room
          else
-           updated_entity
+           updated_room
          end
        end)
+  end
+
+  def apply_timers(%Room{} = room, mobile_ref) do
+    now = Timex.Time.now |> Timex.Time.to_milliseconds
+
+    Room.update_mobile(room, mobile_ref, fn %{timers: timers} ->
+      timers
+      |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
+           if send_at < now do
+             updated_room = update_in(updated_room.mobiles[mobile_ref].timers, &Map.delete(&1, name))
+
+             {:noreply, updated_room} = RoomServer.handle_info(message, updated_room)
+             updated_room
+           else
+             updated_room
+           end
+         end)
+    end)
   end
 
   def timers(%{timers: timers}) do
@@ -33,6 +55,8 @@ defmodule ApathyDrive.TimerManager do
   def time_remaining(%{timers: timers}, name) do
     if timer = Map.get(timers, name) do
       timer.send_at - Timex.Time.to_milliseconds(Timex.Time.now)
+    else
+      0
     end
   end
 
