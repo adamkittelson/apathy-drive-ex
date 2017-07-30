@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
   require Ecto.Query
-  alias ApathyDrive.{Area, Character, Mobile, PubSub, Repo, Room}
+  alias ApathyDrive.{Area, Character, Faction, Mobile, PubSub, Repo, Room}
 
   def keywords, do: ["system", "sys"]
 
@@ -81,6 +81,44 @@ defmodule ApathyDrive.Commands.System do
        end
   end
 
+  def system(%Room{} = room, character, ["create", "faction" | faction]) do
+    faction = Enum.join(faction, " ")
+
+    faction
+    |> Faction.new_faction_changeset
+    |> Repo.insert
+    |> case do
+         {:ok, %Faction{name: name}} ->
+           Mobile.send_scroll(character, "<p>\"#{name}\" created!</p>")
+         {:error, %Ecto.Changeset{errors: errors}} ->
+           Enum.each(errors, fn {field, error} ->
+             message = ApathyDrive.ErrorHelpers.translate_error(error)
+             Mobile.send_scroll(character, "<p>Error: #{field} #{message}</p>")
+           end)
+       end
+    room
+  end
+
+  def system(%Room{} = room, character, ["set", "faction", faction, "ally", other_faction]) do
+    case Faction.create_relationship(faction, other_faction, "Ally") do
+      {:ok, faction, other_faction} ->
+        Mobile.send_scroll(character, "<p>#{faction} is now allied with #{other_faction}.</p>")
+      other ->
+        Mobile.send_scroll(character, inspect(other))
+    end
+    room
+  end
+
+  def system(%Room{} = room, character, ["set", "faction", faction, "enemy", other_faction]) do
+    case Faction.create_relationship(faction, other_faction, "Enemy") do
+      {:ok, faction, other_faction} ->
+        Mobile.send_scroll(character, "<p>#{faction} and #{other_faction} are now enemies.</p>")
+      other ->
+        Mobile.send_scroll(character, inspect(other))
+    end
+    room
+  end
+
   def system(%Room{name: old_name} = room, character, ["set", "room", "name" | room_name]) do
     room =
       room
@@ -134,6 +172,16 @@ defmodule ApathyDrive.Commands.System do
            Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{to_string(area.level) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{to_string(room_count) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='black'>#{area.name}</span></p>")
          end)
 
+       end)
+    room
+  end
+
+  def system(%Room{} = room, character, ["list", "factions"]) do
+    ApathyDrive.Faction
+    |> Repo.all
+    |> Enum.each(fn %Faction{name: name, relationships: %{"allies" => allies, "enemies" => enemies}} ->
+         Mobile.send_scroll(character, "<p><span class='dark-magenta'>#{name}</span></p>")
+         Mobile.send_scroll(character, "<p><span class='dark-cyan'>Allies:</span> #{Enum.join(allies, ", ")} <span class='dark-green'>|</span> <span class='dark-cyan'>Enemies:</span> #{Enum.join(enemies, ", ")}</p>")
        end)
     room
   end
