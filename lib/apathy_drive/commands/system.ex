@@ -65,7 +65,7 @@ defmodule ApathyDrive.Commands.System do
     area = Enum.join(area, " ")
 
     area
-    |> Area.changeset
+    |> Area.new_area_changeset
     |> Repo.insert
     |> case do
          {:ok, %Area{name: name} = area} ->

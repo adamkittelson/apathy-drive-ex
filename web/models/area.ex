@@ -53,7 +53,14 @@ defmodule ApathyDrive.Area do
        end)
   end
 
-  def changeset(name) do
+  def changeset(%Area{} = area, params \\ %{}) do
+    area
+    |> cast(params, ~w(name level hostile), ~w())
+    |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
+    |> validate_length(:name, min: 1, max: 30)
+  end
+
+  def new_area_changeset(name) do
     %__MODULE__{}
     |> cast(%{name: name}, ~w(name))
     |> validate_required(:name)
