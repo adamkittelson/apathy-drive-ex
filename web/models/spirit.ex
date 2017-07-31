@@ -44,7 +44,8 @@ defmodule Spirit do
   """
   def changeset(spirit, params \\ %{}) do
     spirit
-    |> cast(params, ~w(name class_id), ~w())
+    |> cast(params, ~w(name class_id)a)
+    |> validate_required(~w(name class_id)a)
     |> validate_inclusion(:class_id, ApathyDrive.Class.ids)
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, name: :spirits_lower_name_index, on: Repo)
@@ -53,7 +54,8 @@ defmodule Spirit do
 
   def sign_up_changeset(model, params \\ %{}) do
     model
-    |> cast(params, ~w(email password), [])
+    |> cast(params, ~w(email password)a)
+    |> validate_required(~w(email password)a)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:email, min: 3, max: 100)
     |> validate_length(:password, min: 6)

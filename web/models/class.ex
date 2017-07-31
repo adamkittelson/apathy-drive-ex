@@ -14,7 +14,7 @@ defmodule ApathyDrive.Class do
     timestamps
   end
 
-  @required_fields ~w(name description armour weapon_hands weapon_type abilities)
+  @required_fields ~w(name description armour weapon_hands weapon_type abilities)a
   @optional_fields ~w()
 
   @doc """
@@ -25,7 +25,8 @@ defmodule ApathyDrive.Class do
   """
   def changeset(model, params \\ %{}) do
     model
-    |> cast(params, @required_fields, @optional_fields)
+    |> cast(params, @required_fields ++ @optional_fields)
+    |> validate_required(@required_fields)
     |> validate_inclusion(:weapon_hands, weapon_hands())
     |> validate_inclusion(:weapon_type, weapon_types())
   end
