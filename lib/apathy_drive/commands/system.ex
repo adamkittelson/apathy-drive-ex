@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
   require Ecto.Query
-  alias ApathyDrive.{Area, Character, Mobile, PubSub, Repo, Room}
+  alias ApathyDrive.{Area, AreaAlly, AreaEnemy, Character, Mobile, PubSub, Repo, Room}
 
   def keywords, do: ["system", "sys"]
 
@@ -19,14 +19,106 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
-  def system(%Room{area: %Area{level: old_level} = area} = room, character, ["set", "area", "level", level]) do
+  def system(%Room{area: %Area{level: old_level} = area} = room, character, ["area", "set", "level", level]) do
     area = Area.update_level(area, level)
     PubSub.broadcast!("areas:#{area.id}", {:update_area, area})
     Mobile.send_scroll(character, "<p>#{area.name} updated from level #{old_level} to #{level}.</p>")
     room
   end
 
-  def system(%Room{area: %Area{} = old_area} = room, character, ["merge", "area" | area]) do
+  def system(%Room{area: %Area{} = area} = room, character, ["area", "add", "ally" | ally_name]) do
+    ally =
+      ally_name
+      |> Enum.join(" ")
+      |> Area.match_by_name
+
+    cond do
+      is_nil(ally) ->
+        Mobile.send_scroll(character, "<p>Could not find an area called #{Enum.join(ally_name, " ")}</p>")
+      ally.id == area.id ->
+        Mobile.send_scroll(character, "<p>An area cannot be its own ally.</p>")
+      :else ->
+        remove_enemy(area, ally)
+
+        Repo.insert_all(AreaAlly, [[area_id: area.id, ally_id: ally.id], [area_id: ally.id, ally_id: area.id]], on_conflict: :nothing)
+        |> case do
+          {2, nil} ->
+            Mobile.send_scroll(character, "<p>#{area.name} is now an ally of #{ally.name}.</p>")
+          {0, nil} ->
+            Mobile.send_scroll(character, "<p>#{area.name} is already an ally of #{ally.name}.</p>")
+          error ->
+            Mobile.send_scroll(character, "<p>#{inspect(error)}</p>")
+        end
+    end
+    room
+  end
+
+  def system(%Room{area: %Area{} = area} = room, character, ["area", "add", "enemy" | enemy_name]) do
+    enemy =
+      enemy_name
+      |> Enum.join(" ")
+      |> Area.match_by_name
+
+    cond do
+      is_nil(enemy) ->
+        Mobile.send_scroll(character, "<p>Could not find an area called #{Enum.join(enemy_name, " ")}</p>")
+      enemy.id == area.id ->
+        Mobile.send_scroll(character, "<p>An area cannot be its own enemy.</p>")
+      :else ->
+        remove_ally(area, enemy)
+
+        Repo.insert_all(AreaEnemy, [[area_id: area.id, enemy_id: enemy.id], [area_id: enemy.id, enemy_id: area.id]], on_conflict: :nothing)
+        |> case do
+          {2, nil} ->
+            Mobile.send_scroll(character, "<p>#{area.name} is now an enemy of #{enemy.name}.</p>")
+          {0, nil} ->
+            Mobile.send_scroll(character, "<p>#{area.name} is already an enemy of #{enemy.name}.</p>")
+          error ->
+            Mobile.send_scroll(character, "<p>#{inspect(error)}</p>")
+        end
+    end
+    room
+  end
+
+  def system(%Room{area: %Area{} = area} = room, character, ["area", "remove", "enemy" | enemy_name]) do
+    enemy =
+      enemy_name
+      |> Enum.join(" ")
+      |> Area.match_by_name
+
+    cond do
+      is_nil(enemy) ->
+        Mobile.send_scroll(character, "<p>Could not find an area called #{Enum.join(enemy_name, " ")}</p>")
+      enemy.id == area.id ->
+        Mobile.send_scroll(character, "<p>An area cannot be its own enemy.</p>")
+      :else ->
+        remove_enemy(area, enemy)
+
+        Mobile.send_scroll(character, "<p>#{area.name} is no longer an enemy of #{enemy.name}.</p>")
+    end
+    room
+  end
+
+  def system(%Room{area: %Area{} = area} = room, character, ["area", "remove", "ally" | ally_name]) do
+    ally =
+      ally_name
+      |> Enum.join(" ")
+      |> Area.match_by_name
+
+    cond do
+      is_nil(ally) ->
+        Mobile.send_scroll(character, "<p>Could not find an area called #{Enum.join(ally_name, " ")}</p>")
+      ally.id == area.id ->
+        Mobile.send_scroll(character, "<p>An area cannot be its own ally.</p>")
+      :else ->
+        remove_ally(area, ally)
+
+        Mobile.send_scroll(character, "<p>#{area.name} is no longer an ally of #{ally.name}.</p>")
+    end
+    room
+  end
+
+  def system(%Room{area: %Area{} = old_area} = room, character, ["area", "merge" | area]) do
     area = Enum.join(area, " ")
 
     area
@@ -131,7 +223,26 @@ defmodule ApathyDrive.Commands.System do
     |> Enum.each(fn chunk ->
          Mobile.send_scroll(character, "<p><span class='dark-magenta'>Level</span> <span class='dark-green'>|</span> <span class='dark-magenta'>Rooms</span> <span class='dark-green'>|</span> <span class='dark-magenta'>Area</span></p>")
          Enum.each(chunk, fn [area, room_count] ->
+           area =
+             area
+             |> Repo.preload(:allies)
+             |> Repo.preload(:enemies)
+
+           allies =
+             area.allies
+             |> Enum.map(&(&1.name))
+
+           enemies =
+             area.enemies
+             |> Enum.map(&(&1.name))
+
            Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{to_string(area.level) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{to_string(room_count) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='black'>#{area.name}</span></p>")
+           if Enum.any?(allies) do
+             Mobile.send_scroll(character, "<p>              <span class='dark-green'>|</span>   <span class='dark-cyan'>Allies:</span> #{Enum.join(allies, ", ")}</p>")
+           end
+           if Enum.any?(enemies) do
+             Mobile.send_scroll(character, "<p>              <span class='dark-green'>|</span>   <span class='dark-cyan'>Enemies:</span> #{Enum.join(enemies, ", ")}</p>")
+           end
          end)
 
        end)
@@ -142,8 +253,7 @@ defmodule ApathyDrive.Commands.System do
     area = Enum.join(area, " ")
 
     area
-    |> Area.find_by_name
-    |> Repo.one
+    |> Area.match_by_name
     |> case do
          %Area{} = area ->
            Ecto.assoc(area, :rooms)
@@ -177,6 +287,22 @@ defmodule ApathyDrive.Commands.System do
     Mobile.send_scroll(character, "<p>Invalid system command.</p>")
 
     room
+  end
+
+  defp remove_ally(%Area{} = area, %Area{} = ally) do
+    Ecto.Query.from(area_ally in AreaAlly, where: area_ally.area_id == ^area.id and area_ally.ally_id == ^ally.id)
+    |> Repo.delete_all
+
+    Ecto.Query.from(area_ally in AreaAlly, where: area_ally.area_id == ^ally.id and area_ally.ally_id == ^area.id)
+    |> Repo.delete_all
+  end
+
+  defp remove_enemy(%Area{} = area, %Area{} = enemy) do
+    Ecto.Query.from(area_enemy in AreaEnemy, where: area_enemy.area_id == ^area.id and area_enemy.enemy_id == ^enemy.id)
+    |> Repo.delete_all
+
+    Ecto.Query.from(area_enemy in AreaEnemy, where: area_enemy.area_id == ^enemy.id and area_enemy.enemy_id == ^area.id)
+    |> Repo.delete_all
   end
 
 end

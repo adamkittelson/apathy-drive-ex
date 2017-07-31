@@ -4,7 +4,7 @@ defmodule Spirit do
 
   require Logger
   import Comeonin.Bcrypt
-  alias ApathyDrive.{Mobile, Monster, PubSub, Room}
+  alias ApathyDrive.{Mobile, PubSub, Room}
 
   @idle_threshold 60
 

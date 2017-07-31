@@ -1,6 +1,6 @@
 defmodule ApathyDrive.EntityItem do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{EntityItem, Item}
+  alias ApathyDrive.Item
 
   schema "entities_items" do
     field :assoc_table, :string

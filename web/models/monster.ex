@@ -230,24 +230,23 @@ defmodule ApathyDrive.Monster do
                |> Character.load_items
            end
 
-      character =
-        if rarity == "legendary" do
-          character = put_in(character.pity_modifier, 0)
+      if rarity == "legendary" do
+        character = put_in(character.pity_modifier, 0)
 
-          %Character{id: character.id}
-          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
-          |> Repo.update!
+        %Character{id: character.id}
+        |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+        |> Repo.update!
 
-          character
-        else
-          character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
+        character
+      else
+        character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
 
-          %Character{id: character.id}
-          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
-          |> Repo.update!
+        %Character{id: character.id}
+        |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+        |> Repo.update!
 
-          character
-        end
+        character
+      end
     else
       character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
 

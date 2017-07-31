@@ -1,6 +1,5 @@
 defmodule ApathyDrive.EntitySpell do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.EntitySpell
 
   schema "entities_spells" do
     field :assoc_table, :string

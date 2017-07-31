@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Character, Class, Companion, Match, Mobile, Monster, MonsterSpawning, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
+  alias ApathyDrive.{Ability, Area, Character, Companion, Match, Mobile, Monster, MonsterSpawning, Room, RoomServer, RoomUnity, PubSub, TimerManager}
   require Logger
 
   @behaviour Access

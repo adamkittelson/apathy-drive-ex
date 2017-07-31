@@ -4,7 +4,7 @@ defmodule ApathyDrive.Mixfile do
   def project do
     [ app: :apathy_drive,
       version: version(),
-      elixir: "~> 1.3.0",
+      elixir: "~> 1.3.4",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
       deps: deps,
@@ -26,8 +26,9 @@ defmodule ApathyDrive.Mixfile do
   defp deps do
     [
       {:cowboy,              "~> 1.0.0"},
-      {:ecto,                "2.0.2", override: true},
-      {:postgrex,            "~> 0.11.2"},
+      {:ecto,                "~> 2.1", override: true},
+      {:db_connection,       "~> 1.1"},
+      {:postgrex,            "~> 0.13", override: true},
       {:phoenix,             "~> 1.2.0"},
       {:phoenix_pubsub,      "~> 1.0.0"},
       {:phoenix_live_reload, "~> 1.0.5", only: :dev},
@@ -38,12 +39,16 @@ defmodule ApathyDrive.Mixfile do
       {:oauth2,              "~> 0.5"},
       {:comeonin,            "~> 1.2.2"},
       {:exrm,                "1.0.3"},
+      {:erlware_commons, "~> 0.21.0", override: true}, # erlang 19 compat, can remove after exrm -> distillery
       {:conform,             "2.0.0"},
       {:conform_exrm,        "1.0.0"},
       {:ex_statsd,           "~> 0.5.3"},
       {:rollbax,             "~> 0.6.1"},
       {:scrivener_ecto,      "~> 1.0.0", override: true},
-      {:ex_admin,            "~> 0.8"},
+
+      # fix compilation error with newer ecto
+      {:ex_admin,            github: "smpallen99/ex_admin", ref: "490e32aafe40ffc3b60358e6b66c2e00a21ebedb"},
+
       {:shouldi,             "0.3.0", only: :test}
     ]
   end

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, EntityItem, Item, Mobile}
+  alias ApathyDrive.{Character, EntityItem, Item}
   require Logger
 
   schema "items" do

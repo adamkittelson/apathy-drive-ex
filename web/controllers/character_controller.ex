@@ -21,10 +21,9 @@ defmodule ApathyDrive.CharacterController do
 
     case Repo.insert(changeset) do
       {:ok, character} ->
-        conn =
-          conn
-          |> put_session(:character, character.id)
-          |> redirect(to: game_path(conn, :game))
+        conn
+        |> put_session(:character, character.id)
+        |> redirect(to: game_path(conn, :game))
       {:error, changeset} ->
         render(conn, ApathyDrive.SessionView, "new.html", changeset: changeset)
     end

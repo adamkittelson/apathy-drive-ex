@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, Companion, EntityAbility, EntityItem, Item, ItemAbility, Monster, Mobile, Party, Race, Room, RoomServer, Spell, SpellAbility, Text, TimerManager}
+  alias ApathyDrive.{Character, Companion, EntityAbility, Item, Monster, Mobile, Party, Race, Room, RoomServer, Spell, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -795,7 +795,6 @@ defmodule ApathyDrive.Character do
         0
       else
         agi = attribute_at_level(character, :agility, level)
-        cha = attribute_at_level(character, :charm, level)
         agi = agi + (Party.charm_at_level(room, character, level) / 10)
         modifier = ability_value(character, "Stealth")
         agi * (modifier / 100)

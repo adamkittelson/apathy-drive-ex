@@ -9,6 +9,12 @@ defmodule ApathyDrive.Area do
     has_many :rooms, ApathyDrive.Room
     has_many :lair_monsters, through: [:rooms, :lairs, :monster_template]
 
+    has_many :areas_allies, ApathyDrive.AreaAlly
+    has_many :allies, through: [:areas_allies, :ally]
+    
+    has_many :areas_enemies, ApathyDrive.AreaEnemy
+    has_many :enemies, through: [:areas_enemies, :enemy]
+
     timestamps
   end
 
