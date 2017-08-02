@@ -30,6 +30,7 @@ defmodule ApathyDrive.Mixfile do
       {:db_connection,       "~> 1.1"},
       {:postgrex,            "~> 0.13", override: true},
       {:phoenix,             "~> 1.2.0"},
+      {:plug, "~>1.3.5", override: true},
       {:phoenix_pubsub,      "~> 1.0.0"},
       {:phoenix_live_reload, "~> 1.0.5", only: :dev},
       {:phoenix_ecto,        "~> 3.0.0"},

@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Companion, EntityAbility, Item, Monster, Mobile, Party, Race, Room, RoomServer, Spell, Text, TimerManager}
+  alias ApathyDrive.{Character, CharacterReputation, Companion, EntityAbility, Item, Monster, Mobile, Party, Race, Room, RoomServer, Spell, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -51,11 +51,13 @@ defmodule ApathyDrive.Character do
     field :weapon_type,     :string, virtual: true
     field :leader,          :any, virtual: true
     field :invitees,        :any, virtual: true, default: []
+    field :reputations,     :map, virtual: true, default: %{}
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
 
     has_many :characters_items, ApathyDrive.EntityItem
+    has_many :characters_reputations, ApathyDrive.CharacterReputation
 
     timestamps
   end
@@ -165,6 +167,17 @@ defmodule ApathyDrive.Character do
     |> Systems.Effect.add(effect)
   end
 
+  def load_reputations(%Character{} = character) do
+    reputations =
+      character
+      |> Ecto.assoc([:characters_reputations])
+      |> Ecto.Query.preload([:area])
+      |> Repo.all
+      |> Enum.reduce(%{}, &(Map.put(&2, &1.area.id, %{name: &1.area.name, reputation: &1.reputation})))
+
+    Map.put(character, :reputations, reputations)
+  end
+
   def load_items(%Character{id: id} = character) do
     items = ApathyDrive.EntityItem.load_items("characters", id)
 
@@ -233,6 +246,29 @@ defmodule ApathyDrive.Character do
       |> Repo.update!
     end
     character
+  end
+
+  def add_reputation(%Character{} = character, reputations) do
+    Enum.reduce(reputations, character, fn %{area_id: area_id, area_name: area_name, reputation: reputation}, character ->
+      change =
+        if reputation > 0 do
+          change = -div(reputation, 10)
+          Mobile.send_scroll(character, "<p>You lose #{abs(change)} reputation with #{area_name}.")
+          change
+        else
+          change = -div(reputation, 100)
+          Mobile.send_scroll(character, "<p>You gain #{abs(change)} reputation with #{area_name}.")
+          change
+        end
+
+      character = update_in(character.reputations[area_id], &(&1 || %{name: area_name, reputation: 0.0}))
+
+      character = update_in(character.reputations[area_id].reputation, &(max(-1000.0, min(&1 + change, 1000.0))))
+
+      Repo.insert(%CharacterReputation{character_id: character.id, area_id: area_id, reputation: character.reputations[area_id].reputation}, on_conflict: :replace_all, conflict_target: [:character_id, :area_id])
+
+      character
+    end)
   end
 
   def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do
@@ -777,7 +813,7 @@ defmodule ApathyDrive.Character do
 
     def spellcasting_at_level(character, level, room) do
       will = attribute_at_level(character, :willpower, level)
-      cha = Party.charm_at_level(room, character, level) 
+      cha = Party.charm_at_level(room, character, level)
       will = will + (cha / 10)
       modifier = ability_value(character, "Spellcasting")
       will * (1 + (modifier / 100))

@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, EntityAbility, Item, Mobile, Monster, Party, Room, RoomMonster,
+  alias ApathyDrive.{Area, Character, EntityAbility, Item, Mobile, Monster, Party, Room, RoomMonster,
                      Spell, Stealth, Text, TimerManager}
 
   require Logger
@@ -39,6 +39,7 @@ defmodule ApathyDrive.Monster do
     field :spawned_at,  :integer, virtual: true
     field :spell_shift, :float, virtual: true
     field :spell_special, :float, virtual: true
+    field :reputations, :map, virtual: true, default: []
 
     timestamps
 
@@ -93,6 +94,7 @@ defmodule ApathyDrive.Monster do
       |> generate_monster_attributes()
       |> load_spells()
       |> load_abilities()
+      |> set_reputations()
       |> Mobile.cpr
     end
   end
@@ -100,7 +102,7 @@ defmodule ApathyDrive.Monster do
     monster = Repo.get(Monster, monster_id)
 
     attributes = Map.take(rm, [:strength, :agility, :intellect,
-                               :willpower, :health, :charm, :name])
+                               :willpower, :health, :charm, :name, :spawned_at])
 
     ref = make_ref()
     monster
@@ -110,8 +112,38 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:level, rm.level)
     |> load_spells()
     |> load_abilities()
+    |> set_reputations()
     |> Mobile.cpr
   end
+
+  def set_reputations(%Monster{spawned_at: room_id} = monster) do
+    %Room{allies: allies, enemies: enemies, area: area} =
+      Room
+      |> Repo.get(room_id)
+      |> Repo.preload(:area)
+      |> Room.load_reputations
+
+    set_reputations(monster, area, allies, enemies)
+  end
+  def set_reputations(%Monster{grade: grade} = monster, %Area{} = area, allies, enemies) do
+    amount = reputation_for_grade(grade)
+
+    monster = put_in(monster.reputations, [%{reputation: amount, area_id: area.id, area_name: area.name}])
+
+    monster =
+      Enum.reduce(allies, monster, fn {area_id, area_name}, monster ->
+        update_in(monster.reputations, & [%{reputation: div(amount, 2), area_id: area_id, area_name: area_name} | &1])
+      end)
+
+    Enum.reduce(enemies, monster, fn {area_id, area_name}, monster ->
+      update_in(monster.reputations, & [%{reputation: -div(amount, 2), area_id: area_id, area_name: area_name} | &1])
+    end)
+  end
+
+  def reputation_for_grade("boss"), do: 500
+  def reputation_for_grade("strong"), do: 400
+  def reputation_for_grade("normal"), do: 300
+  def reputation_for_grade("weak"), do: 200
 
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
   def spawnable?(%Monster{}, _now), do: true
@@ -499,8 +531,10 @@ defmodule ApathyDrive.Monster do
 
               Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
-
-              character = Character.add_experience(character, exp)
+              character =
+                character
+                |> Character.add_experience(exp)
+                |> Character.add_reputation(monster.reputations)
 
               Monster.generate_loot_for_character(monster, character)
             end)
