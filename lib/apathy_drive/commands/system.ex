@@ -44,6 +44,8 @@ defmodule ApathyDrive.Commands.System do
         |> case do
           {2, nil} ->
             Mobile.send_scroll(character, "<p>#{area.name} is now an ally of #{ally.name}.</p>")
+            PubSub.broadcast!("areas:#{area.id}", :reload_reputations)
+            PubSub.broadcast!("areas:#{ally.id}", :reload_reputations)
           {0, nil} ->
             Mobile.send_scroll(character, "<p>#{area.name} is already an ally of #{ally.name}.</p>")
           error ->
@@ -71,6 +73,8 @@ defmodule ApathyDrive.Commands.System do
         |> case do
           {2, nil} ->
             Mobile.send_scroll(character, "<p>#{area.name} is now an enemy of #{enemy.name}.</p>")
+            PubSub.broadcast!("areas:#{area.id}", :reload_reputations)
+            PubSub.broadcast!("areas:#{enemy.id}", :reload_reputations)
           {0, nil} ->
             Mobile.send_scroll(character, "<p>#{area.name} is already an enemy of #{enemy.name}.</p>")
           error ->
@@ -93,6 +97,8 @@ defmodule ApathyDrive.Commands.System do
         Mobile.send_scroll(character, "<p>An area cannot be its own enemy.</p>")
       :else ->
         remove_enemy(area, enemy)
+        PubSub.broadcast!("areas:#{area.id}", :reload_reputations)
+        PubSub.broadcast!("areas:#{enemy.id}", :reload_reputations)
 
         Mobile.send_scroll(character, "<p>#{area.name} is no longer an enemy of #{enemy.name}.</p>")
     end
@@ -112,6 +118,8 @@ defmodule ApathyDrive.Commands.System do
         Mobile.send_scroll(character, "<p>An area cannot be its own ally.</p>")
       :else ->
         remove_ally(area, ally)
+        PubSub.broadcast!("areas:#{area.id}", :reload_reputations)
+        PubSub.broadcast!("areas:#{ally.id}", :reload_reputations)
 
         Mobile.send_scroll(character, "<p>#{area.name} is no longer an ally of #{ally.name}.</p>")
     end

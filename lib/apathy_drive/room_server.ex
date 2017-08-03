@@ -743,6 +743,12 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def handle_info(:reload_reputations, room) do
+    room = Room.load_reputations(room)
+
+    {:noreply, room}
+  end
+
   def handle_info(message, room) do
     IO.inspect(message)
     {:noreply, room}

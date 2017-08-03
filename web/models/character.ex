@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, CharacterReputation, Companion, EntityAbility, Item, Monster, Mobile, Party, Race, Room, RoomServer, Spell, Text, TimerManager}
+  alias ApathyDrive.{Character, CharacterReputation, Companion, EntityAbility, Item, Monster, Mobile, Party, Race, Reputation, Room, RoomServer, Spell, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -250,20 +250,19 @@ defmodule ApathyDrive.Character do
 
   def add_reputation(%Character{} = character, reputations) do
     Enum.reduce(reputations, character, fn %{area_id: area_id, area_name: area_name, reputation: reputation}, character ->
-      change =
-        if reputation > 0 do
-          change = -div(reputation, 10)
-          Mobile.send_scroll(character, "<p>You lose #{abs(change)} reputation with #{area_name}.")
-          change
-        else
-          change = -div(reputation, 100)
-          Mobile.send_scroll(character, "<p>You gain #{abs(change)} reputation with #{area_name}.")
-          change
-        end
+      change = -(reputation / 100)
 
       character = update_in(character.reputations[area_id], &(&1 || %{name: area_name, reputation: 0.0}))
 
+      current = Reputation.word_for_value(character.reputations[area_id].reputation)
+
       character = update_in(character.reputations[area_id].reputation, &(max(-1000.0, min(&1 + change, 1000.0))))
+
+      updated = Reputation.word_for_value(character.reputations[area_id].reputation)
+
+      if current != updated do
+        Mobile.send_scroll(character, "<p>Your reputation with #{area_name} is now <span class='#{Reputation.color(updated)}'>#{updated}</span>.</p>")
+      end
 
       Repo.insert(%CharacterReputation{character_id: character.id, area_id: area_id, reputation: character.reputations[area_id].reputation}, on_conflict: :replace_all, conflict_target: [:character_id, :area_id])
 
