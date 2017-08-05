@@ -39,7 +39,7 @@ defmodule ApathyDrive.Mixfile do
       {:inflex,              "~> 1.7"},
       {:oauth2,              "~> 0.5"},
       {:comeonin,            "~> 1.2.2"},
-      {:conform,             "~> 2.5.0"},
+      {:conform,             "2.3.2"},
       {:ex_statsd,           "~> 0.5.3"},
       {:rollbax,             "~> 0.6.1"},
       {:scrivener_ecto,      "~> 1.0.0", override: true},
