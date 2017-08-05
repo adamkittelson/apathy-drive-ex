@@ -48,11 +48,11 @@ namespace :db do
   task :local_to_production do
     run_locally do
       execute :pg_dump, "-Ft apathy_drive > database.tar"
-      execute :scp, "priv/database.tar", "apotheos.is:/home/deploy/database.tar"
+      execute :scp, "database.tar", "apotheos.is:/home/deploy/database.tar"
     end
-    invoke "deploy:stop"
+    invoke "deploy:stop" rescue nil
     on roles(:app) do |host|
-      execute :pg_restore, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "-Ft /home/deploy/database.tar"
+      execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "--clean", "--create", "-Ft /home/deploy/database.tar"
     end
     invoke "deploy:start"
   end
