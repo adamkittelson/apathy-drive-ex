@@ -193,3 +193,6 @@ CHANGELOG
 
 ---- 0.0.74 / 2017-07-28 / another-revamp --------------------------------------
 * monsters scale to players level and about a billion other things
+
+---- 0.0.75 / 2017-08-05 / reputation ------------------------------------------
+* area reputations
