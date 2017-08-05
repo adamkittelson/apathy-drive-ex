@@ -5,8 +5,7 @@ set :application, 'apathy_drive'
 set :deploy_to, '/data/apathy_drive'
 set :releases_to_keep, 5
 set :default_env, {
-  'RELEASE_CONFIG_FILE' => '/home/deploy/apathy_drive.conf',
-  'VMARGS_PATH' => '/home/deploy/vm.args'
+  'RELEASE_CONFIG_DIR' => '/home/deploy'
 }
 
 Rake::Task["deploy"].clear_actions
@@ -45,28 +44,31 @@ namespace :db do
     end
   end
 
-  desc "Drop / Load Game World State"
-  task :reload do
-    on roles(:app) do |host|
-      last_release = capture("ls #{fetch(:deploy_to)}/app/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
-      execute "#{fetch(:deploy_to)}/app/bin/apathy_drive", "rpc", "Elixir.ApathyDrive.System", "drop_world!", "\"[].\""
-      execute :pg_restore, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "#{fetch(:deploy_to)}/app/lib/apathy_drive-#{last_release}/priv/data.dump"
+  desc "Upload local data to server"
+  task :local_to_server do
+    run_locally do
+      execute :pg_dump, "--no-privileges", "-Ft apathy_drive > database.tar"
+      execute :scp, "database.tar", "apotheos.is:/home/deploy/database.tar"
     end
-    invoke "deploy:restart"
+    invoke "deploy:stop" rescue nil
+    on roles(:app) do |host|
+      execute :psql, "-U apathy_drive", "-d template1", "-w", "-h localhost", "-c \"DROP DATABASE apathy_drive;\"" rescue nil
+      execute :createdb, "-h localhost", "-U apathy_drive", "-w", "-O apathy_drive", "apathy_drive"
+      execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/database.tar"
+    end
+    invoke "deploy:start"
   end
 
-  desc "Dump / download World Data"
-  task :download do
+  desc "Download server data to local"
+  task :server_to_local do
     on roles(:app) do |host|
-      execute :pg_dump, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "--table=abilities", "--table=crits", "--table=areas", "--table=classes", "--table=item_drops", "--table=items", "--table=lair_monsters", "--table=monster_abilities", "--table=monster_templates", "--table=rooms", "--table=scripts", "--data-only", "--dbname=apathy_drive", "-Fc > /home/deploy/data.dump"
+      execute :pg_dump, "--no-privileges", "-U apathy_drive", "-w", "-h localhost", "-Ft apathy_drive > /home/deploy/database.tar"
     end
     run_locally do
-      execute :scp, "apotheos.is:/home/deploy/data.dump", "priv/data.dump"
-      execute :mix, "drop_world"
-      execute :pg_restore, "--dbname=apathy_drive", "-w", "-h localhost", "priv/data.dump"
-      execute :git,  "add priv/data.dump"
-      execute :git, "commit",  "-m 'update data from production'"
-      execute :git, "push"
+      execute :scp, "apotheos.is:/home/deploy/database.tar", "database.tar"
+      execute :psql, "-U adamkittelson", "-d template1", "-w", "-h localhost", "-c \"DROP DATABASE apathy_drive;\"" rescue nil
+      execute :createdb, "-h localhost", "-U adamkittelson", "-w", "-O adamkittelson", "apathy_drive"
+      execute :pg_restore, "-U adamkittelson", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=adamkittelson", "-Ft database.tar"
     end
   end
 end
@@ -106,11 +108,11 @@ namespace :deploy do
   task :build do
     run_locally do
       build_output = capture("docker build --build-arg MIX_ENV=#{fetch(:mix_env)} .")
-      version  = /The release for apathy_drive-(\d+\.\d+\.\d+) is ready!/.match(build_output)[1]
+      version  = /Archiving apathy_drive-(\d+\.\d+\.\d+)/.match(build_output)[1]
       image_id = /Successfully built (\w+)/.match(build_output)[1]
       raise "build error" unless version && image_id
       container_id = capture("docker create #{image_id}")
-      `docker cp #{container_id}:/usr/src/app/rel/apathy_drive/releases/#{version}/apathy_drive.tar.gz .`
+      `docker cp #{container_id}:/usr/src/app/_build/#{fetch(:mix_env)}/rel/apathy_drive/releases/#{version}/apathy_drive.tar.gz .`
       `docker rm -v #{container_id}`
     end
   end

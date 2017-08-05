@@ -3,12 +3,6 @@ defmodule ApathyDrive.System do
 
   alias ApathyDrive.Repo
 
-  def drop_world! do
-    ["areas", "crits", "item_drops", "lair_monsters", "monster_abilities",
-     "abilities", "classes", "items", "monster_templates", "rooms", "scripts"]
-    |> Enum.each(&(Ecto.Adapters.SQL.query!(Repo, "DELETE FROM #{&1}", [])))
-  end
-
   def add_admin(name) do
     case Repo.get_by(Spirit, name: name) do
       %Spirit{admin: true} ->
