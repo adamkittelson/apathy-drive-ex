@@ -1,4 +1,4 @@
-FROM trenpixster/elixir:1.3.0
+FROM trenpixster/elixir:1.3.4
 
 ENV REFRESHED_AT 2016-06-23
 
@@ -10,4 +10,4 @@ ENV MIX_ENV ${MIX_ENV}
 
 RUN mix deps.get
 
-RUN mix compile && mix phoenix.digest && mix release --verbosity=verbose
+RUN mix compile && mix phoenix.digest && mix release.clean && mix release --verbose --env=${MIX_ENV}
