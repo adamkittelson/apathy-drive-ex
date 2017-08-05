@@ -6,7 +6,6 @@
   "combine": {:hex, :combine, "0.7.0", "2ac6ae852a9835fe8189af18121cddd5bed2677f5df706dc0d208af668ab845d", [:mix], []},
   "comeonin": {:hex, :comeonin, "1.2.2", "9edb1370db14a412f4d9a4e2597c29c7a96564d62e816d47bbe02bb0e24f4321", [:mix, :make, :make], []},
   "conform": {:hex, :conform, "2.5.0", "05db3b2c72875c4edc4ee3318a37939e793696aa96b76d667bda5e128b348665", [:mix], [{:neotoma, "~> 1.7.3", [hex: :neotoma, repo: "hexpm", optional: false]}], "hexpm"},
-  "conform_exrm": {:hex, :conform_exrm, "1.0.0", "68d5923a74dad4169b51454d723d08ca1644b6a6deaf64eccd509fd084cd1343", [:mix], [{:conform, "> 0.0.0", [hex: :conform, optional: false]}, {:exrm, "> 0.0.0", [hex: :exrm, optional: false]}]},
   "connection": {:hex, :connection, "1.0.4", "a1cae72211f0eef17705aaededacac3eb30e6625b04a6117c1b2db6ace7d5976", [:mix], []},
   "cowboy": {:hex, :cowboy, "1.0.4", "a324a8df9f2316c833a470d918aaf73ae894278b8aa6226ce7a9bf699388f878", [:rebar, :make], [{:cowlib, "~> 1.0.0", [hex: :cowlib, optional: false]}, {:ranch, "~> 1.0", [hex: :ranch, optional: false]}]},
   "cowlib": {:hex, :cowlib, "1.0.2", "9d769a1d062c9c3ac753096f868ca121e2730b9a377de23dec0f7e08b1df84ee", [:make], []},
