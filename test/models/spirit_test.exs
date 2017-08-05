@@ -24,13 +24,13 @@ defmodule SpiritTest do
 
   test "changeset with an invalid email address" do
     changeset = Spirit.sign_up_changeset(%Spirit{}, @invalid_email)
-    assert changeset.errors == [email: {"has invalid format", []}]
+    assert changeset.errors == [email: {"has invalid format", [validation: :format]}]
     refute changeset.valid?
   end
 
   test "changeset with a password that is too short" do
     changeset = Spirit.sign_up_changeset(%Spirit{}, @pw_confirmation)
-    assert changeset.errors == [password_confirmation: {"does not match confirmation", []}]
+    assert changeset.errors == [password_confirmation: {"does not match confirmation", [validation: :confirmation]}]
     refute changeset.valid?
   end
 end

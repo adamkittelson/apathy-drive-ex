@@ -81,6 +81,7 @@ defmodule ApathyDrive.RoomServer do
       |> Repo.preload(:room_unity)
       |> Repo.preload(:area)
       |> Room.load_items
+      |> Room.load_reputations
 
     Logger.metadata(room: room.name <> "##{room.id}")
 
@@ -194,6 +195,7 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:leader, ref)
         |> Character.load_race
         |> Character.load_class
+        |> Character.load_reputations
         |> Character.load_spells
         |> Character.load_items
         |> Map.put(:socket, socket)
@@ -739,6 +741,12 @@ defmodule ApathyDrive.RoomServer do
     else
       {:noreply, room}
     end
+  end
+
+  def handle_info(:reload_reputations, room) do
+    room = Room.load_reputations(room)
+
+    {:noreply, room}
   end
 
   def handle_info(message, room) do

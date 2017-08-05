@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, EntityItem, Item, Mobile}
+  alias ApathyDrive.{Character, EntityItem, Item}
   require Logger
 
   schema "items" do
@@ -35,8 +35,8 @@ defmodule ApathyDrive.Item do
     timestamps
   end
 
-  @required_fields ~w(name description worn_on level grade)
-  @optional_fields ~w(abilities global_drop)
+  @required_fields ~w(name description worn_on level grade)a
+  @optional_fields ~w(abilities global_drop)a
   @rarities %{
     "common" => %{
       cost_multiplier: 1,
@@ -73,7 +73,8 @@ defmodule ApathyDrive.Item do
   """
   def changeset(model, params \\ %{}) do
     model
-    |> cast(params, @required_fields, @optional_fields)
+    |> cast(params, @required_fields ++ @optional_fields)
+    |> validate_required(@required_fields)
   end
 
   def from_assoc(%EntityItem{id: id, item: item} = ei) do

@@ -566,7 +566,6 @@ defmodule ApathyDrive.Companion do
         0
       else
         agi = attribute_at_level(companion, :agility, level)
-        cha = attribute_at_level(companion, :charm, level)
         agi = agi + (Party.charm_at_level(room, companion, level) / 10)
         modifier = ability_value(companion, "Stealth")
         agi * (modifier / 100)

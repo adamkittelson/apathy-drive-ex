@@ -1,6 +1,5 @@
 defmodule ApathyDrive.EntityAbility do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.EntityAbility
 
   schema "entities_abilities" do
     field :assoc_table, :string

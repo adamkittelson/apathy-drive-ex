@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Character, Class, Companion, Match, Mobile, Monster, MonsterSpawning, Room, RoomServer, RoomUnity, Presence, PubSub, TimerManager}
+  alias ApathyDrive.{Ability, Area, Character, Companion, Match, Mobile, Monster, MonsterSpawning, Room, RoomServer, RoomUnity, PubSub, TimerManager}
   require Logger
 
   @behaviour Access
@@ -30,6 +30,8 @@ defmodule ApathyDrive.Room do
     field :mobiles,            :map, virtual: true, default: %{}
     field :timer,              :any, virtual: true
     field :items,              :any, virtual: true, default: []
+    field :allies,             :any, virtual: true, default: %{}
+    field :enemies,            :any, virtual: true, default: %{}
 
     timestamps
 
@@ -46,6 +48,17 @@ defmodule ApathyDrive.Room do
   def load_items(%Room{id: id} = room) do
     items = ApathyDrive.EntityItem.load_items("rooms", id)
     Map.put(room, :items, items)
+  end
+
+  def load_reputations(%Room{area: area} = room) do
+    area =
+      area
+      |> Repo.preload(:allies)
+      |> Repo.preload(:enemies)
+
+    room
+    |> put_in([:allies], Enum.reduce(area.allies, %{}, &(Map.put(&2, &1.id, &1.name))))
+    |> put_in([:enemies], Enum.reduce(area.enemies, %{}, &(Map.put(&2, &1.id, &1.name))))
   end
 
   def update_mobile(%Room{} = room, mobile_ref, fun) do

@@ -9,6 +9,12 @@ defmodule ApathyDrive.Area do
     has_many :rooms, ApathyDrive.Room
     has_many :lair_monsters, through: [:rooms, :lairs, :monster_template]
 
+    has_many :areas_allies, ApathyDrive.AreaAlly
+    has_many :allies, through: [:areas_allies, :ally]
+    
+    has_many :areas_enemies, ApathyDrive.AreaEnemy
+    has_many :enemies, through: [:areas_enemies, :enemy]
+
     timestamps
   end
 
@@ -53,7 +59,14 @@ defmodule ApathyDrive.Area do
        end)
   end
 
-  def changeset(name) do
+  def changeset(%Area{} = area, params \\ %{}) do
+    area
+    |> cast(params, ~w(name level hostile), ~w())
+    |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
+    |> validate_length(:name, min: 1, max: 30)
+  end
+
+  def new_area_changeset(name) do
     %__MODULE__{}
     |> cast(%{name: name}, ~w(name))
     |> validate_required(:name)
