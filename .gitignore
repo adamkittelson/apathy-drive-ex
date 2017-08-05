@@ -15,8 +15,6 @@ _build
 /config/test.exs
 /config/prod.secret.exs
 /config/*.conf
-/rel
-relx
 apathy_drive.tar.gz
 /priv/static/css
 /priv/static/js
