@@ -60,7 +60,7 @@ namespace :db do
       execute :pg_dump, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "-Ft apathy_drive > /home/deploy/database.tar"
     end
     run_locally do
-      execute :scp, "apotheos.is:/home/deploy/data.dump", "priv/database.tar"
+      execute :scp, "apotheos.is:/home/deploy/database.tar", "priv/database.tar"
       execute :pg_restore, "--dbname=apathy_drive", "-w", "-h localhost", "-Ft priv/database.tar"
       execute :git,  "add priv/database.tar"
       execute :git, "commit",  "-m 'update data from production'"
