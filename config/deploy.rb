@@ -44,27 +44,31 @@ namespace :db do
     end
   end
 
-  desc "Upload local data to production"
-  task :local_to_production do
+  desc "Upload local data to server"
+  task :local_to_server do
     run_locally do
-      execute :pg_dump, "-Ft apathy_drive > database.tar"
+      execute :pg_dump, "--no-privileges", "-Ft apathy_drive > database.tar"
       execute :scp, "database.tar", "apotheos.is:/home/deploy/database.tar"
     end
     invoke "deploy:stop" rescue nil
     on roles(:app) do |host|
-      execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "--clean", "--create", "-Ft /home/deploy/database.tar"
+      execute :psql, "-U apathy_drive", "-d template1", "-w", "-h localhost", "-c \"DROP DATABASE apathy_drive;\"" rescue nil
+      execute :createdb, "-h localhost", "-U apathy_drive", "-w", "-O apathy_drive", "apathy_drive"
+      execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/database.tar"
     end
     invoke "deploy:start"
   end
 
-  desc "Download production data to local"
-  task :production_to_local do
+  desc "Download server data to local"
+  task :server_to_local do
     on roles(:app) do |host|
-      execute :pg_dump, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "-Ft apathy_drive > /home/deploy/database.tar"
+      execute :pg_dump, "--no-privileges", "-U apathy_drive", "-w", "-h localhost", "-Ft apathy_drive > /home/deploy/database.tar"
     end
     run_locally do
       execute :scp, "apotheos.is:/home/deploy/database.tar", "database.tar"
-      execute :pg_restore, "--dbname=apathy_drive", "-w", "-h localhost", "-Ft database.tar"
+      execute :psql, "-U adamkittelson", "-d template1", "-w", "-h localhost", "-c \"DROP DATABASE apathy_drive;\"" rescue nil
+      execute :createdb, "-h localhost", "-U adamkittelson", "-w", "-O adamkittelson", "apathy_drive"
+      execute :pg_restore, "-U adamkittelson", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=adamkittelson", "-Ft database.tar"
     end
   end
 end
