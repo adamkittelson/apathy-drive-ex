@@ -49,8 +49,7 @@ namespace :db do
   task :reload do
     on roles(:app) do |host|
       last_release = capture("ls #{fetch(:deploy_to)}/app/releases").split("\n").select {|f| f =~ /\d+\.\d+\.\d+/}.last
-      execute "#{fetch(:deploy_to)}/app/bin/apathy_drive", "rpc", "Elixir.ApathyDrive.System", "drop_world!", "\"[].\""
-      execute :pg_restore, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "#{fetch(:deploy_to)}/app/lib/apathy_drive-#{last_release}/priv/data.dump"
+      execute :pg_restore, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "-Ft #{fetch(:deploy_to)}/app/lib/apathy_drive-#{last_release}/priv/database.tar"
     end
     invoke "deploy:restart"
   end
@@ -58,13 +57,12 @@ namespace :db do
   desc "Dump / download World Data"
   task :download do
     on roles(:app) do |host|
-      execute :pg_dump, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "--table=abilities", "--table=crits", "--table=areas", "--table=classes", "--table=item_drops", "--table=items", "--table=lair_monsters", "--table=monster_abilities", "--table=monster_templates", "--table=rooms", "--table=scripts", "--data-only", "--dbname=apathy_drive", "-Fc > /home/deploy/data.dump"
+      execute :pg_dump, "--dbname=apathy_drive", "-U apathy_drive", "-w", "-h localhost", "-Ft apathy_drive > /home/deploy/database.tar"
     end
     run_locally do
-      execute :scp, "apotheos.is:/home/deploy/data.dump", "priv/data.dump"
-      execute :mix, "drop_world"
-      execute :pg_restore, "--dbname=apathy_drive", "-w", "-h localhost", "priv/data.dump"
-      execute :git,  "add priv/data.dump"
+      execute :scp, "apotheos.is:/home/deploy/data.dump", "priv/database.tar"
+      execute :pg_restore, "--dbname=apathy_drive", "-w", "-h localhost", "-Ft priv/database.tar"
+      execute :git,  "add priv/database.tar"
       execute :git, "commit",  "-m 'update data from production'"
       execute :git, "push"
     end
