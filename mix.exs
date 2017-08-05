@@ -39,13 +39,11 @@ defmodule ApathyDrive.Mixfile do
       {:inflex,              "~> 1.7"},
       {:oauth2,              "~> 0.5"},
       {:comeonin,            "~> 1.2.2"},
-      {:exrm,                "1.0.3"},
-      {:erlware_commons, "~> 0.21.0", override: true}, # erlang 19 compat, can remove after exrm -> distillery
       {:conform,             "2.0.0"},
-      {:conform_exrm,        "1.0.0"},
       {:ex_statsd,           "~> 0.5.3"},
       {:rollbax,             "~> 0.6.1"},
       {:scrivener_ecto,      "~> 1.0.0", override: true},
+      {:distillery,          "~> 1.4.1", runtime: false},
 
       # fix compilation error with newer ecto
       {:ex_admin,            github: "smpallen99/ex_admin", ref: "490e32aafe40ffc3b60358e6b66c2e00a21ebedb"},
