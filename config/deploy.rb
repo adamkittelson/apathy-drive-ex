@@ -5,8 +5,7 @@ set :application, 'apathy_drive'
 set :deploy_to, '/data/apathy_drive'
 set :releases_to_keep, 5
 set :default_env, {
-  'RELEASE_CONFIG_FILE' => '/home/deploy/apathy_drive.conf',
-  'VMARGS_PATH' => '/home/deploy/vm.args'
+  'RELEASE_CONFIG_DIR' => '/home/deploy'
 }
 
 Rake::Task["deploy"].clear_actions
