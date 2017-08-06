@@ -27,7 +27,7 @@ defmodule ApathyDrive.Router do
 
   scope "/admin", ExAdmin do
     pipe_through [:browser, :admin]
-    admin_routes
+    admin_routes()
   end
 
   scope "/auth", alias: ApathyDrive do

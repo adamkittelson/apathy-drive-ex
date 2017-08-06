@@ -3,7 +3,7 @@ defmodule ApathyDrive.MapChannel do
   alias ApathyDrive.{Room, Repo}
 
   def join("map", %{}, socket) do
-    send(self, :after_join)
+    send(self(), :after_join)
 
     {:ok, socket}
   end

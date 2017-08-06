@@ -16,7 +16,7 @@ defmodule ApathyDrive.EntityItem do
 
     belongs_to :item, ApathyDrive.Item
 
-    timestamps
+    timestamps()
   end
 
   def load_items(table, id) do

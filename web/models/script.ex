@@ -5,7 +5,7 @@ defmodule ApathyDrive.Script do
   schema "scripts" do
     field :instructions, ApathyDrive.JSONB, default: []
 
-    timestamps
+    timestamps()
   end
 
   def changeset(script, params \\ %{}) do
@@ -250,7 +250,7 @@ defmodule ApathyDrive.Script do
       %Spell{} = spell ->
         spell = Map.put(spell, :ignores_round_cooldown?, true)
 
-        send(self, {:execute_spell, %{caster: monster.ref, spell: spell, target: [monster.ref]}})
+        send(self(), {:execute_spell, %{caster: monster.ref, spell: spell, target: [monster.ref]}})
     end
     execute_script(room, monster, script)
   end
@@ -291,7 +291,7 @@ defmodule ApathyDrive.Script do
       |> Enum.find(&(&1 >= roll))
 
     if script do
-      send(self, {:execute_script, monster.ref, script})
+      send(self(), {:execute_script, monster.ref, script})
     end
 
     case scripts["#{number}"] do

@@ -13,7 +13,7 @@ defmodule ApathyDrive.RoomUnity do
     field :essence_targets, :map, virtual: true, default: %{}
     field :reported_essences, :map, virtual: true, default: %{}
 
-    timestamps
+    timestamps()
 
     belongs_to :room, Room
   end

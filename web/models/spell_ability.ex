@@ -6,7 +6,7 @@ defmodule ApathyDrive.SpellAbility do
     belongs_to :spell, ApathyDrive.Spell
     field :value, ApathyDrive.JSONB
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(ability_id spell_id)

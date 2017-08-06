@@ -41,7 +41,7 @@ defmodule ApathyDrive.Monster do
     field :spell_special, :float, virtual: true
     field :reputations, :map, virtual: true, default: []
 
-    timestamps
+    timestamps()
 
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]

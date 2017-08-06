@@ -23,13 +23,13 @@ defmodule ApathyDrive.Spell do
 
     has_many :entity_spells, ApathyDrive.EntitySpell
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(name targets kind mana command description user_message target_message spectator_message duration_in_ms)
   @optional_fields ~w()
 
-  @valid_targets ["monster or single", "self", "self or single", "monster", "full party area", "full attack area", "single", "full area"]
+  #@valid_targets ["monster or single", "self", "self or single", "monster", "full party area", "full attack area", "single", "full area"]
   @target_required_targets ["monster or single", "monster", "single"]
 
   @instant_abilities [

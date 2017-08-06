@@ -32,7 +32,7 @@ defmodule ApathyDrive.Item do
 
     has_many :items_abilities, ApathyDrive.ItemAbility
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(name description worn_on level grade)a
@@ -287,8 +287,8 @@ defmodule ApathyDrive.Item do
   def colored_name(%Item{name: name} = item, opts \\ []) do
     name =
       name
-      |> String.ljust(opts[:ljust] || 0)
-      |> String.rjust(opts[:rjust] || 0)
+      |> String.pad_trailing(opts[:pad_trailing] || 0)
+      |> String.pad_leading(opts[:pad_leading] || 0)
 
     "<span style='color: #{color(item)}'>#{name}</span>"
   end

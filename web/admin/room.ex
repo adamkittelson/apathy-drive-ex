@@ -4,13 +4,13 @@ defmodule ApathyDrive.ExAdmin.Room do
   register_resource ApathyDrive.Room do
 
     index do
-      selectable_column
+      selectable_column()
 
       column :legacy_id
       column :name
       column :lair_size
 
-      actions
+      actions()
     end
 
     show room do

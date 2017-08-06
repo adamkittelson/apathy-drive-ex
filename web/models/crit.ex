@@ -7,7 +7,7 @@ defmodule ApathyDrive.Crit do
     field :letter, :string
     field :abilities, ApathyDrive.JSONB, default: []
 
-    timestamps
+    timestamps()
   end
 
   def changeset(model, params \\ %{}) do

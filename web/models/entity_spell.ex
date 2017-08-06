@@ -7,7 +7,7 @@ defmodule ApathyDrive.EntitySpell do
     field :level, :integer
     belongs_to :spell, ApathyDrive.Spell
 
-    timestamps
+    timestamps()
   end
 
 end

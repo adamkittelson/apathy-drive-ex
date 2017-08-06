@@ -48,9 +48,9 @@ defmodule ApathyDrive.Level do
 
   def display_exp_table do
     Enum.each(1..50, fn(level) ->
-      essence = String.rjust("#{exp_at_level(level)}", 8)
-      essence_reward = String.rjust("#{exp_reward(level)}", 6)
-      level = String.rjust("#{level}", 2)
+      essence = String.pad_leading("#{exp_at_level(level)}", 8)
+      essence_reward = String.pad_leading("#{exp_reward(level)}", 6)
+      level = String.pad_leading("#{level}", 2)
 
       IO.puts "Level: #{level}, Essence Required: #{essence}, Essence per kill: #{essence_reward}"
     end)

@@ -59,7 +59,7 @@ defmodule ApathyDrive.Character do
     has_many :characters_items, ApathyDrive.EntityItem
     has_many :characters_reputations, ApathyDrive.CharacterReputation
 
-    timestamps
+    timestamps()
   end
 
   def companion(%Character{id: id}, %Room{} = room) do
@@ -207,7 +207,7 @@ defmodule ApathyDrive.Character do
   end
 
   def sign_in?(nil, _password) do
-    dummy_checkpw
+    dummy_checkpw()
   end
 
   def find_or_create_by_external_id(external_id) do

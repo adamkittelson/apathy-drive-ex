@@ -11,7 +11,7 @@ defmodule ApathyDrive.Class do
 
     has_many :characters, ApathyDrive.Character
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(name description armour weapon_hands weapon_type abilities)a

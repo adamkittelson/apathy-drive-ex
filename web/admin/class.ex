@@ -4,14 +4,14 @@ defmodule ApathyDrive.ExAdmin.Class do
   register_resource ApathyDrive.Class do
 
     index do
-      selectable_column
+      selectable_column()
 
       column :id
       column :name
       column :armour
       column :weapon_hands
       column :weapon_type
-      actions
+      actions()
     end
 
     form class do

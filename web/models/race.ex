@@ -12,7 +12,7 @@ defmodule ApathyDrive.Race do
     field :charm, :integer
     field :abilities, ApathyDrive.JSONB
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(name description strength agility intellect willpower health charm abilities)

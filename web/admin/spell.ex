@@ -5,7 +5,7 @@ defmodule ApathyDrive.ExAdmin.Spell do
   register_resource ApathyDrive.Spell do
 
     index do
-      selectable_column
+      selectable_column()
 
       column :id
       column :command
@@ -15,7 +15,7 @@ defmodule ApathyDrive.ExAdmin.Spell do
       column :duration_in_ms
       column :cooldown_in_ms
 
-      actions
+      actions()
     end
 
     show spell do

@@ -105,11 +105,11 @@ defmodule ApathyDrive.RoomServer do
     PubSub.subscribe("rooms:#{room.id}")
     PubSub.subscribe("areas:#{room.area_id}")
 
-    send(self, :load_monsters)
-    send(self, :spawn_permanent_npc)
+    send(self(), :load_monsters)
+    send(self(), :spawn_permanent_npc)
 
     if room.lair_size && Enum.any?(LairMonster.monster_ids(id)) do
-      send(self, :spawn_monsters)
+      send(self(), :spawn_monsters)
     end
 
     Process.send_after(self(), :save, 2000)
@@ -513,7 +513,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:save, room) do
-    Process.send_after(self, :save, jitter(:timer.minutes(30)))
+    Process.send_after(self(), :save, jitter(:timer.minutes(30)))
     room = Repo.save(room)
     {:noreply, room}
   end
@@ -521,7 +521,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:spawn_monsters,
                   %{:lair_next_spawn_at => lair_next_spawn_at} = room) do
 
-    :erlang.send_after(5000, self, :spawn_monsters)
+    :erlang.send_after(5000, self(), :spawn_monsters)
 
     if DateTime.to_secs(DateTime.now) >= lair_next_spawn_at do
 
@@ -641,7 +641,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Room{timers: timers} = room) do
     jitter = trunc(time / 2) + :rand.uniform(time)
 
-    new_ref = :erlang.start_timer(jitter, self, {name, time, [module, function, args]})
+    new_ref = :erlang.start_timer(jitter, self(), {name, time, [module, function, args]})
 
     timers = Map.put(timers, name, new_ref)
 
@@ -718,7 +718,7 @@ defmodule ApathyDrive.RoomServer do
           ability
       end
 
-      send(self, {:execute_ability, %{caster: ref, ability: Map.delete(ability, "cast_time"), target: target}})
+      send(self(), {:execute_ability, %{caster: ref, ability: Map.delete(ability, "cast_time"), target: target}})
 
       {:noreply, room}
     else

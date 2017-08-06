@@ -6,7 +6,7 @@ defmodule ApathyDrive.ItemAbility do
     belongs_to :item, ApathyDrive.Item
     field :value, ApathyDrive.JSONB
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(ability_id item_id)

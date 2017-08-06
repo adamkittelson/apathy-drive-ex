@@ -7,7 +7,7 @@ defmodule ApathyDrive.EntityAbility do
     field :ability, :string
     field :value, ApathyDrive.JSONB
 
-    timestamps
+    timestamps()
   end
 
   def load_abilities(table, id) do

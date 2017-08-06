@@ -31,7 +31,7 @@ defmodule ApathyDrive.MonsterTemplate do
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
 
-    timestamps
+    timestamps()
   end
 
   def changeset(%MonsterTemplate{} = monster_template, params \\ %{}) do

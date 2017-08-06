@@ -1,4 +1,4 @@
-FROM trenpixster/elixir:1.3.4
+FROM adamkittelson/elixir-dockerfile:1.5.1
 
 ENV REFRESHED_AT 2016-06-23
 

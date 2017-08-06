@@ -19,12 +19,12 @@ defmodule ApathyDrive.Commands.Abilities do
            spell
            |> Spell.mana_cost_at_level(character.level)
            |> to_string
-           |> String.ljust(6)
+           |> String.pad_trailing(6)
 
          command =
            command
            |> to_string
-           |> String.ljust(8)
+           |> String.pad_trailing(8)
 
          Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{mana_cost} #{command} #{name}</span></p>")
        end)

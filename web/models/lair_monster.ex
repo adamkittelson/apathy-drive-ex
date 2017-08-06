@@ -6,7 +6,7 @@ defmodule ApathyDrive.LairMonster do
     belongs_to :room, Room
     belongs_to :monster, Monster
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(room_id monster_template_id)

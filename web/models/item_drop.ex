@@ -7,7 +7,7 @@ defmodule ApathyDrive.ItemDrop do
     field :item_id, :integer
     field :chance, :integer
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(monster_id item_id chance)

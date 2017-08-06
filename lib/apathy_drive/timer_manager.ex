@@ -9,7 +9,7 @@ defmodule ApathyDrive.TimerManager do
 
     timers = Map.put(timers, name, %{send_at: send_at, message: term})
 
-    send(self, :start_timer)
+    send(self(), :start_timer)
 
     Map.put(entity, :timers, timers)
   end

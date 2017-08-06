@@ -7,7 +7,7 @@ defmodule Hint do
     field :name,       :string
     field :body,       :string
 
-    timestamps
+    timestamps()
   end
 
   def create(name, body) do

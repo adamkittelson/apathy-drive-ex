@@ -4,7 +4,7 @@ defmodule ApathyDrive.ExAdmin.Race do
   register_resource ApathyDrive.Race do
 
     index do
-      selectable_column
+      selectable_column()
 
       column :id
       column :name
@@ -19,7 +19,7 @@ defmodule ApathyDrive.ExAdmin.Race do
         |> Enum.sum
         |> to_string()
       end
-      actions
+      actions()
     end
 
     form race do

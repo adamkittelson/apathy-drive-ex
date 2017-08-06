@@ -16,7 +16,7 @@ defmodule ApathyDrive.RoomMonster do
     field :spawned_at, :integer
     field :name, :string
 
-    timestamps
+    timestamps()
   end
 
 end

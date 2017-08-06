@@ -6,7 +6,7 @@ defmodule ApathyDrive.MonsterAbility do
     belongs_to :monster_template, MonsterTemplate
     belongs_to :ability, Ability
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(monster_template_id ability_id)

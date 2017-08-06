@@ -6,7 +6,7 @@ defmodule ApathyDrive.SpiritItemRecipe do
     belongs_to :spirit, Spirit
     belongs_to :item, ApathyDrive.Item
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(spirit_id item_id)

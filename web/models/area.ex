@@ -15,7 +15,7 @@ defmodule ApathyDrive.Area do
     has_many :areas_enemies, ApathyDrive.AreaEnemy
     has_many :enemies, through: [:areas_enemies, :enemy]
 
-    timestamps
+    timestamps()
   end
 
   def find_by_name(name) do
@@ -42,7 +42,7 @@ defmodule ApathyDrive.Area do
   end
 
   def set_levels! do
-    list_with_room_counts
+    list_with_room_counts()
     |> ApathyDrive.Repo.all
     |> Enum.each(fn [area, _count] ->
          max =

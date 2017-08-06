@@ -244,7 +244,7 @@ defmodule ApathyDrive.Commands.System do
              area.enemies
              |> Enum.map(&(&1.name))
 
-           Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{to_string(area.level) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{to_string(room_count) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='black'>#{area.name}</span></p>")
+           Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{to_string(area.level) |> String.pad_leading(5)}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{to_string(room_count) |> String.pad_leading(5)}</span> <span class='dark-green'>|</span> <span class='black'>#{area.name}</span></p>")
            if Enum.any?(allies) do
              Mobile.send_scroll(character, "<p>              <span class='dark-green'>|</span>   <span class='dark-cyan'>Allies:</span> #{Enum.join(allies, ", ")}</p>")
            end

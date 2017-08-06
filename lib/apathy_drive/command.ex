@@ -33,7 +33,7 @@ defmodule ApathyDrive.Command do
         Room.initiate_remote_action(room, monster, remote_action_exit)
       scripts = Room.command(room, full_command) ->
         execute_room_command(room, monster, scripts)
-      cmd = Match.one(Enum.map(all, &(&1.to_struct)), :keyword_starts_with, command) ->
+      cmd = Match.one(Enum.map(all(), &(&1.to_struct)), :keyword_starts_with, command) ->
         cmd.module.execute(room, monster, arguments)
       true ->
         spell = monster.spells[String.downcase(command)]
@@ -72,7 +72,7 @@ defmodule ApathyDrive.Command do
       end
 
       def to_struct do
-        %ApathyDrive.Command{name: name, keywords: keywords, module: __MODULE__}
+        %ApathyDrive.Command{name: name(), keywords: keywords(), module: __MODULE__}
       end
     end
   end

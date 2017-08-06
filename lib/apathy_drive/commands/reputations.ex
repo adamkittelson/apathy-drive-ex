@@ -24,7 +24,7 @@ defmodule ApathyDrive.Commands.Reputations do
       reputation = Reputation.word_for_value(rep)
       color = Reputation.color(reputation)
       area = character.reputations[area_id].name
-      Mobile.send_scroll(character, "<p><span class='#{color}'>#{String.ljust(reputation, 12)}</span> #{area}")
+      Mobile.send_scroll(character, "<p><span class='#{color}'>#{String.pad_trailing(reputation, 12)}</span> #{area}")
     end
   end
 

@@ -5,7 +5,7 @@ defmodule ApathyDrive.ShopItem do
     belongs_to :room, ApathyDrive.Room
     belongs_to :item, ApathyDrive.Item
 
-    timestamps
+    timestamps()
   end
 
   @required_fields ~w(room_id item_id)

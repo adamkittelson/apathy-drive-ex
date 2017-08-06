@@ -33,7 +33,7 @@ defmodule ApathyDrive.Room do
     field :allies,             :any, virtual: true, default: %{}
     field :enemies,            :any, virtual: true, default: %{}
 
-    timestamps
+    timestamps()
 
     has_one    :room_unity, RoomUnity
     has_many   :persisted_mobiles, Monster
@@ -161,11 +161,11 @@ defmodule ApathyDrive.Room do
       send_at = max(0, trunc(next_timer - Timex.Time.to_milliseconds(Timex.Time.now)))
       cond do
         is_nil(timer) ->
-          timer = Process.send_after(self, :tick, send_at)
+          timer = Process.send_after(self(), :tick, send_at)
           Map.put(room, :timer, timer)
         Process.read_timer(timer) >= send_at ->
           Process.cancel_timer(timer)
-          timer = Process.send_after(self, :tick, send_at)
+          timer = Process.send_after(self(), :tick, send_at)
           Map.put(room, :timer, timer)
         :else ->
           room

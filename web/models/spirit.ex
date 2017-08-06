@@ -6,8 +6,6 @@ defmodule Spirit do
   import Comeonin.Bcrypt
   alias ApathyDrive.{Mobile, PubSub, Room}
 
-  @idle_threshold 60
-
   schema "spirits" do
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
@@ -33,7 +31,7 @@ defmodule Spirit do
     field :flags,             :map, default: %{}
     field :monitor_ref,       :any, virtual: true
 
-    timestamps
+    timestamps()
   end
 
   @doc """
@@ -73,7 +71,7 @@ defmodule Spirit do
   end
 
   def sign_in?(nil, _password) do
-    dummy_checkpw
+    dummy_checkpw()
   end
 
   def find_or_create_by_external_id(external_id) do
