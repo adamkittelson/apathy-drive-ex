@@ -199,3 +199,6 @@ CHANGELOG
 
 ---- 0.0.76 / 2017-08-05 / distillery ------------------------------------------
 * switch to distillery
+
+---- 0.0.77 / 2017-08-06 / update-elixir-and-libraries -------------------------
+* update erlang / elixir / phoenix etc
