@@ -1,7 +1,6 @@
 defmodule ApathyDrive.Router do
   use Phoenix.Router
-  use ExAdmin.Router
-
+  
   pipeline :browser do
     plug :accepts, ~w(html)
     plug :fetch_session
@@ -23,11 +22,6 @@ defmodule ApathyDrive.Router do
     resources "/sessions", SessionController
     resources "/characters", CharacterController, only: [:create, :edit, :update],
                                                   singleton: true
-  end
-
-  scope "/admin", ExAdmin do
-    pipe_through [:browser, :admin]
-    admin_routes()
   end
 
   scope "/auth", alias: ApathyDrive do
