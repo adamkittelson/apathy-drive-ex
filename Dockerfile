@@ -10,4 +10,4 @@ ENV MIX_ENV ${MIX_ENV}
 
 RUN mix deps.get
 
-RUN mix compile && mix phoenix.digest && mix release.clean && mix release --verbose --env=${MIX_ENV}
+RUN mix compile && mix phx.digest && mix release.clean && mix release --verbose --env=${MIX_ENV}
