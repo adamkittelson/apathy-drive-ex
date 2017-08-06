@@ -1,4 +1,4 @@
-FROM adamkittelson/elixir-dockerfile:1.5.1
+FROM quay.io/adamkittelson/elixir-dockerfile:1.5.1
 
 ENV REFRESHED_AT 2016-06-23
 
