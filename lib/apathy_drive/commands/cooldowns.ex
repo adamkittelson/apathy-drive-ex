@@ -19,7 +19,7 @@ defmodule ApathyDrive.Commands.Cooldowns do
                |> ApathyDrive.TimerManager.time_remaining(effect["timers"] |> List.first)
                |> div(1000)
 
-             Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{name |> String.ljust(15)} #{remaining} seconds</span></p>")
+             Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{name |> String.pad_trailing(15)} #{remaining} seconds</span></p>")
           _effect ->
             :noop
        end)

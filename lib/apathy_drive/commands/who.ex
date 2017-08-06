@@ -20,8 +20,8 @@ defmodule ApathyDrive.Commands.Who do
     |> Enum.sort_by(&(&1.name))
     |> Enum.each(fn
         %{name: name} ->
-          alignment = "Good" |> String.rjust(7)
-          name = name |> String.ljust(longest_name_length)
+          alignment = "Good" |> String.pad_leading(7)
+          name = name |> String.pad_trailing(longest_name_length)
           title = "Adventurer"
           Mobile.send_scroll(character, "<p>#{alignment} <span class='dark-green'>#{name} - <span class='dark-magenta'>#{title}</span></p>")
         end)

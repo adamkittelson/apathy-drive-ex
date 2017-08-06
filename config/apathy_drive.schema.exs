@@ -106,7 +106,7 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: true,
       to: "logger.level"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.render_errors.accepts": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.render_errors.accepts": [
       commented: false,
       datatype: [
         list: :binary
@@ -115,110 +115,88 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
         "html",
         "json"
       ],
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.render_errors.accepts here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.render_errors.accepts here.",
       hidden: true,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.render_errors.accepts"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.render_errors.accepts"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.debug_errors": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.debug_errors": [
       commented: false,
       datatype: :atom,
       default: false,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.debug_errors here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.debug_errors here.",
       hidden: true,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.debug_errors"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.debug_errors"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.pubsub.name": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.name": [
       commented: false,
       datatype: :atom,
       default: :pub_sub,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.pubsub.name here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.name here.",
       hidden: true,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.pubsub.name"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.name"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.pubsub.adapter": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.adapter": [
       commented: false,
       datatype: :atom,
       default: Phoenix.PubSub.PG2,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.pubsub.adapter here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.adapter here.",
       hidden: true,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.pubsub.adapter"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.adapter"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.root": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.root": [
       commented: false,
       datatype: :binary,
       default: "/app",
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.root here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.root here.",
       hidden: true,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.root"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.root"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.http.port": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.http.port": [
       commented: false,
       datatype: :integer,
       default: 4000,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.http.port here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.http.port here.",
       hidden: false,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.http.port"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.http.port"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.url.host": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.url.host": [
       commented: false,
       datatype: :binary,
       default: "apotheos.is",
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.url.host here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.url.host here.",
       hidden: false,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.url.host"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.url.host"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.url.port": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.url.port": [
       commented: false,
       datatype: :integer,
       default: 4000,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.url.port here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.url.port here.",
       hidden: false,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.url.port"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.url.port"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.cache_static_manifest": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.cache_static_manifest": [
       commented: false,
       datatype: :binary,
       default: "priv/static/manifest.json",
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.cache_static_manifest here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.cache_static_manifest here.",
       hidden: false,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.cache_static_manifest"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.cache_static_manifest"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.server": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.server": [
       commented: false,
       datatype: :atom,
       default: true,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.server here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.server here.",
       hidden: true,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.server"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.server"
     ],
-    "apathy_drive.Elixir.ApathyDrive.Endpoint.secret_key_base": [
+    "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.secret_key_base": [
       commented: false,
       datatype: :binary,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Endpoint.secret_key_base here.",
+      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.secret_key_base here.",
       hidden: false,
-      to: "apathy_drive.Elixir.ApathyDrive.Endpoint.secret_key_base"
-    ],
-    "apathy_drive.Elixir.Facebook.client_id": [
-      commented: false,
-      datatype: :binary,
-      doc: "Provide documentation for apathy_drive.Elixir.Facebook.client_id here.",
-      hidden: false,
-      to: "apathy_drive.Elixir.Facebook.client_id"
-    ],
-    "apathy_drive.Elixir.Facebook.client_secret": [
-      commented: false,
-      datatype: :binary,
-      doc: "Provide documentation for apathy_drive.Elixir.Facebook.client_secret here.",
-      hidden: false,
-      to: "apathy_drive.Elixir.Facebook.client_secret"
-    ],
-    "apathy_drive.Elixir.Facebook.redirect_uri": [
-      commented: false,
-      datatype: :binary,
-      default: "http://apotheos.is/auth/callback",
-      doc: "Provide documentation for apathy_drive.Elixir.Facebook.redirect_uri here.",
-      hidden: false,
-      to: "apathy_drive.Elixir.Facebook.redirect_uri"
+      to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.secret_key_base"
     ],
     "apathy_drive.Elixir.ApathyDrive.Repo.hostname": [
       commented: false,

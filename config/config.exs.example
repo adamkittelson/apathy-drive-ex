@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :apathy_drive, ApathyDrive.Endpoint,
+config :apathy_drive, ApathyDriveWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "YOUR_SECRET_WHICH_MUST_BE_AT_LEAST_SIXTY_FOUR_BYTES_IN_LENGTH_HERE",
   debug_errors: false,
@@ -17,20 +17,5 @@ config :logger, :console,
 config :rollbax,
   access_token: "",
   environment: "development"
-
-config :ex_admin,
-  skin_color: :black,
-  head_template: {ApathyDrive.AdminView, "admin_layout.html"},
-  repo: ApathyDrive.Repo,
-  module: ApathyDrive,
-  modules: [
-    ApathyDrive.ExAdmin.Dashboard,
-    ApathyDrive.ExAdmin.Ability,
-    ApathyDrive.ExAdmin.Class,
-    ApathyDrive.ExAdmin.Item,
-    ApathyDrive.ExAdmin.MonsterTemplate,
-    ApathyDrive.ExAdmin.Room,
-    ApathyDrive.ExAdmin.Script
-  ]
 
 import_config "#{Mix.env}.exs"

@@ -174,7 +174,7 @@ defmodule ApathyDrive.Commands.System do
            room
          {:error, %Ecto.Changeset{errors: errors}} ->
            Enum.each(errors, fn {field, error} ->
-             message = ApathyDrive.ErrorHelpers.translate_error(error)
+             message = ApathyDriveWeb.ErrorHelpers.translate_error(error)
              Mobile.send_scroll(character, "<p>Error: #{field} #{message}</p>")
            end)
            room
@@ -187,7 +187,7 @@ defmodule ApathyDrive.Commands.System do
       |> Map.put(:name, Enum.join(room_name, " "))
       |> Repo.save!
 
-    ApathyDrive.Endpoint.broadcast!("map", "room name change", %{room_id: room.id, name: room.name})
+    ApathyDriveWeb.Endpoint.broadcast!("map", "room name change", %{room_id: room.id, name: room.name})
 
     Mobile.send_scroll(character, "<p>Room name changed from \"#{old_name}\" to \"#{room.name}\".</p>")
 
@@ -204,7 +204,7 @@ defmodule ApathyDrive.Commands.System do
       |> Map.put(:coordinates, %{"x" => x, "y" => y, "z" => z})
       |> Repo.save!
 
-    ApathyDrive.Endpoint.broadcast!("map", "room coords change", %{room_id: room.id, x: x, y: y, z: z})
+    ApathyDriveWeb.Endpoint.broadcast!("map", "room coords change", %{room_id: room.id, x: x, y: y, z: z})
 
     Mobile.send_scroll(character, "<p>Room coordinates changed from \"#{inspect(old_coords)}\" to \"#{inspect(room.coordinates)}\".</p>")
 
@@ -217,7 +217,7 @@ defmodule ApathyDrive.Commands.System do
       |> Map.put(:coordinates, nil)
       |> Repo.save!
 
-    ApathyDrive.Endpoint.broadcast!("map", "room coords change", %{room_id: room.id, x: 0, y: 0, z: 0})
+    ApathyDriveWeb.Endpoint.broadcast!("map", "room coords change", %{room_id: room.id, x: 0, y: 0, z: 0})
 
     Mobile.send_scroll(character, "<p>Room coordinates unset from \"#{inspect(old_coords)}\".</p>")
 
@@ -244,7 +244,7 @@ defmodule ApathyDrive.Commands.System do
              area.enemies
              |> Enum.map(&(&1.name))
 
-           Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{to_string(area.level) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{to_string(room_count) |> String.rjust(5)}</span> <span class='dark-green'>|</span> <span class='black'>#{area.name}</span></p>")
+           Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{to_string(area.level) |> String.pad_leading(5)}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{to_string(room_count) |> String.pad_leading(5)}</span> <span class='dark-green'>|</span> <span class='black'>#{area.name}</span></p>")
            if Enum.any?(allies) do
              Mobile.send_scroll(character, "<p>              <span class='dark-green'>|</span>   <span class='dark-cyan'>Allies:</span> #{Enum.join(allies, ", ")}</p>")
            end

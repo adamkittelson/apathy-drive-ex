@@ -1,0 +1,47 @@
+<%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
+
+<div class="row">
+  <h3>Create Your Character</h3>
+</div>
+
+<%= form_for @changeset, character_path(@conn, :update), fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <div class="four columns">
+      <label for="name">Name</label>
+      <%= text_input f, :name, class: "u-full-width" %>
+      <%= error_tag f, :name %>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="four columns">
+      <label for="faction">Gender</label>
+      <%= select(f, :gender, ["Male": "male", "Female": "female"], prompt: "Choose Your Gender", class: "u-full-width") %>
+      <%= error_tag f, :gender %>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="four columns">
+      <label for="class">Race</label>
+      <%= select(f, :race_id, ApathyDrive.Race.select, prompt: "Choose Your Race", class: "u-full-width") %>
+      <%= error_tag f, :race_id %>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="four columns">
+      <label for="class">Class</label>
+      <%= select(f, :class_id, ApathyDrive.Class.select, prompt: "Choose Your Class", class: "u-full-width") %>
+      <%= error_tag f, :class_id %>
+    </div>
+  </div>
+
+  <%= submit "Submit", class: "button-primary" %>
+<% end %>

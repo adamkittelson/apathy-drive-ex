@@ -1,4 +1,4 @@
-defmodule ApathyDrive.ChannelCase do
+defmodule ApathyDriveWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -25,29 +25,7 @@ defmodule ApathyDrive.ChannelCase do
       import Ecto.Query
 
       # The default endpoint for testing
-      @endpoint ApathyDrive.Endpoint
-
-      def test_monster(map \\ %{}, room \\ Repo.insert!(%ApathyDrive.Room{})) do
-        class = Repo.insert!(%ApathyDrive.Class{name: "Demon",
-                                                abilities: []})
-
-        # Hack to prevent it from trying to load rooms that don't exist
-        Task.start(fn ->
-          :global.register_name("room_#{room.id}", self())
-          receive do end
-        end)
-
-        spirit =
-          %Spirit{name: "testy", room_id: room.id, class_id: class.id}
-          |> Map.merge(map)
-          |> Repo.insert!
-
-          token = Phoenix.Token.sign(ApathyDrive.Endpoint, "spirit", spirit.id)
-
-          {:ok, _, socket} = socket() |> subscribe_and_join(ApathyDrive.MUDChannel, "mud:play", %{"spirit" => token})
-
-          socket.assigns[:monster]
-      end
+      @endpoint ApathyDriveWeb.Endpoint
     end
   end
 

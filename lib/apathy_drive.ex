@@ -7,7 +7,7 @@ defmodule ApathyDrive do
     import Supervisor.Spec, warn: false
 
     children = [
-      worker(ApathyDrive.Endpoint, []),
+      worker(ApathyDriveWeb.Endpoint, []),
       worker(ApathyDrive.Repo, []),
       worker(ApathyDrive.Migrator, [], restart: :temporary),
       supervisor(ApathyDrive.Presence, []),
@@ -26,7 +26,7 @@ defmodule ApathyDrive do
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
   def config_change(changed, _new, removed) do
-    ApathyDrive.Endpoint.config_change(changed, removed)
+    ApathyDriveWeb.Endpoint.config_change(changed, removed)
     :ok
   end
 
