@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :apathy_drive, ApathyDrive.Endpoint,
+config :apathy_drive, ApathyDriveWeb.Endpoint,
   url: [host: System.get_env("HOST")],
   http: [port: System.get_env("PORT")],
   secret_key_base: System.get_env("SECRET_KEY_BASE"),

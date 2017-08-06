@@ -1,4 +1,4 @@
-defmodule ApathyDrive.ConnCase do
+defmodule ApathyDriveWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -26,10 +26,10 @@ defmodule ApathyDrive.ConnCase do
       import Ecto.Query, only: [from: 2]
 
       # Import URL helpers from the router
-      import ApathyDrive.Router.Helpers
+      import ApathyDriveWeb.Router.Helpers
 
       # The default endpoint for testing
-      @endpoint ApathyDrive.Endpoint
+      @endpoint ApathyDriveWeb.Endpoint
     end
   end
 

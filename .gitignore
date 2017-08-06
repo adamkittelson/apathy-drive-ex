@@ -7,7 +7,7 @@ _build
 .zenflow-log
 *.DS_Store
 *.ez
-/node_modules
+/assets/node_modules
 /env/*.env
 /config/config.exs
 /config/dev.exs

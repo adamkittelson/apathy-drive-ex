@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :apathy_drive, ApathyDrive.Endpoint,
+config :apathy_drive, ApathyDriveWeb.Endpoint,
   http: [port: 4000],
   debug_errors: true,
   cache_static_lookup: false,

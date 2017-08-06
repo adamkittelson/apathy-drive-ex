@@ -1,4 +1,4 @@
-defmodule ApathyDrive.ChannelCase do
+defmodule ApathyDriveWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -25,7 +25,7 @@ defmodule ApathyDrive.ChannelCase do
       import Ecto.Query
 
       # The default endpoint for testing
-      @endpoint ApathyDrive.Endpoint
+      @endpoint ApathyDriveWeb.Endpoint
     end
   end
 
