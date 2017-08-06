@@ -17,7 +17,6 @@ defmodule ApathyDrive.Character do
     field :gender,          :string
     field :email,           :string
     field :password,        :string
-    field :external_id,     :string
     field :experience,      :integer, default: 0
     field :level,           :integer, default: 1
     field :timers,          :map, virtual: true, default: %{}
@@ -210,16 +209,6 @@ defmodule ApathyDrive.Character do
 
   def sign_in?(nil, _password) do
     dummy_checkpw()
-  end
-
-  def find_or_create_by_external_id(external_id) do
-    case Repo.one from s in Character, where: s.external_id == ^external_id do
-      %Character{} = character ->
-        character
-      nil ->
-        %Character{room_id: Room.start_room_id, external_id: external_id}
-        |> Repo.insert!
-    end
   end
 
   def add_experience(%Character{level: level} = character, exp) do

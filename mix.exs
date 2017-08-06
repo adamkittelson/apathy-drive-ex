@@ -34,7 +34,6 @@ defmodule ApathyDrive.Mixfile do
       {:phoenix_html,        "~> 2.9.0"},
       {:timex_ecto,          "~> 1.1.3"},
       {:inflex,              "~> 1.7"},
-      {:oauth2,              "~> 0.5"},
       {:comeonin,            "~> 4.0"},
       {:bcrypt_elixir,       "~> 0.12.0"},
       {:conform,             "~> 2.5.0"},

@@ -5,12 +5,6 @@ config :apathy_drive, ApathyDrive.Endpoint,
   http: [port: System.get_env("PORT")],
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
   cache_static_manifest: "priv/static/manifest.json",
-  oauth2: {OAuth2.Strategy.AuthCode, [
-    site: "https://graph.facebook.com",
-    authorize_url: "https://www.facebook.com/dialog/oauth",
-    token_url: "https://graph.facebook.com/v2.3/oauth/access_token",
-    client_id: System.get_env("FB_CLIENT_ID"),
-    client_secret: System.get_env("FB_CLIENT_SECRET")]}
 
 config :logger,
   level: :info

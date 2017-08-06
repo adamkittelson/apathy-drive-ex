@@ -1,12 +1,5 @@
 <%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
 
-<div class="row">
-  <div class="three columns">
-    <a id="fb" class="button button-primary" href="<%= auth_path @conn, :index %>">Sign in with Facebook</a>
-  </div>
-</div>
-<hr/>
-
 <h2>Sign In</h2>
 <%= form_for @conn, session_path(@conn, :create), [as: :session], fn f -> %>
   <div class="alert alert-danger">

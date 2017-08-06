@@ -198,28 +198,6 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: false,
       to: "apathy_drive.Elixir.ApathyDrive.Endpoint.secret_key_base"
     ],
-    "apathy_drive.Elixir.Facebook.client_id": [
-      commented: false,
-      datatype: :binary,
-      doc: "Provide documentation for apathy_drive.Elixir.Facebook.client_id here.",
-      hidden: false,
-      to: "apathy_drive.Elixir.Facebook.client_id"
-    ],
-    "apathy_drive.Elixir.Facebook.client_secret": [
-      commented: false,
-      datatype: :binary,
-      doc: "Provide documentation for apathy_drive.Elixir.Facebook.client_secret here.",
-      hidden: false,
-      to: "apathy_drive.Elixir.Facebook.client_secret"
-    ],
-    "apathy_drive.Elixir.Facebook.redirect_uri": [
-      commented: false,
-      datatype: :binary,
-      default: "http://apotheos.is/auth/callback",
-      doc: "Provide documentation for apathy_drive.Elixir.Facebook.redirect_uri here.",
-      hidden: false,
-      to: "apathy_drive.Elixir.Facebook.redirect_uri"
-    ],
     "apathy_drive.Elixir.ApathyDrive.Repo.hostname": [
       commented: false,
       datatype: :binary,

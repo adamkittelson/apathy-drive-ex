@@ -28,7 +28,7 @@
   <h6 class="docs-prime-header">Getting Started</h6>
   <a class="anchor" id="character-creation"></a>
   <h6 class="docs-header">Character Creation</h6>
-  <p>First you need to create your character, you can do this by clicking 'Sign in with Facebook' above. Character creation is easy, just choose the name you'd like to be known by in the game and whether you'd like to be an Angel, a Demon, or an Elemental. You can change your name or faction later by using the <code>reroll</code> command in-game.</p>
+  <p>First you need to create your character, you can do this by clicking 'Sign in' above. Character creation is easy, just choose the name you'd like to be known by in the game and whether you'd like to be an Angel, a Demon, or an Elemental. You can change your name or faction later by using the <code>reroll</code> command in-game.</p>
   <a class="anchor" id="factions"></a>
   <h6 class="docs-header">Factions</h6>
   <p>The three factions are at war with each other. Angels are good-aligned and have abilities related to healing and protection. Elementals are neutral-aligned and have abilities related to nature and the elements. Demons are evil-aligned and specialize in destruction.</p>
