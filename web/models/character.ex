@@ -70,7 +70,8 @@ defmodule ApathyDrive.Character do
 
   def changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(name race_id class_id gender), ~w())
+    |> cast(params, ~w(name race_id class_id gender))
+    |> validate_required(~w(name race_id class_id gender)a)
     |> validate_inclusion(:class_id, ApathyDrive.Class.ids)
     |> validate_inclusion(:race_id, ApathyDrive.Race.ids)
     |> validate_inclusion(:gender, ["male", "female"])
@@ -81,7 +82,8 @@ defmodule ApathyDrive.Character do
 
   def sign_up_changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(email password), [])
+    |> cast(params, ~w(email password))
+    |> validate_required(~w(email password)a)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:email, min: 3, max: 100)
     |> validate_length(:password, min: 6)
