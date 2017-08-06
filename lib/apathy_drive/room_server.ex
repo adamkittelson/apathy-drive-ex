@@ -523,16 +523,14 @@ defmodule ApathyDrive.RoomServer do
 
     :erlang.send_after(5000, self(), :spawn_monsters)
 
-    if DateTime.to_secs(DateTime.now) >= lair_next_spawn_at do
+    if DateTime.to_unix(DateTime.utc_now, :seconds) >= lair_next_spawn_at do
 
       room =
         room
         |> ApathyDrive.MonsterSpawning.spawn_lair
         |> Map.put(
              :lair_next_spawn_at,
-             DateTime.now
-             |> DateTime.shift(minutes: room.lair_frequency)
-             |> DateTime.to_secs
+             DateTime.to_unix(DateTime.utc_now, :seconds) + room.lair_frequency * 60
            )
 
       {:noreply, room}

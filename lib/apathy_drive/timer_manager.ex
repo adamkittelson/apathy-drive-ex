@@ -5,7 +5,7 @@ defmodule ApathyDrive.TimerManager do
   def seconds(seconds), do: seconds |> :timer.seconds |> trunc
 
   def send_after(%{timers: timers} = entity, {name, time, term}) do
-    send_at = time + (Timex.Time.now |> Timex.Time.to_milliseconds |> trunc)
+    send_at = time + (DateTime.utc_now |> DateTime.to_unix(:millisecond) |> trunc)
 
     timers = Map.put(timers, name, %{send_at: send_at, message: term})
 
@@ -15,7 +15,7 @@ defmodule ApathyDrive.TimerManager do
   end
 
   def apply_timers(%Room{timers: timers} = room) do
-    now = Timex.Time.now |> Timex.Time.to_milliseconds
+    now = DateTime.utc_now |> DateTime.to_unix(:milliseconds)
 
     timers
     |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
@@ -31,7 +31,7 @@ defmodule ApathyDrive.TimerManager do
   end
 
   def apply_timers(%Room{} = room, mobile_ref) do
-    now = Timex.Time.now |> Timex.Time.to_milliseconds
+    now = DateTime.utc_now |> DateTime.to_unix(:milliseconds)
 
     Room.update_mobile(room, mobile_ref, fn %{timers: timers} ->
       timers
@@ -54,7 +54,7 @@ defmodule ApathyDrive.TimerManager do
 
   def time_remaining(%{timers: timers}, name) do
     if timer = Map.get(timers, name) do
-      timer.send_at - Timex.Time.to_milliseconds(Timex.Time.now)
+      timer.send_at - DateTime.to_unix(DateTime.utc_now, :milliseconds)
     else
       0
     end

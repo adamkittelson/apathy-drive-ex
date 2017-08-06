@@ -158,7 +158,7 @@ defmodule ApathyDrive.Room do
 
   def start_timer(%Room{timer: timer} = room) do
     if next_timer = Room.next_timer(room) do
-      send_at = max(0, trunc(next_timer - Timex.Time.to_milliseconds(Timex.Time.now)))
+      send_at = max(0, trunc(next_timer - DateTime.to_unix(DateTime.utc_now, :millisecond)))
       cond do
         is_nil(timer) ->
           timer = Process.send_after(self(), :tick, send_at)
