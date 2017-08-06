@@ -48,7 +48,6 @@ defmodule ApathyDrive.Mixfile do
       # fix compilation error with newer ecto
       {:ex_admin,            github: "smpallen99/ex_admin", ref: "490e32aafe40ffc3b60358e6b66c2e00a21ebedb"},
 
-      {:shouldi,             "0.3.0", only: :test},
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false}
     ]
   end
@@ -60,6 +59,6 @@ defmodule ApathyDrive.Mixfile do
     |> Enum.join(".")
   end
 
-  defp elixirc_paths(:test), do: ["lib", "web", "test/matchers", "test/support"]
+  defp elixirc_paths(:test), do: ["lib", "web", "test/support"]
   defp elixirc_paths(_), do: ["lib", "web"]
 end

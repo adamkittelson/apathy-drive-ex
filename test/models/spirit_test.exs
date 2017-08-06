@@ -9,10 +9,6 @@ defmodule SpiritTest do
                    password: "awesome password",
                    password_confirmation: "awesome password"}
 
-  @short_password %{email: "adam@apathydrive.com",
-                    password: "pswd",
-                    password_confirmation: "pswd"}
-
   @pw_confirmation %{email: "adam@apathydrive.com",
                      password: "awesome password",
                      password_confirmation: "awesome pw"}
