@@ -1,4 +1,4 @@
-<%= render ApathyDrive.PageView, "nav.html", conn: @conn %>
+<%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
 
 <div class="row">
   <h3>Create Your Character</h3>
