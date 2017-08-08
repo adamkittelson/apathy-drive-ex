@@ -25,6 +25,8 @@ defmodule ApathyDrive.Command do
     Logger.info "#{monster && monster.name} command: #{full_command}"
 
     cond do
+      is_nil(monster) ->
+        room
       command in @directions ->
         Commands.Move.execute(room, monster, command)
       command_exit = Room.command_exit(room, full_command) ->
