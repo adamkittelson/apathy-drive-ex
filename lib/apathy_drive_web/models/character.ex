@@ -625,15 +625,15 @@ defmodule ApathyDrive.Character do
         character.equipment
         |> Enum.reduce(0, fn
              %Item{grade: "Cloth"}, total ->
-               total + 5
+               total + 1
              %Item{grade: "Leather"}, total ->
-               total + 4
+               total + 2
              %Item{grade: "Chain"}, total ->
                total + 3
              %Item{grade: "Scale"}, total ->
-               total + 2
+               total + 4
              %Item{grade: "Plate"}, total ->
-               total + 1
+               total + 5
              _, total ->
                total
            end)
