@@ -8,8 +8,8 @@
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
-  <script>require("web/static/js/app/jquery-1.10.2.min");</script>
-  <script>require("web/static/js/app/nav");</script>
+  <script>require("js/app/jquery-1.10.2.min.js");</script>
+  <script>require("static/js/app/nav");</script>
 </head>
 <body>
   <div class="container">

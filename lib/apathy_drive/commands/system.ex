@@ -15,6 +15,23 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
+  def system(%Room{} = room, character, ["skill", "create" | skill_name]) do
+    System.Skill.create(room, character, skill_name)
+  end
+
+  def system(%Room{} = room, character, ["skill", "set", "incompatible" | skills]) do
+    if length(skills) >= 3 and Enum.member?(skills, "and") do
+      System.Skill.set_incompatible(room, character, skills)
+    else
+      Mobile.send_scroll(character, "<p>You must give two skills seperated by 'and', e.g. 'blade and blunt'.</p>")
+      room
+    end
+  end
+
+  def system(%Room{} = room, character, ["skill", "list"]) do
+    System.Skill.list(room, character)
+  end
+
   def system(%Room{} = room, character, ["area", "add", "ally" | ally_name]) do
     System.Area.add_ally(room, character, ally_name)
   end
