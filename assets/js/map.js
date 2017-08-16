@@ -1,5 +1,5 @@
-import {Socket} from "deps/phoenix/web/static/js/phoenix"
-import $ from "web/static/js/app/jquery-1.10.2.min";
+import {Socket} from "phoenix"
+import $ from "js/jquery-1.10.2.min";
 
 $(document).ready(function() {
 

@@ -1,4 +1,4 @@
-import {formatJson} from "web/static/js/admin/json-format";
+import {formatJson} from "js/json-format";
 
 $(document).ready(function() {
   $(".json").linedtextarea()

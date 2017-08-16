@@ -1,4 +1,4 @@
-import $ from "web/static/js/app/jquery-1.10.2.min";
+import $ from "js/jquery-1.10.2.min";
 
 $(document).ready(function() {
 

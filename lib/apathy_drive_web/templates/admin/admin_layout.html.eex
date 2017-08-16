@@ -1,6 +1,6 @@
 <script src="<%= static_path(@conn, "/js/admin.js") %>"></script>
 <script>require("web/static/js/admin/jquery-linedtextarea")</script>
-<script>require("web/static/js/admin/json-format")</script>
+<script>require("js/json-format")</script>
 <script>require("web/static/js/admin/json-parser")</script>
 <script>require("web/static/js/admin/json-edit")</script>
 <link rel="stylesheet" href="<%= static_path(@conn, "/css/admin.css") %>">

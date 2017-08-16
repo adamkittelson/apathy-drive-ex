@@ -17,6 +17,4 @@ _build
 /config/*.conf
 apathy_drive.tar.gz
 database.tar
-/priv/static/css
-/priv/static/js
-!priv/static/themes
+/priv/static/

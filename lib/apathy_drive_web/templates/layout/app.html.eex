@@ -8,8 +8,8 @@
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
-  <script>require("js/app/jquery-1.10.2.min.js");</script>
-  <script>require("static/js/app/nav");</script>
+  <script>require("js/jquery-1.10.2.min");</script>
+  <script>require("js/nav");</script>
 </head>
 <body>
   <div class="container">
@@ -22,6 +22,6 @@
       <span id="prompt"></span><input id="command" size="50" class="prompt" autocomplete="off"/>
     </footer>
   </div> <!-- end footer div.container -->
-  <script>require("deps/phoenix_html/web/static/js/phoenix_html");</script>
+  <script>require("phoenix_html");</script>
 </body>
 </html>

@@ -28,7 +28,7 @@ defmodule ApathyDrive.Mixfile do
       {:postgrex,            "~> 0.13", override: true},
       {:phoenix,             "~> 1.3.0"},
       {:phoenix_pubsub,      "~> 1.0.0"},
-      {:phoenix_live_reload, "~> 1.0.5", only: :dev},
+      {:phoenix_live_reload, "~> 1.1.0", only: :dev},
       {:phoenix_ecto,        "~> 3.2.0"},
       {:phoenix_html,        "~> 2.10.0"},
       {:timex_ecto,          "~> 3.1.1"},
