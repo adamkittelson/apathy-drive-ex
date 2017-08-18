@@ -20,6 +20,13 @@ defmodule ApathyDrive.Skill do
     |> unique_constraint(:name)
   end
 
+  def set_cost_changeset(%__MODULE__{} = skill, cost) do
+    skill
+    |> cast(%{training_cost_multiplier: cost}, ~w(training_cost_multiplier))
+    |> validate_required(:training_cost_multiplier)
+    |> validate_number(:training_cost_multiplier, [greater_than: 0])
+  end
+
   def match_by_name(name) do
     __MODULE__
     |> where([skill], not is_nil(skill.name) and skill.name != "")
