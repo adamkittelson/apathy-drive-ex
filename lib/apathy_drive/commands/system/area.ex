@@ -2,6 +2,42 @@ defmodule ApathyDrive.Commands.System.Area do
   alias ApathyDrive.{Area, AreaAlly, AreaEnemy, Mobile, PubSub, Repo, Room}
   require Ecto.Query
 
+  def execute(%Room{} = room, character, ["add", "ally" | ally_name]) do
+    add_ally(room, character, ally_name)
+  end
+
+  def execute(%Room{} = room, character, ["add", "enemy" | enemy_name]) do
+    add_enemy(room, character, enemy_name)
+  end
+
+  def execute(%Room{} = room, character, ["create" | area]) do
+    create(room, character, area)
+  end
+
+  def execute(%Room{} = room, character, ["list"]) do
+    list(room, character)
+  end
+
+  def execute(%Room{} = room, character, ["merge" | area]) do
+    merge(room, character, area)
+  end
+
+  def execute(%Room{} = room, character, ["set", "level", level]) do
+    set_level(room, character, level)
+  end
+
+  def execute(%Room{} = room, character, ["set" | area]) do
+    set(room, character, area)
+  end
+
+  def execute(%Room{} = room, character, ["remove", "ally" | ally_name]) do
+    remove_ally(room, character, ally_name)
+  end
+
+  def execute(%Room{} = room, character, ["remove", "enemy" | enemy_name]) do
+    remove_enemy(room, character, enemy_name)
+  end
+
   def add_ally(%Room{area: %Area{} = area} = room, character, ally_name) do
     ally =
       ally_name

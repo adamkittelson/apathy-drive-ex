@@ -1,6 +1,18 @@
 defmodule ApathyDrive.Commands.System.Room do
   alias ApathyDrive.{Mobile, Repo, Room}
 
+  def execute(%Room{} = room, character, ["room", "set", "coords", x, y, z]) do
+    set_coords(room, character, x, y, z)
+  end
+
+  def execute(%Room{} = room, character, ["room", "set", "coords" | []]) do
+    set_coords(room, character)
+  end
+
+  def execute(%Room{} = room, character, ["room", "set", "name" | room_name]) do
+    set_name(room, character, room_name)
+  end
+
   def set_coords(%Room{coordinates: old_coords} = room, character, x, y, z) do
     x = String.to_integer(x)
     y = String.to_integer(y)

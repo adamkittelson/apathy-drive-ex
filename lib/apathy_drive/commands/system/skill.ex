@@ -2,6 +2,22 @@ defmodule ApathyDrive.Commands.System.Skill do
   alias ApathyDrive.{Mobile, Repo, Room, Skill, SkillIncompatibility}
   require Ecto.Query
 
+  def execute(%Room{} = room, character, ["create" | skill_name]) do
+    create(room, character, skill_name)
+  end
+
+  def execute(%Room{} = room, character, ["set", "incompatible" | skills]) do
+    if length(skills) >= 3 and Enum.member?(skills, "and") do
+      set_incompatible(room, character, skills)
+    else
+      Mobile.send_scroll(character, "<p>You must give two skills seperated by 'and', e.g. 'blade and blunt'.</p>")
+      room
+    end
+  end
+
+  def execute(%Room{} = room, character, ["list"]) do
+    list(room, character)
+  end
 
   def create(%Room{} = room, character, skill_name) do
     skill = Enum.join(skill_name, " ")

@@ -1,7 +1,6 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
-  require Ecto.Query
-  alias ApathyDrive.{Area, Room}
+  alias ApathyDrive.Room
   alias ApathyDrive.Commands.System
 
   def keywords, do: ["system", "sys"]
@@ -15,109 +14,20 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
-  def system(%Room{} = room, character, ["skill", "create" | skill_name]) do
-    System.Skill.create(room, character, skill_name)
+  def system(%Room{} = room, character, ["skill" | args]) do
+    System.Skill.execute(room, character, args)
   end
 
-  def system(%Room{} = room, character, ["skill", "set", "incompatible" | skills]) do
-    if length(skills) >= 3 and Enum.member?(skills, "and") do
-      System.Skill.set_incompatible(room, character, skills)
-    else
-      Mobile.send_scroll(character, "<p>You must give two skills seperated by 'and', e.g. 'blade and blunt'.</p>")
-      room
-    end
+  def system(%Room{} = room, character, ["area" | args]) do
+    System.Area.execute(room, character, args)
   end
 
-  def system(%Room{} = room, character, ["skill", "list"]) do
-    System.Skill.list(room, character)
+  def system(%Room{} = room, character, ["room" | args]) do
+    System.Room.execute(room, character, args)
   end
 
-  def system(%Room{} = room, character, ["area", "add", "ally" | ally_name]) do
-    System.Area.add_ally(room, character, ally_name)
-  end
-
-  def system(%Room{} = room, character, ["area", "add", "enemy" | enemy_name]) do
-    System.Area.add_enemy(room, character, enemy_name)
-  end
-
-  def system(%Room{} = room, character, ["area", "create" | area]) do
-    System.Area.create(room, character, area)
-  end
-
-  def system(%Room{} = room, character, ["area", "list"]) do
-    System.Area.list(room, character)
-  end
-
-  def system(%Room{} = room, character, ["area", "merge" | area]) do
-    System.Area.merge(room, character, area)
-  end
-
-  def system(%Room{} = room, character, ["area", "set", "level", level]) do
-    System.Area.set_level(room, character, level)
-  end
-
-  def system(%Room{} = room, character, ["area", "set" | area]) do
-    System.Area.set(room, character, area)
-  end
-
-  def system(%Room{} = room, character, ["area", "remove", "ally" | ally_name]) do
-    System.Area.remove_ally(room, character, ally_name)
-  end
-
-  def system(%Room{} = room, character, ["area", "remove", "enemy" | enemy_name]) do
-    System.Area.remove_enemy(room, character, enemy_name)
-  end
-
-  def system(%Room{} = room, character, ["room", "set", "coords", x, y, z]) do
-    System.Room.set_coords(room, character, x, y, z)
-  end
-
-  def system(%Room{} = room, character, ["room", "set", "coords" | []]) do
-    System.Room.set_coords(room, character)
-  end
-
-  def system(%Room{} = room, character, ["room", "set", "name" | room_name]) do
-    System.Room.set_name(room, character, room_name)
-  end
-
-  def system(%Room{} = room, character, ["goto" | area]) do
-    area = Enum.join(area, " ")
-
-    area
-    |> Area.match_by_name
-    |> case do
-         %Area{} = area ->
-           Ecto.assoc(area, :rooms)
-           |> Ecto.Query.where([r], not is_nil(r.coordinates))
-           |> Ecto.Query.limit(1)
-           |> Ecto.Query.select([:id])
-           |> ApathyDrive.Repo.one
-           |> case do
-                %Room{id: room_id} ->
-                  room_exit =
-                    %{
-                      "kind" => "Action",
-                      "destination" => room_id,
-                      "mover_message" => "<span class='blue'>You vanish into thin air and reappear somewhere else!</span>",
-                      "from_message" => "<span class='blue'>{{Name}} vanishes into thin air!</span>",
-                      "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
-                    }
-
-                  ApathyDrive.Commands.Move.execute(room, character, room_exit)
-                _ ->
-                  Mobile.send_scroll(character, "<p>#{area.name} has no rooms!</p>")
-                  room
-              end
-         nil ->
-           Mobile.send_scroll(character, "<p>Could not find an area named \"#{area}\".")
-           room
-       end
-  end
-
-  def system(%Room{} = room, character, _args) do
-    Mobile.send_scroll(character, "<p>Invalid system command.</p>")
-
-    room
+  def system(%Room{} = room, character, args) do
+    System.Misc.execute(room, character, args)
   end
 
 end
