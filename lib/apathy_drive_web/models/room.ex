@@ -43,6 +43,8 @@ defmodule ApathyDrive.Room do
     has_many   :items_for_sales, through: [:shop_items, :item]
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster]
+    has_many   :room_skills, ApathyDrive.RoomSkill
+    has_many   :skills, through: [:room_skills, :skill]
   end
 
   def load_items(%Room{id: id} = room) do
