@@ -40,7 +40,7 @@ defmodule ApathyDrive.Commands.System.Room do
     else
        Mobile.send_scroll(character, "<p>Could not find a skill called #{Enum.join(skill_name, " ")}</p>")
     end
-    room
+    Room.load_skills(room)
   end
 
   def remove_skill(%Room{} = room, character, skill_name) do
@@ -62,10 +62,8 @@ defmodule ApathyDrive.Commands.System.Room do
     else
       Mobile.send_scroll(character, "<p>Could not find a skill called #{Enum.join(skill_name, " ")}</p>")
     end
-    room
+    Room.load_skills(room)
   end
-
-
 
   def set_coords(%Room{coordinates: old_coords} = room, character, x, y, z) do
     x = String.to_integer(x)

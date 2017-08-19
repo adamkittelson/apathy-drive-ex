@@ -82,6 +82,7 @@ defmodule ApathyDrive.RoomServer do
       |> Repo.preload(:area)
       |> Room.load_items
       |> Room.load_reputations
+      |> Room.load_skills
 
     Logger.metadata(room: room.name <> "##{room.id}")
 

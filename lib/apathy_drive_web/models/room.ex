@@ -63,6 +63,12 @@ defmodule ApathyDrive.Room do
     |> put_in([:enemies], Enum.reduce(area.enemies, %{}, &(Map.put(&2, &1.id, &1.name))))
   end
 
+  def load_skills(%Room{} = room) do
+    Repo.preload(room, :skills, force: true)
+  end
+
+  def trainer?(%Room{} = room), do: Enum.any?(room.skills)
+
   def update_mobile(%Room{} = room, mobile_ref, fun) do
     if mobile = room.mobiles[mobile_ref] do
       case fun.(mobile) do
