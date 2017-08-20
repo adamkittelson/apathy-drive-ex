@@ -4,17 +4,22 @@ defmodule ApathyDrive.Level do
     exp_at_level(current_level + 1) - current_exp
   end
 
-  def exp_for_level(1), do: 0
-  def exp_for_level(lvl) do
-    ((1 + :math.pow(lvl - 2, 1.50 + (lvl / 75.0))) * 100000 / 150)
+  def exp_to_next_skill_level(current_level, current_exp, multiplier) do
+    trunc(exp_to_next_level(current_level + 1, current_exp) * multiplier)
+  end
+
+  def exp_for_level(1, _multiplier), do: 0
+  def exp_for_level(lvl, multiplier) do
+    ((1 + :math.pow(lvl - 2, 1.50 + (lvl / 75.0))) * 100000 / 150) * multiplier
     |> trunc
   end
 
-  def exp_at_level(0), do: nil
-  def exp_at_level(level) do
+  def exp_at_level(exp, multiplier \\ 1.0)
+  def exp_at_level(0, _multiplier), do: nil
+  def exp_at_level(level, multiplier) do
     (1..level)
     |> Enum.reduce(0, fn(lvl, total) ->
-         total + exp_for_level(lvl)
+         total + exp_for_level(lvl, multiplier)
        end)
   end
 
@@ -24,26 +29,24 @@ defmodule ApathyDrive.Level do
     div(needed, 10 * level)
   end
 
-  def level_at_exp(exp, level \\ 1) do
-    if exp_at_level(level) > exp do
+  def level_at_exp(exp, multiplier \\ 1.0, level \\ 1) do
+    if exp_at_level(level, multiplier) > exp do
       max(level - 1, 1)
     else
-      level_at_exp(exp, level + 1)
+      level_at_exp(exp, multiplier, level + 1)
     end
+  end
+
+  def skill_level_at_exp(exp, multiplier) do
+    level_at_exp(exp, multiplier) - 1
   end
 
   def advance(entity) do
     advance(entity, level_at_exp(entity.experience))
   end
 
-  def advance(%{level: current_level, experience: experience} = entity, level) do
-    # don't de-level if exp just dips below the current level, prevents bouncing back and
-    # forth when spreading essence around
-    if (level < current_level) and (experience > (exp_at_level(current_level) * 0.95)) do
-      entity
-    else
-      put_in(entity.level, level)
-    end
+  def advance(%{} = entity, level) do
+    put_in(entity.level, level)
   end
 
   def display_exp_table do

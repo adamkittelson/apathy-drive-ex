@@ -87,10 +87,6 @@ defmodule ApathyDrive.RoomServer do
     Logger.metadata(room: room.name <> "##{room.id}")
 
     room =
-      room
-      |> Room.set_default_essence
-
-    room =
       if room.room_unity do
         room
       else

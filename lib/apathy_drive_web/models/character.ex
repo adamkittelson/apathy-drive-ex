@@ -1,7 +1,9 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, CharacterReputation, Companion, EntityAbility, Item, Monster, Mobile, Party, Race, Reputation, Room, RoomServer, Spell, Text, TimerManager}
+  alias ApathyDrive.{Character, CharacterSkill, CharacterReputation, Companion,
+                     EntityAbility, Item, Level,  Monster, Mobile, Party, Race,
+                     Reputation, Room, RoomServer, Skill, Spell, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -270,6 +272,21 @@ defmodule ApathyDrive.Character do
 
       character
     end)
+  end
+
+  def train_skill(%Character{} = character, %Skill{} = skill, amount) do
+    character =
+      update_in(character.skills, fn(skills) ->
+        skills = Map.put_new(skills, skill.name, 0)
+        update_in(skills, [skill.name], &(&1 + amount))
+      end)
+
+    Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: character.skills[skill.name]}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
+
+    level = Level.skill_level_at_exp(character.skills[skill.name], skill.training_cost_multiplier)
+
+    Mobile.send_scroll(character, "<p>You spend #{amount} experience to advance #{skill.name} to level #{level}.</p>")
+    character
   end
 
   def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do

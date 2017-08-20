@@ -298,7 +298,6 @@ defmodule ApathyDrive.Room do
       room
       |> Map.put(:area, area)
       |> Map.put(:area_id, area.id)
-      |> set_default_essence()
       |> Repo.save!
     PubSub.subscribe("areas:#{area.id}")
     ApathyDriveWeb.Endpoint.broadcast!("map", "area_change", %{room_id: room.id, old_area: old_area, new_area: area.name})

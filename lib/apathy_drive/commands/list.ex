@@ -61,11 +61,21 @@ defmodule ApathyDrive.Commands.List do
 
          exp = Map.get(character.skills, skill.name, 0)
 
-         level = Level.level_at_exp(exp)
+         level = Level.skill_level_at_exp(exp, skill.training_cost_multiplier)
 
-         padded_level = String.pad_leading("#{level - 1}", 5)
-         tnl = Level.exp_to_next_level(level, exp)
-         Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{padded_skill_name}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{padded_level}</span> <span class='dark-green'>|</span> <span class='black'>#{tnl}</span></p>")
+         padded_level = String.pad_leading("#{level}", 5)
+
+         tnl = Level.exp_to_next_skill_level(level, exp, skill.training_cost_multiplier)
+
+         tnl =
+          if tnl > character.experience do
+            "<span class='dark-red'>#{tnl}</span>"
+          else
+            "<span class='green'>#{tnl}</span>"
+          end
+
+
+         Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{padded_skill_name}</span> <span class='dark-green'>|</span> <span class='dark-cyan'>#{padded_level}</span> <span class='dark-green'>|</span> #{tnl}</p>")
        end)
 
     room

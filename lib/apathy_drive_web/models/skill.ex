@@ -36,7 +36,7 @@ defmodule ApathyDrive.Skill do
     __MODULE__
     |> where([skill], not is_nil(skill.name) and skill.name != "")
     |> distinct(true)
-    |> select([area], [:id, :name])
+    |> select([area], [:id, :name, :training_cost_multiplier])
     |> ApathyDrive.Repo.all
     |> Match.one(:keyword_starts_with, name)
   end
