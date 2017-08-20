@@ -51,12 +51,16 @@ defmodule ApathyDrive.Character do
     field :leader,          :any, virtual: true
     field :invitees,        :any, virtual: true, default: []
     field :reputations,     :map, virtual: true, default: %{}
+    field :skills,          :map, virtual: true, default: %{}
 
     belongs_to :room, Room
     belongs_to :class, ApathyDrive.Class
 
     has_many :characters_items, ApathyDrive.EntityItem
     has_many :characters_reputations, ApathyDrive.CharacterReputation
+
+    has_many :characters_skills, ApathyDrive.CharacterSkill
+    has_many :trained_skills, through: [:characters_skills, :skill]
 
     timestamps()
   end
@@ -120,6 +124,13 @@ defmodule ApathyDrive.Character do
   def can_equip_item?(_character, _item), do: true
 
   def load_spells(%Character{class_id: class_id} = character) do
+    character = Repo.preload(character, [:characters_skills, :trained_skills], force: true)
+
+    character =
+      Enum.reduce(character.characters_skills, character, fn (character_skill, character) ->
+        update_in(character.skills, &Map.put(&1, character_skill.skill.name, character_skill.experience))
+      end)
+
     entities_spells =
       ApathyDrive.EntitySpell
       |> Ecto.Query.where(assoc_id: ^class_id, assoc_table: "classes")

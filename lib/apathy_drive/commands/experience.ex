@@ -7,7 +7,7 @@ defmodule ApathyDrive.Commands.Experience do
   def execute(%Room{} = room, %Character{} = character, _arguments) do
     level     = character.level
     exp       = trunc(character.experience)
-    remaining = trunc(max(Level.exp_to_next_level(character), 0))
+    remaining = trunc(max(Level.exp_to_next_level(character.level, character.experience), 0))
     tolevel   = Level.exp_at_level(level + 1)
     percent   = ((exp / tolevel) * 100) |> round
 

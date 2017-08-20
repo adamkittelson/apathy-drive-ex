@@ -9,8 +9,11 @@ defmodule ApathyDrive.Skill do
 
     has_many :skills_incompatibilities, ApathyDrive.SkillIncompatibility
     has_many :incompatible_skills, through: [:skills_incompatibilities, :incompatible_skill]
-    has_many :room_skills, ApathyDrive.RoomSkill
-    has_many :trainers, through: [:room_skills, :room]
+    has_many :rooms_skills, ApathyDrive.RoomSkill
+    has_many :trainers, through: [:rooms_skills, :room]
+
+    has_many :characters_skills, ApathyDrive.CharacterSkill
+    has_many :characters, through: [:characters_skills, :character]
   end
 
   def create_changeset(name) do

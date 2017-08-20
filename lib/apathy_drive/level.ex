@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Level do
 
-  def exp_to_next_level(entity) do
-    exp_at_level(entity.level + 1) - entity.experience
+  def exp_to_next_level(current_level, current_exp) do
+    exp_at_level(current_level + 1) - current_exp
   end
 
   def exp_for_level(1), do: 0
