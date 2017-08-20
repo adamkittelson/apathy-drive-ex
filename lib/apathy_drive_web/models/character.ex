@@ -274,7 +274,10 @@ defmodule ApathyDrive.Character do
     end)
   end
 
-  def train_skill(%Character{} = character, %Skill{} = skill, amount) do
+  def train_skill(%Character{} = character, %Skill{} = skill, amount) when amount > 0 do
+    skill = Repo.preload(skill, :incompatible_skills)
+    incompatible_skills = Enum.map(skill.incompatible_skills, & &1.name)
+
     character =
       update_in(character.skills, fn(skills) ->
         skills = Map.put_new(skills, skill.name, 0)
@@ -285,8 +288,40 @@ defmodule ApathyDrive.Character do
 
     level = Level.skill_level_at_exp(character.skills[skill.name], skill.training_cost_multiplier)
 
-    Mobile.send_scroll(character, "<p>You spend #{amount} experience to advance #{skill.name} to level #{level}.</p>")
-    character
+    tnl = Level.exp_to_next_skill_level(level, character.skills[skill.name], skill.training_cost_multiplier)
+
+    tnl =
+      if tnl > character.experience do
+        "<span class='dark-red'>#{tnl}</span>"
+      else
+        "<span class='green'>#{tnl}</span>"
+      end
+
+    Mobile.send_scroll(character, "<p>You spend #{amount} experience to advance #{skill.name} to level #{level}, it will cost #{tnl} experience to train it any further.</p>")
+
+    character.skills
+    |> Enum.reduce(character, fn {skill_name, skill_exp}, character ->
+      if skill_name in incompatible_skills do
+        incompatible_skill = Skill.match_by_name(skill_name)
+        level = Level.skill_level_at_exp(skill_exp, incompatible_skill.training_cost_multiplier)
+        if level > 0 do
+          new_level = level - 1
+          new_exp = Level.exp_at_level(level, incompatible_skill.training_cost_multiplier)
+
+          Repo.insert(%CharacterSkill{character_id: character.id, skill_id: incompatible_skill.id, experience: new_exp}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
+
+          Mobile.send_scroll(character, "<p>Your #{incompatible_skill.name} skill falls to level #{new_level}.</p>")
+
+          update_in(character.skills, fn(skills) ->
+            put_in(skills, [incompatible_skill.name], new_exp)
+          end)
+        else
+          character
+        end
+      else
+        character
+      end
+    end)
   end
 
   def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do
