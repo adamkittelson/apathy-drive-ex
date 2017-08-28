@@ -387,8 +387,15 @@ defmodule ApathyDrive.Character do
       willpower: Mobile.attribute_at_level(character, :willpower, character.level),
       health: Mobile.attribute_at_level(character, :health, character.level),
       charm: Mobile.attribute_at_level(character, :charm, character.level),
-      effects: effects
+      effects: effects,
+      item_level: Character.item_level(character)
     }
+  end
+
+  def item_level(%Character{equipment: equipment}) do
+    equipment
+    |> Enum.map(& &1.level)
+    |> Enum.sum
   end
 
   defimpl ApathyDrive.Mobile, for: Character do

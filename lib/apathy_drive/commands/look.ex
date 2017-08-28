@@ -180,10 +180,13 @@ defmodule ApathyDrive.Commands.Look do
     case ApathyDrive.Commands.Wear.equip_item(character, item, false) do
       false ->
         Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} <span class='dark-cyan'>(You can't use)</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> <span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{item.grade}</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{item.level}</span></p>")
         Mobile.send_scroll(character, "<p>#{item.description}</p>\n\n")
       %{equipped: _, character: equipped} ->
         Mobile.send_scroll(character, "<p>#{Item.colored_name(item)}</p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> <span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{item.grade}</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{item.level}</span></p>")
         Mobile.send_scroll(character, "<p>#{item.description}</p>\n\n")
+
         equipped = Character.score_data(equipped, room)
 
         score_data =
@@ -204,7 +207,7 @@ defmodule ApathyDrive.Commands.Look do
         Mobile.send_scroll(character, "<p><span class='dark-green'>#{String.pad_leading("Dodge:", 45)}</span> <span class='#{score_data.dodge.color}'>#{String.pad_leading(to_string(trunc(score_data.dodge.value)), 11)}</span></p>")
         Mobile.send_scroll(character, "<p><span class='dark-green'>Strength:</span>  <span class='#{score_data.strength.color}'>#{String.pad_trailing(to_string(trunc(score_data.strength.value)), 7)}</span> <span class='dark-green'>Agility:</span> <span class='#{score_data.agility.color}'>#{String.pad_trailing(to_string(trunc(score_data.agility.value)), 11)}</span><span class='dark-green'>Spellcasting:</span> <span class='#{score_data.spellcasting.color}'>#{String.pad_leading(to_string(trunc(score_data.spellcasting.value)), 4)}</span></p>")
         Mobile.send_scroll(character, "<p><span class='dark-green'>Intellect:</span> <span class='#{score_data.intellect.color}'>#{String.pad_trailing(to_string(trunc(score_data.intellect.value)), 7)}</span> <span class='dark-green'>Health:</span>  <span class='#{score_data.health.color}'>#{String.pad_trailing(to_string(trunc(score_data.health.value)), 11)}</span><span class='dark-green'>Crits:</span> <span class='#{score_data.crits.color}'>#{String.pad_leading(to_string(trunc(score_data.crits.value)), 11)}</span></p>")
-        Mobile.send_scroll(character, "<p><span class='dark-green'>Willpower:</span> <span class='#{score_data.willpower.color}'>#{String.pad_trailing(to_string(trunc(score_data.willpower.value)), 7)}</span> <span class='dark-green'>Charm:</span>   <span class='#{score_data.charm.color}'>#{trunc(score_data.charm.value)}</span></p>")
+        Mobile.send_scroll(character, "<p><span class='dark-green'>Willpower:</span> <span class='#{score_data.willpower.color}'>#{String.pad_trailing(to_string(trunc(score_data.willpower.value)), 7)}</span> <span class='dark-green'>Charm:</span>   <span class='#{score_data.charm.color}'>#{String.pad_trailing(to_string(trunc(score_data.charm.value)), 11)}</span><span class='dark-green'>Item Level:</span> <span class='#{score_data.item_level.color}'>#{String.pad_leading(to_string(trunc(score_data.item_level.value)), 6)}</span></p>")
     end
   end
 
