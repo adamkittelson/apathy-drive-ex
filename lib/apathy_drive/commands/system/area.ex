@@ -38,6 +38,12 @@ defmodule ApathyDrive.Commands.System.Area do
     remove_enemy(room, character, enemy_name)
   end
 
+  def execute(%Room{} = room, character, _args) do
+    Mobile.send_scroll(character, "<p>Invalid system command.</p>")
+
+    room
+  end
+
   def add_ally(%Room{area: %Area{} = area} = room, character, ally_name) do
     ally =
       ally_name

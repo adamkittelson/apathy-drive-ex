@@ -16,11 +16,13 @@ defmodule ApathyDrive.JSONB do
   def blank?(nil), do: true
   def blank?(_),   do: false
 
+
   def load(json) when is_binary(json) do
     case Poison.decode(json) do
       {:ok, any} -> {:ok, any}
       {:error, {:invalid, _, _}} -> {:ok, json}
       {:error, {:invalid, _}} -> {:ok, json}
+      {:error, :invalid, _} -> {:ok, json}
       {:error, :invalid} -> {:ok, json}
       _ -> :error
     end

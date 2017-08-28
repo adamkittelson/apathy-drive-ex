@@ -1,7 +1,8 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, EntityItem, Item}
+  alias ApathyDrive.{Character, EntityItem, Level, Item, Skill}
   require Logger
+  require Ecto.Query
 
   schema "items" do
     field :name, :string
@@ -13,6 +14,7 @@ defmodule ApathyDrive.Item do
     field :rarity, :string
     field :hit_verbs, ApathyDrive.JSONB
     field :miss_verbs, ApathyDrive.JSONB
+    field :attacks_per_round, :integer
     field :abilities, :map, virtual: true, default: %{}
     field :level, :integer, virtual: true
     field :equipped, :boolean, virtual: true, default: false
@@ -113,69 +115,38 @@ defmodule ApathyDrive.Item do
      "Legs", "Neck", "Off-Hand", "Torso", "Waist", "Weapon Hand", "Wrist", "Wrist"]
   end
 
-  def slots_below_power(%Character{equipment: equipment, inventory: inventory} = character, power) do
-    upgradeable_slots =
-      slots()
-      |> Enum.reduce(equipment ++ inventory, fn slot, mapped_equipment ->
-           items =
-             Enum.filter(mapped_equipment, fn
-               %Item{worn_on: worn_on} = item when worn_on == slot ->
-                 item
-               _ ->
-                 false
-             end)
+  def grade_for_character(%Character{skills: skills}, slot) do
+    grades = grades_for_slot(slot)
 
-           if Enum.any?(items) do
-             item = Enum.max_by(items, &power_at_level(&1, &1.level))
-
-             mapped_equipment =
-               mapped_equipment
-               |> List.delete(item)
-
-             [{slot, power_at_level(item, item.level)} | mapped_equipment]
-           else
-             [{slot, 0} | mapped_equipment]
-           end
-         end)
-      |> Enum.filter(&is_tuple/1)
-      |> Enum.reject(&(elem(&1, 1) >= power))
-      |> Enum.map(&(elem(&1, 0)))
-
-    case Character.weapon(character) do
+    skills
+    |> Enum.filter(fn {skill_name, _value} -> skill_name in grades end)
+    |> Enum.max_by(fn {_skill_name, value} -> value end, fn -> nil end)
+    |> case do
+      {skill_name, _value} ->
+        skill_name
       nil ->
-        upgradeable_slots
-      %Item{worn_on: "Weapon Hand"} ->
-        Enum.reject(upgradeable_slots, &(&1 == "Two Handed"))
-      %Item{worn_on: "Two Handed"} ->
-        Enum.reject(upgradeable_slots, &(&1 in ["Weapon Hand", "Off-Hand"]))
+        if "accessory" in grades do
+          "accessory"
+        else
+          nil
+        end
     end
   end
 
-  def grade_for_character(%Character{weapon_type: type}, slot) when slot in ["Weapon Hand", "Two Handed"] and type != "Any" do
-    type
+  def grades_for_slot(slot) do
+    Item
+    |> Ecto.Query.where(worn_on: ^slot)
+    |> Ecto.Query.distinct(true)
+    |> Ecto.Query.select([:grade])
+    |> Repo.all
+    |> Enum.map(& &1.grade)
   end
-  def grade_for_character(%Character{}, slot) when slot in ["Weapon Hand", "Two Handed"], do: nil
-  def grade_for_character(%Character{armour: grade}, _slot), do: grade
 
   def random_item_id_for_slot_and_rarity(%Character{} = character, slot, rarity) do
     grade = grade_for_character(character, slot)
 
     if grade do
       random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity)
-    else
-      count =
-        __MODULE__
-        |> worn_on(slot)
-        |> rarity(rarity)
-        |> select([item], count(item.id))
-        |> Repo.one
-
-      __MODULE__
-      |> worn_on(slot)
-      |> rarity(rarity)
-      |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-      |> select([item], item.id)
-      |> Repo.one
     end
   end
 
@@ -189,23 +160,16 @@ defmodule ApathyDrive.Item do
       |> select([item], count(item.id))
       |> Repo.one
 
-    cond do
-      count > 0 ->
-        __MODULE__
-        |> grade(grade)
-        |> worn_on(slot)
-        |> rarity(rarity)
-        |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-        |> select([item], item.id)
-        |> Repo.one
-      grade == "Plate" ->
-        random_item_id_for_grade_and_slot_and_rarity("Scale", slot, rarity)
-      grade == "Scale" ->
-        random_item_id_for_grade_and_slot_and_rarity("Chain", slot, rarity)
-      grade == "Chain" ->
-        random_item_id_for_grade_and_slot_and_rarity("Leather", slot, rarity)
-      grade == "Leather" ->
-        random_item_id_for_grade_and_slot_and_rarity("Cloth", slot, rarity)
+    if count > 0 do
+      __MODULE__
+      |> grade(grade)
+      |> worn_on(slot)
+      |> rarity(rarity)
+      |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+      |> select([item], item.id)
+      |> Repo.one
+    else
+      Logger.error("Tried to spawn item for #{grade} #{slot} #{rarity}, but none exist.")
     end
   end
 
@@ -252,21 +216,76 @@ defmodule ApathyDrive.Item do
     }
   end
 
- def generate_for_character!(%Item{rarity: rarity} = item, %Character{} = character, persist?) do
+ def generate_for_character!(%Item{rarity: rarity} = item, %Character{} = character, source) do
     ei =
       %EntityItem{
         assoc_table: "characters",
         assoc_id: character.id,
         item_id: item.id,
-        level: (if rarity == "legendary", do: :infinity, else: character.level)
+        level: (if rarity == "legendary", do: :infinity, else: generated_item_level(character, item.grade))
       }
       |> Map.merge(generate_item_attributes(rarity))
 
-    ei = if persist?, do: Repo.insert!(ei), else: ei
+    item =
+      ei
+      |> Map.put(:item, item)
+      |> from_assoc()
 
-    ei
-    |> Map.put(:item, item)
-    |> from_assoc()
+    if source == :loot and !upgrade_for_character?(item, character) do
+      item
+    else
+      ei = Repo.insert!(ei)
+      Map.put(item, :entities_items_id, ei.id)
+    end
+  end
+
+
+  def upgrade_for_character?(%Item{worn_on: slot, rarity: rarity, level: level}, %Character{equipment: equipment}) do
+    item_power = Item.power_at_level(rarity, level)
+
+    worn_item =
+      Enum.find(equipment, fn(worn_item) ->
+        cond do
+          slot in ["Off-Hand", "Weapon Hand"] ->
+            worn_item.worn_on == slot or worn_item.worn_on == "Two Handed"
+          slot == "Two Handed" ->
+            worn_item.worn_on == slot or
+            worn_item.worn_on == "Weapon Hand" or
+            worn_item.worn_on == "Off-Hand"
+          :else ->
+            worn_item.worn_on == slot
+        end
+      end)
+
+    slot_power =
+      if worn_item do
+        Item.power_at_level(worn_item.rarity, worn_item.level)
+      else
+        0
+      end
+    item_power > slot_power
+  end
+
+  # for accessories use the highest level of any skill
+  def generated_item_level(%Character{} = character, "accessory") do
+    {skill_name, exp} =
+      character.skills
+      |> Enum.max_by(fn {_skill_name, exp} -> exp end, fn -> {"accessory", 0} end)
+
+    if skill = Repo.get_by(Skill, name: skill_name) do
+      Level.skill_level_at_exp(exp, skill.training_cost_multiplier)
+    else
+      1
+    end
+  end
+  def generated_item_level(%Character{} = character, grade) do
+    if skill_info = Enum.find(character.skills, fn {skill_name, _exp} -> skill_name == grade end) do
+      {skill_name, exp} = skill_info
+      skill = Repo.get_by!(Skill, name: skill_name)
+      Level.skill_level_at_exp(exp, skill.training_cost_multiplier)
+    else
+      1
+    end
   end
 
   def price(%Item{rarity: "legendary"}), do: "priceless"

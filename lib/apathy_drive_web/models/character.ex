@@ -468,20 +468,10 @@ defmodule ApathyDrive.Character do
 
     def attacks_per_round(character) do
       case Character.weapon(character) do
+        %Item{attacks_per_round: attacks} ->
+          attacks
         nil ->
           4
-        %Item{worn_on: "Weapon Hand", grade: "Basic"} ->
-          4
-        %Item{worn_on: "Two Handed", grade: "Basic"} ->
-          3
-        %Item{worn_on: "Weapon Hand", grade: "Bladed"} ->
-          3
-        %Item{worn_on: "Two Handed", grade: "Bladed"} ->
-          2
-        %Item{worn_on: "Weapon Hand", grade: "Blunt"} ->
-          2
-        %Item{worn_on: "Two Handed", grade: "Blunt"} ->
-          1
       end
     end
 
@@ -711,7 +701,7 @@ defmodule ApathyDrive.Character do
     end
 
     def max_mana_at_level(mobile, level) do
-      base = trunc(ability_value(mobile, "ManaPerIntellect") * attribute_at_level(mobile, :intellect, level))
+      base = trunc(max(2, ability_value(mobile, "ManaPerIntellect")) * attribute_at_level(mobile, :intellect, level))
       modifier = ability_value(mobile, "MaxMana")
       base * (1 + (modifier / 100))
     end

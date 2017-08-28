@@ -225,51 +225,50 @@ defmodule ApathyDrive.Monster do
     rarity = random_loot_rarity(monster, character.pity_modifier)
 
     if rarity do
-      power = Item.power_at_level(rarity, character.level)
+      Logger.info "spawning #{rarity} item for #{character.name}"
 
-      Logger.info "spawning #{rarity} item for #{character.name} with power level #{inspect power}"
+      item_id = Item.random_item_id_for_slot_and_rarity(character, Enum.random(Item.slots), rarity)
 
-      {loot_type, slot} =
-        case Item.slots_below_power(character, power) do
-          [] ->
-            Logger.info("no slots below power: #{power}, salvaging")
-            {:salvage, Enum.random(Item.slots)}
-          slots ->
-            {:loot, Enum.random(slots)}
+      if item_id do
+        character =
+          Item
+          |> Repo.get(item_id)
+          |> Item.generate_for_character!(character, :loot)
+          |> case do
+              %Item{entities_items_id: nil} = item ->
+                gold =
+                  item
+                  |> Item.price
+                  |> div(10)
+
+                character
+                |> Ecto.Changeset.change(%{gold: character.gold + gold})
+                |> Repo.update!
+                |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
+
+              %Item{entities_items_id: _id} = item ->
+                character
+                |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
+                |> Character.load_items
+            end
+
+        if rarity == "legendary" do
+          character = put_in(character.pity_modifier, 0)
+
+          %Character{id: character.id}
+          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+          |> Repo.update!
+
+          character
+        else
+          character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
+
+          %Character{id: character.id}
+          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+          |> Repo.update!
+
+          character
         end
-
-      item_id = Item.random_item_id_for_slot_and_rarity(character, slot, rarity)
-
-      character =
-        Item
-        |> Repo.get(item_id)
-        |> Item.generate_for_character!(character, loot_type == :loot)
-        |> case do
-             %Item{entities_items_id: nil} = item ->
-               gold =
-                 item
-                 |> Item.price
-                 |> div(10)
-
-               character
-               |> Ecto.Changeset.change(%{gold: character.gold + gold})
-               |> Repo.update!
-               |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
-
-             %Item{entities_items_id: _id} = item ->
-               character
-               |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
-               |> Character.load_items
-           end
-
-      if rarity == "legendary" do
-        character = put_in(character.pity_modifier, 0)
-
-        %Character{id: character.id}
-        |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
-        |> Repo.update!
-
-        character
       else
         character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
 

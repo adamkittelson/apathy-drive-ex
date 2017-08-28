@@ -29,6 +29,12 @@ defmodule ApathyDrive.Commands.System.Skill do
     list(room, character)
   end
 
+  def execute(%Room{} = room, character, _args) do
+    Mobile.send_scroll(character, "<p>Invalid system command.</p>")
+
+    room
+  end
+
   def create(%Room{} = room, character, skill_name) do
     skill = Enum.join(skill_name, " ")
 

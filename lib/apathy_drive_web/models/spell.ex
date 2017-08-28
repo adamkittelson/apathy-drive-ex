@@ -484,7 +484,7 @@ defmodule ApathyDrive.Spell do
     if message = effects["StatusMessage"] do
       Mobile.send_scroll(target, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
     end
-    
+
     target
     |> Systems.Effect.add(effects, duration)
     |> Systems.Effect.schedule_next_periodic_effect
