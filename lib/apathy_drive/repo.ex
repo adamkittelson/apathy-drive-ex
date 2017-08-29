@@ -1,12 +1,5 @@
 defmodule ApathyDrive.Repo do
   use Ecto.Repo, otp_app: :apathy_drive
-  alias ApathyDrive.Room
-
-  def save(%Room{room_unity: room_unity} = room) do
-    room
-    |> Map.put(:room_unity, save!(room_unity))
-    |> save!()
-  end
 
   def save!(%{:__struct__ => module} = current_struct) do
     [pkey] = module.__schema__(:primary_key)

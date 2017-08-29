@@ -47,16 +47,12 @@ defmodule ApathyDrive.Character do
     field :willpower,       :integer, virtual: true
     field :health,          :integer, virtual: true
     field :charm,           :integer, virtual: true
-    field :armour,          :string, virtual: true
-    field :weapon_hands,    :string, virtual: true
-    field :weapon_type,     :string, virtual: true
     field :leader,          :any, virtual: true
     field :invitees,        :any, virtual: true, default: []
     field :reputations,     :map, virtual: true, default: %{}
     field :skills,          :map, virtual: true, default: %{}
 
     belongs_to :room, Room
-    belongs_to :class, ApathyDrive.Class
 
     has_many :characters_items, ApathyDrive.EntityItem
     has_many :characters_reputations, ApathyDrive.CharacterReputation
@@ -75,9 +71,8 @@ defmodule ApathyDrive.Character do
 
   def changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(name race_id class_id gender))
-    |> validate_required(~w(name race_id class_id gender)a)
-    |> validate_inclusion(:class_id, ApathyDrive.Class.ids)
+    |> cast(params, ~w(name race_id gender))
+    |> validate_required(~w(name race_id gender)a)
     |> validate_inclusion(:race_id, ApathyDrive.Race.ids)
     |> validate_inclusion(:gender, ["male", "female"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
@@ -96,58 +91,30 @@ defmodule ApathyDrive.Character do
     |> validate_confirmation(:password)
   end
 
-  def can_equip_item?(%Character{armour: "Cloth"}, %Item{grade: grade}) when grade in ["Plate", "Scale", "Chain", "Leather"] do
-    false
-  end
-  def can_equip_item?(%Character{armour: "Leather"}, %Item{grade: grade}) when grade in ["Plate", "Scale", "Chain"] do
-    false
-  end
-  def can_equip_item?(%Character{armour: "Chain"}, %Item{grade: grade}) when grade in ["Plate", "Scale"] do
-    false
-  end
-  def can_equip_item?(%Character{armour: "Scale"}, %Item{grade: "Plate"}) do
-    false
-  end
-  def can_equip_item?(%Character{weapon_hands: "One Handed"}, %Item{worn_on: "Two Handed"}) do
-    false
-  end
-  def can_equip_item?(%Character{weapon_hands: "Two Handed"}, %Item{worn_on: "Weapon Hand"}) do
-    false
-  end
-  def can_equip_item?(%Character{weapon_type: "Blunt"}, %Item{grade: "Bladed"}) do
-    false
-  end
-  def can_equip_item?(%Character{weapon_type: "Bladed"}, %Item{grade: "Blunt"}) do
-    false
-  end
-  def can_equip_item?(%Character{weapon_type: "Basic"}, %Item{grade: grade}) when grade in ["Blunt", "Bladed"] do
-    false
-  end
-  def can_equip_item?(_character, _item), do: true
-
-  def load_spells(%Character{class_id: class_id} = character) do
+  def load_spells(%Character{} = character) do
     character = Repo.preload(character, [:characters_skills, :trained_skills], force: true)
 
-    character =
-      Enum.reduce(character.characters_skills, character, fn (character_skill, character) ->
-        update_in(character.skills, &Map.put(&1, character_skill.skill.name, character_skill.experience))
-      end)
+    Enum.reduce(character.characters_skills, character, fn (character_skill, character) ->
+      update_in(character.skills, &Map.put(&1, character_skill.skill.name, character_skill.experience))
+    end)
 
-    entities_spells =
-      ApathyDrive.EntitySpell
-      |> Ecto.Query.where(assoc_id: ^class_id, assoc_table: "classes")
-      |> Ecto.Query.preload([:spell])
-      |> Repo.all
+    # TODO: load spells based on trained skills
+    #
+    # entities_spells =
+    #   ApathyDrive.EntitySpell
+    #   |> Ecto.Query.where(assoc_id: ^class_id, assoc_table: "classes")
+    #   |> Ecto.Query.preload([:spell])
+    #   |> Repo.all
 
-    spells =
-      Enum.reduce(entities_spells, %{}, fn
-        %{level: level, spell: %Spell{id: id} = spell}, spells ->
-          spell =
-            put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
-            |> Map.put(:level, level)
-          Map.put(spells, spell.command, spell)
-      end)
-    Map.put(character, :spells, spells)
+    # spells =
+    #   Enum.reduce(entities_spells, %{}, fn
+    #     %{level: level, spell: %Spell{id: id} = spell}, spells ->
+    #       spell =
+    #         put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
+    #         |> Map.put(:level, level)
+    #       Map.put(spells, spell.command, spell)
+    #   end)
+    # Map.put(character, :spells, spells)
   end
 
   def load_race(%Character{race_id: race_id} = character) do
@@ -163,21 +130,6 @@ defmodule ApathyDrive.Character do
     character
     |> Map.put(:race, race.name)
     |> Map.merge(attributes)
-    |> Systems.Effect.add(effect)
-  end
-
-  def load_class(%Character{class_id: class_id} = character) do
-    class = Repo.get(ApathyDrive.Class, class_id)
-
-    effect =
-      EntityAbility.load_abilities("classes", class_id)
-      |> Map.put("stack_key", "class")
-
-    character
-    |> Map.put(:class, class.name)
-    |> Map.put(:armour, class.armour)
-    |> Map.put(:weapon_hands, class.weapon_hands)
-    |> Map.put(:weapon_type, class.weapon_type)
     |> Systems.Effect.add(effect)
   end
 
@@ -362,7 +314,6 @@ defmodule ApathyDrive.Character do
 
     %{
       name: character.name,
-      class: character.class,
       race: character.race,
       level: character.level,
       experience: character.experience,
@@ -584,7 +535,7 @@ defmodule ApathyDrive.Character do
         |> Map.put(:mana, 1.0)
         |> update_in([:effects], fn(effects) ->
              effects
-             |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
+             |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race"] end)
              |> Enum.into(%{})
            end)
         |> Map.put(:timers, %{})

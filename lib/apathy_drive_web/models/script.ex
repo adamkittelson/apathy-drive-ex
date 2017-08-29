@@ -237,10 +237,10 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %{spirit: %Spirit{}} = monster, %{"add_experience" => exp}, script) do
-    monster = Spirit.add_experience(monster, exp)
-    room = put_in(room.monsters[monster.ref], monster)
-    execute_script(room, monster, script)
+  def execute_instruction(%Room{} = room, %Character{} = character, %{"add_experience" => exp}, script) do
+    character = Character.add_experience(character, exp)
+    room = put_in(room.mobiles[character.ref], character)
+    execute_script(room, character, script)
   end
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"cast_ability" => ability_id}, script) do
@@ -269,13 +269,13 @@ defmodule ApathyDrive.Script do
     room
   end
 
-  def execute_instruction(%Room{} = room, %{spirit: %Spirit{experience: exp}} = monster, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, script) do
-    if exp >= price do
-      monster = Spirit.add_experience(monster, -price)
-      room = put_in(room.monsters[monster.ref], monster)
-      execute_script(room, monster, script)
+  def execute_instruction(%Room{} = room, %Character{gold: gold} = character, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, script) do
+    if gold >= price do
+      character = update_in(character.gold, &(&1 - price))
+      room = put_in(room.mobiles[character.ref], character)
+      execute_script(room, character, script)
     else
-      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
+      Mobile.send_scroll(character, "<p><span class='dark-green'>#{failure_message}</p>")
       room
     end
   end

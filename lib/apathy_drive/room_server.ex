@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Character, Commands, Companion, LairMonster, Match, Mobile, MonsterSpawning,
-                     PubSub, Repo, Room, RoomSupervisor, RoomUnity, Spell, TimerManager, Presence}
+  alias ApathyDrive.{Character, Commands, Companion, LairMonster, Mobile, MonsterSpawning,
+                     PubSub, Repo, Room, RoomSupervisor, Spell, TimerManager, Presence}
   use Timex
   require Logger
 
@@ -67,10 +67,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:get_item, mobile, item})
   end
 
-  def destroy_item(room, item) do
-    GenServer.call(room, {:destroy_item, item})
-  end
-
   def character_connected(room, character, socket) do
     GenServer.call(room, {:character_connected, character, socket})
   end
@@ -78,25 +74,12 @@ defmodule ApathyDrive.RoomServer do
   def init(id) do
     room =
       Repo.get!(Room, id)
-      |> Repo.preload(:room_unity)
       |> Repo.preload(:area)
       |> Room.load_items
       |> Room.load_reputations
       |> Room.load_skills
 
     Logger.metadata(room: room.name <> "##{room.id}")
-
-    room =
-      if room.room_unity do
-        room
-      else
-        room_unity =
-          room
-          |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => room.default_essence})
-          |> Repo.save!
-
-        %{room | room_unity: room_unity}
-      end
 
     PubSub.subscribe("rooms")
     PubSub.subscribe("rooms:#{room.id}")
@@ -112,36 +95,6 @@ defmodule ApathyDrive.RoomServer do
     Process.send_after(self(), :save, 2000)
 
     {:ok, room}
-  end
-
-  def handle_call({:destroy_item, item}, _from, %Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions} = room) do
-    actual_item = items
-                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-                  |> Match.one(:name_contains, item)
-
-    visible_item = item_descriptions["visible"]
-                   |> Map.keys
-                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Match.one(:keyword_starts_with, item)
-
-    hidden_item = item_descriptions["hidden"]
-                  |> Map.keys
-                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Match.one(:keyword_starts_with, item)
-
-    cond do
-      visible_item ->
-        {:reply, {:cant_destroy, visible_item.name}, room}
-      hidden_item ->
-        {:reply, {:cant_destroy, hidden_item.name}, room}
-      actual_item ->
-        room =
-          put_in(room.room_unity.items, List.delete(room.room_unity.items, actual_item.item))
-          |> Repo.save
-        {:reply, {:ok, actual_item.item}, room}
-      true ->
-        {:reply, :not_found, room}
-    end
   end
 
   def handle_call({:lock, direction}, _from, room) do
@@ -191,7 +144,6 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:ref, ref)
         |> Map.put(:leader, ref)
         |> Character.load_race
-        |> Character.load_class
         |> Character.load_reputations
         |> Character.load_spells
         |> Character.load_items
@@ -349,40 +301,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:unify, ref}, room) do
-    case Room.get_mobile(room, ref) do
-      %{spirit: nil, unities: []} ->
-        :noop
-      %{spirit: nil, experience: essence, unities: unities} ->
-        Enum.each(unities, fn(unity) ->
-          ApathyDrive.Unity.contribute(unity, essence)
-        end)
-      %{spirit: %Spirit{experience: essence, class: %{unities: unities}}} ->
-        Enum.each(unities, fn(unity) ->
-          ApathyDrive.Unity.contribute(unity, essence)
-        end)
-      _ ->
-        :noop
-    end
-
-    room = Room.update_mobile(room, ref, fn mobile ->
-      TimerManager.send_after(mobile, {:unify, 60_000, {:unify, ref}})
-    end)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:update_unity_essence, unity, essence}, room) do
-    room =
-      Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
-        Room.update_mobile(updated_room, ref, fn mobile ->
-          put_in(mobile.unity_essences[unity], essence)
-        end)
-      end)
-
-    {:noreply, room}
-  end
-
   def handle_info({:heartbeat, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn mobile ->
@@ -400,21 +318,7 @@ defmodule ApathyDrive.RoomServer do
             nil ->
               []
             _exits ->
-              case mobile.unities do
-                [] ->
-                  exits_in_area(room)
-                unities ->
-                  if room.room_unity.controlled_by in unities do
-                    case non_unity_controlled_exits(room, unities) do
-                      [] ->
-                        unity_controlled_exits(room, unities)
-                      result ->
-                        result
-                      end
-                  else
-                    unity_controlled_exits(room, unities)
-                  end
-              end
+              exits_in_area(room)
           end
 
         if Enum.any?(exits) do
@@ -511,7 +415,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info(:save, room) do
     Process.send_after(self(), :save, jitter(:timer.minutes(30)))
-    room = Repo.save(room)
+    room = Repo.save!(room)
     {:noreply, room}
   end
 
@@ -615,20 +519,6 @@ defmodule ApathyDrive.RoomServer do
     if mirror_exit["kind"] == room_exit["kind"] do
       ApathyDrive.PubSub.broadcast!("rooms:#{mirror_room.id}", {:mirror_lock, mirror_exit})
     end
-
-    {:noreply, room}
-  end
-
-  def handle_info(:report_essence, room) do
-    room = Room.report_essence(room)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:essence_report, report}, %Room{} = room) do
-    mirror_exit = Room.mirror_exit(room, report.room_id)
-
-    room = put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
 
     {:noreply, room}
   end
@@ -758,19 +648,6 @@ defmodule ApathyDrive.RoomServer do
   defp exits_in_area(%Room{exits: exits} = room) do
     Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
       room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name) && passable?(room, room_exit)
-    end)
-  end
-
-  defp unity_controlled_exits(%Room{exits: exits} = room, unities) do
-    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
-      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities) && passable?(room, room_exit)
-    end)
-  end
-
-  defp non_unity_controlled_exits(%Room{exits: exits} = room, unities) do
-    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
-      (room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name)) &&
-      !(room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities)) && passable?(room, room_exit)
     end)
   end
 

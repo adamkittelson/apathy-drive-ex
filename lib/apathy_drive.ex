@@ -12,8 +12,6 @@ defmodule ApathyDrive do
       worker(ApathyDrive.Migrator, [], restart: :temporary),
       supervisor(ApathyDrive.Presence, []),
       supervisor(ApathyDrive.RoomSupervisor,   [[], [name: ApathyDrive.RoomSupervisor]]),
-      supervisor(ApathyDrive.MonsterSupervisor, [[], [name: ApathyDrive.MonsterSupervisor]]),
-      worker(ApathyDrive.Unity, []),
       worker(ApathyDrive.Metrics, [])
     ]
 

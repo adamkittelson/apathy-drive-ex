@@ -10,7 +10,7 @@ defmodule ApathyDrive.Command do
                "w", "west", "nw", "northwest", "u", "up", "d", "down"]
 
   def all do
-    [Commands.Abilities, Commands.Attack, Commands.Buy, Commands.Class, Commands.Cooldowns,
+    [Commands.Abilities, Commands.Attack, Commands.Buy, Commands.Cooldowns,
      Commands.Dismiss, Commands.Drop, Commands.Experience, Commands.Get, Commands.Gossip, Commands.Hire,
      Commands.Inventory, Commands.Join, Commands.Invite, Commands.Leave, Commands.List,
      Commands.Look, Commands.Party, Commands.Reputations, Commands.Remove, Commands.Return, Commands.Say,

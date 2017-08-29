@@ -26,7 +26,6 @@ defmodule ApathyDriveWeb.MUDChannel do
 
               ApathyDrive.PubSub.subscribe("spirits:online")
               ApathyDrive.PubSub.subscribe("chat:gossip")
-              ApathyDrive.PubSub.subscribe("chat:#{String.downcase(character.class)}")
 
             send(self(), :after_join)
 

@@ -64,10 +64,4 @@ defmodule ApathyDrive.LairMonster do
     |> Enum.map(&names/1)
   end
 
-  def names(%{item_id: item_id, monster_id: monster_id} = drop) do
-    drop
-    |> Map.put(:item, Repo.get(ApathyDrive.Item, item_id).name)
-    |> Map.put(:monster, Repo.get(MonsterTemplate, monster_id).name)
-  end
-
 end

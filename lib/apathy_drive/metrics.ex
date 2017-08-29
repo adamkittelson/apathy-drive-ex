@@ -13,22 +13,12 @@ defmodule ApathyDrive.Metrics do
     |> ExStatsD.gauge("monsters")
 
     room_count =
-
       "rooms"
       |> ApathyDrive.PubSub.subscribers
       |> length()
 
     room_count
     |> ExStatsD.gauge("rooms")
-
-    ApathyDrive.RoomUnity.controlled_by_counts
-    |> Enum.each(fn({controlled_by, count}) ->
-         unless controlled_by == nil do
-           ExStatsD.gauge(count, "rooms.#{controlled_by}")
-         end
-       end)
-
-
 
     gc_ran? =
       if room_count > 19_700 and !gc_ran? do
