@@ -58,9 +58,14 @@ defmodule ApathyDrive.Commands.List do
     |> Enum.each(fn skill ->
          padded_skill_name = String.pad_leading(skill.name, padding)
 
-         exp = Map.get(character.skills, skill.name, 0)
+         character_skill = character.skills[skill.name]
 
-         level = Level.skill_level_at_exp(exp, skill.training_cost_multiplier)
+        {exp, level} =
+          if character_skill do
+            {character_skill.experience, character_skill.level}
+          else
+            {0, 0}
+          end
 
          padded_level = String.pad_leading("#{level}", 5)
 

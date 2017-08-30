@@ -95,7 +95,12 @@ defmodule ApathyDrive.Character do
     character = Repo.preload(character, [:characters_skills, :trained_skills], force: true)
 
     Enum.reduce(character.characters_skills, character, fn (character_skill, character) ->
-      update_in(character.skills, &Map.put(&1, character_skill.skill.name, character_skill.experience))
+      skill =
+        character_skill.skill
+        |> Map.put(:experience, character_skill.experience)
+        |> Skill.set_level
+
+      update_in(character.skills, &Map.put(&1, character_skill.skill.name, skill))
     end)
 
     # TODO: load spells based on trained skills
@@ -230,17 +235,13 @@ defmodule ApathyDrive.Character do
     skill = Repo.preload(skill, :incompatible_skills)
     incompatible_skills = Enum.map(skill.incompatible_skills, & &1.name)
 
-    character =
-      update_in(character.skills, fn(skills) ->
-        skills = Map.put_new(skills, skill.name, 0)
-        update_in(skills, [skill.name], &(&1 + amount))
-      end)
+    Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: skill.experience + amount}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
 
-    Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: character.skills[skill.name]}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
+    character = load_spells(character)
 
-    level = Level.skill_level_at_exp(character.skills[skill.name], skill.training_cost_multiplier)
+    level = character.skills[skill.name].level
 
-    tnl = Level.exp_to_next_skill_level(level, character.skills[skill.name], skill.training_cost_multiplier)
+    tnl = Level.exp_to_next_skill_level(level, character.skills[skill.name].experience, skill.training_cost_multiplier)
 
     tnl =
       if tnl > character.experience do
@@ -252,7 +253,7 @@ defmodule ApathyDrive.Character do
     Mobile.send_scroll(character, "<p>You spend #{amount} experience to advance #{skill.name} to level #{level}, it will cost #{tnl} experience to train it any further.</p>")
 
     character.skills
-    |> Enum.reduce(character, fn {skill_name, skill_exp}, character ->
+    |> Enum.reduce(character, fn {skill_name, %Skill{experience: skill_exp}}, character ->
       if skill_name in incompatible_skills do
         incompatible_skill = Skill.match_by_name(skill_name)
         level = Level.skill_level_at_exp(skill_exp, incompatible_skill.training_cost_multiplier)
@@ -264,9 +265,7 @@ defmodule ApathyDrive.Character do
 
           Mobile.send_scroll(character, "<p>Your #{incompatible_skill.name} skill falls to level #{new_level}.</p>")
 
-          update_in(character.skills, fn(skills) ->
-            put_in(skills, [incompatible_skill.name], new_exp)
-          end)
+          load_spells(character)
         else
           character
         end
@@ -376,7 +375,14 @@ defmodule ApathyDrive.Character do
       from_equipment =
         character.equipment
         |> Enum.reduce(0, fn %Item{} = item, total ->
-             total + Item.attribute_at_level(item, level, attribute)
+             skill_name = item.grade
+             skill = character.skills[skill_name]
+             if skill do
+               level = min(character.level, skill.level)
+               total + Item.attribute_at_level(item, level, attribute)
+              else
+               total + Item.attribute_at_level(item, character.level, attribute)
+             end
            end)
 
       (base + from_equipment) / 10
@@ -635,16 +641,8 @@ defmodule ApathyDrive.Character do
       mr =
         character.equipment
         |> Enum.reduce(0, fn
-             %Item{grade: "Cloth"}, total ->
-               total + 1
-             %Item{grade: "Leather"}, total ->
-               total + 2
-             %Item{grade: "Chain"}, total ->
-               total + 3
-             %Item{grade: "Scale"}, total ->
-               total + 4
-             %Item{grade: "Plate"}, total ->
-               total + 5
+             %Item{magical_resistance: magical_resistance}, total ->
+               total + (magical_resistance || 0)
              _, total ->
                total
            end)
@@ -695,16 +693,8 @@ defmodule ApathyDrive.Character do
       ac =
         character.equipment
         |> Enum.reduce(0, fn
-             %Item{grade: "Cloth"}, total ->
-               total + 1
-             %Item{grade: "Leather"}, total ->
-               total + 2
-             %Item{grade: "Chain"}, total ->
-               total + 3
-             %Item{grade: "Scale"}, total ->
-               total + 4
-             %Item{grade: "Plate"}, total ->
-               total + 5
+             %Item{physical_resistance: physical_resistance}, total ->
+               total + (physical_resistance || 0)
              _, total ->
                total
            end)

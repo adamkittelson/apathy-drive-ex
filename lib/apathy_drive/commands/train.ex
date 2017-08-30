@@ -14,7 +14,13 @@ defmodule ApathyDrive.Commands.Train do
   end
 
   def train_skill(%Room{} = room, character, %Skill{} = skill) do
-    exp = Map.get(character.skills, skill.name, 0)
+    exp =
+      if character_skill = character.skills[skill.name] do
+        character_skill.experience
+      else
+        0
+      end
+
     level = Level.skill_level_at_exp(exp, skill.training_cost_multiplier)
     cost = Level.exp_to_next_skill_level(level, exp, skill.training_cost_multiplier)
 
@@ -41,7 +47,7 @@ defmodule ApathyDrive.Commands.Train do
         Mobile.send_scroll(character, "<p>You cannot train #{skill.name} here.</p>")
         room
       true ->
-        train_skill(room, character, skill)
+        train_skill(room, character, character.skills[skill.name] || skill)
     end
   end
 end

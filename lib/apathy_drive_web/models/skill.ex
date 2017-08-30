@@ -7,6 +7,9 @@ defmodule ApathyDrive.Skill do
     field :training_cost_multiplier, :float, default: 1.0
     field :description, :string
 
+    field :experience, :integer, virtual: true, default: 0
+    field :level, :integer, virtual: true, default: 0
+
     has_many :skills_incompatibilities, ApathyDrive.SkillIncompatibility
     has_many :incompatible_skills, through: [:skills_incompatibilities, :incompatible_skill]
     has_many :rooms_skills, ApathyDrive.RoomSkill
@@ -14,6 +17,10 @@ defmodule ApathyDrive.Skill do
 
     has_many :characters_skills, ApathyDrive.CharacterSkill
     has_many :characters, through: [:characters_skills, :character]
+  end
+
+  def set_level(%__MODULE__{experience: exp, training_cost_multiplier: multiplier} = skill) when not is_nil(exp) do
+    put_in(skill.level, ApathyDrive.Level.skill_level_at_exp(exp, multiplier))
   end
 
   def create_changeset(name) do

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, EntityItem, Level, Item, Skill}
+  alias ApathyDrive.{Character, EntityItem, Item, Skill}
   require Logger
   require Ecto.Query
 
@@ -15,6 +15,8 @@ defmodule ApathyDrive.Item do
     field :hit_verbs, ApathyDrive.JSONB
     field :miss_verbs, ApathyDrive.JSONB
     field :attacks_per_round, :integer
+    field :physical_resistance, :integer
+    field :magical_resistance, :integer
     field :abilities, :map, virtual: true, default: %{}
     field :level, :integer, virtual: true
     field :equipped, :boolean, virtual: true, default: false
@@ -268,21 +270,16 @@ defmodule ApathyDrive.Item do
 
   # for accessories use the highest level of any skill
   def generated_item_level(%Character{} = character, "accessory") do
-    {skill_name, exp} =
+    {_skill_name, skill} =
       character.skills
-      |> Enum.max_by(fn {_skill_name, exp} -> exp end, fn -> {"accessory", 0} end)
+      |> Enum.max_by(fn {_skill_name, %Skill{experience: exp}} -> exp end, fn -> {"accessory", %Skill{level: 1}} end)
 
-    if skill = Repo.get_by(Skill, name: skill_name) do
-      Level.skill_level_at_exp(exp, skill.training_cost_multiplier)
-    else
-      1
-    end
+    skill.level
   end
   def generated_item_level(%Character{} = character, grade) do
     if skill_info = Enum.find(character.skills, fn {skill_name, _exp} -> skill_name == grade end) do
-      {skill_name, exp} = skill_info
-      skill = Repo.get_by!(Skill, name: skill_name)
-      Level.skill_level_at_exp(exp, skill.training_cost_multiplier)
+      {_skill_name, skill} = skill_info
+      skill.level
     else
       1
     end
