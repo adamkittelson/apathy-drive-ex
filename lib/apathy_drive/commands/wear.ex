@@ -35,9 +35,11 @@ defmodule ApathyDrive.Commands.Wear do
                    Mobile.send_scroll(character, "<p>You remove #{Item.colored_name(item)}.</p>")
                  end)
                  Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
+                 send(character.socket, {:update_character, %{room_id: room.id, power: Mobile.power_at_level(character, character.level), level: character.level}})
                  character
                %{equipped: equipped, character: character} ->
                  Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
+                 send(character.socket, {:update_character, %{room_id: room.id, power: Mobile.power_at_level(character, character.level), level: character.level}})
                  character
                false ->
                  Mobile.send_scroll(character, "<p>You can't equip #{Item.colored_name(item)}.</p>")

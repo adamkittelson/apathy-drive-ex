@@ -307,10 +307,6 @@ $(document).ready(function() {
   var add_room = function(room_id, room_data) {
     if (room_data.coords) {
       rooms[room_id] = room_data
-      areas[room_data.area] = areas[room_data.area] || {
-        map: new PIXI.Graphics(),
-        rooms: {}
-      }
       areas[room_data.area].rooms[room_id] = room_data
     }
   }
@@ -328,12 +324,14 @@ $(document).ready(function() {
       highlighted_z = room.coords.z;
 
       if (old_highlighted_area && old_highlighted_area != room.highlighted_area) {
+        areas[old_highlighted_area].color = undefined;
         draw_area(old_highlighted_area);
       }
 
       highlighted_area = room.area;
 
       stage.removeChild(areas[highlighted_area].map)
+      areas[highlighted_area].color = undefined;
       draw_area(highlighted_area, room.coords.z);
     }
     text.text = room.area;
@@ -343,44 +341,66 @@ $(document).ready(function() {
   }
 
   var draw_area = function(area, z) {
-    var map = areas[area].map;
+    var color = area_color(areas[area], player.level);
 
-    stage.addChild(map);
-    stage.removeChild(title);
-    stage.addChild(title);
-    stage.addChild(text);
-    map.clear();
-    highlighted_rooms = [];
-    var unhighlighted_rooms = [];
+    if (color !== areas[area].color) {
+      areas[area].color = color;
+      var map = areas[area].map;
 
-    for (var room_id in areas[area].rooms) {
-      var room = rooms[room_id];
+      stage.addChild(map);
+      stage.removeChild(title);
+      stage.addChild(title);
+      stage.addChild(text);
+      map.clear();
+      highlighted_rooms = [];
+      var unhighlighted_rooms = [];
 
-      if (highlighted_area == room.area && z == room.coords.z) {
-        highlighted_rooms.push(room_id);
-      } else {
-        unhighlighted_rooms.push(room_id);
+      for (var room_id in areas[area].rooms) {
+        var room = rooms[room_id];
+
+        if (highlighted_area == room.area && z == room.coords.z) {
+          highlighted_rooms.push(room_id);
+        } else {
+          unhighlighted_rooms.push(room_id);
+        }
       }
-    }
 
-    for (var i = 0; i < unhighlighted_rooms.length; i++) {
-      draw_room(map, unhighlighted_rooms[i], false);
-    }
+      for (var i = 0; i < unhighlighted_rooms.length; i++) {
+        draw_room(map, unhighlighted_rooms[i], false);
+      }
 
-    for (var i = 0; i < highlighted_rooms.length; i++) {
-      draw_room(map, highlighted_rooms[i], true);
+      for (var i = 0; i < highlighted_rooms.length; i++) {
+        draw_room(map, highlighted_rooms[i], true);
+      }
     }
 
   };
 
-  window.room_power = function(room, level) {
-    var base = Math.floor(75 * (1 + (room.level / 10))) * 6;
+  window.area_color = function(area, level) {
+    var base = Math.floor(75 * (1 + (area.level / 10))) * 6;
 
-    return (base + ((base / 10) * (Math.max(room.level, level) - 1))) / 10;
+    var power = (base + ((base / 10) * (Math.max(area.level, level) - 1))) / 10;
+
+    if (power < (player.power * 0.66)) {
+      return 'cyan';
+    }
+    else if (power < (player.power * 1.33)) {
+      return 'green';
+    }
+    else if (power < (player.power * 1.66)) {
+      return 'blue';
+    }
+    else if (power < (player.power * 2.0)) {
+      return 'purple';
+    }
+    else {
+      return 'red';
+    }
   }
 
   var draw_room = function(map, room_id, highlighted) {
     var room = rooms[room_id];
+    var color = areas[room.area].color
 
     var x = (room.coords.x * 32) + 2650
     var y = (room.coords.y * 32) + 7600
@@ -390,25 +410,23 @@ $(document).ready(function() {
     var end_x;
     var end_y;
 
-    var roompower = room_power(room, player.level);
-
     if (player.room && (player.room.id === room_id)) {
-      console.log("room power: " + roompower + ", room level: " + room.level + ", player level: " + player.level);
+      console.log("room level: " + room.level + ", player level: " + player.level);
     }
 
     if (highlighted) {
       map.lineStyle(2, 0xFFFFFF, 1);
 
-      if (roompower < (player.power * 0.66)) {
+      if (color === 'cyan') {
         map.beginFill(0x008080);
       }
-      else if (roompower < (player.power * 1.33)) {
+      else if (color === 'green') {
         map.beginFill(0x7fff00);
       }
-      else if (roompower < (player.power * 1.66)) {
+      else if (color === 'blue') {
         map.beginFill(0x0000ff);
       }
-      else if (roompower < (player.power * 2.0)) {
+      else if (color === 'purple') {
         map.beginFill(0x8b008b);
       }
       else {
@@ -418,16 +436,16 @@ $(document).ready(function() {
     else {
       map.lineStyle(2, 0x666666, 1);
 
-      if (roompower < (player.power * 0.66)) {
+      if (color === 'cyan') {
         map.beginFill(0x002020);
       }
-      else if (roompower < (player.power * 1.33)) {
+      else if (color === 'green') {
         map.beginFill(0x006400);
       }
-      else if (roompower < (player.power * 1.66)) {
+      else if (color === 'blue') {
         map.beginFill(0x00008b);
       }
-      else if (roompower < (player.power * 2.0)) {
+      else if (color === 'purple') {
         map.beginFill(0x240024);
       }
       else {
@@ -502,8 +520,13 @@ $(document).ready(function() {
   chan.on("update_map", function(area){
     text.text = "Apotheosis";
     for (var area_name in area) {
-      for (var room_id in area[area_name]) {
-        add_room(parseInt(room_id), area[area_name][room_id]);
+      areas[area_name] = areas[area_name] || {
+        map: new PIXI.Graphics(),
+        level: area[area_name].level,
+        rooms: {}
+      }
+      for (var room_id in area[area_name].rooms) {
+        add_room(parseInt(room_id), area[area_name].rooms[room_id]);
       }
     }
   });

@@ -24,9 +24,14 @@ defmodule ApathyDrive.Commands.Remove do
            |> Repo.update!
 
            Room.update_mobile(room, character.ref, fn(char) ->
-             char
-             |> Character.load_items
-             |> Mobile.send_scroll("<p>You remove #{Item.colored_name(item_to_remove)}.</p>")
+             character =
+               char
+               |> Character.load_items
+               |> Mobile.send_scroll("<p>You remove #{Item.colored_name(item_to_remove)}.</p>")
+
+             send(character.socket, {:update_character, %{room_id: room.id, power: Mobile.power_at_level(character, character.level), level: character.level}})
+
+             character
            end)
        end
   end

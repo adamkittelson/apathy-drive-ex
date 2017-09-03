@@ -270,14 +270,14 @@ defmodule ApathyDrive.Room do
 
   def world_map do
     from area in Area,
-    select: area.id
+    select: %{id: area.id, level: area.level}
   end
 
   def area_map(area_id) do
     from room in Room,
     where: room.area_id == ^area_id and not is_nil(room.coordinates),
     join: area in assoc(room, :area),
-    select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, level: area.level, exits: room.exits}
+    select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, exits: room.exits}
   end
 
   def update_area(%Room{area: %Area{name: old_area}} = room, %Area{} = area) do

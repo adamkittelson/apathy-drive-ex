@@ -194,6 +194,8 @@ defmodule ApathyDrive.Character do
     if character.level > level do
       Mobile.send_scroll character, "<p>You ascend to level #{character.level}!"
 
+      send(character.socket, {:update_character, %{room_id: character.room_id, power: Mobile.power_at_level(character, character.level), level: character.level}})
+
       %Character{id: character.id}
       |> Ecto.Changeset.change(%{level: character.level})
       |> Repo.update!
@@ -202,10 +204,13 @@ defmodule ApathyDrive.Character do
     if character.level < level do
       Mobile.send_scroll character, "<p>You fall to level #{character.level}!"
 
+      send(character.socket, {:update_character, %{room_id: character.room_id, power: Mobile.power_at_level(character, character.level), level: character.level}})
+
       %Character{id: character.id}
       |> Ecto.Changeset.change(%{level: character.level})
       |> Repo.update!
     end
+
     character
   end
 

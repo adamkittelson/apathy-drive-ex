@@ -102,12 +102,6 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:update_room_essence, essence}, socket) do
-    Phoenix.Channel.push socket, "update room essence", essence
-
-    {:noreply, socket}
-  end
-
   def handle_info(:go_home, socket) do
     Phoenix.Channel.push socket, "redirect", %{:url => "/"}
 
