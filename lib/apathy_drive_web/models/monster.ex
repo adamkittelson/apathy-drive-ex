@@ -447,27 +447,11 @@ defmodule ApathyDrive.Monster do
     def caster_level(%Monster{level: level}, %Monster{} = _target), do: level
     def caster_level(%Monster{}, %{level: level} = _target), do: level
 
+    def colored_name(%Monster{name: name, hostile: true} = monster, %Character{} = observer) do
+      "<span style='color: magenta;'>#{name}</span>"
+    end
     def colored_name(%Monster{name: name} = monster, %Character{} = observer) do
-      monster_level = Mobile.target_level(observer, monster)
-      observer_level = Mobile.caster_level(observer, monster)
-
-      monster_power = Mobile.power_at_level(monster, monster_level)
-      observer_power = Mobile.power_at_level(observer, observer_level)
-
-      color =
-        cond do
-          monster_power < (observer_power * 0.66) ->
-            "teal"
-          monster_power < (observer_power * 1.33) ->
-            "chartreuse"
-          monster_power < (observer_power * 1.66) ->
-            "blue"
-          monster_power < (observer_power * 2.00) ->
-            "darkmagenta"
-          :else ->
-            "red"
-        end
-      "<span style='color: #{color};'>#{name}</span>"
+      "<span style='color: teal;'>#{name}</span>"
     end
 
     def confused(%Monster{effects: effects} = monster, %Room{} = room) do
