@@ -634,6 +634,12 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info(:reload_spells, room) do
+    room = Room.load_spells(room)
+
+    {:noreply, room}
+  end
+
   def handle_info(message, room) do
     IO.inspect(message)
     {:noreply, room}

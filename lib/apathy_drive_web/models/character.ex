@@ -100,26 +100,25 @@ defmodule ApathyDrive.Character do
         |> Map.put(:experience, character_skill.experience)
         |> Skill.set_level
 
-      update_in(character.skills, &Map.put(&1, character_skill.skill.name, skill))
+      skill_spells =
+        ApathyDrive.SkillSpell
+        |> Ecto.Query.where([ss], ss.skill_id == ^skill.id and ss.level <= ^skill.level)
+        |> Ecto.Query.preload([:spell])
+        |> Repo.all
+
+      spells =
+        Enum.reduce(skill_spells, %{}, fn
+          %{level: level, spell: %Spell{id: id} = spell}, spells ->
+            spell =
+              put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
+              |> Map.put(:level, level)
+            Map.put(spells, spell.command, spell)
+        end)
+
+      character.skills
+      |> update_in(&Map.put(&1, character_skill.skill.name, skill))
+      |> Map.put(:spells, spells)
     end)
-
-    # TODO: load spells based on trained skills
-    #
-    # entities_spells =
-    #   ApathyDrive.EntitySpell
-    #   |> Ecto.Query.where(assoc_id: ^class_id, assoc_table: "classes")
-    #   |> Ecto.Query.preload([:spell])
-    #   |> Repo.all
-
-    # spells =
-    #   Enum.reduce(entities_spells, %{}, fn
-    #     %{level: level, spell: %Spell{id: id} = spell}, spells ->
-    #       spell =
-    #         put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
-    #         |> Map.put(:level, level)
-    #       Map.put(spells, spell.command, spell)
-    #   end)
-    # Map.put(character, :spells, spells)
   end
 
   def load_race(%Character{race_id: race_id} = character) do

@@ -447,10 +447,10 @@ defmodule ApathyDrive.Monster do
     def caster_level(%Monster{level: level}, %Monster{} = _target), do: level
     def caster_level(%Monster{}, %{level: level} = _target), do: level
 
-    def colored_name(%Monster{name: name, hostile: true} = monster, %Character{} = observer) do
+    def colored_name(%Monster{name: name, hostile: true}, %Character{} = _observer) do
       "<span style='color: magenta;'>#{name}</span>"
     end
-    def colored_name(%Monster{name: name} = monster, %Character{} = observer) do
+    def colored_name(%Monster{name: name}, %Character{} = _observer) do
       "<span style='color: teal;'>#{name}</span>"
     end
 

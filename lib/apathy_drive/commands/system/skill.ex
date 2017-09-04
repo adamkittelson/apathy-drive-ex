@@ -1,6 +1,26 @@
 defmodule ApathyDrive.Commands.System.Skill do
-  alias ApathyDrive.{Mobile, Repo, Room, Skill, SkillIncompatibility}
+  alias ApathyDrive.{Mobile, Repo, Room, Skill, SkillIncompatibility, SkillSpell, Spell}
   require Ecto.Query
+
+  def execute(%Room{} = room, character, ["add", "spell" | args]) do
+    args
+    |> Enum.join(" ")
+    |> String.split(" to ")
+    |> case do
+      [spell, skill] ->
+        skill
+        |> String.split(" at level ")
+        |> case do
+          [skill, level] ->
+            add_spell_to_skill(room, character, spell, skill, level)
+          _ ->
+            Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'add spell <spell> to <skill> at level <level>', e.g. 'add spell bash to blunt at level 5'</p>")
+        end
+      _ ->
+        Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'add spell <spell> to <skill> at level <level>', e.g. 'add spell bash to blunt at level 5'</p>")
+        room
+    end
+  end
 
   def execute(%Room{} = room, character, ["create" | skill_name]) do
     create(room, character, skill_name)
@@ -128,6 +148,25 @@ defmodule ApathyDrive.Commands.System.Skill do
           error ->
             Mobile.send_scroll(character, "<p>#{inspect(error)}</p>")
         end
+    end
+    room
+  end
+
+  def add_spell_to_skill(%Room{} = room, character, spell, skill, level) do
+    with %Skill{} = skill <- Skill.match_by_name(skill),
+         %Spell{} = spell <- Spell.match_by_name(spell),
+         {level, _decimal} <- Integer.parse(level) do
+
+      Repo.insert! %SkillSpell{skill_id: skill.id, spell_id: spell.id, level: level}
+
+      ApathyDrive.PubSub.broadcast!("rooms", :reload_spells)
+
+      Mobile.send_scroll(character, "<p>Added #{spell.name} to #{skill.name} at level #{level}.</p>")
+    else
+      nil ->
+        Mobile.send_scroll(character, "<p>Either #{skill} did not match a known skill or #{spell} did not match a known spell.</p>")
+      :error ->
+        Mobile.send_scroll(character, "<p>Level must be an integer.</p>")
     end
     room
   end

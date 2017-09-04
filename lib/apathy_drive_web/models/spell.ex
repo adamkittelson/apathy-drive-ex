@@ -77,6 +77,15 @@ defmodule ApathyDrive.Spell do
     end
   end
 
+  def match_by_name(name) do
+    __MODULE__
+    |> where([spell], not is_nil(spell.name) and spell.name != "")
+    |> distinct(true)
+    |> select([spell], [:id, :name])
+    |> ApathyDrive.Repo.all
+    |> Match.one(:keyword_starts_with, name)
+  end
+
   def heal_spells(%{spells: spells} = _mobile) do
     spells
     |> Map.values
