@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile, Spell}
+  alias ApathyDrive.{Ability, Character, Mobile}
 
   def keywords, do: ["abilities", "spells"]
 
@@ -12,12 +12,12 @@ defmodule ApathyDrive.Commands.Abilities do
   end
 
   def display_abilities(%Character{} = character) do
-    character
-    |> Mobile.spells_at_level(character.level)
+    character.abilities
+    |> Map.values
     |> Enum.each(fn(%{name: name, command: command, mana: _mana} = spell) ->
          mana_cost =
            spell
-           |> Spell.mana_cost_at_level(character.level)
+           |> Ability.mana_cost_at_level(character.level)
            |> to_string
            |> String.pad_trailing(6)
 

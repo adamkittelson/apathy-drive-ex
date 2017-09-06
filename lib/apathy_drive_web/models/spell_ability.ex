@@ -2,8 +2,8 @@ defmodule ApathyDrive.SpellAbility do
   use ApathyDrive.Web, :model
 
   schema "spells_abilities" do
+    belongs_to :train, ApathyDrive.Trait
     belongs_to :ability, ApathyDrive.Ability
-    belongs_to :spell, ApathyDrive.Spell
     field :value, ApathyDrive.JSONB
 
     timestamps()
@@ -16,7 +16,7 @@ defmodule ApathyDrive.SpellAbility do
     model
     |> cast(params, @required_fields, @optional_fields)
     |> foreign_key_constraint(:ability_id)
-    |> foreign_key_constraint(:spell_id)
+    |> foreign_key_constraint(:trait_id)
   end
 
 end

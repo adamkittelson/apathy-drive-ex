@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Commands, Monster, Match, Mobile, Room, RoomServer, Spell}
+  alias ApathyDrive.{Ability, Commands, Monster, Match, Mobile, Room, RoomServer}
 
   @callback execute(%Room{}, %Monster{}, list) :: %Room{}
 
@@ -38,10 +38,10 @@ defmodule ApathyDrive.Command do
       cmd = Match.one(Enum.map(all(), &(&1.to_struct)), :keyword_starts_with, command) ->
         cmd.module.execute(room, monster, arguments)
       true ->
-        spell = monster.spells[String.downcase(command)]
+        spell = monster.abilities[String.downcase(command)]
 
         if spell do
-          Spell.execute(room, monster.ref, spell, Enum.join(arguments, " "))
+          Ability.execute(room, monster.ref, spell, Enum.join(arguments, " "))
         else
           Mobile.send_scroll(monster, "<p>What?</p>")
           room

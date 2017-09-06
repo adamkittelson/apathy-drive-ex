@@ -1,8 +1,8 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Area, Character, EntityAbility, Item, Mobile, Monster, Party, Room, RoomMonster,
-                     Spell, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, Area, Character, EntityAbility, Item, Mobile,
+                     Monster, Party, Room, RoomMonster, Stealth, Text, TimerManager}
 
   require Logger
 
@@ -26,7 +26,7 @@ defmodule ApathyDrive.Monster do
     field :timers,      :map, virtual: true, default: %{}
     field :effects,     :map, virtual: true, default: %{}
     field :last_effect_key, :integer, virtual: true, default: 0
-    field :spells,      :map, virtual: true, default: %{}
+    field :abilities,   :map, virtual: true, default: %{}
     field :strength,    :integer, virtual: true
     field :agility,     :integer, virtual: true
     field :intellect,   :integer, virtual: true
@@ -92,8 +92,8 @@ defmodule ApathyDrive.Monster do
       monster
       |> Map.put(:ref, ref)
       |> generate_monster_attributes()
-      |> load_spells()
       |> load_abilities()
+      |> load_traits()
       |> set_reputations()
       |> Mobile.cpr
     end
@@ -110,8 +110,8 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:room_monster_id, id)
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
-    |> load_spells()
     |> load_abilities()
+    |> load_traits()
     |> set_reputations()
     |> Mobile.cpr
   end
@@ -148,7 +148,7 @@ defmodule ApathyDrive.Monster do
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
   def spawnable?(%Monster{}, _now), do: true
 
-  def load_abilities(%Monster{id: id} = monster) do
+  def load_traits(%Monster{id: id} = monster) do
     effect =
       EntityAbility.load_abilities("monsters", id)
       |> Map.put("stack_key", "monster")
@@ -157,22 +157,22 @@ defmodule ApathyDrive.Monster do
     |> Systems.Effect.add(effect)
   end
 
-  def load_spells(%Monster{id: id} = monster) do
+  def load_abilities(%Monster{id: id} = monster) do
     entities_spells =
       ApathyDrive.EntitySpell
       |> Ecto.Query.where(assoc_id: ^id, assoc_table: "monsters")
-      |> Ecto.Query.preload([:spell])
+      |> Ecto.Query.preload([:ability])
       |> Repo.all
 
-    spells =
+    abilities =
       Enum.reduce(entities_spells, %{}, fn
-        %{level: level, spell: %Spell{id: id} = spell}, spells ->
-          spell =
-            put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
+        %{level: level, ability: %Ability{id: id} = ability}, abilities ->
+          ability =
+            put_in(ability.traits, EntityAbility.load_abilities("spells", id))
             |> Map.put(:level, level)
-          Map.put(spells, spell.command, spell)
+          Map.put(abilities, ability.command, ability)
       end)
-    Map.put(monster, :spells, spells)
+    Map.put(monster, :abilities, abilities)
   end
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
@@ -385,7 +385,7 @@ defmodule ApathyDrive.Monster do
   def auto_attack_target(%Monster{grade: "boss"} = monster, enemies, room, attack_spell) do
     enemies
     |> Enum.map(fn enemy ->
-         {_caster, target} = Spell.apply_instant_abilities(room.mobiles[enemy], attack_spell, monster, room)
+         {_caster, target} = Ability.apply_instant_traits(room.mobiles[enemy], attack_spell, monster, room)
          target
        end)
     |> Enum.sort_by(& &1.spell_shift)
@@ -424,7 +424,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def attack_spell(monster) do
-      monster.spells
+      monster.abilities
       |> Map.values
       |> Enum.filter(&(&1.kind == "auto attack"))
       |> Enum.random
@@ -550,9 +550,9 @@ defmodule ApathyDrive.Monster do
       agi * (1 + (modifier / 100))
     end
 
-    def enough_mana_for_spell?(monster, %Spell{} =  spell) do
+    def enough_mana_for_spell?(monster, %Ability{} =  spell) do
       mana = Mobile.max_mana_at_level(monster, monster.level)
-      cost = Spell.mana_cost_at_level(spell, monster.level)
+      cost = Ability.mana_cost_at_level(spell, monster.level)
 
       monster.mana >= (cost / mana)
     end
@@ -762,13 +762,6 @@ defmodule ApathyDrive.Monster do
       will * (1 + (modifier / 100))
     end
 
-    def spells_at_level(%Monster{spells: spells}, level) do
-      spells
-      |> Map.values
-      |> Enum.filter(& &1.level <= level)
-      |> Enum.sort_by(& &1.level)
-    end
-
     def stealth_at_level(monster, level, _room) do
       if Mobile.has_ability?(monster, "Revealed") do
         0
@@ -782,7 +775,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def subtract_mana(monster, spell) do
-      cost = Spell.mana_cost_at_level(spell, monster.level)
+      cost = Ability.mana_cost_at_level(spell, monster.level)
       percentage = cost / Mobile.max_mana_at_level(monster, monster.level)
       update_in(monster.mana, &(max(0, &1 - percentage)))
     end

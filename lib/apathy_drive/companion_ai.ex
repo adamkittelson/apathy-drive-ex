@@ -1,5 +1,5 @@
 defmodule ApathyDrive.CompanionAI do
-  alias ApathyDrive.{Companion, Party, Room, Spell}
+  alias ApathyDrive.{Ability, Companion, Party, Room}
 
   def think(companion_ref, %Room{} = room) do
     companion = room.mobiles[companion_ref]
@@ -20,11 +20,11 @@ defmodule ApathyDrive.CompanionAI do
     if chance > roll do
       spell =
         companion
-        |> Spell.heal_spells
+        |> Ability.heal_abilities
         |> random_spell(companion)
 
       if spell do
-        Spell.execute(room, companion.ref, spell, [injured_party_member.ref])
+        Ability.execute(room, companion.ref, spell, [injured_party_member.ref])
       end
     end
   end
@@ -111,14 +111,14 @@ defmodule ApathyDrive.CompanionAI do
   # end
 
   def random_spell([spell], companion) do
-    unless Spell.on_cooldown?(companion, spell) do
+    unless Ability.on_cooldown?(companion, spell) do
       spell
     end
   end
   def random_spell([], _companion), do: nil
   def random_spell(spells, companion) do
     spells
-    |> Enum.reject(&(Spell.on_cooldown?(companion, &1)))
+    |> Enum.reject(&(Ability.on_cooldown?(companion, &1)))
     |> Enum.random
   end
 

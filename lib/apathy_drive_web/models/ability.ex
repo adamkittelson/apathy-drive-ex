@@ -1,9 +1,9 @@
-defmodule ApathyDrive.Spell do
+defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Companion, EntityAbility, Match, Mobile, Monster, Party, Room, Spell, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, Companion, EntityAbility, Match, Mobile, Monster, Party, Room, Stealth, Text, TimerManager}
   require Logger
 
-  schema "spells" do
+  schema "abilities" do
     field :name, :string
     field :targets, :string
     field :kind, :string
@@ -17,7 +17,7 @@ defmodule ApathyDrive.Spell do
     field :cooldown_in_ms, :integer
 
     field :level, :integer, virtual: true
-    field :abilities, :map, virtual: true, default: %{}
+    field :traits, :map, virtual: true, default: %{}
     field :ignores_round_cooldown?, :boolean, virtual: true, default: false
     field :result, :any, virtual: true
 
@@ -32,12 +32,12 @@ defmodule ApathyDrive.Spell do
   #@valid_targets ["monster or single", "self", "self or single", "monster", "full party area", "full attack area", "single", "full area"]
   @target_required_targets ["monster or single", "monster", "single"]
 
-  @instant_abilities [
+  @instant_traits [
     "CurePoison", "Damage", "DispelMagic", "Drain", "Enslave", "Freedom", "Heal", "HealMana", "KillSpell",
     "MagicalDamage", "PhysicalDamage", "Poison", "RemoveSpells", "Script", "Summon", "Teleport"
   ]
 
-  @duration_abilities [
+  @duration_traits [
     "AC", "Accuracy", "Agility", "Charm", "Blind", "Charm", "Confusion", "ConfusionMessage", "ConfusionSpectatorMessage",
     "Crits", "DamageShield", "DamageShieldUserMessage", "DamageShieldTargetMessage", "DamageShieldSpectatorMessage",
     "DamageType", "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "Heal", "HPRegen",
@@ -73,7 +73,7 @@ defmodule ApathyDrive.Spell do
     spell = ApathyDrive.Repo.get(__MODULE__, id)
 
     if spell do
-      put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
+      put_in(spell.traits, EntityAbility.load_abilities("spells", id))
     end
   end
 
@@ -86,8 +86,8 @@ defmodule ApathyDrive.Spell do
     |> Match.one(:keyword_starts_with, name)
   end
 
-  def heal_spells(%{spells: spells} = _mobile) do
-    spells
+  def heal_abilities(%{abilities: abilities} = _mobile) do
+    abilities
     |> Map.values
     |> Enum.filter(&(&1.kind == "heal"))
   end
@@ -95,11 +95,11 @@ defmodule ApathyDrive.Spell do
   # equivilent to a character with 2 ManaPerIntellect and 10 intellect
   def base_mana_at_level(level), do: 20 + ((level - 1) * 2)
 
-  def mana_cost_at_level(%Spell{mana: mana} = _spell, level) do
+  def mana_cost_at_level(%Ability{mana: mana} = _spell, level) do
     trunc(base_mana_at_level(level) * (mana / 100))
   end
 
-  def execute(%Room{} = room, caster_ref, %Spell{targets: targets}, "") when targets in @target_required_targets do
+  def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "") when targets in @target_required_targets do
     room
     |> Room.get_mobile(caster_ref)
     |> Mobile.send_scroll("<p><span class='red'>You must specify a target for that spell.</span></p>")
@@ -107,7 +107,7 @@ defmodule ApathyDrive.Spell do
     room
   end
 
-  def execute(%Room{} = room, caster_ref, %Spell{} = spell, query) when is_binary(query) do
+  def execute(%Room{} = room, caster_ref, %Ability{} = spell, query) when is_binary(query) do
     case get_targets(room, caster_ref, spell, query) do
       [] ->
         case query do
@@ -127,7 +127,7 @@ defmodule ApathyDrive.Spell do
     end
   end
 
-  def execute(%Room{} = room, caster_ref, %Spell{} = spell, targets) when is_list(targets) do
+  def execute(%Room{} = room, caster_ref, %Ability{} = spell, targets) when is_list(targets) do
     if can_execute?(room, caster_ref, spell) do
       Room.update_mobile(room, caster_ref, fn caster ->
         display_pre_cast_message(room, caster, targets, spell)
@@ -205,7 +205,7 @@ defmodule ApathyDrive.Spell do
     end
   end
 
-  def duration(%Spell{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target, room) do
+  def duration(%Ability{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
@@ -236,7 +236,7 @@ defmodule ApathyDrive.Spell do
     :rand.uniform(100) < chance
   end
 
-  def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{abilities: %{"Dodgeable" => true}} = spell) do
+  def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Ability{traits: %{"Dodgeable" => true}} = spell) do
     if dodged?(caster, target, room) do
       display_cast_message(room, caster, target, Map.put(spell, :result, :dodged))
 
@@ -252,10 +252,10 @@ defmodule ApathyDrive.Spell do
 
       put_in(room.mobiles[target.ref], target)
     else
-      apply_spell(room, caster, target, update_in(spell.abilities, &Map.delete(&1, "Dodgeable")))
+      apply_spell(room, caster, target, update_in(spell.traits, &Map.delete(&1, "Dodgeable")))
     end
   end
-  def apply_spell(%Room{} = room, %Character{} = caster, %{} = target, %Spell{abilities: %{"Enslave" => _}} = spell) do
+  def apply_spell(%Room{} = room, %Character{} = caster, %{} = target, %Ability{traits: %{"Enslave" => _}} = spell) do
     display_cast_message(room, caster, target, spell)
 
     if companion = Character.companion(caster, room) do
@@ -266,10 +266,10 @@ defmodule ApathyDrive.Spell do
       Companion.convert_for_character(room, target, caster)
     end
   end
-  def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
+  def apply_spell(%Room{} = room, %{} = caster, %{} = target, %Ability{} = spell) do
     {caster, target} =
       target
-      |> apply_instant_abilities(spell, caster, room)
+      |> apply_instant_traits(spell, caster, room)
 
     target = aggro_target(target, spell, caster)
 
@@ -305,7 +305,7 @@ defmodule ApathyDrive.Spell do
         target
         |> Map.put(:spell_shift, nil)
         |> Map.put(:spell_special, nil)
-        |> apply_duration_abilities(spell, caster, duration, room)
+        |> apply_duration_traits(spell, caster, duration, room)
         |> Mobile.update_prompt
 
       room
@@ -315,7 +315,7 @@ defmodule ApathyDrive.Spell do
 
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, _spell) when target_ref == caster_ref, do: room
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, spell) do
-    if (target = room.mobiles[target_ref]) && "PhysicalDamage" in Map.keys(spell.abilities) do
+    if (target = room.mobiles[target_ref]) && "PhysicalDamage" in Map.keys(spell.traits) do
       target
       |> Map.get(:effects)
       |> Map.values
@@ -323,15 +323,15 @@ defmodule ApathyDrive.Spell do
       |> Enum.reduce(room, fn
            %{"DamageShield" => damage, "DamageType" => damage_type} = shield, updated_room ->
              reaction =
-               %Spell{
+               %Ability{
                  kind: "attack",
                  mana: 0,
                  user_message: shield["DamageShieldUserMessage"],
                  target_message: shield["DamageShieldTargetMessage"],
                  spectator_message: shield["DamageShieldSpectatorMessage"],
                  ignores_round_cooldown?: true,
-                 abilities: %{
-                   "MagicalDamage" => div(spell.abilities["PhysicalDamage"] * damage, 100),
+                 traits: %{
+                   "MagicalDamage" => div(spell.traits["PhysicalDamage"] * damage, 100),
                    "DamageType" => damage_type
                  }
                }
@@ -343,47 +343,47 @@ defmodule ApathyDrive.Spell do
     end
   end
 
-  def aggro_target(%{ref: target_ref} = target, %Spell{kind: kind}, %{ref: caster_ref} = caster) when kind in ["attack", "curse"] and target_ref != caster_ref do
+  def aggro_target(%{ref: target_ref} = target, %Ability{kind: kind}, %{ref: caster_ref} = caster) when kind in ["attack", "curse"] and target_ref != caster_ref do
     ApathyDrive.Aggression.attack(target, caster)
   end
-  def aggro_target(%{} = target, %Spell{}, %{} = _caster), do: target
+  def aggro_target(%{} = target, %Ability{}, %{} = _caster), do: target
 
-  def apply_instant_abilities(%{} = target, %Spell{} = spell, %{} = caster, room) do
-    spell.abilities
-    |> Map.take(@instant_abilities)
+  def apply_instant_traits(%{} = target, %Ability{} = spell, %{} = caster, room) do
+    spell.traits
+    |> Map.take(@instant_traits)
     |> Enum.reduce({caster, target}, fn ability, {updated_caster, updated_target} ->
-         apply_instant_ability(ability, updated_target, spell, updated_caster, room)
+         apply_instant_trait(ability, updated_target, spell, updated_caster, room)
        end)
   end
 
-  def apply_instant_ability({"RemoveSpells", spell_ids}, %{} = target, _spell, caster, _room) do
+  def apply_instant_trait({"RemoveSpells", spell_ids}, %{} = target, _spell, caster, _room) do
     target =
       Enum.reduce(spell_ids, target, fn(spell_id, updated_target) ->
         Systems.Effect.remove_oldest_stack(updated_target, spell_id)
       end)
     {caster, target}
   end
-  def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster, _room) when is_float(value) do
+  def apply_instant_trait({"Heal", value}, %{} = target, _spell, caster, _room) when is_float(value) do
     Logger.info "healing #{target.name} #{inspect value}"
     {caster, Map.put(target, :spell_shift, value)}
   end
-  def apply_instant_ability({"Damage", value}, %{} = target, _spell, caster, _room) when is_float(value) do
+  def apply_instant_trait({"Damage", value}, %{} = target, _spell, caster, _room) when is_float(value) do
     Logger.info "damaging #{target.name} #{inspect value}"
     {caster, Map.put(target, :spell_shift, -value)}
   end
-  def apply_instant_ability({"Heal", value}, %{} = target, _spell, caster, room) do
+  def apply_instant_trait({"Heal", value}, %{} = target, _spell, caster, room) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
     percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
 
     {caster, Map.put(target, :spell_shift, percentage_healed)}
   end
-  def apply_instant_ability({"Drain", value}, %{} = target, spell, caster, room) do
+  def apply_instant_trait({"Drain", value}, %{} = target, spell, caster, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.magical_damage_at_level(caster, caster_level, room)
-    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
+    resist = Mobile.magical_resistance_at_level(target, target_level, spell.traits["DamageType"], room)
 
     {special, damage} = calculate_damage(damage, resist, value, caster, target, room)
 
@@ -401,12 +401,12 @@ defmodule ApathyDrive.Spell do
 
     {caster, target}
   end
-  def apply_instant_ability({"MagicalDamage", value}, %{} = target, spell, caster, room) do
+  def apply_instant_trait({"MagicalDamage", value}, %{} = target, spell, caster, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.magical_damage_at_level(caster, caster_level, room)
-    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
+    resist = Mobile.magical_resistance_at_level(target, target_level, spell.traits["DamageType"], room)
 
     {special, damage} = calculate_damage(damage, resist, value, caster, target, room)
 
@@ -418,12 +418,12 @@ defmodule ApathyDrive.Spell do
       |> Map.put(:spell_special, special)
     {caster, target}
   end
-  def apply_instant_ability({"PhysicalDamage", value}, %{} = target, spell, caster, room) do
+  def apply_instant_trait({"PhysicalDamage", value}, %{} = target, spell, caster, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.physical_damage_at_level(caster, caster_level, room)
-    resist = Mobile.physical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
+    resist = Mobile.physical_resistance_at_level(target, target_level, spell.traits["DamageType"], room)
 
     {special, damage} = calculate_damage(damage, resist, value, caster, target, room)
 
@@ -435,7 +435,7 @@ defmodule ApathyDrive.Spell do
       |> Map.put(:spell_special, special)
     {caster, target}
   end
-  def apply_instant_ability({ability_name, _value}, %{} = target, _spell, caster, _room) do
+  def apply_instant_trait({ability_name, _value}, %{} = target, _spell, caster, _room) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
     {caster, target}
   end
@@ -481,13 +481,13 @@ defmodule ApathyDrive.Spell do
     damage * (modifier / 100) * (Enum.random(95..105) / 100)
   end
 
-  def apply_duration_abilities(%{} = target, %Spell{} = spell, %{} = caster, duration, room) do
+  def apply_duration_traits(%{} = target, %Ability{} = spell, %{} = caster, duration, room) do
     effects =
-      spell.abilities
-      |> Map.take(@duration_abilities)
+      spell.traits
+      |> Map.take(@duration_traits)
       |> Map.put("stack_key", spell.id)
       |> Map.put("stack_count", 1)
-      |> process_duration_abilities(target, caster, spell, room)
+      |> process_duration_traits(target, caster, spell, room)
       |> Map.put("effect_ref", make_ref())
 
     if message = effects["StatusMessage"] do
@@ -499,7 +499,7 @@ defmodule ApathyDrive.Spell do
     |> Systems.Effect.schedule_next_periodic_effect
   end
 
-  def process_duration_abilities(effects, target, caster, spell, room) do
+  def process_duration_traits(effects, target, caster, spell, room) do
     effects
     |> Enum.reduce(effects, fn effect, updated_effects ->
          process_duration_ability(effect, updated_effects, target, caster, spell, room)
@@ -511,7 +511,7 @@ defmodule ApathyDrive.Spell do
     target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.physical_damage_at_level(caster, caster_level, room)
-    resist = Mobile.physical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
+    resist = Mobile.physical_resistance_at_level(target, target_level, spell.traits["DamageType"], room)
 
     damage = (damage - resist) * (modifier / 100)
 
@@ -528,7 +528,7 @@ defmodule ApathyDrive.Spell do
     target_level = Mobile.target_level(caster, target)
 
     damage = Mobile.magical_damage_at_level(caster, caster_level, room)
-    resist = Mobile.magical_resistance_at_level(target, target_level, spell.abilities["DamageType"], room)
+    resist = Mobile.magical_resistance_at_level(target, target_level, spell.traits["DamageType"], room)
 
     damage = (damage - resist) * (modifier / 100)
 
@@ -564,53 +564,53 @@ defmodule ApathyDrive.Spell do
     put_in(effects[ability], value)
   end
 
-  def affects_target?(%{} = target, %Spell{} = spell) do
+  def affects_target?(%{} = target, %Ability{} = spell) do
     cond do
-      Spell.has_ability?(spell, "AffectsLiving") and Mobile.has_ability?(target, "NonLiving") ->
+      Ability.has_ability?(spell, "AffectsLiving") and Mobile.has_ability?(target, "NonLiving") ->
         false
-      Spell.has_ability?(spell, "AffectsAnimals") and !Mobile.has_ability?(target, "Animal") ->
+      Ability.has_ability?(spell, "AffectsAnimals") and !Mobile.has_ability?(target, "Animal") ->
         false
-      Spell.has_ability?(spell, "AffectsUndead") and !Mobile.has_ability?(target, "Undead") ->
+      Ability.has_ability?(spell, "AffectsUndead") and !Mobile.has_ability?(target, "Undead") ->
         false
-      Spell.has_ability?(spell, "Poison") and Mobile.has_ability?(target, "PoisonImmunity") ->
+      Ability.has_ability?(spell, "Poison") and Mobile.has_ability?(target, "PoisonImmunity") ->
         false
       true ->
         true
     end
   end
 
-  def has_ability?(%Spell{} = spell, ability_name) do
-    spell.abilities
+  def has_ability?(%Ability{} = spell, ability_name) do
+    spell.traits
     |> Map.keys
     |> Enum.member?(ability_name)
   end
 
-  def apply_cooldowns(caster, %Spell{} = spell) do
+  def apply_cooldowns(caster, %Ability{} = spell) do
     caster
     |> apply_spell_cooldown(spell)
     |> apply_round_cooldown(spell)
   end
 
-  def apply_spell_cooldown(caster, %Spell{cooldown_in_ms: nil}), do: caster
-  def apply_spell_cooldown(caster, %Spell{cooldown_in_ms: cooldown, name: name}) do
+  def apply_spell_cooldown(caster, %Ability{cooldown_in_ms: nil}), do: caster
+  def apply_spell_cooldown(caster, %Ability{cooldown_in_ms: cooldown, name: name}) do
     Systems.Effect.add(caster, %{"cooldown" => name, "RemoveMessage" => "#{Text.capitalize_first(name)} is ready for use again."}, cooldown)
   end
 
-  def apply_round_cooldown(caster, %Spell{ignores_round_cooldown?: true}), do: caster
+  def apply_round_cooldown(caster, %Ability{ignores_round_cooldown?: true}), do: caster
   def apply_round_cooldown(caster, _spell) do
     cooldown = Mobile.round_length_in_ms(caster)
     Systems.Effect.add(caster, %{"cooldown" => :round}, cooldown)
   end
 
-  def caster_cast_message(%Spell{result: :dodged} = spell, %{} = _caster, %{} = target, _mobile) do
+  def caster_cast_message(%Ability{result: :dodged} = spell, %{} = _caster, %{} = target, _mobile) do
     message =
-      spell.abilities["DodgeUserMessage"]
+      spell.traits["DodgeUserMessage"]
       |> Text.interpolate(%{"target" => target, "spell" => spell.name})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def caster_cast_message(%Spell{result: :resisted} = spell, %{} = _caster, %{} = target, _mobile) do
+  def caster_cast_message(%Ability{result: :resisted} = spell, %{} = _caster, %{} = target, _mobile) do
     message =
       @resist_message.user
       |> Text.interpolate(%{"target" => target, "spell" => spell.name})
@@ -618,7 +618,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def caster_cast_message(%Spell{result: :deflected} = _spell, %{} = _caster, %{} = target, _mobile) do
+  def caster_cast_message(%Ability{result: :deflected} = _spell, %{} = _caster, %{} = target, _mobile) do
     message =
       @deflect_message.user
       |> Text.interpolate(%{"target" => target})
@@ -626,7 +626,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='dark-red'>#{message}</span></p>"
   end
-  def caster_cast_message(%Spell{} = spell, %{} = _caster, %{spell_shift: nil} = target, _mobile) do
+  def caster_cast_message(%Ability{} = spell, %{} = _caster, %{spell_shift: nil} = target, _mobile) do
     message =
       spell.user_message
       |> Text.interpolate(%{"target" => target})
@@ -634,7 +634,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
   end
-  def caster_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: shift} = target, mobile) do
+  def caster_cast_message(%Ability{} = spell, %{} = caster, %{spell_shift: shift} = target, mobile) do
     amount = abs(trunc(shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
@@ -666,15 +666,15 @@ defmodule ApathyDrive.Spell do
     end
   end
 
-  def target_cast_message(%Spell{result: :dodged} = spell, %{} = caster, %{} = _target, _mobile) do
+  def target_cast_message(%Ability{result: :dodged} = spell, %{} = caster, %{} = _target, _mobile) do
     message =
-      spell.abilities["DodgeTargetMessage"]
+      spell.traits["DodgeTargetMessage"]
       |> Text.interpolate(%{"user" => caster, "spell" => spell.name})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def target_cast_message(%Spell{result: :resisted} = spell, %{} = caster, %{} = _target, _mobile) do
+  def target_cast_message(%Ability{result: :resisted} = spell, %{} = caster, %{} = _target, _mobile) do
     message =
       @resist_message.target
       |> Text.interpolate(%{"user" => caster, "spell" => spell.name})
@@ -682,7 +682,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def target_cast_message(%Spell{result: :deflected} = _spell, %{} = caster, %{} = _target, _mobile) do
+  def target_cast_message(%Ability{result: :deflected} = _spell, %{} = caster, %{} = _target, _mobile) do
     message =
       @deflect_message.target
       |> Text.interpolate(%{"user" => caster})
@@ -690,7 +690,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='dark-red'>#{message}</span></p>"
   end
-  def target_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: nil} = _target, _mobile) do
+  def target_cast_message(%Ability{} = spell, %{} = caster, %{spell_shift: nil} = _target, _mobile) do
     message =
       spell.target_message
       |> Text.interpolate(%{"user" => caster})
@@ -698,7 +698,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
   end
-  def target_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: _shift} = target, mobile) do
+  def target_cast_message(%Ability{} = spell, %{} = caster, %{spell_shift: _shift} = target, mobile) do
     amount = abs(trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
@@ -729,15 +729,15 @@ defmodule ApathyDrive.Spell do
     end
   end
 
-  def spectator_cast_message(%Spell{result: :dodged} = spell, %{} = caster, %{} = target, _mobile) do
+  def spectator_cast_message(%Ability{result: :dodged} = spell, %{} = caster, %{} = target, _mobile) do
     message =
-      spell.abilities["DodgeSpectatorMessage"]
+      spell.traits["DodgeSpectatorMessage"]
       |> Text.interpolate(%{"user" => caster, "target" => target, "spell" => spell.name})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Spell{result: :resisted} = spell, %{} = caster, %{} = target, _mobile) do
+  def spectator_cast_message(%Ability{result: :resisted} = spell, %{} = caster, %{} = target, _mobile) do
     message =
       @resist_message.spectator
       |> Text.interpolate(%{"user" => caster, "target" => target, "spell" => spell.name})
@@ -745,7 +745,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Spell{result: :deflected} = _spell, %{} = caster, %{} = target, _mobile) do
+  def spectator_cast_message(%Ability{result: :deflected} = _spell, %{} = caster, %{} = target, _mobile) do
     message =
       @deflect_message.spectator
       |> Text.interpolate(%{"user" => caster, "target" => target})
@@ -753,7 +753,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='dark-red'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: nil} = target, _mobile) do
+  def spectator_cast_message(%Ability{} = spell, %{} = caster, %{spell_shift: nil} = target, _mobile) do
     message =
       spell.spectator_message
       |> Text.interpolate(%{"user" => caster, "target" => target})
@@ -761,7 +761,7 @@ defmodule ApathyDrive.Spell do
 
     "<p><span class='#{message_color(spell)}'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Spell{} = spell, %{} = caster, %{spell_shift: _shift} = target, mobile) do
+  def spectator_cast_message(%Ability{} = spell, %{} = caster, %{spell_shift: _shift} = target, mobile) do
     amount = abs(trunc(target.spell_shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
@@ -793,7 +793,7 @@ defmodule ApathyDrive.Spell do
     end
   end
 
-  def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Spell{} = spell) do
+  def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Ability{} = spell) do
     room.mobiles
     |> Map.values
     |> Enum.each(fn mobile ->
@@ -810,7 +810,7 @@ defmodule ApathyDrive.Spell do
        end)
   end
 
-  def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest] = targets, %Spell{abilities: %{"PreCastMessage" => message}} = spell) do
+  def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest] = targets, %Ability{traits: %{"PreCastMessage" => message}} = spell) do
     target = Room.get_mobile(room, target_ref)
 
     message =
@@ -820,9 +820,9 @@ defmodule ApathyDrive.Spell do
 
     Mobile.send_scroll(caster, "<p><span class='#{message_color(spell)}'>#{message}</span></p>")
 
-    display_pre_cast_message(room, caster, targets, update_in(spell.abilities, &Map.delete(&1, "PreCastMessage")))
+    display_pre_cast_message(room, caster, targets, update_in(spell.traits, &Map.delete(&1, "PreCastMessage")))
   end
-  def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest], %Spell{abilities: %{"PreCastSpectatorMessage" => message}} = spell) do
+  def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest], %Ability{traits: %{"PreCastSpectatorMessage" => message}} = spell) do
     target = Room.get_mobile(room, target_ref)
 
     message = message
@@ -833,8 +833,8 @@ defmodule ApathyDrive.Spell do
   end
   def display_pre_cast_message(_room, _caster, _targets, _spell), do: :noop
 
-  def message_color(%Spell{kind: kind}) when kind in ["attack", "curse"], do: "red"
-  def message_color(%Spell{}), do: "blue"
+  def message_color(%Ability{kind: kind}) when kind in ["attack", "curse"], do: "red"
+  def message_color(%Ability{}), do: "blue"
 
   def can_execute?(%Room{} = room, caster_ref, spell) do
     mobile = Room.get_mobile(room, caster_ref)
@@ -867,8 +867,8 @@ defmodule ApathyDrive.Spell do
     Float.round(time / 1000, 2)
   end
 
-  def on_cooldown?(%{} = _mobile, %Spell{cooldown_in_ms: nil} = _spell), do: false
-  def on_cooldown?(%{effects: effects} = _mobile, %Spell{name: name} = _spell) do
+  def on_cooldown?(%{} = _mobile, %Ability{cooldown_in_ms: nil} = _spell), do: false
+  def on_cooldown?(%{effects: effects} = _mobile, %Ability{name: name} = _spell) do
     effects
     |> Map.values
     |> Enum.any?(&(&1["cooldown"] == name))
@@ -882,7 +882,7 @@ defmodule ApathyDrive.Spell do
     |> Enum.find(&(&1["cooldown"] == :round))
   end
 
-  def get_targets(%Room{} = room, caster_ref, %Spell{targets: "monster or single"}, query) do
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "monster or single"}, query) do
     caster = room.mobiles[caster_ref]
 
     match =
@@ -893,10 +893,10 @@ defmodule ApathyDrive.Spell do
 
     List.wrap(match && match.ref)
   end
-  def get_targets(%Room{}, caster_ref, %Spell{targets: "self"}, _query) do
+  def get_targets(%Room{}, caster_ref, %Ability{targets: "self"}, _query) do
     List.wrap(caster_ref)
   end
-  def get_targets(%Room{} = room, _caster_ref, %Spell{targets: "monster"}, query) do
+  def get_targets(%Room{} = room, _caster_ref, %Ability{targets: "monster"}, query) do
     match =
       room.mobiles
       |> Map.values
@@ -905,12 +905,12 @@ defmodule ApathyDrive.Spell do
 
     List.wrap(match && match.ref)
   end
-  def get_targets(%Room{} = room, caster_ref, %Spell{targets: "full party area"}, _query) do
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full party area"}, _query) do
     room
     |> Room.get_mobile(caster_ref)
     |> Mobile.party_refs(room)
   end
-  def get_targets(%Room{} = room, caster_ref, %Spell{targets: "full attack area"}, _query) do
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full attack area"}, _query) do
     party =
       room
       |> Room.get_mobile(caster_ref)
@@ -920,10 +920,10 @@ defmodule ApathyDrive.Spell do
     |> Map.keys
     |> Kernel.--(party)
   end
-  def get_targets(%Room{}, caster_ref, %Spell{targets: "self or single"}, "") do
+  def get_targets(%Room{}, caster_ref, %Ability{targets: "self or single"}, "") do
     List.wrap(caster_ref)
   end
-  def get_targets(%Room{} = room, _caster_ref, %Spell{targets: "self or single"}, query) do
+  def get_targets(%Room{} = room, _caster_ref, %Ability{targets: "self or single"}, query) do
     match =
       room.mobiles
       |> Map.values
@@ -932,7 +932,7 @@ defmodule ApathyDrive.Spell do
 
     List.wrap(match && match.ref)
   end
-  def get_targets(%Room{} = room, caster_ref, %Spell{targets: "single"}, query) do
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "single"}, query) do
     match =
       room.mobiles
       |> Map.values
@@ -942,8 +942,8 @@ defmodule ApathyDrive.Spell do
     List.wrap(match && match.ref)
   end
 
-  def not_enough_mana?(%{} = _mobile, %Spell{ignores_round_cooldown?: true}), do: false
-  def not_enough_mana?(%{} = mobile, %Spell{} = spell) do
+  def not_enough_mana?(%{} = _mobile, %Ability{ignores_round_cooldown?: true}), do: false
+  def not_enough_mana?(%{} = mobile, %Ability{} = spell) do
     if !Mobile.enough_mana_for_spell?(mobile, spell) do
       Mobile.send_scroll(mobile, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
     end

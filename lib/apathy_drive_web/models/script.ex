@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Mobile, Room, RoomServer, Spell}
+  alias ApathyDrive.{Ability, Character, Mobile, Room, RoomServer}
 
   schema "scripts" do
     field :instructions, ApathyDrive.JSONB, default: []
@@ -244,10 +244,10 @@ defmodule ApathyDrive.Script do
   end
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"cast_ability" => ability_id}, script) do
-    case ApathyDrive.Spell.find(ability_id) do
+    case Ability.find(ability_id) do
       nil ->
-        Mobile.send_scroll(monster, "<p><span class='red'>Not Implemented: Spell ##{ability_id}</span></p>")
-      %Spell{} = spell ->
+        Mobile.send_scroll(monster, "<p><span class='red'>Not Implemented: Ability ##{ability_id}</span></p>")
+      %Ability{} = spell ->
         spell = Map.put(spell, :ignores_round_cooldown?, true)
 
         send(self(), {:execute_spell, %{caster: monster.ref, spell: spell, target: [monster.ref]}})

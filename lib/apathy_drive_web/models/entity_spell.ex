@@ -5,7 +5,7 @@ defmodule ApathyDrive.EntitySpell do
     field :assoc_table, :string
     field :assoc_id, :integer
     field :level, :integer
-    belongs_to :spell, ApathyDrive.Spell
+    belongs_to :ability, ApathyDrive.Ability, foreign_key: :spell_id
 
     timestamps()
   end

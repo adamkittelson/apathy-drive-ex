@@ -65,11 +65,11 @@ defmodule ApathyDrive.Room do
     Repo.preload(room, :skills, force: true)
   end
 
-  def load_spells(%Room{} = room) do
+  def load_abilities(%Room{} = room) do
     Enum.reduce(room.mobiles, room, fn
       {ref, %Character{}}, updated_room ->
         Room.update_mobile(updated_room, ref, fn(character) ->
-          Character.load_spells(character)
+          Character.load_abilities(character)
         end)
       _, updated_room ->
         updated_room

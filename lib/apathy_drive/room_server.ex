@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Character, Commands, Companion, LairMonster, Mobile, MonsterSpawning,
-                     PubSub, Repo, Room, RoomSupervisor, Spell, TimerManager, Presence}
+  alias ApathyDrive.{Ability, Character, Commands, Companion, LairMonster, Mobile,
+                     MonsterSpawning, PubSub, Repo, Room, RoomSupervisor, TimerManager, Presence}
   use Timex
   require Logger
 
@@ -145,7 +145,7 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:leader, ref)
         |> Character.load_race
         |> Character.load_reputations
-        |> Character.load_spells
+        |> Character.load_abilities
         |> Character.load_items
         |> Map.put(:socket, socket)
         |> Mobile.cpr
@@ -354,7 +354,7 @@ defmodule ApathyDrive.RoomServer do
             mobile = TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
             room = put_in(room.mobiles[mobile.ref], mobile)
 
-            Spell.execute(room, mobile.ref, attack, [target_ref])
+            Ability.execute(room, mobile.ref, attack, [target_ref])
           else
             case mobile do
               %Character{attack_target: target} = character when is_reference(target) ->
@@ -383,7 +383,7 @@ defmodule ApathyDrive.RoomServer do
             |> put_in([Access.key!(:effects), key, "NextEffectAt"], System.monotonic_time(:milliseconds) + interval)
             |> Systems.Effect.schedule_next_periodic_effect
           end)
-          |> Spell.execute(target_ref, %Spell{abilities: effect, ignores_round_cooldown?: true}, [target_ref])
+          |> Ability.execute(target_ref, %Ability{traits: effect, ignores_round_cooldown?: true}, [target_ref])
         nil ->
           room
       end
@@ -621,7 +621,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:execute_spell, %{caster: ref, spell: spell, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      room = Spell.execute(room, mobile.ref, spell, target)
+      room = Ability.execute(room, mobile.ref, spell, target)
       {:noreply, room}
     else
       {:noreply, room}
@@ -634,8 +634,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:reload_spells, room) do
-    room = Room.load_spells(room)
+  def handle_info(:reload_abilities, room) do
+    room = Room.load_abilities(room)
 
     {:noreply, room}
   end

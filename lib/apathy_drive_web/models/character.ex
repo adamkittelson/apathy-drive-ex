@@ -1,9 +1,9 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, CharacterSkill, CharacterReputation, Companion,
+  alias ApathyDrive.{Ability, Character, CharacterSkill, CharacterReputation, Companion,
                      EntityAbility, Item, Level,  Monster, Mobile, Party, Race,
-                     Reputation, Room, RoomServer, Skill, Spell, Text, TimerManager}
+                     Reputation, Room, RoomServer, Skill, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -35,7 +35,7 @@ defmodule ApathyDrive.Character do
     field :last_effect_key, :integer, virtual: true, default: 0
     field :hp,              :float, virtual: true, default: 1.0
     field :mana,            :float, virtual: true, default: 1.0
-    field :spells,          :map, virtual: true, default: %{}
+    field :abilities,       :map, virtual: true, default: %{}
     field :inventory,       :any, virtual: true, default: []
     field :equipment,       :any, virtual: true, default: []
     field :spell_shift,     :float, virtual: true
@@ -91,7 +91,7 @@ defmodule ApathyDrive.Character do
     |> validate_confirmation(:password)
   end
 
-  def load_spells(%Character{} = character) do
+  def load_abilities(%Character{} = character) do
     character = Repo.preload(character, [:characters_skills, :trained_skills], force: true)
 
     Enum.reduce(character.characters_skills, character, fn (character_skill, character) ->
@@ -100,24 +100,24 @@ defmodule ApathyDrive.Character do
         |> Map.put(:experience, character_skill.experience)
         |> Skill.set_level
 
-      skill_spells =
-        ApathyDrive.SkillSpell
+      skill_abilities =
+        ApathyDrive.SkillAbility
         |> Ecto.Query.where([ss], ss.skill_id == ^skill.id and ss.level <= ^skill.level)
-        |> Ecto.Query.preload([:spell])
+        |> Ecto.Query.preload([:ability])
         |> Repo.all
 
-      spells =
-        Enum.reduce(skill_spells, %{}, fn
-          %{level: level, spell: %Spell{id: id} = spell}, spells ->
-            spell =
-              put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
+      abilities =
+        Enum.reduce(skill_abilities, %{}, fn
+          %{level: level, ability: %Ability{id: id} = ability}, abilities ->
+            ability =
+              put_in(ability.traits, EntityAbility.load_abilities("spells", id))
               |> Map.put(:level, level)
-            Map.put(spells, spell.command, spell)
+            Map.put(abilities, ability.command, ability)
         end)
 
       character.skills
       |> update_in(&Map.put(&1, character_skill.skill.name, skill))
-      |> Map.put(:spells, spells)
+      |> Map.put(:abilities, abilities)
     end)
   end
 
@@ -241,7 +241,7 @@ defmodule ApathyDrive.Character do
 
     Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: skill.experience + amount}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
 
-    character = load_spells(character)
+    character = load_abilities(character)
 
     level = character.skills[skill.name].level
 
@@ -269,7 +269,7 @@ defmodule ApathyDrive.Character do
 
           Mobile.send_scroll(character, "<p>Your #{incompatible_skill.name} skill falls to level #{new_level}.</p>")
 
-          load_spells(character)
+          load_abilities(character)
         else
           character
         end
@@ -399,14 +399,14 @@ defmodule ApathyDrive.Character do
     def attack_spell(character) do
       case Character.weapon(character) do
         nil ->
-          %Spell{
+          %Ability{
             kind: "attack",
             mana: 0,
             user_message: "You punch {{target}} for {{amount}} damage!",
             target_message: "{{user}} punches you for {{amount}} damage!",
             spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
             ignores_round_cooldown?: true,
-            abilities: %{
+            traits: %{
               "PhysicalDamage" => 100 / attacks_per_round(character),
               "Dodgeable" => true,
               "DodgeUserMessage" => "You throw a punch at {{target}}, but they dodge!",
@@ -416,14 +416,14 @@ defmodule ApathyDrive.Character do
           }
         %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss]} ->
           [singular_hit, plural_hit] = Enum.random(hit_verbs)
-          %Spell{
+          %Ability{
             kind: "attack",
             mana: 0,
             user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
             target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
             spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
             ignores_round_cooldown?: true,
-            abilities: %{
+            traits: %{
               "PhysicalDamage" => 100 / attacks_per_round(character),
               "Dodgeable" => true,
               "DodgeUserMessage" => "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
@@ -573,9 +573,9 @@ defmodule ApathyDrive.Character do
       agi * (1 + (modifier / 100))
     end
 
-    def enough_mana_for_spell?(character, %Spell{} =  spell) do
+    def enough_mana_for_spell?(character, %Ability{} =  ability) do
       mana = Character.mana_at_level(character, character.level)
-      cost = Spell.mana_cost_at_level(spell, character.level)
+      cost = Ability.mana_cost_at_level(ability, character.level)
 
       mana >= cost
     end
@@ -814,8 +814,8 @@ defmodule ApathyDrive.Character do
       will * (1 + (modifier / 100))
     end
 
-    def spells_at_level(%Character{spells: spells}, level) do
-      spells
+    def abilities_at_level(%Character{abilities: abilities}, level) do
+      abilities
       |> Map.values
       |> Enum.filter(& &1.level <= level)
       |> Enum.sort_by(& &1.level)
@@ -833,7 +833,7 @@ defmodule ApathyDrive.Character do
     end
 
     def subtract_mana(character, spell) do
-      cost = Spell.mana_cost_at_level(spell, character.level)
+      cost = Ability.mana_cost_at_level(spell, character.level)
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
       update_in(character.mana, &(max(0, &1 - percentage)))
     end

@@ -1,10 +1,10 @@
 defmodule ApathyDrive.Companion do
-  alias ApathyDrive.{Character, Companion, CompanionAI, EntityAbility, Mobile, Monster,
-                     Party, Repo, Room, RoomMonster, Spell, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, Character, Companion, CompanionAI, EntityAbility, Mobile,
+                     Monster, Party, Repo, Room, RoomMonster, Stealth, Text, TimerManager}
   require Ecto.Query
 
   defstruct [:gender, :description, :enter_message, :exit_message, :death_message,
-             :hp, :mana, :timers, :effects, :last_effect_key, :spells,
+             :hp, :mana, :timers, :effects, :last_effect_key, :abilities,
              :strength, :agility, :intellect, :willpower, :health, :charm,
              :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target, :spell_shift, :spell_special]
 
@@ -149,7 +149,7 @@ defmodule ApathyDrive.Companion do
     end
   end
 
-  def load_abilities(%Companion{monster_id: id} = companion) do
+  def load_traits(%Companion{monster_id: id} = companion) do
     effect =
       EntityAbility.load_abilities("monsters", id)
       |> Map.put("stack_key", "monster")
@@ -158,22 +158,22 @@ defmodule ApathyDrive.Companion do
     |> Systems.Effect.add(effect)
   end
 
-  def load_spells(%Companion{monster_id: id} = companion) do
+  def load_abilities(%Companion{monster_id: id} = companion) do
     entities_spells =
       ApathyDrive.EntitySpell
       |> Ecto.Query.where(assoc_id: ^id, assoc_table: "monsters")
-      |> Ecto.Query.preload([:spell])
+      |> Ecto.Query.preload([:ability])
       |> Repo.all
 
-    spells =
+    abilities =
       Enum.reduce(entities_spells, %{}, fn
-        %{level: level, spell: %Spell{id: id} = spell}, spells ->
-          spell =
-            put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
+        %{level: level, ability: %Ability{id: id} = ability}, abilities ->
+          ability =
+            put_in(ability.traits, EntityAbility.load_abilities("spells", id))
             |> Map.put(:level, level)
-          Map.put(spells, spell.command, spell)
+          Map.put(abilities, ability.command, ability)
       end)
-    Map.put(companion, :spells, spells)
+    Map.put(companion, :abilities, abilities)
   end
 
   def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm) do
@@ -182,7 +182,7 @@ defmodule ApathyDrive.Companion do
       |> Repo.get(monster_id)
       |> Map.take([
            :gender, :description, :enter_message, :exit_message, :death_message,
-           :hp, :mana, :timers, :effects, :last_effect_key, :spells
+           :hp, :mana, :timers, :effects, :last_effect_key, :abilities
          ])
 
     room_monster =
@@ -198,8 +198,8 @@ defmodule ApathyDrive.Companion do
     |> Map.put(:monster_id, monster_id)
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
-    |> load_spells()
     |> load_abilities()
+    |> load_traits()
     |> Mobile.cpr
   end
 
@@ -233,7 +233,7 @@ defmodule ApathyDrive.Companion do
     end
 
     def attack_spell(companion) do
-      companion.spells
+      companion.abilities
       |> Map.values
       |> Enum.filter(&(&1.kind == "auto attack"))
       |> Enum.random
@@ -349,9 +349,9 @@ defmodule ApathyDrive.Companion do
       agi * (1 + (modifier / 100))
     end
 
-    def enough_mana_for_spell?(companion, %Spell{} =  spell) do
+    def enough_mana_for_spell?(companion, %Ability{} =  spell) do
       mana = Mobile.max_mana_at_level(companion, companion.level)
-      cost = Spell.mana_cost_at_level(spell, companion.level)
+      cost = Ability.mana_cost_at_level(spell, companion.level)
 
       companion.mana >= (cost / mana)
     end
@@ -554,13 +554,6 @@ defmodule ApathyDrive.Companion do
       will * (1 + (modifier / 100))
     end
 
-    def spells_at_level(%Companion{spells: spells}, level) do
-      spells
-      |> Map.values
-      |> Enum.filter(& &1.level <= level)
-      |> Enum.sort_by(& &1.level)
-    end
-
     def stealth_at_level(companion, level, room) do
       if Mobile.has_ability?(companion, "Revealed") do
         0
@@ -573,7 +566,7 @@ defmodule ApathyDrive.Companion do
     end
 
     def subtract_mana(companion, spell) do
-      cost = Spell.mana_cost_at_level(spell, companion.level)
+      cost = Ability.mana_cost_at_level(spell, companion.level)
       percentage = cost / Mobile.max_mana_at_level(companion, companion.level)
       update_in(companion.mana, &(max(0, &1 - percentage)))
     end

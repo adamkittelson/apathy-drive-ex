@@ -37,7 +37,6 @@ defprotocol ApathyDrive.Mobile do
   def shift_hp(mobile, percentage, room)
   def silenced(mobile, room)
   def spellcasting_at_level(mobile, level, room)
-  def spells_at_level(mobile, level)
   def stealth_at_level(mobile, level, room)
   def subtract_mana(mobile, spell)
   def target_level(caster, target)

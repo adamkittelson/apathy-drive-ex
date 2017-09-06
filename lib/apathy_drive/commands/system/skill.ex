@@ -1,23 +1,23 @@
 defmodule ApathyDrive.Commands.System.Skill do
-  alias ApathyDrive.{Mobile, Repo, Room, Skill, SkillIncompatibility, SkillSpell, Spell}
+  alias ApathyDrive.{Ability, Mobile, Repo, Room, Skill, SkillAbility, SkillIncompatibility}
   require Ecto.Query
 
-  def execute(%Room{} = room, character, ["add", "spell" | args]) do
+  def execute(%Room{} = room, character, ["add", "ability" | args]) do
     args
     |> Enum.join(" ")
     |> String.split(" to ")
     |> case do
-      [spell, skill] ->
+      [ability, skill] ->
         skill
         |> String.split(" at level ")
         |> case do
           [skill, level] ->
-            add_spell_to_skill(room, character, spell, skill, level)
+            add_ability_to_skill(room, character, ability, skill, level)
           _ ->
-            Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'add spell <spell> to <skill> at level <level>', e.g. 'add spell bash to blunt at level 5'</p>")
+            Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'add ability <ability> to <skill> at level <level>', e.g. 'add ability bash to blunt at level 5'</p>")
         end
       _ ->
-        Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'add spell <spell> to <skill> at level <level>', e.g. 'add spell bash to blunt at level 5'</p>")
+        Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'add ability <ability> to <skill> at level <level>', e.g. 'add ability bash to blunt at level 5'</p>")
         room
     end
   end
@@ -152,19 +152,19 @@ defmodule ApathyDrive.Commands.System.Skill do
     room
   end
 
-  def add_spell_to_skill(%Room{} = room, character, spell, skill, level) do
+  def add_ability_to_skill(%Room{} = room, character, ability, skill, level) do
     with %Skill{} = skill <- Skill.match_by_name(skill),
-         %Spell{} = spell <- Spell.match_by_name(spell),
+         %Ability{} = ability <- Ability.match_by_name(ability),
          {level, _decimal} <- Integer.parse(level) do
 
-      Repo.insert! %SkillSpell{skill_id: skill.id, spell_id: spell.id, level: level}
+      Repo.insert! %SkillAbility{skill_id: skill.id, ability_id: ability.id, level: level}
 
-      ApathyDrive.PubSub.broadcast!("rooms", :reload_spells)
+      ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
 
-      Mobile.send_scroll(character, "<p>Added #{spell.name} to #{skill.name} at level #{level}.</p>")
+      Mobile.send_scroll(character, "<p>Added #{ability.name} to #{skill.name} at level #{level}.</p>")
     else
       nil ->
-        Mobile.send_scroll(character, "<p>Either #{skill} did not match a known skill or #{spell} did not match a known spell.</p>")
+        Mobile.send_scroll(character, "<p>Either #{skill} did not match a known skill or #{ability} did not match a known spell.</p>")
       :error ->
         Mobile.send_scroll(character, "<p>Level must be an integer.</p>")
     end
