@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Companion do
   alias ApathyDrive.{Ability, Character, Companion, CompanionAI, EntityAbility, Mobile,
-                     Monster, Party, Repo, Room, RoomMonster, Stealth, Text, TimerManager}
+                     Monster, MonsterTrait, Party, Repo, Room, RoomMonster, Stealth, Text, TimerManager}
   require Ecto.Query
 
   defstruct [:gender, :description, :enter_message, :exit_message, :death_message,

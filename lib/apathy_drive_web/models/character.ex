@@ -3,7 +3,7 @@ defmodule ApathyDrive.Character do
   use ApathyDrive.Web, :model
   alias ApathyDrive.{Ability, Character, CharacterSkill, CharacterReputation, Companion,
                      EntityAbility, Item, Level,  Monster, Mobile, Party, Race,
-                     Reputation, Room, RoomServer, Skill, Text, TimerManager}
+                     RaceTrait, Reputation, Room, RoomServer, Skill, Text, TimerManager}
 
   require Logger
   import Comeonin.Bcrypt
@@ -125,7 +125,7 @@ defmodule ApathyDrive.Character do
     race = Repo.get(Race, race_id)
 
     effect =
-      EntityAbility.load_abilities("races", race_id)
+      RaceTrait.load_traits(race_id)
       |> Map.put("stack_key", "race")
 
     attributes =

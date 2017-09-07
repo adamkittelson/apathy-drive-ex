@@ -12,6 +12,9 @@ defmodule ApathyDrive.Race do
     field :charm, :integer
     field :abilities, ApathyDrive.JSONB
 
+    has_many :races_traits, ApathyDrive.RaceTrait
+    has_many :traits, through: [:races_traits, :trait]
+
     timestamps()
   end
 

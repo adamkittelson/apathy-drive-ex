@@ -8,6 +8,9 @@ defmodule ApathyDrive.Trait do
     has_many :monsters_traits, ApathyDrive.MonsterTrait
     has_many :monsters, through: [:monsters_traits, :monster]
 
+    has_many :races_traits, ApathyDrive.MonsterTrait
+    has_many :races, through: [:races_traits, :race]
+
     timestamps()
   end
 

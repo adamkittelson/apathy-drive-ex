@@ -3,8 +3,8 @@ defmodule ApathyDrive.Repo.Migrations.CreateMonsterTraits do
 
   def change do
     create table(:monsters_traits) do
-      add :monster_id, references(:monsters)
-      add :trait_id, references(:traits)
+      add :monster_id, references(:monsters, on_delete: :delete_all)
+      add :trait_id, references(:traits, on_delete: :delete_all)
       add :value, :jsonb
     end
 
