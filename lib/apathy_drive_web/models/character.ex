@@ -38,8 +38,8 @@ defmodule ApathyDrive.Character do
     field :abilities,       :map, virtual: true, default: %{}
     field :inventory,       :any, virtual: true, default: []
     field :equipment,       :any, virtual: true, default: []
-    field :spell_shift,     :float, virtual: true
-    field :spell_special,   :float, virtual: true
+    field :ability_shift,     :float, virtual: true
+    field :ability_special,   :float, virtual: true
     field :attack_target,   :any, virtual: true
     field :strength,        :integer, virtual: true
     field :agility,         :integer, virtual: true
@@ -396,7 +396,7 @@ defmodule ApathyDrive.Character do
       trunc(round_length_in_ms(character) / attacks_per_round(character))
     end
 
-    def attack_spell(character) do
+    def attack_ability(character) do
       case Character.weapon(character) do
         nil ->
           %Ability{
@@ -443,7 +443,7 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def auto_attack_target(%Character{attack_target: target} = _character, room, _attack_spell) do
+    def auto_attack_target(%Character{attack_target: target} = _character, room, _attack_ability) do
       if room.mobiles[target], do: target
     end
 
@@ -573,7 +573,7 @@ defmodule ApathyDrive.Character do
       agi * (1 + (modifier / 100))
     end
 
-    def enough_mana_for_spell?(character, %Ability{} =  ability) do
+    def enough_mana_for_ability?(character, %Ability{} =  ability) do
       mana = Character.mana_at_level(character, character.level)
       cost = Ability.mana_cost_at_level(ability, character.level)
 
@@ -832,8 +832,8 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def subtract_mana(character, spell) do
-      cost = Ability.mana_cost_at_level(spell, character.level)
+    def subtract_mana(character, ability) do
+      cost = Ability.mana_cost_at_level(ability, character.level)
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
       update_in(character.mana, &(max(0, &1 - percentage)))
     end

@@ -14,9 +14,9 @@ defmodule ApathyDrive.Commands.Abilities do
   def display_abilities(%Character{} = character) do
     character.abilities
     |> Map.values
-    |> Enum.each(fn(%{name: name, command: command, mana: _mana} = spell) ->
+    |> Enum.each(fn(%{name: name, command: command, mana: _mana} = ability) ->
          mana_cost =
-           spell
+           ability
            |> Ability.mana_cost_at_level(character.level)
            |> to_string
            |> String.pad_trailing(6)

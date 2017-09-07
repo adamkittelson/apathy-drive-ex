@@ -1,13 +1,13 @@
 defmodule ApathyDrive.Companion do
-  alias ApathyDrive.{Ability, AbilityTrait, Character, Companion, CompanionAI,
-                     Mobile, Monster, MonsterTrait, Party, Repo, Room, RoomMonster,
+  alias ApathyDrive.{Ability, Character, Companion, CompanionAI, Mobile, Monster,
+                     MonsterAbility, MonsterTrait, Party, Repo, Room, RoomMonster,
                      Stealth, Text, TimerManager}
   require Ecto.Query
 
   defstruct [:gender, :description, :enter_message, :exit_message, :death_message,
              :hp, :mana, :timers, :effects, :last_effect_key, :abilities,
              :strength, :agility, :intellect, :willpower, :health, :charm,
-             :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target, :spell_shift, :spell_special]
+             :name, :room_id, :level, :monster_id, :character_id, :leader, :attack_target, :ability_shift, :ability_special]
 
   def dismiss(nil, %Room{} = room), do: room
   def dismiss(%Companion{} = companion, %Room{} = room) do
@@ -159,22 +159,8 @@ defmodule ApathyDrive.Companion do
     |> Systems.Effect.add(effect)
   end
 
-  def load_abilities(%Companion{monster_id: id} = companion) do
-    entities_spells =
-      ApathyDrive.EntitySpell
-      |> Ecto.Query.where(assoc_id: ^id, assoc_table: "monsters")
-      |> Ecto.Query.preload([:ability])
-      |> Repo.all
-
-    abilities =
-      Enum.reduce(entities_spells, %{}, fn
-        %{level: level, ability: %Ability{id: id} = ability}, abilities ->
-          ability =
-            put_in(ability.traits, AbilityTrait.load_traits(id))
-            |> Map.put(:level, level)
-          Map.put(abilities, ability.command, ability)
-      end)
-    Map.put(companion, :abilities, abilities)
+  def load_abilities(%Companion{} = companion) do
+    MonsterAbility.load_abilities(companion)
   end
 
   def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm) do
@@ -233,7 +219,7 @@ defmodule ApathyDrive.Companion do
       trunc(round_length_in_ms(companion) / attacks_per_round(companion))
     end
 
-    def attack_spell(companion) do
+    def attack_ability(companion) do
       companion.abilities
       |> Map.values
       |> Enum.filter(&(&1.kind == "auto attack"))
@@ -246,12 +232,12 @@ defmodule ApathyDrive.Companion do
       1
     end
 
-    def auto_attack_target(%Companion{} = companion, room, attack_spell) do
+    def auto_attack_target(%Companion{} = companion, room, attack_ability) do
       character = Companion.character(companion, room)
 
       character_target =
         if character do
-          Mobile.auto_attack_target(character, room, attack_spell)
+          Mobile.auto_attack_target(character, room, attack_ability)
         end
 
       companion_target =
@@ -350,9 +336,9 @@ defmodule ApathyDrive.Companion do
       agi * (1 + (modifier / 100))
     end
 
-    def enough_mana_for_spell?(companion, %Ability{} =  spell) do
+    def enough_mana_for_ability?(companion, %Ability{} =  ability) do
       mana = Mobile.max_mana_at_level(companion, companion.level)
-      cost = Ability.mana_cost_at_level(spell, companion.level)
+      cost = Ability.mana_cost_at_level(ability, companion.level)
 
       companion.mana >= (cost / mana)
     end
@@ -566,8 +552,8 @@ defmodule ApathyDrive.Companion do
       end
     end
 
-    def subtract_mana(companion, spell) do
-      cost = Ability.mana_cost_at_level(spell, companion.level)
+    def subtract_mana(companion, ability) do
+      cost = Ability.mana_cost_at_level(ability, companion.level)
       percentage = cost / Mobile.max_mana_at_level(companion, companion.level)
       update_in(companion.mana, &(max(0, &1 - percentage)))
     end

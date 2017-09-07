@@ -247,10 +247,10 @@ defmodule ApathyDrive.Script do
     case Ability.find(ability_id) do
       nil ->
         Mobile.send_scroll(monster, "<p><span class='red'>Not Implemented: Ability ##{ability_id}</span></p>")
-      %Ability{} = spell ->
-        spell = Map.put(spell, :ignores_round_cooldown?, true)
+      %Ability{} = ability ->
+        ability = Map.put(ability, :ignores_round_cooldown?, true)
 
-        send(self(), {:execute_spell, %{caster: monster.ref, spell: spell, target: [monster.ref]}})
+        send(self(), {:execute_ability, %{caster: monster.ref, ability: ability, target: [monster.ref]}})
     end
     execute_script(room, monster, script)
   end

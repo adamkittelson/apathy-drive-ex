@@ -18,13 +18,13 @@ defmodule ApathyDrive.CompanionAI do
     roll = :rand.uniform(100)
 
     if chance > roll do
-      spell =
+      ability =
         companion
         |> Ability.heal_abilities
-        |> random_spell(companion)
+        |> random_ability(companion)
 
-      if spell do
-        Ability.execute(room, companion.ref, spell, [injured_party_member.ref])
+      if ability do
+        Ability.execute(room, companion.ref, ability, [injured_party_member.ref])
       end
     end
   end
@@ -110,14 +110,14 @@ defmodule ApathyDrive.CompanionAI do
   #   end
   # end
 
-  def random_spell([spell], companion) do
-    unless Ability.on_cooldown?(companion, spell) do
-      spell
+  def random_ability([ability], companion) do
+    unless Ability.on_cooldown?(companion, ability) do
+      ability
     end
   end
-  def random_spell([], _companion), do: nil
-  def random_spell(spells, companion) do
-    spells
+  def random_ability([], _companion), do: nil
+  def random_ability(abilities, companion) do
+    abilities
     |> Enum.reject(&(Ability.on_cooldown?(companion, &1)))
     |> Enum.random
   end

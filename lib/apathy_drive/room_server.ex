@@ -348,9 +348,9 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, ref, fn
         %{} = mobile ->
-          attack = Mobile.attack_spell(mobile)
+          attack = Mobile.attack_ability(mobile)
           if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
-            Logger.info "#{mobile.name} using attack spell on #{target_ref && inspect(target_ref) && room.mobiles[target_ref] && room.mobiles[target_ref].name}"
+            Logger.info "#{mobile.name} using attack ability on #{target_ref && inspect(target_ref) && room.mobiles[target_ref] && room.mobiles[target_ref].name}"
             mobile = TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
             room = put_in(room.mobiles[mobile.ref], mobile)
 
@@ -584,7 +584,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:timer_cast_ability, %{caster: ref, ability: ability, timer: time, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
+      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your ability.</span></p>")
 
       ability = case ability do
         %{"global_cooldown" => nil} ->
@@ -619,9 +619,9 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  def handle_info({:execute_spell, %{caster: ref, spell: spell, target: target}}, room) do
+  def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      room = Ability.execute(room, mobile.ref, spell, target)
+      room = Ability.execute(room, mobile.ref, ability, target)
       {:noreply, room}
     else
       {:noreply, room}

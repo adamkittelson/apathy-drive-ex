@@ -164,7 +164,7 @@ defmodule ApathyDrive.Commands.System.Skill do
       Mobile.send_scroll(character, "<p>Added #{ability.name} to #{skill.name} at level #{level}.</p>")
     else
       nil ->
-        Mobile.send_scroll(character, "<p>Either #{skill} did not match a known skill or #{ability} did not match a known spell.</p>")
+        Mobile.send_scroll(character, "<p>Either #{skill} did not match a known skill or #{ability} did not match a known ability.</p>")
       :error ->
         Mobile.send_scroll(character, "<p>Level must be an integer.</p>")
     end

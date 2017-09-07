@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, AbilityTrait, Area, Character, Item, Mobile, Monster,
+  alias ApathyDrive.{Ability, Area, Character, Item, Mobile, Monster, MonsterAbility,
                      MonsterTrait, Party, Room, RoomMonster, Stealth, Text, TimerManager}
 
   require Logger
@@ -37,8 +37,8 @@ defmodule ApathyDrive.Monster do
     field :room_id,     :integer, virtual: true
     field :level,       :integer, virtual: true
     field :spawned_at,  :integer, virtual: true
-    field :spell_shift, :float, virtual: true
-    field :spell_special, :float, virtual: true
+    field :ability_shift, :float, virtual: true
+    field :ability_special, :float, virtual: true
     field :reputations, :map, virtual: true, default: []
 
     timestamps()
@@ -160,22 +160,8 @@ defmodule ApathyDrive.Monster do
     |> Systems.Effect.add(effect)
   end
 
-  def load_abilities(%Monster{id: id} = monster) do
-    entities_spells =
-      ApathyDrive.EntitySpell
-      |> Ecto.Query.where(assoc_id: ^id, assoc_table: "monsters")
-      |> Ecto.Query.preload([:ability])
-      |> Repo.all
-
-    abilities =
-      Enum.reduce(entities_spells, %{}, fn
-        %{level: level, ability: %Ability{id: id} = ability}, abilities ->
-          ability =
-            put_in(ability.traits, AbilityTrait.load_traits(id))
-            |> Map.put(:level, level)
-          Map.put(abilities, ability.command, ability)
-      end)
-    Map.put(monster, :abilities, abilities)
+  def load_abilities(%Monster{} = monster) do
+    MonsterAbility.load_abilities(monster)
   end
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
@@ -357,12 +343,12 @@ defmodule ApathyDrive.Monster do
     "#{adjective} #{name}"
   end
 
-  def auto_attack_target(_monster, [], _room, _attack_spell) do
+  def auto_attack_target(_monster, [], _room, _attack_ability) do
     nil
   end
 
   # weak monsters attack enemy with lowest % hp remaining
-  def auto_attack_target(%Monster{grade: "weak"}, enemies, room, _attack_spell) do
+  def auto_attack_target(%Monster{grade: "weak"}, enemies, room, _attack_ability) do
     enemies
     |> Enum.map(& room.mobiles[&1])
     |> Enum.sort_by(& &1.hp)
@@ -371,12 +357,12 @@ defmodule ApathyDrive.Monster do
   end
 
   # normal monsters attack a random enemy
-  def auto_attack_target(%Monster{grade: "normal"}, enemies, _room, _attack_spell) do
+  def auto_attack_target(%Monster{grade: "normal"}, enemies, _room, _attack_ability) do
     Enum.random(enemies)
   end
 
   # strong monsters attack enemy with highest % hp remaining
-  def auto_attack_target(%Monster{grade: "strong"}, enemies, room, _attack_spell) do
+  def auto_attack_target(%Monster{grade: "strong"}, enemies, room, _attack_ability) do
     enemies
     |> Enum.map(& room.mobiles[&1])
     |> Enum.sort_by(& &1.hp)
@@ -385,13 +371,13 @@ defmodule ApathyDrive.Monster do
   end
 
   # boss monsters attack enemy who will be damaged the least
-  def auto_attack_target(%Monster{grade: "boss"} = monster, enemies, room, attack_spell) do
+  def auto_attack_target(%Monster{grade: "boss"} = monster, enemies, room, attack_ability) do
     enemies
     |> Enum.map(fn enemy ->
-         {_caster, target} = Ability.apply_instant_traits(room.mobiles[enemy], attack_spell, monster, room)
+         {_caster, target} = Ability.apply_instant_traits(room.mobiles[enemy], attack_ability, monster, room)
          target
        end)
-    |> Enum.sort_by(& &1.spell_shift)
+    |> Enum.sort_by(& &1.ability_shift)
     |> List.last
     |> Map.get(:ref)
   end
@@ -426,7 +412,7 @@ defmodule ApathyDrive.Monster do
       trunc(round_length_in_ms(monster) / attacks_per_round(monster))
     end
 
-    def attack_spell(monster) do
+    def attack_ability(monster) do
       monster.abilities
       |> Map.values
       |> Enum.filter(&(&1.kind == "auto attack"))
@@ -439,12 +425,12 @@ defmodule ApathyDrive.Monster do
       1
     end
 
-    def auto_attack_target(%Monster{} = monster, room, attack_spell) do
+    def auto_attack_target(%Monster{} = monster, room, attack_ability) do
       enemies = Monster.enemies(monster, room)
 
       Logger.info "#{monster.name} enemies: #{inspect enemies}"
 
-      Monster.auto_attack_target(monster, enemies, room, attack_spell)
+      Monster.auto_attack_target(monster, enemies, room, attack_ability)
     end
 
     def caster_level(%Monster{level: level}, %Monster{} = _target), do: level
@@ -553,9 +539,9 @@ defmodule ApathyDrive.Monster do
       agi * (1 + (modifier / 100))
     end
 
-    def enough_mana_for_spell?(monster, %Ability{} =  spell) do
+    def enough_mana_for_ability?(monster, %Ability{} =  ability) do
       mana = Mobile.max_mana_at_level(monster, monster.level)
-      cost = Ability.mana_cost_at_level(spell, monster.level)
+      cost = Ability.mana_cost_at_level(ability, monster.level)
 
       monster.mana >= (cost / mana)
     end
@@ -777,8 +763,8 @@ defmodule ApathyDrive.Monster do
       end
     end
 
-    def subtract_mana(monster, spell) do
-      cost = Ability.mana_cost_at_level(spell, monster.level)
+    def subtract_mana(monster, ability) do
+      cost = Ability.mana_cost_at_level(ability, monster.level)
       percentage = cost / Mobile.max_mana_at_level(monster, monster.level)
       update_in(monster.mana, &(max(0, &1 - percentage)))
     end

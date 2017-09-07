@@ -38,10 +38,10 @@ defmodule ApathyDrive.Command do
       cmd = Match.one(Enum.map(all(), &(&1.to_struct)), :keyword_starts_with, command) ->
         cmd.module.execute(room, monster, arguments)
       true ->
-        spell = monster.abilities[String.downcase(command)]
+        ability = monster.abilities[String.downcase(command)]
 
-        if spell do
-          Ability.execute(room, monster.ref, spell, Enum.join(arguments, " "))
+        if ability do
+          Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
         else
           Mobile.send_scroll(monster, "<p>What?</p>")
           room
