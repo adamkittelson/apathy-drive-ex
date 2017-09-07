@@ -151,7 +151,7 @@ defmodule ApathyDrive.Companion do
 
   def load_traits(%Companion{monster_id: id} = companion) do
     effect =
-      EntityAbility.load_abilities("monsters", id)
+      MonsterTrait.load_traits(id)
       |> Map.put("stack_key", "monster")
 
     companion

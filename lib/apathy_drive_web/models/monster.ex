@@ -2,7 +2,7 @@ defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
   alias ApathyDrive.{Ability, Area, Character, EntityAbility, Item, Mobile,
-                     Monster, Party, Room, RoomMonster, Stealth, Text, TimerManager}
+                     Monster, MonsterTrait, Party, Room, RoomMonster, Stealth, Text, TimerManager}
 
   require Logger
 
@@ -45,6 +45,9 @@ defmodule ApathyDrive.Monster do
 
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
+
+    has_many :monsters_traits, ApathyDrive.MonsterTrait
+    has_many :traits, through: [:monsters_traits, :trait]
   end
 
   @grades %{
@@ -150,7 +153,7 @@ defmodule ApathyDrive.Monster do
 
   def load_traits(%Monster{id: id} = monster) do
     effect =
-      EntityAbility.load_abilities("monsters", id)
+      MonsterTrait.load_traits(id)
       |> Map.put("stack_key", "monster")
 
     monster
