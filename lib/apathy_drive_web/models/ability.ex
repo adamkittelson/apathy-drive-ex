@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Character, Companion, EntityAbility, Match, Mobile, Monster, Party, Room, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, AbilityTrait, Character, Companion, Match, Mobile, Monster, Party, Room, Stealth, Text, TimerManager}
   require Logger
 
   schema "abilities" do
@@ -22,6 +22,9 @@ defmodule ApathyDrive.Ability do
     field :result, :any, virtual: true
 
     has_many :entity_spells, ApathyDrive.EntitySpell
+
+    has_many :abilities_traits, ApathyDrive.AbilityTrait
+    has_many :trait_records, through: [:abilities_traits, :trait]
 
     timestamps()
   end
@@ -73,7 +76,7 @@ defmodule ApathyDrive.Ability do
     spell = ApathyDrive.Repo.get(__MODULE__, id)
 
     if spell do
-      put_in(spell.traits, EntityAbility.load_abilities("spells", id))
+      put_in(spell.traits, AbilityTrait.load_traits(id))
     end
   end
 

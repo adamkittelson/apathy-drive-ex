@@ -1,6 +1,7 @@
 defmodule ApathyDrive.Companion do
-  alias ApathyDrive.{Ability, Character, Companion, CompanionAI, EntityAbility, Mobile,
-                     Monster, MonsterTrait, Party, Repo, Room, RoomMonster, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, AbilityTrait, Character, Companion, CompanionAI,
+                     Mobile, Monster, MonsterTrait, Party, Repo, Room, RoomMonster,
+                     Stealth, Text, TimerManager}
   require Ecto.Query
 
   defstruct [:gender, :description, :enter_message, :exit_message, :death_message,
@@ -169,7 +170,7 @@ defmodule ApathyDrive.Companion do
       Enum.reduce(entities_spells, %{}, fn
         %{level: level, ability: %Ability{id: id} = ability}, abilities ->
           ability =
-            put_in(ability.traits, EntityAbility.load_abilities("spells", id))
+            put_in(ability.traits, AbilityTrait.load_traits(id))
             |> Map.put(:level, level)
           Map.put(abilities, ability.command, ability)
       end)

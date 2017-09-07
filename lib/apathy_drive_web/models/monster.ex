@@ -1,8 +1,8 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Character, EntityAbility, Item, Mobile,
-                     Monster, MonsterTrait, Party, Room, RoomMonster, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, AbilityTrait, Area, Character, Item, Mobile, Monster,
+                     MonsterTrait, Party, Room, RoomMonster, Stealth, Text, TimerManager}
 
   require Logger
 
@@ -171,7 +171,7 @@ defmodule ApathyDrive.Monster do
       Enum.reduce(entities_spells, %{}, fn
         %{level: level, ability: %Ability{id: id} = ability}, abilities ->
           ability =
-            put_in(ability.traits, EntityAbility.load_abilities("spells", id))
+            put_in(ability.traits, AbilityTrait.load_traits(id))
             |> Map.put(:level, level)
           Map.put(abilities, ability.command, ability)
       end)
