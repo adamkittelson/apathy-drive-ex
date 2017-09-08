@@ -26,6 +26,10 @@ defmodule ApathyDrive.Commands.System do
     System.Room.execute(room, character, args)
   end
 
+  def system(%Room{} = room, character, ["ability" | args]) do
+    System.Ability.execute(room, character, args)
+  end
+
   def system(%Room{} = room, character, args) do
     System.Misc.execute(room, character, args)
   end

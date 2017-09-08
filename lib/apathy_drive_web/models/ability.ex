@@ -81,13 +81,19 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def match_by_name(name) do
-    __MODULE__
-    |> where([ability], not is_nil(ability.name) and ability.name != "")
-    |> distinct(true)
-    |> select([ability], [:id, :name])
-    |> ApathyDrive.Repo.all
-    |> Match.one(:keyword_starts_with, name)
+  def match_by_name(name, all \\ false) do
+    abilities =
+      __MODULE__
+      |> where([ability], not is_nil(ability.name) and ability.name != "")
+      |> distinct(true)
+      |> ApathyDrive.Repo.all
+
+      if all do
+        Match.all(abilities, :keyword_starts_with, name)
+      else
+        Match.one(abilities, :keyword_starts_with, name)
+      end
+
   end
 
   def heal_abilities(%{abilities: abilities} = _mobile) do
