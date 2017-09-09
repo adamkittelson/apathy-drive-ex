@@ -73,6 +73,13 @@ defmodule ApathyDrive.Ability do
     |> cast(params, @required_fields, @optional_fields)
   end
 
+  def set_description_changeset(model, description) do
+    model
+    |> cast(%{description: description}, [:description])
+    |> validate_required(:description)
+    |> validate_length(:description, min: 20, max: 500)
+  end
+
   def find(id) do
     ability = ApathyDrive.Repo.get(__MODULE__, id)
 
