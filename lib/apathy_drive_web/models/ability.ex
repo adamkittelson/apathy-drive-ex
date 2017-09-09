@@ -33,8 +33,10 @@ defmodule ApathyDrive.Ability do
   @required_fields ~w(name targets kind mana command description user_message target_message spectator_message duration_in_ms)
   @optional_fields ~w()
 
-  #@valid_targets ["monster or single", "self", "self or single", "monster", "full party area", "full attack area", "single", "full area"]
+  @valid_targets ["monster or single", "self", "self or single", "monster", "full party area", "full attack area", "single", "full area"]
   @target_required_targets ["monster or single", "monster", "single"]
+
+  @kinds ["heal", "attack", "auto attack", "curse", "utility", "blessing", "passive"]
 
   @instant_traits [
     "CurePoison", "Damage", "DispelMagic", "Drain", "Enslave", "Freedom", "Heal", "HealMana", "KillSpell",
@@ -78,6 +80,20 @@ defmodule ApathyDrive.Ability do
     |> cast(%{description: description}, [:description])
     |> validate_required(:description)
     |> validate_length(:description, min: 20, max: 500)
+  end
+
+  def set_targets_changeset(model, targets) do
+    model
+    |> cast(%{targets: targets}, [:targets])
+    |> validate_required(:targets)
+    |> validate_inclusion(:targets, @valid_targets)
+  end
+
+  def set_kind_changeset(model, kind) do
+    model
+    |> cast(%{kind: kind}, [:kind])
+    |> validate_required(:kind)
+    |> validate_inclusion(:kind, @kinds)
   end
 
   def find(id) do
