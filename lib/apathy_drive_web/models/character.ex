@@ -51,6 +51,7 @@ defmodule ApathyDrive.Character do
     field :invitees,        :any, virtual: true, default: []
     field :reputations,     :map, virtual: true, default: %{}
     field :skills,          :map, virtual: true, default: %{}
+    field :editing,         :any, virtual: true
 
     belongs_to :room, Room
 
@@ -285,10 +286,10 @@ defmodule ApathyDrive.Character do
     hp = trunc(max_hp * hp_percent)
     mana = trunc(max_mana * mana_percent)
 
-    if max_mana > 0 do
-      "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}]:"
+    if character.editing do
+      "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}] <span class='yellow'>*#{character.editing.name}*</span>:"
     else
-      "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>]:"
+      "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}]:"
     end
   end
 

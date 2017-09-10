@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Commands.System.Ability do
-  alias ApathyDrive.{Ability, AbilityTrait, Mobile, Repo, Room}
+  alias ApathyDrive.{Ability, AbilityTrait, Character, Mobile, Repo, Room}
 
   def execute(%Room{} = room, character, ["create" | ability_name]) do
     ability_name = Enum.join(ability_name, " ")
@@ -9,20 +9,20 @@ defmodule ApathyDrive.Commands.System.Ability do
     room
   end
 
-  def execute(%Room{} = room, character, ["set", "description" | ability_name]) do
-    set_description(character, ability_name)
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["set", "description" | description]) do
+    set_description(character, description)
 
     room
   end
 
-  def execute(%Room{} = room, character, ["set", "targets" | ability_name]) do
-    set_targets(character, ability_name)
+  def execute(%Room{} = room, character, ["set", "targets" | targets]) do
+    set_targets(character, targets)
 
     room
   end
 
-  def execute(%Room{} = room, character, ["set", "kind" | ability_name]) do
-    set_kind(character, ability_name)
+  def execute(%Room{} = room, character, ["set", "kind" | kind]) do
+    set_kind(character, kind)
 
     room
   end
@@ -47,105 +47,48 @@ defmodule ApathyDrive.Commands.System.Ability do
     help(character, ability_name)
   end
 
-  defp set_description(character, ability_name) do
-    ability_name
-    |> Enum.join(" ")
-    |> String.split(" to ")
+  defp set_description(character, description) do
+    description = Enum.join(description, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_description_changeset(description)
+    |> Repo.update
     |> case do
-      [_] ->
-        Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'sys ability set description &lt;ability&gt; to &lt;description&gt;', e.g. 'sys ability set description frost jet to Fires a jet of frost at a single opponent.'</p>")
-      [ability_name | description] ->
-        case Ability.match_by_name(ability_name, true) do
-          nil ->
-        Mobile.send_scroll(character, "<p>\"#{ability_name}\" does not match any abilities.</p>")
-      %Ability{} = ability ->
-        description = Enum.join(description, " ")
-
-        ability
-        |> Ability.set_description_changeset(description)
-        |> Repo.update
-        |> case do
-          {:ok, _ability} ->
-            help(character, ability.name)
-          {:error, changeset} ->
-            Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
-        end
-      matches ->
-        Mobile.send_scroll(character, "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
-        Enum.each(matches, fn(match) ->
-          Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
-        end)
-
-      end
-
+      {:ok, _ability} ->
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
     end
   end
 
-  defp set_kind(character, ability_name) do
-    ability_name
-    |> Enum.join(" ")
-    |> String.split(" to ")
+  defp set_kind(character, kind) do
+    kind = Enum.join(kind, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_kind_changeset(kind)
+    |> Repo.update
     |> case do
-      [_] ->
-        Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'sys ability set kind &lt;ability&gt; to &lt;kind&gt;', e.g. 'sys ability set kind frost jet to attack.'</p>")
-      [ability_name | targets] ->
-        case Ability.match_by_name(ability_name, true) do
-          nil ->
-        Mobile.send_scroll(character, "<p>\"#{ability_name}\" does not match any abilities.</p>")
-      %Ability{} = ability ->
-        targets = Enum.join(targets, " ")
-
-        ability
-        |> Ability.set_kind_changeset(targets)
-        |> Repo.update
-        |> case do
-          {:ok, _ability} ->
-            help(character, ability.name)
-          {:error, changeset} ->
-            Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
-        end
-      matches ->
-        Mobile.send_scroll(character, "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
-        Enum.each(matches, fn(match) ->
-          Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
-        end)
-
-      end
-
+      {:ok, _ability} ->
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
     end
   end
 
-  defp set_targets(character, ability_name) do
-    ability_name
-    |> Enum.join(" ")
-    |> String.split(" to ")
+  defp set_targets(character, targets) do
+    targets = Enum.join(targets, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_targets_changeset(targets)
+    |> Repo.update
     |> case do
-      [_] ->
-        Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'sys ability set targets &lt;ability&gt; to &lt;targets&gt;', e.g. 'sys ability set targets frost jet to monster or single.'</p>")
-      [ability_name | targets] ->
-        case Ability.match_by_name(ability_name, true) do
-          nil ->
-        Mobile.send_scroll(character, "<p>\"#{ability_name}\" does not match any abilities.</p>")
-      %Ability{} = ability ->
-        targets = Enum.join(targets, " ")
-
-        ability
-        |> Ability.set_targets_changeset(targets)
-        |> Repo.update
-        |> case do
-          {:ok, _ability} ->
-            help(character, ability.name)
-          {:error, changeset} ->
-            Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
-        end
-      matches ->
-        Mobile.send_scroll(character, "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
-        Enum.each(matches, fn(match) ->
-          Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
-        end)
-
-      end
-
+      {:ok, _ability} ->
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
     end
   end
 
