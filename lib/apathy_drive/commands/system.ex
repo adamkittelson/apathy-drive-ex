@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
-  alias ApathyDrive.{Ability, Character, Repo, Room}
+  alias ApathyDrive.{Ability, Character, Repo, Room, Skill}
   alias ApathyDrive.Commands.System
 
   def keywords, do: ["system", "sys"]
@@ -23,6 +23,13 @@ defmodule ApathyDrive.Commands.System do
       character
       |> Map.put(:editing, Repo.get(Ability, ability.id))
     System.Ability.execute(room, character, args)
+  end
+
+  def system(%Room{} = room, %Character{editing: %Skill{} = skill} = character, args) do
+    character =
+      character
+      |> Map.put(:editing, Repo.get(Skill, skill.id))
+    System.Skill.execute(room, character, args)
   end
 
   def system(%Room{} = room, character, ["skill" | args]) do

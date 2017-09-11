@@ -107,18 +107,33 @@ defmodule ApathyDrive.Character do
         |> Ecto.Query.preload([:ability])
         |> Repo.all
 
-      abilities =
-        Enum.reduce(skill_abilities, %{}, fn
-          %{level: level, ability: %Ability{id: id} = ability}, abilities ->
+      character =
+        Enum.reduce(skill_abilities, character, fn
+          %{ability: %Ability{id: id, kind: "passive"}}, character ->
+            case AbilityTrait.load_traits(id) do
+              %{"GrantSkill" => skill_name} = effect ->
+                if character.skills[skill_name] && character.skills[skill_name].level > skill.level do
+                  Systems.Effect.add(character, effect)
+                else
+                  character.skills
+                  |> update_in(&Map.put(&1, skill_name, %Skill{name: skill_name, level: skill.level}))
+                  |> Systems.Effect.add(effect)
+                end
+              %{} = effect ->
+                Systems.Effect.add(character, effect)
+            end
+
+          %{level: level, ability: %Ability{id: id} = ability}, character ->
             ability =
               put_in(ability.traits, AbilityTrait.load_traits(id))
               |> Map.put(:level, level)
-            Map.put(abilities, ability.command, ability)
+            update_in(character.abilities, fn abilities ->
+              Map.put(abilities, ability.command, ability)
+            end)
         end)
 
       character.skills
       |> update_in(&Map.put(&1, character_skill.skill.name, skill))
-      |> Map.put(:abilities, abilities)
     end)
   end
 

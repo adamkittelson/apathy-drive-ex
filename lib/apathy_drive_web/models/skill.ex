@@ -39,13 +39,19 @@ defmodule ApathyDrive.Skill do
     |> validate_number(:training_cost_multiplier, [greater_than: 0])
   end
 
-  def match_by_name(name) do
-    __MODULE__
-    |> where([skill], not is_nil(skill.name) and skill.name != "")
-    |> distinct(true)
-    |> select([area], [:id, :name, :training_cost_multiplier])
-    |> ApathyDrive.Repo.all
-    |> Match.one(:keyword_starts_with, name)
+  def match_by_name(name, all \\ false) do
+    skills =
+      __MODULE__
+      |> where([skill], not is_nil(skill.name) and skill.name != "")
+      |> distinct(true)
+      |> select([area], [:id, :name, :training_cost_multiplier])
+      |> ApathyDrive.Repo.all
+
+    if all do
+      Match.all(skills, :keyword_starts_with, name)
+    else
+      Match.one(skills, :keyword_starts_with, name)
+    end
   end
 
 end

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, EntityItem, Item, Skill}
+  alias ApathyDrive.{Character, EntityItem, Item}
   require Logger
   require Ecto.Query
 
@@ -127,11 +127,7 @@ defmodule ApathyDrive.Item do
       {skill_name, _value} ->
         skill_name
       nil ->
-        if "accessory" in grades do
-          "accessory"
-        else
-          nil
-        end
+        nil
     end
   end
 
@@ -268,14 +264,6 @@ defmodule ApathyDrive.Item do
     item_power > slot_power
   end
 
-  # for accessories use the highest level of any skill
-  def generated_item_level(%Character{} = character, "accessory") do
-    {_skill_name, skill} =
-      character.skills
-      |> Enum.max_by(fn {_skill_name, %Skill{experience: exp}} -> exp end, fn -> {"accessory", %Skill{level: 1}} end)
-
-    skill.level
-  end
   def generated_item_level(%Character{} = character, grade) do
     if skill_info = Enum.find(character.skills, fn {skill_name, _exp} -> skill_name == grade end) do
       {_skill_name, skill} = skill_info

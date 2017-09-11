@@ -3,23 +3,15 @@ defmodule ApathyDrive.Commands.System.Skill do
   require Ecto.Query
 
   def execute(%Room{} = room, character, ["add", "ability" | args]) do
-    args
-    |> Enum.join(" ")
-    |> String.split(" to ")
-    |> case do
-      [ability, skill] ->
-        skill
-        |> String.split(" at level ")
-        |> case do
-          [skill, level] ->
-            add_ability_to_skill(room, character, ability, skill, level)
-          _ ->
-            Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'add ability <ability> to <skill> at level <level>', e.g. 'add ability bash to blunt at level 5'</p>")
-        end
-      _ ->
-        Mobile.send_scroll(character, "<p>Invalid syntax, should be like 'add ability <ability> to <skill> at level <level>', e.g. 'add ability bash to blunt at level 5'</p>")
-        room
-    end
+    level = List.last(args)
+
+    ability =
+      args
+      |> List.delete(level)
+      |> Enum.join(" ")
+
+    add_ability_to_skill(room, character, ability, level)
+    room
   end
 
   def execute(%Room{} = room, character, ["create" | skill_name]) do
@@ -152,10 +144,11 @@ defmodule ApathyDrive.Commands.System.Skill do
     room
   end
 
-  def add_ability_to_skill(%Room{} = room, character, ability, skill, level) do
-    with %Skill{} = skill <- Skill.match_by_name(skill),
-         %Ability{} = ability <- Ability.match_by_name(ability),
+  def add_ability_to_skill(%Room{} = room, character, ability, level) do
+    with %Ability{} = ability <- Ability.match_by_name(ability),
          {level, _decimal} <- Integer.parse(level) do
+
+      skill = character.editing
 
       Repo.insert! %SkillAbility{skill_id: skill.id, ability_id: ability.id, level: level}
 
@@ -164,7 +157,7 @@ defmodule ApathyDrive.Commands.System.Skill do
       Mobile.send_scroll(character, "<p>Added #{ability.name} to #{skill.name} at level #{level}.</p>")
     else
       nil ->
-        Mobile.send_scroll(character, "<p>Either #{skill} did not match a known skill or #{ability} did not match a known ability.</p>")
+        Mobile.send_scroll(character, "<p>#{ability} did not match a known ability.</p>")
       :error ->
         Mobile.send_scroll(character, "<p>Level must be an integer.</p>")
     end

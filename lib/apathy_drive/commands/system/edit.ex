@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Commands.System.Edit do
-  alias ApathyDrive.{Ability, Mobile, Room}
+  alias ApathyDrive.{Ability, Mobile, Room, Skill}
 
   def execute(%Room{} = room, character, ["ability" | ability_name]) do
     ability_name = Enum.join(ability_name, " ")
@@ -14,6 +14,30 @@ defmodule ApathyDrive.Commands.System.Edit do
         Room.update_mobile(room, character.ref, fn character ->
           character
           |> Map.put(:editing, ability)
+          |> Mobile.update_prompt
+        end)
+      matches ->
+        Mobile.send_scroll(character, "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
+        Enum.each(matches, fn(match) ->
+          Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
+        end)
+        room
+    end
+  end
+
+  def execute(%Room{} = room, character, ["skill" | skill_name]) do
+    skill_name = Enum.join(skill_name, " ")
+
+    case Skill.match_by_name(skill_name, true) do
+      nil ->
+        Mobile.send_scroll(character, "<p>\"#{skill_name}\" does not match any skills.</p>")
+        room
+      %Skill{} = skill ->
+        Mobile.send_scroll(character, "<p>You are now editing #{skill.name}.</p>")
+
+        Room.update_mobile(room, character.ref, fn character ->
+          character
+          |> Map.put(:editing, skill)
           |> Mobile.update_prompt
         end)
       matches ->
