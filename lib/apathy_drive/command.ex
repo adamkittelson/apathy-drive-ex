@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Ability, Commands, Monster, Match, Mobile, Room, RoomServer}
+  alias ApathyDrive.{Commands, Monster, Match, Mobile, Room, RoomServer}
 
   @callback execute(%Room{}, %Monster{}, list) :: %Room{}
 
@@ -14,7 +14,7 @@ defmodule ApathyDrive.Command do
      Commands.Dismiss, Commands.Drop, Commands.Experience, Commands.Get, Commands.Gossip, Commands.Hire,
      Commands.Inventory, Commands.Join, Commands.Invite, Commands.Leave, Commands.List,
      Commands.Look, Commands.Party, Commands.Reputations, Commands.Remove, Commands.Return, Commands.Say,
-     Commands.Score, Commands.Search, Commands.Sell, Commands.System, Commands.Train, Commands.Wear, Commands.Who]
+     Commands.Score, Commands.Search, Commands.Sell, Commands.Skills, Commands.System, Commands.Train, Commands.Wear, Commands.Who]
   end
 
   def execute(%Room{} = room, monster_ref, command, arguments) do

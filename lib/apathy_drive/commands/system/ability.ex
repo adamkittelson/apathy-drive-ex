@@ -1,10 +1,16 @@
 defmodule ApathyDrive.Commands.System.Ability do
-  alias ApathyDrive.{Ability, AbilityTrait, Character, Mobile, Repo, Room}
+  alias ApathyDrive.{Ability, AbilityTrait, Character, Mobile, Repo, Room, Trait}
 
   def execute(%Room{} = room, character, ["create" | ability_name]) do
     ability_name = Enum.join(ability_name, " ")
 
     create(character, ability_name)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["add", "trait" | trait]) do
+    add_trait(character, trait)
 
     room
   end
@@ -45,6 +51,30 @@ defmodule ApathyDrive.Commands.System.Ability do
     Repo.insert!(%Ability{name: ability_name}, on_conflict: :nothing)
 
     help(character, ability_name)
+  end
+
+  defp add_trait(character, [trait | value]) do
+    {:ok, value} =
+      value
+      |> Enum.join(" ")
+      |> ApathyDrive.JSONB.load()
+
+    ability = character.editing
+
+    trait = Repo.get_by(Trait, name: trait)
+
+    cond do
+      is_nil(trait) ->
+        Mobile.send_scroll(character, "<p>No trait by that name was found.</p>")
+      value == :error ->
+        Mobile.send_scroll(character, "<p>Value for #{trait.name} is invalid.</p>")
+      :else ->
+        on_conflict = [set: [value: value]]
+        %AbilityTrait{ability_id: ability.id, trait_id: trait.id, value: value}
+        |> Repo.insert(on_conflict: on_conflict, conflict_target: [:ability_id, :trait_id])
+
+        help(character, ability.name)
+    end
   end
 
   defp set_description(character, description) do

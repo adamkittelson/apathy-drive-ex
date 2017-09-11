@@ -19,4 +19,11 @@ defmodule ApathyDrive.AbilityTrait do
        end)
   end
 
+  def add_trait_changeset(model, description) do
+    model
+    |> cast(%{description: description}, [:description])
+    |> validate_required(:description)
+    |> validate_length(:description, min: 20, max: 500)
+  end
+
 end
