@@ -82,6 +82,38 @@ defmodule ApathyDrive.Ability do
     |> validate_length(:description, min: 20, max: 500)
   end
 
+  def set_duration_changeset(model, duration) do
+    model
+    |> cast(%{duration_in_ms: duration}, [:duration_in_ms])
+    |> validate_required(:duration_in_ms)
+    |> validate_number(:duration_in_ms, greater_than: 0)
+  end
+
+  def set_mana_changeset(model, mana) do
+    model
+    |> cast(%{mana: mana}, [:mana])
+    |> validate_required(:mana)
+    |> validate_number(:mana, greater_than: 0)
+  end
+
+  def set_user_message_changeset(model, message) do
+    model
+    |> cast(%{user_message: message}, [:user_message])
+    |> validate_required(:user_message)
+  end
+
+  def set_target_message_changeset(model, message) do
+    model
+    |> cast(%{target_message: message}, [:target_message])
+    |> validate_required(:target_message)
+  end
+
+  def set_spectator_message_changeset(model, message) do
+    model
+    |> cast(%{spectator_message: message}, [:spectator_message])
+    |> validate_required(:spectator_message)
+  end
+
   def set_targets_changeset(model, targets) do
     model
     |> cast(%{targets: targets}, [:targets])

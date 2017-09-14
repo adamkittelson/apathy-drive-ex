@@ -18,6 +18,22 @@ defmodule ApathyDrive.Commands.System do
     System.Edit.execute(room, character, args)
   end
 
+  def system(%Room{} = room, character, ["skill" | args]) do
+    System.Skill.execute(room, character, args)
+  end
+
+  def system(%Room{} = room, character, ["area" | args]) do
+    System.Area.execute(room, character, args)
+  end
+
+  def system(%Room{} = room, character, ["room" | args]) do
+    System.Room.execute(room, character, args)
+  end
+
+  def system(%Room{} = room, character, ["ability" | args]) do
+    System.Ability.execute(room, character, args)
+  end
+
   def system(%Room{} = room, %Character{editing: %Ability{} = ability} = character, args) do
     character =
       character
@@ -31,20 +47,6 @@ defmodule ApathyDrive.Commands.System do
       |> Map.put(:editing, Repo.get(Skill, skill.id))
     System.Skill.execute(room, character, args)
   end
-
-  def system(%Room{} = room, character, ["skill" | args]) do
-    System.Skill.execute(room, character, args)
-  end
-
-  def system(%Room{} = room, character, ["area" | args]) do
-    System.Area.execute(room, character, args)
-  end
-
-  def system(%Room{} = room, character, ["room" | args]) do
-    System.Room.execute(room, character, args)
-  end
-
-
 
   def system(%Room{} = room, character, args) do
     System.Misc.execute(room, character, args)

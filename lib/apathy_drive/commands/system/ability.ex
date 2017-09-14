@@ -21,6 +21,36 @@ defmodule ApathyDrive.Commands.System.Ability do
     room
   end
 
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["set", "duration" | duration]) do
+    set_duration(character, duration)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["set", "mana" | mana]) do
+    set_mana(character, mana)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["set", "user_message" | message]) do
+    set_user_message(character, message)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["set", "target_message" | message]) do
+    set_target_message(character, message)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["set", "spectator_message" | message]) do
+    set_spectator_message(character, message)
+
+    room
+  end
+
   def execute(%Room{} = room, character, ["set", "targets" | targets]) do
     set_targets(character, targets)
 
@@ -83,6 +113,81 @@ defmodule ApathyDrive.Commands.System.Ability do
 
     ability
     |> Ability.set_description_changeset(description)
+    |> Repo.update
+    |> case do
+      {:ok, _ability} ->
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
+    end
+  end
+
+  defp set_duration(character, duration) do
+    duration = Enum.join(duration, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_duration_changeset(duration)
+    |> Repo.update
+    |> case do
+      {:ok, _ability} ->
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
+    end
+  end
+
+  defp set_mana(character, mana) do
+    mana = Enum.join(mana, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_mana_changeset(mana)
+    |> Repo.update
+    |> case do
+      {:ok, _ability} ->
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
+    end
+  end
+
+  defp set_user_message(character, message) do
+    message = Enum.join(message, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_user_message_changeset(message)
+    |> Repo.update
+    |> case do
+      {:ok, _ability} ->
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
+    end
+  end
+
+  defp set_target_message(character, message) do
+    message = Enum.join(message, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_target_message_changeset(message)
+    |> Repo.update
+    |> case do
+      {:ok, _ability} ->
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
+    end
+  end
+
+  defp set_spectator_message(character, message) do
+    message = Enum.join(message, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_spectator_message_changeset(message)
     |> Repo.update
     |> case do
       {:ok, _ability} ->
