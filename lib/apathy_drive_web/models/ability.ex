@@ -181,10 +181,10 @@ defmodule ApathyDrive.Ability do
 
   def execute(%Room{} = room, caster_ref, %Ability{cast_time: time} = ability, query) when not is_nil(time) do
     Room.update_mobile(room, caster_ref, fn mobile ->
-      if TimerManager.time_remaining(mobile, :casting) >  0 do
-        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You interrupt your other spell.</span></p>")
+      if TimerManager.time_remaining(mobile, :casting) > 0 do
+        Mobile.send_scroll(mobile, "<p><span class='dark-red'>You interrupt your other spell.</span></p>")
       end
-      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
+      Mobile.send_scroll(mobile, "<p><span class='cyan'>You begin your casting.</span></p>")
       ability =
         ability
         |> Map.put(:cast_time, nil)
@@ -1037,7 +1037,6 @@ defmodule ApathyDrive.Ability do
     List.wrap(match && match.ref)
   end
 
-  def not_enough_mana?(%{} = _mobile, %Ability{ignores_round_cooldown?: true}), do: false
   def not_enough_mana?(%{} = mobile, %Ability{} = ability) do
     if !Mobile.enough_mana_for_ability?(mobile, ability) do
       Mobile.send_scroll(mobile, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")

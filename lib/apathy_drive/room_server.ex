@@ -346,25 +346,28 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:execute_auto_attack, ref}, %Room{} = room) do
     room =
-      Room.update_mobile(room, ref, fn
-        %{} = mobile ->
-          attack = Mobile.attack_ability(mobile)
-          if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
+      Room.update_mobile(room, ref, fn %{} = mobile ->
+        attack = Mobile.attack_ability(mobile)
+        if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
+          if TimerManager.time_remaining(mobile, :casting) == 0 do
             Logger.info "#{mobile.name} using attack ability on #{target_ref && inspect(target_ref) && room.mobiles[target_ref] && room.mobiles[target_ref].name}"
             mobile = TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
             room = put_in(room.mobiles[mobile.ref], mobile)
 
             Ability.execute(room, mobile.ref, attack, [target_ref])
           else
-            case mobile do
-              %Character{attack_target: target} = character when is_reference(target) ->
-                Mobile.send_scroll(character, "<p><span class='dark-yellow'>*Combat Off*</span></p>")
-                Map.put(character, :attack_target, nil)
-              mobile ->
-                Logger.info "#{mobile.name} found no target"
-                mobile
-              end
+            TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
           end
+        else
+          case mobile do
+            %Character{attack_target: target} = character when is_reference(target) ->
+              Mobile.send_scroll(character, "<p><span class='dark-yellow'>*Combat Off*</span></p>")
+              Map.put(character, :attack_target, nil)
+            mobile ->
+              Logger.info "#{mobile.name} found no target"
+              mobile
+          end
+        end
       end)
     {:noreply, room}
   end
@@ -582,35 +585,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:timer_cast_ability, %{caster: ref, ability: ability, timer: time, target: target}}, room) do
-    if mobile = room.mobiles[ref] do
-      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your ability.</span></p>")
-
-      ability = case ability do
-        %{"global_cooldown" => nil} ->
-          ability
-          |> Map.delete("global_cooldown")
-          |> Map.put("ignores_global_cooldown", true)
-        %{"global_cooldown" => cooldown} ->
-          if cooldown > time do
-            Map.put(ability, "global_cooldown", cooldown - time)
-          else
-            ability
-            |> Map.delete("global_cooldown")
-            |> Map.put("ignores_global_cooldown", true)
-          end
-        _ ->
-          ability
-      end
-
-      send(self(), {:execute_ability, %{caster: ref, ability: Map.delete(ability, "cast_time"), target: target}})
-
-      {:noreply, room}
-    else
-      {:noreply, room}
-    end
-  end
-
   def handle_info({:execute_script, mobile_ref, script}, room) do
     if mobile = room.mobiles[mobile_ref] do
       {:noreply, ApathyDrive.Script.execute(room, mobile, script)}
@@ -621,6 +595,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
     if mobile = room.mobiles[ref] do
+      Mobile.send_scroll(mobile, "<p><span class='cyan'>You cast your spell.</span></p>")
       room = Ability.execute(room, mobile.ref, ability, target)
       {:noreply, room}
     else
