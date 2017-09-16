@@ -51,6 +51,12 @@ defmodule ApathyDrive.Commands.System.Ability do
     room
   end
 
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["set", "command" | command]) do
+    set_command(character, command)
+
+    room
+  end
+
   def execute(%Room{} = room, character, ["set", "targets" | targets]) do
     set_targets(character, targets)
 
@@ -103,6 +109,7 @@ defmodule ApathyDrive.Commands.System.Ability do
         %AbilityTrait{ability_id: ability.id, trait_id: trait.id, value: value}
         |> Repo.insert(on_conflict: on_conflict, conflict_target: [:ability_id, :trait_id])
 
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
     end
   end
@@ -116,6 +123,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Repo.update
     |> case do
       {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
       {:error, changeset} ->
         Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
@@ -131,6 +139,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Repo.update
     |> case do
       {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
       {:error, changeset} ->
         Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
@@ -146,6 +155,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Repo.update
     |> case do
       {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
       {:error, changeset} ->
         Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
@@ -161,6 +171,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Repo.update
     |> case do
       {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
       {:error, changeset} ->
         Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
@@ -176,6 +187,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Repo.update
     |> case do
       {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
       {:error, changeset} ->
         Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
@@ -191,6 +203,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Repo.update
     |> case do
       {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
       {:error, changeset} ->
         Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
@@ -206,6 +219,23 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Repo.update
     |> case do
       {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
+    end
+  end
+
+  defp set_command(character, kind) do
+    kind = Enum.join(kind, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_command_changeset(kind)
+    |> Repo.update
+    |> case do
+      {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
       {:error, changeset} ->
         Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
@@ -221,6 +251,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Repo.update
     |> case do
       {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
       {:error, changeset} ->
         Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
@@ -235,7 +266,8 @@ defmodule ApathyDrive.Commands.System.Ability do
         Mobile.send_scroll(character, "<p><span class='dark-cyan'>+------------------------------------------------------------------+</span></p>")
         Mobile.send_scroll(character, "<p>#{ability.name}</p>")
         Mobile.send_scroll(character, "<p>    #{ability.description}</p>")
-        Mobile.send_scroll(character, "\n\n<p>Kind: #{ability.kind}</p>")
+        Mobile.send_scroll(character, "\n\n<p>Command: #{ability.command}</p>")
+        Mobile.send_scroll(character, "<p>Kind: #{ability.kind}</p>")
         Mobile.send_scroll(character, "<p>Targets: #{ability.targets}</p>")
 
         if ability.mana && ability.mana > 0 do

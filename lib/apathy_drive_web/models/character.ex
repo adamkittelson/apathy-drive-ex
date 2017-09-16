@@ -93,7 +93,11 @@ defmodule ApathyDrive.Character do
   end
 
   def load_abilities(%Character{} = character) do
-    character = Repo.preload(character, [:characters_skills, :trained_skills], force: true)
+    character =
+      character
+      |> Repo.preload([:characters_skills, :trained_skills], force: true)
+      |> Map.put(:abilities, %{})
+      |> Map.put(:skills, %{})
 
     Enum.reduce(character.characters_skills, character, fn (character_skill, character) ->
       skill =

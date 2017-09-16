@@ -102,6 +102,13 @@ defmodule ApathyDrive.Ability do
     |> validate_required(:user_message)
   end
 
+  def set_command_changeset(model, command) do
+    model
+    |> cast(%{command: command}, [:command])
+    |> validate_required(:command)
+    |> validate_length(:command, min: 3, max: 10)
+  end
+
   def set_target_message_changeset(model, message) do
     model
     |> cast(%{target_message: message}, [:target_message])
