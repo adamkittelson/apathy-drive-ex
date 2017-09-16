@@ -69,6 +69,12 @@ defmodule ApathyDrive.Commands.System.Ability do
     room
   end
 
+  def execute(%Room{} = room, character, ["set", "cast_time" | time_in_seconds]) do
+    set_cast_time(character, time_in_seconds)
+
+    room
+  end
+
   def execute(%Room{} = room, character, ["help" | ability_name]) do
     ability_name = Enum.join(ability_name, " ")
 
@@ -258,6 +264,22 @@ defmodule ApathyDrive.Commands.System.Ability do
     end
   end
 
+  defp set_cast_time(character, cast_time) do
+    cast_time = Enum.join(cast_time, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_cast_time_changeset(cast_time)
+    |> Repo.update
+    |> case do
+      {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        help(character, ability.name)
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect changeset.errors}</p>")
+    end
+  end
+
   defp help(character, ability_name) do
     case Ability.match_by_name(ability_name, true) do
       nil ->
@@ -274,8 +296,11 @@ defmodule ApathyDrive.Commands.System.Ability do
           Mobile.send_scroll(character, "<p>Base Mana: #{ability.mana}</p>")
           Mobile.send_scroll(character, "<p>Mana Cost: #{Ability.mana_cost_at_level(ability, character.level)}</p>")
         end
-        if ability.duration_in_ms && ability.duration_in_ms > 0 do
-          Mobile.send_scroll(character, "<p>Duration: #{div(ability.duration_in_ms, 1000)} seconds</p>")
+        if ability.duration && ability.duration > 0 do
+          Mobile.send_scroll(character, "<p>Duration: #{ability.duration} seconds</p>")
+        end
+        if ability.cast_time && ability.cast_time > 0 do
+          Mobile.send_scroll(character, "<p>Cast Time: #{ability.cast_time} seconds</p>")
         end
         Mobile.send_scroll(character, "\n\n<p>Messages:</p>")
         Mobile.send_scroll(character, "<p>    #{ability.user_message}</p>")

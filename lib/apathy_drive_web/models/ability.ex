@@ -13,8 +13,9 @@ defmodule ApathyDrive.Ability do
     field :user_message, :string
     field :target_message, :string
     field :spectator_message, :string
-    field :duration_in_ms, :integer, default: 0
-    field :cooldown_in_ms, :integer
+    field :duration, :integer, default: 0
+    field :cooldown, :integer
+    field :cast_time, :integer
 
     field :level, :integer, virtual: true
     field :traits, :map, virtual: true, default: %{}
@@ -30,7 +31,7 @@ defmodule ApathyDrive.Ability do
     timestamps()
   end
 
-  @required_fields ~w(name targets kind mana command description user_message target_message spectator_message duration_in_ms)
+  @required_fields ~w(name targets kind mana command description user_message target_message spectator_message duration)
   @optional_fields ~w()
 
   @valid_targets ["monster or single", "self", "self or single", "monster", "full party area", "full attack area", "single", "full area"]
@@ -84,9 +85,9 @@ defmodule ApathyDrive.Ability do
 
   def set_duration_changeset(model, duration) do
     model
-    |> cast(%{duration_in_ms: duration}, [:duration_in_ms])
-    |> validate_required(:duration_in_ms)
-    |> validate_number(:duration_in_ms, greater_than: 0)
+    |> cast(%{duration: duration}, [:duration])
+    |> validate_required(:duration)
+    |> validate_number(:duration, greater_than: 0)
   end
 
   def set_mana_changeset(model, mana) do
@@ -94,6 +95,13 @@ defmodule ApathyDrive.Ability do
     |> cast(%{mana: mana}, [:mana])
     |> validate_required(:mana)
     |> validate_number(:mana, greater_than: 0)
+  end
+
+  def set_cast_time_changeset(model, cast_time) do
+    model
+    |> cast(%{cast_time: cast_time}, [:cast_time])
+    |> validate_required(:cast_time)
+    |> validate_number(:cast_time, greater_than_or_equal_to: 0)
   end
 
   def set_user_message_changeset(model, message) do
@@ -171,6 +179,21 @@ defmodule ApathyDrive.Ability do
     trunc(base_mana_at_level(level) * (mana / 100))
   end
 
+  def execute(%Room{} = room, caster_ref, %Ability{cast_time: time} = ability, query) when not is_nil(time) do
+    Room.update_mobile(room, caster_ref, fn mobile ->
+      if TimerManager.time_remaining(mobile, :casting) >  0 do
+        Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You interrupt your other spell.</span></p>")
+      end
+      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You begin your casting.</span></p>")
+      ability =
+        ability
+        |> Map.put(:cast_time, nil)
+        |> Map.put(:ignores_round_cooldown?, true)
+
+      TimerManager.send_after(mobile, {:casting, :timer.seconds(time), {:execute_ability, %{caster: caster_ref, ability: ability, target: query}}})
+    end)
+  end
+
   def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "") when targets in @target_required_targets do
     room
     |> Room.get_mobile(caster_ref)
@@ -190,7 +213,7 @@ defmodule ApathyDrive.Ability do
           _ ->
             room
             |> Room.get_mobile(caster_ref)
-            |> Mobile.send_scroll("<p>What?</p>")
+            |> Mobile.send_scroll("<p><span class='dark-cyan'>Can't find #{query} here! Your spell fails.</span></p>")
         end
 
         room
@@ -277,7 +300,7 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def duration(%Ability{duration_in_ms: duration, kind: kind}, %{} = caster, %{} = target, room) do
+  def duration(%Ability{duration: duration, kind: kind}, %{} = caster, %{} = target, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
@@ -663,8 +686,8 @@ defmodule ApathyDrive.Ability do
     |> apply_round_cooldown(ability)
   end
 
-  def apply_ability_cooldown(caster, %Ability{cooldown_in_ms: nil}), do: caster
-  def apply_ability_cooldown(caster, %Ability{cooldown_in_ms: cooldown, name: name}) do
+  def apply_ability_cooldown(caster, %Ability{cooldown: nil}), do: caster
+  def apply_ability_cooldown(caster, %Ability{cooldown: cooldown, name: name}) do
     Systems.Effect.add(caster, %{"cooldown" => name, "RemoveMessage" => "#{Text.capitalize_first(name)} is ready for use again."}, cooldown)
   end
 
@@ -939,7 +962,7 @@ defmodule ApathyDrive.Ability do
     Float.round(time / 1000, 2)
   end
 
-  def on_cooldown?(%{} = _mobile, %Ability{cooldown_in_ms: nil} = _abilityl), do: false
+  def on_cooldown?(%{} = _mobile, %Ability{cooldown: nil} = _abilityl), do: false
   def on_cooldown?(%{effects: effects} = _mobile, %Ability{name: name} = _ability) do
     effects
     |> Map.values
