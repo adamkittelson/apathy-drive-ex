@@ -261,7 +261,11 @@ defmodule ApathyDrive.Character do
 
     Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: skill.experience + amount}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
 
+    old_abilities = Map.values(character.abilities)
+
     character = load_abilities(character)
+
+    new_abilities = Map.values(character.abilities)
 
     level = character.skills[skill.name].level
 
@@ -276,6 +280,13 @@ defmodule ApathyDrive.Character do
 
     Mobile.send_scroll(character, "<p>You spend #{amount} experience to advance #{skill.name} to level #{level}, it will cost #{tnl} experience to train it any further.</p>")
 
+    Enum.each(new_abilities, fn ability ->
+      unless ability in old_abilities do
+        Mobile.send_scroll character,  "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+        Mobile.send_scroll character,  "<p>     #{ability.description}</p>"
+      end
+    end)
+
     character.skills
     |> Enum.reduce(character, fn {skill_name, %Skill{experience: skill_exp}}, character ->
       if skill_name in incompatible_skills do
@@ -289,7 +300,19 @@ defmodule ApathyDrive.Character do
 
           Mobile.send_scroll(character, "<p>Your #{incompatible_skill.name} skill falls to level #{new_level}.</p>")
 
-          load_abilities(character)
+          old_abilities = Map.values(character.abilities)
+
+          character = load_abilities(character)
+
+          new_abilities = Map.values(character.abilities)
+
+          Enum.each(old_abilities, fn ability ->
+            unless ability in new_abilities do
+              Mobile.send_scroll character, "<p>You've forgotten the <span class='dark-cyan'>#{ability.name}</span> ability.</p>"
+            end
+          end)
+
+          character
         else
           character
         end
