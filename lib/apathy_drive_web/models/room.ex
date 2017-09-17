@@ -111,9 +111,9 @@ defmodule ApathyDrive.Room do
       mobile
       |> Mobile.set_room_id(room.id)
 
-    if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
-
     room = put_in(room.mobiles[mobile.ref], mobile)
+
+    if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
 
     room =
       if Map.has_key?(mobile, :leader) and is_nil(room.mobiles[mobile.leader]) do
@@ -328,6 +328,22 @@ defmodule ApathyDrive.Room do
     |> Enum.map(fn(mt) ->
          "#{mt.name} - #{mt.id}"
        end)
+  end
+
+  def light(%Room{} = room) do
+    light_source_average =
+      room.mobiles
+      |> Enum.map(fn {_ref, mobile} ->
+           Mobile.ability_value(mobile, "Light")
+         end)
+      |> Enum.reject(& &1 == 0)
+      |> average()
+
+    if light_source_average do
+      trunc(light_source_average)
+    else
+      room.light
+    end
   end
 
   def start_room_id do

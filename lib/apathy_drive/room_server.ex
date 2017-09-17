@@ -378,7 +378,6 @@ defmodule ApathyDrive.RoomServer do
       case Systems.Effect.find_by_ref(mobile, effect_ref) do
         {key, %{"Interval" => interval} = effect} ->
           effect = Map.take(effect, ["Heal", "Damage"])
-          IO.inspect(effect)
 
           room
           |> Room.update_mobile(target_ref, fn mobile ->
