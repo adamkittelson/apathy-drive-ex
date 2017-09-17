@@ -21,6 +21,7 @@ defmodule ApathyDrive.Ability do
     field :traits, :map, virtual: true, default: %{}
     field :ignores_round_cooldown?, :boolean, virtual: true, default: false
     field :result, :any, virtual: true
+    field :cast_complete, :boolean, virtual: true, default: false
 
     has_many :monsters_abilities, ApathyDrive.MonsterAbility
     has_many :monsters, through: [:monsters_abilities, :monster]
@@ -188,7 +189,7 @@ defmodule ApathyDrive.Ability do
       ability =
         ability
         |> Map.put(:cast_time, nil)
-        |> Map.put(:ignores_round_cooldown?, true)
+        |> Map.put(:cast_complete, true)
 
       TimerManager.send_after(mobile, {:casting, :timer.seconds(time), {:execute_ability, %{caster: caster_ref, ability: ability, target: query}}})
     end)
@@ -213,7 +214,7 @@ defmodule ApathyDrive.Ability do
           _ ->
             room
             |> Room.get_mobile(caster_ref)
-            |> Mobile.send_scroll("<p><span class='dark-cyan'>Can't find #{query} here! Your spell fails.</span></p>")
+            |> Mobile.send_scroll("<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>")
         end
 
         room
@@ -226,38 +227,6 @@ defmodule ApathyDrive.Ability do
     if can_execute?(room, caster_ref, ability) do
       Room.update_mobile(room, caster_ref, fn caster ->
         display_pre_cast_message(room, caster, targets, ability)
-
-        caster =
-          caster
-          |> apply_cooldowns(ability)
-          |> Mobile.subtract_mana(ability)
-
-        Mobile.update_prompt(caster)
-
-        caster =
-          if ability.kind in ["attack", "curse"] and !(caster.ref in targets) do
-            [target_ref | _] = targets
-
-            if Map.has_key?(caster, :attack_target) do
-              if is_nil(caster.attack_target) do
-                time = min(Mobile.attack_interval(caster), TimerManager.time_remaining(caster, :auto_attack_timer))
-
-                caster
-                |> Map.put(:attack_target, target_ref)
-                |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, caster.ref}})
-                |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
-              else
-                caster
-                |> Map.put(:attack_target, target_ref)
-              end
-            else
-              caster
-            end
-          else
-            caster
-          end
-
-        room = put_in(room.mobiles[caster_ref], caster)
 
         room =
           Enum.reduce(targets, room, fn(target_ref, updated_room) ->
@@ -286,12 +255,47 @@ defmodule ApathyDrive.Ability do
                 end
               else
                 message = "#{target.name} is not affected by that ability." |> Text.capitalize_first
-                Mobile.send_scroll(caster, "<p><span class='dark-cyan'>#{message}</span></p>")
+                Mobile.send_scroll(caster, "<p><span class='cyan'>#{message}</span></p>")
                 target
               end
             end)
           end)
           #|> execute_multi_cast(caster_ref, ability, targets)
+
+
+        room =
+          Room.update_mobile(room, caster.ref, fn caster ->
+            caster =
+              caster
+              |> apply_cooldowns(ability)
+              |> Mobile.subtract_mana(ability)
+
+            Mobile.update_prompt(caster)
+
+            caster =
+              if ability.kind in ["attack", "curse"] and !(caster.ref in targets) do
+                [target_ref | _] = targets
+
+                if Map.has_key?(caster, :attack_target) do
+                  if is_nil(caster.attack_target) do
+                    time = min(Mobile.attack_interval(caster), TimerManager.time_remaining(caster, :auto_attack_timer))
+
+                    caster
+                    |> Map.put(:attack_target, target_ref)
+                    |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, caster.ref}})
+                    |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+                  else
+                    caster
+                    |> Map.put(:attack_target, target_ref)
+                  end
+                else
+                  caster
+                end
+              else
+                caster
+              end
+
+          end)
 
         Room.update_mobile(room, caster_ref, &Stealth.reveal(&1, room))
       end)
@@ -691,6 +695,7 @@ defmodule ApathyDrive.Ability do
     Systems.Effect.add(caster, %{"cooldown" => name, "RemoveMessage" => "#{Text.capitalize_first(name)} is ready for use again."}, cooldown)
   end
 
+  def apply_round_cooldown(caster, %Ability{cast_complete: true}), do: caster
   def apply_round_cooldown(caster, %Ability{ignores_round_cooldown?: true}), do: caster
   def apply_round_cooldown(caster, _ability) do
     cooldown = Mobile.round_length_in_ms(caster)
@@ -727,7 +732,14 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"target" => target})
       |> Text.capitalize_first
 
-    "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+    color =
+      if ability.cast_complete do
+        "cyan"
+      else
+        message_color(ability)
+      end
+
+    "<p><span class='#{color}'>#{message}</span></p>"
   end
   def caster_cast_message(%Ability{} = ability, %{} = caster, %{ability_shift: shift} = target, mobile) do
     amount = abs(trunc(shift * Mobile.max_hp_at_level(target, mobile.level)))
@@ -757,7 +769,14 @@ defmodule ApathyDrive.Ability do
           |> Text.interpolate(%{"target" => target, "amount" => amount})
           |> Text.capitalize_first
 
-        "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+        color =
+          if ability.cast_complete do
+            "cyan"
+          else
+            message_color(ability)
+          end
+
+        "<p><span class='#{color}'>#{message}</span></p>"
     end
   end
 
@@ -1037,9 +1056,10 @@ defmodule ApathyDrive.Ability do
     List.wrap(match && match.ref)
   end
 
+  def not_enough_mana?(%{} = _mobile, %Ability{ignores_round_cooldown?: true}), do: false
   def not_enough_mana?(%{} = mobile, %Ability{} = ability) do
     if !Mobile.enough_mana_for_ability?(mobile, ability) do
-      Mobile.send_scroll(mobile, "<p><span class='red'>You do not have enough mana to use that ability.</span></p>")
+      Mobile.send_scroll(mobile, "<p><span class='cyan'>You do not have enough mana to use that ability.</span></p>")
     end
   end
 
