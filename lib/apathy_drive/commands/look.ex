@@ -24,15 +24,17 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look(%Room{} = room, %Character{} = character, []) do
-    Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
-    Mobile.send_scroll(character, "<p>    #{room.description}</p>")
-    if Room.trainer?(room) do
-      Mobile.send_scroll(character, "<p>\n<em>You can train skills here, \"list skills\" to see the skills available to train at this location.</em>\n\n</p>")
-    end
-    Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
-    Mobile.send_scroll(character, look_mobiles(room, character))
-    Mobile.send_scroll(character, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
-    if room.light do
+    if visible?(room, character) do
+      Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
+      Mobile.send_scroll(character, "<p>    #{room.description}</p>")
+      if Room.trainer?(room) do
+        Mobile.send_scroll(character, "<p>\n<em>You can train skills here, \"list skills\" to see the skills available to train at this location.</em>\n\n</p>")
+      end
+      Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
+      Mobile.send_scroll(character, look_mobiles(room, character))
+      Mobile.send_scroll(character, "<p><span class='dark-green'>#{look_directions(room)}</span></p>")
+      Mobile.send_scroll(character, "<p>#{light_desc(room.light)}</p>")
+    else
       Mobile.send_scroll(character, "<p>#{light_desc(room.light)}</p>")
     end
   end
@@ -124,9 +126,20 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def light_desc(light_level)  when light_level <= -100, do: "The room is barely visible"
-  def light_desc(light_level)  when light_level <=  -25, do: "The room is dimly lit"
+  def light_desc(light_level) when light_level < -1000, do: "<p>You are blind.</p>"
+  def light_desc(light_level) when light_level <= -200, do: "<p>The room is pitch black - you can't see anything</p>"
+  def light_desc(light_level) when light_level <= -150, do: "<p>The room is very dark - you can't see anything</p>"
+  def light_desc(light_level) when light_level <= -100, do: "<p>The room is barely visible</p>"
+  def light_desc(light_level) when light_level < 0,  do: "<p>The room is dimly lit</p>"
+  def light_desc(light_level) when light_level >= 300,  do: "<p>The room is blindingly bright - you can't see anything</p>"
+  def light_desc(light_level) when light_level >= 200,  do: "<p>The room is painfully bright - you can't see anything</p>"
+  def light_desc(light_level) when light_level >= 100,  do: "<p>The room is dazzlingly bright</p>"
+  def light_desc(light_level) when light_level >= 25,   do: "<p>The room is brightly lit</p>"
   def light_desc(_light_level), do: nil
+
+  def visible?(%Room{light: light}, %Character{} = _character) do
+    light > -150 and light < 200
+  end
 
   def display_direction(%{"kind" => "Hidden"} = room_exit, room) do
     if Doors.open?(room, room_exit), do: room_exit["description"]
