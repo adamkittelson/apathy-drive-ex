@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, CharacterItem, Item, Match, Mobile, Repo, RoomItem}
 
   def keywords, do: ["get"]
 
@@ -32,11 +32,13 @@ defmodule ApathyDrive.Commands.Get do
                   |> Match.one(:keyword_starts_with, item)
 
     case actual_item || visible_item || hidden_item do
-      %Item{level: _level, entities_items_id: entities_items_id} = item ->
+      %Item{level: _level, rooms_items_id: rooms_items_id} = item ->
 
-        %EntityItem{id: entities_items_id}
-        |> Ecto.Changeset.change(%{assoc_table: "characters", assoc_id: character.id})
-        |> Repo.update!
+        {:ok, _} =
+          Ecto.Multi.new
+          |> Ecto.Multi.insert(:characters_items, %CharacterItem{character_id: character.id, item_id: item.id, level: item.level})
+          |> Ecto.Multi.delete(:rooms_items, %RoomItem{id: rooms_items_id})
+          |> Repo.transaction
 
         room
         |> Room.load_items

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Wear do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, CharacterItem, Item, Match, Mobile, Repo}
 
   def keywords, do: ["wear", "equip", "wield"]
 
@@ -63,7 +63,7 @@ defmodule ApathyDrive.Commands.Wear do
         inventory = List.delete(inventory, item)
 
         if persist do
-          %EntityItem{id: item_to_remove.entities_items_id}
+          %CharacterItem{id: item_to_remove.characters_items_id}
           |> Ecto.Changeset.change(%{equipped: false})
           |> Repo.update!
         end
@@ -71,7 +71,7 @@ defmodule ApathyDrive.Commands.Wear do
         inventory = List.insert_at(inventory, -1, item_to_remove)
 
         if persist do
-          %EntityItem{id: item.entities_items_id}
+          %CharacterItem{id: item.characters_items_id}
           |> Ecto.Changeset.change(%{equipped: true})
           |> Repo.update!
         end
@@ -95,7 +95,7 @@ defmodule ApathyDrive.Commands.Wear do
 
         if persist do
           Enum.each(items_to_remove, fn item_to_remove ->
-            %EntityItem{id: item_to_remove.entities_items_id}
+            %CharacterItem{id: item_to_remove.characters_items_id}
             |> Ecto.Changeset.change(%{equipped: false})
             |> Repo.update!
           end)
@@ -108,7 +108,7 @@ defmodule ApathyDrive.Commands.Wear do
              end)
 
         if persist do
-          %EntityItem{id: item.entities_items_id}
+          %CharacterItem{id: item.characters_items_id}
           |> Ecto.Changeset.change(%{equipped: true})
           |> Repo.update!
         end
@@ -127,7 +127,7 @@ defmodule ApathyDrive.Commands.Wear do
           |> List.delete(item)
 
         if persist do
-          %EntityItem{id: item.entities_items_id}
+          %CharacterItem{id: item.characters_items_id}
           |> Ecto.Changeset.change(%{equipped: true})
           |> Repo.update!
         end

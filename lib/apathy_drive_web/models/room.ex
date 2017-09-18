@@ -46,7 +46,7 @@ defmodule ApathyDrive.Room do
   end
 
   def load_items(%Room{id: id} = room) do
-    items = ApathyDrive.EntityItem.load_items("rooms", id)
+    items = ApathyDrive.RoomItem.load_items(id)
     Map.put(room, :items, items)
   end
 
