@@ -27,20 +27,6 @@ defmodule ApathyDrive.Repo.Migrations.CreateDamageTypes do
       add :hidden, :boolean, default: false
     end
 
-    create table(:characters_items_damage_types) do
-      add :character_item_id, references(:characters_items, on_delete: :delete_all)
-      add :damage_type_id, references(:damage_types, on_delete: :delete_all)
-      add :kind, :text
-      add :potency, :integer
-    end
-
-    create table(:rooms_items_damage_types) do
-      add :room_item_id, references(:rooms_items, on_delete: :delete_all)
-      add :damage_type_id, references(:damage_types, on_delete: :delete_all)
-      add :kind, :text
-      add :potency, :integer
-    end
-
     drop table(:entities_items)
   end
 end
