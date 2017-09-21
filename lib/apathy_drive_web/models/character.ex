@@ -1,8 +1,8 @@
 defmodule ApathyDrive.Character do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, AbilityTrait, Character, CharacterSkill, CharacterReputation,
-                     Companion, Item, Level,  Monster, Mobile, Party, Race,
+  alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Character, CharacterSkill,
+                     CharacterReputation, Companion, Item, Level,  Monster, Mobile, Party, Race,
                      RaceTrait, Reputation, Room, RoomServer, Skill, Text, TimerManager}
 
   require Logger
@@ -38,8 +38,8 @@ defmodule ApathyDrive.Character do
     field :abilities,       :map, virtual: true, default: %{}
     field :inventory,       :any, virtual: true, default: []
     field :equipment,       :any, virtual: true, default: []
-    field :ability_shift,     :float, virtual: true
-    field :ability_special,   :float, virtual: true
+    field :ability_shift,   :float, virtual: true
+    field :ability_special, :float, virtual: true
     field :attack_target,   :any, virtual: true
     field :strength,        :integer, virtual: true
     field :agility,         :integer, virtual: true
@@ -131,6 +131,14 @@ defmodule ApathyDrive.Character do
             ability =
               put_in(ability.traits, AbilityTrait.load_traits(id))
               |> Map.put(:level, level)
+
+            ability =
+              case AbilityDamageType.load_damage(id) do
+                [] ->
+                  ability
+                damage ->
+                  update_in(ability.traits, &(Map.put(&1, "Damage", damage)))
+              end
             update_in(character.abilities, fn abilities ->
               Map.put(abilities, ability.command, ability)
             end)
@@ -450,7 +458,7 @@ defmodule ApathyDrive.Character do
             spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             traits: %{
-              "PhysicalDamage" => 100 / attacks_per_round(character),
+              "Damage" => [%{potency: 100 / attacks_per_round(character), kind: "physical", damage_type: "Normal"}],
               "Dodgeable" => true,
               "DodgeUserMessage" => "You throw a punch at {{target}}, but they dodge!",
               "DodgeTargetMessage" => "{{user}} throws a punch at you, but you dodge!",
@@ -467,7 +475,7 @@ defmodule ApathyDrive.Character do
             spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             traits: %{
-              "PhysicalDamage" => 100 / attacks_per_round(character),
+              "Damage" => [%{potency: 100 / attacks_per_round(character), kind: "physical", damage_type: "Normal"}],
               "Dodgeable" => true,
               "DodgeUserMessage" => "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
               "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
