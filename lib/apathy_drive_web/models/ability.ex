@@ -51,7 +51,7 @@ defmodule ApathyDrive.Ability do
   @duration_traits [
     "AC", "Accuracy", "Agility", "Charm", "Blind", "Charm", "Confusion", "ConfusionMessage", "ConfusionSpectatorMessage",
     "Crits", "Damage", "DamageShield", "DamageShieldUserMessage", "DamageShieldTargetMessage", "DamageShieldSpectatorMessage",
-    "DamageType", "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "Heal", "Health", "HPRegen",
+    "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "Heal", "Health", "HPRegen",
     "Intellect", "Light", "MagicalResist", "ManaRegen", "MaxHP", "MaxMana", "ModifyDamage", "Perception", "Picklocks",
     "PoisonImmunity", "RemoveMessage", "ResistCold", "ResistFire", "ResistLightning", "ResistStone", "Root", "SeeHidden",
     "Shadowform", "Silence", "Speed", "Spellcasting", "StatusMessage", "Stealth", "Strength", "Tracking", "Willpower"
