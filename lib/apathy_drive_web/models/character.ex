@@ -55,7 +55,7 @@ defmodule ApathyDrive.Character do
 
     belongs_to :room, Room
 
-    has_many :characters_items, ApathyDrive.CharacterItem
+    has_many :items_instances, ApathyDrive.ItemInstance
     has_many :characters_reputations, ApathyDrive.CharacterReputation
 
     has_many :characters_skills, ApathyDrive.CharacterSkill
@@ -176,8 +176,8 @@ defmodule ApathyDrive.Character do
     Map.put(character, :reputations, reputations)
   end
 
-  def load_items(%Character{id: id} = character) do
-    items = ApathyDrive.CharacterItem.load_items(id)
+  def load_items(%Character{} = character) do
+    items = ApathyDrive.ItemInstance.load_items(character)
 
     character
     |> Map.put(:inventory, Enum.reject(items, &(&1.equipped)))

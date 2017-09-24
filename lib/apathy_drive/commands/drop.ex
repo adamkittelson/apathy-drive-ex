@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Drop do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, CharacterItem, Item, Match, Mobile, Repo, RoomItem}
+  alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
 
   def keywords, do: ["drop"]
 
@@ -18,13 +18,12 @@ defmodule ApathyDrive.Commands.Drop do
          nil ->
            Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" to drop!</p>")
            room
-         %Item{characters_items_id: characters_items_id} = item ->
+         %Item{instance_id: instance_id} = item ->
 
-           {:ok, _} =
-            Ecto.Multi.new
-            |> Ecto.Multi.insert(:rooms_items, %RoomItem{room_id: room.id, item_id: item.id, level: item.level})
-            |> Ecto.Multi.delete(:characters_items, %CharacterItem{id: characters_items_id})
-            |> Repo.transaction
+          ItemInstance
+          |> Repo.get(instance_id)
+          |> Ecto.Changeset.change(%{room_id: room.id, character_id: nil, equipped: false, hidden: false})
+          |> Repo.update!
 
            room
            |> Room.load_items

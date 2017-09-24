@@ -224,7 +224,7 @@ defmodule ApathyDrive.Monster do
           |> Repo.get(item_id)
           |> Item.generate_for_character!(character, :loot)
           |> case do
-              %Item{characters_items_id: nil} = item ->
+              %Item{instance_id: nil} = item ->
                 gold =
                   item
                   |> Item.price
@@ -235,7 +235,7 @@ defmodule ApathyDrive.Monster do
                 |> Repo.update!
                 |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
 
-              %Item{characters_items_id: _id} = item ->
+              %Item{instance_id: _id} = item ->
                 character
                 |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
                 |> Character.load_items

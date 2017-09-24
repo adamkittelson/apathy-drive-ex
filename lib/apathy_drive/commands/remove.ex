@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Remove do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, CharacterItem, Item, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
 
   def keywords, do: ["remove", "unequip", "unwield"]
 
@@ -19,7 +19,8 @@ defmodule ApathyDrive.Commands.Remove do
            room
          %Item{} = item_to_remove ->
 
-           %CharacterItem{id: item_to_remove.characters_items_id}
+           ItemInstance
+           |> Repo.get(item_to_remove.instance_id)
            |> Ecto.Changeset.change(%{equipped: false})
            |> Repo.update!
 

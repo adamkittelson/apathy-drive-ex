@@ -625,6 +625,8 @@ defmodule ApathyDrive.Ability do
           resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
           damage = (damage - resist) * (potency / 100)
           damage_percent + (damage / Mobile.max_hp_at_level(target, target_level))
+        _, damage_percent ->
+          damage_percent
       end)
 
     effects

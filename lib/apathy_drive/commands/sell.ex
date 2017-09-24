@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Sell do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, CharacterItem, Item, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
 
   def keywords, do: ["sell"]
 
@@ -22,13 +22,13 @@ defmodule ApathyDrive.Commands.Sell do
        end)
   end
 
-  def sell(%Room{} = room, _shop_items, character, %Item{characters_items_id: characters_items_id} = item) do
+  def sell(%Room{} = room, _shop_items, character, %Item{instance_id: instance_id} = item) do
     case Item.price(item) do
       "priceless" ->
         Mobile.send_scroll(character, "<p><span class='red'>#{Item.colored_name(item)} is a priceless artifact and cannot be sold!</span></p>")
        price ->
          price = div(price, 10)
-         Repo.delete!(%CharacterItem{id: characters_items_id})
+         Repo.delete!(%ItemInstance{id: instance_id})
 
          Room.update_mobile(room, character.ref, fn(char) ->
            update_in(char.gold, &(&1 + price))

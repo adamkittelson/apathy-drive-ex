@@ -45,8 +45,8 @@ defmodule ApathyDrive.Room do
     has_many   :skills, through: [:room_skills, :skill]
   end
 
-  def load_items(%Room{id: id} = room) do
-    items = ApathyDrive.RoomItem.load_items(id)
+  def load_items(%Room{} = room) do
+    items = ApathyDrive.ItemInstance.load_items(room)
     Map.put(room, :items, items)
   end
 

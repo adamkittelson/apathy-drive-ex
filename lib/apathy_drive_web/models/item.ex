@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, CharacterItem, Item, RoomItem}
+  alias ApathyDrive.{Character, Item, ItemInstance}
   require Logger
   require Ecto.Query
 
@@ -20,23 +20,21 @@ defmodule ApathyDrive.Item do
     field :abilities, :map, virtual: true, default: %{}
     field :level, :integer, virtual: true
     field :equipped, :boolean, virtual: true, default: false
+    field :hidden, :boolean, virtual: true, default: false
     field :strength, :integer, virtual: true
     field :agility, :integer, virtual: true
     field :intellect, :integer, virtual: true
     field :willpower, :integer, virtual: true
     field :health, :integer, virtual: true
     field :charm, :integer, virtual: true
-    field :characters_items_id, :integer, virtual: true
-    field :rooms_items_id, :integer, virtual: true
+    field :instance_id, :integer, virtual: true
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
 
-    has_many :characters_items, ApathyDrive.CharacterItem
-    has_many :characters, through: [:characters_items, :character]
-
-    has_many :rooms_items, ApathyDrive.RoomItem
-    has_many :rooms, through: [:rooms_items, :room]
+    has_many :items_instances, ApathyDrive.ItemInstance
+    has_many :rooms, through: [:items_instances, :room]
+    has_many :characters, through: [:items_instances, :character]
 
     has_many :items_abilities, ApathyDrive.ItemAbility
 
@@ -85,26 +83,15 @@ defmodule ApathyDrive.Item do
     |> validate_required(@required_fields)
   end
 
-  def from_assoc(%CharacterItem{id: id, item: item} = ei) do
+  def from_assoc(%ItemInstance{id: id, item: item} = ii) do
     values =
-      ei
-      |> Map.take([:level, :equipped])
+      ii
+      |> Map.take([:level, :equipped, :hidden])
       |> Map.merge(generate_item_attributes(item.rarity))
 
     item
     |> Map.merge(values)
-    |> Map.put(:characters_items_id, id)
-  end
-
-  def from_assoc(%RoomItem{id: id, item: item} = ei) do
-    values =
-      ei
-      |> Map.take([:level])
-      |> Map.merge(generate_item_attributes(item.rarity))
-
-    item
-    |> Map.merge(values)
-    |> Map.put(:rooms_items_id, id)
+    |> Map.put(:instance_id, id)
   end
 
   def attribute_at_level(%Item{} = item, level, attribute) do
@@ -233,7 +220,7 @@ defmodule ApathyDrive.Item do
 
  def generate_for_character!(%Item{rarity: rarity} = item, %Character{} = character, source) do
     ei =
-      %CharacterItem{
+      %ItemInstance{
         character_id: character.id,
         item_id: item.id,
         level: (if rarity == "legendary", do: :infinity, else: generated_item_level(character, item.grade))
@@ -249,7 +236,7 @@ defmodule ApathyDrive.Item do
       item
     else
       ei = Repo.insert!(ei)
-      Map.put(item, :characters_items_id, ei.id)
+      Map.put(item, :instance_id, ei.id)
     end
   end
 
