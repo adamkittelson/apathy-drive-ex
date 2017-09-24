@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Item, ItemInstance}
+  alias ApathyDrive.{Character, Item, ItemDamageType, ItemInstance}
   require Logger
   require Ecto.Query
 
@@ -28,6 +28,7 @@ defmodule ApathyDrive.Item do
     field :health, :integer, virtual: true
     field :charm, :integer, virtual: true
     field :instance_id, :integer, virtual: true
+    field :damage, :any, virtual: true
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
@@ -37,6 +38,9 @@ defmodule ApathyDrive.Item do
     has_many :characters, through: [:items_instances, :character]
 
     has_many :items_abilities, ApathyDrive.ItemAbility
+
+    has_many :items_damage_types, ApathyDrive.ItemDamageType
+    has_many :damage_types, through: [:items_damage_types, :damage_types]
 
     timestamps()
   end
@@ -92,6 +96,7 @@ defmodule ApathyDrive.Item do
     item
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
+    |> Map.put(:damage, ItemDamageType.load_damage(item.id))
   end
 
   def attribute_at_level(%Item{} = item, level, attribute) do

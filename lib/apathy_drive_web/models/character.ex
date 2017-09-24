@@ -458,14 +458,14 @@ defmodule ApathyDrive.Character do
             spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             traits: %{
-              "Damage" => [%{potency: 100 / attacks_per_round(character), kind: "physical", damage_type: "Normal"}],
+              "Damage" => [%{potency: 75 / attacks_per_round(character), kind: "physical", damage_type: "Normal"}],
               "Dodgeable" => true,
               "DodgeUserMessage" => "You throw a punch at {{target}}, but they dodge!",
               "DodgeTargetMessage" => "{{user}} throws a punch at you, but you dodge!",
               "DodgeSpectatorMessage" => "{{user}} throws a punch at {{target}}, but they dodge!"
             }
           }
-        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss]} ->
+        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss], damage: damage} ->
           [singular_hit, plural_hit] = Enum.random(hit_verbs)
           %Ability{
             kind: "attack",
@@ -475,7 +475,7 @@ defmodule ApathyDrive.Character do
             spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             traits: %{
-              "Damage" => [%{potency: 100 / attacks_per_round(character), kind: "physical", damage_type: "Normal"}],
+              "Damage" => damage,
               "Dodgeable" => true,
               "DodgeUserMessage" => "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
               "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
@@ -679,15 +679,7 @@ defmodule ApathyDrive.Character do
 
     def magical_damage_at_level(character, level, room) do
       damage = attribute_at_level(character, :intellect, level) + (Party.charm_at_level(room, character, level) / 10)
-      weapon_bonus =
-        case Character.weapon(character) do
-          %Item{worn_on: "Two Handed"} ->
-            10
-          _ ->
-            0
-          end
-
-      modifier = weapon_bonus + ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
+      modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
       damage * (1 + (modifier / 100))
     end
 
@@ -731,15 +723,7 @@ defmodule ApathyDrive.Character do
 
     def physical_damage_at_level(character, level, room) do
       damage = attribute_at_level(character, :strength, level) + (Party.charm_at_level(room, character, level) / 10)
-      weapon_bonus =
-        case Character.weapon(character) do
-          %Item{worn_on: "Two Handed"} ->
-            10
-          _ ->
-            0
-          end
-
-      modifier = weapon_bonus + ability_value(character, "ModifyDamage") + ability_value(character, "ModifyPhysicalDamage")
+      modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyPhysicalDamage")
       damage * (1 + (modifier / 100))
     end
 
