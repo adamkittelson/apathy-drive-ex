@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Commands.System.Ability do
-  alias ApathyDrive.{Ability, AbilityTrait, Character, Mobile, Repo, Room, Trait}
+  alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Character, DamageType, Mobile, Repo, Room, Trait}
 
   def execute(%Room{} = room, character, ["create" | ability_name]) do
     ability_name = Enum.join(ability_name, " ")
@@ -11,6 +11,12 @@ defmodule ApathyDrive.Commands.System.Ability do
 
   def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["add", "trait" | trait]) do
     add_trait(character, trait)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, ["add", "damage" | damage]) do
+    add_damage(character, damage)
 
     room
   end
@@ -118,6 +124,30 @@ defmodule ApathyDrive.Commands.System.Ability do
         ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         help(character, ability.name)
     end
+  end
+
+  defp add_damage(character, damage) do
+    damage
+    |> Enum.join(" ")
+    |> Poison.decode
+    |> case do
+         {:ok, %{"kind" => kind, "damage_type" => type, "potency" => potency}} ->
+           ability = character.editing
+
+           type = Repo.get_by(DamageType, name: type)
+
+           cond do
+             is_nil(type) ->
+               Mobile.send_scroll(character, "<p>No damage type by that name was found.</p>")
+             :else ->
+
+               %AbilityDamageType{ability_id: ability.id, damage_type_id: type.id, potency: potency, kind: kind}
+               |> Repo.insert
+
+               ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+               help(character, ability.name)
+           end
+        end
   end
 
   defp set_description(character, description) do
@@ -308,6 +338,14 @@ defmodule ApathyDrive.Commands.System.Ability do
         Mobile.send_scroll(character, "<p>    #{ability.spectator_message}</p>")
 
         traits = AbilityTrait.load_traits(ability.id)
+
+        traits =
+          case AbilityDamageType.load_damage(ability.id) do
+            [] ->
+              traits
+            damage ->
+              Map.put(traits, "Damage", damage)
+          end
 
         Mobile.send_scroll(character, "\n\n<p>Traits:</p>")
         Enum.each(traits, fn
