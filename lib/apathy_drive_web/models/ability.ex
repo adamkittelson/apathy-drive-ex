@@ -247,7 +247,10 @@ defmodule ApathyDrive.Ability do
         %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id, enchanted_by: caster.name, progress: 100.0}
         |> Repo.insert!
 
-        Room.update_mobile(room, caster_ref, &Stealth.reveal(&1, room))
+        Room.update_mobile(room, caster_ref, fn(character) ->
+          character = Stealth.reveal(character, room)
+          Character.load_items(character)
+        end)
       end)
     else
       room
@@ -515,8 +518,8 @@ defmodule ApathyDrive.Ability do
 
     {caster, target} =
       Enum.reduce(damages, {caster, target}, fn
-        %{kind: "physical", damage_type: type, potency: potency}, {caster, target} ->
-          damage = Mobile.physical_damage_at_level(caster, caster_level, room)
+        %{kind: "physical", damage_type: type, potency: potency} = damage, {caster, target} ->
+          damage = raw_damage(damage, caster, caster_level, room)
           resist = Mobile.physical_resistance_at_level(target, target_level, type, room)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
@@ -527,8 +530,8 @@ defmodule ApathyDrive.Ability do
             |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
           {caster, target}
-        %{kind: "magical", damage_type: type, potency: potency}, {caster, target} ->
-          damage = Mobile.magical_damage_at_level(caster, caster_level, room)
+        %{kind: "magical", damage_type: type, potency: potency} = damage, {caster, target} ->
+          damage = raw_damage(damage, caster, caster_level, room)
           resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
@@ -539,8 +542,8 @@ defmodule ApathyDrive.Ability do
             |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
           {caster, target}
-        %{kind: "drain", damage_type: type, potency: potency}, {caster, target} ->
-          damage = Mobile.magical_damage_at_level(caster, caster_level, room)
+        %{kind: "drain", damage_type: type, potency: potency} = damage, {caster, target} ->
+          damage = raw_damage(damage, caster, caster_level, room)
           resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
@@ -568,6 +571,19 @@ defmodule ApathyDrive.Ability do
   def apply_instant_trait({ability_name, _value}, %{} = target, _ability, caster, _room) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
     {caster, target}
+  end
+
+  def raw_damage(%{kind: "physical", level: level}, caster, caster_level, room) do
+    Mobile.physical_damage_at_level(caster, min(caster_level, level), room)
+  end
+  def raw_damage(%{kind: "physical"}, caster, caster_level, room) do
+    Mobile.physical_damage_at_level(caster, caster_level, room)
+  end
+  def raw_damage(%{level: level}, caster, caster_level, room) do
+    Mobile.magical_damage_at_level(caster, min(caster_level, level), room)
+  end
+  def raw_damage(%{}, caster, caster_level, room) do
+    Mobile.magical_damage_at_level(caster, caster_level, room)
   end
 
   def calculate_damage(damage, resist, modifier, caster, target, _room) do
@@ -642,13 +658,13 @@ defmodule ApathyDrive.Ability do
 
     damage_percent =
       Enum.reduce(damages, 0, fn
-        %{kind: "physical", damage_type: type, potency: potency}, damage_percent ->
-          damage = Mobile.physical_damage_at_level(caster, caster_level, room)
+        %{kind: "physical", damage_type: type, potency: potency} = damage, damage_percent ->
+          damage = raw_damage(damage, caster, caster_level, room)
           resist = Mobile.physical_resistance_at_level(target, target_level, type, room)
           damage = (damage - resist) * (potency / 100)
           damage_percent + (damage / Mobile.max_hp_at_level(target, target_level))
-        %{kind: "magical", damage_type: type, potency: potency}, damage_percent ->
-          damage = Mobile.magical_damage_at_level(caster, caster_level, room)
+        %{kind: "magical", damage_type: type, potency: potency} = damage, damage_percent ->
+          damage = raw_damage(damage, caster, caster_level, room)
           resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
           damage = (damage - resist) * (potency / 100)
           damage_percent + (damage / Mobile.max_hp_at_level(target, target_level))

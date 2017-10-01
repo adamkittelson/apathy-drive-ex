@@ -16,12 +16,13 @@ defmodule ApathyDrive.ItemDamageType do
     |> preload([:damage_type, :item])
     |> Repo.all
     |> Enum.reduce([], fn
-         %{damage_type: damage_type, kind: kind, potency: potency, item: %Item{rarity: rarity}}, damages ->
+         %{damage_type: damage_type, kind: kind, potency: potency, item: %Item{rarity: rarity} = item}, damages ->
            [
              %{
                kind: kind,
                potency: potency_with_rarity_bonus(potency, rarity),
-               damage_type: damage_type.name
+               damage_type: damage_type.name,
+               level: item.level
               } | damages
            ]
        end)

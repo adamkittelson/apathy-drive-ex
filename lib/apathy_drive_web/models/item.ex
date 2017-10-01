@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Item, ItemDamageType, ItemInstance}
+  alias ApathyDrive.{Character, Enchantment, Item, ItemDamageType, ItemInstance}
   require Logger
   require Ecto.Query
 
@@ -93,10 +93,13 @@ defmodule ApathyDrive.Item do
       |> Map.take([:level, :equipped, :hidden])
       |> Map.merge(generate_item_attributes(item.rarity))
 
-    item
-    |> Map.merge(values)
-    |> Map.put(:instance_id, id)
-    |> Map.put(:damage, ItemDamageType.load_damage(item.id))
+    item =
+      item
+      |> Map.merge(values)
+      |> Map.put(:instance_id, id)
+      |> Map.put(:damage, ItemDamageType.load_damage(item.id))
+
+    update_in(item.damage, &(Enchantment.load_damage(id) ++ &1))
   end
 
   def attribute_at_level(%Item{} = item, level, attribute) do

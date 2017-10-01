@@ -366,6 +366,16 @@ defmodule ApathyDrive.Character do
       |> Enum.filter(&(Map.has_key?(&1, "StatusMessage")))
       |> Enum.map(&(&1["StatusMessage"]))
 
+    round_length = Mobile.round_length_in_ms(character)
+    dps =
+      character
+      |> weapon_potency
+      |> Enum.reduce(0, fn %{potency: potency} = damage, dps ->
+        potency = potency * Mobile.attacks_per_round(character)
+        damage = Ability.raw_damage(damage, character, character.level, room) * (potency / 100)
+        dps + damage / (round_length / 1000)
+      end)
+
     %{
       name: character.name,
       race: character.race,
@@ -378,7 +388,7 @@ defmodule ApathyDrive.Character do
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level, room),
       tracking: Mobile.tracking_at_level(character, character.level, room),
-      physical_damage: Mobile.physical_damage_at_level(character, character.level, room),
+      melee_dps: dps,
       physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil, room),
       magical_damage: Mobile.magical_damage_at_level(character, character.level, room),
       magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil, room),
@@ -401,6 +411,15 @@ defmodule ApathyDrive.Character do
     equipment
     |> Enum.map(& &1.level)
     |> Enum.sum
+  end
+
+  def weapon_potency(character) do
+    case Character.weapon(character) do
+      nil ->
+        [%{potency: 75 / Mobile.attacks_per_round(character), kind: "physical", damage_type: "Normal"}]
+      %Item{damage: damage} ->
+        damage
+    end
   end
 
   defimpl ApathyDrive.Mobile, for: Character do
@@ -458,14 +477,14 @@ defmodule ApathyDrive.Character do
             spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             traits: %{
-              "Damage" => [%{potency: 75 / attacks_per_round(character), kind: "physical", damage_type: "Normal"}],
+              "Damage" => Character.weapon_potency(character),
               "Dodgeable" => true,
               "DodgeUserMessage" => "You throw a punch at {{target}}, but they dodge!",
               "DodgeTargetMessage" => "{{user}} throws a punch at you, but you dodge!",
               "DodgeSpectatorMessage" => "{{user}} throws a punch at {{target}}, but they dodge!"
             }
           }
-        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss], damage: damage} ->
+        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss]} ->
           [singular_hit, plural_hit] = Enum.random(hit_verbs)
           %Ability{
             kind: "attack",
@@ -475,7 +494,7 @@ defmodule ApathyDrive.Character do
             spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             traits: %{
-              "Damage" => damage,
+              "Damage" => Character.weapon_potency(character),
               "Dodgeable" => true,
               "DodgeUserMessage" => "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
               "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
