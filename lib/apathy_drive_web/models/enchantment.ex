@@ -15,7 +15,6 @@ defmodule ApathyDrive.Enchantment do
     |> where([e], e.items_instances_id == ^instance_id)
     |> preload([:ability, items_instances: :item])
     |> Repo.all
-    |> IO.inspect
     |> Enum.reduce([], fn
          %{ability: ability, items_instances: %{item: %{attacks_per_round: attacks}}}, damages ->
            case AbilityDamageType.load_damage(ability.id) do

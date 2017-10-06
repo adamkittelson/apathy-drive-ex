@@ -155,6 +155,26 @@ defmodule Systems.Effect do
     |> Enum.sum
   end
 
+  def effect_list(%{effects: effects}, name) do
+    effects
+    |> Map.values
+    |> Enum.map(fn
+         (%{} = effect) ->
+           key =
+             effect
+             |> Map.keys
+             |> Enum.find(fn key ->
+                  String.downcase(to_string(key)) == String.downcase(to_string(name))
+                end)
+
+           if key, do: Map.get(effect, key), else: nil
+         (_) ->
+           nil
+       end)
+    |> List.flatten
+    |> Enum.reject(&is_nil/1)
+  end
+
   def find_by_ref(%{effects: effects}, ref) do
     Enum.find(effects, fn {_key, effect} ->
       effect["effect_ref"] == ref

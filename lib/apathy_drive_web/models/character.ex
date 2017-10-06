@@ -417,15 +417,20 @@ defmodule ApathyDrive.Character do
     case Character.weapon(character) do
       nil ->
         [%{potency: 75 / Mobile.attacks_per_round(character), kind: "physical", damage_type: "Normal"}]
-      %Item{damage: damage} ->
-        damage
+      %Item{damage: damage} = item ->
+        damage ++ Systems.Effect.effect_list(item, "Damage")
     end
   end
 
   defimpl ApathyDrive.Mobile, for: Character do
 
     def ability_value(character, ability) do
-      Systems.Effect.effect_bonus(character, ability)
+      character_value = Systems.Effect.effect_bonus(character, ability)
+      equipment_value =
+        Enum.reduce(character.equipment, 0, fn item, total ->
+          total + Systems.Effect.effect_bonus(item, ability)
+        end)
+      character_value + equipment_value
     end
 
     def accuracy_at_level(character, level, room) do

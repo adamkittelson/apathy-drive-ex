@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, AbilityTrait, Character, Companion, Enchantment, Item, Match, Mobile, Monster, Party, Room, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, AbilityTrait, Character, Companion, Item, Match, Mobile, Monster, Party, Room, Stealth, Text, TimerManager}
   require Logger
 
   schema "abilities" do
@@ -244,12 +244,25 @@ defmodule ApathyDrive.Ability do
 
         display_cast_message(room, caster, item, ability)
 
-        %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id, enchanted_by: caster.name, progress: 100.0}
-        |> Repo.insert!
+        enchanted_item = apply_item_enchantment(item, ability)
 
         Room.update_mobile(room, caster_ref, fn(character) ->
           character = Stealth.reveal(character, room)
-          Character.load_items(character)
+
+          cond do
+            item in character.equipment ->
+              update_in(character.equipment, fn equipment ->
+                equipment
+                |> List.delete(item)
+                |> List.insert_at(0, enchanted_item)
+              end)
+            item in character.inventory ->
+              update_in(character.inventory, fn inventory ->
+                inventory
+                |> List.delete(item)
+                |> List.insert_at(0, enchanted_item)
+              end)
+          end
         end)
       end)
     else
@@ -627,6 +640,24 @@ defmodule ApathyDrive.Ability do
     damage * (modifier / 100) * (Enum.random(95..105) / 100)
   end
 
+  def apply_item_enchantment(%Item{} = item, %Ability{} = ability) do
+    # if permanent do
+    #   %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id, enchanted_by: caster.name, progress: 100.0}
+    #   |> Repo.insert!
+    # end
+
+    effects =
+      ability.traits
+      |> Map.take(@duration_traits)
+      |> process_enchantment_traits(item)
+      |> Map.put("stack_key", ability.id)
+      |> Map.put("stack_count", 1)
+      |> Map.put("effect_ref", make_ref())
+
+    item
+    |> Systems.Effect.add(effects)
+  end
+
   def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster, duration, room) do
     effects =
       ability.traits
@@ -645,14 +676,32 @@ defmodule ApathyDrive.Ability do
     |> Systems.Effect.schedule_next_periodic_effect
   end
 
-  def process_duration_traits(effects, target, caster, ability, room) do
+  def process_enchantment_traits(effects, item) do
     effects
     |> Enum.reduce(effects, fn effect, updated_effects ->
-         process_duration_ability(effect, updated_effects, target, caster, ability, room)
+         process_enchantment_trait(updated_effects, effect, item)
        end)
   end
 
-  def process_duration_ability({"Damage", damages}, effects, target, caster, _ability, room) do
+  def process_enchantment_trait(effects, {"Damage", damages}, %Item{attacks_per_round: attacks}) do
+    damages =
+      Enum.map(damages, fn damage ->
+        update_in(damage.potency, &(&1 / attacks))
+      end)
+    Map.put(effects, "Damage", damages)
+  end
+  def process_enchantment_trait(effects, {trait, value}, _item) do
+    put_in(effects[trait], value)
+  end
+
+  def process_duration_traits(effects, target, caster, ability, room) do
+    effects
+    |> Enum.reduce(effects, fn effect, updated_effects ->
+         process_duration_trait(effect, updated_effects, target, caster, ability, room)
+       end)
+  end
+
+  def process_duration_trait({"Damage", damages}, effects, target, caster, _ability, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
@@ -677,7 +726,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
     |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
   end
-  def process_duration_ability({"Heal", value}, effects, target, caster, _ability, room) do
+  def process_duration_trait({"Heal", value}, effects, target, caster, _ability, room) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
     percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
@@ -687,7 +736,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
     |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
   end
-  def process_duration_ability({"HealMana", value}, effects, target, caster, _ability, room) do
+  def process_duration_trait({"HealMana", value}, effects, target, caster, _ability, room) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
     percentage_healed = calculate_healing(healing, value) / Mobile.max_mana_at_level(target, level)
@@ -697,8 +746,8 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
     |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
   end
-  def process_duration_ability({ability, value}, effects, _target, _caster, _ability, _room) do
-    put_in(effects[ability], value)
+  def process_duration_trait({trait, value}, effects, _target, _caster, _ability, _room) do
+    put_in(effects[trait], value)
   end
 
   def affects_target?(%{} = target, %Ability{} = ability) do

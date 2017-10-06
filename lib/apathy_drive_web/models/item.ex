@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Enchantment, Item, ItemDamageType, ItemInstance}
+  alias ApathyDrive.{Character, Item, ItemDamageType, ItemInstance}
   require Logger
   require Ecto.Query
 
@@ -29,6 +29,8 @@ defmodule ApathyDrive.Item do
     field :charm, :integer, virtual: true
     field :instance_id, :integer, virtual: true
     field :damage, :any, virtual: true
+    field :effects, :map, virtual: true, default: %{}
+    field :last_effect_key, :integer, virtual: true, default: 0
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
@@ -87,19 +89,16 @@ defmodule ApathyDrive.Item do
     |> validate_required(@required_fields)
   end
 
-  def from_assoc(%ItemInstance{id: id, item: item} = ii) do
+  def from_assoc(%ItemInstance{id: id, item: item, level: level} = ii) do
     values =
       ii
       |> Map.take([:level, :equipped, :hidden])
       |> Map.merge(generate_item_attributes(item.rarity))
 
-    item =
-      item
-      |> Map.merge(values)
-      |> Map.put(:instance_id, id)
-      |> Map.put(:damage, ItemDamageType.load_damage(item.id))
-
-    update_in(item.damage, &(Enchantment.load_damage(id) ++ &1))
+    item
+    |> Map.merge(values)
+    |> Map.put(:instance_id, id)
+    |> Map.put(:damage, ItemDamageType.load_damage(item.id, level))
   end
 
   def attribute_at_level(%Item{} = item, level, attribute) do

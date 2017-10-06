@@ -10,19 +10,19 @@ defmodule ApathyDrive.ItemDamageType do
     belongs_to :damage_type, DamageType
   end
 
-  def load_damage(item_id) do
+  def load_damage(item_id, level) do
     __MODULE__
     |> where([mt], mt.item_id == ^item_id)
     |> preload([:damage_type, :item])
     |> Repo.all
     |> Enum.reduce([], fn
-         %{damage_type: damage_type, kind: kind, potency: potency, item: %Item{rarity: rarity} = item}, damages ->
+         %{damage_type: damage_type, kind: kind, potency: potency, item: %Item{rarity: rarity}}, damages ->
            [
              %{
                kind: kind,
                potency: potency_with_rarity_bonus(potency, rarity),
                damage_type: damage_type.name,
-               level: item.level
+               level: level
               } | damages
            ]
        end)
