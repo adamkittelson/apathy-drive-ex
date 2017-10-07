@@ -352,7 +352,7 @@ defmodule ApathyDrive.Room do
 
   def find_item(%Room{items: items, item_descriptions: item_descriptions}, item) do
     actual_item = items
-                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+                  |> Enum.map(&(%{name: &1.name, keywords: String.split(&1.name), item: &1}))
                   |> Match.one(:keyword_starts_with, item)
 
     visible_item = item_descriptions["visible"]

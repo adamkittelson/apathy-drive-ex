@@ -39,11 +39,10 @@ defmodule ApathyDrive.Commands.Get do
         |> Ecto.Changeset.change(%{room_id: nil, character_id: character.id, equipped: false, hidden: false})
         |> Repo.update!
 
-        room
-        |> Room.load_items
+        update_in(room.items, &(List.delete(&1, item)))
         |> Room.update_mobile(character.ref, fn(char) ->
              char
-             |> Character.load_items
+             |> update_in([Access.key!(:inventory)], &([item | &1]))
              |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
            end)
       %{name: psuedo_item} ->

@@ -25,11 +25,11 @@ defmodule ApathyDrive.Commands.Drop do
           |> Ecto.Changeset.change(%{room_id: room.id, character_id: nil, equipped: false, hidden: false})
           |> Repo.update!
 
-           room
-           |> Room.load_items
+           update_in(room.items, &([item | &1]))
            |> Room.update_mobile(character.ref, fn(char) ->
                 char
-                |> Character.load_items
+                |> update_in([Access.key!(:equipment)], &(List.delete(&1, item)))
+                |> update_in([Access.key!(:inventory)], &(List.delete(&1, item)))
                 |> Mobile.send_scroll("<p>You drop #{Item.colored_name(item)}.</p>")
               end)
       end
