@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Sell do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, Enchantment, Item, ItemInstance, Match, Mobile, Repo}
 
   def keywords, do: ["sell"]
 
@@ -16,6 +16,7 @@ defmodule ApathyDrive.Commands.Sell do
   def sell(%Room{} = room, shop_items, %Character{ref: ref} = character, "all") do
     character.inventory
     |> Enum.reject(&upgrade?(&1, character))
+    |> Enum.reject(&enchanted?(&1))
     |> Enum.reduce(room, fn(item, updated_room) ->
          character = updated_room.mobiles[ref]
          sell(updated_room, shop_items, character, item)
@@ -27,7 +28,13 @@ defmodule ApathyDrive.Commands.Sell do
       "priceless" ->
         Mobile.send_scroll(character, "<p><span class='red'>#{Item.colored_name(item)} is a priceless artifact and cannot be sold!</span></p>")
        price ->
-         price = div(price, 10)
+         enchantment_time = Enchantment.enchantment_time(item)
+         price =
+           if enchantment_time > 0 do
+             price + div(enchantment_time, 60)
+           else
+            div(price, 10)
+           end
          Repo.delete!(%ItemInstance{id: instance_id})
 
          Room.update_mobile(room, character.ref, fn(char) ->
@@ -65,5 +72,14 @@ defmodule ApathyDrive.Commands.Sell do
     %{character: with_item} = ApathyDrive.Commands.Wear.equip_item(character, item, false)
 
     Mobile.power_at_level(with_item, character.level) > Mobile.power_at_level(character, character.level)
+  end
+
+  def enchanted?(%Item{instance_id: nil}), do: true
+  def enchanted?(%Item{instance_id: id}) do
+    require Ecto.Query
+    Enchantment
+    |> Ecto.Query.where([e], e.items_instances_id == ^id)
+    |> Repo.all
+    |> Enum.any?
   end
 end

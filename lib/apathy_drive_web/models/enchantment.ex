@@ -82,6 +82,7 @@ defmodule ApathyDrive.Enchantment do
     min(67, time_left(enchantment))
   end
 
+  def load_enchantments(%Item{instance_id: nil} = item), do: item
   def load_enchantments(%Item{instance_id: id} = item) do
     __MODULE__
     |> where([e], e.items_instances_id == ^id and e.finished == true)
@@ -89,6 +90,16 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.reduce(item, fn enchantment, item ->
          ability = Ability.find(enchantment.ability_id)
          Ability.apply_item_enchantment(item, ability)
+       end)
+  end
+
+  def enchantment_time(%Item{instance_id: nil}), do: 0
+  def enchantment_time(%Item{instance_id: id}) do
+    __MODULE__
+    |> where([e], e.items_instances_id == ^id and e.finished == true)
+    |> Repo.all
+    |> Enum.reduce(0, fn %Enchantment{time_elapsed_in_seconds: time}, total ->
+         total + time
        end)
   end
 
