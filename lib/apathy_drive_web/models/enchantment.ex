@@ -51,7 +51,15 @@ defmodule ApathyDrive.Enchantment do
         Mobile.send_scroll(enchanter, "<p>Time Left: #{formatted_time_left(time_left)}</p>")
         next_tick_time = next_tick_time(enchantment)
 
-        TimerManager.send_after(enchanter, {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time), {:lt_tick, next_tick_time, enchanter_ref, enchantment}})
+        exp =
+          [:strength, :agility, :intellect, :willpower, :health, :charm]
+          |> Enum.map(&Mobile.attribute_at_level(enchanter, &1, enchanter.level))
+          |> Enum.reduce(0, &(&1 + &2))
+          |> trunc
+
+        enchanter
+        |> TimerManager.send_after({{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time), {:lt_tick, next_tick_time, enchanter_ref, enchantment}})
+        |> ApathyDrive.Character.add_experience(exp)
       end
     end)
   end
