@@ -259,8 +259,29 @@ defmodule ApathyDrive.Ability do
               caster
             end
           case Repo.get_by(Enchantment, items_instances_id: item.instance_id, ability_id: ability.id) do
-            %Enchantment{finished: true} ->
-              Mobile.send_scroll(caster, "<p><span class='red'>This #{item.name} is already has the #{ability.name} enchantment.</span></span></p>")
+            %Enchantment{finished: true} = enchantment ->
+              Repo.delete!(enchantment)
+              Mobile.send_scroll(caster, "<p><span class='blue'>You've removed #{ability.name} from #{item.name}.</span></p>")
+
+              unenchanted_item = Systems.Effect.remove_oldest_stack(item, ability.id)
+
+              Room.update_mobile(room, caster_ref, fn(character) ->
+                cond do
+                  item in character.equipment ->
+                    update_in(character.equipment, fn equipment ->
+                      equipment
+                      |> List.delete(item)
+                      |> List.insert_at(0, unenchanted_item)
+                    end)
+                  item in character.inventory ->
+                    update_in(character.inventory, fn inventory ->
+                      inventory
+                      |> List.delete(item)
+                      |> List.insert_at(0, unenchanted_item)
+                    end)
+                end
+              end)
+
             %Enchantment{finished: false} = enchantment ->
               enchantment = Map.put(enchantment, :ability, ability)
               time = Enchantment.next_tick_time(enchantment)
