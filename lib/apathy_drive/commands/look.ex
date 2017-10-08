@@ -24,9 +24,12 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look(%Room{} = room, %Character{} = character, []) do
-    light = Room.light(room)
+    light =
+      room
+      |> Room.light
+      |> light_for_character(character)
 
-    if visible?(light, character) do
+    if visible?(light) do
       Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
       Mobile.send_scroll(character, "<p>    #{room.description}</p>")
       if Room.trainer?(room) do
@@ -139,8 +142,19 @@ defmodule ApathyDrive.Commands.Look do
   def light_desc(light_level) when light_level >= 25,   do: "<p>The room is brightly lit</p>"
   def light_desc(_light_level), do: nil
 
-  def visible?(light, %Character{} = _character) do
+  def visible?(light) do
     light > -150 and light < 200
+  end
+
+  def light_for_character(light, character) do
+    dark_vision = Mobile.ability_value(character, "DarkVision")
+    light_vision = Mobile.ability_value(character, "LightVision")
+
+    if light < 0 do
+      min(0, light + dark_vision)
+    else
+      max(0, light - light_vision)
+    end
   end
 
   def display_direction(%{"kind" => "Hidden"} = room_exit, room) do
