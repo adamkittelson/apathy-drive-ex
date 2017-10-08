@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, AbilityTrait, Character, Companion, Item, Match, Mobile, Monster, Party, Room, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Character, Companion, Enchantment, Item, Match, Mobile, Monster, Party, Repo, Room, Stealth, Text, TimerManager}
   require Logger
 
   schema "abilities" do
@@ -152,6 +152,13 @@ defmodule ApathyDrive.Ability do
 
     if ability do
       put_in(ability.traits, AbilityTrait.load_traits(id))
+
+      case AbilityDamageType.load_damage(id) do
+        [] ->
+          ability
+        damage ->
+          update_in(ability.traits, &(Map.put(&1, "Damage", damage)))
+      end
     end
   end
 
@@ -235,6 +242,7 @@ defmodule ApathyDrive.Ability do
           Room.update_mobile(room, caster.ref, fn caster ->
             caster =
               caster
+              |> Stealth.reveal(room)
               |> apply_cooldowns(ability)
               |> Mobile.subtract_mana(ability)
 
@@ -242,28 +250,57 @@ defmodule ApathyDrive.Ability do
             caster
           end)
 
-        display_cast_message(room, caster, item, ability)
-
-        enchanted_item = apply_item_enchantment(item, ability)
-
-        Room.update_mobile(room, caster_ref, fn(character) ->
-          character = Stealth.reveal(character, room)
-
-          cond do
-            item in character.equipment ->
-              update_in(character.equipment, fn equipment ->
-                equipment
-                |> List.delete(item)
-                |> List.insert_at(0, enchanted_item)
+        if ability.traits["LongTerm"] do
+          caster =
+            if lt = Enum.find(TimerManager.timers(caster), &(match?({:longterm, _}, &1))) do
+              Mobile.send_scroll(caster, "<p><span class='cyan'>You interrupt your work.</span></p>")
+              TimerManager.cancel(caster, lt)
+            else
+              caster
+            end
+          case Repo.get_by(Enchantment, items_instances_id: item.instance_id, ability_id: ability.id) do
+            %Enchantment{finished: true} ->
+              Mobile.send_scroll(caster, "<p><span class='red'>This #{item.name} is already has the #{ability.name} enchantment.</span></span></p>")
+            %Enchantment{finished: false} = enchantment ->
+              enchantment = Map.put(enchantment, :ability, ability)
+              time = Enchantment.next_tick_time(enchantment)
+              Mobile.send_scroll(caster, "<p><span class='cyan'>You continue your work.</span></p>")
+              Room.update_mobile(room, caster.ref, fn caster ->
+                TimerManager.send_after(caster, {{:longterm, item.instance_id}, :timer.seconds(time), {:lt_tick, time, caster_ref, enchantment}})
               end)
-            item in character.inventory ->
-              update_in(character.inventory, fn inventory ->
-                inventory
-                |> List.delete(item)
-                |> List.insert_at(0, enchanted_item)
+            nil ->
+              enchantment =
+                %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id}
+                |> Repo.insert!
+                |> Map.put(:ability, ability)
+              time = Enchantment.next_tick_time(enchantment)
+              Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
+              Room.update_mobile(room, caster.ref, fn caster ->
+                TimerManager.send_after(caster, {{:longterm, item.instance_id}, :timer.seconds(time), {:lt_tick, time, caster_ref, enchantment}})
               end)
           end
-        end)
+        else
+          display_cast_message(room, caster, item, ability)
+
+          enchanted_item = apply_item_enchantment(item, ability)
+
+          Room.update_mobile(room, caster_ref, fn(character) ->
+            cond do
+              item in character.equipment ->
+                update_in(character.equipment, fn equipment ->
+                  equipment
+                  |> List.delete(item)
+                  |> List.insert_at(0, enchanted_item)
+                end)
+              item in character.inventory ->
+                update_in(character.inventory, fn inventory ->
+                  inventory
+                  |> List.delete(item)
+                  |> List.insert_at(0, enchanted_item)
+                end)
+            end
+          end)
+        end
       end)
     else
       room
@@ -641,11 +678,6 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_item_enchantment(%Item{} = item, %Ability{} = ability) do
-    # if permanent do
-    #   %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id, enchanted_by: caster.name, progress: 100.0}
-    #   |> Repo.insert!
-    # end
-
     effects =
       ability.traits
       |> Map.take(@duration_traits)
@@ -654,8 +686,7 @@ defmodule ApathyDrive.Ability do
       |> Map.put("stack_count", 1)
       |> Map.put("effect_ref", make_ref())
 
-    item
-    |> Systems.Effect.add(effects)
+    Systems.Effect.add(item, effects)
   end
 
   def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster, duration, room) do

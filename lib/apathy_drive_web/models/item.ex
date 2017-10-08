@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Item, ItemDamageType, ItemInstance}
+  alias ApathyDrive.{Character, Enchantment, Item, ItemDamageType, ItemInstance}
   require Logger
   require Ecto.Query
 
@@ -99,6 +99,7 @@ defmodule ApathyDrive.Item do
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
     |> Map.put(:damage, ItemDamageType.load_damage(item.id, level))
+    |> Enchantment.load_enchantments
   end
 
   def attribute_at_level(%Item{} = item, level, attribute) do

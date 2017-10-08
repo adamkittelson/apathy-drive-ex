@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Ability, Character, Commands, Companion, LairMonster, Mobile,
+  alias ApathyDrive.{Ability, Character, Commands, Companion, Enchantment, LairMonster, Mobile,
                      MonsterSpawning, PubSub, Repo, Room, RoomSupervisor, TimerManager, Presence}
   use Timex
   require Logger
@@ -575,6 +575,11 @@ defmodule ApathyDrive.RoomServer do
       |> Room.apply_timers
       |> Room.start_timer
 
+    {:noreply, room}
+  end
+
+  def handle_info({:lt_tick, time, caster_ref, enchantment}, room) do
+    room = Enchantment.tick(room, time, caster_ref, enchantment)
     {:noreply, room}
   end
 
