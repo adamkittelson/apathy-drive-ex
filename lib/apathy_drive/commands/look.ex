@@ -113,7 +113,20 @@ defmodule ApathyDrive.Commands.Look do
       |> interpolate(%{"target" => target})
 
     Mobile.send_scroll(character, "<p>#{description}</p>")
-    Mobile.send_scroll(character, "<p>#{hp_description}</p>")
+    Mobile.send_scroll(character, "<p>#{hp_description}\n\n</p>")
+
+    ApathyDrive.DamageType
+    |> ApathyDrive.Repo.all
+    |> Enum.map(& {&1.name, Mobile.ability_value(target, "Resist#{&1.name}")})
+    |> Enum.reject(& elem(&1, 1) == 0)
+    |> Enum.chunk_every(4)
+    |> Enum.each(fn
+         chunks ->
+           chunks = Enum.map(chunks, fn {name, value} ->
+            "<span class='dark-green'>#{String.pad_trailing("Resist" <> name <> ":", 16)}</span> <span class='dark-cyan'>#{String.pad_leading(to_string(value), 3)}</span>"
+           end)
+           Mobile.send_scroll(character, "<p>" <> Enum.join(chunks, "    ") <> "</p>")
+      end)
   end
 
   def look_mobiles(%Room{mobiles: mobiles} = room, character \\ nil) do
