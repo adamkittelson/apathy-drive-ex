@@ -1,6 +1,6 @@
 defmodule ApathyDrive.AbilityTrait do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Trait}
+  alias ApathyDrive.{Ability, AbilityResistance, Trait}
 
   schema "abilities_traits" do
     field :value, ApathyDrive.JSONB
@@ -17,6 +17,7 @@ defmodule ApathyDrive.AbilityTrait do
     |> Enum.reduce(%{}, fn %{trait: trait, value: value}, abilities ->
          Map.put(abilities, trait.name, value)
        end)
+    |> Map.merge(AbilityResistance.load_resistances(ability_id))
   end
 
   def add_trait_changeset(model, description) do
