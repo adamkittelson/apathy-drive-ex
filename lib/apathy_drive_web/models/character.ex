@@ -376,6 +376,11 @@ defmodule ApathyDrive.Character do
         dps + damage / (round_length / 1000)
       end)
 
+    resistances =
+      ApathyDrive.DamageType
+      |> Repo.all
+      |> Enum.map(& {&1.name, Mobile.ability_value(character, "Resist#{&1.name}")})
+
     %{
       name: character.name,
       race: character.race,
@@ -403,7 +408,8 @@ defmodule ApathyDrive.Character do
       health: Mobile.attribute_at_level(character, :health, character.level),
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
-      item_level: Character.item_level(character)
+      item_level: Character.item_level(character),
+      resistances: resistances
     }
   end
 

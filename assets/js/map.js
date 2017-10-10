@@ -154,7 +154,7 @@ $(document).ready(function() {
 
   var pointInRoom = function(point, room) {
     var shape = room.shape;
-    return ((shape.x <= point.x + 16) && ((shape.x + shape.width) >= point.x - 16)) && ((shape.y <= point.y + 16) && ((shape.y + shape.height) >= point.y - 16));
+    return shape && ((shape.x <= point.x + 16) && ((shape.x + shape.width) >= point.x - 16)) && ((shape.y <= point.y + 16) && ((shape.y + shape.height) >= point.y - 16));
   }
 
   var findRoomByCoords = function(point) {
