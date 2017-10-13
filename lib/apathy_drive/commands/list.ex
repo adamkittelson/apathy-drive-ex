@@ -33,7 +33,7 @@ defmodule ApathyDrive.Commands.List do
     items
     |> Enum.each(fn(%Item{name: _name} = item) ->
         item
-        |> Map.put(:level, character.level)
+        |> Map.put(:level, Item.generated_item_level(character, item.grade))
         |> Item.price
         |> case do
             "priceless" ->

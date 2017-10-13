@@ -6,6 +6,7 @@ defmodule ApathyDrive.ItemInstance do
     field :level, :integer
     field :equipped, :boolean
     field :hidden, :boolean
+    field :purchased, :boolean, default: false
 
     belongs_to :item, Item
     belongs_to :room, Room

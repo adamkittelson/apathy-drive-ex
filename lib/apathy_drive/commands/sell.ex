@@ -30,10 +30,10 @@ defmodule ApathyDrive.Commands.Sell do
        price ->
          enchantment_time = Enchantment.enchantment_time(item)
          price =
-           if enchantment_time > 0 do
+           if item.purchased and enchantment_time > 0 do
              price + div(enchantment_time, 60)
            else
-            div(price, 10)
+            div(price, 10) + div(enchantment_time, 60)
            end
          Repo.delete!(%ItemInstance{id: instance_id})
 

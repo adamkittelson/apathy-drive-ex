@@ -31,6 +31,7 @@ defmodule ApathyDrive.Item do
     field :damage, :any, virtual: true
     field :effects, :map, virtual: true, default: %{}
     field :last_effect_key, :integer, virtual: true, default: 0
+    field :purchased, :boolean, virtual: true, default: false
 
     has_many :shop_items, ApathyDrive.ShopItem
     has_many :shops, through: [:shop_items, :room]
@@ -92,7 +93,7 @@ defmodule ApathyDrive.Item do
   def from_assoc(%ItemInstance{id: id, item: item, level: level} = ii) do
     values =
       ii
-      |> Map.take([:level, :equipped, :hidden])
+      |> Map.take([:level, :equipped, :hidden, :purchased])
       |> Map.merge(generate_item_attributes(item.rarity))
 
     item
@@ -231,7 +232,8 @@ defmodule ApathyDrive.Item do
       %ItemInstance{
         character_id: character.id,
         item_id: item.id,
-        level: (if rarity == "legendary", do: :infinity, else: generated_item_level(character, item.grade))
+        level: (if rarity == "legendary", do: :infinity, else: generated_item_level(character, item.grade)),
+        purchased: source == :shop
       }
       |> Map.merge(generate_item_attributes(rarity))
 
