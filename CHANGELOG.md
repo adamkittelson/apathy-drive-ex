@@ -202,3 +202,6 @@ CHANGELOG
 
 ---- 0.0.77 / 2017-08-06 / update-elixir-and-libraries -------------------------
 * update erlang / elixir / phoenix etc
+
+---- 0.0.78 / 2017-10-28 / skill-training --------------------------------------
+* skill training
