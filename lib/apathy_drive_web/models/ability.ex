@@ -891,18 +891,8 @@ defmodule ApathyDrive.Ability do
         |> caster_cast_message(caster, target, mobile)
       :else ->
         message =
-          case target.ability_special do
-            :surprise ->
-              String.replace_prefix(ability.user_message, "You ", "You surprise ")
-            :crit ->
-              String.replace_prefix(ability.user_message, "You ", "You critically ")
-            _ ->
-              ability.user_message
-          end
-
-        message =
-          message
-          |> Text.interpolate(%{"target" => target, "amount" => amount})
+          ability.user_message
+          |> Text.interpolate(%{"target" => target})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
@@ -951,17 +941,8 @@ defmodule ApathyDrive.Ability do
         |> target_cast_message(caster, target, mobile)
       :else ->
         message =
-          case target.ability_special do
-            :surprise ->
-              String.replace_prefix(ability.target_message, "{{user}} ", "{{user}} surprise ")
-            :crit ->
-              String.replace_prefix(ability.target_message, "{{user}} ", "{{user}} critically ")
-            _ ->
-              ability.target_message
-          end
-        message =
-          message
-          |> Text.interpolate(%{"user" => caster, "amount" => amount})
+          ability.target_message
+          |> Text.interpolate(%{"user" => caster})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
@@ -1018,18 +999,8 @@ defmodule ApathyDrive.Ability do
         |> spectator_cast_message(caster, target, mobile)
       :else ->
         message =
-          case target.ability_special do
-            :surprise ->
-              String.replace_prefix(ability.spectator_message, "{{user}} ", "{{user}} surprise ")
-            :crit ->
-              String.replace_prefix(ability.spectator_message, "{{user}} ", "{{user}} critically ")
-            _ ->
-              ability.spectator_message
-          end
-
-        message =
-          message
-          |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
+          ability.spectator_message
+          |> Text.interpolate(%{"user" => caster, "target" => target})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"

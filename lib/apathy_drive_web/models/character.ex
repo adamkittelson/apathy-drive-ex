@@ -483,9 +483,9 @@ defmodule ApathyDrive.Character do
           %Ability{
             kind: "attack",
             mana: 0,
-            user_message: "You punch {{target}} for {{amount}} damage!",
-            target_message: "{{user}} punches you for {{amount}} damage!",
-            spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
+            user_message: "You punch {{target}}!",
+            target_message: "{{user}} punches you!",
+            spectator_message: "{{user}} punches {{target}}!",
             ignores_round_cooldown?: true,
             traits: %{
               "Damage" => Character.weapon_potency(character),
@@ -500,9 +500,9 @@ defmodule ApathyDrive.Character do
           %Ability{
             kind: "attack",
             mana: 0,
-            user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
-            target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
-            spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
+            user_message: "You #{singular_hit} {{target}} with your #{name}!",
+            target_message: "{{user}} #{plural_hit} you with their #{name}!",
+            spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name}!",
             ignores_round_cooldown?: true,
             traits: %{
               "Damage" => Character.weapon_potency(character),
