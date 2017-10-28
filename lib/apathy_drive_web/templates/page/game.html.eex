@@ -7,6 +7,6 @@
 <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.2.3/pixi.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.2.7/interact.min.js"></script>
-<script>require("web/static/js/app/app")</script>
-<script>require("web/static/js/app/map")</script>
-<script>require("web/static/js/app/nav")</script>
+<script>require("js/app")</script>
+<script>require("js/map")</script>
+<script>require("js/nav")</script>

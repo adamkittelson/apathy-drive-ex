@@ -1,8 +1,8 @@
 defmodule ApathyDrive.Monster do
   use Ecto.Schema
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Area, Character, EntityAbility, Item, Mobile, Monster, Party, Room, RoomMonster,
-                     Spell, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, Area, Character, Item, Mobile, Monster, MonsterAbility,
+                     MonsterTrait, Party, Room, RoomMonster, Stealth, Text, TimerManager}
 
   require Logger
 
@@ -26,7 +26,7 @@ defmodule ApathyDrive.Monster do
     field :timers,      :map, virtual: true, default: %{}
     field :effects,     :map, virtual: true, default: %{}
     field :last_effect_key, :integer, virtual: true, default: 0
-    field :spells,      :map, virtual: true, default: %{}
+    field :abilities,   :map, virtual: true, default: %{}
     field :strength,    :integer, virtual: true
     field :agility,     :integer, virtual: true
     field :intellect,   :integer, virtual: true
@@ -37,14 +37,17 @@ defmodule ApathyDrive.Monster do
     field :room_id,     :integer, virtual: true
     field :level,       :integer, virtual: true
     field :spawned_at,  :integer, virtual: true
-    field :spell_shift, :float, virtual: true
-    field :spell_special, :float, virtual: true
+    field :ability_shift, :float, virtual: true
+    field :ability_special, :float, virtual: true
     field :reputations, :map, virtual: true, default: []
 
     timestamps()
 
     has_many :lairs, ApathyDrive.LairMonster
     has_many :lair_rooms, through: [:lairs, :room]
+
+    has_many :monsters_traits, ApathyDrive.MonsterTrait
+    has_many :traits, through: [:monsters_traits, :trait]
   end
 
   @grades %{
@@ -92,8 +95,8 @@ defmodule ApathyDrive.Monster do
       monster
       |> Map.put(:ref, ref)
       |> generate_monster_attributes()
-      |> load_spells()
       |> load_abilities()
+      |> load_traits()
       |> set_reputations()
       |> Mobile.cpr
     end
@@ -110,8 +113,8 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:room_monster_id, id)
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
-    |> load_spells()
     |> load_abilities()
+    |> load_traits()
     |> set_reputations()
     |> Mobile.cpr
   end
@@ -148,31 +151,17 @@ defmodule ApathyDrive.Monster do
   def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now) when not is_nil(time) and time > now, do: false
   def spawnable?(%Monster{}, _now), do: true
 
-  def load_abilities(%Monster{id: id} = monster) do
+  def load_traits(%Monster{id: id} = monster) do
     effect =
-      EntityAbility.load_abilities("monsters", id)
+      MonsterTrait.load_traits(id)
       |> Map.put("stack_key", "monster")
 
     monster
     |> Systems.Effect.add(effect)
   end
 
-  def load_spells(%Monster{id: id} = monster) do
-    entities_spells =
-      ApathyDrive.EntitySpell
-      |> Ecto.Query.where(assoc_id: ^id, assoc_table: "monsters")
-      |> Ecto.Query.preload([:spell])
-      |> Repo.all
-
-    spells =
-      Enum.reduce(entities_spells, %{}, fn
-        %{level: level, spell: %Spell{id: id} = spell}, spells ->
-          spell =
-            put_in(spell.abilities, EntityAbility.load_abilities("spells", id))
-            |> Map.put(:level, level)
-          Map.put(spells, spell.command, spell)
-      end)
-    Map.put(monster, :spells, spells)
+  def load_abilities(%Monster{} = monster) do
+    MonsterAbility.load_abilities(monster)
   end
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
@@ -225,51 +214,50 @@ defmodule ApathyDrive.Monster do
     rarity = random_loot_rarity(monster, character.pity_modifier)
 
     if rarity do
-      power = Item.power_at_level(rarity, character.level)
+      Logger.info "spawning #{rarity} item for #{character.name}"
 
-      Logger.info "spawning #{rarity} item for #{character.name} with power level #{inspect power}"
+      item_id = Item.random_item_id_for_slot_and_rarity(character, Enum.random(Item.slots), rarity)
 
-      {loot_type, slot} =
-        case Item.slots_below_power(character, power) do
-          [] ->
-            Logger.info("no slots below power: #{power}, salvaging")
-            {:salvage, Enum.random(Item.slots)}
-          slots ->
-            {:loot, Enum.random(slots)}
+      if item_id do
+        character =
+          Item
+          |> Repo.get(item_id)
+          |> Item.generate_for_character!(character, :loot)
+          |> case do
+              %Item{instance_id: nil} = item ->
+                gold =
+                  item
+                  |> Item.price
+                  |> div(10)
+
+                character
+                |> Ecto.Changeset.change(%{gold: character.gold + gold})
+                |> Repo.update!
+                |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
+
+              %Item{instance_id: _id} = item ->
+                character
+                |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
+                |> Character.load_items
+            end
+
+        if rarity == "legendary" do
+          character = put_in(character.pity_modifier, 0)
+
+          %Character{id: character.id}
+          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+          |> Repo.update!
+
+          character
+        else
+          character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
+
+          %Character{id: character.id}
+          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
+          |> Repo.update!
+
+          character
         end
-
-      item_id = Item.random_item_id_for_slot_and_rarity(character, slot, rarity)
-
-      character =
-        Item
-        |> Repo.get(item_id)
-        |> Item.generate_for_character!(character, loot_type == :loot)
-        |> case do
-             %Item{entities_items_id: nil} = item ->
-               gold =
-                 item
-                 |> Item.price
-                 |> div(10)
-
-               character
-               |> Ecto.Changeset.change(%{gold: character.gold + gold})
-               |> Repo.update!
-               |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
-
-             %Item{entities_items_id: _id} = item ->
-               character
-               |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
-               |> Character.load_items
-           end
-
-      if rarity == "legendary" do
-        character = put_in(character.pity_modifier, 0)
-
-        %Character{id: character.id}
-        |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
-        |> Repo.update!
-
-        character
       else
         character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
 
@@ -355,12 +343,12 @@ defmodule ApathyDrive.Monster do
     "#{adjective} #{name}"
   end
 
-  def auto_attack_target(_monster, [], _room, _attack_spell) do
+  def auto_attack_target(_monster, [], _room, _attack_ability) do
     nil
   end
 
   # weak monsters attack enemy with lowest % hp remaining
-  def auto_attack_target(%Monster{grade: "weak"}, enemies, room, _attack_spell) do
+  def auto_attack_target(%Monster{grade: "weak"}, enemies, room, _attack_ability) do
     enemies
     |> Enum.map(& room.mobiles[&1])
     |> Enum.sort_by(& &1.hp)
@@ -369,12 +357,12 @@ defmodule ApathyDrive.Monster do
   end
 
   # normal monsters attack a random enemy
-  def auto_attack_target(%Monster{grade: "normal"}, enemies, _room, _attack_spell) do
+  def auto_attack_target(%Monster{grade: "normal"}, enemies, _room, _attack_ability) do
     Enum.random(enemies)
   end
 
   # strong monsters attack enemy with highest % hp remaining
-  def auto_attack_target(%Monster{grade: "strong"}, enemies, room, _attack_spell) do
+  def auto_attack_target(%Monster{grade: "strong"}, enemies, room, _attack_ability) do
     enemies
     |> Enum.map(& room.mobiles[&1])
     |> Enum.sort_by(& &1.hp)
@@ -383,13 +371,13 @@ defmodule ApathyDrive.Monster do
   end
 
   # boss monsters attack enemy who will be damaged the least
-  def auto_attack_target(%Monster{grade: "boss"} = monster, enemies, room, attack_spell) do
+  def auto_attack_target(%Monster{grade: "boss"} = monster, enemies, room, attack_ability) do
     enemies
     |> Enum.map(fn enemy ->
-         {_caster, target} = Spell.apply_instant_abilities(room.mobiles[enemy], attack_spell, monster, room)
+         {_caster, target} = Ability.apply_instant_traits(room.mobiles[enemy], attack_ability, monster, room)
          target
        end)
-    |> Enum.sort_by(& &1.spell_shift)
+    |> Enum.sort_by(& &1.ability_shift)
     |> List.last
     |> Map.get(:ref)
   end
@@ -424,8 +412,8 @@ defmodule ApathyDrive.Monster do
       trunc(round_length_in_ms(monster) / attacks_per_round(monster))
     end
 
-    def attack_spell(monster) do
-      monster.spells
+    def attack_ability(monster) do
+      monster.abilities
       |> Map.values
       |> Enum.filter(&(&1.kind == "auto attack"))
       |> Enum.random
@@ -437,38 +425,22 @@ defmodule ApathyDrive.Monster do
       1
     end
 
-    def auto_attack_target(%Monster{} = monster, room, attack_spell) do
+    def auto_attack_target(%Monster{} = monster, room, attack_ability) do
       enemies = Monster.enemies(monster, room)
 
       Logger.info "#{monster.name} enemies: #{inspect enemies}"
 
-      Monster.auto_attack_target(monster, enemies, room, attack_spell)
+      Monster.auto_attack_target(monster, enemies, room, attack_ability)
     end
 
     def caster_level(%Monster{level: level}, %Monster{} = _target), do: level
     def caster_level(%Monster{}, %{level: level} = _target), do: level
 
-    def colored_name(%Monster{name: name} = monster, %Character{} = observer) do
-      monster_level = Mobile.target_level(observer, monster)
-      observer_level = Mobile.caster_level(observer, monster)
-
-      monster_power = Mobile.power_at_level(monster, monster_level)
-      observer_power = Mobile.power_at_level(observer, observer_level)
-
-      color =
-        cond do
-          monster_power < (observer_power * 0.66) ->
-            "teal"
-          monster_power < (observer_power * 1.33) ->
-            "chartreuse"
-          monster_power < (observer_power * 1.66) ->
-            "blue"
-          monster_power < (observer_power * 2.00) ->
-            "darkmagenta"
-          :else ->
-            "red"
-        end
-      "<span style='color: #{color};'>#{name}</span>"
+    def colored_name(%Monster{name: name, hostile: true}, %Character{} = _observer) do
+      "<span style='color: magenta;'>#{name}</span>"
+    end
+    def colored_name(%Monster{name: name}, %Character{} = _observer) do
+      "<span style='color: teal;'>#{name}</span>"
     end
 
     def confused(%Monster{effects: effects} = monster, %Room{} = room) do
@@ -567,9 +539,9 @@ defmodule ApathyDrive.Monster do
       agi * (1 + (modifier / 100))
     end
 
-    def enough_mana_for_spell?(monster, %Spell{} =  spell) do
+    def enough_mana_for_ability?(monster, %Ability{} =  ability) do
       mana = Mobile.max_mana_at_level(monster, monster.level)
-      cost = Spell.mana_cost_at_level(spell, monster.level)
+      cost = Ability.mana_cost_at_level(ability, monster.level)
 
       monster.mana >= (cost / mana)
     end
@@ -779,13 +751,6 @@ defmodule ApathyDrive.Monster do
       will * (1 + (modifier / 100))
     end
 
-    def spells_at_level(%Monster{spells: spells}, level) do
-      spells
-      |> Map.values
-      |> Enum.filter(& &1.level <= level)
-      |> Enum.sort_by(& &1.level)
-    end
-
     def stealth_at_level(monster, level, _room) do
       if Mobile.has_ability?(monster, "Revealed") do
         0
@@ -798,8 +763,8 @@ defmodule ApathyDrive.Monster do
       end
     end
 
-    def subtract_mana(monster, spell) do
-      cost = Spell.mana_cost_at_level(spell, monster.level)
+    def subtract_mana(monster, ability) do
+      cost = Ability.mana_cost_at_level(ability, monster.level)
       percentage = cost / Mobile.max_mana_at_level(monster, monster.level)
       update_in(monster.mana, &(max(0, &1 - percentage)))
     end

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Wear do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
 
   def keywords, do: ["wear", "equip", "wield"]
 
@@ -35,9 +35,11 @@ defmodule ApathyDrive.Commands.Wear do
                    Mobile.send_scroll(character, "<p>You remove #{Item.colored_name(item)}.</p>")
                  end)
                  Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
+                 send(character.socket, {:update_character, %{room_id: room.id, power: Mobile.power_at_level(character, character.level), level: character.level}})
                  character
                %{equipped: equipped, character: character} ->
                  Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
+                 send(character.socket, {:update_character, %{room_id: room.id, power: Mobile.power_at_level(character, character.level), level: character.level}})
                  character
                false ->
                  Mobile.send_scroll(character, "<p>You can't equip #{Item.colored_name(item)}.</p>")
@@ -50,8 +52,6 @@ defmodule ApathyDrive.Commands.Wear do
   def equip_item(%Character{inventory: inventory, equipment: equipment} = character, %Item{worn_on: worn_on} = item, persist \\ true) do
 
     cond do
-      !Character.can_equip_item?(character, item) ->
-        false
       Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
         item_to_remove =
           equipment
@@ -63,7 +63,7 @@ defmodule ApathyDrive.Commands.Wear do
         inventory = List.delete(inventory, item)
 
         if persist do
-          %EntityItem{id: item_to_remove.entities_items_id}
+          %ItemInstance{id: item_to_remove.instance_id}
           |> Ecto.Changeset.change(%{equipped: false})
           |> Repo.update!
         end
@@ -71,7 +71,7 @@ defmodule ApathyDrive.Commands.Wear do
         inventory = List.insert_at(inventory, -1, item_to_remove)
 
         if persist do
-          %EntityItem{id: item.entities_items_id}
+          %ItemInstance{id: item.instance_id}
           |> Ecto.Changeset.change(%{equipped: true})
           |> Repo.update!
         end
@@ -95,7 +95,7 @@ defmodule ApathyDrive.Commands.Wear do
 
         if persist do
           Enum.each(items_to_remove, fn item_to_remove ->
-            %EntityItem{id: item_to_remove.entities_items_id}
+            %ItemInstance{id: item_to_remove.instance_id}
             |> Ecto.Changeset.change(%{equipped: false})
             |> Repo.update!
           end)
@@ -108,7 +108,7 @@ defmodule ApathyDrive.Commands.Wear do
              end)
 
         if persist do
-          %EntityItem{id: item.entities_items_id}
+          %ItemInstance{id: item.instance_id}
           |> Ecto.Changeset.change(%{equipped: true})
           |> Repo.update!
         end
@@ -127,7 +127,7 @@ defmodule ApathyDrive.Commands.Wear do
           |> List.delete(item)
 
         if persist do
-          %EntityItem{id: item.entities_items_id}
+          %ItemInstance{id: item.instance_id}
           |> Ecto.Changeset.change(%{equipped: true})
           |> Repo.update!
         end

@@ -78,7 +78,7 @@ defmodule Systems.Effect do
     case effects[key] do
       %{} ->
         if opts[:fire_after_cast] && Map.has_key?(effects[key], "after_cast") do
-          #ApathyDrive.Spell.after_cast(effects[key]["after_cast"], [entity.ref])
+          #ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [entity.ref])
         end
 
         if opts[:show_expiration_message] && Map.has_key?(effects[key], "RemoveMessage") do
@@ -153,6 +153,26 @@ defmodule Systems.Effect do
            0
        end)
     |> Enum.sum
+  end
+
+  def effect_list(%{effects: effects}, name) do
+    effects
+    |> Map.values
+    |> Enum.map(fn
+         (%{} = effect) ->
+           key =
+             effect
+             |> Map.keys
+             |> Enum.find(fn key ->
+                  String.downcase(to_string(key)) == String.downcase(to_string(name))
+                end)
+
+           if key, do: Map.get(effect, key), else: nil
+         (_) ->
+           nil
+       end)
+    |> List.flatten
+    |> Enum.reject(&is_nil/1)
   end
 
   def find_by_ref(%{effects: effects}, ref) do

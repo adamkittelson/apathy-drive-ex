@@ -1,7 +1,7 @@
 defmodule ApathyDrive.RoomServer do
   use GenServer
-  alias ApathyDrive.{Character, Commands, Companion, LairMonster, Match, Mobile, MonsterSpawning,
-                     PubSub, Repo, Room, RoomSupervisor, RoomUnity, Spell, TimerManager, Presence}
+  alias ApathyDrive.{Ability, Character, Commands, Companion, Enchantment, LairMonster, Mobile,
+                     MonsterSpawning, PubSub, Repo, Room, RoomSupervisor, TimerManager, Presence}
   use Timex
   require Logger
 
@@ -67,10 +67,6 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:get_item, mobile, item})
   end
 
-  def destroy_item(room, item) do
-    GenServer.call(room, {:destroy_item, item})
-  end
-
   def character_connected(room, character, socket) do
     GenServer.call(room, {:character_connected, character, socket})
   end
@@ -78,28 +74,12 @@ defmodule ApathyDrive.RoomServer do
   def init(id) do
     room =
       Repo.get!(Room, id)
-      |> Repo.preload(:room_unity)
       |> Repo.preload(:area)
       |> Room.load_items
       |> Room.load_reputations
+      |> Room.load_skills
 
     Logger.metadata(room: room.name <> "##{room.id}")
-
-    room =
-      room
-      |> Room.set_default_essence
-
-    room =
-      if room.room_unity do
-        room
-      else
-        room_unity =
-          room
-          |> Ecto.build_assoc(:room_unity, essences: %{"good" => 0, "evil" => 0, "default" => room.default_essence})
-          |> Repo.save!
-
-        %{room | room_unity: room_unity}
-      end
 
     PubSub.subscribe("rooms")
     PubSub.subscribe("rooms:#{room.id}")
@@ -115,36 +95,6 @@ defmodule ApathyDrive.RoomServer do
     Process.send_after(self(), :save, 2000)
 
     {:ok, room}
-  end
-
-  def handle_call({:destroy_item, item}, _from, %Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions} = room) do
-    actual_item = items
-                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
-                  |> Match.one(:name_contains, item)
-
-    visible_item = item_descriptions["visible"]
-                   |> Map.keys
-                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Match.one(:keyword_starts_with, item)
-
-    hidden_item = item_descriptions["hidden"]
-                  |> Map.keys
-                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Match.one(:keyword_starts_with, item)
-
-    cond do
-      visible_item ->
-        {:reply, {:cant_destroy, visible_item.name}, room}
-      hidden_item ->
-        {:reply, {:cant_destroy, hidden_item.name}, room}
-      actual_item ->
-        room =
-          put_in(room.room_unity.items, List.delete(room.room_unity.items, actual_item.item))
-          |> Repo.save
-        {:reply, {:ok, actual_item.item}, room}
-      true ->
-        {:reply, :not_found, room}
-    end
   end
 
   def handle_call({:lock, direction}, _from, room) do
@@ -194,9 +144,8 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:ref, ref)
         |> Map.put(:leader, ref)
         |> Character.load_race
-        |> Character.load_class
         |> Character.load_reputations
-        |> Character.load_spells
+        |> Character.load_abilities
         |> Character.load_items
         |> Map.put(:socket, socket)
         |> Mobile.cpr
@@ -352,40 +301,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:unify, ref}, room) do
-    case Room.get_mobile(room, ref) do
-      %{spirit: nil, unities: []} ->
-        :noop
-      %{spirit: nil, experience: essence, unities: unities} ->
-        Enum.each(unities, fn(unity) ->
-          ApathyDrive.Unity.contribute(unity, essence)
-        end)
-      %{spirit: %Spirit{experience: essence, class: %{unities: unities}}} ->
-        Enum.each(unities, fn(unity) ->
-          ApathyDrive.Unity.contribute(unity, essence)
-        end)
-      _ ->
-        :noop
-    end
-
-    room = Room.update_mobile(room, ref, fn mobile ->
-      TimerManager.send_after(mobile, {:unify, 60_000, {:unify, ref}})
-    end)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:update_unity_essence, unity, essence}, room) do
-    room =
-      Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
-        Room.update_mobile(updated_room, ref, fn mobile ->
-          put_in(mobile.unity_essences[unity], essence)
-        end)
-      end)
-
-    {:noreply, room}
-  end
-
   def handle_info({:heartbeat, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn mobile ->
@@ -403,21 +318,7 @@ defmodule ApathyDrive.RoomServer do
             nil ->
               []
             _exits ->
-              case mobile.unities do
-                [] ->
-                  exits_in_area(room)
-                unities ->
-                  if room.room_unity.controlled_by in unities do
-                    case non_unity_controlled_exits(room, unities) do
-                      [] ->
-                        unity_controlled_exits(room, unities)
-                      result ->
-                        result
-                      end
-                  else
-                    unity_controlled_exits(room, unities)
-                  end
-              end
+              exits_in_area(room)
           end
 
         if Enum.any?(exits) do
@@ -445,25 +346,28 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:execute_auto_attack, ref}, %Room{} = room) do
     room =
-      Room.update_mobile(room, ref, fn
-        %{} = mobile ->
-          attack = Mobile.attack_spell(mobile)
-          if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
-            Logger.info "#{mobile.name} using attack spell on #{target_ref && inspect(target_ref) && room.mobiles[target_ref] && room.mobiles[target_ref].name}"
+      Room.update_mobile(room, ref, fn %{} = mobile ->
+        attack = Mobile.attack_ability(mobile)
+        if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
+          if TimerManager.time_remaining(mobile, :casting) == 0 do
+            Logger.info "#{mobile.name} using attack ability on #{target_ref && inspect(target_ref) && room.mobiles[target_ref] && room.mobiles[target_ref].name}"
             mobile = TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
             room = put_in(room.mobiles[mobile.ref], mobile)
 
-            Spell.execute(room, mobile.ref, attack, [target_ref])
+            Ability.execute(room, mobile.ref, attack, [target_ref])
           else
-            case mobile do
-              %Character{attack_target: target} = character when is_reference(target) ->
-                Mobile.send_scroll(character, "<p><span class='dark-yellow'>*Combat Off*</span></p>")
-                Map.put(character, :attack_target, nil)
-              mobile ->
-                Logger.info "#{mobile.name} found no target"
-                mobile
-              end
+            TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
           end
+        else
+          case mobile do
+            %Character{attack_target: target} = character when is_reference(target) ->
+              Mobile.send_scroll(character, "<p><span class='dark-yellow'>*Combat Off*</span></p>")
+              Map.put(character, :attack_target, nil)
+            mobile ->
+              Logger.info "#{mobile.name} found no target"
+              mobile
+          end
+        end
       end)
     {:noreply, room}
   end
@@ -474,7 +378,6 @@ defmodule ApathyDrive.RoomServer do
       case Systems.Effect.find_by_ref(mobile, effect_ref) do
         {key, %{"Interval" => interval} = effect} ->
           effect = Map.take(effect, ["Heal", "Damage"])
-          IO.inspect(effect)
 
           room
           |> Room.update_mobile(target_ref, fn mobile ->
@@ -482,7 +385,7 @@ defmodule ApathyDrive.RoomServer do
             |> put_in([Access.key!(:effects), key, "NextEffectAt"], System.monotonic_time(:milliseconds) + interval)
             |> Systems.Effect.schedule_next_periodic_effect
           end)
-          |> Spell.execute(target_ref, %Spell{abilities: effect, ignores_round_cooldown?: true}, [target_ref])
+          |> Ability.execute(target_ref, %Ability{traits: effect, ignores_round_cooldown?: true}, [target_ref])
         nil ->
           room
       end
@@ -514,7 +417,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info(:save, room) do
     Process.send_after(self(), :save, jitter(:timer.minutes(30)))
-    room = Repo.save(room)
+    room = Repo.save!(room)
     {:noreply, room}
   end
 
@@ -622,20 +525,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:report_essence, room) do
-    room = Room.report_essence(room)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:essence_report, report}, %Room{} = room) do
-    mirror_exit = Room.mirror_exit(room, report.room_id)
-
-    room = put_in(room.room_unity.exits[mirror_exit["direction"]], %{"essences" => report.essences, "area" => report.area, "controlled_by" => report.controlled_by})
-
-    {:noreply, room}
-  end
-
   def handle_info({:timeout, _ref, {name, time, [module, function, args]}}, %Room{timers: timers} = room) do
     jitter = trunc(time / 2) + :rand.uniform(time)
 
@@ -689,39 +578,15 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:lt_tick, time, caster_ref, enchantment}, room) do
+    room = Enchantment.tick(room, time, caster_ref, enchantment)
+    {:noreply, room}
+  end
+
   def handle_info(:start_timer, %Room{} = room) do
     room = Room.start_timer(room)
 
     {:noreply, room}
-  end
-
-  def handle_info({:timer_cast_ability, %{caster: ref, ability: ability, timer: time, target: target}}, room) do
-    if mobile = room.mobiles[ref] do
-      Mobile.send_scroll(mobile, "<p><span class='dark-yellow'>You cast your spell.</span></p>")
-
-      ability = case ability do
-        %{"global_cooldown" => nil} ->
-          ability
-          |> Map.delete("global_cooldown")
-          |> Map.put("ignores_global_cooldown", true)
-        %{"global_cooldown" => cooldown} ->
-          if cooldown > time do
-            Map.put(ability, "global_cooldown", cooldown - time)
-          else
-            ability
-            |> Map.delete("global_cooldown")
-            |> Map.put("ignores_global_cooldown", true)
-          end
-        _ ->
-          ability
-      end
-
-      send(self(), {:execute_ability, %{caster: ref, ability: Map.delete(ability, "cast_time"), target: target}})
-
-      {:noreply, room}
-    else
-      {:noreply, room}
-    end
   end
 
   def handle_info({:execute_script, mobile_ref, script}, room) do
@@ -732,9 +597,10 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  def handle_info({:execute_spell, %{caster: ref, spell: spell, target: target}}, room) do
+  def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      room = Spell.execute(room, mobile.ref, spell, target)
+      Mobile.send_scroll(mobile, "<p><span class='cyan'>You cast your spell.</span></p>")
+      room = Ability.execute(room, mobile.ref, ability, target)
       {:noreply, room}
     else
       {:noreply, room}
@@ -743,6 +609,12 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info(:reload_reputations, room) do
     room = Room.load_reputations(room)
+
+    {:noreply, room}
+  end
+
+  def handle_info(:reload_abilities, room) do
+    room = Room.load_abilities(room)
 
     {:noreply, room}
   end
@@ -761,19 +633,6 @@ defmodule ApathyDrive.RoomServer do
   defp exits_in_area(%Room{exits: exits} = room) do
     Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
       room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name) && passable?(room, room_exit)
-    end)
-  end
-
-  defp unity_controlled_exits(%Room{exits: exits} = room, unities) do
-    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
-      room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities) && passable?(room, room_exit)
-    end)
-  end
-
-  defp non_unity_controlled_exits(%Room{exits: exits} = room, unities) do
-    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
-      (room.room_unity.exits[direction] && (room.room_unity.exits[direction]["area"] == room.area.name)) &&
-      !(room.room_unity.exits[direction] && (room.room_unity.exits[direction]["controlled_by"] in unities)) && passable?(room, room_exit)
     end)
   end
 

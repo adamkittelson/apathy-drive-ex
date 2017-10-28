@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, EntityItem, Item, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
 
   def keywords, do: ["get"]
 
@@ -32,17 +32,17 @@ defmodule ApathyDrive.Commands.Get do
                   |> Match.one(:keyword_starts_with, item)
 
     case actual_item || visible_item || hidden_item do
-      %Item{level: _level, entities_items_id: entities_items_id} = item ->
+      %Item{level: _level, instance_id: instance_id} = item ->
 
-        %EntityItem{id: entities_items_id}
-        |> Ecto.Changeset.change(%{assoc_table: "characters", assoc_id: character.id})
+        ItemInstance
+        |> Repo.get(instance_id)
+        |> Ecto.Changeset.change(%{room_id: nil, character_id: character.id, equipped: false, hidden: false})
         |> Repo.update!
 
-        room
-        |> Room.load_items
+        update_in(room.items, &(List.delete(&1, item)))
         |> Room.update_mobile(character.ref, fn(char) ->
              char
-             |> Character.load_items
+             |> update_in([Access.key!(:inventory)], &([item | &1]))
              |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
            end)
       %{name: psuedo_item} ->

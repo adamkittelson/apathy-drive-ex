@@ -35,13 +35,5 @@
     </div>
   </div>
 
-  <div class="row">
-    <div class="four columns">
-      <label for="class">Class</label>
-      <%= select(f, :class_id, ApathyDrive.Class.select, prompt: "Choose Your Class", class: "u-full-width") %>
-      <%= error_tag f, :class_id %>
-    </div>
-  </div>
-
   <%= submit "Submit", class: "button-primary" %>
 <% end %>

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Character, Mobile, Room, RoomServer, Spell}
+  alias ApathyDrive.{Ability, Character, Mobile, Room, RoomServer}
 
   schema "scripts" do
     field :instructions, ApathyDrive.JSONB, default: []
@@ -237,20 +237,20 @@ defmodule ApathyDrive.Script do
     end
   end
 
-  def execute_instruction(%Room{} = room, %{spirit: %Spirit{}} = monster, %{"add_experience" => exp}, script) do
-    monster = Spirit.add_experience(monster, exp)
-    room = put_in(room.monsters[monster.ref], monster)
-    execute_script(room, monster, script)
+  def execute_instruction(%Room{} = room, %Character{} = character, %{"add_experience" => exp}, script) do
+    character = Character.add_experience(character, exp)
+    room = put_in(room.mobiles[character.ref], character)
+    execute_script(room, character, script)
   end
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"cast_ability" => ability_id}, script) do
-    case ApathyDrive.Spell.find(ability_id) do
+    case Ability.find(ability_id) do
       nil ->
-        Mobile.send_scroll(monster, "<p><span class='red'>Not Implemented: Spell ##{ability_id}</span></p>")
-      %Spell{} = spell ->
-        spell = Map.put(spell, :ignores_round_cooldown?, true)
+        Mobile.send_scroll(monster, "<p><span class='red'>Not Implemented: Ability ##{ability_id}</span></p>")
+      %Ability{} = ability ->
+        ability = Map.put(ability, :ignores_round_cooldown?, true)
 
-        send(self(), {:execute_spell, %{caster: monster.ref, spell: spell, target: [monster.ref]}})
+        send(self(), {:execute_ability, %{caster: monster.ref, ability: ability, target: [monster.ref]}})
     end
     execute_script(room, monster, script)
   end
@@ -269,13 +269,13 @@ defmodule ApathyDrive.Script do
     room
   end
 
-  def execute_instruction(%Room{} = room, %{spirit: %Spirit{experience: exp}} = monster, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, script) do
-    if exp >= price do
-      monster = Spirit.add_experience(monster, -price)
-      room = put_in(room.monsters[monster.ref], monster)
-      execute_script(room, monster, script)
+  def execute_instruction(%Room{} = room, %Character{gold: gold} = character, %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}}, script) do
+    if gold >= price do
+      character = update_in(character.gold, &(&1 - price))
+      room = put_in(room.mobiles[character.ref], character)
+      execute_script(room, character, script)
     else
-      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
+      Mobile.send_scroll(character, "<p><span class='dark-green'>#{failure_message}</p>")
       room
     end
   end

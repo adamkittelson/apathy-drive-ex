@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Room do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, Area, Character, Companion, Match, Mobile, Monster, MonsterSpawning, Room, RoomServer, RoomUnity, PubSub, TimerManager}
+  alias ApathyDrive.{Ability, Area, Character, Companion, Match, Mobile, Monster, MonsterSpawning, Room, RoomServer, PubSub, TimerManager}
   require Logger
 
   @behaviour Access
@@ -26,7 +26,6 @@ defmodule ApathyDrive.Room do
     field :lair_next_spawn_at, :integer, virtual: true, default: 0
     field :timers,             :map, virtual: true, default: %{}
     field :last_effect_key,    :integer, virtual: true, default: 0
-    field :default_essence,    :integer, virtual: true
     field :mobiles,            :map, virtual: true, default: %{}
     field :timer,              :any, virtual: true
     field :items,              :any, virtual: true, default: []
@@ -35,7 +34,6 @@ defmodule ApathyDrive.Room do
 
     timestamps()
 
-    has_one    :room_unity, RoomUnity
     has_many   :persisted_mobiles, Monster
     belongs_to :ability, Ability
     belongs_to :area, ApathyDrive.Area
@@ -43,10 +41,12 @@ defmodule ApathyDrive.Room do
     has_many   :items_for_sales, through: [:shop_items, :item]
     has_many   :lairs, ApathyDrive.LairMonster
     has_many   :lair_monsters, through: [:lairs, :monster]
+    has_many   :room_skills, ApathyDrive.RoomSkill
+    has_many   :skills, through: [:room_skills, :skill]
   end
 
-  def load_items(%Room{id: id} = room) do
-    items = ApathyDrive.EntityItem.load_items("rooms", id)
+  def load_items(%Room{} = room) do
+    items = ApathyDrive.ItemInstance.load_items(room)
     Map.put(room, :items, items)
   end
 
@@ -60,6 +60,23 @@ defmodule ApathyDrive.Room do
     |> put_in([:allies], Enum.reduce(area.allies, %{}, &(Map.put(&2, &1.id, &1.name))))
     |> put_in([:enemies], Enum.reduce(area.enemies, %{}, &(Map.put(&2, &1.id, &1.name))))
   end
+
+  def load_skills(%Room{} = room) do
+    Repo.preload(room, :skills, force: true)
+  end
+
+  def load_abilities(%Room{} = room) do
+    Enum.reduce(room.mobiles, room, fn
+      {ref, %Character{}}, updated_room ->
+        Room.update_mobile(updated_room, ref, fn(character) ->
+          Character.load_abilities(character)
+        end)
+      _, updated_room ->
+        updated_room
+    end)
+  end
+
+  def trainer?(%Room{} = room), do: Enum.any?(room.skills)
 
   def update_mobile(%Room{} = room, mobile_ref, fun) do
     if mobile = room.mobiles[mobile_ref] do
@@ -94,9 +111,9 @@ defmodule ApathyDrive.Room do
       mobile
       |> Mobile.set_room_id(room.id)
 
-    if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
-
     room = put_in(room.mobiles[mobile.ref], mobile)
+
+    if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
 
     room =
       if Map.has_key?(mobile, :leader) and is_nil(room.mobiles[mobile.leader]) do
@@ -149,11 +166,6 @@ defmodule ApathyDrive.Room do
     Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
       TimerManager.apply_timers(updated_room, ref)
     end)
-  end
-
-  def add_items(%Room{room_unity: %RoomUnity{items: items}} = room, new_items) do
-    put_in(room.room_unity.items, new_items ++ items)
-    |> Repo.save
   end
 
   def start_timer(%Room{timer: timer} = room) do
@@ -269,19 +281,14 @@ defmodule ApathyDrive.Room do
 
   def world_map do
     from area in Area,
-    select: area.id
+    select: %{id: area.id, level: area.level}
   end
 
   def area_map(area_id) do
     from room in Room,
     where: room.area_id == ^area_id and not is_nil(room.coordinates),
     join: area in assoc(room, :area),
-    join: room_unity in assoc(room, :room_unity),
-    select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, level: area.level, controlled_by: room_unity.controlled_by, exits: room.exits}
-  end
-
-  def controlled_by(%Room{} = room) do
-    room.room_unity.controlled_by
+    select: %{id: room.id, name: room.name, coords: room.coordinates, area: area.name, exits: room.exits}
   end
 
   def update_area(%Room{area: %Area{name: old_area}} = room, %Area{} = area) do
@@ -290,61 +297,10 @@ defmodule ApathyDrive.Room do
       room
       |> Map.put(:area, area)
       |> Map.put(:area_id, area.id)
-      |> set_default_essence()
       |> Repo.save!
     PubSub.subscribe("areas:#{area.id}")
     ApathyDriveWeb.Endpoint.broadcast!("map", "area_change", %{room_id: room.id, old_area: old_area, new_area: area.name})
     room
-  end
-
-  def set_default_essence(%Room{room_unity: %RoomUnity{controlled_by: nil}} = room) do
-    room = Map.put(room, :default_essence, default_essence(room))
-    put_in(room.room_unity.essences["default"], room.default_essence)
-  end
-  def set_default_essence(%Room{} = room) do
-    Map.put(room, :default_essence, default_essence(room))
-  end
-
-  def adjacent_room_data(%Room{} = room, data \\ %{}) do
-    Map.merge(data, %{
-      essences: room.room_unity.essences,
-      room_id: room.id,
-      area: room.area.name,
-      controlled_by: room.room_unity.controlled_by
-    })
-  end
-
-  def update_controlled_by(%Room{room_unity: %RoomUnity{essences: essences}} = room) do
-    controlled_by = room.room_unity.controlled_by
-
-    highest_essence =
-      essences
-      |> Map.keys
-      |> Enum.sort_by(&Map.get(essences, &1, 0), &>=/2)
-      |> List.first
-
-    new_controlled_by =
-      cond do
-        highest_essence == "good" and essences["good"] > 0 and (essences["good"] * 0.9) > essences["evil"] ->
-          "good"
-        highest_essence == "evil" and essences["evil"] > 0 and (essences["evil"] * 0.9) > essences["good"] ->
-          "evil"
-        true ->
-          nil
-      end
-
-    if controlled_by != new_controlled_by do
-      ApathyDriveWeb.Endpoint.broadcast!("map", "room control change", %{room_id: room.id, controlled_by: new_controlled_by})
-
-      put_in(room.room_unity.controlled_by, new_controlled_by)
-      |> Repo.save
-    else
-      room
-    end
-  end
-
-  def default_essence(%Room{area: %Area{level: level}}) do
-    ApathyDrive.Level.exp_at_level(level)
   end
 
   def changeset(%Room{} = room, params \\ %{}) do
@@ -374,13 +330,29 @@ defmodule ApathyDrive.Room do
        end)
   end
 
+  def light(%Room{} = room) do
+    light_source_average =
+      room.mobiles
+      |> Enum.map(fn {_ref, mobile} ->
+           Mobile.ability_value(mobile, "Light")
+         end)
+      |> Enum.reject(& &1 == 0)
+      |> average()
+
+    if light_source_average do
+      trunc(light_source_average)
+    else
+      room.light
+    end
+  end
+
   def start_room_id do
     ApathyDrive.Config.get(:start_room)
   end
 
-  def find_item(%Room{room_unity: %RoomUnity{items: items}, item_descriptions: item_descriptions}, item) do
+  def find_item(%Room{items: items, item_descriptions: item_descriptions}, item) do
     actual_item = items
-                  |> Enum.map(&(%{name: &1["name"], keywords: String.split(&1["name"]), item: &1}))
+                  |> Enum.map(&(%{name: &1.name, keywords: String.split(&1.name), item: &1}))
                   |> Match.one(:keyword_starts_with, item)
 
     visible_item = item_descriptions["visible"]
@@ -608,63 +580,6 @@ defmodule ApathyDrive.Room do
       direction ->
         direction
     end
-  end
-
-  def report_essence(%Room{exits: exits, room_unity: %RoomUnity{essences: essences}} = room) do
-    Enum.each(exits, fn(%{"destination" => dest, "direction" => direction, "kind" => kind}) ->
-      unless kind in ["Cast", "RemoteAction"] do
-
-        report = %{
-          essences: essences,
-          room_id: room.id,
-          direction: direction,
-          kind: kind,
-          legacy_id: room.legacy_id,
-          area: room.area.name,
-          controlled_by: room.room_unity.controlled_by
-        }
-
-        dest
-        |> RoomServer.find()
-        |> send({:essence_report, report})
-      end
-    end)
-
-    put_in(room.room_unity.reported_essences, essences)
-  end
-
-  def essence_update_interval(%Room{mobiles: mobiles}) do
-    if Enum.any?(mobiles, fn {_ref, mobile} -> !is_nil(mobile.spirit) end) do
-      1000
-    else
-      60_000
-    end
-  end
-
-  def report_essence?({essence, amount}, last_reported_essences, targets) do
-    case last_reported_essences[essence] do
-      nil ->
-        true
-      reported ->
-        difference = amount - reported
-
-        percent_difference = if reported == 0, do: 1, else: abs(difference) / reported
-
-        cond do
-          difference == 0 ->
-            false
-          percent_difference >= 0.05 ->
-            true
-          amount == targets[essence]["target"] and amount != reported ->
-            true
-          true ->
-            false
-        end
-    end
-  end
-
-  def update_essence_targets(%Room{} = room) do
-    room
   end
 
   def average([]), do: nil

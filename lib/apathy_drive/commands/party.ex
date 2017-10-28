@@ -31,8 +31,7 @@ defmodule ApathyDrive.Commands.Party do
   defp show_invitee(_character, nil), do: :noop
   defp show_invitee(character, invitee) do
     data = %{
-      name: String.pad_trailing(invitee.name, 13),
-      class: String.pad_trailing("(#{invitee.class})", 13)
+      name: String.pad_trailing(invitee.name, 13)
     }
 
     Mobile.send_scroll(character, "<p>#{data.name}#{data.class}[Invited]</p>")
@@ -41,7 +40,6 @@ defmodule ApathyDrive.Commands.Party do
   defp show_party_member(character, %Character{} = member, color) do
     data = %{
       name: String.pad_trailing(member.name, 13),
-      class: String.pad_trailing("(#{member.class})", 13),
       hp: trunc(member.hp * 100) |> to_string |> String.pad_leading(3),
       mana: trunc(member.mana * 100) |> to_string |> String.pad_leading(3)
     }

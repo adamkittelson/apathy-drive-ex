@@ -21,7 +21,7 @@ defmodule ApathyDrive.Commands.Buy do
       %Item{} = item ->
         price =
           item
-          |> Map.put(:level, character.level)
+          |> Map.put(:level, Item.generated_item_level(character, item.grade))
           |> Item.price
 
         if price > character.gold do
@@ -30,7 +30,7 @@ defmodule ApathyDrive.Commands.Buy do
         else
           Room.update_mobile(room, character.ref, fn(char) ->
 
-            Item.generate_for_character!(item, character, true)
+            item = Item.generate_for_character!(item, character, :shop)
 
             update_in(char.gold, &(&1 - price))
             |> Character.load_items

@@ -26,7 +26,6 @@ defmodule ApathyDriveWeb.MUDChannel do
 
               ApathyDrive.PubSub.subscribe("spirits:online")
               ApathyDrive.PubSub.subscribe("chat:gossip")
-              ApathyDrive.PubSub.subscribe("chat:#{String.downcase(character.class)}")
 
             send(self(), :after_join)
 
@@ -99,12 +98,6 @@ defmodule ApathyDriveWeb.MUDChannel do
 
   def handle_info({:update_prompt, html}, socket) do
     Phoenix.Channel.push socket, "update prompt", %{:html => html}
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:update_room_essence, essence}, socket) do
-    Phoenix.Channel.push socket, "update room essence", essence
 
     {:noreply, socket}
   end

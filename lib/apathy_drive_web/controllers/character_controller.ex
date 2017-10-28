@@ -25,7 +25,7 @@ defmodule ApathyDriveWeb.CharacterController do
         |> put_session(:character, character.id)
         |> redirect(to: game_path(conn, :game))
       {:error, changeset} ->
-        render(conn, ApathyDrive.SessionView, "new.html", changeset: changeset)
+        render(conn, ApathyDriveWeb.SessionView, "new.html", changeset: changeset)
     end
   end
 

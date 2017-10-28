@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Commands, Monster, Match, Mobile, Room, RoomServer, Spell}
+  alias ApathyDrive.{Ability, Commands, Monster, Match, Mobile, Room, RoomServer}
 
   @callback execute(%Room{}, %Monster{}, list) :: %Room{}
 
@@ -10,11 +10,11 @@ defmodule ApathyDrive.Command do
                "w", "west", "nw", "northwest", "u", "up", "d", "down"]
 
   def all do
-    [Commands.Abilities, Commands.Attack, Commands.Buy, Commands.Class, Commands.Cooldowns,
+    [Commands.Abilities, Commands.Attack, Commands.Buy, Commands.Cooldowns,
      Commands.Dismiss, Commands.Drop, Commands.Experience, Commands.Get, Commands.Gossip, Commands.Hire,
      Commands.Inventory, Commands.Join, Commands.Invite, Commands.Leave, Commands.List,
      Commands.Look, Commands.Party, Commands.Reputations, Commands.Remove, Commands.Return, Commands.Say,
-     Commands.Score, Commands.Search, Commands.Sell, Commands.System, Commands.Wear, Commands.Who]
+     Commands.Score, Commands.Search, Commands.Sell, Commands.Skills, Commands.System, Commands.Train, Commands.Wear, Commands.Who]
   end
 
   def execute(%Room{} = room, monster_ref, command, arguments) do
@@ -25,6 +25,8 @@ defmodule ApathyDrive.Command do
     Logger.info "#{monster && monster.name} command: #{full_command}"
 
     cond do
+      is_nil(monster) ->
+        room
       command in @directions ->
         Commands.Move.execute(room, monster, command)
       command_exit = Room.command_exit(room, full_command) ->
@@ -36,10 +38,10 @@ defmodule ApathyDrive.Command do
       cmd = Match.one(Enum.map(all(), &(&1.to_struct)), :keyword_starts_with, command) ->
         cmd.module.execute(room, monster, arguments)
       true ->
-        spell = monster.spells[String.downcase(command)]
+        ability = monster.abilities[String.downcase(command)]
 
-        if spell do
-          Spell.execute(room, monster.ref, spell, Enum.join(arguments, " "))
+        if ability do
+          Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
         else
           Mobile.send_scroll(monster, "<p>What?</p>")
           room
