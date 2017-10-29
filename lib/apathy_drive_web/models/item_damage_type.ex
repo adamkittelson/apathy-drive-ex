@@ -22,7 +22,8 @@ defmodule ApathyDrive.ItemDamageType do
                kind: kind,
                potency: potency_with_rarity_bonus(potency, rarity),
                damage_type: damage_type.name,
-               level: level
+               level: level,
+               damage_type_id: damage_type.id
               } | damages
            ]
        end)

@@ -350,7 +350,6 @@ defmodule ApathyDrive.RoomServer do
         attack = Mobile.attack_ability(mobile)
         if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
           if TimerManager.time_remaining(mobile, :casting) == 0 do
-            Logger.info "#{mobile.name} using attack ability on #{target_ref && inspect(target_ref) && room.mobiles[target_ref] && room.mobiles[target_ref].name}"
             mobile = TimerManager.send_after(mobile, {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}})
             room = put_in(room.mobiles[mobile.ref], mobile)
 
@@ -364,7 +363,6 @@ defmodule ApathyDrive.RoomServer do
               Mobile.send_scroll(character, "<p><span class='dark-yellow'>*Combat Off*</span></p>")
               Map.put(character, :attack_target, nil)
             mobile ->
-              Logger.info "#{mobile.name} found no target"
               mobile
           end
         end

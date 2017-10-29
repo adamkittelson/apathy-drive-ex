@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Ability do
   use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Character, Companion, Enchantment, Item, Match, Mobile, Monster, Party, Repo, Room, Stealth, Text, TimerManager}
+  alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Character, Companion, Crit, Enchantment, Item, Match, Mobile, Monster, Party, Repo, Room, Stealth, Text, TimerManager}
   require Logger
 
   schema "abilities" do
@@ -336,7 +336,6 @@ defmodule ApathyDrive.Ability do
           Enum.reduce(targets, room, fn(target_ref, updated_room) ->
             Room.update_mobile(updated_room, target_ref, fn target ->
               if affects_target?(target, ability) do
-                Logger.info "#{caster.name}'s ability affecting #{target.name}"
                 updated_room = apply_ability(updated_room, caster, target, ability)
 
                 target = updated_room.mobiles[target_ref]
@@ -494,25 +493,45 @@ defmodule ApathyDrive.Ability do
     else
       display_cast_message(room, caster, target, ability)
 
-      room = trigger_damage_shields(room, caster.ref, target.ref, ability)
+      room
+      |> trigger_damage_shields(caster.ref, target.ref, ability)
+      |> apply_critical(caster.ref, target.ref, ability, target.ability_shift)
+    end
+  end
+
+  def apply_critical(room, caster_ref, target_ref, ability, ability_shift) when ability_shift >= 0 do
+    finish_ability(room, caster_ref, target_ref, ability, ability_shift)
+  end
+  def apply_critical(room, caster_ref, target_ref, %Ability{kind: "critical"} = ability, ability_shift) do
+    finish_ability(room, caster_ref, target_ref, ability, ability_shift)
+  end
+  def apply_critical(room, caster_ref, target_ref, ability, ability_shift) do
+    if critical = Crit.find_for_ability(ability, ability_shift) do
+      apply_ability(room, room.mobiles[caster_ref], room.mobiles[target_ref], critical)
+    else
+      finish_ability(room, caster_ref, target_ref, ability, ability_shift)
+    end
+  end
+
+  def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
+    Room.update_mobile(room, target_ref, fn (target) ->
+      caster = room.mobiles[caster_ref]
+
+      duration = duration(ability, caster, target, room)
 
       target =
-        if target.ability_shift do
-          Mobile.shift_hp(target, target.ability_shift, room)
+        if ability_shift do
+          Mobile.shift_hp(target, ability_shift, room)
         else
           target
         end
 
-      target =
-        target
-        |> Map.put(:ability_shift, nil)
-        |> Map.put(:ability_special, nil)
-        |> apply_duration_traits(ability, caster, duration, room)
-        |> Mobile.update_prompt
-
-      room
-      |> put_in([:mobiles, target.ref], target)
-    end
+      target
+      |> Map.put(:ability_shift, nil)
+      |> Map.put(:ability_special, nil)
+      |> apply_duration_traits(ability, caster, duration, room)
+      |> Mobile.update_prompt
+    end)
   end
 
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, _ability) when target_ref == caster_ref, do: room
@@ -565,7 +584,6 @@ defmodule ApathyDrive.Ability do
     {caster, target}
   end
   def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room) when is_float(value) do
-    Logger.info "healing #{target.name} #{inspect value}"
     {caster, Map.put(target, :ability_shift, value)}
   end
   def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, room) do
@@ -575,8 +593,10 @@ defmodule ApathyDrive.Ability do
 
     {caster, Map.put(target, :ability_shift, percentage_healed)}
   end
+  def apply_instant_trait({"Damage", value}, %{} = target, %Ability{kind: "critical"}, caster, _room) when is_float(value) do
+    {caster, Map.put(target, :ability_shift, value)}
+  end
   def apply_instant_trait({"Damage", value}, %{} = target, _ability, caster, _room) when is_float(value) do
-    Logger.info "damaging #{target.name} #{inspect value}"
     {caster, Map.put(target, :ability_shift, -value)}
   end
   def apply_instant_trait({"Damage", damages}, %{} = target, _ability, caster, room) do
@@ -753,6 +773,9 @@ defmodule ApathyDrive.Ability do
        end)
   end
 
+  def process_duration_trait({"Damage", damages}, effects, _target, _caster, _ability, _room) when is_float(damages) do
+    effects
+  end
   def process_duration_trait({"Damage", damages}, effects, target, caster, _ability, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
@@ -1061,7 +1084,7 @@ defmodule ApathyDrive.Ability do
   end
   def display_pre_cast_message(_room, _caster, _targets, _ability), do: :noop
 
-  def message_color(%Ability{kind: kind}) when kind in ["attack", "curse"], do: "red"
+  def message_color(%Ability{kind: kind}) when kind in ["attack", "curse", "critical"], do: "red"
   def message_color(%Ability{}), do: "blue"
 
   def can_execute?(%Room{} = room, caster_ref, ability) do

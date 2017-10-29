@@ -24,8 +24,7 @@ defmodule ApathyDrive.Aggression do
 
   def react(%{} = mobile, %{}), do: mobile
 
-  def attack(%{} = attacker, %{ref: ref} = intruder) do
-    Logger.info("#{attacker.name} attacking #{intruder.name} (#{inspect ref})")
+  def attack(%{} = attacker, %{ref: ref} = _intruder) do
     time = min(Mobile.attack_interval(attacker), TimerManager.time_remaining(attacker, :auto_attack_timer))
 
     effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
