@@ -2,7 +2,7 @@ defmodule ApathyDrive.Crit do
   use ApathyDrive.Web, :model
   use Timex
 
-  alias ApathyDrive.{Ability, DamageType}
+  alias ApathyDrive.{Ability, CritTrait, DamageType}
 
   schema "crits" do
     field :crit_table, :string
@@ -46,15 +46,25 @@ defmodule ApathyDrive.Crit do
         |> Repo.one
 
       if crit do
-        %Ability{
-          kind: "critical",
-          user_message: crit.user_message,
-          target_message: crit.target_message,
-          spectator_message: crit.spectator_message,
-          traits: %{
-            "Damage" => damage
+        ability =
+          %Ability{
+            kind: "critical",
+            user_message: crit.user_message,
+            target_message: crit.target_message,
+            spectator_message: crit.spectator_message
           }
-        }
+
+        case CritTrait.load_traits(crit.id) do
+          %{"DamageMultiplier" => multiplier} = traits ->
+            traits =
+              traits
+              |> Map.delete("DamageMultiplier")
+              |> Map.put("Damage", damage * multiplier)
+            put_in(ability.traits, traits)
+          %{} = traits ->
+            traits = Map.put(traits, "Damage", damage)
+            put_in(ability.traits, traits)
+        end
       end
     end
   end
