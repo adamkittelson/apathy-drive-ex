@@ -11,6 +11,7 @@ defmodule ApathyDrive.Crit do
     field :user_message, :string
     field :target_message, :string
     field :spectator_message, :string
+    field :duration, :integer, default: 0
 
     belongs_to :damage_type, DamageType
 
@@ -48,6 +49,7 @@ defmodule ApathyDrive.Crit do
       if crit do
         ability =
           %Ability{
+            duration: crit.duration,
             kind: "critical",
             user_message: crit.user_message,
             target_message: crit.target_message,
