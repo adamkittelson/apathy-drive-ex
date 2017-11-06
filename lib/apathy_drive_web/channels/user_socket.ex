@@ -4,6 +4,7 @@ defmodule ApathyDriveWeb.UserSocket do
   ## Channels
   channel "mud:play", ApathyDriveWeb.MUDChannel
   channel "map", ApathyDriveWeb.MapChannel
+  channel "admin", ApathyDriveWeb.AdminChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket

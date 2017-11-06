@@ -1,6 +1,6 @@
 defmodule ApathyDriveWeb.Router do
   use Phoenix.Router
-  
+
   pipeline :browser do
     plug :accepts, ~w(html)
     plug :fetch_session
@@ -22,6 +22,13 @@ defmodule ApathyDriveWeb.Router do
     resources "/sessions", SessionController
     resources "/characters", CharacterController, only: [:create, :edit, :update],
                                                   singleton: true
+  end
+
+  scope "/admin", ApathyDriveWeb do
+    pipe_through :browser
+    pipe_through :admin
+
+    get "/", AdminController, :index
   end
 
   # Fetch the current user from the session and add it to `conn.assigns`. This
