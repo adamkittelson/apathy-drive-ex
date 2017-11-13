@@ -12,6 +12,7 @@ defmodule ApathyDriveWeb.Router do
 
   pipeline :admin do
     plug :require_admin
+    plug :put_layout, {ApathyDriveWeb.LayoutView, :admin}
   end
 
   scope "/", ApathyDriveWeb do

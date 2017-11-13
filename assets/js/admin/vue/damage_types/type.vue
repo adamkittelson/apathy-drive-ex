@@ -8,10 +8,10 @@
 
 <script>
   export default {
-    props: ['type'],
+    props: ['channel', 'type'],
     methods: {
       updateName: _.debounce(function(id, name) {
-        chan.push("update_name", {id: id, name: name})
+        this.channel.push("update_name", {id: id, name: name})
         .receive("ok", () => console.log("Name Updated") )
       }, 500)
     }

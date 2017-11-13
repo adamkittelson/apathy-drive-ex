@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Apotheosis Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600,100' rel='stylesheet' type='text/css'>
+  <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/components.css") %>">
+  <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+  <script>require("js/jquery-1.10.2.min");</script>
+  <script>require("js/nav");</script>
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
+</head>
+<body>
+  <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
+  <div class="container">
+    <%= render @view_module, @view_template, assigns %>
+  </div>
+  <!-- Page Footer Layout
+       –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <script>
+    require("phoenix_html");
+     var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"
+    require("js/nav");
+    require("js/admin/admin.js");
+  </script>
+</body>
+</html>
