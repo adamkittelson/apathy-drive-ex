@@ -1,15 +1,20 @@
 <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
-<div id="app1">
-  <table>
-    <tr is="damage_type"
-      v-for="damage_type in damage_types"
-      v-bind:damage_type="damage_type"
-      v-bind:key="damage_type.id">
-    </tr>
-  </table>
-</div>
+
+
+<div id="shopping-list"></div>
+
+<template id="damage-types">
+  <div id="app">
+    <table>
+      <type is="type" v-for="type in damage_types" :type="type" :key="type.id"></type>
+    </table>
+  </div>
+</template>
+
+<div id="app"></div>
+
 <script>
   var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"
   require("js/nav");
-  require("js/admin.js");
+  require("js/admin/admin.js");
 </script>

@@ -7,6 +7,7 @@
   <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600,100' rel='stylesheet' type='text/css'>
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/components.css") %>">
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   <script>require("js/jquery-1.10.2.min");</script>
   <script>require("js/nav");</script>
