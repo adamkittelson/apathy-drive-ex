@@ -23,8 +23,11 @@ defmodule ApathyDriveWeb.AdminChannel do
     damage_types =
       DamageType.data_for_admin_index
       |> Repo.all
+      |> Enum.reduce(%{}, fn damage_type, damage_types ->
+        Map.put(damage_types, damage_type.id, damage_type)
+      end)
 
-    push(socket, "damage_types", %{damage_types: damage_types})
+    push(socket, "damage_types", damage_types)
 
     {:noreply, socket}
   end
