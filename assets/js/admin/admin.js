@@ -2,23 +2,27 @@ import {Socket} from "phoenix"
 import ShoppingList from './vue/shopping_list.vue'
 import Type from './vue/damage_types/type.vue'
 
+var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
+socket.connect();
+
+const store = new Vuex.Store({
+  state: {
+    channel: socket.channel("admin", {character: characterID})
+  }
+})
+
 window.shopping_list = new Vue({
   el: '#shopping-list',
   template: '<ShoppingList/>',
   components: { ShoppingList }
 })
 
-var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
-socket.connect();
-var chan = socket.channel("admin", {character: characterID});
-
-
 window.damage_types = new Vue({
   el: "#app",
+  store,
   template: '#damage-types',
   data: {
-    damage_types: {},
-    channel: chan
+    damage_types: {}
   },
   computed: {
     sorted_damage_types: function() {
@@ -30,10 +34,9 @@ window.damage_types = new Vue({
   components: { Type }
 });
 
+store.state.channel.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
 
-chan.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
-
-chan.on("damage_types", function(data){
+store.state.channel.on("damage_types", function(data){
   console.log(data.damage_types);
   damage_types.damage_types = data.damage_types;
 });

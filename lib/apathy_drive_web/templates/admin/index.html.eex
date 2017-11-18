@@ -3,7 +3,7 @@
 <template id="damage-types">
   <div id="app">
     <table>
-      <type is="type" v-for="type in sorted_damage_types" :channel="channel" :type="type" :key="type.id"></type>
+      <type is="type" v-for="type in sorted_damage_types" :type="type" :key="type.id"></type>
     </table>
   </div>
 </template>

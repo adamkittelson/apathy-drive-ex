@@ -8,10 +8,10 @@
 
 <script>
   export default {
-    props: ['channel', 'type'],
+    props: ['type'],
     methods: {
       updateName: _.debounce(function(id, name) {
-        this.channel.push("update_name", {id: id, name: name})
+        this.$store.state.channel.push("update_name", {id: id, name: name})
         .receive("ok", () => console.log("Name Updated") )
       }, 500)
     }
