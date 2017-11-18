@@ -14,6 +14,12 @@
   <script src="https://unpkg.com/vue"></script>
   <script src="https://unpkg.com/vuex"></script>
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
+  <script>
+    require("phoenix_html");
+    var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"
+    require("js/nav");
+    require("js/admin/admin.js");
+  </script>
 </head>
 <body>
   <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
@@ -22,11 +28,5 @@
   </div>
   <!-- Page Footer Layout
        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <script>
-    require("phoenix_html");
-     var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"
-    require("js/nav");
-    require("js/admin/admin.js");
-  </script>
 </body>
 </html>

@@ -33,7 +33,14 @@
       </li>
       <%= if @conn.assigns[:admin?] do %>
         <li class="navbar-item">
-          <a class="navbar-link" href="/admin" target="_blank">Admin</a>
+          <a class="navbar-link" href="#admin" data-popover="#adminPopover">Administration</a>
+          <div id="adminPopover" class="popover">
+            <ul class="popover-list">
+              <li class="popover-item">
+                <a class="popover-link" href="/admin/damage-types" target="_blank">Damage Types</a>
+              </li>
+            </ul>
+          </div>
         </li>
       <% end %>
       <%= if @conn.assigns[:character] do %>

@@ -29,7 +29,7 @@ defmodule ApathyDriveWeb.Router do
     pipe_through :browser
     pipe_through :admin
 
-    get "/", AdminController, :index
+    get "/damage-types", Admin.DamageTypesController, :index
   end
 
   # Fetch the current user from the session and add it to `conn.assigns`. This
