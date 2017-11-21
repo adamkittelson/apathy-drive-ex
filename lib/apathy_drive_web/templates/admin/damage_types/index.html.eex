@@ -3,7 +3,20 @@
     <table>
       <type is="type" v-for="type in sorted_damage_types" :type="type" :key="type.id"></type>
     </table>
-  </div>
+    <v-app dark>
+      <v-data-table
+        :headers="headers"
+        :items="sorted_damage_types"
+        hide-actions
+        dark
+      >
+      <template slot="items" slot-scope="props">
+        <td>{{ props.item.id }}</td>
+        <td>{{ props.item.name }}</td>
+      </template>
+    </v-data-table>
+  </v-app>
+</div>
 </template>
 
 <div id="app"></div>

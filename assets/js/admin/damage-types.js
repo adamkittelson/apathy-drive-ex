@@ -22,7 +22,22 @@ window.damage_types = new Vue({
       return _.sortBy(list, ["id"])
     }
   },
-  components: { Type }
+  components: { Type },
+  data() {
+    return {
+      pagination: {
+        sortBy: 'id'
+      },
+      headers: [
+        {
+          text: 'ID',
+          align: 'left',
+          value: 'id'
+        },
+        { text: 'Name', align: 'left', value: 'name' }
+      ]
+    }
+  }
 });
 
 store.state.channel.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
