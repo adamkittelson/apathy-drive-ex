@@ -5,7 +5,7 @@ socket.connect();
 
 window.store = new Vuex.Store({
   state: {
-    channel: socket.channel("admin", {character: characterID}),
+    channel: socket.channel("admin:damage_types", {character: characterID}),
     damage_types: {}
   },
   mutations: {

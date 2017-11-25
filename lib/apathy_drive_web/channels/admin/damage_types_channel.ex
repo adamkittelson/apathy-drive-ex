@@ -1,21 +1,14 @@
-defmodule ApathyDriveWeb.AdminChannel do
+defmodule ApathyDriveWeb.Admin.DamageTypesChannel do
   use ApathyDrive.Web, :channel
   alias ApathyDrive.{Character, DamageType}
 
-  def join("admin", %{"character" => token}, socket) do
-    case Phoenix.Token.verify(socket, "character", token, max_age: 1209600) do
-      {:ok, character_id} ->
-        case Repo.get!(Character, character_id) do
-          nil ->
-            {:error, %{reason: "unauthorized"}}
-          %Character{admin: true} ->
-            send(self(), :after_join)
-            {:ok, socket}
-          %Character{name: nil} -> # Character has been reset, probably due to a game wipe
-            {:error, %{reason: "unauthorized"}}
-        end
-      {:error, _} ->
-        {:error, %{reason: "unauthorized"}}
+  def join("admin:damage_types", %{"character" => token}, socket) do
+    case ApathyDriveWeb.AdminChannelHelper.authorize(socket, token) do
+      {:ok, %Character{} = _character} ->
+        send(self(), :after_join)
+        {:ok, socket}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
