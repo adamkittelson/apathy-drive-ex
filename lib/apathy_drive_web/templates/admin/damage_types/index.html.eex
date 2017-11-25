@@ -20,7 +20,7 @@
                 <v-container grid-list-md>
                   <v-layout wrap>
                     <v-flex xs12 sm6 md4>
-                      <v-text-field label="Name" v-model="props.item.name" required @keyup.enter="props.item.dialog = false" @input="$store.commit('updateName', {id: props.item.id, name: props.item.name})"></v-text-field>
+                      <v-text-field label="Name" :value="props.item.name" required @keyup.enter="props.item.dialog = false" @input="updateName(props.item.id, $event)"></v-text-field>
                     </v-flex>
                   </v-layout>
                 </v-container>

@@ -27,6 +27,11 @@ window.damage_types = new Vue({
       return _.sortBy(list, ["id"])
     }
   },
+  methods: {
+    updateName: function(id, name) {
+      this.$store.commit('updateName', {id: id, name: name})
+    }
+  },
   data() {
     return {
       pagination: {
