@@ -24,7 +24,7 @@ defmodule ApathyDriveWeb.AdminChannel do
       DamageType.data_for_admin_index
       |> Repo.all
       |> Enum.reduce(%{}, fn damage_type, damage_types ->
-        Map.put(damage_types, damage_type.id, damage_type)
+        Map.put(damage_types, damage_type.id, Map.put(damage_type, :dialog, false))
       end)
 
     push(socket, "damage_types", damage_types)
@@ -35,7 +35,7 @@ defmodule ApathyDriveWeb.AdminChannel do
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
   def handle_in("update_name", %{"id" => id, "name" => name}, socket) do
-    %DamageType{id: String.to_integer(id)}
+    %DamageType{id: id}
     |> Ecto.Changeset.change(%{name: name})
     |> Repo.update!
     {:reply, :ok, socket}

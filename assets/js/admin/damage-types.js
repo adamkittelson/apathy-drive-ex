@@ -3,12 +3,17 @@ import {Socket} from "phoenix"
 var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
 socket.connect();
 
-import Type from './vue/damage_types/type.vue'
-
 window.store = new Vuex.Store({
   state: {
     channel: socket.channel("admin", {character: characterID}),
     damage_types: {}
+  },
+  mutations: {
+    updateName(state, payload) {
+      state.damage_types[payload.id].name = payload.name
+      state.channel.push("update_name", {id: payload.id, name: payload.name})
+      .receive("ok", () => console.log("Name Updated") )
+    }
   }
 })
 
@@ -22,7 +27,6 @@ window.damage_types = new Vue({
       return _.sortBy(list, ["id"])
     }
   },
-  components: { Type },
   data() {
     return {
       pagination: {
