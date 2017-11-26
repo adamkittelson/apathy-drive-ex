@@ -47,8 +47,12 @@ window.abilities = new Vue({
       this.fetchPage()
     },
     fetchPage: function() {
-      var args = {page_number: this.$store.state.page, order_by: this.$store.state.sortBy, descending: this.$store.state.descending}
-      this.$store.state.channel.push("fetch_page", args)
+      if (this.$store.state.channel.state === "joined") {
+        console.log()
+        abilities.loading = true
+        var args = {query: abilities.search, page_number: this.$store.state.page, order_by: this.$store.state.sortBy, descending: this.$store.state.descending}
+        this.$store.state.channel.push("fetch_page", args)
+      }
     }
   },
   data() {
@@ -56,6 +60,7 @@ window.abilities = new Vue({
       pagination: {
         sortBy: 'id'
       },
+      search: '',
       loading: true,
       headers: [
         {
@@ -72,6 +77,7 @@ window.abilities = new Vue({
 store.state.channel.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
 
 store.state.channel.on("abilities", function(page){
+  abilities.loading = false
   store.state.abilities = page.entries;
   abilities.pagination = {
     page: page.page_number,
