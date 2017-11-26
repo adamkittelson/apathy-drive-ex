@@ -4,6 +4,8 @@
       <v-data-table
         :headers="headers"
         :items="abilities"
+        :loading="loading"
+        @update:pagination="updatePagination($event)"
         hide-actions
         dark
       >

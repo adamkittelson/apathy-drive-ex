@@ -32,11 +32,26 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     {:reply, :ok, socket}
   end
 
-  def handle_in("fetch_page", %{"page_number" => page}, socket) do
+  def handle_in("fetch_page", %{"page_number" => page} = params, socket) do
     page =
-      Ability.data_for_admin_index
-      |> Ecto.Query.order_by(asc: :id)
-      |> Repo.paginate(%{"page" => page})
+      cond do
+        params["order_by"] && params["descending"] ->
+          order_by = String.to_existing_atom(params["order_by"])
+
+          Ability.data_for_admin_index
+          |> Ecto.Query.order_by(desc: ^order_by)
+          |> Repo.paginate(%{"page" => page})
+        params["order_by"] ->
+          order_by = String.to_existing_atom(params["order_by"])
+
+          Ability.data_for_admin_index
+          |> Ecto.Query.order_by(asc: ^order_by)
+          |> Repo.paginate(%{"page" => page})
+        :else ->
+          Ability.data_for_admin_index
+          |> Ecto.Query.order_by(asc: :id)
+          |> Repo.paginate(%{"page" => page})
+      end
 
     push(socket, "abilities", page)
 

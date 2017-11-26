@@ -6,13 +6,21 @@ socket.connect();
 window.store = new Vuex.Store({
   state: {
     channel: socket.channel("admin:abilities", {character: characterID}),
-    abilities: {}
+    abilities: {},
+    sortBy: "id",
+    descending: false,
+    page: 1
   },
   mutations: {
     updateName(state, payload) {
       state.abilities[payload.id].name = payload.name
       state.channel.push("update_name", {id: payload.id, name: payload.name})
       .receive("ok", () => console.log("Name Updated") )
+    },
+    updatePagination(state, payload) {
+      state.sortBy = payload.sortBy
+      state.descending = payload.descending
+      state.page = payload.page
     }
   }
 })
@@ -31,7 +39,16 @@ window.abilities = new Vue({
       this.$store.commit('updateName', {id: id, name: name})
     },
     updatePageNumber: function(page) {
-      this.$store.state.channel.push("fetch_page", {page_number: page})
+      this.$store.commit('updatePagination', {page: page, sortBy: this.$store.state.sortBy, descending: this.$store.state.descending})
+      this.fetchPage()
+    },
+    updatePagination: function(pagination) {
+      this.$store.commit('updatePagination', {page: this.$store.state.page, sortBy: pagination.sortBy, descending: !!pagination.descending})
+      this.fetchPage()
+    },
+    fetchPage: function() {
+      var args = {page_number: this.$store.state.page, order_by: this.$store.state.sortBy, descending: this.$store.state.descending}
+      this.$store.state.channel.push("fetch_page", args)
     }
   },
   data() {
@@ -39,6 +56,7 @@ window.abilities = new Vue({
       pagination: {
         sortBy: 'id'
       },
+      loading: true,
       headers: [
         {
           text: 'ID',
