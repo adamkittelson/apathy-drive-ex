@@ -23,7 +23,11 @@ exports.config = {
       // }
     },
     stylesheets: {
-      joinTo: "css/app.css",
+      defaultExtension: 'scss',
+      joinTo: {
+        "css/admin.css": /admin\.scss$/,
+        "css/app.css": /(?!admin\.scss)$/
+      },
       order: {
         before: [
           "css/normalize.css",

@@ -26,3 +26,15 @@ textarea {
   width: 100%;
   overflow: auto;
 }
+
+.application.theme--dark {
+  background: #000;
+  color: #fff;
+}
+
+#app {
+  max-width: 80%;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+}

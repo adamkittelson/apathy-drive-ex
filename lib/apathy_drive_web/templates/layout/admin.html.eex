@@ -9,6 +9,7 @@
   <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/admin.css") %>">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/components.css") %>">
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   <script>require("js/jquery-1.10.2.min");</script>
@@ -26,9 +27,7 @@
 </head>
 <body>
   <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
-  <div class="container">
-    <%= render @view_module, @view_template, assigns %>
-  </div>
+  <%= render @view_module, @view_template, assigns %>
   <!-- Page Footer Layout
        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 </body>
