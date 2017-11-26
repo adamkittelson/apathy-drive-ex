@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Repo do
   use Ecto.Repo, otp_app: :apathy_drive
+  use Scrivener, page_size: 10
 
   def save!(%{:__struct__ => module} = current_struct) do
     [pkey] = module.__schema__(:primary_key)

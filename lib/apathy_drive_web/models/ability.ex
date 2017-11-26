@@ -80,6 +80,11 @@ defmodule ApathyDrive.Ability do
     |> cast(params, @required_fields, @optional_fields)
   end
 
+  def data_for_admin_index do
+    __MODULE__
+    |> select([dt], map(dt, [:id, :name]))
+  end
+
   def set_description_changeset(model, description) do
     model
     |> cast(%{description: description}, [:description])

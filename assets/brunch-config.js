@@ -23,7 +23,6 @@ exports.config = {
       // }
     },
     stylesheets: {
-      defaultExtension: 'scss',
       joinTo: {
         "css/admin.css": /admin\.scss$/,
         "css/app.css": /(?!admin\.scss)$/

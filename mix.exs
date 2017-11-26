@@ -31,6 +31,7 @@ defmodule ApathyDrive.Mixfile do
       {:phoenix_live_reload, "~> 1.1.0", only: :dev},
       {:phoenix_ecto,        "~> 3.2.0"},
       {:phoenix_html,        "~> 2.10.0"},
+      {:scrivener_ecto,      "~> 1.3.0"},
       {:timex_ecto,          "~> 3.1.1"},
       {:inflex,              "~> 1.7"},
       {:comeonin,            "~> 3.2.0"},

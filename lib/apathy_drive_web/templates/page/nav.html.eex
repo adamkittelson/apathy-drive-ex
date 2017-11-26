@@ -37,6 +37,9 @@
           <div id="adminPopover" class="popover">
             <ul class="popover-list">
               <li class="popover-item">
+                <a class="popover-link" href="/admin/abilities" target="_blank">Abilities</a>
+              </li>
+              <li class="popover-item">
                 <a class="popover-link" href="/admin/damage-types" target="_blank">Damage Types</a>
               </li>
             </ul>
