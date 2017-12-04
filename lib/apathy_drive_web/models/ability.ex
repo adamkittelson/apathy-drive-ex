@@ -87,6 +87,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def valid_targets, do: @valid_targets
+  def kinds, do: @kinds
 
   def set_description_changeset(model, description) do
     model

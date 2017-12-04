@@ -11,13 +11,13 @@
             single-line
             hide-details
             v-model="search"
+            @input="fetchPage"
           ></v-text-field>
         </v-card-title>
         <v-data-table
           :headers="headers"
           :items="abilities"
           :loading="loading"
-          :search="search"
           @update:pagination="updatePagination($event)"
           hide-actions
         >
@@ -27,12 +27,12 @@
             <v-layout row justify-center>
               <v-dialog v-model="props.item.dialog" max-width="500px">
                 <v-card>
-                  <v-form v-model="props.item.valid" ref="form" lazy-validation>
+                  <v-form v-model="props.item.valid" :ref="'form-' + props.item.data.id" lazy-validation>
                     <v-text-field
                       label="Name"
                       v-model="props.item.form.name"
                       :rules="nameRules"
-                      :counter="20"
+                      :counter="30"
                       required
                     ></v-text-field>
                     <v-select
@@ -40,6 +40,13 @@
                       v-model="props.item.form.targets"
                       :items="valid_targets()"
                       :rules="[v => !!v || 'targets is required']"
+                      required
+                    ></v-select>
+                    <v-select
+                      label="kind"
+                      v-model="props.item.form.kind"
+                      :items="kinds()"
+                      :rules="[v => !!v || 'kind is required']"
                       required
                     ></v-select>
 

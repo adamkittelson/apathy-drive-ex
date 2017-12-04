@@ -10,27 +10,24 @@ window.store = new Vuex.Store({
     sortBy: "id",
     descending: false,
     page: 1,
-    valid_targets: []
+    valid_targets: [],
+    kinds: []
   },
   mutations: {
     update_ability(state, form_data) {
+      console.log("updating " + form_data.name)
       var index = _.findIndex(store.state.abilities, function(item) {
         return item.form.id === form_data.id
       })
-      state.abilities[index].data = form_data
+      state.abilities[index].data = Object.assign({}, form_data)
       state.channel.push("update", form_data)
       .receive("ok", function() {
         console.log(form_data.name + " Updated")
         state.abilities[index].dialog = false
       })
     },
-    updateName(state, payload) {
-      var index = _.findIndex(store.state.abilities, function(item) {
-        return item.id === payload.id
-      })
-      state.abilities[index].name = payload.name
-      state.channel.push("update_name", {id: payload.id, name: payload.name})
-      .receive("ok", () => console.log("Name Updated") )
+    setAbilities(state, abilities) {
+      state.abilities = abilities;
     },
     updatePagination(state, payload) {
       state.sortBy = payload.sortBy
@@ -46,13 +43,11 @@ window.abilities = new Vue({
   template: '#abilities',
   computed: {
     abilities: function() {
-      return Object.values(this.$store.state.abilities)
+      var abilities = Object.values(this.$store.state.abilities)
+      return abilities
     }
   },
   methods: {
-    updateName: function(id, name) {
-      this.$store.commit('updateName', {id: id, name: name})
-    },
     updatePageNumber: function(page) {
       this.$store.commit('updatePagination', {page: page, sortBy: this.$store.state.sortBy, descending: this.$store.state.descending})
       this.fetchPage()
@@ -69,14 +64,16 @@ window.abilities = new Vue({
       }
     },
     submit(form_data) {
-      if (this.$refs.form.validate()) {
+      if (this.$refs["form-" + form_data.id].validate()) {
         // Native form submission is not yet supported
-        console.log("submitting!")
         this.$store.commit('update_ability', form_data)
       }
     },
     valid_targets: function() {
       return this.$store.state.valid_targets
+    },
+    kinds: function() {
+      return this.$store.state.kinds
     }
   },
   data() {
@@ -86,7 +83,7 @@ window.abilities = new Vue({
       },
       nameRules: [
         (v) => !!v || 'Name is required',
-        (v) => v && v.length <= 20 || 'Name must be less than 20 characters'
+        (v) => v && v.length <= 30 || 'Name must be less than 30 characters'
       ],
       search: '',
       loading: true,
@@ -105,7 +102,6 @@ window.abilities = new Vue({
 store.state.channel.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
 
 store.state.channel.on("abilities", function(data){
-  console.log(data)
   abilities.loading = false
   var items = _.map(data.page.entries, function(ability) {
     var item = {
@@ -116,8 +112,9 @@ store.state.channel.on("abilities", function(data){
     }
     return item;
   })
-  store.state.abilities = items;
+  store.commit('setAbilities', items)
   store.state.valid_targets = data.valid_targets;
+  store.state.kinds = data.kinds;
   abilities.pagination = {
     page: data.page.page_number,
     rowsPerPage: data.page.page_size,
