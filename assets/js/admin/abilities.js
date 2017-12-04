@@ -85,6 +85,10 @@ window.abilities = new Vue({
         (v) => !!v || 'Name is required',
         (v) => v && v.length <= 30 || 'Name must be less than 30 characters'
       ],
+      manaRules: [
+        (v) => !!v || 'Mana is required',
+        (v) => v && v >= 0 || 'Mana must greater than or equal to 0'
+      ],
       search: '',
       loading: true,
       headers: [

@@ -49,6 +49,14 @@
                       :rules="[v => !!v || 'kind is required']"
                       required
                     ></v-select>
+                    <v-text-field
+                      label="Mana"
+                      v-model="props.item.form.mana"
+                      :rules="manaRules"
+                      type="number"
+                      suffix="percent of base mana"
+                      required
+                    ></v-text-field>
 
                     <v-btn
                       @click="submit(props.item.form)"
