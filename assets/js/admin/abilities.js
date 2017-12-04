@@ -9,9 +9,21 @@ window.store = new Vuex.Store({
     abilities: {},
     sortBy: "id",
     descending: false,
-    page: 1
+    page: 1,
+    valid_targets: []
   },
   mutations: {
+    update_ability(state, form_data) {
+      var index = _.findIndex(store.state.abilities, function(item) {
+        return item.form.id === form_data.id
+      })
+      state.abilities[index].data = form_data
+      state.channel.push("update", form_data)
+      .receive("ok", function() {
+        console.log(form_data.name + " Updated")
+        state.abilities[index].dialog = false
+      })
+    },
     updateName(state, payload) {
       var index = _.findIndex(store.state.abilities, function(item) {
         return item.id === payload.id
@@ -55,6 +67,16 @@ window.abilities = new Vue({
         var args = {query: abilities.search, page_number: this.$store.state.page, order_by: this.$store.state.sortBy, descending: this.$store.state.descending}
         this.$store.state.channel.push("fetch_page", args)
       }
+    },
+    submit(form_data) {
+      if (this.$refs.form.validate()) {
+        // Native form submission is not yet supported
+        console.log("submitting!")
+        this.$store.commit('update_ability', form_data)
+      }
+    },
+    valid_targets: function() {
+      return this.$store.state.valid_targets
     }
   },
   data() {
@@ -62,6 +84,10 @@ window.abilities = new Vue({
       pagination: {
         sortBy: 'id'
       },
+      nameRules: [
+        (v) => !!v || 'Name is required',
+        (v) => v && v.length <= 20 || 'Name must be less than 20 characters'
+      ],
       search: '',
       loading: true,
       headers: [
@@ -78,17 +104,24 @@ window.abilities = new Vue({
 
 store.state.channel.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
 
-store.state.channel.on("abilities", function(page){
+store.state.channel.on("abilities", function(data){
+  console.log(data)
   abilities.loading = false
-  var items = _.map(page.entries, function(item) {
-    item.dialog = false
+  var items = _.map(data.page.entries, function(ability) {
+    var item = {
+      form: Object.assign({}, ability),
+      dialog: false,
+      valid: true,
+      data: Object.assign({}, ability)
+    }
     return item;
   })
   store.state.abilities = items;
+  store.state.valid_targets = data.valid_targets;
   abilities.pagination = {
-    page: page.page_number,
-    rowsPerPage: page.page_size,
-    totalItems: page.total_entries,
-    totalPages: page.total_pages
+    page: data.page.page_number,
+    rowsPerPage: data.page.page_size,
+    totalItems: data.page.total_entries,
+    totalPages: data.page.total_pages
   }
 });

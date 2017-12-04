@@ -35,8 +35,8 @@ defmodule ApathyDrive.Ability do
     timestamps()
   end
 
-  @required_fields ~w(name targets kind mana command description user_message target_message spectator_message duration)
-  @optional_fields ~w()
+  @required_fields ~w(name targets kind command description user_message target_message spectator_message)a
+  @optional_fields ~w(cast_time cooldown duration mana)a
 
   @valid_targets ["monster or single", "self", "self or single", "monster", "full party area", "full attack area", "single", "full area", "weapon"]
   @target_required_targets ["monster or single", "monster", "single"]
@@ -77,13 +77,16 @@ defmodule ApathyDrive.Ability do
   """
   def changeset(model, params \\ %{}) do
     model
-    |> cast(params, @required_fields, @optional_fields)
+    |> cast(params, @required_fields ++ @optional_fields)
+    |> validate_required(@required_fields)
   end
 
   def data_for_admin_index do
     __MODULE__
-    |> select([dt], map(dt, [:id, :name]))
+    |> select([dt], map(dt, ~w(id name targets kind mana command description user_message target_message spectator_message duration cooldown cast_time)a))
   end
+
+  def valid_targets, do: @valid_targets
 
   def set_description_changeset(model, description) do
     model

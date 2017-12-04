@@ -18,16 +18,17 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
       |> Ecto.Query.order_by(asc: :id)
       |> Repo.paginate(%{"page" => 1})
 
-    push(socket, "abilities", page)
+    push(socket, "abilities", %{valid_targets: Ability.valid_targets, page: page})
 
     {:noreply, socket}
   end
 
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
-  def handle_in("update_name", %{"id" => id, "name" => name}, socket) do
-    %Ability{id: id}
-    |> Ecto.Changeset.change(%{name: name})
+  def handle_in("update", form_data, socket) do
+    Ability
+    |> Repo.get!(form_data["id"])
+    |> Ability.changeset(form_data)
     |> Repo.update!
     {:reply, :ok, socket}
   end
@@ -54,7 +55,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
 
     page = Repo.paginate(query, %{"page" => page})
 
-    push(socket, "abilities", page)
+    push(socket, "abilities", %{valid_targets: Ability.valid_targets, page: page})
 
     {:noreply, socket}
   end

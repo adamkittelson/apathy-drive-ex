@@ -22,24 +22,34 @@
           hide-actions
         >
           <template slot="items" slot-scope="props">
-            <td>{{ props.item.id }}</td>
-            <td @click="props.item.dialog=true">{{ props.item.name }}</td>
+            <td>{{ props.item.data.id }}</td>
+            <td @click="props.item.dialog=true">{{ props.item.data.name }}</td>
             <v-layout row justify-center>
               <v-dialog v-model="props.item.dialog" max-width="500px">
                 <v-card>
-                  <v-card-title>
-                    <span class="headline">Damage Type</span>
-                  </v-card-title>
-                  <v-card-text>
-                    <v-container grid-list-md>
-                      <v-layout wrap>
-                        <v-flex xs12 sm6 md4>
-                          <v-text-field label="Name" :value="props.item.name" required @keyup.enter="props.item.dialog = false" @input="updateName(props.item.id, $event)"></v-text-field>
-                        </v-flex>
-                      </v-layout>
-                    </v-container>
-                    <small>*indicates required field</small>
-                  </v-card-text>
+                  <v-form v-model="props.item.valid" ref="form" lazy-validation>
+                    <v-text-field
+                      label="Name"
+                      v-model="props.item.form.name"
+                      :rules="nameRules"
+                      :counter="20"
+                      required
+                    ></v-text-field>
+                    <v-select
+                      label="targets"
+                      v-model="props.item.form.targets"
+                      :items="valid_targets()"
+                      :rules="[v => !!v || 'targets is required']"
+                      required
+                    ></v-select>
+
+                    <v-btn
+                      @click="submit(props.item.form)"
+                      :disabled="!props.item.valid"
+                    >
+                      submit
+                    </v-btn>
+                  </v-form>
                 </v-card>
               </v-dialog>
             </v-layout>
@@ -47,10 +57,10 @@
         </v-data-table>
       </v-card>
       <div class="text-xs-center pt-2">
-          <v-pagination v-model="pagination.page" @input="updatePageNumber($event)" :length="pagination.totalPages" :total-visible="7"></v-pagination>
-        </div>
-  </v-app>
-</div>
+        <v-pagination v-model="pagination.page" @input="updatePageNumber($event)" :length="pagination.totalPages" :total-visible="7"></v-pagination>
+      </div>
+    </v-app>
+  </div>
 </template>
 
 <div id="app"></div>
