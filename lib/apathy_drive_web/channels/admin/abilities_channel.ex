@@ -18,7 +18,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
       |> Ecto.Query.order_by(asc: :id)
       |> Repo.paginate(%{"page" => 1})
 
-    push(socket, "abilities", %{valid_targets: Ability.valid_targets, kinds: Ability.kinds, page: page})
+    push_page(socket, page)
 
     {:noreply, socket}
   end
@@ -55,7 +55,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
 
     page = Repo.paginate(query, %{"page" => page})
 
-    push(socket, "abilities", %{valid_targets: Ability.valid_targets, kinds: Ability.kinds, page: page})
+    push_page(socket, page)
 
     {:noreply, socket}
   end
@@ -73,6 +73,10 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   def handle_out(event, payload, socket) do
     push socket, event, payload
     {:noreply, socket}
+  end
+
+  defp push_page(socket, page) do
+    push(socket, "abilities", %{valid_targets: Ability.valid_targets, kinds: Ability.kinds, page: page})
   end
 
 end

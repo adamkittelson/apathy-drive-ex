@@ -1,6 +1,6 @@
 <template id="abilities">
   <div id="app">
-    <v-app dark>
+    <v-app>
       <v-card>
         <v-card-title>
           Abilities
@@ -28,94 +28,120 @@
               <v-dialog v-model="props.item.dialog">
                 <v-card>
                   <v-form v-model="props.item.valid" :ref="'form-' + props.item.data.id" lazy-validation>
-                    <v-text-field
-                      label="Name"
-                      v-model="props.item.form.name"
-                      :rules="nameRules"
-                      :counter="30"
-                      required
-                    ></v-text-field>
-                    <v-select
-                      label="targets"
-                      v-model="props.item.form.targets"
-                      :items="valid_targets()"
-                      :rules="[v => !!v || 'targets is required']"
-                      required
-                    ></v-select>
-                    <v-select
-                      label="kind"
-                      v-model="props.item.form.kind"
-                      :items="kinds()"
-                      :rules="[v => !!v || 'kind is required']"
-                      required
-                    ></v-select>
-                    <v-text-field
-                      label="Mana"
-                      v-model="props.item.form.mana"
-                      :rules="manaRules"
-                      type="number"
-                      suffix="percent of base mana"
-                      required
-                    ></v-text-field>
-                    <v-text-field
-                      label="command"
-                      v-model="props.item.form.command"
-                      :rules="[v => (v && v.length <= 5) || 'Command must be at most 5 characters']"
-                      :counter="5"
-                    ></v-text-field>
-                    <v-text-field
-                      label="description"
-                      v-model="props.item.form.description"
-                      :rules="[v => (v && v.length <= 500) || 'Description must be at most 500 characters']"
-                      :counter="500"
-                      textarea
-                    ></v-text-field>
-                    <v-text-field
-                      label="user message"
-                      v-model="props.item.form.user_message"
-                      :rules="[v => !v || v.length <= 100 || 'User message must be at most 100 characters']"
-                      :counter="100"
-                    ></v-text-field>
-                    <v-text-field
-                      label="target message"
-                      v-model="props.item.form.target_message"
-                      :rules="[v => !v || v.length <= 100 || 'Target message must be at most 100 characters']"
-                      :counter="100"
-                    ></v-text-field>
-                    <v-text-field
-                      label="spectator message"
-                      v-model="props.item.form.spectator_message"
-                      :rules="[v => !v || v.length <= 100 || 'Spectator message must be at most 100 characters']"
-                      :counter="100"
-                    ></v-text-field>
-                    <v-text-field
-                      label="Duration"
-                      v-model="props.item.form.duration"
-                      :rules="durationRules"
-                      type="number"
-                      suffix="seconds"
-                      required
-                    ></v-text-field>
-                    <v-text-field
-                      label="Cooldown"
-                      v-model="props.item.form.cooldown"
-                      :rules="[v => (!!('' + v) && v >= 0) || 'Cooldown must be >= 0']"
-                      type="number"
-                      suffix="seconds"
-                    ></v-text-field>
-                    <v-text-field
-                      label="Cast Time"
-                      v-model="props.item.form.cast_time"
-                      :rules="[v => (!!('' + v) && v >= 0) || 'Cast time must be >= 0']"
-                      type="number"
-                      suffix="seconds"
-                    ></v-text-field>
-                    <v-btn
-                      @click="submit(props.item.form)"
-                      :disabled="!props.item.valid"
-                    >
-                      submit
-                    </v-btn>
+                    <v-layout row wrap>
+                      <v-flex xs6>
+                        <v-text-field
+                          label="Name"
+                          v-model="props.item.form.name"
+                          :rules="nameRules"
+                          :counter="30"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs6>
+                        <v-select
+                          label="Targets"
+                          v-model="props.item.form.targets"
+                          :items="valid_targets()"
+                          :rules="[v => !!v || 'targets is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-select
+                          label="Kind"
+                          v-model="props.item.form.kind"
+                          :items="kinds()"
+                          :rules="[v => !!v || 'kind is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Mana"
+                          v-model="props.item.form.mana"
+                          :rules="manaRules"
+                          type="number"
+                          suffix="percent of base mana"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Command"
+                          v-model="props.item.form.command"
+                          :rules="[v => (v && v.length <= 5) || 'Command must be at most 5 characters']"
+                          :counter="5"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Cooldown"
+                          v-model="props.item.form.cooldown"
+                          :rules="[v => (!!('' + v) && v >= 0) || 'Cooldown must be >= 0']"
+                          type="number"
+                          suffix="seconds"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Cast Time"
+                          v-model="props.item.form.cast_time"
+                          :rules="[v => (!!('' + v) && v >= 0) || 'Cast time must be >= 0']"
+                          type="number"
+                          suffix="seconds"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Duration"
+                          v-model="props.item.form.duration"
+                          :rules="durationRules"
+                          type="number"
+                          suffix="seconds"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs12>
+                        <v-text-field
+                          label="Description"
+                          v-model="props.item.form.description"
+                          :rules="[v => (v && v.length <= 500) || 'Description must be at most 500 characters']"
+                          :counter="500"
+                          textarea
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs12>
+                        <v-text-field
+                          label="User Message"
+                          v-model="props.item.form.user_message"
+                          :rules="[v => !v || v.length <= 100 || 'User message must be at most 100 characters']"
+                          :counter="100"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs12>
+                        <v-text-field
+                          label="Target Message"
+                          v-model="props.item.form.target_message"
+                          :rules="[v => !v || v.length <= 100 || 'Target message must be at most 100 characters']"
+                          :counter="100"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs12>
+                        <v-text-field
+                          label="Spectator Message"
+                          v-model="props.item.form.spectator_message"
+                          :rules="[v => !v || v.length <= 100 || 'Spectator message must be at most 100 characters']"
+                          :counter="100"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-btn
+                        @click="submit(props.item.form)"
+                        :disabled="!props.item.valid"
+                      >
+                        submit
+                      </v-btn>
+                    </v-layout>
                   </v-form>
                 </v-card>
               </v-dialog>
