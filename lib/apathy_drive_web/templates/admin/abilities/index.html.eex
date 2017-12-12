@@ -27,6 +27,9 @@
             <v-layout row justify-center>
               <v-dialog v-model="props.item.dialog">
                 <v-card>
+                  <v-card-title>
+                    <span class="headline">Ability</span>
+                  </v-card-title>
                   <v-form v-model="props.item.valid" :ref="'form-' + props.item.data.id" lazy-validation>
                     <v-layout row wrap>
                       <v-flex xs6>
@@ -144,6 +147,39 @@
                     </v-layout>
                   </v-form>
                 </v-card>
+                <v-card>
+                  <v-card-title>
+                    <span class="headline">Traits</span>
+                  </v-card-title>
+                  <v-form v-for="trait in props.item.form.traits" :key="trait.id" v-model="trait.valid" :ref="'trait-form-' + trait.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs4>
+                        <v-select
+                          label="Name"
+                          v-model="trait.form.name"
+                          :items="traits()"
+                          :rules="[v => !!v || 'name is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Value"
+                          v-model="trait.form.value"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-btn
+                          @click="submitTrait(trait.form)"
+                          :disabled="!trait.valid"
+                        >
+                          submit
+                        </v-btn>
+                      </v-flex>
+                    </v-layout>
+                  </v-form>
+                </vcard>
               </v-dialog>
             </v-layout>
           </template>

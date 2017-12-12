@@ -14,4 +14,12 @@ defmodule ApathyDrive.Trait do
     timestamps()
   end
 
+  def names do
+    __MODULE__
+    |> Ecto.Query.select([:name])
+    |> Repo.all
+    |> Enum.map(& &1.name)
+    |> Enum.sort
+  end
+
 end

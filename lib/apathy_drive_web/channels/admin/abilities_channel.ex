@@ -1,6 +1,6 @@
 defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   use ApathyDrive.Web, :channel
-  alias ApathyDrive.{Ability, Character}
+  alias ApathyDrive.{Ability, AbilityTrait, Character, Trait}
 
   def join("admin:abilities", %{"character" => token}, socket) do
     case ApathyDriveWeb.AdminChannelHelper.authorize(socket, token) do
@@ -17,8 +17,9 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
       Ability.data_for_admin_index
       |> Ecto.Query.order_by(asc: :id)
       |> Repo.paginate(%{"page" => 1})
+      |> load_traits()
 
-    push_page(socket, page)
+      push_page(socket, page)
 
     {:noreply, socket}
   end
@@ -30,6 +31,22 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     |> Repo.get!(form_data["id"])
     |> Ability.changeset(form_data)
     |> Repo.update!
+
+    {:reply, :ok, socket}
+  end
+
+  def handle_in("update_trait", form_data, socket) do
+    data = %{
+      "value" => form_data["value"],
+      "trait_id" => Repo.get_by!(Trait, name: form_data["name"]).id
+    }
+
+    AbilityTrait
+    |> Repo.get!(form_data["id"])
+    |> AbilityTrait.changeset(data)
+    |> IO.inspect
+    |> Repo.update!
+
     {:reply, :ok, socket}
   end
 
@@ -76,7 +93,22 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   end
 
   defp push_page(socket, page) do
-    push(socket, "abilities", %{valid_targets: Ability.valid_targets, kinds: Ability.kinds, page: page})
+    push(socket, "abilities", %{valid_targets: Ability.valid_targets, kinds: Ability.kinds, traits: Trait.names, page: page})
+  end
+
+  defp load_traits(page) do
+    update_in(page.entries, fn(entries) ->
+      Enum.map(entries, fn(entry) ->
+        entry = Map.put_new(entry, :traits, [])
+        AbilityTrait
+        |> where([at], at.ability_id == ^entry.id)
+        |> preload([:trait])
+        |> Repo.all
+        |> Enum.reduce(entry, fn ability_trait, entry ->
+             update_in(entry.traits, &([%{form: %{id: ability_trait.id, name: ability_trait.trait.name, value: ability_trait.value, ability_id: ability_trait.ability_id}, valid: true, data: %{id: ability_trait.id, name: ability_trait.trait.name, value: ability_trait.value, ability_id: ability_trait.ability_id}} | &1]))
+           end)
+      end)
+    end)
   end
 
 end

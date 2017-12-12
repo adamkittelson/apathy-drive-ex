@@ -9,6 +9,11 @@ defmodule ApathyDrive.AbilityTrait do
     belongs_to :trait, Trait
   end
 
+  def changeset(model, params \\ %{}) do
+    model
+    |> cast(params, ~w(trait_id value)a)
+  end
+
   def load_traits(ability_id) do
     __MODULE__
     |> where([mt], mt.ability_id == ^ability_id)

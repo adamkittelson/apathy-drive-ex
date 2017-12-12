@@ -26,6 +26,23 @@ window.store = new Vuex.Store({
         state.abilities[index].dialog = false
       })
     },
+    update_trait(state, form_data) {
+      console.log("updating " + form_data.name)
+      var ability_index = _.findIndex(store.state.abilities, function(item) {
+        return item.form.id === form_data.ability_id
+      })
+
+      var trait_index = _.findIndex(state.abilities[ability_index].data.traits, function(item) {
+        return item.form.id === form_data.id
+      })
+
+      state.abilities[ability_index].data.traits[trait_index].data = Object.assign({}, form_data)
+      state.channel.push("update_trait", form_data)
+      .receive("ok", function() {
+        console.log(form_data.name + " Updated")
+        state.abilities[ability_index].dialog = false
+      })
+    },
     setAbilities(state, abilities) {
       state.abilities = abilities;
     },
@@ -65,8 +82,12 @@ window.abilities = new Vue({
     },
     submit(form_data) {
       if (this.$refs["form-" + form_data.id].validate()) {
-        // Native form submission is not yet supported
         this.$store.commit('update_ability', form_data)
+      }
+    },
+    submitTrait(form_data) {
+      if (this.$refs["trait-form-" + form_data.id][0].validate()) {
+        this.$store.commit('update_trait', form_data)
       }
     },
     valid_targets: function() {
@@ -74,7 +95,10 @@ window.abilities = new Vue({
     },
     kinds: function() {
       return this.$store.state.kinds
-    }
+    },
+    traits: function() {
+      return this.$store.state.traits
+    },
   },
   data() {
     return {
@@ -123,6 +147,7 @@ store.state.channel.on("abilities", function(data){
   store.commit('setAbilities', items)
   store.state.valid_targets = data.valid_targets;
   store.state.kinds = data.kinds;
+  store.state.traits = data.traits;
   abilities.pagination = {
     page: data.page.page_number,
     rowsPerPage: data.page.page_size,
