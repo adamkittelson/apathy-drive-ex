@@ -50,6 +50,20 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     {:reply, :ok, socket}
   end
 
+  def handle_in("create_trait", form_data, socket) do
+    {:ok, value} = ApathyDrive.JSONB.load(form_data["value"])
+
+    %AbilityTrait{id: id} =
+      %AbilityTrait{
+        value: value,
+        trait_id: Repo.get_by!(Trait, name: form_data["name"]).id,
+        ability_id: form_data["ability_id"]
+      }
+      |> Repo.insert!
+
+    {:reply, {:ok, %{id: id}}, socket}
+  end
+
   def handle_in("fetch_page", %{"page_number" => page} = params, socket) do
     query =
       cond do
@@ -70,7 +84,10 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
 
     query = if params["query"], do: Ecto.Query.where(query, [a], ilike(a.name, ^"%#{params["query"]}%")), else: query
 
-    page = Repo.paginate(query, %{"page" => page})
+    page =
+      query
+      |> Repo.paginate(%{"page" => page})
+      |> load_traits()
 
     push_page(socket, page)
 

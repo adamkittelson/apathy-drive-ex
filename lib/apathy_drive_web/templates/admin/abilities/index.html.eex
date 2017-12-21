@@ -150,7 +150,36 @@
                 <v-card>
                   <v-card-title>
                     <span class="headline">Traits</span>
+                    <v-btn :disabled="!!props.item.new_trait.show" @click="showNewTrait(props.item.data.id)">Add Trait</v-btn>
                   </v-card-title>
+                  <v-form v-if="props.item.new_trait.show" v-model="props.item.new_trait.valid" :ref="'new-trait-form-' + props.item.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs4>
+                        <v-select
+                          label="Name"
+                          v-model="props.item.new_trait.name"
+                          :items="traits()"
+                          :rules="[v => !!v || 'name is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Value"
+                          v-model="props.item.new_trait.value"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-btn
+                          @click="createTrait(props.item.data.id)"
+                          :disabled="!props.item.new_trait.valid"
+                        >
+                          add
+                        </v-btn>
+                      </v-flex>
+                    </v-layout>
+                  </v-form>
                   <v-form v-for="trait in props.item.form.traits" :key="trait.id" v-model="trait.valid" :ref="'trait-form-' + trait.data.id" lazy-validation>
                     <v-layout row wrap>
                       <v-flex xs4>
@@ -174,7 +203,7 @@
                           @click="submitTrait(trait.form)"
                           :disabled="!trait.valid"
                         >
-                          submit
+                          update
                         </v-btn>
                       </v-flex>
                     </v-layout>

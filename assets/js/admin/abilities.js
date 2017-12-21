@@ -14,6 +14,46 @@ window.store = new Vuex.Store({
     kinds: []
   },
   mutations: {
+    create_trait(state, ability_id) {
+      var ability_index = _.findIndex(store.state.abilities, function(ability) {
+        return ability.data.id === ability_id
+      })
+      state.abilities[ability_index].new_trait.show = false
+
+      var trait_name = state.abilities[ability_index].new_trait.name
+      var trait_value = state.abilities[ability_index].new_trait.value
+
+      console.log("adding " + trait_name)
+
+      var trait_index = state.abilities[ability_index].data.traits.length
+
+      state.channel.push("create_trait", {ability_id: ability_id, name: trait_name, value: trait_value})
+      .receive("ok", function(response) {
+        console.log(response.id + " added")
+
+        var trait = {
+          data: {
+            ability_id: ability_id,
+            id: response.id,
+            name: trait_name,
+            value: trait_value
+          },
+          form: {
+            ability_id: ability_id,
+            id: response.id,
+            name: trait_name,
+            value: trait_value
+          },
+          valid: true
+        }
+
+        state.abilities[ability_index].data.traits[trait_index] = Object.assign({}, trait)
+        state.abilities[ability_index].form.traits[trait_index] = Object.assign({}, trait)
+        state.abilities[ability_index].new_trait.show = false
+        state.abilities[ability_index].new_trait.name = ""
+        state.abilities[ability_index].new_trait.value = ""
+      })
+    },
     update_ability(state, form_data) {
       console.log("updating " + form_data.name)
       var index = _.findIndex(store.state.abilities, function(item) {
@@ -43,6 +83,12 @@ window.store = new Vuex.Store({
         state.abilities[ability_index].dialog = false
       })
     },
+    show_new_trait(state, ability_id) {
+      var index = _.findIndex(store.state.abilities, function(ability) {
+        return ability.data.id === ability_id
+      })
+      state.abilities[index].new_trait.show = true
+    },
     setAbilities(state, abilities) {
       state.abilities = abilities;
     },
@@ -65,6 +111,9 @@ window.abilities = new Vue({
     }
   },
   methods: {
+    createTrait: function(ability_id) {
+      this.$store.commit('create_trait', ability_id)
+    },
     updatePageNumber: function(page) {
       this.$store.commit('updatePagination', {page: page, sortBy: this.$store.state.sortBy, descending: this.$store.state.descending})
       this.fetchPage()
@@ -79,6 +128,9 @@ window.abilities = new Vue({
         var args = {query: abilities.search, page_number: this.$store.state.page, order_by: this.$store.state.sortBy, descending: this.$store.state.descending}
         this.$store.state.channel.push("fetch_page", args)
       }
+    },
+    showNewTrait: function(ability_id) {
+      this.$store.commit('show_new_trait', ability_id)
     },
     submit(form_data) {
       if (this.$refs["form-" + form_data.id].validate()) {
@@ -140,7 +192,13 @@ store.state.channel.on("abilities", function(data){
       form: Object.assign({}, ability),
       dialog: false,
       valid: true,
-      data: Object.assign({}, ability)
+      data: Object.assign({}, ability),
+      new_trait: {
+        name: "",
+        value: "",
+        valid: false,
+        show: false
+      }
     }
     return item;
   })
