@@ -25,8 +25,6 @@ window.store = new Vuex.Store({
 
       console.log("adding " + trait_name)
 
-      var trait_index = state.abilities[ability_index].data.traits.length
-
       state.channel.push("create_trait", {ability_id: ability_id, name: trait_name, value: trait_value})
       .receive("ok", function(response) {
         console.log(response.id + " added")
@@ -47,13 +45,16 @@ window.store = new Vuex.Store({
           valid: true
         }
 
-        state.abilities[ability_index].data.traits[trait_index] = Object.assign({}, trait)
-        state.abilities[ability_index].form.traits[trait_index] = Object.assign({}, trait)
-        state.abilities[ability_index].new_trait.show = false
-        state.abilities[ability_index].new_trait.name = ""
-        state.abilities[ability_index].new_trait.value = ""
-        abilities.$forceUpdate()
+        store.commit('add_created_trait', {index: ability_index, trait: trait})
       })
+    },
+    add_created_trait(state, payload) {
+      var ability_index = payload.index
+      state.abilities[ability_index].data.traits.unshift(Object.assign({}, payload.trait))
+      state.abilities[ability_index].form.traits.unshift(Object.assign({}, payload.trait))
+      state.abilities[ability_index].new_trait.show = false
+      state.abilities[ability_index].new_trait.name = ""
+      state.abilities[ability_index].new_trait.value = ""
     },
     update_ability(state, form_data) {
       console.log("updating " + form_data.name)
@@ -190,10 +191,10 @@ store.state.channel.on("abilities", function(data){
   abilities.loading = false
   var items = _.map(data.page.entries, function(ability) {
     var item = {
-      form: Object.assign({}, ability),
+      form: JSON.parse(JSON.stringify(ability)),
       dialog: false,
       valid: true,
-      data: Object.assign({}, ability),
+      data: JSON.parse(JSON.stringify(ability)),
       new_trait: {
         name: "",
         value: "",
