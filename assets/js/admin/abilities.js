@@ -52,6 +52,7 @@ window.store = new Vuex.Store({
         state.abilities[ability_index].new_trait.show = false
         state.abilities[ability_index].new_trait.name = ""
         state.abilities[ability_index].new_trait.value = ""
+        abilities.$forceUpdate()
       })
     },
     update_ability(state, form_data) {
@@ -107,7 +108,7 @@ window.abilities = new Vue({
   computed: {
     abilities: function() {
       var abilities = Object.values(this.$store.state.abilities)
-      return abilities
+      return abilities;
     }
   },
   methods: {
