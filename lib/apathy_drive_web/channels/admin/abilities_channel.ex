@@ -50,6 +50,14 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     {:reply, :ok, socket}
   end
 
+  def handle_in("delete_trait", id, socket) do
+    AbilityTrait
+    |> Repo.get!(id)
+    |> Repo.delete!
+
+    {:reply, :ok, socket}
+  end
+
   def handle_in("create_trait", form_data, socket) do
     {:ok, value} = ApathyDrive.JSONB.load(form_data["value"])
 

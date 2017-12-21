@@ -85,6 +85,26 @@ window.store = new Vuex.Store({
         state.abilities[ability_index].dialog = false
       })
     },
+    delete_trait(state, form_data) {
+      console.log("deleting " + form_data.name)
+      var ability_index = _.findIndex(store.state.abilities, function(item) {
+        return item.form.id === form_data.ability_id
+      })
+
+      var trait_index = _.findIndex(state.abilities[ability_index].data.traits, function(item) {
+        return item.form.id === form_data.id
+      })
+
+      state.channel.push("delete_trait", form_data.id)
+      .receive("ok", function() {
+        console.log(form_data.name + " deleted")
+        store.commit('remove_deleted_trait', {ability: ability_index, trait: trait_index})
+      })
+    },
+    remove_deleted_trait(state, payload) {
+      state.abilities[payload.ability].data.traits.splice(payload.trait, 1)
+      state.abilities[payload.ability].form.traits.splice(payload.trait, 1)
+    },
     show_new_trait(state, ability_id) {
       var index = _.findIndex(store.state.abilities, function(ability) {
         return ability.data.id === ability_id
@@ -143,6 +163,9 @@ window.abilities = new Vue({
       if (this.$refs["trait-form-" + form_data.id][0].validate()) {
         this.$store.commit('update_trait', form_data)
       }
+    },
+    deleteTrait(form_data) {
+      this.$store.commit('delete_trait', form_data)
     },
     valid_targets: function() {
       return this.$store.state.valid_targets

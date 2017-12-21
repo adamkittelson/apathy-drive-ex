@@ -203,7 +203,12 @@
                           @click="submitTrait(trait.form)"
                           :disabled="!trait.valid"
                         >
-                          update
+                          <v-icon>fa-save</v-icon>
+                        </v-btn>
+                        <v-btn
+                          @click="deleteTrait(trait.form)"
+                        >
+                          <v-icon>fa-trash-alt</v-icon>
                         </v-btn>
                       </v-flex>
                     </v-layout>

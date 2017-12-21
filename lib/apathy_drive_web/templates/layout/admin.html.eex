@@ -14,6 +14,7 @@
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   <script>require("js/jquery-1.10.2.min");</script>
   <script>require("js/nav");</script>
+  <script>require("js/admin/fontawesome-all")</script>
   <script src="https://unpkg.com/vue"></script>
   <script src="https://unpkg.com/vuex"></script>
   <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
