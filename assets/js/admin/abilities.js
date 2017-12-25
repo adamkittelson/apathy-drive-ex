@@ -78,11 +78,11 @@ window.store = new Vuex.Store({
         return item.form.id === form_data.id
       })
 
-      state.abilities[ability_index].data.traits[trait_index].data = Object.assign({}, form_data)
       state.channel.push("update_trait", form_data)
       .receive("ok", function() {
         console.log(form_data.name + " Updated")
-        state.abilities[ability_index].dialog = false
+        state.abilities[ability_index].data.traits[trait_index].data = Object.assign({}, form_data)
+        state.abilities[ability_index].form.traits[trait_index].data = Object.assign({}, form_data)
       })
     },
     delete_trait(state, form_data) {
@@ -176,6 +176,33 @@ window.abilities = new Vue({
     traits: function() {
       return this.$store.state.traits
     },
+    hasChanged: function(trait) {
+      var parse = function(string) {
+        var result = null;
+        try {
+          result = JSON.parse(string);
+        }
+        catch(e) {
+          if (string === "") {
+            result = null
+          }
+          else {
+            result = string
+          }
+        }
+        return result
+      }
+
+      var data = {
+       name: parse(trait.data.name),
+       value: parse(trait.data.value)
+      }
+      var form = {
+        name: parse(trait.form.name),
+        value: parse(trait.form.value)
+       }
+      return !_.isEqual(data, form)
+    }
   },
   data() {
     return {
