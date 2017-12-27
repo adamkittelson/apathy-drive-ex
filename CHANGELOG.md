@@ -205,3 +205,6 @@ CHANGELOG
 
 ---- 0.0.78 / 2017-10-28 / skill-training --------------------------------------
 * skill training
+
+---- 0.0.79 / 2017-12-27 / bring-back-crits ------------------------------------
+* crits / admin dashboard stuff

@@ -606,11 +606,9 @@ defmodule ApathyDrive.Character do
 
               if character_stat < observer_stat do
                 index = trunc((character_stat - observer_stat) / 2) + div(length(stat_descriptions), 2)
-                Logger.info "#{stat} index: #{inspect index}"
                 Map.put(descriptions, stat, Enum.at(stat_descriptions, index, Enum.at(stat_descriptions, 0)))
               else
                 index = trunc((character_stat - observer_stat) / 2) + div(length(stat_descriptions), 2)
-                Logger.info "#{stat} index: #{inspect index}"
                 Map.put(descriptions, stat, Enum.at(stat_descriptions, index, Enum.at(stat_descriptions, -1)))
               end
             end)

@@ -1,0 +1,42 @@
+<template id="damage-types">
+  <div id="app">
+    <v-app dark>
+      <v-data-table
+        :headers="headers"
+        :items="sorted_damage_types"
+        hide-actions
+        dark
+      >
+      <template slot="items" slot-scope="props">
+        <td>{{ props.item.id }}</td>
+        <td @click="props.item.dialog=true">{{ props.item.name }}</td>
+        <v-layout row justify-center>
+          <v-dialog v-model="props.item.dialog" max-width="500px">
+            <v-card>
+              <v-card-title>
+                <span class="headline">Damage Type</span>
+              </v-card-title>
+              <v-card-text>
+                <v-container grid-list-md>
+                  <v-layout wrap>
+                    <v-flex xs12 sm6 md4>
+                      <v-text-field label="Name" :value="props.item.name" required @keyup.enter="props.item.dialog = false" @input="updateName(props.item.id, $event)"></v-text-field>
+                    </v-flex>
+                  </v-layout>
+                </v-container>
+                <small>*indicates required field</small>
+              </v-card-text>
+            </v-card>
+          </v-dialog>
+        </v-layout>
+      </template>
+    </v-data-table>
+  </v-app>
+</div>
+</template>
+
+<div id="app"></div>
+
+<script>
+  require("js/admin/damage-types")
+</script>

@@ -428,8 +428,6 @@ defmodule ApathyDrive.Monster do
     def auto_attack_target(%Monster{} = monster, room, attack_ability) do
       enemies = Monster.enemies(monster, room)
 
-      Logger.info "#{monster.name} enemies: #{inspect enemies}"
-
       Monster.auto_attack_target(monster, enemies, room, attack_ability)
     end
 

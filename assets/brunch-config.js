@@ -2,7 +2,10 @@ exports.config = {
   // See http://brunch.io/#documentation for docs.
   files: {
     javascripts: {
-      joinTo: "js/app.js"
+      joinTo: {
+        'js/admin.js': /^admin/,
+        'js/app.js': /^(?!admin)/
+      }
 
       // To use a separate vendor.js bundle, specify two files path
       // http://brunch.io/docs/config#-files-
@@ -20,16 +23,16 @@ exports.config = {
       // }
     },
     stylesheets: {
-      joinTo: "css/app.css",
+      joinTo: {
+        "css/admin.css": /admin\.scss$/,
+        "css/app.css": /(?!admin\.scss)$/
+      },
       order: {
         before: [
           "css/normalize.css",
           "css/skeleton.css"
         ]
       }
-    },
-    templates: {
-      joinTo: "js/app.js"
     }
   },
 
@@ -43,7 +46,7 @@ exports.config = {
   // Phoenix paths configuration
   paths: {
     // Dependencies and current project directories to watch
-    watched: ["static", "css", "js", "vendor"],
+    watched: ["css", "js", "js/admin", "vendor", "vue"],
     // Where to compile files to
     public: "../priv/static"
   },
@@ -53,6 +56,10 @@ exports.config = {
     babel: {
       // Do not use ES6 compiler in vendor code
       ignore: [/vendor/]
+    },
+    vue: {
+      extractCSS: true,
+      out: '../priv/static/css/components.css'
     }
   },
 

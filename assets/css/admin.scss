@@ -26,3 +26,49 @@ textarea {
   width: 100%;
   overflow: auto;
 }
+
+.application.theme--dark {
+  background: #000;
+  color: #fff;
+}
+
+.application.theme--light {
+  background: #000;
+}
+
+.pagination__more {
+  color: #fff;
+}
+
+#app {
+  max-width: 80%;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card {
+  padding: 10px;
+  margin-bottom: -25px;
+}
+
+.pagination {
+  margin-top: 25px;
+}
+
+.dialog {
+  width: 50%;
+}
+
+.flex {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.card__title {
+  padding-left: 0px;
+}
+
+.btn__content {
+  padding: 0;
+}

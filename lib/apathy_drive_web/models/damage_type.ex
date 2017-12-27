@@ -8,4 +8,9 @@ defmodule ApathyDrive.DamageType do
     has_many :abilities, through: [:abilities_damage_types, :ability]
   end
 
+  def data_for_admin_index do
+    __MODULE__
+    |> select([dt], map(dt, [:id, :name]))
+  end
+
 end

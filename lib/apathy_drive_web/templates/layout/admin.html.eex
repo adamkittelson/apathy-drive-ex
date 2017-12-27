@@ -2,29 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Apotheosis</title>
+  <title>Apotheosis Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600,100' rel='stylesheet' type='text/css'>
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/admin.css") %>">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/components.css") %>">
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   <script>require("js/jquery-1.10.2.min");</script>
   <script>require("js/nav");</script>
+  <script>require("js/admin/fontawesome-all")</script>
   <script src="https://unpkg.com/vue"></script>
+  <script src="https://unpkg.com/vuex"></script>
+  <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
+  <script>
+    require("phoenix_html");
+    var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"
+    require("js/nav");
+    require("js/admin/admin.js");
+  </script>
 </head>
 <body>
-  <div class="container">
-    <%= render @view_module, @view_template, assigns %>
-  </div>
+  <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
+  <%= render @view_module, @view_template, assigns %>
   <!-- Page Footer Layout
        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <div class="container">
-    <footer id="footer" class="twelve columns">
-      <span id="prompt"></span><input id="command" size="50" class="prompt" autocomplete="off"/>
-    </footer>
-  </div> <!-- end footer div.container -->
-  <script>require("phoenix_html");</script>
 </body>
 </html>
