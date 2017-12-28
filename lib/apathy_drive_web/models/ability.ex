@@ -22,6 +22,7 @@ defmodule ApathyDrive.Ability do
     field :ignores_round_cooldown?, :boolean, virtual: true, default: false
     field :result, :any, virtual: true
     field :cast_complete, :boolean, virtual: true, default: false
+    field :skills, :any, virtual: true, default: []
 
     has_many :monsters_abilities, ApathyDrive.MonsterAbility
     has_many :monsters, through: [:monsters_abilities, :monster]
@@ -608,7 +609,7 @@ defmodule ApathyDrive.Ability do
   def apply_instant_trait({"Damage", value}, %{} = target, _ability, caster, _room) when is_float(value) do
     {caster, Map.put(target, :ability_shift, -value)}
   end
-  def apply_instant_trait({"Damage", damages}, %{} = target, _ability, caster, room) do
+  def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
@@ -616,7 +617,7 @@ defmodule ApathyDrive.Ability do
       target
       |> Map.put(:ability_shift, 0)
 
-    {caster, target} =
+    {caster, damage_percent} =
       Enum.reduce(damages, {caster, target}, fn
         %{kind: "physical", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level, room)
@@ -625,11 +626,7 @@ defmodule ApathyDrive.Ability do
 
           damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
-          target =
-            target
-            |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
-
-          {caster, target}
+          {caster, damage_percent}
         %{kind: "magical", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level, room)
           resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
@@ -637,11 +634,7 @@ defmodule ApathyDrive.Ability do
 
           damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
-          target =
-            target
-            |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
-
-          {caster, target}
+          {caster, damage_percent}
         %{kind: "drain", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level, room)
           resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
@@ -649,22 +642,33 @@ defmodule ApathyDrive.Ability do
 
           damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
-          target =
-            target
-            |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
-
           heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
 
           caster = Mobile.shift_hp(caster, heal_percent, room)
 
           Mobile.update_prompt(caster)
 
-          {caster, target}
+          {caster, damage_percent}
       end)
 
     target =
       target
       |> Map.put(:ability_special, :normal)
+      |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
+
+    caster =
+      if caster.__struct__ == Character and Enum.any?(ability.skills) do
+        exp =
+          [:strength, :agility, :intellect, :willpower, :health, :charm]
+          |> Enum.map(&Mobile.attribute_at_level(target, &1, target_level))
+          |> Enum.reduce(0, &(&1 + &2))
+          |> Kernel.*(damage_percent)
+          |> trunc
+
+        Character.add_skill_experience(caster, Enum.random(ability.skills), exp)
+      else
+        caster
+      end
 
     {caster, target}
   end

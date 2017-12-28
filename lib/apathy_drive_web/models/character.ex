@@ -263,6 +263,39 @@ defmodule ApathyDrive.Character do
     end)
   end
 
+  def add_skill_experience(%Character{} = character, %Skill{} = skill, amount) do
+    skill = Map.put(skill, :experience, skill.experience + amount)
+    tnl = trunc(max(Level.exp_to_next_skill_level(skill.level, skill.experience, skill.training_cost_multiplier), 0))
+    Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: skill.experience}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
+
+    if tnl <= 0 do
+      old_abilities = Map.values(character.abilities)
+
+      character = load_abilities(character)
+
+      new_abilities = Map.values(character.abilities)
+
+      level = character.skills[skill.name].level
+
+      Mobile.send_scroll(character, "<p>Your #{skill.name} skill advances to level #{level}!</p>")
+
+      Enum.each(new_abilities, fn ability ->
+        unless ability in old_abilities do
+          Mobile.send_scroll character,  "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+          Mobile.send_scroll character,  "<p>     #{ability.description}</p>"
+        end
+      end)
+
+      character
+    else
+      put_in(character.skills[skill.name], skill)
+    end
+  end
+  def add_skill_experience(character, skill_name, amount) do
+    skill = character.skills[skill_name] || Repo.get_by!(Skill, name: skill_name)
+    add_skill_experience(character, skill, amount)
+  end
+
   def train_skill(%Character{} = character, %Skill{} = skill, amount) when amount > 0 do
     skill = Repo.preload(skill, :incompatible_skills)
     incompatible_skills = Enum.map(skill.incompatible_skills, & &1.name)
@@ -495,7 +528,7 @@ defmodule ApathyDrive.Character do
               "DodgeSpectatorMessage" => "{{user}} throws a punch at {{target}}, but they dodge!"
             }
           }
-        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss]} ->
+        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss], grade: grade} ->
           [singular_hit, plural_hit] = Enum.random(hit_verbs)
           %Ability{
             kind: "attack",
@@ -504,6 +537,7 @@ defmodule ApathyDrive.Character do
             target_message: "{{user}} #{plural_hit} you with their #{name}!",
             spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name}!",
             ignores_round_cooldown?: true,
+            skills: [grade],
             traits: %{
               "Damage" => Character.weapon_potency(character),
               "Dodgeable" => true,
