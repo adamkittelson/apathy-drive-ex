@@ -216,7 +216,7 @@ defmodule ApathyDrive.Monster do
     if rarity do
       Logger.info "spawning #{rarity} item for #{character.name}"
 
-      item_id = Item.random_item_id_for_slot_and_rarity(character, Enum.random(Item.slots), rarity)
+      item_id = Item.random_item_id_for_slot_and_rarity(Enum.random(Item.slots), rarity)
 
       if item_id do
         character =
@@ -484,14 +484,6 @@ defmodule ApathyDrive.Monster do
         Enum.reduce(room.mobiles, room, fn
           {ref, %Character{}}, updated_room ->
             Room.update_mobile(updated_room, ref, fn(character) ->
-              level = Mobile.target_level(character, monster)
-
-              exp =
-                [:strength, :agility, :intellect, :willpower, :health, :charm]
-                |> Enum.map(&Mobile.attribute_at_level(monster, &1, level))
-                |> Enum.reduce(0, &(&1 + &2))
-                |> trunc
-
               message =
                 monster.death_message
                 |> Text.interpolate(%{"name" => monster.name})
@@ -499,11 +491,8 @@ defmodule ApathyDrive.Monster do
 
               Mobile.send_scroll(character, "<p>#{message}</p>")
 
-              Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
-
               character =
                 character
-                |> Character.add_experience(exp)
                 |> Character.add_reputation(monster.reputations)
 
               Monster.generate_loot_for_character(monster, character)

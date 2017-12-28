@@ -464,7 +464,7 @@ defmodule ApathyDrive.Character do
   def weapon_potency(character) do
     case Character.weapon(character) do
       nil ->
-        [%{potency: 75 / Mobile.attacks_per_round(character), kind: "physical", damage_type: "Normal"}]
+        [%{potency: 75 / Mobile.attacks_per_round(character), kind: "physical", damage_type_id: 3, damage_type: "Normal"}]
       %Item{damage: damage} = item ->
         damage ++ Systems.Effect.effect_list(item, "Damage")
     end
@@ -482,6 +482,16 @@ defmodule ApathyDrive.Character do
     end
 
     def accuracy_at_level(character, level, room) do
+      skill_level =
+        case Character.weapon(character) do
+          nil ->
+            skill = character.skills["melee"] || Repo.get_by(Skill, name: "melee")
+            skill.level
+          %Item{grade: grade} ->
+            skill = character.skills[grade] || Repo.get_by(Skill, name: grade)
+            skill.level
+        end
+      level = min(level, skill_level)
       agi = attribute_at_level(character, :agility, level)
       cha = Party.charm_at_level(room, character, level)
       agi = agi + (cha / 10)
@@ -529,6 +539,7 @@ defmodule ApathyDrive.Character do
             target_message: "{{user}} punches you!",
             spectator_message: "{{user}} punches {{target}}!",
             ignores_round_cooldown?: true,
+            skills: ["melee"],
             traits: %{
               "Damage" => Character.weapon_potency(character),
               "Dodgeable" => true,

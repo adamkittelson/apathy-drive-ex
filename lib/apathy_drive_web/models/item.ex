@@ -130,20 +130,6 @@ defmodule ApathyDrive.Item do
      "Legs", "Neck", "Off-Hand", "Torso", "Waist", "Weapon Hand", "Wrist", "Wrist"]
   end
 
-  def grade_for_character(%Character{skills: skills}, slot) do
-    grades = grades_for_slot(slot)
-
-    skills
-    |> Enum.filter(fn {skill_name, _value} -> skill_name in grades end)
-    |> Enum.max_by(fn {_skill_name, value} -> value end, fn -> nil end)
-    |> case do
-      {skill_name, _value} ->
-        skill_name
-      nil ->
-        nil
-    end
-  end
-
   def grades_for_slot(slot) do
     Item
     |> Ecto.Query.where(worn_on: ^slot)
@@ -153,8 +139,11 @@ defmodule ApathyDrive.Item do
     |> Enum.map(& &1.grade)
   end
 
-  def random_item_id_for_slot_and_rarity(%Character{} = character, slot, rarity) do
-    grade = grade_for_character(character, slot)
+  def random_item_id_for_slot_and_rarity(slot, rarity) do
+    grade =
+      slot
+      |> grades_for_slot()
+      |> Enum.random
 
     if grade do
       random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity)
