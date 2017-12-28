@@ -657,7 +657,7 @@ defmodule ApathyDrive.Ability do
       |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
     caster =
-      if caster.__struct__ == Character and Enum.any?(ability.skills) do
+      if caster.__struct__ == Character do
         exp =
           [:strength, :agility, :intellect, :willpower, :health, :charm]
           |> Enum.map(&Mobile.attribute_at_level(target, &1, target_level))
@@ -665,7 +665,7 @@ defmodule ApathyDrive.Ability do
           |> Kernel.*(damage_percent)
           |> trunc
 
-        Character.add_skill_experience(caster, Enum.random(ability.skills), exp)
+        Character.add_skill_experience(caster, ability.skills, exp)
       else
         caster
       end

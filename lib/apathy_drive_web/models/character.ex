@@ -263,6 +263,15 @@ defmodule ApathyDrive.Character do
     end)
   end
 
+  def add_skill_experience(%Character{} = character, skills, amount) when is_list(skills) do
+    amount = div(amount, length(skills) + 1)
+
+    character = add_experience(character, amount)
+
+    Enum.reduce(skills, character, fn skill, character ->
+      add_skill_experience(character, skill, amount)
+    end)
+  end
   def add_skill_experience(%Character{} = character, %Skill{} = skill, amount) do
     skill = Map.put(skill, :experience, skill.experience + amount)
     tnl = trunc(max(Level.exp_to_next_skill_level(skill.level, skill.experience, skill.training_cost_multiplier), 0))
