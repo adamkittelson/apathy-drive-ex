@@ -20,7 +20,7 @@ defmodule ApathyDrive.Skill do
   end
 
   def set_level(%__MODULE__{experience: exp, training_cost_multiplier: multiplier} = skill) when not is_nil(exp) do
-    put_in(skill.level, ApathyDrive.Level.skill_level_at_exp(exp, multiplier))
+    put_in(skill.level, ApathyDrive.Level.level_at_exp(exp, multiplier))
   end
 
   def create_changeset(name) do

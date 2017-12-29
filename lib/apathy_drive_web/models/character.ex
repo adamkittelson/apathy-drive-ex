@@ -341,7 +341,7 @@ defmodule ApathyDrive.Character do
     |> Enum.reduce(character, fn {skill_name, %Skill{experience: skill_exp}}, character ->
       if skill_name in incompatible_skills do
         incompatible_skill = Skill.match_by_name(skill_name)
-        level = Level.skill_level_at_exp(skill_exp, incompatible_skill.training_cost_multiplier)
+        level = Level.level_at_exp(skill_exp, incompatible_skill.training_cost_multiplier)
         if level > 0 do
           new_level = level - 1
           new_exp = Level.exp_at_level(level, incompatible_skill.training_cost_multiplier)
