@@ -455,10 +455,17 @@ defmodule ApathyDrive.Character do
     }
   end
 
+  def item_level(%Character{equipment: []}), do: 0
   def item_level(%Character{equipment: equipment}) do
-    equipment
-    |> Enum.map(& &1.level)
-    |> Enum.sum
+    levels =
+      equipment
+      |> Enum.map(fn item ->
+          item_level = Item.item_level(item)
+          List.duplicate(item_level, ApathyDrive.Commands.Wear.worn_on_max(item))
+        end)
+      |> List.flatten
+
+    Enum.sum(levels) / length(levels)
   end
 
   def weapon_potency(character) do

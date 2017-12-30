@@ -67,12 +67,12 @@ defmodule ApathyDrive.Item do
       attributes: 9
     },
     "epic" => %{
-      cost_multiplier: 4,
+      cost_multiplier: 5,
       color: "darkmagenta",
       attributes: 15
     },
     "legendary" => %{
-      cost_multiplier: :infinity,
+      cost_multiplier: 8,
       color: "red",
       attributes: 24
     }
@@ -206,6 +206,10 @@ defmodule ApathyDrive.Item do
     |> Repo.all
   end
 
+  def item_level(%Item{} = item) do
+    power_at_level(item, item.level) / 3
+  end
+
   def generate_item_attributes(rarity) do
     %{strength: @rarities[rarity].attributes,
       agility: @rarities[rarity].attributes,
@@ -221,7 +225,7 @@ defmodule ApathyDrive.Item do
       %ItemInstance{
         character_id: character.id,
         item_id: item.id,
-        level: (if rarity == "legendary", do: :infinity, else: generated_item_level(character, item.grade)),
+        level: character.level,
         purchased: source == :shop
       }
       |> Map.merge(generate_item_attributes(rarity))
@@ -264,15 +268,6 @@ defmodule ApathyDrive.Item do
         0
       end
     item_power > slot_power
-  end
-
-  def generated_item_level(%Character{} = character, grade) do
-    if skill_info = Enum.find(character.skills, fn {skill_name, _exp} -> skill_name == grade end) do
-      {_skill_name, skill} = skill_info
-      skill.level
-    else
-      1
-    end
   end
 
   def price(%Item{rarity: "legendary"}), do: "priceless"

@@ -44,7 +44,6 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     AbilityTrait
     |> Repo.get!(form_data["id"])
     |> AbilityTrait.changeset(data)
-    |> IO.inspect
     |> Repo.update!
 
     {:reply, :ok, socket}
