@@ -680,7 +680,6 @@ defmodule ApathyDrive.Ability do
         skills =
           target.equipment
           |> Enum.map(& &1.grade)
-          |> Enum.uniq
 
         Character.add_skill_experience(target, skills, exp)
       else
