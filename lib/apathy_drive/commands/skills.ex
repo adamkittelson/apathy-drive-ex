@@ -14,7 +14,7 @@ defmodule ApathyDrive.Commands.Skills do
   def display_skills(%Character{} = character) do
     character.skills
     |> Map.values
-    |> Enum.each(fn(%{name: name, level: level} = skill) ->
+    |> Enum.map(fn(%{name: name, level: level} = skill) ->
          exp       = trunc(skill.experience)
          currentLevel = Level.exp_at_level(level)
          tolevel   = Level.exp_at_level(level + 1)
@@ -30,6 +30,11 @@ defmodule ApathyDrive.Commands.Skills do
            |> to_string
            |> String.pad_leading(5)
 
+         {level, percent, name}
+       end)
+    |> Enum.sort
+    |> Enum.reverse
+    |> Enum.each(fn {level, percent, name} ->
          Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{level} #{percent}%    #{name}</span></p>")
        end)
   end

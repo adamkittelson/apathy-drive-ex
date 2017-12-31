@@ -439,10 +439,14 @@ defmodule ApathyDrive.Ability do
 
     modifier = Mobile.ability_value(target, "Dodge")
 
-    chance = 30 + modifier + ((dodge - accuracy) * 10)
+    difference = dodge - accuracy
 
-    chance = min(chance, 60 + modifier)
-    chance = max(chance, 10 + modifier)
+    chance =
+      if difference > 0 do
+        30 + modifier + (difference * 0.3)
+      else
+        30 + modifier + (difference * 0.7)
+      end
 
     :rand.uniform(100) < chance
   end
@@ -451,14 +455,8 @@ defmodule ApathyDrive.Ability do
     if dodged?(caster, target, room) do
       display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
 
-      effects =
-        %{"Dodge" => -10}
-        |> Map.put("stack_key", "dodge-limiter")
-        |> Map.put("stack_count", 5)
-
       target =
         target
-        |> Systems.Effect.add(effects, Mobile.round_length_in_ms(target))
         |> aggro_target(ability, caster)
 
       put_in(room.mobiles[target.ref], target)
@@ -668,6 +666,25 @@ defmodule ApathyDrive.Ability do
         Character.add_skill_experience(caster, ability.skills, exp)
       else
         caster
+      end
+
+    target =
+      if target.__struct__ == Character do
+        exp =
+          [:strength, :agility, :intellect, :willpower, :health, :charm]
+          |> Enum.map(&Mobile.attribute_at_level(target, &1, target_level))
+          |> Enum.reduce(0, &(&1 + &2))
+          |> Kernel.*(damage_percent)
+          |> trunc
+
+        skills =
+          target.equipment
+          |> Enum.map(& &1.grade)
+          |> Enum.uniq
+
+        Character.add_skill_experience(target, skills, exp)
+      else
+        target
       end
 
     {caster, target}

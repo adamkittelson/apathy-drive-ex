@@ -264,7 +264,7 @@ defmodule ApathyDrive.Character do
   end
 
   def add_skill_experience(%Character{} = character, skills, amount) when is_list(skills) do
-    amount = div(amount, length(skills) + 1)
+    amount = max(1, div(amount, length(skills) + 1))
 
     character = add_experience(character, amount)
 
