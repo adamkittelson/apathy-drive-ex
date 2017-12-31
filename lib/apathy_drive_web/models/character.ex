@@ -195,6 +195,14 @@ defmodule ApathyDrive.Character do
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
   end
 
+  def shield(%Character{} = character) do
+    shield =
+      character.equipment
+      |> Enum.find(&(&1.worn_on in ["Off-Hand"]))
+
+    if shield.grade == "shield", do: shield
+  end
+
   def sign_in(email, password) do
     player = Repo.get_by(Character, email: email)
     sign_in?(player, password) && player
@@ -264,7 +272,7 @@ defmodule ApathyDrive.Character do
   end
 
   def add_skill_experience(%Character{} = character, skills, amount) when is_list(skills) do
-    amount = max(1, div(amount, length(skills) + 1))
+    amount = max(1, div(trunc(amount), length(skills) + 1))
 
     character = add_experience(character, amount)
 
@@ -300,7 +308,7 @@ defmodule ApathyDrive.Character do
       put_in(character.skills[skill.name], skill)
     end
   end
-  def add_skill_experience(character, skill_name, amount) do
+  def add_skill_experience(%Character{} = character, skill_name, amount) do
     skill = character.skills[skill_name] || Repo.get_by!(Skill, name: skill_name)
     add_skill_experience(character, skill, amount)
   end
@@ -434,7 +442,7 @@ defmodule ApathyDrive.Character do
       crits: Mobile.crits_at_level(character, character.level, room),
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level, room),
-      tracking: Mobile.tracking_at_level(character, character.level, room),
+      block: Character.block_at_level(character, character.level),
       melee_dps: dps,
       physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil, room),
       magical_damage: Mobile.magical_damage_at_level(character, character.level, room),
@@ -475,6 +483,18 @@ defmodule ApathyDrive.Character do
       %Item{damage: damage} = item ->
         damage ++ Systems.Effect.effect_list(item, "Damage")
     end
+  end
+
+  def block_at_level(character, level) do
+    skill = character.skills["shield"] || Repo.get_by(Skill, name: "shield")
+    skill_level = skill.level
+    level = min(level, skill_level)
+
+    str = Mobile.attribute_at_level(character, :strength, level)
+    cha = Mobile.attribute_at_level(character, :charm, level)
+    str = str + (cha / 10)
+    modifier = Mobile.ability_value(character, "Block")
+    str * (1 + (modifier / 100))
   end
 
   defimpl ApathyDrive.Mobile, for: Character do
@@ -706,6 +726,10 @@ defmodule ApathyDrive.Character do
     end
 
     def dodge_at_level(character, level, room) do
+      skill = character.skills["dodge"] || Repo.get_by(Skill, name: "dodge")
+      skill_level = skill.level
+      level = min(level, skill_level)
+
       agi = attribute_at_level(character, :agility, level)
       cha = Party.charm_at_level(room, character, level)
       agi = agi + (cha / 10)

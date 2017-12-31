@@ -451,17 +451,68 @@ defmodule ApathyDrive.Ability do
     :rand.uniform(100) < chance
   end
 
-  def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{traits: %{"Dodgeable" => true}} = ability) do
-    if dodged?(caster, target, room) do
-      display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
+  def blocked?(%{} = caster, %Character{} = target, room) do
+    if Character.shield(target) do
+      caster_level = Mobile.caster_level(caster, target)
+      accuracy = Mobile.accuracy_at_level(caster, caster_level, room)
 
-      target =
-        target
-        |> aggro_target(ability, caster)
+      target_level = Mobile.target_level(caster, target)
+      dodge = Character.block_at_level(target, target_level)
 
-      put_in(room.mobiles[target.ref], target)
+      modifier = Mobile.ability_value(target, "Block")
+
+      difference = dodge - accuracy
+
+      chance =
+        if difference > 0 do
+          30 + modifier + (difference * 0.3)
+        else
+          30 + modifier + (difference * 0.7)
+        end
+
+      :rand.uniform(100) < chance
     else
-      apply_ability(room, caster, target, update_in(ability.traits, &Map.delete(&1, "Dodgeable")))
+      false
+    end
+  end
+  def blocked?(%{} = _caster, %{} = target, _room) do
+    :rand.uniform(100) < Mobile.ability_value(target, "Block")
+  end
+
+  def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{traits: %{"Dodgeable" => true}} = ability) do
+    cond do
+      dodged?(caster, target, room) ->
+        display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
+
+        target =
+          target
+          |> aggro_target(ability, caster)
+
+        target =
+          if Character == target.__struct__ do
+            Character.add_skill_experience(target, ["dodge"], Mobile.dodge_at_level(target, target.level, room))
+          else
+            target
+          end
+
+        put_in(room.mobiles[target.ref], target)
+      blocked?(caster, target, room) ->
+        display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
+
+        target =
+          target
+          |> aggro_target(ability, caster)
+
+        target =
+          if Character == target.__struct__ do
+            Character.add_skill_experience(target, ["shield"], Character.block_at_level(target, target.level))
+          else
+            target
+          end
+
+        put_in(room.mobiles[target.ref], target)
+      true ->
+        apply_ability(room, caster, target, update_in(ability.traits, &Map.delete(&1, "Dodgeable")))
     end
   end
   def apply_ability(%Room{} = room, %Character{} = caster, %{} = target, %Ability{traits: %{"Enslave" => _}} = ability) do
@@ -901,6 +952,14 @@ defmodule ApathyDrive.Ability do
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
+  def caster_cast_message(%Ability{result: :blocked} = _ability, %{} = _caster, %{} = target, _mobile) do
+    message =
+      "{{target}} blocks your attack with {{target:his/her/their}} shield!"
+      |> Text.interpolate(%{"target" => target})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
   def caster_cast_message(%Ability{result: :resisted} = ability, %{} = _caster, %{} = target, _mobile) do
     message =
       @resist_message.user
@@ -959,6 +1018,14 @@ defmodule ApathyDrive.Ability do
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
+  def target_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = _target, _mobile) do
+    message =
+      "You block {{user}}'s attack with your shield!"
+      |> Text.interpolate(%{"user" => caster})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
   def target_cast_message(%Ability{result: :resisted} = ability, %{} = caster, %{} = _target, _mobile) do
     message =
       @resist_message.target
@@ -1005,6 +1072,14 @@ defmodule ApathyDrive.Ability do
     message =
       ability.traits["DodgeSpectatorMessage"]
       |> Text.interpolate(%{"user" => caster, "target" => target, "ability" => ability.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def spectator_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = target, _mobile) do
+    message =
+      "{{target}} blocks {{user}}'s attack with {{target:his/her/their}} shield!"
+      |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
