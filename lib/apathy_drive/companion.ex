@@ -204,6 +204,8 @@ defmodule ApathyDrive.Companion do
       agi * (1 + (modifier / 100))
     end
 
+    def add_skill_experience(%Companion{} = companion, _skill_name, _amount), do: companion
+
     def attribute_at_level(%Companion{} = companion, attribute, level) do
       growth =
         [:strength, :agility, :intellect, :willpower, :health, :charm]
@@ -334,6 +336,10 @@ defmodule ApathyDrive.Companion do
       agi = agi + (cha / 10)
       modifier = ability_value(companion, "Dodge")
       agi * (1 + (modifier / 100))
+    end
+
+    def block_at_level(companion, _level) do
+      Mobile.ability_value(companion, "Block")
     end
 
     def enough_mana_for_ability?(companion, %Ability{} =  ability) do

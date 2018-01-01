@@ -457,7 +457,7 @@ defmodule ApathyDrive.Ability do
       accuracy = Mobile.accuracy_at_level(caster, caster_level, room)
 
       target_level = Mobile.target_level(caster, target)
-      dodge = Character.block_at_level(target, target_level)
+      dodge = Mobile.block_at_level(target, target_level)
 
       modifier = Mobile.ability_value(target, "Block")
 
@@ -487,13 +487,7 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-
-        target =
-          if Character == target.__struct__ do
-            Character.add_skill_experience(target, ["dodge"], Mobile.dodge_at_level(target, target.level, room))
-          else
-            target
-          end
+          |> Mobile.add_skill_experience(["dodge"], Mobile.dodge_at_level(target, target.level, room))
 
         put_in(room.mobiles[target.ref], target)
       blocked?(caster, target, room) ->
@@ -502,13 +496,7 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-
-        target =
-          if Character == target.__struct__ do
-            Character.add_skill_experience(target, ["shield"], Character.block_at_level(target, target.level))
-          else
-            target
-          end
+          |> Mobile.add_skill_experience(["shield"], Mobile.block_at_level(target, target.level))
 
         put_in(room.mobiles[target.ref], target)
       true ->
@@ -705,37 +693,21 @@ defmodule ApathyDrive.Ability do
       |> Map.put(:ability_special, :normal)
       |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
-    caster =
-      if caster.__struct__ == Character do
-        exp =
-          [:strength, :agility, :intellect, :willpower, :health, :charm]
-          |> Enum.map(&Mobile.attribute_at_level(target, &1, target_level))
-          |> Enum.reduce(0, &(&1 + &2))
-          |> Kernel.*(damage_percent)
-          |> trunc
+    exp =
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.map(&Mobile.attribute_at_level(target, &1, target_level))
+      |> Enum.reduce(0, &(&1 + &2))
+      |> Kernel.*(damage_percent)
+      |> trunc
 
-        Character.add_skill_experience(caster, ability.skills, exp)
-      else
-        caster
-      end
+    caster = Mobile.add_skill_experience(caster, ability.skills, exp)
 
-    target =
-      if target.__struct__ == Character do
-        exp =
-          [:strength, :agility, :intellect, :willpower, :health, :charm]
-          |> Enum.map(&Mobile.attribute_at_level(target, &1, target_level))
-          |> Enum.reduce(0, &(&1 + &2))
-          |> Kernel.*(damage_percent)
-          |> trunc
+    skills =
+      target
+      |> Map.get(:equipment, [])
+      |> Enum.map(& &1.grade)
 
-        skills =
-          target.equipment
-          |> Enum.map(& &1.grade)
-
-        Character.add_skill_experience(target, skills, exp)
-      else
-        target
-      end
+    target = Mobile.add_skill_experience(target, skills, exp)
 
     {caster, target}
   end

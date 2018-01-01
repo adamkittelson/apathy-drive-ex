@@ -271,48 +271,6 @@ defmodule ApathyDrive.Character do
     end)
   end
 
-  def add_skill_experience(%Character{} = character, skills, amount) when is_list(skills) do
-    amount = max(1, div(trunc(amount), length(skills) + 1))
-
-    character = add_experience(character, amount)
-
-    Enum.reduce(skills, character, fn skill, character ->
-      add_skill_experience(character, skill, amount)
-    end)
-  end
-  def add_skill_experience(%Character{} = character, %Skill{} = skill, amount) do
-    skill = Map.put(skill, :experience, skill.experience + amount)
-    tnl = trunc(max(Level.exp_to_next_skill_level(skill.level, skill.experience, skill.training_cost_multiplier), 0))
-    Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: skill.experience}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
-
-    if tnl <= 0 do
-      old_abilities = Map.values(character.abilities)
-
-      character = load_abilities(character)
-
-      new_abilities = Map.values(character.abilities)
-
-      level = character.skills[skill.name].level
-
-      Mobile.send_scroll(character, "<p>Your #{skill.name} skill advances to level #{level}!</p>")
-
-      Enum.each(new_abilities, fn ability ->
-        unless ability in old_abilities do
-          Mobile.send_scroll character,  "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
-          Mobile.send_scroll character,  "<p>     #{ability.description}</p>"
-        end
-      end)
-
-      character
-    else
-      put_in(character.skills[skill.name], skill)
-    end
-  end
-  def add_skill_experience(%Character{} = character, skill_name, amount) do
-    skill = character.skills[skill_name] || Repo.get_by!(Skill, name: skill_name)
-    add_skill_experience(character, skill, amount)
-  end
-
   def train_skill(%Character{} = character, %Skill{} = skill, amount) when amount > 0 do
     skill = Repo.preload(skill, :incompatible_skills)
     incompatible_skills = Enum.map(skill.incompatible_skills, & &1.name)
@@ -442,7 +400,7 @@ defmodule ApathyDrive.Character do
       crits: Mobile.crits_at_level(character, character.level, room),
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level, room),
-      block: Character.block_at_level(character, character.level),
+      block: Mobile.block_at_level(character, character.level),
       melee_dps: dps,
       physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil, room),
       magical_damage: Mobile.magical_damage_at_level(character, character.level, room),
@@ -485,18 +443,6 @@ defmodule ApathyDrive.Character do
     end
   end
 
-  def block_at_level(character, level) do
-    skill = character.skills["shield"] || Repo.get_by(Skill, name: "shield")
-    skill_level = skill.level
-    level = min(level, skill_level)
-
-    str = Mobile.attribute_at_level(character, :strength, level)
-    cha = Mobile.attribute_at_level(character, :charm, level)
-    str = str + (cha / 10)
-    modifier = Mobile.ability_value(character, "Block")
-    str * (1 + (modifier / 100))
-  end
-
   defimpl ApathyDrive.Mobile, for: Character do
 
     def ability_value(character, ability) do
@@ -506,6 +452,48 @@ defmodule ApathyDrive.Character do
           total + Systems.Effect.effect_bonus(item, ability)
         end)
       character_value + equipment_value
+    end
+
+    def add_skill_experience(%Character{} = character, skills, amount) when is_list(skills) do
+      amount = max(1, div(trunc(amount), length(skills) + 1))
+
+      character = Character.add_experience(character, amount)
+
+      Enum.reduce(skills, character, fn skill, character ->
+        add_skill_experience(character, skill, amount)
+      end)
+    end
+    def add_skill_experience(%Character{} = character, %Skill{} = skill, amount) do
+      skill = Map.put(skill, :experience, skill.experience + amount)
+      tnl = trunc(max(Level.exp_to_next_skill_level(skill.level, skill.experience, skill.training_cost_multiplier), 0))
+      Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: skill.experience}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
+
+      if tnl <= 0 do
+        old_abilities = Map.values(character.abilities)
+
+        character = Character.load_abilities(character)
+
+        new_abilities = Map.values(character.abilities)
+
+        level = character.skills[skill.name].level
+
+        Mobile.send_scroll(character, "<p>Your #{skill.name} skill advances to level #{level}!</p>")
+
+        Enum.each(new_abilities, fn ability ->
+          unless ability in old_abilities do
+            Mobile.send_scroll character,  "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+            Mobile.send_scroll character,  "<p>     #{ability.description}</p>"
+          end
+        end)
+
+        character
+      else
+        put_in(character.skills[skill.name], skill)
+      end
+    end
+    def add_skill_experience(%Character{} = character, skill_name, amount) do
+      skill = character.skills[skill_name] || Repo.get_by!(Skill, name: skill_name)
+      add_skill_experience(character, skill, amount)
     end
 
     def accuracy_at_level(character, level, room) do
@@ -735,6 +723,18 @@ defmodule ApathyDrive.Character do
       agi = agi + (cha / 10)
       modifier = ability_value(character, "Dodge")
       agi * (1 + (modifier / 100))
+    end
+
+    def block_at_level(character, level) do
+      skill = character.skills["shield"] || Repo.get_by(Skill, name: "shield")
+      skill_level = skill.level
+      level = min(level, skill_level)
+
+      str = Mobile.attribute_at_level(character, :strength, level)
+      cha = Mobile.attribute_at_level(character, :charm, level)
+      str = str + (cha / 10)
+      modifier = Mobile.ability_value(character, "Block")
+      str * (1 + (modifier / 100))
     end
 
     def enough_mana_for_ability?(character, %Ability{} =  ability) do
