@@ -491,9 +491,12 @@ defmodule ApathyDrive.Character do
         put_in(character.skills[skill.name], skill)
       end
     end
-    def add_skill_experience(%Character{} = character, skill_name, amount) do
+    def add_skill_experience(%Character{} = character, skill_name, amount) when is_binary(skill_name) do
       skill = character.skills[skill_name] || Repo.get_by!(Skill, name: skill_name)
       add_skill_experience(character, skill, amount)
+    end
+    def add_skill_experience(%Character{} = character, skill_fun, amount) do
+      add_skill_experience(character, skill_fun.(), amount)
     end
 
     def accuracy_at_level(character, level, room) do
@@ -735,6 +738,20 @@ defmodule ApathyDrive.Character do
       str = str + (cha / 10)
       modifier = Mobile.ability_value(character, "Block")
       str * (1 + (modifier / 100))
+    end
+
+    def parry_at_level(character, level) do
+      skill_name = Character.weapon(character).grade
+      skill = character.skills[skill_name] || Repo.get_by(Skill, name: skill_name)
+      skill_level = skill.level
+      level = min(level, skill_level)
+
+      str = Mobile.attribute_at_level(character, :strength, level)
+      agi = Mobile.attribute_at_level(character, :agility, level)
+      cha = Mobile.attribute_at_level(character, :charm, level)
+      raw = ((str + agi) / 2) +  (cha / 10)
+      modifier = Mobile.ability_value(character, "Parry")
+      raw * (1 + (modifier / 100))
     end
 
     def enough_mana_for_ability?(character, %Ability{} =  ability) do

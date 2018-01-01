@@ -342,6 +342,10 @@ defmodule ApathyDrive.Companion do
       Mobile.ability_value(companion, "Block")
     end
 
+    def parry_at_level(companion, _level) do
+      Mobile.ability_value(companion, "Parry")
+    end
+
     def enough_mana_for_ability?(companion, %Ability{} =  ability) do
       mana = Mobile.max_mana_at_level(companion, companion.level)
       cost = Ability.mana_cost_at_level(ability, companion.level)

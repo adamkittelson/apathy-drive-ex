@@ -532,6 +532,10 @@ defmodule ApathyDrive.Monster do
       Mobile.ability_value(monster, "Block")
     end
 
+    def parry_at_level(monster, _level) do
+      Mobile.ability_value(monster, "Parry")
+    end
+
     def enough_mana_for_ability?(monster, %Ability{} =  ability) do
       mana = Mobile.max_mana_at_level(monster, monster.level)
       cost = Ability.mana_cost_at_level(ability, monster.level)

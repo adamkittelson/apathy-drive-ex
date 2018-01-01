@@ -27,6 +27,7 @@ defprotocol ApathyDrive.Mobile do
   def magical_resistance_at_level(mobile, level, damage_type, room)
   def max_hp_at_level(mobile, level)
   def max_mana_at_level(mobile, level)
+  def parry_at_level(mobile, level)
   def perception_at_level(mobile, level, room)
   def party_refs(mobile, room)
   def physical_damage_at_level(mobile, level, room)
