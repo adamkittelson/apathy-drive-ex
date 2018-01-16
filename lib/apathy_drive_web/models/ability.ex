@@ -962,16 +962,22 @@ defmodule ApathyDrive.Ability do
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
   def caster_cast_message(%Ability{result: :blocked} = _ability, %{} = _caster, %{} = target, _mobile) do
+    shield =
+      Character.shield(target).name
+
     message =
-      "{{target}} blocks your attack with {{target:his/her/their}} shield!"
+      "{{target}} blocks your attack with {{target:his/her/their}} #{shield}!"
       |> Text.interpolate(%{"target" => target})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
   def caster_cast_message(%Ability{result: :parried} = _ability, %{} = _caster, %{} = target, _mobile) do
+    weapon =
+      Character.weapon(target).name
+
     message =
-      "{{target}} parries your attack with {{target:his/her/their}} weapon!"
+      "{{target}} parries your attack with {{target:his/her/their}} #{weapon}!"
       |> Text.interpolate(%{"target" => target})
       |> Text.capitalize_first
 
@@ -1020,7 +1026,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.user_message
-          |> Text.interpolate(%{"target" => target})
+          |> Text.interpolate(%{"target" => target, "amount" => amount})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
@@ -1035,17 +1041,22 @@ defmodule ApathyDrive.Ability do
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def target_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = _target, _mobile) do
+  def target_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = target, _mobile) do
+    shield =
+      Character.shield(target).name
     message =
-      "You block {{user}}'s attack with your shield!"
+      "You block {{user}}'s attack with your #{shield}!"
       |> Text.interpolate(%{"user" => caster})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def target_cast_message(%Ability{result: :parried} = _ability, %{} = caster, %{} = _target, _mobile) do
+  def target_cast_message(%Ability{result: :parried} = _ability, %{} = caster, %{} = target, _mobile) do
+    weapon =
+      Character.weapon(target).name
+
     message =
-      "You parry {{user}}'s attack with your weapon!"
+      "You parry {{user}}'s attack with your #{weapon}!"
       |> Text.interpolate(%{"user" => caster})
       |> Text.capitalize_first
 
@@ -1086,7 +1097,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.target_message
-          |> Text.interpolate(%{"user" => caster})
+          |> Text.interpolate(%{"user" => caster, "amount" => amount})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
@@ -1102,16 +1113,22 @@ defmodule ApathyDrive.Ability do
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
   def spectator_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = target, _mobile) do
+    shield =
+      Character.shield(target).name
+
     message =
-      "{{target}} blocks {{user}}'s attack with {{target:his/her/their}} shield!"
+      "{{target}} blocks {{user}}'s attack with {{target:his/her/their}} #{shield}!"
       |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
   def spectator_cast_message(%Ability{result: :parried} = _ability, %{} = caster, %{} = target, _mobile) do
+    weapon =
+      Character.weapon(target).name
+
     message =
-      "{{target}} parries {{user}}'s attack with {{target:his/her/their}} weapon!"
+      "{{target}} parries {{user}}'s attack with {{target:his/her/their}} #{weapon}!"
       |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first
 
@@ -1160,7 +1177,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.spectator_message
-          |> Text.interpolate(%{"user" => caster, "target" => target})
+          |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"

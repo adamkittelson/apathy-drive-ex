@@ -14,13 +14,22 @@ defmodule ApathyDrive.Commands.Sell do
   end
 
   def sell(%Room{} = room, shop_items, %Character{ref: ref} = character, "all") do
-    character.inventory
-    |> Enum.reject(&upgrade?(&1, character))
-    |> Enum.reject(&enchanted?(&1))
-    |> Enum.reduce(room, fn(item, updated_room) ->
-         character = updated_room.mobiles[ref]
-         sell(updated_room, shop_items, character, item)
-       end)
+    items_to_sell =
+      character.inventory
+      |> Enum.reject(&upgrade?(&1, character))
+      |> Enum.reject(&enchanted?(&1))
+
+    if Enum.any?(items_to_sell) do
+      items_to_sell
+      |> Enum.reduce(room, fn(item, updated_room) ->
+          character = updated_room.mobiles[ref]
+          sell(updated_room, shop_items, character, item)
+        end)
+    else
+      Mobile.send_scroll(character, "<p>All your items are too valuable to auto-sell and must be sold one at a time.</p>")
+      room
+    end
+
   end
 
   def sell(%Room{} = room, _shop_items, character, %Item{instance_id: instance_id} = item) do

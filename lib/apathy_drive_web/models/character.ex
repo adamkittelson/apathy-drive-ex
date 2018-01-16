@@ -200,7 +200,7 @@ defmodule ApathyDrive.Character do
       character.equipment
       |> Enum.find(&(&1.worn_on in ["Off-Hand"]))
 
-    if shield.grade == "shield", do: shield
+    if shield && shield.grade == "shield", do: shield
   end
 
   def sign_in(email, password) do
@@ -477,7 +477,7 @@ defmodule ApathyDrive.Character do
 
         level = character.skills[skill.name].level
 
-        Mobile.send_scroll(character, "<p>Your #{skill.name} skill advances to level #{level}!</p>")
+        Mobile.send_scroll(character, "<p><span class='yellow'>Your #{skill.name} skill advances to level #{level}!</span></p>")
 
         Enum.each(new_abilities, fn ability ->
           unless ability in old_abilities do
@@ -553,9 +553,9 @@ defmodule ApathyDrive.Character do
           %Ability{
             kind: "attack",
             mana: 0,
-            user_message: "You punch {{target}}!",
-            target_message: "{{user}} punches you!",
-            spectator_message: "{{user}} punches {{target}}!",
+            user_message: "You punch {{target}} for {{amount}} damage!",
+            target_message: "{{user}} punches you for {{amount}} damage!",
+            spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             skills: ["melee"],
             traits: %{
@@ -571,9 +571,9 @@ defmodule ApathyDrive.Character do
           %Ability{
             kind: "attack",
             mana: 0,
-            user_message: "You #{singular_hit} {{target}} with your #{name}!",
-            target_message: "{{user}} #{plural_hit} you with their #{name}!",
-            spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name}!",
+            user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
+            target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
+            spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
             ignores_round_cooldown?: true,
             skills: [grade],
             traits: %{
@@ -882,7 +882,12 @@ defmodule ApathyDrive.Character do
 
       base_regen_per_round = attribute_at_level(character, :willpower, character.level) / 5
 
-      hp_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(character, "HPRegen") / 100) / max_hp
+      hp_regen_percentage_per_round =
+        if TimerManager.time_remaining(character, :auto_attack_timer) > 0 do
+          0
+        else
+          base_regen_per_round * (1 + ability_value(character, "HPRegen") / 100) / max_hp
+        end
       mana_regen_percentage_per_round =
         if max_mana > 0 do
           base_regen_per_round * (1 + ability_value(character, "ManaRegen") / 100) / max_mana
