@@ -10,6 +10,11 @@ defmodule ApathyDrive.AbilityDamageType do
     belongs_to :damage_type, DamageType
   end
 
+  def changeset(model, params \\ %{}) do
+    model
+    |> cast(params, ~w(damage_type_id kind potency)a)
+  end
+
   def load_damage(ability_id) do
     __MODULE__
     |> where([mt], mt.ability_id == ^ability_id)

@@ -48,6 +48,43 @@ window.store = new Vuex.Store({
         store.commit('add_created_trait', {index: ability_index, trait: trait})
       })
     },
+    create_damage_type(state, ability_id) {
+      var ability_index = _.findIndex(store.state.abilities, function(ability) {
+        return ability.data.id === ability_id
+      })
+      state.abilities[ability_index].new_damage_type.show = false
+
+      var damage_type_name = state.abilities[ability_index].new_damage_type.name
+      var damage_type_potency = state.abilities[ability_index].new_damage_type.potency
+      var damage_type_kind = state.abilities[ability_index].new_damage_type.kind
+
+      console.log("adding " + damage_type_name)
+
+      state.channel.push("create_damage_type", {ability_id: ability_id, name: damage_type_name, potency: damage_type_potency, kind: damage_type_kind})
+      .receive("ok", function(response) {
+        console.log(response.id + " added")
+
+        var damage_type = {
+          data: {
+            ability_id: ability_id,
+            id: response.id,
+            name: damage_type_name,
+            kind: damage_type_kind,
+            potency: damage_type_potency
+          },
+          form: {
+            ability_id: ability_id,
+            id: response.id,
+            name: damage_type_name,
+            kind: damage_type_kind,
+            potency: damage_type_potency
+          },
+          valid: true
+        }
+
+        store.commit('add_created_damage_type', {index: ability_index, damage_type: damage_type})
+      })
+    },
     add_created_trait(state, payload) {
       var ability_index = payload.index
       state.abilities[ability_index].data.traits.unshift(Object.assign({}, payload.trait))
@@ -55,6 +92,14 @@ window.store = new Vuex.Store({
       state.abilities[ability_index].new_trait.show = false
       state.abilities[ability_index].new_trait.name = ""
       state.abilities[ability_index].new_trait.value = ""
+    },
+    add_created_damage_type(state, payload) {
+      var ability_index = payload.index
+      state.abilities[ability_index].data.damage_types.unshift(Object.assign({}, payload.damage_type))
+      state.abilities[ability_index].form.damage_types.unshift(Object.assign({}, payload.damage_type))
+      state.abilities[ability_index].new_damage_type.show = false
+      state.abilities[ability_index].new_damage_type.name = ""
+      state.abilities[ability_index].new_damage_type.value = ""
     },
     update_ability(state, form_data) {
       console.log("updating " + form_data.name)
@@ -85,6 +130,23 @@ window.store = new Vuex.Store({
         state.abilities[ability_index].form.traits[trait_index].data = Object.assign({}, form_data)
       })
     },
+    update_damage_type(state, form_data) {
+      console.log("updating " + form_data.name)
+      var ability_index = _.findIndex(store.state.abilities, function(item) {
+        return item.form.id === form_data.ability_id
+      })
+
+      var damage_type_index = _.findIndex(state.abilities[ability_index].data.damage_types, function(item) {
+        return item.form.id === form_data.id
+      })
+
+      state.channel.push("update_damage_type", form_data)
+      .receive("ok", function() {
+        console.log(form_data.name + " Updated")
+        state.abilities[ability_index].data.damage_types[damage_type_index].data = Object.assign({}, form_data)
+        state.abilities[ability_index].form.damage_types[damage_type_index].data = Object.assign({}, form_data)
+      })
+    },
     delete_trait(state, form_data) {
       console.log("deleting " + form_data.name)
       var ability_index = _.findIndex(store.state.abilities, function(item) {
@@ -101,15 +163,41 @@ window.store = new Vuex.Store({
         store.commit('remove_deleted_trait', {ability: ability_index, trait: trait_index})
       })
     },
+    delete_damage_type(state, form_data) {
+      console.log("deleting " + form_data.name)
+      var ability_index = _.findIndex(store.state.abilities, function(item) {
+        return item.form.id === form_data.ability_id
+      })
+
+      var damage_type_index = _.findIndex(state.abilities[ability_index].data.damage_types, function(item) {
+        return item.form.id === form_data.id
+      })
+
+      state.channel.push("delete_damage_type", form_data.id)
+      .receive("ok", function() {
+        console.log(form_data.name + " deleted")
+        store.commit('remove_deleted_damage_type', {ability: ability_index, damage_type: damage_type_index})
+      })
+    },
     remove_deleted_trait(state, payload) {
       state.abilities[payload.ability].data.traits.splice(payload.trait, 1)
       state.abilities[payload.ability].form.traits.splice(payload.trait, 1)
+    },
+    remove_deleted_damage_type(state, payload) {
+      state.abilities[payload.ability].data.damage_types.splice(payload.damage_type, 1)
+      state.abilities[payload.ability].form.damage_types.splice(payload.damage_type, 1)
     },
     show_new_trait(state, ability_id) {
       var index = _.findIndex(store.state.abilities, function(ability) {
         return ability.data.id === ability_id
       })
       state.abilities[index].new_trait.show = true
+    },
+    show_new_damage_type(state, ability_id) {
+      var index = _.findIndex(store.state.abilities, function(ability) {
+        return ability.data.id === ability_id
+      })
+      state.abilities[index].new_damage_type.show = true
     },
     setAbilities(state, abilities) {
       state.abilities = abilities;
@@ -136,6 +224,9 @@ window.abilities = new Vue({
     createTrait: function(ability_id) {
       this.$store.commit('create_trait', ability_id)
     },
+    createDamageType: function(ability_id) {
+      this.$store.commit('create_damage_type', ability_id)
+    },
     updatePageNumber: function(page) {
       this.$store.commit('updatePagination', {page: page, sortBy: this.$store.state.sortBy, descending: this.$store.state.descending})
       this.fetchPage()
@@ -154,6 +245,9 @@ window.abilities = new Vue({
     showNewTrait: function(ability_id) {
       this.$store.commit('show_new_trait', ability_id)
     },
+    showNewDamageType: function(ability_id) {
+      this.$store.commit('show_new_damage_type', ability_id)
+    },
     submit(form_data) {
       if (this.$refs["form-" + form_data.id].validate()) {
         this.$store.commit('update_ability', form_data)
@@ -164,8 +258,16 @@ window.abilities = new Vue({
         this.$store.commit('update_trait', form_data)
       }
     },
+    submitDamageType(form_data) {
+      if (this.$refs["damage-type-form-" + form_data.id][0].validate()) {
+        this.$store.commit('update_damage_type', form_data)
+      }
+    },
     deleteTrait(form_data) {
       this.$store.commit('delete_trait', form_data)
+    },
+    deleteDamageType(form_data) {
+      this.$store.commit('delete_damage_type', form_data)
     },
     valid_targets: function() {
       return this.$store.state.valid_targets
@@ -175,6 +277,38 @@ window.abilities = new Vue({
     },
     traits: function() {
       return this.$store.state.traits
+    },
+    damage_types: function() {
+      return this.$store.state.damage_types
+    },
+    damageTypeHasChanged: function(damage_type) {
+      var parse = function(string) {
+        var result = null;
+        try {
+          result = JSON.parse(string);
+        }
+        catch(e) {
+          if (string === "") {
+            result = null
+          }
+          else {
+            result = string
+          }
+        }
+        return result
+      }
+
+      var data = {
+        name: parse(damage_type.data.name),
+        kind: parse(damage_type.data.kind),
+        potency: parse(damage_type.data.potency)
+      }
+      var form = {
+        name: parse(damage_type.form.name),
+        kind: parse(damage_type.form.kind),
+        potency: parse(damage_type.form.potency)
+      }
+      return !_.isEqual(data, form)
     },
     hasChanged: function(trait) {
       var parse = function(string) {
@@ -250,6 +384,12 @@ store.state.channel.on("abilities", function(data){
         value: "",
         valid: false,
         show: false
+      },
+      new_damage_type: {
+        name: "",
+        potency: "",
+        valid: false,
+        show: false
       }
     }
     return item;
@@ -258,6 +398,7 @@ store.state.channel.on("abilities", function(data){
   store.state.valid_targets = data.valid_targets;
   store.state.kinds = data.kinds;
   store.state.traits = data.traits;
+  store.state.damage_types = data.damage_types;
   abilities.pagination = {
     page: data.page.page_number,
     rowsPerPage: data.page.page_size,
