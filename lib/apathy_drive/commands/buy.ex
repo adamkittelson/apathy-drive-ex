@@ -22,6 +22,7 @@ defmodule ApathyDrive.Commands.Buy do
         price =
           item
           |> Map.put(:level, character.level)
+          |> Item.from_shop
           |> Item.price
 
         if price > character.gold do

@@ -3,7 +3,7 @@ defmodule ApathyDrive.Stealth do
 
   def visible?(sneaker, observer, room) do
     sneaker_level = Mobile.target_level(sneaker, observer)
-    stealth = Mobile.stealth_at_level(sneaker, sneaker_level, room)
+    stealth = Mobile.stealth_at_level(sneaker, sneaker_level)
 
     observer_level = Mobile.caster_level(observer, sneaker)
     perception = Mobile.perception_at_level(observer, observer_level, room)
@@ -15,8 +15,8 @@ defmodule ApathyDrive.Stealth do
     !visible?(sneaker, observer, room)
   end
 
-  def reveal(sneaker, room) do
-    if Mobile.has_ability?(sneaker, "Revealed") || Mobile.stealth_at_level(sneaker, sneaker.level, room) > 0 do
+  def reveal(sneaker) do
+    if Mobile.has_ability?(sneaker, "Revealed") || Mobile.stealth_at_level(sneaker, sneaker.level) > 0 do
       effect = %{
         "Revealed" => true,
         "stack_key" => :revealed,

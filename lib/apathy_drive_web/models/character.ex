@@ -380,7 +380,7 @@ defmodule ApathyDrive.Character do
       |> weapon_potency
       |> Enum.reduce(0, fn %{potency: potency} = damage, dps ->
         potency = potency * Mobile.attacks_per_round(character)
-        damage = Ability.raw_damage(damage, character, character.level, room) * (potency / 100)
+        damage = Ability.raw_damage(damage, character, character.level) * (potency / 100)
         dps + damage / (round_length / 1000)
       end)
 
@@ -399,12 +399,12 @@ defmodule ApathyDrive.Character do
       spellcasting: Mobile.spellcasting_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level, room),
       dodge: Mobile.dodge_at_level(character, character.level, room),
-      stealth: Mobile.stealth_at_level(character, character.level, room),
+      stealth: Mobile.stealth_at_level(character, character.level),
       block: Mobile.block_at_level(character, character.level),
       melee_dps: dps,
-      physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil, room),
-      magical_damage: Mobile.magical_damage_at_level(character, character.level, room),
-      magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil, room),
+      physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil),
+      magical_damage: Mobile.magical_damage_at_level(character, character.level),
+      magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil),
       hp: hp_at_level(character, character.level),
       max_hp: Mobile.max_hp_at_level(character, character.level),
       mana: mana_at_level(character, character.level),
@@ -540,7 +540,7 @@ defmodule ApathyDrive.Character do
              end
            end)
 
-      (base + from_equipment) / 10
+      base + from_equipment
     end
 
     def attack_interval(character) do
@@ -807,23 +807,15 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
-    def magical_damage_at_level(character, level, room) do
-      damage = attribute_at_level(character, :intellect, level) + (Party.charm_at_level(room, character, level) / 10)
+    def magical_damage_at_level(character, level) do
+      damage = attribute_at_level(character, :intellect, level) + (attribute_at_level(character, :charm, level) / 10)
       modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def magical_resistance_at_level(character, level, damage_type, room) do
-      resist = attribute_at_level(character, :willpower, level) + (Party.charm_at_level(room, character, level) / 10)
-      mr =
-        character.equipment
-        |> Enum.reduce(0, fn
-             %Item{magical_resistance: magical_resistance}, total ->
-               total + (magical_resistance || 0)
-             _, total ->
-               total
-           end)
-      modifier = mr + ability_value(character, "MagicalResist") + ability_value(character, "Resist#{damage_type}")
+    def magical_resistance_at_level(character, level, damage_type) do
+      resist = attribute_at_level(character, :willpower, level) + (attribute_at_level(character, :charm, level) / 10)
+      modifier = 30 + ability_value(character, "MagicalResist") + ability_value(character, "Resist#{damage_type}")
       resist * (modifier / 100)
     end
 
@@ -851,23 +843,15 @@ defmodule ApathyDrive.Character do
       int * (1 + (modifier / 100))
     end
 
-    def physical_damage_at_level(character, level, room) do
-      damage = attribute_at_level(character, :strength, level) + (Party.charm_at_level(room, character, level) / 10)
+    def physical_damage_at_level(character, level) do
+      damage = attribute_at_level(character, :strength, level) + (attribute_at_level(character, :charm, level) / 10)
       modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyPhysicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def physical_resistance_at_level(character, level, damage_type, room) do
-      resist = attribute_at_level(character, :strength, level) + (Party.charm_at_level(room, character, level) / 10)
-      ac =
-        character.equipment
-        |> Enum.reduce(0, fn
-             %Item{physical_resistance: physical_resistance}, total ->
-               total + (physical_resistance || 0)
-             _, total ->
-               total
-           end)
-      modifier = ac + ability_value(character, "AC") + ability_value(character, "Resist#{damage_type}")
+    def physical_resistance_at_level(character, level, damage_type) do
+      resist = attribute_at_level(character, :strength, level) + (attribute_at_level(character, :charm, level) / 10)
+      modifier = 30 + ability_value(character, "AC") + ability_value(character, "Resist#{damage_type}")
       resist * (modifier / 100)
     end
 
@@ -991,12 +975,12 @@ defmodule ApathyDrive.Character do
       |> Enum.sort_by(& &1.level)
     end
 
-    def stealth_at_level(character, level, room) do
+    def stealth_at_level(character, level) do
       if Mobile.has_ability?(character, "Revealed") do
         0
       else
         agi = attribute_at_level(character, :agility, level)
-        agi = agi + (Party.charm_at_level(room, character, level) / 10)
+        agi = agi + (attribute_at_level(character, :charm, level) / 10)
         modifier = ability_value(character, "Stealth")
         agi * (modifier / 100)
       end

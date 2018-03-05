@@ -581,13 +581,13 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
-    def magical_damage_at_level(monster, level, _room) do
+    def magical_damage_at_level(monster, level) do
       damage = attribute_at_level(monster, :intellect, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyMagicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def magical_resistance_at_level(monster, level, damage_type, _room) do
+    def magical_resistance_at_level(monster, level, damage_type) do
       resist = attribute_at_level(monster, :willpower, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "MagicalResist") + ability_value(monster, "Resist#{damage_type}")
       resist * (modifier / 100)
@@ -628,13 +628,13 @@ defmodule ApathyDrive.Monster do
       int * (1 + (modifier / 100))
     end
 
-    def physical_damage_at_level(monster, level, _room) do
+    def physical_damage_at_level(monster, level) do
       damage = attribute_at_level(monster, :strength, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyPhysicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def physical_resistance_at_level(monster, level, damage_type, _room) do
+    def physical_resistance_at_level(monster, level, damage_type) do
       resist = attribute_at_level(monster, :strength, level)
       modifier = ability_value(monster, "AC") + ability_value(monster, "Resist#{damage_type}")
       resist * (modifier / 100)
@@ -748,7 +748,7 @@ defmodule ApathyDrive.Monster do
       will * (1 + (modifier / 100))
     end
 
-    def stealth_at_level(monster, level, _room) do
+    def stealth_at_level(monster, level) do
       if Mobile.has_ability?(monster, "Revealed") do
         0
       else

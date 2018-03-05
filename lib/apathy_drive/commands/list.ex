@@ -34,6 +34,7 @@ defmodule ApathyDrive.Commands.List do
     |> Enum.each(fn(%Item{name: _name} = item) ->
         item
         |> Map.put(:level, character.level)
+        |> Item.from_shop
         |> Item.price
         |> case do
             "priceless" ->

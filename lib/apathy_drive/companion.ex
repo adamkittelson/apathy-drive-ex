@@ -403,14 +403,14 @@ defmodule ApathyDrive.Companion do
     def hp_description(%Companion{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Companion{hp: _hp}), do: "very critically wounded"
 
-    def magical_damage_at_level(companion, level, room) do
-      damage = attribute_at_level(companion, :intellect, level) + (Party.charm_at_level(room, companion, level) / 10)
+    def magical_damage_at_level(companion, level) do
+      damage = attribute_at_level(companion, :intellect, level) + attribute_at_level(companion, :charm, level) / 10
       modifier = ability_value(companion, "ModifyDamage") + ability_value(companion, "ModifyMagicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def magical_resistance_at_level(companion, level, damage_type, room) do
-      resist = attribute_at_level(companion, :willpower, level) + (Party.charm_at_level(room, companion, level) / 10)
+    def magical_resistance_at_level(companion, level, damage_type) do
+      resist = attribute_at_level(companion, :willpower, level) + (attribute_at_level(companion, :charm, level) / 10)
       modifier = ability_value(companion, "MagicalResist") + ability_value(companion, "Resist#{damage_type}")
       resist * (modifier / 100)
     end
@@ -440,14 +440,14 @@ defmodule ApathyDrive.Companion do
       int * (1 + (modifier / 100))
     end
 
-    def physical_damage_at_level(companion, level, room) do
-      damage = attribute_at_level(companion, :strength, level) + (Party.charm_at_level(room, companion, level) / 10)
+    def physical_damage_at_level(companion, level) do
+      damage = attribute_at_level(companion, :strength, level) + (attribute_at_level(companion, :charm, level) / 10)
       modifier = ability_value(companion, "ModifyDamage") + ability_value(companion, "ModifyPhysicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def physical_resistance_at_level(companion, level, damage_type, room) do
-      resist = attribute_at_level(companion, :strength, level) + (Party.charm_at_level(room, companion, level) / 10)
+    def physical_resistance_at_level(companion, level, damage_type) do
+      resist = attribute_at_level(companion, :strength, level) + (attribute_at_level(companion, :charm, level) / 10)
       modifier = ability_value(companion, "AC") + ability_value(companion, "Resist#{damage_type}")
       resist * (modifier / 100)
     end
@@ -551,12 +551,12 @@ defmodule ApathyDrive.Companion do
       will * (1 + (modifier / 100))
     end
 
-    def stealth_at_level(companion, level, room) do
+    def stealth_at_level(companion, level) do
       if Mobile.has_ability?(companion, "Revealed") do
         0
       else
         agi = attribute_at_level(companion, :agility, level)
-        agi = agi + (Party.charm_at_level(room, companion, level) / 10)
+        agi = agi + (attribute_at_level(companion, :charm, level) / 10)
         modifier = ability_value(companion, "Stealth")
         agi * (modifier / 100)
       end
