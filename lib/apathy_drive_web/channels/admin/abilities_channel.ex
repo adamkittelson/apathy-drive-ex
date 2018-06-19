@@ -1,6 +1,6 @@
 defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   use ApathyDrive.Web, :channel
-  alias ApathyDrive.{Ability, AbilityTrait, Character, Trait}
+  alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Character, DamageType, Trait}
 
   def join("admin:abilities", %{"character" => token}, socket) do
     case ApathyDriveWeb.AdminChannelHelper.authorize(socket, token) do
@@ -18,6 +18,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
       |> Ecto.Query.order_by(asc: :id)
       |> Repo.paginate(%{"page" => 1})
       |> load_traits()
+      |> load_damage_types()
 
       push_page(socket, page)
 
@@ -44,7 +45,21 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     AbilityTrait
     |> Repo.get!(form_data["id"])
     |> AbilityTrait.changeset(data)
-    |> IO.inspect
+    |> Repo.update!
+
+    {:reply, :ok, socket}
+  end
+
+  def handle_in("update_damage_type", form_data, socket) do
+    data = %{
+      "potency" => form_data["potency"],
+      "kind" => form_data["kind"],
+      "damage_type_id" => Repo.get_by!(DamageType, name: form_data["name"]).id
+    }
+
+    AbilityDamageType
+    |> Repo.get!(form_data["id"])
+    |> AbilityDamageType.changeset(data)
     |> Repo.update!
 
     {:reply, :ok, socket}
@@ -58,6 +73,14 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     {:reply, :ok, socket}
   end
 
+  def handle_in("delete_damage_type", id, socket) do
+    AbilityDamageType
+    |> Repo.get!(id)
+    |> Repo.delete!
+
+    {:reply, :ok, socket}
+  end
+
   def handle_in("create_trait", form_data, socket) do
     {:ok, value} = ApathyDrive.JSONB.load(form_data["value"])
 
@@ -65,6 +88,22 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
       %AbilityTrait{
         value: value,
         trait_id: Repo.get_by!(Trait, name: form_data["name"]).id,
+        ability_id: form_data["ability_id"]
+      }
+      |> Repo.insert!
+
+    {:reply, {:ok, %{id: id}}, socket}
+  end
+
+  def handle_in("create_damage_type", form_data, socket) do
+    {:ok, potency} = ApathyDrive.JSONB.load(form_data["potency"])
+    {:ok, kind} = ApathyDrive.JSONB.load(form_data["kind"])
+
+    %AbilityDamageType{id: id} =
+      %AbilityDamageType{
+        potency: potency,
+        kind: kind,
+        damage_type_id: Repo.get_by!(DamageType, name: form_data["name"]).id,
         ability_id: form_data["ability_id"]
       }
       |> Repo.insert!
@@ -96,6 +135,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
       query
       |> Repo.paginate(%{"page" => page})
       |> load_traits()
+      |> load_damage_types()
 
     push_page(socket, page)
 
@@ -118,7 +158,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   end
 
   defp push_page(socket, page) do
-    push(socket, "abilities", %{valid_targets: Ability.valid_targets, kinds: Ability.kinds, traits: Trait.names, page: page})
+    push(socket, "abilities", %{valid_targets: Ability.valid_targets, kinds: Ability.kinds, traits: Trait.names, damage_types: DamageType.names, page: page})
   end
 
   defp load_traits(page) do
@@ -131,6 +171,21 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
         |> Repo.all
         |> Enum.reduce(entry, fn ability_trait, entry ->
              update_in(entry.traits, &([%{form: %{id: ability_trait.id, name: ability_trait.trait.name, value: ability_trait.value, ability_id: ability_trait.ability_id}, valid: true, data: %{id: ability_trait.id, name: ability_trait.trait.name, value: ability_trait.value, ability_id: ability_trait.ability_id}} | &1]))
+           end)
+      end)
+    end)
+  end
+
+  defp load_damage_types(page) do
+    update_in(page.entries, fn(entries) ->
+      Enum.map(entries, fn(entry) ->
+        entry = Map.put_new(entry, :damage_types, [])
+        AbilityDamageType
+        |> where([at], at.ability_id == ^entry.id)
+        |> preload([:damage_type])
+        |> Repo.all
+        |> Enum.reduce(entry, fn ability_damage_type, entry ->
+             update_in(entry.damage_types, &([%{form: %{id: ability_damage_type.id, name: ability_damage_type.damage_type.name, kind: ability_damage_type.kind, potency: ability_damage_type.potency, ability_id: ability_damage_type.ability_id}, valid: true, data: %{id: ability_damage_type.id, name: ability_damage_type.damage_type.name, kind: ability_damage_type.kind, potency: ability_damage_type.potency, ability_id: ability_damage_type.ability_id}} | &1]))
            end)
       end)
     end)

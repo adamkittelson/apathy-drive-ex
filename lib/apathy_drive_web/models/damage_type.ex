@@ -13,4 +13,12 @@ defmodule ApathyDrive.DamageType do
     |> select([dt], map(dt, [:id, :name]))
   end
 
+  def names do
+    __MODULE__
+    |> Ecto.Query.select([:name])
+    |> Repo.all
+    |> Enum.map(& &1.name)
+    |> Enum.sort
+  end
+
 end

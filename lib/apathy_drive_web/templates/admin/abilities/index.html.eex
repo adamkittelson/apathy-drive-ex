@@ -214,6 +214,94 @@
                     </v-layout>
                   </v-form>
                 </vcard>
+
+                <v-card>
+                  <v-card-title>
+                    <span class="headline">Damage Types</span>
+                    <v-btn :disabled="!!props.item.new_damage_type.show" @click="showNewDamageType(props.item.data.id)">Add DamageType</v-btn>
+                  </v-card-title>
+
+                  <v-form v-if="props.item.new_damage_type.show" v-model="props.item.new_damage_type.valid" :ref="'new-damage-type-form-' + props.item.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs3>
+                        <v-select
+                          label="Name"
+                          v-model="props.item.new_damage_type.name"
+                          :items="damage_types()"
+                          :rules="[v => !!v || 'name is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs3>
+                        <v-select
+                          label="Kind"
+                          v-model="props.item.new_damage_type.kind"
+                          :items="['physical', 'magical']"
+                          :rules="[v => !!v || 'kind is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs2>
+                        <v-text-field
+                          label="Potency"
+                          v-model="props.item.new_damage_type.potency"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-btn
+                          @click="createDamageType(props.item.data.id)"
+                          :disabled="!props.item.new_damage_type.valid"
+                        >
+                          <v-icon>fa-save</v-icon>
+                        </v-btn>
+                      </v-flex>
+                    </v-layout>
+                  </v-form>
+                  <v-form v-for="damage_type in props.item.form.damage_types" :key="damage_type.id" v-model="damage_type.valid" :ref="'damage-type-form-' + damage_type.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs3>
+                        <v-select
+                          label="Name"
+                          v-model="damage_type.form.name"
+                          :items="damage_types()"
+                          :rules="[v => !!v || 'name is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs3>
+                        <v-select
+                          label="Kind"
+                          v-model="damage_type.form.kind"
+                          :items="['physical', 'magical']"
+                          :rules="[v => !!v || 'kind is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs2>
+                        <v-text-field
+                          label="Potency"
+                          v-model="damage_type.form.potency"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-btn
+                          @click="submitDamageType(damage_type.form)"
+                          :disabled="!damage_type.valid || !damageTypeHasChanged(damage_type)"
+                        >
+                          <v-icon>fa-save</v-icon>
+                        </v-btn>
+                        <v-btn
+                          @click="deleteDamageType(damage_type.form)"
+                        >
+                          <v-icon>fa-trash-alt</v-icon>
+                        </v-btn>
+                      </v-flex>
+                    </v-layout>
+                  </v-form>
+                </vcard>
+
               </v-dialog>
             </v-layout>
           </template>

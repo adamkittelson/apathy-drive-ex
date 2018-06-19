@@ -208,3 +208,6 @@ CHANGELOG
 
 ---- 0.0.79 / 2017-12-27 / bring-back-crits ------------------------------------
 * crits / admin dashboard stuff
+
+---- 0.0.80 / 2018-06-19 / exp-for-skill-usage ---------------------------------
+* exp for skill usage

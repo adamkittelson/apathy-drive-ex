@@ -195,6 +195,14 @@ defmodule ApathyDrive.Character do
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
   end
 
+  def shield(%Character{} = character) do
+    shield =
+      character.equipment
+      |> Enum.find(&(&1.worn_on in ["Off-Hand"]))
+
+    if shield && shield.grade == "shield", do: shield
+  end
+
   def sign_in(email, password) do
     player = Repo.get_by(Character, email: email)
     sign_in?(player, password) && player
@@ -299,7 +307,7 @@ defmodule ApathyDrive.Character do
     |> Enum.reduce(character, fn {skill_name, %Skill{experience: skill_exp}}, character ->
       if skill_name in incompatible_skills do
         incompatible_skill = Skill.match_by_name(skill_name)
-        level = Level.skill_level_at_exp(skill_exp, incompatible_skill.training_cost_multiplier)
+        level = Level.level_at_exp(skill_exp, incompatible_skill.training_cost_multiplier)
         if level > 0 do
           new_level = level - 1
           new_exp = Level.exp_at_level(level, incompatible_skill.training_cost_multiplier)
@@ -372,7 +380,7 @@ defmodule ApathyDrive.Character do
       |> weapon_potency
       |> Enum.reduce(0, fn %{potency: potency} = damage, dps ->
         potency = potency * Mobile.attacks_per_round(character)
-        damage = Ability.raw_damage(damage, character, character.level, room) * (potency / 100)
+        damage = Ability.raw_damage(damage, character, character.level) * (potency / 100)
         dps + damage / (round_length / 1000)
       end)
 
@@ -391,12 +399,12 @@ defmodule ApathyDrive.Character do
       spellcasting: Mobile.spellcasting_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level, room),
       dodge: Mobile.dodge_at_level(character, character.level, room),
-      stealth: Mobile.stealth_at_level(character, character.level, room),
-      tracking: Mobile.tracking_at_level(character, character.level, room),
+      stealth: Mobile.stealth_at_level(character, character.level),
+      block: Mobile.block_at_level(character, character.level),
       melee_dps: dps,
-      physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil, room),
-      magical_damage: Mobile.magical_damage_at_level(character, character.level, room),
-      magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil, room),
+      physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil),
+      magical_damage: Mobile.magical_damage_at_level(character, character.level),
+      magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil),
       hp: hp_at_level(character, character.level),
       max_hp: Mobile.max_hp_at_level(character, character.level),
       mana: mana_at_level(character, character.level),
@@ -413,16 +421,23 @@ defmodule ApathyDrive.Character do
     }
   end
 
+  def item_level(%Character{equipment: []}), do: 0
   def item_level(%Character{equipment: equipment}) do
-    equipment
-    |> Enum.map(& &1.level)
-    |> Enum.sum
+    levels =
+      equipment
+      |> Enum.map(fn item ->
+          item_level = Item.item_level(item)
+          List.duplicate(item_level, ApathyDrive.Commands.Wear.worn_on_max(item))
+        end)
+      |> List.flatten
+
+    Enum.sum(levels) / length(levels)
   end
 
   def weapon_potency(character) do
     case Character.weapon(character) do
       nil ->
-        [%{potency: 75 / Mobile.attacks_per_round(character), kind: "physical", damage_type: "Normal"}]
+        [%{potency: 75 / Mobile.attacks_per_round(character), kind: "physical", damage_type_id: 3, damage_type: "Normal"}]
       %Item{damage: damage} = item ->
         damage ++ Systems.Effect.effect_list(item, "Damage")
     end
@@ -439,7 +454,62 @@ defmodule ApathyDrive.Character do
       character_value + equipment_value
     end
 
+    def add_skill_experience(%Character{} = character, skills, amount) when is_list(skills) do
+      amount = max(1, div(trunc(amount), length(skills) + 1))
+
+      character = Character.add_experience(character, amount)
+
+      Enum.reduce(skills, character, fn skill, character ->
+        add_skill_experience(character, skill, amount)
+      end)
+    end
+    def add_skill_experience(%Character{} = character, %Skill{} = skill, amount) do
+      skill = Map.put(skill, :experience, skill.experience + amount)
+      tnl = trunc(max(Level.exp_to_next_skill_level(skill.level, skill.experience, skill.training_cost_multiplier), 0))
+      Repo.insert(%CharacterSkill{character_id: character.id, skill_id: skill.id, experience: skill.experience}, on_conflict: :replace_all, conflict_target: [:character_id, :skill_id])
+
+      if tnl <= 0 do
+        old_abilities = Map.values(character.abilities)
+
+        character = Character.load_abilities(character)
+
+        new_abilities = Map.values(character.abilities)
+
+        level = character.skills[skill.name].level
+
+        Mobile.send_scroll(character, "<p><span class='yellow'>Your #{skill.name} skill advances to level #{level}!</span></p>")
+
+        Enum.each(new_abilities, fn ability ->
+          unless ability in old_abilities do
+            Mobile.send_scroll character,  "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+            Mobile.send_scroll character,  "<p>     #{ability.description}</p>"
+          end
+        end)
+
+        character
+      else
+        put_in(character.skills[skill.name], skill)
+      end
+    end
+    def add_skill_experience(%Character{} = character, skill_name, amount) when is_binary(skill_name) do
+      skill = character.skills[skill_name] || Repo.get_by!(Skill, name: skill_name)
+      add_skill_experience(character, skill, amount)
+    end
+    def add_skill_experience(%Character{} = character, skill_fun, amount) do
+      add_skill_experience(character, skill_fun.(), amount)
+    end
+
     def accuracy_at_level(character, level, room) do
+      skill_level =
+        case Character.weapon(character) do
+          nil ->
+            skill = character.skills["melee"] || Repo.get_by(Skill, name: "melee")
+            skill.level
+          %Item{grade: grade} ->
+            skill = character.skills[grade] || Repo.get_by(Skill, name: grade)
+            skill.level
+        end
+      level = min(level, skill_level)
       agi = attribute_at_level(character, :agility, level)
       cha = Party.charm_at_level(room, character, level)
       agi = agi + (cha / 10)
@@ -470,7 +540,7 @@ defmodule ApathyDrive.Character do
              end
            end)
 
-      (base + from_equipment) / 10
+      base + from_equipment
     end
 
     def attack_interval(character) do
@@ -483,10 +553,11 @@ defmodule ApathyDrive.Character do
           %Ability{
             kind: "attack",
             mana: 0,
-            user_message: "You punch {{target}}!",
-            target_message: "{{user}} punches you!",
-            spectator_message: "{{user}} punches {{target}}!",
+            user_message: "You punch {{target}} for {{amount}} damage!",
+            target_message: "{{user}} punches you for {{amount}} damage!",
+            spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
             ignores_round_cooldown?: true,
+            skills: ["melee"],
             traits: %{
               "Damage" => Character.weapon_potency(character),
               "Dodgeable" => true,
@@ -495,15 +566,16 @@ defmodule ApathyDrive.Character do
               "DodgeSpectatorMessage" => "{{user}} throws a punch at {{target}}, but they dodge!"
             }
           }
-        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss]} ->
+        %Item{name: name, hit_verbs: hit_verbs, miss_verbs: [singular_miss, plural_miss], grade: grade} ->
           [singular_hit, plural_hit] = Enum.random(hit_verbs)
           %Ability{
             kind: "attack",
             mana: 0,
-            user_message: "You #{singular_hit} {{target}} with your #{name}!",
-            target_message: "{{user}} #{plural_hit} you with their #{name}!",
-            spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name}!",
+            user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
+            target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
+            spectator_message: "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
             ignores_round_cooldown?: true,
+            skills: [grade],
             traits: %{
               "Damage" => Character.weapon_potency(character),
               "Dodgeable" => true,
@@ -645,11 +717,41 @@ defmodule ApathyDrive.Character do
     end
 
     def dodge_at_level(character, level, room) do
+      skill = character.skills["dodge"] || Repo.get_by(Skill, name: "dodge")
+      skill_level = skill.level
+      level = min(level, skill_level)
+
       agi = attribute_at_level(character, :agility, level)
       cha = Party.charm_at_level(room, character, level)
       agi = agi + (cha / 10)
       modifier = ability_value(character, "Dodge")
       agi * (1 + (modifier / 100))
+    end
+
+    def block_at_level(character, level) do
+      skill = character.skills["shield"] || Repo.get_by(Skill, name: "shield")
+      skill_level = skill.level
+      level = min(level, skill_level)
+
+      str = Mobile.attribute_at_level(character, :strength, level)
+      cha = Mobile.attribute_at_level(character, :charm, level)
+      str = str + (cha / 10)
+      modifier = Mobile.ability_value(character, "Block")
+      str * (1 + (modifier / 100))
+    end
+
+    def parry_at_level(character, level) do
+      skill_name = Character.weapon(character).grade
+      skill = character.skills[skill_name] || Repo.get_by(Skill, name: skill_name)
+      skill_level = skill.level
+      level = min(level, skill_level)
+
+      str = Mobile.attribute_at_level(character, :strength, level)
+      agi = Mobile.attribute_at_level(character, :agility, level)
+      cha = Mobile.attribute_at_level(character, :charm, level)
+      raw = ((str + agi) / 2) +  (cha / 10)
+      modifier = Mobile.ability_value(character, "Parry")
+      raw * (1 + (modifier / 100))
     end
 
     def enough_mana_for_ability?(character, %Ability{} =  ability) do
@@ -705,23 +807,15 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
-    def magical_damage_at_level(character, level, room) do
-      damage = attribute_at_level(character, :intellect, level) + (Party.charm_at_level(room, character, level) / 10)
+    def magical_damage_at_level(character, level) do
+      damage = attribute_at_level(character, :intellect, level) + (attribute_at_level(character, :charm, level) / 10)
       modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def magical_resistance_at_level(character, level, damage_type, room) do
-      resist = attribute_at_level(character, :willpower, level) + (Party.charm_at_level(room, character, level) / 10)
-      mr =
-        character.equipment
-        |> Enum.reduce(0, fn
-             %Item{magical_resistance: magical_resistance}, total ->
-               total + (magical_resistance || 0)
-             _, total ->
-               total
-           end)
-      modifier = mr + ability_value(character, "MagicalResist") + ability_value(character, "Resist#{damage_type}")
+    def magical_resistance_at_level(character, level, damage_type) do
+      resist = attribute_at_level(character, :willpower, level) + (attribute_at_level(character, :charm, level) / 10)
+      modifier = 30 + ability_value(character, "MagicalResist") + ability_value(character, "Resist#{damage_type}")
       resist * (modifier / 100)
     end
 
@@ -749,23 +843,15 @@ defmodule ApathyDrive.Character do
       int * (1 + (modifier / 100))
     end
 
-    def physical_damage_at_level(character, level, room) do
-      damage = attribute_at_level(character, :strength, level) + (Party.charm_at_level(room, character, level) / 10)
+    def physical_damage_at_level(character, level) do
+      damage = attribute_at_level(character, :strength, level) + (attribute_at_level(character, :charm, level) / 10)
       modifier = ability_value(character, "ModifyDamage") + ability_value(character, "ModifyPhysicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def physical_resistance_at_level(character, level, damage_type, room) do
-      resist = attribute_at_level(character, :strength, level) + (Party.charm_at_level(room, character, level) / 10)
-      ac =
-        character.equipment
-        |> Enum.reduce(0, fn
-             %Item{physical_resistance: physical_resistance}, total ->
-               total + (physical_resistance || 0)
-             _, total ->
-               total
-           end)
-      modifier = ac + ability_value(character, "AC") + ability_value(character, "Resist#{damage_type}")
+    def physical_resistance_at_level(character, level, damage_type) do
+      resist = attribute_at_level(character, :strength, level) + (attribute_at_level(character, :charm, level) / 10)
+      modifier = 30 + ability_value(character, "AC") + ability_value(character, "Resist#{damage_type}")
       resist * (modifier / 100)
     end
 
@@ -780,7 +866,12 @@ defmodule ApathyDrive.Character do
 
       base_regen_per_round = attribute_at_level(character, :willpower, character.level) / 5
 
-      hp_regen_percentage_per_round = base_regen_per_round * (1 + ability_value(character, "HPRegen") / 100) / max_hp
+      hp_regen_percentage_per_round =
+        if TimerManager.time_remaining(character, :auto_attack_timer) > 0 do
+          0
+        else
+          base_regen_per_round * (1 + ability_value(character, "HPRegen") / 100) / max_hp
+        end
       mana_regen_percentage_per_round =
         if max_mana > 0 do
           base_regen_per_round * (1 + ability_value(character, "ManaRegen") / 100) / max_mana
@@ -884,12 +975,12 @@ defmodule ApathyDrive.Character do
       |> Enum.sort_by(& &1.level)
     end
 
-    def stealth_at_level(character, level, room) do
+    def stealth_at_level(character, level) do
       if Mobile.has_ability?(character, "Revealed") do
         0
       else
         agi = attribute_at_level(character, :agility, level)
-        agi = agi + (Party.charm_at_level(room, character, level) / 10)
+        agi = agi + (attribute_at_level(character, :charm, level) / 10)
         modifier = ability_value(character, "Stealth")
         agi * (modifier / 100)
       end

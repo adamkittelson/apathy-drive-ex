@@ -145,9 +145,9 @@ defmodule ApathyDrive.Commands.Wear do
     end
   end
 
-  defp worn_on_max(%{worn_on: "Finger"}), do: 2
-  defp worn_on_max(%{worn_on: "Wrist"}),  do: 2
-  defp worn_on_max(%{worn_on: _}),        do: 1
+  def worn_on_max(%{worn_on: "Finger"}), do: 2
+  def worn_on_max(%{worn_on: "Wrist"}),  do: 2
+  def worn_on_max(%{worn_on: _}),        do: 1
 
   defp conflicting_worn_on("Weapon Hand"), do: ["Two Handed"]
   defp conflicting_worn_on("Off-Hand"), do: ["Two Handed"]

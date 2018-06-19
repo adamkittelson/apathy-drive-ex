@@ -21,7 +21,7 @@ defmodule ApathyDrive.Commands.Train do
         0
       end
 
-    level = Level.skill_level_at_exp(exp, skill.training_cost_multiplier)
+    level = Level.level_at_exp(exp, skill.training_cost_multiplier)
     cost = Level.exp_to_next_skill_level(level, exp, skill.training_cost_multiplier)
 
     if cost > character.experience do

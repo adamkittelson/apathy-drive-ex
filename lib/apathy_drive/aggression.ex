@@ -25,13 +25,22 @@ defmodule ApathyDrive.Aggression do
   def react(%{} = mobile, %{}), do: mobile
 
   def attack(%{} = attacker, %{ref: ref} = _intruder) do
-    time = min(Mobile.attack_interval(attacker), TimerManager.time_remaining(attacker, :auto_attack_timer))
-
     effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
 
-    attacker
-    |> Systems.Effect.add(effect, 60_000)
-    |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, attacker.ref}})
+    time = min(Mobile.attack_interval(attacker), TimerManager.time_remaining(attacker, :auto_attack_timer))
+
+    attacker =
+      attacker
+      |> Systems.Effect.add(effect, 60_000)
+      |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, attacker.ref}})
+
+    if Map.has_key?(attacker, :attack_target) and attacker.attack_target == nil do
+      attacker
+      |> Map.put(:attack_target, ref)
+      |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+    else
+      attacker
+    end
   end
 
 end

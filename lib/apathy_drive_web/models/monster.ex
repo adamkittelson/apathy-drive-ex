@@ -216,7 +216,7 @@ defmodule ApathyDrive.Monster do
     if rarity do
       Logger.info "spawning #{rarity} item for #{character.name}"
 
-      item_id = Item.random_item_id_for_slot_and_rarity(character, Enum.random(Item.slots), rarity)
+      item_id = Item.random_item_id_for_slot_and_rarity(Enum.random(Item.slots), rarity)
 
       if item_id do
         character =
@@ -397,6 +397,8 @@ defmodule ApathyDrive.Monster do
       agi * (1 + (modifier / 100))
     end
 
+    def add_skill_experience(%Monster{} = monster, _skill_name, _amount), do: monster
+
     def attribute_at_level(%Monster{} = monster, attribute, level) do
       growth =
         [:strength, :agility, :intellect, :willpower, :health, :charm]
@@ -484,14 +486,6 @@ defmodule ApathyDrive.Monster do
         Enum.reduce(room.mobiles, room, fn
           {ref, %Character{}}, updated_room ->
             Room.update_mobile(updated_room, ref, fn(character) ->
-              level = Mobile.target_level(character, monster)
-
-              exp =
-                [:strength, :agility, :intellect, :willpower, :health, :charm]
-                |> Enum.map(&Mobile.attribute_at_level(monster, &1, level))
-                |> Enum.reduce(0, &(&1 + &2))
-                |> trunc
-
               message =
                 monster.death_message
                 |> Text.interpolate(%{"name" => monster.name})
@@ -499,11 +493,8 @@ defmodule ApathyDrive.Monster do
 
               Mobile.send_scroll(character, "<p>#{message}</p>")
 
-              Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
-
               character =
                 character
-                |> Character.add_experience(exp)
                 |> Character.add_reputation(monster.reputations)
 
               Monster.generate_loot_for_character(monster, character)
@@ -535,6 +526,14 @@ defmodule ApathyDrive.Monster do
       agi = agi + (cha / 10)
       modifier = ability_value(monster, "Dodge")
       agi * (1 + (modifier / 100))
+    end
+
+    def block_at_level(monster, _level) do
+      Mobile.ability_value(monster, "Block")
+    end
+
+    def parry_at_level(monster, _level) do
+      Mobile.ability_value(monster, "Parry")
     end
 
     def enough_mana_for_ability?(monster, %Ability{} =  ability) do
@@ -582,13 +581,13 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
-    def magical_damage_at_level(monster, level, _room) do
+    def magical_damage_at_level(monster, level) do
       damage = attribute_at_level(monster, :intellect, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyMagicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def magical_resistance_at_level(monster, level, damage_type, _room) do
+    def magical_resistance_at_level(monster, level, damage_type) do
       resist = attribute_at_level(monster, :willpower, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "MagicalResist") + ability_value(monster, "Resist#{damage_type}")
       resist * (modifier / 100)
@@ -629,13 +628,13 @@ defmodule ApathyDrive.Monster do
       int * (1 + (modifier / 100))
     end
 
-    def physical_damage_at_level(monster, level, _room) do
+    def physical_damage_at_level(monster, level) do
       damage = attribute_at_level(monster, :strength, level) + (attribute_at_level(monster, :charm, level) / 10)
       modifier = ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyPhysicalDamage")
       damage * (1 + (modifier / 100))
     end
 
-    def physical_resistance_at_level(monster, level, damage_type, _room) do
+    def physical_resistance_at_level(monster, level, damage_type) do
       resist = attribute_at_level(monster, :strength, level)
       modifier = ability_value(monster, "AC") + ability_value(monster, "Resist#{damage_type}")
       resist * (modifier / 100)
@@ -749,7 +748,7 @@ defmodule ApathyDrive.Monster do
       will * (1 + (modifier / 100))
     end
 
-    def stealth_at_level(monster, level, _room) do
+    def stealth_at_level(monster, level) do
       if Mobile.has_ability?(monster, "Revealed") do
         0
       else

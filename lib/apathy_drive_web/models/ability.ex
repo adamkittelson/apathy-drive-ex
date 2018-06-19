@@ -22,6 +22,7 @@ defmodule ApathyDrive.Ability do
     field :ignores_round_cooldown?, :boolean, virtual: true, default: false
     field :result, :any, virtual: true
     field :cast_complete, :boolean, virtual: true, default: false
+    field :skills, :any, virtual: true, default: []
 
     has_many :monsters_abilities, ApathyDrive.MonsterAbility
     has_many :monsters, through: [:monsters_abilities, :monster]
@@ -251,7 +252,7 @@ defmodule ApathyDrive.Ability do
           Room.update_mobile(room, caster.ref, fn caster ->
             caster =
               caster
-              |> Stealth.reveal(room)
+              |> Stealth.reveal
               |> apply_cooldowns(ability)
               |> Mobile.subtract_mana(ability)
 
@@ -352,7 +353,7 @@ defmodule ApathyDrive.Ability do
                 if target do
                   target =
                     if ability.kind in ["attack", "curse"] do
-                      Stealth.reveal(target, updated_room)
+                      Stealth.reveal(target)
                     else
                       target
                     end
@@ -408,7 +409,7 @@ defmodule ApathyDrive.Ability do
 
           end)
 
-        Room.update_mobile(room, caster_ref, &Stealth.reveal(&1, room))
+        Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
       end)
     else
       room
@@ -422,7 +423,7 @@ defmodule ApathyDrive.Ability do
     caster_sc = Mobile.spellcasting_at_level(caster, caster_level, room)
 
     if kind == "curse" do
-      target_mr = Mobile.magical_resistance_at_level(target, target_level, nil, room)
+      target_mr = Mobile.magical_resistance_at_level(target, target_level, nil)
       trunc(duration * :math.pow(1.005, caster_sc) * :math.pow(0.985, target_mr))
     else
       trunc(duration * :math.pow(1.005, caster_sc))
@@ -438,31 +439,105 @@ defmodule ApathyDrive.Ability do
 
     modifier = Mobile.ability_value(target, "Dodge")
 
-    chance = 30 + modifier + ((dodge - accuracy) * 10)
+    difference = dodge - accuracy
 
-    chance = min(chance, 60 + modifier)
-    chance = max(chance, 10 + modifier)
+    chance =
+      if difference > 0 do
+        30 + modifier + (difference * 0.3)
+      else
+        30 + modifier + (difference * 0.7)
+      end
 
     :rand.uniform(100) < chance
   end
 
-  def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{traits: %{"Dodgeable" => true}} = ability) do
-    if dodged?(caster, target, room) do
-      display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
+  def blocked?(%{} = caster, %Character{} = target, room) do
+    if Character.shield(target) do
+      caster_level = Mobile.caster_level(caster, target)
+      accuracy = Mobile.accuracy_at_level(caster, caster_level, room)
 
-      effects =
-        %{"Dodge" => -10}
-        |> Map.put("stack_key", "dodge-limiter")
-        |> Map.put("stack_count", 5)
+      target_level = Mobile.target_level(caster, target)
+      block = Mobile.block_at_level(target, target_level)
 
-      target =
-        target
-        |> Systems.Effect.add(effects, Mobile.round_length_in_ms(target))
-        |> aggro_target(ability, caster)
+      modifier = Mobile.ability_value(target, "Block")
 
-      put_in(room.mobiles[target.ref], target)
+      difference = block - accuracy
+
+      chance =
+        if difference > 0 do
+          30 + modifier + (difference * 0.3)
+        else
+          30 + modifier + (difference * 0.7)
+        end
+
+      :rand.uniform(100) < chance
     else
-      apply_ability(room, caster, target, update_in(ability.traits, &Map.delete(&1, "Dodgeable")))
+      false
+    end
+  end
+  def blocked?(%{} = _caster, %{} = target, _room) do
+    :rand.uniform(100) < Mobile.ability_value(target, "Block")
+  end
+
+  def parried?(%{} = caster, %Character{} = target, room) do
+    if Character.weapon(target) do
+      caster_level = Mobile.caster_level(caster, target)
+      accuracy = Mobile.accuracy_at_level(caster, caster_level, room)
+
+      target_level = Mobile.target_level(caster, target)
+      dodge = Mobile.parry_at_level(target, target_level)
+
+      modifier = Mobile.ability_value(target, "Parry")
+
+      difference = dodge - accuracy
+
+      chance =
+        if difference > 0 do
+          30 + modifier + (difference * 0.3)
+        else
+          30 + modifier + (difference * 0.7)
+        end
+
+      :rand.uniform(100) < chance
+    else
+      false
+    end
+  end
+  def parried?(%{} = _caster, %{} = target, _room) do
+    :rand.uniform(100) < Mobile.ability_value(target, "Parry")
+  end
+
+  def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{traits: %{"Dodgeable" => true}} = ability) do
+    cond do
+      dodged?(caster, target, room) ->
+        display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
+
+        target =
+          target
+          |> aggro_target(ability, caster)
+          |> Mobile.add_skill_experience(fn -> ["dodge"] end, Mobile.dodge_at_level(target, target.level, room))
+
+        put_in(room.mobiles[target.ref], target)
+      blocked?(caster, target, room) ->
+        display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
+
+        target =
+          target
+          |> aggro_target(ability, caster)
+          |> Mobile.add_skill_experience(fn -> ["shield"] end, Mobile.block_at_level(target, target.level))
+
+        put_in(room.mobiles[target.ref], target)
+      parried?(caster, target, room) ->
+        display_cast_message(room, caster, target, Map.put(ability, :result, :parried))
+
+        target =
+          target
+          |> aggro_target(ability, caster)
+          |> Mobile.add_skill_experience(fn -> [Character.weapon(target).grade] end, Mobile.parry_at_level(target, target.level))
+
+        put_in(room.mobiles[target.ref], target)
+      true ->
+        apply_ability(room, caster, target, update_in(ability.traits, &Map.delete(&1, "Dodgeable")))
     end
   end
   def apply_ability(%Room{} = room, %Character{} = caster, %{} = target, %Ability{traits: %{"Enslave" => _}} = ability) do
@@ -595,9 +670,9 @@ defmodule ApathyDrive.Ability do
   def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room) when is_float(value) do
     {caster, Map.put(target, :ability_shift, value)}
   end
-  def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, room) do
+  def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room) do
     level = min(target.level, caster.level)
-    healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
+    healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
     percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
 
     {caster, Map.put(target, :ability_shift, percentage_healed)}
@@ -608,7 +683,7 @@ defmodule ApathyDrive.Ability do
   def apply_instant_trait({"Damage", value}, %{} = target, _ability, caster, _room) when is_float(value) do
     {caster, Map.put(target, :ability_shift, -value)}
   end
-  def apply_instant_trait({"Damage", damages}, %{} = target, _ability, caster, room) do
+  def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
@@ -616,42 +691,30 @@ defmodule ApathyDrive.Ability do
       target
       |> Map.put(:ability_shift, 0)
 
-    {caster, target} =
+    {caster, damage_percent} =
       Enum.reduce(damages, {caster, target}, fn
         %{kind: "physical", damage_type: type, potency: potency} = damage, {caster, target} ->
-          damage = raw_damage(damage, caster, caster_level, room)
-          resist = Mobile.physical_resistance_at_level(target, target_level, type, room)
+          damage = raw_damage(damage, caster, caster_level)
+          resist = Mobile.physical_resistance_at_level(target, target_level, type)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
           damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
-          target =
-            target
-            |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
-
-          {caster, target}
+          {caster, damage_percent}
         %{kind: "magical", damage_type: type, potency: potency} = damage, {caster, target} ->
-          damage = raw_damage(damage, caster, caster_level, room)
-          resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
+          damage = raw_damage(damage, caster, caster_level)
+          resist = Mobile.magical_resistance_at_level(target, target_level, type)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
           damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
 
-          target =
-            target
-            |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
-
-          {caster, target}
+          {caster, damage_percent}
         %{kind: "drain", damage_type: type, potency: potency} = damage, {caster, target} ->
-          damage = raw_damage(damage, caster, caster_level, room)
-          resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
+          damage = raw_damage(damage, caster, caster_level)
+          resist = Mobile.magical_resistance_at_level(target, target_level, type)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
           damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
-
-          target =
-            target
-            |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
           heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
 
@@ -659,12 +722,29 @@ defmodule ApathyDrive.Ability do
 
           Mobile.update_prompt(caster)
 
-          {caster, target}
+          {caster, damage_percent}
       end)
 
     target =
       target
       |> Map.put(:ability_special, :normal)
+      |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
+
+    exp =
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.map(&Mobile.attribute_at_level(target, &1, target_level))
+      |> Enum.reduce(0, &(&1 + &2))
+      |> Kernel.*(damage_percent)
+      |> trunc
+
+    caster = Mobile.add_skill_experience(caster, fn -> ability.skills end, exp)
+
+    skills =
+      target
+      |> Map.get(:equipment, [])
+      |> Enum.map(& &1.grade)
+
+    target = Mobile.add_skill_experience(target, fn -> skills end, exp)
 
     {caster, target}
   end
@@ -673,17 +753,17 @@ defmodule ApathyDrive.Ability do
     {caster, target}
   end
 
-  def raw_damage(%{kind: "physical", level: level}, caster, caster_level, room) do
-    Mobile.physical_damage_at_level(caster, min(caster_level, level), room)
+  def raw_damage(%{kind: "physical", level: level}, caster, caster_level) do
+    Mobile.physical_damage_at_level(caster, min(caster_level, level))
   end
-  def raw_damage(%{kind: "physical"}, caster, caster_level, room) do
-    Mobile.physical_damage_at_level(caster, caster_level, room)
+  def raw_damage(%{kind: "physical"}, caster, caster_level) do
+    Mobile.physical_damage_at_level(caster, caster_level)
   end
-  def raw_damage(%{level: level}, caster, caster_level, room) do
-    Mobile.magical_damage_at_level(caster, min(caster_level, level), room)
+  def raw_damage(%{level: level}, caster, caster_level) do
+    Mobile.magical_damage_at_level(caster, min(caster_level, level))
   end
-  def raw_damage(%{}, caster, caster_level, room) do
-    Mobile.magical_damage_at_level(caster, caster_level, room)
+  def raw_damage(%{}, caster, caster_level) do
+    Mobile.magical_damage_at_level(caster, caster_level)
   end
 
   def calculate_damage(damage, resist, modifier, caster, target, _room) do
@@ -785,20 +865,20 @@ defmodule ApathyDrive.Ability do
   def process_duration_trait({"Damage", damages}, effects, _target, _caster, _ability, _room) when is_float(damages) do
     effects
   end
-  def process_duration_trait({"Damage", damages}, effects, target, caster, _ability, room) do
+  def process_duration_trait({"Damage", damages}, effects, target, caster, _ability, _room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
     damage_percent =
       Enum.reduce(damages, 0, fn
         %{kind: "physical", damage_type: type, potency: potency} = damage, damage_percent ->
-          damage = raw_damage(damage, caster, caster_level, room)
-          resist = Mobile.physical_resistance_at_level(target, target_level, type, room)
+          damage = raw_damage(damage, caster, caster_level)
+          resist = Mobile.physical_resistance_at_level(target, target_level, type)
           damage = (damage - resist) * (potency / 100)
           damage_percent + (damage / Mobile.max_hp_at_level(target, target_level))
         %{kind: "magical", damage_type: type, potency: potency} = damage, damage_percent ->
-          damage = raw_damage(damage, caster, caster_level, room)
-          resist = Mobile.magical_resistance_at_level(target, target_level, type, room)
+          damage = raw_damage(damage, caster, caster_level)
+          resist = Mobile.magical_resistance_at_level(target, target_level, type)
           damage = (damage - resist) * (potency / 100)
           damage_percent + (damage / Mobile.max_hp_at_level(target, target_level))
         _, damage_percent ->
@@ -810,9 +890,9 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
     |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
   end
-  def process_duration_trait({"Heal", value}, effects, target, caster, _ability, room) do
+  def process_duration_trait({"Heal", value}, effects, target, caster, _ability, _room) do
     level = min(target.level, caster.level)
-    healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
+    healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
     percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
 
     effects
@@ -820,9 +900,9 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
     |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
   end
-  def process_duration_trait({"HealMana", value}, effects, target, caster, _ability, room) do
+  def process_duration_trait({"HealMana", value}, effects, target, caster, _ability, _room) do
     level = min(target.level, caster.level)
-    healing = Mobile.magical_damage_at_level(caster, level, room) * (value / 100)
+    healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
     percentage_healed = calculate_healing(healing, value) / Mobile.max_mana_at_level(target, level)
 
     effects
@@ -881,6 +961,28 @@ defmodule ApathyDrive.Ability do
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
+  def caster_cast_message(%Ability{result: :blocked} = _ability, %{} = _caster, %{} = target, _mobile) do
+    shield =
+      Character.shield(target).name
+
+    message =
+      "{{target}} blocks your attack with {{target:his/her/their}} #{shield}!"
+      |> Text.interpolate(%{"target" => target})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def caster_cast_message(%Ability{result: :parried} = _ability, %{} = _caster, %{} = target, _mobile) do
+    weapon =
+      Character.weapon(target).name
+
+    message =
+      "{{target}} parries your attack with {{target:his/her/their}} #{weapon}!"
+      |> Text.interpolate(%{"target" => target})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
   def caster_cast_message(%Ability{result: :resisted} = ability, %{} = _caster, %{} = target, _mobile) do
     message =
       @resist_message.user
@@ -924,7 +1026,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.user_message
-          |> Text.interpolate(%{"target" => target})
+          |> Text.interpolate(%{"target" => target, "amount" => amount})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
@@ -935,6 +1037,27 @@ defmodule ApathyDrive.Ability do
     message =
       ability.traits["DodgeTargetMessage"]
       |> Text.interpolate(%{"user" => caster, "ability" => ability.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def target_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = target, _mobile) do
+    shield =
+      Character.shield(target).name
+    message =
+      "You block {{user}}'s attack with your #{shield}!"
+      |> Text.interpolate(%{"user" => caster})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def target_cast_message(%Ability{result: :parried} = _ability, %{} = caster, %{} = target, _mobile) do
+    weapon =
+      Character.weapon(target).name
+
+    message =
+      "You parry {{user}}'s attack with your #{weapon}!"
+      |> Text.interpolate(%{"user" => caster})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
@@ -974,7 +1097,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.target_message
-          |> Text.interpolate(%{"user" => caster})
+          |> Text.interpolate(%{"user" => caster, "amount" => amount})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
@@ -985,6 +1108,28 @@ defmodule ApathyDrive.Ability do
     message =
       ability.traits["DodgeSpectatorMessage"]
       |> Text.interpolate(%{"user" => caster, "target" => target, "ability" => ability.name})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def spectator_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = target, _mobile) do
+    shield =
+      Character.shield(target).name
+
+    message =
+      "{{target}} blocks {{user}}'s attack with {{target:his/her/their}} #{shield}!"
+      |> Text.interpolate(%{"user" => caster, "target" => target})
+      |> Text.capitalize_first
+
+    "<p><span class='dark-cyan'>#{message}</span></p>"
+  end
+  def spectator_cast_message(%Ability{result: :parried} = _ability, %{} = caster, %{} = target, _mobile) do
+    weapon =
+      Character.weapon(target).name
+
+    message =
+      "{{target}} parries {{user}}'s attack with {{target:his/her/their}} #{weapon}!"
+      |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
@@ -1032,7 +1177,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.spectator_message
-          |> Text.interpolate(%{"user" => caster, "target" => target})
+          |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
           |> Text.capitalize_first
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
