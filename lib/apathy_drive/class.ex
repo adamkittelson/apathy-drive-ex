@@ -3,10 +3,9 @@ defmodule ApathyDrive.Class do
   import Ecto.Changeset
   alias ApathyDrive.Class
 
-
   schema "classes" do
-    field :description, :string
-    field :name, :string
+    field(:description, :string)
+    field(:name, :string)
 
     timestamps()
   end

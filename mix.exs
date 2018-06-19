@@ -4,7 +4,7 @@ defmodule ApathyDrive.Mixfile do
   def project do
     [ app: :apathy_drive,
       version: version(),
-      elixir: "~> 1.5.1",
+      elixir: "~> 1.6.5",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix] ++ Mix.compilers,
       deps: deps(),
