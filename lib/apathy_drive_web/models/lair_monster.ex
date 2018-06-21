@@ -1,10 +1,10 @@
 defmodule ApathyDrive.LairMonster do
-  use ApathyDrive.Web, :model
+  use ApathyDriveWeb, :model
   alias ApathyDrive.{Monster, Room}
 
   schema "lair_monsters" do
-    belongs_to :room, Room
-    belongs_to :monster, Monster
+    belongs_to(:room, Room)
+    belongs_to(:monster, Monster)
 
     timestamps()
   end
@@ -23,6 +23,7 @@ defmodule ApathyDrive.LairMonster do
   end
 
   def update_params(:empty), do: :empty
+
   def update_params(params) do
     params
     |> Map.put("monster_template_id", get_number(Map.get(params, "monster_template_id")))
@@ -30,32 +31,40 @@ defmodule ApathyDrive.LairMonster do
   end
 
   def get_number(nil), do: nil
-  def get_number(""),  do: nil
+  def get_number(""), do: nil
+
   def get_number(string) do
     case Regex.run(~r/\d+$/, string) do
       nil ->
         nil
+
       [number] ->
         number
     end
   end
 
   def monster_ids(room_id) do
-    query = from lair in __MODULE__,
-            where: lair.room_id == ^room_id,
-            select: lair.monster_id
+    query =
+      from(
+        lair in __MODULE__,
+        where: lair.room_id == ^room_id,
+        select: lair.monster_id
+      )
 
     query
-    |> Repo.all
+    |> Repo.all()
   end
 
   def item_drops(item_id) do
-    query = from drop in __MODULE__,
-            where: drop.item_id == ^item_id,
-            select: drop
+    query =
+      from(
+        drop in __MODULE__,
+        where: drop.item_id == ^item_id,
+        select: drop
+      )
 
     query
-    |> Repo.all
+    |> Repo.all()
   end
 
   def names(drops) when is_list(drops) do
@@ -63,5 +72,4 @@ defmodule ApathyDrive.LairMonster do
     |> Enum.map(&Map.from_struct/1)
     |> Enum.map(&names/1)
   end
-
 end

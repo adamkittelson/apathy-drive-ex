@@ -1,32 +1,35 @@
 defmodule ApathyDrive.Enchantment do
-  use ApathyDrive.Web, :model
+  use ApathyDriveWeb, :model
   alias ApathyDrive.{Ability, Enchantment, Item, ItemInstance, Mobile, Room, TimerManager}
 
   schema "enchantments" do
-    field :finished, :boolean, default: false
-    field :time_elapsed_in_seconds, :integer, default: 0
-    belongs_to :items_instances, ItemInstance
-    belongs_to :ability, Ability
+    field(:finished, :boolean, default: false)
+    field(:time_elapsed_in_seconds, :integer, default: 0)
+    belongs_to(:items_instances, ItemInstance)
+    belongs_to(:ability, Ability)
   end
 
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{} = enchantment) do
     Room.update_mobile(room, enchanter_ref, fn enchanter ->
       {:ok, enchantment} =
         enchantment
-        |> Ecto.Changeset.change(%{time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time})
-        |> Repo.update
+        |> Ecto.Changeset.change(%{
+          time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time
+        })
+        |> Repo.update()
 
       time_left = time_left(enchantment)
 
       if time_left <= 0 do
         enchantment
         |> Ecto.Changeset.change(%{finished: true})
-        |> Repo.update!
+        |> Repo.update!()
+
         Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
 
         item =
           Enum.find(enchanter.equipment, &(&1.instance_id == enchantment.items_instances_id)) ||
-          Enum.find(enchanter.inventory, &(&1.instance_id == enchantment.items_instances_id))
+            Enum.find(enchanter.inventory, &(&1.instance_id == enchantment.items_instances_id))
 
         enchanted_item = Ability.apply_item_enchantment(item, enchantment.ability)
 
@@ -39,6 +42,7 @@ defmodule ApathyDrive.Enchantment do
               |> List.delete(item)
               |> List.insert_at(0, enchanted_item)
             end)
+
           item in enchanter.inventory ->
             update_in(enchanter.inventory, fn inventory ->
               inventory
@@ -58,14 +62,17 @@ defmodule ApathyDrive.Enchantment do
           |> trunc
 
         enchanter
-        |> TimerManager.send_after({{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time), {:lt_tick, next_tick_time, enchanter_ref, enchantment}})
+        |> TimerManager.send_after(
+          {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
+           {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
+        )
         |> ApathyDrive.Character.add_experience(exp)
       end
     end)
   end
 
   def formatted_time_left(seconds) do
-    hours   = seconds |> div(60) |> div(60)
+    hours = seconds |> div(60) |> div(60)
     minutes = div(seconds, 60) - hours * 60
     seconds = seconds - minutes * 60
 
@@ -83,24 +90,25 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def load_enchantments(%Item{instance_id: nil} = item), do: item
+
   def load_enchantments(%Item{instance_id: id} = item) do
     __MODULE__
     |> where([e], e.items_instances_id == ^id and e.finished == true)
-    |> Repo.all
+    |> Repo.all()
     |> Enum.reduce(item, fn enchantment, item ->
-         ability = Ability.find(enchantment.ability_id)
-         Ability.apply_item_enchantment(item, ability)
-       end)
+      ability = Ability.find(enchantment.ability_id)
+      Ability.apply_item_enchantment(item, ability)
+    end)
   end
 
   def enchantment_time(%Item{instance_id: nil}), do: 0
+
   def enchantment_time(%Item{instance_id: id}) do
     __MODULE__
     |> where([e], e.items_instances_id == ^id and e.finished == true)
-    |> Repo.all
+    |> Repo.all()
     |> Enum.reduce(0, fn %Enchantment{time_elapsed_in_seconds: time}, total ->
-         total + time
-       end)
+      total + time
+    end)
   end
-
 end

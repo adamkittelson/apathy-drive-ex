@@ -1,5 +1,5 @@
 defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
-  use ApathyDrive.Web, :channel
+  use ApathyDriveWeb, :channel
   alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Character, DamageType, Trait}
 
   def join("admin:abilities", %{"character" => token}, socket) do
@@ -7,6 +7,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
       {:ok, %Character{} = _character} ->
         send(self(), :after_join)
         {:ok, socket}
+
       {:error, error} ->
         {:error, error}
     end
@@ -14,13 +15,13 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
 
   def handle_info(:after_join, socket) do
     page =
-      Ability.data_for_admin_index
+      Ability.data_for_admin_index()
       |> Ecto.Query.order_by(asc: :id)
       |> Repo.paginate(%{"page" => 1})
       |> load_traits()
       |> load_damage_types()
 
-      push_page(socket, page)
+    push_page(socket, page)
 
     {:noreply, socket}
   end
@@ -31,7 +32,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     Ability
     |> Repo.get!(form_data["id"])
     |> Ability.changeset(form_data)
-    |> Repo.update!
+    |> Repo.update!()
 
     {:reply, :ok, socket}
   end
@@ -45,7 +46,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     AbilityTrait
     |> Repo.get!(form_data["id"])
     |> AbilityTrait.changeset(data)
-    |> Repo.update!
+    |> Repo.update!()
 
     {:reply, :ok, socket}
   end
@@ -60,7 +61,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
     AbilityDamageType
     |> Repo.get!(form_data["id"])
     |> AbilityDamageType.changeset(data)
-    |> Repo.update!
+    |> Repo.update!()
 
     {:reply, :ok, socket}
   end
@@ -68,7 +69,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   def handle_in("delete_trait", id, socket) do
     AbilityTrait
     |> Repo.get!(id)
-    |> Repo.delete!
+    |> Repo.delete!()
 
     {:reply, :ok, socket}
   end
@@ -76,7 +77,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   def handle_in("delete_damage_type", id, socket) do
     AbilityDamageType
     |> Repo.get!(id)
-    |> Repo.delete!
+    |> Repo.delete!()
 
     {:reply, :ok, socket}
   end
@@ -90,7 +91,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
         trait_id: Repo.get_by!(Trait, name: form_data["name"]).id,
         ability_id: form_data["ability_id"]
       }
-      |> Repo.insert!
+      |> Repo.insert!()
 
     {:reply, {:ok, %{id: id}}, socket}
   end
@@ -106,7 +107,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
         damage_type_id: Repo.get_by!(DamageType, name: form_data["name"]).id,
         ability_id: form_data["ability_id"]
       }
-      |> Repo.insert!
+      |> Repo.insert!()
 
     {:reply, {:ok, %{id: id}}, socket}
   end
@@ -117,19 +118,24 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
         params["order_by"] && params["descending"] ->
           order_by = String.to_existing_atom(params["order_by"])
 
-          Ability.data_for_admin_index
+          Ability.data_for_admin_index()
           |> Ecto.Query.order_by(desc: ^order_by)
+
         params["order_by"] ->
           order_by = String.to_existing_atom(params["order_by"])
 
-          Ability.data_for_admin_index
+          Ability.data_for_admin_index()
           |> Ecto.Query.order_by(asc: ^order_by)
+
         :else ->
-          Ability.data_for_admin_index
+          Ability.data_for_admin_index()
           |> Ecto.Query.order_by(asc: :id)
       end
 
-    query = if params["query"], do: Ecto.Query.where(query, [a], ilike(a.name, ^"%#{params["query"]}%")), else: query
+    query =
+      if params["query"],
+        do: Ecto.Query.where(query, [a], ilike(a.name, ^"%#{params["query"]}%")),
+        else: query
 
     page =
       query
@@ -145,7 +151,7 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   # It is also common to receive messages from the client and
   # broadcast to everyone in the current topic (mud:lobby).
   def handle_in("shout", payload, socket) do
-    broadcast socket, "shout", payload
+    broadcast(socket, "shout", payload)
     {:noreply, socket}
   end
 
@@ -153,42 +159,91 @@ defmodule ApathyDriveWeb.Admin.AbilitiesChannel do
   # to the client. The default implementation is just to push it
   # downstream but one could filter or change the event.
   def handle_out(event, payload, socket) do
-    push socket, event, payload
+    push(socket, event, payload)
     {:noreply, socket}
   end
 
   defp push_page(socket, page) do
-    push(socket, "abilities", %{valid_targets: Ability.valid_targets, kinds: Ability.kinds, traits: Trait.names, damage_types: DamageType.names, page: page})
+    push(socket, "abilities", %{
+      valid_targets: Ability.valid_targets(),
+      kinds: Ability.kinds(),
+      traits: Trait.names(),
+      damage_types: DamageType.names(),
+      page: page
+    })
   end
 
   defp load_traits(page) do
-    update_in(page.entries, fn(entries) ->
-      Enum.map(entries, fn(entry) ->
+    update_in(page.entries, fn entries ->
+      Enum.map(entries, fn entry ->
         entry = Map.put_new(entry, :traits, [])
+
         AbilityTrait
         |> where([at], at.ability_id == ^entry.id)
         |> preload([:trait])
-        |> Repo.all
+        |> Repo.all()
         |> Enum.reduce(entry, fn ability_trait, entry ->
-             update_in(entry.traits, &([%{form: %{id: ability_trait.id, name: ability_trait.trait.name, value: ability_trait.value, ability_id: ability_trait.ability_id}, valid: true, data: %{id: ability_trait.id, name: ability_trait.trait.name, value: ability_trait.value, ability_id: ability_trait.ability_id}} | &1]))
-           end)
+          update_in(
+            entry.traits,
+            &[
+              %{
+                form: %{
+                  id: ability_trait.id,
+                  name: ability_trait.trait.name,
+                  value: ability_trait.value,
+                  ability_id: ability_trait.ability_id
+                },
+                valid: true,
+                data: %{
+                  id: ability_trait.id,
+                  name: ability_trait.trait.name,
+                  value: ability_trait.value,
+                  ability_id: ability_trait.ability_id
+                }
+              }
+              | &1
+            ]
+          )
+        end)
       end)
     end)
   end
 
   defp load_damage_types(page) do
-    update_in(page.entries, fn(entries) ->
-      Enum.map(entries, fn(entry) ->
+    update_in(page.entries, fn entries ->
+      Enum.map(entries, fn entry ->
         entry = Map.put_new(entry, :damage_types, [])
+
         AbilityDamageType
         |> where([at], at.ability_id == ^entry.id)
         |> preload([:damage_type])
-        |> Repo.all
+        |> Repo.all()
         |> Enum.reduce(entry, fn ability_damage_type, entry ->
-             update_in(entry.damage_types, &([%{form: %{id: ability_damage_type.id, name: ability_damage_type.damage_type.name, kind: ability_damage_type.kind, potency: ability_damage_type.potency, ability_id: ability_damage_type.ability_id}, valid: true, data: %{id: ability_damage_type.id, name: ability_damage_type.damage_type.name, kind: ability_damage_type.kind, potency: ability_damage_type.potency, ability_id: ability_damage_type.ability_id}} | &1]))
-           end)
+          update_in(
+            entry.damage_types,
+            &[
+              %{
+                form: %{
+                  id: ability_damage_type.id,
+                  name: ability_damage_type.damage_type.name,
+                  kind: ability_damage_type.kind,
+                  potency: ability_damage_type.potency,
+                  ability_id: ability_damage_type.ability_id
+                },
+                valid: true,
+                data: %{
+                  id: ability_damage_type.id,
+                  name: ability_damage_type.damage_type.name,
+                  kind: ability_damage_type.kind,
+                  potency: ability_damage_type.potency,
+                  ability_id: ability_damage_type.ability_id
+                }
+              }
+              | &1
+            ]
+          )
+        end)
       end)
     end)
   end
-
 end

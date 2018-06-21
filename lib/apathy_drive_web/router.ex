@@ -2,35 +2,42 @@ defmodule ApathyDriveWeb.Router do
   use Phoenix.Router
 
   pipeline :browser do
-    plug :accepts, ~w(html)
-    plug :fetch_session
-    plug :fetch_flash
-    plug :protect_from_forgery
-    plug :assign_character
-    plug :put_secure_browser_headers
+    plug(:accepts, ~w(html))
+    plug(:fetch_session)
+    plug(:fetch_flash)
+    plug(:protect_from_forgery)
+    plug(:assign_character)
+    plug(:put_secure_browser_headers)
   end
 
   pipeline :admin do
-    plug :require_admin
-    plug :put_layout, {ApathyDriveWeb.LayoutView, :admin}
+    plug(:require_admin)
+    plug(:put_layout, {ApathyDriveWeb.LayoutView, :admin})
   end
 
   scope "/", ApathyDriveWeb do
-    pipe_through :browser # Use the default browser stack
+    # Use the default browser stack
+    pipe_through(:browser)
 
-    get "/", PageController, :index
-    get  "/game", PageController, :game, as: :game
-    resources "/sessions", SessionController
-    resources "/characters", CharacterController, only: [:create, :edit, :update],
-                                                  singleton: true
+    get("/", PageController, :index)
+    get("/game", PageController, :game, as: :game)
+    resources("/sessions", SessionController)
+
+    resources(
+      "/characters",
+      CharacterController,
+      only: [:create, :edit, :update],
+      singleton: true
+    )
   end
 
   scope "/admin", ApathyDriveWeb do
-    pipe_through :browser
-    pipe_through :admin
+    pipe_through(:browser)
+    pipe_through(:admin)
 
-    get "/abilities", Admin.AbilitiesController, :index
-    get "/damage-types", Admin.DamageTypesController, :index
+    get("/abilities", Admin.AbilitiesController, :index)
+    get("/damage-types", Admin.DamageTypesController, :index)
+    resources("/classes", Admin.ClassController)
   end
 
   # Fetch the current user from the session and add it to `conn.assigns`. This
@@ -62,11 +69,11 @@ defmodule ApathyDriveWeb.Router do
     case conn.assigns[:admin?] do
       true ->
         conn
+
       _ ->
         conn
         |> redirect(to: "/")
         |> halt
     end
   end
-
 end

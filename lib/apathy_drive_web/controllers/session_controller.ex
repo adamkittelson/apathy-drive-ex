@@ -1,8 +1,8 @@
 defmodule ApathyDriveWeb.SessionController do
-  use ApathyDrive.Web, :controller
+  use ApathyDriveWeb, :controller
   alias ApathyDrive.Character
 
-  plug :scrub_params, "session" when action in [:create]
+  plug(:scrub_params, "session" when action in [:create])
 
   def new(conn, _params) do
     changeset = Character.sign_up_changeset(%Character{})

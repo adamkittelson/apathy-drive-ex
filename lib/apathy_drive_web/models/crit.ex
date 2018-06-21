@@ -1,19 +1,19 @@
 defmodule ApathyDrive.Crit do
-  use ApathyDrive.Web, :model
+  use ApathyDriveWeb, :model
   use Timex
 
   alias ApathyDrive.{Ability, CritTrait, DamageType}
 
   schema "crits" do
-    field :crit_table, :string
-    field :letter, :string
-    field :abilities, ApathyDrive.JSONB, default: []
-    field :user_message, :string
-    field :target_message, :string
-    field :spectator_message, :string
-    field :duration, :integer, default: 0
+    field(:crit_table, :string)
+    field(:letter, :string)
+    field(:abilities, ApathyDrive.JSONB, default: [])
+    field(:user_message, :string)
+    field(:target_message, :string)
+    field(:spectator_message, :string)
+    field(:duration, :integer, default: 0)
 
-    belongs_to :damage_type, DamageType
+    belongs_to(:damage_type, DamageType)
 
     timestamps()
   end
@@ -38,23 +38,22 @@ defmodule ApathyDrive.Crit do
         __MODULE__
         |> where(damage_type_id: ^table, letter: ^letter)
         |> select([crit], count(crit.id))
-        |> Repo.one
+        |> Repo.one()
 
       crit =
         __MODULE__
         |> where(damage_type_id: ^table, letter: ^letter)
         |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-        |> Repo.one
+        |> Repo.one()
 
       if crit do
-        ability =
-          %Ability{
-            duration: crit.duration,
-            kind: "critical",
-            user_message: crit.user_message,
-            target_message: crit.target_message,
-            spectator_message: crit.spectator_message
-          }
+        ability = %Ability{
+          duration: crit.duration,
+          kind: "critical",
+          user_message: crit.user_message,
+          target_message: crit.target_message,
+          spectator_message: crit.spectator_message
+        }
 
         case CritTrait.load_traits(crit.id) do
           %{"DamageMultiplier" => multiplier} = traits ->
@@ -62,7 +61,9 @@ defmodule ApathyDrive.Crit do
               traits
               |> Map.delete("DamageMultiplier")
               |> Map.put("Damage", damage * multiplier)
+
             put_in(ability.traits, traits)
+
           %{} = traits ->
             traits = Map.put(traits, "Damage", damage)
             put_in(ability.traits, traits)
@@ -81,11 +82,12 @@ defmodule ApathyDrive.Crit do
     roll =
       total
       |> trunc
-      |> :rand.uniform
+      |> :rand.uniform()
 
     case Enum.find(Enum.reverse(damages), fn {n, _id} -> roll <= n end) do
       {_, id} ->
         id
+
       _ ->
         nil
     end
@@ -95,15 +97,18 @@ defmodule ApathyDrive.Crit do
     case :rand.uniform(1_000_000) do
       roll when roll <= 100 ->
         "E"
+
       roll when roll <= 1000 ->
         "D"
+
       roll when roll <= 10_000 ->
         "C"
+
       roll when roll <= 100_000 ->
         "B"
+
       _ ->
         "A"
     end
   end
-
 end

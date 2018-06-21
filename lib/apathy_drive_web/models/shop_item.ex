@@ -1,9 +1,9 @@
 defmodule ApathyDrive.ShopItem do
-  use ApathyDrive.Web, :model
+  use ApathyDriveWeb, :model
 
   schema "shop_items" do
-    belongs_to :room, ApathyDrive.Room
-    belongs_to :item, ApathyDrive.Item
+    belongs_to(:room, ApathyDrive.Room)
+    belongs_to(:item, ApathyDrive.Item)
 
     timestamps()
   end
@@ -21,8 +21,7 @@ defmodule ApathyDrive.ShopItem do
 
   def all do
     __MODULE__
-    #|> Ecto.Query.where([si], si.room_id == ^id)
-    |> Repo.all
+    # |> Ecto.Query.where([si], si.room_id == ^id)
+    |> Repo.all()
   end
-
 end

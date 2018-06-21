@@ -40,6 +40,9 @@
                 <a class="popover-link" href="/admin/abilities" target="_blank">Abilities</a>
               </li>
               <li class="popover-item">
+                <a class="popover-link" href="/admin/classes" target="_blank">Classes</a>
+              </li>
+              <li class="popover-item">
                 <a class="popover-link" href="/admin/damage-types" target="_blank">Damage Types</a>
               </li>
             </ul>

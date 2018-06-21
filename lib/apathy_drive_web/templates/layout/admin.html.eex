@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600,100' rel='stylesheet' type='text/css'>
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
-  <link href="https://unpkg.com/vuetify/dist/vuetify.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/admin.css") %>">
@@ -26,9 +25,11 @@
     require("js/admin/admin.js");
   </script>
 </head>
-<body>
+<body class="admin">
   <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
-  <%= render @view_module, @view_template, assigns %>
+  <div class="container">
+    <%= render @view_module, @view_template, assigns %>
+  </div>
   <!-- Page Footer Layout
        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 </body>

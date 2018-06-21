@@ -1,22 +1,22 @@
 defmodule ApathyDrive.CritTrait do
-  use ApathyDrive.Web, :model
+  use ApathyDriveWeb, :model
   alias ApathyDrive.{Crit, CritResistance, Trait}
 
   schema "crits_traits" do
-    field :value, ApathyDrive.JSONB
+    field(:value, ApathyDrive.JSONB)
 
-    belongs_to :crit, Crit
-    belongs_to :trait, Trait
+    belongs_to(:crit, Crit)
+    belongs_to(:trait, Trait)
   end
 
   def load_traits(crit_id) do
     __MODULE__
     |> where([mt], mt.crit_id == ^crit_id)
     |> preload([:trait])
-    |> Repo.all
+    |> Repo.all()
     |> Enum.reduce(%{}, fn %{trait: trait, value: value}, crits ->
-         Map.put(crits, trait.name, value)
-       end)
+      Map.put(crits, trait.name, value)
+    end)
     |> Map.merge(CritResistance.load_resistances(crit_id))
   end
 
@@ -26,5 +26,4 @@ defmodule ApathyDrive.CritTrait do
     |> validate_required(:description)
     |> validate_length(:description, min: 20, max: 500)
   end
-
 end

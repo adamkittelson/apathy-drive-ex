@@ -1,37 +1,57 @@
 defmodule ApathyDrive.Ability do
-  use ApathyDrive.Web, :model
-  alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Character, Companion, Crit, Enchantment, Item, Match, Mobile, Monster, Party, Repo, Room, Stealth, Text, TimerManager}
+  use ApathyDriveWeb, :model
+
+  alias ApathyDrive.{
+    Ability,
+    AbilityDamageType,
+    AbilityTrait,
+    Character,
+    Companion,
+    Crit,
+    Enchantment,
+    Item,
+    Match,
+    Mobile,
+    Monster,
+    Party,
+    Repo,
+    Room,
+    Stealth,
+    Text,
+    TimerManager
+  }
+
   require Logger
 
   schema "abilities" do
-    field :name, :string
-    field :targets, :string
-    field :kind, :string
-    field :mana, :integer, default: 0
-    field :command, :string
-    field :description, :string
-    field :user_message, :string
-    field :target_message, :string
-    field :spectator_message, :string
-    field :duration, :integer, default: 0
-    field :cooldown, :integer
-    field :cast_time, :integer
+    field(:name, :string)
+    field(:targets, :string)
+    field(:kind, :string)
+    field(:mana, :integer, default: 0)
+    field(:command, :string)
+    field(:description, :string)
+    field(:user_message, :string)
+    field(:target_message, :string)
+    field(:spectator_message, :string)
+    field(:duration, :integer, default: 0)
+    field(:cooldown, :integer)
+    field(:cast_time, :integer)
 
-    field :level, :integer, virtual: true
-    field :traits, :map, virtual: true, default: %{}
-    field :ignores_round_cooldown?, :boolean, virtual: true, default: false
-    field :result, :any, virtual: true
-    field :cast_complete, :boolean, virtual: true, default: false
-    field :skills, :any, virtual: true, default: []
+    field(:level, :integer, virtual: true)
+    field(:traits, :map, virtual: true, default: %{})
+    field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
+    field(:result, :any, virtual: true)
+    field(:cast_complete, :boolean, virtual: true, default: false)
+    field(:skills, :any, virtual: true, default: [])
 
-    has_many :monsters_abilities, ApathyDrive.MonsterAbility
-    has_many :monsters, through: [:monsters_abilities, :monster]
+    has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
+    has_many(:monsters, through: [:monsters_abilities, :monster])
 
-    has_many :abilities_traits, ApathyDrive.AbilityTrait
-    has_many :trait_records, through: [:abilities_traits, :trait]
+    has_many(:abilities_traits, ApathyDrive.AbilityTrait)
+    has_many(:trait_records, through: [:abilities_traits, :trait])
 
-    has_many :abilities_damage_types, ApathyDrive.AbilityDamageType
-    has_many :damage_types, through: [:abilities_damage_types, :damage_types]
+    has_many(:abilities_damage_types, ApathyDrive.AbilityDamageType)
+    has_many(:damage_types, through: [:abilities_damage_types, :damage_types])
 
     timestamps()
   end
@@ -39,23 +59,91 @@ defmodule ApathyDrive.Ability do
   @required_fields ~w(name targets kind command description user_message target_message spectator_message)a
   @optional_fields ~w(cast_time cooldown duration mana)a
 
-  @valid_targets ["monster or single", "self", "self or single", "monster", "full party area", "full attack area", "single", "full area", "weapon"]
+  @valid_targets [
+    "monster or single",
+    "self",
+    "self or single",
+    "monster",
+    "full party area",
+    "full attack area",
+    "single",
+    "full area",
+    "weapon"
+  ]
   @target_required_targets ["monster or single", "monster", "single"]
 
   @kinds ["heal", "attack", "auto attack", "curse", "utility", "blessing", "passive"]
 
   @instant_traits [
-    "CurePoison", "Damage", "DispelMagic", "Enslave", "Freedom", "Heal", "HealMana", "KillSpell",
-    "Poison", "RemoveSpells", "Script", "Summon", "Teleport"
+    "CurePoison",
+    "Damage",
+    "DispelMagic",
+    "Enslave",
+    "Freedom",
+    "Heal",
+    "HealMana",
+    "KillSpell",
+    "Poison",
+    "RemoveSpells",
+    "Script",
+    "Summon",
+    "Teleport"
   ]
 
   @duration_traits [
-    "AC", "Accuracy", "Agility", "Charm", "Blind", "Charm", "Confusion", "ConfusionMessage", "ConfusionSpectatorMessage",
-    "Crits", "Damage", "DamageShield", "DamageShieldUserMessage", "DamageShieldTargetMessage", "DamageShieldSpectatorMessage",
-    "DarkVision", "Dodge", "Encumbrance", "EndCast", "EndCast%", "EnhanceSpell", "EnhanceSpellDamage", "Fear", "Heal", "Health", "HPRegen",
-    "Intellect", "Light", "LightVision", "MagicalResist", "ManaRegen", "MaxHP", "MaxMana", "ModifyDamage", "Perception", "Picklocks",
-    "PoisonImmunity", "RemoveMessage", "ResistCold", "ResistFire", "ResistLightning", "ResistStone", "Root", "SeeHidden",
-    "Shadowform", "Silence", "Speed", "Spellcasting", "StatusMessage", "Stealth", "Strength", "Tracking", "Willpower"
+    "AC",
+    "Accuracy",
+    "Agility",
+    "Charm",
+    "Blind",
+    "Charm",
+    "Confusion",
+    "ConfusionMessage",
+    "ConfusionSpectatorMessage",
+    "Crits",
+    "Damage",
+    "DamageShield",
+    "DamageShieldUserMessage",
+    "DamageShieldTargetMessage",
+    "DamageShieldSpectatorMessage",
+    "DarkVision",
+    "Dodge",
+    "Encumbrance",
+    "EndCast",
+    "EndCast%",
+    "EnhanceSpell",
+    "EnhanceSpellDamage",
+    "Fear",
+    "Heal",
+    "Health",
+    "HPRegen",
+    "Intellect",
+    "Light",
+    "LightVision",
+    "MagicalResist",
+    "ManaRegen",
+    "MaxHP",
+    "MaxMana",
+    "ModifyDamage",
+    "Perception",
+    "Picklocks",
+    "PoisonImmunity",
+    "RemoveMessage",
+    "ResistCold",
+    "ResistFire",
+    "ResistLightning",
+    "ResistStone",
+    "Root",
+    "SeeHidden",
+    "Shadowform",
+    "Silence",
+    "Speed",
+    "Spellcasting",
+    "StatusMessage",
+    "Stealth",
+    "Strength",
+    "Tracking",
+    "Willpower"
   ]
 
   @resist_message %{
@@ -84,7 +172,13 @@ defmodule ApathyDrive.Ability do
 
   def data_for_admin_index do
     __MODULE__
-    |> select([dt], map(dt, ~w(id name targets kind mana command description user_message target_message spectator_message duration cooldown cast_time)a))
+    |> select(
+      [dt],
+      map(
+        dt,
+        ~w(id name targets kind mana command description user_message target_message spectator_message duration cooldown cast_time)a
+      )
+    )
   end
 
   def valid_targets, do: @valid_targets
@@ -166,8 +260,9 @@ defmodule ApathyDrive.Ability do
       case AbilityDamageType.load_damage(id) do
         [] ->
           ability
+
         damage ->
-          update_in(ability.traits, &(Map.put(&1, "Damage", damage)))
+          update_in(ability.traits, &Map.put(&1, "Damage", damage))
       end
     end
   end
@@ -177,48 +272,60 @@ defmodule ApathyDrive.Ability do
       __MODULE__
       |> where([ability], not is_nil(ability.name) and ability.name != "")
       |> distinct(true)
-      |> ApathyDrive.Repo.all
+      |> ApathyDrive.Repo.all()
 
-      if all do
-        Match.all(abilities, :keyword_starts_with, name)
-      else
-        Match.one(abilities, :keyword_starts_with, name)
-      end
-
+    if all do
+      Match.all(abilities, :keyword_starts_with, name)
+    else
+      Match.one(abilities, :keyword_starts_with, name)
+    end
   end
 
   def heal_abilities(%{abilities: abilities} = _mobile) do
     abilities
-    |> Map.values
+    |> Map.values()
     |> Enum.filter(&(&1.kind == "heal"))
   end
 
   # equivilent to a character with 2 ManaPerIntellect and 10 intellect
-  def base_mana_at_level(level), do: 20 + ((level - 1) * 2)
+  def base_mana_at_level(level), do: 20 + (level - 1) * 2
 
   def mana_cost_at_level(%Ability{mana: mana} = _ability, level) do
     trunc(base_mana_at_level(level) * (mana / 100))
   end
 
-  def execute(%Room{} = room, caster_ref, %Ability{cast_time: time} = ability, query) when not is_nil(time) do
+  def execute(%Room{} = room, caster_ref, %Ability{cast_time: time} = ability, query)
+      when not is_nil(time) do
     Room.update_mobile(room, caster_ref, fn mobile ->
       if TimerManager.time_remaining(mobile, :casting) > 0 do
-        Mobile.send_scroll(mobile, "<p><span class='dark-red'>You interrupt your other spell.</span></p>")
+        Mobile.send_scroll(
+          mobile,
+          "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
+        )
       end
+
       Mobile.send_scroll(mobile, "<p><span class='cyan'>You begin your casting.</span></p>")
+
       ability =
         ability
         |> Map.put(:cast_time, nil)
         |> Map.put(:cast_complete, true)
 
-      TimerManager.send_after(mobile, {:casting, :timer.seconds(time), {:execute_ability, %{caster: caster_ref, ability: ability, target: query}}})
+      TimerManager.send_after(
+        mobile,
+        {:casting, :timer.seconds(time),
+         {:execute_ability, %{caster: caster_ref, ability: ability, target: query}}}
+      )
     end)
   end
 
-  def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "") when targets in @target_required_targets do
+  def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "")
+      when targets in @target_required_targets do
     room
     |> Room.get_mobile(caster_ref)
-    |> Mobile.send_scroll("<p><span class='red'>You must specify a target for that ability.</span></p>")
+    |> Mobile.send_scroll(
+      "<p><span class='red'>You must specify a target for that ability.</span></p>"
+    )
 
     room
   end
@@ -231,13 +338,17 @@ defmodule ApathyDrive.Ability do
             room
             |> Room.get_mobile(caster_ref)
             |> Mobile.send_scroll("<p>Your ability would affect no one.</p>")
+
           _ ->
             room
             |> Room.get_mobile(caster_ref)
-            |> Mobile.send_scroll("<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>")
+            |> Mobile.send_scroll(
+              "<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>"
+            )
         end
 
         room
+
       targets ->
         execute(room, caster_ref, ability, targets)
     end
@@ -252,7 +363,7 @@ defmodule ApathyDrive.Ability do
           Room.update_mobile(room, caster.ref, fn caster ->
             caster =
               caster
-              |> Stealth.reveal
+              |> Stealth.reveal()
               |> apply_cooldowns(ability)
               |> Mobile.subtract_mana(ability)
 
@@ -262,20 +373,33 @@ defmodule ApathyDrive.Ability do
 
         if ability.traits["LongTerm"] do
           caster =
-            if lt = Enum.find(TimerManager.timers(caster), &(match?({:longterm, _}, &1))) do
-              Mobile.send_scroll(caster, "<p><span class='cyan'>You interrupt your work.</span></p>")
+            if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='cyan'>You interrupt your work.</span></p>"
+              )
+
               TimerManager.cancel(caster, lt)
             else
               caster
             end
-          case Repo.get_by(Enchantment, items_instances_id: item.instance_id, ability_id: ability.id) do
+
+          case Repo.get_by(
+                 Enchantment,
+                 items_instances_id: item.instance_id,
+                 ability_id: ability.id
+               ) do
             %Enchantment{finished: true} = enchantment ->
               Repo.delete!(enchantment)
-              Mobile.send_scroll(caster, "<p><span class='blue'>You've removed #{ability.name} from #{item.name}.</span></p>")
+
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='blue'>You've removed #{ability.name} from #{item.name}.</span></p>"
+              )
 
               unenchanted_item = Systems.Effect.remove_oldest_stack(item, ability.id)
 
-              Room.update_mobile(room, caster_ref, fn(character) ->
+              Room.update_mobile(room, caster_ref, fn character ->
                 cond do
                   item in character.equipment ->
                     update_in(character.equipment, fn equipment ->
@@ -283,6 +407,7 @@ defmodule ApathyDrive.Ability do
                       |> List.delete(item)
                       |> List.insert_at(0, unenchanted_item)
                     end)
+
                   item in character.inventory ->
                     update_in(character.inventory, fn inventory ->
                       inventory
@@ -295,19 +420,35 @@ defmodule ApathyDrive.Ability do
             %Enchantment{finished: false} = enchantment ->
               enchantment = Map.put(enchantment, :ability, ability)
               time = Enchantment.next_tick_time(enchantment)
-              Mobile.send_scroll(caster, "<p><span class='cyan'>You continue your work.</span></p>")
+
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='cyan'>You continue your work.</span></p>"
+              )
+
               Room.update_mobile(room, caster.ref, fn caster ->
-                TimerManager.send_after(caster, {{:longterm, item.instance_id}, :timer.seconds(time), {:lt_tick, time, caster_ref, enchantment}})
+                TimerManager.send_after(
+                  caster,
+                  {{:longterm, item.instance_id}, :timer.seconds(time),
+                   {:lt_tick, time, caster_ref, enchantment}}
+                )
               end)
+
             nil ->
               enchantment =
                 %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id}
-                |> Repo.insert!
+                |> Repo.insert!()
                 |> Map.put(:ability, ability)
+
               time = Enchantment.next_tick_time(enchantment)
               Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
+
               Room.update_mobile(room, caster.ref, fn caster ->
-                TimerManager.send_after(caster, {{:longterm, item.instance_id}, :timer.seconds(time), {:lt_tick, time, caster_ref, enchantment}})
+                TimerManager.send_after(
+                  caster,
+                  {{:longterm, item.instance_id}, :timer.seconds(time),
+                   {:lt_tick, time, caster_ref, enchantment}}
+                )
               end)
           end
         else
@@ -315,7 +456,7 @@ defmodule ApathyDrive.Ability do
 
           enchanted_item = apply_item_enchantment(item, ability)
 
-          Room.update_mobile(room, caster_ref, fn(character) ->
+          Room.update_mobile(room, caster_ref, fn character ->
             cond do
               item in character.equipment ->
                 update_in(character.equipment, fn equipment ->
@@ -323,6 +464,7 @@ defmodule ApathyDrive.Ability do
                   |> List.delete(item)
                   |> List.insert_at(0, enchanted_item)
                 end)
+
               item in character.inventory ->
                 update_in(character.inventory, fn inventory ->
                   inventory
@@ -337,13 +479,14 @@ defmodule ApathyDrive.Ability do
       room
     end
   end
+
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) when is_list(targets) do
     if can_execute?(room, caster_ref, ability) do
       Room.update_mobile(room, caster_ref, fn caster ->
         display_pre_cast_message(room, caster, targets, ability)
 
         room =
-          Enum.reduce(targets, room, fn(target_ref, updated_room) ->
+          Enum.reduce(targets, room, fn target_ref, updated_room ->
             Room.update_mobile(updated_room, target_ref, fn target ->
               if affects_target?(target, ability) do
                 updated_room = apply_ability(updated_room, caster, target, ability)
@@ -367,14 +510,16 @@ defmodule ApathyDrive.Ability do
                   updated_room
                 end
               else
-                message = "#{target.name} is not affected by that ability." |> Text.capitalize_first
+                message =
+                  "#{target.name} is not affected by that ability." |> Text.capitalize_first()
+
                 Mobile.send_scroll(caster, "<p><span class='cyan'>#{message}</span></p>")
                 target
               end
             end)
           end)
-          #|> execute_multi_cast(caster_ref, ability, targets)
 
+        # |> execute_multi_cast(caster_ref, ability, targets)
 
         room =
           Room.update_mobile(room, caster.ref, fn caster ->
@@ -390,12 +535,20 @@ defmodule ApathyDrive.Ability do
 
               if Map.has_key?(caster, :attack_target) do
                 if is_nil(caster.attack_target) do
-                  time = min(Mobile.attack_interval(caster), TimerManager.time_remaining(caster, :auto_attack_timer))
+                  time =
+                    min(
+                      Mobile.attack_interval(caster),
+                      TimerManager.time_remaining(caster, :auto_attack_timer)
+                    )
 
                   caster
                   |> Map.put(:attack_target, target_ref)
-                  |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, caster.ref}})
-                  |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+                  |> TimerManager.send_after(
+                    {:auto_attack_timer, time, {:execute_auto_attack, caster.ref}}
+                  )
+                  |> Mobile.send_scroll(
+                    "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
+                  )
                 else
                   caster
                   |> Map.put(:attack_target, target_ref)
@@ -406,7 +559,6 @@ defmodule ApathyDrive.Ability do
             else
               caster
             end
-
           end)
 
         Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
@@ -443,9 +595,9 @@ defmodule ApathyDrive.Ability do
 
     chance =
       if difference > 0 do
-        30 + modifier + (difference * 0.3)
+        30 + modifier + difference * 0.3
       else
-        30 + modifier + (difference * 0.7)
+        30 + modifier + difference * 0.7
       end
 
     :rand.uniform(100) < chance
@@ -465,9 +617,9 @@ defmodule ApathyDrive.Ability do
 
       chance =
         if difference > 0 do
-          30 + modifier + (difference * 0.3)
+          30 + modifier + difference * 0.3
         else
-          30 + modifier + (difference * 0.7)
+          30 + modifier + difference * 0.7
         end
 
       :rand.uniform(100) < chance
@@ -475,6 +627,7 @@ defmodule ApathyDrive.Ability do
       false
     end
   end
+
   def blocked?(%{} = _caster, %{} = target, _room) do
     :rand.uniform(100) < Mobile.ability_value(target, "Block")
   end
@@ -493,9 +646,9 @@ defmodule ApathyDrive.Ability do
 
       chance =
         if difference > 0 do
-          30 + modifier + (difference * 0.3)
+          30 + modifier + difference * 0.3
         else
-          30 + modifier + (difference * 0.7)
+          30 + modifier + difference * 0.7
         end
 
       :rand.uniform(100) < chance
@@ -503,11 +656,17 @@ defmodule ApathyDrive.Ability do
       false
     end
   end
+
   def parried?(%{} = _caster, %{} = target, _room) do
     :rand.uniform(100) < Mobile.ability_value(target, "Parry")
   end
 
-  def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{traits: %{"Dodgeable" => true}} = ability) do
+  def apply_ability(
+        %Room{} = room,
+        %{} = caster,
+        %{} = target,
+        %Ability{traits: %{"Dodgeable" => true}} = ability
+      ) do
     cond do
       dodged?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
@@ -515,32 +674,55 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_skill_experience(fn -> ["dodge"] end, Mobile.dodge_at_level(target, target.level, room))
+          |> Mobile.add_skill_experience(
+            fn -> ["dodge"] end,
+            Mobile.dodge_at_level(target, target.level, room)
+          )
 
         put_in(room.mobiles[target.ref], target)
+
       blocked?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
 
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_skill_experience(fn -> ["shield"] end, Mobile.block_at_level(target, target.level))
+          |> Mobile.add_skill_experience(
+            fn -> ["shield"] end,
+            Mobile.block_at_level(target, target.level)
+          )
 
         put_in(room.mobiles[target.ref], target)
+
       parried?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :parried))
 
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_skill_experience(fn -> [Character.weapon(target).grade] end, Mobile.parry_at_level(target, target.level))
+          |> Mobile.add_skill_experience(
+            fn -> [Character.weapon(target).grade] end,
+            Mobile.parry_at_level(target, target.level)
+          )
 
         put_in(room.mobiles[target.ref], target)
+
       true ->
-        apply_ability(room, caster, target, update_in(ability.traits, &Map.delete(&1, "Dodgeable")))
+        apply_ability(
+          room,
+          caster,
+          target,
+          update_in(ability.traits, &Map.delete(&1, "Dodgeable"))
+        )
     end
   end
-  def apply_ability(%Room{} = room, %Character{} = caster, %{} = target, %Ability{traits: %{"Enslave" => _}} = ability) do
+
+  def apply_ability(
+        %Room{} = room,
+        %Character{} = caster,
+        %{} = target,
+        %Ability{traits: %{"Enslave" => _}} = ability
+      ) do
     display_cast_message(room, caster, target, ability)
 
     if companion = Character.companion(caster, room) do
@@ -551,6 +733,7 @@ defmodule ApathyDrive.Ability do
       Companion.convert_for_character(room, target, caster)
     end
   end
+
   def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{} = ability) do
     {caster, target} =
       target
@@ -570,7 +753,7 @@ defmodule ApathyDrive.Ability do
         target
         |> Map.put(:ability_shift, nil)
         |> Map.put(:ability_special, nil)
-        |> Mobile.update_prompt
+        |> Mobile.update_prompt()
 
       room
       |> put_in([:mobiles, target.ref], target)
@@ -583,12 +766,21 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def apply_critical(room, caster_ref, target_ref, ability, ability_shift) when ability_shift >= 0 do
+  def apply_critical(room, caster_ref, target_ref, ability, ability_shift)
+      when ability_shift >= 0 do
     finish_ability(room, caster_ref, target_ref, ability, ability_shift)
   end
-  def apply_critical(room, caster_ref, target_ref, %Ability{kind: "critical"} = ability, ability_shift) do
+
+  def apply_critical(
+        room,
+        caster_ref,
+        target_ref,
+        %Ability{kind: "critical"} = ability,
+        ability_shift
+      ) do
     finish_ability(room, caster_ref, target_ref, ability, ability_shift)
   end
+
   def apply_critical(room, caster_ref, target_ref, ability, ability_shift) do
     if critical = Crit.find_for_ability(ability, ability_shift) do
       apply_ability(room, room.mobiles[caster_ref], room.mobiles[target_ref], critical)
@@ -598,7 +790,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
-    Room.update_mobile(room, target_ref, fn (target) ->
+    Room.update_mobile(room, target_ref, fn target ->
       caster = room.mobiles[caster_ref]
 
       duration = duration(ability, caster, target, room)
@@ -614,62 +806,69 @@ defmodule ApathyDrive.Ability do
       |> Map.put(:ability_shift, nil)
       |> Map.put(:ability_special, nil)
       |> apply_duration_traits(ability, caster, duration, room)
-      |> Mobile.update_prompt
+      |> Mobile.update_prompt()
     end)
   end
 
-  def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, _ability) when target_ref == caster_ref, do: room
+  def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, _ability)
+      when target_ref == caster_ref,
+      do: room
+
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, ability) do
     if (target = room.mobiles[target_ref]) && "Damage" in Map.keys(ability.traits) do
       target
       |> Map.get(:effects)
-      |> Map.values
-      |> Enum.filter(&(Map.has_key?(&1, "DamageShield")))
-      |> Enum.reduce(room, fn
-           %{"DamageShield" => _, "Damage" => damage} = shield, updated_room ->
-             reaction =
-               %Ability{
-                 kind: "attack",
-                 mana: 0,
-                 user_message: shield["DamageShieldUserMessage"],
-                 target_message: shield["DamageShieldTargetMessage"],
-                 spectator_message: shield["DamageShieldSpectatorMessage"],
-                 ignores_round_cooldown?: true,
-                 traits: %{
-                   "Damage" => damage
-                 }
-               }
+      |> Map.values()
+      |> Enum.filter(&Map.has_key?(&1, "DamageShield"))
+      |> Enum.reduce(room, fn %{"DamageShield" => _, "Damage" => damage} = shield, updated_room ->
+        reaction = %Ability{
+          kind: "attack",
+          mana: 0,
+          user_message: shield["DamageShieldUserMessage"],
+          target_message: shield["DamageShieldTargetMessage"],
+          spectator_message: shield["DamageShieldSpectatorMessage"],
+          ignores_round_cooldown?: true,
+          traits: %{
+            "Damage" => damage
+          }
+        }
 
-             apply_ability(updated_room, room.mobiles[target_ref], room.mobiles[caster_ref], reaction)
-         end)
+        apply_ability(updated_room, room.mobiles[target_ref], room.mobiles[caster_ref], reaction)
+      end)
     else
       room
     end
   end
 
-  def aggro_target(%{ref: target_ref} = target, %Ability{kind: kind}, %{ref: caster_ref} = caster) when kind in ["attack", "curse"] and target_ref != caster_ref do
+  def aggro_target(%{ref: target_ref} = target, %Ability{kind: kind}, %{ref: caster_ref} = caster)
+      when kind in ["attack", "curse"] and target_ref != caster_ref do
     ApathyDrive.Aggression.attack(target, caster)
   end
+
   def aggro_target(%{} = target, %Ability{}, %{} = _caster), do: target
 
   def apply_instant_traits(%{} = target, %Ability{} = ability, %{} = caster, room) do
     ability.traits
     |> Map.take(@instant_traits)
     |> Enum.reduce({caster, target}, fn trait, {updated_caster, updated_target} ->
-         apply_instant_trait(trait, updated_target, ability, updated_caster, room)
-       end)
+      apply_instant_trait(trait, updated_target, ability, updated_caster, room)
+    end)
   end
 
   def apply_instant_trait({"RemoveSpells", ability_ids}, %{} = target, _ability, caster, _room) do
     target =
-      Enum.reduce(ability_ids, target, fn(ability_id, updated_target) ->
+      Enum.reduce(ability_ids, target, fn ability_id, updated_target ->
         Systems.Effect.remove_oldest_stack(updated_target, ability_id)
       end)
+
     {caster, target}
   end
-  def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room) when is_float(value) do
+
+  def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room)
+      when is_float(value) do
     {caster, Map.put(target, :ability_shift, value)}
   end
+
   def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
@@ -677,12 +876,23 @@ defmodule ApathyDrive.Ability do
 
     {caster, Map.put(target, :ability_shift, percentage_healed)}
   end
-  def apply_instant_trait({"Damage", value}, %{} = target, %Ability{kind: "critical"}, caster, _room) when is_float(value) do
+
+  def apply_instant_trait(
+        {"Damage", value},
+        %{} = target,
+        %Ability{kind: "critical"},
+        caster,
+        _room
+      )
+      when is_float(value) do
     {caster, Map.put(target, :ability_shift, value)}
   end
-  def apply_instant_trait({"Damage", value}, %{} = target, _ability, caster, _room) when is_float(value) do
+
+  def apply_instant_trait({"Damage", value}, %{} = target, _ability, caster, _room)
+      when is_float(value) do
     {caster, Map.put(target, :ability_shift, -value)}
   end
+
   def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
@@ -698,23 +908,25 @@ defmodule ApathyDrive.Ability do
           resist = Mobile.physical_resistance_at_level(target, target_level, type)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
-          damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           {caster, damage_percent}
+
         %{kind: "magical", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level, type)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
-          damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           {caster, damage_percent}
+
         %{kind: "drain", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level, type)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
 
-          damage_percent =  damage / Mobile.max_hp_at_level(target, target_level)
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
 
@@ -748,6 +960,7 @@ defmodule ApathyDrive.Ability do
 
     {caster, target}
   end
+
   def apply_instant_trait({ability_name, _value}, %{} = target, _ability, caster, _room) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
     {caster, target}
@@ -756,12 +969,15 @@ defmodule ApathyDrive.Ability do
   def raw_damage(%{kind: "physical", level: level}, caster, caster_level) do
     Mobile.physical_damage_at_level(caster, min(caster_level, level))
   end
+
   def raw_damage(%{kind: "physical"}, caster, caster_level) do
     Mobile.physical_damage_at_level(caster, caster_level)
   end
+
   def raw_damage(%{level: level}, caster, caster_level) do
     Mobile.magical_damage_at_level(caster, min(caster_level, level))
   end
+
   def raw_damage(%{}, caster, caster_level) do
     Mobile.magical_damage_at_level(caster, caster_level)
   end
@@ -795,7 +1011,7 @@ defmodule ApathyDrive.Ability do
     caster_modifier = Mobile.ability_value(caster, "Crits")
     target_modifier = Mobile.ability_value(target, "Crits")
 
-    chance = 30 + caster_modifier - target_modifier + ((caster_crit - target_crit) * 10)
+    chance = 30 + caster_modifier - target_modifier + (caster_crit - target_crit) * 10
 
     chance = min(chance, 60 + caster_modifier - target_modifier)
     chance = max(chance, 10 + caster_modifier - target_modifier)
@@ -829,19 +1045,22 @@ defmodule ApathyDrive.Ability do
       |> Map.put("effect_ref", make_ref())
 
     if message = effects["StatusMessage"] do
-      Mobile.send_scroll(target, "<p><span class='#{message_color(ability)}'>#{message}</span></p>")
+      Mobile.send_scroll(
+        target,
+        "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+      )
     end
 
     target
     |> Systems.Effect.add(effects, :timer.seconds(duration))
-    |> Systems.Effect.schedule_next_periodic_effect
+    |> Systems.Effect.schedule_next_periodic_effect()
   end
 
   def process_enchantment_traits(effects, item) do
     effects
     |> Enum.reduce(effects, fn effect, updated_effects ->
-         process_enchantment_trait(updated_effects, effect, item)
-       end)
+      process_enchantment_trait(updated_effects, effect, item)
+    end)
   end
 
   def process_enchantment_trait(effects, {"Damage", damages}, %Item{attacks_per_round: attacks}) do
@@ -849,8 +1068,10 @@ defmodule ApathyDrive.Ability do
       Enum.map(damages, fn damage ->
         update_in(damage.potency, &(&1 / attacks))
       end)
+
     Map.put(effects, "Damage", damages)
   end
+
   def process_enchantment_trait(effects, {trait, value}, _item) do
     put_in(effects[trait], value)
   end
@@ -858,13 +1079,15 @@ defmodule ApathyDrive.Ability do
   def process_duration_traits(effects, target, caster, ability, room) do
     effects
     |> Enum.reduce(effects, fn effect, updated_effects ->
-         process_duration_trait(effect, updated_effects, target, caster, ability, room)
-       end)
+      process_duration_trait(effect, updated_effects, target, caster, ability, room)
+    end)
   end
 
-  def process_duration_trait({"Damage", damages}, effects, _target, _caster, _ability, _room) when is_float(damages) do
+  def process_duration_trait({"Damage", damages}, effects, _target, _caster, _ability, _room)
+      when is_float(damages) do
     effects
   end
+
   def process_duration_trait({"Damage", damages}, effects, target, caster, _ability, _room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
@@ -875,12 +1098,14 @@ defmodule ApathyDrive.Ability do
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.physical_resistance_at_level(target, target_level, type)
           damage = (damage - resist) * (potency / 100)
-          damage_percent + (damage / Mobile.max_hp_at_level(target, target_level))
+          damage_percent + damage / Mobile.max_hp_at_level(target, target_level)
+
         %{kind: "magical", damage_type: type, potency: potency} = damage, damage_percent ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level, type)
           damage = (damage - resist) * (potency / 100)
-          damage_percent + (damage / Mobile.max_hp_at_level(target, target_level))
+          damage_percent + damage / Mobile.max_hp_at_level(target, target_level)
+
         _, damage_percent ->
           damage_percent
       end)
@@ -888,8 +1113,12 @@ defmodule ApathyDrive.Ability do
     effects
     |> Map.put("Damage", damage_percent)
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
-    |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put(
+      "NextEffectAt",
+      System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4
+    )
   end
+
   def process_duration_trait({"Heal", value}, effects, target, caster, _ability, _room) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
@@ -898,18 +1127,28 @@ defmodule ApathyDrive.Ability do
     effects
     |> Map.put("Heal", percentage_healed)
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
-    |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put(
+      "NextEffectAt",
+      System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4
+    )
   end
+
   def process_duration_trait({"HealMana", value}, effects, target, caster, _ability, _room) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
-    percentage_healed = calculate_healing(healing, value) / Mobile.max_mana_at_level(target, level)
+
+    percentage_healed =
+      calculate_healing(healing, value) / Mobile.max_mana_at_level(target, level)
 
     effects
     |> Map.put("HealMana", percentage_healed)
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
-    |> Map.put("NextEffectAt", System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put(
+      "NextEffectAt",
+      System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4
+    )
   end
+
   def process_duration_trait({trait, value}, effects, _target, _caster, _ability, _room) do
     put_in(effects[trait], value)
   end
@@ -918,12 +1157,16 @@ defmodule ApathyDrive.Ability do
     cond do
       Ability.has_ability?(ability, "AffectsLiving") and Mobile.has_ability?(target, "NonLiving") ->
         false
+
       Ability.has_ability?(ability, "AffectsAnimals") and !Mobile.has_ability?(target, "Animal") ->
         false
+
       Ability.has_ability?(ability, "AffectsUndead") and !Mobile.has_ability?(target, "Undead") ->
         false
+
       Ability.has_ability?(ability, "Poison") and Mobile.has_ability?(target, "PoisonImmunity") ->
         false
+
       true ->
         true
     end
@@ -931,7 +1174,7 @@ defmodule ApathyDrive.Ability do
 
   def has_ability?(%Ability{} = ability, ability_name) do
     ability.traits
-    |> Map.keys
+    |> Map.keys()
     |> Enum.member?(ability_name)
   end
 
@@ -942,80 +1185,129 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_ability_cooldown(caster, %Ability{cooldown: nil}), do: caster
+
   def apply_ability_cooldown(caster, %Ability{cooldown: cooldown, name: name}) do
-    Systems.Effect.add(caster, %{"cooldown" => name, "RemoveMessage" => "#{Text.capitalize_first(name)} is ready for use again."}, cooldown)
+    Systems.Effect.add(
+      caster,
+      %{
+        "cooldown" => name,
+        "RemoveMessage" => "#{Text.capitalize_first(name)} is ready for use again."
+      },
+      cooldown
+    )
   end
 
   def apply_round_cooldown(caster, %Ability{cast_complete: true}), do: caster
   def apply_round_cooldown(caster, %Ability{ignores_round_cooldown?: true}), do: caster
+
   def apply_round_cooldown(caster, _ability) do
     cooldown = Mobile.round_length_in_ms(caster)
     Systems.Effect.add(caster, %{"cooldown" => :round}, cooldown)
   end
 
-  def caster_cast_message(%Ability{result: :dodged} = ability, %{} = _caster, %{} = target, _mobile) do
+  def caster_cast_message(
+        %Ability{result: :dodged} = ability,
+        %{} = _caster,
+        %{} = target,
+        _mobile
+      ) do
     message =
       ability.traits["DodgeUserMessage"]
       |> Text.interpolate(%{"target" => target, "ability" => ability.name})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def caster_cast_message(%Ability{result: :blocked} = _ability, %{} = _caster, %{} = target, _mobile) do
-    shield =
-      Character.shield(target).name
+
+  def caster_cast_message(
+        %Ability{result: :blocked} = _ability,
+        %{} = _caster,
+        %{} = target,
+        _mobile
+      ) do
+    shield = Character.shield(target).name
 
     message =
       "{{target}} blocks your attack with {{target:his/her/their}} #{shield}!"
       |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def caster_cast_message(%Ability{result: :parried} = _ability, %{} = _caster, %{} = target, _mobile) do
-    weapon =
-      Character.weapon(target).name
+
+  def caster_cast_message(
+        %Ability{result: :parried} = _ability,
+        %{} = _caster,
+        %{} = target,
+        _mobile
+      ) do
+    weapon = Character.weapon(target).name
 
     message =
       "{{target}} parries your attack with {{target:his/her/their}} #{weapon}!"
       |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def caster_cast_message(%Ability{result: :resisted} = ability, %{} = _caster, %{} = target, _mobile) do
+
+  def caster_cast_message(
+        %Ability{result: :resisted} = ability,
+        %{} = _caster,
+        %{} = target,
+        _mobile
+      ) do
     message =
       @resist_message.user
       |> Text.interpolate(%{"target" => target, "ability" => ability.name})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def caster_cast_message(%Ability{result: :deflected} = _ability, %{} = _caster, %{} = target, _mobile) do
+
+  def caster_cast_message(
+        %Ability{result: :deflected} = _ability,
+        %{} = _caster,
+        %{} = target,
+        _mobile
+      ) do
     message =
       @deflect_message.user
       |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-red'>#{message}</span></p>"
   end
+
   def caster_cast_message(%Ability{} = ability, %{} = _caster, %Item{} = target, _mobile) do
     message =
       ability.user_message
       |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
   end
-  def caster_cast_message(%Ability{} = ability, %{} = _caster, %{ability_shift: nil} = target, _mobile) do
+
+  def caster_cast_message(
+        %Ability{} = ability,
+        %{} = _caster,
+        %{ability_shift: nil} = target,
+        _mobile
+      ) do
     message =
       ability.user_message
       |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
   end
-  def caster_cast_message(%Ability{} = ability, %{} = caster, %{ability_shift: shift} = target, mobile) do
+
+  def caster_cast_message(
+        %Ability{} = ability,
+        %{} = caster,
+        %{ability_shift: shift} = target,
+        mobile
+      ) do
     amount = abs(trunc(shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
@@ -1023,70 +1315,111 @@ defmodule ApathyDrive.Ability do
         ability
         |> Map.put(:result, :deflected)
         |> caster_cast_message(caster, target, mobile)
+
       :else ->
         message =
           ability.user_message
           |> Text.interpolate(%{"target" => target, "amount" => amount})
-          |> Text.capitalize_first
+          |> Text.capitalize_first()
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
     end
   end
 
-  def target_cast_message(%Ability{result: :dodged} = ability, %{} = caster, %{} = _target, _mobile) do
+  def target_cast_message(
+        %Ability{result: :dodged} = ability,
+        %{} = caster,
+        %{} = _target,
+        _mobile
+      ) do
     message =
       ability.traits["DodgeTargetMessage"]
       |> Text.interpolate(%{"user" => caster, "ability" => ability.name})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def target_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = target, _mobile) do
-    shield =
-      Character.shield(target).name
+
+  def target_cast_message(
+        %Ability{result: :blocked} = _ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
+    shield = Character.shield(target).name
+
     message =
       "You block {{user}}'s attack with your #{shield}!"
       |> Text.interpolate(%{"user" => caster})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def target_cast_message(%Ability{result: :parried} = _ability, %{} = caster, %{} = target, _mobile) do
-    weapon =
-      Character.weapon(target).name
+
+  def target_cast_message(
+        %Ability{result: :parried} = _ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
+    weapon = Character.weapon(target).name
 
     message =
       "You parry {{user}}'s attack with your #{weapon}!"
       |> Text.interpolate(%{"user" => caster})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def target_cast_message(%Ability{result: :resisted} = ability, %{} = caster, %{} = _target, _mobile) do
+
+  def target_cast_message(
+        %Ability{result: :resisted} = ability,
+        %{} = caster,
+        %{} = _target,
+        _mobile
+      ) do
     message =
       @resist_message.target
       |> Text.interpolate(%{"user" => caster, "ability" => ability.name})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def target_cast_message(%Ability{result: :deflected} = _ability, %{} = caster, %{} = _target, _mobile) do
+
+  def target_cast_message(
+        %Ability{result: :deflected} = _ability,
+        %{} = caster,
+        %{} = _target,
+        _mobile
+      ) do
     message =
       @deflect_message.target
       |> Text.interpolate(%{"user" => caster})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-red'>#{message}</span></p>"
   end
-  def target_cast_message(%Ability{} = ability, %{} = caster, %{ability_shift: nil} = _target, _mobile) do
+
+  def target_cast_message(
+        %Ability{} = ability,
+        %{} = caster,
+        %{ability_shift: nil} = _target,
+        _mobile
+      ) do
     message =
       ability.target_message
       |> Text.interpolate(%{"user" => caster})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
   end
-  def target_cast_message(%Ability{} = ability, %{} = caster, %{ability_shift: _shift} = target, mobile) do
+
+  def target_cast_message(
+        %Ability{} = ability,
+        %{} = caster,
+        %{ability_shift: _shift} = target,
+        mobile
+      ) do
     amount = abs(trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
@@ -1094,79 +1427,120 @@ defmodule ApathyDrive.Ability do
         ability
         |> Map.put(:result, :deflected)
         |> target_cast_message(caster, target, mobile)
+
       :else ->
         message =
           ability.target_message
           |> Text.interpolate(%{"user" => caster, "amount" => amount})
-          |> Text.capitalize_first
+          |> Text.capitalize_first()
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
     end
   end
 
-  def spectator_cast_message(%Ability{result: :dodged} = ability, %{} = caster, %{} = target, _mobile) do
+  def spectator_cast_message(
+        %Ability{result: :dodged} = ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
     message =
       ability.traits["DodgeSpectatorMessage"]
       |> Text.interpolate(%{"user" => caster, "target" => target, "ability" => ability.name})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Ability{result: :blocked} = _ability, %{} = caster, %{} = target, _mobile) do
-    shield =
-      Character.shield(target).name
+
+  def spectator_cast_message(
+        %Ability{result: :blocked} = _ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
+    shield = Character.shield(target).name
 
     message =
       "{{target}} blocks {{user}}'s attack with {{target:his/her/their}} #{shield}!"
       |> Text.interpolate(%{"user" => caster, "target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Ability{result: :parried} = _ability, %{} = caster, %{} = target, _mobile) do
-    weapon =
-      Character.weapon(target).name
+
+  def spectator_cast_message(
+        %Ability{result: :parried} = _ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
+    weapon = Character.weapon(target).name
 
     message =
       "{{target}} parries {{user}}'s attack with {{target:his/her/their}} #{weapon}!"
       |> Text.interpolate(%{"user" => caster, "target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Ability{result: :resisted} = ability, %{} = caster, %{} = target, _mobile) do
+
+  def spectator_cast_message(
+        %Ability{result: :resisted} = ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
     message =
       @resist_message.spectator
       |> Text.interpolate(%{"user" => caster, "target" => target, "ability" => ability.name})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-cyan'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Ability{result: :deflected} = _ability, %{} = caster, %{} = target, _mobile) do
+
+  def spectator_cast_message(
+        %Ability{result: :deflected} = _ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
     message =
       @deflect_message.spectator
       |> Text.interpolate(%{"user" => caster, "target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='dark-red'>#{message}</span></p>"
   end
+
   def spectator_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, _mobile) do
     message =
       ability.spectator_message
       |> Text.interpolate(%{"user" => caster, "target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Ability{} = ability, %{} = caster, %{ability_shift: nil} = target, _mobile) do
+
+  def spectator_cast_message(
+        %Ability{} = ability,
+        %{} = caster,
+        %{ability_shift: nil} = target,
+        _mobile
+      ) do
     message =
       ability.spectator_message
       |> Text.interpolate(%{"user" => caster, "target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
   end
-  def spectator_cast_message(%Ability{} = ability, %{} = caster, %{ability_shift: _shift} = target, mobile) do
+
+  def spectator_cast_message(
+        %Ability{} = ability,
+        %{} = caster,
+        %{ability_shift: _shift} = target,
+        mobile
+      ) do
     amount = abs(trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level)))
 
     cond do
@@ -1174,11 +1548,12 @@ defmodule ApathyDrive.Ability do
         ability
         |> Map.put(:result, :deflected)
         |> spectator_cast_message(caster, target, mobile)
+
       :else ->
         message =
           ability.spectator_message
           |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
-          |> Text.capitalize_first
+          |> Text.capitalize_first()
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
     end
@@ -1186,56 +1561,82 @@ defmodule ApathyDrive.Ability do
 
   def display_cast_message(%Room{} = room, %{} = caster, %Item{} = target, %Ability{} = ability) do
     room.mobiles
-    |> Map.values
+    |> Map.values()
     |> Enum.each(fn mobile ->
-         cond do
-           mobile.ref == caster.ref and not is_nil(ability.user_message) ->
-             Mobile.send_scroll(mobile, caster_cast_message(ability, caster, target, mobile))
-           mobile && not is_nil(ability.spectator_message) ->
-             Mobile.send_scroll(mobile, spectator_cast_message(ability, caster, target, mobile))
-           true ->
-             :noop
-         end
-       end)
-  end
-  def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Ability{} = ability) do
-    room.mobiles
-    |> Map.values
-    |> Enum.each(fn mobile ->
-         cond do
-           mobile.ref == caster.ref and not is_nil(ability.user_message) ->
-             Mobile.send_scroll(mobile, caster_cast_message(ability, caster, target, mobile))
-           mobile.ref == target.ref and not is_nil(ability.target_message) ->
-             Mobile.send_scroll(mobile, target_cast_message(ability, caster, target, mobile))
-           mobile && not is_nil(ability.spectator_message) ->
-             Mobile.send_scroll(mobile, spectator_cast_message(ability, caster, target, mobile))
-           true ->
-             :noop
-         end
-       end)
+      cond do
+        mobile.ref == caster.ref and not is_nil(ability.user_message) ->
+          Mobile.send_scroll(mobile, caster_cast_message(ability, caster, target, mobile))
+
+        mobile && not is_nil(ability.spectator_message) ->
+          Mobile.send_scroll(mobile, spectator_cast_message(ability, caster, target, mobile))
+
+        true ->
+          :noop
+      end
+    end)
   end
 
-  def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest] = targets, %Ability{traits: %{"PreCastMessage" => message}} = ability) do
+  def display_cast_message(%Room{} = room, %{} = caster, %{} = target, %Ability{} = ability) do
+    room.mobiles
+    |> Map.values()
+    |> Enum.each(fn mobile ->
+      cond do
+        mobile.ref == caster.ref and not is_nil(ability.user_message) ->
+          Mobile.send_scroll(mobile, caster_cast_message(ability, caster, target, mobile))
+
+        mobile.ref == target.ref and not is_nil(ability.target_message) ->
+          Mobile.send_scroll(mobile, target_cast_message(ability, caster, target, mobile))
+
+        mobile && not is_nil(ability.spectator_message) ->
+          Mobile.send_scroll(mobile, spectator_cast_message(ability, caster, target, mobile))
+
+        true ->
+          :noop
+      end
+    end)
+  end
+
+  def display_pre_cast_message(
+        %Room{} = room,
+        %{} = caster,
+        [target_ref | _rest] = targets,
+        %Ability{traits: %{"PreCastMessage" => message}} = ability
+      ) do
     target = Room.get_mobile(room, target_ref)
 
     message =
       message
       |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first
+      |> Text.capitalize_first()
 
     Mobile.send_scroll(caster, "<p><span class='#{message_color(ability)}'>#{message}</span></p>")
 
-    display_pre_cast_message(room, caster, targets, update_in(ability.traits, &Map.delete(&1, "PreCastMessage")))
+    display_pre_cast_message(
+      room,
+      caster,
+      targets,
+      update_in(ability.traits, &Map.delete(&1, "PreCastMessage"))
+    )
   end
-  def display_pre_cast_message(%Room{} = room, %{} = caster, [target_ref | _rest], %Ability{traits: %{"PreCastSpectatorMessage" => message}} = ability) do
+
+  def display_pre_cast_message(
+        %Room{} = room,
+        %{} = caster,
+        [target_ref | _rest],
+        %Ability{traits: %{"PreCastSpectatorMessage" => message}} = ability
+      ) do
     target = Room.get_mobile(room, target_ref)
 
-    message = message
-              |> Text.interpolate(%{"user" => caster, "target" => target})
-              |> Text.capitalize_first
+    message =
+      message
+      |> Text.interpolate(%{"user" => caster, "target" => target})
+      |> Text.capitalize_first()
 
-    Room.send_scroll(room, "<p><span class='#{message_color(ability)}'>#{message}</span></p>", [caster])
+    Room.send_scroll(room, "<p><span class='#{message_color(ability)}'>#{message}</span></p>", [
+      caster
+    ])
   end
+
   def display_pre_cast_message(_room, _caster, _targets, _ability), do: :noop
 
   def message_color(%Ability{kind: kind}) when kind in ["attack", "curse", "critical"], do: "red"
@@ -1246,17 +1647,30 @@ defmodule ApathyDrive.Ability do
 
     cond do
       cd = on_cooldown?(mobile, ability) ->
-        Mobile.send_scroll(mobile, "<p>#{ability.name} is on cooldown: #{time_remaining(mobile, cd)} seconds remaining.</p>")
+        Mobile.send_scroll(
+          mobile,
+          "<p>#{ability.name} is on cooldown: #{time_remaining(mobile, cd)} seconds remaining.</p>"
+        )
+
         false
+
       cd = on_round_cooldown?(mobile, ability) ->
-        Mobile.send_scroll(mobile, "<p>You have already used an ability this round: #{time_remaining(mobile, cd)} seconds remaining.</p>")
+        Mobile.send_scroll(
+          mobile,
+          "<p>You have already used an ability this round: #{time_remaining(mobile, cd)} seconds remaining.</p>"
+        )
+
         false
+
       Mobile.confused(mobile, room) ->
         false
+
       Mobile.silenced(mobile, room) ->
         false
+
       not_enough_mana?(mobile, ability) ->
         false
+
       true ->
         true
     end
@@ -1273,17 +1687,19 @@ defmodule ApathyDrive.Ability do
   end
 
   def on_cooldown?(%{} = _mobile, %Ability{cooldown: nil} = _abilityl), do: false
+
   def on_cooldown?(%{effects: effects} = _mobile, %Ability{name: name} = _ability) do
     effects
-    |> Map.values
+    |> Map.values()
     |> Enum.any?(&(&1["cooldown"] == name))
   end
 
   def on_round_cooldown?(_mobile, %{ignores_round_cooldown?: true}), do: false
   def on_round_cooldown?(mobile, %{}), do: on_round_cooldown?(mobile)
+
   def on_round_cooldown?(%{effects: effects}) do
     effects
-    |> Map.values
+    |> Map.values()
     |> Enum.find(&(&1["cooldown"] == :round))
   end
 
@@ -1292,29 +1708,33 @@ defmodule ApathyDrive.Ability do
 
     match =
       room.mobiles
-      |> Map.values
-      |> Enum.reject(& &1.ref in Party.refs(room, caster))
+      |> Map.values()
+      |> Enum.reject(&(&1.ref in Party.refs(room, caster)))
       |> Match.one(:name_contains, query)
 
     List.wrap(match && match.ref)
   end
+
   def get_targets(%Room{}, caster_ref, %Ability{targets: "self"}, _query) do
     List.wrap(caster_ref)
   end
+
   def get_targets(%Room{} = room, _caster_ref, %Ability{targets: "monster"}, query) do
     match =
       room.mobiles
-      |> Map.values
-      |> Enum.filter(& &1.__struct__ == Monster)
+      |> Map.values()
+      |> Enum.filter(&(&1.__struct__ == Monster))
       |> Match.one(:name_contains, query)
 
     List.wrap(match && match.ref)
   end
+
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full party area"}, _query) do
     room
     |> Room.get_mobile(caster_ref)
     |> Mobile.party_refs(room)
   end
+
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full attack area"}, _query) do
     party =
       room
@@ -1322,32 +1742,37 @@ defmodule ApathyDrive.Ability do
       |> Mobile.party_refs(room)
 
     room.mobiles
-    |> Map.keys
+    |> Map.keys()
     |> Kernel.--(party)
   end
+
   def get_targets(%Room{}, caster_ref, %Ability{targets: "self or single"}, "") do
     List.wrap(caster_ref)
   end
+
   def get_targets(%Room{} = room, _caster_ref, %Ability{targets: "self or single"}, query) do
     match =
       room.mobiles
-      |> Map.values
-      |> Enum.reject(& &1.__struct__ == Monster)
+      |> Map.values()
+      |> Enum.reject(&(&1.__struct__ == Monster))
       |> Match.one(:name_contains, query)
 
     List.wrap(match && match.ref)
   end
+
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "single"}, query) do
     match =
       room.mobiles
-      |> Map.values
-      |> Enum.reject(& &1.__struct__ == Monster || &1.ref == caster_ref)
+      |> Map.values()
+      |> Enum.reject(&(&1.__struct__ == Monster || &1.ref == caster_ref))
       |> Match.one(:name_contains, query)
 
     List.wrap(match && match.ref)
   end
+
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "weapon"}, query) do
     %Character{inventory: inventory, equipment: equipment} = room.mobiles[caster_ref]
+
     item =
       (inventory ++ equipment)
       |> Enum.filter(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
@@ -1356,16 +1781,20 @@ defmodule ApathyDrive.Ability do
     case item do
       nil ->
         []
+
       %Item{} = item ->
         item
     end
   end
 
   def not_enough_mana?(%{} = _mobile, %Ability{ignores_round_cooldown?: true}), do: false
+
   def not_enough_mana?(%{} = mobile, %Ability{} = ability) do
     if !Mobile.enough_mana_for_ability?(mobile, ability) do
-      Mobile.send_scroll(mobile, "<p><span class='cyan'>You do not have enough mana to use that ability.</span></p>")
+      Mobile.send_scroll(
+        mobile,
+        "<p><span class='cyan'>You do not have enough mana to use that ability.</span></p>"
+      )
     end
   end
-
 end

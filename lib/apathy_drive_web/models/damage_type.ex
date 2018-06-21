@@ -1,11 +1,11 @@
 defmodule ApathyDrive.DamageType do
-  use ApathyDrive.Web, :model
+  use ApathyDriveWeb, :model
 
   schema "damage_types" do
-    field :name, :string
+    field(:name, :string)
 
-    has_many :abilities_damage_types, ApathyDrive.AbilityDamageType
-    has_many :abilities, through: [:abilities_damage_types, :ability]
+    has_many(:abilities_damage_types, ApathyDrive.AbilityDamageType)
+    has_many(:abilities, through: [:abilities_damage_types, :ability])
   end
 
   def data_for_admin_index do
@@ -16,9 +16,8 @@ defmodule ApathyDrive.DamageType do
   def names do
     __MODULE__
     |> Ecto.Query.select([:name])
-    |> Repo.all
+    |> Repo.all()
     |> Enum.map(& &1.name)
-    |> Enum.sort
+    |> Enum.sort()
   end
-
 end

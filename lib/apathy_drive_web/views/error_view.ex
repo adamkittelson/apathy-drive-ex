@@ -1,5 +1,5 @@
 defmodule ApathyDriveWeb.ErrorView do
-  use ApathyDrive.Web, :view
+  use ApathyDriveWeb, :view
 
   def render("404.html", _assigns) do
     "Page not found - 404"
@@ -11,6 +11,6 @@ defmodule ApathyDriveWeb.ErrorView do
 
   # Render all other templates as 500
   def render(_, assigns) do
-    render "500.html", assigns
+    render("500.html", assigns)
   end
 end

@@ -1,0 +1,5 @@
+<h2>Edit Class</h2>
+
+<%= render "form.html", Map.put(assigns, :action, class_path(@conn, :update, @class)) %>
+
+<span><%= link "Back", to: class_path(@conn, :index) %></span>

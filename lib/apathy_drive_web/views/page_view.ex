@@ -1,4 +1,3 @@
 defmodule ApathyDriveWeb.PageView do
-  use ApathyDrive.Web, :view
-
+  use ApathyDriveWeb, :view
 end

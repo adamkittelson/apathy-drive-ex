@@ -1,10 +1,10 @@
 defmodule ApathyDrive.ItemAbility do
-  use ApathyDrive.Web, :model
+  use ApathyDriveWeb, :model
 
   schema "items_abilities" do
-    belongs_to :ability, ApathyDrive.Ability
-    belongs_to :item, ApathyDrive.Item
-    field :value, ApathyDrive.JSONB
+    belongs_to(:ability, ApathyDrive.Ability)
+    belongs_to(:item, ApathyDrive.Item)
+    field(:value, ApathyDrive.JSONB)
 
     timestamps()
   end
@@ -18,5 +18,4 @@ defmodule ApathyDrive.ItemAbility do
     |> foreign_key_constraint(:ability_id)
     |> foreign_key_constraint(:item_id)
   end
-
 end

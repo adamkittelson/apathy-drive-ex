@@ -1,19 +1,19 @@
 defmodule ApathyDrive.Race do
-  use ApathyDrive.Web, :model
+  use ApathyDriveWeb, :model
 
   schema "races" do
-    field :name, :string
-    field :description, :string
-    field :strength, :integer
-    field :agility, :integer
-    field :intellect, :integer
-    field :willpower, :integer
-    field :health, :integer
-    field :charm, :integer
-    field :abilities, ApathyDrive.JSONB
+    field(:name, :string)
+    field(:description, :string)
+    field(:strength, :integer)
+    field(:agility, :integer)
+    field(:intellect, :integer)
+    field(:willpower, :integer)
+    field(:health, :integer)
+    field(:charm, :integer)
+    field(:abilities, ApathyDrive.JSONB)
 
-    has_many :races_traits, ApathyDrive.RaceTrait
-    has_many :traits, through: [:races_traits, :trait]
+    has_many(:races_traits, ApathyDrive.RaceTrait)
+    has_many(:traits, through: [:races_traits, :trait])
 
     timestamps()
   end
@@ -34,20 +34,19 @@ defmodule ApathyDrive.Race do
 
   def ids do
     Repo.all(__MODULE__, select: [:id])
-    |> Enum.map(&(Map.get(&1, :id)))
+    |> Enum.map(&Map.get(&1, :id))
   end
 
   def select do
     Repo.all(__MODULE__, select: [:id, :name])
-    |> Enum.map(&({&1.name, &1.id}))
+    |> Enum.map(&{&1.name, &1.id})
   end
 
   def name(race_id) do
     __MODULE__
     |> Ecto.Query.where(id: ^race_id)
     |> Ecto.Query.select([:name])
-    |> Repo.one
+    |> Repo.one()
     |> Map.get(:name)
   end
-
 end
