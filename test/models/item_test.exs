@@ -1,9 +1,15 @@
 defmodule ApathyDrive.ItemTest do
-  use ApathyDrive.ModelCase
+  use ApathyDrive.DataCase
 
   alias ApathyDrive.Item
 
-  @valid_attrs %{description: "some content", grade: "light", level: 42,  name: "some content", worn_on: "some content"}
+  @valid_attrs %{
+    description: "some content",
+    grade: "light",
+    level: 42,
+    name: "some content",
+    worn_on: "some content"
+  }
   @invalid_attrs %{}
 
   test "changeset with valid attributes" do

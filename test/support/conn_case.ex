@@ -28,6 +28,22 @@ defmodule ApathyDriveWeb.ConnCase do
       # Import URL helpers from the router
       import ApathyDriveWeb.Router.Helpers
 
+      def session_conn() do
+        opts =
+          Plug.Session.init(
+            store: :cookie,
+            key: "foobar",
+            encryption_salt: "encrypted cookie salt",
+            signing_salt: "signing salt",
+            log: false,
+            encrypt: false
+          )
+
+        build_conn()
+        |> Plug.Session.call(opts)
+        |> fetch_session()
+      end
+
       # The default endpoint for testing
       @endpoint ApathyDriveWeb.Endpoint
     end
