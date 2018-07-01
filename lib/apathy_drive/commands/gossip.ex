@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.Gossip do
   use ApathyDrive.Command
+  alias ApathyDrive.Gossip
 
   def keywords, do: ["gos"]
 
@@ -13,7 +14,7 @@ defmodule ApathyDrive.Commands.Gossip do
       html: "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{message}</p>"
     })
 
-    WebSockex.cast(ApathyDrive.Gossip, {:broadcast, character.name, message})
+    Gossip.broadcast("gossip", character.name, message)
     room
   end
 end
