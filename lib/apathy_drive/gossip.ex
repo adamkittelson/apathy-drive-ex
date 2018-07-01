@@ -20,7 +20,7 @@ defmodule ApathyDrive.Gossip do
   end
 
   def init(state) do
-    send(self(), :connect)
+    if config(:enabled), do: send(self(), :connect)
     {:ok, state}
   end
 
@@ -79,5 +79,9 @@ defmodule ApathyDrive.Gossip do
         Process.send_after(self(), :connect, 5000)
         {:noreply, state}
     end
+  end
+
+  defp config(key) do
+    Application.get_all_env(:apathy_drive)[:gossip][key]
   end
 end
