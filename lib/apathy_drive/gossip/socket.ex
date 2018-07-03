@@ -19,7 +19,8 @@ defmodule ApathyDrive.Gossip.Socket do
         "event" => "authenticate",
         "payload" => %{
           "client_id" => config(:client_id),
-          "client_secret" => config(:secret_id)
+          "client_secret" => config(:secret_id),
+          "user_agent" => "Apathy Drive v#{to_string(Application.spec(:apathy_drive, :vsn))}"
         }
       })
 
