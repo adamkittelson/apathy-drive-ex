@@ -71,7 +71,7 @@ defmodule ApathyDrive.Gossip do
         payload: %{players: ApathyDrive.Commands.Who.names()}
       })
 
-    Logger.info("Gossip responding to heartbeat with #{inspect(response)}")
+    Logger.debug("Gossip responding to heartbeat with #{inspect(response)}")
 
     {:reply, {:ok, response}, state}
   end
