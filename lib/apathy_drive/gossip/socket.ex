@@ -31,8 +31,13 @@ defmodule ApathyDrive.Gossip.Socket do
     msg
     |> Poison.decode!()
     |> handle_message()
+    |> case do
+      :ok ->
+        {:ok, state}
 
-    {:ok, state}
+      {:ok, response} ->
+        {:reply, {:text, response}, state}
+    end
   end
 
   def handle_frame(_, state) do
@@ -67,7 +72,7 @@ defmodule ApathyDrive.Gossip.Socket do
   end
 
   defp handle_message(%{"event" => "heartbeat"}) do
-    Logger.debug("Gossip heartbeat received")
+    Gossip.respond_to_heartbeat()
   end
 
   defp handle_message(msg) do

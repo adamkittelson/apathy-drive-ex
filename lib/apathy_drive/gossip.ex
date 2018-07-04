@@ -19,6 +19,10 @@ defmodule ApathyDrive.Gossip do
     GenServer.call(__MODULE__, {:receive_message, payload})
   end
 
+  def respond_to_heartbeat do
+    GenServer.call(__MODULE__, :respond_to_heartbeat)
+  end
+
   def init(state) do
     if config(:enabled), do: send(self(), :connect)
     {:ok, state}
@@ -58,6 +62,18 @@ defmodule ApathyDrive.Gossip do
     })
 
     {:reply, :ok, state}
+  end
+
+  def handle_call(:respond_to_heartbeat, _from, state) do
+    response =
+      Poison.encode!(%{
+        event: "heartbeat",
+        payload: %{players: ApathyDrive.Commands.Who.names()}
+      })
+
+    Logger.info("Gossip responding to heartbeat with #{inspect(response)}")
+
+    {:reply, {:ok, response}, state}
   end
 
   def handle_call({:update_channel_subscriptions, channels}, _from, state) do
