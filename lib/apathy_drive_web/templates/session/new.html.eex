@@ -1,9 +1,12 @@
 <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
+<script>
+  var tab = "<%= @tab %>"
+</script>
 
 <div class="container signup">
   <ul class="tabrow">
     <li class="selected" id="signin_tab">Sign In</li>
-    <li id="signup_tab">Create an Account</li>
+    <li id="signup_tab">Create a Character</li>
   </ul>
 
   <%= form_for @conn, session_path(@conn, :create), [as: :session, id: "signin_form"], fn f -> %>
@@ -27,28 +30,51 @@
   <% end %>
 
   <%= form_for @changeset, character_path(@conn, :create), [id: "signup_form", style: "display: none"], fn f -> %>
-    <%= if @changeset.action do %>
-      <div class="alert alert-danger">
-        <p>Oops, something went wrong! Please check the errors below.</p>
+    <div class="form-group">
+      <label for="name">Character Name <%= error_tag f, :name %></label>
+      <%= text_input f, :name, class: "u-full-width" %>
+    </div>
+
+    <div class="form-group">
+      <label for="faction">Gender <%= error_tag f, :gender %></label>
+      <%= select(f, :gender, ["Male": "male", "Female": "female"], prompt: "Choose Your Character's Gender", class: "u-full-width") %>
+    </div>
+
+    <div class="form-group">
+      <label for="class">Race <%= error_tag f, :race_id %></label>
+      <%= select(f, :race_id, ApathyDrive.Race.select, prompt: "Choose Your Character's Race", class: "u-full-width", id: "race") %>
+    </div>
+
+    <%= for race <- ApathyDrive.Race.all do %>
+      <div id="race-<%= race.id %>" class="races" style="display: none;">
+        <p><%= race.description %></p>
       </div>
     <% end %>
 
     <div class="form-group">
-      <%= label f, :email, "Email Address" %>
+      <label for="class">Class <%= error_tag f, :class_id %></label>
+      <%= select(f, :class_id, ApathyDrive.Class.select, prompt: "Choose Your Character's Class", class: "u-full-width", id: "class") %>
+    </div>
+
+    <%= for class <- ApathyDrive.Class.all do %>
+      <div id="class-<%= class.id %>" class="classes" style="display: none;">
+        <p><%= class.description %></p>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <label for="email">Email Address <%= error_tag f, :email %></label>
       <%= text_input f, :email, class: "u-full-width" %>
-      <%= error_tag f, :email %>
     </div>
 
     <div class="form-group">
-      <%= label f, :password, "Password" %>
+      <label for="password">Password <%= error_tag f, :password %></label>
       <%= password_input f, :password, class: "u-full-width" %>
-      <%= error_tag f, :password %>
     </div>
 
     <div class="form-group">
-      <%= label f, :password_confirmation, "Password Confirmation" %>
+      <label for="password_confirmation">Password Confirmation <%= error_tag f, :password_confirmation %></label>
       <%= password_input f, :password_confirmation, class: "u-full-width" %>
-      <%= error_tag f, :password_confirmation %>
     </div>
 
     <div class="form-group">

@@ -46,6 +46,7 @@ defmodule ApathyDrive.Character do
     field(:flags, :map, default: %{})
     field(:gold, :integer, default: 150)
     field(:race_id, :integer)
+    field(:class_id, :integer)
     field(:pity_modifier, :integer, default: 0)
     field(:race, :string, virtual: true)
     field(:monitor_ref, :any, virtual: true)
@@ -103,13 +104,19 @@ defmodule ApathyDrive.Character do
 
   def sign_up_changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(email password))
-    |> validate_required(~w(email password)a)
+    |> cast(params, ~w(email password name race_id gender class_id))
+    |> validate_required(~w(email password name race_id gender class_id)a)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:email, min: 3, max: 100)
     |> validate_length(:password, min: 6)
     |> unique_constraint(:email, name: :characters_lower_email_index, on: Repo)
     |> validate_confirmation(:password)
+    |> validate_inclusion(:race_id, ApathyDrive.Race.ids())
+    |> validate_inclusion(:class_id, ApathyDrive.Class.ids())
+    |> validate_inclusion(:gender, ["male", "female"])
+    |> validate_format(:name, ~r/^[a-zA-Z]+$/)
+    |> unique_constraint(:name, name: :characters_lower_name_index, on: Repo)
+    |> validate_length(:name, min: 1, max: 12)
   end
 
   def load_abilities(%Character{} = character) do

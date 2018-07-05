@@ -42,6 +42,10 @@ defmodule ApathyDrive.Race do
     |> Enum.map(&{&1.name, &1.id})
   end
 
+  def all do
+    Repo.all(__MODULE__, select: [:id, :name, :description])
+  end
+
   def name(race_id) do
     __MODULE__
     |> Ecto.Query.where(id: ^race_id)

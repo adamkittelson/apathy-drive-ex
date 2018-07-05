@@ -13,11 +13,14 @@ defmodule ApathyDriveWeb.CharacterController do
     hashed_password =
       changeset
       |> get_field(:password)
+      |> to_string
       |> hashpwsalt
 
     changeset =
       changeset
       |> put_change(:password, hashed_password)
+      |> put_change(:room_id, ApathyDrive.Room.start_room_id())
+      |> put_change(:name, capitalize_first(character_params["name"] || ""))
 
     case Repo.insert(changeset) do
       {:ok, character} ->
@@ -26,7 +29,13 @@ defmodule ApathyDriveWeb.CharacterController do
         |> redirect(to: game_path(conn, :game))
 
       {:error, changeset} ->
-        render(conn, ApathyDriveWeb.SessionView, "new.html", changeset: changeset)
+        render(
+          conn,
+          ApathyDriveWeb.SessionView,
+          "new.html",
+          changeset: changeset,
+          tab: "signup_tab"
+        )
     end
   end
 
