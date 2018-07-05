@@ -224,7 +224,7 @@ input[type="button"].button-primary:focus {
 
 /* Forms
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
-/* input[type="email"],
+input[type="email"],
 input[type="number"],
 input[type="search"],
 input[type="text"],
@@ -239,7 +239,7 @@ select {
   border: 1px solid #D1D1D1;
   border-radius: 4px;
   box-shadow: none;
-  box-sizing: border-box; } */
+  box-sizing: border-box; }
 /* Removes awkward default styles on some inputs for iOS */
 input[type="email"],
 input[type="number"],

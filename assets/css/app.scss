@@ -7,9 +7,10 @@ html, body.app {
   form {
     border: 2px solid #fff;
     padding: 20px;
+    max-width: 500px;
   }
   .tabrow {
-    text-align: center;
+    left: 20px;
     list-style: none;
     margin: 25px -10px 0 0;
     padding: 0;
