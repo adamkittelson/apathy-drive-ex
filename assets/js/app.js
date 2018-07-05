@@ -1,16 +1,16 @@
 import "phoenix_html"
-import {Socket} from "phoenix"
+import { Socket } from "phoenix"
 import $ from "js/jquery-1.10.2.min";
 
 var pruneBackscroll, addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, history_marker, setFocus, updateRoom, socket, push;
 focus = null;
-$('html').on('click', function(event) {
+$('html').on('click', function (event) {
   if (window.getSelection().type !== "Range") {
     return setFocus("#command");
   }
 });
 
-updateRoom = function(data) {
+updateRoom = function (data) {
   $('#room .title').html(data['name']);
   $('#room .description').html(data['description']);
   if (data['entities'].length > 0) {
@@ -22,17 +22,17 @@ updateRoom = function(data) {
   return adjustScrollTop();
 };
 
-clearScroll = function() {
+clearScroll = function () {
   return $('#scroll').html("");
 };
 
-adjustScrollTop = function() {
+adjustScrollTop = function () {
   if ($(window).scrollTop() + $(window).height() > $(document).height() - 250) {
     return window.scrollTo(0, $('#scroll')[0].scrollHeight);
   }
 };
 
-setFocus = function(selector) {
+setFocus = function (selector) {
   focus = selector;
   selector = $(selector);
   var x = window.scrollX, y = window.scrollY;
@@ -44,15 +44,15 @@ adjustScrollTop();
 
 var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/ws");
 socket.connect();
-var chan = socket.channel("mud:play", {character: characterID});
+var chan = socket.channel("mud:play", { character: characterID });
 
-chan.join().receive("error", ({reason}) => window.location = "" + window.location.origin )
+chan.join().receive("error", ({ reason }) => window.location = "" + window.location.origin)
 
 // chan.on("room", function(message){
 //   updateRoom(message.html);
 // });
 
-chan.on("update_room", function(message){
+chan.on("update_room", function (message) {
   if (player.power != message.power || player.level != message.level) {
     player.power = message.power;
     player.level = message.level;
@@ -64,49 +64,49 @@ chan.on("update_room", function(message){
 
 });
 
-chan.on("clear scroll", function(message){
+chan.on("clear scroll", function (message) {
   clearScroll();
 });
 
-chan.on("focus", function(message){
+chan.on("focus", function (message) {
   setFocus(message.html).select();
 });
 
-chan.on("disable", function(message){
+chan.on("disable", function (message) {
   disableField(message.html);
 });
 
-chan.on("update prompt", function(message){
+chan.on("update prompt", function (message) {
   $("#prompt").html(message.html);
 });
 
-chan.on("update room essence", function(message) {
+chan.on("update room essence", function (message) {
   $('.room-' + message.room_id + '-default').text(message.default);
   $('.room-' + message.room_id + '-good').text(message.good);
   $('.room-' + message.room_id + '-evil').text(message.evil);
 });
 
-chan.on("redirect", function(message){
+chan.on("redirect", function (message) {
   window.location = "" + window.location.origin + message.url;
 });
 
-chan.on("open tab", function(message){
+chan.on("open tab", function (message) {
   window.open(window.location.origin + message.url, "_blank")
 });
 
-chan.on("up", function(message){
+chan.on("up", function (message) {
   command_history("up");
 });
 
-chan.on("scroll", function(message){
+chan.on("scroll", function (message) {
   addToScroll("#scroll", message.html);
 });
 
-window.push = function(event, message) {
-   chan.push(event, message)
-  };
+window.push = function (event, message) {
+  chan.push(event, message)
+};
 
-pruneBackscroll = function() {
+pruneBackscroll = function () {
   var backscroll_size = 5000;
 
   if ($("#scroll").children().length > backscroll_size) {
@@ -115,18 +115,18 @@ pruneBackscroll = function() {
   };
 };
 
-addToScroll = function(elem, text) {
+addToScroll = function (elem, text) {
   $(elem).append(text);
   pruneBackscroll();
   return adjustScrollTop();
 };
 
-disableField = function(selector) {
+disableField = function (selector) {
   return $(selector).prop('disabled', true).removeAttr('id');
 };
 
 history_marker = null;
-command_history = function(direction) {
+command_history = function (direction) {
   var history;
   history = $('.prompt:disabled');
   if (history.length === 0) {
@@ -144,13 +144,13 @@ command_history = function(direction) {
   return setFocus("#command").select();
 };
 
-$(document).on('keydown', "input", function(event) {
+$(document).on('keydown', "input", function (event) {
   if (event.which === 9 && !event.shiftKey) {
     return event.preventDefault();
   }
 });
 
-$(document).on('keydown', function(event) {
+$(document).on('keydown', function (event) {
   if (!(event.ctrlKey || event.shiftKey || event.metaKey)) {
     setFocus("#command");
   } else if (event.which === 75 && event.metaKey) {
@@ -159,11 +159,11 @@ $(document).on('keydown', function(event) {
   }
 });
 
-$(document).on('keyup', function(event) {
+$(document).on('keyup', function (event) {
   setFocus("#command");
 });
 
-$(document).on('keyup', "input", function(event) {
+$(document).on('keyup', "input", function (event) {
   var command, params;
   event.preventDefault();
   if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {

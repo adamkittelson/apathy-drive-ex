@@ -3,6 +3,89 @@ html, body.app {
   background-color: #000;
 }
 
+.signup {
+  form {
+    border: 2px solid #fff;
+    padding: 20px;
+  }
+  .tabrow {
+    text-align: center;
+    list-style: none;
+    margin: 25px -10px 0 0;
+    padding: 0;
+    line-height: 24px;
+  }
+  .tabrow li {
+    display: inline-block;
+    height: 38px;
+    padding: 0 30px;
+    color: #555;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 38px;
+    letter-spacing: .1rem;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    border: 1px solid #bbb;
+    cursor: pointer;
+    box-sizing: border-box;
+    background-color: #ddd;
+
+    margin: 0;
+  }
+ .tabrow li:hover {
+    color: #FFF;
+    background-color: #1EAEDB;
+    border-color: #1EAEDB;
+  }
+  .tabrow li.selected {
+    color: #555;
+    background-color: #fff;
+  }
+  .tabrow {
+    position: relative;
+  }
+  .tabrow:before {
+    z-index: 1;
+  }
+  .tabrow li {
+    position: relative;
+    z-index: 0;
+  }
+  .tabrow li.selected {
+    z-index: 2;
+    border-bottom-color: #fff;
+  }
+  .tabrow li:before,
+  .tabrow li:after {
+    position: absolute;
+    bottom: -1px;
+    width: 6px;
+    height: 6px;
+    content: " ";
+  }
+  .tabrow li:before {
+    left: -6px;
+  }
+  .tabrow li:after {
+    right: -6px;
+  }
+  .tabrow li {
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+  }
+  .tabrow li:before {
+    border-bottom-right-radius: 6px;
+    border-width: 0 1px 1px 0;
+  }
+  .tabrow li:after {
+    border-bottom-left-radius: 6px;
+    border-width: 0 0 1px 1px;
+  }
+}
+
 body.app {
   .table-container {
     display: table;

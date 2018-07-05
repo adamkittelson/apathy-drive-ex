@@ -1,56 +1,63 @@
 <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
 
-<h2>Sign In</h2>
-<%= form_for @conn, session_path(@conn, :create), [as: :session], fn f -> %>
-  <div class="alert alert-danger">
-    <%= get_flash(@conn, :sign_in) %>
-  </div>
+<div class="container signup">
+  <ul class="tabrow">
+    <li class="selected" id="signin_tab">Sign In</li>
+    <li id="signup_tab">Create an Account</li>
+  </ul>
 
-  <div class="form-group">
-    <%= label f, :email, "Email Address" %>
-    <%= text_input f, :email, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%= label f, :password, "Password" %>
-    <%= password_input f, :password, class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%= submit "Submit", class: "button button-primary" %>
-  </div>
-<% end %>
-<hr/>
-<h2>Sign Up</h2>
-<%= form_for @changeset, character_path(@conn, :create), fn f -> %>
-  <%= if @changeset.action do %>
+  <%= form_for @conn, session_path(@conn, :create), [as: :session, id: "signin_form"], fn f -> %>
     <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
+      <%= get_flash(@conn, :sign_in) %>
+    </div>
+
+    <div class="form-group">
+      <%= label f, :email, "Email Address" %>
+      <%= text_input f, :email, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= label f, :password, "Password" %>
+      <%= password_input f, :password, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%= submit "Submit", class: "button button-primary" %>
     </div>
   <% end %>
 
-  <div class="form-group">
-    <%= label f, :email, "Email Address" %>
-    <%= text_input f, :email, class: "form-control" %>
-    <%= error_tag f, :email %>
-  </div>
+  <%= form_for @changeset, character_path(@conn, :create), [id: "signup_form", style: "display: none"], fn f -> %>
+    <%= if @changeset.action do %>
+      <div class="alert alert-danger">
+        <p>Oops, something went wrong! Please check the errors below.</p>
+      </div>
+    <% end %>
 
-  <div class="form-group">
-    <%= label f, :password, "Password" %>
-    <%= password_input f, :password, class: "form-control" %>
-    <%= error_tag f, :password %>
-  </div>
+    <div class="form-group">
+      <%= label f, :email, "Email Address" %>
+      <%= text_input f, :email, class: "form-control" %>
+      <%= error_tag f, :email %>
+    </div>
 
-  <div class="form-group">
-    <%= label f, :password_confirmation, "Password Confirmation" %>
-    <%= password_input f, :password_confirmation, class: "form-control" %>
-    <%= error_tag f, :password_confirmation %>
-  </div>
+    <div class="form-group">
+      <%= label f, :password, "Password" %>
+      <%= password_input f, :password, class: "form-control" %>
+      <%= error_tag f, :password %>
+    </div>
 
-  <div class="form-group">
-    <%= submit "Submit", class: "button button-primary" %>
-  </div>
-<% end %>
+    <div class="form-group">
+      <%= label f, :password_confirmation, "Password Confirmation" %>
+      <%= password_input f, :password_confirmation, class: "form-control" %>
+      <%= error_tag f, :password_confirmation %>
+    </div>
 
-<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+    <div class="form-group">
+      <%= submit "Submit", class: "button button-primary" %>
+    </div>
+  <% end %>
+
+</div>
+
+
+<script>require("js/signup")</script>
 <script>require("js/nav")</script>
