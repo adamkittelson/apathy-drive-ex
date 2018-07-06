@@ -22,8 +22,6 @@ defmodule ApathyDrive.Commands.Score do
         String.pad_trailing(score_data.name, 13)
       }</span><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
         String.pad_trailing(to_string(score_data.level), 13)
-      }</span><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{
-        String.pad_leading(to_string(score_data.experience), 13)
       }</span> #{resistance(Enum.at(score_data.resistances, 0))} #{
         resistance(Enum.at(score_data.resistances, 1))
       }</p>"
