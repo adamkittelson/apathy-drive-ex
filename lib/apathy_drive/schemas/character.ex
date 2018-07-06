@@ -121,66 +121,40 @@ defmodule ApathyDrive.Character do
     |> validate_length(:name, min: 1, max: 12)
   end
 
-  def load_abilities(%Character{} = character) do
+  def load_abilities(%Character{class_id: class_id, level: level} = character) do
     character =
       character
-      |> Repo.preload([:characters_skills, :trained_skills], force: true)
       |> Map.put(:abilities, %{})
       |> Map.put(:skills, %{})
 
-    Enum.reduce(character.characters_skills, character, fn character_skill, character ->
-      skill =
-        character_skill.skill
-        |> Map.put(:experience, character_skill.experience)
-        |> Skill.set_level()
+    class_abilities =
+      ApathyDrive.ClassAbility
+      |> Ecto.Query.where([ss], ss.class_id == ^class_id and ss.level <= ^level)
+      |> Ecto.Query.preload([:ability])
+      |> Repo.all()
 
-      skill_abilities =
-        ApathyDrive.SkillAbility
-        |> Ecto.Query.where([ss], ss.skill_id == ^skill.id and ss.level <= ^skill.level)
-        |> Ecto.Query.preload([:ability])
-        |> Repo.all()
+    Enum.reduce(class_abilities, character, fn
+      %{ability: %Ability{id: id, kind: "passive"}}, character ->
+        effect = AbilityTrait.load_traits(id)
+        Systems.Effect.add(character, effect)
 
-      character =
-        Enum.reduce(skill_abilities, character, fn
-          %{ability: %Ability{id: id, kind: "passive"}}, character ->
-            case AbilityTrait.load_traits(id) do
-              %{"GrantSkill" => skill_name} = effect ->
-                if character.skills[skill_name] &&
-                     character.skills[skill_name].level > skill.level do
-                  Systems.Effect.add(character, effect)
-                else
-                  character.skills
-                  |> update_in(
-                    &Map.put(&1, skill_name, %Skill{name: skill_name, level: skill.level})
-                  )
-                  |> Systems.Effect.add(effect)
-                end
+      %{level: level, ability: %Ability{id: id} = ability}, character ->
+        ability =
+          put_in(ability.traits, AbilityTrait.load_traits(id))
+          |> Map.put(:level, level)
 
-              %{} = effect ->
-                Systems.Effect.add(character, effect)
-            end
+        ability =
+          case AbilityDamageType.load_damage(id) do
+            [] ->
+              ability
 
-          %{level: level, ability: %Ability{id: id} = ability}, character ->
-            ability =
-              put_in(ability.traits, AbilityTrait.load_traits(id))
-              |> Map.put(:level, level)
+            damage ->
+              update_in(ability.traits, &Map.put(&1, "Damage", damage))
+          end
 
-            ability =
-              case AbilityDamageType.load_damage(id) do
-                [] ->
-                  ability
-
-                damage ->
-                  update_in(ability.traits, &Map.put(&1, "Damage", damage))
-              end
-
-            update_in(character.abilities, fn abilities ->
-              Map.put(abilities, ability.command, ability)
-            end)
+        update_in(character.abilities, fn abilities ->
+          Map.put(abilities, ability.command, ability)
         end)
-
-      character.skills
-      |> update_in(&Map.put(&1, character_skill.skill.name, skill))
     end)
   end
 
