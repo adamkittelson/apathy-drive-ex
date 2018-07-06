@@ -9,6 +9,7 @@ defmodule ApathyDrive.Character do
     Character,
     CharacterSkill,
     CharacterReputation,
+    Class,
     Companion,
     Item,
     Level,
@@ -49,6 +50,7 @@ defmodule ApathyDrive.Character do
     field(:class_id, :integer)
     field(:pity_modifier, :integer, default: 0)
     field(:race, :string, virtual: true)
+    field(:class, :string, virtual: true)
     field(:monitor_ref, :any, virtual: true)
     field(:ref, :any, virtual: true)
     field(:socket, :any, virtual: true)
@@ -195,6 +197,13 @@ defmodule ApathyDrive.Character do
     |> Map.put(:race, race.name)
     |> Map.merge(attributes)
     |> Systems.Effect.add(effect)
+  end
+
+  def load_class(%Character{class_id: class_id} = character) do
+    class = Repo.get(Class, class_id)
+
+    character
+    |> Map.put(:class, class.name)
   end
 
   def load_reputations(%Character{} = character) do
@@ -506,6 +515,7 @@ defmodule ApathyDrive.Character do
     %{
       name: character.name,
       race: character.race,
+      class: character.class,
       level: character.level,
       experience: character.experience,
       perception: Mobile.perception_at_level(character, character.level, room),
