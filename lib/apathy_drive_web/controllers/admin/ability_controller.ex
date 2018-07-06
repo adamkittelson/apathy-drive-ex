@@ -2,7 +2,7 @@ defmodule ApathyDriveWeb.Admin.AbilityController do
   use ApathyDriveWeb, :controller
 
   alias ApathyDrive.Admin
-  alias ApathyDrive.Admin.Ability
+  # alias ApathyDrive.Admin.Ability
 
   def index(conn, _params) do
     abilities = Admin.list_abilities()
