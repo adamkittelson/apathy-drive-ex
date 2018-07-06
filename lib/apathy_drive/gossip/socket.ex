@@ -20,6 +20,8 @@ defmodule ApathyDrive.Gossip.Socket do
         "payload" => %{
           "client_id" => config(:client_id),
           "client_secret" => config(:secret_id),
+          "supports" => ["channels"],
+          "channels" => ["gossip"],
           "user_agent" => "Apathy Drive v#{to_string(Application.spec(:apathy_drive, :vsn))}"
         }
       })
@@ -64,11 +66,6 @@ defmodule ApathyDrive.Gossip.Socket do
 
   defp handle_message(%{"event" => "authenticate", "status" => status}) do
     Logger.debug("Gossip Authentication: #{status}")
-  end
-
-  defp handle_message(%{"event" => "channels/subscribed", "payload" => %{"channels" => channels}}) do
-    Logger.debug("Gossip subscribed to channels: #{inspect(channels)}")
-    Gossip.update_channel_subscriptions(channels)
   end
 
   defp handle_message(%{"event" => "heartbeat"}) do

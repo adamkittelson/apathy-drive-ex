@@ -4,11 +4,7 @@ defmodule ApathyDrive.Gossip do
   require Logger
 
   def start_link() do
-    GenServer.start_link(__MODULE__, %{socket: nil, channels: []}, name: __MODULE__)
-  end
-
-  def update_channel_subscriptions(channels) do
-    GenServer.call(__MODULE__, {:update_channel_subscriptions, channels})
+    GenServer.start_link(__MODULE__, %{socket: nil, channels: ["gossip"]}, name: __MODULE__)
   end
 
   def broadcast(channel, character_name, message) do
@@ -74,12 +70,6 @@ defmodule ApathyDrive.Gossip do
     Logger.debug("Gossip responding to heartbeat with #{inspect(response)}")
 
     {:reply, {:ok, response}, state}
-  end
-
-  def handle_call({:update_channel_subscriptions, channels}, _from, state) do
-    state = %{state | channels: channels}
-    Logger.debug("Updated channel subscriptions: #{inspect(state.channels)}")
-    {:reply, :ok, state}
   end
 
   def handle_info(:connect, state) do
