@@ -2,7 +2,7 @@ defmodule ApathyDriveWeb.Admin.ClassController do
   use ApathyDriveWeb, :controller
 
   alias ApathyDrive.Admin
-  alias ApathyDrive.Admin.Class
+  alias ApathyDrive.Class
 
   def index(conn, _params) do
     classes = Admin.list_classes()
@@ -28,7 +28,8 @@ defmodule ApathyDriveWeb.Admin.ClassController do
 
   def show(conn, %{"id" => id}) do
     class = Admin.get_class!(id)
-    render(conn, "show.html", class: class)
+    abilities = Admin.get_abilities_for_class(class)
+    render(conn, "show.html", class: class, abilities: abilities)
   end
 
   def edit(conn, %{"id" => id}) do

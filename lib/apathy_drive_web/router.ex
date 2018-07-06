@@ -35,7 +35,7 @@ defmodule ApathyDriveWeb.Router do
     pipe_through(:browser)
     pipe_through(:admin)
 
-    get("/abilities", Admin.AbilitiesController, :index)
+    resources("/abilities", Admin.AbilityController)
     get("/damage-types", Admin.DamageTypesController, :index)
     resources("/classes", Admin.ClassController)
   end

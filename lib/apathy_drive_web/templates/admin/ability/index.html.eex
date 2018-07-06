@@ -1,3 +1,33 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Description</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for ability <- @abilities do %>
+    <tr>
+      <td><%= ability.id %></td>
+      <td><%= ability.name %></td>
+      <td><%= ability.description %></td>
+
+      <td class="text-right">
+        <span><%= link "Show", to: ability_path(@conn, :show, ability), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Edit", to: ability_path(@conn, :edit, ability), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Delete", to: ability_path(@conn, :delete, ability), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Ability", to: ability_path(@conn, :new) %></span>
+
+<!--
 <template id="abilities">
   <div id="app">
     <v-app>
@@ -319,3 +349,5 @@
 <script>
   require("js/admin/abilities")
 </script>
+-->
+

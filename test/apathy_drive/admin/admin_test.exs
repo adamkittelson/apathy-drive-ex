@@ -4,7 +4,7 @@ defmodule ApathyDrive.AdminTest do
   alias ApathyDrive.Admin
 
   describe "classes" do
-    alias ApathyDrive.Admin.Class
+    alias ApathyDrive.Class
 
     @valid_attrs %{description: "some description", name: "some name"}
     @update_attrs %{description: "some updated description", name: "some updated name"}

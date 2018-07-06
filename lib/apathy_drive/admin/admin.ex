@@ -6,7 +6,7 @@ defmodule ApathyDrive.Admin do
   import Ecto.Query, warn: false
   alias ApathyDrive.Repo
 
-  alias ApathyDrive.Admin.Class
+  alias ApathyDrive.{Ability, Class, ClassAbility}
 
   @doc """
   Returns the list of classes.
@@ -19,6 +19,19 @@ defmodule ApathyDrive.Admin do
   """
   def list_classes do
     Repo.all(Class)
+  end
+
+  def list_abilities do
+    Ability
+    |> Ecto.Query.order_by(asc: :id)
+    |> Repo.all()
+  end
+
+  def get_abilities_for_class(%Class{id: id}) do
+    ClassAbility
+    |> where([mt], mt.class_id == ^id)
+    |> preload([:ability])
+    |> Repo.all()
   end
 
   @doc """
