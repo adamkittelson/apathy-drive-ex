@@ -31,6 +31,7 @@ defmodule ApathyDrive.Admin do
     ClassAbility
     |> where([mt], mt.class_id == ^id)
     |> preload([:ability])
+    |> Ecto.Query.order_by(asc: :level)
     |> Repo.all()
   end
 
