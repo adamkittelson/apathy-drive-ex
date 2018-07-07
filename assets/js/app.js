@@ -80,6 +80,38 @@ chan.on("update prompt", function (message) {
   $("#prompt").html(message.html);
 });
 
+chan.on("update score", function (score_data) {
+  $("#score-name").text(_.padEnd(score_data.name, 12));
+  $("#score-level").text(_.padEnd(score_data.level, 10));
+  $("#score-accuracy").text(score_data.accuracy);
+  $("#score-race").text(_.padEnd(score_data.race, 12));
+  $("#score-class").text(_.padEnd(score_data.class, 10));
+  $("#score-dodge").text(score_data.dodge);
+  $("#score-ac").text(_.padEnd(score_data.physical_resistance, 12));
+  $("#score-mr").text(_.padEnd(score_data.magical_resistance, 10));
+  $("#score-parry").text(score_data.parry);
+  $("#score-hp").text(_.padEnd(score_data.hp + "/" + score_data.max_hp, 12));
+  $("#score-mana").text(_.padEnd(score_data.mana + "/" + score_data.max_mana, 10));
+  $("#score-block").text(score_data.block);
+  $("#score-stealth").text(score_data.stealth);
+  $("#score-strength").text(_.padEnd(score_data.strength, 7));
+  $("#score-agility").text(_.padEnd(score_data.agility, 8));
+  $("#score-perception").text(score_data.perception);
+  $("#score-intellect").text(_.padEnd(score_data.intellect, 7));
+  $("#score-health").text(_.padEnd(score_data.health, 8));
+  $("#score-crits").text(score_data.crits);
+  $("#score-willpower").text(_.padEnd(score_data.willpower, 7));
+  $("#score-charm").text(_.padEnd(score_data.charm, 8));
+  $("#score-casting").text(score_data.spellcasting);
+  $("#score-stone").text(_.padEnd(score_data.resistances.Stone, 5));
+  $("#score-lightning").text(score_data.resistances.Electricity);
+  $("#score-fire").text(_.padEnd(score_data.resistances.Fire, 5));
+  $("#score-cold").text(score_data.resistances.Cold);
+  $("#score-water").text(_.padEnd(score_data.resistances.Water, 5));
+  $("#score-poison").text(score_data.resistances.Poison);
+  $("#score-effects").text(_.join(score_data.effects, "\n"));
+});
+
 chan.on("update room essence", function (message) {
   $('.room-' + message.room_id + '-default').text(message.default);
   $('.room-' + message.room_id + '-good').text(message.good);
@@ -99,7 +131,7 @@ chan.on("up", function (message) {
 });
 
 chan.on("scroll", function (message) {
-  addToScroll("#scroll", message.html);
+  addToScroll("#scroll", _.unescape(message.html));
 });
 
 window.push = function (event, message) {

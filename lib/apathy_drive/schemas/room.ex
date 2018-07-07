@@ -96,12 +96,22 @@ defmodule ApathyDrive.Room do
 
   def update_mobile(%Room{} = room, mobile_ref, fun) do
     if mobile = room.mobiles[mobile_ref] do
-      case fun.(mobile) do
-        %Room{} = updated_room ->
-          updated_room
+      room =
+        case fun.(mobile) do
+          %Room{} = updated_room ->
+            updated_room
 
-        %{} = updated_mobile ->
-          put_in(room.mobiles[mobile_ref], updated_mobile)
+          %{} = updated_mobile ->
+            put_in(room.mobiles[mobile_ref], updated_mobile)
+        end
+
+      case room.mobiles[mobile_ref] do
+        %Character{} = character ->
+          Character.update_score(character, room)
+          room
+
+        _ ->
+          room
       end
     else
       room

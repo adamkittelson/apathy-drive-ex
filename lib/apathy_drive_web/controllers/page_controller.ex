@@ -21,7 +21,9 @@ defmodule ApathyDriveWeb.PageController do
             |> redirect(to: character_path(conn, :edit))
 
           %Character{} ->
-            render(conn, "game.html", [])
+            conn
+            |> put_layout({ApathyDriveWeb.LayoutView, :game})
+            |> render("game.html", [])
 
           nil ->
             conn

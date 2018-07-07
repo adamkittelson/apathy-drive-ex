@@ -25,13 +25,11 @@ exports.config = {
     stylesheets: {
       joinTo: {
         "css/admin.css": /admin\.scss$/,
-        "css/app.css": /(?!admin\.scss)$/
-      },
-      order: {
-        before: [
-          "css/normalize.css",
-          "css/skeleton.css"
-        ]
+        "css/app.css": /(app\.scss)$/,
+        "css/game.css": /(game\.scss)$/,
+        "css/normalize.css": /(normalize\.css)$/,
+        "css/skeleton.css": /(skeleton\.css)$/,
+        "css/nav.css": /(nav\.scss)$/
       }
     }
   },

@@ -1,0 +1,172 @@
+html, body.app {
+  height: 100%;
+  background-color: #000;
+}
+
+.container {
+  max-width: 900px;
+  min-width: 725px;
+  color: white;
+  label.error {
+    color: red;
+  }
+  input {
+    background: #141414;
+  }
+  textarea {
+    background: #141414;
+    height: 150px;
+  }
+  select {
+    color: black;
+  }
+  margin: 0 0 0 25px;
+}
+
+canvas {
+  position: absolute;
+  top: 84px;
+  right: 20px;
+  z-index: 1;
+}
+
+.score {
+  position: fixed;
+  white-space: pre-wrap;
+  font-family: "Inconsolata", "Andale Mono", Monospace;
+  top: 65px;
+  left: 5px;
+  color: silver;
+}
+
+#scroll {
+  margin-left: 400px;
+  height: 100%;
+  white-space: pre-wrap;
+  font-family: "Inconsolata", "Andale Mono", Monospace;
+  color: silver;
+  line-height: 9px;
+  width: 800px;
+}
+
+#footer {
+  margin-left: 400px;
+  font-family: "Inconsolata", "Andale Mono", Monospace;
+  color: silver;
+  line-height: 9px;
+  margin-bottom: 1em;
+  width: 100%;
+  padding-top: 5px;
+}
+
+input.prompt {
+  background-color: black !important;
+  border: none;
+  color: silver;
+  outline: none;
+  font-size: 14px;
+  display: inline;
+  margin-bottom: 0px;
+  width: 100%;
+  position: relative;
+  left: 115px;
+  top: -13px;
+}
+
+
+
+
+/* old */
+
+.dark-cyan {
+  color: teal; }
+
+.cyan {
+  color: cyan; }
+
+.dark-red {
+  color: maroon; }
+
+.red {
+  color: red; }
+
+.dark-magenta {
+  color: darkmagenta; }
+
+.magenta {
+  color: magenta; }
+
+.white {
+  color: white; }
+
+.dark-yellow {
+  color: olive; }
+
+.yellow {
+  color: yellow; }
+
+.dark-blue {
+  color: #0000aa; }
+
+.blue {
+  color: blue; }
+
+.dark-green {
+  color: green; }
+
+.green {
+  color: chartreuse; }
+
+.grey {
+  color: silver; }
+
+.dark-grey {
+  color: gray; }
+
+.underline {
+  border-bottom: 1px solid green;
+  padding-bottom: 3px;
+  margin-bottom: 20px; }
+
+pre {
+  font-family: "Inconsolata", "Andale Mono", Monospace;
+}
+
+#scroll p {
+  line-height: 19px;
+  margin-bottom: 0px;
+}
+
+.prompt::selection {
+  background-color: #0000aa;
+  color: white; }
+
+.prompt:disabled {
+  color: olive; }
+
+#prompt {
+  color: silver;
+  margin-right: 5px;
+}
+
+
+.ability-index table {
+  margin: 0px;
+}
+.ability th:first-child {
+ width: 100px;
+}
+
+.CodeMirror {
+  height: inherit;
+  margin-bottom: 1.5rem;
+  border: 1px solid silver;
+}
+
+a.anchor{display: block; position: relative; top: -7.0rem; visibility: hidden;}
+
+#fb {margin-top: 40px;}
+
+.alert { color: red;}
+
+form.link { margin-bottom: 0;}

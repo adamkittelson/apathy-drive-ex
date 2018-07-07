@@ -468,6 +468,11 @@ defmodule ApathyDrive.Character do
     trunc(max_mana * character.mana)
   end
 
+  def update_score(%Character{socket: socket} = character, room) do
+    data = score_data(character, room)
+    send(socket, {:update_score, data})
+  end
+
   def score_data(%Character{} = character, room) do
     effects =
       character.effects
@@ -489,7 +494,13 @@ defmodule ApathyDrive.Character do
     resistances =
       ApathyDrive.DamageType
       |> Repo.all()
-      |> Enum.map(&{&1.name, Mobile.ability_value(character, "Resist#{&1.name}")})
+      |> Enum.reduce(%{}, fn damage_type, resistances ->
+        Map.put(
+          resistances,
+          damage_type.name,
+          Mobile.ability_value(character, "Resist#{damage_type.name}")
+        )
+      end)
 
     %{
       name: character.name,

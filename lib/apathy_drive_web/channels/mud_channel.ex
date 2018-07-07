@@ -72,6 +72,12 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:update_score, %{} = data}, socket) do
+    Phoenix.Channel.push(socket, "update score", data)
+
+    {:noreply, socket}
+  end
+
   def handle_info({:scroll, %{} = data}, socket) do
     if socket.assigns[:spirit_id] in Map.keys(data) do
       send_scroll(socket, data[socket.assigns[:monster_ref]])

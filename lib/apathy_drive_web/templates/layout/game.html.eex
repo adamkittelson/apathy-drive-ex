@@ -8,21 +8,19 @@
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/normalize.css") %>">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/skeleton.css") %>">
-  <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/nav.css") %>">
-  <link rel="stylesheet" href="<%= static_path(@conn, "/css/components.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/game.css") %>">
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   <script>require("js/jquery-1.10.2.min");</script>
   <script>require("js/nav");</script>
-  <script src="https://unpkg.com/vue"></script>
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
 </head>
 <body class="app">
-  <div class="container">
-    <%= render @view_module, @view_template, assigns %>
-  </div>
+  <%= render @view_module, @view_template, assigns %>
   <!-- Page Footer Layout
        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <script>require("phoenix_html");</script>
+  <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+
 </body>
 </html>
