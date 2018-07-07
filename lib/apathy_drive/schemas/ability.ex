@@ -671,39 +671,47 @@ defmodule ApathyDrive.Ability do
       dodged?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
 
+        exp = Mobile.dodge_at_level(target, target.level, room)
+
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_skill_experience(
-            fn -> ["dodge"] end,
-            Mobile.dodge_at_level(target, target.level, room)
-          )
+          |> Mobile.add_attribute_experience(%{
+            agility: exp * 0.9,
+            charm: exp * 0.1
+          })
 
         put_in(room.mobiles[target.ref], target)
 
       blocked?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
 
+        exp = Mobile.block_at_level(target, target.level, room)
+
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_skill_experience(
-            fn -> ["shield"] end,
-            Mobile.block_at_level(target, target.level)
-          )
+          |> Mobile.add_attribute_experience(%{
+            strength: exp * 0.7,
+            agility: exp * 0.2,
+            charm: exp * 0.1
+          })
 
         put_in(room.mobiles[target.ref], target)
 
       parried?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :parried))
 
+        exp = Mobile.parry_at_level(target, target.level)
+
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_skill_experience(
-            fn -> [Character.weapon(target).grade] end,
-            Mobile.parry_at_level(target, target.level)
-          )
+          |> Mobile.add_attribute_experience(%{
+            strength: exp * 0.2,
+            agility: exp * 0.7,
+            charm: exp * 0.1
+          })
 
         put_in(room.mobiles[target.ref], target)
 
@@ -942,21 +950,29 @@ defmodule ApathyDrive.Ability do
       |> Map.put(:ability_special, :normal)
       |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
-    exp =
-      [:strength, :agility, :intellect, :willpower, :health, :charm]
-      |> Enum.map(&Mobile.attribute_at_level(target, &1, target_level))
-      |> Enum.reduce(0, &(&1 + &2))
-      |> Kernel.*(damage_percent)
-      |> trunc
+    caster_attribute =
+      if ability.mana > 0 do
+        :intellect
+      else
+        :strength
+      end
 
-    caster = Mobile.add_skill_experience(caster, fn -> ability.skills end, exp)
+    caster =
+      Mobile.add_attribute_experience(caster, %{
+        caster_attribute => Map.get(caster, caster_attribute)
+      })
 
-    skills =
-      target
-      |> Map.get(:equipment, [])
-      |> Enum.map(& &1.grade)
+    target_attribute =
+      if ability.mana > 0 do
+        :willpower
+      else
+        :strength
+      end
 
-    target = Mobile.add_skill_experience(target, fn -> skills end, exp)
+    target =
+      Mobile.add_attribute_experience(target, %{
+        target_attribute => Map.get(target, target_attribute)
+      })
 
     {caster, target}
   end

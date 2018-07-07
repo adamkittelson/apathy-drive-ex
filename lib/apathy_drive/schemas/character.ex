@@ -473,6 +473,10 @@ defmodule ApathyDrive.Character do
     send(socket, {:update_score, data})
   end
 
+  def pulse_score_attribute(%Character{socket: socket}, attribute) do
+    send(socket, {:pulse_score_attribute, attribute})
+  end
+
   def score_data(%Character{} = character, room) do
     effects =
       character.effects
@@ -577,80 +581,60 @@ defmodule ApathyDrive.Character do
       character_value + equipment_value
     end
 
-    def add_skill_experience(%Character{} = character, skills, amount) when is_list(skills) do
-      amount = max(1, div(trunc(amount), length(skills) + 1))
+    def add_attribute_experience(%Character{} = character, %{} = attributes) do
+      Enum.reduce(attributes, character, fn {attribute, amount}, character ->
+        Character.pulse_score_attribute(character, attribute)
 
-      character = Character.add_experience(character, amount)
+        character =
+          character
+          |> Ecto.Changeset.change(%{
+            "#{attribute}_experience":
+              Map.get(character, :"#{attribute}_experience") + trunc(amount)
+          })
+          |> Repo.update!()
 
-      Enum.reduce(skills, character, fn skill, character ->
-        add_skill_experience(character, skill, amount)
+        # tnl =
+        #   trunc(
+        #     max(
+        #       Level.exp_to_next_skill_level(
+        #         skill.level,
+        #         skill.experience,
+        #         skill.training_cost_multiplier
+        #       ),
+        #       0
+        #     )
+        #   )
+
+        # if tnl <= 0 do
+        #   old_abilities = Map.values(character.abilities)
+
+        #   character = Character.load_abilities(character)
+
+        #   new_abilities = Map.values(character.abilities)
+
+        #   level = character.skills[skill.name].level
+
+        #   Mobile.send_scroll(
+        #     character,
+        #     "<p><span class='yellow'>Your #{skill.name} skill advances to level #{level}!</span></p>"
+        #   )
+
+        #   Enum.each(new_abilities, fn ability ->
+        #     unless ability in old_abilities do
+        #       Mobile.send_scroll(
+        #         character,
+        #         "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+        #       )
+
+        #       Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
+        #     end
+        #   end)
+
+        #   character
+        # else
+        #   put_in(character.skills[skill.name], skill)
+        # end
       end)
-    end
-
-    def add_skill_experience(%Character{} = character, %Skill{} = skill, amount) do
-      skill = Map.put(skill, :experience, skill.experience + amount)
-
-      tnl =
-        trunc(
-          max(
-            Level.exp_to_next_skill_level(
-              skill.level,
-              skill.experience,
-              skill.training_cost_multiplier
-            ),
-            0
-          )
-        )
-
-      Repo.insert(
-        %CharacterSkill{
-          character_id: character.id,
-          skill_id: skill.id,
-          experience: skill.experience
-        },
-        on_conflict: :replace_all,
-        conflict_target: [:character_id, :skill_id]
-      )
-
-      if tnl <= 0 do
-        old_abilities = Map.values(character.abilities)
-
-        character = Character.load_abilities(character)
-
-        new_abilities = Map.values(character.abilities)
-
-        level = character.skills[skill.name].level
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='yellow'>Your #{skill.name} skill advances to level #{level}!</span></p>"
-        )
-
-        Enum.each(new_abilities, fn ability ->
-          unless ability in old_abilities do
-            Mobile.send_scroll(
-              character,
-              "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
-            )
-
-            Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
-          end
-        end)
-
-        character
-      else
-        put_in(character.skills[skill.name], skill)
-      end
-    end
-
-    def add_skill_experience(%Character{} = character, skill_name, amount)
-        when is_binary(skill_name) do
-      skill = character.skills[skill_name] || Repo.get_by!(Skill, name: skill_name)
-      add_skill_experience(character, skill, amount)
-    end
-
-    def add_skill_experience(%Character{} = character, skill_fun, amount) do
-      add_skill_experience(character, skill_fun.(), amount)
     end
 
     def accuracy_at_level(character, level, room) do

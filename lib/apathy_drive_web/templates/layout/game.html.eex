@@ -11,7 +11,8 @@
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/nav.css") %>">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/game.css") %>">
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
-  <script>require("js/jquery-1.10.2.min");</script>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
   <script>require("js/nav");</script>
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
 </head>
