@@ -686,7 +686,7 @@ defmodule ApathyDrive.Ability do
       blocked?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
 
-        exp = Mobile.block_at_level(target, target.level, room)
+        exp = Mobile.block_at_level(target, target.level)
 
         target =
           target

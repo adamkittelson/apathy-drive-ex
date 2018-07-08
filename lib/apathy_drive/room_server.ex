@@ -166,6 +166,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_race()
         |> Character.load_class()
         |> Character.load_reputations()
+        |> Character.set_attribute_levels()
         |> Character.load_abilities()
         |> Character.load_items()
         |> Map.put(:socket, socket)

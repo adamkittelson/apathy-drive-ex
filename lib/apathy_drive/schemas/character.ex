@@ -80,6 +80,7 @@ defmodule ApathyDrive.Character do
     field(:reputations, :map, virtual: true, default: %{})
     field(:skills, :map, virtual: true, default: %{})
     field(:editing, :any, virtual: true)
+    field(:attribute_levels, :any, virtual: true, default: %{})
 
     belongs_to(:room, Room)
 
@@ -163,6 +164,32 @@ defmodule ApathyDrive.Character do
     end)
   end
 
+  def set_attribute_levels(%Character{} = character) do
+    character =
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.reduce(character, fn stat, character ->
+        exp = Map.get(character, :"#{stat}_experience")
+
+        level = Level.level_at_exp(exp, 1.0)
+
+        character
+        |> put_in([Access.key!(:attribute_levels), stat], level)
+        |> put_in([Access.key!(stat)], character.race[stat] + level)
+      end)
+
+    Map.put(character, :level, level(character))
+  end
+
+  def level(%Character{} = character) do
+    average_attribute_level =
+      character.attribute_levels
+      |> Map.values()
+      |> Enum.sum()
+      |> div(6)
+
+    average_attribute_level + 1
+  end
+
   def load_race(%Character{race_id: race_id} = character) do
     race = Repo.get(Race, race_id)
 
@@ -170,11 +197,10 @@ defmodule ApathyDrive.Character do
       RaceTrait.load_traits(race_id)
       |> Map.put("stack_key", "race")
 
-    attributes = Map.take(race, [:strength, :agility, :intellect, :willpower, :health, :charm])
+    race = Map.take(race, [:name, :strength, :agility, :intellect, :willpower, :health, :charm])
 
     character
-    |> Map.put(:race, race.name)
-    |> Map.merge(attributes)
+    |> Map.put(:race, race)
     |> Systems.Effect.add(effect)
   end
 
@@ -508,7 +534,7 @@ defmodule ApathyDrive.Character do
 
     %{
       name: character.name,
-      race: character.race,
+      race: character.race.name,
       class: character.class,
       level: character.level,
       perception: Mobile.perception_at_level(character, character.level, room),
@@ -582,8 +608,12 @@ defmodule ApathyDrive.Character do
     end
 
     def add_attribute_experience(%Character{} = character, %{} = attributes) do
+      character_level = character.level
+
       Enum.reduce(attributes, character, fn {attribute, amount}, character ->
         Character.pulse_score_attribute(character, attribute)
+
+        attribute_level = character.attribute_levels[attribute]
 
         character =
           character
@@ -593,47 +623,50 @@ defmodule ApathyDrive.Character do
           })
           |> Repo.update!()
 
-        # tnl =
-        #   trunc(
-        #     max(
-        #       Level.exp_to_next_skill_level(
-        #         skill.level,
-        #         skill.experience,
-        #         skill.training_cost_multiplier
-        #       ),
-        #       0
-        #     )
-        #   )
+        new_attribute_level =
+          character
+          |> Map.get(:"#{attribute}_experience")
+          |> Level.level_at_exp(1.0)
 
-        # if tnl <= 0 do
-        #   old_abilities = Map.values(character.abilities)
+        if new_attribute_level > attribute_level do
+          old_abilities = Map.values(character.abilities)
 
-        #   character = Character.load_abilities(character)
+          character =
+            character
+            |> Character.set_attribute_levels()
+            |> Character.load_abilities()
 
-        #   new_abilities = Map.values(character.abilities)
+          new_abilities = Map.values(character.abilities)
 
-        #   level = character.skills[skill.name].level
+          Mobile.send_scroll(
+            character,
+            "<p><span class='yellow'>Your #{attribute} increases to #{
+              Map.get(character, attribute)
+            }!</span></p>"
+          )
 
-        #   Mobile.send_scroll(
-        #     character,
-        #     "<p><span class='yellow'>Your #{skill.name} skill advances to level #{level}!</span></p>"
-        #   )
+          if character.level > character_level do
+            Mobile.send_scroll(
+              character,
+              "<p><span class='yellow'>Your level increases to #{character.level}!</span></p>"
+            )
+          end
 
-        #   Enum.each(new_abilities, fn ability ->
-        #     unless ability in old_abilities do
-        #       Mobile.send_scroll(
-        #         character,
-        #         "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
-        #       )
+          Enum.each(new_abilities, fn ability ->
+            unless ability in old_abilities do
+              Mobile.send_scroll(
+                character,
+                "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+              )
 
-        #       Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
-        #     end
-        #   end)
+              Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
+            end
+          end)
 
-        #   character
-        # else
-        #   put_in(character.skills[skill.name], skill)
-        # end
+          character
+        else
+          character
+        end
       end)
     end
 
@@ -945,7 +978,7 @@ defmodule ApathyDrive.Character do
         end)
 
       "#{character.name} is a #{descriptions[:health]}, #{descriptions[:strength]} #{
-        character.race
+        character.race.name
       }. {{target:He moves/She moves/They move}} #{descriptions[:agility]}, and {{target:is/is/are}} #{
         descriptions[:charm]
       } #{character.name} appears to be #{descriptions[:intellect]} and #{
