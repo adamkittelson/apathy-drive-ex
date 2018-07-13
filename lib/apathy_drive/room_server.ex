@@ -180,6 +180,12 @@ defmodule ApathyDrive.RoomServer do
 
       case Presence.track(socket, "spirits:online", character.id, %{name: character.name}) do
         {:ok, _} ->
+          Gossip.player_sign_in(character.name)
+
+          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+            html: "<p>#{character.name} just entered the Realm.</p>"
+          })
+
           :ok
 
         {:error, {:already_tracked, _pid, _topic, _key}} ->
@@ -358,6 +364,13 @@ defmodule ApathyDrive.RoomServer do
       room
       |> update_in([:mobiles], &Map.delete(&1, ref))
       |> update_in([:mobiles], &Map.delete(&1, companion && companion.ref))
+
+    Gossip.player_sign_out(character.name)
+    Presence.untrack(character.socket, "spirits:online", character.id)
+
+    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+      html: "<p>#{character.name} just left the Realm.</p>"
+    })
 
     {:noreply, room}
   end

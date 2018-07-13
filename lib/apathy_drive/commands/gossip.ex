@@ -1,6 +1,5 @@
 defmodule ApathyDrive.Commands.Gossip do
   use ApathyDrive.Command
-  alias ApathyDrive.Gossip
 
   def keywords, do: ["gos"]
 
@@ -14,7 +13,7 @@ defmodule ApathyDrive.Commands.Gossip do
       html: "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{message}</p>"
     })
 
-    Gossip.broadcast("gossip", character.name, message)
+    Gossip.broadcast("gossip", %{name: character.name, message: message})
     room
   end
 end

@@ -137,16 +137,16 @@ defmodule ApathyDriveWeb.MUDChannel do
         },
         socket
       ) do
-    (Presence.metas(joins) -- Presence.metas("spirits:online"))
-    |> Enum.each(fn %{name: name} ->
-      Phoenix.Channel.push(socket, "scroll", %{:html => "<p>#{name} just entered the Realm.</p>"})
-    end)
+    # (Presence.metas(joins) -- Presence.metas("spirits:online"))
+    # |> Enum.each(fn %{name: name} ->
+    #   Phoenix.Channel.push(socket, "scroll", %{:html => "<p>#{name} just entered the Realm.</p>"})
+    # end)
 
-    leaves
-    |> Presence.metas()
-    |> Enum.each(fn %{name: name} ->
-      Phoenix.Channel.push(socket, "scroll", %{:html => "<p>#{name} just left the Realm.</p>"})
-    end)
+    # leaves
+    # |> Presence.metas()
+    # |> Enum.each(fn %{name: name} ->
+    #   Phoenix.Channel.push(socket, "scroll", %{:html => "<p>#{name} just left the Realm.</p>"})
+    # end)
 
     {:noreply, socket}
   end

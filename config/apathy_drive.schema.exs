@@ -253,21 +253,21 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       hidden: true,
       to: "apathy_drive.Elixir.ApathyDrive.Repo.extensions.Elixir.Extensions.JSON.library"
     ],
-    "apathy_drive.gossip.client_id": [
+    "gossip.client_id": [
       commented: false,
       datatype: :binary,
       default: "",
       doc: "client id for Gossip authentication",
       hidden: false,
-      to: "apathy_drive.gossip.client_id"
+      to: "gossip.client_id"
     ],
-    "apathy_drive.gossip.secret_id": [
+    "gossip.client_secret": [
       commented: false,
       datatype: :binary,
       default: "",
       doc: "secret id for Gossip authentication",
       hidden: false,
-      to: "apathy_drive.gossip.secret_id"
+      to: "gossip.client_secret"
     ]
   ],
   transforms: [],
