@@ -1,6 +1,6 @@
 defmodule ApathyDriveWeb.MUDChannel do
   use ApathyDriveWeb, :channel
-  alias ApathyDrive.{Character, Mobile, Presence, RoomServer}
+  alias ApathyDrive.{Character, Mobile, RoomServer}
 
   def join("mud:play", %{"character" => token}, socket) do
     case Phoenix.Token.verify(socket, "character", token, max_age: 1_209_600) do
@@ -130,24 +130,7 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info(
-        %Phoenix.Socket.Broadcast{
-          event: "presence_diff",
-          payload: %{joins: joins, leaves: leaves}
-        },
-        socket
-      ) do
-    # (Presence.metas(joins) -- Presence.metas("spirits:online"))
-    # |> Enum.each(fn %{name: name} ->
-    #   Phoenix.Channel.push(socket, "scroll", %{:html => "<p>#{name} just entered the Realm.</p>"})
-    # end)
-
-    # leaves
-    # |> Presence.metas()
-    # |> Enum.each(fn %{name: name} ->
-    #   Phoenix.Channel.push(socket, "scroll", %{:html => "<p>#{name} just left the Realm.</p>"})
-    # end)
-
+  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
     {:noreply, socket}
   end
 

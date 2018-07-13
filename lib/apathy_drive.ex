@@ -12,8 +12,7 @@ defmodule ApathyDrive do
       worker(ApathyDrive.Migrator, [], restart: :temporary),
       supervisor(ApathyDrive.Presence, []),
       supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
-      worker(ApathyDrive.Metrics, []),
-      supervisor(Gossip.Supervisor, [])
+      worker(ApathyDrive.Metrics, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
