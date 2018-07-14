@@ -21,12 +21,6 @@ defmodule ApathyDrive.Item do
     field(:level, :integer, virtual: true)
     field(:equipped, :boolean, virtual: true, default: false)
     field(:hidden, :boolean, virtual: true, default: false)
-    field(:strength, :integer, virtual: true)
-    field(:agility, :integer, virtual: true)
-    field(:intellect, :integer, virtual: true)
-    field(:willpower, :integer, virtual: true)
-    field(:health, :integer, virtual: true)
-    field(:charm, :integer, virtual: true)
     field(:instance_id, :integer, virtual: true)
     field(:damage, :any, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
@@ -50,23 +44,6 @@ defmodule ApathyDrive.Item do
 
   @required_fields ~w(name description worn_on level grade)a
   @optional_fields ~w(abilities global_drop)a
-  @grades %{
-    "mystic armour" => %{
-      strength: -1,
-      intellect: 1,
-      willpower: 1
-    },
-    "light armour" => %{
-      agility: 1,
-      charm: 1,
-      willpower: -1
-    },
-    "heavy armour" => %{
-      strength: 1,
-      health: 1,
-      agility: -1
-    }
-  }
   @rarities %{
     "common" => %{
       multiplier: 1,
@@ -106,7 +83,6 @@ defmodule ApathyDrive.Item do
     values =
       ii
       |> Map.take([:level, :equipped, :hidden, :purchased])
-      |> Map.merge(generate_item_attributes(item.rarity, item.grade))
 
     item
     |> Map.merge(values)
@@ -116,14 +92,7 @@ defmodule ApathyDrive.Item do
   end
 
   def from_shop(%Item{} = item) do
-    Map.merge(item, generate_item_attributes(item.rarity, item.grade))
-  end
-
-  def attribute_at_level(%Item{} = item, level, attribute) do
-    level = min(item.level, level)
-    value = Map.get(item, attribute)
-
-    value + value / 10 * (level - 1)
+    item
   end
 
   def power_at_level(%Item{} = item, level) do
@@ -242,30 +211,13 @@ defmodule ApathyDrive.Item do
     power_at_level(item, item.level) / 3
   end
 
-  def generate_item_attributes(rarity, grade) do
-    %{
-      strength: @rarities[rarity].multiplier * (3 + (get_in(@grades, [grade, :strength]) || 0)),
-      agility: @rarities[rarity].multiplier * (3 + (get_in(@grades, [grade, :agility]) || 0)),
-      intellect: @rarities[rarity].multiplier * (3 + (get_in(@grades, [grade, :intellect]) || 0)),
-      willpower: @rarities[rarity].multiplier * (3 + (get_in(@grades, [grade, :willpower]) || 0)),
-      health: @rarities[rarity].multiplier * (3 + (get_in(@grades, [grade, :health]) || 0)),
-      charm: @rarities[rarity].multiplier * (3 + (get_in(@grades, [grade, :charm]) || 0))
+  def generate_for_character!(%Item{} = item, %Character{} = character, source) do
+    ei = %ItemInstance{
+      character_id: character.id,
+      item_id: item.id,
+      level: character.level,
+      purchased: source == :shop
     }
-  end
-
-  def generate_for_character!(
-        %Item{rarity: rarity, grade: grade} = item,
-        %Character{} = character,
-        source
-      ) do
-    ei =
-      %ItemInstance{
-        character_id: character.id,
-        item_id: item.id,
-        level: character.level,
-        purchased: source == :shop
-      }
-      |> Map.merge(generate_item_attributes(rarity, grade))
 
     item =
       ei
@@ -312,15 +264,7 @@ defmodule ApathyDrive.Item do
 
   def price(%Item{rarity: "legendary"}), do: "priceless"
 
-  def price(%Item{rarity: rarity, level: level} = item) do
-    attributes =
-      [:strength, :agility, :intellect, :willpower, :health, :charm]
-      |> Enum.reduce(0, fn attribute, total ->
-        total + attribute_at_level(item, level, attribute)
-      end)
-
-    trunc(attributes * @rarities[rarity].multiplier)
-  end
+  def price(%Item{rarity: rarity, level: level} = item), do: 5
 
   def color(%Item{rarity: rarity}) do
     @rarities[rarity].color

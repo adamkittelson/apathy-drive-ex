@@ -86,10 +86,10 @@ defmodule ApathyDrive.Commands.Look do
         look_at_mobile(target, character)
 
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
-        look_at_item(character, target, room)
+        look_at_item(character, target)
 
       true ->
-        look_at_item(character, Enum.join(arguments, " "), room)
+        look_at_item(character, Enum.join(arguments, " "))
     end
   end
 
@@ -279,186 +279,37 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.any?(&Map.has_key?(&1, "blinded"))
   end
 
-  def look_at_item(%Character{} = character, %Item{} = item, room) do
-    current = Character.score_data(character, room)
+  def look_at_item(%Character{} = character, %Item{} = item) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> <span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{
+        item.grade
+      }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{item.level}</span></p>"
+    )
 
-    case ApathyDrive.Commands.Wear.equip_item(character, item, false) do
-      false ->
-        Mobile.send_scroll(character, "<p>#{item.description}</p>")
+    Mobile.send_scroll(character, "<p>#{item.description}</p>")
 
-        item.effects
-        |> Map.values()
-        |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
-        |> Enum.map(& &1["StatusMessage"])
-        |> Enum.each(fn effect_message ->
-          Mobile.send_scroll(character, "<p>#{effect_message}</p>")
-        end)
-
-        Mobile.send_scroll(
-          character,
-          "\n\n<p><span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> <span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{
-            item.grade
-          }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{item.level}</span></p>"
-        )
-
-      %{equipped: _, character: equipped} ->
-        Mobile.send_scroll(character, "<p>#{item.description}</p>")
-
-        item.effects
-        |> Map.values()
-        |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
-        |> Enum.map(& &1["StatusMessage"])
-        |> Enum.each(fn effect_message ->
-          Mobile.send_scroll(character, "<p>#{effect_message}</p>")
-        end)
-
-        Mobile.send_scroll(
-          character,
-          "\n\n<p><span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> <span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{
-            item.grade
-          }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{item.level}</span></p>"
-        )
-
-        equipped = Character.score_data(equipped, room)
-
-        score_data =
-          current
-          |> Enum.reduce(%{}, fn {key, val}, values ->
-            Map.put(values, key, %{color: color(val, equipped[key]), value: equipped[key]})
-          end)
-
-        hits =
-          Enum.join([score_data.hp.value, trunc(score_data.max_hp.value)], "/")
-          |> String.pad_trailing(13)
-
-        mana =
-          Enum.join([score_data.mana.value, trunc(score_data.max_mana.value)], "/")
-          |> String.pad_trailing(13)
-
-        Mobile.send_scroll(
-          character,
-          "\n\n<p><span class='dark-yellow'>Changes if Equipped:</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Name:</span> <span class='#{score_data.name.color}'>#{
-            String.pad_trailing(score_data.name.value, 13)
-          }</span><span class='dark-green'>Level:</span> <span class='#{score_data.level.color}'>#{
-            String.pad_trailing(to_string(score_data.level.value), 13)
-          }</span><span class='dark-green'>Exp:</span> <span class='#{score_data.experience.color}'>#{
-            String.pad_leading(to_string(score_data.experience.value), 13)
-          }</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Race:</span> <span class='#{score_data.race.color}'>#{
-            String.pad_trailing(score_data.race.value, 13)
-          }</span><span class='dark-green'>Melee DPS:</span> <span class='#{
-            score_data.melee_dps.color
-          }'>#{String.pad_trailing(to_string(Float.round(score_data.melee_dps.value, 2)), 9)}</span><span class='dark-green'>Perception:</span> <span class='#{
-            score_data.perception.color
-          }'>#{String.pad_leading(to_string(trunc(score_data.perception.value)), 6)}</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p>                   <span class='dark-green'>Physical Res:</span> <span class='#{
-            score_data.physical_resistance.color
-          }'>#{String.pad_trailing(to_string(trunc(score_data.physical_resistance.value)), 6)}</span><span class='dark-green'>Stealth:</span> <span class='#{
-            score_data.stealth.color
-          }'>#{String.pad_leading(to_string(trunc(score_data.stealth.value)), 9)}</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Hits:</span> <span class='#{score_data.max_hp.color}'>#{
-            hits
-          }</span><span class='dark-green'>Magical Dmg:</span> <span class='#{
-            score_data.magical_damage.color
-          }'>#{String.pad_trailing(to_string(trunc(score_data.magical_damage.value)), 7)}</span><span class='dark-green'>Block:</span> <span class='#{
-            score_data.block.color
-          }'>#{String.pad_leading(to_string(trunc(score_data.block.value)), 11)}</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Mana:</span> <span class='#{score_data.max_mana.color}'>#{
-            mana
-          }</span><span class='dark-green'>Magical Res:</span> <span class='#{
-            score_data.magical_resistance.color
-          }'>#{String.pad_trailing(to_string(trunc(score_data.magical_resistance.value)), 7)}</span><span class='dark-green'>Accuracy:</span> <span class='#{
-            score_data.accuracy.color
-          }'>#{String.pad_leading(to_string(trunc(score_data.accuracy.value)), 8)}</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>#{String.pad_leading("Dodge:", 45)}</span> <span class='#{
-            score_data.dodge.color
-          }'>#{String.pad_leading(to_string(trunc(score_data.dodge.value)), 11)}</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Strength:</span>  <span class='#{score_data.strength.color}'>#{
-            String.pad_trailing(to_string(trunc(score_data.strength.value)), 7)
-          }</span> <span class='dark-green'>Agility:</span> <span class='#{
-            score_data.agility.color
-          }'>#{String.pad_trailing(to_string(trunc(score_data.agility.value)), 11)}</span><span class='dark-green'>Spellcasting:</span> <span class='#{
-            score_data.spellcasting.color
-          }'>#{String.pad_leading(to_string(trunc(score_data.spellcasting.value)), 4)}</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Intellect:</span> <span class='#{
-            score_data.intellect.color
-          }'>#{String.pad_trailing(to_string(trunc(score_data.intellect.value)), 7)}</span> <span class='dark-green'>Health:</span>  <span class='#{
-            score_data.health.color
-          }'>#{String.pad_trailing(to_string(trunc(score_data.health.value)), 11)}</span><span class='dark-green'>Crits:</span> <span class='#{
-            score_data.crits.color
-          }'>#{String.pad_leading(to_string(trunc(score_data.crits.value)), 11)}</span></p>"
-        )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Willpower:</span> <span class='#{
-            score_data.willpower.color
-          }'>#{String.pad_trailing(to_string(trunc(score_data.willpower.value)), 7)}</span> <span class='dark-green'>Charm:</span>   <span class='#{
-            score_data.charm.color
-          }'>#{String.pad_trailing(to_string(trunc(score_data.charm.value)), 11)}</span><span class='dark-green'>Item Level:</span> <span class='#{
-            score_data.item_level.color
-          }'>#{String.pad_leading(to_string(trunc(score_data.item_level.value)), 6)}</span></p>"
-        )
-    end
+    item.effects
+    |> Map.values()
+    |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
+    |> Enum.map(& &1["StatusMessage"])
+    |> Enum.each(fn effect_message ->
+      Mobile.send_scroll(character, "<p>#{effect_message}</p>")
+    end)
   end
 
-  def look_at_item(mobile, %{description: description}, _room) do
+  def look_at_item(mobile, %{description: description}) do
     Mobile.send_scroll(mobile, "<p>#{description}</p>")
   end
 
-  def look_at_item(%Character{} = mobile, item_name, room) do
+  def look_at_item(%Character{} = mobile, item_name) do
     case find_item(mobile, item_name) do
       nil ->
         Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")
 
       item ->
-        look_at_item(mobile, item, room)
+        look_at_item(mobile, item)
     end
-  end
-
-  defp color(pre, post) when pre > post do
-    "dark-red"
-  end
-
-  defp color(pre, post) when pre < post do
-    "green"
-  end
-
-  defp color(_pre, _post) do
-    "dark-cyan"
   end
 
   defp find_item(%Character{inventory: items}, item) do

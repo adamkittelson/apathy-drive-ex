@@ -670,51 +670,19 @@ defmodule ApathyDrive.Character do
       end)
     end
 
-    def accuracy_at_level(character, level, room) do
-      skill_level =
-        case Character.weapon(character) do
-          nil ->
-            skill = character.skills["melee"] || Repo.get_by(Skill, name: "melee")
-            skill.level
-
-          %Item{grade: grade} ->
-            skill = character.skills[grade] || Repo.get_by(Skill, name: grade)
-            skill.level
-        end
-
-      level = min(level, skill_level)
-      agi = attribute_at_level(character, :agility, level)
-      cha = Party.charm_at_level(room, character, level)
-      agi = agi + cha / 10
+    def accuracy_at_level(character, _level, room) do
+      agi = character.agility + character.charm / 10
       modifier = ability_value(character, "Accuracy")
       agi * (1 + modifier / 100)
     end
 
-    def attribute_at_level(%Character{} = character, attribute, level) do
+    def attribute_at_level(%Character{} = character, attribute, _level) do
       growth =
         [:strength, :agility, :intellect, :willpower, :health, :charm]
         |> Enum.reduce(0, &(&2 + Map.get(character, &1)))
         |> div(6)
 
-      base = Map.get(character, attribute)
-
-      base = base + growth / 10 * (level - 1)
-
-      from_equipment =
-        character.equipment
-        |> Enum.reduce(0, fn %Item{} = item, total ->
-          skill_name = item.grade
-          skill = character.skills[skill_name]
-
-          if skill do
-            level = min(character.level, skill.level)
-            total + Item.attribute_at_level(item, level, attribute)
-          else
-            total + Item.attribute_at_level(item, character.level, attribute)
-          end
-        end)
-
-      base + from_equipment
+      Map.get(character, attribute)
     end
 
     def attack_interval(character) do
