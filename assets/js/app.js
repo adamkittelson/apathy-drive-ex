@@ -119,9 +119,7 @@ chan.on("update score", function (score_data) {
 });
 
 window.pulsate_attribute = function (attribute) {
-  var original_color = $("#score-" + attribute).css("color")
-  console.log("pulsing " + attribute)
-  $("#score-" + attribute).animate({ color: "lime" }, 250, function () { $("#score-" + attribute).animate({ color: original_color }, 250) })
+  $("#score-" + attribute).animate({ color: "lime" }, 500, function () { $("#score-" + attribute).animate({ color: "teal" }, 500) })
 }
 
 chan.on("pulse score attribute", function (data) {

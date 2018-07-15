@@ -467,8 +467,8 @@ defmodule ApathyDrive.Monster do
       (base + growth / 10 * (level - 1)) / 10
     end
 
-    def attack_interval(monster) do
-      trunc(round_length_in_ms(monster) / attacks_per_round(monster))
+    def attack_interval(monster, weapon \\ nil) do
+      trunc(round_length_in_ms(monster) / attacks_per_round(monster, weapon))
     end
 
     def attack_ability(monster) do
@@ -480,7 +480,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:ignores_round_cooldown?, true)
     end
 
-    def attacks_per_round(_monster) do
+    def attacks_per_round(_monster, _weapon) do
       1
     end
 
@@ -575,7 +575,7 @@ defmodule ApathyDrive.Monster do
                 character
                 |> Character.add_reputation(monster.reputations)
 
-              Monster.generate_loot_for_character(monster, character)
+              # Monster.generate_loot_for_character(monster, character)
             end)
 
           _, updated_room ->
@@ -778,29 +778,8 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
     end
 
-    def round_length_in_ms(monster) do
-      agility = attribute_at_level(monster, :agility, monster.level)
-
-      base =
-        if agility > 1000 do
-          4000 * :math.pow(0.9997, 1000) * :math.pow(0.999925, agility - 1000)
-        else
-          4000 * :math.pow(0.9997, agility)
-        end
-
-      speed_mods =
-        monster.effects
-        |> Map.values()
-        |> Enum.filter(&Map.has_key?(&1, "Speed"))
-        |> Enum.map(&Map.get(&1, "Speed"))
-
-      count = length(speed_mods)
-
-      if count > 0 do
-        trunc(base * (Enum.sum(speed_mods) / count / 100))
-      else
-        base
-      end
+    def round_length_in_ms(_monster) do
+      Application.get_env(:apathy_drive, :round_length_in_ms)
     end
 
     def send_scroll(%Monster{} = monster, _html) do

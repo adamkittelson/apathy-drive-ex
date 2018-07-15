@@ -293,8 +293,8 @@ defmodule ApathyDrive.Companion do
       (base + growth / 10 * (level - 1)) / 10
     end
 
-    def attack_interval(companion) do
-      trunc(round_length_in_ms(companion) / attacks_per_round(companion))
+    def attack_interval(companion, weapon \\ nil) do
+      trunc(round_length_in_ms(companion) / attacks_per_round(companion, weapon))
     end
 
     def attack_ability(companion) do
@@ -306,7 +306,7 @@ defmodule ApathyDrive.Companion do
       |> Map.put(:ignores_round_cooldown?, true)
     end
 
-    def attacks_per_round(_companion) do
+    def attacks_per_round(_companion, _weapon) do
       1
     end
 
@@ -612,29 +612,8 @@ defmodule ApathyDrive.Companion do
       |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
     end
 
-    def round_length_in_ms(companion) do
-      agility = attribute_at_level(companion, :agility, companion.level)
-
-      base =
-        if agility > 1000 do
-          4000 * :math.pow(0.9997, 1000) * :math.pow(0.999925, agility - 1000)
-        else
-          4000 * :math.pow(0.9997, agility)
-        end
-
-      speed_mods =
-        companion.effects
-        |> Map.values()
-        |> Enum.filter(&Map.has_key?(&1, "Speed"))
-        |> Enum.map(&Map.get(&1, "Speed"))
-
-      count = length(speed_mods)
-
-      if count > 0 do
-        trunc(base * (Enum.sum(speed_mods) / count / 100))
-      else
-        base
-      end
+    def round_length_in_ms(_companion) do
+      Application.get_env(:apathy_drive, :round_length_in_ms)
     end
 
     def send_scroll(%Companion{} = companion, _html) do

@@ -7,7 +7,6 @@ defmodule ApathyDrive.Ability do
     AbilityTrait,
     Character,
     Companion,
-    Crit,
     Enchantment,
     Item,
     Match,
@@ -770,30 +769,7 @@ defmodule ApathyDrive.Ability do
 
       room
       |> trigger_damage_shields(caster.ref, target.ref, ability)
-      |> apply_critical(caster.ref, target.ref, ability, target.ability_shift)
-    end
-  end
-
-  def apply_critical(room, caster_ref, target_ref, ability, ability_shift)
-      when ability_shift >= 0 do
-    finish_ability(room, caster_ref, target_ref, ability, ability_shift)
-  end
-
-  def apply_critical(
-        room,
-        caster_ref,
-        target_ref,
-        %Ability{kind: "critical"} = ability,
-        ability_shift
-      ) do
-    finish_ability(room, caster_ref, target_ref, ability, ability_shift)
-  end
-
-  def apply_critical(room, caster_ref, target_ref, ability, ability_shift) do
-    if critical = Crit.find_for_ability(ability, ability_shift) do
-      apply_ability(room, room.mobiles[caster_ref], room.mobiles[target_ref], critical)
-    else
-      finish_ability(room, caster_ref, target_ref, ability, ability_shift)
+      |> finish_ability(caster.ref, target.ref, ability, target.ability_shift)
     end
   end
 
@@ -911,6 +887,14 @@ defmodule ApathyDrive.Ability do
 
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, target}, fn
+        %{kind: "physical", damage: damage, damage_type: type}, {caster, target} ->
+          resist = Mobile.physical_resistance_at_level(target, target_level, type)
+          damage = damage - resist
+
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+
+          {caster, damage_percent}
+
         %{kind: "physical", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.physical_resistance_at_level(target, target_level, type)
@@ -924,6 +908,14 @@ defmodule ApathyDrive.Ability do
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level, type)
           damage = calculate_damage(damage, resist, potency, caster, target, room)
+
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+
+          {caster, damage_percent}
+
+        %{kind: "magical", damage: damage, damage_type: type}, {caster, target} ->
+          resist = Mobile.magical_resistance_at_level(target, target_level, type)
+          damage = damage - resist
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 

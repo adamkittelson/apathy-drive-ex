@@ -1,6 +1,7 @@
 defmodule ApathyDrive.Item do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, Enchantment, Item, ItemDamageType, ItemInstance}
+  alias ApathyDrive.{Character, Enchantment, Item, ItemInstance}
+  alias ApathyDrive.Items.{Weapon}
   require Logger
   require Ecto.Query
 
@@ -17,6 +18,18 @@ defmodule ApathyDrive.Item do
     field(:attacks_per_round, :integer)
     field(:physical_resistance, :integer)
     field(:magical_resistance, :integer)
+    field(:kind, :string)
+    field(:weight, :integer)
+    field(:speed, :integer)
+    field(:min_damage, :integer)
+    field(:max_damage, :integer)
+    field(:required_strength, :integer)
+    field(:required_agility, :integer)
+    field(:required_intellect, :integer)
+    field(:required_willpower, :integer)
+    field(:required_health, :integer)
+    field(:required_charm, :integer)
+
     field(:abilities, :map, virtual: true, default: %{})
     field(:level, :integer, virtual: true)
     field(:equipped, :boolean, virtual: true, default: false)
@@ -35,9 +48,6 @@ defmodule ApathyDrive.Item do
     has_many(:characters, through: [:items_instances, :character])
 
     has_many(:items_abilities, ApathyDrive.ItemAbility)
-
-    has_many(:items_damage_types, ApathyDrive.ItemDamageType)
-    has_many(:damage_types, through: [:items_damage_types, :damage_types])
 
     timestamps()
   end
@@ -79,7 +89,7 @@ defmodule ApathyDrive.Item do
     |> validate_required(@required_fields)
   end
 
-  def from_assoc(%ItemInstance{id: id, item: item, level: level} = ii) do
+  def from_assoc(%ItemInstance{id: id, item: item} = ii) do
     values =
       ii
       |> Map.take([:level, :equipped, :hidden, :purchased])
@@ -87,8 +97,34 @@ defmodule ApathyDrive.Item do
     item
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
-    |> Map.put(:damage, ItemDamageType.load_damage(item.id, level))
-    |> Enchantment.load_enchantments()
+    |> case do
+      %Item{kind: "weapon"} = item ->
+        %Weapon{
+          name: item.name,
+          description: item.description,
+          worn_on: item.worn_on,
+          kind: item.grade,
+          hit_verbs: item.hit_verbs,
+          miss_verbs: item.miss_verbs,
+          instance_id: item.instance_id,
+          weight: item.weight,
+          speed: item.speed,
+          min_damage: item.min_damage,
+          max_damage: item.max_damage,
+          required_strength: item.required_strength,
+          required_agility: item.required_agility,
+          required_intellect: item.required_intellect,
+          required_willpower: item.required_willpower,
+          required_health: item.required_health,
+          required_charm: item.required_charm,
+          equipped: item.equipped,
+          effects: item.effects
+        }
+
+      %Item{} = item ->
+        item
+        |> Enchantment.load_enchantments()
+    end
   end
 
   def from_shop(%Item{} = item) do
@@ -207,10 +243,6 @@ defmodule ApathyDrive.Item do
     |> Repo.all()
   end
 
-  def item_level(%Item{} = item) do
-    power_at_level(item, item.level) / 3
-  end
-
   def generate_for_character!(%Item{} = item, %Character{} = character, source) do
     ei = %ItemInstance{
       character_id: character.id,
@@ -264,18 +296,18 @@ defmodule ApathyDrive.Item do
 
   def price(%Item{rarity: "legendary"}), do: "priceless"
 
-  def price(%Item{rarity: rarity, level: level} = item), do: 5
+  def price(%Item{}), do: 5
 
   def color(%Item{rarity: rarity}) do
     @rarities[rarity].color
   end
 
-  def colored_name(%Item{name: name} = item, opts \\ []) do
+  def colored_name(%{name: name}, opts \\ []) do
     name =
       name
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 
-    "<span style='color: #{color(item)}'>#{name}</span>"
+    "<span style='color: dark-cyan;'>#{name}</span>"
   end
 end

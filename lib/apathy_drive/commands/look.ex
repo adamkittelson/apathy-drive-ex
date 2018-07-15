@@ -2,6 +2,7 @@ defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
   alias ApathyDrive.{Character, Doors, Item, Match, Mobile, RoomServer, Stealth}
+  alias ApathyDrive.Items.{Weapon}
 
   @directions [
     "n",
@@ -279,6 +280,38 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.any?(&Map.has_key?(&1, "blinded"))
   end
 
+  def look_at_item(%Character{} = character, %Weapon{} = item) do
+    attack_interval = Mobile.attack_interval(character, item) / 1000
+
+    character_damage = character.strength / Mobile.attacks_per_round(character, item)
+
+    min_damage = Float.round(item.min_damage + character_damage, 2)
+    max_damage = Float.round(item.max_damage + character_damage, 2)
+
+    average = (min_damage + max_damage) / 2
+
+    dps = Float.round(average / attack_interval, 2)
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Kind:</span> <span class='dark-cyan'>#{item.worn_on} #{
+        item.kind
+      }</span> <span class='dark-green'>DPS:</span> <span class='dark-cyan'>#{dps} (#{min_damage}-#{
+        max_damage
+      } @ #{attack_interval})</span></p>"
+    )
+
+    Mobile.send_scroll(character, "<p>#{item.description}</p>")
+
+    item.effects
+    |> Map.values()
+    |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
+    |> Enum.map(& &1["StatusMessage"])
+    |> Enum.each(fn effect_message ->
+      Mobile.send_scroll(character, "<p>#{effect_message}</p>")
+    end)
+  end
+
   def look_at_item(%Character{} = character, %Item{} = item) do
     Mobile.send_scroll(
       character,
@@ -321,7 +354,7 @@ defmodule ApathyDrive.Commands.Look do
       nil ->
         nil
 
-      %Item{} = item ->
+      %{} = item ->
         item
     end
   end

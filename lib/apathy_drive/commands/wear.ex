@@ -11,11 +11,11 @@ defmodule ApathyDrive.Commands.Wear do
 
   def execute(%Room{} = room, %Character{ref: ref} = character, ["all"]) do
     character.inventory
-    |> Enum.map(&(&1.name))
-    |> Enum.reduce(room, fn(item_name, updated_room) ->
-         character = updated_room.mobiles[ref]
-         execute(updated_room, character, [item_name])
-       end)
+    |> Enum.map(& &1.name)
+    |> Enum.reduce(room, fn item_name, updated_room ->
+      character = updated_room.mobiles[ref]
+      execute(updated_room, character, [item_name])
+    end)
   end
 
   def execute(%Room{} = room, %Character{} = character, args) do
@@ -24,33 +24,66 @@ defmodule ApathyDrive.Commands.Wear do
     character.inventory
     |> Match.one(:name_contains, item_name)
     |> case do
-         nil ->
-           Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" left unequipped.</p>")
-           room
-         %Item{} = item ->
-           character =
-             case equip_item(character, item) do
-               %{equipped: equipped, unequipped: unequipped, character: character} ->
-                 Enum.each(unequipped, fn(item) ->
-                   Mobile.send_scroll(character, "<p>You remove #{Item.colored_name(item)}.</p>")
-                 end)
-                 Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
-                 send(character.socket, {:update_character, %{room_id: room.id, power: Mobile.power_at_level(character, character.level), level: character.level}})
-                 character
-               %{equipped: equipped, character: character} ->
-                 Mobile.send_scroll(character, "<p>You are now wearing #{Item.colored_name(equipped)}.</p>")
-                 send(character.socket, {:update_character, %{room_id: room.id, power: Mobile.power_at_level(character, character.level), level: character.level}})
-                 character
-               false ->
-                 Mobile.send_scroll(character, "<p>You can't equip #{Item.colored_name(item)}.</p>")
-             end
+      nil ->
+        Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" left unequipped.</p>")
+        room
 
-           put_in(room.mobiles[character.ref], character)
-       end
+      %{} = item ->
+        character =
+          case equip_item(character, item) do
+            %{equipped: equipped, unequipped: unequipped, character: character} ->
+              Enum.each(unequipped, fn item ->
+                Mobile.send_scroll(character, "<p>You remove #{Item.colored_name(item)}.</p>")
+              end)
+
+              Mobile.send_scroll(
+                character,
+                "<p>You are now wearing #{Item.colored_name(equipped)}.</p>"
+              )
+
+              send(
+                character.socket,
+                {:update_character,
+                 %{
+                   room_id: room.id,
+                   power: Mobile.power_at_level(character, character.level),
+                   level: character.level
+                 }}
+              )
+
+              character
+
+            %{equipped: equipped, character: character} ->
+              Mobile.send_scroll(
+                character,
+                "<p>You are now wearing #{Item.colored_name(equipped)}.</p>"
+              )
+
+              send(
+                character.socket,
+                {:update_character,
+                 %{
+                   room_id: room.id,
+                   power: Mobile.power_at_level(character, character.level),
+                   level: character.level
+                 }}
+              )
+
+              character
+
+            false ->
+              Mobile.send_scroll(character, "<p>You can't equip #{Item.colored_name(item)}.</p>")
+          end
+
+        put_in(room.mobiles[character.ref], character)
+    end
   end
 
-  def equip_item(%Character{inventory: inventory, equipment: equipment} = character, %Item{worn_on: worn_on} = item, persist \\ true) do
-
+  def equip_item(
+        %Character{inventory: inventory, equipment: equipment} = character,
+        %{worn_on: worn_on} = item,
+        persist \\ true
+      ) do
     cond do
       Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
         item_to_remove =
@@ -65,7 +98,7 @@ defmodule ApathyDrive.Commands.Wear do
         if persist do
           %ItemInstance{id: item_to_remove.instance_id}
           |> Ecto.Changeset.change(%{equipped: false})
-          |> Repo.update!
+          |> Repo.update!()
         end
 
         inventory = List.insert_at(inventory, -1, item_to_remove)
@@ -73,7 +106,7 @@ defmodule ApathyDrive.Commands.Wear do
         if persist do
           %ItemInstance{id: item.instance_id}
           |> Ecto.Changeset.change(%{equipped: true})
-          |> Repo.update!
+          |> Repo.update!()
         end
 
         equipment = List.insert_at(equipment, -1, item)
@@ -84,7 +117,8 @@ defmodule ApathyDrive.Commands.Wear do
           |> Map.put(:equipment, equipment)
 
         %{equipped: item, unequipped: [item_to_remove], character: character}
-      conflicting_worn_on(worn_on) |> Enum.any? ->
+
+      conflicting_worn_on(worn_on) |> Enum.any?() ->
         items_to_remove =
           equipment
           |> Enum.filter(&(&1.worn_on in conflicting_worn_on(worn_on)))
@@ -97,20 +131,20 @@ defmodule ApathyDrive.Commands.Wear do
           Enum.each(items_to_remove, fn item_to_remove ->
             %ItemInstance{id: item_to_remove.instance_id}
             |> Ecto.Changeset.change(%{equipped: false})
-            |> Repo.update!
+            |> Repo.update!()
           end)
         end
 
         inventory =
           items_to_remove
-          |> Enum.reduce(inventory, fn(item_to_remove, inv) ->
-               List.insert_at(inv, -1, item_to_remove)
-             end)
+          |> Enum.reduce(inventory, fn item_to_remove, inv ->
+            List.insert_at(inv, -1, item_to_remove)
+          end)
 
         if persist do
           %ItemInstance{id: item.instance_id}
           |> Ecto.Changeset.change(%{equipped: true})
-          |> Repo.update!
+          |> Repo.update!()
         end
 
         equipment = List.insert_at(equipment, -1, item)
@@ -121,6 +155,7 @@ defmodule ApathyDrive.Commands.Wear do
           |> Map.put(:equipment, equipment)
 
         %{equipped: item, unequipped: items_to_remove, character: character}
+
       true ->
         inventory =
           inventory
@@ -129,7 +164,7 @@ defmodule ApathyDrive.Commands.Wear do
         if persist do
           %ItemInstance{id: item.instance_id}
           |> Ecto.Changeset.change(%{equipped: true})
-          |> Repo.update!
+          |> Repo.update!()
         end
 
         equipment =
@@ -146,12 +181,11 @@ defmodule ApathyDrive.Commands.Wear do
   end
 
   def worn_on_max(%{worn_on: "Finger"}), do: 2
-  def worn_on_max(%{worn_on: "Wrist"}),  do: 2
-  def worn_on_max(%{worn_on: _}),        do: 1
+  def worn_on_max(%{worn_on: "Wrist"}), do: 2
+  def worn_on_max(%{worn_on: _}), do: 1
 
   defp conflicting_worn_on("Weapon Hand"), do: ["Two Handed"]
   defp conflicting_worn_on("Off-Hand"), do: ["Two Handed"]
   defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
   defp conflicting_worn_on(_), do: []
-
 end
