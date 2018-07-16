@@ -26,7 +26,7 @@ defmodule ApathyDriveWeb.RaceControllerTest do
 
     test "lists all races", %{conn: conn} do
       conn = get(conn, race_path(conn, :index))
-      assert html_response(conn, 200) =~ "Description"
+      assert html_response(conn, 200) =~ "Strength"
     end
   end
 
