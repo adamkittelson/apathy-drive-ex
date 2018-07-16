@@ -1,0 +1,38 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Strength</th>
+      <th>Agility</th>
+      <th>Intellect</th>
+      <th>Willpower</th>
+      <th>Health</th>
+      <th>Charm</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for race <- @races do %>
+    <tr>
+      <td><%= race.id %></td>
+      <td><%= race.name %></td>
+      <td><%= race.strength %></td>
+      <td><%= race.agility %></td>
+      <td><%= race.intellect %></td>
+      <td><%= race.willpower %></td>
+      <td><%= race.health %></td>
+      <td><%= race.charm %></td>
+
+      <td class="text-right">
+        <span><%= link "Show", to: race_path(@conn, :show, race), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Edit", to: race_path(@conn, :edit, race), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Delete", to: race_path(@conn, :delete, race), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Race", to: race_path(@conn, :new) %></span>

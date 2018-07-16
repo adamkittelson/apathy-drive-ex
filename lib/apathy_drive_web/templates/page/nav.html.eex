@@ -45,6 +45,9 @@
               <li class="popover-item">
                 <a class="popover-link" href="/admin/damage-types" target="_blank">Damage Types</a>
               </li>
+              <li class="popover-item">
+                <a class="popover-link" href="/admin/races" target="_blank">Races</a>
+              </li>
             </ul>
           </div>
         </li>

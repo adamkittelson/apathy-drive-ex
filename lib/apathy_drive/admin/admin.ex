@@ -6,7 +6,7 @@ defmodule ApathyDrive.Admin do
   import Ecto.Query, warn: false
   alias ApathyDrive.Repo
 
-  alias ApathyDrive.{Ability, Class, ClassAbility}
+  alias ApathyDrive.{Ability, Class, ClassAbility, Race}
 
   @doc """
   Returns the list of classes.
@@ -18,7 +18,15 @@ defmodule ApathyDrive.Admin do
 
   """
   def list_classes do
-    Repo.all(Class)
+    Class
+    |> Ecto.Query.order_by(asc: :id)
+    |> Repo.all()
+  end
+
+  def list_races do
+    Race
+    |> Ecto.Query.order_by(asc: :id)
+    |> Repo.all()
   end
 
   def list_abilities do
@@ -51,6 +59,8 @@ defmodule ApathyDrive.Admin do
   """
   def get_class!(id), do: Repo.get!(Class, id)
 
+  def get_race!(id), do: Repo.get!(Race, id)
+
   @doc """
   Creates a class.
 
@@ -66,6 +76,12 @@ defmodule ApathyDrive.Admin do
   def create_class(attrs \\ %{}) do
     %Class{}
     |> Class.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_race(attrs \\ %{}) do
+    %Race{}
+    |> Race.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -87,6 +103,12 @@ defmodule ApathyDrive.Admin do
     |> Repo.update()
   end
 
+  def update_race(%Race{} = race, attrs) do
+    race
+    |> Race.changeset(attrs)
+    |> Repo.update()
+  end
+
   @doc """
   Deletes a Class.
 
@@ -103,6 +125,10 @@ defmodule ApathyDrive.Admin do
     Repo.delete(class)
   end
 
+  def delete_race(%Race{} = race) do
+    Repo.delete(race)
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking class changes.
 
@@ -114,5 +140,9 @@ defmodule ApathyDrive.Admin do
   """
   def change_class(%Class{} = class) do
     Class.changeset(class, %{})
+  end
+
+  def change_race(%Race{} = race) do
+    Race.changeset(race, %{})
   end
 end

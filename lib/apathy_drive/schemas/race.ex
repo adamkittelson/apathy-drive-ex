@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Race do
   use ApathyDriveWeb, :model
+  alias ApathyDrive.Race
 
   schema "races" do
     field(:name, :string)
@@ -10,7 +11,6 @@ defmodule ApathyDrive.Race do
     field(:willpower, :integer)
     field(:health, :integer)
     field(:charm, :integer)
-    field(:abilities, ApathyDrive.JSONB)
 
     has_many(:races_traits, ApathyDrive.RaceTrait)
     has_many(:traits, through: [:races_traits, :trait])
@@ -18,8 +18,7 @@ defmodule ApathyDrive.Race do
     timestamps()
   end
 
-  @required_fields ~w(name description strength agility intellect willpower health charm abilities)
-  @optional_fields ~w()
+  @required_fields ~w(name description strength agility intellect willpower health charm)a
 
   @doc """
   Creates a changeset based on the `model` and `params`.
@@ -27,9 +26,10 @@ defmodule ApathyDrive.Race do
   If no params are provided, an invalid changeset is returned
   with no validation performed.
   """
-  def changeset(model, params \\ %{}) do
-    model
-    |> cast(params, @required_fields, @optional_fields)
+  def changeset(%Race{} = race, attrs) do
+    race
+    |> cast(attrs, @required_fields)
+    |> validate_required(@required_fields)
   end
 
   def ids do

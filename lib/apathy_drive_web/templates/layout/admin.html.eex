@@ -7,7 +7,9 @@
   <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600,100' rel='stylesheet' type='text/css'>
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/normalize.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/skeleton.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/nav.css") %>">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/admin.css") %>">
   <link rel="stylesheet" href="<%= static_path(@conn, "/css/components.css") %>">
   <script src="<%= static_path(@conn, "/js/app.js") %>"></script>

@@ -38,6 +38,7 @@ defmodule ApathyDriveWeb.Router do
     resources("/abilities", Admin.AbilityController)
     get("/damage-types", Admin.DamageTypesController, :index)
     resources("/classes", Admin.ClassController)
+    resources("/races", Admin.RaceController)
   end
 
   # Fetch the current user from the session and add it to `conn.assigns`. This

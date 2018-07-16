@@ -1,0 +1,8 @@
+<h2><%= @race.name %></h2>
+
+<p>
+  <%= @race.description %>
+</p>
+
+<span><%= link "Edit", to: race_path(@conn, :edit, @race) %></span>
+<span><%= link "Back", to: race_path(@conn, :index) %></span>
