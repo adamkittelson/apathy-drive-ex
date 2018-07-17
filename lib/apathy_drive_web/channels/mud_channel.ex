@@ -1,19 +1,22 @@
 defmodule ApathyDriveWeb.MUDChannel do
-  use ApathyDrive.Web, :channel
-  alias ApathyDrive.{Character, Mobile, Presence, RoomServer}
+  use ApathyDriveWeb, :channel
+  alias ApathyDrive.{Character, Mobile, RoomServer}
 
   def join("mud:play", %{"character" => token}, socket) do
-    case Phoenix.Token.verify(socket, "character", token, max_age: 1209600) do
+    case Phoenix.Token.verify(socket, "character", token, max_age: 1_209_600) do
       {:ok, character_id} ->
         case Repo.get!(Character, character_id) do
           nil ->
             {:error, %{reason: "unauthorized"}}
-          %Character{name: nil} -> # Character has been reset, probably due to a game wipe
+
+          # Character has been reset, probably due to a game wipe
+          %Character{name: nil} ->
             {:error, %{reason: "unauthorized"}}
+
           %Character{room_id: room_id} = character ->
             character =
               room_id
-              |> RoomServer.find
+              |> RoomServer.find()
               |> RoomServer.character_connected(character, self())
 
             socket =
@@ -24,13 +27,14 @@ defmodule ApathyDriveWeb.MUDChannel do
               |> assign(:level, character.level)
               |> assign(:monster_ref, character.ref)
 
-              ApathyDrive.PubSub.subscribe("spirits:online")
-              ApathyDrive.PubSub.subscribe("chat:gossip")
+            ApathyDrive.PubSub.subscribe("spirits:online")
+            ApathyDrive.PubSub.subscribe("chat:gossip")
 
             send(self(), :after_join)
 
             {:ok, socket}
         end
+
       {:error, _} ->
         {:error, %{reason: "unauthorized"}}
     end
@@ -38,7 +42,7 @@ defmodule ApathyDriveWeb.MUDChannel do
 
   def handle_info(:after_join, socket) do
     socket.assigns[:room_id]
-    |> RoomServer.find
+    |> RoomServer.find()
     |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
 
     {:noreply, socket}
@@ -51,7 +55,7 @@ defmodule ApathyDriveWeb.MUDChannel do
   end
 
   def handle_info({:disable_element, elem}, socket) do
-    Phoenix.Channel.push socket, "disable", %{:html => elem}
+    Phoenix.Channel.push(socket, "disable", %{:html => elem})
 
     {:noreply, socket}
   end
@@ -64,6 +68,18 @@ defmodule ApathyDriveWeb.MUDChannel do
       |> assign(:level, level)
 
     update_room(socket)
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:update_score, %{} = data}, socket) do
+    Phoenix.Channel.push(socket, "update score", data)
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:pulse_score_attribute, attribute}, socket) do
+    Phoenix.Channel.push(socket, "pulse score attribute", %{attribute: attribute})
 
     {:noreply, socket}
   end
@@ -85,60 +101,48 @@ defmodule ApathyDriveWeb.MUDChannel do
   end
 
   def handle_info({:focus_element, elem}, socket) do
-    Phoenix.Channel.push socket, "focus", %{:html => elem}
+    Phoenix.Channel.push(socket, "focus", %{:html => elem})
 
     {:noreply, socket}
   end
 
   def handle_info(:up, socket) do
-    Phoenix.Channel.push socket, "up", %{}
+    Phoenix.Channel.push(socket, "up", %{})
 
     {:noreply, socket}
   end
 
   def handle_info({:update_prompt, html}, socket) do
-    Phoenix.Channel.push socket, "update prompt", %{:html => html}
+    Phoenix.Channel.push(socket, "update prompt", %{:html => html})
 
     {:noreply, socket}
   end
 
   def handle_info(:go_home, socket) do
-    Phoenix.Channel.push socket, "redirect", %{:url => "/"}
+    Phoenix.Channel.push(socket, "redirect", %{:url => "/"})
 
     {:noreply, socket}
   end
 
   def handle_info({:open_tab, path}, socket) do
-    Phoenix.Channel.push socket, "open tab", %{:url => path}
+    Phoenix.Channel.push(socket, "open tab", %{:url => path})
 
     {:noreply, socket}
   end
 
-  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff", payload: %{joins: joins, leaves: leaves}}, socket) do
-    (Presence.metas(joins) -- Presence.metas("spirits:online"))
-    |> Enum.each(fn %{name: name} ->
-         Phoenix.Channel.push socket, "scroll", %{:html => "<p>#{name} just entered the Realm.</p>"}
-       end)
-
-    leaves
-    |> Presence.metas
-    |> Enum.each(fn %{name: name} ->
-         Phoenix.Channel.push socket, "scroll", %{:html => "<p>#{name} just left the Realm.</p>"}
-       end)
-
+  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
     {:noreply, socket}
   end
 
   def handle_info(%Phoenix.Socket.Broadcast{event: event, payload: payload}, socket) do
-    Phoenix.Channel.push socket, event, payload
+    Phoenix.Channel.push(socket, event, payload)
 
     {:noreply, socket}
   end
 
   def handle_in("command", %{}, socket) do
-
     socket.assigns[:room_id]
-    |> RoomServer.find
+    |> RoomServer.find()
     |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
 
     {:noreply, socket}
@@ -148,11 +152,12 @@ defmodule ApathyDriveWeb.MUDChannel do
     case String.split(message) do
       [command | arguments] ->
         socket.assigns[:room_id]
-        |> RoomServer.find
+        |> RoomServer.find()
         |> RoomServer.execute_command(socket.assigns[:monster_ref], command, arguments)
+
       [] ->
         socket.assigns[:room_id]
-        |> RoomServer.find
+        |> RoomServer.find()
         |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
     end
 
@@ -173,7 +178,7 @@ defmodule ApathyDriveWeb.MUDChannel do
   # It is also common to receive messages from the client and
   # broadcast to everyone in the current topic (mud:lobby).
   def handle_in("shout", payload, socket) do
-    broadcast socket, "shout", payload
+    broadcast(socket, "shout", payload)
     {:noreply, socket}
   end
 
@@ -181,16 +186,19 @@ defmodule ApathyDriveWeb.MUDChannel do
   # to the client. The default implementation is just to push it
   # downstream but one could filter or change the event.
   def handle_out(event, payload, socket) do
-    push socket, event, payload
+    push(socket, event, payload)
     {:noreply, socket}
   end
 
   defp update_room(socket) do
-    Phoenix.Channel.push socket, "update_room", %{room_id: socket.assigns[:room_id], power: socket.assigns[:power], level: socket.assigns[:level]}
+    Phoenix.Channel.push(socket, "update_room", %{
+      room_id: socket.assigns[:room_id],
+      power: socket.assigns[:power],
+      level: socket.assigns[:level]
+    })
   end
 
   defp send_scroll(socket, html) do
-    Phoenix.Channel.push socket, "scroll", %{:html => html}
+    Phoenix.Channel.push(socket, "scroll", %{:html => html})
   end
-
 end

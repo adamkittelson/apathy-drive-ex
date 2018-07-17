@@ -115,7 +115,8 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
         "html",
         "json"
       ],
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.render_errors.accepts here.",
+      doc:
+        "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.render_errors.accepts here.",
       hidden: true,
       to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.render_errors.accepts"
     ],
@@ -123,7 +124,8 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       commented: false,
       datatype: :atom,
       default: false,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.debug_errors here.",
+      doc:
+        "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.debug_errors here.",
       hidden: true,
       to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.debug_errors"
     ],
@@ -131,7 +133,8 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       commented: false,
       datatype: :atom,
       default: :pub_sub,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.name here.",
+      doc:
+        "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.name here.",
       hidden: true,
       to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.name"
     ],
@@ -139,7 +142,8 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       commented: false,
       datatype: :atom,
       default: Phoenix.PubSub.PG2,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.adapter here.",
+      doc:
+        "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.adapter here.",
       hidden: true,
       to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.pubsub.adapter"
     ],
@@ -155,7 +159,8 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       commented: false,
       datatype: :integer,
       default: 4000,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.http.port here.",
+      doc:
+        "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.http.port here.",
       hidden: false,
       to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.http.port"
     ],
@@ -179,7 +184,8 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       commented: false,
       datatype: :binary,
       default: "priv/static/manifest.json",
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.cache_static_manifest here.",
+      doc:
+        "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.cache_static_manifest here.",
       hidden: false,
       to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.cache_static_manifest"
     ],
@@ -194,7 +200,8 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
     "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.secret_key_base": [
       commented: false,
       datatype: :binary,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.secret_key_base here.",
+      doc:
+        "Provide documentation for apathy_drive.Elixir.ApathyDriveWeb.Endpoint.secret_key_base here.",
       hidden: false,
       to: "apathy_drive.Elixir.ApathyDriveWeb.Endpoint.secret_key_base"
     ],
@@ -241,9 +248,26 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       commented: false,
       datatype: :atom,
       default: Poison,
-      doc: "Provide documentation for apathy_drive.Elixir.ApathyDrive.Repo.extensions.Elixir.Extensions.JSON.library here.",
+      doc:
+        "Provide documentation for apathy_drive.Elixir.ApathyDrive.Repo.extensions.Elixir.Extensions.JSON.library here.",
       hidden: true,
       to: "apathy_drive.Elixir.ApathyDrive.Repo.extensions.Elixir.Extensions.JSON.library"
+    ],
+    "gossip.client_id": [
+      commented: false,
+      datatype: :binary,
+      default: "",
+      doc: "client id for Gossip authentication",
+      hidden: false,
+      to: "gossip.client_id"
+    ],
+    "gossip.client_secret": [
+      commented: false,
+      datatype: :binary,
+      default: "",
+      doc: "secret id for Gossip authentication",
+      hidden: false,
+      to: "gossip.client_secret"
     ]
   ],
   transforms: [],

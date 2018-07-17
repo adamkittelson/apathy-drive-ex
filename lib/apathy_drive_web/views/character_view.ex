@@ -1,3 +1,3 @@
 defmodule ApathyDriveWeb.CharacterView do
-  use ApathyDrive.Web, :view
+  use ApathyDriveWeb, :view
 end

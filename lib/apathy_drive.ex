@@ -11,7 +11,7 @@ defmodule ApathyDrive do
       worker(ApathyDrive.Repo, []),
       worker(ApathyDrive.Migrator, [], restart: :temporary),
       supervisor(ApathyDrive.Presence, []),
-      supervisor(ApathyDrive.RoomSupervisor,   [[], [name: ApathyDrive.RoomSupervisor]]),
+      supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
       worker(ApathyDrive.Metrics, [])
     ]
 
@@ -27,5 +27,4 @@ defmodule ApathyDrive do
     ApathyDriveWeb.Endpoint.config_change(changed, removed)
     :ok
   end
-
 end

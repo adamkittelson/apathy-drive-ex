@@ -1,0 +1,21 @@
+defmodule ApathyDrive.Items.Weapon do
+  defstruct name: nil,
+            description: nil,
+            worn_on: nil,
+            kind: nil,
+            hit_verbs: nil,
+            miss_verbs: nil,
+            instance_id: nil,
+            weight: nil,
+            speed: nil,
+            min_damage: nil,
+            max_damage: nil,
+            required_strength: nil,
+            required_agility: nil,
+            required_intellect: nil,
+            required_willpower: nil,
+            required_health: nil,
+            required_charm: nil,
+            equipped: nil,
+            effects: nil
+end

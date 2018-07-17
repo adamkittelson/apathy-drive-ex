@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Apotheosis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600,100' rel='stylesheet' type='text/css'>
+  <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/normalize.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/skeleton.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/nav.css") %>">
+  <link rel="stylesheet" href="<%= static_path(@conn, "/css/game.css") %>">
+  <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+  <script>require("js/nav");</script>
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
+</head>
+<body class="app">
+  <%= render @view_module, @view_template, assigns %>
+  <!-- Page Footer Layout
+       –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <script>require("phoenix_html");</script>
+  <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+
+</body>
+</html>

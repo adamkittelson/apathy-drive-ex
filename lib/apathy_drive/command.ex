@@ -5,16 +5,60 @@ defmodule ApathyDrive.Command do
 
   @callback execute(%Room{}, %Monster{}, list) :: %Room{}
 
-  @directions ["n", "north", "ne", "northeast", "e", "east",
-              "se", "southeast", "s", "south", "sw", "southwest",
-               "w", "west", "nw", "northwest", "u", "up", "d", "down"]
+  @directions [
+    "n",
+    "north",
+    "ne",
+    "northeast",
+    "e",
+    "east",
+    "se",
+    "southeast",
+    "s",
+    "south",
+    "sw",
+    "southwest",
+    "w",
+    "west",
+    "nw",
+    "northwest",
+    "u",
+    "up",
+    "d",
+    "down"
+  ]
 
   def all do
-    [Commands.Abilities, Commands.Attack, Commands.Buy, Commands.Cooldowns,
-     Commands.Dismiss, Commands.Drop, Commands.Experience, Commands.Get, Commands.Gossip, Commands.Hire,
-     Commands.Inventory, Commands.Join, Commands.Invite, Commands.Leave, Commands.List,
-     Commands.Look, Commands.Party, Commands.Reputations, Commands.Remove, Commands.Return, Commands.Say,
-     Commands.Score, Commands.Search, Commands.Sell, Commands.Skills, Commands.System, Commands.Train, Commands.Wear, Commands.Who]
+    [
+      Commands.Abilities,
+      Commands.Attack,
+      Commands.Buy,
+      Commands.Cooldowns,
+      Commands.Dismiss,
+      Commands.Drop,
+      Commands.Experience,
+      Commands.Get,
+      Commands.Gossip,
+      Commands.Hire,
+      Commands.Inventory,
+      Commands.Join,
+      Commands.Invite,
+      Commands.Leave,
+      Commands.List,
+      Commands.Look,
+      Commands.Party,
+      Commands.Reputations,
+      Commands.Remove,
+      Commands.Return,
+      Commands.Say,
+      Commands.Search,
+      Commands.Sell,
+      Commands.Skills,
+      Commands.System,
+      Commands.Train,
+      Commands.Wear,
+      Commands.Who
+    ]
   end
 
   def execute(%Room{} = room, monster_ref, command, arguments) do
@@ -22,21 +66,27 @@ defmodule ApathyDrive.Command do
 
     monster = room.mobiles[monster_ref]
 
-    Logger.info "#{monster && monster.name} command: #{full_command}"
+    Logger.info("#{monster && monster.name} command: #{full_command}")
 
     cond do
       is_nil(monster) ->
         room
+
       command in @directions ->
         Commands.Move.execute(room, monster, command)
+
       command_exit = Room.command_exit(room, full_command) ->
         Commands.Move.execute(room, monster, Map.put(command_exit, "kind", "Action"))
+
       remote_action_exit = Room.remote_action_exit(room, full_command) ->
         Room.initiate_remote_action(room, monster, remote_action_exit)
+
       scripts = Room.command(room, full_command) ->
         execute_room_command(room, monster, scripts)
-      cmd = Match.one(Enum.map(all(), &(&1.to_struct)), :keyword_starts_with, command) ->
+
+      cmd = Match.one(Enum.map(all(), & &1.to_struct), :keyword_starts_with, command) ->
         cmd.module.execute(room, monster, arguments)
+
       true ->
         ability = monster.abilities[String.downcase(command)]
 
@@ -67,10 +117,10 @@ defmodule ApathyDrive.Command do
 
       def name do
         __MODULE__
-        |> Atom.to_string
+        |> Atom.to_string()
         |> String.split(".")
-        |> List.last
-        |> Inflex.underscore
+        |> List.last()
+        |> Inflex.underscore()
       end
 
       def to_struct do
@@ -78,5 +128,4 @@ defmodule ApathyDrive.Command do
       end
     end
   end
-
 end

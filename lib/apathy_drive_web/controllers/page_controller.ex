@@ -1,9 +1,9 @@
 defmodule ApathyDriveWeb.PageController do
-  use ApathyDrive.Web, :controller
+  use ApathyDriveWeb, :controller
   alias ApathyDrive.{Character, Repo}
 
   def index(conn, _params) do
-    render conn, "index.html"
+    render(conn, "index.html")
   end
 
   def game(conn, _params) do
@@ -12,14 +12,19 @@ defmodule ApathyDriveWeb.PageController do
         conn
         |> put_session(:character, nil)
         |> redirect(to: "/")
+
       spirit_id ->
         case Repo.get(Character, spirit_id) do
           %Character{id: id, name: nil} ->
             conn
             |> put_session(:character, id)
             |> redirect(to: character_path(conn, :edit))
+
           %Character{} ->
-            render conn, "game.html", []
+            conn
+            |> put_layout({ApathyDriveWeb.LayoutView, :game})
+            |> render("game.html", [])
+
           nil ->
             conn
             |> put_session(:character, nil)
@@ -27,5 +32,4 @@ defmodule ApathyDriveWeb.PageController do
         end
     end
   end
-
 end

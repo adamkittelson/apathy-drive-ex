@@ -1,3 +1,3 @@
 defmodule ApathyDriveWeb.AdminView do
-  use ApathyDrive.Web, :view
+  use ApathyDriveWeb, :view
 end

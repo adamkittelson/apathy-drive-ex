@@ -1,0 +1,353 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Description</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for ability <- @abilities do %>
+    <tr>
+      <td><%= ability.id %></td>
+      <td><%= ability.name %></td>
+      <td><%= ability.description %></td>
+
+      <td class="text-right">
+        <span><%= link "Show", to: ability_path(@conn, :show, ability), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Edit", to: ability_path(@conn, :edit, ability), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Delete", to: ability_path(@conn, :delete, ability), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Ability", to: ability_path(@conn, :new) %></span>
+
+<!--
+<template id="abilities">
+  <div id="app">
+    <v-app>
+      <v-card>
+        <v-card-title>
+          Abilities
+          <v-spacer></v-spacer>
+          <v-text-field
+            append-icon="search"
+            label="Search"
+            single-line
+            hide-details
+            v-model="search"
+            @input="fetchPage"
+          ></v-text-field>
+        </v-card-title>
+        <v-data-table
+          :headers="headers"
+          :items="abilities"
+          :loading="loading"
+          @update:pagination="updatePagination($event)"
+          hide-actions
+        >
+          <template slot="items" slot-scope="props">
+            <td>{{ props.item.data.id }}</td>
+            <td @click="props.item.dialog=true">{{ props.item.data.name }}</td>
+            <v-layout row justify-center>
+              <v-dialog v-model="props.item.dialog">
+                <v-card>
+                  <v-card-title>
+                    <span class="headline">Ability</span>
+                  </v-card-title>
+                  <v-form v-model="props.item.valid" :ref="'form-' + props.item.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs6>
+                        <v-text-field
+                          label="Name"
+                          v-model="props.item.form.name"
+                          :rules="nameRules"
+                          :counter="30"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs6>
+                        <v-select
+                          label="Targets"
+                          v-model="props.item.form.targets"
+                          :items="valid_targets()"
+                          :rules="[v => !!v || 'targets is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-select
+                          label="Kind"
+                          v-model="props.item.form.kind"
+                          :items="kinds()"
+                          :rules="[v => !!v || 'kind is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Mana"
+                          v-model="props.item.form.mana"
+                          :rules="manaRules"
+                          type="number"
+                          suffix="percent of base mana"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Command"
+                          v-model="props.item.form.command"
+                          :rules="[v => (v && v.length <= 5) || 'Command must be at most 5 characters']"
+                          :counter="5"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Cooldown"
+                          v-model="props.item.form.cooldown"
+                          :rules="[v => (!!('' + v) && v >= 0) || 'Cooldown must be >= 0']"
+                          type="number"
+                          suffix="seconds"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Cast Time"
+                          v-model="props.item.form.cast_time"
+                          :rules="[v => (!!('' + v) && v >= 0) || 'Cast time must be >= 0']"
+                          type="number"
+                          suffix="seconds"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Duration"
+                          v-model="props.item.form.duration"
+                          :rules="durationRules"
+                          type="number"
+                          suffix="seconds"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs12>
+                        <v-text-field
+                          label="Description"
+                          v-model="props.item.form.description"
+                          :rules="[v => (v && v.length <= 500) || 'Description must be at most 500 characters']"
+                          :counter="500"
+                          textarea
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs12>
+                        <v-text-field
+                          label="User Message"
+                          v-model="props.item.form.user_message"
+                          :rules="[v => !v || v.length <= 100 || 'User message must be at most 100 characters']"
+                          :counter="100"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs12>
+                        <v-text-field
+                          label="Target Message"
+                          v-model="props.item.form.target_message"
+                          :rules="[v => !v || v.length <= 100 || 'Target message must be at most 100 characters']"
+                          :counter="100"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs12>
+                        <v-text-field
+                          label="Spectator Message"
+                          v-model="props.item.form.spectator_message"
+                          :rules="[v => !v || v.length <= 100 || 'Spectator message must be at most 100 characters']"
+                          :counter="100"
+                        ></v-text-field>
+                      </v-flex>
+                      <v-btn
+                        @click="submit(props.item.form)"
+                        :disabled="!props.item.valid"
+                      >
+                        submit
+                      </v-btn>
+                    </v-layout>
+                  </v-form>
+                </v-card>
+                <v-card>
+                  <v-card-title>
+                    <span class="headline">Traits</span>
+                    <v-btn :disabled="!!props.item.new_trait.show" @click="showNewTrait(props.item.data.id)">Add Trait</v-btn>
+                  </v-card-title>
+                  <v-form v-if="props.item.new_trait.show" v-model="props.item.new_trait.valid" :ref="'new-trait-form-' + props.item.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs4>
+                        <v-select
+                          label="Name"
+                          v-model="props.item.new_trait.name"
+                          :items="traits()"
+                          :rules="[v => !!v || 'name is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Value"
+                          v-model="props.item.new_trait.value"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-btn
+                          @click="createTrait(props.item.data.id)"
+                          :disabled="!props.item.new_trait.valid"
+                        >
+                          <v-icon>fa-save</v-icon>
+                        </v-btn>
+                      </v-flex>
+                    </v-layout>
+                  </v-form>
+                  <v-form v-for="trait in props.item.form.traits" :key="trait.id" v-model="trait.valid" :ref="'trait-form-' + trait.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs4>
+                        <v-select
+                          label="Name"
+                          v-model="trait.form.name"
+                          :items="traits()"
+                          :rules="[v => !!v || 'name is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-text-field
+                          label="Value"
+                          v-model="trait.form.value"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-btn
+                          @click="submitTrait(trait.form)"
+                          :disabled="!trait.valid || !hasChanged(trait)"
+                        >
+                          <v-icon>fa-save</v-icon>
+                        </v-btn>
+                        <v-btn
+                          @click="deleteTrait(trait.form)"
+                        >
+                          <v-icon>fa-trash-alt</v-icon>
+                        </v-btn>
+                      </v-flex>
+                    </v-layout>
+                  </v-form>
+                </vcard>
+
+                <v-card>
+                  <v-card-title>
+                    <span class="headline">Damage Types</span>
+                    <v-btn :disabled="!!props.item.new_damage_type.show" @click="showNewDamageType(props.item.data.id)">Add DamageType</v-btn>
+                  </v-card-title>
+
+                  <v-form v-if="props.item.new_damage_type.show" v-model="props.item.new_damage_type.valid" :ref="'new-damage-type-form-' + props.item.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs3>
+                        <v-select
+                          label="Name"
+                          v-model="props.item.new_damage_type.name"
+                          :items="damage_types()"
+                          :rules="[v => !!v || 'name is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs3>
+                        <v-select
+                          label="Kind"
+                          v-model="props.item.new_damage_type.kind"
+                          :items="['physical', 'magical']"
+                          :rules="[v => !!v || 'kind is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs2>
+                        <v-text-field
+                          label="Potency"
+                          v-model="props.item.new_damage_type.potency"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-btn
+                          @click="createDamageType(props.item.data.id)"
+                          :disabled="!props.item.new_damage_type.valid"
+                        >
+                          <v-icon>fa-save</v-icon>
+                        </v-btn>
+                      </v-flex>
+                    </v-layout>
+                  </v-form>
+                  <v-form v-for="damage_type in props.item.form.damage_types" :key="damage_type.id" v-model="damage_type.valid" :ref="'damage-type-form-' + damage_type.data.id" lazy-validation>
+                    <v-layout row wrap>
+                      <v-flex xs3>
+                        <v-select
+                          label="Name"
+                          v-model="damage_type.form.name"
+                          :items="damage_types()"
+                          :rules="[v => !!v || 'name is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs3>
+                        <v-select
+                          label="Kind"
+                          v-model="damage_type.form.kind"
+                          :items="['physical', 'magical']"
+                          :rules="[v => !!v || 'kind is required']"
+                          required
+                        ></v-select>
+                      </v-flex>
+                      <v-flex xs2>
+                        <v-text-field
+                          label="Potency"
+                          v-model="damage_type.form.potency"
+                          required
+                        ></v-text-field>
+                      </v-flex>
+                      <v-flex xs4>
+                        <v-btn
+                          @click="submitDamageType(damage_type.form)"
+                          :disabled="!damage_type.valid || !damageTypeHasChanged(damage_type)"
+                        >
+                          <v-icon>fa-save</v-icon>
+                        </v-btn>
+                        <v-btn
+                          @click="deleteDamageType(damage_type.form)"
+                        >
+                          <v-icon>fa-trash-alt</v-icon>
+                        </v-btn>
+                      </v-flex>
+                    </v-layout>
+                  </v-form>
+                </vcard>
+
+              </v-dialog>
+            </v-layout>
+          </template>
+        </v-data-table>
+      </v-card>
+      <div class="text-xs-center pt-2">
+        <v-pagination v-model="pagination.page" @input="updatePageNumber($event)" :length="pagination.totalPages" :total-visible="7"></v-pagination>
+      </div>
+    </v-app>
+  </div>
+</template>
+
+<div id="app"></div>
+
+<script>
+  require("js/admin/abilities")
+</script>
+-->
+

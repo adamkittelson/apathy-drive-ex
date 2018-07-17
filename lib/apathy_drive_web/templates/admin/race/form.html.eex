@@ -1,0 +1,59 @@
+<%= form_for @changeset, @action, fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= label f, :name, class: "control-label" %>
+    <%= text_input f, :name, class: "form-control" %>
+    <%= error_tag f, :name %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :description, class: "control-label" %>
+    <%= textarea f, :description, class: "form-control" %>
+    <%= error_tag f, :description %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :strength, class: "control-label" %>
+    <%= number_input f, :strength, class: "form-control" %>
+    <%= error_tag f, :strength %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :agility, class: "control-label" %>
+    <%= number_input f, :agility, class: "form-control" %>
+    <%= error_tag f, :agility %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :intellect, class: "control-label" %>
+    <%= number_input f, :intellect, class: "form-control" %>
+    <%= error_tag f, :intellect %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :willpower, class: "control-label" %>
+    <%= number_input f, :willpower, class: "form-control" %>
+    <%= error_tag f, :willpower %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :health, class: "control-label" %>
+    <%= number_input f, :health, class: "form-control" %>
+    <%= error_tag f, :health %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :charm, class: "control-label" %>
+    <%= number_input f, :charm, class: "form-control" %>
+    <%= error_tag f, :charm %>
+  </div>
+
+  <div class="form-group">
+    <%= submit "Submit", class: "button button-primary" %>
+  </div>
+<% end %>

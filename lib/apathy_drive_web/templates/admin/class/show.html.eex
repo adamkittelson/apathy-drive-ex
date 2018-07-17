@@ -1,0 +1,40 @@
+<h2><%= @class.name %></h2>
+
+<p>
+  <%= @class.description %>
+</p>
+
+<span><%= link "Edit", to: class_path(@conn, :edit, @class) %></span>
+<span><%= link "Back", to: class_path(@conn, :index) %></span>
+
+<h3>Abilities</h3>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Level</th>
+      <th>Name</th>
+      <th>Description</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for class_ability <- @abilities do %>
+    <tr>
+      <td><%= class_ability.level %></td>
+      <td><%= class_ability.ability.name %></td>
+      <td><%= class_ability.ability.description %></td>
+
+      <td class="text-right">
+        <span><%= link "Show", to: ability_path(@conn, :show, class_ability.ability), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Edit", to: ability_path(@conn, :edit, class_ability.ability), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Delete", to: ability_path(@conn, :delete, class_ability.ability), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Ability", to: ability_path(@conn, :new) %></span>
+

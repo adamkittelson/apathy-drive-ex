@@ -1,12 +1,12 @@
 defmodule ApathyDriveWeb.SessionController do
-  use ApathyDrive.Web, :controller
+  use ApathyDriveWeb, :controller
   alias ApathyDrive.Character
 
-  plug :scrub_params, "session" when action in [:create]
+  plug(:scrub_params, "session" when action in [:create])
 
   def new(conn, _params) do
     changeset = Character.sign_up_changeset(%Character{})
-    render(conn, "new.html", changeset: changeset)
+    render(conn, "new.html", changeset: changeset, tab: "signin_form")
   end
 
   def create(conn, %{"session" => %{"email" => nil}}) do
@@ -40,6 +40,6 @@ defmodule ApathyDriveWeb.SessionController do
 
     conn
     |> put_flash(:sign_in, "email or password incorrect")
-    |> render("new.html", changeset: changeset)
+    |> render("new.html", changeset: changeset, tab: "signin_form")
   end
 end

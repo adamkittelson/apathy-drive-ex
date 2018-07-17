@@ -30,10 +30,37 @@
   <div class="row">
     <div class="four columns">
       <label for="class">Race</label>
-      <%= select(f, :race_id, ApathyDrive.Race.select, prompt: "Choose Your Race", class: "u-full-width") %>
+      <%= select(f, :race_id, ApathyDrive.Race.select, prompt: "Choose Your Race", class: "u-full-width", id: "race") %>
       <%= error_tag f, :race_id %>
     </div>
   </div>
 
+  <%= for race <- ApathyDrive.Race.all do %>
+    <div class="row">
+      <div id="race-<%= race.id %>" class="eight columns races" style="display: none;">
+        <p><%= race.description %></p>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <div class="four columns">
+      <label for="class">Class</label>
+      <%= select(f, :class_id, ApathyDrive.Class.select, prompt: "Choose Your Class", class: "u-full-width", id: "class") %>
+      <%= error_tag f, :class_id %>
+    </div>
+  </div>
+
+  <%= for class <- ApathyDrive.Class.all do %>
+    <div class="row">
+      <div id="class-<%= class.id %>" class="eight columns classes" style="display: none;">
+        <p><%= class.description %></p>
+      </div>
+    </div>
+  <% end %>
+
+
   <%= submit "Submit", class: "button-primary" %>
 <% end %>
+
+<script>require("js/character_creation")</script>

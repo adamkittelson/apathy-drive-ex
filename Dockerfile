@@ -1,6 +1,6 @@
-FROM quay.io/adamkittelson/elixir-dockerfile:1.5.1
+FROM quay.io/adamkittelson/elixir-dockerfile:1.6.5
 
-ENV REFRESHED_AT 2016-06-23
+ENV REFRESHED_AT 2018-07-01
 
 ADD . /usr/src/app
 WORKDIR /usr/src/app

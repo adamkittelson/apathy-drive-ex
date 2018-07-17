@@ -8,8 +8,12 @@ defmodule ApathyDrive.Commands.Gossip do
       args
       |> Enum.join(" ")
       |> Character.sanitize()
-    ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "scroll", %{html: "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{message}</p>"})
+
+    ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "scroll", %{
+      html: "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{message}</p>"
+    })
+
+    Gossip.broadcast("gossip", %{name: character.name, message: message})
     room
   end
-
 end

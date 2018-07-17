@@ -1,3 +1,3 @@
 defmodule ApathyDriveWeb.ItemView do
-  use ApathyDrive.Web, :view
+  use ApathyDriveWeb, :view
 end
