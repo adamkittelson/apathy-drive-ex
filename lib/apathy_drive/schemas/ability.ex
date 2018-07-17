@@ -574,7 +574,7 @@ defmodule ApathyDrive.Ability do
     caster_sc = Mobile.spellcasting_at_level(caster, caster_level, room)
 
     if kind == "curse" do
-      target_mr = Mobile.magical_resistance_at_level(target, target_level, nil)
+      target_mr = Mobile.magical_resistance_at_level(target, target_level)
       trunc(duration * :math.pow(1.005, caster_sc) * :math.pow(0.985, target_mr))
     else
       trunc(duration * :math.pow(1.005, caster_sc))
@@ -888,8 +888,13 @@ defmodule ApathyDrive.Ability do
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, target}, fn
         %{kind: "physical", damage: damage, damage_type: type}, {caster, target} ->
-          resist = Mobile.physical_resistance_at_level(target, target_level, type)
+          resist = Mobile.physical_resistance_at_level(target, target_level)
+
           damage = damage - resist
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = damage * (1 - modifier / 100)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 
@@ -897,8 +902,8 @@ defmodule ApathyDrive.Ability do
 
         %{kind: "physical", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
-          resist = Mobile.physical_resistance_at_level(target, target_level, type)
-          damage = calculate_damage(damage, resist, potency, caster, target, room)
+          resist = Mobile.physical_resistance_at_level(target, target_level)
+          damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 
@@ -906,16 +911,20 @@ defmodule ApathyDrive.Ability do
 
         %{kind: "magical", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
-          resist = Mobile.magical_resistance_at_level(target, target_level, type)
-          damage = calculate_damage(damage, resist, potency, caster, target, room)
+          resist = Mobile.magical_resistance_at_level(target, target_level)
+          damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           {caster, damage_percent}
 
         %{kind: "magical", damage: damage, damage_type: type}, {caster, target} ->
-          resist = Mobile.magical_resistance_at_level(target, target_level, type)
+          resist = Mobile.magical_resistance_at_level(target, target_level)
           damage = damage - resist
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = damage * (1 - modifier / 100)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 
@@ -923,8 +932,8 @@ defmodule ApathyDrive.Ability do
 
         %{kind: "drain", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
-          resist = Mobile.magical_resistance_at_level(target, target_level, type)
-          damage = calculate_damage(damage, resist, potency, caster, target, room)
+          resist = Mobile.magical_resistance_at_level(target, target_level)
+          damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 
@@ -990,7 +999,7 @@ defmodule ApathyDrive.Ability do
     Mobile.magical_damage_at_level(caster, caster_level)
   end
 
-  def calculate_damage(damage, resist, modifier, caster, target, _room) do
+  def calculate_damage(damage, type, resist, potency, caster, target, _room) do
     _caster_level = Mobile.caster_level(caster, target)
     _target_level = Mobile.target_level(caster, target)
 
@@ -1003,7 +1012,13 @@ defmodule ApathyDrive.Ability do
       #   damage = (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
       #   {:crit, damage * 2}
       true ->
-        _damage = (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
+        damage = damage - resist
+
+        elemental_modifier = Mobile.ability_value(target, "Resist#{type}")
+
+        damage = damage * (1 - elemental_modifier / 100)
+
+        damage * (potency / 100)
         # {:normal, damage}
     end
   end
@@ -1104,14 +1119,19 @@ defmodule ApathyDrive.Ability do
       Enum.reduce(damages, 0, fn
         %{kind: "physical", damage_type: type, potency: potency} = damage, damage_percent ->
           damage = raw_damage(damage, caster, caster_level)
-          resist = Mobile.physical_resistance_at_level(target, target_level, type)
-          damage = (damage - resist) * (potency / 100)
+          resist = Mobile.physical_resistance_at_level(target, target_level)
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = (damage - resist) * (potency / 100) * (1 - modifier / 100)
           damage_percent + damage / Mobile.max_hp_at_level(target, target_level)
 
         %{kind: "magical", damage_type: type, potency: potency} = damage, damage_percent ->
           damage = raw_damage(damage, caster, caster_level)
-          resist = Mobile.magical_resistance_at_level(target, target_level, type)
-          damage = (damage - resist) * (potency / 100)
+          resist = Mobile.magical_resistance_at_level(target, target_level)
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = (damage - resist) * (potency / 100) * (1 - modifier / 100)
           damage_percent + damage / Mobile.max_hp_at_level(target, target_level)
 
         _, damage_percent ->

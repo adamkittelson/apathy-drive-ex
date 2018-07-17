@@ -515,15 +515,6 @@ defmodule ApathyDrive.Character do
       |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
       |> Enum.map(& &1["StatusMessage"])
 
-    # dps =
-    #   character
-    #   |> weapon_potency
-    #   |> Enum.reduce(0, fn %{potency: potency} = damage, dps ->
-    #     potency = potency * Mobile.attacks_per_round(character)
-    #     damage = Ability.raw_damage(damage, character, character.level) * (potency / 100)
-    #     dps + damage / (round_length / 1000)
-    #   end)
-
     resistances =
       ApathyDrive.DamageType
       |> Repo.all()
@@ -547,9 +538,9 @@ defmodule ApathyDrive.Character do
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
       block: Mobile.block_at_level(character, character.level),
-      physical_resistance: Mobile.physical_resistance_at_level(character, character.level, nil),
+      physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
       magical_damage: Mobile.magical_damage_at_level(character, character.level),
-      magical_resistance: Mobile.magical_resistance_at_level(character, character.level, nil),
+      magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
       hp: hp_at_level(character, character.level),
       max_hp: Mobile.max_hp_at_level(character, character.level),
       mana: mana_at_level(character, character.level),
@@ -1094,16 +1085,13 @@ defmodule ApathyDrive.Character do
       damage * (1 + modifier / 100)
     end
 
-    def magical_resistance_at_level(character, level, damage_type) do
-      resist =
-        attribute_at_level(character, :willpower, level) +
-          attribute_at_level(character, :charm, level) / 10
+    def magical_resistance_at_level(character, level) do
+      willpower = attribute_at_level(character, :willpower, level)
+      charm = attribute_at_level(character, :charm, level)
 
-      modifier =
-        30 + ability_value(character, "MagicalResist") +
-          ability_value(character, "Resist#{damage_type}")
+      resist = div(willpower * 5 + charm, 6)
 
-      resist * (modifier / 100)
+      resist + ability_value(character, "MagicalResist")
     end
 
     def max_hp_at_level(mobile, level) do
@@ -1153,15 +1141,15 @@ defmodule ApathyDrive.Character do
       damage * (1 + modifier / 100)
     end
 
-    def physical_resistance_at_level(character, level, damage_type) do
+    def physical_resistance_at_level(character, level) do
       resist =
-        attribute_at_level(character, :strength, level) +
-          attribute_at_level(character, :charm, level) / 10
+        div(
+          attribute_at_level(character, :strength, level) * 5 +
+            attribute_at_level(character, :charm, level),
+          6
+        )
 
-      modifier =
-        30 + ability_value(character, "AC") + ability_value(character, "Resist#{damage_type}")
-
-      resist * (modifier / 100)
+      resist + ability_value(character, "AC")
     end
 
     def power_at_level(%Character{} = character, level) do

@@ -457,14 +457,7 @@ defmodule ApathyDrive.Monster do
     def add_attribute_experience(%Monster{} = monster, _skills_and_experience), do: monster
 
     def attribute_at_level(%Monster{} = monster, attribute, level) do
-      growth =
-        [:strength, :agility, :intellect, :willpower, :health, :charm]
-        |> Enum.reduce(0, &(&2 + Map.get(monster, &1)))
-        |> div(6)
-
-      base = Map.get(monster, attribute)
-
-      (base + growth / 10 * (level - 1)) / 10
+      Map.get(monster, attribute) + level - 1
     end
 
     def attack_interval(monster, weapon \\ nil) do
@@ -571,9 +564,8 @@ defmodule ApathyDrive.Monster do
 
               Mobile.send_scroll(character, "<p>#{message}</p>")
 
-              character =
-                character
-                |> Character.add_reputation(monster.reputations)
+              character
+              |> Character.add_reputation(monster.reputations)
 
               # Monster.generate_loot_for_character(monster, character)
             end)
@@ -673,15 +665,13 @@ defmodule ApathyDrive.Monster do
       damage * (1 + modifier / 100)
     end
 
-    def magical_resistance_at_level(monster, level, damage_type) do
-      resist =
-        attribute_at_level(monster, :willpower, level) +
-          attribute_at_level(monster, :charm, level) / 10
+    def magical_resistance_at_level(monster, level) do
+      willpower = attribute_at_level(monster, :willpower, level)
+      charm = attribute_at_level(monster, :charm, level)
 
-      modifier =
-        ability_value(monster, "MagicalResist") + ability_value(monster, "Resist#{damage_type}")
+      resist = div(willpower * 5 + charm, 6)
 
-      resist * (modifier / 100)
+      resist + ability_value(monster, "MagicalResist")
     end
 
     def max_hp_at_level(%Monster{grade: grade} = monster, level) do
@@ -739,10 +729,15 @@ defmodule ApathyDrive.Monster do
       damage * (1 + modifier / 100)
     end
 
-    def physical_resistance_at_level(monster, level, damage_type) do
-      resist = attribute_at_level(monster, :strength, level)
-      modifier = ability_value(monster, "AC") + ability_value(monster, "Resist#{damage_type}")
-      resist * (modifier / 100)
+    def physical_resistance_at_level(monster, level) do
+      strength = attribute_at_level(monster, :strength, level)
+      charm = attribute_at_level(monster, :charm, level)
+
+      resist = div(strength * 5 + charm, 6)
+
+      ac = ability_value(monster, "AC")
+
+      resist + ac
     end
 
     def power_at_level(%Monster{} = monster, level) do

@@ -526,16 +526,13 @@ defmodule ApathyDrive.Companion do
       damage * (1 + modifier / 100)
     end
 
-    def magical_resistance_at_level(companion, level, damage_type) do
-      resist =
-        attribute_at_level(companion, :willpower, level) +
-          attribute_at_level(companion, :charm, level) / 10
+    def magical_resistance_at_level(companion, level) do
+      willpower = attribute_at_level(companion, :willpower, level)
+      charm = attribute_at_level(companion, :charm, level)
 
-      modifier =
-        ability_value(companion, "MagicalResist") +
-          ability_value(companion, "Resist#{damage_type}")
+      resist = div(willpower * 5 + charm, 6)
 
-      resist * (modifier / 100)
+      resist + ability_value(companion, "MagicalResist")
     end
 
     def max_hp_at_level(%Companion{} = companion, level) do
@@ -581,13 +578,15 @@ defmodule ApathyDrive.Companion do
       damage * (1 + modifier / 100)
     end
 
-    def physical_resistance_at_level(companion, level, damage_type) do
+    def physical_resistance_at_level(companion, level) do
       resist =
-        attribute_at_level(companion, :strength, level) +
-          attribute_at_level(companion, :charm, level) / 10
+        div(
+          attribute_at_level(companion, :strength, level) * 5 +
+            attribute_at_level(companion, :charm, level),
+          6
+        )
 
-      modifier = ability_value(companion, "AC") + ability_value(companion, "Resist#{damage_type}")
-      resist * (modifier / 100)
+      resist + ability_value(companion, "AC")
     end
 
     def power_at_level(%Companion{} = companion, level) do
