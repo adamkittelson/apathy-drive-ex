@@ -211,3 +211,6 @@ CHANGELOG
 
 ---- 0.0.80 / 2018-06-19 / exp-for-skill-usage ---------------------------------
 * exp for skill usage
+
+---- 0.0.81 / 2018-07-16 / classes ---------------------------------------------
+* basic class stuff etc
