@@ -719,6 +719,9 @@ defmodule ApathyDrive.Character do
 
           character_damage = character.strength / Mobile.attacks_per_round(character, weapon)
 
+          round_percentage =
+            Mobile.attack_interval(character, weapon) / Mobile.round_length_in_ms(character)
+
           min_damage = trunc((min_damage + character_damage) * 100)
           max_damage = trunc((max_damage + character_damage) * 100)
 
@@ -726,6 +729,7 @@ defmodule ApathyDrive.Character do
 
           %Ability{
             kind: "attack",
+            round_percentage: round_percentage,
             mana: 0,
             user_message:
               "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",

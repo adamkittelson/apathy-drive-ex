@@ -42,6 +42,7 @@ defmodule ApathyDrive.Ability do
     field(:result, :any, virtual: true)
     field(:cast_complete, :boolean, virtual: true, default: false)
     field(:skills, :any, virtual: true, default: [])
+    field(:round_percentage, :any, virtual: true, default: 1.00)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -861,17 +862,6 @@ defmodule ApathyDrive.Ability do
     {caster, Map.put(target, :ability_shift, percentage_healed)}
   end
 
-  def apply_instant_trait(
-        {"Damage", value},
-        %{} = target,
-        %Ability{kind: "critical"},
-        caster,
-        _room
-      )
-      when is_float(value) do
-    {caster, Map.put(target, :ability_shift, value)}
-  end
-
   def apply_instant_trait({"Damage", value}, %{} = target, _ability, caster, _room)
       when is_float(value) do
     {caster, Map.put(target, :ability_shift, -value)}
@@ -881,16 +871,20 @@ defmodule ApathyDrive.Ability do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
+    round_percent = ability.round_percentage
+
     target =
       target
       |> Map.put(:ability_shift, 0)
 
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, target}, fn
-        %{kind: "physical", damage: damage, damage_type: type}, {caster, target} ->
+        %{kind: "physical", damage: dmg, damage_type: type}, {caster, target} ->
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
-          damage = damage - resist
+          resist = resist * round_percent
+
+          damage = dmg - resist
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -903,6 +897,8 @@ defmodule ApathyDrive.Ability do
         %{kind: "physical", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.physical_resistance_at_level(target, target_level)
+          resist = resist * round_percent
+
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
@@ -912,6 +908,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "magical", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level)
+          resist = resist * round_percent
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
@@ -920,6 +917,7 @@ defmodule ApathyDrive.Ability do
 
         %{kind: "magical", damage: damage, damage_type: type}, {caster, target} ->
           resist = Mobile.magical_resistance_at_level(target, target_level)
+          resist = resist * round_percent
           damage = damage - resist
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
@@ -933,6 +931,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "drain", damage_type: type, potency: potency} = damage, {caster, target} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level)
+          resist = resist * round_percent
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
@@ -1336,7 +1335,7 @@ defmodule ApathyDrive.Ability do
         %{ability_shift: shift} = target,
         mobile
       ) do
-    amount = abs(trunc(shift * Mobile.max_hp_at_level(target, mobile.level)))
+    amount = -trunc(shift * Mobile.max_hp_at_level(target, mobile.level))
 
     cond do
       amount < 1 and has_ability?(ability, "Damage") ->
@@ -1347,7 +1346,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.user_message
-          |> Text.interpolate(%{"target" => target, "amount" => amount})
+          |> Text.interpolate(%{"target" => target, "amount" => abs(amount)})
           |> Text.capitalize_first()
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
@@ -1448,7 +1447,7 @@ defmodule ApathyDrive.Ability do
         %{ability_shift: _shift} = target,
         mobile
       ) do
-    amount = abs(trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level)))
+    amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level))
 
     cond do
       amount < 1 and has_ability?(ability, "Damage") ->
@@ -1459,7 +1458,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.target_message
-          |> Text.interpolate(%{"user" => caster, "amount" => amount})
+          |> Text.interpolate(%{"user" => caster, "amount" => abs(amount)})
           |> Text.capitalize_first()
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
@@ -1569,7 +1568,7 @@ defmodule ApathyDrive.Ability do
         %{ability_shift: _shift} = target,
         mobile
       ) do
-    amount = abs(trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level)))
+    amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level))
 
     cond do
       amount < 1 and has_ability?(ability, "Damage") ->
@@ -1580,7 +1579,7 @@ defmodule ApathyDrive.Ability do
       :else ->
         message =
           ability.spectator_message
-          |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => amount})
+          |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => abs(amount)})
           |> Text.capitalize_first()
 
         "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
