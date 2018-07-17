@@ -55,6 +55,7 @@ defmodule ApathyDrive.Monster do
     field(:ability_shift, :float, virtual: true)
     field(:ability_special, :float, virtual: true)
     field(:reputations, :map, virtual: true, default: [])
+    field(:max_energy, :integer, virtual: true, default: 1000)
 
     timestamps()
 
@@ -201,7 +202,7 @@ defmodule ApathyDrive.Monster do
   end
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
-    base = 40
+    base = 30
     min = trunc(base - 20)
     max = trunc(base + 20)
 
@@ -460,10 +461,6 @@ defmodule ApathyDrive.Monster do
       Map.get(monster, attribute) + level - 1
     end
 
-    def attack_interval(monster, weapon \\ nil) do
-      trunc(round_length_in_ms(monster) / attacks_per_round(monster, weapon))
-    end
-
     def attack_ability(monster) do
       monster.abilities
       |> Map.values()
@@ -471,10 +468,6 @@ defmodule ApathyDrive.Monster do
       |> Enum.random()
       |> Map.put(:kind, "attack")
       |> Map.put(:ignores_round_cooldown?, true)
-    end
-
-    def attacks_per_round(_monster, _weapon) do
-      1
     end
 
     def auto_attack_target(%Monster{} = monster, room, attack_ability) do

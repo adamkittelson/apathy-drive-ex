@@ -7,6 +7,7 @@ defmodule ApathyDrive.RoomServer do
     Commands,
     Companion,
     Enchantment,
+    Energy,
     LairMonster,
     Mobile,
     MonsterSpawning,
@@ -423,13 +424,14 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, ref, fn %{} = mobile ->
         attack = Mobile.attack_ability(mobile)
+        time = Energy.duration_for_energy(mobile, attack.energy)
 
         if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
           if TimerManager.time_remaining(mobile, :casting) == 0 do
             mobile =
               TimerManager.send_after(
                 mobile,
-                {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}}
+                {:auto_attack_timer, time, {:execute_auto_attack, ref}}
               )
 
             room = put_in(room.mobiles[mobile.ref], mobile)
@@ -438,7 +440,7 @@ defmodule ApathyDrive.RoomServer do
           else
             TimerManager.send_after(
               mobile,
-              {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}}
+              {:auto_attack_timer, time, {:execute_auto_attack, ref}}
             )
           end
         else

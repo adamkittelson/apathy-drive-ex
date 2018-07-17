@@ -35,6 +35,7 @@ defmodule ApathyDrive.Ability do
     field(:duration, :integer, default: 0)
     field(:cooldown, :integer)
     field(:cast_time, :integer)
+    field(:energy, :integer, default: 1000)
 
     field(:level, :integer, virtual: true)
     field(:traits, :map, virtual: true, default: %{})
@@ -42,7 +43,6 @@ defmodule ApathyDrive.Ability do
     field(:result, :any, virtual: true)
     field(:cast_complete, :boolean, virtual: true, default: false)
     field(:skills, :any, virtual: true, default: [])
-    field(:round_percentage, :any, virtual: true, default: 1.00)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -536,8 +536,8 @@ defmodule ApathyDrive.Ability do
               if Map.has_key?(caster, :attack_target) do
                 if is_nil(caster.attack_target) do
                   time =
-                    min(
-                      Mobile.attack_interval(caster),
+                    max(
+                      0,
                       TimerManager.time_remaining(caster, :auto_attack_timer)
                     )
 
@@ -871,7 +871,7 @@ defmodule ApathyDrive.Ability do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    round_percent = ability.round_percentage
+    round_percent = ability.energy / caster.max_energy
 
     target =
       target

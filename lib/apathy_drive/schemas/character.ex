@@ -55,6 +55,7 @@ defmodule ApathyDrive.Character do
     field(:race_id, :integer)
     field(:class_id, :integer)
     field(:pity_modifier, :integer, default: 0)
+
     field(:level, :integer, virtual: true, default: 1)
     field(:race, :string, virtual: true)
     field(:class, :string, virtual: true)
@@ -86,6 +87,7 @@ defmodule ApathyDrive.Character do
     field(:combat_level, :integer, virtual: true, default: 3)
     field(:encumbrance, :integer, virtual: true, default: 0)
     field(:max_encumbrance, :integer, virtual: true, default: 2000)
+    field(:max_energy, :integer, virtual: true, default: 1000)
 
     belongs_to(:room, Room)
 
@@ -561,7 +563,7 @@ defmodule ApathyDrive.Character do
       nil ->
         [
           %{
-            potency: 75 / Mobile.attacks_per_round(character),
+            potency: 75 / 1,
             kind: "physical",
             damage_type_id: 3,
             damage_type: "Normal"
@@ -571,6 +573,28 @@ defmodule ApathyDrive.Character do
       %Item{damage: damage} = item ->
         damage ++ Systems.Effect.effect_list(item, "Damage")
     end
+  end
+
+  def energy_per_swing(character, weapon \\ nil) do
+    weapon = weapon || Character.weapon(character)
+
+    cost =
+      weapon.speed * 1000 /
+        ((character.level * (character.combat_level + 2) + 45) * (character.agility + 150) * 1500 /
+           9000.0)
+
+    cost =
+      if character.strength < weapon.required_strength do
+        ((weapon.required_strength - character.strength) * 3 + 200) * cost / 200.0
+      else
+        cost
+      end
+
+    trunc(
+      cost *
+        (Float.floor(Float.floor(character.encumbrance / character.max_encumbrance * 100) / 2.0) +
+           75) / 100.0
+    )
   end
 
   defimpl ApathyDrive.Mobile, for: Character do
@@ -658,36 +682,6 @@ defmodule ApathyDrive.Character do
       Map.get(character, attribute)
     end
 
-    def attack_interval(character, weapon \\ nil) do
-      attacks_per_round = attacks_per_round(character, weapon)
-      round_length = round_length_in_ms(character)
-      trunc(round_length / attacks_per_round)
-    end
-
-    def attacks_per_round(character, weapon \\ nil) do
-      weapon = weapon || Character.weapon(character)
-
-      cost =
-        weapon.speed * 1000 /
-          ((character.level * (character.combat_level + 2) + 45) * (character.agility + 150) *
-             1500 / 9000.0)
-
-      cost =
-        if character.strength < weapon.required_strength do
-          ((weapon.required_strength - character.strength) * 3 + 200) * cost / 200.0
-        else
-          cost
-        end
-
-      1 /
-        (cost *
-           Float.round(
-             Float.floor(
-               Float.floor(character.encumbrance / character.max_encumbrance * 100) / 2.0
-             ) + 75
-           ) / 100.0 / 1000)
-    end
-
     def attack_ability(character) do
       case Character.weapon(character) do
         nil ->
@@ -717,10 +711,9 @@ defmodule ApathyDrive.Character do
         } = weapon ->
           [singular_hit, plural_hit] = Enum.random(hit_verbs)
 
-          character_damage = character.strength / Mobile.attacks_per_round(character, weapon)
+          energy = Character.energy_per_swing(character, weapon)
 
-          round_percentage =
-            Mobile.attack_interval(character, weapon) / Mobile.round_length_in_ms(character)
+          character_damage = character.strength * energy / character.max_energy
 
           min_damage = trunc((min_damage + character_damage) * 100)
           max_damage = trunc((max_damage + character_damage) * 100)
@@ -729,7 +722,7 @@ defmodule ApathyDrive.Character do
 
           %Ability{
             kind: "attack",
-            round_percentage: round_percentage,
+            energy: energy,
             mana: 0,
             user_message:
               "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
