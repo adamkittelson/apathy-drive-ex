@@ -87,6 +87,7 @@ defmodule ApathyDrive.Character do
     field(:combat_level, :integer, virtual: true, default: 3)
     field(:encumbrance, :integer, virtual: true, default: 0)
     field(:max_encumbrance, :integer, virtual: true, default: 2000)
+    field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
 
     belongs_to(:room, Room)
@@ -547,6 +548,8 @@ defmodule ApathyDrive.Character do
       max_hp: Mobile.max_hp_at_level(character, character.level),
       mana: mana_at_level(character, character.level),
       max_mana: Mobile.max_mana_at_level(character, character.level),
+      energy: character.energy,
+      max_energy: character.max_energy,
       strength: Mobile.attribute_at_level(character, :strength, character.level),
       agility: Mobile.attribute_at_level(character, :agility, character.level),
       intellect: Mobile.attribute_at_level(character, :intellect, character.level),
@@ -1278,6 +1281,11 @@ defmodule ApathyDrive.Character do
       cost = Ability.mana_cost_at_level(ability, character.level)
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
       update_in(character.mana, &max(0, &1 - percentage))
+    end
+
+    def subtract_energy(character, ability) do
+      IO.puts("subtracting energy #{ability.energy}")
+      update_in(character.energy, &max(0, &1 - ability.energy))
     end
 
     def target_level(%Character{level: _caster_level}, %Character{level: target_level}),

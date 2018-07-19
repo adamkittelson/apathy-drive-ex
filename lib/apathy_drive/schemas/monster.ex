@@ -55,6 +55,7 @@ defmodule ApathyDrive.Monster do
     field(:ability_shift, :float, virtual: true)
     field(:ability_special, :float, virtual: true)
     field(:reputations, :map, virtual: true, default: [])
+    field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
 
     timestamps()
@@ -847,6 +848,10 @@ defmodule ApathyDrive.Monster do
       cost = Ability.mana_cost_at_level(ability, monster.level)
       percentage = cost / Mobile.max_mana_at_level(monster, monster.level)
       update_in(monster.mana, &max(0, &1 - percentage))
+    end
+
+    def subtract_energy(monster, ability) do
+      update_in(monster.energy, &max(0, &1 - ability.energy))
     end
 
     def target_level(%Monster{level: monster_level}, %Monster{level: _target_level}),

@@ -40,6 +40,7 @@ defprotocol ApathyDrive.Mobile do
   def spellcasting_at_level(mobile, level, room)
   def stealth_at_level(mobile, level)
   def subtract_mana(mobile, ability)
+  def subtract_energy(mobile, ability)
   def target_level(caster, target)
   def tracking_at_level(mobile, level, room)
   def update_prompt(mobile)

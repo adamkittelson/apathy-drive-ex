@@ -45,7 +45,9 @@ defmodule ApathyDrive.Companion do
     :leader,
     :attack_target,
     :ability_shift,
-    :ability_special
+    :ability_special,
+    :energy,
+    :max_energy
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -683,6 +685,10 @@ defmodule ApathyDrive.Companion do
       cost = Ability.mana_cost_at_level(ability, companion.level)
       percentage = cost / Mobile.max_mana_at_level(companion, companion.level)
       update_in(companion.mana, &max(0, &1 - percentage))
+    end
+
+    def subtract_energy(companion, ability) do
+      update_in(companion.energy, &max(0, &1 - ability.energy))
     end
 
     def target_level(%Companion{level: _caster_level}, %Character{level: target_level}),

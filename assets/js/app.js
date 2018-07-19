@@ -87,6 +87,9 @@ var update_score_attribute = function (attribute, new_value) {
 }
 
 chan.on("update score", function (score_data) {
+  progress($(".hp"), (score_data.hp / score_data.max_hp * 100))
+  progress($(".mana"), (score_data.mana / score_data.max_mana * 100))
+  progress($(".energy"), (score_data.energy / score_data.max_energy * 100))
   update_score_attribute("name", _.padEnd(score_data.name, 12));
   update_score_attribute("level", _.padEnd(score_data.level, 10));
   update_score_attribute("accuracy", score_data.accuracy);
@@ -224,3 +227,12 @@ $(document).on('keyup', "input", function (event) {
     return command_history("down");
   }
 });
+
+window.progress = function ($element, percent) {
+  $.each($element, function (index, value) {
+    var elem = $(value)
+    var progressBarWidth = percent * elem.width() / 100;
+    elem.find('div').stop().animate({ width: progressBarWidth }, 50);
+  })
+
+}

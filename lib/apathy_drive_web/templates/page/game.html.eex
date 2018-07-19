@@ -1,5 +1,18 @@
 <%= render "nav.html", conn: @conn %>
 
+
+<div id="player-bars">
+  <div class="progress-bar hp">
+    <div class="red"></div>
+    </div>
+  <div class="progress-bar energy">
+    <div class="yellow"></div>
+    </div>
+  <div class="progress-bar mana">
+    <div class="blue"></div>
+  </div>
+</div>
+
 <div class="score">
   <span class="dark-green">Name:</span> <span id="score-name" class="dark-cyan"></span> <span class="dark-green">Level:</span> <span id="score-level" class="dark-cyan"></span> <span class="dark-green">Accuracy:</span> <span id="score-accuracy" class="dark-cyan"></span>
   <span class="dark-green">Race:</span> <span id="score-race" class="dark-cyan"></span> <span class="dark-green">Class:</span> <span id="score-class" class="dark-cyan"></span> <span class="dark-green">Dodge:</span>    <span id="score-dodge" class="dark-cyan"></span>
@@ -21,7 +34,16 @@
     <div id="scroll">
     </div>
     <footer id="footer" class="twelve columns">
-      <span id="prompt"></span><input id="command" size="50" class="prompt" autocomplete="off"/>
+      <div id="prompt"></div><input id="command" size="50" class="prompt" autocomplete="off"/>
+      <div class="progress-bar hp">
+        <div class="red"></div>
+        </div>
+      <div class="progress-bar energy">
+        <div class="yellow"></div>
+        </div>
+      <div class="progress-bar mana">
+        <div class="blue"></div>
+      </div>
     </footer>
 </div>
 

@@ -67,13 +67,51 @@ input.prompt {
   font-size: 14px;
   display: inline;
   margin-bottom: 0px;
-  width: 100%;
+  width: 80%;
   position: relative;
-  left: 125px;
-  top: -12px;
+  top: -5px;
+  font-size: 15px;
 }
 
+#player-bars {
+  position: fixed;
+  top: 390px;
+  left: 6px;
+  width: 405px;
+}
 
+.progress-bar {
+
+  width: 32%;
+  height: 7px;
+  margin-bottom: 5px;
+  background: #292929;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 0 5px #333;
+  float: left;
+  margin-left: 5px;
+
+  div {
+    height: 100%;
+    color: #fff;
+    text-align: right;
+    font-size: 12px;
+    line-height: 22px;
+  }
+
+  div.blue {
+    background: linear-gradient(#0000dd, #000066);
+  }
+
+  div.red {
+    background: linear-gradient(#c00000, #400000);
+  }
+
+  div.yellow {
+    background: linear-gradient(#c0c000,#404000);
+  }
+}
 
 
 /* old */
@@ -147,6 +185,8 @@ pre {
 #prompt {
   color: silver;
   margin-right: 5px;
+  float: left;
+  line-height: 8px;
 }
 
 

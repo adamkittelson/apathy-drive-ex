@@ -366,6 +366,7 @@ defmodule ApathyDrive.Ability do
               |> Stealth.reveal()
               |> apply_cooldowns(ability)
               |> Mobile.subtract_mana(ability)
+              |> Mobile.subtract_energy(ability)
 
             Mobile.update_prompt(caster)
             caster
@@ -527,6 +528,7 @@ defmodule ApathyDrive.Ability do
               caster
               |> apply_cooldowns(ability)
               |> Mobile.subtract_mana(ability)
+              |> Mobile.subtract_energy(ability)
 
             Mobile.update_prompt(caster)
 
