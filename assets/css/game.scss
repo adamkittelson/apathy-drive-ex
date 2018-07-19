@@ -47,6 +47,8 @@ canvas {
   color: silver;
   line-height: 9px;
   width: 800px;
+  z-index: 1;
+  position: relative;
 }
 
 #footer {
@@ -57,6 +59,7 @@ canvas {
   margin-bottom: 1em;
   width: 100%;
   padding-top: 5px;
+  padding-bottom: 20px;
 }
 
 input.prompt {
@@ -78,6 +81,17 @@ input.prompt {
   top: 390px;
   left: 6px;
   width: 405px;
+}
+
+#bottom-bars {
+  position: fixed;
+  bottom: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 102%;
+  z-index: 0;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .progress-bar {
