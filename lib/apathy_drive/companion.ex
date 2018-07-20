@@ -4,6 +4,7 @@ defmodule ApathyDrive.Companion do
     Character,
     Companion,
     CompanionAI,
+    Energy,
     Mobile,
     Monster,
     MonsterAbility,
@@ -688,7 +689,14 @@ defmodule ApathyDrive.Companion do
     end
 
     def subtract_energy(companion, ability) do
-      update_in(companion.energy, &max(0, &1 - ability.energy))
+      initial_energy = companion.energy
+      companion = update_in(companion.energy, &max(0, &1 - ability.energy))
+
+      if initial_energy == companion.max_energy do
+        Energy.regenerate(companion)
+      else
+        companion
+      end
     end
 
     def target_level(%Companion{level: _caster_level}, %Character{level: target_level}),

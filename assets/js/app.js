@@ -86,6 +86,10 @@ var update_score_attribute = function (attribute, new_value) {
   }
 }
 
+chan.on("update score", function (data) {
+  progress($(".energy"), (data.energy / data.max_energy * 100))
+})
+
 chan.on("update score", function (score_data) {
   progress($(".hp"), (score_data.hp / score_data.max_hp * 100))
   progress($(".mana"), (score_data.mana / score_data.max_mana * 100))

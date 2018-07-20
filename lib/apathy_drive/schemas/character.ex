@@ -11,6 +11,7 @@ defmodule ApathyDrive.Character do
     CharacterReputation,
     Class,
     Companion,
+    Energy,
     Item,
     Level,
     Monster,
@@ -507,6 +508,10 @@ defmodule ApathyDrive.Character do
     send(socket, {:update_score, data})
   end
 
+  def update_energy(%Character{socket: socket} = character) do
+    send(socket, {:update_energy, %{energy: character.energy, max_energy: character.max_energy}})
+  end
+
   def pulse_score_attribute(%Character{socket: socket}, attribute) do
     send(socket, {:pulse_score_attribute, attribute})
   end
@@ -962,6 +967,7 @@ defmodule ApathyDrive.Character do
         |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
         |> Map.put(:hp, 1.0)
         |> Map.put(:mana, 1.0)
+        |> Map.put(:energy, character.max_energy)
         |> update_in([:effects], fn effects ->
           effects
           |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race"] end)
@@ -1284,8 +1290,14 @@ defmodule ApathyDrive.Character do
     end
 
     def subtract_energy(character, ability) do
-      IO.puts("subtracting energy #{ability.energy}")
-      update_in(character.energy, &max(0, &1 - ability.energy))
+      initial_energy = character.energy
+      character = update_in(character.energy, &max(0, &1 - ability.energy))
+
+      if initial_energy == character.max_energy do
+        Energy.regenerate(character)
+      else
+        character
+      end
     end
 
     def target_level(%Character{level: _caster_level}, %Character{level: target_level}),

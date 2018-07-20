@@ -385,6 +385,15 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:regenerate_energy, mobile_ref}, room) do
+    room =
+      Room.update_mobile(room, mobile_ref, fn mobile ->
+        Energy.regenerate(mobile)
+      end)
+
+    {:noreply, room}
+  end
+
   def handle_info({:auto_move, ref}, room) do
     if mobile = Room.get_mobile(room, ref) do
       if should_move?(room, mobile) do
@@ -424,38 +433,46 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, ref, fn %{} = mobile ->
         attack = Mobile.attack_ability(mobile)
-        time = Energy.duration_for_energy(mobile, attack.energy)
+        # max 5 auto attacks per "round"
+        time = div(Mobile.round_length_in_ms(mobile), 5)
 
-        if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
-          if TimerManager.time_remaining(mobile, :casting) == 0 do
-            mobile =
+        if mobile.energy >= attack.energy do
+          if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
+            if TimerManager.time_remaining(mobile, :casting) == 0 do
+              mobile =
+                TimerManager.send_after(
+                  mobile,
+                  {:auto_attack_timer, time, {:execute_auto_attack, ref}}
+                )
+
+              room = put_in(room.mobiles[mobile.ref], mobile)
+
+              Ability.execute(room, mobile.ref, attack, [target_ref])
+            else
               TimerManager.send_after(
                 mobile,
                 {:auto_attack_timer, time, {:execute_auto_attack, ref}}
               )
-
-            room = put_in(room.mobiles[mobile.ref], mobile)
-
-            Ability.execute(room, mobile.ref, attack, [target_ref])
+            end
           else
-            TimerManager.send_after(
-              mobile,
-              {:auto_attack_timer, time, {:execute_auto_attack, ref}}
-            )
+            case mobile do
+              %Character{attack_target: target} = character when is_reference(target) ->
+                Mobile.send_scroll(
+                  character,
+                  "<p><span class='dark-yellow'>*Combat Off*</span></p>"
+                )
+
+                Map.put(character, :attack_target, nil)
+
+              mobile ->
+                mobile
+            end
           end
         else
-          case mobile do
-            %Character{attack_target: target} = character when is_reference(target) ->
-              Mobile.send_scroll(
-                character,
-                "<p><span class='dark-yellow'>*Combat Off*</span></p>"
-              )
-
-              Map.put(character, :attack_target, nil)
-
-            mobile ->
-              mobile
-          end
+          TimerManager.send_after(
+            mobile,
+            {:auto_attack_timer, time, {:execute_auto_attack, ref}}
+          )
         end
       end)
 

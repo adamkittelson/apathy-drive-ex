@@ -6,6 +6,7 @@ defmodule ApathyDrive.Monster do
     Ability,
     Area,
     Character,
+    Energy,
     Item,
     Mobile,
     Monster,
@@ -203,9 +204,9 @@ defmodule ApathyDrive.Monster do
   end
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
-    base = 30
-    min = trunc(base - 20)
-    max = trunc(base + 20)
+    base = 35
+    min = trunc(base - 10)
+    max = trunc(base + 10)
 
     room_monster = %RoomMonster{
       level: level,
@@ -851,7 +852,14 @@ defmodule ApathyDrive.Monster do
     end
 
     def subtract_energy(monster, ability) do
-      update_in(monster.energy, &max(0, &1 - ability.energy))
+      initial_energy = monster.energy
+      monster = update_in(monster.energy, &max(0, &1 - ability.energy))
+
+      if initial_energy == monster.max_energy do
+        Energy.regenerate(monster)
+      else
+        monster
+      end
     end
 
     def target_level(%Monster{level: monster_level}, %Monster{level: _target_level}),
