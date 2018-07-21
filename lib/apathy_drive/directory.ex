@@ -73,6 +73,7 @@ defmodule ApathyDrive.Directory do
     characters =
       if game_name do
         Enum.into(state.remote, [])
+        |> Enum.filter(&String.starts_with?(String.downcase(&1.game), String.downcase(game_name)))
       else
         all_characters(state)
       end
@@ -84,11 +85,7 @@ defmodule ApathyDrive.Directory do
         {:reply, :not_found, state}
 
       %{name: name, game: game} ->
-        if String.starts_with?(String.downcase(game), String.downcase(game_name)) do
-          {:reply, {:remote, name, game}, state}
-        else
-          {:reply, :not_found, state}
-        end
+        {:reply, {:remote, name, game}, state}
 
       %{name: name, room: room_id, ref: ref} ->
         {:reply, {:local, name, room_id, ref}, state}
