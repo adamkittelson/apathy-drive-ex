@@ -10,7 +10,7 @@ defmodule ApathyDrive do
       worker(ApathyDriveWeb.Endpoint, []),
       worker(ApathyDrive.Repo, []),
       worker(ApathyDrive.Migrator, [], restart: :temporary),
-      supervisor(ApathyDrive.Presence, []),
+      worker(ApathyDrive.Directory, []),
       supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
       worker(ApathyDrive.Metrics, [])
     ]

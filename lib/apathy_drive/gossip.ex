@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Gossip do
   require Logger
+  alias ApathyDrive.Directory
 
   @behaviour Gossip.Client
 
@@ -37,7 +38,7 @@ defmodule ApathyDrive.Gossip do
   end
 
   def players do
-    ApathyDrive.Commands.Who.names()
+    Directory.list_characters()
   end
 
   def user_agent do

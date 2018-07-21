@@ -136,10 +136,6 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
-    {:noreply, socket}
-  end
-
   def handle_info(%Phoenix.Socket.Broadcast{event: event, payload: payload}, socket) do
     Phoenix.Channel.push(socket, event, payload)
 

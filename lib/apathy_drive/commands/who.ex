@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Who do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile, Presence}
+  alias ApathyDrive.{Character, Directory, Mobile}
 
   def keywords, do: ["who"]
 
@@ -15,7 +15,7 @@ defmodule ApathyDrive.Commands.Who do
       "<p><span class='dark-grey'>        ===================</span>\n\n</p>"
     )
 
-    list = names()
+    list = Directory.list_characters()
 
     longest_name_length =
       list
@@ -36,10 +36,5 @@ defmodule ApathyDrive.Commands.Who do
     end)
 
     room
-  end
-
-  def names do
-    Presence.metas("spirits:online")
-    |> Enum.map(& &1.name)
   end
 end

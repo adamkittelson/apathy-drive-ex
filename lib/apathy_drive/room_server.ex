@@ -6,6 +6,7 @@ defmodule ApathyDrive.RoomServer do
     Character,
     Commands,
     Companion,
+    Directory,
     Enchantment,
     Energy,
     LairMonster,
@@ -15,8 +16,7 @@ defmodule ApathyDrive.RoomServer do
     Repo,
     Room,
     RoomSupervisor,
-    TimerManager,
-    Presence
+    TimerManager
   }
 
   use Timex
@@ -143,16 +143,6 @@ defmodule ApathyDrive.RoomServer do
       room.mobiles[existing_character.ref]
       |> Mobile.update_prompt()
 
-      case Presence.track(socket, "spirits:online", existing_character.id, %{
-             name: existing_character.name
-           }) do
-        {:ok, _} ->
-          :ok
-
-        {:error, {:already_tracked, _pid, _topic, _key}} ->
-          :ok
-      end
-
       {:reply, room.mobiles[existing_character.ref], room}
     else
       monitor_ref = Process.monitor(socket)
@@ -179,19 +169,7 @@ defmodule ApathyDrive.RoomServer do
         put_in(room.mobiles[character.ref], character)
         |> Companion.load_for_character(character)
 
-      case Presence.track(socket, "spirits:online", character.id, %{name: character.name}) do
-        {:ok, _} ->
-          Gossip.player_sign_in(character.name)
-
-          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-            html: "<p>#{character.name} just entered the Realm.</p>"
-          })
-
-          :ok
-
-        {:error, {:already_tracked, _pid, _topic, _key}} ->
-          :ok
-      end
+      Directory.add_character(%{name: character.name, ref: character.ref})
 
       {:reply, character, room}
     end
@@ -366,12 +344,7 @@ defmodule ApathyDrive.RoomServer do
       |> update_in([:mobiles], &Map.delete(&1, ref))
       |> update_in([:mobiles], &Map.delete(&1, companion && companion.ref))
 
-    Gossip.player_sign_out(character.name)
-    Presence.untrack(character.socket, "spirits:online", character.id)
-
-    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-      html: "<p>#{character.name} just left the Realm.</p>"
-    })
+    Directory.remove_character(character.ref)
 
     {:noreply, room}
   end
