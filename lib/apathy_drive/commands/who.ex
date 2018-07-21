@@ -15,24 +15,36 @@ defmodule ApathyDrive.Commands.Who do
       "<p><span class='dark-grey'>        ===================</span>\n\n</p>"
     )
 
-    list = Directory.list_characters()
+    list =
+      Directory.list_characters()
+      |> Enum.sort()
 
     longest_name_length =
       list
-      |> Enum.max_by(&String.length/1)
+      |> Enum.max_by(&String.length(&1.name))
+      |> Map.get(:name)
       |> String.length()
 
     list
-    |> Enum.sort()
-    |> Enum.each(fn name ->
-      alignment = "Good" |> String.pad_leading(7)
-      name = name |> String.pad_trailing(longest_name_length)
-      title = "Adventurer"
+    |> Enum.sort_by(& &1.name)
+    |> Enum.each(fn
+      %{name: name, game: game} ->
+        name = name |> String.pad_trailing(longest_name_length)
 
-      Mobile.send_scroll(
-        character,
-        "<p>#{alignment} <span class='dark-green'>#{name} - <span class='dark-magenta'>#{title}</span></p>"
-      )
+        Mobile.send_scroll(
+          character,
+          "<p>        <span class='dark-green'>#{name} - <span class='dark-magenta'>(@#{game})</span></p>"
+        )
+
+      %{name: name} ->
+        alignment = "Good" |> String.pad_leading(7)
+        name = name |> String.pad_trailing(longest_name_length)
+        title = "Adventurer"
+
+        Mobile.send_scroll(
+          character,
+          "<p>#{alignment} <span class='dark-green'>#{name} - <span class='dark-magenta'>#{title}</span></p>"
+        )
     end)
 
     room

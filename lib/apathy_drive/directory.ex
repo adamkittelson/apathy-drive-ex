@@ -7,12 +7,16 @@ defmodule ApathyDrive.Directory do
   end
 
   def init(_state) do
+    Process.send_after(self(), :refresh_remote_players, :timer.seconds(5))
+
     {:ok,
      %{
        local:
          %{
            # name => %{name: name, room: room_id, ref: ref}
-         }
+         },
+       # %{name: name, game: game}
+       remote: MapSet.new()
      }}
   end
 
@@ -24,8 +28,16 @@ defmodule ApathyDrive.Directory do
     GenServer.call(__MODULE__, {:add_character, character})
   end
 
+  def add_character(game, character) do
+    GenServer.call(__MODULE__, {:add_character, game, character})
+  end
+
   def remove_character(name) do
     GenServer.call(__MODULE__, {:remove_character, name})
+  end
+
+  def remove_character(game, name) do
+    GenServer.call(__MODULE__, {:remove_character, game, name})
   end
 
   def find(name) do
@@ -44,13 +56,28 @@ defmodule ApathyDrive.Directory do
     {:reply, :ok, put_in(state, [:local, character.name], character)}
   end
 
+  def handle_call({:add_character, game, name}, _from, state) do
+    {:reply, :ok, update_in(state, [:remote], &MapSet.put(&1, %{name: name, game: game}))}
+  end
+
   def handle_call({:find, character}, _from, state) do
-    state.local
-    |> Map.values()
+    characters =
+      if character =~ "@" do
+        Enum.into(state.remote, [])
+      else
+        all_characters(state)
+      end
+
+    character = String.split(character, "@") |> List.first()
+
+    characters
     |> Match.one(:name_starts_with, character)
     |> case do
       nil ->
         {:reply, :not_found, state}
+
+      %{name: name, game: game} ->
+        {:reply, {:remote, name, game}, state}
 
       %{name: name, room: room_id, ref: ref} ->
         {:reply, {:local, name, room_id, ref}, state}
@@ -58,7 +85,7 @@ defmodule ApathyDrive.Directory do
   end
 
   def handle_call(:list_characters, _from, state) do
-    {:reply, Map.keys(state.local), state}
+    {:reply, all_characters(state), state}
   end
 
   def handle_call({:remove_character, name}, _from, state) do
@@ -71,5 +98,22 @@ defmodule ApathyDrive.Directory do
     end
 
     {:reply, :ok, update_in(state.local, &Map.delete(&1, name))}
+  end
+
+  def handle_call({:remove_character, game, name}, _from, state) do
+    {:reply, :ok, update_in(state.remote, &MapSet.delete(&1, %{name: name, game: game}))}
+  end
+
+  def handle_info(:refresh_remote_players, state) do
+    Gossip.request_players_online()
+    Process.send_after(self(), :refresh_remote_players, :timer.minutes(5))
+    {:noreply, state}
+  end
+
+  defp all_characters(state) do
+    local_players = Map.values(state.local)
+    remote_players = Enum.into(state.remote, [])
+
+    local_players ++ remote_players
   end
 end

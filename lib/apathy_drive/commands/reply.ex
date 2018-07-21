@@ -25,6 +25,25 @@ defmodule ApathyDrive.Commands.Reply do
           "<p><span class='red'>You tell #{name}:</span> #{Character.sanitize(message)}"
         )
 
+      {:remote, name, game} ->
+        case Gossip.send_tell(character.name, game, name, message) do
+          {:error, error} ->
+            Mobile.send_scroll(
+              character,
+              "<p><span class='red'>#{name}@#{game} tells you:</span> I'm unable to receive tells 😭 - #{
+                Character.sanitize(error)
+              }"
+            )
+
+          :ok ->
+            Mobile.send_scroll(
+              character,
+              "<p><span class='red'>You tell #{name}@#{game}:</span> #{
+                Character.sanitize(message)
+              }"
+            )
+        end
+
       _ ->
         Mobile.send_scroll(character, "<p>#{character.reply_to} is no longer online.</p>")
     end

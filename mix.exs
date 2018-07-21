@@ -40,7 +40,7 @@ defmodule ApathyDrive.Mixfile do
       {:conform, "~> 2.5.0"},
       {:ex_statsd, "~> 0.5.3"},
       {:rollbax, "~> 0.8.2"},
-      {:gossip, "~> 0.3.0"},
+      {:gossip, "~> 0.4.0"},
       {:distillery, "~> 1.4.1", runtime: false},
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false}
     ]
