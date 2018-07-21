@@ -61,14 +61,21 @@ defmodule ApathyDrive.Directory do
   end
 
   def handle_call({:find, character}, _from, state) do
+    {character, game_name} =
+      case String.split(character, "@") do
+        [character] ->
+          {character, nil}
+
+        [character, game_name] ->
+          {character, game_name}
+      end
+
     characters =
-      if character =~ "@" do
+      if game_name do
         Enum.into(state.remote, [])
       else
         all_characters(state)
       end
-
-    character = String.split(character, "@") |> List.first()
 
     characters
     |> Match.one(:name_starts_with, character)
@@ -77,7 +84,11 @@ defmodule ApathyDrive.Directory do
         {:reply, :not_found, state}
 
       %{name: name, game: game} ->
-        {:reply, {:remote, name, game}, state}
+        if String.starts_with?(String.downcase(game), String.downcase(game_name)) do
+          {:reply, {:remote, name, game}, state}
+        else
+          {:reply, :not_found, state}
+        end
 
       %{name: name, room: room_id, ref: ref} ->
         {:reply, {:local, name, room_id, ref}, state}

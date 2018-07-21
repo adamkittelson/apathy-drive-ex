@@ -17,7 +17,7 @@ defmodule ApathyDrive.Commands.Tell do
 
         Mobile.send_scroll(
           character,
-          "<p><span class='red'>You tell #{name} tells you:</span> #{Character.sanitize(message)}"
+          "<p><span class='red'>You tell #{name}:</span> #{Character.sanitize(message)}"
         )
 
       {:remote, name, game} ->
