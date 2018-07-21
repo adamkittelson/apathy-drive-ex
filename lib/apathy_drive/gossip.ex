@@ -42,9 +42,7 @@ defmodule ApathyDrive.Gossip do
   end
 
   def players_status(game, players) do
-    Enum.each(players, fn player ->
-      Directory.add_character(Character.sanitize(game), Character.sanitize(player))
-    end)
+    Directory.update_remote_players(game, players)
   end
 
   def players do

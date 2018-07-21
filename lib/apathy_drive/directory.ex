@@ -44,6 +44,10 @@ defmodule ApathyDrive.Directory do
     GenServer.call(__MODULE__, {:find, name})
   end
 
+  def update_remote_players(game, players) do
+    GenServer.call(__MODULE__, {:update_remote_players, game, players})
+  end
+
   def handle_call({:add_character, character}, _from, state) do
     if state.local[character.name] == nil do
       Gossip.player_sign_in(character.name)
@@ -110,6 +114,52 @@ defmodule ApathyDrive.Directory do
 
   def handle_call({:remove_character, game, name}, _from, state) do
     {:reply, :ok, update_in(state.remote, &MapSet.delete(&1, %{name: name, game: game}))}
+  end
+
+  def handle_call({:update_remote_players, game, players}, _from, state) do
+    new_list =
+      players
+      |> Enum.map(&%{game: game, name: &1})
+      |> Enum.into(MapSet.new())
+
+    # remove players who have disappeared
+    updated_list =
+      state.remote
+      |> Enum.filter(&(&1.game == game))
+      |> Enum.reduce(state.remote, fn %{name: name, game: game} = player, updated_list ->
+        if !MapSet.member?(new_list, player) do
+          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+            html:
+              "<p>#{ApathyDrive.Character.sanitize(name)} just left the distant Realm of #{
+                ApathyDrive.Character.sanitize(game)
+              }.</p>"
+          })
+
+          MapSet.delete(updated_list, player)
+        else
+          updated_list
+        end
+      end)
+
+    # add players who have were missing
+    updated_list =
+      new_list
+      |> Enum.reduce(updated_list, fn %{name: name, game: game} = player, updated_list ->
+        if !MapSet.member?(updated_list, player) do
+          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+            html:
+              "<p>#{ApathyDrive.Character.sanitize(name)} just entered the distant Realm of #{
+                ApathyDrive.Character.sanitize(game)
+              }.</p>"
+          })
+
+          MapSet.put(updated_list, player)
+        else
+          updated_list
+        end
+      end)
+
+    {:reply, :ok, put_in(state.remote, updated_list)}
   end
 
   def handle_info(:refresh_remote_players, state) do
