@@ -90,6 +90,10 @@ defmodule ApathyDrive.RoomServer do
     GenServer.call(room, {:character_connected, character, socket})
   end
 
+  def tell(room, from_character_name, to_character_name, message) do
+    GenServer.cast(room, {:tell, from_character_name, to_character_name, message})
+  end
+
   def init(id) do
     room =
       Repo.get!(Room, id)
@@ -169,7 +173,7 @@ defmodule ApathyDrive.RoomServer do
         put_in(room.mobiles[character.ref], character)
         |> Companion.load_for_character(character)
 
-      Directory.add_character(%{name: character.name, ref: character.ref})
+      Directory.add_character(%{name: character.name, room: character.room_id, ref: character.ref})
 
       {:reply, character, room}
     end
@@ -177,6 +181,22 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast({:send_scroll, html}, %Room{} = room) do
     Room.send_scroll(room, html)
+
+    {:noreply, room}
+  end
+
+  def handle_cast({:tell, from_character_name, to_character_ref, message}, room) do
+    room =
+      Room.update_mobile(room, to_character_ref, fn character ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>#{from_character_name} tells you:</span> #{
+            Character.sanitize(message)
+          }"
+        )
+
+        Map.put(character, :reply_to, from_character_name)
+      end)
 
     {:noreply, room}
   end
@@ -344,7 +364,7 @@ defmodule ApathyDrive.RoomServer do
       |> update_in([:mobiles], &Map.delete(&1, ref))
       |> update_in([:mobiles], &Map.delete(&1, companion && companion.ref))
 
-    Directory.remove_character(character.ref)
+    Directory.remove_character(character.name)
 
     {:noreply, room}
   end

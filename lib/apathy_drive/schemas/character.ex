@@ -11,6 +11,7 @@ defmodule ApathyDrive.Character do
     CharacterReputation,
     Class,
     Companion,
+    Directory,
     Energy,
     Item,
     Level,
@@ -90,6 +91,7 @@ defmodule ApathyDrive.Character do
     field(:max_encumbrance, :integer, virtual: true, default: 2000)
     field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
+    field(:reply_to, :string, virtual: true)
 
     belongs_to(:room, Room)
 
@@ -1210,6 +1212,8 @@ defmodule ApathyDrive.Character do
            level: character.level
          }}
       )
+
+      Directory.add_character(%{name: character.name, room: room_id, ref: character.ref})
 
       character
       |> Map.put(:room_id, room_id)
