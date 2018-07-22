@@ -92,6 +92,7 @@ defmodule ApathyDrive.Character do
     field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:reply_to, :string, virtual: true)
+    field(:casting, :any, virtual: true, default: nil)
 
     belongs_to(:room, Room)
 

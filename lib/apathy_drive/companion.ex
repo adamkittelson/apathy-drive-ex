@@ -48,7 +48,8 @@ defmodule ApathyDrive.Companion do
     :ability_shift,
     :ability_special,
     :energy,
-    :max_energy
+    :max_energy,
+    :casting
   ]
 
   def dismiss(nil, %Room{} = room), do: room

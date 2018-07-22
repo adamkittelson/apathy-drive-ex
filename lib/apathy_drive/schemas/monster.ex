@@ -58,6 +58,7 @@ defmodule ApathyDrive.Monster do
     field(:reputations, :map, virtual: true, default: [])
     field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
+    field(:casting, :any, virtual: true)
 
     timestamps()
 

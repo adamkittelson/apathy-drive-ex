@@ -381,11 +381,25 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:regenerate_energy, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn mobile ->
-        Energy.regenerate(mobile)
+        mobile
+        |> Energy.regenerate()
+        |> execute_casting_ability(room)
       end)
 
     {:noreply, room}
   end
+
+  def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
+    if ability.energy <= mobile.energy do
+      mobile = Map.put(mobile, :casting, nil)
+      room = put_in(room.mobiles[mobile.ref], mobile)
+      Ability.execute(room, mobile.ref, %Ability{} = ability, ability.target_list)
+    else
+      mobile
+    end
+  end
+
+  def execute_casting_ability(%{} = mobile, _room), do: mobile
 
   def handle_info({:auto_move, ref}, room) do
     if mobile = Room.get_mobile(room, ref) do
@@ -429,7 +443,7 @@ defmodule ApathyDrive.RoomServer do
         # max 5 auto attacks per "round"
         time = div(Mobile.round_length_in_ms(mobile), 5)
 
-        if mobile.energy >= attack.energy do
+        if mobile.energy >= attack.energy and !mobile.casting do
           if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
             if TimerManager.time_remaining(mobile, :casting) == 0 do
               mobile =

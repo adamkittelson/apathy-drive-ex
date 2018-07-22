@@ -284,8 +284,6 @@ defmodule ApathyDrive.Commands.Look do
     energy = Character.energy_per_swing(character, item)
     attack_interval = Energy.duration_for_energy(character, energy)
 
-    IO.puts("energy per swing: #{inspect(energy)}, max energy: #{character.max_energy}")
-
     character_damage = character.strength * (energy / character.max_energy)
 
     min_damage = Float.round(item.min_damage + character_damage, 2)
