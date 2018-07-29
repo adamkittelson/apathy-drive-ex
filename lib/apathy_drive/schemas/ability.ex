@@ -457,21 +457,6 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
-    if req_energy > energy do
-      if caster.casting do
-        Mobile.send_scroll(
-          caster,
-          "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
-        )
-      end
-
-      Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
-
-      Map.put(caster, :casting, ability)
-    end
-  end
-
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) when is_list(targets) do
     Room.update_mobile(room, caster_ref, fn caster ->
       cond do
@@ -564,6 +549,21 @@ defmodule ApathyDrive.Ability do
           room
       end
     end)
+  end
+
+  def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
+    if req_energy > energy do
+      if caster.casting do
+        Mobile.send_scroll(
+          caster,
+          "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
+        )
+      end
+
+      Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
+
+      Map.put(caster, :casting, ability)
+    end
   end
 
   def duration(%Ability{duration: duration, kind: kind}, %{} = caster, %{} = target, room) do

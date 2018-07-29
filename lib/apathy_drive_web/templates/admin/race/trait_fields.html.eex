@@ -1,0 +1,11 @@
+<%= inputs_for @f, :races_traits, fn p -> %>
+  <tr>
+    <td>
+      <%= select(p, :trait_id, ApathyDrive.Trait.select, prompt: "New Trait", class: "u-full-width") %>
+    </td>
+    <td>
+      <%= text_input p, :value, class: "form-control" %>
+    </td>
+    <td></td>
+  </tr>
+<% end %>

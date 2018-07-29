@@ -281,7 +281,7 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Weapon{} = item) do
-    energy = Character.energy_per_swing(character, item)
+    energy = Character.energy_per_swing(character, item.speed)
     attack_interval = Energy.duration_for_energy(character, energy)
 
     character_damage = character.strength * (energy / character.max_energy)

@@ -44,7 +44,7 @@ defmodule ApathyDriveWeb.Admin.RaceController do
       {:ok, race} ->
         conn
         |> put_flash(:info, "Race updated successfully.")
-        |> redirect(to: race_path(conn, :show, race))
+        |> redirect(to: race_path(conn, :edit, race))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", race: race, changeset: changeset)

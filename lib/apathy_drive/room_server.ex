@@ -389,18 +389,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
-    if ability.energy <= mobile.energy do
-      mobile = Map.put(mobile, :casting, nil)
-      room = put_in(room.mobiles[mobile.ref], mobile)
-      Ability.execute(room, mobile.ref, %Ability{} = ability, ability.target_list)
-    else
-      mobile
-    end
-  end
-
-  def execute_casting_ability(%{} = mobile, _room), do: mobile
-
   def handle_info({:auto_move, ref}, room) do
     if mobile = Room.get_mobile(room, ref) do
       if should_move?(room, mobile) do
@@ -754,6 +742,18 @@ defmodule ApathyDrive.RoomServer do
     IO.inspect(message)
     {:noreply, room}
   end
+
+  defp execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
+    if ability.energy <= mobile.energy do
+      mobile = Map.put(mobile, :casting, nil)
+      room = put_in(room.mobiles[mobile.ref], mobile)
+      Ability.execute(room, mobile.ref, %Ability{} = ability, ability.target_list)
+    else
+      mobile
+    end
+  end
+
+  defp execute_casting_ability(%{} = mobile, _room), do: mobile
 
   defp jitter(time) do
     time

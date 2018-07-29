@@ -256,6 +256,74 @@ defmodule ApathyDrive.Character do
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
   end
 
+  def attack_abilities(character) do
+    punch =
+      ability_for_weapon(character, %Weapon{
+        name: "fist",
+        hit_verbs: [["punch", "punches"]],
+        miss_verbs: ["throw a punch", "throws a punch"],
+        min_damage: 2,
+        max_damage: 7,
+        speed: 1150,
+        required_strength: 0
+      })
+
+    abilities = [punch]
+
+    if weapon = Character.weapon(character) do
+      [ability_for_weapon(character, weapon) | abilities]
+    else
+      abilities
+    end
+  end
+
+  def ability_for_weapon(character, weapon) do
+    %Weapon{
+      name: name,
+      hit_verbs: hit_verbs,
+      miss_verbs: [singular_miss, plural_miss],
+      min_damage: min_damage,
+      max_damage: max_damage
+    } = weapon
+
+    [singular_hit, plural_hit] = Enum.random(hit_verbs)
+
+    energy = Character.energy_per_swing(character, weapon)
+
+    character_damage = character.strength * energy / character.max_energy
+
+    min_damage = trunc((min_damage + character_damage) * 100)
+    max_damage = trunc((max_damage + character_damage) * 100)
+
+    damage = Enum.random(min_damage..max_damage) / 100
+
+    %Ability{
+      kind: "attack",
+      energy: energy,
+      mana: 0,
+      user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
+      target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
+      spectator_message:
+        "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
+      ignores_round_cooldown?: true,
+      traits: %{
+        "Damage" => [
+          %{
+            kind: "physical",
+            damage_type: "Normal",
+            damage: damage
+          }
+        ],
+        "Dodgeable" => true,
+        "DodgeUserMessage" =>
+          "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
+        "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
+        "DodgeSpectatorMessage" =>
+          "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
+      }
+    }
+  end
+
   def shield(%Character{} = character) do
     shield =
       character.equipment
@@ -694,71 +762,20 @@ defmodule ApathyDrive.Character do
     end
 
     def attack_ability(character) do
-      case Character.weapon(character) do
-        nil ->
-          %Ability{
-            kind: "attack",
-            mana: 0,
-            user_message: "You punch {{target}} for {{amount}} damage!",
-            target_message: "{{user}} punches you for {{amount}} damage!",
-            spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
-            ignores_round_cooldown?: true,
-            skills: ["melee"],
-            traits: %{
-              "Damage" => Character.weapon_potency(character),
-              "Dodgeable" => true,
-              "DodgeUserMessage" => "You throw a punch at {{target}}, but they dodge!",
-              "DodgeTargetMessage" => "{{user}} throws a punch at you, but you dodge!",
-              "DodgeSpectatorMessage" => "{{user}} throws a punch at {{target}}, but they dodge!"
-            }
-          }
+      abilities = Character.attack_abilities(character)
 
-        %Weapon{
-          name: name,
-          hit_verbs: hit_verbs,
-          miss_verbs: [singular_miss, plural_miss],
-          min_damage: min_damage,
-          max_damage: max_damage
-        } = weapon ->
-          [singular_hit, plural_hit] = Enum.random(hit_verbs)
+      useable_abilities =
+        abilities
+        |> Enum.filter(&(&1.energy <= character.energy))
 
-          energy = Character.energy_per_swing(character, weapon)
-
-          character_damage = character.strength * energy / character.max_energy
-
-          min_damage = trunc((min_damage + character_damage) * 100)
-          max_damage = trunc((max_damage + character_damage) * 100)
-
-          damage = Enum.random(min_damage..max_damage) / 100
-
-          %Ability{
-            kind: "attack",
-            energy: energy,
-            mana: 0,
-            user_message:
-              "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
-            target_message:
-              "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
-            spectator_message:
-              "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
-            ignores_round_cooldown?: true,
-            traits: %{
-              "Damage" => [
-                %{
-                  kind: "physical",
-                  damage_type: "Normal",
-                  damage: damage
-                }
-              ],
-              "Dodgeable" => true,
-              "DodgeUserMessage" =>
-                "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
-              "DodgeTargetMessage" =>
-                "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
-              "DodgeSpectatorMessage" =>
-                "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
-            }
-          }
+      if Enum.any?(useable_abilities) do
+        # use the ability with the highest energy cost
+        useable_abilities
+        |> Enum.sort_by(&(-&1.energy))
+        |> List.first()
+      else
+        # use whatever, doesn't matter, will get rejected because we don't have enough energy
+        List.first(abilities)
       end
     end
 
@@ -1109,10 +1126,12 @@ defmodule ApathyDrive.Character do
 
       health = attribute_at_level(mobile, :health, level)
 
-      base = health / 2 + ability_value(mobile, "HPPerHealth") * 100 / health * (level - 1)
+      base = health / 2
+      hp_per_level = ability_value(mobile, "HPPerLevel") * level
+      bonus = (health - 50) / 16
 
       modifier = ability_value(mobile, "MaxHP")
-      base * (1 + modifier / 100)
+      trunc((base + hp_per_level + bonus) * (1 + modifier / 100))
     end
 
     def max_mana_at_level(mobile, level) do

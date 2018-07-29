@@ -59,7 +59,11 @@ defmodule ApathyDrive.Admin do
   """
   def get_class!(id), do: Repo.get!(Class, id)
 
-  def get_race!(id), do: Repo.get!(Race, id)
+  def get_race!(id) do
+    Race
+    |> Repo.get!(id)
+    |> Repo.preload(:races_traits)
+  end
 
   @doc """
   Creates a class.
