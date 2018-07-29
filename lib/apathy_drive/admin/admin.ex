@@ -57,7 +57,11 @@ defmodule ApathyDrive.Admin do
       ** (Ecto.NoResultsError)
 
   """
-  def get_class!(id), do: Repo.get!(Class, id)
+  def get_class!(id) do
+    Class
+    |> Repo.get!(id)
+    |> Repo.preload(:classes_traits)
+  end
 
   def get_race!(id) do
     Race

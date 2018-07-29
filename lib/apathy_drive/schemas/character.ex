@@ -10,6 +10,7 @@ defmodule ApathyDrive.Character do
     CharacterSkill,
     CharacterReputation,
     Class,
+    ClassTrait,
     Companion,
     Directory,
     Energy,
@@ -219,8 +220,13 @@ defmodule ApathyDrive.Character do
   def load_class(%Character{class_id: class_id} = character) do
     class = Repo.get(Class, class_id)
 
+    effect =
+      ClassTrait.load_traits(class_id)
+      |> Map.put("stack_key", "class")
+
     character
     |> Map.put(:class, class.name)
+    |> Systems.Effect.add(effect)
   end
 
   def load_reputations(%Character{} = character) do

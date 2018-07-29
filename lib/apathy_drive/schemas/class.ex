@@ -7,14 +7,18 @@ defmodule ApathyDrive.Class do
     field(:description, :string)
     field(:name, :string)
 
+    has_many(:classes_traits, ApathyDrive.ClassTrait)
+    has_many(:traits, through: [:classes_traits, :trait])
+
     timestamps()
   end
 
   @doc false
-  def changeset(%Class{} = class, attrs) do
+  def changeset(%Class{} = class, attrs \\ %{}) do
     class
     |> cast(attrs, [:name, :description])
     |> validate_required([:name, :description])
+    |> cast_assoc(:classes_traits)
   end
 
   def select do
