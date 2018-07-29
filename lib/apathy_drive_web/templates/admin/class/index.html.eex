@@ -16,7 +16,6 @@
       <td><%= class.description %></td>
 
       <td class="text-right">
-        <span><%= link "Show", to: class_path(@conn, :show, class), class: "btn btn-default btn-xs" %></span>
         <span><%= link "Edit", to: class_path(@conn, :edit, class), class: "btn btn-default btn-xs" %></span>
         <span><%= link "Delete", to: class_path(@conn, :delete, class), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
       </td>

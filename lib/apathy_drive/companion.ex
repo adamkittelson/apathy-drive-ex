@@ -4,6 +4,7 @@ defmodule ApathyDrive.Companion do
     Character,
     Companion,
     CompanionAI,
+    Energy,
     Mobile,
     Monster,
     MonsterAbility,
@@ -45,7 +46,10 @@ defmodule ApathyDrive.Companion do
     :leader,
     :attack_target,
     :ability_shift,
-    :ability_special
+    :ability_special,
+    :energy,
+    :max_energy,
+    :casting
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -115,8 +119,8 @@ defmodule ApathyDrive.Companion do
 
   def toggle_combat(%Companion{} = companion, room) do
     time =
-      min(
-        Mobile.attack_interval(companion),
+      max(
+        0,
         TimerManager.time_remaining(companion, :auto_attack_timer)
       )
 
@@ -293,10 +297,6 @@ defmodule ApathyDrive.Companion do
       (base + growth / 10 * (level - 1)) / 10
     end
 
-    def attack_interval(companion, weapon \\ nil) do
-      trunc(round_length_in_ms(companion) / attacks_per_round(companion, weapon))
-    end
-
     def attack_ability(companion) do
       companion.abilities
       |> Map.values()
@@ -304,10 +304,6 @@ defmodule ApathyDrive.Companion do
       |> Enum.random()
       |> Map.put(:kind, "attack")
       |> Map.put(:ignores_round_cooldown?, true)
-    end
-
-    def attacks_per_round(_companion, _weapon) do
-      1
     end
 
     def auto_attack_target(%Companion{} = companion, room, attack_ability) do
@@ -691,6 +687,17 @@ defmodule ApathyDrive.Companion do
       cost = Ability.mana_cost_at_level(ability, companion.level)
       percentage = cost / Mobile.max_mana_at_level(companion, companion.level)
       update_in(companion.mana, &max(0, &1 - percentage))
+    end
+
+    def subtract_energy(companion, ability) do
+      initial_energy = companion.energy
+      companion = update_in(companion.energy, &max(0, &1 - ability.energy))
+
+      if initial_energy == companion.max_energy do
+        Energy.regenerate(companion)
+      else
+        companion
+      end
     end
 
     def target_level(%Companion{level: _caster_level}, %Character{level: target_level}),

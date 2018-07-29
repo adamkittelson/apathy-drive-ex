@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Doors, Item, Match, Mobile, RoomServer, Stealth}
+  alias ApathyDrive.{Character, Doors, Energy, Item, Match, Mobile, RoomServer, Stealth}
   alias ApathyDrive.Items.{Weapon}
 
   @directions [
@@ -281,16 +281,17 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Weapon{} = item) do
-    attack_interval = Mobile.attack_interval(character, item) / 1000
+    energy = Character.energy_per_swing(character, item.speed)
+    attack_interval = Energy.duration_for_energy(character, energy)
 
-    character_damage = character.strength / Mobile.attacks_per_round(character, item)
+    character_damage = character.strength * (energy / character.max_energy)
 
     min_damage = Float.round(item.min_damage + character_damage, 2)
     max_damage = Float.round(item.max_damage + character_damage, 2)
 
     average = (min_damage + max_damage) / 2
 
-    dps = Float.round(average / attack_interval, 2)
+    dps = Float.round(average / (attack_interval / 1000), 2)
 
     Mobile.send_scroll(
       character,

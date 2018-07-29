@@ -21,8 +21,19 @@
     <div id="scroll">
     </div>
     <footer id="footer" class="twelve columns">
-      <span id="prompt"></span><input id="command" size="50" class="prompt" autocomplete="off"/>
+      <div id="prompt"></div><input id="command" size="50" class="prompt" autocomplete="off"/>
     </footer>
+</div>
+<div id="bottom-bars">
+  <div class="progress-bar hp">
+    <div class="red"></div>
+    </div>
+  <div class="progress-bar energy">
+    <div class="yellow"></div>
+    </div>
+  <div class="progress-bar mana">
+    <div class="blue"></div>
+  </div>
 </div>
 
 <script>var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"</script>

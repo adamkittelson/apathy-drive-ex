@@ -6,6 +6,7 @@ defmodule ApathyDrive.Monster do
     Ability,
     Area,
     Character,
+    Energy,
     Item,
     Mobile,
     Monster,
@@ -55,6 +56,9 @@ defmodule ApathyDrive.Monster do
     field(:ability_shift, :float, virtual: true)
     field(:ability_special, :float, virtual: true)
     field(:reputations, :map, virtual: true, default: [])
+    field(:energy, :integer, virtual: true, default: 1000)
+    field(:max_energy, :integer, virtual: true, default: 1000)
+    field(:casting, :any, virtual: true)
 
     timestamps()
 
@@ -201,9 +205,9 @@ defmodule ApathyDrive.Monster do
   end
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
-    base = 40
-    min = trunc(base - 20)
-    max = trunc(base + 20)
+    base = 35
+    min = trunc(base - 10)
+    max = trunc(base + 10)
 
     room_monster = %RoomMonster{
       level: level,
@@ -460,10 +464,6 @@ defmodule ApathyDrive.Monster do
       Map.get(monster, attribute) + level - 1
     end
 
-    def attack_interval(monster, weapon \\ nil) do
-      trunc(round_length_in_ms(monster) / attacks_per_round(monster, weapon))
-    end
-
     def attack_ability(monster) do
       monster.abilities
       |> Map.values()
@@ -471,10 +471,6 @@ defmodule ApathyDrive.Monster do
       |> Enum.random()
       |> Map.put(:kind, "attack")
       |> Map.put(:ignores_round_cooldown?, true)
-    end
-
-    def attacks_per_round(_monster, _weapon) do
-      1
     end
 
     def auto_attack_target(%Monster{} = monster, room, attack_ability) do
@@ -854,6 +850,17 @@ defmodule ApathyDrive.Monster do
       cost = Ability.mana_cost_at_level(ability, monster.level)
       percentage = cost / Mobile.max_mana_at_level(monster, monster.level)
       update_in(monster.mana, &max(0, &1 - percentage))
+    end
+
+    def subtract_energy(monster, ability) do
+      initial_energy = monster.energy
+      monster = update_in(monster.energy, &max(0, &1 - ability.energy))
+
+      if initial_energy == monster.max_energy do
+        Energy.regenerate(monster)
+      else
+        monster
+      end
     end
 
     def target_level(%Monster{level: monster_level}, %Monster{level: _target_level}),

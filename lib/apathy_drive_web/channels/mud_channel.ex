@@ -78,6 +78,12 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:update_energy, %{} = data}, socket) do
+    Phoenix.Channel.push(socket, "update energy", data)
+
+    {:noreply, socket}
+  end
+
   def handle_info({:pulse_score_attribute, attribute}, socket) do
     Phoenix.Channel.push(socket, "pulse score attribute", %{attribute: attribute})
 
@@ -127,10 +133,6 @@ defmodule ApathyDriveWeb.MUDChannel do
   def handle_info({:open_tab, path}, socket) do
     Phoenix.Channel.push(socket, "open tab", %{:url => path})
 
-    {:noreply, socket}
-  end
-
-  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, socket) do
     {:noreply, socket}
   end
 

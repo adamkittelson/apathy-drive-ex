@@ -6,6 +6,7 @@ defmodule ApathyDrive.Aggression do
     Enum.reduce(room.mobiles, room, fn
       {_ref, %Monster{}}, updated_room ->
         updated_room
+
       {_ref, %{} = mobile}, updated_room ->
         monster = updated_room.mobiles[monster_ref]
         put_in(updated_room.mobiles[monster_ref], ApathyDrive.Aggression.react(monster, mobile))
@@ -27,7 +28,7 @@ defmodule ApathyDrive.Aggression do
   def attack(%{} = attacker, %{ref: ref} = _intruder) do
     effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
 
-    time = min(Mobile.attack_interval(attacker), TimerManager.time_remaining(attacker, :auto_attack_timer))
+    time = max(0, TimerManager.time_remaining(attacker, :auto_attack_timer))
 
     attacker =
       attacker
@@ -42,5 +43,4 @@ defmodule ApathyDrive.Aggression do
       attacker
     end
   end
-
 end

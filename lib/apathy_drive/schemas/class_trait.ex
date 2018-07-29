@@ -1,29 +1,28 @@
-defmodule ApathyDrive.RaceTrait do
+defmodule ApathyDrive.ClassTrait do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Race, RaceResistance, RaceTrait, Trait}
+  alias ApathyDrive.{Class, ClassTrait, Trait}
 
-  schema "races_traits" do
+  schema "classes_traits" do
     field(:value, ApathyDrive.JSONB)
     field(:delete, :boolean, virtual: true)
 
-    belongs_to(:race, Race)
+    belongs_to(:class, Class)
     belongs_to(:trait, Trait)
   end
 
   @required_fields ~w(trait_id value)a
 
-  def load_traits(race_id) do
+  def load_traits(class_id) do
     __MODULE__
-    |> where([mt], mt.race_id == ^race_id)
+    |> where([mt], mt.class_id == ^class_id)
     |> preload([:trait])
     |> Repo.all()
     |> Enum.reduce(%{}, fn %{trait: trait, value: value}, abilities ->
       Map.put(abilities, trait.name, value)
     end)
-    |> Map.merge(RaceResistance.load_resistances(race_id))
   end
 
-  def changeset(%RaceTrait{} = rt, attrs) do
+  def changeset(%ClassTrait{} = rt, attrs) do
     rt
     |> cast(attrs, [:delete | @required_fields])
     |> validate_required(@required_fields)

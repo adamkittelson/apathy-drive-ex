@@ -26,10 +26,11 @@ defmodule ApathyDrive.Race do
   If no params are provided, an invalid changeset is returned
   with no validation performed.
   """
-  def changeset(%Race{} = race, attrs) do
+  def changeset(%Race{} = race, attrs \\ %{}) do
     race
     |> cast(attrs, @required_fields)
     |> validate_required(@required_fields)
+    |> cast_assoc(:races_traits)
   end
 
   def ids do

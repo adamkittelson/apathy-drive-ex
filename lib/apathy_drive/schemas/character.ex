@@ -10,7 +10,10 @@ defmodule ApathyDrive.Character do
     CharacterSkill,
     CharacterReputation,
     Class,
+    ClassTrait,
     Companion,
+    Directory,
+    Energy,
     Item,
     Level,
     Monster,
@@ -55,6 +58,7 @@ defmodule ApathyDrive.Character do
     field(:race_id, :integer)
     field(:class_id, :integer)
     field(:pity_modifier, :integer, default: 0)
+
     field(:level, :integer, virtual: true, default: 1)
     field(:race, :string, virtual: true)
     field(:class, :string, virtual: true)
@@ -86,6 +90,10 @@ defmodule ApathyDrive.Character do
     field(:combat_level, :integer, virtual: true, default: 3)
     field(:encumbrance, :integer, virtual: true, default: 0)
     field(:max_encumbrance, :integer, virtual: true, default: 2000)
+    field(:energy, :integer, virtual: true, default: 1000)
+    field(:max_energy, :integer, virtual: true, default: 1000)
+    field(:reply_to, :string, virtual: true)
+    field(:casting, :any, virtual: true, default: nil)
 
     belongs_to(:room, Room)
 
@@ -212,8 +220,13 @@ defmodule ApathyDrive.Character do
   def load_class(%Character{class_id: class_id} = character) do
     class = Repo.get(Class, class_id)
 
+    effect =
+      ClassTrait.load_traits(class_id)
+      |> Map.put("stack_key", "class")
+
     character
     |> Map.put(:class, class.name)
+    |> Systems.Effect.add(effect)
   end
 
   def load_reputations(%Character{} = character) do
@@ -247,6 +260,74 @@ defmodule ApathyDrive.Character do
   def weapon(%Character{} = character) do
     character.equipment
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
+  end
+
+  def attack_abilities(character) do
+    punch =
+      ability_for_weapon(character, %Weapon{
+        name: "fist",
+        hit_verbs: [["punch", "punches"]],
+        miss_verbs: ["throw a punch", "throws a punch"],
+        min_damage: 2,
+        max_damage: 7,
+        speed: 1150,
+        required_strength: 0
+      })
+
+    abilities = [punch]
+
+    if weapon = Character.weapon(character) do
+      [ability_for_weapon(character, weapon) | abilities]
+    else
+      abilities
+    end
+  end
+
+  def ability_for_weapon(character, weapon) do
+    %Weapon{
+      name: name,
+      hit_verbs: hit_verbs,
+      miss_verbs: [singular_miss, plural_miss],
+      min_damage: min_damage,
+      max_damage: max_damage
+    } = weapon
+
+    [singular_hit, plural_hit] = Enum.random(hit_verbs)
+
+    energy = Character.energy_per_swing(character, weapon)
+
+    character_damage = character.strength * energy / character.max_energy
+
+    min_damage = trunc((min_damage + character_damage) * 100)
+    max_damage = trunc((max_damage + character_damage) * 100)
+
+    damage = Enum.random(min_damage..max_damage) / 100
+
+    %Ability{
+      kind: "attack",
+      energy: energy,
+      mana: 0,
+      user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
+      target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
+      spectator_message:
+        "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
+      ignores_round_cooldown?: true,
+      traits: %{
+        "Damage" => [
+          %{
+            kind: "physical",
+            damage_type: "Normal",
+            damage: damage
+          }
+        ],
+        "Dodgeable" => true,
+        "DodgeUserMessage" =>
+          "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
+        "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
+        "DodgeSpectatorMessage" =>
+          "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
+      }
+    }
   end
 
   def shield(%Character{} = character) do
@@ -504,6 +585,10 @@ defmodule ApathyDrive.Character do
     send(socket, {:update_score, data})
   end
 
+  def update_energy(%Character{socket: socket} = character) do
+    send(socket, {:update_energy, %{energy: character.energy, max_energy: character.max_energy}})
+  end
+
   def pulse_score_attribute(%Character{socket: socket}, attribute) do
     send(socket, {:pulse_score_attribute, attribute})
   end
@@ -545,6 +630,8 @@ defmodule ApathyDrive.Character do
       max_hp: Mobile.max_hp_at_level(character, character.level),
       mana: mana_at_level(character, character.level),
       max_mana: Mobile.max_mana_at_level(character, character.level),
+      energy: character.energy,
+      max_energy: character.max_energy,
       strength: Mobile.attribute_at_level(character, :strength, character.level),
       agility: Mobile.attribute_at_level(character, :agility, character.level),
       intellect: Mobile.attribute_at_level(character, :intellect, character.level),
@@ -561,7 +648,7 @@ defmodule ApathyDrive.Character do
       nil ->
         [
           %{
-            potency: 75 / Mobile.attacks_per_round(character),
+            potency: 75 / 1,
             kind: "physical",
             damage_type_id: 3,
             damage_type: "Normal"
@@ -571,6 +658,28 @@ defmodule ApathyDrive.Character do
       %Item{damage: damage} = item ->
         damage ++ Systems.Effect.effect_list(item, "Damage")
     end
+  end
+
+  def energy_per_swing(character, weapon \\ nil) do
+    weapon = weapon || Character.weapon(character)
+
+    cost =
+      weapon.speed * 1000 /
+        ((character.level * (character.combat_level + 2) + 45) * (character.agility + 150) * 1500 /
+           9000.0)
+
+    cost =
+      if character.strength < weapon.required_strength do
+        ((weapon.required_strength - character.strength) * 3 + 200) * cost / 200.0
+      else
+        cost
+      end
+
+    trunc(
+      cost *
+        (Float.floor(Float.floor(character.encumbrance / character.max_encumbrance * 100) / 2.0) +
+           75) / 100.0
+    )
   end
 
   defimpl ApathyDrive.Mobile, for: Character do
@@ -658,103 +767,21 @@ defmodule ApathyDrive.Character do
       Map.get(character, attribute)
     end
 
-    def attack_interval(character, weapon \\ nil) do
-      attacks_per_round = attacks_per_round(character, weapon)
-      round_length = round_length_in_ms(character)
-      trunc(round_length / attacks_per_round)
-    end
-
-    def attacks_per_round(character, weapon \\ nil) do
-      weapon = weapon || Character.weapon(character)
-
-      cost =
-        weapon.speed * 1000 /
-          ((character.level * (character.combat_level + 2) + 45) * (character.agility + 150) *
-             1500 / 9000.0)
-
-      cost =
-        if character.strength < weapon.required_strength do
-          ((weapon.required_strength - character.strength) * 3 + 200) * cost / 200.0
-        else
-          cost
-        end
-
-      1 /
-        (cost *
-           Float.round(
-             Float.floor(
-               Float.floor(character.encumbrance / character.max_encumbrance * 100) / 2.0
-             ) + 75
-           ) / 100.0 / 1000)
-    end
-
     def attack_ability(character) do
-      case Character.weapon(character) do
-        nil ->
-          %Ability{
-            kind: "attack",
-            mana: 0,
-            user_message: "You punch {{target}} for {{amount}} damage!",
-            target_message: "{{user}} punches you for {{amount}} damage!",
-            spectator_message: "{{user}} punches {{target}} for {{amount}} damage!",
-            ignores_round_cooldown?: true,
-            skills: ["melee"],
-            traits: %{
-              "Damage" => Character.weapon_potency(character),
-              "Dodgeable" => true,
-              "DodgeUserMessage" => "You throw a punch at {{target}}, but they dodge!",
-              "DodgeTargetMessage" => "{{user}} throws a punch at you, but you dodge!",
-              "DodgeSpectatorMessage" => "{{user}} throws a punch at {{target}}, but they dodge!"
-            }
-          }
+      abilities = Character.attack_abilities(character)
 
-        %Weapon{
-          name: name,
-          hit_verbs: hit_verbs,
-          miss_verbs: [singular_miss, plural_miss],
-          min_damage: min_damage,
-          max_damage: max_damage
-        } = weapon ->
-          [singular_hit, plural_hit] = Enum.random(hit_verbs)
+      useable_abilities =
+        abilities
+        |> Enum.filter(&(&1.energy <= character.energy))
 
-          character_damage = character.strength / Mobile.attacks_per_round(character, weapon)
-
-          round_percentage =
-            Mobile.attack_interval(character, weapon) / Mobile.round_length_in_ms(character)
-
-          min_damage = trunc((min_damage + character_damage) * 100)
-          max_damage = trunc((max_damage + character_damage) * 100)
-
-          damage = Enum.random(min_damage..max_damage) / 100
-
-          %Ability{
-            kind: "attack",
-            round_percentage: round_percentage,
-            mana: 0,
-            user_message:
-              "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
-            target_message:
-              "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
-            spectator_message:
-              "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
-            ignores_round_cooldown?: true,
-            traits: %{
-              "Damage" => [
-                %{
-                  kind: "physical",
-                  damage_type: "Normal",
-                  damage: damage
-                }
-              ],
-              "Dodgeable" => true,
-              "DodgeUserMessage" =>
-                "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
-              "DodgeTargetMessage" =>
-                "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
-              "DodgeSpectatorMessage" =>
-                "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
-            }
-          }
+      if Enum.any?(useable_abilities) do
+        # use the ability with the highest energy cost
+        useable_abilities
+        |> Enum.sort_by(&(-&1.energy))
+        |> List.first()
+      else
+        # use whatever, doesn't matter, will get rejected because we don't have enough energy
+        List.first(abilities)
       end
     end
 
@@ -966,6 +993,7 @@ defmodule ApathyDrive.Character do
         |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
         |> Map.put(:hp, 1.0)
         |> Map.put(:mana, 1.0)
+        |> Map.put(:energy, character.max_energy)
         |> update_in([:effects], fn effects ->
           effects
           |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race"] end)
@@ -1104,10 +1132,12 @@ defmodule ApathyDrive.Character do
 
       health = attribute_at_level(mobile, :health, level)
 
-      base = health / 2 + ability_value(mobile, "HPPerHealth") * 100 / health * (level - 1)
+      base = health / 2
+      hp_per_level = ability_value(mobile, "HPPerLevel") * level
+      bonus = (health - 50) / 16
 
       modifier = ability_value(mobile, "MaxHP")
-      base * (1 + modifier / 100)
+      trunc((base + hp_per_level + bonus) * (1 + modifier / 100))
     end
 
     def max_mana_at_level(mobile, level) do
@@ -1209,6 +1239,8 @@ defmodule ApathyDrive.Character do
          }}
       )
 
+      Directory.add_character(%{name: character.name, room: room_id, ref: character.ref})
+
       character
       |> Map.put(:room_id, room_id)
       |> Map.put(:monitor_ref, Process.monitor(socket))
@@ -1285,6 +1317,17 @@ defmodule ApathyDrive.Character do
       cost = Ability.mana_cost_at_level(ability, character.level)
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
       update_in(character.mana, &max(0, &1 - percentage))
+    end
+
+    def subtract_energy(character, ability) do
+      initial_energy = character.energy
+      character = update_in(character.energy, &max(0, &1 - ability.energy))
+
+      if initial_energy == character.max_energy do
+        Energy.regenerate(character)
+      else
+        character
+      end
     end
 
     def target_level(%Character{level: _caster_level}, %Character{level: target_level}),

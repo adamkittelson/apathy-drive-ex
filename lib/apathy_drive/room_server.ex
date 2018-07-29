@@ -6,7 +6,9 @@ defmodule ApathyDrive.RoomServer do
     Character,
     Commands,
     Companion,
+    Directory,
     Enchantment,
+    Energy,
     LairMonster,
     Mobile,
     MonsterSpawning,
@@ -14,8 +16,7 @@ defmodule ApathyDrive.RoomServer do
     Repo,
     Room,
     RoomSupervisor,
-    TimerManager,
-    Presence
+    TimerManager
   }
 
   use Timex
@@ -89,6 +90,10 @@ defmodule ApathyDrive.RoomServer do
     GenServer.call(room, {:character_connected, character, socket})
   end
 
+  def tell(room, from_character_name, to_character_name, message) do
+    GenServer.cast(room, {:tell, from_character_name, to_character_name, message})
+  end
+
   def init(id) do
     room =
       Repo.get!(Room, id)
@@ -142,16 +147,6 @@ defmodule ApathyDrive.RoomServer do
       room.mobiles[existing_character.ref]
       |> Mobile.update_prompt()
 
-      case Presence.track(socket, "spirits:online", existing_character.id, %{
-             name: existing_character.name
-           }) do
-        {:ok, _} ->
-          :ok
-
-        {:error, {:already_tracked, _pid, _topic, _key}} ->
-          :ok
-      end
-
       {:reply, room.mobiles[existing_character.ref], room}
     else
       monitor_ref = Process.monitor(socket)
@@ -178,19 +173,7 @@ defmodule ApathyDrive.RoomServer do
         put_in(room.mobiles[character.ref], character)
         |> Companion.load_for_character(character)
 
-      case Presence.track(socket, "spirits:online", character.id, %{name: character.name}) do
-        {:ok, _} ->
-          Gossip.player_sign_in(character.name)
-
-          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-            html: "<p>#{character.name} just entered the Realm.</p>"
-          })
-
-          :ok
-
-        {:error, {:already_tracked, _pid, _topic, _key}} ->
-          :ok
-      end
+      Directory.add_character(%{name: character.name, room: character.room_id, ref: character.ref})
 
       {:reply, character, room}
     end
@@ -198,6 +181,22 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast({:send_scroll, html}, %Room{} = room) do
     Room.send_scroll(room, html)
+
+    {:noreply, room}
+  end
+
+  def handle_cast({:tell, from_character_name, to_character_ref, message}, room) do
+    room =
+      Room.update_mobile(room, to_character_ref, fn character ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>#{from_character_name} tells you:</span> #{
+            Character.sanitize(message)
+          }"
+        )
+
+        Map.put(character, :reply_to, from_character_name)
+      end)
 
     {:noreply, room}
   end
@@ -365,12 +364,7 @@ defmodule ApathyDrive.RoomServer do
       |> update_in([:mobiles], &Map.delete(&1, ref))
       |> update_in([:mobiles], &Map.delete(&1, companion && companion.ref))
 
-    Gossip.player_sign_out(character.name)
-    Presence.untrack(character.socket, "spirits:online", character.id)
-
-    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-      html: "<p>#{character.name} just left the Realm.</p>"
-    })
+    Directory.remove_character(character.name)
 
     {:noreply, room}
   end
@@ -379,6 +373,17 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, mobile_ref, fn mobile ->
         Mobile.heartbeat(mobile, room)
+      end)
+
+    {:noreply, room}
+  end
+
+  def handle_info({:regenerate_energy, mobile_ref}, room) do
+    room =
+      Room.update_mobile(room, mobile_ref, fn mobile ->
+        mobile
+        |> Energy.regenerate()
+        |> execute_casting_ability(room)
       end)
 
     {:noreply, room}
@@ -423,37 +428,46 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, ref, fn %{} = mobile ->
         attack = Mobile.attack_ability(mobile)
+        # max 5 auto attacks per "round"
+        time = div(Mobile.round_length_in_ms(mobile), 5)
 
-        if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
-          if TimerManager.time_remaining(mobile, :casting) == 0 do
-            mobile =
+        if mobile.energy >= attack.energy and !mobile.casting do
+          if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
+            if TimerManager.time_remaining(mobile, :casting) == 0 do
+              mobile =
+                TimerManager.send_after(
+                  mobile,
+                  {:auto_attack_timer, time, {:execute_auto_attack, ref}}
+                )
+
+              room = put_in(room.mobiles[mobile.ref], mobile)
+
+              Ability.execute(room, mobile.ref, attack, [target_ref])
+            else
               TimerManager.send_after(
                 mobile,
-                {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}}
+                {:auto_attack_timer, time, {:execute_auto_attack, ref}}
               )
-
-            room = put_in(room.mobiles[mobile.ref], mobile)
-
-            Ability.execute(room, mobile.ref, attack, [target_ref])
+            end
           else
-            TimerManager.send_after(
-              mobile,
-              {:auto_attack_timer, Mobile.attack_interval(mobile), {:execute_auto_attack, ref}}
-            )
+            case mobile do
+              %Character{attack_target: target} = character when is_reference(target) ->
+                Mobile.send_scroll(
+                  character,
+                  "<p><span class='dark-yellow'>*Combat Off*</span></p>"
+                )
+
+                Map.put(character, :attack_target, nil)
+
+              mobile ->
+                mobile
+            end
           end
         else
-          case mobile do
-            %Character{attack_target: target} = character when is_reference(target) ->
-              Mobile.send_scroll(
-                character,
-                "<p><span class='dark-yellow'>*Combat Off*</span></p>"
-              )
-
-              Map.put(character, :attack_target, nil)
-
-            mobile ->
-              mobile
-          end
+          TimerManager.send_after(
+            mobile,
+            {:auto_attack_timer, time, {:execute_auto_attack, ref}}
+          )
         end
       end)
 
@@ -728,6 +742,18 @@ defmodule ApathyDrive.RoomServer do
     IO.inspect(message)
     {:noreply, room}
   end
+
+  defp execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
+    if ability.energy <= mobile.energy do
+      mobile = Map.put(mobile, :casting, nil)
+      room = put_in(room.mobiles[mobile.ref], mobile)
+      Ability.execute(room, mobile.ref, %Ability{} = ability, ability.target_list)
+    else
+      mobile
+    end
+  end
+
+  defp execute_casting_ability(%{} = mobile, _room), do: mobile
 
   defp jitter(time) do
     time

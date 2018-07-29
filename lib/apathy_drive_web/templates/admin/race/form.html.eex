@@ -17,43 +17,83 @@
     <%= error_tag f, :description %>
   </div>
 
-  <div class="form-group">
-    <%= label f, :strength, class: "control-label" %>
-    <%= number_input f, :strength, class: "form-control" %>
-    <%= error_tag f, :strength %>
+  <div class="row">
+    <div class="form-group four columns">
+      <%= label f, :strength, class: "control-label" %>
+      <%= number_input f, :strength, class: "form-control" %>
+      <%= error_tag f, :strength %>
+    </div>
+
+    <div class="form-group four columns">
+      <%= label f, :agility, class: "control-label" %>
+      <%= number_input f, :agility, class: "form-control" %>
+      <%= error_tag f, :agility %>
+    </div>
+
+    <div class="form-group four columns">
+      <%= label f, :intellect, class: "control-label" %>
+      <%= number_input f, :intellect, class: "form-control" %>
+      <%= error_tag f, :intellect %>
+    </div>
   </div>
 
-  <div class="form-group">
-    <%= label f, :agility, class: "control-label" %>
-    <%= number_input f, :agility, class: "form-control" %>
-    <%= error_tag f, :agility %>
+  <div class="row">
+    <div class="form-group four columns">
+      <%= label f, :willpower, class: "control-label" %>
+      <%= number_input f, :willpower, class: "form-control" %>
+      <%= error_tag f, :willpower %>
+    </div>
+
+    <div class="form-group four columns">
+      <%= label f, :health, class: "control-label" %>
+      <%= number_input f, :health, class: "form-control" %>
+      <%= error_tag f, :health %>
+    </div>
+
+    <div class="form-group four columns">
+      <%= label f, :charm, class: "control-label" %>
+      <%= number_input f, :charm, class: "form-control" %>
+      <%= error_tag f, :charm %>
+    </div>
   </div>
 
-  <div class="form-group">
-    <%= label f, :intellect, class: "control-label" %>
-    <%= number_input f, :intellect, class: "form-control" %>
-    <%= error_tag f, :intellect %>
-  </div>
+  <h3>Traits</h3>
 
-  <div class="form-group">
-    <%= label f, :willpower, class: "control-label" %>
-    <%= number_input f, :willpower, class: "form-control" %>
-    <%= error_tag f, :willpower %>
-  </div>
+  <table>
+    <tbody id="traits">
+      <%= inputs_for f, :races_traits, fn i -> %>
+        <tr>
+          <td>
+            <%= select(i, :trait_id, ApathyDrive.Trait.select, prompt: "New Trait", class: "u-full-width") %>
+          </td>
+          <td>
+            <%= text_input i, :value, class: "form-control" %>
+          </td>
+          <%= if i.data.id do %>
+            <td>
+              <%= label i, :delete, "Delete?", class: "control-label" %>
+              <%= checkbox i, :delete %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
 
-  <div class="form-group">
-    <%= label f, :health, class: "control-label" %>
-    <%= number_input f, :health, class: "form-control" %>
-    <%= error_tag f, :health %>
-  </div>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2"></td>
+        <td><%= link_to_trait_fields() %></td>
+      </tr>
+    </tfoot>
+  </table>
 
-  <div class="form-group">
-    <%= label f, :charm, class: "control-label" %>
-    <%= number_input f, :charm, class: "form-control" %>
-    <%= error_tag f, :charm %>
-  </div>
+
 
   <div class="form-group">
     <%= submit "Submit", class: "button button-primary" %>
   </div>
 <% end %>
+
+<script>
+  require("js/admin/admin")
+</script>

@@ -17,6 +17,36 @@
     <%= error_tag f, :description %>
   </div>
 
+  <h3>Traits</h3>
+
+  <table>
+    <tbody id="traits">
+      <%= inputs_for f, :classes_traits, fn i -> %>
+        <tr>
+          <td>
+            <%= select(i, :trait_id, ApathyDrive.Trait.select, prompt: "New Trait", class: "u-full-width") %>
+          </td>
+          <td>
+            <%= text_input i, :value, class: "form-control" %>
+          </td>
+          <%= if i.data.id do %>
+            <td>
+              <%= label i, :delete, "Delete?", class: "control-label" %>
+              <%= checkbox i, :delete %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2"></td>
+        <td><%= link_to_trait_fields() %></td>
+      </tr>
+    </tfoot>
+  </table>
+
   <div class="form-group">
     <%= submit "Submit", class: "button button-primary" %>
   </div>

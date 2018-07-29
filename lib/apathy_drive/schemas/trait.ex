@@ -21,4 +21,10 @@ defmodule ApathyDrive.Trait do
     |> Enum.map(& &1.name)
     |> Enum.sort()
   end
+
+  def select do
+    Repo.all(__MODULE__, select: [:id, :name])
+    |> Enum.sort_by(& &1.name)
+    |> Enum.map(&{&1.name, &1.id})
+  end
 end

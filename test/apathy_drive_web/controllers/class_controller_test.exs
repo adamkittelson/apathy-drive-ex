@@ -33,11 +33,11 @@ defmodule ApathyDriveWeb.ClassControllerTest do
   describe "create class" do
     setup [:admin_user]
 
-    test "redirects to show when data is valid", %{conn: conn} do
+    test "redirects to edit when data is valid", %{conn: conn} do
       conn = post(conn, class_path(conn, :create), class: @create_attrs)
 
       assert %{id: id} = redirected_params(conn)
-      assert redirected_to(conn) == class_path(conn, :show, id)
+      assert redirected_to(conn) == class_path(conn, :edit, id)
 
       conn = get(conn, class_path(conn, :show, id))
       assert html_response(conn, 200) =~ "some name"
@@ -63,7 +63,7 @@ defmodule ApathyDriveWeb.ClassControllerTest do
 
     test "redirects when data is valid", %{conn: conn, class: class} do
       conn = put(conn, class_path(conn, :update, class), class: @update_attrs)
-      assert redirected_to(conn) == class_path(conn, :show, class)
+      assert redirected_to(conn) == class_path(conn, :edit, class)
 
       conn = get(conn, class_path(conn, :show, class))
       assert html_response(conn, 200) =~ "some updated description"

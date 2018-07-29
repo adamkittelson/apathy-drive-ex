@@ -4,13 +4,13 @@ defmodule ApathyDrive.Commands.Gossip do
   def keywords, do: ["gos"]
 
   def execute(%Room{} = room, %Character{} = character, args) do
-    message =
-      args
-      |> Enum.join(" ")
-      |> Character.sanitize()
+    message = Enum.join(args, " ")
 
     ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "scroll", %{
-      html: "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{message}</p>"
+      html:
+        "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{
+          Character.sanitize(message)
+        }</p>"
     })
 
     Gossip.broadcast("gossip", %{name: character.name, message: message})
