@@ -72,7 +72,7 @@ defmodule ApathyDriveWeb.RaceControllerTest do
 
     test "redirects when data is valid", %{conn: conn, race: race} do
       conn = put(conn, race_path(conn, :update, race), race: @update_attrs)
-      assert redirected_to(conn) == race_path(conn, :show, race)
+      assert redirected_to(conn) == race_path(conn, :edit, race)
 
       conn = get(conn, race_path(conn, :show, race))
       assert html_response(conn, 200) =~ "some updated description"

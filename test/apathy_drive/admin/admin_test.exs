@@ -25,7 +25,10 @@ defmodule ApathyDrive.AdminTest do
     end
 
     test "get_class!/1 returns the class with given id" do
-      class = class_fixture()
+      class =
+        class_fixture()
+        |> Map.put(:classes_traits, [])
+
       assert Admin.get_class!(class.id) == class
     end
 
@@ -41,6 +44,7 @@ defmodule ApathyDrive.AdminTest do
 
     test "update_class/2 with valid data updates the class" do
       class = class_fixture()
+
       assert {:ok, class} = Admin.update_class(class, @update_attrs)
       assert %Class{} = class
       assert class.description == "some updated description"
@@ -48,7 +52,10 @@ defmodule ApathyDrive.AdminTest do
     end
 
     test "update_class/2 with invalid data returns error changeset" do
-      class = class_fixture()
+      class =
+        class_fixture()
+        |> Map.put(:classes_traits, [])
+
       assert {:error, %Ecto.Changeset{}} = Admin.update_class(class, @invalid_attrs)
       assert class == Admin.get_class!(class.id)
     end
