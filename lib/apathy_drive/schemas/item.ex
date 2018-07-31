@@ -37,7 +37,7 @@ defmodule ApathyDrive.Item do
     timestamps()
   end
 
-  @required_fields ~w()a
+  @required_fields ~w(name)a
   @optional_fields ~w()a
 
   @doc """

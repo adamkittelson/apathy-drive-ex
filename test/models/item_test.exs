@@ -5,8 +5,6 @@ defmodule ApathyDrive.ItemTest do
 
   @valid_attrs %{
     description: "some content",
-    grade: "light",
-    level: 42,
     name: "some content",
     worn_on: "some content"
   }
