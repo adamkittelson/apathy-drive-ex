@@ -88,7 +88,6 @@ defmodule ApathyDrive.Commands.Wear do
       Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
         item_to_remove =
           equipment
-          |> Enum.sort_by(&Item.power_at_level(&1, &1.level))
           |> Enum.find(&(&1.worn_on == worn_on))
 
         equipment = List.delete(equipment, item_to_remove)

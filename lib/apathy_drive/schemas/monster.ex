@@ -69,13 +69,6 @@ defmodule ApathyDrive.Monster do
     has_many(:traits, through: [:monsters_traits, :trait])
   end
 
-  @grades %{
-    "weak" => 50,
-    "normal" => 75,
-    "strong" => 100,
-    "boss" => 125
-  }
-
   def changeset(%Monster{} = monster, params \\ %{}) do
     monster
     |> cast(params, ~w(), ~w())
@@ -253,52 +246,33 @@ defmodule ApathyDrive.Monster do
   def generate_monster_attributes(%Monster{} = monster), do: monster
 
   def generate_loot_for_character(%Monster{} = monster, %Character{} = character) do
-    rarity = random_loot_rarity(monster, character.pity_modifier)
+    rarity = nil
 
     if rarity do
       Logger.info("spawning #{rarity} item for #{character.name}")
 
-      item_id = Item.random_item_id_for_slot_and_rarity(Enum.random(Item.slots()), rarity)
+      item_id = 1
 
       if item_id do
-        character =
-          Item
-          |> Repo.get(item_id)
-          |> Item.generate_for_character!(character, :loot)
-          |> case do
-            %Item{instance_id: nil} = item ->
-              gold =
-                item
-                |> Item.price()
-                |> div(10)
+        Item
+        |> Repo.get(item_id)
+        |> Item.generate_for_character!(character, :loot)
+        |> case do
+          %Item{instance_id: nil} = item ->
+            gold =
+              item
+              |> Item.price()
+              |> div(10)
 
-              character
-              |> Ecto.Changeset.change(%{gold: character.gold + gold})
-              |> Repo.update!()
-              |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
+            character
+            |> Ecto.Changeset.change(%{gold: character.gold + gold})
+            |> Repo.update!()
+            |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
 
-            %Item{instance_id: _id} = item ->
-              character
-              |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
-              |> Character.load_items()
-          end
-
-        if rarity == "legendary" do
-          character = put_in(character.pity_modifier, 0)
-
-          %Character{id: character.id}
-          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
-          |> Repo.update!()
-
-          character
-        else
-          character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
-
-          %Character{id: character.id}
-          |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
-          |> Repo.update!()
-
-          character
+          %Item{instance_id: _id} = item ->
+            character
+            |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
+            |> Character.load_items()
         end
       else
         character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
@@ -324,73 +298,6 @@ defmodule ApathyDrive.Monster do
   def pity_bonus(%Monster{grade: "normal"}), do: 100
   def pity_bonus(%Monster{grade: "strong"}), do: 1_000
   def pity_bonus(%Monster{grade: "boss"}), do: 10_000
-
-  def random_loot_rarity(%Monster{grade: "weak"}, pity_modifier) do
-    case :rand.uniform(1_000_000 - pity_modifier) do
-      roll when roll <= 10 ->
-        "legendary"
-
-      roll when roll <= 500 ->
-        "epic"
-
-      roll when roll <= 5000 ->
-        "rare"
-
-      roll when roll <= 50_000 ->
-        "uncommon"
-
-      _ ->
-        "common"
-    end
-  end
-
-  def random_loot_rarity(%Monster{grade: "normal"}, pity_modifier) do
-    case :rand.uniform(1_000_000 - pity_modifier) do
-      roll when roll <= 100 ->
-        "legendary"
-
-      roll when roll <= 1000 ->
-        "epic"
-
-      roll when roll <= 10_000 ->
-        "rare"
-
-      roll when roll <= 100_000 ->
-        "uncommon"
-
-      _ ->
-        "common"
-    end
-  end
-
-  def random_loot_rarity(%Monster{grade: "strong"}, pity_modifier) do
-    case :rand.uniform(1_000_000 - pity_modifier) do
-      roll when roll <= 1000 ->
-        "legendary"
-
-      roll when roll <= 10_000 ->
-        "epic"
-
-      roll when roll <= 100_000 ->
-        "rare"
-
-      _ ->
-        "uncommon"
-    end
-  end
-
-  def random_loot_rarity(%Monster{grade: "boss"}, pity_modifier) do
-    case :rand.uniform(1_000_000 - pity_modifier) do
-      roll when roll <= 10_000 ->
-        "legendary"
-
-      roll when roll <= 100_000 ->
-        "epic"
-
-      _ ->
-        "rare"
-    end
-  end
 
   def name_with_adjective(name, nil), do: name
   def name_with_adjective(name, []), do: name

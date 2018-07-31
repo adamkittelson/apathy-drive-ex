@@ -1047,7 +1047,6 @@ defmodule ApathyDrive.Ability do
     effects =
       ability.traits
       |> Map.take(@duration_traits)
-      |> process_enchantment_traits(item)
       |> Map.put("stack_key", ability.id)
       |> Map.put("stack_count", 1)
       |> Map.put("effect_ref", make_ref())
@@ -1074,26 +1073,6 @@ defmodule ApathyDrive.Ability do
     target
     |> Systems.Effect.add(effects, :timer.seconds(duration))
     |> Systems.Effect.schedule_next_periodic_effect()
-  end
-
-  def process_enchantment_traits(effects, item) do
-    effects
-    |> Enum.reduce(effects, fn effect, updated_effects ->
-      process_enchantment_trait(updated_effects, effect, item)
-    end)
-  end
-
-  def process_enchantment_trait(effects, {"Damage", damages}, %Item{attacks_per_round: attacks}) do
-    damages =
-      Enum.map(damages, fn damage ->
-        update_in(damage.potency, &(&1 / attacks))
-      end)
-
-    Map.put(effects, "Damage", damages)
-  end
-
-  def process_enchantment_trait(effects, {trait, value}, _item) do
-    put_in(effects[trait], value)
   end
 
   def process_duration_traits(effects, target, caster, ability, room) do

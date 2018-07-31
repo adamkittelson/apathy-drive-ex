@@ -14,7 +14,6 @@ defmodule ApathyDrive.Character do
     Companion,
     Directory,
     Energy,
-    Item,
     Level,
     Monster,
     Mobile,
@@ -641,23 +640,6 @@ defmodule ApathyDrive.Character do
       effects: effects,
       resistances: resistances
     }
-  end
-
-  def weapon_potency(character) do
-    case Character.weapon(character) do
-      nil ->
-        [
-          %{
-            potency: 75 / 1,
-            kind: "physical",
-            damage_type_id: 3,
-            damage_type: "Normal"
-          }
-        ]
-
-      %Item{damage: damage} = item ->
-        damage ++ Systems.Effect.effect_list(item, "Damage")
-    end
   end
 
   def energy_per_swing(character, weapon \\ nil) do

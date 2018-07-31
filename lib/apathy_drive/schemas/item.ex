@@ -7,75 +7,38 @@ defmodule ApathyDrive.Item do
 
   schema "items" do
     field(:name, :string)
-    field(:description, :string)
+    field(:type, :string)
     field(:worn_on, :string)
-    field(:grade, :string)
-    field(:global_drop, :boolean)
+    field(:weapon_type, :string)
+    field(:armour_type, :string)
     field(:game_limit, :integer)
-    field(:rarity, :string)
-    field(:hit_verbs, ApathyDrive.JSONB)
-    field(:miss_verbs, ApathyDrive.JSONB)
-    field(:attacks_per_round, :integer)
-    field(:physical_resistance, :integer)
-    field(:magical_resistance, :integer)
-    field(:kind, :string)
     field(:weight, :integer)
     field(:speed, :integer)
+    field(:required_strength, :integer)
+    field(:max_uses, :integer)
+    field(:getable, :boolean)
+    field(:dropable, :boolean)
+    field(:destroy_on_death, :boolean)
+    field(:destroy_when_fully_used, :boolean)
+    field(:robbable, :boolean)
+    field(:cost_value, :integer)
+    field(:cost_currency, :string)
     field(:min_damage, :integer)
     field(:max_damage, :integer)
-    field(:required_strength, :integer)
-    field(:required_agility, :integer)
-    field(:required_intellect, :integer)
-    field(:required_willpower, :integer)
-    field(:required_health, :integer)
-    field(:required_charm, :integer)
+    field(:description, :string)
+    field(:hit_verbs, ApathyDrive.JSONB)
+    field(:miss_verbs, ApathyDrive.JSONB)
+    field(:destruct_message, :string)
 
-    field(:abilities, :map, virtual: true, default: %{})
-    field(:level, :integer, virtual: true)
-    field(:equipped, :boolean, virtual: true, default: false)
-    field(:hidden, :boolean, virtual: true, default: false)
     field(:instance_id, :integer, virtual: true)
-    field(:damage, :any, virtual: true)
-    field(:effects, :map, virtual: true, default: %{})
-    field(:last_effect_key, :integer, virtual: true, default: 0)
-    field(:purchased, :boolean, virtual: true, default: false)
-
-    has_many(:shop_items, ApathyDrive.ShopItem)
-    has_many(:shops, through: [:shop_items, :room])
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
-    has_many(:rooms, through: [:items_instances, :room])
-    has_many(:characters, through: [:items_instances, :character])
-
-    has_many(:items_abilities, ApathyDrive.ItemAbility)
 
     timestamps()
   end
 
-  @required_fields ~w(name description worn_on level grade)a
-  @optional_fields ~w(abilities global_drop)a
-  @rarities %{
-    "common" => %{
-      multiplier: 1,
-      color: "teal"
-    },
-    "uncommon" => %{
-      multiplier: 2,
-      color: "chartreuse"
-    },
-    "rare" => %{
-      multiplier: 3,
-      color: "blue"
-    },
-    "epic" => %{
-      multiplier: 5,
-      color: "darkmagenta"
-    },
-    "legendary" => %{
-      multiplier: 8,
-      color: "red"
-    }
-  }
+  @required_fields ~w()a
+  @optional_fields ~w()a
 
   @doc """
   Creates a changeset based on the `model` and `params`.
@@ -98,7 +61,7 @@ defmodule ApathyDrive.Item do
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
     |> case do
-      %Item{kind: "weapon"} = item ->
+      %Item{type: "Weapon"} = item ->
         %Weapon{
           name: item.name,
           description: item.description,
@@ -129,15 +92,6 @@ defmodule ApathyDrive.Item do
 
   def from_shop(%Item{} = item) do
     item
-  end
-
-  def power_at_level(%Item{} = item, level) do
-    base = 3 * @rarities[item.rarity].multiplier * 6
-    base + base / 10 * (level - 1)
-  end
-
-  def power_at_level(rarity, level) do
-    power_at_level(%Item{rarity: rarity}, level)
   end
 
   def slots do
@@ -171,55 +125,12 @@ defmodule ApathyDrive.Item do
     |> Enum.map(& &1.grade)
   end
 
-  def random_item_id_for_slot_and_rarity(slot, rarity) do
-    grade =
-      slot
-      |> grades_for_slot()
-      |> Enum.random()
-
-    if grade do
-      random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity)
-    end
-  end
-
-  def random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity) do
-    Logger.info(
-      "finding random #{inspect(rarity)} item with grade: #{inspect(grade)} for slot: #{
-        inspect(slot)
-      }"
-    )
-
-    count =
-      __MODULE__
-      |> grade(grade)
-      |> worn_on(slot)
-      |> rarity(rarity)
-      |> select([item], count(item.id))
-      |> Repo.one()
-
-    if count > 0 do
-      __MODULE__
-      |> grade(grade)
-      |> worn_on(slot)
-      |> rarity(rarity)
-      |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-      |> select([item], item.id)
-      |> Repo.one()
-    else
-      Logger.error("Tried to spawn item for #{grade} #{slot} #{rarity}, but none exist.")
-    end
-  end
-
   def worn_on(query, slot) do
     query |> where([item], item.worn_on == ^slot)
   end
 
   def grade(query, grade) do
     query |> where([item], item.grade == ^grade)
-  end
-
-  def rarity(query, rarity) do
-    query |> where([item], item.rarity == ^rarity)
   end
 
   def global_drops(query) do
@@ -256,50 +167,14 @@ defmodule ApathyDrive.Item do
       |> Map.put(:item, item)
       |> from_assoc()
 
-    if source == :loot and !upgrade_for_character?(item, character) do
-      item
-    else
-      ei = Repo.insert!(ei)
-      Map.put(item, :instance_id, ei.id)
-    end
+    ei = Repo.insert!(ei)
+    Map.put(item, :instance_id, ei.id)
   end
-
-  def upgrade_for_character?(%Item{worn_on: slot, rarity: rarity, level: level}, %Character{
-        equipment: equipment
-      }) do
-    item_power = Item.power_at_level(rarity, level)
-
-    worn_item =
-      Enum.find(equipment, fn worn_item ->
-        cond do
-          slot in ["Off-Hand", "Weapon Hand"] ->
-            worn_item.worn_on == slot or worn_item.worn_on == "Two Handed"
-
-          slot == "Two Handed" ->
-            worn_item.worn_on == slot or worn_item.worn_on == "Weapon Hand" or
-              worn_item.worn_on == "Off-Hand"
-
-          :else ->
-            worn_item.worn_on == slot
-        end
-      end)
-
-    slot_power =
-      if worn_item do
-        Item.power_at_level(worn_item.rarity, worn_item.level)
-      else
-        0
-      end
-
-    item_power > slot_power
-  end
-
-  def price(%Item{rarity: "legendary"}), do: "priceless"
 
   def price(%Item{}), do: 5
 
-  def color(%Item{rarity: rarity}) do
-    @rarities[rarity].color
+  def color(%Item{}) do
+    "dark-cyan"
   end
 
   def colored_name(%{name: name}, opts \\ []) do
