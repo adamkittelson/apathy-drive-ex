@@ -6,6 +6,7 @@ defmodule ApathyDrive.Room do
     Area,
     Character,
     Companion,
+    Item,
     Match,
     Mobile,
     Monster,
@@ -46,6 +47,7 @@ defmodule ApathyDrive.Room do
     field(:items, :any, virtual: true, default: [])
     field(:allies, :any, virtual: true, default: %{})
     field(:enemies, :any, virtual: true, default: %{})
+    field(:shop, :any, virtual: true, default: %{})
 
     timestamps()
 
@@ -80,6 +82,20 @@ defmodule ApathyDrive.Room do
     Repo.preload(room, :skills, force: true)
   end
 
+  def load_shop(%Room{} = room) do
+    shop_items =
+      room
+      |> Repo.preload(:shop_items)
+      |> Map.get(:shop_items)
+
+    Enum.reduce(shop_items, room, fn shop_item, room ->
+      shop_item = Repo.preload(shop_item, :item)
+
+      room
+      |> update_in([Access.key!(:shop)], &Map.put(&1, shop_item.item.name, shop_item))
+    end)
+  end
+
   def load_abilities(%Room{} = room) do
     Enum.reduce(room.mobiles, room, fn
       {ref, %Character{}}, updated_room ->
@@ -91,8 +107,6 @@ defmodule ApathyDrive.Room do
         updated_room
     end)
   end
-
-  def trainer?(%Room{} = room), do: Enum.any?(room.skills)
 
   def update_mobile(%Room{} = room, mobile_ref, fun) do
     if mobile = room.mobiles[mobile_ref] do

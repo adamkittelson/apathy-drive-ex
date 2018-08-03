@@ -101,6 +101,7 @@ defmodule ApathyDrive.RoomServer do
       |> Room.load_items()
       |> Room.load_reputations()
       |> Room.load_skills()
+      |> Room.load_shop()
 
     Logger.metadata(room: room.name <> "##{room.id}")
 

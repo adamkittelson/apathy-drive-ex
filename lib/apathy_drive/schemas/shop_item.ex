@@ -2,10 +2,15 @@ defmodule ApathyDrive.ShopItem do
   use ApathyDriveWeb, :model
 
   schema "shop_items" do
+    field(:stock, :integer)
+    field(:max_stock, :integer)
+    field(:regen_frequency_in_minutes, :integer)
+    field(:regen_chance, :integer)
+    field(:regen_amount, :integer)
+    field(:next_regen_at, :utc_datetime)
+
     belongs_to(:room, ApathyDrive.Room)
     belongs_to(:item, ApathyDrive.Item)
-
-    timestamps()
   end
 
   @required_fields ~w(room_id item_id)

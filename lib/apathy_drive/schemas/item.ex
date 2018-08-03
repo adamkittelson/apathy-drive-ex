@@ -17,7 +17,7 @@ defmodule ApathyDrive.Item do
     field(:required_strength, :integer)
     field(:max_uses, :integer)
     field(:getable, :boolean)
-    field(:dropable, :boolean)
+    field(:droppable, :boolean)
     field(:destroy_on_death, :boolean)
     field(:destroy_when_fully_used, :boolean)
     field(:robbable, :boolean)
@@ -33,8 +33,6 @@ defmodule ApathyDrive.Item do
     field(:instance_id, :integer, virtual: true)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
-
-    timestamps()
   end
 
   @required_fields ~w(name)a
@@ -183,6 +181,6 @@ defmodule ApathyDrive.Item do
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 
-    "<span style='color: dark-cyan;'>#{name}</span>"
+    "<span class='dark-cyan'>#{name}</span>"
   end
 end

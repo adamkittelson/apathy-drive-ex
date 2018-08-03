@@ -56,13 +56,6 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
       Mobile.send_scroll(character, "<p>    #{room.description}</p>")
 
-      if Room.trainer?(room) do
-        Mobile.send_scroll(
-          character,
-          "<p>\n<em>You can train skills here, \"list skills\" to see the skills available to train at this location.</em>\n\n</p>"
-        )
-      end
-
       Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
       Mobile.send_scroll(character, look_mobiles(room, character))
 
