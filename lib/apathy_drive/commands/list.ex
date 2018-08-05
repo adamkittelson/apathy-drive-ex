@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.List do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile, Item, ShopItem}
+  alias ApathyDrive.{Character, Mobile, Item, Shop, ShopItem}
 
   def keywords, do: ["list"]
 
@@ -17,7 +17,7 @@ defmodule ApathyDrive.Commands.List do
     )
   end
 
-  def list(%Room{shop: items}, character) do
+  def list(%Room{shop: %Shop{shop_items: items}}, character) do
     character
     |> Mobile.send_scroll(
       "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Quantity</span>    <span class='dark-cyan'>Price</span></p>"
@@ -27,13 +27,13 @@ defmodule ApathyDrive.Commands.List do
     )
 
     items
-    |> Enum.each(fn {_name, %ShopItem{} = shop_item} ->
-      if shop_item.stock > 0 do
+    |> Enum.each(fn %ShopItem{} = shop_item ->
+      if shop_item.count > 0 do
         if shop_item.item.cost_value do
           Mobile.send_scroll(
             character,
             "<p>#{Item.colored_name(shop_item.item, pad_trailing: 30)}<span class='dark-cyan'>#{
-              String.pad_trailing(to_string(shop_item.stock), 12)
+              String.pad_trailing(to_string(shop_item.count), 12)
             }</span><span class='dark-cyan'>#{shop_item.item.cost_value} #{
               shop_item.item.cost_currency
             }s</span></p>"
@@ -42,7 +42,7 @@ defmodule ApathyDrive.Commands.List do
           Mobile.send_scroll(
             character,
             "<p>#{Item.colored_name(shop_item.item, pad_trailing: 30)}<span class='dark-cyan'>#{
-              String.pad_trailing(to_string(shop_item.stock), 12)
+              String.pad_trailing(to_string(shop_item.count), 12)
             }</span><span class='dark-cyan'>FREE</span></p>"
           )
         end

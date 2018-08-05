@@ -1,15 +1,17 @@
 defmodule ApathyDrive.ShopItem do
   use ApathyDriveWeb, :model
 
+  alias ApathyDrive.{ItemInstance, Room, ShopItem}
+
   schema "shop_items" do
     field(:stock, :integer)
-    field(:max_stock, :integer)
-    field(:regen_frequency_in_minutes, :integer)
-    field(:regen_chance, :integer)
-    field(:regen_amount, :integer)
-    field(:next_regen_at, :utc_datetime)
+    field(:restock_frequency_in_minutes, :integer)
+    field(:restock_chance, :integer)
+    field(:restock_amount, :integer)
+    field(:next_restock_at, :utc_datetime)
+    field(:count, :integer, virtual: true, default: 0)
 
-    belongs_to(:room, ApathyDrive.Room)
+    belongs_to(:shop, ApathyDrive.Shop)
     belongs_to(:item, ApathyDrive.Item)
   end
 
@@ -28,5 +30,36 @@ defmodule ApathyDrive.ShopItem do
     __MODULE__
     # |> Ecto.Query.where([si], si.room_id == ^id)
     |> Repo.all()
+  end
+
+  def restock!(%Room{} = room, %ShopItem{} = shop_item) do
+    if !is_nil(shop_item.restock_frequency_in_minutes) and
+         (is_nil(shop_item.next_restock_at) or
+            DateTime.compare(shop_item.next_restock_at, DateTime.utc_now()) == :lt) do
+      if shop_item.count < shop_item.stock and :rand.uniform(100) <= shop_item.restock_chance do
+        restock_amount = min(shop_item.stock - shop_item.count, shop_item.restock_amount)
+
+        IO.puts("Stocking #{restock_amount} #{shop_item.item.name}")
+
+        ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "scroll", %{
+          html:
+            "<p>[<span class='yellow'>announce</span> : Apotheosis] #{room.name} just received a shipment of #{
+              restock_amount
+            } #{Inflex.inflect(shop_item.item.name, restock_amount)}</p>"
+        })
+
+        Enum.each(1..restock_amount, fn _ ->
+          %ItemInstance{item_id: shop_item.item_id, shop_id: shop_item.shop_id}
+          |> Repo.insert!()
+        end)
+      end
+
+      shop_item
+      |> Ecto.Changeset.change(
+        next_restock_at:
+          Timex.shift(DateTime.utc_now(), minutes: shop_item.restock_frequency_in_minutes)
+      )
+      |> Repo.update!()
+    end
   end
 end

@@ -38,6 +38,14 @@ defmodule ApathyDrive.Item do
   @required_fields ~w(name)a
   @optional_fields ~w()a
 
+  @currencies %{
+    "copper farthing" => 1,
+    "silver noble" => 10,
+    "gold crown" => 100,
+    "platinum piece" => 10_000,
+    "runic coin" => 1_000_000
+  }
+
   @doc """
   Creates a changeset based on the `model` and `params`.
 
@@ -182,5 +190,9 @@ defmodule ApathyDrive.Item do
       |> String.pad_leading(opts[:pad_leading] || 0)
 
     "<span class='dark-cyan'>#{name}</span>"
+  end
+
+  def cost_in_copper(%Item{} = item) do
+    item.cost_value * @currencies[item.cost_currency]
   end
 end

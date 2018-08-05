@@ -6,7 +6,6 @@ defmodule ApathyDrive.Room do
     Area,
     Character,
     Companion,
-    Item,
     Match,
     Mobile,
     Monster,
@@ -14,6 +13,7 @@ defmodule ApathyDrive.Room do
     Room,
     RoomServer,
     PubSub,
+    Shop,
     TimerManager
   }
 
@@ -47,19 +47,19 @@ defmodule ApathyDrive.Room do
     field(:items, :any, virtual: true, default: [])
     field(:allies, :any, virtual: true, default: %{})
     field(:enemies, :any, virtual: true, default: %{})
-    field(:shop, :any, virtual: true, default: %{})
 
     timestamps()
 
     has_many(:persisted_mobiles, Monster)
     belongs_to(:ability, Ability)
     belongs_to(:area, ApathyDrive.Area)
-    has_many(:shop_items, ApathyDrive.ShopItem)
-    has_many(:items_for_sales, through: [:shop_items, :item])
     has_many(:lairs, ApathyDrive.LairMonster)
     has_many(:lair_monsters, through: [:lairs, :monster])
     has_many(:room_skills, ApathyDrive.RoomSkill)
     has_many(:skills, through: [:room_skills, :skill])
+    has_one(:shop, Shop)
+    has_many(:shop_items, through: [:shop, :shop_items])
+    has_many(:items_for_sales, through: [:shop_items, :item])
   end
 
   def load_items(%Room{} = room) do
@@ -80,20 +80,6 @@ defmodule ApathyDrive.Room do
 
   def load_skills(%Room{} = room) do
     Repo.preload(room, :skills, force: true)
-  end
-
-  def load_shop(%Room{} = room) do
-    shop_items =
-      room
-      |> Repo.preload(:shop_items)
-      |> Map.get(:shop_items)
-
-    Enum.reduce(shop_items, room, fn shop_item, room ->
-      shop_item = Repo.preload(shop_item, :item)
-
-      room
-      |> update_in([Access.key!(:shop)], &Map.put(&1, shop_item.item.name, shop_item))
-    end)
   end
 
   def load_abilities(%Room{} = room) do
