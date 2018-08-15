@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Shop do
   use ApathyDriveWeb, :model
+  require Logger
 
   alias ApathyDrive.{Character, Item, ItemInstance, Room, Shop, ShopItem}
 
@@ -11,11 +12,17 @@ defmodule ApathyDrive.Shop do
     has_many(:item_instances, ItemInstance)
   end
 
+  def room_ids do
+    Shop
+    |> select([s], s.room_id)
+    |> Repo.all()
+  end
+
   def shop?(%Room{shop: %Shop{}}), do: true
   def shop?(%Room{}), do: false
 
   def restock(%Room{} = room) do
-    IO.puts("restocking #{room.name}")
+    Logger.info("restocking #{room.name}")
 
     Enum.each(room.shop.shop_items, fn shop_item ->
       ShopItem.restock!(room, shop_item)
@@ -36,7 +43,7 @@ defmodule ApathyDrive.Shop do
     if next_shop_item do
       name = next_shop_item.item.name
       time = DateTime.diff(next_shop_item.next_restock_at, DateTime.utc_now(), :millisecond)
-      IO.puts("next restock #{name} in #{time} milliseconds")
+      Logger.info("next restock #{name} in #{time} milliseconds")
 
       if time > 0 do
         Process.send_after(self(), :restock_shop, time)

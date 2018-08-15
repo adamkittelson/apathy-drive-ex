@@ -12,7 +12,8 @@ defmodule ApathyDrive do
       worker(ApathyDrive.Migrator, [], restart: :temporary),
       worker(ApathyDrive.Directory, []),
       supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
-      worker(ApathyDrive.Metrics, [])
+      worker(ApathyDrive.Metrics, []),
+      worker(ApathyDrive, [], function: :load_shops, restart: :transient)
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
@@ -26,5 +27,12 @@ defmodule ApathyDrive do
   def config_change(changed, _new, removed) do
     ApathyDriveWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  def load_shops do
+    Task.start_link(fn ->
+      ApathyDrive.Shop.room_ids()
+      |> Enum.each(&ApathyDrive.RoomServer.load/1)
+    end)
   end
 end

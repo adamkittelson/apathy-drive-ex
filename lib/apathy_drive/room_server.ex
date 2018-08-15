@@ -40,6 +40,9 @@ defmodule ApathyDrive.RoomServer do
 
       {:ok, pid} ->
         pid
+
+      false ->
+        false
     end
   end
 

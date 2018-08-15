@@ -8,13 +8,23 @@ defmodule ApathyDrive.RoomSupervisor do
   end
 
   def init(children) do
-    supervise(children, [strategy: :one_for_one])
+    supervise(children, strategy: :one_for_one)
   end
 
   def launch(id) do
     id
     |> find_supervisor()
-    |> Supervisor.start_child({"room_#{id}", {GenServer, :start_link, [RoomServer, id, [name: :"room_#{id}"]]}, :transient, 5000, :worker, [RoomServer]})
+    |> case do
+      pid when is_pid(pid) ->
+        Supervisor.start_child(
+          pid,
+          {"room_#{id}", {GenServer, :start_link, [RoomServer, id, [name: :"room_#{id}"]]},
+           :transient, 5000, :worker, [RoomServer]}
+        )
+
+      _ ->
+        false
+    end
   end
 
   def find_supervisor(id) do
@@ -23,13 +33,19 @@ defmodule ApathyDrive.RoomSupervisor do
       |> Ecto.Query.where(id: ^id)
       |> Ecto.Query.join(:left, [r], a in assoc(r, :area))
       |> Ecto.Query.select([r, a], a.name)
-      |> Repo.one
+      |> Repo.one()
 
-    case Supervisor.start_child(__MODULE__, supervisor(__MODULE__, [[], [name: String.to_atom(area)]], [id: area])) do
-      {:ok, pid} ->
-        pid
-      {:error, {:already_started, pid}} ->
-        pid
+    if area do
+      case Supervisor.start_child(
+             __MODULE__,
+             supervisor(__MODULE__, [[], [name: String.to_atom(area)]], id: area)
+           ) do
+        {:ok, pid} ->
+          pid
+
+        {:error, {:already_started, pid}} ->
+          pid
+      end
     end
   end
 end
