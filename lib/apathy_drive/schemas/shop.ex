@@ -65,7 +65,10 @@ defmodule ApathyDrive.Shop do
           |> Enum.filter(&(&1.item_id == original_shop_item.item_id))
           |> length
 
-        shop_item = Map.put(original_shop_item, :count, count)
+        shop_item =
+          original_shop_item
+          |> Map.put(:count, count)
+          |> Map.put(:name, original_shop_item.item.name)
 
         room
         |> update_in(

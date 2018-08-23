@@ -1,7 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDriveWeb, :model
   alias ApathyDrive.{Character, Enchantment, Item, ItemInstance}
-  alias ApathyDrive.Items.{Weapon}
   require Logger
   require Ecto.Query
 
@@ -31,6 +30,7 @@ defmodule ApathyDrive.Item do
     field(:destruct_message, :string)
 
     field(:instance_id, :integer, virtual: true)
+    field(:effects, :map, virtual: true, default: %{})
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end
@@ -66,34 +66,6 @@ defmodule ApathyDrive.Item do
     item
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
-    |> case do
-      %Item{type: "Weapon"} = item ->
-        %Weapon{
-          name: item.name,
-          description: item.description,
-          worn_on: item.worn_on,
-          kind: item.grade,
-          hit_verbs: item.hit_verbs,
-          miss_verbs: item.miss_verbs,
-          instance_id: item.instance_id,
-          weight: item.weight,
-          speed: item.speed,
-          min_damage: item.min_damage,
-          max_damage: item.max_damage,
-          required_strength: item.required_strength,
-          required_agility: item.required_agility,
-          required_intellect: item.required_intellect,
-          required_willpower: item.required_willpower,
-          required_health: item.required_health,
-          required_charm: item.required_charm,
-          equipped: item.equipped,
-          effects: item.effects
-        }
-
-      %Item{} = item ->
-        item
-        |> Enchantment.load_enchantments()
-    end
   end
 
   def from_shop(%Item{} = item) do

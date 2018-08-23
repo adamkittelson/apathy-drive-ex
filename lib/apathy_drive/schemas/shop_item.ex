@@ -10,6 +10,7 @@ defmodule ApathyDrive.ShopItem do
     field(:restock_amount, :integer)
     field(:next_restock_at, :utc_datetime)
     field(:count, :integer, virtual: true, default: 0)
+    field(:name, :string, virtual: true)
 
     belongs_to(:shop, ApathyDrive.Shop)
     belongs_to(:item, ApathyDrive.Item)
@@ -43,9 +44,9 @@ defmodule ApathyDrive.ShopItem do
 
         ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "scroll", %{
           html:
-            "<p>[<span class='yellow'>announce</span> : Apotheosis] #{room.name} just received a shipment of #{
-              restock_amount
-            } #{Inflex.inflect(shop_item.item.name, restock_amount)}</p>"
+            "<p>[<span class='yellow'>announce</span> : Apotheosis] #{room.name} just received a shipment of: #{
+              shop_item.item.name
+            } (#{restock_amount})</p>"
         })
 
         Enum.each(1..restock_amount, fn _ ->

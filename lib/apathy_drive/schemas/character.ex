@@ -14,6 +14,7 @@ defmodule ApathyDrive.Character do
     Companion,
     Directory,
     Energy,
+    Item,
     Level,
     Monster,
     Mobile,
@@ -27,8 +28,6 @@ defmodule ApathyDrive.Character do
     Text,
     TimerManager
   }
-
-  alias ApathyDrive.Items.{Weapon}
 
   require Logger
   import Comeonin.Bcrypt
@@ -263,7 +262,8 @@ defmodule ApathyDrive.Character do
 
   def attack_abilities(character) do
     punch =
-      ability_for_weapon(character, %Weapon{
+      ability_for_weapon(character, %Item{
+        type: "Weapon",
         name: "fist",
         hit_verbs: [["punch", "punches"]],
         miss_verbs: ["throw a punch", "throws a punch"],
@@ -283,7 +283,8 @@ defmodule ApathyDrive.Character do
   end
 
   def ability_for_weapon(character, weapon) do
-    %Weapon{
+    %Item{
+      type: "Weapon",
       name: name,
       hit_verbs: hit_verbs,
       miss_verbs: [singular_miss, plural_miss],

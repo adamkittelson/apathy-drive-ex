@@ -59,7 +59,7 @@ defmodule ApathyDrive.Room do
     has_many(:skills, through: [:room_skills, :skill])
     has_one(:shop, Shop)
     has_many(:shop_items, through: [:shop, :shop_items])
-    has_many(:items_for_sales, through: [:shop_items, :item])
+    has_many(:items_for_sales, through: [:shop, :shop_items])
   end
 
   def load_items(%Room{} = room) do
@@ -122,6 +122,8 @@ defmodule ApathyDrive.Room do
     room
     |> assoc(:items_for_sales)
     |> Repo.all()
+    |> Enum.map(&Repo.preload(&1, :item))
+    |> Enum.map(&Map.put(&1, :name, &1.item.name))
   end
 
   def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do
