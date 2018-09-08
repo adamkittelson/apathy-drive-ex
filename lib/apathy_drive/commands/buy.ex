@@ -32,6 +32,8 @@ defmodule ApathyDrive.Commands.Buy do
 
         Mobile.send_scroll(character, message)
 
+        room
+
       %ShopItem{} = shop_item ->
         # if price > character.gold do
         #   Mobile.send_scroll(
@@ -41,6 +43,8 @@ defmodule ApathyDrive.Commands.Buy do
 
         #   room
         # else
+
+        price_in_copper = Shop.buy_price(room.shop, character, shop_item.item)
 
         item_instance =
           room.shop.item_instances
@@ -61,7 +65,7 @@ defmodule ApathyDrive.Commands.Buy do
           |> Character.load_items()
           |> Repo.save!()
           |> Mobile.send_scroll(
-            "<p>You purchase #{Item.colored_name(item_instance.item)} for 0 gold.</p>"
+            "<p>You purchase #{Item.colored_name(item_instance.item)} for #{price_in_copper} copper.</p>"
           )
         end)
         |> Shop.load()

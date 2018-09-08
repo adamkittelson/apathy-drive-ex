@@ -17,7 +17,7 @@ defmodule ApathyDrive.Commands.List do
     )
   end
 
-  def list(%Room{shop: %Shop{shop_items: items}}, character) do
+  def list(%Room{shop: %Shop{shop_items: items, cost_multiplier: multiplier}}, character) do
     character
     |> Mobile.send_scroll(
       "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Quantity</span>    <span class='dark-cyan'>Price</span></p>"
@@ -34,7 +34,7 @@ defmodule ApathyDrive.Commands.List do
             character,
             "<p>#{Item.colored_name(shop_item.item, pad_trailing: 30)}<span class='dark-cyan'>#{
               String.pad_trailing(to_string(shop_item.count), 12)
-            }</span><span class='dark-cyan'>#{shop_item.item.cost_value} #{
+            }</span><span class='dark-cyan'>#{trunc(shop_item.item.cost_value * multiplier)} #{
               shop_item.item.cost_currency
             }s</span></p>"
           )
