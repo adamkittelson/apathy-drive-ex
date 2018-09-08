@@ -38,6 +38,10 @@ defmodule ApathyDrive.Currency do
     set_value(currency_holder, wealth(currency_holder) + copper)
   end
 
+  def subtract(currency_holder, copper) do
+    set_value(currency_holder, wealth(currency_holder) - copper)
+  end
+
   def wealth(currency_holder) do
     Enum.reduce(@currencies, 0, fn currency, total ->
       total + Map.get(currency_holder, currency) * copper_value(currency)

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Buy do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Match, Mobile, Item, Repo, Shop, ShopItem}
+  alias ApathyDrive.{Character, Currency, Match, Mobile, Item, Repo, Shop, ShopItem}
 
   def keywords, do: ["buy"]
 
@@ -35,42 +35,52 @@ defmodule ApathyDrive.Commands.Buy do
         room
 
       %ShopItem{} = shop_item ->
-        # if price > character.gold do
-        #   Mobile.send_scroll(
-        #     character,
-        #     "<p>You cannot afford to buy #{Item.colored_name(item)}.</p>"
-        #   )
-
-        #   room
-        # else
-
         price_in_copper = Shop.buy_price(room.shop, character, shop_item.item)
 
-        item_instance =
-          room.shop.item_instances
-          |> Enum.find(&(&1.item_id == shop_item.item_id))
-
-        Room.update_mobile(room, character.ref, fn char ->
-          item_instance
-          |> Ecto.Changeset.change(%{
-            shop_id: nil,
-            character_id: char.id,
-            equipped: false,
-            hidden: false
-          })
-          |> Repo.update!()
-
-          # update_in(char.gold, &(&1 - price))
-          char
-          |> Character.load_items()
-          |> Repo.save!()
-          |> Mobile.send_scroll(
-            "<p>You purchase #{Item.colored_name(item_instance.item)} for #{price_in_copper} copper.</p>"
+        if Currency.wealth(character) < price_in_copper do
+          Mobile.send_scroll(
+            character,
+            "<p>You cannot afford to buy #{Item.colored_name(shop_item.item)}.<p>"
           )
-        end)
-        |> Shop.load()
 
-      # end
+          room
+        else
+          item_instance =
+            room.shop.item_instances
+            |> Enum.find(&(&1.item_id == shop_item.item_id))
+
+          Room.update_mobile(room, character.ref, fn char ->
+            item_instance
+            |> Ecto.Changeset.change(%{
+              shop_id: nil,
+              character_id: char.id,
+              equipped: false,
+              hidden: false
+            })
+            |> Repo.update!()
+
+            currency = Currency.set_value(price_in_copper)
+            char_currency = Currency.subtract(char, price_in_copper)
+
+            char
+            |> Ecto.Changeset.change(%{
+              runic: char_currency.runic,
+              platinum: char_currency.platinum,
+              gold: char_currency.gold,
+              silver: char_currency.silver,
+              copper: char_currency.copper
+            })
+            |> Repo.update!()
+            |> Character.load_items()
+            |> Repo.save!()
+            |> Mobile.send_scroll(
+              "<p>You purchase #{Item.colored_name(item_instance.item)} for #{
+                Currency.to_string(currency)
+              }.</p>"
+            )
+          end)
+          |> Shop.load()
+        end
 
       matches ->
         Mobile.send_scroll(
