@@ -156,6 +156,8 @@ defmodule ApathyDrive.Item do
     "<span class='dark-cyan'>#{name}</span>"
   end
 
+  def cost_in_copper(%Item{cost_currency: nil}), do: 0
+
   def cost_in_copper(%Item{} = item) do
     item.cost_value * Currency.copper_value(item.cost_currency)
   end

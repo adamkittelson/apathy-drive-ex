@@ -62,6 +62,20 @@ defmodule ApathyDrive.Commands.Buy do
             currency = Currency.set_value(price_in_copper)
             char_currency = Currency.subtract(char, price_in_copper)
 
+            if price_in_copper == 0 do
+              Mobile.send_scroll(
+                char,
+                "<p>You purchase #{Item.colored_name(item_instance.item)} for nothing.</p>"
+              )
+            else
+              Mobile.send_scroll(
+                char,
+                "<p>You purchase #{Item.colored_name(item_instance.item)} for #{
+                  Currency.to_string(currency)
+                }.</p>"
+              )
+            end
+
             char
             |> Ecto.Changeset.change(%{
               runic: char_currency.runic,
@@ -73,11 +87,6 @@ defmodule ApathyDrive.Commands.Buy do
             |> Repo.update!()
             |> Character.load_items()
             |> Repo.save!()
-            |> Mobile.send_scroll(
-              "<p>You purchase #{Item.colored_name(item_instance.item)} for #{
-                Currency.to_string(currency)
-              }.</p>"
-            )
           end)
           |> Shop.load()
         end
