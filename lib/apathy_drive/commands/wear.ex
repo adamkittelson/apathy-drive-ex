@@ -75,7 +75,9 @@ defmodule ApathyDrive.Commands.Wear do
               Mobile.send_scroll(character, "<p>You can't equip #{Item.colored_name(item)}.</p>")
           end
 
-        put_in(room.mobiles[character.ref], character)
+        room = put_in(room.mobiles[character.ref], character)
+        Character.update_score(character, room)
+        room
     end
   end
 
@@ -114,6 +116,7 @@ defmodule ApathyDrive.Commands.Wear do
           character
           |> Map.put(:inventory, inventory)
           |> Map.put(:equipment, equipment)
+          |> Character.add_equipped_items_effects()
 
         %{equipped: item, unequipped: [item_to_remove], character: character}
 
@@ -152,6 +155,7 @@ defmodule ApathyDrive.Commands.Wear do
           character
           |> Map.put(:inventory, inventory)
           |> Map.put(:equipment, equipment)
+          |> Character.add_equipped_items_effects()
 
         %{equipped: item, unequipped: items_to_remove, character: character}
 
@@ -174,6 +178,7 @@ defmodule ApathyDrive.Commands.Wear do
           character
           |> Map.put(:inventory, inventory)
           |> Map.put(:equipment, equipment)
+          |> Character.add_equipped_items_effects()
 
         %{equipped: item, character: character}
     end

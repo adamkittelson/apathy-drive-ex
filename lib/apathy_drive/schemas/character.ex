@@ -251,6 +251,28 @@ defmodule ApathyDrive.Character do
     character
     |> Map.put(:inventory, Enum.reject(items, & &1.equipped))
     |> Map.put(:equipment, Enum.filter(items, & &1.equipped))
+    |> add_equipped_items_effects()
+  end
+
+  def add_equipped_items_effects(%Character{} = character) do
+    character =
+      Enum.reduce(character.effects, character, fn {_key, %{"stack_key" => key}}, character ->
+        if String.starts_with?(key, "item") do
+          Systems.Effect.remove_oldest_stack(character, key)
+        else
+          character
+        end
+      end)
+
+    Enum.reduce(character.equipment, character, fn item, updated_character ->
+      add_equipped_item_effects(updated_character, item)
+    end)
+  end
+
+  def add_equipped_item_effects(%Character{} = character, item) do
+    effect = Map.put(item.traits, "stack_key", "item-#{item.instance_id}")
+
+    Systems.Effect.add(character, effect)
   end
 
   def sanitize(message) do

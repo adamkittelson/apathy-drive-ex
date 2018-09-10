@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Item do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, Currency, Item, ItemInstance}
+  alias ApathyDrive.{Character, Currency, Item, ItemInstance, ItemTrait}
   require Logger
   require Ecto.Query
 
@@ -31,6 +31,7 @@ defmodule ApathyDrive.Item do
 
     field(:instance_id, :integer, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
+    field(:traits, :map, virtual: true, default: %{})
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end
@@ -58,6 +59,7 @@ defmodule ApathyDrive.Item do
     item
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
+    |> Map.put(:traits, ItemTrait.load_traits(item.id))
   end
 
   def from_shop(%Item{} = item) do
