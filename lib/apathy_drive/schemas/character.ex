@@ -96,6 +96,8 @@ defmodule ApathyDrive.Character do
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:reply_to, :string, virtual: true)
     field(:casting, :any, virtual: true, default: nil)
+    field(:weapon, :string, virtual: true)
+    field(:armour, :string, virtual: true)
 
     belongs_to(:room, Room)
 
@@ -228,6 +230,8 @@ defmodule ApathyDrive.Character do
 
     character
     |> Map.put(:class, class.name)
+    |> Map.put(:weapon, class.weapon)
+    |> Map.put(:armour, class.armour)
     |> Systems.Effect.add(effect)
   end
 

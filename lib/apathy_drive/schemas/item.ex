@@ -39,6 +39,19 @@ defmodule ApathyDrive.Item do
   @required_fields ~w(name)a
   @optional_fields ~w()a
 
+  @armours [
+    "Natural",
+    "Robes",
+    "Padded",
+    "Soft Leather",
+    "Soft Studded Leather",
+    "Rigid Leather",
+    "Studded Rigid Leather",
+    "Chainmail",
+    "Scalemail",
+    "Platemail"
+  ]
+
   @doc """
   Creates a changeset based on the `model` and `params`.
 
@@ -60,10 +73,6 @@ defmodule ApathyDrive.Item do
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
     |> Map.put(:traits, ItemTrait.load_traits(item.id))
-  end
-
-  def from_shop(%Item{} = item) do
-    item
   end
 
   def slots do
@@ -163,4 +172,61 @@ defmodule ApathyDrive.Item do
   def cost_in_copper(%Item{} = item) do
     item.cost_value * Currency.copper_value(item.cost_currency)
   end
+
+  def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
+    cond do
+      Enum.any?(weapon.traits, fn {name, value} ->
+        name == "ClassOk" and character.class_id in value
+      end) ->
+        true
+
+      :else ->
+        case character.weapon do
+          "One Handed Blunt" ->
+            weapon.weapon_type == "Blunt"
+
+          "Two Handed Blunt" ->
+            weapon.weapon_type == "Two Handed Blunt"
+
+          "One Handed Blade" ->
+            weapon.weapon_type == "Blade"
+
+          "Two Handed Blade" ->
+            weapon.weapon_type == "Two Handed Blade"
+
+          "Any Blade" ->
+            weapon.weapon_type in ["Blade", "Two Handed Blade"]
+
+          "Any Blunt" ->
+            weapon.weapon_type in ["Blunt", "Two Handed Blunt"]
+
+          "Any One Handed" ->
+            weapon.weapon_type in ["Blade", "Blunt"]
+
+          "Any Two Handed" ->
+            weapon.weapon_type in ["Two Handed Blunt", "Two Handed Blade"]
+
+          "All" ->
+            true
+
+          "Limited" ->
+            false
+        end
+    end
+  end
+
+  def useable_by_character?(%Character{} = character, %Item{type: "Armour"} = armour) do
+    cond do
+      Enum.any?(weapon.traits, fn {name, value} ->
+        name == "ClassOk" and character.class_id in value
+      end) ->
+        true
+
+      :else ->
+        Enum.find_index(@armours, &(&1 == armour.armour_type)) <=
+          Enum.find_index(@armours, &(&1 == character.armour))
+    end
+  end
+
+  def useable_by_character?(_character, _item), do: true
 end

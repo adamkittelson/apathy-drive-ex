@@ -81,106 +81,110 @@ defmodule ApathyDrive.Commands.Wear do
     end
   end
 
-  def equip_item(
-        %Character{inventory: inventory, equipment: equipment} = character,
-        %{worn_on: worn_on} = item,
-        persist \\ true
-      ) do
+  def equip_item(%Character{} = character, %{worn_on: worn_on} = item, persist \\ true) do
+    %{inventory: inventory, equipment: equipment} = character
+
     cond do
-      Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
-        item_to_remove =
-          equipment
-          |> Enum.find(&(&1.worn_on == worn_on))
+      !Item.useable_by_character?(character, item) ->
+        false
 
-        equipment = List.delete(equipment, item_to_remove)
+      :else ->
+        cond do
+          Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
+            item_to_remove =
+              equipment
+              |> Enum.find(&(&1.worn_on == worn_on))
 
-        inventory = List.delete(inventory, item)
+            equipment = List.delete(equipment, item_to_remove)
 
-        if persist do
-          %ItemInstance{id: item_to_remove.instance_id}
-          |> Ecto.Changeset.change(%{equipped: false})
-          |> Repo.update!()
+            inventory = List.delete(inventory, item)
+
+            if persist do
+              %ItemInstance{id: item_to_remove.instance_id}
+              |> Ecto.Changeset.change(%{equipped: false})
+              |> Repo.update!()
+            end
+
+            inventory = List.insert_at(inventory, -1, item_to_remove)
+
+            if persist do
+              %ItemInstance{id: item.instance_id}
+              |> Ecto.Changeset.change(%{equipped: true})
+              |> Repo.update!()
+            end
+
+            equipment = List.insert_at(equipment, -1, item)
+
+            character =
+              character
+              |> Map.put(:inventory, inventory)
+              |> Map.put(:equipment, equipment)
+              |> Character.add_equipped_items_effects()
+
+            %{equipped: item, unequipped: [item_to_remove], character: character}
+
+          conflicting_worn_on(worn_on) |> Enum.any?() ->
+            items_to_remove =
+              equipment
+              |> Enum.filter(&(&1.worn_on in conflicting_worn_on(worn_on)))
+
+            equipment = Enum.reject(equipment, &(&1 in items_to_remove))
+
+            inventory = List.delete(inventory, item)
+
+            if persist do
+              Enum.each(items_to_remove, fn item_to_remove ->
+                %ItemInstance{id: item_to_remove.instance_id}
+                |> Ecto.Changeset.change(%{equipped: false})
+                |> Repo.update!()
+              end)
+            end
+
+            inventory =
+              items_to_remove
+              |> Enum.reduce(inventory, fn item_to_remove, inv ->
+                List.insert_at(inv, -1, item_to_remove)
+              end)
+
+            if persist do
+              %ItemInstance{id: item.instance_id}
+              |> Ecto.Changeset.change(%{equipped: true})
+              |> Repo.update!()
+            end
+
+            equipment = List.insert_at(equipment, -1, item)
+
+            character =
+              character
+              |> Map.put(:inventory, inventory)
+              |> Map.put(:equipment, equipment)
+              |> Character.add_equipped_items_effects()
+
+            %{equipped: item, unequipped: items_to_remove, character: character}
+
+          true ->
+            inventory =
+              inventory
+              |> List.delete(item)
+
+            if persist do
+              %ItemInstance{id: item.instance_id}
+              |> Ecto.Changeset.change(%{equipped: true})
+              |> Repo.update!()
+            end
+
+            equipment =
+              equipment
+              |> List.insert_at(-1, item)
+
+            character =
+              character
+              |> Map.put(:inventory, inventory)
+              |> Map.put(:equipment, equipment)
+              |> Character.add_equipped_items_effects()
+
+            %{equipped: item, character: character}
         end
-
-        inventory = List.insert_at(inventory, -1, item_to_remove)
-
-        if persist do
-          %ItemInstance{id: item.instance_id}
-          |> Ecto.Changeset.change(%{equipped: true})
-          |> Repo.update!()
-        end
-
-        equipment = List.insert_at(equipment, -1, item)
-
-        character =
-          character
-          |> Map.put(:inventory, inventory)
-          |> Map.put(:equipment, equipment)
-          |> Character.add_equipped_items_effects()
-
-        %{equipped: item, unequipped: [item_to_remove], character: character}
-
-      conflicting_worn_on(worn_on) |> Enum.any?() ->
-        items_to_remove =
-          equipment
-          |> Enum.filter(&(&1.worn_on in conflicting_worn_on(worn_on)))
-
-        equipment = Enum.reject(equipment, &(&1 in items_to_remove))
-
-        inventory = List.delete(inventory, item)
-
-        if persist do
-          Enum.each(items_to_remove, fn item_to_remove ->
-            %ItemInstance{id: item_to_remove.instance_id}
-            |> Ecto.Changeset.change(%{equipped: false})
-            |> Repo.update!()
-          end)
-        end
-
-        inventory =
-          items_to_remove
-          |> Enum.reduce(inventory, fn item_to_remove, inv ->
-            List.insert_at(inv, -1, item_to_remove)
-          end)
-
-        if persist do
-          %ItemInstance{id: item.instance_id}
-          |> Ecto.Changeset.change(%{equipped: true})
-          |> Repo.update!()
-        end
-
-        equipment = List.insert_at(equipment, -1, item)
-
-        character =
-          character
-          |> Map.put(:inventory, inventory)
-          |> Map.put(:equipment, equipment)
-          |> Character.add_equipped_items_effects()
-
-        %{equipped: item, unequipped: items_to_remove, character: character}
-
-      true ->
-        inventory =
-          inventory
-          |> List.delete(item)
-
-        if persist do
-          %ItemInstance{id: item.instance_id}
-          |> Ecto.Changeset.change(%{equipped: true})
-          |> Repo.update!()
-        end
-
-        equipment =
-          equipment
-          |> List.insert_at(-1, item)
-
-        character =
-          character
-          |> Map.put(:inventory, inventory)
-          |> Map.put(:equipment, equipment)
-          |> Character.add_equipped_items_effects()
-
-        %{equipped: item, character: character}
     end
   end
 

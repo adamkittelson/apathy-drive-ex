@@ -18,7 +18,8 @@ defmodule ApathyDrive.ItemTrait do
     |> preload([:trait])
     |> Repo.all()
     |> Enum.reduce(%{}, fn %{trait: trait, value: value}, abilities ->
-      Map.put(abilities, trait.name, value)
+      abilities = Map.put_new(abilities, trait.name, [])
+      Map.put(abilities, trait.name, [value | abilities[trait.name]])
     end)
   end
 

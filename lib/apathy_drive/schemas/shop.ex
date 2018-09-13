@@ -2,7 +2,7 @@ defmodule ApathyDrive.Shop do
   use ApathyDriveWeb, :model
   require Logger
 
-  alias ApathyDrive.{Character, Item, ItemInstance, Room, Shop, ShopItem}
+  alias ApathyDrive.{Character, Item, ItemInstance, ItemTrait, Room, Shop, ShopItem}
 
   schema "shops" do
     field(:cost_multiplier, :float)
@@ -69,6 +69,7 @@ defmodule ApathyDrive.Shop do
           original_shop_item
           |> Map.put(:count, count)
           |> Map.put(:name, original_shop_item.item.name)
+          |> update_in([Access.key!(:item)], &Map.put(&1, :traits, ItemTrait.load_traits(&1.id)))
 
         room
         |> update_in(
@@ -94,5 +95,15 @@ defmodule ApathyDrive.Shop do
     buy_price = buy_price(shop, character, item)
 
     min(sell_price, trunc(buy_price * 0.9))
+  end
+
+  def item_disclaimer(item, character) do
+    cond do
+      !Item.useable_by_character?(character, item) ->
+        "<span class='dark-cyan'>(You can't use)</span>"
+
+      :else ->
+        ""
+    end
   end
 end

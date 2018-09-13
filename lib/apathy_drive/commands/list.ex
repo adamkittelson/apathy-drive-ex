@@ -10,13 +10,6 @@ defmodule ApathyDrive.Commands.List do
     room
   end
 
-  def list(%Room{shop: items}, character) when map_size(items) == 0 do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='red'>You cannot LIST if you are not in a shop!</span></p>"
-    )
-  end
-
   def list(%Room{shop: %Shop{shop_items: items, cost_multiplier: multiplier}}, character) do
     character
     |> Mobile.send_scroll(
@@ -36,17 +29,26 @@ defmodule ApathyDrive.Commands.List do
               String.pad_trailing(to_string(shop_item.count), 12)
             }</span><span class='dark-cyan'>#{trunc(shop_item.item.cost_value * multiplier)} #{
               shop_item.item.cost_currency
-            }s</span></p>"
+            }s #{Shop.item_disclaimer(shop_item.item, character)}</span></p>"
           )
         else
           Mobile.send_scroll(
             character,
             "<p>#{Item.colored_name(shop_item.item, pad_trailing: 30)}<span class='dark-cyan'>#{
               String.pad_trailing(to_string(shop_item.count), 12)
-            }</span><span class='dark-cyan'>FREE</span></p>"
+            }</span><span class='dark-cyan'>FREE</span> #{
+              Shop.item_disclaimer(shop_item.item, character)
+            }</p>"
           )
         end
       end
     end)
+  end
+
+  def list(%Room{shop: nil}, character) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='red'>You cannot LIST if you are not in a shop!</span></p>"
+    )
   end
 end
