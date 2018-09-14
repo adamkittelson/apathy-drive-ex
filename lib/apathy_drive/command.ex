@@ -85,7 +85,7 @@ defmodule ApathyDrive.Command do
       scripts = Room.command(room, full_command) ->
         execute_room_command(room, monster, scripts)
 
-      cmd = Match.one(Enum.map(all(), & &1.to_struct), :keyword_starts_with, command) ->
+      cmd = Match.one(Enum.map(all(), & &1.to_struct), :match_keyword, command) ->
         cmd.module.execute(room, monster, arguments)
 
       true ->

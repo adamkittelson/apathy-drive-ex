@@ -273,7 +273,6 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
-    IO.inspect(item)
     energy = Character.energy_per_swing(character, item)
     attack_interval = Energy.duration_for_energy(character, energy)
 

@@ -1,6 +1,17 @@
 defmodule ApathyDrive.Item do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, Currency, Item, ItemInstance, ItemTrait}
+
+  alias ApathyDrive.{
+    Character,
+    Currency,
+    Item,
+    ItemClass,
+    ItemInstance,
+    ItemRace,
+    ItemTrait,
+    ShopItem
+  }
+
   require Logger
   require Ecto.Query
 
@@ -32,6 +43,8 @@ defmodule ApathyDrive.Item do
     field(:instance_id, :integer, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
     field(:traits, :map, virtual: true, default: %{})
+    field(:required_races, :any, virtual: true, default: [])
+    field(:required_classes, :any, virtual: true, default: [])
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end
@@ -73,6 +86,13 @@ defmodule ApathyDrive.Item do
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
     |> Map.put(:traits, ItemTrait.load_traits(item.id))
+    |> load_required_races_and_classes()
+  end
+
+  def from_assoc(%ShopItem{id: id, item: item} = ii) do
+    item
+    |> Map.put(:traits, ItemTrait.load_traits(item.id))
+    |> load_required_races_and_classes()
   end
 
   def slots do
@@ -175,6 +195,12 @@ defmodule ApathyDrive.Item do
 
   def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
     cond do
+      Enum.any?(weapon.required_classes) and !(character.class_id in weapon.required_classes) ->
+        false
+
+      Enum.any?(weapon.required_races) and !(character.race_id in weapon.required_races) ->
+        false
+
       Enum.any?(weapon.traits, fn {name, value} ->
         name == "ClassOk" and character.class_id in value
       end) ->
@@ -217,7 +243,13 @@ defmodule ApathyDrive.Item do
 
   def useable_by_character?(%Character{} = character, %Item{type: "Armour"} = armour) do
     cond do
-      Enum.any?(weapon.traits, fn {name, value} ->
+      Enum.any?(armour.required_classes) and !(character.class_id in armour.required_classes) ->
+        false
+
+      Enum.any?(armour.required_races) and !(character.race_id in armour.required_races) ->
+        false
+
+      Enum.any?(armour.traits, fn {name, value} ->
         name == "ClassOk" and character.class_id in value
       end) ->
         true
@@ -229,4 +261,10 @@ defmodule ApathyDrive.Item do
   end
 
   def useable_by_character?(_character, _item), do: true
+
+  defp load_required_races_and_classes(%Item{} = item) do
+    item
+    |> ItemClass.load_classes()
+    |> ItemRace.load_races()
+  end
 end
