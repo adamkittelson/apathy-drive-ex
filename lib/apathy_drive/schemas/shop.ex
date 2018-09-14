@@ -102,6 +102,9 @@ defmodule ApathyDrive.Shop do
       !Item.useable_by_character?(character, item) ->
         "<span class='dark-cyan'>(You can't use)</span>"
 
+      Item.too_powerful_for_character?(character, item) ->
+        "<span class='dark-cyan'>(Too powerful)</span>"
+
       :else ->
         ""
     end

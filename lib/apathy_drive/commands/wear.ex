@@ -72,7 +72,7 @@ defmodule ApathyDrive.Commands.Wear do
               character
 
             false ->
-              Mobile.send_scroll(character, "<p>You can't equip #{Item.colored_name(item)}.</p>")
+              Mobile.send_scroll(character, "<p>You cannot use #{Item.colored_name(item)}.</p>")
           end
 
         room = put_in(room.mobiles[character.ref], character)
@@ -85,6 +85,9 @@ defmodule ApathyDrive.Commands.Wear do
     %{inventory: inventory, equipment: equipment} = character
 
     cond do
+      Item.too_powerful_for_character?(character, item) ->
+        false
+
       !Item.useable_by_character?(character, item) ->
         false
 

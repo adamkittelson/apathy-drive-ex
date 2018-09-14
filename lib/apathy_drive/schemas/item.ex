@@ -89,7 +89,7 @@ defmodule ApathyDrive.Item do
     |> load_required_races_and_classes()
   end
 
-  def from_assoc(%ShopItem{id: id, item: item} = ii) do
+  def from_assoc(%ShopItem{item: item}) do
     item
     |> Map.put(:traits, ItemTrait.load_traits(item.id))
     |> load_required_races_and_classes()
@@ -261,6 +261,16 @@ defmodule ApathyDrive.Item do
   end
 
   def useable_by_character?(_character, _item), do: true
+
+  def too_powerful_for_character?(character, item) do
+    case item.traits["MinLevel"] do
+      [min_level | []] ->
+        character.level < min_level
+
+      _ ->
+        false
+    end
+  end
 
   defp load_required_races_and_classes(%Item{} = item) do
     item
