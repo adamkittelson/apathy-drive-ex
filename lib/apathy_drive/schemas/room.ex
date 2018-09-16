@@ -37,6 +37,11 @@ defmodule ApathyDrive.Room do
     field(:legacy_id, :string)
     field(:coordinates, ApathyDrive.JSONB)
     field(:permanent_npc, :integer)
+    field(:runic, :integer, default: 0)
+    field(:platinum, :integer, default: 0)
+    field(:gold, :integer, default: 0)
+    field(:silver, :integer, default: 0)
+    field(:copper, :integer, default: 0)
 
     field(:effects, :map, virtual: true, default: %{})
     field(:lair_next_spawn_at, :integer, virtual: true, default: 0)

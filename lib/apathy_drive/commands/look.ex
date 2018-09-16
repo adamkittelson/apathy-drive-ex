@@ -1,7 +1,19 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Doors, Energy, Item, Match, Mobile, RoomServer, Stealth}
+
+  alias ApathyDrive.{
+    Character,
+    Commands.Inventory,
+    Currency,
+    Doors,
+    Energy,
+    Item,
+    Match,
+    Mobile,
+    RoomServer,
+    Stealth
+  }
 
   @directions [
     "n",
@@ -255,14 +267,14 @@ defmodule ApathyDrive.Commands.Look do
 
     items = Enum.map(room.items, &Item.colored_name(&1))
 
-    items = items ++ psuedo_items
+    items = Currency.to_list(room) ++ items ++ psuedo_items
 
     case Enum.count(items) do
       0 ->
         ""
 
       _ ->
-        "You notice #{Enum.join(items, ", ")} here."
+        "You notice #{Inventory.to_sentence(items)} here."
     end
   end
 

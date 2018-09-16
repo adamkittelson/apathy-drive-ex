@@ -33,7 +33,7 @@ defmodule ApathyDrive.Commands.Inventory do
     item_names = Currency.to_list(character) ++ item_names
 
     if item_names |> Enum.count() > 0 do
-      Mobile.send_scroll(character, "<p>You are carrying #{item_names |> to_sentence()}</p>")
+      Mobile.send_scroll(character, "<p>You are carrying #{item_names |> to_sentence()}.</p>")
     else
       Mobile.send_scroll(character, "<p>You are carrying nothing.</p>")
     end

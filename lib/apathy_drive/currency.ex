@@ -34,6 +34,16 @@ defmodule ApathyDrive.Currency do
     currency_holder
   end
 
+  def matches do
+    [
+      %{name: "copper farthing", currency: :copper},
+      %{name: "silver noble", currency: :silver},
+      %{name: "gold crown", currency: :gold},
+      %{name: "platinum piece", currency: :platinum},
+      %{name: "runic coin", currency: :runic}
+    ]
+  end
+
   def add(currency_holder, copper) do
     set_value(currency_holder, wealth(currency_holder) + copper)
   end
