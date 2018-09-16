@@ -29,8 +29,6 @@ defmodule ApathyDrive.Character do
     TimerManager
   }
 
-  alias ApathyDrive.Items.{Weapon}
-
   require Logger
   import Comeonin.Bcrypt
 
@@ -54,7 +52,11 @@ defmodule ApathyDrive.Character do
     field(:timers, :map, virtual: true, default: %{})
     field(:admin, :boolean)
     field(:flags, :map, default: %{})
-    field(:gold, :integer, default: 150)
+    field(:copper, :integer, default: 0)
+    field(:silver, :integer, default: 0)
+    field(:gold, :integer, default: 0)
+    field(:platinum, :integer, default: 0)
+    field(:runic, :integer, default: 0)
     field(:race_id, :integer)
     field(:class_id, :integer)
     field(:pity_modifier, :integer, default: 0)
@@ -88,12 +90,12 @@ defmodule ApathyDrive.Character do
     field(:editing, :any, virtual: true)
     field(:attribute_levels, :any, virtual: true, default: %{})
     field(:combat_level, :integer, virtual: true, default: 3)
-    field(:encumbrance, :integer, virtual: true, default: 0)
-    field(:max_encumbrance, :integer, virtual: true, default: 2000)
     field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:reply_to, :string, virtual: true)
     field(:casting, :any, virtual: true, default: nil)
+    field(:weapon, :string, virtual: true)
+    field(:armour, :string, virtual: true)
 
     belongs_to(:room, Room)
 
@@ -104,6 +106,30 @@ defmodule ApathyDrive.Character do
     has_many(:trained_skills, through: [:characters_skills, :skill])
 
     timestamps()
+  end
+
+  def encumbrance(%Character{} = character) do
+    item_weight = Enum.reduce(character.equipment ++ character.inventory, 0, &(&1.weight + &2))
+
+    coin_weight =
+      div(
+        Enum.sum([
+          character.runic,
+          character.platinum,
+          character.gold,
+          character.silver,
+          character.copper
+        ]),
+        3
+      )
+
+    item_weight + coin_weight
+  end
+
+  def max_encumbrance(%Character{} = character) do
+    trunc(
+      character.strength * 48 * (1 + Systems.Effect.effect_bonus(character, "Encumbrance") / 100)
+    )
   end
 
   def companion(%Character{id: id}, %Room{} = room) do
@@ -226,6 +252,8 @@ defmodule ApathyDrive.Character do
 
     character
     |> Map.put(:class, class.name)
+    |> Map.put(:weapon, class.weapon)
+    |> Map.put(:armour, class.armour)
     |> Systems.Effect.add(effect)
   end
 
@@ -249,6 +277,28 @@ defmodule ApathyDrive.Character do
     character
     |> Map.put(:inventory, Enum.reject(items, & &1.equipped))
     |> Map.put(:equipment, Enum.filter(items, & &1.equipped))
+    |> add_equipped_items_effects()
+  end
+
+  def add_equipped_items_effects(%Character{} = character) do
+    character =
+      Enum.reduce(character.effects, character, fn {_key, %{"stack_key" => key}}, character ->
+        if is_binary(key) and String.starts_with?(key, "item") do
+          Systems.Effect.remove_oldest_stack(character, key)
+        else
+          character
+        end
+      end)
+
+    Enum.reduce(character.equipment, character, fn item, updated_character ->
+      add_equipped_item_effects(updated_character, item)
+    end)
+  end
+
+  def add_equipped_item_effects(%Character{} = character, item) do
+    effect = Map.put(item.traits, "stack_key", "item-#{item.instance_id}")
+
+    Systems.Effect.add(character, effect)
   end
 
   def sanitize(message) do
@@ -264,7 +314,8 @@ defmodule ApathyDrive.Character do
 
   def attack_abilities(character) do
     punch =
-      ability_for_weapon(character, %Weapon{
+      ability_for_weapon(character, %Item{
+        type: "Weapon",
         name: "fist",
         hit_verbs: [["punch", "punches"]],
         miss_verbs: ["throw a punch", "throws a punch"],
@@ -284,7 +335,8 @@ defmodule ApathyDrive.Character do
   end
 
   def ability_for_weapon(character, weapon) do
-    %Weapon{
+    %Item{
+      type: "Weapon",
       name: name,
       hit_verbs: hit_verbs,
       miss_verbs: [singular_miss, plural_miss],
@@ -643,25 +695,10 @@ defmodule ApathyDrive.Character do
     }
   end
 
-  def weapon_potency(character) do
-    case Character.weapon(character) do
-      nil ->
-        [
-          %{
-            potency: 75 / 1,
-            kind: "physical",
-            damage_type_id: 3,
-            damage_type: "Normal"
-          }
-        ]
-
-      %Item{damage: damage} = item ->
-        damage ++ Systems.Effect.effect_list(item, "Damage")
-    end
-  end
-
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
+    encumbrance = Character.encumbrance(character)
+    max_encumbrance = Character.max_encumbrance(character)
 
     cost =
       weapon.speed * 1000 /
@@ -676,9 +713,7 @@ defmodule ApathyDrive.Character do
       end
 
     trunc(
-      cost *
-        (Float.floor(Float.floor(character.encumbrance / character.max_encumbrance * 100) / 2.0) +
-           75) / 100.0
+      cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
     )
   end
 

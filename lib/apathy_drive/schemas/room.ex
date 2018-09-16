@@ -13,6 +13,7 @@ defmodule ApathyDrive.Room do
     Room,
     RoomServer,
     PubSub,
+    Shop,
     TimerManager
   }
 
@@ -36,6 +37,11 @@ defmodule ApathyDrive.Room do
     field(:legacy_id, :string)
     field(:coordinates, ApathyDrive.JSONB)
     field(:permanent_npc, :integer)
+    field(:runic, :integer, default: 0)
+    field(:platinum, :integer, default: 0)
+    field(:gold, :integer, default: 0)
+    field(:silver, :integer, default: 0)
+    field(:copper, :integer, default: 0)
 
     field(:effects, :map, virtual: true, default: %{})
     field(:lair_next_spawn_at, :integer, virtual: true, default: 0)
@@ -52,12 +58,12 @@ defmodule ApathyDrive.Room do
     has_many(:persisted_mobiles, Monster)
     belongs_to(:ability, Ability)
     belongs_to(:area, ApathyDrive.Area)
-    has_many(:shop_items, ApathyDrive.ShopItem)
-    has_many(:items_for_sales, through: [:shop_items, :item])
     has_many(:lairs, ApathyDrive.LairMonster)
     has_many(:lair_monsters, through: [:lairs, :monster])
     has_many(:room_skills, ApathyDrive.RoomSkill)
     has_many(:skills, through: [:room_skills, :skill])
+    has_one(:shop, Shop)
+    has_many(:shop_items, through: [:shop, :shop_items])
   end
 
   def load_items(%Room{} = room) do
@@ -92,8 +98,6 @@ defmodule ApathyDrive.Room do
     end)
   end
 
-  def trainer?(%Room{} = room), do: Enum.any?(room.skills)
-
   def update_mobile(%Room{} = room, mobile_ref, fun) do
     if mobile = room.mobiles[mobile_ref] do
       room =
@@ -116,12 +120,6 @@ defmodule ApathyDrive.Room do
     else
       room
     end
-  end
-
-  def items_for_sale(%Room{} = room) do
-    room
-    |> assoc(:items_for_sales)
-    |> Repo.all()
   end
 
   def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do

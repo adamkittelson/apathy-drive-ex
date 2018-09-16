@@ -3,7 +3,12 @@ defmodule ApathyDriveWeb.ClassControllerTest do
 
   alias ApathyDrive.{Admin, Character}
 
-  @create_attrs %{description: "some description", name: "some name"}
+  @create_attrs %{
+    description: "some description",
+    name: "some name",
+    weapon: "All",
+    armour: "Platemail"
+  }
   @update_attrs %{description: "some updated description", name: "some updated name"}
   @invalid_attrs %{description: nil, name: nil}
 

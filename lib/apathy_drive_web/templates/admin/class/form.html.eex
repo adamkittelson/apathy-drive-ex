@@ -12,6 +12,18 @@
   </div>
 
   <div class="form-group">
+    <%= label f, :weapon, class: "control-label" %>
+    <%= select(f, :weapon, ApathyDrive.Class.weapon_select, prompt: "Weapon Type", class: "u-full-width") %>
+    <%= error_tag f, :weapon %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :armour, class: "control-label" %>
+    <%= select(f, :armour, ApathyDrive.Class.armour_select, prompt: "Armour Type", class: "u-full-width") %>
+    <%= error_tag f, :armour %>
+  </div>
+
+  <div class="form-group">
     <%= label f, :description, class: "control-label" %>
     <%= textarea f, :description, class: "form-control" %>
     <%= error_tag f, :description %>

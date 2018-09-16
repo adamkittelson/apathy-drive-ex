@@ -1,6 +1,6 @@
 defmodule ApathyDrive.ItemInstance do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, Item, Room}
+  alias ApathyDrive.{Character, Item, Room, Shop}
 
   schema "items_instances" do
     field(:level, :integer)
@@ -11,6 +11,7 @@ defmodule ApathyDrive.ItemInstance do
     belongs_to(:item, Item)
     belongs_to(:room, Room)
     belongs_to(:character, Character)
+    belongs_to(:shop, Shop)
   end
 
   def load_items(%Room{id: id}) do

@@ -1,81 +1,69 @@
 defmodule ApathyDrive.Item do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, Enchantment, Item, ItemInstance}
-  alias ApathyDrive.Items.{Weapon}
+
+  alias ApathyDrive.{
+    Character,
+    Currency,
+    Item,
+    ItemClass,
+    ItemInstance,
+    ItemRace,
+    ItemTrait,
+    ShopItem
+  }
+
   require Logger
   require Ecto.Query
 
   schema "items" do
     field(:name, :string)
-    field(:description, :string)
+    field(:type, :string)
     field(:worn_on, :string)
-    field(:grade, :string)
-    field(:global_drop, :boolean)
+    field(:weapon_type, :string)
+    field(:armour_type, :string)
     field(:game_limit, :integer)
-    field(:rarity, :string)
-    field(:hit_verbs, ApathyDrive.JSONB)
-    field(:miss_verbs, ApathyDrive.JSONB)
-    field(:attacks_per_round, :integer)
-    field(:physical_resistance, :integer)
-    field(:magical_resistance, :integer)
-    field(:kind, :string)
     field(:weight, :integer)
     field(:speed, :integer)
+    field(:required_strength, :integer)
+    field(:max_uses, :integer)
+    field(:getable, :boolean)
+    field(:droppable, :boolean)
+    field(:destroy_on_death, :boolean)
+    field(:destroy_when_fully_used, :boolean)
+    field(:robbable, :boolean)
+    field(:cost_value, :integer)
+    field(:cost_currency, :string)
     field(:min_damage, :integer)
     field(:max_damage, :integer)
-    field(:required_strength, :integer)
-    field(:required_agility, :integer)
-    field(:required_intellect, :integer)
-    field(:required_willpower, :integer)
-    field(:required_health, :integer)
-    field(:required_charm, :integer)
+    field(:description, :string)
+    field(:hit_verbs, ApathyDrive.JSONB)
+    field(:miss_verbs, ApathyDrive.JSONB)
+    field(:destruct_message, :string)
 
-    field(:abilities, :map, virtual: true, default: %{})
-    field(:level, :integer, virtual: true)
-    field(:equipped, :boolean, virtual: true, default: false)
-    field(:hidden, :boolean, virtual: true, default: false)
     field(:instance_id, :integer, virtual: true)
-    field(:damage, :any, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
-    field(:last_effect_key, :integer, virtual: true, default: 0)
-    field(:purchased, :boolean, virtual: true, default: false)
-
-    has_many(:shop_items, ApathyDrive.ShopItem)
-    has_many(:shops, through: [:shop_items, :room])
+    field(:traits, :map, virtual: true, default: %{})
+    field(:required_races, :any, virtual: true, default: [])
+    field(:required_classes, :any, virtual: true, default: [])
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
-    has_many(:rooms, through: [:items_instances, :room])
-    has_many(:characters, through: [:items_instances, :character])
-
-    has_many(:items_abilities, ApathyDrive.ItemAbility)
-
-    timestamps()
   end
 
-  @required_fields ~w(name description worn_on level grade)a
-  @optional_fields ~w(abilities global_drop)a
-  @rarities %{
-    "common" => %{
-      multiplier: 1,
-      color: "teal"
-    },
-    "uncommon" => %{
-      multiplier: 2,
-      color: "chartreuse"
-    },
-    "rare" => %{
-      multiplier: 3,
-      color: "blue"
-    },
-    "epic" => %{
-      multiplier: 5,
-      color: "darkmagenta"
-    },
-    "legendary" => %{
-      multiplier: 8,
-      color: "red"
-    }
-  }
+  @required_fields ~w(name)a
+  @optional_fields ~w()a
+
+  @armours [
+    "Natural",
+    "Robes",
+    "Padded",
+    "Soft Leather",
+    "Soft Studded Leather",
+    "Rigid Leather",
+    "Studded Rigid Leather",
+    "Chainmail",
+    "Scalemail",
+    "Platemail"
+  ]
 
   @doc """
   Creates a changeset based on the `model` and `params`.
@@ -97,47 +85,14 @@ defmodule ApathyDrive.Item do
     item
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
-    |> case do
-      %Item{kind: "weapon"} = item ->
-        %Weapon{
-          name: item.name,
-          description: item.description,
-          worn_on: item.worn_on,
-          kind: item.grade,
-          hit_verbs: item.hit_verbs,
-          miss_verbs: item.miss_verbs,
-          instance_id: item.instance_id,
-          weight: item.weight,
-          speed: item.speed,
-          min_damage: item.min_damage,
-          max_damage: item.max_damage,
-          required_strength: item.required_strength,
-          required_agility: item.required_agility,
-          required_intellect: item.required_intellect,
-          required_willpower: item.required_willpower,
-          required_health: item.required_health,
-          required_charm: item.required_charm,
-          equipped: item.equipped,
-          effects: item.effects
-        }
-
-      %Item{} = item ->
-        item
-        |> Enchantment.load_enchantments()
-    end
+    |> Map.put(:traits, ItemTrait.load_traits(item.id))
+    |> load_required_races_and_classes()
   end
 
-  def from_shop(%Item{} = item) do
+  def from_assoc(%ShopItem{item: item}) do
     item
-  end
-
-  def power_at_level(%Item{} = item, level) do
-    base = 3 * @rarities[item.rarity].multiplier * 6
-    base + base / 10 * (level - 1)
-  end
-
-  def power_at_level(rarity, level) do
-    power_at_level(%Item{rarity: rarity}, level)
+    |> Map.put(:traits, ItemTrait.load_traits(item.id))
+    |> load_required_races_and_classes()
   end
 
   def slots do
@@ -171,55 +126,12 @@ defmodule ApathyDrive.Item do
     |> Enum.map(& &1.grade)
   end
 
-  def random_item_id_for_slot_and_rarity(slot, rarity) do
-    grade =
-      slot
-      |> grades_for_slot()
-      |> Enum.random()
-
-    if grade do
-      random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity)
-    end
-  end
-
-  def random_item_id_for_grade_and_slot_and_rarity(grade, slot, rarity) do
-    Logger.info(
-      "finding random #{inspect(rarity)} item with grade: #{inspect(grade)} for slot: #{
-        inspect(slot)
-      }"
-    )
-
-    count =
-      __MODULE__
-      |> grade(grade)
-      |> worn_on(slot)
-      |> rarity(rarity)
-      |> select([item], count(item.id))
-      |> Repo.one()
-
-    if count > 0 do
-      __MODULE__
-      |> grade(grade)
-      |> worn_on(slot)
-      |> rarity(rarity)
-      |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-      |> select([item], item.id)
-      |> Repo.one()
-    else
-      Logger.error("Tried to spawn item for #{grade} #{slot} #{rarity}, but none exist.")
-    end
-  end
-
   def worn_on(query, slot) do
     query |> where([item], item.worn_on == ^slot)
   end
 
   def grade(query, grade) do
     query |> where([item], item.grade == ^grade)
-  end
-
-  def rarity(query, rarity) do
-    query |> where([item], item.rarity == ^rarity)
   end
 
   def global_drops(query) do
@@ -256,50 +168,14 @@ defmodule ApathyDrive.Item do
       |> Map.put(:item, item)
       |> from_assoc()
 
-    if source == :loot and !upgrade_for_character?(item, character) do
-      item
-    else
-      ei = Repo.insert!(ei)
-      Map.put(item, :instance_id, ei.id)
-    end
+    ei = Repo.insert!(ei)
+    Map.put(item, :instance_id, ei.id)
   end
-
-  def upgrade_for_character?(%Item{worn_on: slot, rarity: rarity, level: level}, %Character{
-        equipment: equipment
-      }) do
-    item_power = Item.power_at_level(rarity, level)
-
-    worn_item =
-      Enum.find(equipment, fn worn_item ->
-        cond do
-          slot in ["Off-Hand", "Weapon Hand"] ->
-            worn_item.worn_on == slot or worn_item.worn_on == "Two Handed"
-
-          slot == "Two Handed" ->
-            worn_item.worn_on == slot or worn_item.worn_on == "Weapon Hand" or
-              worn_item.worn_on == "Off-Hand"
-
-          :else ->
-            worn_item.worn_on == slot
-        end
-      end)
-
-    slot_power =
-      if worn_item do
-        Item.power_at_level(worn_item.rarity, worn_item.level)
-      else
-        0
-      end
-
-    item_power > slot_power
-  end
-
-  def price(%Item{rarity: "legendary"}), do: "priceless"
 
   def price(%Item{}), do: 5
 
-  def color(%Item{rarity: rarity}) do
-    @rarities[rarity].color
+  def color(%Item{}) do
+    "dark-cyan"
   end
 
   def colored_name(%{name: name}, opts \\ []) do
@@ -308,6 +184,97 @@ defmodule ApathyDrive.Item do
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 
-    "<span style='color: dark-cyan;'>#{name}</span>"
+    "<span class='dark-cyan'>#{name}</span>"
+  end
+
+  def cost_in_copper(%Item{cost_currency: nil}), do: 0
+
+  def cost_in_copper(%Item{} = item) do
+    item.cost_value * Currency.copper_value(item.cost_currency)
+  end
+
+  def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
+    cond do
+      Enum.any?(weapon.required_classes) and !(character.class_id in weapon.required_classes) ->
+        false
+
+      Enum.any?(weapon.required_races) and !(character.race_id in weapon.required_races) ->
+        false
+
+      Enum.any?(weapon.traits, fn {name, value} ->
+        name == "ClassOk" and character.class_id in value
+      end) ->
+        true
+
+      :else ->
+        case character.weapon do
+          "One Handed Blunt" ->
+            weapon.weapon_type == "Blunt"
+
+          "Two Handed Blunt" ->
+            weapon.weapon_type == "Two Handed Blunt"
+
+          "One Handed Blade" ->
+            weapon.weapon_type == "Blade"
+
+          "Two Handed Blade" ->
+            weapon.weapon_type == "Two Handed Blade"
+
+          "Any Blade" ->
+            weapon.weapon_type in ["Blade", "Two Handed Blade"]
+
+          "Any Blunt" ->
+            weapon.weapon_type in ["Blunt", "Two Handed Blunt"]
+
+          "Any One Handed" ->
+            weapon.weapon_type in ["Blade", "Blunt"]
+
+          "Any Two Handed" ->
+            weapon.weapon_type in ["Two Handed Blunt", "Two Handed Blade"]
+
+          "All" ->
+            true
+
+          "Limited" ->
+            false
+        end
+    end
+  end
+
+  def useable_by_character?(%Character{} = character, %Item{type: "Armour"} = armour) do
+    cond do
+      Enum.any?(armour.required_classes) and !(character.class_id in armour.required_classes) ->
+        false
+
+      Enum.any?(armour.required_races) and !(character.race_id in armour.required_races) ->
+        false
+
+      Enum.any?(armour.traits, fn {name, value} ->
+        name == "ClassOk" and character.class_id in value
+      end) ->
+        true
+
+      :else ->
+        Enum.find_index(@armours, &(&1 == armour.armour_type)) <=
+          Enum.find_index(@armours, &(&1 == character.armour))
+    end
+  end
+
+  def useable_by_character?(_character, _item), do: true
+
+  def too_powerful_for_character?(character, item) do
+    case item.traits["MinLevel"] do
+      [min_level | []] ->
+        character.level < min_level
+
+      _ ->
+        false
+    end
+  end
+
+  defp load_required_races_and_classes(%Item{} = item) do
+    item
+    |> ItemClass.load_classes()
+    |> ItemRace.load_races()
   end
 end

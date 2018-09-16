@@ -16,6 +16,7 @@ defmodule ApathyDrive.RoomServer do
     Repo,
     Room,
     RoomSupervisor,
+    Shop,
     TimerManager
   }
 
@@ -39,6 +40,9 @@ defmodule ApathyDrive.RoomServer do
 
       {:ok, pid} ->
         pid
+
+      false ->
+        false
     end
   end
 
@@ -101,6 +105,7 @@ defmodule ApathyDrive.RoomServer do
       |> Room.load_items()
       |> Room.load_reputations()
       |> Room.load_skills()
+      |> Shop.load()
 
     Logger.metadata(room: room.name <> "##{room.id}")
 
@@ -110,6 +115,10 @@ defmodule ApathyDrive.RoomServer do
 
     send(self(), :load_monsters)
     send(self(), :spawn_permanent_npc)
+
+    if Shop.shop?(room) do
+      send(self(), :restock_shop)
+    end
 
     if room.lair_size && Enum.any?(LairMonster.monster_ids(id)) do
       send(self(), :spawn_monsters)
@@ -352,6 +361,11 @@ defmodule ApathyDrive.RoomServer do
           room
       end
 
+    {:noreply, room}
+  end
+
+  def handle_info(:restock_shop, room) do
+    room = Shop.restock(room)
     {:noreply, room}
   end
 

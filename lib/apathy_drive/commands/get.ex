@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, Currency, Item, ItemInstance, Match, Mobile, Repo}
 
   def keywords, do: ["get"]
 
@@ -11,46 +11,128 @@ defmodule ApathyDrive.Commands.Get do
 
   def execute(%Room{items: items} = room, %Character{} = character, ["all"]) do
     items
-    |> Enum.map(&(&1.name))
+    |> Enum.map(& &1.name)
     |> get_all(room, character)
   end
 
-  def execute(%Room{items: items, item_descriptions: item_descriptions} = room, %Character{} = character, args) do
-    item = Enum.join(args, " ")
+  def execute(
+        %Room{items: items, item_descriptions: item_descriptions} = room,
+        %Character{} = character,
+        [first | rest] = args
+      ) do
+    case Integer.parse(first) do
+      {amount, ""} ->
+        currency = Enum.join(rest, " ")
 
-    actual_item = items
-                  |> Match.one(:name_contains, item)
+        Currency.matches()
+        |> Match.one(:name_contains, currency)
+        |> case do
+          nil ->
+            Mobile.send_scroll(
+              character,
+              "<p><span class='red'>Syntax: GET #{amount} {Currency}</span></p>"
+            )
 
-    visible_item = item_descriptions["visible"]
-                   |> Map.keys
-                   |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                   |> Match.one(:keyword_starts_with, item)
+            room
 
-    hidden_item = item_descriptions["hidden"]
-                  |> Map.keys
-                  |> Enum.map(&(%{name: &1, keywords: String.split(&1)}))
-                  |> Match.one(:keyword_starts_with, item)
+          %{name: name, currency: currency} ->
+            if (room_currency = Map.get(room, currency)) >= amount do
+              current = Map.get(character, currency)
 
-    case actual_item || visible_item || hidden_item do
-      %Item{level: _level, instance_id: instance_id} = item ->
+              max = (Character.max_encumbrance(character) - Character.encumbrance(character)) * 3
 
-        ItemInstance
-        |> Repo.get(instance_id)
-        |> Ecto.Changeset.change(%{room_id: nil, character_id: character.id, equipped: false, hidden: false})
-        |> Repo.update!
+              amount = min(amount, max)
 
-        update_in(room.items, &(List.delete(&1, item)))
-        |> Room.update_mobile(character.ref, fn(char) ->
-             char
-             |> update_in([Access.key!(:inventory)], &([item | &1]))
-             |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
-           end)
-      %{name: psuedo_item} ->
-        Mobile.send_scroll(character, "<p>#{psuedo_item |> capitalize_first} cannot be picked up.</p>")
-        room
-      nil ->
-        Mobile.send_scroll(character, "<p>You don't see \"#{item}\" here.</p>")
-        room
+              room =
+                Room.update_mobile(room, character.ref, fn char ->
+                  char
+                  |> Ecto.Changeset.change(%{
+                    currency => current + amount
+                  })
+                  |> Repo.update!()
+                  |> Character.load_items()
+                end)
+                |> Ecto.Changeset.change(%{
+                  currency => room_currency - amount
+                })
+                |> Repo.update!()
+
+              Mobile.send_scroll(character, "<p>You picked up #{amount} #{name}s.</p>")
+              room
+            else
+              Mobile.send_scroll(
+                character,
+                "<p>You don't see #{amount} #{name}s.</p>"
+              )
+
+              room
+            end
+        end
+
+      _ ->
+        item = Enum.join(args, " ")
+
+        actual_item =
+          items
+          |> Match.one(:name_contains, item)
+
+        visible_item =
+          item_descriptions["visible"]
+          |> Map.keys()
+          |> Enum.map(&%{name: &1, keywords: String.split(&1)})
+          |> Match.one(:keyword_starts_with, item)
+
+        hidden_item =
+          item_descriptions["hidden"]
+          |> Map.keys()
+          |> Enum.map(&%{name: &1, keywords: String.split(&1)})
+          |> Match.one(:keyword_starts_with, item)
+
+        currency =
+          Currency.matches()
+          |> Match.one(:name_contains, item)
+
+        case actual_item || currency || visible_item || hidden_item do
+          %Item{instance_id: instance_id} = item ->
+            if item.weight <=
+                 Character.max_encumbrance(character) - Character.encumbrance(character) do
+              ItemInstance
+              |> Repo.get(instance_id)
+              |> Ecto.Changeset.change(%{
+                room_id: nil,
+                character_id: character.id,
+                equipped: false,
+                hidden: false
+              })
+              |> Repo.update!()
+
+              update_in(room.items, &List.delete(&1, item))
+              |> Room.update_mobile(character.ref, fn char ->
+                char
+                |> update_in([Access.key!(:inventory)], &[item | &1])
+                |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
+              end)
+            else
+              Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
+              room
+            end
+
+          %{name: name, currency: currency} ->
+            amount = Map.get(room, currency)
+            execute(room, character, ["#{amount}", "#{name}"])
+
+          %{name: psuedo_item} ->
+            Mobile.send_scroll(
+              character,
+              "<p>#{psuedo_item |> capitalize_first} cannot be picked up.</p>"
+            )
+
+            room
+
+          nil ->
+            Mobile.send_scroll(character, "<p>You don't see \"#{item}\" here.</p>")
+            room
+        end
     end
   end
 
@@ -61,9 +143,9 @@ defmodule ApathyDrive.Commands.Get do
 
   defp get_all(item_names, room, character) do
     item_names
-    |> Enum.reduce(room, fn(item_name, updated_room) ->
-         character = updated_room.mobiles[character.ref]
-         execute(updated_room, character, [item_name])
-       end)
+    |> Enum.reduce(room, fn item_name, updated_room ->
+      character = updated_room.mobiles[character.ref]
+      execute(updated_room, character, [item_name])
+    end)
   end
 end

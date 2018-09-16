@@ -1,8 +1,19 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Doors, Energy, Item, Match, Mobile, RoomServer, Stealth}
-  alias ApathyDrive.Items.{Weapon}
+
+  alias ApathyDrive.{
+    Character,
+    Commands.Inventory,
+    Currency,
+    Doors,
+    Energy,
+    Item,
+    Match,
+    Mobile,
+    RoomServer,
+    Stealth
+  }
 
   @directions [
     "n",
@@ -55,13 +66,6 @@ defmodule ApathyDrive.Commands.Look do
     if visible?(light) do
       Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
       Mobile.send_scroll(character, "<p>    #{room.description}</p>")
-
-      if Room.trainer?(room) do
-        Mobile.send_scroll(
-          character,
-          "<p>\n<em>You can train skills here, \"list skills\" to see the skills available to train at this location.</em>\n\n</p>"
-        )
-      end
 
       Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
       Mobile.send_scroll(character, look_mobiles(room, character))
@@ -263,14 +267,14 @@ defmodule ApathyDrive.Commands.Look do
 
     items = Enum.map(room.items, &Item.colored_name(&1))
 
-    items = items ++ psuedo_items
+    items = Currency.to_list(room) ++ items ++ psuedo_items
 
     case Enum.count(items) do
       0 ->
         ""
 
       _ ->
-        "You notice #{Enum.join(items, ", ")} here."
+        "You notice #{Inventory.to_sentence(items)} here."
     end
   end
 
@@ -280,8 +284,8 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.any?(&Map.has_key?(&1, "blinded"))
   end
 
-  def look_at_item(%Character{} = character, %Weapon{} = item) do
-    energy = Character.energy_per_swing(character, item.speed)
+  def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
+    energy = Character.energy_per_swing(character, item)
     attack_interval = Energy.duration_for_energy(character, energy)
 
     character_damage = character.strength * (energy / character.max_energy)
@@ -293,13 +297,19 @@ defmodule ApathyDrive.Commands.Look do
 
     dps = Float.round(average / (attack_interval / 1000), 2)
 
+    kind =
+      if item.worn_on == "Weapon Hand" do
+        "One Handed #{item.weapon_type}"
+      else
+        "Two Handed #{item.weapon_type}"
+      end
+
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Kind:</span> <span class='dark-cyan'>#{item.worn_on} #{
-        item.kind
-      }</span> <span class='dark-green'>DPS:</span> <span class='dark-cyan'>#{dps} (#{min_damage}-#{
-        max_damage
-      } @ #{attack_interval})</span></p>"
+      "<p><span class='dark-green'>Kind:</span> " <>
+        "<span class='dark-cyan'>#{kind}</span> " <>
+        "<span class='dark-green'>DPS:</span> " <>
+        "<span class='dark-cyan'>#{dps} (#{min_damage}-#{max_damage} @ #{attack_interval})</span></p>"
     )
 
     Mobile.send_scroll(character, "<p>#{item.description}</p>")

@@ -6,6 +6,8 @@ defmodule ApathyDrive.Class do
   schema "classes" do
     field(:description, :string)
     field(:name, :string)
+    field(:weapon, :string)
+    field(:armour, :string)
 
     has_many(:classes_traits, ApathyDrive.ClassTrait)
     has_many(:traits, through: [:classes_traits, :trait])
@@ -13,11 +15,39 @@ defmodule ApathyDrive.Class do
     timestamps()
   end
 
+  @weapons [
+    "One Handed Blunt",
+    "Two Handed Blunt",
+    "One Handed Blade",
+    "Two Handed Blade",
+    "Any Blade",
+    "Any Blunt",
+    "Any One Handed",
+    "Any Two Handed",
+    "All",
+    "Limited"
+  ]
+
+  @armours [
+    "Natural",
+    "Robes",
+    "Padded",
+    "Soft Leather",
+    "Soft Studded Leather",
+    "Rigid Leather",
+    "Studded Rigid Leather",
+    "Chainmail",
+    "Scalemail",
+    "Platemail"
+  ]
+
   @doc false
   def changeset(%Class{} = class, attrs \\ %{}) do
     class
-    |> cast(attrs, [:name, :description])
-    |> validate_required([:name, :description])
+    |> cast(attrs, [:name, :description, :weapon, :armour])
+    |> validate_required([:name, :description, :weapon, :armour])
+    |> validate_inclusion(:weapon, @weapons)
+    |> validate_inclusion(:armour, @armours)
     |> cast_assoc(:classes_traits)
   end
 
@@ -33,5 +63,13 @@ defmodule ApathyDrive.Class do
   def ids do
     Repo.all(__MODULE__, select: [:id])
     |> Enum.map(&Map.get(&1, :id))
+  end
+
+  def weapon_select do
+    Enum.map(@weapons, &{&1, &1})
+  end
+
+  def armour_select do
+    Enum.map(@armours, &{&1, &1})
   end
 end
