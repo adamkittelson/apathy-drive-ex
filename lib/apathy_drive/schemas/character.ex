@@ -127,7 +127,9 @@ defmodule ApathyDrive.Character do
   end
 
   def max_encumbrance(%Character{} = character) do
-    character.strength * 48
+    trunc(
+      character.strength * 48 * (1 + Systems.Effect.effect_bonus(character, "Encumbrance") / 100)
+    )
   end
 
   def companion(%Character{id: id}, %Room{} = room) do
