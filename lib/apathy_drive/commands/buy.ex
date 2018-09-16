@@ -37,58 +37,69 @@ defmodule ApathyDrive.Commands.Buy do
       %ShopItem{} = shop_item ->
         price_in_copper = Shop.buy_price(room.shop, character, shop_item.item)
 
-        if Currency.wealth(character) < price_in_copper do
-          Mobile.send_scroll(
-            character,
-            "<p>You cannot afford to buy #{Item.colored_name(shop_item.item)}.<p>"
-          )
+        cond do
+          shop_item.item.weight >
+              Character.max_encumbrance(character) - Character.encumbrance(character) ->
+            Mobile.send_scroll(
+              character,
+              "<p>You cannot carry that much!<p>"
+            )
 
-          room
-        else
-          item_instance =
-            room.shop.item_instances
-            |> Enum.find(&(&1.item_id == shop_item.item_id))
+            room
 
-          Room.update_mobile(room, character.ref, fn char ->
-            item_instance
-            |> Ecto.Changeset.change(%{
-              shop_id: nil,
-              character_id: char.id,
-              equipped: false,
-              hidden: false
-            })
-            |> Repo.update!()
+          Currency.wealth(character) < price_in_copper ->
+            Mobile.send_scroll(
+              character,
+              "<p>You cannot afford to buy #{Item.colored_name(shop_item.item)}.<p>"
+            )
 
-            currency = Currency.set_value(price_in_copper)
-            char_currency = Currency.subtract(char, price_in_copper)
+            room
 
-            if price_in_copper == 0 do
-              Mobile.send_scroll(
-                char,
-                "<p>You purchase #{Item.colored_name(item_instance.item)} for nothing.</p>"
-              )
-            else
-              Mobile.send_scroll(
-                char,
-                "<p>You purchase #{Item.colored_name(item_instance.item)} for #{
-                  Currency.to_string(currency)
-                }.</p>"
-              )
-            end
+          :else ->
+            item_instance =
+              room.shop.item_instances
+              |> Enum.find(&(&1.item_id == shop_item.item_id))
 
-            char
-            |> Ecto.Changeset.change(%{
-              runic: char_currency.runic,
-              platinum: char_currency.platinum,
-              gold: char_currency.gold,
-              silver: char_currency.silver,
-              copper: char_currency.copper
-            })
-            |> Repo.update!()
-            |> Character.load_items()
-            |> Repo.save!()
-          end)
-          |> Shop.load()
+            Room.update_mobile(room, character.ref, fn char ->
+              item_instance
+              |> Ecto.Changeset.change(%{
+                shop_id: nil,
+                character_id: char.id,
+                equipped: false,
+                hidden: false
+              })
+              |> Repo.update!()
+
+              currency = Currency.set_value(price_in_copper)
+              char_currency = Currency.subtract(char, price_in_copper)
+
+              if price_in_copper == 0 do
+                Mobile.send_scroll(
+                  char,
+                  "<p>You purchase #{Item.colored_name(item_instance.item)} for nothing.</p>"
+                )
+              else
+                Mobile.send_scroll(
+                  char,
+                  "<p>You purchase #{Item.colored_name(item_instance.item)} for #{
+                    Currency.to_string(currency)
+                  }.</p>"
+                )
+              end
+
+              char
+              |> Ecto.Changeset.change(%{
+                runic: char_currency.runic,
+                platinum: char_currency.platinum,
+                gold: char_currency.gold,
+                silver: char_currency.silver,
+                copper: char_currency.copper
+              })
+              |> Repo.update!()
+              |> Character.load_items()
+              |> Repo.save!()
+            end)
+            |> Shop.load()
         end
 
       matches ->

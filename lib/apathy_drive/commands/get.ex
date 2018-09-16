@@ -40,22 +40,27 @@ defmodule ApathyDrive.Commands.Get do
 
     case actual_item || visible_item || hidden_item do
       %Item{instance_id: instance_id} = item ->
-        ItemInstance
-        |> Repo.get(instance_id)
-        |> Ecto.Changeset.change(%{
-          room_id: nil,
-          character_id: character.id,
-          equipped: false,
-          hidden: false
-        })
-        |> Repo.update!()
+        if item.weight <= Character.max_encumbrance(character) - Character.encumbrance(character) do
+          ItemInstance
+          |> Repo.get(instance_id)
+          |> Ecto.Changeset.change(%{
+            room_id: nil,
+            character_id: character.id,
+            equipped: false,
+            hidden: false
+          })
+          |> Repo.update!()
 
-        update_in(room.items, &List.delete(&1, item))
-        |> Room.update_mobile(character.ref, fn char ->
-          char
-          |> update_in([Access.key!(:inventory)], &[item | &1])
-          |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
-        end)
+          update_in(room.items, &List.delete(&1, item))
+          |> Room.update_mobile(character.ref, fn char ->
+            char
+            |> update_in([Access.key!(:inventory)], &[item | &1])
+            |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
+          end)
+        else
+          Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
+          room
+        end
 
       %{name: psuedo_item} ->
         Mobile.send_scroll(

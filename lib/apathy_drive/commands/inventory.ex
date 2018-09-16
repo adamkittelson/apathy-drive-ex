@@ -45,6 +45,33 @@ defmodule ApathyDrive.Commands.Inventory do
       } copper farthings</span></p>"
     )
 
+    current_encumbrance = Character.encumbrance(character)
+    max_encumbrance = Character.max_encumbrance(character)
+
+    encumbrance_percent = trunc(current_encumbrance / max_encumbrance * 100)
+
+    encumbrance =
+      cond do
+        encumbrance_percent < 17 ->
+          "None [#{encumbrance_percent}%]"
+
+        encumbrance_percent < 34 ->
+          "<span class='dark-green'>Light [#{encumbrance_percent}%]</span>"
+
+        encumbrance_percent < 67 ->
+          "<span class='dark-yellow'>Medium [#{encumbrance_percent}%]</span>"
+
+        :else ->
+          "<span class='dark-red'>Heavy [#{encumbrance_percent}%]</span>"
+      end
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{
+        current_encumbrance
+      }/#{max_encumbrance} -</span> #{encumbrance}</p>"
+    )
+
     room
   end
 

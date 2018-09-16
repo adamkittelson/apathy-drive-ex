@@ -90,8 +90,6 @@ defmodule ApathyDrive.Character do
     field(:editing, :any, virtual: true)
     field(:attribute_levels, :any, virtual: true, default: %{})
     field(:combat_level, :integer, virtual: true, default: 3)
-    field(:encumbrance, :integer, virtual: true, default: 0)
-    field(:max_encumbrance, :integer, virtual: true, default: 2000)
     field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:reply_to, :string, virtual: true)
@@ -108,6 +106,28 @@ defmodule ApathyDrive.Character do
     has_many(:trained_skills, through: [:characters_skills, :skill])
 
     timestamps()
+  end
+
+  def encumbrance(%Character{} = character) do
+    item_weight = Enum.reduce(character.equipment ++ character.inventory, 0, &(&1.weight + &2))
+
+    coin_weight =
+      div(
+        Enum.sum([
+          character.runic,
+          character.platinum,
+          character.gold,
+          character.silver,
+          character.copper
+        ]),
+        3
+      )
+
+    item_weight + coin_weight
+  end
+
+  def max_encumbrance(%Character{} = character) do
+    character.strength * 48
   end
 
   def companion(%Character{id: id}, %Room{} = room) do
@@ -261,7 +281,7 @@ defmodule ApathyDrive.Character do
   def add_equipped_items_effects(%Character{} = character) do
     character =
       Enum.reduce(character.effects, character, fn {_key, %{"stack_key" => key}}, character ->
-        if String.starts_with?(key, "item") do
+        if is_binary(key) and String.starts_with?(key, "item") do
           Systems.Effect.remove_oldest_stack(character, key)
         else
           character
@@ -675,6 +695,8 @@ defmodule ApathyDrive.Character do
 
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
+    encumbrance = Character.encumbrance(character)
+    max_encumbrance = Character.max_encumbrance(character)
 
     cost =
       weapon.speed * 1000 /
@@ -689,9 +711,7 @@ defmodule ApathyDrive.Character do
       end
 
     trunc(
-      cost *
-        (Float.floor(Float.floor(character.encumbrance / character.max_encumbrance * 100) / 2.0) +
-           75) / 100.0
+      cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
     )
   end
 
