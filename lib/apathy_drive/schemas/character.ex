@@ -26,7 +26,8 @@ defmodule ApathyDrive.Character do
     RoomServer,
     Skill,
     Text,
-    TimerManager
+    TimerManager,
+    Title
   }
 
   require Logger
@@ -106,6 +107,10 @@ defmodule ApathyDrive.Character do
     has_many(:trained_skills, through: [:characters_skills, :skill])
 
     timestamps()
+  end
+
+  def set_title(%Character{} = character) do
+    Map.put(character, :title, Title.for_character(character))
   end
 
   def encumbrance(%Character{} = character) do
@@ -408,6 +413,7 @@ defmodule ApathyDrive.Character do
       character
       |> Map.put(:experience, character.experience + exp)
       |> ApathyDrive.Level.advance()
+      |> Character.set_title()
 
     %Character{id: character.id}
     |> Ecto.Changeset.change(%{experience: character.experience})
@@ -426,6 +432,13 @@ defmodule ApathyDrive.Character do
          }}
       )
 
+      Directory.add_character(%{
+        name: character.name,
+        room: character.room_id,
+        ref: character.ref,
+        title: character.title
+      })
+
       %Character{id: character.id}
       |> Ecto.Changeset.change(%{level: character.level})
       |> Repo.update!()
@@ -443,6 +456,13 @@ defmodule ApathyDrive.Character do
            level: character.level
          }}
       )
+
+      Directory.add_character(%{
+        name: character.name,
+        room: character.room_id,
+        ref: character.ref,
+        title: character.title
+      })
 
       %Character{id: character.id}
       |> Ecto.Changeset.change(%{level: character.level})
@@ -757,6 +777,7 @@ defmodule ApathyDrive.Character do
             character
             |> Character.set_attribute_levels()
             |> Character.load_abilities()
+            |> Character.set_title()
 
           new_abilities = Map.values(character.abilities)
 
@@ -772,6 +793,13 @@ defmodule ApathyDrive.Character do
               character,
               "<p><span class='yellow'>Your level increases to #{character.level}!</span></p>"
             )
+
+            Directory.add_character(%{
+              name: character.name,
+              room: character.room_id,
+              ref: character.ref,
+              title: character.title
+            })
           end
 
           Enum.each(new_abilities, fn ability ->
@@ -1031,10 +1059,11 @@ defmodule ApathyDrive.Character do
         |> Map.put(:energy, character.max_energy)
         |> update_in([:effects], fn effects ->
           effects
-          |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race"] end)
+          |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
           |> Enum.into(%{})
         end)
         |> Map.put(:timers, %{})
+        |> Character.add_equipped_items_effects()
         |> Mobile.update_prompt()
         |> Mobile.cpr()
 
@@ -1274,7 +1303,12 @@ defmodule ApathyDrive.Character do
          }}
       )
 
-      Directory.add_character(%{name: character.name, room: room_id, ref: character.ref})
+      Directory.add_character(%{
+        name: character.name,
+        room: room_id,
+        ref: character.ref,
+        title: character.title
+      })
 
       character
       |> Map.put(:room_id, room_id)

@@ -220,3 +220,6 @@ CHANGELOG
 
 ---- 0.0.83 / 2018-09-16 / item-overhaul ---------------------------------------
 * overhaul items
+
+---- 0.0.84 / 2018-09-17 / update-gossip-and-tweak-who-list --------------------
+* who list tweaks

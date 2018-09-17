@@ -33,13 +33,14 @@ defmodule ApathyDrive.Commands.Who do
 
         Mobile.send_scroll(
           character,
-          "<p>        <span class='dark-green'>#{name} - <span class='dark-magenta'>(@#{game})</span></p>"
+          "<p>        <span class='dark-green'>#{name} -</span> <span class='dark-magenta'>Stranger</span> <span class='dark-green'>of</span> <span class='dark-yellow'>#{
+            game
+          }</span>"
         )
 
-      %{name: name} ->
-        alignment = "Good" |> String.pad_leading(7)
+      %{name: name, title: title} ->
+        alignment = "" |> String.pad_leading(7)
         name = name |> String.pad_trailing(longest_name_length)
-        title = "Adventurer"
 
         Mobile.send_scroll(
           character,
