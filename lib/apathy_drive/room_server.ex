@@ -173,6 +173,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.set_attribute_levels()
         |> Character.load_abilities()
         |> Character.load_items()
+        |> Character.set_title()
         |> Map.put(:socket, socket)
         |> Mobile.cpr()
 
@@ -182,7 +183,18 @@ defmodule ApathyDrive.RoomServer do
         put_in(room.mobiles[character.ref], character)
         |> Companion.load_for_character(character)
 
-      Directory.add_character(%{name: character.name, room: character.room_id, ref: character.ref})
+      Gossip.player_sign_in(character.name)
+
+      ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+        html: "<p>#{character.name} just entered the Realm.</p>"
+      })
+
+      Directory.add_character(%{
+        name: character.name,
+        room: character.room_id,
+        ref: character.ref,
+        title: character.title
+      })
 
       {:reply, character, room}
     end
@@ -378,7 +390,13 @@ defmodule ApathyDrive.RoomServer do
       |> update_in([:mobiles], &Map.delete(&1, ref))
       |> update_in([:mobiles], &Map.delete(&1, companion && companion.ref))
 
-    Directory.remove_character(character.name)
+    Gossip.player_sign_out(character.name)
+
+    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+      html: "<p>#{character.name} just left the Realm.</p>"
+    })
+
+    Directory.remove_character(character.id)
 
     {:noreply, room}
   end
