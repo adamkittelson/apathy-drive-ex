@@ -396,7 +396,7 @@ defmodule ApathyDrive.RoomServer do
       html: "<p>#{character.name} just left the Realm.</p>"
     })
 
-    Directory.remove_character(character.id)
+    Directory.remove_character(character.name)
 
     {:noreply, room}
   end

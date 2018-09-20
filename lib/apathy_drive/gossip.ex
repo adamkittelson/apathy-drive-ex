@@ -41,10 +41,6 @@ defmodule ApathyDrive.Gossip do
     Directory.remove_character(game_name, player_name)
   end
 
-  def players_status(game, players) do
-    Directory.update_remote_players(game, players)
-  end
-
   def players do
     Directory.list_characters()
     |> Enum.filter(& &1[:ref])
