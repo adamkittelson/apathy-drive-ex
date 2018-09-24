@@ -9,7 +9,7 @@ defmodule ApathyDrive.Energy do
   end
 
   def regenerate(mobile) do
-    amount_to_regenerate = div(mobile.max_energy, 100)
+    amount_to_regenerate = div(mobile.max_energy, 5)
 
     mobile
     |> update_in([Access.key!(:energy)], &min(mobile.max_energy, &1 + amount_to_regenerate))
@@ -22,7 +22,7 @@ defmodule ApathyDrive.Energy do
       time_until_next_tick =
         mobile
         |> Mobile.round_length_in_ms()
-        |> div(100)
+        |> div(5)
 
       TimerManager.send_after(
         mobile,

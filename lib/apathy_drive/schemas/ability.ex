@@ -182,6 +182,14 @@ defmodule ApathyDrive.Ability do
     )
   end
 
+  def total_damage(%Ability{traits: %{"Damage" => damage}} = ability) do
+    damage
+    |> Enum.map(& &1.damage)
+    |> Enum.sum()
+  end
+
+  def total_damage(%Ability{}), do: 0
+
   def valid_targets, do: @valid_targets
   def kinds, do: @kinds
 

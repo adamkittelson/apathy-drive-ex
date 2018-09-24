@@ -363,6 +363,7 @@ defmodule ApathyDrive.Character do
     %Ability{
       kind: "attack",
       energy: energy,
+      name: weapon.name,
       mana: 0,
       user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
       target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
@@ -838,9 +839,9 @@ defmodule ApathyDrive.Character do
         |> Enum.filter(&(&1.energy <= character.energy))
 
       if Enum.any?(useable_abilities) do
-        # use the ability with the highest energy cost
+        # use the ability with the highest average damage
         useable_abilities
-        |> Enum.sort_by(&(-&1.energy))
+        |> Enum.sort_by(&Ability.total_damage/1)
         |> List.first()
       else
         # use whatever, doesn't matter, will get rejected because we don't have enough energy
