@@ -185,10 +185,6 @@ defmodule ApathyDrive.RoomServer do
 
       Gossip.player_sign_in(character.name)
 
-      ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-        html: "<p>#{character.name} just entered the Realm.</p>"
-      })
-
       Directory.add_character(%{
         name: character.name,
         room: character.room_id,
@@ -391,10 +387,6 @@ defmodule ApathyDrive.RoomServer do
       |> update_in([:mobiles], &Map.delete(&1, companion && companion.ref))
 
     Gossip.player_sign_out(character.name)
-
-    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-      html: "<p>#{character.name} just left the Realm.</p>"
-    })
 
     Directory.remove_character(character.name)
 

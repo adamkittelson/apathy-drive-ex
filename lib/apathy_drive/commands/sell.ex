@@ -16,10 +16,21 @@ defmodule ApathyDrive.Commands.Sell do
   def keywords, do: ["sell"]
 
   def execute(%Room{} = room, %Character{} = character, arguments) do
-    sell(room, character, Enum.join(arguments, " "))
+    item_name = Enum.join(arguments, " ")
+
+    if String.trim(item_name) == "" do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='red'>Syntax: SELL {item}</span></p>"
+      )
+
+      room
+    else
+      sell(room, character, item_name)
+    end
   end
 
-  def sell(%Room{} = room, [], character, _item_name) do
+  def sell(%Room{shop: nil} = room, character, _args) do
     Mobile.send_scroll(
       character,
       "<p><span class='red'>You cannot SELL if you are not in a shop!</span></p>"

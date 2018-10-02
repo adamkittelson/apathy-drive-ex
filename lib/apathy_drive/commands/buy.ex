@@ -5,10 +5,21 @@ defmodule ApathyDrive.Commands.Buy do
   def keywords, do: ["buy"]
 
   def execute(%Room{} = room, %Character{} = character, arguments) do
-    buy(room, room.shop.shop_items, character, Enum.join(arguments, " "))
+    item_name = Enum.join(arguments, " ")
+
+    if String.trim(item_name) == "" do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='red'>Syntax: BUY {item}</span></p>"
+      )
+
+      room
+    else
+      buy(room, character, item_name)
+    end
   end
 
-  def buy(%Room{} = room, [], character, _item_name) do
+  def buy(%Room{shop: nil} = room, character, _args) do
     Mobile.send_scroll(
       character,
       "<p><span class='red'>You cannot BUY if you are not in a shop!</span></p>"
@@ -17,8 +28,8 @@ defmodule ApathyDrive.Commands.Buy do
     room
   end
 
-  def buy(%Room{} = room, items, character, item_name) do
-    case Match.all(items, :name_contains, item_name) do
+  def buy(%Room{} = room, character, item_name) do
+    case Match.all(room.shop.shop_items, :name_contains, item_name) do
       nil ->
         Mobile.send_scroll(
           character,
