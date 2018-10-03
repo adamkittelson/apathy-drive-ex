@@ -6,6 +6,7 @@ defmodule ApathyDrive.Monster do
     Ability,
     Area,
     Character,
+    Currency,
     Energy,
     Item,
     Mobile,
@@ -35,6 +36,11 @@ defmodule ApathyDrive.Monster do
     field(:death_message, :string)
     field(:adjectives, ApathyDrive.JSONB)
     field(:next_spawn_at, :integer)
+    field(:copper, :integer, default: 0)
+    field(:silver, :integer, default: 0)
+    field(:gold, :integer, default: 0)
+    field(:platinum, :integer, default: 0)
+    field(:runic, :integer, default: 0)
 
     field(:hp, :float, virtual: true, default: 1.0)
     field(:mana, :float, virtual: true, default: 1.0)
@@ -72,6 +78,16 @@ defmodule ApathyDrive.Monster do
   def changeset(%Monster{} = monster, params \\ %{}) do
     monster
     |> cast(params, ~w(), ~w())
+  end
+
+  def loot_wealth_in_copper(%Monster{} = monster) do
+    monster
+    |> Map.put(:copper, Enum.random(0..monster.copper))
+    |> Map.put(:silver, Enum.random(0..monster.silver))
+    |> Map.put(:gold, Enum.random(0..monster.gold))
+    |> Map.put(:platinum, Enum.random(0..monster.platinum))
+    |> Map.put(:runic, Enum.random(0..monster.runic))
+    |> Currency.wealth()
   end
 
   def enemies(%Monster{} = monster, room) do
@@ -469,6 +485,7 @@ defmodule ApathyDrive.Monster do
 
               character
               |> Character.add_reputation(monster.reputations)
+              |> Character.add_loot_from_monster(monster)
 
               # Monster.generate_loot_for_character(monster, character)
             end)

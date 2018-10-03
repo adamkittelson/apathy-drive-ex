@@ -12,6 +12,7 @@ defmodule ApathyDrive.Character do
     Class,
     ClassTrait,
     Companion,
+    Currency,
     Directory,
     Energy,
     Item,
@@ -111,6 +112,29 @@ defmodule ApathyDrive.Character do
 
   def set_title(%Character{} = character) do
     Map.put(character, :title, Title.for_character(character))
+  end
+
+  def add_loot_from_monster(character, monster) do
+    currency_value = Monster.loot_wealth_in_copper(monster)
+
+    if currency_value > 0 do
+      currency = Currency.set_value(currency_value)
+
+      Mobile.send_scroll(character, "<p>You receive #{Currency.to_string(currency)}.</p>")
+
+      character
+      |> Ecto.Changeset.change(%{
+        runic: character.runic + currency.runic,
+        platinum: character.platinum + currency.platinum,
+        gold: character.gold + currency.gold,
+        silver: character.silver + currency.silver,
+        copper: character.copper + currency.copper
+      })
+      |> Repo.update!()
+      |> load_items()
+    else
+      character
+    end
   end
 
   def encumbrance(%Character{} = character) do
