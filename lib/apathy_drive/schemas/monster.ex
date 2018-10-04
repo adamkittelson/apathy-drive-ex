@@ -215,10 +215,6 @@ defmodule ApathyDrive.Monster do
   end
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
-    base = 35
-    min = trunc(base - 10)
-    max = trunc(base + 10)
-
     room_monster = %RoomMonster{
       level: level,
       room_id: monster.room_id,
@@ -229,14 +225,9 @@ defmodule ApathyDrive.Monster do
 
     room_monster =
       [:strength, :agility, :intellect, :willpower, :health, :charm]
-      |> Enum.shuffle()
-      |> Enum.chunk(2)
-      |> Enum.reduce(room_monster, fn [attribute_1, attribute_2], rm ->
-        roll = Enum.random(min..max)
-
+      |> Enum.reduce(room_monster, fn attribute, rm ->
         rm
-        |> Map.put(attribute_1, roll)
-        |> Map.put(attribute_2, max - roll + min)
+        |> Map.put(attribute, 40)
       end)
       |> Repo.insert!()
 
