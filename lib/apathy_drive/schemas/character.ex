@@ -433,69 +433,20 @@ defmodule ApathyDrive.Character do
     dummy_checkpw()
   end
 
-  def add_experience(%Character{level: level} = character, exp) do
-    character =
-      character
-      |> Map.put(:experience, character.experience + exp)
-      |> ApathyDrive.Level.advance()
-      |> Character.set_title()
+  def add_experience(%Character{} = character, exp) when exp > 0 do
+    Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
-    %Character{id: character.id}
-    |> Ecto.Changeset.change(%{experience: character.experience})
-    |> Repo.update!()
-
-    if character.level > level do
-      Mobile.send_scroll(character, "<p>You ascend to level #{character.level}!")
-
-      send(
-        character.socket,
-        {:update_character,
-         %{
-           room_id: character.room_id,
-           power: Mobile.power_at_level(character, character.level),
-           level: character.level
-         }}
-      )
-
-      Directory.add_character(%{
-        name: character.name,
-        room: character.room_id,
-        ref: character.ref,
-        title: character.title
-      })
-
-      %Character{id: character.id}
-      |> Ecto.Changeset.change(%{level: character.level})
-      |> Repo.update!()
-    end
-
-    if character.level < level do
-      Mobile.send_scroll(character, "<p>You fall to level #{character.level}!")
-
-      send(
-        character.socket,
-        {:update_character,
-         %{
-           room_id: character.room_id,
-           power: Mobile.power_at_level(character, character.level),
-           level: character.level
-         }}
-      )
-
-      Directory.add_character(%{
-        name: character.name,
-        room: character.room_id,
-        ref: character.ref,
-        title: character.title
-      })
-
-      %Character{id: character.id}
-      |> Ecto.Changeset.change(%{level: character.level})
-      |> Repo.update!()
-    end
-
-    character
+    Mobile.add_attribute_experience(character, %{
+      strength: exp,
+      agility: exp,
+      intellect: exp,
+      willpower: exp,
+      health: exp,
+      charm: exp
+    })
   end
+
+  def add_experience(character, _exp), do: character
 
   def add_reputation(%Character{} = character, reputations) do
     Enum.reduce(reputations, character, fn %{
@@ -683,7 +634,15 @@ defmodule ApathyDrive.Character do
   end
 
   def update_energy(%Character{socket: socket} = character) do
-    send(socket, {:update_energy, %{energy: character.energy, max_energy: character.max_energy}})
+    send(
+      socket,
+      {:update_energy,
+       %{
+         energy: character.energy,
+         max_energy: character.max_energy,
+         round_length_in_ms: Mobile.round_length_in_ms(character)
+       }}
+    )
   end
 
   def pulse_score_attribute(%Character{socket: socket}, attribute) do
@@ -736,7 +695,8 @@ defmodule ApathyDrive.Character do
       health: Mobile.attribute_at_level(character, :health, character.level),
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
-      resistances: resistances
+      resistances: resistances,
+      round_length_in_ms: Mobile.round_length_in_ms(character)
     }
   end
 
@@ -848,7 +808,7 @@ defmodule ApathyDrive.Character do
     def accuracy_at_level(character, _level, _room) do
       agi = character.agility + character.charm / 10
       modifier = ability_value(character, "Accuracy")
-      agi * (1 + modifier / 100)
+      trunc(agi * (1 + modifier / 100))
     end
 
     def attribute_at_level(%Character{} = character, attribute, _level) do
@@ -856,21 +816,10 @@ defmodule ApathyDrive.Character do
     end
 
     def attack_ability(character) do
-      abilities = Character.attack_abilities(character)
-
-      useable_abilities =
-        abilities
-        |> Enum.filter(&(&1.energy <= character.energy))
-
-      if Enum.any?(useable_abilities) do
-        # use the ability with the highest average damage
-        useable_abilities
-        |> Enum.sort_by(&Ability.total_damage/1)
-        |> List.first()
-      else
-        # use whatever, doesn't matter, will get rejected because we don't have enough energy
-        List.first(abilities)
-      end
+      character
+      |> Character.attack_abilities()
+      |> Enum.sort_by(&Ability.total_damage/1)
+      |> List.last()
     end
 
     def auto_attack_target(%Character{attack_target: target} = _character, room, _attack_ability) do
@@ -965,7 +914,7 @@ defmodule ApathyDrive.Character do
       cha = Party.charm_at_level(room, character, level)
       int = int + cha / 10
       modifier = ability_value(character, "Crits")
-      int * (1 + modifier / 100)
+      trunc(int * (1 + modifier / 100))
     end
 
     def description(%Character{} = character, %Character{} = observer) do
@@ -1114,7 +1063,7 @@ defmodule ApathyDrive.Character do
       cha = Party.charm_at_level(room, character, level)
       agi = agi + cha / 10
       modifier = ability_value(character, "Dodge")
-      agi * (1 + modifier / 100)
+      trunc(agi * (1 + modifier / 100))
     end
 
     def block_at_level(character, level) do
@@ -1126,7 +1075,7 @@ defmodule ApathyDrive.Character do
       cha = Mobile.attribute_at_level(character, :charm, level)
       str = str + cha / 10
       modifier = Mobile.ability_value(character, "Block")
-      str * (1 + modifier / 100)
+      trunc(str * (1 + modifier / 100))
     end
 
     def parry_at_level(character, _level) do
@@ -1249,7 +1198,7 @@ defmodule ApathyDrive.Character do
       cha = Party.charm_at_level(room, character, level)
       int = int + cha / 10
       modifier = ability_value(character, "Perception")
-      int * (1 + modifier / 100)
+      trunc(int * (1 + modifier / 100))
     end
 
     def physical_damage_at_level(character, level) do
@@ -1386,7 +1335,7 @@ defmodule ApathyDrive.Character do
       cha = Party.charm_at_level(room, character, level)
       will = will + cha / 10
       modifier = ability_value(character, "Spellcasting")
-      will * (1 + modifier / 100)
+      trunc(will * (1 + modifier / 100))
     end
 
     def abilities_at_level(%Character{abilities: abilities}, level) do
@@ -1403,7 +1352,7 @@ defmodule ApathyDrive.Character do
         agi = attribute_at_level(character, :agility, level)
         agi = agi + attribute_at_level(character, :charm, level) / 10
         modifier = ability_value(character, "Stealth")
-        agi * (modifier / 100)
+        trunc(agi * (modifier / 100))
       end
     end
 
@@ -1416,6 +1365,8 @@ defmodule ApathyDrive.Character do
     def subtract_energy(character, ability) do
       initial_energy = character.energy
       character = update_in(character.energy, &max(0, &1 - ability.energy))
+
+      Character.update_energy(character)
 
       if initial_energy == character.max_energy do
         Energy.regenerate(character)

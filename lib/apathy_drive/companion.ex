@@ -281,7 +281,7 @@ defmodule ApathyDrive.Companion do
       cha = Party.charm_at_level(room, companion, level)
       agi = agi + cha / 10
       modifier = ability_value(companion, "Accuracy")
-      agi * (1 + modifier / 100)
+      trunc(agi * (1 + modifier / 100))
     end
 
     def add_attribute_experience(%Companion{} = companion, _skills_and_experience), do: companion
@@ -414,7 +414,7 @@ defmodule ApathyDrive.Companion do
       cha = Party.charm_at_level(room, companion, level)
       int = int + cha / 10
       modifier = ability_value(companion, "Crits")
-      int * (1 + modifier / 100)
+      trunc(int * (1 + modifier / 100))
     end
 
     def description(companion, _observer) do
@@ -439,11 +439,11 @@ defmodule ApathyDrive.Companion do
       cha = Party.charm_at_level(room, companion, level)
       agi = agi + cha / 10
       modifier = ability_value(companion, "Dodge")
-      agi * (1 + modifier / 100)
+      trunc(agi * (1 + modifier / 100))
     end
 
     def block_at_level(companion, _level) do
-      Mobile.ability_value(companion, "Block")
+      trunc(Mobile.ability_value(companion, "Block"))
     end
 
     def parry_at_level(companion, _level) do
@@ -559,7 +559,7 @@ defmodule ApathyDrive.Companion do
       cha = Party.charm_at_level(room, companion, level)
       int = int + cha / 10
       modifier = ability_value(companion, "Perception")
-      int * (1 + modifier / 100)
+      trunc(int * (1 + modifier / 100))
     end
 
     def physical_damage_at_level(companion, level) do
@@ -669,7 +669,7 @@ defmodule ApathyDrive.Companion do
       cha = Party.charm_at_level(room, companion, level)
       will = will + cha / 10
       modifier = ability_value(companion, "Spellcasting")
-      will * (1 + modifier / 100)
+      trunc(will * (1 + modifier / 100))
     end
 
     def stealth_at_level(companion, level) do
@@ -679,7 +679,7 @@ defmodule ApathyDrive.Companion do
         agi = attribute_at_level(companion, :agility, level)
         agi = agi + attribute_at_level(companion, :charm, level) / 10
         modifier = ability_value(companion, "Stealth")
-        agi * (modifier / 100)
+        trunc(agi * (modifier / 100))
       end
     end
 

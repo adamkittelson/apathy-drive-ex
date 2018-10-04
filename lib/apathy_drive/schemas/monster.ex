@@ -41,6 +41,7 @@ defmodule ApathyDrive.Monster do
     field(:gold, :integer, default: 0)
     field(:platinum, :integer, default: 0)
     field(:runic, :integer, default: 0)
+    field(:experience, :integer, default: 0)
 
     field(:hp, :float, virtual: true, default: 1.0)
     field(:mana, :float, virtual: true, default: 1.0)
@@ -378,7 +379,7 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       agi = agi + cha / 10
       modifier = ability_value(monster, "Accuracy")
-      agi * (1 + modifier / 100)
+      trunc(agi * (1 + modifier / 100))
     end
 
     def add_attribute_experience(%Monster{} = monster, _skills_and_experience), do: monster
@@ -464,7 +465,7 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       int = int + cha / 10
       modifier = ability_value(monster, "Crits")
-      int * (1 + modifier / 100)
+      trunc(int * (1 + modifier / 100))
     end
 
     def description(monster, _observer) do
@@ -485,6 +486,7 @@ defmodule ApathyDrive.Monster do
 
               character
               |> Character.add_reputation(monster.reputations)
+              |> Character.add_experience(monster.experience)
               |> Character.add_loot_from_monster(monster)
 
               # Monster.generate_loot_for_character(monster, character)
@@ -516,11 +518,11 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       agi = agi + cha / 10
       modifier = ability_value(monster, "Dodge")
-      agi * (1 + modifier / 100)
+      trunc(agi * (1 + modifier / 100))
     end
 
     def block_at_level(monster, _level) do
-      Mobile.ability_value(monster, "Block")
+      trunc(Mobile.ability_value(monster, "Block"))
     end
 
     def parry_at_level(monster, _level) do
@@ -635,7 +637,7 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       int = int + cha / 10
       modifier = ability_value(monster, "Perception")
-      int * (1 + modifier / 100)
+      trunc(int * (1 + modifier / 100))
     end
 
     def physical_damage_at_level(monster, level) do
@@ -755,7 +757,7 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       will = will + cha / 10
       modifier = ability_value(monster, "Spellcasting")
-      will * (1 + modifier / 100)
+      trunc(will * (1 + modifier / 100))
     end
 
     def stealth_at_level(monster, level) do
@@ -766,7 +768,7 @@ defmodule ApathyDrive.Monster do
         cha = attribute_at_level(monster, :charm, level)
         agi = agi + cha / 10
         modifier = ability_value(monster, "Stealth")
-        agi * (modifier / 100)
+        trunc(agi * (modifier / 100))
       end
     end
 

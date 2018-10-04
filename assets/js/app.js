@@ -86,14 +86,14 @@ var update_score_attribute = function (attribute, new_value) {
   }
 }
 
-chan.on("update score", function (data) {
-  progress($(".energy"), (data.energy / data.max_energy * 100))
+chan.on("update energy", function (data) {
+  progress($(".energy"), (data.energy / data.max_energy * 100), data.round_length_in_ms)
 })
 
 chan.on("update score", function (score_data) {
-  progress($(".hp"), (score_data.hp / score_data.max_hp * 100))
-  progress($(".mana"), (score_data.mana / score_data.max_mana * 100))
-  progress($(".energy"), (score_data.energy / score_data.max_energy * 100))
+  progress($(".hp"), (score_data.hp / score_data.max_hp * 100), score_data.round_length_in_ms)
+  progress($(".mana"), (score_data.mana / score_data.max_mana * 100), score_data.round_length_in_ms)
+  progress($(".energy"), (score_data.energy / score_data.max_energy * 100), score_data.round_length_in_ms)
   update_score_attribute("name", _.padEnd(score_data.name, 12));
   update_score_attribute("level", _.padEnd(score_data.level, 10));
   update_score_attribute("accuracy", score_data.accuracy);
@@ -126,7 +126,7 @@ chan.on("update score", function (score_data) {
 });
 
 window.pulsate_attribute = function (attribute) {
-  $("#score-" + attribute).animate({ color: "lime" }, 500, function () { $("#score-" + attribute).animate({ color: "teal" }, 500) })
+  $("#score-" + attribute).animate({ color: "lime" }, 250, function () { $("#score-" + attribute).animate({ color: "teal" }, 250) })
 }
 
 chan.on("pulse score attribute", function (data) {
@@ -232,11 +232,23 @@ $(document).on('keyup', "input", function (event) {
   }
 });
 
-window.progress = function ($element, percent) {
+window.progress = function ($element, percent, round_length_in_ms) {
   $.each($element, function (index, value) {
     var elem = $(value)
     var progressBarWidth = percent * elem.width() / 100;
-    elem.find('div').stop().animate({ width: progressBarWidth }, 50);
+
+    var time = 0
+
+    if (elem.hasClass("energy")) {
+      var current_percent = 100 * ($("div.progress-bar.energy").find('div').width() / $("div.progress-bar.energy").width())
+
+      if (percent > current_percent) {
+        var percent_to_move = percent - current_percent
+        time = round_length_in_ms * (percent_to_move / 100)
+      }
+    }
+
+    elem.find('div').stop().animate({ width: progressBarWidth }, time);
   })
 
 }
