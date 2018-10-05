@@ -5,6 +5,8 @@ defmodule ApathyDrive.AbilityDamageType do
   schema "abilities_damage_types" do
     field(:kind, :string)
     field(:potency, :integer)
+    field(:min, :integer)
+    field(:max, :integer)
 
     belongs_to(:ability, Ability)
     belongs_to(:damage_type, DamageType)
@@ -20,11 +22,12 @@ defmodule ApathyDrive.AbilityDamageType do
     |> where([mt], mt.ability_id == ^ability_id)
     |> preload([:damage_type])
     |> Repo.all()
-    |> Enum.reduce([], fn %{damage_type: damage_type, kind: kind, potency: potency}, damages ->
+    |> Enum.reduce([], fn %{damage_type: damage_type, kind: kind, min: min, max: max}, damages ->
       [
         %{
           kind: kind,
-          potency: potency,
+          min: min,
+          max: max,
           damage_type: damage_type.name,
           damage_type_id: damage_type.id
         }

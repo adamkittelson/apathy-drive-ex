@@ -885,6 +885,30 @@ defmodule ApathyDrive.Ability do
 
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, target}, fn
+        %{kind: "physical", min: min, max: max, damage_type: type}, {caster, target} ->
+          caster_damage = caster.strength * ability.energy / caster.max_energy
+
+          min_damage = trunc((min + caster_damage) * 100)
+          max_damage = trunc((max + caster_damage) * 100)
+
+          dmg = Enum.random(min_damage..max_damage) / 100
+
+          IO.puts("caster_damage: #{caster_damage}, min: #{min}, max: #{max}, dmg: #{dmg}")
+
+          resist = Mobile.physical_resistance_at_level(target, target_level)
+
+          resist = resist * round_percent
+
+          damage = dmg - resist
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = damage * (1 - modifier / 100)
+
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+
+          {caster, damage_percent}
+
         %{kind: "physical", damage: dmg, damage_type: type}, {caster, target} ->
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
