@@ -117,6 +117,28 @@ defmodule ApathyDrive.Directory do
   end
 
   def handle_call({:update_remote_players, game, players}, _from, state) do
+    {:reply, :ok, update_remote_players_for_game(game, players, state)}
+  end
+
+  def handle_info(:refresh_remote_players, state) do
+    state =
+      Gossip.who()
+      |> Enum.reduce(state, fn {game, players}, updated_state ->
+        update_remote_players_for_game(game, players, updated_state)
+      end)
+
+    Process.send_after(self(), :refresh_remote_players, :timer.seconds(5))
+    {:noreply, state}
+  end
+
+  defp all_characters(state) do
+    local_players = Map.values(state.local)
+    remote_players = Enum.into(state.remote, [])
+
+    local_players ++ remote_players
+  end
+
+  defp update_remote_players_for_game(game, players, state) do
     new_list =
       players
       |> Enum.map(&%{game: game, name: &1})
@@ -141,7 +163,7 @@ defmodule ApathyDrive.Directory do
         end
       end)
 
-    # add players who have were missing
+    # add players who were missing
     updated_list =
       new_list
       |> Enum.reduce(updated_list, fn %{name: name, game: game} = player, updated_list ->
@@ -159,19 +181,6 @@ defmodule ApathyDrive.Directory do
         end
       end)
 
-    {:reply, :ok, put_in(state.remote, updated_list)}
-  end
-
-  def handle_info(:refresh_remote_players, state) do
-    Gossip.request_players_online()
-    Process.send_after(self(), :refresh_remote_players, :timer.minutes(5))
-    {:noreply, state}
-  end
-
-  defp all_characters(state) do
-    local_players = Map.values(state.local)
-    remote_players = Enum.into(state.remote, [])
-
-    local_players ++ remote_players
+    put_in(state.remote, updated_list)
   end
 end
