@@ -6,6 +6,7 @@ defmodule ApathyDrive.Monster do
     Ability,
     Area,
     Character,
+    Currency,
     Energy,
     Item,
     Mobile,
@@ -35,6 +36,13 @@ defmodule ApathyDrive.Monster do
     field(:death_message, :string)
     field(:adjectives, ApathyDrive.JSONB)
     field(:next_spawn_at, :integer)
+    field(:copper, :integer, default: 0)
+    field(:silver, :integer, default: 0)
+    field(:gold, :integer, default: 0)
+    field(:platinum, :integer, default: 0)
+    field(:runic, :integer, default: 0)
+    field(:experience, :integer, default: 0)
+    field(:base_hp, :integer)
 
     field(:hp, :float, virtual: true, default: 1.0)
     field(:mana, :float, virtual: true, default: 1.0)
@@ -72,6 +80,16 @@ defmodule ApathyDrive.Monster do
   def changeset(%Monster{} = monster, params \\ %{}) do
     monster
     |> cast(params, ~w(), ~w())
+  end
+
+  def loot_wealth_in_copper(%Monster{} = monster) do
+    monster
+    |> Map.put(:copper, Enum.random(0..monster.copper))
+    |> Map.put(:silver, Enum.random(0..monster.silver))
+    |> Map.put(:gold, Enum.random(0..monster.gold))
+    |> Map.put(:platinum, Enum.random(0..monster.platinum))
+    |> Map.put(:runic, Enum.random(0..monster.runic))
+    |> Currency.wealth()
   end
 
   def enemies(%Monster{} = monster, room) do
@@ -198,10 +216,6 @@ defmodule ApathyDrive.Monster do
   end
 
   def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
-    base = 35
-    min = trunc(base - 10)
-    max = trunc(base + 10)
-
     room_monster = %RoomMonster{
       level: level,
       room_id: monster.room_id,
@@ -212,14 +226,9 @@ defmodule ApathyDrive.Monster do
 
     room_monster =
       [:strength, :agility, :intellect, :willpower, :health, :charm]
-      |> Enum.shuffle()
-      |> Enum.chunk(2)
-      |> Enum.reduce(room_monster, fn [attribute_1, attribute_2], rm ->
-        roll = Enum.random(min..max)
-
+      |> Enum.reduce(room_monster, fn attribute, rm ->
         rm
-        |> Map.put(attribute_1, roll)
-        |> Map.put(attribute_2, max - roll + min)
+        |> Map.put(attribute, 40)
       end)
       |> Repo.insert!()
 
@@ -362,7 +371,7 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       agi = agi + cha / 10
       modifier = ability_value(monster, "Accuracy")
-      agi * (1 + modifier / 100)
+      trunc(agi * (1 + modifier / 100))
     end
 
     def add_attribute_experience(%Monster{} = monster, _skills_and_experience), do: monster
@@ -448,7 +457,7 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       int = int + cha / 10
       modifier = ability_value(monster, "Crits")
-      int * (1 + modifier / 100)
+      trunc(int * (1 + modifier / 100))
     end
 
     def description(monster, _observer) do
@@ -469,6 +478,8 @@ defmodule ApathyDrive.Monster do
 
               character
               |> Character.add_reputation(monster.reputations)
+              |> Character.add_experience(monster.experience)
+              |> Character.add_loot_from_monster(monster)
 
               # Monster.generate_loot_for_character(monster, character)
             end)
@@ -499,11 +510,11 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       agi = agi + cha / 10
       modifier = ability_value(monster, "Dodge")
-      agi * (1 + modifier / 100)
+      trunc(agi * (1 + modifier / 100))
     end
 
     def block_at_level(monster, _level) do
-      Mobile.ability_value(monster, "Block")
+      trunc(Mobile.ability_value(monster, "Block"))
     end
 
     def parry_at_level(monster, _level) do
@@ -558,9 +569,7 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
     def magical_damage_at_level(monster, level) do
-      damage =
-        attribute_at_level(monster, :intellect, level) +
-          attribute_at_level(monster, :charm, level) / 10
+      damage = attribute_at_level(monster, :intellect, level)
 
       modifier =
         ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyMagicalDamage")
@@ -570,37 +579,19 @@ defmodule ApathyDrive.Monster do
 
     def magical_resistance_at_level(monster, level) do
       willpower = attribute_at_level(monster, :willpower, level)
-      charm = attribute_at_level(monster, :charm, level)
 
-      resist = div(willpower * 5 + charm, 6)
-
-      resist + ability_value(monster, "MagicalResist")
+      willpower + ability_value(monster, "MagicalResist")
     end
 
-    def max_hp_at_level(%Monster{grade: grade} = monster, level) do
-      base =
-        case grade do
-          "weak" ->
-            4
+    def max_hp_at_level(%Monster{} = monster, level) do
+      health = attribute_at_level(monster, :health, level)
 
-          "normal" ->
-            8
-
-          "strong" ->
-            16
-
-          "boss" ->
-            32
-        end
-
-      base =
-        trunc(
-          (base + ability_value(monster, "HPPerHealth")) *
-            attribute_at_level(monster, :health, level)
-        )
+      base = monster.base_hp
+      hp_per_level = 8 * level
+      bonus = (health - 50) / 16
 
       modifier = ability_value(monster, "MaxHP")
-      base * (1 + modifier / 100)
+      trunc((base + hp_per_level + bonus) * (1 + modifier / 100))
     end
 
     def max_mana_at_level(mobile, level) do
@@ -618,13 +609,11 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       int = int + cha / 10
       modifier = ability_value(monster, "Perception")
-      int * (1 + modifier / 100)
+      trunc(int * (1 + modifier / 100))
     end
 
     def physical_damage_at_level(monster, level) do
-      damage =
-        attribute_at_level(monster, :strength, level) +
-          attribute_at_level(monster, :charm, level) / 10
+      damage = attribute_at_level(monster, :strength, level)
 
       modifier =
         ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyPhysicalDamage")
@@ -634,13 +623,10 @@ defmodule ApathyDrive.Monster do
 
     def physical_resistance_at_level(monster, level) do
       strength = attribute_at_level(monster, :strength, level)
-      charm = attribute_at_level(monster, :charm, level)
-
-      resist = div(strength * 5 + charm, 6)
 
       ac = ability_value(monster, "AC")
 
-      resist + ac
+      strength + ac
     end
 
     def power_at_level(%Monster{} = monster, level) do
@@ -738,7 +724,7 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       will = will + cha / 10
       modifier = ability_value(monster, "Spellcasting")
-      will * (1 + modifier / 100)
+      trunc(will * (1 + modifier / 100))
     end
 
     def stealth_at_level(monster, level) do
@@ -749,7 +735,7 @@ defmodule ApathyDrive.Monster do
         cha = attribute_at_level(monster, :charm, level)
         agi = agi + cha / 10
         modifier = ability_value(monster, "Stealth")
-        agi * (modifier / 100)
+        trunc(agi * (modifier / 100))
       end
     end
 

@@ -885,6 +885,28 @@ defmodule ApathyDrive.Ability do
 
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, target}, fn
+        %{kind: "physical", min: min, max: max, damage_type: type}, {caster, target} ->
+          caster_damage =
+            div(trunc(Mobile.physical_damage_at_level(caster, caster_level) * round_percent), 2)
+
+          ability_damage = Enum.random(min..max)
+
+          resist =
+            div(
+              trunc(Mobile.physical_resistance_at_level(target, target_level) * round_percent),
+              4
+            )
+
+          damage = caster_damage + ability_damage - resist
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = damage * (1 - modifier / 100)
+
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+
+          {caster, damage_percent}
+
         %{kind: "physical", damage: dmg, damage_type: type}, {caster, target} ->
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
@@ -906,6 +928,28 @@ defmodule ApathyDrive.Ability do
           resist = resist * round_percent
 
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
+
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+
+          {caster, damage_percent}
+
+        %{kind: "magical", min: min, max: max, damage_type: type}, {caster, target} ->
+          caster_damage =
+            div(trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent), 2)
+
+          ability_damage = Enum.random(min..max)
+
+          resist =
+            div(
+              trunc(Mobile.magical_resistance_at_level(target, target_level) * round_percent),
+              4
+            )
+
+          damage = caster_damage + ability_damage - resist
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = damage * (1 - modifier / 100)
 
           damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
 

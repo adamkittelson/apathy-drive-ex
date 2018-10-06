@@ -223,3 +223,6 @@ CHANGELOG
 
 ---- 0.0.84 / 2018-09-17 / update-gossip-and-tweak-who-list --------------------
 * who list tweaks
+
+---- 0.0.85 / 2018-10-05 / monster-things --------------------------------------
+* tweak monster hp / damage, make kills grant exp / currency
