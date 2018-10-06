@@ -237,18 +237,18 @@ window.progress = function ($element, percent, round_length_in_ms) {
     var elem = $(value)
     var progressBarWidth = percent * elem.width() / 100;
 
-    var time = 0
+    // var time = 0
 
-    if (elem.hasClass("energy")) {
-      var current_percent = 100 * ($("div.progress-bar.energy").find('div').width() / $("div.progress-bar.energy").width())
+    // if (elem.hasClass("energy")) {
+    //   var current_percent = 100 * ($("div.progress-bar.energy").find('div').width() / $("div.progress-bar.energy").width())
 
-      if (percent > current_percent) {
-        var percent_to_move = percent - current_percent
-        time = round_length_in_ms * (percent_to_move / 100)
-      }
-    }
+    //   if (percent > current_percent) {
+    //     var percent_to_move = percent - current_percent
+    //     time = 3000 * (percent_to_move / 100)
+    //   }
+    // }
 
-    elem.find('div').stop().animate({ width: progressBarWidth }, time);
+    elem.find('div').stop().animate({ width: progressBarWidth }, 0);
   })
 
 }

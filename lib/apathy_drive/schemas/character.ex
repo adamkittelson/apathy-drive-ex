@@ -341,28 +341,6 @@ defmodule ApathyDrive.Character do
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
   end
 
-  def attack_abilities(character) do
-    punch =
-      ability_for_weapon(character, %Item{
-        type: "Weapon",
-        name: "fist",
-        hit_verbs: [["punch", "punches"]],
-        miss_verbs: ["throw a punch", "throws a punch"],
-        min_damage: 2,
-        max_damage: 7,
-        speed: 1150,
-        required_strength: 0
-      })
-
-    abilities = [punch]
-
-    if weapon = Character.weapon(character) do
-      [ability_for_weapon(character, weapon) | abilities]
-    else
-      abilities
-    end
-  end
-
   def ability_for_weapon(character, weapon) do
     %Item{
       type: "Weapon",
@@ -376,13 +354,6 @@ defmodule ApathyDrive.Character do
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
 
     energy = Character.energy_per_swing(character, weapon)
-
-    character_damage = character.strength * energy / character.max_energy
-
-    min_damage = trunc((min_damage + character_damage) * 100)
-    max_damage = trunc((max_damage + character_damage) * 100)
-
-    damage = Enum.random(min_damage..max_damage) / 100
 
     %Ability{
       kind: "attack",
@@ -399,7 +370,8 @@ defmodule ApathyDrive.Character do
           %{
             kind: "physical",
             damage_type: "Normal",
-            damage: damage
+            min: min_damage,
+            max: max_damage
           }
         ],
         "Dodgeable" => true,
@@ -816,10 +788,20 @@ defmodule ApathyDrive.Character do
     end
 
     def attack_ability(character) do
-      character
-      |> Character.attack_abilities()
-      |> Enum.sort_by(&Ability.total_damage/1)
-      |> List.last()
+      punch = %Item{
+        type: "Weapon",
+        name: "fist",
+        hit_verbs: [["punch", "punches"]],
+        miss_verbs: ["throw a punch", "throws a punch"],
+        min_damage: 2,
+        max_damage: 7,
+        speed: 1150,
+        required_strength: 0
+      }
+
+      weapon = Character.weapon(character) || punch
+
+      Character.ability_for_weapon(character, weapon)
     end
 
     def auto_attack_target(%Character{attack_target: target} = _character, room, _attack_ability) do
@@ -1145,9 +1127,7 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
     def magical_damage_at_level(character, level) do
-      damage =
-        attribute_at_level(character, :intellect, level) +
-          attribute_at_level(character, :charm, level) / 10
+      damage = attribute_at_level(character, :intellect, level)
 
       modifier =
         ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
@@ -1157,11 +1137,8 @@ defmodule ApathyDrive.Character do
 
     def magical_resistance_at_level(character, level) do
       willpower = attribute_at_level(character, :willpower, level)
-      charm = attribute_at_level(character, :charm, level)
 
-      resist = div(willpower * 5 + charm, 6)
-
-      resist + ability_value(character, "MagicalResist")
+      willpower + ability_value(character, "MagicalResist")
     end
 
     def max_hp_at_level(mobile, level) do
@@ -1202,9 +1179,7 @@ defmodule ApathyDrive.Character do
     end
 
     def physical_damage_at_level(character, level) do
-      damage =
-        attribute_at_level(character, :strength, level) +
-          attribute_at_level(character, :charm, level) / 10
+      damage = attribute_at_level(character, :strength, level)
 
       modifier =
         ability_value(character, "ModifyDamage") +
@@ -1214,14 +1189,10 @@ defmodule ApathyDrive.Character do
     end
 
     def physical_resistance_at_level(character, level) do
-      resist =
-        div(
-          attribute_at_level(character, :strength, level) * 5 +
-            attribute_at_level(character, :charm, level),
-          6
-        )
+      strength = attribute_at_level(character, :strength, level)
+      ac = ability_value(character, "AC")
 
-      resist + ability_value(character, "AC")
+      strength + ac
     end
 
     def power_at_level(%Character{} = character, level) do
