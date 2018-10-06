@@ -42,6 +42,7 @@ defmodule ApathyDrive.Monster do
     field(:platinum, :integer, default: 0)
     field(:runic, :integer, default: 0)
     field(:experience, :integer, default: 0)
+    field(:base_hp, :integer)
 
     field(:hp, :float, virtual: true, default: 1.0)
     field(:mana, :float, virtual: true, default: 1.0)
@@ -582,30 +583,15 @@ defmodule ApathyDrive.Monster do
       willpower + ability_value(monster, "MagicalResist")
     end
 
-    def max_hp_at_level(%Monster{grade: grade} = monster, level) do
-      base =
-        case grade do
-          "weak" ->
-            4
+    def max_hp_at_level(%Monster{} = monster, level) do
+      health = attribute_at_level(monster, :health, level)
 
-          "normal" ->
-            8
-
-          "strong" ->
-            16
-
-          "boss" ->
-            32
-        end
-
-      base =
-        trunc(
-          (base + ability_value(monster, "HPPerHealth")) *
-            attribute_at_level(monster, :health, level)
-        )
+      base = monster.base_hp
+      hp_per_level = 8 * level
+      bonus = (health - 50) / 16
 
       modifier = ability_value(monster, "MaxHP")
-      base * (1 + modifier / 100)
+      trunc((base + hp_per_level + bonus) * (1 + modifier / 100))
     end
 
     def max_mana_at_level(mobile, level) do
