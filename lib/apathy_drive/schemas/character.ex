@@ -1204,13 +1204,17 @@ defmodule ApathyDrive.Character do
       max_hp = max_hp_at_level(character, character.level)
       max_mana = max_mana_at_level(character, character.level)
 
-      base_regen_per_round = attribute_at_level(character, :willpower, character.level) / 5
+      base_mana_regen =
+        (character.level + 20) * attribute_at_level(character, :willpower, character.level) *
+          (div(ability_value(character, "ManaPerLevel"), 2) + 2) / 1650.0 * round_length / 30_000
+
+      modified_mana_regen = base_mana_regen * (1 + ability_value(character, "ManaRegen") / 100)
 
       hp_regen_percentage_per_round = modified_hp_regen / max_hp
 
       mana_regen_percentage_per_round =
         if max_mana > 0 do
-          base_regen_per_round * (1 + ability_value(character, "ManaRegen") / 100) / max_mana
+          modified_mana_regen / max_mana
         else
           0
         end
