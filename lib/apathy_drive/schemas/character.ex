@@ -1201,17 +1201,20 @@ defmodule ApathyDrive.Character do
     end
 
     def regenerate_hp_and_mana(%Character{hp: _hp, mana: mana} = character, room) do
+      round_length = Mobile.round_length_in_ms(character)
+
+      base_hp_regen =
+        (character.level + 30) * attribute_at_level(character, :health, character.level) / 500.0 *
+          round_length / 30_000
+
+      modified_hp_regen = base_hp_regen * (1 + ability_value(character, "HPRegen") / 100)
+
       max_hp = max_hp_at_level(character, character.level)
       max_mana = max_mana_at_level(character, character.level)
 
       base_regen_per_round = attribute_at_level(character, :willpower, character.level) / 5
 
-      hp_regen_percentage_per_round =
-        if TimerManager.time_remaining(character, :auto_attack_timer) > 0 do
-          0
-        else
-          base_regen_per_round * (1 + ability_value(character, "HPRegen") / 100) / max_hp
-        end
+      hp_regen_percentage_per_round = modified_hp_regen / max_hp
 
       mana_regen_percentage_per_round =
         if max_mana > 0 do
