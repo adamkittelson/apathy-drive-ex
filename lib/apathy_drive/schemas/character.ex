@@ -1142,9 +1142,6 @@ defmodule ApathyDrive.Character do
     end
 
     def max_hp_at_level(mobile, level) do
-      # base =
-      #   trunc(ability_value(mobile, "HPPerHealth") * attribute_at_level(mobile, :health, level))
-
       health = attribute_at_level(mobile, :health, level)
 
       base = health / 2
@@ -1156,14 +1153,9 @@ defmodule ApathyDrive.Character do
     end
 
     def max_mana_at_level(mobile, level) do
-      base =
-        trunc(
-          max(2, ability_value(mobile, "ManaPerIntellect")) *
-            attribute_at_level(mobile, :intellect, level)
-        )
+      mana_per_level = ability_value(mobile, "ManaPerLevel")
 
-      modifier = ability_value(mobile, "MaxMana")
-      base * (1 + modifier / 100)
+      mana_per_level * level + 6
     end
 
     def party_refs(character, room) do
