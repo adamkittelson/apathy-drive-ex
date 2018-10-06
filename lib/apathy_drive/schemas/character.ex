@@ -605,14 +605,21 @@ defmodule ApathyDrive.Character do
     send(socket, {:update_score, data})
   end
 
-  def update_energy(%Character{socket: socket} = character) do
+  def update_bars(%Character{socket: socket} = character) do
+    max_hp = Mobile.max_hp_at_level(character, character.level)
+    max_mana = Mobile.max_mana_at_level(character, character.level)
+
     send(
       socket,
-      {:update_energy,
+      {:update_bars,
        %{
-         energy: character.energy,
-         max_energy: character.max_energy,
-         round_length_in_ms: Mobile.round_length_in_ms(character)
+         energy_percentage: trunc(character.energy / character.max_energy * 100),
+         mana_percentage: trunc(character.mana * 100),
+         hp_percentage: trunc(character.hp * 100),
+         mana: trunc(character.mana * max_mana),
+         hp: trunc(character.hp * max_hp),
+         max_hp: max_hp,
+         max_mana: max_mana
        }}
     )
   end
@@ -1336,7 +1343,7 @@ defmodule ApathyDrive.Character do
       initial_energy = character.energy
       character = update_in(character.energy, &max(0, &1 - ability.energy))
 
-      Character.update_energy(character)
+      Character.update_bars(character)
 
       if initial_energy == character.max_energy do
         Energy.regenerate(character)

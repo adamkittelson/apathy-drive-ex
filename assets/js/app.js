@@ -86,14 +86,15 @@ var update_score_attribute = function (attribute, new_value) {
   }
 }
 
-chan.on("update energy", function (data) {
-  progress($(".energy"), (data.energy / data.max_energy * 100), data.round_length_in_ms)
+chan.on("update bars", function (data) {
+  progress($(".energy"), data.energy_percentage)
+  progress($(".mana"), data.mana_percentage)
+  progress($(".hp"), data.hp_percentage)
+  update_score_attribute("hp", _.padEnd(score_data.hp + "/" + score_data.max_hp, 12));
+  update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 10));
 })
 
 chan.on("update score", function (score_data) {
-  progress($(".hp"), (score_data.hp / score_data.max_hp * 100), score_data.round_length_in_ms)
-  progress($(".mana"), (score_data.mana / score_data.max_mana * 100), score_data.round_length_in_ms)
-  progress($(".energy"), (score_data.energy / score_data.max_energy * 100), score_data.round_length_in_ms)
   update_score_attribute("name", _.padEnd(score_data.name, 12));
   update_score_attribute("level", _.padEnd(score_data.level, 10));
   update_score_attribute("accuracy", score_data.accuracy);

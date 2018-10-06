@@ -78,8 +78,8 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:update_energy, %{} = data}, socket) do
-    Phoenix.Channel.push(socket, "update energy", data)
+  def handle_info({:update_bars, %{} = data}, socket) do
+    Phoenix.Channel.push(socket, "update bars", data)
 
     {:noreply, socket}
   end
