@@ -858,10 +858,21 @@ defmodule ApathyDrive.Ability do
     {caster, Map.put(target, :ability_shift, value)}
   end
 
-  def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room) do
-    level = min(target.level, caster.level)
-    healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
-    percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
+  def apply_instant_trait({"Heal", value}, %{} = target, ability, caster, _room) do
+    roll = Enum.random(value["min"]..value["max"])
+
+    attribute_value =
+      ability.attributes
+      |> Map.keys()
+      |> Enum.map(&Mobile.attribute_at_level(caster, &1, caster.level))
+      |> Enum.sum()
+      |> div(map_size(ability.attributes))
+
+    modifier = (attribute_value + 50) / 100
+
+    healing = roll * modifier
+
+    percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
 
     {caster, Map.put(target, :ability_shift, percentage_healed)}
   end
@@ -998,17 +1009,10 @@ defmodule ApathyDrive.Ability do
       |> Map.put(:ability_special, :normal)
       |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
-    caster_attribute =
-      if ability.mana > 0 do
-        :intellect
-      else
-        :strength
-      end
-
     caster =
-      Mobile.add_attribute_experience(caster, %{
-        caster_attribute => Map.get(caster, caster_attribute)
-      })
+      Enum.reduce(ability.attributes, caster, fn {attribute, _value}, caster ->
+        Mobile.add_attribute_experience(caster, %{attribute => Map.get(caster, attribute)})
+      end)
 
     target_attribute =
       if ability.mana > 0 do
@@ -1173,10 +1177,21 @@ defmodule ApathyDrive.Ability do
     )
   end
 
-  def process_duration_trait({"Heal", value}, effects, target, caster, _ability, _room) do
-    level = min(target.level, caster.level)
-    healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
-    percentage_healed = calculate_healing(healing, value) / Mobile.max_hp_at_level(target, level)
+  def process_duration_trait({"Heal", value}, effects, target, caster, ability, _room) do
+    roll = Enum.random(value["min"]..value["max"])
+
+    attribute_value =
+      ability.attributes
+      |> Map.keys()
+      |> Enum.map(&Mobile.attribute_at_level(caster, &1, caster.level))
+      |> Enum.sum()
+      |> div(map_size(ability.attributes))
+
+    modifier = (attribute_value + 50) / 100
+
+    healing = roll * modifier
+
+    percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
 
     effects
     |> Map.put("Heal", percentage_healed)
