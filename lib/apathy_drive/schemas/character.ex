@@ -134,6 +134,7 @@ defmodule ApathyDrive.Character do
       })
       |> Repo.update!()
       |> load_items()
+      |> Mobile.add_attribute_experience(%{charm: currency_value})
     else
       character
     end
@@ -1083,7 +1084,7 @@ defmodule ApathyDrive.Character do
       raw * (1 + modifier / 100)
     end
 
-    def enough_mana_for_ability?(character, %Ability{mana: cost} = ability) do
+    def enough_mana_for_ability?(character, %Ability{mana: cost} = _ability) do
       mana = Character.mana_at_level(character, character.level)
 
       mana >= cost
