@@ -1083,9 +1083,8 @@ defmodule ApathyDrive.Character do
       raw * (1 + modifier / 100)
     end
 
-    def enough_mana_for_ability?(character, %Ability{} = ability) do
+    def enough_mana_for_ability?(character, %Ability{mana: cost} = ability) do
       mana = Character.mana_at_level(character, character.level)
-      cost = Ability.mana_cost_at_level(ability, character.level)
 
       mana >= cost
     end
@@ -1377,8 +1376,7 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def subtract_mana(character, ability) do
-      cost = Ability.mana_cost_at_level(ability, character.level)
+    def subtract_mana(character, %{mana: cost} = ability) do
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
 
       character

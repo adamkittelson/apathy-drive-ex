@@ -522,9 +522,8 @@ defmodule ApathyDrive.Monster do
       Mobile.ability_value(monster, "Parry")
     end
 
-    def enough_mana_for_ability?(monster, %Ability{} = ability) do
+    def enough_mana_for_ability?(monster, %Ability{mana: cost}) do
       mana = Mobile.max_mana_at_level(monster, monster.level)
-      cost = Ability.mana_cost_at_level(ability, monster.level)
 
       monster.mana >= cost / mana
     end
@@ -772,8 +771,7 @@ defmodule ApathyDrive.Monster do
       end
     end
 
-    def subtract_mana(monster, ability) do
-      cost = Ability.mana_cost_at_level(ability, monster.level)
+    def subtract_mana(monster, %{mana: cost} = _ability) do
       percentage = cost / Mobile.max_mana_at_level(monster, monster.level)
       update_in(monster.mana, &max(0, &1 - percentage))
     end

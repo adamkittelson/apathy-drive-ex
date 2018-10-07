@@ -450,9 +450,8 @@ defmodule ApathyDrive.Companion do
       Mobile.ability_value(companion, "Parry")
     end
 
-    def enough_mana_for_ability?(companion, %Ability{} = ability) do
+    def enough_mana_for_ability?(companion, %Ability{mana: cost}) do
       mana = Mobile.max_mana_at_level(companion, companion.level)
-      cost = Ability.mana_cost_at_level(ability, companion.level)
 
       companion.mana >= cost / mana
     end
@@ -671,8 +670,7 @@ defmodule ApathyDrive.Companion do
       end
     end
 
-    def subtract_mana(companion, ability) do
-      cost = Ability.mana_cost_at_level(ability, companion.level)
+    def subtract_mana(companion, %{mana: cost}) do
       percentage = cost / Mobile.max_mana_at_level(companion, companion.level)
       update_in(companion.mana, &max(0, &1 - percentage))
     end

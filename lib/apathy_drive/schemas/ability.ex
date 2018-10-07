@@ -297,13 +297,6 @@ defmodule ApathyDrive.Ability do
     |> Enum.filter(&(&1.kind == "heal"))
   end
 
-  # equivilent to a character with 2 ManaPerIntellect and 10 intellect
-  def base_mana_at_level(level), do: 20 + (level - 1) * 2
-
-  def mana_cost_at_level(%Ability{mana: mana} = _ability, level) do
-    trunc(base_mana_at_level(level) * (mana / 100))
-  end
-
   def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "")
       when targets in @target_required_targets do
     room
