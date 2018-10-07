@@ -44,6 +44,7 @@ defmodule ApathyDrive.Ability do
     field(:cast_complete, :boolean, virtual: true, default: false)
     field(:skills, :any, virtual: true, default: [])
     field(:target_list, :any, virtual: true)
+    field(:attributes, :map, virtual: true, default: %{})
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])

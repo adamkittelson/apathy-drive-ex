@@ -4,6 +4,7 @@ defmodule ApathyDrive.Character do
 
   alias ApathyDrive.{
     Ability,
+    AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
     Character,
@@ -214,7 +215,9 @@ defmodule ApathyDrive.Character do
 
       %{level: level, ability: %Ability{id: id} = ability}, character ->
         ability =
-          put_in(ability.traits, AbilityTrait.load_traits(id))
+          ability
+          |> put_in([Access.key!(:traits)], AbilityTrait.load_traits(id))
+          |> put_in([Access.key!(:attributes)], AbilityAttribute.load_attributes(id))
           |> Map.put(:level, level)
 
         ability =
