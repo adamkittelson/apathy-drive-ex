@@ -99,6 +99,7 @@ defmodule ApathyDrive.Character do
     field(:casting, :any, virtual: true, default: nil)
     field(:weapon, :string, virtual: true)
     field(:armour, :string, virtual: true)
+    field(:mana_regen_attributes, :any, virtual: true, default: [])
 
     belongs_to(:room, Room)
 
@@ -1124,8 +1125,14 @@ defmodule ApathyDrive.Character do
 
       max_mana = max_mana_at_level(character, character.level)
 
+      attribute_value =
+        character.mana_regen_attributes
+        |> Enum.map(&attribute_at_level(character, &1, character.level))
+        |> Enum.sum()
+        |> div(length(character.mana_regen_attributes))
+
       base_mana_regen =
-        (character.level + 20) * attribute_at_level(character, :willpower, character.level) *
+        (character.level + 20) * attribute_value *
           (div(ability_value(character, "ManaPerLevel"), 2) + 2) / 1650.0 * round_length / 30_000
 
       modified_mana_regen = base_mana_regen * (1 + ability_value(character, "ManaRegen") / 100)
@@ -1373,7 +1380,13 @@ defmodule ApathyDrive.Character do
     def subtract_mana(character, ability) do
       cost = Ability.mana_cost_at_level(ability, character.level)
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
-      update_in(character.mana, &max(0, &1 - percentage))
+
+      character
+      |> update_in([Access.key!(:mana)], &max(0, &1 - percentage))
+      |> update_in(
+        [Access.key!(:mana_regen_attributes)],
+        &Enum.uniq(&1 ++ Map.keys(ability.attributes))
+      )
     end
 
     def subtract_energy(character, ability) do

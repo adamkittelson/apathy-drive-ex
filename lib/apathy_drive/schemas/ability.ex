@@ -491,7 +491,11 @@ defmodule ApathyDrive.Ability do
                         target
                       end
 
-                    if target.hp < 0 do
+                    target_level = Mobile.target_level(caster, target)
+                    max_hp = Mobile.max_hp_at_level(target, target_level)
+                    hp = trunc(max_hp * target.hp)
+
+                    if hp < 1 do
                       Mobile.die(target, updated_room)
                     else
                       put_in(updated_room.mobiles[target.ref], target)
