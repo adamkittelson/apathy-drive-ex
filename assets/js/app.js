@@ -90,8 +90,8 @@ chan.on("update bars", function (data) {
   progress($(".energy"), data.energy_percentage)
   progress($(".mana"), data.mana_percentage)
   progress($(".hp"), data.hp_percentage)
-  update_score_attribute("hp", _.padEnd(score_data.hp + "/" + score_data.max_hp, 12));
-  update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 10));
+  update_score_attribute("hp", _.padEnd(data.hp + "/" + data.max_hp, 12));
+  update_score_attribute("mana", _.padEnd(data.mana + "/" + data.max_mana, 10));
 })
 
 chan.on("update score", function (score_data) {
@@ -123,11 +123,11 @@ chan.on("update score", function (score_data) {
   update_score_attribute("cold", score_data.resistances.Cold);
   update_score_attribute("water", _.padEnd(score_data.resistances.Water, 5));
   update_score_attribute("poison", score_data.resistances.Poison);
-  update_score_attribute("effects", _.join(score_data.effects, "\n"));
+  update_score_attribute("effects", _.join(score_data.effects, "\n  "));
 });
 
 window.pulsate_attribute = function (attribute) {
-  $("#score-" + attribute).animate({ color: "lime" }, 250, function () { $("#score-" + attribute).animate({ color: "teal" }, 250) })
+  $("#score-" + attribute).stop().animate({ color: "lime" }, 250, function () { $("#score-" + attribute).animate({ color: "teal" }, 250) })
 }
 
 chan.on("pulse score attribute", function (data) {

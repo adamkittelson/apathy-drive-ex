@@ -24,28 +24,40 @@ defmodule ApathyDrive.Regeneration do
     update_in(mobile, [Access.key!(:energy)], &min(mobile.max_energy, &1 + amount_to_regenerate))
   end
 
+  def regenerate_hp(%{hp: 1.0} = mobile), do: mobile
+
   def regenerate_hp(%{attack_target: nil} = mobile) do
     hp = Mobile.hp_regen_per_round(mobile) / 10
 
-    update_in(mobile, [Access.key!(:hp)], &min(1.0, &1 + hp))
+    mobile
+    |> update_in([Access.key!(:hp)], &min(1.0, &1 + hp))
+    |> Mobile.add_attribute_experience(%{health: 1})
   end
 
   def regenerate_hp(%{} = mobile) do
     hp = Mobile.hp_regen_per_round(mobile) / 100
 
-    update_in(mobile, [Access.key!(:hp)], &min(1.0, &1 + hp))
+    mobile
+    |> update_in([Access.key!(:hp)], &min(1.0, &1 + hp))
+    |> Mobile.add_attribute_experience(%{health: 1})
   end
+
+  def regenerate_mana(%{mana: 1.0} = mobile), do: mobile
 
   def regenerate_mana(%{attack_target: nil} = mobile) do
     mana = Mobile.mana_regen_per_round(mobile) / 10
 
-    update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + mana))
+    mobile
+    |> update_in([Access.key!(:mana)], &min(1.0, &1 + mana))
+    |> Mobile.add_attribute_experience(%{willpower: 1})
   end
 
   def regenerate_mana(%{} = mobile) do
     mana = Mobile.mana_regen_per_round(mobile) / 100
 
-    update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + mana))
+    mobile
+    |> update_in([Access.key!(:mana)], &min(1.0, &1 + mana))
+    |> Mobile.add_attribute_experience(%{willpower: 1})
   end
 
   def schedule_next_tick(mobile) do
