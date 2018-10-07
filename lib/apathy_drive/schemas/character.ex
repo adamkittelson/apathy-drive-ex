@@ -14,7 +14,7 @@ defmodule ApathyDrive.Character do
     Companion,
     Currency,
     Directory,
-    Energy,
+    Regeneration,
     Item,
     Level,
     Monster,
@@ -622,6 +622,8 @@ defmodule ApathyDrive.Character do
          max_mana: max_mana
        }}
     )
+
+    character
   end
 
   def pulse_score_attribute(%Character{socket: socket}, attribute) do
@@ -1020,6 +1022,7 @@ defmodule ApathyDrive.Character do
         |> Map.put(:hp, 1.0)
         |> Map.put(:mana, 1.0)
         |> Map.put(:energy, character.max_energy)
+        |> Character.update_bars()
         |> update_in([:effects], fn effects ->
           effects
           |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
@@ -1099,10 +1102,41 @@ defmodule ApathyDrive.Character do
       |> Enum.member?(ability_name)
     end
 
+    def hp_regen_per_round(%Character{} = character) do
+      round_length = Mobile.round_length_in_ms(character)
+
+      base_hp_regen =
+        (character.level + 30) * attribute_at_level(character, :health, character.level) / 500.0 *
+          round_length / 30_000
+
+      modified_hp_regen = base_hp_regen * (1 + ability_value(character, "HPRegen") / 100)
+
+      max_hp = max_hp_at_level(character, character.level)
+
+      modified_hp_regen / max_hp
+    end
+
+    def mana_regen_per_round(%Character{} = character) do
+      round_length = Mobile.round_length_in_ms(character)
+
+      max_mana = max_mana_at_level(character, character.level)
+
+      base_mana_regen =
+        (character.level + 20) * attribute_at_level(character, :willpower, character.level) *
+          (div(ability_value(character, "ManaPerLevel"), 2) + 2) / 1650.0 * round_length / 30_000
+
+      modified_mana_regen = base_mana_regen * (1 + ability_value(character, "ManaRegen") / 100)
+
+      if max_mana > 0 do
+        modified_mana_regen / max_mana
+      else
+        0
+      end
+    end
+
     def heartbeat(%Character{} = character, %Room{} = room) do
       Room.update_mobile(room, character.ref, fn character ->
         character
-        |> regenerate_hp_and_mana(room)
         |> TimerManager.send_after(
           {:heartbeat, Mobile.round_length_in_ms(character), {:heartbeat, character.ref}}
         )
@@ -1346,7 +1380,7 @@ defmodule ApathyDrive.Character do
       Character.update_bars(character)
 
       if initial_energy == character.max_energy do
-        Energy.regenerate(character)
+        Regeneration.regenerate(character)
       else
         character
       end

@@ -7,7 +7,7 @@ defmodule ApathyDrive.Monster do
     Area,
     Character,
     Currency,
-    Energy,
+    Regeneration,
     Item,
     Mobile,
     Monster,
@@ -43,6 +43,7 @@ defmodule ApathyDrive.Monster do
     field(:runic, :integer, default: 0)
     field(:experience, :integer, default: 0)
     field(:base_hp, :integer)
+    field(:hp_regen, :integer)
 
     field(:hp, :float, virtual: true, default: 1.0)
     field(:mana, :float, virtual: true, default: 1.0)
@@ -594,10 +595,10 @@ defmodule ApathyDrive.Monster do
       trunc((base + hp_per_level + bonus) * (1 + modifier / 100))
     end
 
-    def max_mana_at_level(mobile, level) do
-      base = trunc(5 * attribute_at_level(mobile, :intellect, level))
-      modifier = ability_value(mobile, "MaxMana")
-      base * (1 + modifier / 100)
+    def max_mana_at_level(monster, level) do
+      mana_per_level = ability_value(monster, "ManaPerLevel")
+
+      mana_per_level * level + 6
     end
 
     def party_refs(monster, room) do
@@ -637,12 +638,44 @@ defmodule ApathyDrive.Monster do
     def heartbeat(%Monster{} = monster, %Room{} = room) do
       Room.update_mobile(room, monster.ref, fn monster ->
         monster
-        |> regenerate_hp_and_mana(room)
         |> TimerManager.send_after(
           {:heartbeat, Mobile.round_length_in_ms(monster), {:heartbeat, monster.ref}}
         )
       end)
       |> ApathyDrive.Aggression.react(monster.ref)
+    end
+
+    def hp_regen_per_round(%Monster{} = monster) do
+      round_length = Mobile.round_length_in_ms(monster)
+
+      base_hp_regen =
+        (monster.hp_regen +
+           (monster.level + 30) * attribute_at_level(monster, :health, monster.level) / 500.0) *
+          round_length / 30_000
+
+      modified_hp_regen = base_hp_regen * (1 + ability_value(monster, "HPRegen") / 100)
+
+      max_hp = max_hp_at_level(monster, monster.level)
+
+      modified_hp_regen / max_hp
+    end
+
+    def mana_regen_per_round(%Monster{} = monster) do
+      round_length = Mobile.round_length_in_ms(monster)
+
+      max_mana = max_mana_at_level(monster, monster.level)
+
+      base_mana_regen =
+        (monster.level + 20) * attribute_at_level(monster, :willpower, monster.level) *
+          (div(ability_value(monster, "ManaPerLevel"), 2) + 2) / 1650.0 * round_length / 30_000
+
+      modified_mana_regen = base_mana_regen * (1 + ability_value(monster, "ManaRegen") / 100)
+
+      if max_mana > 0 do
+        modified_mana_regen / max_mana
+      else
+        0
+      end
     end
 
     def regenerate_hp_and_mana(%Monster{hp: _hp, mana: mana} = monster, room) do
@@ -750,7 +783,7 @@ defmodule ApathyDrive.Monster do
       monster = update_in(monster.energy, &max(0, &1 - ability.energy))
 
       if initial_energy == monster.max_energy do
-        Energy.regenerate(monster)
+        Regeneration.regenerate(monster)
       else
         monster
       end

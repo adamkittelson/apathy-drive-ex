@@ -8,7 +8,7 @@ defmodule ApathyDrive.RoomServer do
     Companion,
     Directory,
     Enchantment,
-    Energy,
+    Regeneration,
     LairMonster,
     Mobile,
     MonsterSpawning,
@@ -406,7 +406,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, mobile_ref, fn mobile ->
         mobile
-        |> Energy.regenerate()
+        |> Regeneration.regenerate()
         |> execute_casting_ability(room)
       end)
 

@@ -4,7 +4,7 @@ defmodule ApathyDrive.Companion do
     Character,
     Companion,
     CompanionAI,
-    Energy,
+    Regeneration,
     Mobile,
     Monster,
     MonsterAbility,
@@ -477,7 +477,6 @@ defmodule ApathyDrive.Companion do
       room =
         Room.update_mobile(room, companion.ref, fn companion ->
           companion
-          |> regenerate_hp_and_mana(room)
           |> Companion.toggle_combat(room)
           |> TimerManager.send_after(
             {:heartbeat, Mobile.round_length_in_ms(companion), {:heartbeat, companion.ref}}
@@ -683,7 +682,7 @@ defmodule ApathyDrive.Companion do
       companion = update_in(companion.energy, &max(0, &1 - ability.energy))
 
       if initial_energy == companion.max_energy do
-        Energy.regenerate(companion)
+        Regeneration.regenerate(companion)
       else
         companion
       end

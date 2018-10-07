@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Energy do
+defmodule ApathyDrive.Regeneration do
   alias ApathyDrive.{Character, Mobile, TimerManager}
 
   def duration_for_energy(mobile, energy) do
@@ -25,16 +25,28 @@ defmodule ApathyDrive.Energy do
   end
 
   def regenerate_hp(%{attack_target: nil} = mobile) do
-    update_in(mobile, [Access.key!(:hp)], &min(1.0, &1 + 0.005))
+    hp = Mobile.hp_regen_per_round(mobile) / 10
+
+    update_in(mobile, [Access.key!(:hp)], &min(1.0, &1 + hp))
   end
 
-  def regenerate_hp(%{} = mobile), do: mobile
+  def regenerate_hp(%{} = mobile) do
+    hp = Mobile.hp_regen_per_round(mobile) / 100
+
+    update_in(mobile, [Access.key!(:hp)], &min(1.0, &1 + hp))
+  end
 
   def regenerate_mana(%{attack_target: nil} = mobile) do
-    update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + 0.005))
+    mana = Mobile.mana_regen_per_round(mobile) / 10
+
+    update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + mana))
   end
 
-  def regenerate_mana(%{} = mobile), do: mobile
+  def regenerate_mana(%{} = mobile) do
+    mana = Mobile.mana_regen_per_round(mobile) / 100
+
+    update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + mana))
+  end
 
   def schedule_next_tick(mobile) do
     if mobile.max_energy > mobile.energy or mobile.mana < 1 or mobile.hp < 1 do
