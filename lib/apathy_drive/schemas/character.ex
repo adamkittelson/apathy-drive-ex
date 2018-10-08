@@ -1079,6 +1079,7 @@ defmodule ApathyDrive.Character do
         |> Map.put(:hp, 1.0)
         |> Map.put(:mana, 1.0)
         |> Map.put(:energy, character.max_energy)
+        |> Map.put(:attack_target, nil)
         |> Character.update_energy_bar()
         |> Character.update_hp_bar()
         |> Character.update_mana_bar()

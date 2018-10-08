@@ -237,13 +237,19 @@ $(document).on('keyup', "input", function (event) {
   }
 });
 
-window.progress = function ($element, percent, time_to_full) {
-  $.each($element, function (index, value) {
-    var elem = $(value)
-
+window.progress = function (elem, percent, time_to_full) {
+  if (percent == 100) {
+    console.log("setting width to " + elem.width())
+    elem.find('div').stop().width(elem.width())
+  }
+  else {
     var currentWidth = percent * elem.width() / 100;
 
-    elem.find('div').stop().animate({ width: currentWidth }, 0).animate({ width: elem.width() }, time_to_full);
-  })
+    console.log("current percent: " + percent + ", current: " + currentWidth + ", target: " + elem.width() + ", time_to_full: " + time_to_full)
+
+    if (currentWidth >= 0) {
+      elem.find('div').stop().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: Math.floor(time_to_full) });
+    }
+  }
 
 }
