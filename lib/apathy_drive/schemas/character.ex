@@ -1080,6 +1080,8 @@ defmodule ApathyDrive.Character do
         |> Map.put(:mana, 1.0)
         |> Map.put(:energy, character.max_energy)
         |> Character.update_energy_bar()
+        |> Character.update_hp_bar()
+        |> Character.update_mana_bar()
         |> update_in([:effects], fn effects ->
           effects
           |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
