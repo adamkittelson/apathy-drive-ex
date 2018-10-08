@@ -481,7 +481,10 @@ defmodule ApathyDrive.RoomServer do
                   "<p><span class='dark-yellow'>*Combat Off*</span></p>"
                 )
 
-                Map.put(character, :attack_target, nil)
+                character
+                |> Map.put(:attack_target, nil)
+                |> Character.update_hp_bar()
+                |> Character.update_mana_bar()
 
               mobile ->
                 mobile

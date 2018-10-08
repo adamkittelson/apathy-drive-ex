@@ -610,26 +610,78 @@ defmodule ApathyDrive.Character do
     send(socket, {:update_score, data})
   end
 
-  def update_bars(%Character{socket: socket} = character) do
-    max_hp = Mobile.max_hp_at_level(character, character.level)
-    max_mana = Mobile.max_mana_at_level(character, character.level)
+  def update_energy_bar(%Character{socket: socket} = character) do
+    percent = character.energy / character.max_energy
 
     send(
       socket,
-      {:update_bars,
+      {:update_energy_bar,
        %{
-         energy_percentage: trunc(character.energy / character.max_energy * 100),
-         mana_percentage: trunc(character.mana * 100),
-         hp_percentage: trunc(character.hp * 100),
-         mana: trunc(character.mana * max_mana),
-         hp: trunc(character.hp * max_hp),
-         max_hp: max_hp,
-         max_mana: max_mana
+         percentage: trunc(percent * 100),
+         time_to_full: Mobile.round_length_in_ms(character) * (1 - percent)
        }}
     )
 
     character
   end
+
+  def update_mana_bar(%Character{socket: socket} = character) do
+    percent = character.mana
+
+    time_to_full =
+      if percent == 1.0 do
+        0
+      else
+        regen_per_tick =
+          Regeneration.regen_per_tick(character, Mobile.mana_regen_per_round(character))
+
+        ticks_remaining = (1.0 - percent) / regen_per_tick
+
+        Regeneration.tick_time(character) * ticks_remaining
+      end
+
+    send(
+      socket,
+      {:update_mana_bar,
+       %{
+         percentage: trunc(percent * 100),
+         time_to_full: time_to_full
+       }}
+    )
+
+    character
+  end
+
+  def update_mana_bar(%{} = character), do: character
+
+  def update_hp_bar(%Character{socket: socket} = character) do
+    percent = character.hp
+
+    time_to_full =
+      if percent == 1.0 do
+        0
+      else
+        regen_per_tick =
+          Regeneration.regen_per_tick(character, Mobile.hp_regen_per_round(character))
+
+        ticks_remaining = (1.0 - percent) / regen_per_tick
+
+        Regeneration.tick_time(character) * ticks_remaining
+      end
+
+    send(
+      socket,
+      {:update_hp_bar,
+       %{
+         percentage: trunc(percent * 100),
+         time_to_full: time_to_full
+       }}
+    )
+
+    character
+  end
+
+  def update_hp_bar(%{} = character), do: character
 
   def pulse_score_attribute(%Character{socket: socket}, attribute) do
     send(socket, {:pulse_score_attribute, attribute})
@@ -1027,7 +1079,7 @@ defmodule ApathyDrive.Character do
         |> Map.put(:hp, 1.0)
         |> Map.put(:mana, 1.0)
         |> Map.put(:energy, character.max_energy)
-        |> Character.update_bars()
+        |> Character.update_energy_bar()
         |> update_in([:effects], fn effects ->
           effects
           |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
@@ -1299,7 +1351,7 @@ defmodule ApathyDrive.Character do
         end)
       end
 
-      character
+      Character.update_hp_bar(character)
     end
 
     def silenced(%Character{effects: effects} = character, %Room{} = room) do
@@ -1353,13 +1405,14 @@ defmodule ApathyDrive.Character do
         [Access.key!(:mana_regen_attributes)],
         &Enum.uniq(&1 ++ Map.keys(ability.attributes))
       )
+      |> Character.update_mana_bar()
     end
 
     def subtract_energy(character, ability) do
       initial_energy = character.energy
       character = update_in(character.energy, &max(0, &1 - ability.energy))
 
-      Character.update_bars(character)
+      Character.update_energy_bar(character)
 
       if initial_energy == character.max_energy do
         Regeneration.regenerate(character)

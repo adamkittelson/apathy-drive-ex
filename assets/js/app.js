@@ -86,12 +86,16 @@ var update_score_attribute = function (attribute, new_value) {
   }
 }
 
-chan.on("update bars", function (data) {
-  progress($(".energy"), data.energy_percentage)
-  progress($(".mana"), data.mana_percentage)
-  progress($(".hp"), data.hp_percentage)
-  update_score_attribute("hp", _.padEnd(data.hp + "/" + data.max_hp, 12));
-  update_score_attribute("mana", _.padEnd(data.mana + "/" + data.max_mana, 10));
+chan.on("update energy bar", function (data) {
+  progress($(".energy"), data.percentage, data.time_to_full)
+})
+
+chan.on("update mana bar", function (data) {
+  progress($(".mana"), data.percentage, data.time_to_full)
+})
+
+chan.on("update hp bar", function (data) {
+  progress($(".hp"), data.percentage, data.time_to_full)
 })
 
 chan.on("update score", function (score_data) {
@@ -233,23 +237,13 @@ $(document).on('keyup', "input", function (event) {
   }
 });
 
-window.progress = function ($element, percent, round_length_in_ms) {
+window.progress = function ($element, percent, time_to_full) {
   $.each($element, function (index, value) {
     var elem = $(value)
-    var progressBarWidth = percent * elem.width() / 100;
 
-    // var time = 0
+    var currentWidth = percent * elem.width() / 100;
 
-    // if (elem.hasClass("energy")) {
-    //   var current_percent = 100 * ($("div.progress-bar.energy").find('div').width() / $("div.progress-bar.energy").width())
-
-    //   if (percent > current_percent) {
-    //     var percent_to_move = percent - current_percent
-    //     time = 3000 * (percent_to_move / 100)
-    //   }
-    // }
-
-    elem.find('div').stop().animate({ width: progressBarWidth }, 0);
+    elem.find('div').stop().animate({ width: currentWidth }, 0).animate({ width: elem.width() }, time_to_full);
   })
 
 }

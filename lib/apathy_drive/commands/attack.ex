@@ -37,5 +37,7 @@ defmodule ApathyDrive.Commands.Attack do
     |> Map.put(:attack_target, target_ref)
     |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, character.ref}})
     |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+    |> Character.update_hp_bar()
+    |> Character.update_mana_bar()
   end
 end

@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Mobile, Monster, Room, TimerManager}
+  alias ApathyDrive.{Character, Mobile, Monster, Room, TimerManager}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
@@ -39,6 +39,8 @@ defmodule ApathyDrive.Aggression do
       attacker
       |> Map.put(:attack_target, ref)
       |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+      |> Character.update_hp_bar()
+      |> Character.update_mana_bar()
     else
       attacker
     end

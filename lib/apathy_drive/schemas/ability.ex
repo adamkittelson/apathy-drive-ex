@@ -537,6 +537,8 @@ defmodule ApathyDrive.Ability do
                     |> Mobile.send_scroll(
                       "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
                     )
+                    |> Character.update_hp_bar()
+                    |> Character.update_mana_bar()
                   else
                     caster
                     |> Map.put(:attack_target, target_ref)

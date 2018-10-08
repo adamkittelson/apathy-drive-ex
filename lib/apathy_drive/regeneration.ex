@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Regeneration do
-  alias ApathyDrive.{Character, Mobile, TimerManager}
+  alias ApathyDrive.{Mobile, TimerManager}
 
   @ticks_per_round 5
 
@@ -21,14 +21,19 @@ defmodule ApathyDrive.Regeneration do
     |> regenerate_hp()
     |> regenerate_mana()
     |> schedule_next_tick()
-    |> update_bars
     |> Mobile.update_prompt()
   end
 
-  def regenerate_energy(mobile) do
-    amount_to_regenerate = mobile.max_energy / @ticks_per_round
+  def energy_per_tick(mobile) do
+    mobile.max_energy / @ticks_per_round
+  end
 
-    update_in(mobile, [Access.key!(:energy)], &min(mobile.max_energy, &1 + amount_to_regenerate))
+  def regenerate_energy(mobile) do
+    update_in(
+      mobile,
+      [Access.key!(:energy)],
+      &min(mobile.max_energy, &1 + energy_per_tick(mobile))
+    )
   end
 
   def regenerate_hp(%{hp: 1.0} = mobile), do: mobile
@@ -70,21 +75,14 @@ defmodule ApathyDrive.Regeneration do
     end
   end
 
-  def update_bars(%Character{} = character) do
-    Character.update_bars(character)
-    character
-  end
-
-  def update_bars(%{} = mobile), do: mobile
-
   defp reset_mana_regen_attributes(%{mana_regen_attributes: _, mana: 1.0} = mobile) do
     Map.put(mobile, :mana_regen_attributes, [])
   end
 
   defp reset_mana_regen_attributes(mobile), do: mobile
 
-  defp regen_per_tick(%{attack_target: nil} = _mobile, regen),
+  def regen_per_tick(%{attack_target: nil} = _mobile, regen),
     do: regen / @ticks_per_round * 10
 
-  defp regen_per_tick(%{} = _mobile, regen), do: regen / @ticks_per_round
+  def regen_per_tick(%{} = _mobile, regen), do: regen / @ticks_per_round
 end
