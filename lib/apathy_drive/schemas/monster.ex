@@ -677,23 +677,6 @@ defmodule ApathyDrive.Monster do
       end
     end
 
-    def regenerate_hp_and_mana(%Monster{hp: _hp, mana: mana} = monster, room) do
-      max_hp = max_hp_at_level(monster, monster.level)
-      max_mana = max_mana_at_level(monster, monster.level)
-
-      base_regen_per_round = attribute_at_level(monster, :willpower, monster.level) / 5
-
-      hp_regen_percentage_per_round =
-        base_regen_per_round * (1 + ability_value(monster, "HPRegen")) / max_hp
-
-      mana_regen_percentage_per_round =
-        base_regen_per_round * (1 + ability_value(monster, "ManaRegen")) / max_mana
-
-      monster
-      |> shift_hp(hp_regen_percentage_per_round, room)
-      |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
-    end
-
     def round_length_in_ms(_monster) do
       Application.get_env(:apathy_drive, :round_length_in_ms)
     end

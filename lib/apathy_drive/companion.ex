@@ -49,7 +49,9 @@ defmodule ApathyDrive.Companion do
     :ability_special,
     :energy,
     :max_energy,
-    :casting
+    :casting,
+    :hp_regen,
+    :base_hp
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -155,24 +157,12 @@ defmodule ApathyDrive.Companion do
   end
 
   def convert_for_character(%Room{} = room, %Monster{} = monster, %Character{} = character) do
-    {base_power, level, _power_at_level} = conversion_power(character)
-
-    monster_base_power = Mobile.power_at_level(monster, 1)
-
-    diff = trunc((monster_base_power - base_power) / 6) * 10
-
     room_monster =
       RoomMonster
       |> Repo.get!(monster.room_monster_id)
 
     changes = %{
-      strength: room_monster.strength - diff,
-      agility: room_monster.agility - diff,
-      intellect: room_monster.intellect - diff,
-      willpower: room_monster.willpower - diff,
-      health: room_monster.health - diff,
-      charm: room_monster.charm - diff,
-      level: level,
+      level: character.level,
       character_id: character.id
     }
 
@@ -231,6 +221,10 @@ defmodule ApathyDrive.Companion do
       Monster
       |> Repo.get(monster_id)
       |> Map.take([
+        :base_hp,
+        :hp_regen,
+        :energy,
+        :max_energy,
         :gender,
         :description,
         :enter_message,
@@ -287,14 +281,7 @@ defmodule ApathyDrive.Companion do
     def add_attribute_experience(%Companion{} = companion, _skills_and_experience), do: companion
 
     def attribute_at_level(%Companion{} = companion, attribute, level) do
-      growth =
-        [:strength, :agility, :intellect, :willpower, :health, :charm]
-        |> Enum.reduce(0, &(&2 + Map.get(companion, &1)))
-        |> div(6)
-
-      base = Map.get(companion, attribute)
-
-      (base + growth / 10 * (level - 1)) / 10
+      Map.get(companion, attribute) + level - 1
     end
 
     def attack_ability(companion) do
@@ -328,32 +315,8 @@ defmodule ApathyDrive.Companion do
 
     def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
 
-    def colored_name(%Companion{name: name} = companion, %Character{} = observer) do
-      companion_level = Mobile.target_level(observer, companion)
-      observer_level = Mobile.caster_level(observer, companion)
-
-      companion_power = Mobile.power_at_level(companion, companion_level)
-      observer_power = Mobile.power_at_level(observer, observer_level)
-
-      color =
-        cond do
-          companion_power < observer_power * 0.66 ->
-            "teal"
-
-          companion_power < observer_power * 1.33 ->
-            "chartreuse"
-
-          companion_power < observer_power * 1.66 ->
-            "blue"
-
-          companion_power < observer_power * 2.00 ->
-            "darkmagenta"
-
-          :else ->
-            "red"
-        end
-
-      "<span style='color: #{color};'>#{name}</span>"
+    def colored_name(%Companion{name: name} = _companion, %Character{} = _observer) do
+      "<span style='color: white;'>#{name}</span>"
     end
 
     def confused(%Companion{effects: effects} = companion, %Room{} = room) do
@@ -525,22 +488,20 @@ defmodule ApathyDrive.Companion do
     end
 
     def max_hp_at_level(%Companion{} = companion, level) do
-      base = 8
+      health = attribute_at_level(companion, :health, level)
 
-      base =
-        trunc(
-          (base + ability_value(companion, "HPPerHealth")) *
-            attribute_at_level(companion, :health, level)
-        )
+      base = companion.base_hp
+      hp_per_level = 8 * level
+      bonus = (health - 50) / 16
 
       modifier = ability_value(companion, "MaxHP")
-      base * (1 + modifier / 100)
+      trunc((base + hp_per_level + bonus) * (1 + modifier / 100))
     end
 
     def max_mana_at_level(mobile, level) do
-      base = trunc(4 * attribute_at_level(mobile, :intellect, level))
-      modifier = ability_value(mobile, "MaxMana")
-      base * (1 + modifier / 100)
+      mana_per_level = ability_value(mobile, "ManaPerLevel")
+
+      mana_per_level * level + 6
     end
 
     def party_refs(companion, room) do
@@ -562,6 +523,8 @@ defmodule ApathyDrive.Companion do
         ability_value(companion, "ModifyDamage") +
           ability_value(companion, "ModifyPhysicalDamage")
 
+      IO.puts("damage: #{damage}, modifier: #{modifier}")
+
       damage * (1 + modifier / 100)
     end
 
@@ -577,21 +540,37 @@ defmodule ApathyDrive.Companion do
       |> Enum.reduce(0, &(&2 + Mobile.attribute_at_level(companion, &1, level)))
     end
 
-    def regenerate_hp_and_mana(%Companion{hp: _hp, mana: mana} = companion, room) do
+    def hp_regen_per_round(%Companion{} = companion) do
+      round_length = Mobile.round_length_in_ms(companion)
+
+      base_hp_regen =
+        (companion.hp_regen +
+           (companion.level + 30) * attribute_at_level(companion, :health, companion.level) /
+             500.0) * round_length / 30_000
+
+      modified_hp_regen = base_hp_regen * (1 + ability_value(companion, "HPRegen") / 100)
+
       max_hp = max_hp_at_level(companion, companion.level)
+
+      modified_hp_regen / max_hp
+    end
+
+    def mana_regen_per_round(%Companion{} = companion) do
+      round_length = Mobile.round_length_in_ms(companion)
+
       max_mana = max_mana_at_level(companion, companion.level)
 
-      base_regen_per_round = attribute_at_level(companion, :willpower, companion.level) / 5
+      base_mana_regen =
+        (companion.level + 20) * attribute_at_level(companion, :willpower, companion.level) *
+          (div(ability_value(companion, "ManaPerLevel"), 2) + 2) / 1650.0 * round_length / 30_000
 
-      hp_regen_percentage_per_round =
-        base_regen_per_round * (1 + ability_value(companion, "HPRegen")) / max_hp
+      modified_mana_regen = base_mana_regen * (1 + ability_value(companion, "ManaRegen") / 100)
 
-      mana_regen_percentage_per_round =
-        base_regen_per_round * (1 + ability_value(companion, "ManaRegen")) / max_mana
-
-      companion
-      |> shift_hp(hp_regen_percentage_per_round, room)
-      |> Map.put(:mana, min(mana + mana_regen_percentage_per_round, 1.0))
+      if max_mana > 0 do
+        modified_mana_regen / max_mana
+      else
+        0
+      end
     end
 
     def round_length_in_ms(_companion) do

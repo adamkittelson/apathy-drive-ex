@@ -784,6 +784,8 @@ defmodule ApathyDrive.Ability do
 
       duration = duration(ability, caster, target, room)
 
+      IO.puts("#{target.name} shift hp #{ability_shift}")
+
       target =
         if ability_shift do
           Mobile.shift_hp(target, ability_shift, room)
@@ -874,6 +876,12 @@ defmodule ApathyDrive.Ability do
 
     percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
 
+    IO.puts(
+      "#{target.name} healing #{healing} of #{Mobile.max_hp_at_level(target, target.level)} (#{
+        percentage_healed
+      }%)"
+    )
+
     {caster, Map.put(target, :ability_shift, percentage_healed)}
   end
 
@@ -907,6 +915,12 @@ defmodule ApathyDrive.Ability do
             )
 
           damage = caster_damage + ability_damage - resist
+
+          IO.puts(
+            "#{caster.name} vs #{target.name}: #{caster_damage} + #{ability_damage} - #{resist} = #{
+              damage
+            }"
+          )
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
