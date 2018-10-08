@@ -51,7 +51,8 @@ defmodule ApathyDrive.Companion do
     :max_energy,
     :casting,
     :hp_regen,
-    :base_hp
+    :base_hp,
+    :last_tick_at
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -235,7 +236,8 @@ defmodule ApathyDrive.Companion do
         :timers,
         :effects,
         :last_effect_key,
-        :abilities
+        :abilities,
+        :last_tick_at
       ])
 
     room_monster =
@@ -522,8 +524,6 @@ defmodule ApathyDrive.Companion do
       modifier =
         ability_value(companion, "ModifyDamage") +
           ability_value(companion, "ModifyPhysicalDamage")
-
-      IO.puts("damage: #{damage}, modifier: #{modifier}")
 
       damage * (1 + modifier / 100)
     end

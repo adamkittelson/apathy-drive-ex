@@ -13,6 +13,7 @@ defmodule ApathyDrive.RoomServer do
     Mobile,
     MonsterSpawning,
     PubSub,
+    Regeneration,
     Repo,
     Room,
     RoomSupervisor,
@@ -453,7 +454,10 @@ defmodule ApathyDrive.RoomServer do
       Room.update_mobile(room, ref, fn %{} = mobile ->
         attack = Mobile.attack_ability(mobile)
         # max 5 auto attacks per "round"
-        time = div(Mobile.round_length_in_ms(mobile), 5)
+
+        mobile = Regeneration.regenerate(mobile)
+
+        time = Regeneration.duration_for_energy(mobile, max(attack.energy, 200))
 
         if mobile.energy >= attack.energy and !mobile.casting do
           if target_ref = Mobile.auto_attack_target(mobile, room, attack) do

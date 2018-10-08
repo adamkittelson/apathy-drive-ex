@@ -12,7 +12,7 @@ defmodule ApathyDrive.Regeneration do
     round_length = Mobile.round_length_in_ms(mobile)
     max_energy = mobile.max_energy
 
-    trunc(round_length * energy / max_energy)
+    max(0, trunc(round_length * energy / max_energy))
   end
 
   def regenerate(mobile) do
@@ -21,25 +21,64 @@ defmodule ApathyDrive.Regeneration do
     |> regenerate_hp()
     |> regenerate_mana()
     |> schedule_next_tick()
+    |> Map.put(:last_tick_at, DateTime.utc_now())
     |> Mobile.update_prompt()
+
+    # |> Character.update_energy_bar()
+    # |> Character.update_hp_bar()
+    # |> Character.update_mana_bar()
   end
 
   def energy_per_tick(mobile) do
     mobile.max_energy / @ticks_per_round
   end
 
+  def energy_since_last_tick(%{last_tick_at: nil} = mobile), do: energy_per_tick(mobile)
+
+  def energy_since_last_tick(%{last_tick_at: last_tick} = mobile) do
+    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :milliseconds)
+    energy_per_tick = energy_per_tick(mobile)
+    energy = energy_per_tick * ms_since_last_tick / tick_time(mobile)
+
+    min(energy, energy_per_tick)
+  end
+
+  def hp_since_last_tick(%{last_tick_at: nil} = mobile),
+    do: regen_per_tick(mobile, Mobile.hp_regen_per_round(mobile))
+
+  def hp_since_last_tick(%{last_tick_at: last_tick} = mobile) do
+    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :milliseconds)
+    hp_per_tick = regen_per_tick(mobile, Mobile.hp_regen_per_round(mobile))
+    hp = hp_per_tick * ms_since_last_tick / tick_time(mobile)
+
+    min(hp, hp_per_tick)
+  end
+
+  def mana_since_last_tick(%{last_tick_at: nil} = mobile),
+    do: regen_per_tick(mobile, Mobile.mana_regen_per_round(mobile))
+
+  def mana_since_last_tick(%{last_tick_at: last_tick} = mobile) do
+    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :milliseconds)
+    mana_per_tick = regen_per_tick(mobile, Mobile.mana_regen_per_round(mobile))
+    mana = mana_per_tick * ms_since_last_tick / tick_time(mobile)
+
+    min(mana, mana_per_tick)
+  end
+
   def regenerate_energy(mobile) do
+    energy = energy_since_last_tick(mobile)
+
     update_in(
       mobile,
       [Access.key!(:energy)],
-      &min(mobile.max_energy, &1 + energy_per_tick(mobile))
+      &min(mobile.max_energy, &1 + energy)
     )
   end
 
   def regenerate_hp(%{hp: 1.0} = mobile), do: mobile
 
   def regenerate_hp(%{} = mobile) do
-    hp = regen_per_tick(mobile, Mobile.hp_regen_per_round(mobile))
+    hp = hp_since_last_tick(mobile)
 
     mobile
     |> update_in([Access.key!(:hp)], &min(1.0, &1 + hp))
@@ -49,7 +88,7 @@ defmodule ApathyDrive.Regeneration do
   def regenerate_mana(%{mana: 1.0} = mobile), do: mobile
 
   def regenerate_mana(%{} = mobile) do
-    mana = regen_per_tick(mobile, Mobile.mana_regen_per_round(mobile))
+    mana = mana_since_last_tick(mobile)
 
     if attributes = Map.get(mobile, :mana_regen_attributes) do
       exp = Enum.reduce(attributes, %{}, &Map.put(&2, &1, 1))

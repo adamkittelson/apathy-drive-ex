@@ -248,7 +248,7 @@ window.progress = function (elem, percent, time_to_full) {
     console.log("current percent: " + percent + ", current: " + currentWidth + ", target: " + elem.width() + ", time_to_full: " + time_to_full)
 
     if (currentWidth >= 0) {
-      elem.find('div').stop().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: Math.floor(time_to_full) });
+      elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
     }
   }
 

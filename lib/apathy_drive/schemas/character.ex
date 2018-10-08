@@ -100,6 +100,7 @@ defmodule ApathyDrive.Character do
     field(:weapon, :string, virtual: true)
     field(:armour, :string, virtual: true)
     field(:mana_regen_attributes, :any, virtual: true, default: [])
+    field(:last_tick_at, :any, virtual: true)
 
     belongs_to(:room, Room)
 
@@ -625,6 +626,8 @@ defmodule ApathyDrive.Character do
     character
   end
 
+  def update_energy_bar(%{} = character), do: character
+
   def update_mana_bar(%Character{socket: socket} = character) do
     percent = character.mana
 
@@ -637,7 +640,7 @@ defmodule ApathyDrive.Character do
 
         ticks_remaining = (1.0 - percent) / regen_per_tick
 
-        Regeneration.tick_time(character) * ticks_remaining
+        Regeneration.tick_time(character) * Float.ceil(ticks_remaining)
       end
 
     send(
@@ -666,7 +669,7 @@ defmodule ApathyDrive.Character do
 
         ticks_remaining = (1.0 - percent) / regen_per_tick
 
-        Regeneration.tick_time(character) * ticks_remaining
+        Regeneration.tick_time(character) * Float.ceil(ticks_remaining)
       end
 
     send(

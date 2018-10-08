@@ -40,8 +40,6 @@ defmodule ApathyDrive.ShopItem do
       if shop_item.count < shop_item.stock and :rand.uniform(100) <= shop_item.restock_chance do
         restock_amount = min(shop_item.stock - shop_item.count, shop_item.restock_amount)
 
-        IO.puts("Stocking #{restock_amount} #{shop_item.item.name}")
-
         ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "scroll", %{
           html:
             "<p>[<span class='yellow'>announce</span> : Apotheosis] #{room.name} just received a shipment of: #{

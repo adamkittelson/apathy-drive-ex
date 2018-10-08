@@ -22,8 +22,6 @@ defmodule ApathyDrive.Shop do
   def shop?(%Room{}), do: false
 
   def restock(%Room{} = room) do
-    Logger.info("restocking #{room.name}")
-
     Enum.each(room.shop.shop_items, fn shop_item ->
       ShopItem.restock!(room, shop_item)
     end)
@@ -41,9 +39,7 @@ defmodule ApathyDrive.Shop do
       |> List.first()
 
     if next_shop_item do
-      name = next_shop_item.item.name
       time = DateTime.diff(next_shop_item.next_restock_at, DateTime.utc_now(), :millisecond)
-      Logger.info("next restock #{name} in #{time} milliseconds")
 
       if time > 0 do
         Process.send_after(self(), :restock_shop, time)
