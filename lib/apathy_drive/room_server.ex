@@ -152,6 +152,9 @@ defmodule ApathyDrive.RoomServer do
           |> Map.put(:socket, socket)
           |> TimerManager.cancel(:logout)
           |> Map.put(:monitor_ref, monitor_ref)
+          |> Character.update_hp_bar()
+          |> Character.update_mana_bar()
+          |> Character.update_energy_bar()
         end)
 
       room.mobiles[existing_character.ref]
