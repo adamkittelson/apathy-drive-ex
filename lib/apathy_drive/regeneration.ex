@@ -1,6 +1,13 @@
 defmodule ApathyDrive.Regeneration do
   alias ApathyDrive.{Character, Mobile, TimerManager}
 
+  @ticks_per_round 5
+
+  def tick_time(mobile) do
+    round_length = Mobile.round_length_in_ms(mobile)
+    round_length / @ticks_per_round
+  end
+
   def duration_for_energy(mobile, energy) do
     round_length = Mobile.round_length_in_ms(mobile)
     max_energy = mobile.max_energy
@@ -19,7 +26,7 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def regenerate_energy(mobile) do
-    amount_to_regenerate = div(mobile.max_energy, 100)
+    amount_to_regenerate = mobile.max_energy / @ticks_per_round
 
     update_in(mobile, [Access.key!(:energy)], &min(mobile.max_energy, &1 + amount_to_regenerate))
   end
@@ -54,14 +61,9 @@ defmodule ApathyDrive.Regeneration do
 
   def schedule_next_tick(mobile) do
     if mobile.max_energy > mobile.energy or mobile.mana < 1 or mobile.hp < 1 do
-      time_until_next_tick =
-        mobile
-        |> Mobile.round_length_in_ms()
-        |> div(100)
-
       TimerManager.send_after(
         mobile,
-        {:energy_regen, time_until_next_tick, {:regenerate_energy, mobile.ref}}
+        {:energy_regen, tick_time(mobile), {:regenerate_energy, mobile.ref}}
       )
     else
       mobile
@@ -81,6 +83,8 @@ defmodule ApathyDrive.Regeneration do
 
   defp reset_mana_regen_attributes(mobile), do: mobile
 
-  defp regen_per_tick(%{attack_target: nil}, regen), do: regen / 10
-  defp regen_per_tick(%{}, regen), do: regen / 100
+  defp regen_per_tick(%{attack_target: nil} = _mobile, regen),
+    do: regen / @ticks_per_round * 10
+
+  defp regen_per_tick(%{} = _mobile, regen), do: regen / @ticks_per_round
 end
