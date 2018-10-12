@@ -12,6 +12,7 @@ defmodule ApathyDrive.Monster do
     Mobile,
     Monster,
     MonsterAbility,
+    MonsterSpawning,
     MonsterTrait,
     Party,
     Room,
@@ -44,6 +45,8 @@ defmodule ApathyDrive.Monster do
     field(:experience, :integer, default: 0)
     field(:base_hp, :integer)
     field(:hp_regen, :integer)
+    field(:regen_time_in_hours, :integer)
+    field(:game_limit, :integer)
 
     field(:hp, :float, virtual: true, default: 1.0)
     field(:mana, :float, virtual: true, default: 1.0)
@@ -120,7 +123,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:level, rm.level)
       |> Map.put(:spawned_at, rm.spawned_at)
 
-    if spawnable?(monster, now) do
+    if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
       ref = make_ref()
 
       monster
@@ -198,11 +201,9 @@ defmodule ApathyDrive.Monster do
   def reputation_for_grade("normal"), do: 300
   def reputation_for_grade("weak"), do: 200
 
-  def spawnable?(%Monster{grade: "boss", next_spawn_at: time}, now)
-      when not is_nil(time) and time > now,
-      do: false
-
-  def spawnable?(%Monster{}, _now), do: true
+  def spawnable?(%Monster{next_spawn_at: nil}, _now), do: true
+  def spawnable?(%Monster{regen_time_in_hours: nil}, _now), do: true
+  def spawnable?(%Monster{next_spawn_at: time}, now), do: now >= time
 
   def load_traits(%Monster{id: id} = monster) do
     effect =
@@ -217,7 +218,7 @@ defmodule ApathyDrive.Monster do
     MonsterAbility.load_abilities(monster)
   end
 
-  def generate_monster_attributes(%Monster{grade: grade, level: level} = monster) do
+  def generate_monster_attributes(%Monster{level: level} = monster) do
     room_monster = %RoomMonster{
       level: level,
       room_id: monster.room_id,
@@ -233,19 +234,6 @@ defmodule ApathyDrive.Monster do
         |> Map.put(attribute, 40)
       end)
       |> Repo.insert!()
-
-    if grade == "boss" do
-      # set to 100 years from now, e.g. don't spawn this monster again
-      # updated to something closer to now when the monster is killed
-      spawn_at =
-        DateTime.utc_now().year
-        |> update_in(&(&1 + 100))
-        |> DateTime.to_unix()
-
-      %Monster{id: monster.id}
-      |> Ecto.Changeset.change(next_spawn_at: spawn_at)
-      |> Repo.update!()
-    end
 
     monster
     |> Map.merge(
@@ -492,12 +480,11 @@ defmodule ApathyDrive.Monster do
 
       ApathyDrive.Repo.delete!(%RoomMonster{id: monster.room_monster_id})
 
-      if monster.grade == "boss" do
-        # set to 6 hours from now so the boss won't respawn until then
+      if monster.regen_time_in_hours do
         spawn_at =
           DateTime.utc_now()
           |> DateTime.to_unix()
-          |> Kernel.+(6 * 60 * 60)
+          |> Kernel.+(monster.regen_time_in_hours * 60 * 60)
 
         %Monster{id: monster.id}
         |> Ecto.Changeset.change(next_spawn_at: spawn_at)

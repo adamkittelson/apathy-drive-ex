@@ -5,14 +5,15 @@ defmodule ApathyDrive.MonsterSpawning do
   def load_monsters(%Room{} = room) do
     room.id
     |> monsters_to_load()
-    |> Enum.reduce(room, fn(room_monster, updated_room) ->
-         monster = Monster.from_room_monster(room_monster)
+    |> Enum.reduce(room, fn room_monster, updated_room ->
+      monster = Monster.from_room_monster(room_monster)
 
-         Room.mobile_entered(updated_room, monster)
-       end)
+      Room.mobile_entered(updated_room, monster)
+    end)
   end
 
   def spawn_permanent_npc(%Room{permanent_npc: nil} = room), do: room
+
   def spawn_permanent_npc(%Room{permanent_npc: monster_id} = room) do
     if permanent_npc_missing?(room) do
       spawn_monster(room, monster_id) || room
@@ -34,7 +35,7 @@ defmodule ApathyDrive.MonsterSpawning do
         level: room.area.level,
         spawned_at: room.id
       }
-      |> Monster.from_room_monster
+      |> Monster.from_room_monster()
 
     if monster do
       Room.mobile_entered(room, monster)
@@ -44,17 +45,17 @@ defmodule ApathyDrive.MonsterSpawning do
   defp monsters_to_load(room_id) do
     RoomMonster
     |> Ecto.Query.where([rm], rm.room_id == ^room_id and is_nil(rm.character_id))
-    |> Repo.all
+    |> Repo.all()
   end
 
   defp permanent_npc_missing?(%Room{permanent_npc: monster_id} = room) do
     room.mobiles
-    |> Map.values
+    |> Map.values()
     |> Enum.all?(&(Map.get(&1, :id) != monster_id))
   end
 
   defp spawn_lair(%Room{} = room, lair_monsters) do
-    if room.lair_size > spawned_monster_count(room.id) and Enum.any?(lair_monsters) do
+    if room.lair_size > spawned_monster_count_for_room(room.id) and Enum.any?(lair_monsters) do
       monster_id = Enum.random(lair_monsters)
 
       if updated_room = spawn_monster(room, monster_id) do
@@ -67,11 +68,22 @@ defmodule ApathyDrive.MonsterSpawning do
     end
   end
 
-  def spawned_monster_count(room_id) do
+  def spawned_monster_count_for_room(room_id) do
     RoomMonster
     |> Ecto.Query.where(spawned_at: ^room_id)
     |> Ecto.Query.select([m], count(m.id))
-    |> Repo.one
+    |> Repo.one()
   end
 
+  def limit_reached?(%Monster{game_limit: nil}), do: false
+
+  def limit_reached?(%Monster{id: id, game_limit: limit}) do
+    count =
+      RoomMonster
+      |> Ecto.Query.where(monster_id: ^id)
+      |> Ecto.Query.select([m], count(m.id))
+      |> Repo.one()
+
+    count >= limit
+  end
 end
