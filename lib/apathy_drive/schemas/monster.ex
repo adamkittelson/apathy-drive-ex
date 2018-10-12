@@ -386,7 +386,9 @@ defmodule ApathyDrive.Monster do
     end
 
     def caster_level(%Monster{level: level}, %Monster{} = _target), do: level
-    def caster_level(%Monster{}, %{level: level} = _target), do: level
+
+    def caster_level(%Monster{level: level}, %{level: target_level} = _target),
+      do: max(level, target_level)
 
     def colored_name(%Monster{name: name, hostile: true}, %Character{} = _observer) do
       "<span style='color: magenta;'>#{name}</span>"
@@ -761,11 +763,8 @@ defmodule ApathyDrive.Monster do
     def target_level(%Monster{level: monster_level}, %Monster{level: _target_level}),
       do: monster_level
 
-    def target_level(%Monster{level: monster_level}, %{level: target_level})
-        when target_level > monster_level,
-        do: target_level
-
-    def target_level(%Monster{level: monster_level}, %{level: _target_level}), do: monster_level
+    def target_level(%Monster{level: monster_level}, %{level: target_level}),
+      do: max(target_level, monster_level)
 
     def tracking_at_level(monster, level, room) do
       perception = perception_at_level(monster, level, room)
