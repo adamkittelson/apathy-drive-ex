@@ -932,32 +932,12 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def colored_name(%Character{name: name} = character, %{} = observer) do
-      character_level = Mobile.target_level(observer, character)
-      observer_level = Mobile.caster_level(observer, character)
+    def color(%Character{}) do
+      "darkteal"
+    end
 
-      character_power = Mobile.power_at_level(character, character_level)
-      observer_power = Mobile.power_at_level(observer, observer_level)
-
-      color =
-        cond do
-          character_power < observer_power * 0.66 ->
-            "teal"
-
-          character_power < observer_power * 1.33 ->
-            "chartreuse"
-
-          character_power < observer_power * 1.66 ->
-            "blue"
-
-          character_power < observer_power * 2.00 ->
-            "darkmagenta"
-
-          :else ->
-            "red"
-        end
-
-      "<span style='color: #{color};'>#{name}</span>"
+    def colored_name(%Character{name: name} = character) do
+      "<span style='color: #{color(character)};'>#{name}</span>"
     end
 
     def crits_at_level(character, level, room) do
@@ -1105,8 +1085,12 @@ defmodule ApathyDrive.Character do
         |> Character.companion(room)
         |> Companion.dismiss(room)
 
-      put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
-      |> Room.send_scroll("<p><span class='red'>#{character.name} has died.</span></p>")
+      room =
+        put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+        |> Room.send_scroll("<p><span class='red'>#{character.name} has died.</span></p>")
+
+      Room.update_moblist(room)
+      room
     end
 
     def dodge_at_level(character, level, room) do
@@ -1349,7 +1333,7 @@ defmodule ApathyDrive.Character do
           %Character{} = observer ->
             Mobile.send_scroll(
               observer,
-              "<p>#{Mobile.colored_name(character, observer)} is #{updated_hp_description}.</p>"
+              "<p>#{Mobile.colored_name(character)} is #{updated_hp_description}.</p>"
             )
 
           _ ->

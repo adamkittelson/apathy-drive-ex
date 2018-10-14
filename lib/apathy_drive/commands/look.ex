@@ -131,7 +131,7 @@ defmodule ApathyDrive.Commands.Look do
       |> Enum.each(fn
         %Character{} = observer ->
           message =
-            "#{Mobile.colored_name(character, observer)} peeks in from #{
+            "#{Mobile.colored_name(character)} peeks in from #{
               Room.enter_direction(mirror_exit["direction"])
             }!"
 
@@ -148,7 +148,7 @@ defmodule ApathyDrive.Commands.Look do
       do:
         Mobile.send_scroll(
           target,
-          "<p>#{Mobile.colored_name(character, target)} looks you over.</p>"
+          "<p>#{Mobile.colored_name(character)} looks you over.</p>"
         )
 
     hp_description = Mobile.hp_description(target)
@@ -188,7 +188,7 @@ defmodule ApathyDrive.Commands.Look do
       |> Map.values()
       |> List.delete(character)
       |> Enum.filter(&Stealth.visible?(&1, character, room))
-      |> Enum.map(&Mobile.colored_name(&1, character))
+      |> Enum.map(&Mobile.colored_name(&1))
 
     if Enum.any?(mobiles_to_show) do
       "<p><span class='dark-magenta'>Also here:</span> #{Enum.join(mobiles_to_show, ", ")}<span class='dark-magenta'>.</span></p>"

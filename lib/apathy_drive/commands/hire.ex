@@ -14,29 +14,47 @@ defmodule ApathyDrive.Commands.Hire do
 
           cond do
             price > character.gold ->
-              Mobile.send_scroll(character, "<p>You cannot afford to hire #{Mobile.colored_name(monster, character)}.</p>")
+              Mobile.send_scroll(
+                character,
+                "<p>You cannot afford to hire #{Mobile.colored_name(monster)}.</p>"
+              )
+
               room
+
             companion = Character.companion(character, room) ->
-              Mobile.send_scroll(character, "<p>You must <span class='green'>dismiss</span> #{Mobile.colored_name(companion, character)} before you can hire #{Mobile.colored_name(monster, character)}.</p>")
+              Mobile.send_scroll(
+                character,
+                "<p>You must <span class='green'>dismiss</span> #{Mobile.colored_name(companion)} before you can hire #{
+                  Mobile.colored_name(monster)
+                }.</p>"
+              )
+
               room
+
             Party.size(room, character) > 5 ->
               Mobile.send_scroll(character, "<p>Your party is already full.</p>")
               room
+
             true ->
               %Character{id: character.id}
               |> Ecto.Changeset.change(%{gold: character.gold - price})
-              |> Repo.update!
+              |> Repo.update!()
 
               room
-              |> Room.update_mobile(character.ref, fn(char) ->
-                   update_in(char.gold, &(&1 - price))
-                 end)
+              |> Room.update_mobile(character.ref, fn char ->
+                update_in(char.gold, &(&1 - price))
+              end)
               |> Companion.convert_for_character(monster, character)
           end
         else
-          Mobile.send_scroll(character, "<p>#{Mobile.colored_name(monster, character)} has no interest in joining your party.</p>")
+          Mobile.send_scroll(
+            character,
+            "<p>#{Mobile.colored_name(monster)} has no interest in joining your party.</p>"
+          )
+
           room
         end
+
       _ ->
         Mobile.send_scroll(character, "<p>You don't see #{query} here!</p>")
         room

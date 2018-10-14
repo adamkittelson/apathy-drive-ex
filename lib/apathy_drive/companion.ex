@@ -62,7 +62,7 @@ defmodule ApathyDrive.Companion do
 
     Mobile.send_scroll(
       character,
-      "<p>You release #{Mobile.colored_name(companion, character)} from your service, and they wander off into the sunset.</p>"
+      "<p>You release #{Mobile.colored_name(companion)} from your service, and they wander off into the sunset.</p>"
     )
 
     room.mobiles
@@ -72,9 +72,7 @@ defmodule ApathyDrive.Companion do
       %Character{} = observer ->
         Mobile.send_scroll(
           observer,
-          "<p>#{Mobile.colored_name(character, observer)} releases #{
-            Mobile.colored_name(companion, observer)
-          } from {{target:his/her/their}} service.</p>"
+          "<p>#{Mobile.colored_name(character)} releases #{Mobile.colored_name(companion)} from {{target:his/her/their}} service.</p>"
         )
 
       _ ->
@@ -84,7 +82,9 @@ defmodule ApathyDrive.Companion do
     %RoomMonster{id: companion.room_monster_id}
     |> Repo.delete!()
 
-    update_in(room.mobiles, &Map.delete(&1, companion.ref))
+    room = update_in(room.mobiles, &Map.delete(&1, companion.ref))
+    Room.update_moblist(room)
+    room
   end
 
   def character_enemies(nil, _room), do: []
@@ -173,8 +173,12 @@ defmodule ApathyDrive.Companion do
 
     Mobile.send_scroll(character, "<p>#{monster.name} started to follow you</p>")
 
-    load_for_character(room, character)
-    |> update_in([:mobiles], &Map.delete(&1, monster.ref))
+    room =
+      load_for_character(room, character)
+      |> update_in([:mobiles], &Map.delete(&1, monster.ref))
+
+    Room.update_moblist(room)
+    room
   end
 
   def load_for_character(%Room{} = room, %Character{id: id} = character) do
@@ -317,8 +321,12 @@ defmodule ApathyDrive.Companion do
 
     def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
 
-    def colored_name(%Companion{name: name} = _companion, %Character{} = _observer) do
-      "<span style='color: white;'>#{name}</span>"
+    def color(%Companion{} = _companion) do
+      "white"
+    end
+
+    def colored_name(%Companion{name: name} = companion) do
+      "<span style='color: #{color(companion)};'>#{name}</span>"
     end
 
     def confused(%Companion{effects: effects} = companion, %Room{} = room) do
@@ -396,7 +404,9 @@ defmodule ApathyDrive.Companion do
 
       ApathyDrive.Repo.delete!(%RoomMonster{id: companion.room_monster_id})
 
-      put_in(room.mobiles, Map.delete(room.mobiles, companion.ref))
+      room = put_in(room.mobiles, Map.delete(room.mobiles, companion.ref))
+      Room.update_moblist(room)
+      room
     end
 
     def dodge_at_level(companion, level, room) do
@@ -603,7 +613,7 @@ defmodule ApathyDrive.Companion do
           %Character{} = observer ->
             Mobile.send_scroll(
               observer,
-              "<p>#{Mobile.colored_name(companion, observer)} is #{updated_hp_description}.</p>"
+              "<p>#{Mobile.colored_name(companion)} is #{updated_hp_description}.</p>"
             )
 
           _ ->

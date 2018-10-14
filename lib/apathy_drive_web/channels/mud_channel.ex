@@ -96,6 +96,12 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:update_moblist, {:safe, data}}, socket) do
+    Phoenix.Channel.push(socket, "update mob list", %{html: to_string(data)})
+
+    {:noreply, socket}
+  end
+
   def handle_info({:pulse_score_attribute, attribute}, socket) do
     Phoenix.Channel.push(socket, "pulse score attribute", %{attribute: attribute})
 

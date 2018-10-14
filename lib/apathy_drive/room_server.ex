@@ -160,6 +160,8 @@ defmodule ApathyDrive.RoomServer do
       room.mobiles[existing_character.ref]
       |> Mobile.update_prompt()
 
+      Room.update_moblist(room)
+
       {:reply, room.mobiles[existing_character.ref], room}
     else
       monitor_ref = Process.monitor(socket)
@@ -195,6 +197,8 @@ defmodule ApathyDrive.RoomServer do
         ref: character.ref,
         title: character.title
       })
+
+      Room.update_moblist(room)
 
       {:reply, character, room}
     end
