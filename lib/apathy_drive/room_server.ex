@@ -483,20 +483,20 @@ defmodule ApathyDrive.RoomServer do
             end
           else
             case mobile do
-              %Character{attack_target: target} = character when is_reference(target) ->
+              %{attack_target: target} = mobile when not is_nil(target) ->
                 Mobile.send_scroll(
-                  character,
+                  mobile,
                   "<p><span class='dark-yellow'>*Combat Off*</span></p>"
                 )
 
-                character =
-                  character
+                mobile =
+                  mobile
                   |> Map.put(:attack_target, nil)
 
-                room = put_in(room.mobiles[character.ref], character)
+                room = put_in(room.mobiles[mobile.ref], mobile)
 
-                Room.update_hp_bar(room, character.ref)
-                Room.update_mana_bar(room, character.ref)
+                Room.update_hp_bar(room, mobile.ref)
+                Room.update_mana_bar(room, mobile.ref)
 
                 room
 
