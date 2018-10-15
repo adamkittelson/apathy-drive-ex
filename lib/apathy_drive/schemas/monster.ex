@@ -48,6 +48,7 @@ defmodule ApathyDrive.Monster do
     field(:regen_time_in_hours, :integer)
     field(:game_limit, :integer)
 
+    field(:leader, :any, virtual: true)
     field(:hp, :float, virtual: true, default: 1.0)
     field(:mana, :float, virtual: true, default: 1.0)
     field(:ref, :any, virtual: true)
@@ -124,7 +125,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:spawned_at, rm.spawned_at)
 
     if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
-      ref = make_ref()
+      ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
       monster
       |> Map.put(:ref, ref)
@@ -151,7 +152,7 @@ defmodule ApathyDrive.Monster do
         :spawned_at
       ])
 
-    ref = make_ref()
+    ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
     monster
     |> Map.merge(attributes)
@@ -390,12 +391,16 @@ defmodule ApathyDrive.Monster do
     def caster_level(%Monster{level: level}, %{level: target_level} = _target),
       do: max(level, target_level)
 
-    def colored_name(%Monster{name: name, hostile: true}, %Character{} = _observer) do
-      "<span style='color: magenta;'>#{name}</span>"
+    def color(%Monster{hostile: true}) do
+      "magenta"
     end
 
-    def colored_name(%Monster{name: name}, %Character{} = _observer) do
-      "<span style='color: teal;'>#{name}</span>"
+    def color(%Monster{}) do
+      "teal"
+    end
+
+    def colored_name(%Monster{name: name} = monster) do
+      "<span style='color: #{color(monster)};'>#{name}</span>"
     end
 
     def confused(%Monster{effects: effects} = monster, %Room{} = room) do
@@ -460,21 +465,25 @@ defmodule ApathyDrive.Monster do
       room =
         Enum.reduce(room.mobiles, room, fn
           {ref, %Character{}}, updated_room ->
-            Room.update_mobile(updated_room, ref, fn character ->
-              message =
-                monster.death_message
-                |> Text.interpolate(%{"name" => monster.name})
-                |> Text.capitalize_first()
+            room =
+              Room.update_mobile(updated_room, ref, fn character ->
+                message =
+                  monster.death_message
+                  |> Text.interpolate(%{"name" => monster.name})
+                  |> Text.capitalize_first()
 
-              Mobile.send_scroll(character, "<p>#{message}</p>")
+                Mobile.send_scroll(character, "<p>#{message}</p>")
 
-              character
-              |> Character.add_reputation(monster.reputations)
-              |> Character.add_experience(monster.experience)
-              |> Character.add_loot_from_monster(monster)
+                character
+                |> Character.add_reputation(monster.reputations)
+                |> Character.add_experience(monster.experience)
+                |> Character.add_loot_from_monster(monster)
 
-              # Monster.generate_loot_for_character(monster, character)
-            end)
+                # Monster.generate_loot_for_character(monster, character)
+              end)
+
+            Room.update_moblist(room)
+            room
 
           _, updated_room ->
             updated_room
@@ -493,7 +502,10 @@ defmodule ApathyDrive.Monster do
         |> Repo.update!()
       end
 
-      put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
+      room = put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
+
+      Room.update_moblist(room)
+      room
     end
 
     def dodge_at_level(monster, level, _room) do
@@ -697,7 +709,7 @@ defmodule ApathyDrive.Monster do
           %Character{} = observer ->
             Mobile.send_scroll(
               observer,
-              "<p>#{Mobile.colored_name(monster, observer)} is #{updated_hp_description}.</p>"
+              "<p>#{Mobile.colored_name(monster)} is #{updated_hp_description}.</p>"
             )
 
           _ ->

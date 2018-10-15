@@ -152,19 +152,18 @@ defmodule ApathyDrive.RoomServer do
           |> Map.put(:socket, socket)
           |> TimerManager.cancel(:logout)
           |> Map.put(:monitor_ref, monitor_ref)
-          |> Character.update_hp_bar()
-          |> Character.update_mana_bar()
-          |> Character.update_energy_bar()
         end)
 
       room.mobiles[existing_character.ref]
       |> Mobile.update_prompt()
 
+      Room.update_moblist(room)
+
       {:reply, room.mobiles[existing_character.ref], room}
     else
       monitor_ref = Process.monitor(socket)
 
-      ref = make_ref()
+      ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
       character =
         character
@@ -195,6 +194,8 @@ defmodule ApathyDrive.RoomServer do
         ref: character.ref,
         title: character.title
       })
+
+      Room.update_moblist(room)
 
       {:reply, character, room}
     end
@@ -482,16 +483,22 @@ defmodule ApathyDrive.RoomServer do
             end
           else
             case mobile do
-              %Character{attack_target: target} = character when is_reference(target) ->
+              %{attack_target: target} = mobile when not is_nil(target) ->
                 Mobile.send_scroll(
-                  character,
+                  mobile,
                   "<p><span class='dark-yellow'>*Combat Off*</span></p>"
                 )
 
-                character
-                |> Map.put(:attack_target, nil)
-                |> Character.update_hp_bar()
-                |> Character.update_mana_bar()
+                mobile =
+                  mobile
+                  |> Map.put(:attack_target, nil)
+
+                room = put_in(room.mobiles[mobile.ref], mobile)
+
+                Room.update_hp_bar(room, mobile.ref)
+                Room.update_mana_bar(room, mobile.ref)
+
+                room
 
               mobile ->
                 mobile

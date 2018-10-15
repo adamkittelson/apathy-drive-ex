@@ -122,6 +122,121 @@ defmodule ApathyDrive.Room do
     end
   end
 
+  def update_moblist(%Room{} = room) do
+    room.mobiles
+    |> Enum.each(fn
+      {_ref, %Character{socket: socket} = character} ->
+        list = moblist(room, character)
+
+        send(socket, {:update_moblist, list})
+
+        Enum.each(room.mobiles, fn {ref, _mobile} ->
+          Room.update_energy_bar(room, ref)
+          Room.update_hp_bar(room, ref)
+          Room.update_mana_bar(room, ref)
+        end)
+
+      _ ->
+        :noop
+    end)
+  end
+
+  def update_energy_bar(%Room{} = room, ref) do
+    if mobile = room.mobiles[ref] do
+      room.mobiles
+      |> Enum.each(fn
+        {_ref, %Character{} = character} ->
+          Character.update_energy_bar(character, mobile)
+
+        _ ->
+          :noop
+      end)
+    end
+  end
+
+  def update_hp_bar(%Room{} = room, ref) do
+    if mobile = room.mobiles[ref] do
+      room.mobiles
+      |> Enum.each(fn
+        {_ref, %Character{} = character} ->
+          Character.update_hp_bar(character, mobile)
+
+        _ ->
+          :noop
+      end)
+    end
+  end
+
+  def update_mana_bar(%Room{} = room, ref) do
+    if mobile = room.mobiles[ref] do
+      room.mobiles
+      |> Enum.each(fn
+        {_ref, %Character{} = character} ->
+          Character.update_mana_bar(character, mobile)
+
+        _ ->
+          :noop
+      end)
+    end
+  end
+
+  def moblist(%Room{} = room, character) do
+    import Phoenix.HTML
+
+    list =
+      Enum.reduce(room.mobiles, %{}, fn {ref, mobile}, list ->
+        leader = mobile.leader && inspect(mobile.leader)
+        list = Map.put_new(list, leader, [])
+
+        mob = %{
+          ref: ref,
+          name: mobile.name,
+          color: Mobile.color(mobile),
+          leader: leader
+        }
+
+        update_in(list, [leader], fn mobs ->
+          Enum.sort_by(
+            [mob | mobs],
+            &(&1.ref == character.ref || &1.name)
+          )
+        end)
+      end)
+      |> Map.values()
+      |> Enum.sort_by(
+        fn mobs ->
+          Enum.any?(
+            mobs,
+            &(&1.ref == character.ref)
+          )
+        end,
+        &>=/2
+      )
+
+    ~E"""
+      <%= for mobs <- list do %>
+        <ul>
+          <%= for mob <- mobs do %>
+            <li>
+              <span class="<%= mob.color %>"><%= mob.name %></span>
+              <div id="<%= mob.ref %>-bars">
+                <div class="progress-bar hp">
+                  <div class="red"></div>
+                  </div>
+                <div class="progress-bar energy">
+                  <div class="yellow"></div>
+                  </div>
+                <div class="progress-bar mana">
+                  <div class="blue"></div>
+                </div>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    """
+  end
+
   def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do
     from_direction =
       room
@@ -140,12 +255,7 @@ defmodule ApathyDrive.Room do
 
     if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
 
-    room =
-      if Map.has_key?(mobile, :leader) and is_nil(room.mobiles[mobile.leader]) do
-        put_in(room.mobiles[mobile.ref], put_in(mobile.leader, mobile.ref))
-      else
-        room
-      end
+    update_moblist(room)
 
     room
     |> MonsterSpawning.spawn_permanent_npc()
@@ -253,7 +363,7 @@ defmodule ApathyDrive.Room do
         message =
           (message || Mobile.enter_message(mobile))
           |> ApathyDrive.Text.interpolate(%{
-            "name" => Mobile.colored_name(mobile, observer),
+            "name" => Mobile.colored_name(mobile),
             "direction" => from_direction
           })
           |> ApathyDrive.Text.capitalize_first()
@@ -274,7 +384,7 @@ defmodule ApathyDrive.Room do
         message =
           message
           |> ApathyDrive.Text.interpolate(%{
-            "name" => Mobile.colored_name(mobile, observer),
+            "name" => Mobile.colored_name(mobile),
             "direction" =>
               room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction()
           })
@@ -322,7 +432,7 @@ defmodule ApathyDrive.Room do
             observer,
             "<p>#{
               ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{
-                "name" => Mobile.colored_name(mobile, observer)
+                "name" => Mobile.colored_name(mobile)
               })
             }</span></p>"
           )

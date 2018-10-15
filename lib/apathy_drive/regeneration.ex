@@ -23,10 +23,6 @@ defmodule ApathyDrive.Regeneration do
     |> schedule_next_tick()
     |> Map.put(:last_tick_at, DateTime.utc_now())
     |> Mobile.update_prompt()
-
-    # |> Character.update_energy_bar()
-    # |> Character.update_hp_bar()
-    # |> Character.update_mana_bar()
   end
 
   def energy_per_tick(mobile) do

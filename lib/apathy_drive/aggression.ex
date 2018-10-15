@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Character, Mobile, Monster, Room, TimerManager}
+  alias ApathyDrive.{Mobile, Monster, Room, TimerManager}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
@@ -9,23 +9,34 @@ defmodule ApathyDrive.Aggression do
 
       {_ref, %{} = mobile}, updated_room ->
         monster = updated_room.mobiles[monster_ref]
-        put_in(updated_room.mobiles[monster_ref], ApathyDrive.Aggression.react(monster, mobile))
+        ApathyDrive.Aggression.react(room, monster, mobile)
     end)
   end
 
   # Don't attack other monsters
-  def react(%Monster{} = monster, %Monster{}), do: monster
+  def react(%Room{} = room, %Monster{}, %Monster{}), do: room
 
   # attack non-monsters if hostile
-  def react(%Monster{hostile: true} = monster, %{} = intruder) do
-    attack(monster, intruder)
+  def react(%Room{} = room, %Monster{hostile: true} = monster, %{} = intruder) do
+    attack(room, monster, intruder)
   end
 
-  def react(%Monster{} = monster, %{} = _intruder), do: monster
+  def react(%Room{} = room, %Monster{} = _monster, %{} = _intruder), do: room
 
-  def react(%{} = mobile, %{}), do: mobile
+  def react(%Room{} = room, %{} = _mobile, %{}), do: room
 
-  def attack(%{} = attacker, %{ref: ref} = _intruder) do
+  def attack(%Room{} = room, %{} = attacker, %{} = intruder) do
+    attacker = attack_target(attacker, intruder)
+
+    room = put_in(room.mobiles[attacker.ref], attacker)
+
+    Room.update_hp_bar(room, attacker.ref)
+    Room.update_mana_bar(room, attacker.ref)
+
+    room
+  end
+
+  def attack_target(%{} = attacker, %{ref: ref} = _intruder) do
     effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
 
     time = max(0, TimerManager.time_remaining(attacker, :auto_attack_timer))
@@ -39,8 +50,6 @@ defmodule ApathyDrive.Aggression do
       attacker
       |> Map.put(:attack_target, ref)
       |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
-      |> Character.update_hp_bar()
-      |> Character.update_mana_bar()
     else
       attacker
     end
