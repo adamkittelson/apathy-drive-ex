@@ -151,10 +151,11 @@ defmodule ApathyDrive.Companion do
     {base_power, level, power_at_level}
   end
 
-  def hire_price(%Character{} = character) do
-    {_base_power, _level, power_at_level} = conversion_power(character)
+  def hire_price(%Character{} = _character) do
+    # {_base_power, _level, power_at_level} = conversion_power(character)
 
-    div(power_at_level, 10)
+    # div(power_at_level, 10)
+    0
   end
 
   def convert_for_character(%Room{} = room, %Monster{} = monster, %Character{} = character) do

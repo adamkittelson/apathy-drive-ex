@@ -220,8 +220,16 @@ defmodule ApathyDrive.Character do
         ability =
           ability
           |> put_in([Access.key!(:traits)], AbilityTrait.load_traits(id))
-          |> put_in([Access.key!(:attributes)], AbilityAttribute.load_attributes(id))
           |> Map.put(:level, level)
+
+        attributes = AbilityAttribute.load_attributes(id)
+
+        ability =
+          if map_size(attributes) == 0 do
+            Map.put(ability, :attributes, %{willpower: 40})
+          else
+            Map.put(ability, :attributes, attributes)
+          end
 
         ability =
           case AbilityDamageType.load_damage(id) do
@@ -628,25 +636,26 @@ defmodule ApathyDrive.Character do
     character
   end
 
-  def update_mana_bar(%Character{socket: socket} = character) do
-    percent = character.mana
+  def update_mana_bar(%Character{socket: socket} = character, mobile) do
+    percent = mobile.mana
 
     time_to_full =
       if percent == 1.0 do
         0
       else
-        regen_per_tick =
-          Regeneration.regen_per_tick(character, Mobile.mana_regen_per_round(character))
+        regen_per_tick = Regeneration.regen_per_tick(mobile, Mobile.mana_regen_per_round(mobile))
 
         ticks_remaining = (1.0 - percent) / regen_per_tick
 
-        Regeneration.tick_time(character) * Float.ceil(ticks_remaining)
+        Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
       end
 
     send(
       socket,
       {:update_mana_bar,
        %{
+         ref: mobile.ref,
+         player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
          time_to_full: time_to_full
        }}
@@ -1062,7 +1071,6 @@ defmodule ApathyDrive.Character do
         |> Map.put(:mana, 1.0)
         |> Map.put(:energy, character.max_energy)
         |> Map.put(:attack_target, nil)
-        |> Character.update_mana_bar()
         |> update_in([:effects], fn effects ->
           effects
           |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
@@ -1392,7 +1400,6 @@ defmodule ApathyDrive.Character do
         [Access.key!(:mana_regen_attributes)],
         &Enum.uniq(&1 ++ Map.keys(ability.attributes))
       )
-      |> Character.update_mana_bar()
     end
 
     def subtract_energy(character, ability) do

@@ -133,6 +133,7 @@ defmodule ApathyDrive.Room do
         Enum.each(room.mobiles, fn {ref, _mobile} ->
           Room.update_energy_bar(room, ref)
           Room.update_hp_bar(room, ref)
+          Room.update_mana_bar(room, ref)
         end)
 
       _ ->
@@ -159,6 +160,19 @@ defmodule ApathyDrive.Room do
       |> Enum.each(fn
         {_ref, %Character{} = character} ->
           Character.update_hp_bar(character, mobile)
+
+        _ ->
+          :noop
+      end)
+    end
+  end
+
+  def update_mana_bar(%Room{} = room, ref) do
+    if mobile = room.mobiles[ref] do
+      room.mobiles
+      |> Enum.each(fn
+        {_ref, %Character{} = character} ->
+          Character.update_mana_bar(character, mobile)
 
         _ ->
           :noop

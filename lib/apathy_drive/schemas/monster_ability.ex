@@ -1,6 +1,15 @@
 defmodule ApathyDrive.MonsterAbility do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, AbilityDamageType, AbilityTrait, Companion, Monster, MonsterAbility}
+
+  alias ApathyDrive.{
+    Ability,
+    AbilityAttribute,
+    AbilityDamageType,
+    AbilityTrait,
+    Companion,
+    Monster,
+    MonsterAbility
+  }
 
   schema "monsters_abilities" do
     belongs_to(:monster, Monster)
@@ -33,6 +42,15 @@ defmodule ApathyDrive.MonsterAbility do
 
             damage ->
               update_in(ability.traits, &Map.put(&1, "Damage", damage))
+          end
+
+        attributes = AbilityAttribute.load_attributes(id)
+
+        ability =
+          if map_size(attributes) == 0 do
+            Map.put(ability, :attributes, %{willpower: 40})
+          else
+            Map.put(ability, :attributes, attributes)
           end
 
         Map.put(abilities, ability.command, ability)

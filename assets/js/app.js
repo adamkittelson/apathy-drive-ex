@@ -97,7 +97,11 @@ chan.on("update energy bar", function (data) {
 })
 
 chan.on("update mana bar", function (data) {
-  progress($("#player-bars .mana"), data.percentage, data.time_to_full)
+  if (data.player) {
+    progress($("#player-bars .mana"), data.percentage, data.time_to_full)
+  }
+
+  progress($("#" + data.ref + "-bars .mana"), data.percentage, data.time_to_full)
 })
 
 chan.on("update hp bar", function (data) {

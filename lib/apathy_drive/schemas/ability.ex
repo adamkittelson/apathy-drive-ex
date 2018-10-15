@@ -540,7 +540,6 @@ defmodule ApathyDrive.Ability do
                     |> Mobile.send_scroll(
                       "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
                     )
-                    |> Character.update_mana_bar()
                   else
                     caster
                     |> Map.put(:attack_target, target_ref)
@@ -555,6 +554,7 @@ defmodule ApathyDrive.Ability do
 
           Room.update_energy_bar(room, caster.ref)
           Room.update_hp_bar(room, caster.ref)
+          Room.update_mana_bar(room, caster.ref)
 
           Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
 
@@ -812,6 +812,8 @@ defmodule ApathyDrive.Ability do
 
     Room.update_hp_bar(room, target_ref)
     Room.update_hp_bar(room, caster_ref)
+    Room.update_mana_bar(room, caster_ref)
+    Room.update_mana_bar(room, target_ref)
 
     room
   end
