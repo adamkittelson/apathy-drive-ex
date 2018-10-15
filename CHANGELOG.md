@@ -226,3 +226,6 @@ CHANGELOG
 
 ---- 0.0.85 / 2018-10-05 / monster-things --------------------------------------
 * tweak monster hp / damage, make kills grant exp / currency
+
+---- 0.0.86 / 2018-10-14 / party-and-mob-bars ----------------------------------
+* add party / mob bars
