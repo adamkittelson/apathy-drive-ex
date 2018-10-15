@@ -130,9 +130,40 @@ defmodule ApathyDrive.Room do
 
         send(socket, {:update_moblist, list})
 
+        Enum.each(room.mobiles, fn {ref, _mobile} ->
+          Room.update_energy_bar(room, ref)
+          Room.update_hp_bar(room, ref)
+        end)
+
       _ ->
         :noop
     end)
+  end
+
+  def update_energy_bar(%Room{} = room, ref) do
+    if mobile = room.mobiles[ref] do
+      room.mobiles
+      |> Enum.each(fn
+        {_ref, %Character{} = character} ->
+          Character.update_energy_bar(character, mobile)
+
+        _ ->
+          :noop
+      end)
+    end
+  end
+
+  def update_hp_bar(%Room{} = room, ref) do
+    if mobile = room.mobiles[ref] do
+      room.mobiles
+      |> Enum.each(fn
+        {_ref, %Character{} = character} ->
+          Character.update_hp_bar(character, mobile)
+
+        _ ->
+          :noop
+      end)
+    end
   end
 
   def moblist(%Room{} = room, character) do
@@ -144,20 +175,26 @@ defmodule ApathyDrive.Room do
         list = Map.put_new(list, leader, [])
 
         mob = %{
-          ref: inspect(ref),
+          ref: ref,
           name: mobile.name,
           color: Mobile.color(mobile),
           leader: leader
         }
 
         update_in(list, [leader], fn mobs ->
-          Enum.sort_by([mob | mobs], &(&1.ref == inspect(character.ref) || &1.name))
+          Enum.sort_by(
+            [mob | mobs],
+            &(&1.ref == character.ref || &1.name)
+          )
         end)
       end)
       |> Map.values()
       |> Enum.sort_by(
         fn mobs ->
-          Enum.any?(mobs, &(&1.ref == inspect(character.ref)))
+          Enum.any?(
+            mobs,
+            &(&1.ref == character.ref)
+          )
         end,
         &>=/2
       )

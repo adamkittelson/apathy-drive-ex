@@ -152,9 +152,7 @@ defmodule ApathyDrive.RoomServer do
           |> Map.put(:socket, socket)
           |> TimerManager.cancel(:logout)
           |> Map.put(:monitor_ref, monitor_ref)
-          |> Character.update_hp_bar()
           |> Character.update_mana_bar()
-          |> Character.update_energy_bar()
         end)
 
       room.mobiles[existing_character.ref]
@@ -166,7 +164,7 @@ defmodule ApathyDrive.RoomServer do
     else
       monitor_ref = Process.monitor(socket)
 
-      ref = make_ref()
+      ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
       character =
         character
@@ -492,10 +490,16 @@ defmodule ApathyDrive.RoomServer do
                   "<p><span class='dark-yellow'>*Combat Off*</span></p>"
                 )
 
-                character
-                |> Map.put(:attack_target, nil)
-                |> Character.update_hp_bar()
-                |> Character.update_mana_bar()
+                character =
+                  character
+                  |> Map.put(:attack_target, nil)
+                  |> Character.update_mana_bar()
+
+                room = put_in(room.mobiles[character.ref], character)
+
+                Room.update_hp_bar(room, character.ref)
+
+                room
 
               mobile ->
                 mobile

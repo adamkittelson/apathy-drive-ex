@@ -351,6 +351,8 @@ defmodule ApathyDrive.Ability do
             caster
           end)
 
+        Room.update_energy_bar(room, caster.ref)
+
         if ability.traits["LongTerm"] do
           caster =
             if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
@@ -538,7 +540,6 @@ defmodule ApathyDrive.Ability do
                     |> Mobile.send_scroll(
                       "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
                     )
-                    |> Character.update_hp_bar()
                     |> Character.update_mana_bar()
                   else
                     caster
@@ -551,6 +552,9 @@ defmodule ApathyDrive.Ability do
                 caster
               end
             end)
+
+          Room.update_energy_bar(room, caster.ref)
+          Room.update_hp_bar(room, caster.ref)
 
           Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
 
@@ -786,24 +790,30 @@ defmodule ApathyDrive.Ability do
   end
 
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
-    Room.update_mobile(room, target_ref, fn target ->
-      caster = room.mobiles[caster_ref]
+    room =
+      Room.update_mobile(room, target_ref, fn target ->
+        caster = room.mobiles[caster_ref]
 
-      duration = duration(ability, caster, target, room)
+        duration = duration(ability, caster, target, room)
 
-      target =
-        if ability_shift do
-          Mobile.shift_hp(target, ability_shift, room)
-        else
-          target
-        end
+        target =
+          if ability_shift do
+            Mobile.shift_hp(target, ability_shift, room)
+          else
+            target
+          end
 
-      target
-      |> Map.put(:ability_shift, nil)
-      |> Map.put(:ability_special, nil)
-      |> apply_duration_traits(ability, caster, duration, room)
-      |> Mobile.update_prompt()
-    end)
+        target
+        |> Map.put(:ability_shift, nil)
+        |> Map.put(:ability_special, nil)
+        |> apply_duration_traits(ability, caster, duration, room)
+        |> Mobile.update_prompt()
+      end)
+
+    Room.update_hp_bar(room, target_ref)
+    Room.update_hp_bar(room, caster_ref)
+
+    room
   end
 
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, _ability)
@@ -838,7 +848,7 @@ defmodule ApathyDrive.Ability do
 
   def aggro_target(%{ref: target_ref} = target, %Ability{kind: kind}, %{ref: caster_ref} = caster)
       when kind in ["attack", "curse"] and target_ref != caster_ref do
-    ApathyDrive.Aggression.attack(target, caster)
+    ApathyDrive.Aggression.attack_target(target, caster)
   end
 
   def aggro_target(%{} = target, %Ability{}, %{} = _caster), do: target

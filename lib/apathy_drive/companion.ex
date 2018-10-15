@@ -257,7 +257,7 @@ defmodule ApathyDrive.Companion do
         :level
       ])
 
-    ref = make_ref()
+    ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
     %Companion{}
     |> Map.merge(monster)

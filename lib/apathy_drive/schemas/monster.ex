@@ -125,7 +125,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:spawned_at, rm.spawned_at)
 
     if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
-      ref = make_ref()
+      ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
       monster
       |> Map.put(:ref, ref)
@@ -152,7 +152,7 @@ defmodule ApathyDrive.Monster do
         :spawned_at
       ])
 
-    ref = make_ref()
+    ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
     monster
     |> Map.merge(attributes)
@@ -502,7 +502,10 @@ defmodule ApathyDrive.Monster do
         |> Repo.update!()
       end
 
-      put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
+      room = put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
+
+      Room.update_moblist(room)
+      room
     end
 
     def dodge_at_level(monster, level, _room) do

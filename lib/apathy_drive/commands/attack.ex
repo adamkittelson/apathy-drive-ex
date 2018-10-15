@@ -21,9 +21,14 @@ defmodule ApathyDrive.Commands.Attack do
       |> Enum.reject(&(&1.ref in Party.refs(room, character)))
       |> Match.one(:name_contains, query)
 
-    Room.update_mobile(room, character.ref, fn %{} = attacker ->
-      attack(attacker, target)
-    end)
+    room =
+      Room.update_mobile(room, character.ref, fn %{} = attacker ->
+        attack(attacker, target)
+      end)
+
+    Room.update_hp_bar(room, character.ref)
+
+    room
   end
 
   def attack(%{} = character, nil) do
@@ -37,7 +42,6 @@ defmodule ApathyDrive.Commands.Attack do
     |> Map.put(:attack_target, target_ref)
     |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, character.ref}})
     |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
-    |> Character.update_hp_bar()
     |> Character.update_mana_bar()
   end
 end

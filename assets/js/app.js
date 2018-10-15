@@ -87,7 +87,13 @@ var update_score_attribute = function (attribute, new_value) {
 }
 
 chan.on("update energy bar", function (data) {
-  progress($("#player-bars .energy"), data.percentage, data.time_to_full)
+  console.log(data)
+
+  if (data.player) {
+    progress($("#player-bars .energy"), data.percentage, data.time_to_full)
+  }
+
+  progress($("#" + data.ref + "-bars .energy"), data.percentage, data.time_to_full)
 })
 
 chan.on("update mana bar", function (data) {
@@ -95,7 +101,11 @@ chan.on("update mana bar", function (data) {
 })
 
 chan.on("update hp bar", function (data) {
-  progress($("#player-bars .hp"), data.percentage, data.time_to_full)
+  if (data.player) {
+    progress($("#player-bars .hp"), data.percentage, data.time_to_full)
+  }
+
+  progress($("#" + data.ref + "-bars .hp"), data.percentage, data.time_to_full)
 })
 
 chan.on("update mob list", function (data) {
