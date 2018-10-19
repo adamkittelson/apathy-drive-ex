@@ -724,7 +724,6 @@ defmodule ApathyDrive.Character do
       level: character.level,
       perception: Mobile.perception_at_level(character, character.level, room),
       accuracy: Mobile.accuracy_at_level(character, character.level, room),
-      spellcasting: Mobile.spellcasting_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level, room),
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
@@ -882,7 +881,7 @@ defmodule ApathyDrive.Character do
       Character.ability_for_weapon(character, weapon)
     end
 
-    def auto_attack_target(%Character{attack_target: target} = _character, room, _attack_ability) do
+    def auto_attack_target(%Character{attack_target: target} = _character, room) do
       if room.mobiles[target], do: target
     end
 
@@ -1366,12 +1365,15 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def spellcasting_at_level(character, level, room) do
-      will = attribute_at_level(character, :willpower, level)
-      cha = Party.charm_at_level(room, character, level)
-      will = will + cha / 10
-      modifier = ability_value(character, "Spellcasting")
-      trunc(will * (1 + modifier / 100))
+    def spellcasting_at_level(character, level, ability) do
+      sc =
+        ability.attributes
+        |> Map.keys()
+        |> Enum.map(&Mobile.attribute_at_level(character, &1, level))
+        |> Enum.sum()
+        |> div(map_size(ability.attributes))
+
+      sc + ability_value(character, "Spellcasting")
     end
 
     def abilities_at_level(%Character{abilities: abilities}, level) do

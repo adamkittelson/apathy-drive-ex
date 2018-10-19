@@ -309,6 +309,16 @@ defmodule ApathyDrive.Ability do
     |> useable(mobile)
   end
 
+  def curse_abilities(%{abilities: abilities} = mobile, %{} = target) do
+    abilities
+    |> Map.values()
+    |> Enum.filter(&(&1.kind == "curse"))
+    |> Enum.reject(fn ability ->
+      Ability.removes_blessing?(target, ability)
+    end)
+    |> useable(mobile)
+  end
+
   def useable(abilities, %{} = mobile) do
     abilities
     |> Enum.reject(fn ability ->
@@ -601,17 +611,15 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def duration(%Ability{duration: duration, kind: kind}, %{} = caster, %{} = target, room) do
-    caster_level = Mobile.caster_level(caster, target)
-    target_level = Mobile.target_level(caster, target)
+  def duration(%Ability{duration: duration} = ability, %{} = caster, %{} = target, _room) do
+    if duration > 0 do
+      caster_level = Mobile.caster_level(caster, target)
 
-    caster_sc = Mobile.spellcasting_at_level(caster, caster_level, room)
+      caster_sc = Mobile.spellcasting_at_level(caster, caster_level, ability)
 
-    if kind == "curse" do
-      target_mr = Mobile.magical_resistance_at_level(target, target_level)
-      trunc(duration * :math.pow(1.005, caster_sc) * :math.pow(0.985, target_mr))
-    else
       trunc(duration * :math.pow(1.005, caster_sc))
+    else
+      duration
     end
   end
 
@@ -787,7 +795,7 @@ defmodule ApathyDrive.Ability do
 
     duration = duration(ability, caster, target, room)
 
-    if ability.kind == "curse" and duration < 1000 do
+    if ability.kind == "curse" and duration < 1 do
       display_cast_message(room, caster, target, Map.put(ability, :result, :resisted))
 
       target =
@@ -898,12 +906,7 @@ defmodule ApathyDrive.Ability do
   def apply_instant_trait({"Heal", value}, %{} = target, ability, caster, _room) do
     roll = Enum.random(value["min"]..value["max"])
 
-    attribute_value =
-      ability.attributes
-      |> Map.keys()
-      |> Enum.map(&Mobile.attribute_at_level(caster, &1, caster.level))
-      |> Enum.sum()
-      |> div(map_size(ability.attributes))
+    attribute_value = Mobile.spellcasting_at_level(caster, caster.level, ability)
 
     modifier = (attribute_value + 50) / 100
 
@@ -1217,12 +1220,7 @@ defmodule ApathyDrive.Ability do
   def process_duration_trait({"Heal", value}, effects, target, caster, ability, _room) do
     roll = Enum.random(value["min"]..value["max"])
 
-    attribute_value =
-      ability.attributes
-      |> Map.keys()
-      |> Enum.map(&Mobile.attribute_at_level(caster, &1, caster.level))
-      |> Enum.sum()
-      |> div(map_size(ability.attributes))
+    attribute_value = Mobile.spellcasting_at_level(caster, caster.level, ability)
 
     modifier = (attribute_value + 50) / 100
 
@@ -1736,7 +1734,7 @@ defmodule ApathyDrive.Ability do
 
   def display_pre_cast_message(_room, _caster, _targets, _ability), do: :noop
 
-  def message_color(%Ability{kind: kind}) when kind in ["attack", "curse", "critical"], do: "red"
+  def message_color(%Ability{kind: kind}) when kind in ["attack", "critical"], do: "red"
   def message_color(%Ability{}), do: "blue"
 
   def can_execute?(%Room{} = room, mobile, ability) do

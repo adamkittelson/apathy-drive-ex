@@ -8,7 +8,7 @@
                                        <span class="dark-green">Stealth:</span>  <span id="score-stealth" class="dark-cyan"></span>
   <span class="dark-green">Strength:</span>  <span id="score-strength" class="dark-cyan"></span> <span class="dark-green">Agility:</span> <span id="score-agility" class="dark-cyan"></span> <span class="dark-green">Percep:</span>   <span id="score-perception" class="dark-cyan"></span>
   <span class="dark-green">Intellect:</span> <span id="score-intellect" class="dark-cyan"></span> <span class="dark-green">Health:</span>  <span id="score-health" class="dark-cyan"></span> <span class="dark-green">Crits:</span>    <span id="score-crits" class="dark-cyan"></span>
-  <span class="dark-green">Willpower:</span> <span id="score-willpower" class="dark-cyan"></span> <span class="dark-green">Charm:</span>   <span id="score-charm" class="dark-cyan"></span> <span class="dark-green">Casting:</span>  <span id="score-casting" class="dark-cyan"></span>
+  <span class="dark-green">Willpower:</span> <span id="score-willpower" class="dark-cyan"></span> <span class="dark-green">Charm:</span>   <span id="score-charm" class="dark-cyan"></span>
 
   <span class="dark-green">ResistStone:</span> <span id="score-stone" class="dark-cyan"></span> <span class="dark-green">ResistLightning:</span> <span id="score-lightning" class="dark-cyan"></span>
   <span class="dark-green">ResistFire:</span>  <span id="score-fire" class="dark-cyan"></span> <span class="dark-green">ResistCold:</span>      <span id="score-cold" class="dark-cyan"></span>

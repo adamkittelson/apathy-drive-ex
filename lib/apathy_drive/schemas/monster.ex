@@ -312,12 +312,12 @@ defmodule ApathyDrive.Monster do
     "#{adjective} #{name}"
   end
 
-  def auto_attack_target(_monster, [], _room, _attack_ability) do
+  def auto_attack_target(_monster, [], _room) do
     nil
   end
 
   # weak monsters attack enemy with lowest % hp remaining
-  def auto_attack_target(%Monster{grade: "weak"}, enemies, room, _attack_ability) do
+  def auto_attack_target(%Monster{grade: "weak"}, enemies, room) do
     enemies
     |> Enum.map(&room.mobiles[&1])
     |> Enum.sort_by(& &1.hp)
@@ -326,29 +326,15 @@ defmodule ApathyDrive.Monster do
   end
 
   # normal monsters attack a random enemy
-  def auto_attack_target(%Monster{grade: "normal"}, enemies, _room, _attack_ability) do
+  def auto_attack_target(%Monster{grade: "normal"}, enemies, _room) do
     Enum.random(enemies)
   end
 
   # strong monsters attack enemy with highest % hp remaining
-  def auto_attack_target(%Monster{grade: "strong"}, enemies, room, _attack_ability) do
+  def auto_attack_target(%Monster{}, enemies, room) do
     enemies
     |> Enum.map(&room.mobiles[&1])
     |> Enum.sort_by(& &1.hp)
-    |> List.last()
-    |> Map.get(:ref)
-  end
-
-  # boss monsters attack enemy who will be damaged the least
-  def auto_attack_target(%Monster{grade: "boss"} = monster, enemies, room, attack_ability) do
-    enemies
-    |> Enum.map(fn enemy ->
-      {_caster, target} =
-        Ability.apply_instant_traits(room.mobiles[enemy], attack_ability, monster, room)
-
-      target
-    end)
-    |> Enum.sort_by(& &1.ability_shift)
     |> List.last()
     |> Map.get(:ref)
   end
@@ -389,10 +375,10 @@ defmodule ApathyDrive.Monster do
       end
     end
 
-    def auto_attack_target(%Monster{} = monster, room, attack_ability) do
+    def auto_attack_target(%Monster{} = monster, room) do
       enemies = Monster.enemies(monster, room)
 
-      Monster.auto_attack_target(monster, enemies, room, attack_ability)
+      Monster.auto_attack_target(monster, enemies, room)
     end
 
     def caster_level(%Monster{level: level}, %Monster{} = _target), do: level
@@ -745,12 +731,15 @@ defmodule ApathyDrive.Monster do
       true
     end
 
-    def spellcasting_at_level(monster, level, _room) do
-      will = attribute_at_level(monster, :willpower, level)
-      cha = attribute_at_level(monster, :charm, level)
-      will = will + cha / 10
-      modifier = ability_value(monster, "Spellcasting")
-      trunc(will * (1 + modifier / 100))
+    def spellcasting_at_level(monster, level, ability) do
+      sc =
+        ability.attributes
+        |> Map.keys()
+        |> Enum.map(&Mobile.attribute_at_level(monster, &1, level))
+        |> Enum.sum()
+        |> div(map_size(ability.attributes))
+
+      sc + ability_value(monster, "Spellcasting")
     end
 
     def stealth_at_level(monster, level) do

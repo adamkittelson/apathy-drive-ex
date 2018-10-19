@@ -138,7 +138,6 @@ chan.on("update score", function (score_data) {
   update_score_attribute("crits", score_data.crits);
   update_score_attribute("willpower", _.padEnd(score_data.willpower, 7));
   update_score_attribute("charm", _.padEnd(score_data.charm, 8));
-  update_score_attribute("casting", score_data.spellcasting);
   update_score_attribute("stone", _.padEnd(score_data.resistances.Stone, 5));
   update_score_attribute("lightning", score_data.resistances.Electricity);
   update_score_attribute("fire", _.padEnd(score_data.resistances.Fire, 5));

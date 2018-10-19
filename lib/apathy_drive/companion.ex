@@ -284,12 +284,12 @@ defmodule ApathyDrive.Companion do
       |> Map.put(:ignores_round_cooldown?, true)
     end
 
-    def auto_attack_target(%Companion{} = companion, room, attack_ability) do
+    def auto_attack_target(%Companion{} = companion, room) do
       character = Companion.character(companion, room)
 
       character_target =
         if character do
-          Mobile.auto_attack_target(character, room, attack_ability)
+          Mobile.auto_attack_target(character, room)
         end
 
       companion_target =
@@ -621,12 +621,15 @@ defmodule ApathyDrive.Companion do
       true
     end
 
-    def spellcasting_at_level(companion, level, room) do
-      will = attribute_at_level(companion, :willpower, level)
-      cha = Party.charm_at_level(room, companion, level)
-      will = will + cha / 10
-      modifier = ability_value(companion, "Spellcasting")
-      trunc(will * (1 + modifier / 100))
+    def spellcasting_at_level(companion, level, ability) do
+      sc =
+        ability.attributes
+        |> Map.keys()
+        |> Enum.map(&Mobile.attribute_at_level(companion, &1, level))
+        |> Enum.sum()
+        |> div(map_size(ability.attributes))
+
+      sc + ability_value(companion, "Spellcasting")
     end
 
     def stealth_at_level(companion, level) do

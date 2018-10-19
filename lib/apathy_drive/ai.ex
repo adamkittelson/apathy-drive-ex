@@ -7,8 +7,9 @@ defmodule ApathyDrive.AI do
     if mobile.casting do
       mobile
     else
-      # ||  || curse(room, monster_ref) || attack(room, monster_ref) || room
-      heal(mobile, room) || bless(mobile, room) || auto_attack(mobile, room)
+      #  || attack(room, monster_ref) || room
+      heal(mobile, room) || bless(mobile, room) || curse(mobile, room) ||
+        auto_attack(mobile, room)
     end
   end
 
@@ -51,12 +52,27 @@ defmodule ApathyDrive.AI do
     end
   end
 
+  def curse(%{} = mobile, %Room{} = room) do
+    target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
+
+    if target && :rand.uniform(100) > 95 do
+      ability =
+        mobile
+        |> Ability.curse_abilities(target)
+        |> random_ability(mobile)
+
+      if ability do
+        Ability.execute(room, mobile.ref, ability, [target.ref])
+      end
+    end
+  end
+
   def auto_attack(mobile, room) do
     Room.update_mobile(room, mobile.ref, fn %{} = mobile ->
       attack = Mobile.attack_ability(mobile)
 
       if attack && mobile.energy >= attack.energy && !mobile.casting do
-        if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
+        if target_ref = Mobile.auto_attack_target(mobile, room) do
           Ability.execute(room, mobile.ref, attack, [target_ref])
         else
           case mobile do
