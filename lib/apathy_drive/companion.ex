@@ -1,9 +1,9 @@
 defmodule ApathyDrive.Companion do
   alias ApathyDrive.{
     Ability,
+    AI,
     Character,
     Companion,
-    CompanionAI,
     Regeneration,
     Mobile,
     Monster,
@@ -13,6 +13,7 @@ defmodule ApathyDrive.Companion do
     Repo,
     Room,
     RoomMonster,
+    RoomServer,
     Stealth,
     Text,
     TimerManager
@@ -118,23 +119,6 @@ defmodule ApathyDrive.Companion do
     room.mobiles
     |> Map.values()
     |> Enum.find(&(&1.__struct__ == Character and &1.id == id))
-  end
-
-  def toggle_combat(%Companion{} = companion, room) do
-    time =
-      max(
-        0,
-        TimerManager.time_remaining(companion, :auto_attack_timer)
-      )
-
-    if Mobile.auto_attack_target(companion, room, nil) do
-      companion
-      |> TimerManager.send_after(
-        {:auto_attack_timer, time, {:execute_auto_attack, companion.ref}}
-      )
-    else
-      companion
-    end
   end
 
   def conversion_power(%Character{} = character) do
@@ -449,16 +433,12 @@ defmodule ApathyDrive.Companion do
     end
 
     def heartbeat(%Companion{} = companion, %Room{} = room) do
-      room =
-        Room.update_mobile(room, companion.ref, fn companion ->
-          companion
-          |> Companion.toggle_combat(room)
-          |> TimerManager.send_after(
-            {:heartbeat, Mobile.round_length_in_ms(companion), {:heartbeat, companion.ref}}
-          )
-        end)
-
-      CompanionAI.think(companion.ref, room)
+      Room.update_mobile(room, companion.ref, fn companion ->
+        companion
+        |> Regeneration.regenerate()
+        |> RoomServer.execute_casting_ability(room)
+      end)
+      |> AI.think(companion.ref)
     end
 
     def held(%{effects: effects} = mobile) do
@@ -514,7 +494,7 @@ defmodule ApathyDrive.Companion do
     def max_mana_at_level(mobile, level) do
       mana_per_level = ability_value(mobile, "ManaPerLevel")
 
-      mana_per_level * level + 6
+      mana_per_level * (level - 1) + 6
     end
 
     def party_refs(companion, room) do

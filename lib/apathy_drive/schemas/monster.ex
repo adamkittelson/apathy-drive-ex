@@ -4,6 +4,7 @@ defmodule ApathyDrive.Monster do
 
   alias ApathyDrive.{
     Ability,
+    AI,
     Area,
     Character,
     Currency,
@@ -17,6 +18,7 @@ defmodule ApathyDrive.Monster do
     Party,
     Room,
     RoomMonster,
+    RoomServer,
     Stealth,
     Text,
     TimerManager
@@ -375,9 +377,16 @@ defmodule ApathyDrive.Monster do
       monster.abilities
       |> Map.values()
       |> Enum.filter(&(&1.kind == "auto attack"))
-      |> Enum.random()
-      |> Map.put(:kind, "attack")
-      |> Map.put(:ignores_round_cooldown?, true)
+      |> case do
+        [] ->
+          nil
+
+        attacks ->
+          attacks
+          |> Enum.random()
+          |> Map.put(:kind, "attack")
+          |> Map.put(:ignores_round_cooldown?, true)
+      end
     end
 
     def auto_attack_target(%Monster{} = monster, room, attack_ability) do
@@ -599,7 +608,7 @@ defmodule ApathyDrive.Monster do
     def max_mana_at_level(monster, level) do
       mana_per_level = ability_value(monster, "ManaPerLevel")
 
-      mana_per_level * level + 6
+      mana_per_level * (level - 1) + 6
     end
 
     def party_refs(monster, room) do
@@ -639,11 +648,11 @@ defmodule ApathyDrive.Monster do
     def heartbeat(%Monster{} = monster, %Room{} = room) do
       Room.update_mobile(room, monster.ref, fn monster ->
         monster
-        |> TimerManager.send_after(
-          {:heartbeat, Mobile.round_length_in_ms(monster), {:heartbeat, monster.ref}}
-        )
+        |> Regeneration.regenerate()
+        |> RoomServer.execute_casting_ability(room)
       end)
       |> ApathyDrive.Aggression.react(monster.ref)
+      |> AI.think(monster.ref)
     end
 
     def hp_regen_per_round(%Monster{} = monster) do

@@ -7,6 +7,7 @@ defmodule ApathyDrive.Character do
     AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
+    AI,
     Character,
     CharacterSkill,
     CharacterReputation,
@@ -1194,10 +1195,10 @@ defmodule ApathyDrive.Character do
     def heartbeat(%Character{} = character, %Room{} = room) do
       Room.update_mobile(room, character.ref, fn character ->
         character
-        |> TimerManager.send_after(
-          {:heartbeat, Mobile.round_length_in_ms(character), {:heartbeat, character.ref}}
-        )
+        |> Regeneration.regenerate()
+        |> RoomServer.execute_casting_ability(room)
       end)
+      |> AI.think(character.ref)
     end
 
     def held(%{effects: effects} = mobile) do
@@ -1253,7 +1254,7 @@ defmodule ApathyDrive.Character do
     def max_mana_at_level(mobile, level) do
       mana_per_level = ability_value(mobile, "ManaPerLevel")
 
-      mana_per_level * level + 6
+      mana_per_level * (level - 1) + 6
     end
 
     def party_refs(character, room) do
@@ -1403,14 +1404,7 @@ defmodule ApathyDrive.Character do
     end
 
     def subtract_energy(character, ability) do
-      initial_energy = character.energy
-      character = update_in(character.energy, &max(0, &1 - ability.energy))
-
-      if initial_energy == character.max_energy do
-        Regeneration.regenerate(character)
-      else
-        character
-      end
+      update_in(character.energy, &max(0, &1 - ability.energy))
     end
 
     def target_level(%Character{level: _caster_level}, %Character{level: target_level}),

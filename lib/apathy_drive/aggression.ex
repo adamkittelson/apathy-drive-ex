@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Mobile, Monster, Room, TimerManager}
+  alias ApathyDrive.{Mobile, Monster, Room}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
@@ -39,12 +39,9 @@ defmodule ApathyDrive.Aggression do
   def attack_target(%{} = attacker, %{ref: ref} = _intruder) do
     effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
 
-    time = max(0, TimerManager.time_remaining(attacker, :auto_attack_timer))
-
     attacker =
       attacker
       |> Systems.Effect.add(effect, 60_000)
-      |> TimerManager.send_after({:auto_attack_timer, time, {:execute_auto_attack, attacker.ref}})
 
     if Map.has_key?(attacker, :attack_target) and attacker.attack_target == nil do
       attacker

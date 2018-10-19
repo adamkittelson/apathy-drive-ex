@@ -100,14 +100,7 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def schedule_next_tick(mobile) do
-    if mobile.max_energy > mobile.energy or mobile.mana < 1 or mobile.hp < 1 do
-      TimerManager.send_after(
-        mobile,
-        {:energy_regen, tick_time(mobile), {:regenerate_energy, mobile.ref}}
-      )
-    else
-      mobile
-    end
+    TimerManager.send_after(mobile, {:heartbeat, tick_time(mobile), {:heartbeat, mobile.ref}})
   end
 
   defp reset_mana_regen_attributes(%{mana_regen_attributes: _, mana: 1.0} = mobile) do

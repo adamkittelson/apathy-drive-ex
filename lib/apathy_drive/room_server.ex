@@ -13,7 +13,6 @@ defmodule ApathyDrive.RoomServer do
     Mobile,
     MonsterSpawning,
     PubSub,
-    Regeneration,
     Repo,
     Room,
     RoomSupervisor,
@@ -407,17 +406,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:regenerate_energy, mobile_ref}, room) do
-    room =
-      Room.update_mobile(room, mobile_ref, fn mobile ->
-        mobile
-        |> Regeneration.regenerate()
-        |> execute_casting_ability(room)
-      end)
-
-    {:noreply, room}
-  end
-
   def handle_info({:auto_move, ref}, room) do
     if mobile = Room.get_mobile(room, ref) do
       if should_move?(room, mobile) do
@@ -448,68 +436,6 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, ref, fn mobile ->
         update_in(mobile.invitees, &List.delete(&1, invitee_ref))
-      end)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:execute_auto_attack, ref}, %Room{} = room) do
-    room =
-      Room.update_mobile(room, ref, fn %{} = mobile ->
-        attack = Mobile.attack_ability(mobile)
-        # max 5 auto attacks per "round"
-
-        mobile = Regeneration.regenerate(mobile)
-
-        time = Regeneration.duration_for_energy(mobile, max(attack.energy, 200))
-
-        if mobile.energy >= attack.energy and !mobile.casting do
-          if target_ref = Mobile.auto_attack_target(mobile, room, attack) do
-            if TimerManager.time_remaining(mobile, :casting) == 0 do
-              mobile =
-                TimerManager.send_after(
-                  mobile,
-                  {:auto_attack_timer, time, {:execute_auto_attack, ref}}
-                )
-
-              room = put_in(room.mobiles[mobile.ref], mobile)
-
-              Ability.execute(room, mobile.ref, attack, [target_ref])
-            else
-              TimerManager.send_after(
-                mobile,
-                {:auto_attack_timer, time, {:execute_auto_attack, ref}}
-              )
-            end
-          else
-            case mobile do
-              %{attack_target: target} = mobile when not is_nil(target) ->
-                Mobile.send_scroll(
-                  mobile,
-                  "<p><span class='dark-yellow'>*Combat Off*</span></p>"
-                )
-
-                mobile =
-                  mobile
-                  |> Map.put(:attack_target, nil)
-
-                room = put_in(room.mobiles[mobile.ref], mobile)
-
-                Room.update_hp_bar(room, mobile.ref)
-                Room.update_mana_bar(room, mobile.ref)
-
-                room
-
-              mobile ->
-                mobile
-            end
-          end
-        else
-          TimerManager.send_after(
-            mobile,
-            {:auto_attack_timer, time, {:execute_auto_attack, ref}}
-          )
-        end
       end)
 
     {:noreply, room}
@@ -784,7 +710,7 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  defp execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
+  def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
     if ability.energy <= mobile.energy do
       mobile = Map.put(mobile, :casting, nil)
       room = put_in(room.mobiles[mobile.ref], mobile)
@@ -794,7 +720,7 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  defp execute_casting_ability(%{} = mobile, _room), do: mobile
+  def execute_casting_ability(%{} = mobile, _room), do: mobile
 
   defp jitter(time) do
     time

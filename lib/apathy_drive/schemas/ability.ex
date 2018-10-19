@@ -13,7 +13,6 @@ defmodule ApathyDrive.Ability do
     Mobile,
     Monster,
     Party,
-    Regeneration,
     Repo,
     Room,
     Stealth,
@@ -292,10 +291,18 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def heal_abilities(%{abilities: abilities} = _mobile) do
+  def heal_abilities(%{abilities: abilities} = mobile) do
     abilities
     |> Map.values()
     |> Enum.filter(&(&1.kind == "heal"))
+    |> useable(mobile)
+  end
+
+  def useable(abilities, %{} = mobile) do
+    abilities
+    |> Enum.reject(fn ability ->
+      ability.mana > 0 && !Mobile.enough_mana_for_ability?(mobile, ability)
+    end)
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "")
@@ -526,17 +533,8 @@ defmodule ApathyDrive.Ability do
 
                 if Map.has_key?(caster, :attack_target) do
                   if is_nil(caster.attack_target) do
-                    time =
-                      max(
-                        0,
-                        TimerManager.time_remaining(caster, :auto_attack_timer)
-                      )
-
                     caster
                     |> Map.put(:attack_target, target_ref)
-                    |> TimerManager.send_after(
-                      {:auto_attack_timer, time, {:execute_auto_attack, caster.ref}}
-                    )
                     |> Mobile.send_scroll(
                       "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
                     )
@@ -575,11 +573,7 @@ defmodule ApathyDrive.Ability do
 
       Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
 
-      time = Regeneration.duration_for_energy(caster, req_energy - energy)
-
-      caster
-      |> Map.put(:casting, ability)
-      |> TimerManager.send_after({:cast_timer, time, {:regenerate_energy, caster.ref}})
+      Map.put(caster, :casting, ability)
     end
   end
 
