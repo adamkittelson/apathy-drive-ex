@@ -136,16 +136,8 @@ defmodule Systems.Effect do
     end
   end
 
-  def max_stacks?(%{} = monster, %{
-        "duration_effects" => %{"stack_key" => stack_key, "stack_count" => stack_count}
-      }) do
-    stack_count(monster, stack_key) >= stack_count
-  end
-
-  def max_stacks?(%{} = monster, %{"duration_effects" => _} = ability) do
-    ability = put_in(ability["duration_effects"]["stack_key"], ability["name"])
-    ability = put_in(ability["duration_effects"]["stack_count"], 1)
-    max_stacks?(monster, ability)
+  def max_stacks?(%{} = mobile, %{duration: d, id: stack_key, max_stacks: max}) when d > 0 do
+    stack_count(mobile, stack_key) >= max
   end
 
   def max_stacks?(%{}, %{}), do: false

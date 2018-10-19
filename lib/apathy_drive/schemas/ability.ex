@@ -45,6 +45,7 @@ defmodule ApathyDrive.Ability do
     field(:skills, :any, virtual: true, default: [])
     field(:target_list, :any, virtual: true)
     field(:attributes, :map, virtual: true, default: %{})
+    field(:max_stacks, :integer, virtual: true, default: 1)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -298,11 +299,34 @@ defmodule ApathyDrive.Ability do
     |> useable(mobile)
   end
 
+  def bless_abilities(%{abilities: abilities} = mobile, %{} = target) do
+    abilities
+    |> Map.values()
+    |> Enum.filter(&(&1.kind == "blessing"))
+    |> Enum.reject(fn ability ->
+      Ability.removes_blessing?(target, ability)
+    end)
+    |> useable(mobile)
+  end
+
   def useable(abilities, %{} = mobile) do
     abilities
     |> Enum.reject(fn ability ->
       ability.mana > 0 && !Mobile.enough_mana_for_ability?(mobile, ability)
     end)
+  end
+
+  def removes_blessing?(%{} = mobile, %{} = ability) do
+    abilities = ability.traits["RemoveSpells"] || []
+
+    Systems.Effect.max_stacks?(mobile, ability) or
+      Enum.any?(abilities, fn ability_id ->
+        Systems.Effect.stack_count(mobile, ability_id) > 0
+      end)
+  end
+
+  def removes_blessing?(mobile, ability) do
+    Systems.Effect.max_stacks?(mobile, ability)
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "")

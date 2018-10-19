@@ -7,8 +7,8 @@ defmodule ApathyDrive.AI do
     if mobile.casting do
       mobile
     else
-      # || bless(room, monster_ref) || curse(room, monster_ref) || attack(room, monster_ref) || room
-      heal(mobile, room) || auto_attack(mobile, room)
+      # ||  || curse(room, monster_ref) || attack(room, monster_ref) || room
+      heal(mobile, room) || bless(mobile, room) || auto_attack(mobile, room)
     end
   end
 
@@ -32,6 +32,22 @@ defmodule ApathyDrive.AI do
       if ability do
         Ability.execute(room, mobile.ref, ability, [injured_party_member.ref])
       end
+    end
+  end
+
+  def bless(%{} = mobile, %Room{} = room) do
+    member_to_bless =
+      room
+      |> Party.members(mobile)
+      |> Enum.random()
+
+    ability =
+      mobile
+      |> Ability.bless_abilities(member_to_bless)
+      |> random_ability(mobile)
+
+    if ability do
+      Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
     end
   end
 

@@ -8,7 +8,6 @@ defmodule ApathyDrive.RoomServer do
     Companion,
     Directory,
     Enchantment,
-    Regeneration,
     LairMonster,
     Mobile,
     MonsterSpawning,
