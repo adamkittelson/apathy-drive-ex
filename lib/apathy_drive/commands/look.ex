@@ -292,13 +292,6 @@ defmodule ApathyDrive.Commands.Look do
 
     dps = Float.round(average / (attack_interval / 1000), 2)
 
-    kind =
-      if item.worn_on == "Weapon Hand" do
-        "One Handed #{item.weapon_type}"
-      else
-        "Two Handed #{item.weapon_type}"
-      end
-
     Mobile.send_scroll(
       character,
       "<p><span class='dark-green'>Name:</span> " <>

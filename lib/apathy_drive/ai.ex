@@ -8,7 +8,35 @@ defmodule ApathyDrive.AI do
       mobile
     else
       heal(mobile, room) || bless(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
-        auto_attack(mobile, room)
+        auto_attack(mobile, room) || move(mobile, room) || mobile
+    end
+  end
+
+  def move(%{} = mobile, %Room{} = room) do
+    if should_move?(mobile, room) do
+      exits =
+        case room.exits do
+          nil ->
+            []
+
+          _exits ->
+            exits_in_area(room)
+        end
+
+      if Enum.any?(exits) do
+        new_exits =
+          exits
+          |> Enum.reject(&(&1["destination"] == mobile.last_room_id))
+
+        room_exit =
+          if Enum.any?(new_exits) do
+            Enum.random(new_exits)
+          else
+            Enum.find(exits, &(&1["destination"] == mobile.last_room_id))
+          end
+
+        ApathyDrive.Commands.Move.execute(room, mobile, room_exit)
+      end
     end
   end
 
@@ -88,39 +116,35 @@ defmodule ApathyDrive.AI do
   def attack(%{} = _mobile, %Room{}), do: nil
 
   def auto_attack(mobile, room) do
-    Room.update_mobile(room, mobile.ref, fn %{} = mobile ->
-      attack = Mobile.attack_ability(mobile)
+    attack = Mobile.attack_ability(mobile)
 
-      if attack && mobile.energy >= attack.energy && !mobile.casting do
-        if target_ref = Mobile.auto_attack_target(mobile, room) do
-          Ability.execute(room, mobile.ref, attack, [target_ref])
-        else
-          case mobile do
-            %{attack_target: target} = mobile when not is_nil(target) ->
-              Mobile.send_scroll(
-                mobile,
-                "<p><span class='dark-yellow'>*Combat Off*</span></p>"
-              )
-
-              mobile =
-                mobile
-                |> Map.put(:attack_target, nil)
-
-              room = put_in(room.mobiles[mobile.ref], mobile)
-
-              Room.update_hp_bar(room, mobile.ref)
-              Room.update_mana_bar(room, mobile.ref)
-
-              room
-
-            mobile ->
-              mobile
-          end
-        end
+    if attack && mobile.energy >= attack.energy && !mobile.casting do
+      if target_ref = Mobile.auto_attack_target(mobile, room) do
+        Ability.execute(room, mobile.ref, attack, [target_ref])
       else
-        mobile
+        case mobile do
+          %{attack_target: target} = mobile when not is_nil(target) ->
+            Mobile.send_scroll(
+              mobile,
+              "<p><span class='dark-yellow'>*Combat Off*</span></p>"
+            )
+
+            mobile =
+              mobile
+              |> Map.put(:attack_target, nil)
+
+            room = put_in(room.mobiles[mobile.ref], mobile)
+
+            Room.update_hp_bar(room, mobile.ref)
+            Room.update_mana_bar(room, mobile.ref)
+
+            mobile
+
+          _mobile ->
+            nil
+        end
       end
-    end)
+    end
   end
 
   def random_ability([ability], mobile) do
@@ -135,5 +159,27 @@ defmodule ApathyDrive.AI do
     abilities
     |> Enum.reject(&Ability.on_cooldown?(mobile, &1))
     |> Enum.random()
+  end
+
+  defp exits_in_area(%Room{exits: exits} = room) do
+    Enum.filter(exits, fn %{"direction" => _direction} = room_exit ->
+      # && room.exits[direction]["area"] == room.area.name
+      passable?(room, room_exit)
+    end)
+  end
+
+  defp passable?(room, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"],
+    do: ApathyDrive.Doors.open?(room, room_exit)
+
+  defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"],
+    do: true
+
+  defp passable?(_room, _room_exit), do: false
+
+  defp should_move?(%ApathyDrive.Companion{}, _room), do: false
+  defp should_move?(%{movement: "stationary"}, _room), do: false
+
+  defp should_move?(%{} = mobile, room) do
+    mobile.hp > 0.8 and mobile.mana > 0.8 and is_nil(Mobile.auto_attack_target(mobile, room))
   end
 end

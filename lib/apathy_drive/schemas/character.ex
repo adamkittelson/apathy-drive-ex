@@ -102,6 +102,7 @@ defmodule ApathyDrive.Character do
     field(:armour, :string, virtual: true)
     field(:mana_regen_attributes, :any, virtual: true, default: [])
     field(:last_tick_at, :any, virtual: true)
+    field(:last_room_id, :integer, virtual: true)
 
     belongs_to(:room, Room)
 
@@ -1320,6 +1321,7 @@ defmodule ApathyDrive.Character do
       })
 
       character
+      |> Map.put(:last_room_id, character.room_id)
       |> Map.put(:room_id, room_id)
       |> Map.put(:monitor_ref, Process.monitor(socket))
       |> Repo.save!()

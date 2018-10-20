@@ -75,6 +75,7 @@ defmodule ApathyDrive.Monster do
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:casting, :any, virtual: true)
     field(:last_tick_at, :any, virtual: true)
+    field(:last_room_id, :integer, virtual: true)
 
     timestamps()
 
@@ -688,6 +689,7 @@ defmodule ApathyDrive.Monster do
       |> Repo.update!()
 
       monster
+      |> Map.put(:last_room_id, monster.room_id)
       |> Map.put(:room_id, room_id)
     end
 
