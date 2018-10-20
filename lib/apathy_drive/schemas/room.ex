@@ -538,7 +538,7 @@ defmodule ApathyDrive.Room do
     ApathyDrive.Config.get(:start_room)
   end
 
-  def find_item(%Room{items: items, item_descriptions: item_descriptions}, item) do
+  def find_item(%Room{items: items, item_descriptions: item_descriptions} = room, item) do
     actual_item =
       items
       |> Enum.map(&%{name: &1.name, keywords: String.split(&1.name), item: &1})
@@ -556,6 +556,11 @@ defmodule ApathyDrive.Room do
       |> Enum.map(&%{name: &1, keywords: String.split(&1)})
       |> Match.one(:keyword_starts_with, item)
 
+    shop_item =
+      if room.shop do
+        Match.one(room.shop.shop_items, :keyword_starts_with, item)
+      end
+
     cond do
       visible_item ->
         %{description: item_descriptions["visible"][visible_item.name]}
@@ -565,6 +570,9 @@ defmodule ApathyDrive.Room do
 
       actual_item ->
         actual_item.item
+
+      shop_item ->
+        shop_item.item
 
       true ->
         nil

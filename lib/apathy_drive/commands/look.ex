@@ -288,12 +288,7 @@ defmodule ApathyDrive.Commands.Look do
     energy = Character.energy_per_swing(character, item)
     attack_interval = Regeneration.duration_for_energy(character, energy)
 
-    character_damage = character.strength * (energy / character.max_energy)
-
-    min_damage = Float.round(item.min_damage + character_damage, 2)
-    max_damage = Float.round(item.max_damage + character_damage, 2)
-
-    average = (min_damage + max_damage) / 2
+    average = (item.min_damage + item.max_damage) / 2
 
     dps = Float.round(average / (attack_interval / 1000), 2)
 
@@ -306,10 +301,14 @@ defmodule ApathyDrive.Commands.Look do
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Kind:</span> " <>
-        "<span class='dark-cyan'>#{kind}</span> " <>
+      "<p><span class='dark-green'>Name:</span> " <>
+        "<span class='dark-cyan'>#{item.name}</span> " <>
+        "<span class='dark-green'>Kind:</span> " <>
+        "<span class='dark-cyan'>#{item.weapon_type}</span> " <>
         "<span class='dark-green'>DPS:</span> " <>
-        "<span class='dark-cyan'>#{dps} (#{min_damage}-#{max_damage} @ #{attack_interval})</span></p>"
+        "<span class='dark-cyan'>#{dps} (#{item.min_damage}-#{item.max_damage} @ #{
+          trunc(energy / 10)
+        }% energy per swing)</span></p>"
     )
 
     Mobile.send_scroll(character, "<p>#{item.description}</p>")
@@ -321,17 +320,32 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.each(fn effect_message ->
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
+
+    item.traits
+    |> Map.keys()
+    |> Enum.reject(&(&1 in ["ClassOk"]))
+    |> Enum.each(fn trait ->
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
+          Enum.sum(item.traits[trait])
+        }</span></p>"
+      )
+    end)
   end
 
   def look_at_item(%Character{} = character, %Item{} = item) do
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> <span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{
-        item.grade
-      }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{item.level}</span></p>"
+      "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span> <span class='dark-green'>Type:</span> <span class='dark-cyan'>#{
+        item.armour_type
+      }</span> <span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span></p>"
     )
 
-    Mobile.send_scroll(character, "<p>#{item.description}</p>")
+    Mobile.send_scroll(
+      character,
+      "<p>#{item.description}</p>"
+    )
 
     item.effects
     |> Map.values()
@@ -339,6 +353,18 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.map(& &1["StatusMessage"])
     |> Enum.each(fn effect_message ->
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
+    end)
+
+    item.traits
+    |> Map.keys()
+    |> Enum.reject(&(&1 in ["ClassOk"]))
+    |> Enum.each(fn trait ->
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
+          Enum.sum(item.traits[trait])
+        }</span></p>"
+      )
     end)
   end
 
@@ -356,9 +382,9 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  defp find_item(%Character{inventory: items}, item) do
+  defp find_item(%Character{inventory: items, equipment: equipment}, item) do
     item =
-      items
+      (items ++ equipment)
       |> Match.one(:keyword_starts_with, item)
 
     case item do
