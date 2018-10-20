@@ -484,7 +484,7 @@ defmodule ApathyDrive.Companion do
       health = attribute_at_level(companion, :health, level)
 
       base = companion.base_hp
-      hp_per_level = 8 * level
+      hp_per_level = 4 * level
       bonus = (health - 50) / 16
 
       modifier = ability_value(companion, "MaxHP")

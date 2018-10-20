@@ -584,7 +584,7 @@ defmodule ApathyDrive.Monster do
       health = attribute_at_level(monster, :health, level)
 
       base = monster.base_hp
-      hp_per_level = 8 * level
+      hp_per_level = 4 * level
       bonus = (health - 50) / 16
 
       modifier = ability_value(monster, "MaxHP")
