@@ -319,6 +319,16 @@ defmodule ApathyDrive.Ability do
     |> useable(mobile)
   end
 
+  def attack_abilities(%{abilities: abilities} = mobile, %{} = target) do
+    abilities
+    |> Map.values()
+    |> Enum.filter(&(&1.kind == "attack"))
+    |> Enum.filter(fn ability ->
+      Ability.affects_target?(target, ability)
+    end)
+    |> useable(mobile)
+  end
+
   def useable(abilities, %{} = mobile) do
     abilities
     |> Enum.reject(fn ability ->

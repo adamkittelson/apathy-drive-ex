@@ -7,8 +7,7 @@ defmodule ApathyDrive.AI do
     if mobile.casting do
       mobile
     else
-      #  || attack(room, monster_ref) || room
-      heal(mobile, room) || bless(mobile, room) || curse(mobile, room) ||
+      heal(mobile, room) || bless(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
         auto_attack(mobile, room)
     end
   end
@@ -36,7 +35,7 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def bless(%{} = mobile, %Room{} = room) do
+  def bless(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
     member_to_bless =
       room
       |> Party.members(mobile)
@@ -52,7 +51,9 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def curse(%{} = mobile, %Room{} = room) do
+  def bless(%{} = _mobile, %Room{}), do: nil
+
+  def curse(%{mana: mana} = mobile, %Room{} = room) when mana > 0.9 do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
     if target && :rand.uniform(100) > 95 do
@@ -66,6 +67,25 @@ defmodule ApathyDrive.AI do
       end
     end
   end
+
+  def curse(%{} = _mobile, %Room{}), do: nil
+
+  def attack(%{mana: mana} = mobile, %Room{} = room) when mana > 0.75 do
+    target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
+
+    if target do
+      ability =
+        mobile
+        |> Ability.attack_abilities(target)
+        |> random_ability(mobile)
+
+      if ability do
+        Ability.execute(room, mobile.ref, ability, [target.ref])
+      end
+    end
+  end
+
+  def attack(%{} = _mobile, %Room{}), do: nil
 
   def auto_attack(mobile, room) do
     Room.update_mobile(room, mobile.ref, fn %{} = mobile ->
@@ -102,87 +122,6 @@ defmodule ApathyDrive.AI do
       end
     end)
   end
-
-  # def bless(%Room{} = room, monster_ref) do
-  #   case Room.get_monster(room, monster_ref) do
-  #     %{spirit: nil} = monster ->
-  #       unless Ability.on_global_cooldown?(monster) do
-  #         ability = monster
-  #                   |> Ability.bless_abilities
-  #                   |> random_ability(monster)
-  #
-  #         if ability do
-  #           Ability.execute(room, monster_ref, ability, [monster_ref])
-  #         end
-  #       end
-  #     _ ->
-  #       nil
-  #   end
-  # end
-  #
-  # def curse(%Room{} = room, monster_ref) do
-  #   case Room.get_monster(room, monster_ref) do
-  #     %{spirit: nil} = monster ->
-  #       if :rand.uniform(100) > 95 do
-  #         if target = Monster.aggro_target(room, monster) do
-  #           curse =
-  #             if !Ability.on_global_cooldown?(monster) do
-  #
-  #               monster
-  #               |> Ability.curse_abilities
-  #               |> random_ability(monster)
-  #             end
-  #
-  #           if curse do
-  #             Ability.execute(room, monster_ref, curse, [target])
-  #           end
-  #         end
-  #       end
-  #     _ ->
-  #       nil
-  #   end
-  # end
-  #
-  # def attack(%Room{} = room, monster_ref) do
-  #   case Room.get_monster(room, monster_ref) do
-  #     %{spirit: nil} = monster ->
-  #       if target = Monster.aggro_target(room, monster) do
-  #         attack = cond do
-  #           !Ability.on_global_cooldown?(monster) ->
-  #              monster
-  #              |> Ability.attack_abilities
-  #              |> random_ability(monster)
-  #           true ->
-  #             nil
-  #         end
-  #
-  #         if attack do
-  #           room
-  #           |> Ability.execute(monster_ref, attack, [target])
-  #           |> Room.update_monster(monster_ref, fn(mob) ->
-  #                mob
-  #                |> Monster.set_attack_target(target)
-  #                |> Monster.initiate_combat
-  #              end)
-  #         else
-  #           Room.update_monster(room, monster_ref, fn(mob) ->
-  #             mob
-  #             |> Monster.set_attack_target(target)
-  #             |> Monster.initiate_combat
-  #           end)
-  #         end
-  #       end
-  #     %{spirit: _} = monster ->
-  #       if target = Monster.aggro_target(room, monster) do
-  #
-  #         Room.update_monster(room, monster_ref, fn(mob) ->
-  #           mob
-  #           |> Monster.set_attack_target(target)
-  #           |> Monster.initiate_combat
-  #         end)
-  #       end
-  #   end
-  # end
 
   def random_ability([ability], mobile) do
     unless Ability.on_cooldown?(mobile, ability) do
