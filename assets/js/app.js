@@ -87,8 +87,6 @@ var update_score_attribute = function (attribute, new_value) {
 }
 
 chan.on("update energy bar", function (data) {
-  console.log(data)
-
   if (data.player) {
     progress($("#player-bars .energy"), data.percentage, data.time_to_full)
   }
@@ -256,13 +254,10 @@ $(document).on('keyup', "input", function (event) {
 
 window.progress = function (elem, percent, time_to_full) {
   if (percent == 100) {
-    console.log("setting width to " + elem.width())
     elem.find('div').stop().width(elem.width())
   }
   else {
     var currentWidth = percent * elem.width() / 100;
-
-    console.log("current percent: " + percent + ", current: " + currentWidth + ", target: " + elem.width() + ", time_to_full: " + time_to_full)
 
     if (currentWidth >= 0) {
       elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });

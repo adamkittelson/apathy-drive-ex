@@ -304,10 +304,11 @@ $(document).ready(function () {
   window.rooms = {};
   window.areas = {};
 
-  var add_room = function (room_id, room_data) {
+  var add_room = function (room_id, area_name, room_data) {
     if (room_data.coords) {
+      room_data.area = area_name
       rooms[room_id] = room_data
-      areas[room_data.area].rooms[room_id] = room_data
+      areas[area_name].rooms[room_id] = room_data
     }
   }
 
@@ -366,31 +367,27 @@ $(document).ready(function () {
       }
 
       for (var i = 0; i < unhighlighted_rooms.length; i++) {
-        draw_room(map, unhighlighted_rooms[i], false);
+        draw_room(map, area, unhighlighted_rooms[i], false);
       }
 
       for (var i = 0; i < highlighted_rooms.length; i++) {
-        draw_room(map, highlighted_rooms[i], true);
+        draw_room(map, area, highlighted_rooms[i], true);
       }
     }
 
   };
 
   window.area_color = function (area, level) {
-    var base = Math.floor(75 * (1 + (area.level / 10))) * 6;
-
-    var power = (base + ((base / 10) * (Math.max(area.level, level) - 1))) / 10;
-
-    if (power < (player.power * 0.66)) {
+    if ((player.level - area.level) > 5) {
       return 'cyan';
     }
-    else if (power < (player.power * 1.33)) {
+    else if (player.level >= area.level) {
       return 'green';
     }
-    else if (power < (player.power * 1.66)) {
+    else if ((area.level - player.level) < 5) {
       return 'blue';
     }
-    else if (power < (player.power * 2.0)) {
+    else if ((area.level - player.level) < 15) {
       return 'purple';
     }
     else {
@@ -398,9 +395,9 @@ $(document).ready(function () {
     }
   }
 
-  var draw_room = function (map, room_id, highlighted) {
+  var draw_room = function (map, area, room_id, highlighted) {
     var room = rooms[room_id];
-    var color = areas[room.area].color
+    var color = areas[area].color
 
     var x = (room.coords.x * 32) + 2650
     var y = (room.coords.y * 32) + 7600
@@ -526,7 +523,7 @@ $(document).ready(function () {
         rooms: {}
       }
       for (var room_id in area[area_name].rooms) {
-        add_room(parseInt(room_id), area[area_name].rooms[room_id]);
+        add_room(parseInt(room_id), area_name, area[area_name].rooms[room_id]);
       }
     }
   });
@@ -539,7 +536,7 @@ $(document).ready(function () {
     var room = areas[data.old_area].rooms[data.room_id];
     room.area = data.new_area;
     delete areas[data.old_area].rooms[data.room_id];
-    add_room(data.room_id, room);
+    add_room(data.room_id, data.new_area, room);
 
     center_on_room(player.room.id);
   });
@@ -547,7 +544,7 @@ $(document).ready(function () {
   chan.on("room name change", function (data) {
     var room = rooms[data.room_id];
     room.name = data.name;
-    add_room(data.room_id, room);
+    add_room(data.room_id, data.area, room);
 
     center_on_room(player.room.id);
   });
@@ -555,10 +552,10 @@ $(document).ready(function () {
   chan.on("room coords change", function (data) {
     var room = rooms[data.room_id];
     room.coords = { x: data.x, y: data.y, z: data.z };
-    add_room(data.room_id, room);
+    add_room(data.room_id, data.area, room);
 
-    draw_area(room.area);
-    draw_area(player.room.area);
+    draw_area(data.area);
+    //draw_area(player.room.area);
     center_on_room(player.room.id);
   });
 
@@ -568,10 +565,10 @@ $(document).ready(function () {
     room.coords = data.coords;
     room.directions = data.directions;
 
-    add_room(room.id, room);
+    add_room(room.id, data.area, room);
 
-    draw_area(room.area);
-    draw_area(player.room.area);
+    draw_area(data.area);
+    //draw_area(player.room.area);
     center_on_room(player.room.id);
   });
 

@@ -12,33 +12,13 @@ defmodule ApathyDriveWeb.MapChannel do
     # Doing it in a task so it gets garbage collected right away
     Room.world_map()
     |> Repo.all()
-    |> Enum.map(fn %{id: area_id, level: level} ->
+    |> Enum.map(fn %{level: level, map: map, name: area_name} ->
       Task.async(fn ->
-        {area_name, map} =
-          area_id
-          |> Room.area_map()
-          |> Repo.all()
-          |> Enum.reduce({nil, %{}}, fn %{id: id, area: area_name} = room, {_, map} ->
-            directions =
-              room.exits
-              |> Enum.filter(
-                &(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"])
-              )
-              |> Enum.map(& &1["direction"])
-
-            room =
-              room
-              |> Map.put(:directions, directions)
-              |> Map.delete(:exits)
-
-            {area_name, Map.put(map, to_string(id), room)}
-          end)
-
         if map_size(map) > 0,
           do: push(socket, "update_map", %{area_name => %{level: level, rooms: map}})
       end)
     end)
-    |> Enum.map(&Task.await/1)
+    |> Enum.map(&Task.await(&1, :infinity))
 
     push(socket, "request_room_id", %{})
 

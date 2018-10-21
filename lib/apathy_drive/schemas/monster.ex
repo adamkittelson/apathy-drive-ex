@@ -172,7 +172,7 @@ defmodule ApathyDrive.Monster do
     %Room{allies: allies, enemies: enemies, area: area} =
       Room
       |> Repo.get(room_id)
-      |> Repo.preload(:area)
+      |> Repo.preload(area: Area.without_map())
       |> Room.load_reputations()
 
     set_reputations(monster, area, allies, enemies)

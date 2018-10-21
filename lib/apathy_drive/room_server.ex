@@ -3,6 +3,7 @@ defmodule ApathyDrive.RoomServer do
 
   alias ApathyDrive.{
     Ability,
+    Area,
     Character,
     Commands,
     Companion,
@@ -100,7 +101,8 @@ defmodule ApathyDrive.RoomServer do
   def init(id) do
     room =
       Repo.get!(Room, id)
-      |> Repo.preload(:area)
+      |> Repo.preload(area: Area.without_map())
+      |> Room.load_exits()
       |> Room.load_items()
       |> Room.load_reputations()
       |> Room.load_skills()
