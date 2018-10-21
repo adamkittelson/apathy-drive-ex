@@ -41,7 +41,9 @@ defmodule ApathyDrive.Area do
         |> Enum.reduce(%{}, fn %{id: id} = room, map ->
           directions =
             ApathyDrive.RoomExit.load_exits(id)
-            |> Enum.filter(&(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast"]))
+            |> Enum.filter(
+              &(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast", "Level"])
+            )
             |> Enum.map(& &1["direction"])
 
           room =
@@ -58,6 +60,8 @@ defmodule ApathyDrive.Area do
       })
       |> Repo.update!()
     end)
+
+    send(ApathyDrive.WorldMap, :load_world_map)
   end
 
   def find_by_name(name) do

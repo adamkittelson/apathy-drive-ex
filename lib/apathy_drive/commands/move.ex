@@ -14,9 +14,17 @@ defmodule ApathyDrive.Commands.Move do
     execute(room, character, Map.put(room_exit, "kind", "Normal"))
   end
 
-  def execute(%Room{} = room, %{} = character, %{"kind" => kind} = room_exit)
-      when kind in ["Door", "Gate"] do
-    execute(room, character, Map.put(room_exit, "kind", "Normal"))
+  def execute(%Room{} = room, %{} = mob, %{"kind" => kind} = re) when kind in ["Door", "Gate"] do
+    if Doors.open?(room, re) do
+      execute(room, mob, Map.put(re, "kind", "Normal"))
+    else
+      Mobile.send_scroll(
+        mob,
+        "<p><span class='red'>The #{String.downcase(kind)} is closed!</span></p>"
+      )
+
+      room
+    end
   end
 
   def execute(
@@ -53,6 +61,21 @@ defmodule ApathyDrive.Commands.Move do
   def execute(%Room{} = room, %{} = character, %{"kind" => "RemoteAction"}) do
     Mobile.send_scroll(character, "<p>There is no exit in that direction.</p>")
     room
+  end
+
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Level"} = room_exit) do
+    cond do
+      room_exit["min"] && character.level < room_exit["min"] ->
+        Mobile.send_scroll(character, "<p>#{room_exit["failure_message"]}</p>")
+        room
+
+      room_exit["max"] && character.level > room_exit["max"] ->
+        Mobile.send_scroll(character, "<p>#{room_exit["failure_message"]}</p>")
+        room
+
+      :else ->
+        execute(room, character, Map.put(room_exit, "kind", "Normal"))
+    end
   end
 
   def execute(

@@ -32,8 +32,10 @@ defmodule ApathyDrive.Command do
     [
       Commands.Abilities,
       Commands.Attack,
+      Commands.Bash,
       Commands.Buy,
       Commands.Cooldowns,
+      Commands.Close,
       Commands.Dismiss,
       Commands.Drop,
       Commands.Experience,
@@ -46,6 +48,7 @@ defmodule ApathyDrive.Command do
       Commands.Leave,
       Commands.List,
       Commands.Look,
+      Commands.Open,
       Commands.Party,
       Commands.Reputations,
       Commands.Remove,

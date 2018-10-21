@@ -621,10 +621,10 @@ defmodule ApathyDrive.Room do
     effects
     |> Map.values()
     |> Enum.filter(fn effect ->
-      Map.has_key?(effect, :unlocked)
+      Map.has_key?(effect, "unlocked")
     end)
     |> Enum.map(fn effect ->
-      Map.get(effect, :unlocked)
+      Map.get(effect, "unlocked")
     end)
     |> Enum.member?(direction)
   end
@@ -724,7 +724,7 @@ defmodule ApathyDrive.Room do
     effects
     |> Map.keys()
     |> Enum.filter(fn key ->
-      effects[key][:unlocked] == direction
+      effects[key]["unlocked"] == direction
     end)
     |> Enum.reduce(room, fn key, room ->
       Systems.Effect.remove(room, key, show_expiration_message: true)
@@ -742,17 +742,28 @@ defmodule ApathyDrive.Room do
   end
 
   defp unlock!(%Room{} = room, direction) do
+    room_exit = get_exit(room, direction)
+    name = String.downcase(room_exit["kind"])
+
     unlock_duration =
-      if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
+      if open_duration = room_exit["open_duration_in_seconds"] do
         open_duration
       else
         # 300
         10
       end
 
-    Systems.Effect.add(room, %{unlocked: direction}, unlock_duration)
-    # todo: tell players in the room when it re-locks
-    # "The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
+    Systems.Effect.add(
+      room,
+      %{
+        "unlocked" => direction,
+        "RemoveMessage" =>
+          "<span class='grey'>The #{name} #{
+            ApathyDrive.Exit.direction_description(room_exit["direction"])
+          } just locked!</span>"
+      },
+      :timer.seconds(unlock_duration)
+    )
   end
 
   def direction(direction) do

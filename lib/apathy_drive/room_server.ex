@@ -62,6 +62,46 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:trigger_remote_action, remote_action_exit, from, opts})
   end
 
+  def bash(room, mobile, direction) do
+    GenServer.cast(room, {:bash, mobile, direction})
+  end
+
+  def open(room, mobile, direction) do
+    GenServer.cast(room, {:open, mobile, direction})
+  end
+
+  def lock(room, mobile, direction) do
+    GenServer.cast(room, {:lock, mobile, direction})
+  end
+
+  def mirror_lock(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_lock, mirror_room_id, room_exit})
+  end
+
+  def mirror_open(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_open, mirror_room_id, room_exit})
+  end
+
+  def close(room, mobile, direction) do
+    GenServer.cast(room, {:close, mobile, direction})
+  end
+
+  def mirror_close(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_close, mirror_room_id, room_exit})
+  end
+
+  def mirror_bash(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_bash, mirror_room_id, room_exit})
+  end
+
+  def mirror_bash_fail(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_bash_fail, mirror_room_id, room_exit})
+  end
+
+  def mirror_open_fail(room, mirror_room_id, room_exit) do
+    GenServer.cast(room, {:mirror_open_fail, mirror_room_id, room_exit})
+  end
+
   def execute_command(room, spirit_id, command, arguments) do
     GenServer.cast(room, {:execute_command, spirit_id, command, arguments})
   end
