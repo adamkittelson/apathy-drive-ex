@@ -1,6 +1,6 @@
 defmodule ApathyDriveWeb.MapChannel do
   use ApathyDriveWeb, :channel
-  alias ApathyDrive.{Room, Repo}
+  alias ApathyDrive.WorldMap
 
   def join("map", %{}, socket) do
     send(self(), :after_join)
@@ -10,15 +10,13 @@ defmodule ApathyDriveWeb.MapChannel do
 
   def handle_info(:after_join, socket) do
     # Doing it in a task so it gets garbage collected right away
-    Room.world_map()
-    |> Repo.all()
-    |> Enum.map(fn %{level: level, map: map, name: area_name} ->
-      Task.async(fn ->
-        if map_size(map) > 0,
-          do: push(socket, "update_map", %{area_name => %{level: level, rooms: map}})
-      end)
+    Task.async(fn ->
+      map = WorldMap.fetch()
+
+      if map_size(map) > 0,
+        do: push(socket, "update_map", map)
     end)
-    |> Enum.map(&Task.await(&1, :infinity))
+    |> Task.await()
 
     push(socket, "request_room_id", %{})
 
