@@ -89,7 +89,7 @@ $(document).ready(function () {
   player.drawCircle(0, 0, 5)
   player.endFill();
 
-  window.text = new PIXI.Text('Loading...', { font: '16px Arial', fill: 0x333333, align: 'center', padding: 1 });
+  window.text = new PIXI.Text('Loading...', { fontSize: '16px', fontFamily: 'Arial', fill: 0x333333, align: 'center', padding: 1 });
 
   var text_left_padding = 5;
 
@@ -202,11 +202,13 @@ $(document).ready(function () {
 
   $("canvas").mousemove(function (event) {
     onDragMove(event);
-  }).mousedown(function (event) {
-    onDragStart(event);
   }).mouseleave(function (event) {
     highlight_area(player.room);
   });
+
+  $("canvas").mousedown(function (event) {
+    onDragStart(event);
+  })
 
   $(document).mouseup(function (event) {
     onDragEnd(event);
@@ -577,48 +579,48 @@ $(document).ready(function () {
     return;
   }
 
-  interact('canvas')
-    .draggable({
-      onmove: dragMoveListener
-    })
-    .resizable({
-      preserveAspectRatio: false,
-      edges: { left: true, right: true, bottom: true, top: true }
-    })
-    .on('resizemove', function (event) {
-      var target = event.target,
-        x = (parseFloat(target.getAttribute('data-x')) || 0),
-        y = (parseFloat(target.getAttribute('data-y')) || 0);
+  // interact('canvas')
+  //   .draggable({
+  //     onmove: dragMoveListener
+  //   })
+  //   .resizable({
+  //     preserveAspectRatio: false,
+  //     edges: { left: true, right: true, bottom: true, top: true }
+  //   })
+  //   .on('resizemove', function (event) {
+  //     var target = event.target,
+  //       x = (parseFloat(target.getAttribute('data-x')) || 0),
+  //       y = (parseFloat(target.getAttribute('data-y')) || 0);
 
-      // update the element's style
-      target.style.width = event.rect.width + 'px';
-      target.style.height = event.rect.height + 'px';
+  //     // update the element's style
+  //     target.style.width = event.rect.width + 'px';
+  //     target.style.height = event.rect.height + 'px';
 
-      // translate when resizing from top or left edges
-      x += event.deltaRect.left;
-      y += event.deltaRect.top;
+  //     // translate when resizing from top or left edges
+  //     x += event.deltaRect.left;
+  //     y += event.deltaRect.top;
 
-      target.style.webkitTransform = target.style.transform =
-        'translate(' + x + 'px,' + y + 'px)';
+  //     target.style.webkitTransform = target.style.transform =
+  //       'translate(' + x + 'px,' + y + 'px)';
 
-      target.setAttribute('data-x', x);
-      target.setAttribute('data-y', y);
+  //     target.setAttribute('data-x', x);
+  //     target.setAttribute('data-y', y);
 
-      var w = $("canvas").innerWidth();
-      var h = $("canvas").innerHeight();
+  //     var w = $("canvas").innerWidth();
+  //     var h = $("canvas").innerHeight();
 
-      //this part resizes the canvas but keeps ratio the same
-      renderer.view.style.width = w + "px";
-      renderer.view.style.height = h + "px";
+  //     //this part resizes the canvas but keeps ratio the same
+  //     renderer.view.style.width = w + "px";
+  //     renderer.view.style.height = h + "px";
 
-      background.width = w / zoom;
-      background.height = h / zoom;
-      title.width = w / zoom;
-      title.height = title_height / zoom;
+  //     background.width = w / zoom;
+  //     background.height = h / zoom;
+  //     title.width = w / zoom;
+  //     title.height = title_height / zoom;
 
-      //this part adjusts the ratio:
-      renderer.resize(w, h);
-    });
+  //     //this part adjusts the ratio:
+  //     renderer.resize(w, h);
+  //   });
 
 
 });
