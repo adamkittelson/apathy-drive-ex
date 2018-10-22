@@ -2,14 +2,15 @@ defmodule ApathyDrive.AI do
   alias ApathyDrive.{Ability, Mobile, Party, Room}
 
   def think(%Room{} = room, ref) do
-    mobile = room.mobiles[ref]
-
-    if mobile.casting do
-      mobile
-    else
-      heal(mobile, room) || bless(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
-        auto_attack(mobile, room) || move(mobile, room) || mobile
-    end
+    Room.update_mobile(room, ref, fn mobile ->
+      if mobile.casting do
+        mobile
+      else
+        # move(mobile, room) || mobile
+        heal(mobile, room) || bless(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
+          auto_attack(mobile, room) || mobile
+      end
+    end)
   end
 
   def move(%{} = mobile, %Room{} = room) do
@@ -29,10 +30,15 @@ defmodule ApathyDrive.AI do
           |> Enum.reject(&(&1["destination"] == mobile.last_room_id))
 
         room_exit =
-          if Enum.any?(new_exits) do
-            Enum.random(new_exits)
-          else
-            Enum.find(exits, &(&1["destination"] == mobile.last_room_id))
+          cond do
+            is_nil(mobile.last_room_id) ->
+              Enum.random(exits)
+
+            Enum.any?(new_exits) ->
+              Enum.random(new_exits)
+
+            :else ->
+              Enum.find(exits, &(&1["destination"] == mobile.last_room_id))
           end
 
         ApathyDrive.Commands.Move.execute(room, mobile, room_exit)
@@ -138,7 +144,7 @@ defmodule ApathyDrive.AI do
             Room.update_hp_bar(room, mobile.ref)
             Room.update_mana_bar(room, mobile.ref)
 
-            mobile
+            room
 
           _mobile ->
             nil
@@ -163,8 +169,7 @@ defmodule ApathyDrive.AI do
 
   defp exits_in_area(%Room{exits: exits} = room) do
     Enum.filter(exits, fn %{"direction" => _direction} = room_exit ->
-      # && room.exits[direction]["area"] == room.area.name
-      passable?(room, room_exit)
+      room_exit["area"] == room.area.id && passable?(room, room_exit)
     end)
   end
 
@@ -177,6 +182,7 @@ defmodule ApathyDrive.AI do
   defp passable?(_room, _room_exit), do: false
 
   defp should_move?(%ApathyDrive.Companion{}, _room), do: false
+  defp should_move?(%ApathyDrive.Character{}, _room), do: false
   defp should_move?(%{movement: "stationary"}, _room), do: false
 
   defp should_move?(%{} = mobile, room) do

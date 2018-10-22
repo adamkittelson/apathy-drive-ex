@@ -32,7 +32,6 @@ defmodule ApathyDrive.Room do
     field(:item_descriptions, ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}})
     field(:lair_size, :integer)
     field(:lair_frequency, :integer, default: 5)
-    field(:exits, ApathyDrive.JSONB, default: [])
     field(:commands, ApathyDrive.JSONB, default: %{})
     field(:legacy_id, :string)
     field(:coordinates, ApathyDrive.JSONB)
@@ -43,6 +42,7 @@ defmodule ApathyDrive.Room do
     field(:silver, :integer, default: 0)
     field(:copper, :integer, default: 0)
 
+    field(:exits, :any, virtual: true, default: [])
     field(:effects, :map, virtual: true, default: %{})
     field(:lair_next_spawn_at, :integer, virtual: true, default: 0)
     field(:timers, :map, virtual: true, default: %{})
@@ -64,6 +64,11 @@ defmodule ApathyDrive.Room do
     has_many(:skills, through: [:room_skills, :skill])
     has_one(:shop, Shop)
     has_many(:shop_items, through: [:shop, :shop_items])
+  end
+
+  def load_exits(%Room{} = room) do
+    exits = ApathyDrive.RoomExit.load_exits(room.id)
+    Map.put(room, :exits, exits)
   end
 
   def load_items(%Room{} = room) do
@@ -448,22 +453,7 @@ defmodule ApathyDrive.Room do
   def world_map do
     from(
       area in Area,
-      select: %{id: area.id, level: area.level}
-    )
-  end
-
-  def area_map(area_id) do
-    from(
-      room in Room,
-      where: room.area_id == ^area_id and not is_nil(room.coordinates),
-      join: area in assoc(room, :area),
-      select: %{
-        id: room.id,
-        name: room.name,
-        coords: room.coordinates,
-        area: area.name,
-        exits: room.exits
-      }
+      select: [:id, :level, :map, :name]
     )
   end
 
@@ -631,10 +621,10 @@ defmodule ApathyDrive.Room do
     effects
     |> Map.values()
     |> Enum.filter(fn effect ->
-      Map.has_key?(effect, :unlocked)
+      Map.has_key?(effect, "unlocked")
     end)
     |> Enum.map(fn effect ->
-      Map.get(effect, :unlocked)
+      Map.get(effect, "unlocked")
     end)
     |> Enum.member?(direction)
   end
@@ -734,7 +724,7 @@ defmodule ApathyDrive.Room do
     effects
     |> Map.keys()
     |> Enum.filter(fn key ->
-      effects[key][:unlocked] == direction
+      effects[key]["unlocked"] == direction
     end)
     |> Enum.reduce(room, fn key, room ->
       Systems.Effect.remove(room, key, show_expiration_message: true)
@@ -752,17 +742,27 @@ defmodule ApathyDrive.Room do
   end
 
   defp unlock!(%Room{} = room, direction) do
+    room_exit = get_exit(room, direction)
+    name = String.downcase(room_exit["kind"])
+
     unlock_duration =
-      if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
+      if open_duration = room_exit["open_duration_in_seconds"] do
         open_duration
       else
-        # 300
-        10
+        300
       end
 
-    Systems.Effect.add(room, %{unlocked: direction}, unlock_duration)
-    # todo: tell players in the room when it re-locks
-    # "The #{name} #{ApathyDrive.Exit.direction_description(exit["direction"])} just locked!"
+    Systems.Effect.add(
+      room,
+      %{
+        "unlocked" => direction,
+        "RemoveMessage" =>
+          "<span class='grey'>The #{name} #{
+            ApathyDrive.Exit.direction_description(room_exit["direction"])
+          } just locked!</span>"
+      },
+      :timer.seconds(unlock_duration)
+    )
   end
 
   def direction(direction) do

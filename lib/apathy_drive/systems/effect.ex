@@ -1,6 +1,6 @@
 defmodule Systems.Effect do
   use Timex
-  alias ApathyDrive.{Mobile, TimerManager}
+  alias ApathyDrive.{Mobile, Room, TimerManager}
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
     add_effect(entity, key + 1, effect)
@@ -100,10 +100,15 @@ defmodule Systems.Effect do
         end
 
         if opts[:show_expiration_message] && Map.has_key?(effects[key], "RemoveMessage") do
-          Mobile.send_scroll(
-            entity,
-            "<p><span class='dark-yellow'>#{effects[key]["RemoveMessage"]}</span></p>"
-          )
+          message = "<p><span class='dark-yellow'>#{effects[key]["RemoveMessage"]}</span></p>"
+
+          case entity do
+            %Room{} ->
+              Room.send_scroll(entity, message)
+
+            _ ->
+              Mobile.send_scroll(entity, message)
+          end
         end
 
         if Map.has_key?(effects[key], "member") do

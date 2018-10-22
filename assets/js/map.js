@@ -89,7 +89,7 @@ $(document).ready(function () {
   player.drawCircle(0, 0, 5)
   player.endFill();
 
-  window.text = new PIXI.Text('Loading...', { font: '16px Arial', fill: 0x333333, align: 'center', padding: 1 });
+  window.text = new PIXI.Text('Loading...', { fontSize: '16px', fontFamily: 'Arial', fill: 0x333333, align: 'center', padding: 1 });
 
   var text_left_padding = 5;
 
@@ -202,11 +202,13 @@ $(document).ready(function () {
 
   $("canvas").mousemove(function (event) {
     onDragMove(event);
-  }).mousedown(function (event) {
-    onDragStart(event);
   }).mouseleave(function (event) {
     highlight_area(player.room);
   });
+
+  $("canvas").mousedown(function (event) {
+    onDragStart(event);
+  })
 
   $(document).mouseup(function (event) {
     onDragEnd(event);
@@ -304,10 +306,11 @@ $(document).ready(function () {
   window.rooms = {};
   window.areas = {};
 
-  var add_room = function (room_id, room_data) {
+  var add_room = function (room_id, area_name, room_data) {
     if (room_data.coords) {
+      room_data.area = area_name
       rooms[room_id] = room_data
-      areas[room_data.area].rooms[room_id] = room_data
+      areas[area_name].rooms[room_id] = room_data
     }
   }
 
@@ -366,31 +369,27 @@ $(document).ready(function () {
       }
 
       for (var i = 0; i < unhighlighted_rooms.length; i++) {
-        draw_room(map, unhighlighted_rooms[i], false);
+        draw_room(map, area, unhighlighted_rooms[i], false);
       }
 
       for (var i = 0; i < highlighted_rooms.length; i++) {
-        draw_room(map, highlighted_rooms[i], true);
+        draw_room(map, area, highlighted_rooms[i], true);
       }
     }
 
   };
 
   window.area_color = function (area, level) {
-    var base = Math.floor(75 * (1 + (area.level / 10))) * 6;
-
-    var power = (base + ((base / 10) * (Math.max(area.level, level) - 1))) / 10;
-
-    if (power < (player.power * 0.66)) {
+    if ((player.level - area.level) > 5) {
       return 'cyan';
     }
-    else if (power < (player.power * 1.33)) {
+    else if (player.level >= area.level) {
       return 'green';
     }
-    else if (power < (player.power * 1.66)) {
+    else if ((area.level - player.level) < 5) {
       return 'blue';
     }
-    else if (power < (player.power * 2.0)) {
+    else if ((area.level - player.level) < 15) {
       return 'purple';
     }
     else {
@@ -398,9 +397,9 @@ $(document).ready(function () {
     }
   }
 
-  var draw_room = function (map, room_id, highlighted) {
+  var draw_room = function (map, area, room_id, highlighted) {
     var room = rooms[room_id];
-    var color = areas[room.area].color
+    var color = areas[area].color
 
     var x = (room.coords.x * 32) + 2650
     var y = (room.coords.y * 32) + 7600
@@ -526,7 +525,7 @@ $(document).ready(function () {
         rooms: {}
       }
       for (var room_id in area[area_name].rooms) {
-        add_room(parseInt(room_id), area[area_name].rooms[room_id]);
+        add_room(parseInt(room_id), area_name, area[area_name].rooms[room_id]);
       }
     }
   });
@@ -539,7 +538,7 @@ $(document).ready(function () {
     var room = areas[data.old_area].rooms[data.room_id];
     room.area = data.new_area;
     delete areas[data.old_area].rooms[data.room_id];
-    add_room(data.room_id, room);
+    add_room(data.room_id, data.new_area, room);
 
     center_on_room(player.room.id);
   });
@@ -547,7 +546,7 @@ $(document).ready(function () {
   chan.on("room name change", function (data) {
     var room = rooms[data.room_id];
     room.name = data.name;
-    add_room(data.room_id, room);
+    add_room(data.room_id, data.area, room);
 
     center_on_room(player.room.id);
   });
@@ -555,10 +554,10 @@ $(document).ready(function () {
   chan.on("room coords change", function (data) {
     var room = rooms[data.room_id];
     room.coords = { x: data.x, y: data.y, z: data.z };
-    add_room(data.room_id, room);
+    add_room(data.room_id, data.area, room);
 
-    draw_area(room.area);
-    draw_area(player.room.area);
+    draw_area(data.area);
+    //draw_area(player.room.area);
     center_on_room(player.room.id);
   });
 
@@ -568,10 +567,10 @@ $(document).ready(function () {
     room.coords = data.coords;
     room.directions = data.directions;
 
-    add_room(room.id, room);
+    add_room(room.id, data.area, room);
 
-    draw_area(room.area);
-    draw_area(player.room.area);
+    draw_area(data.area);
+    //draw_area(player.room.area);
     center_on_room(player.room.id);
   });
 
@@ -580,48 +579,48 @@ $(document).ready(function () {
     return;
   }
 
-  interact('canvas')
-    .draggable({
-      onmove: dragMoveListener
-    })
-    .resizable({
-      preserveAspectRatio: false,
-      edges: { left: true, right: true, bottom: true, top: true }
-    })
-    .on('resizemove', function (event) {
-      var target = event.target,
-        x = (parseFloat(target.getAttribute('data-x')) || 0),
-        y = (parseFloat(target.getAttribute('data-y')) || 0);
+  // interact('canvas')
+  //   .draggable({
+  //     onmove: dragMoveListener
+  //   })
+  //   .resizable({
+  //     preserveAspectRatio: false,
+  //     edges: { left: true, right: true, bottom: true, top: true }
+  //   })
+  //   .on('resizemove', function (event) {
+  //     var target = event.target,
+  //       x = (parseFloat(target.getAttribute('data-x')) || 0),
+  //       y = (parseFloat(target.getAttribute('data-y')) || 0);
 
-      // update the element's style
-      target.style.width = event.rect.width + 'px';
-      target.style.height = event.rect.height + 'px';
+  //     // update the element's style
+  //     target.style.width = event.rect.width + 'px';
+  //     target.style.height = event.rect.height + 'px';
 
-      // translate when resizing from top or left edges
-      x += event.deltaRect.left;
-      y += event.deltaRect.top;
+  //     // translate when resizing from top or left edges
+  //     x += event.deltaRect.left;
+  //     y += event.deltaRect.top;
 
-      target.style.webkitTransform = target.style.transform =
-        'translate(' + x + 'px,' + y + 'px)';
+  //     target.style.webkitTransform = target.style.transform =
+  //       'translate(' + x + 'px,' + y + 'px)';
 
-      target.setAttribute('data-x', x);
-      target.setAttribute('data-y', y);
+  //     target.setAttribute('data-x', x);
+  //     target.setAttribute('data-y', y);
 
-      var w = $("canvas").innerWidth();
-      var h = $("canvas").innerHeight();
+  //     var w = $("canvas").innerWidth();
+  //     var h = $("canvas").innerHeight();
 
-      //this part resizes the canvas but keeps ratio the same
-      renderer.view.style.width = w + "px";
-      renderer.view.style.height = h + "px";
+  //     //this part resizes the canvas but keeps ratio the same
+  //     renderer.view.style.width = w + "px";
+  //     renderer.view.style.height = h + "px";
 
-      background.width = w / zoom;
-      background.height = h / zoom;
-      title.width = w / zoom;
-      title.height = title_height / zoom;
+  //     background.width = w / zoom;
+  //     background.height = h / zoom;
+  //     title.width = w / zoom;
+  //     title.height = title_height / zoom;
 
-      //this part adjusts the ratio:
-      renderer.resize(w, h);
-    });
+  //     //this part adjusts the ratio:
+  //     renderer.resize(w, h);
+  //   });
 
 
 });

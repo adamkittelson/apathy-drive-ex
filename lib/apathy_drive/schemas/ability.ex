@@ -1054,6 +1054,13 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent}
       end)
 
+    damage_percent =
+      if match?(%Character{}, target) and target.level < 5 and damage_percent > 0.2 do
+        Enum.random(10..20) / 100
+      else
+        damage_percent
+      end
+
     target =
       target
       |> Map.put(:ability_special, :normal)

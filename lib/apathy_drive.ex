@@ -13,6 +13,7 @@ defmodule ApathyDrive do
       worker(ApathyDrive.Directory, []),
       supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
       worker(ApathyDrive.Metrics, []),
+      worker(ApathyDrive.WorldMap, []),
       worker(ApathyDrive, [], function: :load_shops, restart: :transient)
     ]
 
