@@ -749,8 +749,7 @@ defmodule ApathyDrive.Room do
       if open_duration = room_exit["open_duration_in_seconds"] do
         open_duration
       else
-        # 300
-        10
+        300
       end
 
     Systems.Effect.add(

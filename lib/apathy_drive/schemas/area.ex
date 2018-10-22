@@ -42,7 +42,16 @@ defmodule ApathyDrive.Area do
           directions =
             ApathyDrive.RoomExit.load_exits(id)
             |> Enum.filter(
-              &(&1["kind"] in ["Normal", "Action", "Door", "Gate", "Trap", "Cast", "Level"])
+              &(&1["kind"] in [
+                  "Normal",
+                  "Action",
+                  "Door",
+                  "Gate",
+                  "Trap",
+                  "Cast",
+                  "Level",
+                  "Toll"
+                ])
             )
             |> Enum.map(& &1["direction"])
 
