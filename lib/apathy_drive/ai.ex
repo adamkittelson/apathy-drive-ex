@@ -6,9 +6,8 @@ defmodule ApathyDrive.AI do
       if mobile.casting do
         mobile
       else
-        # move(mobile, room) || mobile
         heal(mobile, room) || bless(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
-          auto_attack(mobile, room) || mobile
+          auto_attack(mobile, room) || move(mobile, room) || mobile
       end
     end)
   end
@@ -169,7 +168,8 @@ defmodule ApathyDrive.AI do
 
   defp exits_in_area(%Room{exits: exits} = room) do
     Enum.filter(exits, fn %{"direction" => _direction} = room_exit ->
-      room_exit["area"] == room.area.id && passable?(room, room_exit)
+      room_exit["area"] == room.area.id && room_exit["zone"] == room.zone_controller_id &&
+        passable?(room, room_exit)
     end)
   end
 

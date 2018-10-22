@@ -48,10 +48,14 @@ defmodule ApathyDrive.MonsterSpawning do
     |> Repo.all()
   end
 
-  defp permanent_npc_missing?(%Room{permanent_npc: monster_id} = room) do
-    room.mobiles
-    |> Map.values()
-    |> Enum.all?(&(Map.get(&1, :id) != monster_id))
+  defp permanent_npc_missing?(%Room{id: id, permanent_npc: monster_id}) do
+    count =
+      RoomMonster
+      |> Ecto.Query.where(monster_id: ^monster_id, spawned_at: ^id)
+      |> Ecto.Query.select([m], count(m.id))
+      |> Repo.one()
+
+    count < 1
   end
 
   defp spawn_lair(%Room{} = room, lair_monsters) do

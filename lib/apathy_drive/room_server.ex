@@ -162,7 +162,7 @@ defmodule ApathyDrive.RoomServer do
     end
 
     if room.lair_size && Enum.any?(LairMonster.monster_ids(id)) do
-      send(self(), :spawn_monsters)
+      send(self(), :spawn_lair)
     end
 
     Process.send_after(self(), :save, 2000)
@@ -540,10 +540,10 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(
-        :spawn_monsters,
+        :spawn_lair,
         %{:lair_next_spawn_at => lair_next_spawn_at} = room
       ) do
-    :erlang.send_after(5000, self(), :spawn_monsters)
+    :erlang.send_after(5000, self(), :spawn_lair)
 
     if DateTime.to_unix(DateTime.utc_now(), :seconds) >= lair_next_spawn_at do
       room =
