@@ -479,7 +479,7 @@ defmodule ApathyDrive.Monster do
               end)
 
             Room.update_moblist(room)
-            updated_room
+            room
 
           _, updated_room ->
             updated_room
