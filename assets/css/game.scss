@@ -42,29 +42,6 @@ canvas {
   font-size: 0.90em;
 }
 
-#moblist {
-  font-family: "Inconsolata", "Andale Mono", Monospace;
-  position: fixed;
-  right: 0px;
-  top: 75px;
-  width: 350px;
-  div.progress-bar {
-    width: 100px;
-    height: 2px;
-    margin-left: 0px;
-    margin-right: 5px;
-  }
-  ul {
-    list-style-type: none;
-    margin-bottom: 45px;
-    margin-left: 0px;
-  }
-  h5 {
-    margin-bottom: 0px;
-  }
-}
-
-
 #scroll {
   padding-left: 360px;
   height: 100%;
@@ -150,6 +127,41 @@ input.prompt {
     background: linear-gradient(#c0c000,#404000);
   }
 }
+
+#moblist {
+  font-family: "Inconsolata", "Andale Mono", Monospace;
+  position: fixed;
+  right: 0px;
+  top: 75px;
+  width: 350px;
+  div.progress-bar {
+    width: 100px;
+    height: 3px;
+    margin-left: 0px;
+    margin-right: 5px;
+  }
+  ul {
+    list-style-type: none;
+    margin-bottom: 45px;
+    margin-left: 0px;
+  }
+  h5 {
+    margin-bottom: 0px;
+  }
+
+  div.blue {
+    background: #0000dd;
+  }
+
+  div.red {
+    background: #c00000;
+  }
+
+  div.yellow {
+    background: #c0c000;
+  }
+}
+
 
 
 /* old */
