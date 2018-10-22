@@ -229,3 +229,6 @@ CHANGELOG
 
 ---- 0.0.86 / 2018-10-14 / party-and-mob-bars ----------------------------------
 * add party / mob bars
+
+---- 0.0.87 / 2018-10-22 / room-exit-revamp ------------------------------------
+* move exits into their own tables, re-add doors etc
