@@ -2,14 +2,15 @@ defmodule ApathyDrive.AI do
   alias ApathyDrive.{Ability, Mobile, Party, Room}
 
   def think(%Room{} = room, ref) do
-    mobile = room.mobiles[ref]
-
-    if mobile.casting do
-      mobile
-    else
-      heal(mobile, room) || bless(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
-        auto_attack(mobile, room) || move(mobile, room) || mobile
-    end
+    Room.update_mobile(room, ref, fn mobile ->
+      if mobile.casting do
+        mobile
+      else
+        # move(mobile, room) || mobile
+        heal(mobile, room) || bless(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
+          auto_attack(mobile, room) || mobile
+      end
+    end)
   end
 
   def move(%{} = mobile, %Room{} = room) do
@@ -143,7 +144,7 @@ defmodule ApathyDrive.AI do
             Room.update_hp_bar(room, mobile.ref)
             Room.update_mana_bar(room, mobile.ref)
 
-            mobile
+            room
 
           _mobile ->
             nil
