@@ -185,7 +185,11 @@ defmodule ApathyDrive.AI do
   defp should_move?(%ApathyDrive.Character{}, _room), do: false
   defp should_move?(%{movement: "stationary"}, _room), do: false
 
+  # defp should_move?(%Character{} = mobile, room) do
+  #   mobile.hp > 0.8 and mobile.mana > 0.8 and is_nil(Mobile.auto_attack_target(mobile, room))
+  # end
+
   defp should_move?(%{} = mobile, room) do
-    mobile.hp > 0.8 and mobile.mana > 0.8 and is_nil(Mobile.auto_attack_target(mobile, room))
+    is_nil(Mobile.auto_attack_target(mobile, room)) and :rand.uniform(100) > 99
   end
 end
