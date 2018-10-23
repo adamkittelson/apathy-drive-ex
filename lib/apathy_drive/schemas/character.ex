@@ -407,11 +407,8 @@ defmodule ApathyDrive.Character do
   end
 
   def shield(%Character{} = character) do
-    shield =
-      character.equipment
-      |> Enum.find(&(&1.worn_on in ["Off-Hand"]))
-
-    if shield && shield.grade == "shield", do: shield
+    character.equipment
+    |> Enum.find(&(&1.worn_on == "Off-Hand" and &1.type == "Shield"))
   end
 
   def sign_in(email, password) do

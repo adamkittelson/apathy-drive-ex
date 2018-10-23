@@ -2,7 +2,7 @@ defmodule ApathyDrive.Commands.Remove do
   use ApathyDrive.Command
   alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
 
-  def keywords, do: ["remove", "unequip", "unwield"]
+  def keywords, do: ["remove", "unequip", "unwield", "rem"]
 
   def execute(%Room{} = room, %Character{} = character, []) do
     Mobile.send_scroll(character, "<p>Remove what?</p>")

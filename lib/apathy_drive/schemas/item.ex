@@ -241,7 +241,8 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def useable_by_character?(%Character{} = character, %Item{type: "Armour"} = armour) do
+  def useable_by_character?(%Character{} = character, %Item{type: type} = armour)
+      when type in ["Armour", "Shield"] do
     cond do
       Enum.any?(armour.required_classes) and !(character.class_id in armour.required_classes) ->
         false
