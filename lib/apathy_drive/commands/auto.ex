@@ -102,6 +102,11 @@ defmodule ApathyDrive.Commands.Auto do
     execute(room, room.mobiles[ref], [])
   end
 
+  def execute(%Room{} = room, %Character{} = character, _args) do
+    Mobile.send_scroll(character, "<p>What?</p>")
+    room
+  end
+
   def emoji(true), do: "✅"
   def emoji(false), do: "❌"
 end
