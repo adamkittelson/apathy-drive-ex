@@ -76,6 +76,11 @@ defmodule ApathyDrive.Monster do
     field(:casting, :any, virtual: true)
     field(:last_tick_at, :any, virtual: true)
     field(:last_room_id, :integer, virtual: true)
+    field(:auto_heal, :boolean, virtual: true, default: true)
+    field(:auto_bless, :boolean, virtual: true, default: true)
+    field(:auto_curse, :boolean, virtual: true, default: true)
+    field(:auto_nuke, :boolean, virtual: true, default: true)
+    field(:auto_flee, :boolean, virtual: true, default: false)
 
     timestamps()
 
