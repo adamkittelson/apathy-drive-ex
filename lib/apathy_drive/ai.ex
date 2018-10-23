@@ -4,7 +4,7 @@ defmodule ApathyDrive.AI do
   def think(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn mobile ->
       if mobile.casting do
-        mobile
+        flee(mobile, room) || mobile
       else
         heal(mobile, room) || flee(mobile, room) || bless(mobile, room) || curse(mobile, room) ||
           attack(mobile, room) || auto_attack(mobile, room) || move(mobile, room) || mobile

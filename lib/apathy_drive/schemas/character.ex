@@ -735,6 +735,7 @@ defmodule ApathyDrive.Character do
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
       block: Mobile.block_at_level(character, character.level),
+      parry: Mobile.parry_at_level(character, character.level),
       physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
       magical_damage: Mobile.magical_damage_at_level(character, character.level),
       magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
@@ -1078,6 +1079,7 @@ defmodule ApathyDrive.Character do
         |> Map.put(:mana, 1.0)
         |> Map.put(:energy, character.max_energy)
         |> Map.put(:attack_target, nil)
+        |> Map.put(:attack_roam, false)
         |> update_in([:effects], fn effects ->
           effects
           |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
@@ -1135,7 +1137,7 @@ defmodule ApathyDrive.Character do
       cha = Mobile.attribute_at_level(character, :charm, character.level)
       raw = (str + agi) / 2 + cha / 10
       modifier = Mobile.ability_value(character, "Parry")
-      raw * (1 + modifier / 100)
+      trunc(raw * (1 + modifier / 100))
     end
 
     def enough_mana_for_ability?(character, %Ability{mana: cost} = _ability) do
