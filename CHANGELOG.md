@@ -232,3 +232,6 @@ CHANGELOG
 
 ---- 0.0.87 / 2018-10-22 / room-exit-revamp ------------------------------------
 * move exits into their own tables, re-add doors etc
+
+---- 0.0.88 / 2018-10-22 / monster-roaming -------------------------------------
+* monster roaming and player automation
