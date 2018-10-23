@@ -25,6 +25,7 @@ defmodule ApathyDrive.RoomExit do
       %{
         "direction" => room_exit.direction,
         "area" => room_exit.destination.area_id,
+        "zone" => room_exit.destination.zone_controller_id,
         "kind" => room_exit.exit.kind,
         "destination" => room_exit.destination.id
       }

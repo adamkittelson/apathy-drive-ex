@@ -43,6 +43,7 @@ defmodule ApathyDrive.Area do
             ApathyDrive.RoomExit.load_exits(id)
             |> Enum.filter(
               &(&1["kind"] in [
+                  "Block Guard",
                   "Normal",
                   "Action",
                   "Door",

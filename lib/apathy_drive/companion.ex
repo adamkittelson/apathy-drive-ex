@@ -53,7 +53,13 @@ defmodule ApathyDrive.Companion do
     :casting,
     :hp_regen,
     :base_hp,
-    :last_tick_at
+    :last_tick_at,
+    :auto_heal,
+    :auto_bless,
+    :auto_curse,
+    :auto_nuke,
+    :auto_roam,
+    :auto_flee
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -226,7 +232,13 @@ defmodule ApathyDrive.Companion do
         :effects,
         :last_effect_key,
         :abilities,
-        :last_tick_at
+        :last_tick_at,
+        :auto_heal,
+        :auto_bless,
+        :auto_curse,
+        :auto_nuke,
+        :auto_roam,
+        :auto_flee
       ])
 
     room_monster =

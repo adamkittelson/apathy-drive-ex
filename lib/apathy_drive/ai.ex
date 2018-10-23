@@ -1,14 +1,13 @@
 defmodule ApathyDrive.AI do
-  alias ApathyDrive.{Ability, Mobile, Party, Room}
+  alias ApathyDrive.{Ability, Character, Mobile, Monster, Party, Room}
 
   def think(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn mobile ->
       if mobile.casting do
         mobile
       else
-        # move(mobile, room) || mobile
-        heal(mobile, room) || bless(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
-          auto_attack(mobile, room) || mobile
+        heal(mobile, room) || flee(mobile, room) || bless(mobile, room) || curse(mobile, room) ||
+          attack(mobile, room) || auto_attack(mobile, room) || move(mobile, room) || mobile
       end
     end)
   end
@@ -21,7 +20,7 @@ defmodule ApathyDrive.AI do
             []
 
           _exits ->
-            exits_in_area(room)
+            exits_in_area(room, mobile)
         end
 
       if Enum.any?(exits) do
@@ -46,7 +45,24 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def heal(%{} = mobile, %Room{} = room) do
+  def flee(%{} = mobile, %Room{} = room) do
+    if should_flee?(mobile, room) do
+      exits =
+        case room.exits do
+          nil ->
+            []
+
+          _exits ->
+            exits_in_area(room, mobile)
+        end
+
+      if Enum.any?(exits) do
+        ApathyDrive.Commands.Move.execute(room, mobile, Enum.random(exits))
+      end
+    end
+  end
+
+  def heal(%{auto_heal: true} = mobile, %Room{} = room) do
     injured_party_member =
       room
       |> Party.members(mobile)
@@ -69,7 +85,9 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def bless(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
+  def heal(%{} = _mobile, %Room{}), do: nil
+
+  def bless(%{auto_bless: true, mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
     member_to_bless =
       room
       |> Party.members(mobile)
@@ -87,7 +105,7 @@ defmodule ApathyDrive.AI do
 
   def bless(%{} = _mobile, %Room{}), do: nil
 
-  def curse(%{mana: mana} = mobile, %Room{} = room) when mana > 0.9 do
+  def curse(%{auto_curse: true, mana: mana} = mobile, %Room{} = room) when mana > 0.9 do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
     if target && :rand.uniform(100) > 95 do
@@ -104,7 +122,7 @@ defmodule ApathyDrive.AI do
 
   def curse(%{} = _mobile, %Room{}), do: nil
 
-  def attack(%{mana: mana} = mobile, %Room{} = room) when mana > 0.75 do
+  def attack(%{auto_nuke: true, mana: mana} = mobile, %Room{} = room) when mana > 0.75 do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
     if target do
@@ -167,25 +185,67 @@ defmodule ApathyDrive.AI do
     |> Enum.random()
   end
 
-  defp exits_in_area(%Room{exits: exits} = room) do
+  defp exits_in_area(%Room{exits: exits} = room, %Character{} = mobile) do
     Enum.filter(exits, fn %{"direction" => _direction} = room_exit ->
-      room_exit["area"] == room.area.id && passable?(room, room_exit)
+      room_exit["area"] == room.area.id && passable?(room, room_exit, mobile)
     end)
   end
 
-  defp passable?(room, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"],
+  defp exits_in_area(%Room{exits: exits} = room, mobile) do
+    Enum.filter(exits, fn %{"direction" => _direction} = room_exit ->
+      room_exit["area"] == room.area.id && room_exit["zone"] == room.zone_controller_id &&
+        passable?(room, room_exit, mobile)
+    end)
+  end
+
+  defp passable?(room, %{"kind" => kind} = room_exit, _mobile) when kind in ["Door", "Gate"],
     do: ApathyDrive.Doors.open?(room, room_exit)
 
-  defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"],
-    do: true
+  defp passable?(_room, %{"kind" => kind}, %Character{})
+       when kind in ["Block Guard", "Normal", "Action", "Trap", "Cast"],
+       do: true
 
-  defp passable?(_room, _room_exit), do: false
+  defp passable?(_room, %{"kind" => kind}, _mobile)
+       when kind in ["Normal", "Action", "Trap", "Cast"],
+       do: true
+
+  defp passable?(_room, _room_exit, _mobile), do: false
 
   defp should_move?(%ApathyDrive.Companion{}, _room), do: false
-  defp should_move?(%ApathyDrive.Character{}, _room), do: false
+
+  defp should_move?(%ApathyDrive.Character{auto_roam: true} = character, room) do
+    character.hp > 0.8 and character.mana > 0.8 and
+      is_nil(Mobile.auto_attack_target(character, room))
+  end
+
   defp should_move?(%{movement: "stationary"}, _room), do: false
 
-  defp should_move?(%{} = mobile, room) do
-    mobile.hp > 0.8 and mobile.mana > 0.8 and is_nil(Mobile.auto_attack_target(mobile, room))
+  defp should_move?(%{auto_roam: true} = mobile, room) do
+    is_nil(Mobile.auto_attack_target(mobile, room)) and :rand.uniform(100) > 99
   end
+
+  defp should_move?(%{} = _mobile, _room), do: false
+
+  defp should_flee?(%ApathyDrive.Companion{}, _room), do: false
+
+  defp should_flee?(%{movement: "stationary"}, _room), do: false
+
+  defp should_flee?(%{auto_flee: true} = mobile, room) do
+    hp_low? = mobile.hp < 0.20
+
+    enemies_present? =
+      room.mobiles
+      |> Map.values()
+      |> Enum.any?(fn
+        %Monster{hostile: true} ->
+          true
+
+        _ ->
+          false
+      end)
+
+    hp_low? and enemies_present?
+  end
+
+  defp should_flee?(%{} = _mobile, _room), do: false
 end

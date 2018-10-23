@@ -22,6 +22,10 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
+  def execute(%Room{} = room, %{} = mob, %{"kind" => "Block Guard"} = re) do
+    execute(room, mob, Map.put(re, "kind", "Normal"))
+  end
+
   def execute(
         %Room{} = room,
         character,

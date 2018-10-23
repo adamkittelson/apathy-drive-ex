@@ -41,6 +41,7 @@ defmodule ApathyDrive.Room do
     field(:gold, :integer, default: 0)
     field(:silver, :integer, default: 0)
     field(:copper, :integer, default: 0)
+    field(:zone_monster_limit, :integer)
 
     field(:exits, :any, virtual: true, default: [])
     field(:effects, :map, virtual: true, default: %{})
@@ -58,6 +59,7 @@ defmodule ApathyDrive.Room do
     has_many(:persisted_mobiles, Monster)
     belongs_to(:ability, Ability)
     belongs_to(:area, ApathyDrive.Area)
+    belongs_to(:zone_controller, ApathyDrive.Room)
     has_many(:lairs, ApathyDrive.LairMonster)
     has_many(:lair_monsters, through: [:lairs, :monster])
     has_many(:room_skills, ApathyDrive.RoomSkill)
