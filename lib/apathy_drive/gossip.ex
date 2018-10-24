@@ -9,7 +9,7 @@ defmodule ApathyDrive.Gossip do
   end
 
   def message_broadcast(payload) do
-    ApathyDriveWeb.Endpoint.broadcast!("chat:#{payload.channel}", "scroll", %{
+    ApathyDriveWeb.Endpoint.broadcast!("chat:#{payload.channel}", "chat", %{
       html:
         "<p>[<span class='dark-magenta'>gossip</span> : #{
           ApathyDrive.Character.sanitize(payload.name)
