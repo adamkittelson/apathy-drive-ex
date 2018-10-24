@@ -52,7 +52,7 @@ defmodule ApathyDrive.Directory do
     if state.local[character.name] == nil do
       Gossip.player_sign_in(character.name)
 
-      ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+      ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
         html: "<p>#{character.name} just entered the Realm.</p>"
       })
     end
@@ -168,7 +168,7 @@ defmodule ApathyDrive.Directory do
       new_list
       |> Enum.reduce(updated_list, fn %{name: name, game: game} = player, updated_list ->
         if !MapSet.member?(updated_list, player) do
-          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
             html:
               "<p>#{ApathyDrive.Character.sanitize(name)} just entered the distant Realm of #{
                 ApathyDrive.Character.sanitize(game)

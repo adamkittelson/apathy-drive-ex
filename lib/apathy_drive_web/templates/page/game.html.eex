@@ -17,15 +17,19 @@
 
 </div>
 
-<div class="container">
+<div id="scroll-container">
   <div id="scroll">
   </div>
   <footer id="footer" class="twelve columns">
     <div id="prompt"></div><input id="command" size="50" class="prompt" autocomplete="off"/>
   </footer>
-  <div id="moblist">
-  </div>
 </div>
+<div id="right-sidebar">
+    <div id="moblist">
+    </div>
+    <div id="chat">
+    </div>
+  </div>
 <div id="player-bars">
   <div class="progress-bar hp">
     <div class="red"></div>

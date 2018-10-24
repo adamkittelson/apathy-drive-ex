@@ -946,7 +946,7 @@ defmodule ApathyDrive.Character do
     end
 
     def color(%Character{}) do
-      "darkteal"
+      "teal"
     end
 
     def colored_name(%Character{name: name} = character) do

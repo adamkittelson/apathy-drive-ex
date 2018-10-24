@@ -1,13 +1,16 @@
 html, body.app {
   height: 100%;
   background-color: #000;
+  overflow: hidden;
 }
 
-.container {
-  //max-width: 900px;
-  //min-width: 725px;
+#scroll-container {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 100%;
+  height: 100%;
   color: white;
   label.error {
     color: red;
@@ -23,6 +26,33 @@ html, body.app {
     color: black;
   }
   margin: 0 0 0 25px;
+  #scroll {
+    overflow-y: scroll;
+    padding-left: 360px;
+    //height: 100%;
+    white-space: pre-wrap;
+    font-family: "Inconsolata", "Andale Mono", Monospace;
+    color: silver;
+    line-height: 9px;
+    width: 100%;
+    z-index: 1;
+    //position: relative;
+    font-size: 0.90em;
+    p {
+      padding-right: 775px;
+    }
+  }
+  #footer {
+    flex-shrink: 0;
+    margin-left: 360px;
+    font-family: "Inconsolata", "Andale Mono", Monospace;
+    color: silver;
+    line-height: 9px;
+    margin-bottom: 1em;
+    width: 100%;
+    padding-top: 5px;
+    padding-bottom: 80px;
+  }
 }
 
 canvas {
@@ -42,39 +72,12 @@ canvas {
   font-size: 0.90em;
 }
 
-#scroll {
-  padding-left: 360px;
-  height: 100%;
-  white-space: pre-wrap;
-  font-family: "Inconsolata", "Andale Mono", Monospace;
-  color: silver;
-  line-height: 9px;
-  width: 100%;
-  z-index: 1;
-  position: relative;
-  font-size: 0.90em;
-  p {
-    padding-right: 750px;
-  }
-}
-
-#footer {
-  margin-left: 360px;
-  font-family: "Inconsolata", "Andale Mono", Monospace;
-  color: silver;
-  line-height: 9px;
-  margin-bottom: 1em;
-  width: 100%;
-  padding-top: 5px;
-  padding-bottom: 20px;
-}
 
 input.prompt {
   background-color: black !important;
   border: none;
   color: silver;
   outline: none;
-  font-size: 14px;
   display: inline;
   margin-bottom: 0px;
   width: 80%;
@@ -128,38 +131,60 @@ input.prompt {
   }
 }
 
-#moblist {
-  font-family: "Inconsolata", "Andale Mono", Monospace;
+#right-sidebar {
   position: fixed;
   right: 0px;
   top: 75px;
-  width: 350px;
-  div.progress-bar {
-    width: 100px;
-    height: 3px;
-    margin-left: 0px;
-    margin-right: 5px;
-  }
-  ul {
-    list-style-type: none;
-    margin-bottom: 45px;
-    margin-left: 0px;
-  }
-  h5 {
-    margin-bottom: 0px;
+  width: 375px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  #chat {
+    color: silver;
+    line-height: 19px;
+    font-family: "Inconsolata", "Andale Mono", Monospace;
+    font-size: 0.90em;
+    padding-bottom: 115px;
+    overflow-y: scroll;
+    p {
+      margin-bottom: 0px;
+      margin-right: 10px;
+    }
   }
 
-  div.blue {
-    background: #0000dd;
+  #moblist {
+    flex-shrink: 0;
+    font-family: "Inconsolata", "Andale Mono", Monospace;
+    font-size: 0.90em;
+    div.progress-bar {
+      width: 105px;
+      height: 3px;
+      margin-left: 0px;
+      margin-right: 5px;
+    }
+    ul {
+      list-style-type: none;
+      margin-bottom: 45px;
+      margin-left: 0px;
+    }
+    h5 {
+      margin-bottom: 0px;
+    }
+
+    div.blue {
+      background: #0000dd;
+    }
+
+    div.red {
+      background: #c00000;
+    }
+
+    div.yellow {
+      background: #c0c000;
+    }
   }
 
-  div.red {
-    background: #c00000;
-  }
-
-  div.yellow {
-    background: #c0c000;
-  }
 }
 
 
@@ -237,6 +262,7 @@ pre {
   margin-right: 5px;
   float: left;
   line-height: 8px;
+  font-size: 0.90em;
 }
 
 

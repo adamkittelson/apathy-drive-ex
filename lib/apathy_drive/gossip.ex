@@ -20,7 +20,7 @@ defmodule ApathyDrive.Gossip do
   end
 
   def player_sign_in(game_name, player_name) do
-    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
       html:
         "<p>#{ApathyDrive.Character.sanitize(player_name)} just entered the distant Realm of #{
           ApathyDrive.Character.sanitize(game_name)
@@ -31,7 +31,7 @@ defmodule ApathyDrive.Gossip do
   end
 
   def player_sign_out(game_name, player_name) do
-    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
+    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
       html:
         "<p>#{ApathyDrive.Character.sanitize(player_name)} just left the distant Realm of #{
           ApathyDrive.Character.sanitize(game_name)

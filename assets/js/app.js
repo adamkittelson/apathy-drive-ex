@@ -26,8 +26,14 @@ clearScroll = function () {
 };
 
 adjustScrollTop = function () {
-  if ($(window).scrollTop() + $(window).height() > $(document).height() - 250) {
-    return window.scrollTo(0, $('#scroll')[0].scrollHeight);
+  if ($('#scroll').scrollTop() + $('#scroll').height() > $('#scroll')[0].scrollHeight - 400) {
+    return $("#scroll").scrollTop($('#scroll')[0].scrollHeight);
+  }
+};
+
+window.adjustChatTop = function () {
+  if ($('#chat').scrollTop() + $('#chat').height() > $('#chat')[0].scrollHeight - 400) {
+    return $("#chat").scrollTop($('#chat')[0].scrollHeight);
   }
 };
 
@@ -111,7 +117,8 @@ chan.on("update hp bar", function (data) {
 })
 
 chan.on("update mob list", function (data) {
-  $("#moblist").html(data.html)
+  $("#moblist").html(data.html);
+  adjustChatTop();
 })
 
 chan.on("update score", function (score_data) {
@@ -173,6 +180,12 @@ chan.on("up", function (message) {
 
 chan.on("scroll", function (message) {
   addToScroll("#scroll", _.unescape(message.html));
+});
+
+chan.on("chat", function (message) {
+  addToScroll("#scroll", _.unescape(message.html));
+  $("#chat").append(_.unescape(message.html));
+  return adjustChatTop();
 });
 
 window.push = function (event, message) {

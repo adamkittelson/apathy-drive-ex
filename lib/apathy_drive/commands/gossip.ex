@@ -6,7 +6,7 @@ defmodule ApathyDrive.Commands.Gossip do
   def execute(%Room{} = room, %Character{} = character, args) do
     message = Enum.join(args, " ")
 
-    ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "scroll", %{
+    ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
       html:
         "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{
           Character.sanitize(message)
