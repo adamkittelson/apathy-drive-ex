@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Auto do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile}
+  alias ApathyDrive.{Character, Mobile, Repo}
 
   def keywords, do: ["auto"]
 
@@ -51,7 +51,9 @@ defmodule ApathyDrive.Commands.Auto do
   def execute(%Room{} = room, %Character{ref: ref}, ["heal"]) do
     room =
       Room.update_mobile(room, ref, fn character ->
-        Map.put(character, :auto_heal, !character.auto_heal)
+        character
+        |> Ecto.Changeset.change(%{auto_heal: !character.auto_heal})
+        |> Repo.update!()
       end)
 
     execute(room, room.mobiles[ref], [])
@@ -60,7 +62,9 @@ defmodule ApathyDrive.Commands.Auto do
   def execute(%Room{} = room, %Character{ref: ref}, ["flee"]) do
     room =
       Room.update_mobile(room, ref, fn character ->
-        Map.put(character, :auto_flee, !character.auto_flee)
+        character
+        |> Ecto.Changeset.change(%{auto_flee: !character.auto_flee})
+        |> Repo.update!()
       end)
 
     execute(room, room.mobiles[ref], [])
@@ -69,7 +73,9 @@ defmodule ApathyDrive.Commands.Auto do
   def execute(%Room{} = room, %Character{ref: ref}, ["bless"]) do
     room =
       Room.update_mobile(room, ref, fn character ->
-        Map.put(character, :auto_bless, !character.auto_bless)
+        character
+        |> Ecto.Changeset.change(%{auto_bless: !character.auto_bless})
+        |> Repo.update!()
       end)
 
     execute(room, room.mobiles[ref], [])
@@ -78,7 +84,9 @@ defmodule ApathyDrive.Commands.Auto do
   def execute(%Room{} = room, %Character{ref: ref}, ["curse"]) do
     room =
       Room.update_mobile(room, ref, fn character ->
-        Map.put(character, :auto_curse, !character.auto_curse)
+        character
+        |> Ecto.Changeset.change(%{auto_curse: !character.auto_curse})
+        |> Repo.update!()
       end)
 
     execute(room, room.mobiles[ref], [])
@@ -87,7 +95,9 @@ defmodule ApathyDrive.Commands.Auto do
   def execute(%Room{} = room, %Character{ref: ref}, ["nuke"]) do
     room =
       Room.update_mobile(room, ref, fn character ->
-        Map.put(character, :auto_nuke, !character.auto_nuke)
+        character
+        |> Ecto.Changeset.change(%{auto_nuke: !character.auto_nuke})
+        |> Repo.update!()
       end)
 
     execute(room, room.mobiles[ref], [])
@@ -96,7 +106,9 @@ defmodule ApathyDrive.Commands.Auto do
   def execute(%Room{} = room, %Character{ref: ref}, ["roam"]) do
     room =
       Room.update_mobile(room, ref, fn character ->
-        Map.put(character, :auto_roam, !character.auto_roam)
+        character
+        |> Ecto.Changeset.change(%{auto_roam: !character.auto_roam})
+        |> Repo.update!()
       end)
 
     execute(room, room.mobiles[ref], [])
@@ -108,5 +120,5 @@ defmodule ApathyDrive.Commands.Auto do
   end
 
   def emoji(true), do: "✅"
-  def emoji(false), do: "❌"
+  def emoji(_), do: "❌"
 end

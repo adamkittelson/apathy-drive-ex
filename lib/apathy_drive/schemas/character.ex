@@ -64,6 +64,12 @@ defmodule ApathyDrive.Character do
     field(:race_id, :integer)
     field(:class_id, :integer)
     field(:pity_modifier, :integer, default: 0)
+    field(:auto_heal, :boolean)
+    field(:auto_bless, :boolean)
+    field(:auto_curse, :boolean)
+    field(:auto_nuke, :boolean)
+    field(:auto_roam, :boolean)
+    field(:auto_flee, :boolean)
 
     field(:level, :integer, virtual: true, default: 1)
     field(:race, :string, virtual: true)
@@ -103,12 +109,6 @@ defmodule ApathyDrive.Character do
     field(:mana_regen_attributes, :any, virtual: true, default: [])
     field(:last_tick_at, :any, virtual: true)
     field(:last_room_id, :integer, virtual: true)
-    field(:auto_heal, :boolean, virtual: true, default: false)
-    field(:auto_bless, :boolean, virtual: true, default: false)
-    field(:auto_curse, :boolean, virtual: true, default: false)
-    field(:auto_nuke, :boolean, virtual: true, default: false)
-    field(:auto_roam, :boolean, virtual: true, default: false)
-    field(:auto_flee, :boolean, virtual: true, default: false)
 
     belongs_to(:room, Room)
 

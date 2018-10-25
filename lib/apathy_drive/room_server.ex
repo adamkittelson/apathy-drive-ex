@@ -165,6 +165,10 @@ defmodule ApathyDrive.RoomServer do
       send(self(), :spawn_lair)
     end
 
+    if room.zone_controller_id > 0 && room.zone_controller_id != room.id do
+      send(self(), :spawn_zone_monster)
+    end
+
     Process.send_after(self(), :save, 2000)
 
     {:ok, room}
@@ -536,6 +540,19 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:save, room) do
     Process.send_after(self(), :save, jitter(:timer.minutes(30)))
     room = Repo.save!(room)
+    {:noreply, room}
+  end
+
+  def handle_info(:spawn_zone_monster, %Room{zone_controller_id: nil} = room),
+    do: {:noreply, room}
+
+  def handle_info(:spawn_zone_monster, %Room{zone_controller_id: id} = room) do
+    room =
+      ApathyDrive.MonsterSpawning.spawn_zone_monster(
+        room,
+        LairMonster.monster_ids(id)
+      )
+
     {:noreply, room}
   end
 

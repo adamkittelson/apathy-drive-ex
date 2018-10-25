@@ -68,6 +68,7 @@ defmodule ApathyDrive.Monster do
     field(:room_id, :integer, virtual: true)
     field(:level, :integer, virtual: true)
     field(:spawned_at, :integer, virtual: true)
+    field(:zone_spawned_at, :integer, virtual: true)
     field(:ability_shift, :float, virtual: true)
     field(:ability_special, :float, virtual: true)
     field(:reputations, :map, virtual: true, default: [])
@@ -131,6 +132,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:room_id, room_id)
       |> Map.put(:level, rm.level)
       |> Map.put(:spawned_at, rm.spawned_at)
+      |> Map.put(:zone_spawned_at, rm.zone_spawned_at)
 
     if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
       ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -157,7 +159,8 @@ defmodule ApathyDrive.Monster do
         :health,
         :charm,
         :name,
-        :spawned_at
+        :spawned_at,
+        :room_spawned_at
       ])
 
     ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -233,6 +236,7 @@ defmodule ApathyDrive.Monster do
       room_id: monster.room_id,
       monster_id: monster.id,
       spawned_at: monster.spawned_at,
+      zone_spawned_at: monster.zone_spawned_at,
       name: name_with_adjective(monster.name, monster.adjectives)
     }
 

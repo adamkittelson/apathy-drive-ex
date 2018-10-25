@@ -1,6 +1,7 @@
 defmodule ApathyDrive.MonsterSpawning do
   alias ApathyDrive.{LairMonster, Monster, Repo, Room, RoomMonster}
   require Ecto.Query
+  require Logger
 
   def load_monsters(%Room{} = room) do
     room.id
@@ -27,13 +28,41 @@ defmodule ApathyDrive.MonsterSpawning do
     spawn_lair(room, lair_monsters)
   end
 
+  def spawn_zone_monster(%Room{zone_controller_id: nil} = room, _monster_ids), do: room
+  def spawn_zone_monster(%Room{} = room, []), do: room
+
+  def spawn_zone_monster(%Room{zone_controller_id: id} = room, monster_ids) do
+    Process.send_after(self(), :spawn_zone_monster, 5000)
+
+    if :rand.uniform(100) > 90 do
+      monster_limit = Room.zone_monster_limit(id)
+
+      if !zone_limit_reached?(id, monster_limit) do
+        monster_id = Enum.random(monster_ids)
+
+        if updated_room = spawn_monster(room, monster_id) do
+          Logger.info("#{room.name} spawned #{monster_id} for zone #{id}")
+          updated_room
+        else
+          room
+        end
+      else
+        Logger.info("#{room.name} not spawning for zone #{id} because it is full")
+        room
+      end
+    else
+      room
+    end
+  end
+
   def spawn_monster(%Room{} = room, monster_id) do
     monster =
       %RoomMonster{
         room_id: room.id,
         monster_id: monster_id,
         level: room.area.level,
-        spawned_at: room.id
+        spawned_at: room.id,
+        zone_spawned_at: room.zone_controller_id
       }
       |> Monster.from_room_monster()
 
@@ -85,6 +114,18 @@ defmodule ApathyDrive.MonsterSpawning do
     count =
       RoomMonster
       |> Ecto.Query.where(monster_id: ^id)
+      |> Ecto.Query.select([m], count(m.id))
+      |> Repo.one()
+
+    count >= limit
+  end
+
+  def zone_limit_reached?(_id, nil), do: true
+
+  def zone_limit_reached?(id, limit) do
+    count =
+      RoomMonster
+      |> Ecto.Query.where(zone_spawned_at: ^id)
       |> Ecto.Query.select([m], count(m.id))
       |> Repo.one()
 

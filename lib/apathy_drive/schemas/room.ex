@@ -244,6 +244,18 @@ defmodule ApathyDrive.Room do
     """
   end
 
+  def zone_monster_limit(room_id) do
+    query =
+      from(
+        room in __MODULE__,
+        where: room.id == ^room_id,
+        select: room.zone_monster_limit
+      )
+
+    query
+    |> Repo.one()
+  end
+
   def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do
     from_direction =
       room

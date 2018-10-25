@@ -14,6 +14,7 @@ defmodule ApathyDrive.RoomMonster do
     field(:charm, :integer)
     field(:level, :integer)
     field(:spawned_at, :integer)
+    field(:zone_spawned_at, :integer)
     field(:name, :string)
 
     timestamps()
