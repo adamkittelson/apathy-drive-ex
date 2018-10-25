@@ -263,6 +263,7 @@ $(document).ready(function () {
   }
 
   window.center_on_room = function (room_id) {
+    draw_map()
     if (rooms[room_id]) {
       player.room = rooms[room_id];
       highlight_area(rooms[room_id]);
@@ -286,7 +287,6 @@ $(document).ready(function () {
     for (var area_name in areas) {
       draw_area(area_name);
     };
-    center_on_room(room_id);
   }
 
   // Start animating
@@ -517,6 +517,7 @@ $(document).ready(function () {
   }
 
   chan.on("update_map", function (area) {
+    window.map_loaded = false
     text.text = "Apotheosis";
     for (var area_name in area) {
       areas[area_name] = areas[area_name] || {
@@ -528,6 +529,7 @@ $(document).ready(function () {
         add_room(parseInt(room_id), area_name, area[area_name].rooms[room_id]);
       }
     }
+    window.map_loaded = true
   });
 
   chan.on("request_room_id", function () {
