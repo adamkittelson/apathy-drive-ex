@@ -25,9 +25,9 @@
   </footer>
 </div>
 <div id="right-sidebar">
-    <div id="moblist">
-    </div>
     <div id="chat">
+    </div>
+    <div id="moblist">
     </div>
   </div>
 <div id="player-bars">
