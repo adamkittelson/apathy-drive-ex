@@ -1,7 +1,7 @@
 defmodule ApathyDrive.ShopItem do
   use ApathyDriveWeb, :model
 
-  alias ApathyDrive.{ItemInstance, Room, ShopItem}
+  alias ApathyDrive.{ChannelHistory, ItemInstance, Room, ShopItem}
 
   schema "shop_items" do
     field(:stock, :integer)
@@ -40,11 +40,19 @@ defmodule ApathyDrive.ShopItem do
       if shop_item.count < shop_item.stock and :rand.uniform(100) <= shop_item.restock_chance do
         restock_amount = min(shop_item.stock - shop_item.count, shop_item.restock_amount)
 
+        message =
+          "<p>[<span class='yellow'>announce</span> : Apotheosis] #{room.name} just received a shipment of: #{
+            shop_item.item.name
+          } (#{restock_amount})</p>"
+
+        Repo.insert!(%ChannelHistory{
+          character_name: "Apotheosis",
+          channel_name: "announce",
+          message: message
+        })
+
         ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
-          html:
-            "<p>[<span class='yellow'>announce</span> : Apotheosis] #{room.name} just received a shipment of: #{
-              shop_item.item.name
-            } (#{restock_amount})</p>"
+          html: message
         })
 
         Enum.each(1..restock_amount, fn _ ->

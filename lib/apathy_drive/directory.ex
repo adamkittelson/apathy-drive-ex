@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Directory do
   use GenServer
-  alias ApathyDrive.Match
+  alias ApathyDrive.{ChannelHistory, Match, Repo}
 
   def start_link do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -52,8 +52,15 @@ defmodule ApathyDrive.Directory do
     if state.local[character.name] == nil do
       Gossip.player_sign_in(character.name)
 
+      message = "<p>#{character.name} just entered the Realm.</p>"
+
+      Repo.insert!(%ChannelHistory{
+        character_name: character.name,
+        message: message
+      })
+
       ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
-        html: "<p>#{character.name} just entered the Realm.</p>"
+        html: message
       })
     end
 
