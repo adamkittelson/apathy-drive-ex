@@ -235,3 +235,6 @@ CHANGELOG
 
 ---- 0.0.88 / 2018-10-22 / monster-roaming -------------------------------------
 * monster roaming and player automation
+
+---- 0.0.89 / 2018-10-25 / chat-history ----------------------------------------
+* chat history
