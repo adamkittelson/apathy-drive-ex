@@ -40,10 +40,10 @@ defmodule ApathyDrive.ShopItem do
       if shop_item.count < shop_item.stock and :rand.uniform(100) <= shop_item.restock_chance do
         restock_amount = min(shop_item.stock - shop_item.count, shop_item.restock_amount)
 
-        message =
-          "<p>[<span class='yellow'>announce</span> : Apotheosis] #{room.name} just received a shipment of: #{
-            shop_item.item.name
-          } (#{restock_amount})</p>"
+        raw_message =
+          "#{room.name} just received a shipment of: #{shop_item.item.name} (#{restock_amount})"
+
+        message = "<p>[<span class='yellow'>announce</span> : Apotheosis] #{raw_message}</p>"
 
         Repo.insert!(%ChannelHistory{
           character_name: "Apotheosis",

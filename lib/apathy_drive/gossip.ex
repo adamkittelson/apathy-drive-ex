@@ -4,13 +4,18 @@ defmodule ApathyDrive.Gossip do
 
   @behaviour Gossip.Client
 
+  @channel_colors %{
+    "gossip" => "dark-magenta",
+    "announce" => "yellow"
+  }
+
   def channels do
     ["gossip"]
   end
 
   def message_broadcast(payload) do
     message =
-      "<p>[<span class='dark-magenta'>gossip</span> : #{
+      "<p>[<span class='#{@channel_colors[payload.channel]}'>#{payload.channel}</span> : #{
         ApathyDrive.Character.sanitize(payload.name)
       }@#{ApathyDrive.Character.sanitize(payload.game)}] #{
         ApathyDrive.Character.sanitize(payload.message)

@@ -23,7 +23,7 @@ defmodule ApathyDrive.Commands.Gossip do
       html: message
     })
 
-    Gossip.broadcast("gossip", %{name: character.name, message: Character.sanitize(raw_message)})
+    Gossip.broadcast("gossip", %{name: character.name, message: raw_message})
     room
   end
 end
