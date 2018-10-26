@@ -5,11 +5,11 @@ defmodule ApathyDrive.Commands.Gossip do
   def keywords, do: ["gos"]
 
   def execute(%Room{} = room, %Character{} = character, args) do
-    message = Enum.join(args, " ")
+    raw_message = Enum.join(args, " ")
 
     message =
       "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{
-        Character.sanitize(message)
+        Character.sanitize(raw_message)
       }</p>"
 
     Repo.insert!(%ChannelHistory{
@@ -23,7 +23,7 @@ defmodule ApathyDrive.Commands.Gossip do
       html: message
     })
 
-    Gossip.broadcast("gossip", %{name: character.name, message: message})
+    Gossip.broadcast("gossip", %{name: character.name, message: Character.sanitize(raw_message)})
     room
   end
 end

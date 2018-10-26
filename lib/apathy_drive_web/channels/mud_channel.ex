@@ -48,7 +48,6 @@ defmodule ApathyDriveWeb.MUDChannel do
 
     ChannelHistory.fetch()
     |> Enum.each(fn message ->
-      IO.inspect(message)
       Phoenix.Channel.push(socket, "chat-sidebar", %{:html => message})
     end)
 
