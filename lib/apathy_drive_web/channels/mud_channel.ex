@@ -1,6 +1,6 @@
 defmodule ApathyDriveWeb.MUDChannel do
   use ApathyDriveWeb, :channel
-  alias ApathyDrive.{Character, Mobile, RoomServer}
+  alias ApathyDrive.{ChannelHistory, Character, Mobile, RoomServer}
 
   def join("mud:play", %{"character" => token}, socket) do
     case Phoenix.Token.verify(socket, "character", token, max_age: 1_209_600) do
@@ -29,6 +29,7 @@ defmodule ApathyDriveWeb.MUDChannel do
 
             ApathyDrive.PubSub.subscribe("spirits:online")
             ApathyDrive.PubSub.subscribe("chat:gossip")
+            ApathyDrive.PubSub.subscribe("chat:announce")
 
             send(self(), :after_join)
 
@@ -44,6 +45,12 @@ defmodule ApathyDriveWeb.MUDChannel do
     socket.assigns[:room_id]
     |> RoomServer.find()
     |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
+
+    ChannelHistory.fetch()
+    |> Enum.each(fn message ->
+      IO.inspect(message)
+      Phoenix.Channel.push(socket, "chat-sidebar", %{:html => message})
+    end)
 
     {:noreply, socket}
   end

@@ -188,6 +188,11 @@ chan.on("chat", function (message) {
   return adjustChatTop();
 });
 
+chan.on("chat-sidebar", function (message) {
+  $("#chat").append(_.unescape(message.html));
+  return adjustChatTop();
+});
+
 window.push = function (event, message) {
   chan.push(event, message)
 };

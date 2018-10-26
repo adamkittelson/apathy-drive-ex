@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Gossip do
   require Logger
-  alias ApathyDrive.{Character, Directory, RoomServer}
+  alias ApathyDrive.{ChannelHistory, Character, Directory, Repo, RoomServer}
 
   @behaviour Gossip.Client
 
@@ -9,33 +9,58 @@ defmodule ApathyDrive.Gossip do
   end
 
   def message_broadcast(payload) do
+    message =
+      "<p>[<span class='dark-magenta'>gossip</span> : #{
+        ApathyDrive.Character.sanitize(payload.name)
+      }@#{ApathyDrive.Character.sanitize(payload.game)}] #{
+        ApathyDrive.Character.sanitize(payload.message)
+      }</p>"
+
+    Repo.insert!(%ChannelHistory{
+      character_name: ApathyDrive.Character.sanitize(payload.name),
+      game_name: ApathyDrive.Character.sanitize(payload.game),
+      channel_name: payload.channel,
+      message: message
+    })
+
     ApathyDriveWeb.Endpoint.broadcast!("chat:#{payload.channel}", "chat", %{
-      html:
-        "<p>[<span class='dark-magenta'>gossip</span> : #{
-          ApathyDrive.Character.sanitize(payload.name)
-        }@#{ApathyDrive.Character.sanitize(payload.game)}] #{
-          ApathyDrive.Character.sanitize(payload.message)
-        }</p>"
+      html: message
     })
   end
 
   def player_sign_in(game_name, player_name) do
+    message =
+      "<p>#{ApathyDrive.Character.sanitize(player_name)} just entered the distant Realm of #{
+        ApathyDrive.Character.sanitize(game_name)
+      }.</p>"
+
+    Repo.insert!(%ChannelHistory{
+      character_name: ApathyDrive.Character.sanitize(player_name),
+      game_name: ApathyDrive.Character.sanitize(game_name),
+      message: message
+    })
+
     ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
-      html:
-        "<p>#{ApathyDrive.Character.sanitize(player_name)} just entered the distant Realm of #{
-          ApathyDrive.Character.sanitize(game_name)
-        }.</p>"
+      html: message
     })
 
     Directory.add_character(game_name, player_name)
   end
 
   def player_sign_out(game_name, player_name) do
+    message =
+      "<p>#{ApathyDrive.Character.sanitize(player_name)} just left the distant Realm of #{
+        ApathyDrive.Character.sanitize(game_name)
+      }.</p>"
+
+    Repo.insert!(%ChannelHistory{
+      character_name: ApathyDrive.Character.sanitize(player_name),
+      game_name: ApathyDrive.Character.sanitize(game_name),
+      message: message
+    })
+
     ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
-      html:
-        "<p>#{ApathyDrive.Character.sanitize(player_name)} just left the distant Realm of #{
-          ApathyDrive.Character.sanitize(game_name)
-        }.</p>"
+      html: message
     })
 
     Directory.remove_character(game_name, player_name)
