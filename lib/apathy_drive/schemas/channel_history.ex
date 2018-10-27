@@ -14,9 +14,10 @@ defmodule ApathyDrive.ChannelHistory do
 
   def fetch(rows \\ 100) do
     __MODULE__
-    |> Ecto.Query.order_by(asc: :id)
+    |> Ecto.Query.order_by(desc: :id)
     |> Ecto.Query.limit(^rows)
     |> Ecto.Query.select([ch], ch.message)
     |> Repo.all()
+    |> Enum.reverse()
   end
 end
