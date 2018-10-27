@@ -93,7 +93,11 @@ defmodule ApathyDrive.Directory do
     |> Match.one(:name_starts_with, character)
     |> case do
       nil ->
-        {:reply, :not_found, state}
+        if game_name do
+          {:reply, {:remote, character, game_name}, state}
+        else
+          {:reply, :not_found, state}
+        end
 
       %{name: name, game: game} ->
         {:reply, {:remote, name, game}, state}
@@ -121,10 +125,6 @@ defmodule ApathyDrive.Directory do
 
   def handle_call({:remove_character, game, name}, _from, state) do
     {:reply, :ok, update_in(state.remote, &MapSet.delete(&1, %{name: name, game: game}))}
-  end
-
-  def handle_call({:update_remote_players, game, players}, _from, state) do
-    {:reply, :ok, update_remote_players_for_game(game, players, state)}
   end
 
   def handle_info(:refresh_remote_players, state) do
