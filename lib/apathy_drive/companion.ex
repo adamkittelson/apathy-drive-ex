@@ -576,8 +576,17 @@ defmodule ApathyDrive.Companion do
       end
     end
 
-    def round_length_in_ms(_companion) do
-      Application.get_env(:apathy_drive, :round_length_in_ms)
+    def round_length_in_ms(companion) do
+      speed = ability_value(companion, "Speed")
+
+      modifier =
+        if speed == 0 do
+          1
+        else
+          speed / 100
+        end
+
+      trunc(modifier * Application.get_env(:apathy_drive, :round_length_in_ms))
     end
 
     def send_scroll(%Companion{} = companion, _html) do

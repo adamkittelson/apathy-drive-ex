@@ -1282,8 +1282,17 @@ defmodule ApathyDrive.Character do
       |> Enum.reduce(0, &(&2 + Mobile.attribute_at_level(character, &1, level)))
     end
 
-    def round_length_in_ms(_character) do
-      Application.get_env(:apathy_drive, :round_length_in_ms)
+    def round_length_in_ms(character) do
+      speed = ability_value(character, "Speed")
+
+      modifier =
+        if speed == 0 do
+          1
+        else
+          speed / 100
+        end
+
+      trunc(modifier * Application.get_env(:apathy_drive, :round_length_in_ms))
     end
 
     def send_scroll(%Character{socket: socket} = character, html) do
