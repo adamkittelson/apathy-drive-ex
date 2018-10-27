@@ -1052,6 +1052,34 @@ defmodule ApathyDrive.Ability do
           Mobile.update_prompt(caster)
 
           {caster, damage_percent}
+
+        %{kind: "drain", min: min, max: max, damage_type: type}, {caster, target} ->
+          caster_damage =
+            div(trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent), 2)
+
+          ability_damage = Enum.random(min..max)
+
+          resist =
+            div(
+              trunc(Mobile.magical_resistance_at_level(target, target_level) * round_percent),
+              4
+            )
+
+          damage = caster_damage + ability_damage - resist
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = damage * (1 - modifier / 100)
+
+          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+
+          heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
+
+          caster = Mobile.shift_hp(caster, heal_percent, room)
+
+          Mobile.update_prompt(caster)
+
+          {caster, damage_percent}
       end)
 
     damage_percent =
