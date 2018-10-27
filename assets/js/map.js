@@ -517,7 +517,6 @@ $(document).ready(function () {
   }
 
   chan.on("update_map", function (area) {
-    window.map_loaded = false
     text.text = "Apotheosis";
     for (var area_name in area) {
       areas[area_name] = areas[area_name] || {
@@ -529,7 +528,6 @@ $(document).ready(function () {
         add_room(parseInt(room_id), area_name, area[area_name].rooms[room_id]);
       }
     }
-    window.map_loaded = true
   });
 
   chan.on("request_room_id", function () {

@@ -61,12 +61,8 @@ chan.on("update_room", function (message) {
   if (player.power != message.power || player.level != message.level) {
     player.power = message.power;
     player.level = message.level;
-    draw_map(message.room_id);
   }
-  else {
-    center_on_room(message.room_id)
-  }
-
+  center_on_room(message.room_id)
 });
 
 chan.on("clear scroll", function (message) {
