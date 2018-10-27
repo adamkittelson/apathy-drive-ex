@@ -299,6 +299,19 @@ defmodule ApathyDrive.Ability do
     |> useable(mobile)
   end
 
+  def drain_abilities(%{abilities: abilities} = mobile, %{} = target) do
+    abilities
+    |> Map.values()
+    |> Enum.filter(fn ability ->
+      Map.has_key?(ability.traits, "Damage") and
+        Enum.any?(ability.traits["Damage"], &(&1.kind == "drain"))
+    end)
+    |> Enum.filter(fn ability ->
+      Ability.affects_target?(target, ability)
+    end)
+    |> useable(mobile)
+  end
+
   def bless_abilities(%{abilities: abilities} = mobile, %{} = target) do
     abilities
     |> Map.values()

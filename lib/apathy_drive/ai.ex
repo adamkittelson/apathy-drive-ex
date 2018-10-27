@@ -6,8 +6,9 @@ defmodule ApathyDrive.AI do
       if mobile.casting do
         flee(mobile, room) || mobile
       else
-        heal(mobile, room) || flee(mobile, room) || bless(mobile, room) || curse(mobile, room) ||
-          attack(mobile, room) || auto_attack(mobile, room) || move(mobile, room) || mobile
+        drain(mobile, room) || heal(mobile, room) || flee(mobile, room) || bless(mobile, room) ||
+          curse(mobile, room) || attack(mobile, room) || auto_attack(mobile, room) ||
+          move(mobile, room) || mobile
       end
     end)
   end
@@ -61,6 +62,26 @@ defmodule ApathyDrive.AI do
       end
     end
   end
+
+  def drain(%{auto_heal: true} = mobile, %Room{} = room) do
+    target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
+    chance = trunc(:math.pow(20, 2 - mobile.hp) - 20)
+
+    roll = :rand.uniform(100)
+
+    if target && chance > roll do
+      ability =
+        mobile
+        |> Ability.drain_abilities(target)
+        |> random_ability(mobile)
+
+      if ability do
+        Ability.execute(room, mobile.ref, ability, [target.ref])
+      end
+    end
+  end
+
+  def drain(%{} = _mobile, %Room{}), do: nil
 
   def heal(%{auto_heal: true} = mobile, %Room{} = room) do
     injured_party_member =
