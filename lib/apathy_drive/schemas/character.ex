@@ -150,21 +150,7 @@ defmodule ApathyDrive.Character do
   end
 
   def encumbrance(%Character{} = character) do
-    item_weight = Enum.reduce(character.equipment ++ character.inventory, 0, &(&1.weight + &2))
-
-    coin_weight =
-      div(
-        Enum.sum([
-          character.runic,
-          character.platinum,
-          character.gold,
-          character.silver,
-          character.copper
-        ]),
-        3
-      )
-
-    item_weight + coin_weight
+    Enum.reduce(character.equipment ++ character.inventory, 0, &(&1.weight + &2))
   end
 
   def max_encumbrance(%Character{} = character) do
