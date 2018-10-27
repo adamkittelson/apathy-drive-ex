@@ -18,8 +18,18 @@ defmodule ApathyDrive.Mixfile do
   def application do
     [
       mod: {ApathyDrive, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: extra_applications()
     ]
+  end
+
+  defp extra_applications() do
+    extra_apps = [:logger, :runtime_tools]
+
+    if Application.get_env(:logger, :handle_sasl_reports) do
+      [:sasl | extra_apps]
+    else
+      extra_apps
+    end
   end
 
   defp deps do

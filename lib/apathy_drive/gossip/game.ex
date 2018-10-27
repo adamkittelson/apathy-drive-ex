@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Gossip.Game do
+defmodule ApathyDrive.Gossip.Games do
   @behaviour Gossip.Client.Games
 
   @impl true
