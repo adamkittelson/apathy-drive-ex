@@ -868,10 +868,10 @@ defmodule ApathyDrive.Ability do
         reaction = %Ability{
           kind: "attack",
           mana: 0,
+          energy: 0,
           user_message: shield["DamageShieldUserMessage"],
           target_message: shield["DamageShieldTargetMessage"],
           spectator_message: shield["DamageShieldSpectatorMessage"],
-          ignores_round_cooldown?: true,
           traits: %{
             "Damage" => damage
           }
@@ -1191,6 +1191,17 @@ defmodule ApathyDrive.Ability do
     |> Enum.reduce(effects, fn effect, updated_effects ->
       process_duration_trait(effect, updated_effects, target, caster, ability, room)
     end)
+  end
+
+  def process_duration_trait(
+        {"Damage", _damages},
+        %{"DamageShield" => _} = effects,
+        _target,
+        _caster,
+        _ability,
+        _room
+      ) do
+    effects
   end
 
   def process_duration_trait({"Damage", damages}, effects, _target, _caster, _ability, _room)
