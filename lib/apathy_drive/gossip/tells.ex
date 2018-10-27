@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Gossip.Tell do
+defmodule ApathyDrive.Gossip.Tells do
   require Logger
   alias ApathyDrive.{Character, Directory, RoomServer}
   @behaviour Gossip.Client.Tells
