@@ -762,6 +762,11 @@ defmodule ApathyDrive.Character do
     )
   end
 
+  def send_chat(%Character{socket: socket} = character, html) do
+    send(socket, {:chat, html})
+    character
+  end
+
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
       character_value = Systems.Effect.effect_bonus(character, ability)

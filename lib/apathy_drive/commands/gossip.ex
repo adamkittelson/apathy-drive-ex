@@ -13,8 +13,6 @@ defmodule ApathyDrive.Commands.Gossip do
       }</p>"
 
     Repo.insert!(%ChannelHistory{
-      character_name: character.name,
-      character_id: character.id,
       message: message,
       channel_name: "gossip"
     })

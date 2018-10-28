@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Reply do
   use ApathyDrive.Command
-  alias ApathyDrive.{Directory, Mobile}
+  alias ApathyDrive.{ChannelHistory, Directory, Mobile, Repo}
 
   def keywords, do: ["reply"]
 
@@ -18,9 +18,9 @@ defmodule ApathyDrive.Commands.Reply do
       {:local, name, room, ref} ->
         room
         |> RoomServer.find()
-        |> RoomServer.tell(character.name, ref, message)
+        |> RoomServer.tell(character.name, nil, ref, message)
 
-        Mobile.send_scroll(
+        Character.send_chat(
           character,
           "<p><span class='red'>You tell #{name}:</span> #{Character.sanitize(message)}"
         )
@@ -36,12 +36,17 @@ defmodule ApathyDrive.Commands.Reply do
             )
 
           :ok ->
-            Mobile.send_scroll(
-              character,
+            message =
               "<p><span class='red'>You tell #{name}@#{game}:</span> #{
                 Character.sanitize(message)
-              }"
-            )
+              }</p>"
+
+            Repo.insert!(%ChannelHistory{
+              character_id: character.id,
+              message: message
+            })
+
+            Character.send_chat(character, message)
         end
 
       _ ->

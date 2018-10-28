@@ -12,7 +12,7 @@ defmodule ApathyDrive.Gossip.Tells do
 
         room
         |> RoomServer.find()
-        |> RoomServer.tell("#{from_player}@#{game_name}", ref, message)
+        |> RoomServer.tell(from_player, game_name, ref, message)
 
       _ ->
         Logger.error(

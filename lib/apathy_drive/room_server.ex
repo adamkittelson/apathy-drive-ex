@@ -4,6 +4,7 @@ defmodule ApathyDrive.RoomServer do
   alias ApathyDrive.{
     Ability,
     Area,
+    ChannelHistory,
     Character,
     Commands,
     Companion,
@@ -134,8 +135,11 @@ defmodule ApathyDrive.RoomServer do
     GenServer.call(room, {:character_connected, character, socket})
   end
 
-  def tell(room, from_character_name, to_character_name, message) do
-    GenServer.cast(room, {:tell, from_character_name, to_character_name, message})
+  def tell(room, from_character_name, to_character_name, to_character_ref, message) do
+    GenServer.cast(
+      room,
+      {:tell, from_character_name, to_character_name, to_character_ref, message}
+    )
   end
 
   def init(id) do
@@ -251,17 +255,29 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_cast({:tell, from_character_name, to_character_ref, message}, room) do
+  def handle_cast({:tell, from_character_name, from_game, to_character_ref, message}, room) do
     room =
       Room.update_mobile(room, to_character_ref, fn character ->
-        Mobile.send_scroll(
+        from_character =
+          [from_character_name, from_game]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.join("@")
+
+        message =
+          "<p><span class='red'>#{from_character} tells you:</span> #{Character.sanitize(message)}</p>"
+
+        Character.send_chat(
           character,
-          "<p><span class='red'>#{from_character_name} tells you:</span> #{
-            Character.sanitize(message)
-          }"
+          message
         )
 
-        Map.put(character, :reply_to, from_character_name)
+        Repo.insert!(%ChannelHistory{
+          character_name: from_character_name,
+          game_name: from_game,
+          message: message
+        })
+
+        Map.put(character, :reply_to, from_character)
       end)
 
     {:noreply, room}

@@ -130,6 +130,12 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:chat, html}, socket) do
+    Phoenix.Channel.push(socket, "chat", %{:html => html})
+
+    {:noreply, socket}
+  end
+
   def handle_info({:focus_element, elem}, socket) do
     Phoenix.Channel.push(socket, "focus", %{:html => elem})
 
