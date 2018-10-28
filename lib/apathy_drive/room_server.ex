@@ -272,6 +272,7 @@ defmodule ApathyDrive.RoomServer do
         )
 
         Repo.insert!(%ChannelHistory{
+          character_id: character.id,
           character_name: from_character_name,
           game_name: from_game,
           message: message

@@ -46,7 +46,7 @@ defmodule ApathyDriveWeb.MUDChannel do
     |> RoomServer.find()
     |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
 
-    ChannelHistory.fetch()
+    ChannelHistory.fetch(socket.assigns[:character])
     |> Enum.each(fn message ->
       Phoenix.Channel.push(socket, "chat-sidebar", %{:html => message})
     end)
