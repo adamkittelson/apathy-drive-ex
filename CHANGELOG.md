@@ -241,3 +241,6 @@ CHANGELOG
 
 ---- 0.0.90 / 2018-10-27 / update-gossip ---------------------------------------
 * udpate gossip to 1.0.0
+
+---- 0.0.91 / 2018-10-29 / monster-tweaks --------------------------------------
+* monsters cast spells
