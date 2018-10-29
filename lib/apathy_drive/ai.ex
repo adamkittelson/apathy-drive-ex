@@ -126,10 +126,10 @@ defmodule ApathyDrive.AI do
 
   def bless(%{} = _mobile, %Room{}), do: nil
 
-  def curse(%{auto_curse: true, mana: mana} = mobile, %Room{} = room) when mana > 0.9 do
+  def curse(%{auto_curse: true, mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
-    if target && :rand.uniform(100) > 95 do
+    if target do
       ability =
         mobile
         |> Ability.curse_abilities(target)
