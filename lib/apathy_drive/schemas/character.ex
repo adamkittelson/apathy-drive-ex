@@ -47,6 +47,8 @@ defmodule ApathyDrive.Character do
     field(:gender, :string)
     field(:email, :string)
     field(:password, :string)
+    field(:exp_buffer, :integer, default: 0)
+    field(:max_exp_buffer, :integer, default: 0)
     field(:strength_experience, :integer, default: 0)
     field(:agility_experience, :integer, default: 0)
     field(:intellect_experience, :integer, default: 0)
@@ -143,7 +145,7 @@ defmodule ApathyDrive.Character do
       })
       |> Repo.update!()
       |> load_items()
-      |> Mobile.add_attribute_experience(%{charm: currency_value})
+      |> Mobile.add_attribute_experience(%{charm: 1})
     else
       character
     end
@@ -417,14 +419,17 @@ defmodule ApathyDrive.Character do
   def add_experience(%Character{} = character, exp) when exp > 0 do
     Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
-    Mobile.add_attribute_experience(character, %{
-      strength: exp,
-      agility: exp,
-      intellect: exp,
-      willpower: exp,
-      health: exp,
-      charm: exp
-    })
+    exp_buffer = character.exp_buffer + exp
+
+    character =
+      character
+      |> Ecto.Changeset.change(%{
+        exp_buffer: exp_buffer,
+        max_exp_buffer: max(exp_buffer, character.max_exp_buffer)
+      })
+      |> Repo.update!()
+
+    Character.update_exp_bar(character)
   end
 
   def add_experience(character, _exp), do: character
@@ -771,6 +776,25 @@ defmodule ApathyDrive.Character do
     character
   end
 
+  def update_exp_bar(%Character{socket: socket} = character) do
+    percent =
+      if character.max_exp_buffer > 0 do
+        trunc(character.exp_buffer / character.max_exp_buffer * 100)
+      else
+        0
+      end
+
+    send(
+      socket,
+      {:update_exp_bar,
+       %{
+         percentage: percent
+       }}
+    )
+
+    character
+  end
+
   def update_attribute_bar(%Character{socket: socket} = character, attribute) do
     level = character.attribute_levels[attribute]
 
@@ -807,76 +831,86 @@ defmodule ApathyDrive.Character do
     def add_attribute_experience(%Character{} = character, %{} = attributes) do
       character_level = character.level
 
-      Enum.reduce(attributes, character, fn {attribute, amount}, character ->
-        Character.pulse_score_attribute(character, attribute)
+      exp = max(1, trunc(character.exp_buffer * 0.01))
 
-        attribute_level = character.attribute_levels[attribute]
+      Enum.reduce(attributes, character, fn {attribute, percent}, character ->
+        amount = max(1, trunc(exp * percent))
 
-        character =
-          character
-          |> Ecto.Changeset.change(%{
-            "#{attribute}_experience":
-              Map.get(character, :"#{attribute}_experience") + trunc(amount)
-          })
-          |> Repo.update!()
+        if character.exp_buffer >= amount do
+          Character.pulse_score_attribute(character, attribute)
 
-        new_attribute_level =
-          character
-          |> Map.get(:"#{attribute}_experience")
-          |> Level.level_at_exp(1.0)
+          attribute_level = character.attribute_levels[attribute]
 
-        character =
-          if new_attribute_level > attribute_level do
-            old_abilities = Map.values(character.abilities)
+          character =
+            character
+            |> Ecto.Changeset.change(%{
+              "#{attribute}_experience":
+                Map.get(character, :"#{attribute}_experience") + trunc(amount),
+              exp_buffer: Map.get(character, :exp_buffer) - amount
+            })
+            |> Repo.update!()
 
-            character =
-              character
-              |> Character.set_attribute_levels()
-              |> Character.load_abilities()
-              |> Character.set_title()
+          new_attribute_level =
+            character
+            |> Map.get(:"#{attribute}_experience")
+            |> Level.level_at_exp(1.0)
 
-            new_abilities = Map.values(character.abilities)
+          character =
+            if new_attribute_level > attribute_level do
+              old_abilities = Map.values(character.abilities)
 
-            Mobile.send_scroll(
-              character,
-              "<p><span class='yellow'>Your #{attribute} increases to #{
-                Map.get(character, attribute)
-              }!</span></p>"
-            )
+              character =
+                character
+                |> Character.set_attribute_levels()
+                |> Character.load_abilities()
+                |> Character.set_title()
 
-            if character.level > character_level do
+              new_abilities = Map.values(character.abilities)
+
               Mobile.send_scroll(
                 character,
-                "<p><span class='yellow'>Your level increases to #{character.level}!</span></p>"
+                "<p><span class='yellow'>Your #{attribute} increases to #{
+                  Map.get(character, attribute)
+                }!</span></p>"
               )
 
-              Directory.add_character(%{
-                name: character.name,
-                room: character.room_id,
-                ref: character.ref,
-                title: character.title
-              })
-            end
-
-            Enum.each(new_abilities, fn ability ->
-              unless ability in old_abilities do
+              if character.level > character_level do
                 Mobile.send_scroll(
                   character,
-                  "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+                  "<p><span class='yellow'>Your level increases to #{character.level}!</span></p>"
                 )
 
-                Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
+                Directory.add_character(%{
+                  name: character.name,
+                  room: character.room_id,
+                  ref: character.ref,
+                  title: character.title
+                })
               end
-            end)
 
-            character
-          else
-            character
-          end
+              Enum.each(new_abilities, fn ability ->
+                unless ability in old_abilities do
+                  Mobile.send_scroll(
+                    character,
+                    "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+                  )
 
-        Character.update_attribute_bar(character, attribute)
+                  Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
+                end
+              end)
 
-        character
+              character
+            else
+              character
+            end
+
+          Character.update_attribute_bar(character, attribute)
+          Character.update_exp_bar(character)
+
+          character
+        else
+          character
+        end
       end)
     end
 

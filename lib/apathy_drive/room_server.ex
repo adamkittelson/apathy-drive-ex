@@ -205,6 +205,7 @@ defmodule ApathyDrive.RoomServer do
       room.mobiles[existing_character.ref]
       |> Mobile.update_prompt()
       |> Character.set_attribute_levels()
+      |> Character.update_exp_bar()
 
       Room.update_moblist(room)
 
@@ -224,6 +225,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_class()
         |> Character.load_reputations()
         |> Character.set_attribute_levels()
+        |> Character.update_exp_bar()
         |> Character.load_abilities()
         |> Character.load_items()
         |> Character.set_title()

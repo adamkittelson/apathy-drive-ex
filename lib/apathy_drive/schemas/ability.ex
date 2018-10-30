@@ -735,14 +735,12 @@ defmodule ApathyDrive.Ability do
       dodged?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
 
-        exp = Mobile.dodge_at_level(target, target.level, room)
-
         target =
           target
           |> aggro_target(ability, caster)
           |> Mobile.add_attribute_experience(%{
-            agility: exp * 0.9,
-            charm: exp * 0.1
+            agility: 0.9,
+            charm: 0.1
           })
 
         put_in(room.mobiles[target.ref], target)
@@ -750,15 +748,13 @@ defmodule ApathyDrive.Ability do
       blocked?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
 
-        exp = Mobile.block_at_level(target, target.level)
-
         target =
           target
           |> aggro_target(ability, caster)
           |> Mobile.add_attribute_experience(%{
-            strength: exp * 0.7,
-            agility: exp * 0.2,
-            charm: exp * 0.1
+            strength: 0.7,
+            agility: 0.2,
+            charm: 0.1
           })
 
         put_in(room.mobiles[target.ref], target)
@@ -766,15 +762,13 @@ defmodule ApathyDrive.Ability do
       parried?(caster, target, room) ->
         display_cast_message(room, caster, target, Map.put(ability, :result, :parried))
 
-        exp = Mobile.parry_at_level(target, target.level)
-
         target =
           target
           |> aggro_target(ability, caster)
           |> Mobile.add_attribute_experience(%{
-            strength: exp * 0.2,
-            agility: exp * 0.7,
-            charm: exp * 0.1
+            strength: 0.2,
+            agility: 0.7,
+            charm: 0.1
           })
 
         put_in(room.mobiles[target.ref], target)
@@ -1109,7 +1103,9 @@ defmodule ApathyDrive.Ability do
 
     caster =
       Enum.reduce(ability.attributes, caster, fn {attribute, _value}, caster ->
-        Mobile.add_attribute_experience(caster, %{attribute => Map.get(caster, attribute)})
+        Mobile.add_attribute_experience(caster, %{
+          attribute => 1 / length(Map.keys(ability.attributes))
+        })
       end)
 
     target_attribute =
@@ -1121,7 +1117,8 @@ defmodule ApathyDrive.Ability do
 
     target =
       Mobile.add_attribute_experience(target, %{
-        target_attribute => Map.get(target, target_attribute)
+        target_attribute => 0.2,
+        :health => 0.8
       })
 
     {caster, target}

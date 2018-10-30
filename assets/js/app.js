@@ -88,8 +88,13 @@ var update_score_attribute = function (attribute, new_value) {
   }
 }
 
+chan.on("update exp bar", function (data) {
+  console.log("exp: " + data.percentage)
+  progress($(".score .experience"), data.percentage)
+})
+
+
 chan.on("update attribute bar", function (data) {
-  console.log(data.attribute + ": " + data.percentage)
   progress($(".score ." + data.attribute), data.percentage)
 })
 

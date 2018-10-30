@@ -47,7 +47,7 @@ defmodule ApathyDrive.MonsterSpawning do
           room
         end
       else
-        Logger.info("#{room.name} not spawning for zone #{id} because it is full")
+        Logger.debug("#{room.name} not spawning for zone #{id} because it is full")
         room
       end
     else

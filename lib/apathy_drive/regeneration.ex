@@ -78,7 +78,6 @@ defmodule ApathyDrive.Regeneration do
 
     mobile
     |> update_in([Access.key!(:hp)], &min(1.0, &1 + hp))
-    |> Mobile.add_attribute_experience(%{health: 1})
   end
 
   def regenerate_mana(%{mana: 1.0} = mobile), do: mobile
@@ -86,13 +85,10 @@ defmodule ApathyDrive.Regeneration do
   def regenerate_mana(%{} = mobile) do
     mana = mana_since_last_tick(mobile)
 
-    if attributes = Map.get(mobile, :mana_regen_attributes) do
-      exp = Enum.reduce(attributes, %{}, &Map.put(&2, &1, 1))
-
+    if Map.get(mobile, :mana_regen_attributes) do
       mobile
       |> update_in([Access.key!(:mana)], &min(1.0, &1 + mana))
       |> reset_mana_regen_attributes()
-      |> Mobile.add_attribute_experience(exp)
     else
       mobile
       |> update_in([Access.key!(:mana)], &min(1.0, &1 + mana))
