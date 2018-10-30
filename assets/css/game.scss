@@ -131,6 +131,51 @@ input.prompt {
   div.yellow {
     background: linear-gradient(#c0c000,#404000);
   }
+
+  div.dark-magenta {
+    background: linear-gradient(darkmagenta, black)
+  }
+
+  div.dark-red {
+    background: linear-gradient(darkred, black)
+  }
+
+  div.green {
+    background: linear-gradient(chartreuse, black)
+  }
+
+  div.magenta {
+    background: linear-gradient(magenta, darkmagenta)
+  }
+
+  div.dark-cyan {
+    background: linear-gradient(teal, black)
+  }
+
+  div.dark-green {
+    background: darkgreen;
+  }
+
+
+}
+
+div.attribute {
+  width: 115px;
+  margin-left: 13px;
+  height: 1px;
+  position: relative;
+  top: -2px;
+}
+span.attribute-row {
+  position: relative;
+  top: -64px;
+}
+div.experience {
+  width: 244px;
+  position: relative;
+  top: 10px;
+  left: 8px;
+  height: 3px;
 }
 
 #right-sidebar {

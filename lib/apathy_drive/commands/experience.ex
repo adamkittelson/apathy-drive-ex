@@ -20,7 +20,7 @@ defmodule ApathyDrive.Commands.Experience do
       current = Level.exp_at_level(level, 1.0)
       to_level = Level.exp_at_level(level + 1, 1.0)
 
-      percent = ((exp - current) / (to_level - current) * 100) |> round
+      percent = ((exp - current) / (to_level - current) * 100) |> trunc
 
       Mobile.send_scroll(
         character,

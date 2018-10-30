@@ -248,9 +248,13 @@ defmodule ApathyDrive.Character do
 
         level = Level.level_at_exp(exp, 1.0)
 
+        character =
+          character
+          |> put_in([Access.key!(:attribute_levels), stat], level)
+          |> put_in([Access.key!(stat)], character.race[stat] + level)
+
+        Character.update_attribute_bar(character, stat)
         character
-        |> put_in([Access.key!(:attribute_levels), stat], level)
-        |> put_in([Access.key!(stat)], character.race[stat] + level)
       end)
 
     Map.put(character, :level, level(character))
@@ -767,6 +771,27 @@ defmodule ApathyDrive.Character do
     character
   end
 
+  def update_attribute_bar(%Character{socket: socket} = character, attribute) do
+    level = character.attribute_levels[attribute]
+
+    exp = Map.get(character, :"#{attribute}_experience")
+    current = Level.exp_at_level(level, 1.0)
+    to_level = Level.exp_at_level(level + 1, 1.0)
+
+    percent = ((exp - current) / (to_level - current) * 100) |> trunc
+
+    send(
+      socket,
+      {:update_attribute_bar,
+       %{
+         attribute: to_string(attribute),
+         percentage: percent
+       }}
+    )
+
+    character
+  end
+
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
       character_value = Systems.Effect.effect_bonus(character, ability)
@@ -800,53 +825,58 @@ defmodule ApathyDrive.Character do
           |> Map.get(:"#{attribute}_experience")
           |> Level.level_at_exp(1.0)
 
-        if new_attribute_level > attribute_level do
-          old_abilities = Map.values(character.abilities)
+        character =
+          if new_attribute_level > attribute_level do
+            old_abilities = Map.values(character.abilities)
 
-          character =
-            character
-            |> Character.set_attribute_levels()
-            |> Character.load_abilities()
-            |> Character.set_title()
+            character =
+              character
+              |> Character.set_attribute_levels()
+              |> Character.load_abilities()
+              |> Character.set_title()
 
-          new_abilities = Map.values(character.abilities)
+            new_abilities = Map.values(character.abilities)
 
-          Mobile.send_scroll(
-            character,
-            "<p><span class='yellow'>Your #{attribute} increases to #{
-              Map.get(character, attribute)
-            }!</span></p>"
-          )
-
-          if character.level > character_level do
             Mobile.send_scroll(
               character,
-              "<p><span class='yellow'>Your level increases to #{character.level}!</span></p>"
+              "<p><span class='yellow'>Your #{attribute} increases to #{
+                Map.get(character, attribute)
+              }!</span></p>"
             )
 
-            Directory.add_character(%{
-              name: character.name,
-              room: character.room_id,
-              ref: character.ref,
-              title: character.title
-            })
-          end
-
-          Enum.each(new_abilities, fn ability ->
-            unless ability in old_abilities do
+            if character.level > character_level do
               Mobile.send_scroll(
                 character,
-                "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+                "<p><span class='yellow'>Your level increases to #{character.level}!</span></p>"
               )
 
-              Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
+              Directory.add_character(%{
+                name: character.name,
+                room: character.room_id,
+                ref: character.ref,
+                title: character.title
+              })
             end
-          end)
 
-          character
-        else
-          character
-        end
+            Enum.each(new_abilities, fn ability ->
+              unless ability in old_abilities do
+                Mobile.send_scroll(
+                  character,
+                  "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+                )
+
+                Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
+              end
+            end)
+
+            character
+          else
+            character
+          end
+
+        Character.update_attribute_bar(character, attribute)
+
+        character
       end)
     end
 

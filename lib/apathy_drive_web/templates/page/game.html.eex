@@ -5,15 +5,18 @@
   <span class="dark-green">Race:</span> <span id="score-race" class="dark-cyan"></span> <span class="dark-green">Class:</span> <span id="score-class" class="dark-cyan"></span> <span class="dark-green">Dodge:</span>    <span id="score-dodge" class="dark-cyan"></span>
   <span class="dark-green">AC:</span>   <span id="score-ac" class="dark-cyan"></span> <span class="dark-green">MR:</span>    <span id="score-mr" class="dark-cyan"></span> <span class="dark-green">Parry:</span>    <span id="score-parry" class="dark-cyan"></span>
   <span class="dark-green">Hits:</span> <span id="score-hp" class="dark-cyan"></span> <span class="dark-green">Mana:</span>  <span id="score-mana" class="dark-cyan"></span> <span class="dark-green">Block:</span>    <span id="score-block" class="dark-cyan"></span>
-                                       <span class="dark-green">Stealth:</span>  <span id="score-stealth" class="dark-cyan"></span>
+  <div class="progress-bar experience"><div class="dark-cyan"></div></div><span class="dark-green">Stealth:</span>  <span id="score-stealth" class="dark-cyan"></span>
   <span class="dark-green">Strength:</span>  <span id="score-strength" class="dark-cyan"></span> <span class="dark-green">Agility:</span> <span id="score-agility" class="dark-cyan"></span> <span class="dark-green">Percep:</span>   <span id="score-perception" class="dark-cyan"></span>
-  <span class="dark-green">Intellect:</span> <span id="score-intellect" class="dark-cyan"></span> <span class="dark-green">Health:</span>  <span id="score-health" class="dark-cyan"></span> <span class="dark-green">Crits:</span>    <span id="score-crits" class="dark-cyan"></span>
+  <div class="progress-bar strength attribute"><div class="dark-green"></div></div><div class="progress-bar agility attribute"><div class="dark-green"></div></div>
+  <div class="progress-bar intellect attribute"><div class="dark-green"></div></div><div class="progress-bar health attribute"><div class="dark-green"></div></div>
+  <div class="progress-bar willpower attribute"><div class="dark-green"></div></div><div class="progress-bar charm attribute"><div class="dark-green"></div></div>
+  <span class="attribute-row"><span class="dark-green">Intellect:</span> <span id="score-intellect" class="dark-cyan"></span> <span class="dark-green">Health:</span>  <span id="score-health" class="dark-cyan"></span> <span class="dark-green">Crits:</span>    <span id="score-crits" class="dark-cyan"></span>
   <span class="dark-green">Willpower:</span> <span id="score-willpower" class="dark-cyan"></span> <span class="dark-green">Charm:</span>   <span id="score-charm" class="dark-cyan"></span>
 
   <span class="dark-green">ResistStone:</span> <span id="score-stone" class="dark-cyan"></span> <span class="dark-green">ResistLightning:</span> <span id="score-lightning" class="dark-cyan"></span>
   <span class="dark-green">ResistFire:</span>  <span id="score-fire" class="dark-cyan"></span> <span class="dark-green">ResistCold:</span>      <span id="score-cold" class="dark-cyan"></span>
   <span class="dark-green">ResistWater:</span> <span id="score-water" class="dark-cyan"></span> <span class="dark-green">ResistPoison:</span>    <span id="score-poison" class="dark-cyan"></span>
-  <span id="score-effects"></span>
+  <span id="score-effects"></span></span>
 
 </div>
 

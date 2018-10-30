@@ -88,6 +88,11 @@ var update_score_attribute = function (attribute, new_value) {
   }
 }
 
+chan.on("update attribute bar", function (data) {
+  console.log(data.attribute + ": " + data.percentage)
+  progress($(".score ." + data.attribute), data.percentage)
+})
+
 chan.on("update energy bar", function (data) {
   if (data.player) {
     progress($("#player-bars .energy"), data.percentage, data.time_to_full)
@@ -271,11 +276,18 @@ window.progress = function (elem, percent, time_to_full) {
     elem.find('div').stop().width(elem.width())
   }
   else {
-    var currentWidth = percent * elem.width() / 100;
+    if (time_to_full) {
+      var currentWidth = percent * elem.width() / 100;
 
-    if (currentWidth >= 0) {
-      elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
+      if (currentWidth >= 0) {
+        elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
+      }
+    } else {
+      var currentWidth = percent * elem.width() / 100;
+
+      elem.find('div').width(currentWidth)
     }
+
   }
 
 }
