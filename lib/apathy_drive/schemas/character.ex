@@ -1323,7 +1323,7 @@ defmodule ApathyDrive.Character do
 
       base = health / 2
       hp_per_level = ability_value(mobile, "HPPerLevel") * level
-      bonus = (health - 50) / 16
+      bonus = (health - 50) * level / 16
 
       modifier = ability_value(mobile, "MaxHP")
       trunc((base + hp_per_level + bonus) * (1 + modifier / 100))
