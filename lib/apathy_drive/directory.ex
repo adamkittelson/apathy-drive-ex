@@ -115,8 +115,15 @@ defmodule ApathyDrive.Directory do
     if character = state.local[name] do
       Gossip.player_sign_out(character.name)
 
-      ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-        html: "<p>#{character.name} just left the Realm.</p>"
+      message = "<p>#{character.name} just left the Realm.</p>"
+
+      ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
+        html: message
+      })
+
+      Repo.insert!(%ChannelHistory{
+        character_name: ApathyDrive.Character.sanitize(character.name),
+        message: message
       })
     end
 
@@ -157,11 +164,19 @@ defmodule ApathyDrive.Directory do
       |> Enum.filter(&(&1.game == game))
       |> Enum.reduce(state.remote, fn %{name: name, game: game} = player, updated_list ->
         if !MapSet.member?(new_list, player) do
-          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-            html:
-              "<p>#{ApathyDrive.Character.sanitize(name)} just left the distant Realm of #{
-                ApathyDrive.Character.sanitize(game)
-              }.</p>"
+          message =
+            "<p>#{ApathyDrive.Character.sanitize(name)} just left the distant Realm of #{
+              ApathyDrive.Character.sanitize(game)
+            }.</p>"
+
+          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
+            html: message
+          })
+
+          Repo.insert!(%ChannelHistory{
+            character_name: ApathyDrive.Character.sanitize(name),
+            game_name: ApathyDrive.Character.sanitize(game),
+            message: message
           })
 
           MapSet.delete(updated_list, player)
