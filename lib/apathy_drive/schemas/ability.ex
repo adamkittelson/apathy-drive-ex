@@ -738,7 +738,7 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_attribute_experience(%{
+          |> Character.add_attribute_experience(%{
             agility: 0.9,
             charm: 0.1
           })
@@ -751,7 +751,7 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_attribute_experience(%{
+          |> Character.add_attribute_experience(%{
             strength: 0.7,
             agility: 0.2,
             charm: 0.1
@@ -765,7 +765,7 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-          |> Mobile.add_attribute_experience(%{
+          |> Character.add_attribute_experience(%{
             strength: 0.2,
             agility: 0.7,
             charm: 0.1
@@ -1109,7 +1109,7 @@ defmodule ApathyDrive.Ability do
       end
 
     target =
-      Mobile.add_attribute_experience(target, %{
+      Character.add_attribute_experience(target, %{
         target_attribute => 0.2,
         :health => 0.8
       })

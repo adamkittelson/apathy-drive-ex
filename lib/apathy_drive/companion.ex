@@ -281,8 +281,6 @@ defmodule ApathyDrive.Companion do
       trunc(agi * (1 + modifier / 100))
     end
 
-    def add_attribute_experience(%Companion{} = companion, _skills_and_experience), do: companion
-
     def attribute_at_level(%Companion{} = companion, attribute, level) do
       Map.get(companion, attribute) + level - 1
     end

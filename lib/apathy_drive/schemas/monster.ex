@@ -363,8 +363,6 @@ defmodule ApathyDrive.Monster do
       trunc(agi * (1 + modifier / 100))
     end
 
-    def add_attribute_experience(%Monster{} = monster, _skills_and_experience), do: monster
-
     def attribute_at_level(%Monster{} = monster, attribute, level) do
       Map.get(monster, attribute) + level - 1
     end
