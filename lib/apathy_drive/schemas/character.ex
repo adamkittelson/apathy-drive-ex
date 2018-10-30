@@ -1468,12 +1468,19 @@ defmodule ApathyDrive.Character do
     def subtract_mana(character, %{mana: cost} = ability) do
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
 
-      character
-      |> update_in([Access.key!(:mana)], &max(0, &1 - percentage))
-      |> update_in(
-        [Access.key!(:mana_regen_attributes)],
-        &Enum.uniq(&1 ++ Map.keys(ability.attributes))
-      )
+      character =
+        character
+        |> update_in([Access.key!(:mana)], &max(0, &1 - percentage))
+        |> update_in(
+          [Access.key!(:mana_regen_attributes)],
+          &Enum.uniq(&1 ++ Map.keys(ability.attributes))
+        )
+
+      Enum.reduce(ability.attributes, character, fn {attribute, _value}, character ->
+        Mobile.add_attribute_experience(character, %{
+          attribute => 1 / length(Map.keys(ability.attributes))
+        })
+      end)
     end
 
     def subtract_energy(character, ability) do

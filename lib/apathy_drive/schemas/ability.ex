@@ -1101,13 +1101,6 @@ defmodule ApathyDrive.Ability do
       |> Map.put(:ability_special, :normal)
       |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
-    caster =
-      Enum.reduce(ability.attributes, caster, fn {attribute, _value}, caster ->
-        Mobile.add_attribute_experience(caster, %{
-          attribute => 1 / length(Map.keys(ability.attributes))
-        })
-      end)
-
     target_attribute =
       if ability.mana > 0 do
         :willpower
