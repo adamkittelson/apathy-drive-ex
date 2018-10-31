@@ -89,7 +89,6 @@ var update_score_attribute = function (attribute, new_value) {
 }
 
 chan.on("update exp bar", function (data) {
-  console.log("exp: " + data.percentage)
   progress($(".score .experience"), data.percentage)
 })
 
@@ -204,7 +203,7 @@ window.push = function (event, message) {
 };
 
 pruneBackscroll = function () {
-  var backscroll_size = 5000;
+  var backscroll_size = 1000;
 
   if ($("#scroll").children().length > backscroll_size) {
     $("#scroll").children().first().remove();
