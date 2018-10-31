@@ -244,3 +244,6 @@ CHANGELOG
 
 ---- 0.0.91 / 2018-10-29 / monster-tweaks --------------------------------------
 * monsters cast spells
+
+---- 0.0.92 / 2018-10-31 / monster-attack-chance -------------------------------
+* monster attack chance
