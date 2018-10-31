@@ -161,33 +161,33 @@ defmodule ApathyDrive.AI do
   def attack(%{} = _mobile, %Room{}), do: nil
 
   def auto_attack(mobile, room) do
-    attack = Mobile.attack_ability(mobile)
+    if target_ref = Mobile.auto_attack_target(mobile, room) do
+      attack = Mobile.attack_ability(mobile)
 
-    if attack && mobile.energy >= attack.energy && !mobile.casting do
-      if target_ref = Mobile.auto_attack_target(mobile, room) do
+      if attack && mobile.energy >= attack.energy && !mobile.casting do
         Ability.execute(room, mobile.ref, attack, [target_ref])
-      else
-        case mobile do
-          %{attack_target: target} = mobile when not is_nil(target) ->
-            Mobile.send_scroll(
-              mobile,
-              "<p><span class='dark-yellow'>*Combat Off*</span></p>"
-            )
+      end
+    else
+      case mobile do
+        %{attack_target: target} = mobile when not is_nil(target) ->
+          Mobile.send_scroll(
+            mobile,
+            "<p><span class='dark-yellow'>*Combat Off*</span></p>"
+          )
 
-            mobile =
-              mobile
-              |> Map.put(:attack_target, nil)
+          mobile =
+            mobile
+            |> Map.put(:attack_target, nil)
 
-            room = put_in(room.mobiles[mobile.ref], mobile)
+          room = put_in(room.mobiles[mobile.ref], mobile)
 
-            Room.update_hp_bar(room, mobile.ref)
-            Room.update_mana_bar(room, mobile.ref)
+          Room.update_hp_bar(room, mobile.ref)
+          Room.update_mana_bar(room, mobile.ref)
 
-            room
+          room
 
-          _mobile ->
-            nil
-        end
+        _mobile ->
+          nil
       end
     end
   end
