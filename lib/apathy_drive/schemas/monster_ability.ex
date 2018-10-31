@@ -14,6 +14,8 @@ defmodule ApathyDrive.MonsterAbility do
   schema "monsters_abilities" do
     belongs_to(:monster, Monster)
     belongs_to(:ability, Ability)
+
+    field(:chance, :integer)
   end
 
   def load_abilities(%Monster{id: id} = monster) do
@@ -32,8 +34,14 @@ defmodule ApathyDrive.MonsterAbility do
       |> Repo.all()
 
     abilities =
-      Enum.reduce(monster_abilities, %{}, fn %{ability: %Ability{id: id} = ability}, abilities ->
-        ability = put_in(ability.traits, AbilityTrait.load_traits(id))
+      Enum.reduce(monster_abilities, %{}, fn %{
+                                               ability: %Ability{id: id} = ability,
+                                               chance: chance
+                                             },
+                                             abilities ->
+        ability =
+          put_in(ability.traits, AbilityTrait.load_traits(id))
+          |> Map.put(:chance, chance)
 
         ability =
           case AbilityDamageType.load_damage(id) do
@@ -53,7 +61,7 @@ defmodule ApathyDrive.MonsterAbility do
             Map.put(ability, :attributes, attributes)
           end
 
-        Map.put(abilities, ability.command, ability)
+        Map.put(abilities, ability.command || ability.id, ability)
       end)
 
     Map.put(entity, :abilities, abilities)

@@ -376,8 +376,16 @@ defmodule ApathyDrive.Monster do
           nil
 
         attacks ->
+          attacks =
+            attacks
+            |> Enum.sort_by(& &1.chance)
+
           attacks
-          |> Enum.random()
+          |> Enum.find(fn attack ->
+            rand = :rand.uniform(100)
+
+            attack.chance > rand or attack == List.last(attacks)
+          end)
           |> Map.put(:kind, "attack")
           |> Map.put(:ignores_round_cooldown?, true)
       end
