@@ -450,9 +450,21 @@ defmodule ApathyDrive.RoomServer do
       %Item{delete_at: nil} ->
         :noop
 
-      %Item{delete_at: delete_at, instance_id: id} ->
+      %Item{delete_at: delete_at, instance_id: id} = item ->
         if DateTime.compare(DateTime.utc_now(), delete_at) == :gt do
-          Repo.delete!(%ItemInstance{id: id})
+          if !is_nil(item.dropped_for_character_id) do
+            # change the item to be visible to everyone and
+            # set it to delete based on the value of the item
+            ItemInstance
+            |> Repo.get(id)
+            |> Ecto.Changeset.change(%{
+              dropped_for_character_id: nil,
+              delete_at: Timex.shift(DateTime.utc_now(), minutes: Item.cost_in_copper(item))
+            })
+            |> Repo.update!()
+          else
+            Repo.delete!(%ItemInstance{id: id})
+          end
         end
     end)
 
