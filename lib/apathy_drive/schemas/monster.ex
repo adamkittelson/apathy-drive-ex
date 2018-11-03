@@ -357,13 +357,14 @@ defmodule ApathyDrive.Monster do
     |> Map.get(:ref)
   end
 
-  def drop_loot_for_character(%Room{} = room, %Monster{} = monster, %Character{id: _id}) do
+  def drop_loot_for_character(%Room{} = room, %Monster{} = monster, %Character{id: id}) do
     Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id}, room ->
       if :rand.uniform(100) <= chance do
         %ItemInstance{
           item_id: item_id,
           room_id: room.id,
           character_id: nil,
+          dropped_for_character_id: id,
           equipped: false,
           hidden: false
         }

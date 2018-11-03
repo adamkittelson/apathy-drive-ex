@@ -58,6 +58,13 @@ defmodule ApathyDrive.Commands.Get do
                 |> Repo.update!()
 
               Mobile.send_scroll(character, "<p>You picked up #{amount} #{name}s.</p>")
+
+              Room.send_scroll(
+                room,
+                "<p><span class='dark-yellow'>#{character.name} picked up some #{name}s.</span></p>",
+                [character]
+              )
+
               room
             else
               Mobile.send_scroll(
@@ -74,6 +81,9 @@ defmodule ApathyDrive.Commands.Get do
 
         actual_item =
           items
+          |> Enum.filter(
+            &(&1.dropped_for_character_id == character.id or is_nil(&1.dropped_for_character_id))
+          )
           |> Match.one(:name_contains, item)
 
         visible_item =
@@ -101,17 +111,30 @@ defmodule ApathyDrive.Commands.Get do
               |> Ecto.Changeset.change(%{
                 room_id: nil,
                 character_id: character.id,
+                dropped_for_character_id: nil,
                 equipped: false,
                 hidden: false
               })
               |> Repo.update!()
 
-              update_in(room.items, &List.delete(&1, item))
-              |> Room.update_mobile(character.ref, fn char ->
-                char
-                |> update_in([Access.key!(:inventory)], &[item | &1])
-                |> Mobile.send_scroll("<p>You get #{Item.colored_name(item)}.</p>")
-              end)
+              room =
+                room
+                |> Room.load_items()
+                |> Room.update_mobile(character.ref, fn char ->
+                  char
+                  |> Character.load_items()
+                  |> Mobile.send_scroll("<p>You took #{Item.colored_name(item)}.</p>")
+                end)
+
+              Room.send_scroll(
+                room,
+                "<p><span class='dark-yellow'>#{character.name} picks up #{
+                  Item.colored_name(item)
+                }.</span></p>",
+                [character]
+              )
+
+              room
             else
               Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
               room

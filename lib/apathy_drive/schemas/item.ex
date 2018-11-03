@@ -41,6 +41,7 @@ defmodule ApathyDrive.Item do
     field(:destruct_message, :string)
 
     field(:instance_id, :integer, virtual: true)
+    field(:dropped_for_character_id, :integer, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
     field(:traits, :map, virtual: true, default: %{})
     field(:required_races, :any, virtual: true, default: [])
@@ -80,7 +81,7 @@ defmodule ApathyDrive.Item do
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
     values =
       ii
-      |> Map.take([:level, :equipped, :hidden, :purchased])
+      |> Map.take([:level, :equipped, :hidden, :purchased, :dropped_for_character_id])
 
     item
     |> Map.merge(values)

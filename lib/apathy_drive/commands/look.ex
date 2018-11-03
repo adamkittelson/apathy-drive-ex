@@ -67,7 +67,11 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
       Mobile.send_scroll(character, "<p>    #{room.description}</p>")
 
-      Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{look_items(room)}</span></p>")
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-cyan'>#{look_items(room, character)}</span></p>"
+      )
+
       Mobile.send_scroll(character, look_mobiles(room, character))
 
       Mobile.send_scroll(
@@ -280,12 +284,17 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_items(%Room{} = room) do
+  def look_items(%Room{} = room, %Character{} = character) do
     psuedo_items =
       room.item_descriptions["visible"]
       |> Map.keys()
 
-    items = Enum.map(room.items, &Item.colored_name(&1))
+    items =
+      room.items
+      |> Enum.filter(
+        &(&1.dropped_for_character_id == character.id or is_nil(&1.dropped_for_character_id))
+      )
+      |> Enum.map(&Item.colored_name(&1))
 
     items = Currency.to_list(room) ++ items ++ psuedo_items
 
