@@ -44,6 +44,13 @@ defmodule ApathyDrive.Commands.Drop do
                 |> Repo.update!()
 
               Mobile.send_scroll(character, "<p>You dropped #{amount} #{name}s.</p>")
+
+              Room.send_scroll(
+                room,
+                "<p><span class='dark-yellow'>#{character.name} dropped some #{name}s.</span></p>",
+                [character]
+              )
+
               room
             else
               Mobile.send_scroll(
@@ -72,7 +79,8 @@ defmodule ApathyDrive.Commands.Drop do
               room_id: room.id,
               character_id: nil,
               equipped: false,
-              hidden: false
+              hidden: false,
+              delete_at: Timex.shift(DateTime.utc_now(), minutes: Item.cost_in_copper(item))
             })
             |> Repo.update!()
 
@@ -90,11 +98,20 @@ defmodule ApathyDrive.Commands.Drop do
                   char
                 end
 
+              char =
+                char
+                |> Character.load_items()
+                |> Mobile.send_scroll("<p>You dropped #{Item.colored_name(item)}.</p>")
+
+              Room.send_scroll(
+                room,
+                "<p><span class='dark-yellow'>#{char.name} dropped #{Item.colored_name(item)}.</span></p>",
+                [char]
+              )
+
               char
-              |> update_in([Access.key!(:equipment)], &List.delete(&1, item))
-              |> update_in([Access.key!(:inventory)], &List.delete(&1, item))
-              |> Mobile.send_scroll("<p>You drop #{Item.colored_name(item)}.</p>")
             end)
+            |> Room.load_items()
         end
     end
   end
