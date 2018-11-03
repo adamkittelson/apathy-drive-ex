@@ -127,7 +127,7 @@ defmodule ApathyDrive.Character do
     Map.put(character, :title, Title.for_character(character))
   end
 
-  def add_loot_from_monster(character, monster) do
+  def add_currency_from_monster(character, monster) do
     currency_value = Monster.loot_wealth_in_copper(monster)
 
     if currency_value > 0 do

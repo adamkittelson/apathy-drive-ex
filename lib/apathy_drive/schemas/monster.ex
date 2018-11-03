@@ -10,9 +10,11 @@ defmodule ApathyDrive.Monster do
     Currency,
     Regeneration,
     Item,
+    ItemInstance,
     Mobile,
     Monster,
     MonsterAbility,
+    MonsterItem,
     MonsterSpawning,
     MonsterTrait,
     Party,
@@ -82,6 +84,7 @@ defmodule ApathyDrive.Monster do
     field(:auto_curse, :boolean, virtual: true, default: true)
     field(:auto_nuke, :boolean, virtual: true, default: true)
     field(:auto_flee, :boolean, virtual: true, default: false)
+    field(:drops, :any, virtual: true, default: [])
 
     timestamps()
 
@@ -172,6 +175,7 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:level, rm.level)
     |> load_abilities()
     |> load_traits()
+    |> load_drops()
     |> set_reputations()
     |> Mobile.cpr()
   end
@@ -224,6 +228,10 @@ defmodule ApathyDrive.Monster do
 
     monster
     |> Systems.Effect.add(effect)
+  end
+
+  def load_drops(%Monster{} = monster) do
+    MonsterItem.load_drops(monster)
   end
 
   def load_abilities(%Monster{} = monster) do
@@ -347,6 +355,25 @@ defmodule ApathyDrive.Monster do
     |> Enum.sort_by(& &1.hp)
     |> List.last()
     |> Map.get(:ref)
+  end
+
+  def drop_loot_for_character(%Room{} = room, %Monster{} = monster, %Character{id: _id}) do
+    Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id}, room ->
+      if :rand.uniform(100) <= chance do
+        %ItemInstance{
+          item_id: item_id,
+          room_id: room.id,
+          character_id: nil,
+          equipped: false,
+          hidden: false
+        }
+        |> Repo.insert!()
+
+        Room.load_items(room)
+      else
+        room
+      end
+    end)
   end
 
   defimpl ApathyDrive.Mobile, for: Monster do
@@ -475,7 +502,7 @@ defmodule ApathyDrive.Monster do
     def die(monster, room) do
       room =
         Enum.reduce(room.mobiles, room, fn
-          {ref, %Character{}}, updated_room ->
+          {ref, %Character{} = character}, updated_room ->
             room =
               Room.update_mobile(updated_room, ref, fn character ->
                 message =
@@ -488,10 +515,11 @@ defmodule ApathyDrive.Monster do
                 character
                 |> Character.add_reputation(monster.reputations)
                 |> Character.add_experience(monster.experience)
-                |> Character.add_loot_from_monster(monster)
+                |> Character.add_currency_from_monster(monster)
 
                 # Monster.generate_loot_for_character(monster, character)
               end)
+              |> Monster.drop_loot_for_character(monster, character)
 
             Room.update_moblist(room)
             room
