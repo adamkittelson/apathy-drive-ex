@@ -247,3 +247,6 @@ CHANGELOG
 
 ---- 0.0.92 / 2018-10-31 / monster-attack-chance -------------------------------
 * monster attack chance
+
+---- 0.0.93 / 2018-11-03 / monster-item-drops ----------------------------------
+* monsters drop items, items are cleaned up from rooms periodically
