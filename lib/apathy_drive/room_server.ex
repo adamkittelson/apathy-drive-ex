@@ -10,6 +10,8 @@ defmodule ApathyDrive.RoomServer do
     Companion,
     Directory,
     Enchantment,
+    Item,
+    ItemInstance,
     LairMonster,
     Mobile,
     MonsterSpawning,
@@ -174,6 +176,8 @@ defmodule ApathyDrive.RoomServer do
     end
 
     Process.send_after(self(), :save, 2000)
+
+    send(self(), :cleanup)
 
     {:ok, room}
   end
@@ -438,6 +442,23 @@ defmodule ApathyDrive.RoomServer do
           room
       end
 
+    {:noreply, room}
+  end
+
+  def handle_info(:cleanup, room) do
+    Enum.each(room.items, fn
+      %Item{delete_at: nil} ->
+        :noop
+
+      %Item{delete_at: delete_at, instance_id: id} ->
+        if DateTime.compare(DateTime.utc_now(), delete_at) == :gt do
+          Repo.delete!(%ItemInstance{id: id})
+        end
+    end)
+
+    Process.send_after(self(), :cleanup, :timer.hours(1))
+
+    room = Room.load_items(room)
     {:noreply, room}
   end
 

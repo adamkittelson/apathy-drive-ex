@@ -366,7 +366,8 @@ defmodule ApathyDrive.Monster do
           character_id: nil,
           dropped_for_character_id: id,
           equipped: false,
-          hidden: false
+          hidden: false,
+          delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
         }
         |> Repo.insert!()
 

@@ -79,7 +79,8 @@ defmodule ApathyDrive.Commands.Drop do
               room_id: room.id,
               character_id: nil,
               equipped: false,
-              hidden: false
+              hidden: false,
+              delete_at: Timex.shift(DateTime.utc_now(), minutes: Item.cost_in_copper(item))
             })
             |> Repo.update!()
 
