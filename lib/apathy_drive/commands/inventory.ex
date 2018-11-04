@@ -28,6 +28,10 @@ defmodule ApathyDrive.Commands.Inventory do
       Mobile.send_scroll(character, "<br>")
     end
 
+    keys = Enum.filter(inventory, &(&1.type == "Key"))
+
+    inventory = inventory -- keys
+
     item_names = inventory |> Enum.map(&Item.colored_name(&1))
 
     item_names = Currency.to_list(character) ++ item_names
@@ -37,6 +41,11 @@ defmodule ApathyDrive.Commands.Inventory do
     else
       Mobile.send_scroll(character, "<p>You are carrying nothing.</p>")
     end
+
+    Mobile.send_scroll(
+      character,
+      "<p>You have the following keys: #{Enum.map(keys, & &1.name) |> to_sentence()}</p>"
+    )
 
     Mobile.send_scroll(
       character,
