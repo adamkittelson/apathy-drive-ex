@@ -11,6 +11,7 @@ defmodule ApathyDrive.Commands.Wear do
 
   def execute(%Room{} = room, %Character{ref: ref} = character, ["all"]) do
     character.inventory
+    |> Enum.reject(&is_nil(&1.worn_on))
     |> Enum.map(& &1.name)
     |> Enum.reduce(room, fn item_name, updated_room ->
       character = updated_room.mobiles[ref]
@@ -72,7 +73,7 @@ defmodule ApathyDrive.Commands.Wear do
               character
 
             false ->
-              Mobile.send_scroll(character, "<p>You cannot use #{Item.colored_name(item)}.</p>")
+              Mobile.send_scroll(character, "<p>You cannot equip #{Item.colored_name(item)}.</p>")
           end
 
         room = put_in(room.mobiles[character.ref], character)
@@ -85,6 +86,9 @@ defmodule ApathyDrive.Commands.Wear do
     %{inventory: inventory, equipment: equipment} = character
 
     cond do
+      is_nil(worn_on) ->
+        false
+
       Item.too_powerful_for_character?(character, item) ->
         false
 
