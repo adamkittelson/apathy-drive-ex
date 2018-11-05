@@ -126,10 +126,10 @@ defmodule ApathyDrive.AI do
 
   def bless(%{} = _mobile, %Room{}), do: nil
 
-  def curse(%{auto_curse: true, mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
+  def curse(%{auto_curse: true} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
-    if target do
+    if target && :rand.uniform(100) > 95 do
       ability =
         mobile
         |> Ability.curse_abilities(target)
@@ -143,17 +143,36 @@ defmodule ApathyDrive.AI do
 
   def curse(%{} = _mobile, %Room{}), do: nil
 
-  def attack(%{auto_nuke: true, mana: mana} = mobile, %Room{} = room) when mana > 0.75 do
+  def attack(%{auto_nuke: true} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
-    if target do
-      ability =
-        mobile
-        |> Ability.attack_abilities(target)
-        |> random_ability(mobile)
+    energy_pct = mobile.energy / mobile.max_energy * 100
+
+    if target && energy_pct >= 40 && :rand.uniform(10) > 8 do
+      potential_targets =
+        Ability.get_targets(room, mobile.ref, %Ability{targets: "full attack area"}, "")
+
+      attack_abilities = Ability.attack_abilities(mobile, target)
+
+      {ability, targets} =
+        if length(potential_targets) > 1 do
+          ability =
+            attack_abilities
+            |> Enum.filter(&(&1.targets == "full attack area"))
+            |> random_ability(mobile)
+
+          {ability, ""}
+        else
+          ability =
+            attack_abilities
+            |> Enum.reject(&(&1.targets == "full attack area"))
+            |> random_ability(mobile)
+
+          {ability, [target.ref]}
+        end
 
       if ability do
-        Ability.execute(room, mobile.ref, ability, [target.ref])
+        Ability.execute(room, mobile.ref, ability, targets)
       end
     end
   end
