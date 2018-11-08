@@ -252,7 +252,7 @@ defmodule ApathyDrive.Monster do
       [:strength, :agility, :intellect, :willpower, :health, :charm]
       |> Enum.reduce(room_monster, fn attribute, rm ->
         rm
-        |> Map.put(attribute, 40)
+        |> Map.put(attribute, 50)
       end)
       |> Repo.insert!()
 
