@@ -79,7 +79,7 @@ $(document).ready(function () {
   player.drawCircle(0, 0, 5)
   player.endFill();
 
-  window.text = new PIXI.Text('Loading...', { fontSize: '16px', fontFamily: 'Inconsolata', fill: 0x00ffff, align: 'center', padding: 1 });
+  window.text = new PIXI.Text('Loading...', { fontSize: '18px', fontFamily: 'Inconsolata', fill: 0x00ffff, align: 'center', padding: 1 });
 
   var text_left_padding = 5;
 
@@ -211,7 +211,12 @@ $(document).ready(function () {
 
       if (room) {
         highlight_area(room);
+        title.height = text.height / zoom;
         text.text = room.area + " - " + room.id + " - " + room.name;
+      }
+      else {
+        title.height = 0;
+        text.text = "";
       }
       return;
     }
@@ -319,7 +324,8 @@ $(document).ready(function () {
       areas[highlighted_area].color = undefined;
       draw_area(highlighted_area, room.coords.z);
     }
-    text.text = room.area;
+    title.height = 0;
+    text.text = "";
     stage.addChild(player);
     // puts them at the beginning of the children array
     // which draws them above other areas on the map
@@ -400,23 +406,18 @@ $(document).ready(function () {
 
       if (color === 'cyan') {
         map.beginFill(0x008080);
-        map.lineStyle(2, 0x008080, 1);
       }
       else if (color === 'green') {
         map.beginFill(0x7fff00);
-        map.lineStyle(2, 0x7fff00, 1);
       }
       else if (color === 'blue') {
         map.beginFill(0x0000ff);
-        map.lineStyle(2, 0x0000ff, 1);
       }
       else if (color === 'purple') {
         map.beginFill(0x8b008b);
-        map.lineStyle(2, 0x8b008b, 1);
       }
       else {
         map.beginFill(0xFF0000);
-        map.lineStyle(2, 0xFF0000, 1);
       }
     }
     else {
@@ -424,23 +425,18 @@ $(document).ready(function () {
 
       if (color === 'cyan') {
         map.beginFill(0x002020);
-        map.lineStyle(2, 0x002020, 1);
       }
       else if (color === 'green') {
         map.beginFill(0x006400);
-        map.lineStyle(2, 0x006400, 1);
       }
       else if (color === 'blue') {
         map.beginFill(0x00008b);
-        map.lineStyle(2, 0x00008b, 1);
       }
       else if (color === 'purple') {
         map.beginFill(0x240024);
-        map.lineStyle(2, 0x240024, 1);
       }
       else {
         map.beginFill(0x8b0000);
-        map.lineStyle(2, 0x8b0000, 1);
       }
     }
 
@@ -509,7 +505,8 @@ $(document).ready(function () {
   }
 
   chan.on("update_map", function (area) {
-    text.text = "Apotheosis";
+    title.height = 0;
+    text.text = "";
     for (var area_name in area) {
       areas[area_name] = areas[area_name] || {
         map: new PIXI.Graphics(),
