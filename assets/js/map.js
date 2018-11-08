@@ -74,22 +74,12 @@ $(document).ready(function () {
   stage.scale.x = zoom;
   stage.scale.y = zoom;
 
-  window.background = new PIXI.Graphics();
-
-  background.beginFill(0x000000);
-  background.lineStyle(2, 0xFFFFFF, 1);
-  background.drawRect(0, 0, $("canvas").innerWidth() / zoom, $("canvas").innerHeight() / zoom);
-  background.endFill();
-
-  // Add the graphics to the stage
-  stage.addChild(background);
-
   window.player = new PIXI.Graphics();
   player.beginFill(0x000000);
   player.drawCircle(0, 0, 5)
   player.endFill();
 
-  window.text = new PIXI.Text('Loading...', { fontSize: '16px', fontFamily: 'Arial', fill: 0x333333, align: 'center', padding: 1 });
+  window.text = new PIXI.Text('Loading...', { fontSize: '16px', fontFamily: 'Inconsolata', fill: 0x00ffff, align: 'center', padding: 1 });
 
   var text_left_padding = 5;
 
@@ -101,7 +91,7 @@ $(document).ready(function () {
 
   var title_height = text.height * zoom;
 
-  title.beginFill(0xFFFFFF);
+  title.beginFill(0x000000);
   title.drawRect(0, 0, $("canvas").innerWidth() / zoom, title_height / zoom);
   title.endFill();
 
@@ -117,8 +107,6 @@ $(document).ready(function () {
 
     zoom = stage.scale.x;
 
-    background.width = $("canvas").innerWidth() / zoom;
-    background.height = $("canvas").innerHeight() / zoom;
     title.width = $("canvas").innerWidth() / zoom;
     title.height = title_height / zoom;
     text.scale.x = 1 / zoom;
@@ -133,12 +121,10 @@ $(document).ready(function () {
     var y_diff = afterTransform.y - beforeTransform.y
 
     stage.position.x += x_diff * stage.scale.x;
-    background.position.x = -(stage.position.x / stage.scale.x);
     title.position.x = -(stage.position.x / stage.scale.x);
     text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
 
     stage.position.y += y_diff * stage.scale.y;
-    background.position.y = -(stage.position.y / stage.scale.y);
     title.position.y = -(stage.position.y / stage.scale.y);
     text.position.y = -(stage.position.y / stage.scale.y);
 
@@ -252,8 +238,6 @@ $(document).ready(function () {
 
       stage.position.x += dx;
       stage.position.y += dy;
-      background.position.x = -(stage.position.x / stage.scale.x);
-      background.position.y = -(stage.position.y / stage.scale.y);
       title.position.x = -(stage.position.x / stage.scale.x);
       title.position.y = -(stage.position.y / stage.scale.y);
       text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
@@ -271,8 +255,6 @@ $(document).ready(function () {
       stage.position.x = (-((pos.x * stage.scale.x) - (($("canvas").innerWidth()) / 2) + ((pos.width * stage.scale.x) / 2)));
       stage.position.y = (-((pos.y * stage.scale.y) - (($("canvas").innerHeight()) / 2) + ((pos.height * stage.scale.y) / 2)));
 
-      background.position.x = -(stage.position.x / stage.scale.x);
-      background.position.y = -(stage.position.y / stage.scale.y);
       title.position.x = -(stage.position.x / stage.scale.x);
       title.position.y = -(stage.position.y / stage.scale.y);
       text.position.x = -(stage.position.x / stage.scale.x) + (text_left_padding / stage.scale.x);
@@ -418,18 +400,23 @@ $(document).ready(function () {
 
       if (color === 'cyan') {
         map.beginFill(0x008080);
+        map.lineStyle(2, 0x008080, 1);
       }
       else if (color === 'green') {
         map.beginFill(0x7fff00);
+        map.lineStyle(2, 0x7fff00, 1);
       }
       else if (color === 'blue') {
         map.beginFill(0x0000ff);
+        map.lineStyle(2, 0x0000ff, 1);
       }
       else if (color === 'purple') {
         map.beginFill(0x8b008b);
+        map.lineStyle(2, 0x8b008b, 1);
       }
       else {
         map.beginFill(0xFF0000);
+        map.lineStyle(2, 0xFF0000, 1);
       }
     }
     else {
@@ -437,18 +424,23 @@ $(document).ready(function () {
 
       if (color === 'cyan') {
         map.beginFill(0x002020);
+        map.lineStyle(2, 0x002020, 1);
       }
       else if (color === 'green') {
         map.beginFill(0x006400);
+        map.lineStyle(2, 0x006400, 1);
       }
       else if (color === 'blue') {
         map.beginFill(0x00008b);
+        map.lineStyle(2, 0x00008b, 1);
       }
       else if (color === 'purple') {
         map.beginFill(0x240024);
+        map.lineStyle(2, 0x240024, 1);
       }
       else {
         map.beginFill(0x8b0000);
+        map.lineStyle(2, 0x8b0000, 1);
       }
     }
 
@@ -613,8 +605,6 @@ $(document).ready(function () {
   //     renderer.view.style.width = w + "px";
   //     renderer.view.style.height = h + "px";
 
-  //     background.width = w / zoom;
-  //     background.height = h / zoom;
   //     title.width = w / zoom;
   //     title.height = title_height / zoom;
 
