@@ -1,21 +1,41 @@
 defmodule ApathyDrive.ItemAbility do
   use ApathyDriveWeb, :model
+  alias ApathyDrive.{Ability, ItemAbility, Item}
 
   schema "items_abilities" do
-    belongs_to(:ability, ApathyDrive.Ability)
-    belongs_to(:item, ApathyDrive.Item)
-    field(:value, ApathyDrive.JSONB)
+    field(:delete, :boolean, virtual: true)
 
-    timestamps()
+    belongs_to(:item, Item)
+    belongs_to(:ability, Ability)
+    belongs_to(:type, ApathyDrive.ItemAbilityType)
   end
 
-  @required_fields ~w(ability_id item_id)
-  @optional_fields ~w()
+  @required_fields ~w(item_id ability_id)a
 
-  def changeset(model, params \\ %{}) do
-    model
-    |> cast(params, @required_fields, @optional_fields)
-    |> foreign_key_constraint(:ability_id)
-    |> foreign_key_constraint(:item_id)
+  def load_abilities(%Item{id: id, traits: traits} = item) do
+    traits =
+      __MODULE__
+      |> where([ia], ia.item_id == ^id)
+      |> preload([:type, :ability])
+      |> Repo.all()
+      |> Enum.reduce(traits, &Map.put(&2, &1.type.name, &1.ability))
+
+    Map.put(item, :traits, traits)
+  end
+
+  def changeset(%ItemAbility{} = rt, attrs) do
+    rt
+    |> cast(attrs, [:delete | @required_fields])
+    |> validate_required(@required_fields)
+    |> mark_for_deletion()
+  end
+
+  defp mark_for_deletion(changeset) do
+    # If delete was set and it is true, let's change the action
+    if get_change(changeset, :delete) do
+      %{changeset | action: :delete}
+    else
+      changeset
+    end
   end
 end

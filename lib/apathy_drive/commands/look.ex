@@ -356,6 +356,24 @@ defmodule ApathyDrive.Commands.Look do
     end)
   end
 
+  def look_at_item(%Character{} = character, %Item{type: "Scroll"} = item) do
+    ability = item.traits["Learn"]
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span> <span class='dark-green'>Type:</span> <span class='dark-cyan'>#{
+        item.type
+      }</span> <span class='dark-green'>Teaches Ability:</span> <span class='dark-cyan'>#{
+        ability.name
+      }</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p>#{item.description}</p>"
+    )
+  end
+
   def look_at_item(%Character{} = character, %Item{} = item) do
     Mobile.send_scroll(
       character,

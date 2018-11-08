@@ -5,6 +5,7 @@ defmodule ApathyDrive.Item do
     Character,
     Currency,
     Item,
+    ItemAbility,
     ItemClass,
     ItemInstance,
     ItemRace,
@@ -89,12 +90,14 @@ defmodule ApathyDrive.Item do
     |> Map.put(:instance_id, id)
     |> Map.put(:traits, ItemTrait.load_traits(item.id))
     |> load_required_races_and_classes()
+    |> load_item_abilities()
   end
 
   def from_assoc(%ShopItem{item: item}) do
     item
     |> Map.put(:traits, ItemTrait.load_traits(item.id))
     |> load_required_races_and_classes()
+    |> load_item_abilities()
   end
 
   def slots do
@@ -279,5 +282,10 @@ defmodule ApathyDrive.Item do
     item
     |> ItemClass.load_classes()
     |> ItemRace.load_races()
+  end
+
+  defp load_item_abilities(%Item{} = item) do
+    item
+    |> ItemAbility.load_abilities()
   end
 end
