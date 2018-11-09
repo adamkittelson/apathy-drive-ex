@@ -31,6 +31,7 @@ defmodule ApathyDrive.Command do
   def all do
     [
       Commands.Abilities,
+      Commands.Activate,
       Commands.Auto,
       Commands.Attack,
       Commands.Bash,

@@ -127,6 +127,10 @@ defmodule ApathyDrive.Character do
     Map.put(character, :title, Title.for_character(character))
   end
 
+  def max_active_abilities(%Character{level: level}) do
+    5 + div(level, 5)
+  end
+
   def add_currency_from_monster(character, monster) do
     currency_value = Monster.loot_wealth_in_copper(monster)
 
@@ -212,11 +216,10 @@ defmodule ApathyDrive.Character do
         effect = AbilityTrait.load_traits(id)
         Systems.Effect.add(character, effect)
 
-      %{level: level, ability: %Ability{id: id} = ability}, character ->
+      %{ability: %Ability{id: id} = ability}, character ->
         ability =
           ability
           |> put_in([Access.key!(:traits)], AbilityTrait.load_traits(id))
-          |> Map.put(:level, level)
 
         attributes = AbilityAttribute.load_attributes(id)
 

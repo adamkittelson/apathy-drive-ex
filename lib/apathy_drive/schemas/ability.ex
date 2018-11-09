@@ -37,7 +37,6 @@ defmodule ApathyDrive.Ability do
     field(:cast_time, :integer)
     field(:energy, :integer, default: 1000)
 
-    field(:level, :integer, virtual: true)
     field(:traits, :map, virtual: true, default: %{})
     field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
     field(:result, :any, virtual: true)
