@@ -5,7 +5,9 @@ defmodule ApathyDrive.Commands.Activate do
   def keywords, do: ["activate"]
 
   def execute(%Room{} = room, %Character{} = character, []) do
-    Mobile.send_scroll(character, "<p>Get what?</p>")
+    message = "<p><span class='red'>Syntax: ACTIVATE {ability}</span></p>"
+    Mobile.send_scroll(character, message)
+
     room
   end
 
