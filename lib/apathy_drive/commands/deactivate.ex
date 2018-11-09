@@ -1,11 +1,11 @@
-defmodule ApathyDrive.Commands.Deactivate do
+defmodule ApathyDrive.Commands.Forget do
   use ApathyDrive.Command
   alias ApathyDrive.{Ability, Character, CharacterAbility, Match, Repo, Room}
 
   def keywords, do: ["deactivate"]
 
   def execute(%Room{} = room, %Character{} = character, []) do
-    message = "<p><span class='red'>Syntax: DEACTIVATE {ability}</span></p>"
+    message = "<p><span class='red'>Syntax: FORGET {ability}</span></p>"
     Mobile.send_scroll(character, message)
 
     room
@@ -22,7 +22,7 @@ defmodule ApathyDrive.Commands.Deactivate do
         deactivate_ability(room, character, ability)
 
       nil ->
-        message = "<p><span class='red'>Syntax: DEACTIVATE {ability}</span></p>"
+        message = "<p><span class='red'>Syntax: FORGET {ability}</span></p>"
         Mobile.send_scroll(character, message)
 
         room
@@ -31,7 +31,7 @@ defmodule ApathyDrive.Commands.Deactivate do
 
   defp deactivate_ability(room, character, ability) do
     Room.update_mobile(room, character.ref, fn character ->
-      message = "<p>Deactivating #{ability.name}!</p>"
+      message = "<p>You no longer know how to use #{ability.name}!</p>"
       Mobile.send_scroll(character, message)
 
       CharacterAbility

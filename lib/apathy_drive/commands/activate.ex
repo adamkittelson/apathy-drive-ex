@@ -29,7 +29,7 @@ defmodule ApathyDrive.Commands.Activate do
 
           too_many_active_abilities?(character) ->
             message =
-              "<p>You must deactivate an ability before you can activate any more abilities.</p>"
+              "<p>You must forget an ability before you can activate any more abilities.</p>"
 
             Mobile.send_scroll(character, message)
 
