@@ -20,6 +20,13 @@ defmodule ApathyDrive.ClassAbility do
     |> cast(params, ~w(damage_type_id kind potency)a)
   end
 
+  def abilities_at_level(class_id, level) do
+    ApathyDrive.ClassAbility
+    |> Ecto.Query.where([ss], ss.class_id == ^class_id and ss.level <= ^level)
+    |> Ecto.Query.preload([:ability])
+    |> Repo.all()
+  end
+
   def load_damage(ability_id) do
     __MODULE__
     |> where([mt], mt.ability_id == ^ability_id)

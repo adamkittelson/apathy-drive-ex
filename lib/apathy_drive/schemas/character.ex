@@ -195,19 +195,19 @@ defmodule ApathyDrive.Character do
     |> validate_length(:name, min: 1, max: 12)
   end
 
-  def load_abilities(%Character{class_id: class_id, level: level} = character) do
+  def load_abilities(%Character{id: id} = character) do
     character =
       character
       |> Map.put(:abilities, %{})
       |> Map.put(:skills, %{})
 
-    class_abilities =
-      ApathyDrive.ClassAbility
-      |> Ecto.Query.where([ss], ss.class_id == ^class_id and ss.level <= ^level)
+    abilities =
+      ApathyDrive.CharacterAbility
+      |> Ecto.Query.where([ca], ca.character_id == ^id)
       |> Ecto.Query.preload([:ability])
       |> Repo.all()
 
-    Enum.reduce(class_abilities, character, fn
+    Enum.reduce(abilities, character, fn
       %{ability: %Ability{id: id, kind: "passive"}}, character ->
         effect = AbilityTrait.load_traits(id)
         Systems.Effect.add(character, effect)
