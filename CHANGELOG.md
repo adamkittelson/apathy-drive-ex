@@ -250,3 +250,6 @@ CHANGELOG
 
 ---- 0.0.93 / 2018-11-03 / monster-item-drops ----------------------------------
 * monsters drop items, items are cleaned up from rooms periodically
+
+---- 0.0.94 / 2018-11-11 / spell-help ------------------------------------------
+* help for spells, more info when looking at spell scrolls
