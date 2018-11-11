@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Repo.Migrations.CreateItemsAbilities do
+defmodule ApathyDrive.Repo.Migrations.CreateItemsAbilitiesRedux do
   use Ecto.Migration
 
   def change do
