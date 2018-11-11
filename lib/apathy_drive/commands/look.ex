@@ -317,7 +317,10 @@ defmodule ApathyDrive.Commands.Look do
     energy = Character.energy_per_swing(character, item)
     attack_interval = Regeneration.duration_for_energy(character, energy)
 
-    average = (item.min_damage + item.max_damage) / 2
+    min_damage = item.min_damage + Mobile.ability_value(character, "ModifyDamage")
+    max_damage = item.max_damage + Mobile.ability_value(character, "ModifyDamage")
+
+    average = (min_damage + max_damage) / 2
 
     dps = Float.round(average / (attack_interval / 1000), 2)
 
