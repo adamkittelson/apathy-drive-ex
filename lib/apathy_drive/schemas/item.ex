@@ -25,7 +25,6 @@ defmodule ApathyDrive.Item do
     field(:game_limit, :integer)
     field(:weight, :integer)
     field(:speed, :integer)
-    field(:required_strength, :integer)
     field(:max_uses, :integer)
     field(:getable, :boolean)
     field(:droppable, :boolean)
@@ -40,6 +39,7 @@ defmodule ApathyDrive.Item do
     field(:hit_verbs, ApathyDrive.JSONB)
     field(:miss_verbs, ApathyDrive.JSONB)
     field(:destruct_message, :string)
+    field(:required_strength, :integer)
 
     field(:instance_id, :integer, virtual: true)
     field(:delete_at, :utc_datetime, virtual: true)
@@ -269,6 +269,11 @@ defmodule ApathyDrive.Item do
   def useable_by_character?(_character, _item), do: true
 
   def too_powerful_for_character?(character, item) do
+    too_high_level_for_character?(character, item) or
+      attribute_requirement_not_met?(character, item)
+  end
+
+  def too_high_level_for_character?(character, item) do
     case item.traits["MinLevel"] do
       [min_level | []] ->
         character.level < min_level
@@ -277,6 +282,14 @@ defmodule ApathyDrive.Item do
         false
     end
   end
+
+  def attribute_requirement_not_met?(character, %Item{traits: %{"Learn" => ability}}) do
+    Enum.any?(ability.attributes, fn {attribute, value} ->
+      Map.get(character, attribute) < value
+    end)
+  end
+
+  def attribute_requirement_not_met?(_character, _item), do: false
 
   defp load_required_races_and_classes(%Item{} = item) do
     item

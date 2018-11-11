@@ -372,6 +372,15 @@ defmodule ApathyDrive.Commands.Look do
       character,
       "<p>#{item.description}</p>"
     )
+
+    Enum.each(ability.attributes, fn {attribute, value} ->
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Required #{attribute}:</span> <span class='dark-cyan'>#{
+          value
+        }</span></p>"
+      )
+    end)
   end
 
   def look_at_item(%Character{} = character, %Item{} = item) do

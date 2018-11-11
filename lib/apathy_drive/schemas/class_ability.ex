@@ -4,12 +4,6 @@ defmodule ApathyDrive.ClassAbility do
 
   schema "classes_abilities" do
     field(:level, :integer)
-    field(:required_strength, :integer)
-    field(:required_agility, :integer)
-    field(:required_intellect, :integer)
-    field(:required_willpower, :integer)
-    field(:required_health, :integer)
-    field(:required_charm, :integer)
 
     belongs_to(:ability, Ability)
     belongs_to(:class, Class)

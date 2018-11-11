@@ -31,6 +31,12 @@ defmodule ApathyDrive.Commands.Read do
         ability = item.traits["Learn"]
 
         cond do
+          Item.too_powerful_for_character?(character, item) ->
+            message = "<p>You do not meet the attribute requirements to read #{item.name}.</p>"
+            Mobile.send_scroll(character, message)
+
+            room
+
           already_active?(character, ability) ->
             message = "<p>You already have #{ability.name} activated.</p>"
             Mobile.send_scroll(character, message)

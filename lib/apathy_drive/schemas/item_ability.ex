@@ -1,6 +1,6 @@
 defmodule ApathyDrive.ItemAbility do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, ItemAbility, Item}
+  alias ApathyDrive.{Ability, AbilityAttribute, ItemAbility, Item}
 
   schema "items_abilities" do
     field(:delete, :boolean, virtual: true)
@@ -18,7 +18,12 @@ defmodule ApathyDrive.ItemAbility do
       |> where([ia], ia.item_id == ^id)
       |> preload([:type, :ability])
       |> Repo.all()
-      |> Enum.reduce(traits, &Map.put(&2, &1.type.name, &1.ability))
+      |> Enum.reduce(traits, fn item_ability, traits ->
+        attributes = AbilityAttribute.load_attributes(item_ability.ability.id)
+        ability = Map.put(item_ability.ability, :attributes, attributes)
+
+        Map.put(traits, item_ability.type.name, ability)
+      end)
 
     Map.put(item, :traits, traits)
   end
