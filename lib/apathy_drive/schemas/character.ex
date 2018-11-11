@@ -387,8 +387,8 @@ defmodule ApathyDrive.Character do
           %{
             kind: "physical",
             damage_type: "Normal",
-            min: min_damage,
-            max: max_damage
+            min: min_damage + Mobile.ability_value(character, "ModifyDamage"),
+            max: max_damage + Mobile.ability_value(character, "ModifyDamage")
           }
         ],
         "Dodgeable" => true,
