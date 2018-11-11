@@ -510,14 +510,17 @@ defmodule ApathyDrive.Character do
   def drain_exp_buffer(%Character{exp_buffer: 0} = character), do: character
 
   def drain_exp_buffer(%Character{} = character) do
-    attribute =
+    sorted_attributes =
       Enum.sort_by([:strength, :agility, :intellect, :willpower, :health, :charm], fn attribute ->
-        level = character.attribute_levels[attribute]
-
-        to_level = Level.exp_at_level(level + 1, 1.0)
-        to_level - Map.get(character, :"#{attribute}_experience")
+        Map.get(character, attribute)
       end)
-      |> List.first()
+
+    attribute =
+      sorted_attributes
+      |> Enum.filter(
+        &(Map.get(character, &1) == Map.get(character, List.first(sorted_attributes)))
+      )
+      |> Enum.random()
 
     Character.add_attribute_experience(character, attribute, 1)
   end
