@@ -3,6 +3,7 @@ defmodule ApathyDrive.Ability do
 
   alias ApathyDrive.{
     Ability,
+    AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
     Character,
@@ -280,16 +281,49 @@ defmodule ApathyDrive.Ability do
 
   def match_by_name(name, all \\ false) do
     abilities =
-      __MODULE__
-      |> where([ability], not is_nil(ability.name) and ability.name != "")
-      |> distinct(true)
-      |> ApathyDrive.Repo.all()
+      if all do
+        learnable_abilities()
+      else
+        __MODULE__
+        |> where([ability], not is_nil(ability.name) and ability.name != "")
+        |> distinct(true)
+        |> ApathyDrive.Repo.all()
+      end
+      |> Enum.map(fn ability ->
+        attributes = AbilityAttribute.load_attributes(ability.id)
+        Map.put(ability, :attributes, attributes)
+      end)
 
-    if all do
-      Match.all(abilities, :keyword_starts_with, name)
-    else
-      Match.one(abilities, :keyword_starts_with, name)
-    end
+    Match.all(abilities, :keyword_starts_with, name)
+  end
+
+  def learnable_abilities do
+    class_ability_ids =
+      ApathyDrive.ClassAbility
+      |> select([:ability_id])
+      |> distinct(true)
+      |> preload(:ability)
+      |> Repo.all()
+
+    learn_id =
+      ApathyDrive.ItemAbilityType
+      |> select([:id])
+      |> where(name: "Learn")
+      |> Repo.one!()
+      |> Map.get(:id)
+
+    scroll_ability_ids =
+      ApathyDrive.ItemAbility
+      |> select([:ability_id])
+      |> where(type_id: ^learn_id)
+      |> distinct(true)
+      |> preload(:ability)
+      |> Repo.all()
+
+    (class_ability_ids ++ scroll_ability_ids)
+    |> Enum.map(& &1.ability)
+    |> Enum.uniq()
+    |> Enum.reject(&(is_nil(&1.name) or &1.name == ""))
   end
 
   def heal_abilities(%{abilities: abilities} = mobile) do

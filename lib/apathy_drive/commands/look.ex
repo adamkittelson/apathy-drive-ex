@@ -361,26 +361,15 @@ defmodule ApathyDrive.Commands.Look do
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span> <span class='dark-green'>Type:</span> <span class='dark-cyan'>#{
-        item.type
-      }</span> <span class='dark-green'>Teaches Ability:</span> <span class='dark-cyan'>#{
-        ability.name
-      }</span></p>"
+      "<p>#{item.description}</p>"
     )
 
     Mobile.send_scroll(
       character,
-      "<p>#{item.description}</p>"
+      "<p><span class='white'>Reading this scroll will teach the following ability:</span></p>"
     )
 
-    Enum.each(ability.attributes, fn {attribute, value} ->
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Required #{attribute}:</span> <span class='dark-cyan'>#{
-          value
-        }</span></p>"
-      )
-    end)
+    ApathyDrive.Commands.Help.help(character, ability)
   end
 
   def look_at_item(%Character{} = character, %Item{} = item) do

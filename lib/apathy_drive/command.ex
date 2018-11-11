@@ -44,6 +44,7 @@ defmodule ApathyDrive.Command do
       Commands.Forget,
       Commands.Get,
       Commands.Gossip,
+      Commands.Help,
       Commands.Hire,
       Commands.Inventory,
       Commands.Join,
