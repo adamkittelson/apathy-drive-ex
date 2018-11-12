@@ -117,6 +117,8 @@ defmodule ApathyDrive.AI do
     ability =
       mobile
       |> Ability.bless_abilities(member_to_bless)
+      |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
+      |> reject_light_spells_if_it_isnt_dark(room)
       |> random_ability(mobile)
 
     if ability do
@@ -148,7 +150,7 @@ defmodule ApathyDrive.AI do
 
     energy_pct = mobile.energy / mobile.max_energy * 100
 
-    if target && energy_pct >= 40 && :rand.uniform(10) > 8 do
+    if target && energy_pct >= 40 do
       potential_targets =
         Ability.get_targets(room, mobile.ref, %Ability{targets: "full attack area"}, "")
 
@@ -254,7 +256,7 @@ defmodule ApathyDrive.AI do
   defp should_move?(%ApathyDrive.Companion{}, _room), do: false
 
   defp should_move?(%ApathyDrive.Character{auto_roam: true} = character, room) do
-    character.hp > 0.8 and character.mana > 0.8 and
+    character.hp > 0.8 and character.mana > 0.5 and
       is_nil(Mobile.auto_attack_target(character, room))
   end
 
@@ -288,4 +290,22 @@ defmodule ApathyDrive.AI do
   end
 
   defp should_flee?(%{} = _mobile, _room), do: false
+
+  defp reject_self_only_if_not_targetting_self(abilities, mobile, member_to_bless) do
+    if mobile.ref !== member_to_bless.ref do
+      Enum.reject(abilities, &(&1.targets == "self"))
+    else
+      abilities
+    end
+  end
+
+  defp reject_light_spells_if_it_isnt_dark(abilities, room) do
+    # don't cast positive light spells if the room isn't dark
+    # but treat darkness spells like regular blessings
+    if Room.light(room) >= 0 do
+      Enum.reject(abilities, &(!is_nil(&1.traits["Light"]) and &1.traits["Light"] > 0))
+    else
+      abilities
+    end
+  end
 end
