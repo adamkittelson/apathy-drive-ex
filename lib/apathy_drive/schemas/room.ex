@@ -523,19 +523,38 @@ defmodule ApathyDrive.Room do
   end
 
   def light(%Room{} = room) do
+    # average of the highest positive light source and the lowest negative light source in the room
+    # in other words if a room has a crappy torch and a bright lantern in the room only
+    # the lantern is taken into consideration
+    # but if the room also has someone with darkness spell effect then that will be averaged with the lantern
     light_source_average =
       room.mobiles
       |> Enum.map(fn {_ref, mobile} ->
         Mobile.ability_value(mobile, "Light")
       end)
       |> Enum.reject(&(&1 == 0))
-      |> average()
+      |> Enum.reduce({0, 0}, fn light, {min, max} ->
+        min = if light < min, do: light, else: min
+        max = if light > max, do: light, else: max
+        {min, max}
+      end)
+      |> case do
+        {0, 0} ->
+          0
 
-    if light_source_average do
-      trunc(light_source_average)
-    else
-      room.light
-    end
+        {0, max} ->
+          max
+
+        {min, 0} ->
+          min
+
+        {min, max} ->
+          [min, max]
+          |> average()
+          |> trunc()
+      end
+
+    room.light + light_source_average
   end
 
   def start_room_id do
