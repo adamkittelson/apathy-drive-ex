@@ -211,7 +211,7 @@ $(document).ready(function () {
 
       if (room) {
         highlight_area(room);
-        title.height = text.height / zoom;
+        title.height = title_height / zoom;
         text.text = room.area + " - " + room.id + " - " + room.name;
       }
       else {
