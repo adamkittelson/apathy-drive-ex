@@ -157,7 +157,8 @@ defmodule ApathyDrive.AI do
       attack_abilities = Ability.attack_abilities(mobile, target)
 
       {ability, targets} =
-        if length(potential_targets) > 1 do
+        if length(potential_targets) > 1 and
+             Enum.any?(attack_abilities, &(&1.targets == "full attack area")) do
           ability =
             attack_abilities
             |> Enum.filter(&(&1.targets == "full attack area"))
