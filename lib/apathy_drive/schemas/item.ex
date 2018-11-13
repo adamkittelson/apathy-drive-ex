@@ -49,6 +49,8 @@ defmodule ApathyDrive.Item do
     field(:traits, :map, virtual: true, default: %{})
     field(:required_races, :any, virtual: true, default: [])
     field(:required_classes, :any, virtual: true, default: [])
+    field(:enchantment_name, :string, virtual: true, default: nil)
+    field(:keywords, :any, virtual: true)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end
@@ -184,9 +186,13 @@ defmodule ApathyDrive.Item do
     "dark-cyan"
   end
 
-  def colored_name(%{name: name}, opts \\ []) do
+  def colored_name(%{name: name} = item, opts \\ []) do
     name =
-      name
+      if item.enchantment_name do
+        name <> " " <> "(#{item.enchantment_name})"
+      else
+        name
+      end
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 

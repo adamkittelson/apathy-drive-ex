@@ -17,11 +17,13 @@ defmodule ApathyDrive.Commands.Inventory do
 
       equipment
       |> Enum.each(fn item ->
+        worn_on = String.pad_trailing("(#{item.worn_on})", 15)
+
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-green'>#{Item.colored_name(item, pad_trailing: 30)}</span><span class='dark-cyan'>(#{
-            item.worn_on
-          })</span></p>"
+          "<p><span class='dark-cyan'>#{worn_on}</span><span class='dark-green'>#{
+            Item.colored_name(item)
+          }</span></p>"
         )
       end)
 

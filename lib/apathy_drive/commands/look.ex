@@ -345,14 +345,13 @@ defmodule ApathyDrive.Commands.Look do
     end)
 
     item.traits
-    |> Map.keys()
-    |> Enum.reject(&(&1 in ["ClassOk"]))
-    |> Enum.each(fn trait ->
+    |> Enum.reject(fn {_key, val} ->
+      !is_list(val)
+    end)
+    |> Enum.each(fn {trait, val} ->
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
-          Enum.sum(item.traits[trait])
-        }</span></p>"
+        "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{Enum.sum(val)}</span></p>"
       )
     end)
   end

@@ -10,6 +10,7 @@ defmodule ApathyDrive.Enchantment do
     Enchantment,
     Item,
     ItemInstance,
+    Match,
     Mobile,
     Room,
     TimerManager
@@ -118,32 +119,50 @@ defmodule ApathyDrive.Enchantment do
     min(67, time_left(enchantment))
   end
 
-  def load_enchantment(%Item{instance_id: nil} = item), do: item
+  def load_enchantment(%Item{instance_id: nil} = item),
+    do: Map.put(item, :keywords, Match.keywords(item.name))
 
   def load_enchantment(%Item{instance_id: id, traits: traits} = item) do
-    traits =
+    enchantment =
       __MODULE__
-      |> where([ia], ia.items_instances_id == ^id)
+      |> where([ia], ia.items_instances_id == ^id and ia.finished == true)
       |> preload([:ability])
-      |> Repo.all()
-      |> Enum.reduce(traits, fn item_ability, traits ->
-        attributes = AbilityAttribute.load_attributes(item_ability.ability.id)
-        ability = Map.put(item_ability.ability, :attributes, attributes)
+      |> Repo.one()
 
-        ability = put_in(ability.traits, AbilityTrait.load_traits(item_ability.ability.id))
+    if enchantment do
+      attributes = AbilityAttribute.load_attributes(enchantment.ability.id)
+      ability = Map.put(enchantment.ability, :attributes, attributes)
 
-        case AbilityDamageType.load_damage(item_ability.ability.id) do
-          [] ->
-            ability
+      ability = put_in(ability.traits, AbilityTrait.load_traits(enchantment.ability.id))
 
-          damage ->
-            update_in(ability.traits, &Map.put(&1, "Damage", damage))
+      case AbilityDamageType.load_damage(enchantment.ability.id) do
+        [] ->
+          ability
+
+        damage ->
+          update_in(ability.traits, &Map.put(&1, "Damage", damage))
+      end
+
+      traits =
+        cond do
+          ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
+            Map.put(traits, "OnHit", ability)
+
+          ability.kind == "blessing" ->
+            Map.put(traits, "Passive", ability)
+
+          :else ->
+            Map.put(traits, "Grant", ability)
         end
 
-        Map.put(traits, "Passive", ability)
-      end)
-
-    Map.put(item, :traits, traits)
+      item
+      |> Map.put(:traits, traits)
+      |> Map.put(:enchantment_name, ability.name)
+      |> Map.put(:keywords, Match.keywords(item.name <> " " <> ability.name))
+    else
+      item
+      |> Map.put(:keywords, Match.keywords(item.name))
+    end
   end
 
   def enchantment_time(%Item{instance_id: nil}), do: 0
