@@ -396,7 +396,7 @@ defmodule ApathyDrive.Character do
 
     energy = Character.energy_per_swing(character, weapon)
 
-    %Ability{
+    ability = %Ability{
       kind: "attack",
       energy: energy,
       name: weapon.name,
@@ -423,6 +423,18 @@ defmodule ApathyDrive.Character do
           "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
       }
     }
+
+    if on_hit = weapon.traits["OnHit"] do
+      on_hit =
+        on_hit
+        |> Map.put(:energy, energy)
+        |> Map.put(:mana, 0)
+        |> Map.put(:on_hit?, true)
+
+      put_in(ability.traits["OnHit"], on_hit)
+    else
+      ability
+    end
   end
 
   def shield(%Character{} = character) do

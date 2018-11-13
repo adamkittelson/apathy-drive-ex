@@ -47,6 +47,7 @@ defmodule ApathyDrive.Ability do
     field(:attributes, :map, virtual: true, default: %{})
     field(:max_stacks, :integer, virtual: true, default: 1)
     field(:chance, :integer, virtual: true)
+    field(:on_hit?, :boolean, virtual: true, default: false)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -599,8 +600,6 @@ defmodule ApathyDrive.Ability do
               end)
             end)
 
-          # |> execute_multi_cast(caster_ref, ability, targets)
-
           room =
             Room.update_mobile(room, caster.ref, fn caster ->
               caster =
@@ -637,7 +636,15 @@ defmodule ApathyDrive.Ability do
           Room.update_hp_bar(room, caster.ref)
           Room.update_mana_bar(room, caster.ref)
 
-          Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
+          room = Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
+
+          if (on_hit = ability.traits["OnHit"]) && is_nil(Process.get(:ability_result)) do
+            Process.delete(:ability_result)
+            execute(room, caster_ref, on_hit, targets)
+          else
+            Process.delete(:ability_result)
+            room
+          end
 
         :else ->
           room
@@ -646,7 +653,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
-    if req_energy > energy do
+    if req_energy > energy && !ability.on_hit? do
       if caster.casting do
         Mobile.send_scroll(
           caster,
@@ -759,6 +766,7 @@ defmodule ApathyDrive.Ability do
       ) do
     cond do
       dodged?(caster, target, room) ->
+        Process.put(:ability_result, :dodged)
         display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
 
         target =
@@ -772,6 +780,7 @@ defmodule ApathyDrive.Ability do
         put_in(room.mobiles[target.ref], target)
 
       blocked?(caster, target, room) ->
+        Process.put(:ability_result, :blocked)
         display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
 
         target =
@@ -786,6 +795,7 @@ defmodule ApathyDrive.Ability do
         put_in(room.mobiles[target.ref], target)
 
       parried?(caster, target, room) ->
+        Process.put(:ability_result, :parried)
         display_cast_message(room, caster, target, Map.put(ability, :result, :parried))
 
         target =
@@ -839,6 +849,7 @@ defmodule ApathyDrive.Ability do
     duration = duration(ability, caster, target, room)
 
     if ability.kind == "curse" and duration < 1 do
+      Process.put(:ability_result, :resisted)
       display_cast_message(room, caster, target, Map.put(ability, :result, :resisted))
 
       target =
@@ -1118,6 +1129,13 @@ defmodule ApathyDrive.Ability do
     damage_percent =
       if match?(%Character{}, target) and target.level < 5 and damage_percent > 0.2 do
         Enum.random(10..20) / 100
+      else
+        damage_percent
+      end
+
+    damage_percent =
+      if ability.on_hit? do
+        damage_percent * ability.energy / 1000
       else
         damage_percent
       end

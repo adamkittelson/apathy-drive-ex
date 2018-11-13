@@ -135,13 +135,14 @@ defmodule ApathyDrive.Enchantment do
 
       ability = put_in(ability.traits, AbilityTrait.load_traits(enchantment.ability.id))
 
-      case AbilityDamageType.load_damage(enchantment.ability.id) do
-        [] ->
-          ability
+      ability =
+        case AbilityDamageType.load_damage(enchantment.ability.id) do
+          [] ->
+            ability
 
-        damage ->
-          update_in(ability.traits, &Map.put(&1, "Damage", damage))
-      end
+          damage ->
+            update_in(ability.traits, &Map.put(&1, "Damage", damage))
+        end
 
       traits =
         cond do

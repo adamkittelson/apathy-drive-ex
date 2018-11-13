@@ -354,6 +354,8 @@ defmodule ApathyDrive.Commands.Look do
         "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{Enum.sum(val)}</span></p>"
       )
     end)
+
+    display_enchantment(character, item)
   end
 
   def look_at_item(%Character{} = character, %Item{} = item) do
@@ -417,6 +419,13 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_enchantment(character, %Item{traits: %{"Passive" => ability}}) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Enchantment:</span> <span class='dark-cyan'>#{ability.name}</span></p>"
+    )
+  end
+
+  def display_enchantment(character, %Item{traits: %{"OnHit" => ability}}) do
     Mobile.send_scroll(
       character,
       "<p><span class='dark-green'>Enchantment:</span> <span class='dark-cyan'>#{ability.name}</span></p>"
