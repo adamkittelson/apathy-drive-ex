@@ -4,6 +4,7 @@ defmodule ApathyDrive.Item do
   alias ApathyDrive.{
     Character,
     Currency,
+    Enchantment,
     Item,
     ItemAbility,
     ItemClass,
@@ -300,5 +301,6 @@ defmodule ApathyDrive.Item do
   defp load_item_abilities(%Item{} = item) do
     item
     |> ItemAbility.load_abilities()
+    |> Enchantment.load_enchantment()
   end
 end

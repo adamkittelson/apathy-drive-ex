@@ -357,22 +357,6 @@ defmodule ApathyDrive.Commands.Look do
     end)
   end
 
-  def look_at_item(%Character{} = character, %Item{type: "Scroll"} = item) do
-    ability = item.traits["Learn"]
-
-    Mobile.send_scroll(
-      character,
-      "<p>#{item.description}</p>"
-    )
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='white'>Reading this scroll will teach the following ability:</span></p>"
-    )
-
-    ApathyDrive.Commands.Help.help(character, ability)
-  end
-
   def look_at_item(%Character{} = character, %Item{} = item) do
     Mobile.send_scroll(
       character,
@@ -394,17 +378,20 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
 
-    item.traits
-    |> Map.keys()
-    |> Enum.reject(&(&1 in ["ClassOk"]))
-    |> Enum.each(fn trait ->
+    traits =
+      Enum.reject(item.traits, fn {_key, val} ->
+        !is_list(val)
+      end)
+
+    traits
+    |> Enum.each(fn {trait, value} ->
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
-          Enum.sum(item.traits[trait])
-        }</span></p>"
+        "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{Enum.sum(value)}</span></p>"
       )
     end)
+
+    display_enchantment(character, item)
   end
 
   def look_at_item(mobile, %{description: description}) do
@@ -420,6 +407,24 @@ defmodule ApathyDrive.Commands.Look do
         look_at_item(mobile, item)
     end
   end
+
+  def display_enchantment(character, %Item{traits: %{"Learn" => ability}}) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='white'>Reading this scroll will teach the following ability:</span></p>"
+    )
+
+    ApathyDrive.Commands.Help.help(character, ability)
+  end
+
+  def display_enchantment(character, %Item{traits: %{"Passive" => ability}}) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Enchantment:</span> <span class='dark-cyan'>#{ability.name}</span></p>"
+    )
+  end
+
+  def display_enchantment(_character, %Item{} = _item), do: :noop
 
   defp find_item(%Character{inventory: items, equipment: equipment}, item) do
     item =

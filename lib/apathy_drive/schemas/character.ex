@@ -342,7 +342,33 @@ defmodule ApathyDrive.Character do
   end
 
   def add_equipped_item_effects(%Character{} = character, item) do
-    effect = Map.put(item.traits, "stack_key", "item-#{item.instance_id}")
+    traits =
+      case item.traits do
+        %{"Passive" => ability} ->
+          IO.inspect(ability.traits)
+
+          Enum.reduce(ability.traits, item.traits, fn {trait, value}, traits ->
+            if trait in Map.keys(traits) do
+              cond do
+                is_integer(traits[trait]) ->
+                  Map.put(traits, trait, traits[trait] + value)
+
+                is_list(traits[trait]) ->
+                  Map.put(traits, trait, [value | traits[trait]])
+
+                :else ->
+                  Map.put(traits, trait, value)
+              end
+            else
+              Map.put(traits, trait, value)
+            end
+          end)
+
+        traits ->
+          traits
+      end
+
+    effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
     Systems.Effect.add(character, effect)
   end
