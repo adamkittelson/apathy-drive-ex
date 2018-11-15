@@ -1,11 +1,17 @@
 defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
-  alias ApathyDrive.{ClassAbility, Character, Mobile}
+  alias ApathyDrive.{ClassAbility, Character, Mobile, Repo}
+  require Ecto.Query
 
   def keywords, do: ["abilities", "spells"]
 
-  def execute(%Room{} = room, %Character{} = character, _arguments) do
-    number = map_size(character.abilities)
+  def execute(%Room{} = room, %Character{id: id} = character, _arguments) do
+    number =
+      ApathyDrive.CharacterAbility
+      |> Ecto.Query.where([ca], ca.character_id == ^id)
+      |> Ecto.Query.select([ca], count(ca.id))
+      |> Repo.one()
+
     max = Character.max_active_abilities(character)
 
     Mobile.send_scroll(

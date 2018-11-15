@@ -13,6 +13,8 @@ defmodule ApathyDrive.Commands.Sell do
     Shop
   }
 
+  require Ecto.Query
+
   def keywords, do: ["sell"]
 
   def execute(%Room{} = room, %Character{} = character, arguments) do
@@ -75,6 +77,17 @@ defmodule ApathyDrive.Commands.Sell do
           hidden: false
         })
         |> Repo.update!()
+
+        enchantment =
+          Enchantment
+          |> Ecto.Query.where([e], e.items_instances_id == ^instance_id and e.finished == true)
+          |> Repo.one()
+
+        if enchantment do
+          Repo.delete!(enchantment)
+        else
+          0
+        end
 
         currency = Currency.set_value(cost_in_copper)
         char_currency = Currency.add(char, cost_in_copper)
@@ -145,7 +158,7 @@ defmodule ApathyDrive.Commands.Sell do
       Mobile.power_at_level(character, character.level)
   end
 
-  def enchanted?(%Item{instance_id: nil}), do: true
+  def enchanted?(%Item{instance_id: nil}), do: false
 
   def enchanted?(%Item{instance_id: id}) do
     require Ecto.Query

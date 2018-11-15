@@ -47,6 +47,7 @@ defmodule ApathyDrive.Ability do
     field(:attributes, :map, virtual: true, default: %{})
     field(:max_stacks, :integer, virtual: true, default: 1)
     field(:chance, :integer, virtual: true)
+    field(:on_hit?, :boolean, virtual: true, default: false)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -412,19 +413,29 @@ defmodule ApathyDrive.Ability do
       [] ->
         case query do
           "" ->
-            room
-            |> Room.get_mobile(caster_ref)
-            |> Mobile.send_scroll("<p>Your ability would affect no one.</p>")
+            if ability.targets in ["self", "self or single"] do
+              execute(room, caster_ref, ability, List.wrap(caster_ref))
+            else
+              room
+              |> Room.get_mobile(caster_ref)
+              |> Mobile.send_scroll("<p>Your ability would affect no one.</p>")
+
+              room
+            end
 
           _ ->
-            room
-            |> Room.get_mobile(caster_ref)
-            |> Mobile.send_scroll(
-              "<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>"
-            )
-        end
+            if item = item_target(room, caster_ref, query) do
+              execute(room, caster_ref, ability, item)
+            else
+              room
+              |> Room.get_mobile(caster_ref)
+              |> Mobile.send_scroll(
+                "<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>"
+              )
 
-        room
+              room
+            end
+        end
 
       targets ->
         execute(room, caster_ref, ability, targets)
@@ -432,132 +443,114 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, %Item{} = item) do
-    if can_execute?(room, caster_ref, ability) do
-      Room.update_mobile(room, caster_ref, fn caster ->
-        display_pre_cast_message(room, caster, item, ability)
+    ability =
+      put_in(
+        ability.traits["TickMessage"],
+        "<p><span class='dark-cyan'>You continue enchanting the #{item.name}.</span></p>"
+      )
 
-        room =
-          Room.update_mobile(room, caster.ref, fn caster ->
-            caster =
-              caster
-              |> Stealth.reveal()
-              |> apply_cooldowns(ability)
-              |> Mobile.subtract_mana(ability)
-              |> Mobile.subtract_energy(ability)
+    Room.update_mobile(room, caster_ref, fn caster ->
+      cond do
+        mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
+          mobile
 
-            Mobile.update_prompt(caster)
-            caster
-          end)
+        can_execute?(room, caster, ability) ->
+          display_pre_cast_message(room, caster, item, ability)
 
-        Room.update_energy_bar(room, caster.ref)
+          room =
+            Room.update_mobile(room, caster.ref, fn caster ->
+              caster =
+                caster
+                |> apply_cooldowns(ability)
+                |> Mobile.subtract_mana(ability)
+                |> Mobile.subtract_energy(ability)
+                |> Stealth.reveal()
 
-        if ability.traits["LongTerm"] do
-          caster =
-            if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
-              Mobile.send_scroll(
-                caster,
-                "<p><span class='cyan'>You interrupt your work.</span></p>"
-              )
+              Mobile.update_prompt(caster)
 
-              TimerManager.cancel(caster, lt)
-            else
-              caster
-            end
+              caster =
+                if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
+                  Mobile.send_scroll(
+                    caster,
+                    "<p><span class='cyan'>You interrupt your work.</span></p>"
+                  )
 
-          case Repo.get_by(
-                 Enchantment,
-                 items_instances_id: item.instance_id,
-                 ability_id: ability.id
-               ) do
-            %Enchantment{finished: true} = enchantment ->
-              Repo.delete!(enchantment)
-
-              Mobile.send_scroll(
-                caster,
-                "<p><span class='blue'>You've removed #{ability.name} from #{item.name}.</span></p>"
-              )
-
-              unenchanted_item = Systems.Effect.remove_oldest_stack(item, ability.id)
-
-              Room.update_mobile(room, caster_ref, fn character ->
-                cond do
-                  item in character.equipment ->
-                    update_in(character.equipment, fn equipment ->
-                      equipment
-                      |> List.delete(item)
-                      |> List.insert_at(0, unenchanted_item)
-                    end)
-
-                  item in character.inventory ->
-                    update_in(character.inventory, fn inventory ->
-                      inventory
-                      |> List.delete(item)
-                      |> List.insert_at(0, unenchanted_item)
-                    end)
+                  TimerManager.cancel(caster, lt)
+                else
+                  caster
                 end
-              end)
 
-            %Enchantment{finished: false} = enchantment ->
-              enchantment = Map.put(enchantment, :ability, ability)
-              time = Enchantment.next_tick_time(enchantment)
+              case Repo.get_by(
+                     Enchantment,
+                     items_instances_id: item.instance_id,
+                     ability_id: ability.id
+                   ) do
+                %Enchantment{finished: true} = enchantment ->
+                  Repo.delete!(enchantment)
 
-              Mobile.send_scroll(
-                caster,
-                "<p><span class='cyan'>You continue your work.</span></p>"
-              )
+                  Mobile.send_scroll(
+                    caster,
+                    "<p><span class='blue'>You've removed #{ability.name} from #{item.name}.</span></p>"
+                  )
 
-              Room.update_mobile(room, caster.ref, fn caster ->
-                TimerManager.send_after(
-                  caster,
-                  {{:longterm, item.instance_id}, :timer.seconds(time),
-                   {:lt_tick, time, caster_ref, enchantment}}
-                )
-              end)
+                  Character.load_items(caster)
 
-            nil ->
-              enchantment =
-                %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id}
-                |> Repo.insert!()
-                |> Map.put(:ability, ability)
+                %Enchantment{finished: false} = enchantment ->
+                  enchantment = Map.put(enchantment, :ability, ability)
+                  time = Enchantment.next_tick_time(enchantment)
 
-              time = Enchantment.next_tick_time(enchantment)
-              Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
+                  Mobile.send_scroll(
+                    caster,
+                    "<p><span class='cyan'>You continue your work.</span></p>"
+                  )
 
-              Room.update_mobile(room, caster.ref, fn caster ->
-                TimerManager.send_after(
-                  caster,
-                  {{:longterm, item.instance_id}, :timer.seconds(time),
-                   {:lt_tick, time, caster_ref, enchantment}}
-                )
-              end)
-          end
-        else
-          display_cast_message(room, caster, item, ability)
+                  Mobile.send_scroll(
+                    caster,
+                    "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                      Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                    }</span></p>"
+                  )
 
-          enchanted_item = apply_item_enchantment(item, ability)
+                  TimerManager.send_after(
+                    caster,
+                    {{:longterm, item.instance_id}, :timer.seconds(time),
+                     {:lt_tick, time, caster_ref, enchantment}}
+                  )
 
-          Room.update_mobile(room, caster_ref, fn character ->
-            cond do
-              item in character.equipment ->
-                update_in(character.equipment, fn equipment ->
-                  equipment
-                  |> List.delete(item)
-                  |> List.insert_at(0, enchanted_item)
-                end)
+                nil ->
+                  enchantment =
+                    %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id}
+                    |> Repo.insert!()
+                    |> Map.put(:ability, ability)
 
-              item in character.inventory ->
-                update_in(character.inventory, fn inventory ->
-                  inventory
-                  |> List.delete(item)
-                  |> List.insert_at(0, enchanted_item)
-                end)
-            end
-          end)
-        end
-      end)
-    else
-      room
-    end
+                  time = Enchantment.next_tick_time(enchantment)
+                  Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
+
+                  Mobile.send_scroll(
+                    caster,
+                    "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                      Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                    }</span></p>"
+                  )
+
+                  TimerManager.send_after(
+                    caster,
+                    {{:longterm, item.instance_id}, :timer.seconds(time),
+                     {:lt_tick, time, caster_ref, enchantment}}
+                  )
+              end
+            end)
+
+          Room.update_energy_bar(room, caster.ref)
+          Room.update_hp_bar(room, caster.ref)
+          Room.update_mana_bar(room, caster.ref)
+
+          room
+
+        :else ->
+          room
+      end
+    end)
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) when is_list(targets) do
@@ -607,8 +600,6 @@ defmodule ApathyDrive.Ability do
               end)
             end)
 
-          # |> execute_multi_cast(caster_ref, ability, targets)
-
           room =
             Room.update_mobile(room, caster.ref, fn caster ->
               caster =
@@ -645,7 +636,15 @@ defmodule ApathyDrive.Ability do
           Room.update_hp_bar(room, caster.ref)
           Room.update_mana_bar(room, caster.ref)
 
-          Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
+          room = Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
+
+          if (on_hit = ability.traits["OnHit"]) && is_nil(Process.get(:ability_result)) do
+            Process.delete(:ability_result)
+            execute(room, caster_ref, on_hit, targets)
+          else
+            Process.delete(:ability_result)
+            room
+          end
 
         :else ->
           room
@@ -654,7 +653,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
-    if req_energy > energy do
+    if req_energy > energy && !ability.on_hit? do
       if caster.casting do
         Mobile.send_scroll(
           caster,
@@ -767,6 +766,7 @@ defmodule ApathyDrive.Ability do
       ) do
     cond do
       dodged?(caster, target, room) ->
+        Process.put(:ability_result, :dodged)
         display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
 
         target =
@@ -780,6 +780,7 @@ defmodule ApathyDrive.Ability do
         put_in(room.mobiles[target.ref], target)
 
       blocked?(caster, target, room) ->
+        Process.put(:ability_result, :blocked)
         display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
 
         target =
@@ -794,6 +795,7 @@ defmodule ApathyDrive.Ability do
         put_in(room.mobiles[target.ref], target)
 
       parried?(caster, target, room) ->
+        Process.put(:ability_result, :parried)
         display_cast_message(room, caster, target, Map.put(ability, :result, :parried))
 
         target =
@@ -847,6 +849,7 @@ defmodule ApathyDrive.Ability do
     duration = duration(ability, caster, target, room)
 
     if ability.kind == "curse" and duration < 1 do
+      Process.put(:ability_result, :resisted)
       display_cast_message(room, caster, target, Map.put(ability, :result, :resisted))
 
       target =
@@ -1126,6 +1129,13 @@ defmodule ApathyDrive.Ability do
     damage_percent =
       if match?(%Character{}, target) and target.level < 5 and damage_percent > 0.2 do
         Enum.random(10..20) / 100
+      else
+        damage_percent
+      end
+
+    damage_percent =
+      if ability.on_hit? do
+        damage_percent * ability.energy / 1000
       else
         damage_percent
       end
@@ -1884,8 +1894,8 @@ defmodule ApathyDrive.Ability do
     List.wrap(match && match.ref)
   end
 
-  def get_targets(%Room{}, caster_ref, %Ability{targets: "self"}, _query) do
-    List.wrap(caster_ref)
+  def get_targets(%Room{}, _caster_ref, %Ability{targets: "self"}, _query) do
+    []
   end
 
   def get_targets(%Room{} = room, _caster_ref, %Ability{targets: "monster"}, query) do
@@ -1915,8 +1925,8 @@ defmodule ApathyDrive.Ability do
     |> Kernel.--(party)
   end
 
-  def get_targets(%Room{}, caster_ref, %Ability{targets: "self or single"}, "") do
-    List.wrap(caster_ref)
+  def get_targets(%Room{}, _caster_ref, %Ability{targets: "self or single"}, "") do
+    []
   end
 
   def get_targets(%Room{} = room, _caster_ref, %Ability{targets: "self or single"}, query) do
@@ -1939,17 +1949,14 @@ defmodule ApathyDrive.Ability do
     List.wrap(match && match.ref)
   end
 
-  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "weapon"}, query) do
-    %Character{inventory: inventory, equipment: equipment} = room.mobiles[caster_ref]
+  def item_target(room, caster_ref, query) do
+    %Character{inventory: inventory} = room.mobiles[caster_ref]
 
-    item =
-      (inventory ++ equipment)
-      |> Enum.filter(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
-      |> Match.one(:keyword_starts_with, query)
+    item = Match.one(inventory, :keyword_starts_with, query)
 
     case item do
       nil ->
-        []
+        nil
 
       %Item{} = item ->
         item

@@ -253,3 +253,6 @@ CHANGELOG
 
 ---- 0.0.94 / 2018-11-11 / spell-help ------------------------------------------
 * help for spells, more info when looking at spell scrolls
+
+---- 0.0.95 / 2018-11-14 / enchantment -----------------------------------------
+* enchant items with spells

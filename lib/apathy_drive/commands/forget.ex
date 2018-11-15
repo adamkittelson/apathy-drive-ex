@@ -31,14 +31,21 @@ defmodule ApathyDrive.Commands.Forget do
 
   defp deactivate_ability(room, character, ability) do
     Room.update_mobile(room, character.ref, fn character ->
-      message = "<p>You no longer know how to use #{ability.name}!</p>"
-      Mobile.send_scroll(character, message)
+      if character_ability =
+           Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id) do
+        message = "<p>You no longer know how to use #{ability.name}!</p>"
 
-      CharacterAbility
-      |> Repo.get_by!(character_id: character.id, ability_id: ability.id)
-      |> Repo.delete!()
+        Mobile.send_scroll(character, message)
 
-      Character.load_abilities(character)
+        Repo.delete!(character_ability)
+
+        Character.load_abilities(character)
+      else
+        message = "<p>You cannot forget an ability granted by an equipped item.</p>"
+
+        Mobile.send_scroll(character, message)
+        character
+      end
     end)
   end
 end

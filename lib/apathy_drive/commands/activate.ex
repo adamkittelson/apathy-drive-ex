@@ -1,6 +1,7 @@
 defmodule ApathyDrive.Commands.Activate do
   use ApathyDrive.Command
   alias ApathyDrive.{Ability, Character, CharacterAbility, ClassAbility, Match, Repo, Room}
+  require Ecto.Query
 
   def keywords, do: ["activate"]
 
@@ -51,8 +52,14 @@ defmodule ApathyDrive.Commands.Activate do
     !!Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id)
   end
 
-  defp too_many_active_abilities?(character) do
-    map_size(character.abilities) >= Character.max_active_abilities(character)
+  defp too_many_active_abilities?(%{id: id} = character) do
+    count =
+      ApathyDrive.CharacterAbility
+      |> Ecto.Query.where([ca], ca.character_id == ^id)
+      |> Ecto.Query.select([ca], count(ca.id))
+      |> Repo.one()
+
+    count >= Character.max_active_abilities(character)
   end
 
   defp activate_ability(room, character, ability) do

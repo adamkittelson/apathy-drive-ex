@@ -40,20 +40,22 @@ defmodule ApathyDrive.ShopItem do
       if shop_item.count < shop_item.stock and :rand.uniform(100) <= shop_item.restock_chance do
         restock_amount = min(shop_item.stock - shop_item.count, shop_item.restock_amount)
 
-        raw_message =
-          "#{room.name} just received a shipment of: #{shop_item.item.name} (#{restock_amount})"
+        if shop_item.count == 0 do
+          raw_message =
+            "#{room.name} just received a shipment of: #{shop_item.item.name} (#{restock_amount})"
 
-        message = "<p>[<span class='yellow'>announce</span> : Apotheosis] #{raw_message}</p>"
+          message = "<p>[<span class='yellow'>announce</span> : Apotheosis] #{raw_message}</p>"
 
-        Repo.insert!(%ChannelHistory{
-          character_name: "Apotheosis",
-          channel_name: "announce",
-          message: message
-        })
+          Repo.insert!(%ChannelHistory{
+            character_name: "Apotheosis",
+            channel_name: "announce",
+            message: message
+          })
 
-        ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
-          html: message
-        })
+          ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
+            html: message
+          })
+        end
 
         Enum.each(1..restock_amount, fn _ ->
           %ItemInstance{item_id: shop_item.item_id, shop_id: shop_item.shop_id}
