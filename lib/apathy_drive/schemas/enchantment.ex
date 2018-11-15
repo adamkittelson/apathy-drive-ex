@@ -82,7 +82,7 @@ defmodule ApathyDrive.Enchantment do
 
         next_tick_time = next_tick_time(enchantment)
 
-        exp = max(100, div(enchanter.max_exp_buffer, 100))
+        exp = max(1, div(enchanter.max_exp_buffer, 20))
 
         enchanter =
           enchanter
@@ -94,7 +94,7 @@ defmodule ApathyDrive.Enchantment do
         Enum.reduce(enchantment.ability.attributes, enchanter, fn {attribute, _value},
                                                                   enchanter ->
           Character.add_attribute_experience(enchanter, %{
-            attribute => 1 / length(Map.keys(enchantment.ability.attributes))
+            attribute => 1 / length(Map.keys(enchantment.ability.attributes)) * 5
           })
         end)
         |> ApathyDrive.Character.add_experience(exp)
