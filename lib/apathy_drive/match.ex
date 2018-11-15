@@ -77,7 +77,7 @@ defmodule ApathyDrive.Match do
 
   def match_keyword("", _pid), do: false
 
-  def match_keyword(string, %{keywords: keywords} = thing) do
+  def match_keyword(string, %{keywords: keywords}) do
     keywords
     |> Enum.any?(fn keyword ->
       String.downcase(string) == String.downcase(keyword)

@@ -108,6 +108,8 @@ defmodule ApathyDrive.Shop do
     |> max(enchantment_value(item))
   end
 
+  def enchantment_value(%Item{instance_id: nil}), do: 0
+
   def enchantment_value(%Item{instance_id: id}) do
     enchantment =
       Enchantment
