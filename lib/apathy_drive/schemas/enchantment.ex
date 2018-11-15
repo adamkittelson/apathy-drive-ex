@@ -82,7 +82,7 @@ defmodule ApathyDrive.Enchantment do
 
         next_tick_time = next_tick_time(enchantment)
 
-        exp = max(1, div(enchanter.max_exp_buffer, 100))
+        exp = max(100, div(enchanter.max_exp_buffer, 100))
 
         enchanter =
           enchanter
