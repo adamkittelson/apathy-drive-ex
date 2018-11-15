@@ -84,11 +84,19 @@ defmodule ApathyDrive.Enchantment do
 
         exp = max(1, div(enchanter.max_exp_buffer, 100))
 
-        enchanter
-        |> TimerManager.send_after(
-          {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
-           {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
-        )
+        enchanter =
+          enchanter
+          |> TimerManager.send_after(
+            {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
+             {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
+          )
+
+        Enum.reduce(enchantment.ability.attributes, enchanter, fn {attribute, _value},
+                                                                  enchanter ->
+          Character.add_attribute_experience(enchanter, %{
+            attribute => 1 / length(Map.keys(enchantment.ability.attributes))
+          })
+        end)
         |> ApathyDrive.Character.add_experience(exp)
       end
     end)

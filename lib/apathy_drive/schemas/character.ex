@@ -211,37 +211,47 @@ defmodule ApathyDrive.Character do
       |> Ecto.Query.preload([:ability])
       |> Repo.all()
 
-    Enum.reduce(abilities, character, fn
-      %{ability: %Ability{id: id, kind: "passive"}}, character ->
-        effect = AbilityTrait.load_traits(id)
-        Systems.Effect.add(character, effect)
+    character =
+      abilities
+      |> Enum.reduce(character, fn
+        %{ability: %Ability{id: id, kind: "passive"}}, character ->
+          effect = AbilityTrait.load_traits(id)
+          Systems.Effect.add(character, effect)
 
-      %{ability: %Ability{id: id} = ability}, character ->
-        ability =
-          ability
-          |> put_in([Access.key!(:traits)], AbilityTrait.load_traits(id))
+        %{ability: %Ability{id: id} = ability}, character ->
+          ability =
+            ability
+            |> put_in([Access.key!(:traits)], AbilityTrait.load_traits(id))
 
-        attributes = AbilityAttribute.load_attributes(id)
+          attributes = AbilityAttribute.load_attributes(id)
 
-        ability =
-          if map_size(attributes) == 0 do
-            Map.put(ability, :attributes, %{willpower: 40})
-          else
-            Map.put(ability, :attributes, attributes)
-          end
+          ability =
+            if map_size(attributes) == 0 do
+              Map.put(ability, :attributes, %{willpower: 40})
+            else
+              Map.put(ability, :attributes, attributes)
+            end
 
-        ability =
-          case AbilityDamageType.load_damage(id) do
-            [] ->
-              ability
+          ability =
+            case AbilityDamageType.load_damage(id) do
+              [] ->
+                ability
 
-            damage ->
-              update_in(ability.traits, &Map.put(&1, "Damage", damage))
-          end
+              damage ->
+                update_in(ability.traits, &Map.put(&1, "Damage", damage))
+            end
 
-        update_in(character.abilities, fn abilities ->
-          Map.put(abilities, ability.command, ability)
-        end)
+          update_in(character.abilities, fn abilities ->
+            Map.put(abilities, ability.command, ability)
+          end)
+      end)
+
+    Enum.reduce(character.equipment, character, fn item, character ->
+      if ability = item.traits["Grant"] do
+        put_in(character.abilities[ability.command], ability)
+      else
+        character
+      end
     end)
   end
 
@@ -324,6 +334,7 @@ defmodule ApathyDrive.Character do
     |> Map.put(:inventory, Enum.reject(items, & &1.equipped))
     |> Map.put(:equipment, Enum.filter(items, & &1.equipped))
     |> add_equipped_items_effects()
+    |> load_abilities()
   end
 
   def add_equipped_items_effects(%Character{} = character) do
@@ -368,7 +379,9 @@ defmodule ApathyDrive.Character do
 
     effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
-    Systems.Effect.add(character, effect)
+    character
+    |> Systems.Effect.add(effect)
+    |> load_abilities()
   end
 
   def sanitize(message) do

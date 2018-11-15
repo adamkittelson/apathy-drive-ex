@@ -359,12 +359,19 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Item{} = item) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span> <span class='dark-green'>Type:</span> <span class='dark-cyan'>#{
-        item.armour_type
-      }</span> <span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span></p>"
-    )
+    if item.worn_on do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span> <span class='dark-green'>Type:</span> <span class='dark-cyan'>#{
+          item.armour_type
+        }</span> <span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span></p>"
+      )
+    else
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span></p>"
+      )
+    end
 
     Mobile.send_scroll(
       character,
@@ -421,15 +428,28 @@ defmodule ApathyDrive.Commands.Look do
   def display_enchantment(character, %Item{traits: %{"Passive" => ability}}) do
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Enchantment:</span> <span class='dark-cyan'>#{ability.name}</span></p>"
+      "<p><span class='white'>Equipping this item will grant you the benefits of the following ability:</span></p>"
     )
+
+    ApathyDrive.Commands.Help.help(character, ability)
   end
 
   def display_enchantment(character, %Item{traits: %{"OnHit" => ability}}) do
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Enchantment:</span> <span class='dark-cyan'>#{ability.name}</span></p>"
+      "<p><span class='white'>Striking an enemy with this weapon will afflict your target with the following ability:</span></p>"
     )
+
+    ApathyDrive.Commands.Help.help(character, ability)
+  end
+
+  def display_enchantment(character, %Item{traits: %{"Grant" => ability}}) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='white'>Equipping this item will grant you the usage of the following ability:</span></p>"
+    )
+
+    ApathyDrive.Commands.Help.help(character, ability)
   end
 
   def display_enchantment(_character, %Item{} = _item), do: :noop
