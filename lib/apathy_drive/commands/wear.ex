@@ -130,11 +130,7 @@ defmodule ApathyDrive.Commands.Wear do
 
             %{equipped: item, unequipped: [item_to_remove], character: character}
 
-          conflicting_worn_on(worn_on) |> Enum.any?() ->
-            items_to_remove =
-              equipment
-              |> Enum.filter(&(&1.worn_on in conflicting_worn_on(worn_on)))
-
+          items_to_remove = conflicting_items(item, equipment) ->
             equipment = Enum.reject(equipment, &(&1 in items_to_remove))
 
             inventory = List.delete(inventory, item)
@@ -203,4 +199,23 @@ defmodule ApathyDrive.Commands.Wear do
   defp conflicting_worn_on("Off-Hand"), do: ["Two Handed"]
   defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
   defp conflicting_worn_on(_), do: []
+
+  defp conflicting_items(item, equipment) do
+    Enum.filter(equipment, fn equipped_item ->
+      equipped_item.worn_on in conflicting_worn_on(item.worn_on) or
+        (!is_nil(enchantment(item)) and enchantment(item) == enchantment(equipped_item))
+    end)
+    |> case do
+      [] ->
+        nil
+
+      conflicts ->
+        conflicts
+    end
+  end
+
+  defp enchantment(item) do
+    enchantment = item.traits["Grant"] || item.traits["OnHit"] || item.traits["Passive"]
+    enchantment && enchantment.id
+  end
 end
