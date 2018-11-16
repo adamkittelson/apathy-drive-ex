@@ -1510,9 +1510,13 @@ defmodule ApathyDrive.Ability do
 
     cond do
       amount < 1 and has_ability?(ability, "Damage") ->
-        ability
-        |> Map.put(:result, :deflected)
-        |> caster_cast_message(caster, target, mobile)
+        ability =
+          if List.first(ability.traits["Damage"]).kind == "magical" do
+            Map.put(ability, :result, :resisted)
+          else
+            Map.put(ability, :result, :deflected)
+          end
+          |> caster_cast_message(caster, target, mobile)
 
       :else ->
         message =
