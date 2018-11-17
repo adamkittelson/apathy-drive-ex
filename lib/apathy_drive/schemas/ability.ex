@@ -352,7 +352,8 @@ defmodule ApathyDrive.Ability do
     |> Map.values()
     |> Enum.filter(&(&1.kind == "blessing"))
     |> Enum.reject(fn ability ->
-      Ability.removes_blessing?(target, ability)
+      Ability.removes_blessing?(target, ability) or
+        Character.wearing_enchanted_item?(mobile, ability)
     end)
     |> useable(mobile)
   end
@@ -1241,24 +1242,28 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster, duration, room) do
-    effects =
-      ability.traits
-      |> Map.take(@duration_traits)
-      |> Map.put("stack_key", ability.id)
-      |> Map.put("stack_count", 1)
-      |> process_duration_traits(target, caster, ability, room)
-      |> Map.put("effect_ref", make_ref())
+    if !Character.wearing_enchanted_item?(target, ability) do
+      effects =
+        ability.traits
+        |> Map.take(@duration_traits)
+        |> Map.put("stack_key", ability.id)
+        |> Map.put("stack_count", 1)
+        |> process_duration_traits(target, caster, ability, room)
+        |> Map.put("effect_ref", make_ref())
 
-    if message = effects["StatusMessage"] do
-      Mobile.send_scroll(
-        target,
-        "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
-      )
+      if message = effects["StatusMessage"] do
+        Mobile.send_scroll(
+          target,
+          "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+        )
+      end
+
+      target
+      |> Systems.Effect.add(effects, :timer.seconds(duration))
+      |> Systems.Effect.schedule_next_periodic_effect()
+    else
+      target
     end
-
-    target
-    |> Systems.Effect.add(effects, :timer.seconds(duration))
-    |> Systems.Effect.schedule_next_periodic_effect()
   end
 
   def process_duration_traits(effects, target, caster, ability, room) do

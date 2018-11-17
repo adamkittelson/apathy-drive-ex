@@ -123,6 +123,14 @@ defmodule ApathyDrive.Character do
     timestamps()
   end
 
+  def wearing_enchanted_item?(%Character{} = character, %Ability{} = ability) do
+    Enum.any?(character.equipment, fn item ->
+      Item.enchantment(item) == ability.id
+    end)
+  end
+
+  def wearing_enchanted_item?(%{} = _mobile, %Ability{}), do: false
+
   def set_title(%Character{} = character) do
     Map.put(character, :title, Title.for_character(character))
   end
@@ -353,35 +361,45 @@ defmodule ApathyDrive.Character do
   end
 
   def add_equipped_item_effects(%Character{} = character, item) do
-    traits =
+    {ability_id, traits} =
       case item.traits do
         %{"Passive" => ability} ->
-          Enum.reduce(ability.traits, item.traits, fn {trait, value}, traits ->
-            if trait in Map.keys(traits) do
-              cond do
-                is_integer(traits[trait]) ->
-                  Map.put(traits, trait, traits[trait] + value)
+          traits =
+            Enum.reduce(ability.traits, item.traits, fn {trait, value}, traits ->
+              if trait in Map.keys(traits) do
+                cond do
+                  is_integer(traits[trait]) ->
+                    Map.put(traits, trait, traits[trait] + value)
 
-                is_list(traits[trait]) ->
-                  Map.put(traits, trait, [value | traits[trait]])
+                  is_list(traits[trait]) ->
+                    Map.put(traits, trait, [value | traits[trait]])
 
-                :else ->
-                  Map.put(traits, trait, value)
+                  :else ->
+                    Map.put(traits, trait, value)
+                end
+              else
+                Map.put(traits, trait, value)
               end
-            else
-              Map.put(traits, trait, value)
-            end
-          end)
+            end)
+
+          {ability.id, traits}
 
         traits ->
-          traits
+          {nil, traits}
       end
 
-    effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
+    character =
+      if ability_id do
+        effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
-    character
-    |> Systems.Effect.add(effect)
-    |> load_abilities()
+        character
+        |> Systems.Effect.remove_oldest_stack(ability_id)
+        |> Systems.Effect.add(effect)
+      else
+        character
+      end
+
+    load_abilities(character)
   end
 
   def sanitize(message) do

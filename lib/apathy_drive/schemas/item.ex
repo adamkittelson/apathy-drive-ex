@@ -186,6 +186,11 @@ defmodule ApathyDrive.Item do
     "dark-cyan"
   end
 
+  def enchantment(item) do
+    enchantment = item.traits["Grant"] || item.traits["OnHit"] || item.traits["Passive"]
+    enchantment && enchantment.id
+  end
+
   def colored_name(%{name: name} = item, opts \\ []) do
     name =
       if item.enchantment_name do
