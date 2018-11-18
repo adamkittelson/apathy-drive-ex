@@ -28,6 +28,7 @@ defmodule ApathyDrive.Character do
     Room,
     RoomServer,
     Skill,
+    Statix,
     Text,
     TimerManager,
     Title
@@ -604,6 +605,8 @@ defmodule ApathyDrive.Character do
         max_exp_buffer: max(exp_buffer, character.max_exp_buffer)
       })
       |> Repo.update!()
+
+    Statix.increment("exp_gained", exp, tags: ["character:#{String.downcase(character.name)}"])
 
     Character.update_exp_bar(character)
   end
