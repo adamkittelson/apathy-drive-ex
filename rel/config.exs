@@ -48,7 +48,7 @@ release :apathy_drive do
 
   set(
     config_providers: [
-      {Toml.Provider, [path: "${RELEASE_CONFIG_DIR}/myapp.toml", transforms: []]}
+      {Toml.Provider, [path: "${RELEASE_CONFIG_DIR}/apathy_drive.toml", transforms: []]}
     ]
   )
 end
