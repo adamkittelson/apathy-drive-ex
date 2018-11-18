@@ -8,6 +8,19 @@ defmodule ApathyDrive.Metrics do
   end
 
   def record_metrics() do
+    :scheduler.utilization(10)
+    |> Enum.each(fn
+      {:normal, scheduler, percent, _percent_charlist} ->
+        Statix.gauge(
+          "scheduler_utilization",
+          trunc(percent * 100),
+          tags: ["scheduler:#{scheduler}"]
+        )
+
+      _ ->
+        :noop
+    end)
+
     Directory.list_characters()
     |> Enum.reduce(%{}, fn
       %{game: game}, list ->
@@ -34,8 +47,6 @@ defmodule ApathyDrive.Metrics do
     memory_used_in_mb = trunc(:erlang.memory()[:total] / 1024 / 1024)
 
     Statix.gauge("memory_used", memory_used_in_mb)
-
-    :timer.sleep(10000)
 
     record_metrics()
   end
