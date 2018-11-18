@@ -48,7 +48,7 @@ defmodule ApathyDrive.Mixfile do
       {:inflex, "~> 1.7"},
       {:comeonin, "~> 3.2.0"},
       {:conform, "~> 2.5.0"},
-      {:ex_statsd, "~> 0.5.3"},
+      {:statix, "~> 1.1.0"},
       {:rollbax, "~> 0.8.2"},
       {:gossip, "~> 1.0.0"},
       {:distillery, "~> 1.4.1", runtime: false},

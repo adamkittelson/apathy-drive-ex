@@ -1,37 +1,38 @@
 defmodule ApathyDrive.Metrics do
+  alias ApathyDrive.{Directory, Statix}
 
   def start_link do
-    Task.start_link fn ->
+    Task.start_link(fn ->
       record_metrics()
-    end
+    end)
   end
 
-  def record_metrics(gc_ran? \\ false) do
-    "monsters"
-    |> ApathyDrive.PubSub.subscribers
-    |> length()
-    |> ExStatsD.gauge("monsters")
+  def record_metrics() do
+    Directory.list_characters()
+    |> Enum.reduce(%{}, fn
+      %{game: game}, list ->
+        list
+        |> Map.put_new(game, 0)
+        |> update_in([game], &(&1 + 1))
+
+      %{}, list ->
+        list
+        |> Map.put_new("Apotheosis", 0)
+        |> update_in(["Apotheosis"], &(&1 + 1))
+    end)
+    |> Enum.each(fn {game, count} ->
+      Statix.gauge("players", count, tags: ["game:#{String.downcase(game)}"])
+    end)
 
     room_count =
       "rooms"
-      |> ApathyDrive.PubSub.subscribers
+      |> ApathyDrive.PubSub.subscribers()
       |> length()
 
-    room_count
-    |> ExStatsD.gauge("rooms")
+    Statix.gauge("rooms", room_count)
 
-    gc_ran? =
-      if room_count > 19_700 and !gc_ran? do
-        Task.start fn ->
-          Enum.each(:erlang.processes, &:erlang.garbage_collect/1)
-        end
-        true
-      else
-        gc_ran?
-      end
+    :timer.sleep(10000)
 
-    :timer.sleep 10000
-
-    record_metrics(gc_ran?)
+    record_metrics()
   end
 end

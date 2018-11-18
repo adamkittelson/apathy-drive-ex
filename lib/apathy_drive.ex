@@ -6,6 +6,8 @@ defmodule ApathyDrive do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
+    :ok = ApathyDrive.Statix.connect()
+
     children = [
       worker(ApathyDriveWeb.Endpoint, []),
       worker(ApathyDrive.Repo, []),
