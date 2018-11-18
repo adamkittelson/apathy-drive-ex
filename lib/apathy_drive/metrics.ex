@@ -31,6 +31,10 @@ defmodule ApathyDrive.Metrics do
 
     Statix.gauge("rooms", room_count)
 
+    memory_used_in_mb = trunc(:erlang.memory()[:total] / 1024 / 1024)
+
+    Statix.gauge("memory_used", memory_used_in_mb)
+
     :timer.sleep(10000)
 
     record_metrics()
