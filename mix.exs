@@ -47,11 +47,11 @@ defmodule ApathyDrive.Mixfile do
       {:timex_ecto, "~> 3.1.1"},
       {:inflex, "~> 1.7"},
       {:comeonin, "~> 3.2.0"},
-      {:conform, "~> 2.5.0"},
       {:statix, "~> 1.1.0"},
       {:rollbax, "~> 0.8.2"},
       {:gossip, "~> 1.0.0"},
       {:distillery, "~> 2.0.12"},
+      {:toml, "~> 0.5.2"},
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false}
     ]
   end
