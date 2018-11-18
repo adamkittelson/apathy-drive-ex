@@ -51,7 +51,7 @@ defmodule ApathyDrive.Mixfile do
       {:statix, "~> 1.1.0"},
       {:rollbax, "~> 0.8.2"},
       {:gossip, "~> 1.0.0"},
-      {:distillery, "~> 1.5.5", runtime: false},
+      {:distillery, "~> 2.0.12"},
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false}
     ]
   end
