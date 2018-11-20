@@ -245,6 +245,7 @@ defmodule ApathyDrive.RoomServer do
 
       Directory.add_character(%{
         name: character.name,
+        evil_points: character.evil_points,
         room: character.room_id,
         ref: character.ref,
         title: character.title
@@ -499,6 +500,25 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, mobile_ref, fn mobile ->
         Mobile.heartbeat(mobile, room)
+      end)
+
+    {:noreply, room}
+  end
+
+  def handle_info({:forgive_evil, mobile_ref}, room) do
+    room =
+      Room.update_mobile(room, mobile_ref, fn character ->
+        character = update_in(character.evil_points, &max(-220, &1 - 1 / 60))
+
+        Directory.add_character(%{
+          name: character.name,
+          evil_points: character.evil_points,
+          room: character.room_id,
+          ref: character.ref,
+          title: character.title
+        })
+
+        character
       end)
 
     {:noreply, room}

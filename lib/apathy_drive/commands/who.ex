@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Who do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Directory, Mobile}
+  alias ApathyDrive.{Character, Directory, Mobile, Reputation}
 
   def keywords, do: ["who"]
 
@@ -38,8 +38,11 @@ defmodule ApathyDrive.Commands.Who do
           }</span>"
         )
 
-      %{name: name, title: title} ->
-        alignment = "" |> String.pad_leading(7)
+      %{name: name, title: title, evil_points: ep} ->
+        alignment = Mobile.alignment(%Character{evil_points: ep})
+        color = Reputation.color(alignment)
+        alignment = alignment |> String.pad_leading(7)
+        alignment = "<span class='#{color}'>#{alignment}</span>"
         name = name |> String.pad_trailing(longest_name_length)
 
         Mobile.send_scroll(

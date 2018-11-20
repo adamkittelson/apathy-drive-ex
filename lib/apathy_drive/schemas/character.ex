@@ -73,6 +73,7 @@ defmodule ApathyDrive.Character do
     field(:auto_nuke, :boolean)
     field(:auto_roam, :boolean)
     field(:auto_flee, :boolean)
+    field(:evil_points, :float)
 
     field(:level, :integer, virtual: true, default: 1)
     field(:race, :string, virtual: true)
@@ -533,6 +534,7 @@ defmodule ApathyDrive.Character do
 
           Directory.add_character(%{
             name: character.name,
+            evil_points: character.evil_points,
             room: character.room_id,
             ref: character.ref,
             title: character.title
@@ -1013,6 +1015,15 @@ defmodule ApathyDrive.Character do
       trunc(agi * (1 + modifier / 100))
     end
 
+    def alignment(%Character{evil_points: ep}) when ep < -200, do: "Saint"
+    def alignment(%Character{evil_points: ep}) when ep < -50, do: "Good"
+    def alignment(%Character{evil_points: ep}) when ep < 30, do: "Neutral"
+    def alignment(%Character{evil_points: ep}) when ep < 40, do: "Seedy"
+    def alignment(%Character{evil_points: ep}) when ep < 80, do: "Outlaw"
+    def alignment(%Character{evil_points: ep}) when ep < 120, do: "Criminal"
+    def alignment(%Character{evil_points: ep}) when ep < 210, do: "Villain"
+    def alignment(%Character{evil_points: _ep}), do: "FIEND"
+
     def attribute_at_level(%Character{} = character, attribute, _level) do
       Map.get(character, attribute)
     end
@@ -1047,7 +1058,11 @@ defmodule ApathyDrive.Character do
           TimerManager.time_remaining(character, :heartbeat)
         )
 
-      TimerManager.send_after(character, {:heartbeat, time, {:heartbeat, character.ref}})
+      character
+      |> TimerManager.send_after({:heartbeat, time, {:heartbeat, character.ref}})
+      |> TimerManager.send_after(
+        {:forgive_evil, :timer.seconds(60), {:forgive_evil, character.ref}}
+      )
     end
 
     def confused(%Character{effects: effects} = character, %Room{} = room) do
@@ -1478,6 +1493,7 @@ defmodule ApathyDrive.Character do
 
       Directory.add_character(%{
         name: character.name,
+        evil_points: character.evil_points,
         room: room_id,
         ref: character.ref,
         title: character.title

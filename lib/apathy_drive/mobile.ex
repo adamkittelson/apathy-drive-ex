@@ -1,6 +1,7 @@
 defprotocol ApathyDrive.Mobile do
   def ability_value(mobile, ability)
   def accuracy_at_level(mobile, level, room)
+  def alignment(mobile)
   def attack_ability(mobile)
   def attribute_at_level(mobile, attribute, level)
   def auto_attack_target(mobile, room)
