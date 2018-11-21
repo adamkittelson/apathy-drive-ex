@@ -51,6 +51,8 @@ defmodule ApathyDrive.Monster do
     field(:hp_regen, :integer)
     field(:regen_time_in_hours, :integer)
     field(:game_limit, :integer)
+    field(:alignment, :string)
+    field(:disposition, :string)
 
     field(:leader, :any, virtual: true)
     field(:hp, :float, virtual: true, default: 1.0)
@@ -431,16 +433,13 @@ defmodule ApathyDrive.Monster do
     def caster_level(%Monster{level: level}, %{level: target_level} = _target),
       do: max(level, target_level)
 
-    def color(%Monster{hostile: true}) do
-      "magenta"
-    end
-
-    def color(%Monster{}) do
-      "teal"
-    end
+    def color(%Monster{disposition: "neutral"}), do: "dark-cyan"
+    def color(%Monster{alignment: "evil"}), do: "magenta"
+    def color(%Monster{alignment: "neutral"}), do: "dark-cyan"
+    def color(%Monster{alignment: "good"}), do: "grey"
 
     def colored_name(%Monster{name: name} = monster) do
-      "<span style='color: #{color(monster)};'>#{name}</span>"
+      "<span class='#{color(monster)}'>#{name}</span>"
     end
 
     def confused(%Monster{effects: effects} = monster, %Room{} = room) do

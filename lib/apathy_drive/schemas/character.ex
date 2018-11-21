@@ -1108,8 +1108,19 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def color(%Character{}) do
-      "teal"
+    def color(%Character{} = character) do
+      alignment = alignment(character)
+
+      cond do
+        alignment in ["Saint", "Good"] ->
+          "grey"
+
+        alignment in ["Neutral", "Seedy"] ->
+          "dark-cyan"
+
+        :else ->
+          "magenta"
+      end
     end
 
     def colored_name(%Character{name: name} = character) do

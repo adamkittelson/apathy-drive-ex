@@ -225,7 +225,7 @@ defmodule ApathyDrive.Room do
         <ul>
           <%= for mob <- mobs do %>
             <li>
-              <span style="color: <%= mob.color %>;"><%= mob.name %></span>
+              <span class="<%= mob.color %>"><%= mob.name %></span>
               <div id="<%= mob.ref %>-bars">
                 <div class="progress-bar hp">
                   <div class="red"></div>
