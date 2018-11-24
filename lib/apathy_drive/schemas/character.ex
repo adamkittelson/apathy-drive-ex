@@ -1015,14 +1015,14 @@ defmodule ApathyDrive.Character do
       trunc(agi * (1 + modifier / 100))
     end
 
-    def alignment(%Character{evil_points: ep}) when ep < -200, do: "Saint"
-    def alignment(%Character{evil_points: ep}) when ep < -50, do: "Good"
-    def alignment(%Character{evil_points: ep}) when ep < 30, do: "Neutral"
-    def alignment(%Character{evil_points: ep}) when ep < 40, do: "Seedy"
-    def alignment(%Character{evil_points: ep}) when ep < 80, do: "Outlaw"
-    def alignment(%Character{evil_points: ep}) when ep < 120, do: "Criminal"
-    def alignment(%Character{evil_points: ep}) when ep < 210, do: "Villain"
-    def alignment(%Character{evil_points: _ep}), do: "FIEND"
+    def alignment(%Character{evil_points: ep}, _room) when ep < -200, do: "Saint"
+    def alignment(%Character{evil_points: ep}, _room) when ep < -50, do: "Good"
+    def alignment(%Character{evil_points: ep}, _room) when ep < 30, do: "Neutral"
+    def alignment(%Character{evil_points: ep}, _room) when ep < 40, do: "Seedy"
+    def alignment(%Character{evil_points: ep}, _room) when ep < 80, do: "Outlaw"
+    def alignment(%Character{evil_points: ep}, _room) when ep < 120, do: "Criminal"
+    def alignment(%Character{evil_points: ep}, _room) when ep < 210, do: "Villain"
+    def alignment(%Character{evil_points: _ep}, _room), do: "FIEND"
 
     def attribute_at_level(%Character{} = character, attribute, _level) do
       Map.get(character, attribute)
@@ -1108,8 +1108,8 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def color(%Character{} = character) do
-      alignment = alignment(character)
+    def color(%Character{} = character, room) do
+      alignment = alignment(character, room)
 
       cond do
         alignment in ["Saint", "Good"] ->
@@ -1123,8 +1123,8 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def colored_name(%Character{name: name} = character) do
-      "<span style='color: #{color(character)};'>#{name}</span>"
+    def colored_name(%Character{name: name} = character, room) do
+      "<span style='color: #{color(character, room)};'>#{name}</span>"
     end
 
     def crits_at_level(character, level, room) do
@@ -1530,7 +1530,7 @@ defmodule ApathyDrive.Character do
           %Character{} = observer ->
             Mobile.send_scroll(
               observer,
-              "<p>#{Mobile.colored_name(character)} is #{updated_hp_description}.</p>"
+              "<p>#{Mobile.colored_name(character, room)} is #{updated_hp_description}.</p>"
             )
 
           _ ->

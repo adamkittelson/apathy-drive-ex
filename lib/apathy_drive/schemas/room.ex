@@ -198,7 +198,7 @@ defmodule ApathyDrive.Room do
         mob = %{
           ref: ref,
           name: mobile.name,
-          color: Mobile.color(mobile),
+          color: Mobile.color(mobile, room),
           leader: leader
         }
 
@@ -382,7 +382,7 @@ defmodule ApathyDrive.Room do
         message =
           (message || Mobile.enter_message(mobile))
           |> ApathyDrive.Text.interpolate(%{
-            "name" => Mobile.colored_name(mobile),
+            "name" => Mobile.colored_name(mobile, room),
             "direction" => from_direction
           })
           |> ApathyDrive.Text.capitalize_first()
@@ -403,7 +403,7 @@ defmodule ApathyDrive.Room do
         message =
           message
           |> ApathyDrive.Text.interpolate(%{
-            "name" => Mobile.colored_name(mobile),
+            "name" => Mobile.colored_name(mobile, room),
             "direction" =>
               room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction()
           })
@@ -451,7 +451,7 @@ defmodule ApathyDrive.Room do
             observer,
             "<p>#{
               ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{
-                "name" => Mobile.colored_name(mobile)
+                "name" => Mobile.colored_name(mobile, room)
               })
             }</span></p>"
           )

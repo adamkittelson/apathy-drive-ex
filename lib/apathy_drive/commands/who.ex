@@ -39,7 +39,7 @@ defmodule ApathyDrive.Commands.Who do
         )
 
       %{name: name, title: title, evil_points: ep} ->
-        alignment = Mobile.alignment(%Character{evil_points: ep})
+        alignment = Mobile.alignment(%Character{evil_points: ep}, room)
         color = Reputation.color(alignment)
         alignment = alignment |> String.pad_leading(7)
         alignment = "<span class='#{color}'>#{alignment}</span>"

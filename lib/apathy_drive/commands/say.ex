@@ -16,7 +16,7 @@ defmodule ApathyDrive.Commands.Say do
     |> Enum.each(fn
       %Character{} = observer when character != observer ->
         message =
-          "<p>#{Mobile.colored_name(character)} says: <span class='dark-green'>\"#{message}\"</span></p>"
+          "<p>#{Mobile.colored_name(character, room)} says: <span class='dark-green'>\"#{message}\"</span></p>"
 
         Mobile.send_scroll(observer, "<p><span class='dark-magenta'>#{message}</span></p>")
 

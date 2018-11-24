@@ -394,6 +394,8 @@ defmodule ApathyDrive.Monster do
       trunc(agi * (1 + modifier / 100))
     end
 
+    def alignment(monster, _room), do: monster.alignment
+
     def attribute_at_level(%Monster{} = monster, attribute, level) do
       Map.get(monster, attribute) + level - 1
     end
@@ -433,13 +435,13 @@ defmodule ApathyDrive.Monster do
     def caster_level(%Monster{level: level}, %{level: target_level} = _target),
       do: max(level, target_level)
 
-    def color(%Monster{disposition: "neutral"}), do: "dark-cyan"
-    def color(%Monster{alignment: "evil"}), do: "magenta"
-    def color(%Monster{alignment: "neutral"}), do: "dark-cyan"
-    def color(%Monster{alignment: "good"}), do: "grey"
+    def color(%Monster{disposition: "neutral"}, _room), do: "dark-cyan"
+    def color(%Monster{alignment: "evil"}, _room), do: "magenta"
+    def color(%Monster{alignment: "neutral"}, _room), do: "dark-cyan"
+    def color(%Monster{alignment: "good"}, _room), do: "grey"
 
-    def colored_name(%Monster{name: name} = monster) do
-      "<span class='#{color(monster)}'>#{name}</span>"
+    def colored_name(%Monster{name: name} = monster, room) do
+      "<span class='#{color(monster, room)}'>#{name}</span>"
     end
 
     def confused(%Monster{effects: effects} = monster, %Room{} = room) do
@@ -758,7 +760,7 @@ defmodule ApathyDrive.Monster do
           %Character{} = observer ->
             Mobile.send_scroll(
               observer,
-              "<p>#{Mobile.colored_name(monster)} is #{updated_hp_description}.</p>"
+              "<p>#{Mobile.colored_name(monster, room)} is #{updated_hp_description}.</p>"
             )
 
           _ ->

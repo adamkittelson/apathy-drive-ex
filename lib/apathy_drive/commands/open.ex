@@ -40,7 +40,7 @@ defmodule ApathyDrive.Commands.Open do
 
         Room.send_scroll(
           room,
-          "<p>You see #{Mobile.colored_name(mobile)} attempt to open the #{name} #{
+          "<p>You see #{Mobile.colored_name(mobile, room)} attempt to open the #{name} #{
             ApathyDrive.Exit.direction_description(room_exit["direction"])
           }.</p>",
           [mobile]
@@ -54,7 +54,7 @@ defmodule ApathyDrive.Commands.Open do
 
         Room.send_scroll(
           room,
-          "<p>You see #{Mobile.colored_name(mobile)} open the #{name} #{
+          "<p>You see #{Mobile.colored_name(mobile, room)} open the #{name} #{
             ApathyDrive.Exit.direction_description(room_exit["direction"])
           }.</p>",
           [mobile]

@@ -36,7 +36,7 @@ defmodule ApathyDrive.Commands.Close do
 
         Room.send_scroll(
           room,
-          "<p>You see #{Mobile.colored_name(mobile)} close the #{name} #{
+          "<p>You see #{Mobile.colored_name(mobile, room)} close the #{name} #{
             ApathyDrive.Exit.direction_description(room_exit["direction"])
           }.</p>",
           [mobile]

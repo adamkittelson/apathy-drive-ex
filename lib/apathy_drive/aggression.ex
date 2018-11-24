@@ -4,26 +4,50 @@ defmodule ApathyDrive.Aggression do
 
   def react(%Room{} = room, monster_ref) do
     Enum.reduce(room.mobiles, room, fn
-      {_ref, %Monster{}}, updated_room ->
+      # don't consider attacking self
+      {^monster_ref, %{} = mobile}, updated_room ->
         updated_room
 
       {_ref, %{} = mobile}, updated_room ->
         monster = updated_room.mobiles[monster_ref]
-        ApathyDrive.Aggression.react(room, monster, mobile)
+
+        alignment =
+          mobile
+          |> Mobile.alignment(room)
+          |> convert_alignment()
+
+        ApathyDrive.Aggression.react(room, monster, %{alignment: alignment, mobile: mobile})
     end)
   end
 
-  # Don't attack other monsters
-  def react(%Room{} = room, %Monster{}, %Monster{}), do: room
+  # monsters with neutral dispositions never initiate combat
+  def react(%Room{} = room, %Monster{disposition: "neutral"}, _), do: room
 
-  # attack non-monsters if hostile
-  def react(%Room{} = room, %Monster{hostile: true} = monster, %{} = intruder) do
-    attack(room, monster, intruder)
+  def react(%Room{} = room, %Monster{} = monster, %{alignment: "evil", mobile: mob}) do
+    cond do
+      monster.alignment == "good" ->
+        attack(room, monster, mob)
+
+      monster.spawned_at == Map.get(mob, :spawned_at) ->
+        room
+
+      monster.alignment == "evil" and monster.disposition != "lawful" ->
+        attack(room, monster, mob)
+
+      :else ->
+        room
+    end
   end
 
-  def react(%Room{} = room, %Monster{} = _monster, %{} = _intruder), do: room
+  def react(%Room{} = room, %Monster{} = monster, %{alignment: _alignment, mobile: mob}) do
+    cond do
+      monster.alignment == "evil" ->
+        attack(room, monster, mob)
 
-  def react(%Room{} = room, %{} = _mobile, %{}), do: room
+      :else ->
+        room
+    end
+  end
 
   def attack(%Room{} = room, %{} = attacker, %{} = intruder) do
     attacker = attack_target(attacker, intruder)
@@ -51,4 +75,14 @@ defmodule ApathyDrive.Aggression do
       attacker
     end
   end
+
+  def convert_alignment("Saint"), do: "good"
+  def convert_alignment("Good"), do: "good"
+  def convert_alignment("Neutral"), do: "neutral"
+  def convert_alignment("Seedy"), do: "neutral"
+  def convert_alignment("Outlaw"), do: "evil"
+  def convert_alignment("Criminal"), do: "evil"
+  def convert_alignment("Villain"), do: "evil"
+  def convert_alignment("FIEND"), do: "evil"
+  def convert_alignment(alignment), do: alignment
 end
