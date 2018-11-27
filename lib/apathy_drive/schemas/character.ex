@@ -449,13 +449,26 @@ defmodule ApathyDrive.Character do
     }
 
     if on_hit = weapon.traits["OnHit"] do
-      on_hit =
-        on_hit
-        |> Map.put(:energy, energy)
-        |> Map.put(:mana, 0)
-        |> Map.put(:on_hit?, true)
+      if on_hit.kind == "attack" do
+        modifier = energy / 1000
 
-      put_in(ability.traits["OnHit"], on_hit)
+        Enum.reduce(on_hit.traits["Damage"], ability, fn damage, ability ->
+          damage =
+            damage
+            |> update_in([:min], &trunc(&1 * modifier))
+            |> update_in([:max], &trunc(&1 * modifier))
+
+          update_in(ability, [Access.key!(:traits), "Damage"], &[damage | &1])
+        end)
+      else
+        on_hit =
+          on_hit
+          |> Map.put(:energy, 0)
+          |> Map.put(:mana, 0)
+          |> Map.put(:on_hit?, true)
+
+        put_in(ability.traits["OnHit"], on_hit)
+      end
     else
       ability
     end
@@ -893,9 +906,19 @@ defmodule ApathyDrive.Character do
         cost
       end
 
-    trunc(
-      cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
-    )
+    energy =
+      trunc(
+        cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
+      )
+
+    energy =
+      if weapon.traits["OnHit"] do
+        energy * 2
+      else
+        energy
+      end
+
+    min(energy, 1000)
   end
 
   def send_chat(%Character{socket: socket} = character, html) do

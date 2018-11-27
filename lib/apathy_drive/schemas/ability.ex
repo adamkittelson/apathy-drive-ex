@@ -988,8 +988,8 @@ defmodule ApathyDrive.Ability do
       |> Map.put(:ability_shift, 0)
 
     {caster, damage_percent} =
-      Enum.reduce(damages, {caster, target}, fn
-        %{kind: "physical", min: min, max: max, damage_type: type}, {caster, target} ->
+      Enum.reduce(damages, {caster, 0}, fn
+        %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           caster_damage =
             div(trunc(Mobile.physical_damage_at_level(caster, caster_level) * round_percent), 2)
 
@@ -1007,11 +1007,11 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "physical", damage: dmg, damage_type: type}, {caster, target} ->
+        %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent} ->
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
           resist = resist * round_percent
@@ -1022,22 +1022,23 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "physical", damage_type: type, potency: potency} = damage, {caster, target} ->
+        %{kind: "physical", damage_type: type, potency: potency} = damage,
+        {caster, damage_percent} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.physical_resistance_at_level(target, target_level)
           resist = resist * round_percent
 
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "magical", min: min, max: max, damage_type: type}, {caster, target} ->
+        %{kind: "magical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           caster_damage =
             div(trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent), 2)
 
@@ -1055,21 +1056,22 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "magical", damage_type: type, potency: potency} = damage, {caster, target} ->
+        %{kind: "magical", damage_type: type, potency: potency} = damage,
+        {caster, damage_percent} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level)
           resist = resist * round_percent
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "magical", damage: damage, damage_type: type}, {caster, target} ->
+        %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent} ->
           resist = Mobile.magical_resistance_at_level(target, target_level)
           resist = resist * round_percent
           damage = damage - resist
@@ -1078,17 +1080,18 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "drain", damage_type: type, potency: potency} = damage, {caster, target} ->
+        %{kind: "drain", damage_type: type, potency: potency} = damage,
+        {caster, damage_percent} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level)
           resist = resist * round_percent
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
 
@@ -1096,9 +1099,9 @@ defmodule ApathyDrive.Ability do
 
           Mobile.update_prompt(caster)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "drain", min: min, max: max, damage_type: type}, {caster, target} ->
+        %{kind: "drain", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           caster_damage =
             div(trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent), 2)
 
@@ -1116,7 +1119,7 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
 
@@ -1124,19 +1127,12 @@ defmodule ApathyDrive.Ability do
 
           Mobile.update_prompt(caster)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
       end)
 
     damage_percent =
       if match?(%Character{}, target) and target.level < 5 and damage_percent > 0.2 do
         Enum.random(10..20) / 100
-      else
-        damage_percent
-      end
-
-    damage_percent =
-      if ability.on_hit? do
-        damage_percent * ability.energy / 1000
       else
         damage_percent
       end
