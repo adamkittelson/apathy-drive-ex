@@ -1,29 +1,64 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Mobile, Monster, Room}
+  alias ApathyDrive.{Character, Mobile, Monster, Room}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
     Enum.reduce(room.mobiles, room, fn
       # don't consider attacking self
-      {^monster_ref, %{} = mobile}, updated_room ->
+      {^monster_ref, %{} = _mobile}, updated_room ->
         updated_room
 
       {_ref, %{} = mobile}, updated_room ->
         monster = updated_room.mobiles[monster_ref]
 
-        alignment =
-          mobile
-          |> Mobile.alignment(room)
-          |> convert_alignment()
-
-        ApathyDrive.Aggression.react(room, monster, %{alignment: alignment, mobile: mobile})
+        ApathyDrive.Aggression.react(room, monster, mobile)
     end)
   end
 
-  # monsters with neutral dispositions never initiate combat
-  def react(%Room{} = room, %Monster{disposition: "neutral"}, _), do: room
+  def react(%Room{} = room, %Monster{alignment: "neutral"}, %{} = _mobile) do
+    room
+  end
 
-  def react(%Room{} = room, %Monster{} = monster, %{alignment: "evil", mobile: mob}) do
+  def react(
+        %Room{} = room,
+        %Monster{alignment: "good", lawful: true} = monster,
+        %Character{} = character
+      ) do
+    IO.inspect(Character.legal_status(character))
+
+    if Character.legal_status(character) in ["Outlaw", "Criminal", "Villain", "FIEND"] do
+      IO.puts("#{monster.name} attacking #{character.name}")
+      attack(room, monster, character)
+    else
+      room
+    end
+  end
+
+  def react(
+        %Room{} = room,
+        %Monster{alignment: "good"},
+        %Character{}
+      ) do
+    room
+  end
+
+  def react(
+        %Room{} = room,
+        %Monster{alignment: "evil", lawful: true},
+        %Character{alignment: "evil"}
+      ) do
+    room
+  end
+
+  def react(
+        %Room{} = room,
+        %Monster{alignment: "evil"} = monster,
+        %Character{} = character
+      ) do
+    attack(room, monster, character)
+  end
+
+  def react(%Room{} = room, %Monster{} = monster, %{alignment: "evil"} = mob) do
     cond do
       monster.alignment == "good" ->
         attack(room, monster, mob)
@@ -31,7 +66,7 @@ defmodule ApathyDrive.Aggression do
       monster.spawned_at == Map.get(mob, :spawned_at) ->
         room
 
-      monster.alignment == "evil" and monster.disposition != "lawful" ->
+      monster.alignment == "evil" and !monster.lawful ->
         attack(room, monster, mob)
 
       :else ->
@@ -39,7 +74,7 @@ defmodule ApathyDrive.Aggression do
     end
   end
 
-  def react(%Room{} = room, %Monster{} = monster, %{alignment: _alignment, mobile: mob}) do
+  def react(%Room{} = room, %Monster{} = monster, %{} = mob) do
     cond do
       monster.alignment == "evil" ->
         attack(room, monster, mob)
@@ -75,14 +110,4 @@ defmodule ApathyDrive.Aggression do
       attacker
     end
   end
-
-  def convert_alignment("Saint"), do: "good"
-  def convert_alignment("Good"), do: "good"
-  def convert_alignment("Neutral"), do: "neutral"
-  def convert_alignment("Seedy"), do: "neutral"
-  def convert_alignment("Outlaw"), do: "evil"
-  def convert_alignment("Criminal"), do: "evil"
-  def convert_alignment("Villain"), do: "evil"
-  def convert_alignment("FIEND"), do: "evil"
-  def convert_alignment(alignment), do: alignment
 end

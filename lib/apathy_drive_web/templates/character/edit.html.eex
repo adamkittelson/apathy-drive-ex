@@ -59,7 +59,6 @@
     </div>
   <% end %>
 
-
   <%= submit "Submit", class: "button-primary" %>
 <% end %>
 

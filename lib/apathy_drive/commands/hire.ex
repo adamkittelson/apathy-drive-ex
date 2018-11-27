@@ -16,7 +16,7 @@ defmodule ApathyDrive.Commands.Hire do
             price > character.gold ->
               Mobile.send_scroll(
                 character,
-                "<p>You cannot afford to hire #{Mobile.colored_name(monster, room)}.</p>"
+                "<p>You cannot afford to hire #{Mobile.colored_name(monster)}.</p>"
               )
 
               room
@@ -24,9 +24,9 @@ defmodule ApathyDrive.Commands.Hire do
             companion = Character.companion(character, room) ->
               Mobile.send_scroll(
                 character,
-                "<p>You must <span class='green'>dismiss</span> #{
-                  Mobile.colored_name(companion, room)
-                } before you can hire #{Mobile.colored_name(monster, room)}.</p>"
+                "<p>You must <span class='green'>dismiss</span> #{Mobile.colored_name(companion)} before you can hire #{
+                  Mobile.colored_name(monster)
+                }.</p>"
               )
 
               room
@@ -49,7 +49,7 @@ defmodule ApathyDrive.Commands.Hire do
         else
           Mobile.send_scroll(
             character,
-            "<p>#{Mobile.colored_name(monster, room)} has no interest in joining your party.</p>"
+            "<p>#{Mobile.colored_name(monster)} has no interest in joining your party.</p>"
           )
 
           room

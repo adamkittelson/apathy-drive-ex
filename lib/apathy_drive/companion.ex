@@ -59,7 +59,8 @@ defmodule ApathyDrive.Companion do
     :auto_curse,
     :auto_nuke,
     :auto_roam,
-    :auto_flee
+    :auto_flee,
+    :alignment
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -69,7 +70,7 @@ defmodule ApathyDrive.Companion do
 
     Mobile.send_scroll(
       character,
-      "<p>You release #{Mobile.colored_name(companion, room)} from your service, and they wander off into the sunset.</p>"
+      "<p>You release #{Mobile.colored_name(companion)} from your service, and they wander off into the sunset.</p>"
     )
 
     room.mobiles
@@ -79,9 +80,7 @@ defmodule ApathyDrive.Companion do
       %Character{} = observer ->
         Mobile.send_scroll(
           observer,
-          "<p>#{Mobile.colored_name(character, room)} releases #{
-            Mobile.colored_name(companion, room)
-          } from {{target:his/her/their}} service.</p>"
+          "<p>#{Mobile.colored_name(character)} releases #{Mobile.colored_name(companion)} from {{target:his/her/their}} service.</p>"
         )
 
       _ ->
@@ -185,6 +184,7 @@ defmodule ApathyDrive.Companion do
         rm
         |> from_room_monster()
         |> Map.put(:leader, character.ref)
+        |> Map.put(:alignment, character.alignment)
         |> Map.put(:character_id, id)
 
       mobiles =
@@ -283,12 +283,6 @@ defmodule ApathyDrive.Companion do
       trunc(agi * (1 + modifier / 100))
     end
 
-    def alignment(companion, room) do
-      companion
-      |> Companion.character(room)
-      |> Mobile.alignment(room)
-    end
-
     def attribute_at_level(%Companion{} = companion, attribute, level) do
       Map.get(companion, attribute) + level - 1
     end
@@ -324,23 +318,12 @@ defmodule ApathyDrive.Companion do
 
     def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
 
-    def color(%Companion{} = companion, room) do
-      alignment = alignment(companion, room)
+    def color(%Companion{alignment: "evil"}), do: "magenta"
+    def color(%Companion{alignment: "neutral"}), do: "dark-cyan"
+    def color(%Companion{alignment: "good"}), do: "grey"
 
-      cond do
-        alignment in ["Saint", "Good"] ->
-          "grey"
-
-        alignment in ["Neutral", "Seedy"] ->
-          "dark-cyan"
-
-        :else ->
-          "magenta"
-      end
-    end
-
-    def colored_name(%Character{name: name} = character, room) do
-      "<span style='color: #{color(character, room)};'>#{name}</span>"
+    def colored_name(%Companion{name: name} = companion) do
+      "<span style='color: #{color(companion)};'>#{name}</span>"
     end
 
     def confused(%Companion{effects: effects} = companion, %Room{} = room) do
@@ -631,7 +614,7 @@ defmodule ApathyDrive.Companion do
           %Character{} = observer ->
             Mobile.send_scroll(
               observer,
-              "<p>#{Mobile.colored_name(companion, room)} is #{updated_hp_description}.</p>"
+              "<p>#{Mobile.colored_name(companion)} is #{updated_hp_description}.</p>"
             )
 
           _ ->

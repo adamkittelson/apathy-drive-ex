@@ -13,7 +13,7 @@ defmodule ApathyDrive.Commands.Join do
           Party.size(room, target) > 5 ->
             Mobile.send_scroll(
               character,
-              "<p>#{Mobile.colored_name(target, room)}'s party is already full.</p>"
+              "<p>#{Mobile.colored_name(target)}'s party is already full.</p>"
             )
 
             room

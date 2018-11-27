@@ -78,17 +78,6 @@ defmodule ApathyDrive.Room do
     Map.put(room, :items, items)
   end
 
-  def load_reputations(%Room{area: area} = room) do
-    area =
-      area
-      |> Repo.preload(:allies)
-      |> Repo.preload(:enemies)
-
-    room
-    |> put_in([:allies], Enum.reduce(area.allies, %{}, &Map.put(&2, &1.id, &1.name)))
-    |> put_in([:enemies], Enum.reduce(area.enemies, %{}, &Map.put(&2, &1.id, &1.name)))
-  end
-
   def load_skills(%Room{} = room) do
     Repo.preload(room, :skills, force: true)
   end
@@ -198,7 +187,7 @@ defmodule ApathyDrive.Room do
         mob = %{
           ref: ref,
           name: mobile.name,
-          color: Mobile.color(mobile, room),
+          color: Mobile.color(mobile),
           leader: leader
         }
 
@@ -382,7 +371,7 @@ defmodule ApathyDrive.Room do
         message =
           (message || Mobile.enter_message(mobile))
           |> ApathyDrive.Text.interpolate(%{
-            "name" => Mobile.colored_name(mobile, room),
+            "name" => Mobile.colored_name(mobile),
             "direction" => from_direction
           })
           |> ApathyDrive.Text.capitalize_first()
@@ -403,7 +392,7 @@ defmodule ApathyDrive.Room do
         message =
           message
           |> ApathyDrive.Text.interpolate(%{
-            "name" => Mobile.colored_name(mobile, room),
+            "name" => Mobile.colored_name(mobile),
             "direction" =>
               room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction()
           })
@@ -451,7 +440,7 @@ defmodule ApathyDrive.Room do
             observer,
             "<p>#{
               ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{
-                "name" => Mobile.colored_name(mobile, room)
+                "name" => Mobile.colored_name(mobile)
               })
             }</span></p>"
           )

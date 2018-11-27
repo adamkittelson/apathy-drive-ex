@@ -5,7 +5,6 @@ defmodule ApathyDrive.Monster do
   alias ApathyDrive.{
     Ability,
     AI,
-    Area,
     Character,
     Currency,
     Regeneration,
@@ -52,7 +51,7 @@ defmodule ApathyDrive.Monster do
     field(:regen_time_in_hours, :integer)
     field(:game_limit, :integer)
     field(:alignment, :string)
-    field(:disposition, :string)
+    field(:lawful, :boolean)
 
     field(:leader, :any, virtual: true)
     field(:hp, :float, virtual: true, default: 1.0)
@@ -75,7 +74,6 @@ defmodule ApathyDrive.Monster do
     field(:zone_spawned_at, :integer, virtual: true)
     field(:ability_shift, :float, virtual: true)
     field(:ability_special, :float, virtual: true)
-    field(:reputations, :map, virtual: true, default: [])
     field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:casting, :any, virtual: true)
@@ -147,7 +145,6 @@ defmodule ApathyDrive.Monster do
       |> generate_monster_attributes()
       |> load_abilities()
       |> load_traits()
-      |> set_reputations()
       |> Mobile.cpr()
     end
   end
@@ -178,46 +175,8 @@ defmodule ApathyDrive.Monster do
     |> load_abilities()
     |> load_traits()
     |> load_drops()
-    |> set_reputations()
     |> Mobile.cpr()
   end
-
-  def set_reputations(%Monster{spawned_at: room_id} = monster) do
-    %Room{allies: allies, enemies: enemies, area: area} =
-      Room
-      |> Repo.get(room_id)
-      |> Repo.preload(area: Area.without_map())
-      |> Room.load_reputations()
-
-    set_reputations(monster, area, allies, enemies)
-  end
-
-  def set_reputations(%Monster{grade: grade} = monster, %Area{} = area, allies, enemies) do
-    amount = reputation_for_grade(grade)
-
-    monster =
-      put_in(monster.reputations, [%{reputation: amount, area_id: area.id, area_name: area.name}])
-
-    monster =
-      Enum.reduce(allies, monster, fn {area_id, area_name}, monster ->
-        update_in(
-          monster.reputations,
-          &[%{reputation: div(amount, 2), area_id: area_id, area_name: area_name} | &1]
-        )
-      end)
-
-    Enum.reduce(enemies, monster, fn {area_id, area_name}, monster ->
-      update_in(
-        monster.reputations,
-        &[%{reputation: -div(amount, 2), area_id: area_id, area_name: area_name} | &1]
-      )
-    end)
-  end
-
-  def reputation_for_grade("boss"), do: 500
-  def reputation_for_grade("strong"), do: 400
-  def reputation_for_grade("normal"), do: 300
-  def reputation_for_grade("weak"), do: 200
 
   def spawnable?(%Monster{next_spawn_at: nil}, _now), do: true
   def spawnable?(%Monster{regen_time_in_hours: nil}, _now), do: true
@@ -435,13 +394,12 @@ defmodule ApathyDrive.Monster do
     def caster_level(%Monster{level: level}, %{level: target_level} = _target),
       do: max(level, target_level)
 
-    def color(%Monster{disposition: "neutral"}, _room), do: "dark-cyan"
-    def color(%Monster{alignment: "evil"}, _room), do: "magenta"
-    def color(%Monster{alignment: "neutral"}, _room), do: "dark-cyan"
-    def color(%Monster{alignment: "good"}, _room), do: "grey"
+    def color(%Monster{alignment: "evil"}), do: "magenta"
+    def color(%Monster{alignment: "neutral"}), do: "dark-cyan"
+    def color(%Monster{alignment: "good"}), do: "grey"
 
-    def colored_name(%Monster{name: name} = monster, room) do
-      "<span class='#{color(monster, room)}'>#{name}</span>"
+    def colored_name(%Monster{name: name} = monster) do
+      "<span class='#{color(monster)}'>#{name}</span>"
     end
 
     def confused(%Monster{effects: effects} = monster, %Room{} = room) do
@@ -516,7 +474,6 @@ defmodule ApathyDrive.Monster do
                 Mobile.send_scroll(character, "<p>#{message}</p>")
 
                 character
-                |> Character.add_reputation(monster.reputations)
                 |> Character.add_experience(monster.experience)
                 |> Character.add_currency_from_monster(monster)
 
@@ -760,7 +717,7 @@ defmodule ApathyDrive.Monster do
           %Character{} = observer ->
             Mobile.send_scroll(
               observer,
-              "<p>#{Mobile.colored_name(monster, room)} is #{updated_hp_description}.</p>"
+              "<p>#{Mobile.colored_name(monster)} is #{updated_hp_description}.</p>"
             )
 
           _ ->

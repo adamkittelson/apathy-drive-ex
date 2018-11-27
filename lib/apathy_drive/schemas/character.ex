@@ -10,7 +10,6 @@ defmodule ApathyDrive.Character do
     AI,
     Character,
     CharacterSkill,
-    CharacterReputation,
     Class,
     ClassTrait,
     Companion,
@@ -24,7 +23,6 @@ defmodule ApathyDrive.Character do
     Party,
     Race,
     RaceTrait,
-    Reputation,
     Room,
     RoomServer,
     Skill,
@@ -73,7 +71,8 @@ defmodule ApathyDrive.Character do
     field(:auto_nuke, :boolean)
     field(:auto_roam, :boolean)
     field(:auto_flee, :boolean)
-    field(:evil_points, :float)
+    field(:bounty, :integer, default: 0)
+    field(:alignment, :string)
 
     field(:level, :integer, virtual: true, default: 1)
     field(:race, :string, virtual: true)
@@ -99,7 +98,6 @@ defmodule ApathyDrive.Character do
     field(:charm, :integer, virtual: true)
     field(:leader, :any, virtual: true)
     field(:invitees, :any, virtual: true, default: [])
-    field(:reputations, :map, virtual: true, default: %{})
     field(:skills, :map, virtual: true, default: %{})
     field(:editing, :any, virtual: true)
     field(:attribute_levels, :any, virtual: true, default: %{})
@@ -117,13 +115,19 @@ defmodule ApathyDrive.Character do
     belongs_to(:room, Room)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
-    has_many(:characters_reputations, ApathyDrive.CharacterReputation)
 
     has_many(:characters_skills, ApathyDrive.CharacterSkill)
     has_many(:trained_skills, through: [:characters_skills, :skill])
 
     timestamps()
   end
+
+  def legal_status(%Character{bounty: bounty}) when bounty >= 1_000_000, do: "FIEND"
+  def legal_status(%Character{bounty: bounty}) when bounty >= 500_000, do: "Villain"
+  def legal_status(%Character{bounty: bounty}) when bounty >= 250_000, do: "Criminal"
+  def legal_status(%Character{bounty: bounty}) when bounty >= 10_000, do: "Outlaw"
+  def legal_status(%Character{bounty: bounty}) when bounty > 0, do: "Seedy"
+  def legal_status(%Character{bounty: _bounty}), do: "Lawful"
 
   def wearing_enchanted_item?(%Character{} = character, %Ability{} = ability) do
     Enum.any?(character.equipment, fn item ->
@@ -194,8 +198,8 @@ defmodule ApathyDrive.Character do
 
   def sign_up_changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(email password name race_id gender class_id))
-    |> validate_required(~w(email password name race_id gender class_id)a)
+    |> cast(params, ~w(email password name race_id gender class_id alignment))
+    |> validate_required(~w(email password name race_id gender class_id alignment)a)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:email, min: 3, max: 100)
     |> validate_length(:password, min: 6)
@@ -204,6 +208,7 @@ defmodule ApathyDrive.Character do
     |> validate_inclusion(:race_id, ApathyDrive.Race.ids())
     |> validate_inclusion(:class_id, ApathyDrive.Class.ids())
     |> validate_inclusion(:gender, ["male", "female"])
+    |> validate_inclusion(:alignment, ["good", "neutral", "evil"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, name: :characters_lower_name_index, on: Repo)
     |> validate_length(:name, min: 1, max: 12)
@@ -321,20 +326,6 @@ defmodule ApathyDrive.Character do
     |> Map.put(:weapon, class.weapon)
     |> Map.put(:armour, class.armour)
     |> Systems.Effect.add(effect)
-  end
-
-  def load_reputations(%Character{} = character) do
-    reputations =
-      character
-      |> Ecto.assoc([:characters_reputations])
-      |> Ecto.Query.preload([:area])
-      |> Repo.all()
-      |> Enum.reduce(
-        %{},
-        &Map.put(&2, &1.area.id, %{name: &1.area.name, reputation: &1.reputation})
-      )
-
-    Map.put(character, :reputations, reputations)
   end
 
   def load_items(%Character{} = character) do
@@ -534,7 +525,7 @@ defmodule ApathyDrive.Character do
 
           Directory.add_character(%{
             name: character.name,
-            evil_points: character.evil_points,
+            bounty: character.bounty,
             room: character.room_id,
             ref: character.ref,
             title: character.title
@@ -614,51 +605,6 @@ defmodule ApathyDrive.Character do
   end
 
   def add_experience(character, _exp), do: character
-
-  def add_reputation(%Character{} = character, reputations) do
-    Enum.reduce(reputations, character, fn %{
-                                             area_id: area_id,
-                                             area_name: area_name,
-                                             reputation: reputation
-                                           },
-                                           character ->
-      change = -(reputation / 100)
-
-      character =
-        update_in(character.reputations[area_id], &(&1 || %{name: area_name, reputation: 0.0}))
-
-      current = Reputation.word_for_value(character.reputations[area_id].reputation)
-
-      character =
-        update_in(
-          character.reputations[area_id].reputation,
-          &max(-1000.0, min(&1 + change, 1000.0))
-        )
-
-      updated = Reputation.word_for_value(character.reputations[area_id].reputation)
-
-      if current != updated do
-        Mobile.send_scroll(
-          character,
-          "<p>Your reputation with #{area_name} is now <span class='#{Reputation.color(updated)}'>#{
-            updated
-          }</span>.</p>"
-        )
-      end
-
-      Repo.insert(
-        %CharacterReputation{
-          character_id: character.id,
-          area_id: area_id,
-          reputation: character.reputations[area_id].reputation
-        },
-        on_conflict: :replace_all,
-        conflict_target: [:character_id, :area_id]
-      )
-
-      character
-    end)
-  end
 
   def train_skill(%Character{} = character, %Skill{} = skill, amount) when amount > 0 do
     skill = Repo.preload(skill, :incompatible_skills)
@@ -1015,15 +961,6 @@ defmodule ApathyDrive.Character do
       trunc(agi * (1 + modifier / 100))
     end
 
-    def alignment(%Character{evil_points: ep}, _room) when ep < -200, do: "Saint"
-    def alignment(%Character{evil_points: ep}, _room) when ep < -50, do: "Good"
-    def alignment(%Character{evil_points: ep}, _room) when ep < 30, do: "Neutral"
-    def alignment(%Character{evil_points: ep}, _room) when ep < 40, do: "Seedy"
-    def alignment(%Character{evil_points: ep}, _room) when ep < 80, do: "Outlaw"
-    def alignment(%Character{evil_points: ep}, _room) when ep < 120, do: "Criminal"
-    def alignment(%Character{evil_points: ep}, _room) when ep < 210, do: "Villain"
-    def alignment(%Character{evil_points: _ep}, _room), do: "FIEND"
-
     def attribute_at_level(%Character{} = character, attribute, _level) do
       Map.get(character, attribute)
     end
@@ -1061,7 +998,7 @@ defmodule ApathyDrive.Character do
       character
       |> TimerManager.send_after({:heartbeat, time, {:heartbeat, character.ref}})
       |> TimerManager.send_after(
-        {:forgive_evil, :timer.seconds(60), {:forgive_evil, character.ref}}
+        {:reduce_bounty, :timer.seconds(60), {:reduce_bounty, character.ref}}
       )
     end
 
@@ -1108,23 +1045,12 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def color(%Character{} = character, room) do
-      alignment = alignment(character, room)
+    def color(%Character{alignment: "evil"}), do: "magenta"
+    def color(%Character{alignment: "neutral"}), do: "dark-cyan"
+    def color(%Character{alignment: "good"}), do: "grey"
 
-      cond do
-        alignment in ["Saint", "Good"] ->
-          "grey"
-
-        alignment in ["Neutral", "Seedy"] ->
-          "dark-cyan"
-
-        :else ->
-          "magenta"
-      end
-    end
-
-    def colored_name(%Character{name: name} = character, room) do
-      "<span style='color: #{color(character, room)};'>#{name}</span>"
+    def colored_name(%Character{name: name} = character) do
+      "<span class='#{color(character)}'>#{name}</span>"
     end
 
     def crits_at_level(character, level, room) do
@@ -1504,7 +1430,7 @@ defmodule ApathyDrive.Character do
 
       Directory.add_character(%{
         name: character.name,
-        evil_points: character.evil_points,
+        bounty: character.bounty,
         room: room_id,
         ref: character.ref,
         title: character.title
@@ -1530,7 +1456,7 @@ defmodule ApathyDrive.Character do
           %Character{} = observer ->
             Mobile.send_scroll(
               observer,
-              "<p>#{Mobile.colored_name(character, room)} is #{updated_hp_description}.</p>"
+              "<p>#{Mobile.colored_name(character)} is #{updated_hp_description}.</p>"
             )
 
           _ ->

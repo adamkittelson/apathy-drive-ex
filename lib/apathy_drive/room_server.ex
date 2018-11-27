@@ -150,7 +150,6 @@ defmodule ApathyDrive.RoomServer do
       |> Repo.preload(area: Area.without_map())
       |> Room.load_exits()
       |> Room.load_items()
-      |> Room.load_reputations()
       |> Room.load_skills()
       |> Shop.load()
 
@@ -227,7 +226,6 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:socket, socket)
         |> Character.load_race()
         |> Character.load_class()
-        |> Character.load_reputations()
         |> Character.set_attribute_levels()
         |> Character.update_exp_bar()
         |> Character.load_abilities()
@@ -245,7 +243,7 @@ defmodule ApathyDrive.RoomServer do
 
       Directory.add_character(%{
         name: character.name,
-        evil_points: character.evil_points,
+        bounty: character.bounty,
         room: character.room_id,
         ref: character.ref,
         title: character.title
@@ -505,20 +503,26 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:forgive_evil, mobile_ref}, room) do
+  def handle_info({:reduce_bounty, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn character ->
-        character = update_in(character.evil_points, &max(-220, &1 - 1 / 60))
+        character =
+          character
+          |> Ecto.Changeset.change(%{bounty: character.bounty - 1})
+          |> Repo.update!()
 
         Directory.add_character(%{
           name: character.name,
-          evil_points: character.evil_points,
+          bounty: character.bounty,
           room: character.room_id,
           ref: character.ref,
           title: character.title
         })
 
-        character
+        TimerManager.send_after(
+          character,
+          {:reduce_bounty, :timer.seconds(60), {:reduce_bounty, character.ref}}
+        )
       end)
 
     {:noreply, room}
@@ -822,12 +826,6 @@ defmodule ApathyDrive.RoomServer do
     else
       {:noreply, room}
     end
-  end
-
-  def handle_info(:reload_reputations, room) do
-    room = Room.load_reputations(room)
-
-    {:noreply, room}
   end
 
   def handle_info(:reload_abilities, room) do

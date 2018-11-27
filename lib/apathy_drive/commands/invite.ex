@@ -39,12 +39,12 @@ defmodule ApathyDrive.Commands.Invite do
 
           Mobile.send_scroll(
             character,
-            "<p>#{Mobile.colored_name(monster, room)} says: <span class='dark-green'>\"#{message}\"</span></p>"
+            "<p>#{Mobile.colored_name(monster)} says: <span class='dark-green'>\"#{message}\"</span></p>"
           )
         else
           Mobile.send_scroll(
             character,
-            "<p>#{Mobile.colored_name(monster, room)} has no interest in joining your party.</p>"
+            "<p>#{Mobile.colored_name(monster)} has no interest in joining your party.</p>"
           )
         end
 

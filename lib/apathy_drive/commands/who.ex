@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Who do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Directory, Mobile, Reputation}
+  alias ApathyDrive.{Character, Directory, Mobile}
 
   def keywords, do: ["who"]
 
@@ -38,19 +38,28 @@ defmodule ApathyDrive.Commands.Who do
           }</span>"
         )
 
-      %{name: name, title: title, evil_points: ep} ->
-        alignment = Mobile.alignment(%Character{evil_points: ep}, room)
-        color = Reputation.color(alignment)
-        alignment = alignment |> String.pad_leading(7)
-        alignment = "<span class='#{color}'>#{alignment}</span>"
+      %{name: name, title: title, bounty: bounty} ->
+        legal_status = Character.legal_status(%Character{bounty: bounty})
+        color = color(legal_status)
+        legal_status = legal_status |> String.pad_leading(7)
+        legal_status = "<span class='#{color}'>#{legal_status}</span>"
         name = name |> String.pad_trailing(longest_name_length)
 
         Mobile.send_scroll(
           character,
-          "<p>#{alignment} <span class='dark-green'>#{name} - <span class='dark-magenta'>#{title}</span></p>"
+          "<p>#{legal_status} <span class='dark-green'>#{name} - <span class='dark-magenta'>#{
+            title
+          }</span></p>"
         )
     end)
 
     room
   end
+
+  def color("Lawful"), do: "white"
+  def color("Seedy"), do: "dark-grey"
+  def color("Outlaw"), do: "dark-red"
+  def color("Criminal"), do: "dark-yellow"
+  def color("Villian"), do: "yellow"
+  def color("FIEND"), do: "red"
 end
