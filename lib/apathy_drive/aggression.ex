@@ -11,76 +11,61 @@ defmodule ApathyDrive.Aggression do
       {_ref, %{} = mobile}, updated_room ->
         monster = updated_room.mobiles[monster_ref]
 
-        ApathyDrive.Aggression.react(room, monster, mobile)
+        if enemy?(monster, mobile) do
+          attack(updated_room, monster, mobile)
+        else
+          updated_room
+        end
     end)
   end
 
-  def react(%Room{} = room, %Monster{alignment: "neutral"}, %{} = _mobile) do
-    room
+  def enemy?(%Monster{alignment: "neutral"}, %{} = _mobile) do
+    false
   end
 
-  def react(
-        %Room{} = room,
-        %Monster{alignment: "good", lawful: true} = monster,
-        %Character{} = character
-      ) do
-    IO.inspect(Character.legal_status(character))
-
+  def enemy?(%Monster{alignment: "good", lawful: true} = monster, %Character{} = character) do
     if Character.legal_status(character) in ["Outlaw", "Criminal", "Villain", "FIEND"] do
-      IO.puts("#{monster.name} attacking #{character.name}")
-      attack(room, monster, character)
+      true
     else
-      room
+      false
     end
   end
 
-  def react(
-        %Room{} = room,
-        %Monster{alignment: "good"},
-        %Character{}
-      ) do
-    room
+  def enemy?(%Monster{alignment: "good"}, %Character{}) do
+    false
   end
 
-  def react(
-        %Room{} = room,
-        %Monster{alignment: "evil", lawful: true},
-        %Character{alignment: "evil"}
-      ) do
-    room
+  def enemy?(%Monster{alignment: "evil", lawful: true}, %Character{alignment: "evil"}) do
+    false
   end
 
-  def react(
-        %Room{} = room,
-        %Monster{alignment: "evil"} = monster,
-        %Character{} = character
-      ) do
-    attack(room, monster, character)
+  def enemy?(%Monster{alignment: "evil"}, %Character{}) do
+    true
   end
 
-  def react(%Room{} = room, %Monster{} = monster, %{alignment: "evil"} = mob) do
+  def enemy?(%Monster{} = monster, %{alignment: "evil"} = mob) do
     cond do
       monster.alignment == "good" ->
-        attack(room, monster, mob)
+        true
 
       monster.spawned_at == Map.get(mob, :spawned_at) ->
-        room
+        false
 
       monster.alignment == "evil" and !monster.lawful ->
-        attack(room, monster, mob)
+        true
 
       :else ->
-        room
+        false
     end
   end
 
-  def react(%Room{} = room, %Monster{} = monster, %{} = mob) do
+  def enemy?(%Monster{} = monster, %{} = _mob) do
     cond do
       monster.alignment == "evil" ->
-        attack(room, monster, mob)
+        true
 
       :else ->
-        room
+        false
     end
   end
 
