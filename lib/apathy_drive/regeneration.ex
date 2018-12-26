@@ -105,8 +105,11 @@ defmodule ApathyDrive.Regeneration do
 
   defp reset_mana_regen_attributes(mobile), do: mobile
 
-  def regen_per_tick(%{attack_target: nil} = _mobile, regen),
-    do: regen / @ticks_per_round * 10
-
-  def regen_per_tick(%{} = _mobile, regen), do: regen / @ticks_per_round
+  def regen_per_tick(%{} = mobile, regen) do
+    if TimerManager.time_remaining(mobile, :rest_timer) > 0 do
+      regen / @ticks_per_round
+    else
+      regen / @ticks_per_round * 10
+    end
+  end
 end

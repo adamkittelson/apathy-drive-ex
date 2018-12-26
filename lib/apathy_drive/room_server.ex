@@ -503,6 +503,13 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:rest, mobile_ref}, room) do
+    Room.update_hp_bar(room, mobile_ref)
+    Room.update_mana_bar(room, mobile_ref)
+
+    {:noreply, room}
+  end
+
   def handle_info({:reduce_bounty, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn character ->

@@ -23,7 +23,7 @@ defmodule ApathyDrive.Aggression do
     false
   end
 
-  def enemy?(%Monster{alignment: "good", lawful: true} = monster, %Character{} = character) do
+  def enemy?(%Monster{alignment: "good", lawful: true}, %Character{} = character) do
     if Character.legal_status(character) in ["Outlaw", "Criminal", "Villain", "FIEND"] do
       true
     else

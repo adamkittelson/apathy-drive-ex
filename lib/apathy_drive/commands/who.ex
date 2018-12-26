@@ -60,6 +60,6 @@ defmodule ApathyDrive.Commands.Who do
   def color("Seedy"), do: "dark-grey"
   def color("Outlaw"), do: "dark-red"
   def color("Criminal"), do: "dark-yellow"
-  def color("Villian"), do: "yellow"
+  def color("Villain"), do: "yellow"
   def color("FIEND"), do: "red"
 end
