@@ -77,6 +77,15 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Alignment"} = room_exit) do
+    if character.alignment in room_exit["allowed"] do
+      execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"))
+    else
+      Mobile.send_scroll(character, "<p>A strange power holds you back!</p>")
+      room
+    end
+  end
+
   def execute(%Room{} = room, %Character{} = character, %{"kind" => "Toll"} = room_exit) do
     amount_in_gold = room_exit["amount_in_gold"]
     amount_in_copper = amount_in_gold * 100

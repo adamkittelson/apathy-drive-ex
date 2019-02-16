@@ -78,17 +78,6 @@ defmodule ApathyDrive.Room do
     Map.put(room, :items, items)
   end
 
-  def load_reputations(%Room{area: area} = room) do
-    area =
-      area
-      |> Repo.preload(:allies)
-      |> Repo.preload(:enemies)
-
-    room
-    |> put_in([:allies], Enum.reduce(area.allies, %{}, &Map.put(&2, &1.id, &1.name)))
-    |> put_in([:enemies], Enum.reduce(area.enemies, %{}, &Map.put(&2, &1.id, &1.name)))
-  end
-
   def load_skills(%Room{} = room) do
     Repo.preload(room, :skills, force: true)
   end
@@ -225,7 +214,7 @@ defmodule ApathyDrive.Room do
         <ul>
           <%= for mob <- mobs do %>
             <li>
-              <span style="color: <%= mob.color %>;"><%= mob.name %></span>
+              <span class="<%= mob.color %>"><%= mob.name %></span>
               <div id="<%= mob.ref %>-bars">
                 <div class="progress-bar hp">
                   <div class="red"></div>

@@ -314,11 +314,17 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
-    energy = Character.energy_per_swing(character, item)
-    attack_interval = Regeneration.duration_for_energy(character, energy)
+    ability = Character.ability_for_weapon(character, item)
 
-    min_damage = item.min_damage + Mobile.ability_value(character, "ModifyDamage")
-    max_damage = item.max_damage + Mobile.ability_value(character, "ModifyDamage")
+    attack_interval = Regeneration.duration_for_energy(character, ability.energy)
+
+    {min_damage, max_damage} =
+      Enum.reduce(ability.traits["Damage"], {0, 0}, fn damage, {min_damage, max_damage} ->
+        {min_damage + damage.min, max_damage + damage.max}
+      end)
+
+    min_damage = min_damage + Mobile.ability_value(character, "ModifyDamage")
+    max_damage = max_damage + Mobile.ability_value(character, "ModifyDamage")
 
     average = (min_damage + max_damage) / 2
 
@@ -331,7 +337,9 @@ defmodule ApathyDrive.Commands.Look do
         "<span class='dark-green'>Kind:</span> " <>
         "<span class='dark-cyan'>#{item.weapon_type}</span> " <>
         "<span class='dark-green'>DPS:</span> " <>
-        "<span class='dark-cyan'>#{dps} (#{min_damage}-#{max_damage} @ #{trunc(energy / 10)}% energy per swing)</span></p>"
+        "<span class='dark-cyan'>#{dps} (#{min_damage}-#{max_damage} @ #{
+          trunc(ability.energy / 10)
+        }% energy per swing)</span></p>"
     )
 
     Mobile.send_scroll(character, "<p>#{item.description}</p>")
@@ -434,7 +442,7 @@ defmodule ApathyDrive.Commands.Look do
     ApathyDrive.Commands.Help.help(character, ability)
   end
 
-  def display_enchantment(character, %Item{traits: %{"OnHit" => ability}}) do
+  def display_enchantment(character, %Item{traits: %{"OnHit" => %{kind: "curse"} = ability}}) do
     Mobile.send_scroll(
       character,
       "<p><span class='white'>Striking an enemy with this weapon will afflict your target with the following ability:</span></p>"

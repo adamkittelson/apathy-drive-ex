@@ -256,3 +256,6 @@ CHANGELOG
 
 ---- 0.0.95 / 2018-11-14 / enchantment -----------------------------------------
 * enchant items with spells
+
+---- 0.0.96 / 2019-02-16 / alignment -------------------------------------------
+* alignment stuff

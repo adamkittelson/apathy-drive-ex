@@ -1,29 +1,73 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Mobile, Monster, Room}
+  alias ApathyDrive.{Character, Mobile, Monster, Room}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
     Enum.reduce(room.mobiles, room, fn
-      {_ref, %Monster{}}, updated_room ->
+      # don't consider attacking self
+      {^monster_ref, %{} = _mobile}, updated_room ->
         updated_room
 
       {_ref, %{} = mobile}, updated_room ->
         monster = updated_room.mobiles[monster_ref]
-        ApathyDrive.Aggression.react(room, monster, mobile)
+
+        if enemy?(monster, mobile) do
+          attack(updated_room, monster, mobile)
+        else
+          updated_room
+        end
     end)
   end
 
-  # Don't attack other monsters
-  def react(%Room{} = room, %Monster{}, %Monster{}), do: room
-
-  # attack non-monsters if hostile
-  def react(%Room{} = room, %Monster{hostile: true} = monster, %{} = intruder) do
-    attack(room, monster, intruder)
+  def enemy?(%Monster{alignment: "neutral"}, %{} = _mobile) do
+    false
   end
 
-  def react(%Room{} = room, %Monster{} = _monster, %{} = _intruder), do: room
+  def enemy?(%Monster{alignment: "good", lawful: true}, %Character{} = character) do
+    if Character.legal_status(character) in ["Outlaw", "Criminal", "Villain", "FIEND"] do
+      true
+    else
+      false
+    end
+  end
 
-  def react(%Room{} = room, %{} = _mobile, %{}), do: room
+  def enemy?(%Monster{alignment: "good"}, %Character{}) do
+    false
+  end
+
+  def enemy?(%Monster{alignment: "evil", lawful: true}, %Character{alignment: "evil"}) do
+    false
+  end
+
+  def enemy?(%Monster{alignment: "evil"}, %Character{}) do
+    true
+  end
+
+  def enemy?(%Monster{} = monster, %{alignment: "evil"} = mob) do
+    cond do
+      monster.alignment == "good" ->
+        true
+
+      monster.spawned_at == Map.get(mob, :spawned_at) ->
+        false
+
+      monster.alignment == "evil" and !monster.lawful ->
+        true
+
+      :else ->
+        false
+    end
+  end
+
+  def enemy?(%Monster{} = monster, %{} = _mob) do
+    cond do
+      monster.alignment == "evil" ->
+        true
+
+      :else ->
+        false
+    end
+  end
 
   def attack(%Room{} = room, %{} = attacker, %{} = intruder) do
     attacker = attack_target(attacker, intruder)

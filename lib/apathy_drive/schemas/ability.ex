@@ -8,6 +8,8 @@ defmodule ApathyDrive.Ability do
     AbilityTrait,
     Character,
     Companion,
+    Currency,
+    Directory,
     Enchantment,
     Item,
     Match,
@@ -929,6 +931,15 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def aggro_target(
+        %Character{ref: target_ref} = target,
+        %Ability{kind: kind},
+        %{ref: caster_ref} = _caster
+      )
+      when kind in ["attack", "curse"] and target_ref != caster_ref do
+    TimerManager.send_after(target, {:rest_timer, 5_000, {:rest, target_ref}})
+  end
+
   def aggro_target(%{ref: target_ref} = target, %Ability{kind: kind}, %{ref: caster_ref} = caster)
       when kind in ["attack", "curse"] and target_ref != caster_ref do
     ApathyDrive.Aggression.attack_target(target, caster)
@@ -988,8 +999,8 @@ defmodule ApathyDrive.Ability do
       |> Map.put(:ability_shift, 0)
 
     {caster, damage_percent} =
-      Enum.reduce(damages, {caster, target}, fn
-        %{kind: "physical", min: min, max: max, damage_type: type}, {caster, target} ->
+      Enum.reduce(damages, {caster, 0}, fn
+        %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           caster_damage =
             div(trunc(Mobile.physical_damage_at_level(caster, caster_level) * round_percent), 2)
 
@@ -1007,11 +1018,11 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "physical", damage: dmg, damage_type: type}, {caster, target} ->
+        %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent} ->
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
           resist = resist * round_percent
@@ -1022,22 +1033,23 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "physical", damage_type: type, potency: potency} = damage, {caster, target} ->
+        %{kind: "physical", damage_type: type, potency: potency} = damage,
+        {caster, damage_percent} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.physical_resistance_at_level(target, target_level)
           resist = resist * round_percent
 
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "magical", min: min, max: max, damage_type: type}, {caster, target} ->
+        %{kind: "magical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           caster_damage =
             div(trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent), 2)
 
@@ -1055,21 +1067,22 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "magical", damage_type: type, potency: potency} = damage, {caster, target} ->
+        %{kind: "magical", damage_type: type, potency: potency} = damage,
+        {caster, damage_percent} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level)
           resist = resist * round_percent
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "magical", damage: damage, damage_type: type}, {caster, target} ->
+        %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent} ->
           resist = Mobile.magical_resistance_at_level(target, target_level)
           resist = resist * round_percent
           damage = damage - resist
@@ -1078,17 +1091,18 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "drain", damage_type: type, potency: potency} = damage, {caster, target} ->
+        %{kind: "drain", damage_type: type, potency: potency} = damage,
+        {caster, damage_percent} ->
           damage = raw_damage(damage, caster, caster_level)
           resist = Mobile.magical_resistance_at_level(target, target_level)
           resist = resist * round_percent
           damage = calculate_damage(damage, type, resist, potency, caster, target, room)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
 
@@ -1096,9 +1110,9 @@ defmodule ApathyDrive.Ability do
 
           Mobile.update_prompt(caster)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
 
-        %{kind: "drain", min: min, max: max, damage_type: type}, {caster, target} ->
+        %{kind: "drain", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           caster_damage =
             div(trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent), 2)
 
@@ -1116,7 +1130,7 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          damage_percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
 
@@ -1124,19 +1138,12 @@ defmodule ApathyDrive.Ability do
 
           Mobile.update_prompt(caster)
 
-          {caster, damage_percent}
+          {caster, damage_percent + percent}
       end)
 
     damage_percent =
       if match?(%Character{}, target) and target.level < 5 and damage_percent > 0.2 do
         Enum.random(10..20) / 100
-      else
-        damage_percent
-      end
-
-    damage_percent =
-      if ability.on_hit? do
-        damage_percent * ability.energy / 1000
       else
         damage_percent
       end
@@ -1159,7 +1166,187 @@ defmodule ApathyDrive.Ability do
         :health => 0.8
       })
 
-    {caster, target}
+    case {caster, target} do
+      {%Character{bounty: bounty} = caster, %Character{bounty: target_bounty} = target} ->
+        percent = 1 / (target.hp / abs(damage_percent))
+
+        cond do
+          target_bounty < 0 ->
+            initial_caster_legal_status = Character.legal_status(caster)
+
+            Logger.info(
+              "increasing #{caster.name}'s bounty by #{trunc(abs(target_bounty) * abs(percent))} (#{
+                abs(target_bounty)
+              } * #{abs(percent)}) (#{target.hp} / #{abs(damage_percent)})"
+            )
+
+            new_bounty =
+              min(abs(target_bounty), max(bounty, 0) + trunc(abs(target_bounty) * abs(percent)))
+
+            caster =
+              caster
+              |> Ecto.Changeset.change(%{
+                bounty: new_bounty
+              })
+              |> Repo.update!()
+
+            Directory.add_character(%{
+              name: caster.name,
+              bounty: caster.bounty,
+              room: caster.room_id,
+              ref: caster.ref,
+              title: caster.title
+            })
+
+            caster_legal_status = Character.legal_status(caster)
+
+            if caster_legal_status != initial_caster_legal_status do
+              color = ApathyDrive.Commands.Who.color(caster_legal_status)
+
+              status = "<span class='#{color}'>#{caster_legal_status}</span>"
+
+              Mobile.send_scroll(
+                caster,
+                "<p>Your legal status has changed to #{status}.</p>"
+              )
+
+              Room.send_scroll(
+                room,
+                "<p>#{Mobile.colored_name(caster)}'s legal status has changed to #{status}.",
+                [caster]
+              )
+            end
+
+            {caster, target}
+
+          target_bounty > 0 ->
+            bounty = trunc(abs(target_bounty) * abs(percent))
+            copper = min(bounty, Currency.wealth(target))
+
+            if copper > 0 do
+              initial_caster_legal_status = Character.legal_status(caster)
+              initial_target_legal_status = Character.legal_status(target)
+
+              currency = Currency.set_value(copper)
+              caster_currency = Currency.add(caster, copper)
+              target_currency = Currency.subtract(target, copper)
+
+              new_caster_bounty =
+                if caster.bounty > 0 do
+                  max(0, caster.bounty - copper)
+                else
+                  caster.bounty
+                end
+
+              caster =
+                caster
+                |> Ecto.Changeset.change(%{
+                  bounty: new_caster_bounty,
+                  runic: caster_currency.runic,
+                  platinum: caster_currency.platinum,
+                  gold: caster_currency.gold,
+                  silver: caster_currency.silver,
+                  copper: caster_currency.copper
+                })
+                |> Repo.update!()
+
+              target =
+                target
+                |> Ecto.Changeset.change(%{
+                  bounty: target_bounty - copper,
+                  runic: target_currency.runic,
+                  platinum: target_currency.platinum,
+                  gold: target_currency.gold,
+                  silver: target_currency.silver,
+                  copper: target_currency.copper
+                })
+                |> Repo.update!()
+
+              Directory.add_character(%{
+                name: caster.name,
+                bounty: caster.bounty,
+                room: caster.room_id,
+                ref: caster.ref,
+                title: caster.title
+              })
+
+              Directory.add_character(%{
+                name: target.name,
+                bounty: target.bounty,
+                room: target.room_id,
+                ref: target.ref,
+                title: target.title
+              })
+
+              Mobile.send_scroll(
+                caster,
+                "<p>You receive #{Currency.to_string(currency)} from #{
+                  Mobile.colored_name(target)
+                }'s bounty."
+              )
+
+              Mobile.send_scroll(
+                target,
+                "<p>#{Mobile.colored_name(caster)} receives #{Currency.to_string(currency)} from your bounty."
+              )
+
+              Room.send_scroll(
+                room,
+                "<p>#{Mobile.colored_name(caster)} receives #{Currency.to_string(currency)} from #{
+                  Mobile.colored_name(target)
+                }'s bounty.",
+                [caster, target]
+              )
+
+              caster_legal_status = Character.legal_status(caster)
+              target_legal_status = Character.legal_status(target)
+
+              if caster_legal_status != initial_caster_legal_status do
+                color = ApathyDrive.Commands.Who.color(caster_legal_status)
+
+                status = "<span class='#{color}'>#{caster_legal_status}</span>"
+
+                Mobile.send_scroll(
+                  caster,
+                  "<p>Your legal status has changed to #{status}.</p>"
+                )
+
+                Room.send_scroll(
+                  room,
+                  "<p>#{Mobile.colored_name(caster)}'s legal status has changed to #{status}.",
+                  [caster]
+                )
+              end
+
+              if target_legal_status != initial_target_legal_status do
+                color = ApathyDrive.Commands.Who.color(target_legal_status)
+
+                status = "<span class='#{color}'>#{target_legal_status}</span>"
+
+                Mobile.send_scroll(
+                  target,
+                  "<p>Your legal status has changed to #{status}.</p>"
+                )
+
+                Room.send_scroll(
+                  room,
+                  "<p>#{Mobile.colored_name(target)}'s legal status has changed to #{status}.",
+                  [target]
+                )
+              end
+
+              {caster, target}
+            else
+              {caster, target}
+            end
+
+          :else ->
+            {caster, target}
+        end
+
+      {caster, target} ->
+        {caster, target}
+    end
   end
 
   def apply_instant_trait({ability_name, _value}, %{} = target, _ability, caster, _room) do

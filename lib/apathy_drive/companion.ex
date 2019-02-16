@@ -59,7 +59,8 @@ defmodule ApathyDrive.Companion do
     :auto_curse,
     :auto_nuke,
     :auto_roam,
-    :auto_flee
+    :auto_flee,
+    :alignment
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -183,6 +184,7 @@ defmodule ApathyDrive.Companion do
         rm
         |> from_room_monster()
         |> Map.put(:leader, character.ref)
+        |> Map.put(:alignment, character.alignment)
         |> Map.put(:character_id, id)
 
       mobiles =
@@ -316,9 +318,9 @@ defmodule ApathyDrive.Companion do
 
     def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
 
-    def color(%Companion{} = _companion) do
-      "white"
-    end
+    def color(%Companion{alignment: "evil"}), do: "magenta"
+    def color(%Companion{alignment: "neutral"}), do: "dark-cyan"
+    def color(%Companion{alignment: "good"}), do: "grey"
 
     def colored_name(%Companion{name: name} = companion) do
       "<span style='color: #{color(companion)};'>#{name}</span>"

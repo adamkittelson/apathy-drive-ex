@@ -55,7 +55,6 @@ defmodule ApathyDrive.Command do
       Commands.Open,
       Commands.Party,
       Commands.Read,
-      Commands.Reputations,
       Commands.Remove,
       Commands.Reply,
       Commands.Return,
