@@ -389,7 +389,10 @@ defmodule ApathyDrive.Character do
         |> Systems.Effect.remove_oldest_stack(ability_id)
         |> Systems.Effect.add(effect)
       else
+        effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
+
         character
+        |> Systems.Effect.add(effect)
       end
 
     load_abilities(character)
