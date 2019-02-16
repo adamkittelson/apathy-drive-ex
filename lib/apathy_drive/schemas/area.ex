@@ -45,7 +45,8 @@ defmodule ApathyDrive.Area do
                   "Trap",
                   "Cast",
                   "Level",
-                  "Toll"
+                  "Toll",
+                  "Alignment"
                 ])
             )
             |> Enum.map(& &1["direction"])

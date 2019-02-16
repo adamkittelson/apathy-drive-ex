@@ -861,6 +861,7 @@ defmodule ApathyDrive.Character do
       race: character.race.name,
       class: character.class,
       level: character.level,
+      alignment: character.alignment,
       perception: Mobile.perception_at_level(character, character.level, room),
       accuracy: Mobile.accuracy_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level, room),
