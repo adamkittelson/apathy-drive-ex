@@ -922,6 +922,15 @@ defmodule ApathyDrive.Ability do
         |> Mobile.update_prompt()
       end)
 
+    room =
+      if script_id = ability.traits["Script"] do
+        Room.update_mobile(room, caster_ref, fn caster ->
+          ApathyDrive.Script.execute_script(room, caster, script_id)
+        end)
+      else
+        room
+      end
+
     Room.update_hp_bar(room, target_ref)
     Room.update_hp_bar(room, caster_ref)
     Room.update_mana_bar(room, caster_ref)
@@ -1376,6 +1385,11 @@ defmodule ApathyDrive.Ability do
       {caster, target} ->
         {caster, target}
     end
+  end
+
+  # just to silence the Not Implemented, handled elsewhere
+  def apply_instant_trait({"Script", _id}, %{} = target, _ability, caster, _room) do
+    {caster, target}
   end
 
   def apply_instant_trait({ability_name, _value}, %{} = target, _ability, caster, _room) do

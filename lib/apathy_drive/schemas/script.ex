@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, Character, Mobile, Room, RoomServer}
+  alias ApathyDrive.{Ability, Character, ItemInstance, Mobile, Room, RoomServer}
 
   schema "scripts" do
     field(:instructions, ApathyDrive.JSONB, default: [])
@@ -363,20 +363,24 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(
         %Room{} = room,
-        %{} = monster,
-        %{"give_item" => _item_template_id},
+        %{} = mobile,
+        %{"give_item" => item_id},
         script
       ) do
-    # item = ApathyDrive.Item.generate_item(%{item_id: item_template_id, level: monster.level})
-    #
-    # monster =
-    #   put_in(monster.spirit.inventory, [item | monster.spirit.inventory])
-    #
-    # Repo.save!(monster.spirit)
-    #
-    # room = put_in(room.monsters[monster.ref], monster)
+    %ItemInstance{
+      item_id: item_id,
+      room_id: nil,
+      character_id: mobile.id,
+      dropped_for_character_id: mobile.id,
+      equipped: false,
+      hidden: false
+    }
+    |> Repo.insert!()
 
-    execute_script(room, monster, script)
+    mobile = Character.load_items(mobile)
+    room = put_in(room.mobiles[mobile.ref], mobile)
+
+    execute_script(room, mobile, script)
   end
 
   def execute_instruction(
