@@ -29,6 +29,9 @@ defmodule ApathyDrive.Commands.Wear do
         Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" left unequipped.</p>")
         room
 
+      %{type: "Light"} = item ->
+        ApathyDrive.Commands.Use.execute(room, character, [item.name])
+
       %{} = item ->
         character =
           case equip_item(character, item) do

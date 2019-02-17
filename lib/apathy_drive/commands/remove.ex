@@ -29,7 +29,15 @@ defmodule ApathyDrive.Commands.Remove do
           character =
             char
             |> Character.load_items()
-            |> Mobile.send_scroll("<p>You remove #{Item.colored_name(item_to_remove)}.</p>")
+
+          if item_to_remove.type == "Light" do
+            Mobile.send_scroll(
+              char,
+              "<p>You remove the #{Item.colored_name(item_to_remove)} and extinguish it.</p>"
+            )
+          else
+            Mobile.send_scroll(char, "<p>You remove #{Item.colored_name(item_to_remove)}.</p>")
+          end
 
           send(
             character.socket,

@@ -27,7 +27,14 @@ defmodule ApathyDrive.Commands.Use do
         })
         |> Repo.update!()
 
-        Mobile.send_scroll(character, "<p>You lit the #{item.name}.</p>")
+        room =
+          if current_light = equipped_light_source(character) do
+            ApathyDrive.Commands.Remove.execute(room, character, current_light.keywords)
+          else
+            room
+          end
+
+        Mobile.send_scroll(character, "<p>You lit the #{Item.colored_name(item)}.</p>")
 
         Room.update_mobile(room, character.ref, fn char ->
           Character.load_items(char)
@@ -37,7 +44,7 @@ defmodule ApathyDrive.Commands.Use do
 
   def use_light_source(%Room{} = room, mobile_ref) do
     Room.update_mobile(room, mobile_ref, fn mobile ->
-      if light = Enum.find(mobile.equipment, &(&1.type == "Light")) do
+      if light = equipped_light_source(mobile) do
         if light.uses > 1 do
           ItemInstance
           |> Repo.get(light.instance_id)
@@ -59,5 +66,9 @@ defmodule ApathyDrive.Commands.Use do
         room
       end
     end)
+  end
+
+  def equipped_light_source(%{} = mobile) do
+    Enum.find(mobile.equipment, &(&1.type == "Light"))
   end
 end

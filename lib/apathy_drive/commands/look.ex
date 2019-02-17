@@ -220,14 +220,14 @@ defmodule ApathyDrive.Commands.Look do
   def light_desc(light_level) when light_level <= -100, do: "<p>The room is barely visible</p>"
   def light_desc(light_level) when light_level < 0, do: "<p>The room is dimly lit</p>"
 
-  def light_desc(light_level) when light_level >= 300,
+  def light_desc(light_level) when light_level > 300,
     do: "<p>The room is blindingly bright - you can't see anything</p>"
 
-  def light_desc(light_level) when light_level >= 200,
+  def light_desc(light_level) when light_level > 200,
     do: "<p>The room is painfully bright - you can't see anything</p>"
 
-  def light_desc(light_level) when light_level >= 100, do: "<p>The room is dazzlingly bright</p>"
-  def light_desc(light_level) when light_level >= 25, do: "<p>The room is brightly lit</p>"
+  def light_desc(light_level) when light_level > 100, do: "<p>The room is dazzlingly bright</p>"
+  def light_desc(light_level) when light_level > 25, do: "<p>The room is brightly lit</p>"
   def light_desc(_light_level), do: nil
 
   def visible?(light) do
