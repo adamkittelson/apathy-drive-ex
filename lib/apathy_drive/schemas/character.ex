@@ -334,6 +334,9 @@ defmodule ApathyDrive.Character do
     |> Map.put(:equipment, Enum.filter(items, & &1.equipped))
     |> add_equipped_items_effects()
     |> load_abilities()
+    |> TimerManager.send_after(
+      {:use_light_source, :timer.seconds(30), {:use_light_source, character.ref}}
+    )
   end
 
   def add_equipped_items_effects(%Character{} = character) do

@@ -17,7 +17,12 @@ defmodule ApathyDrive.Commands.Inventory do
 
       equipment
       |> Enum.each(fn item ->
-        worn_on = String.pad_trailing("(#{item.worn_on})", 15)
+        worn_on =
+          if item.type == "Light" do
+            String.pad_trailing("(Readied/#{item.uses})", 15)
+          else
+            String.pad_trailing("(#{item.worn_on})", 15)
+          end
 
         Mobile.send_scroll(
           character,

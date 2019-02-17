@@ -73,6 +73,7 @@ defmodule ApathyDrive.Command do
       Commands.Skills,
       Commands.System,
       Commands.Tell,
+      Commands.Use,
       Commands.Wear,
       Commands.Who
     ]

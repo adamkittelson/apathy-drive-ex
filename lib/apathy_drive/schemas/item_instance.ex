@@ -9,6 +9,7 @@ defmodule ApathyDrive.ItemInstance do
     field(:purchased, :boolean, default: false)
     field(:dropped_for_character_id, :integer)
     field(:delete_at, :utc_datetime)
+    field(:uses, :integer)
 
     belongs_to(:item, Item)
     belongs_to(:room, Room)

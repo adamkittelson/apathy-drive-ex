@@ -51,6 +51,7 @@ defmodule ApathyDrive.Item do
     field(:required_classes, :any, virtual: true, default: [])
     field(:enchantment_name, :string, virtual: true, default: nil)
     field(:keywords, :any, virtual: true)
+    field(:uses, :integer, virtual: true)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end
@@ -86,12 +87,21 @@ defmodule ApathyDrive.Item do
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
     values =
       ii
-      |> Map.take([:level, :equipped, :hidden, :purchased, :dropped_for_character_id, :delete_at])
+      |> Map.take([
+        :level,
+        :equipped,
+        :hidden,
+        :purchased,
+        :dropped_for_character_id,
+        :delete_at,
+        :uses
+      ])
 
     item
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
     |> Map.put(:traits, ItemTrait.load_traits(item.id))
+    |> Map.put(:uses, ii.uses || item.max_uses)
     |> load_required_races_and_classes()
     |> load_item_abilities()
   end
