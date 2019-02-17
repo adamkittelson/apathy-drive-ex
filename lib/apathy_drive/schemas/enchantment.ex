@@ -25,81 +25,120 @@ defmodule ApathyDrive.Enchantment do
 
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{} = enchantment) do
     Room.update_mobile(room, enchanter_ref, fn enchanter ->
-      {:ok, enchantment} =
-        enchantment
-        |> Ecto.Changeset.change(%{
-          time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time
-        })
-        |> Repo.update()
+      if !Enum.all?(enchantment.ability.traits["RequireItems"], &present?(enchanter, &1)) do
+        Mobile.send_scroll(
+          enchanter,
+          "<p><span class='cyan'>You interrupt your work.</span></p>"
+        )
 
-      item =
-        enchantment
-        |> Repo.preload(:items_instances)
-        |> Map.get(:items_instances)
-        |> Repo.preload(:item)
-        |> Item.from_assoc()
+        enchanter
+      else
+        {:ok, enchantment} =
+          enchantment
+          |> Ecto.Changeset.change(%{
+            time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time
+          })
+          |> Repo.update()
 
-      time_left = time_left(enchantment)
+        item =
+          enchantment
+          |> Repo.preload(:items_instances)
+          |> Map.get(:items_instances)
+          |> Repo.preload(:item)
+          |> Item.from_assoc()
 
-      if time_left <= 0 do
-        Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
+        time_left = time_left(enchantment)
 
-        if old_enchantment =
-             Repo.get_by(Enchantment, items_instances_id: item.instance_id, finished: true) do
-          old_enchantment =
-            old_enchantment
-            |> Repo.preload(:ability)
+        if time_left <= 0 do
+          Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
 
-          Repo.delete!(old_enchantment)
+          enchanter =
+            if instance_id = enchantment.ability.traits["DestroyItem"] do
+              scroll =
+                (enchanter.inventory ++ enchanter.equipment)
+                |> Enum.find(&(&1.instance_id == instance_id))
+
+              Mobile.send_scroll(
+                enchanter,
+                "<p>As you read the #{scroll.name} it crumbles to dust.</p>"
+              )
+
+              ItemInstance
+              |> Repo.get!(instance_id)
+              |> Repo.delete!()
+
+              enchanter
+              |> Character.load_abilities()
+              |> Character.load_items()
+            else
+              enchanter
+            end
+
+          if old_enchantment =
+               Repo.get_by(Enchantment, items_instances_id: item.instance_id, finished: true) do
+            old_enchantment =
+              old_enchantment
+              |> Repo.preload(:ability)
+
+            Repo.delete!(old_enchantment)
+
+            Mobile.send_scroll(
+              enchanter,
+              "<p><span class='dark-yellow'>You've removed #{old_enchantment.ability.name} from #{
+                item.name
+              }.</span></p>"
+            )
+          end
+
+          enchantment
+          |> Ecto.Changeset.change(%{finished: true})
+          |> Repo.update!()
 
           Mobile.send_scroll(
             enchanter,
-            "<p><span class='dark-yellow'>You've removed #{old_enchantment.ability.name} from #{
-              item.name
-            }.</span></p>"
+            "<p><span class='blue'>You've enchanted #{item.name} with #{enchantment.ability.name}.</span></p>"
           )
+
+          Character.load_items(enchanter)
+        else
+          Mobile.send_scroll(enchanter, "<p>#{enchantment.ability.traits["TickMessage"]}</p>")
+
+          Mobile.send_scroll(
+            enchanter,
+            "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+              formatted_time_left(time_left)
+            }</span></p>"
+          )
+
+          next_tick_time = next_tick_time(enchantment)
+
+          exp = max(1, div(enchanter.max_exp_buffer, 20))
+
+          enchanter =
+            enchanter
+            |> TimerManager.send_after(
+              {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
+               {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
+            )
+
+          Enum.reduce(enchantment.ability.attributes, enchanter, fn {attribute, _value},
+                                                                    enchanter ->
+            Character.add_attribute_experience(enchanter, %{
+              attribute => 1 / length(Map.keys(enchantment.ability.attributes)) * 5
+            })
+          end)
+          |> ApathyDrive.Character.add_experience(exp)
         end
-
-        enchantment
-        |> Ecto.Changeset.change(%{finished: true})
-        |> Repo.update!()
-
-        Mobile.send_scroll(
-          enchanter,
-          "<p><span class='blue'>You've enchanted #{item.name} with #{enchantment.ability.name}.</span></p>"
-        )
-
-        Character.load_items(enchanter)
-      else
-        Mobile.send_scroll(enchanter, "<p>#{enchantment.ability.traits["TickMessage"]}</p>")
-
-        Mobile.send_scroll(
-          enchanter,
-          "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-            formatted_time_left(time_left)
-          }</span></p>"
-        )
-
-        next_tick_time = next_tick_time(enchantment)
-
-        exp = max(1, div(enchanter.max_exp_buffer, 20))
-
-        enchanter =
-          enchanter
-          |> TimerManager.send_after(
-            {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
-             {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
-          )
-
-        Enum.reduce(enchantment.ability.attributes, enchanter, fn {attribute, _value},
-                                                                  enchanter ->
-          Character.add_attribute_experience(enchanter, %{
-            attribute => 1 / length(Map.keys(enchantment.ability.attributes)) * 5
-          })
-        end)
-        |> ApathyDrive.Character.add_experience(exp)
       end
     end)
+  end
+
+  def present?(%Character{} = enchanter, instance_id) do
+    item =
+      (enchanter.inventory ++ enchanter.equipment)
+      |> Enum.find(&(&1.instance_id == instance_id))
+
+    !!item
   end
 
   def formatted_time_left(seconds) do

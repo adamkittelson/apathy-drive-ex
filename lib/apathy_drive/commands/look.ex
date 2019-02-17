@@ -427,7 +427,7 @@ defmodule ApathyDrive.Commands.Look do
   def display_enchantment(character, %Item{traits: %{"Learn" => ability}}) do
     Mobile.send_scroll(
       character,
-      "<p><span class='white'>Reading this scroll will teach the following ability:</span></p>"
+      "<p><span class='white'>This scroll will allow you a single use of following ability:</span></p>"
     )
 
     ApathyDrive.Commands.Help.help(character, ability)

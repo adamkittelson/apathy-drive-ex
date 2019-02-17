@@ -214,17 +214,15 @@ defmodule ApathyDrive.Character do
     |> validate_length(:name, min: 1, max: 12)
   end
 
-  def load_abilities(%Character{id: id} = character) do
+  def load_abilities(%Character{} = character) do
     character =
       character
       |> Map.put(:abilities, %{})
       |> Map.put(:skills, %{})
 
     abilities =
-      ApathyDrive.CharacterAbility
-      |> Ecto.Query.where([ca], ca.character_id == ^id)
-      |> Ecto.Query.preload([:ability])
-      |> Repo.all()
+      character.class_id
+      |> ApathyDrive.ClassAbility.abilities_at_level(character.level)
 
     character =
       abilities
@@ -389,7 +387,10 @@ defmodule ApathyDrive.Character do
         |> Systems.Effect.remove_oldest_stack(ability_id)
         |> Systems.Effect.add(effect)
       else
+        effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
+
         character
+        |> Systems.Effect.add(effect)
       end
 
     load_abilities(character)

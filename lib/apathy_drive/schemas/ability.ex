@@ -12,6 +12,7 @@ defmodule ApathyDrive.Ability do
     Directory,
     Enchantment,
     Item,
+    ItemInstance,
     Match,
     Mobile,
     Monster,
@@ -446,11 +447,15 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, %Item{} = item) do
-    ability =
-      put_in(
-        ability.traits["TickMessage"],
+    traits =
+      ability.traits
+      |> Map.update("RequireItems", [item.instance_id], &[item.instance_id | &1])
+      |> Map.put(
+        "TickMessage",
         "<p><span class='dark-cyan'>You continue enchanting the #{item.name}.</span></p>"
       )
+
+    ability = Map.put(ability, :traits, traits)
 
     Room.update_mobile(room, caster_ref, fn caster ->
       cond do
@@ -640,6 +645,30 @@ defmodule ApathyDrive.Ability do
           Room.update_mana_bar(room, caster.ref)
 
           room = Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
+
+          room =
+            if instance_id = ability.traits["DestroyItem"] do
+              Room.update_mobile(room, caster_ref, fn caster ->
+                scroll =
+                  (caster.inventory ++ caster.equipment)
+                  |> Enum.find(&(&1.instance_id == instance_id))
+
+                Mobile.send_scroll(
+                  caster,
+                  "<p>As you read the #{scroll.name} it crumbles to dust.</p>"
+                )
+
+                ItemInstance
+                |> Repo.get!(instance_id)
+                |> Repo.delete!()
+
+                caster
+                |> Character.load_abilities()
+                |> Character.load_items()
+              end)
+            else
+              room
+            end
 
           if (on_hit = ability.traits["OnHit"]) && is_nil(Process.get(:ability_result)) do
             Process.delete(:ability_result)

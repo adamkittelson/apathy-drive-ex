@@ -259,3 +259,6 @@ CHANGELOG
 
 ---- 0.0.96 / 2019-02-16 / alignment -------------------------------------------
 * alignment stuff
+
+---- 0.0.97 / 2019-02-16 / scroll-changes --------------------------------------
+* don'\''t learn spells via scrolls, just allow single use casting (including enchantment)

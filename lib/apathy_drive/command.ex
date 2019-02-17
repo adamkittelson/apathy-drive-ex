@@ -1,7 +1,19 @@
 defmodule ApathyDrive.Command do
   defstruct name: nil, keywords: nil, module: nil
   require Logger
-  alias ApathyDrive.{Ability, Commands, Monster, Match, Mobile, Room, RoomServer}
+
+  alias ApathyDrive.{
+    Ability,
+    AbilityDamageType,
+    AbilityTrait,
+    Character,
+    Commands,
+    Monster,
+    Match,
+    Mobile,
+    Room,
+    RoomServer
+  }
 
   @callback execute(%Room{}, %Monster{}, list) :: %Room{}
 
@@ -31,7 +43,6 @@ defmodule ApathyDrive.Command do
   def all do
     [
       Commands.Abilities,
-      Commands.Activate,
       Commands.Auto,
       Commands.Attack,
       Commands.Bash,
@@ -41,7 +52,6 @@ defmodule ApathyDrive.Command do
       Commands.Dismiss,
       Commands.Drop,
       Commands.Experience,
-      Commands.Forget,
       Commands.Get,
       Commands.Gossip,
       Commands.Help,
@@ -54,7 +64,6 @@ defmodule ApathyDrive.Command do
       Commands.Look,
       Commands.Open,
       Commands.Party,
-      Commands.Read,
       Commands.Remove,
       Commands.Reply,
       Commands.Return,
@@ -95,17 +104,42 @@ defmodule ApathyDrive.Command do
       cmd = Match.one(Enum.map(all(), & &1.to_struct), :match_keyword, command) ->
         cmd.module.execute(room, monster, arguments)
 
-      true ->
-        ability = monster.abilities[String.downcase(command)]
+      ability = monster.abilities[String.downcase(command)] ->
+        Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 
-        if ability do
-          Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
-        else
-          Mobile.send_scroll(monster, "<p>What?</p>")
-          room
-        end
+      scroll = useable_scroll(monster, String.downcase(command)) ->
+        ability = scroll.traits["Learn"]
+
+        traits = AbilityTrait.load_traits(ability.id)
+
+        traits =
+          case AbilityDamageType.load_damage(ability.id) do
+            [] ->
+              traits
+
+            damage ->
+              Map.put(traits, "Damage", damage)
+          end
+          |> Map.put("DestroyItem", scroll.instance_id)
+          |> Map.update("RequireItems", [scroll.instance_id], &[scroll.instance_id | &1])
+
+        ability = Map.put(ability, :traits, traits)
+
+        Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
+
+      true ->
+        Mobile.send_scroll(monster, "<p>What?</p>")
+        room
     end
   end
+
+  defp useable_scroll(%Character{} = monster, command) do
+    monster
+    |> ApathyDrive.Commands.Abilities.scrolls()
+    |> Enum.find(&(&1.traits["Learn"].command == command))
+  end
+
+  defp useable_scroll(_monster, _command), do: nil
 
   defp execute_room_command(room, monster, scripts) do
     if Mobile.confused(monster, room) do
