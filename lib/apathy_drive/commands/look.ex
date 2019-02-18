@@ -285,10 +285,6 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_items(%Room{} = room, %Character{} = character) do
-    psuedo_items =
-      room.item_descriptions["visible"]
-      |> Map.keys()
-
     items =
       room.items
       |> Enum.filter(
@@ -296,7 +292,7 @@ defmodule ApathyDrive.Commands.Look do
       )
       |> Enum.map(&Item.colored_name(&1))
 
-    items = Currency.to_list(room) ++ items ++ psuedo_items
+    items = Currency.to_list(room) ++ items
 
     case Enum.count(items) do
       0 ->
@@ -364,6 +360,13 @@ defmodule ApathyDrive.Commands.Look do
     end)
 
     display_enchantment(character, item)
+  end
+
+  def look_at_item(%Character{} = character, %Item{type: "Sign"} = item) do
+    Mobile.send_scroll(
+      character,
+      "<p>#{item.description}</p>"
+    )
   end
 
   def look_at_item(%Character{} = character, %Item{} = item) do

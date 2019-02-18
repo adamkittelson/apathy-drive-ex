@@ -86,12 +86,6 @@ defmodule ApathyDrive.Commands.Get do
           )
           |> Match.one(:name_contains, item)
 
-        visible_item =
-          item_descriptions["visible"]
-          |> Map.keys()
-          |> Enum.map(&%{name: &1, keywords: String.split(&1)})
-          |> Match.one(:keyword_starts_with, item)
-
         hidden_item =
           item_descriptions["hidden"]
           |> Map.keys()
@@ -102,7 +96,7 @@ defmodule ApathyDrive.Commands.Get do
           Currency.matches()
           |> Match.one(:name_contains, item)
 
-        case actual_item || currency || visible_item || hidden_item do
+        case actual_item || currency || hidden_item do
           %Item{instance_id: instance_id} = item ->
             if item.weight <=
                  Character.max_encumbrance(character) - Character.encumbrance(character) do
