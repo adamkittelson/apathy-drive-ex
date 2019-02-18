@@ -523,6 +523,30 @@ defmodule ApathyDrive.Script do
     room
   end
 
+  def execute_instruction(%Room{} = room, %{} = monster, %{"clear_item" => nil}, script) do
+    Enum.each(room.items, fn item ->
+      ItemInstance
+      |> Repo.get!(item.instance_id)
+      |> Repo.delete!()
+    end)
+
+    room = Room.load_items(room)
+    execute_script(room, monster, script)
+  end
+
+  def execute_instruction(%Room{} = room, %{} = monster, %{"clear_item" => item_id}, script) do
+    Enum.each(room.items, fn item ->
+      if item.id == item_id do
+        ItemInstance
+        |> Repo.get!(item.instance_id)
+        |> Repo.delete!()
+      end
+    end)
+
+    room = Room.load_items(room)
+    execute_script(room, monster, script)
+  end
+
   def execute_instruction(room, monster, instruction, _script) do
     Mobile.send_scroll(
       monster,
