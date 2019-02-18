@@ -39,6 +39,8 @@ defmodule ApathyDrive.Monster do
     field(:exit_message, :string)
     field(:death_message, :string)
     field(:adjectives, ApathyDrive.JSONB)
+    field(:questions, ApathyDrive.JSONB)
+    field(:greeting, :string)
     field(:next_spawn_at, :integer)
     field(:copper, :integer, default: 0)
     field(:silver, :integer, default: 0)
