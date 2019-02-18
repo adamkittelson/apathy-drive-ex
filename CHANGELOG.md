@@ -262,3 +262,6 @@ CHANGELOG
 
 ---- 0.0.97 / 2019-02-16 / scroll-changes --------------------------------------
 * don'\''t learn spells via scrolls, just allow single use casting (including enchantment)
+
+---- 0.0.98 / 2019-02-18 / placed-items ----------------------------------------
+* spawn placed items
