@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, Character, Item, ItemInstance, Mobile, Room, RoomServer}
+  alias ApathyDrive.{Ability, Character, Currency, Item, ItemInstance, Mobile, Room, RoomServer}
 
   schema "scripts" do
     field(:instructions, ApathyDrive.JSONB, default: [])
@@ -186,33 +186,36 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(
         %Room{} = room,
-        %{} = monster,
-        %{"check_item" => %{"failure_message" => _message, "item" => _item_template_id}},
+        %{} = character,
+        %{"check_item" => %{"failure_message" => message, "item" => item_id}},
         script
       ) do
-    execute_script(room, monster, script)
-    # if Monster.has_item?(monster, item_template_id) do
-    #   execute_script(room, monster, script)
-    # else
-    #   Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
-    #   room
-    # end
+    if Enum.find(character.inventory, &(&1.id == item_id)) do
+      execute_script(room, character, script)
+    else
+      Mobile.send_scroll(character, "<p><span class='dark-green'>#{message}</p>")
+      room
+    end
   end
 
   def execute_instruction(
         %Room{} = room,
-        %{} = monster,
-        %{"take_item" => %{"failure_message" => _message, "item" => _item_template_id}},
+        %{} = character,
+        %{"take_item" => %{"failure_message" => message, "item" => item_id}},
         script
       ) do
-    execute_script(room, monster, script)
-    # if monster = Monster.remove_item?(monster, item_template_id) do
-    #   Monster.save(monster)
-    #   execute_script(room, monster, script)
-    # else
-    #   Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
-    #   room
-    # end
+    if item = Enum.find(character.inventory, &(&1.id == item_id)) do
+      ItemInstance
+      |> Repo.get!(item.instance_id)
+      |> Repo.delete!()
+
+      character = Character.load_items(character)
+      room = put_in(room.mobiles[character.ref], character)
+      execute_script(room, character, script)
+    else
+      Mobile.send_scroll(character, "<p><span class='dark-green'>#{message}</p>")
+      room
+    end
   end
 
   def execute_instruction(
@@ -359,6 +362,31 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(%Room{} = room, %{} = monster, %{"no_monsters" => _}, script) do
     execute_script(room, monster, script)
+  end
+
+  def execute_instruction(%Room{} = room, %{} = mobile, %{"give_coins" => coins}, script) do
+    %{"amount" => amount, "denomination" => denomination} = coins
+
+    denomination = String.to_existing_atom(denomination)
+
+    if denomination in Currency.currencies() do
+      mobile =
+        mobile
+        |> Ecto.Changeset.change(%{
+          denomination => Map.get(mobile, denomination) + amount
+        })
+        |> Repo.update!()
+
+      room = put_in(room.mobiles[mobile.ref], mobile)
+      execute_script(room, mobile, script)
+    else
+      Mobile.send_scroll(
+        mobile,
+        "<p><span class='red'>Invalid Currency for give_coins: #{denomination}</span></p>"
+      )
+
+      execute_script(room, mobile, script)
+    end
   end
 
   def execute_instruction(

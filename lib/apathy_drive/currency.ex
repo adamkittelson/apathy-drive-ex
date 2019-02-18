@@ -22,6 +22,8 @@ defmodule ApathyDrive.Currency do
 
   @default %{copper: 0, silver: 0, gold: 0, platinum: 0, runic: 0}
 
+  def currencies, do: @currencies
+
   def set_value(currency_holder \\ @default, copper) do
     {currency_holder, _} =
       Enum.reduce(@currencies, {currency_holder, copper}, fn currency,
