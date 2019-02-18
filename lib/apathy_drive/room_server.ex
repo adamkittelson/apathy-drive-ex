@@ -145,11 +145,16 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def init(id) do
+    {:ok, id, {:continue, :init}}
+  end
+
+  def handle_continue(:init, id) do
     room =
       Repo.get!(Room, id)
       |> Repo.preload(area: Area.without_map())
       |> Room.load_exits()
       |> Room.load_items()
+      |> Repo.preload(:placed_items)
       |> Room.load_skills()
       |> Shop.load()
 
@@ -161,6 +166,10 @@ defmodule ApathyDrive.RoomServer do
 
     send(self(), :load_monsters)
     send(self(), :spawn_permanent_npc)
+
+    if Enum.any?(room.placed_items) do
+      send(self(), :spawn_placed_items)
+    end
 
     if Shop.shop?(room) do
       send(self(), :restock_shop)
@@ -178,7 +187,7 @@ defmodule ApathyDrive.RoomServer do
 
     send(self(), :cleanup)
 
-    {:ok, room}
+    {:noreply, room}
   end
 
   def handle_call({:lock, direction}, _from, room) do
@@ -426,6 +435,13 @@ defmodule ApathyDrive.RoomServer do
   def handle_cast({:mobile_entered, %{} = mobile, message}, room) do
     room = Room.mobile_entered(room, mobile, message)
 
+    {:noreply, room}
+  end
+
+  def handle_info(:spawn_placed_items, room) do
+    room = Room.spawn_placed_items(room)
+
+    Process.send_after(self(), :spawn_placed_items, :timer.hours(18))
     {:noreply, room}
   end
 

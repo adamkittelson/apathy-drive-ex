@@ -6,10 +6,12 @@ defmodule ApathyDrive.Room do
     Area,
     Character,
     Companion,
+    ItemInstance,
     Match,
     Mobile,
     Monster,
     MonsterSpawning,
+    PlacedItem,
     Room,
     RoomServer,
     PubSub,
@@ -29,7 +31,7 @@ defmodule ApathyDrive.Room do
     field(:name, :string)
     field(:description, :string)
     field(:light, :integer)
-    field(:item_descriptions, ApathyDrive.JSONB, default: %{"hidden" => %{}, "visible" => %{}})
+    field(:item_descriptions, ApathyDrive.JSONB, default: %{"hidden" => %{}})
     field(:lair_size, :integer)
     field(:lair_frequency, :integer, default: 5)
     field(:commands, ApathyDrive.JSONB, default: %{})
@@ -57,6 +59,7 @@ defmodule ApathyDrive.Room do
     timestamps()
 
     has_many(:persisted_mobiles, Monster)
+    has_many(:placed_items, PlacedItem)
     belongs_to(:ability, Ability)
     belongs_to(:area, ApathyDrive.Area)
     belongs_to(:zone_controller, ApathyDrive.Room)
@@ -74,8 +77,33 @@ defmodule ApathyDrive.Room do
   end
 
   def load_items(%Room{} = room) do
-    items = ApathyDrive.ItemInstance.load_items(room)
+    items = ItemInstance.load_items(room)
+
     Map.put(room, :items, items)
+  end
+
+  def spawn_placed_items(%Room{placed_items: []} = room), do: room
+
+  def spawn_placed_items(%Room{placed_items: items} = room) do
+    Enum.reduce(items, room, fn item, room ->
+      spawn_placed_item(room, item)
+    end)
+  end
+
+  def spawn_placed_item(%Room{} = room, %PlacedItem{} = placed_item) do
+    if placed_item.item_id in Enum.map(room.items, & &1.id) do
+      room
+    else
+      %ItemInstance{
+        room_id: room.id,
+        item_id: placed_item.item_id,
+        hidden: false,
+        equipped: false
+      }
+      |> Repo.insert!()
+
+      Room.load_items(room)
+    end
   end
 
   def load_skills(%Room{} = room) do
@@ -575,12 +603,6 @@ defmodule ApathyDrive.Room do
       |> Enum.map(&%{name: &1.name, keywords: String.split(&1.name), item: &1})
       |> Match.one(:keyword_starts_with, item)
 
-    visible_item =
-      item_descriptions["visible"]
-      |> Map.keys()
-      |> Enum.map(&%{name: &1, keywords: String.split(&1)})
-      |> Match.one(:keyword_starts_with, item)
-
     hidden_item =
       item_descriptions["hidden"]
       |> Map.keys()
@@ -593,9 +615,6 @@ defmodule ApathyDrive.Room do
       end
 
     cond do
-      visible_item ->
-        %{description: item_descriptions["visible"][visible_item.name]}
-
       hidden_item ->
         %{description: item_descriptions["hidden"][hidden_item.name]}
 
