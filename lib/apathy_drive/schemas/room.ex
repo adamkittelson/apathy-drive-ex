@@ -539,6 +539,20 @@ defmodule ApathyDrive.Room do
     end)
   end
 
+  def delete_items_for_maintenance(%Room{} = room) do
+    Enum.reduce(room.items, room, fn item, room ->
+      if Map.has_key?(item.traits, "Del@Maint") do
+        ItemInstance
+        |> Repo.get!(item.instance_id)
+        |> Repo.delete!()
+
+        Room.load_items(room)
+      else
+        room
+      end
+    end)
+  end
+
   def light(%Room{} = room) do
     # average of the highest positive light source and the lowest negative light source in the room
     # in other words if a room has a crappy torch and a bright lantern in the room only

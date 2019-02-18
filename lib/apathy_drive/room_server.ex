@@ -167,9 +167,7 @@ defmodule ApathyDrive.RoomServer do
     send(self(), :load_monsters)
     send(self(), :spawn_permanent_npc)
 
-    if Enum.any?(room.placed_items) do
-      send(self(), :spawn_placed_items)
-    end
+    send(self(), :perform_maintenance)
 
     if Shop.shop?(room) do
       send(self(), :restock_shop)
@@ -438,10 +436,13 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:spawn_placed_items, room) do
-    room = Room.spawn_placed_items(room)
+  def handle_info(:perform_maintenance, room) do
+    room =
+      room
+      |> Room.delete_items_for_maintenance()
+      |> Room.spawn_placed_items()
 
-    Process.send_after(self(), :spawn_placed_items, :timer.hours(18))
+    Process.send_after(self(), :perform_maintenance, :timer.hours(18))
     {:noreply, room}
   end
 

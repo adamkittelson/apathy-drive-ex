@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Script do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, Character, ItemInstance, Mobile, Room, RoomServer}
+  alias ApathyDrive.{Ability, Character, Item, ItemInstance, Mobile, Room, RoomServer}
 
   schema "scripts" do
     field(:instructions, ApathyDrive.JSONB, default: [])
@@ -367,18 +367,35 @@ defmodule ApathyDrive.Script do
         %{"give_item" => item_id},
         script
       ) do
-    %ItemInstance{
-      item_id: item_id,
-      room_id: nil,
-      character_id: mobile.id,
-      dropped_for_character_id: mobile.id,
-      equipped: false,
-      hidden: false
-    }
-    |> Repo.insert!()
+    item = Repo.get!(Item, item_id)
 
-    mobile = Character.load_items(mobile)
-    room = put_in(room.mobiles[mobile.ref], mobile)
+    room =
+      if item.weight <= Character.max_encumbrance(mobile) - Character.encumbrance(mobile) do
+        %ItemInstance{
+          item_id: item_id,
+          room_id: nil,
+          character_id: mobile.id,
+          dropped_for_character_id: mobile.id,
+          equipped: false,
+          hidden: false
+        }
+        |> Repo.insert!()
+
+        mobile = Character.load_items(mobile)
+        put_in(room.mobiles[mobile.ref], mobile)
+      else
+        %ItemInstance{
+          item_id: item_id,
+          room_id: room.id,
+          character_id: nil,
+          dropped_for_character_id: nil,
+          equipped: false,
+          hidden: false
+        }
+        |> Repo.insert!()
+
+        Room.load_items(room)
+      end
 
     execute_script(room, mobile, script)
   end
@@ -442,10 +459,10 @@ defmodule ApathyDrive.Script do
   def execute_instruction(
         %Room{} = room,
         %{} = monster,
-        %{"room_item" => %{"failure_message" => failure_message, "item" => item_name}},
+        %{"room_item" => %{"failure_message" => failure_message, "item" => item_id}},
         script
       ) do
-    if Room.find_item(room, item_name) do
+    if Enum.find(room.items, &(&1.id == item_id)) do
       execute_script(room, monster, script)
     else
       Mobile.send_scroll(monster, "<p><span class='dark-green'>#{failure_message}</p>")
