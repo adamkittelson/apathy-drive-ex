@@ -173,12 +173,6 @@ defmodule ApathyDrive.Directory do
             html: message
           })
 
-          Repo.insert!(%ChannelHistory{
-            character_name: ApathyDrive.Character.sanitize(name),
-            game_name: ApathyDrive.Character.sanitize(game),
-            message: message
-          })
-
           MapSet.delete(updated_list, player)
         else
           updated_list

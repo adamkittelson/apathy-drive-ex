@@ -10,12 +10,6 @@ defmodule ApathyDrive.Gossip.Players do
         ApathyDrive.Character.sanitize(game_name)
       }.</p>"
 
-    Repo.insert!(%ChannelHistory{
-      character_name: ApathyDrive.Character.sanitize(player_name),
-      game_name: ApathyDrive.Character.sanitize(game_name),
-      message: message
-    })
-
     ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
       html: message
     })
@@ -29,12 +23,6 @@ defmodule ApathyDrive.Gossip.Players do
       "<p>#{ApathyDrive.Character.sanitize(player_name)} just left the distant Realm of #{
         ApathyDrive.Character.sanitize(game_name)
       }.</p>"
-
-    Repo.insert!(%ChannelHistory{
-      character_name: ApathyDrive.Character.sanitize(player_name),
-      game_name: ApathyDrive.Character.sanitize(game_name),
-      message: message
-    })
 
     ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
       html: message
