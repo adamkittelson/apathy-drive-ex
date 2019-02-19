@@ -43,6 +43,7 @@ defmodule ApathyDrive.Command do
   def all do
     [
       Commands.Abilities,
+      Commands.Ask,
       Commands.Auto,
       Commands.Attack,
       Commands.Bash,
@@ -54,6 +55,7 @@ defmodule ApathyDrive.Command do
       Commands.Experience,
       Commands.Get,
       Commands.Gossip,
+      Commands.Greet,
       Commands.Help,
       Commands.Hire,
       Commands.Inventory,

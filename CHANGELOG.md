@@ -265,3 +265,6 @@ CHANGELOG
 
 ---- 0.0.98 / 2019-02-18 / placed-items ----------------------------------------
 * spawn placed items
+
+---- 0.0.99 / 2019-02-18 / greet-and-ask ---------------------------------------
+* greet and ask commands
