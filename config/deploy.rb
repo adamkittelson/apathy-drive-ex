@@ -60,7 +60,7 @@ namespace :db do
       execute :createdb, "-h localhost", "-U apathy_drive", "-w", "-O apathy_drive", "apathy_drive"
       execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/database.tar"
       execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/characters.tar"
-      execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/items_instances.tar"
+      execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/items.tar"
     end
     invoke "deploy:start"
   end
