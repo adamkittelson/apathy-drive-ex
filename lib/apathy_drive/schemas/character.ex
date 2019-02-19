@@ -111,6 +111,7 @@ defmodule ApathyDrive.Character do
     field(:mana_regen_attributes, :any, virtual: true, default: [])
     field(:last_tick_at, :any, virtual: true)
     field(:last_room_id, :integer, virtual: true)
+    field(:delayed, :boolean, virtual: true, default: false)
 
     belongs_to(:room, Room)
 

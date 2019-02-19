@@ -28,6 +28,10 @@ defmodule ApathyDrive.Script do
     result || room
   end
 
+  def execute_script(%Room{} = room, %{delayed: true}, _script) do
+    room
+  end
+
   def execute_script(%Room{} = room, %{} = monster, [instruction | rest])
       when is_list(instruction) do
     if room = execute_script(room, monster, instruction) do
@@ -220,6 +224,23 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(
         %Room{} = room,
+        %{} = character,
+        %{"monsters" => %{"failure_message" => message}},
+        script
+      ) do
+    room.mobiles
+    |> Map.values()
+    |> Enum.any?(&(&1.__struct__ == Monster))
+    |> if do
+      execute_script(room, character, script)
+    else
+      Mobile.send_scroll(character, "<p><span class='dark-green'>#{message}</p>")
+      room
+    end
+  end
+
+  def execute_instruction(
+        %Room{} = room,
         %{delayed: false} = monster,
         %{"add_delay" => delay},
         script
@@ -227,20 +248,11 @@ defmodule ApathyDrive.Script do
     monster =
       monster
       |> ApathyDrive.TimerManager.send_after(
-        {:delay_execute_script, delay * 1000, {:execute_script, monster.ref, script}}
+        {:delay_execute_script, delay * 1000, {:delay_execute_script, monster.ref, script}}
       )
       |> Map.put(:delayed, true)
 
-    room = put_in(room.monsters[monster.ref], monster)
-    execute_script(room, monster, [])
-  end
-
-  def execute_instruction(
-        %Room{} = room,
-        %{delayed: true} = monster,
-        %{"add_delay" => _delay},
-        _script
-      ) do
+    room = put_in(room.mobiles[monster.ref], monster)
     execute_script(room, monster, [])
   end
 
@@ -472,16 +484,18 @@ defmodule ApathyDrive.Script do
           "<p><span class='red'>Not Implemented: Ability ##{ability_id}</span></p>"
         )
 
+        execute_script(room, monster, script)
+
       %Ability{} = ability ->
-        ability = Map.put(ability, :ignores_round_cooldown?, true)
+        ability =
+          ability
+          |> Map.put(:ignores_round_cooldown?, true)
+          |> Map.put(:energy, 0)
 
-        send(
-          self(),
-          {:execute_ability, %{caster: monster.ref, ability: ability, target: [monster.ref]}}
-        )
+        room
+        |> Ability.execute(monster.ref, ability, [monster.ref])
+        |> execute_script(monster, script)
     end
-
-    execute_script(room, monster, script)
   end
 
   def execute_instruction(
@@ -510,12 +524,26 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(
         %Room{} = room,
-        %Character{gold: gold} = character,
-        %{"price" => %{"failure_message" => failure_message, "price_in_copper" => price}},
+        %Character{} = character,
+        %{
+          "price" => %{"failure_message" => failure_message, "price_in_copper" => price_in_copper}
+        },
         script
       ) do
-    if gold >= price do
-      character = update_in(character.gold, &(&1 - price))
+    if Currency.wealth(character) >= price_in_copper do
+      char_currency = Currency.subtract(character, price_in_copper)
+
+      character =
+        character
+        |> Ecto.Changeset.change(%{
+          runic: char_currency.runic,
+          platinum: char_currency.platinum,
+          gold: char_currency.gold,
+          silver: char_currency.silver,
+          copper: char_currency.copper
+        })
+        |> Repo.update!()
+
       room = put_in(room.mobiles[character.ref], character)
       execute_script(room, character, script)
     else
