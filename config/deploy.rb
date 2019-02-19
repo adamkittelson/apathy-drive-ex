@@ -48,6 +48,7 @@ namespace :db do
   task :local_to_server do
     on roles(:app) do |host|
       execute :pg_dump, "--no-privileges", "-U apathy_drive", "-w", "-h localhost", "-t characters", "-Ft apathy_drive > /home/deploy/characters.tar"
+      execute :pg_dump, "--no-privileges", "-U apathy_drive", "-w", "-h localhost", "-t items_instances", "-Ft apathy_drive > /home/deploy/items.tar"
     end
     run_locally do
       execute :pg_dump, "--no-privileges", "-Ft apathy_drive > database.tar"
@@ -59,6 +60,7 @@ namespace :db do
       execute :createdb, "-h localhost", "-U apathy_drive", "-w", "-O apathy_drive", "apathy_drive"
       execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/database.tar"
       execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/characters.tar"
+      execute :pg_restore, "-U apathy_drive", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=apathy_drive", "-Ft /home/deploy/items_instances.tar"
     end
     invoke "deploy:start"
   end
