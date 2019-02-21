@@ -639,7 +639,7 @@ defmodule ApathyDrive.Monster do
     def heartbeat(%Monster{} = monster, %Room{} = room) do
       Room.update_mobile(room, monster.ref, fn monster ->
         monster
-        |> Regeneration.regenerate()
+        |> Regeneration.regenerate(room)
         |> RoomServer.execute_casting_ability(room)
       end)
       |> ApathyDrive.Aggression.react(monster.ref)
@@ -706,12 +706,12 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:room_id, room_id)
     end
 
-    def shift_hp(monster, percentage, room) do
+    def shift_hp(monster, percentage, room \\ nil) do
       hp_description = hp_description(monster)
       monster = update_in(monster.hp, &min(1.0, &1 + percentage))
       updated_hp_description = hp_description(monster)
 
-      if monster.hp > 0 and hp_description != updated_hp_description do
+      if room && (monster.hp > 0 and hp_description != updated_hp_description) do
         room.mobiles
         |> Map.values()
         |> List.delete(monster)

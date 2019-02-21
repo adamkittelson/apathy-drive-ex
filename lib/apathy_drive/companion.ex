@@ -447,7 +447,7 @@ defmodule ApathyDrive.Companion do
     def heartbeat(%Companion{} = companion, %Room{} = room) do
       Room.update_mobile(room, companion.ref, fn companion ->
         companion
-        |> Regeneration.regenerate()
+        |> Regeneration.regenerate(room)
         |> RoomServer.execute_casting_ability(room)
       end)
       |> AI.think(companion.ref)
@@ -601,12 +601,12 @@ defmodule ApathyDrive.Companion do
       |> Map.put(:room_id, room_id)
     end
 
-    def shift_hp(companion, percentage, room) do
+    def shift_hp(companion, percentage, room \\ nil) do
       hp_description = hp_description(companion)
       companion = update_in(companion.hp, &min(1.0, &1 + percentage))
       updated_hp_description = hp_description(companion)
 
-      if companion.hp > 0 and hp_description != updated_hp_description do
+      if room && (companion.hp > 0 and hp_description != updated_hp_description) do
         room.mobiles
         |> Map.values()
         |> List.delete(companion)

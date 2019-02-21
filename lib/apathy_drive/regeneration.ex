@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Regeneration do
-  alias ApathyDrive.{Mobile, TimerManager}
+  alias ApathyDrive.{Character, Mobile, TimerManager}
 
   @ticks_per_round 5
 
@@ -15,10 +15,10 @@ defmodule ApathyDrive.Regeneration do
     max(0, trunc(round_length * energy / max_energy))
   end
 
-  def regenerate(mobile) do
+  def regenerate(mobile, room \\ nil) do
     mobile
     |> regenerate_energy()
-    |> regenerate_hp()
+    |> regenerate_hp(room)
     |> regenerate_mana()
     |> schedule_next_tick()
     |> Map.put(:last_tick_at, DateTime.utc_now())
@@ -71,13 +71,10 @@ defmodule ApathyDrive.Regeneration do
     )
   end
 
-  def regenerate_hp(%{hp: 1.0} = mobile), do: mobile
-
-  def regenerate_hp(%{} = mobile) do
+  def regenerate_hp(%{} = mobile, room) do
     hp = hp_since_last_tick(mobile)
 
-    mobile
-    |> update_in([Access.key!(:hp)], &min(1.0, &1 + hp))
+    Mobile.shift_hp(mobile, hp, room)
   end
 
   def regenerate_mana(%{mana: 1.0} = mobile), do: mobile
@@ -105,11 +102,16 @@ defmodule ApathyDrive.Regeneration do
 
   defp reset_mana_regen_attributes(mobile), do: mobile
 
-  def regen_per_tick(%{} = mobile, regen) do
+  def regen_per_tick(%Character{} = mobile, regen) do
     if TimerManager.time_remaining(mobile, :rest_timer) > 0 do
       regen / @ticks_per_round
     else
       regen / @ticks_per_round * 10
     end
+  end
+
+  # todo: fix combat detection for mobs for real or rethink out of combat hp regeneration
+  def regen_per_tick(%{} = _mobile, regen) do
+    regen / @ticks_per_round
   end
 end

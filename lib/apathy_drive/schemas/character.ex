@@ -1329,7 +1329,7 @@ defmodule ApathyDrive.Character do
     def heartbeat(%Character{} = character, %Room{} = room) do
       Room.update_mobile(room, character.ref, fn character ->
         character
-        |> Regeneration.regenerate()
+        |> Regeneration.regenerate(room)
         |> Character.drain_exp_buffer()
         |> RoomServer.execute_casting_ability(room)
       end)
@@ -1472,12 +1472,12 @@ defmodule ApathyDrive.Character do
       |> Repo.save!()
     end
 
-    def shift_hp(character, percentage, room) do
+    def shift_hp(character, percentage, room \\ nil) do
       hp_description = hp_description(character)
       character = update_in(character.hp, &min(1.0, &1 + percentage))
       updated_hp_description = hp_description(character)
 
-      if character.hp > 0 and hp_description != updated_hp_description do
+      if room && (character.hp > 0 and hp_description != updated_hp_description) do
         room.mobiles
         |> Map.values()
         |> Enum.reject(&(&1.ref == character.ref))
