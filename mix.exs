@@ -52,7 +52,8 @@ defmodule ApathyDrive.Mixfile do
       {:gossip, "~> 1.0.0"},
       {:distillery, "~> 2.0.12"},
       {:toml, "~> 0.5.2"},
-      {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false}
+      {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
+      {:auto_linker, "~> 0.2.2"}
     ]
   end
 

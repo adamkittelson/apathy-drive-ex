@@ -4,6 +4,11 @@ html, body.app {
   overflow: hidden;
 }
 
+a.autolink {
+  text-decoration: none;
+  color: teal;
+}
+
 .container {margin-left: 25px;}
 
 #scroll-container {

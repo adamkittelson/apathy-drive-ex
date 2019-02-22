@@ -31,6 +31,16 @@ adjustScrollTop = function () {
   }
 };
 
+window.linkify = function (text) {
+  var exp = /(\b(https?):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+
+  return text.replace(exp, function (str) {
+    var url = new URL(str);
+    return "<a class='autolink' href='" + str + "' target='blank'>link(" + url.hostname + ")</a>";
+  });
+}
+
+
 window.adjustChatTop = function () {
   if ($('#chat').scrollTop() + $('#chat').height() > $('#chat')[0].scrollHeight - 400) {
     return $("#chat").scrollTop($('#chat')[0].scrollHeight);
@@ -188,13 +198,15 @@ chan.on("scroll", function (message) {
 });
 
 chan.on("chat", function (message) {
-  addToScroll("#scroll", _.unescape(message.html));
-  $("#chat").append(_.unescape(message.html));
+  message = linkify(_.unescape(message.html));
+  addToScroll("#scroll", message);
+  $("#chat").append(message);
   return adjustChatTop();
 });
 
 chan.on("chat-sidebar", function (message) {
-  $("#chat").append(_.unescape(message.html));
+  message = linkify(_.unescape(message.html));
+  $("#chat").append(message);
   return adjustChatTop();
 });
 
