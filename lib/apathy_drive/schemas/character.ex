@@ -917,13 +917,6 @@ defmodule ApathyDrive.Character do
         cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
       )
 
-    energy =
-      if weapon.traits["OnHit"] do
-        energy * 2
-      else
-        energy
-      end
-
     min(energy, 1000)
   end
 
