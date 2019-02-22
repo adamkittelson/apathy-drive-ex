@@ -26,7 +26,7 @@ defmodule ApathyDrive.Commands.Who do
       |> String.length()
 
     list
-    |> Enum.sort_by(& &1.name)
+    |> Enum.sort_by(&String.downcase(&1.name))
     |> Enum.each(fn
       %{name: name, game: game} ->
         name = name |> String.pad_trailing(longest_name_length)
