@@ -45,8 +45,8 @@ defmodule ApathyDrive.Class do
   @doc false
   def changeset(%Class{} = class, attrs \\ %{}) do
     class
-    |> cast(attrs, [:name, :description, :weapon, :armour])
-    |> validate_required([:name, :description, :weapon, :armour])
+    |> cast(attrs, [:name, :description, :weapon, :armour, :stealth])
+    |> validate_required([:name, :description, :weapon, :armour, :stealth])
     |> validate_inclusion(:weapon, @weapons)
     |> validate_inclusion(:armour, @armours)
     |> cast_assoc(:classes_traits)

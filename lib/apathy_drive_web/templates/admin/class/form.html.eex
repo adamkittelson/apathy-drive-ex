@@ -29,6 +29,12 @@
     <%= error_tag f, :description %>
   </div>
 
+  <div class="form-group">
+    <%= label f, :stealth, class: "control-label" %>
+    <%= checkbox f, :stealth %>
+    <%= error_tag f, :stealth %>
+  </div>
+
   <h3>Traits</h3>
 
   <table>

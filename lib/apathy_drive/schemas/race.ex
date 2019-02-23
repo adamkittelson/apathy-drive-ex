@@ -19,7 +19,7 @@ defmodule ApathyDrive.Race do
     timestamps()
   end
 
-  @required_fields ~w(name description strength agility intellect willpower health charm)a
+  @required_fields ~w(name description strength agility intellect willpower health charm stealth)a
 
   @doc """
   Creates a changeset based on the `model` and `params`.
