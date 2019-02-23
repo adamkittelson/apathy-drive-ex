@@ -11,6 +11,7 @@ defmodule ApathyDrive.Race do
     field(:willpower, :integer)
     field(:health, :integer)
     field(:charm, :integer)
+    field(:stealth, :boolean)
 
     has_many(:races_traits, ApathyDrive.RaceTrait)
     has_many(:traits, through: [:races_traits, :trait])

@@ -40,7 +40,7 @@ defmodule ApathyDrive.Commands.Use do
           Character.load_items(char)
         end)
 
-      %Item{} = item ->
+      %Item{} ->
         Mobile.send_scroll(character, "<p>You cannot use that.</p>")
         room
     end

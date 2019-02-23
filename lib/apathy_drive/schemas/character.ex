@@ -307,7 +307,17 @@ defmodule ApathyDrive.Character do
       |> Map.put("stack_key", "race")
       |> Map.put("stack_count", 1)
 
-    race = Map.take(race, [:name, :strength, :agility, :intellect, :willpower, :health, :charm])
+    race =
+      Map.take(race, [
+        :name,
+        :strength,
+        :agility,
+        :intellect,
+        :willpower,
+        :health,
+        :charm,
+        :stealth
+      ])
 
     character
     |> Map.put(:race, race)
@@ -323,7 +333,7 @@ defmodule ApathyDrive.Character do
       |> Map.put("stack_count", 1)
 
     character
-    |> Map.put(:class, class.name)
+    |> Map.put(:class, Map.take(class, [:name, :stealth]))
     |> Map.put(:weapon, class.weapon)
     |> Map.put(:armour, class.armour)
     |> Systems.Effect.add(effect)
@@ -866,7 +876,7 @@ defmodule ApathyDrive.Character do
     %{
       name: character.name,
       race: character.race.name,
-      class: character.class,
+      class: character.class.name,
       level: character.level,
       alignment: character.alignment,
       perception: Mobile.perception_at_level(character, character.level, room),
@@ -1524,10 +1534,27 @@ defmodule ApathyDrive.Character do
       if Mobile.has_ability?(character, "Revealed") do
         0
       else
-        agi = attribute_at_level(character, :agility, level)
-        agi = agi + attribute_at_level(character, :charm, level) / 10
-        modifier = ability_value(character, "Stealth")
-        trunc(agi * (modifier / 100))
+        agility = attribute_at_level(character, :agility, level)
+        charm = attribute_at_level(character, :charm, level)
+
+        base = agility * 3 + div(charm, 6) + level * 2
+
+        modifier =
+          cond do
+            !character.race.stealth and !character.class.stealth ->
+              0
+
+            !character.class.stealth ->
+              0.4
+
+            !character.race.stealth ->
+              0.6
+
+            :else ->
+              1
+          end
+
+        max(0, trunc(base * modifier) + ability_value(character, "Stealth"))
       end
     end
 

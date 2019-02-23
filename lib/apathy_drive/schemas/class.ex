@@ -8,6 +8,7 @@ defmodule ApathyDrive.Class do
     field(:name, :string)
     field(:weapon, :string)
     field(:armour, :string)
+    field(:stealth, :boolean)
 
     has_many(:classes_traits, ApathyDrive.ClassTrait)
     has_many(:traits, through: [:classes_traits, :trait])
