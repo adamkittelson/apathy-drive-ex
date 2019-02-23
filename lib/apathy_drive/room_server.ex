@@ -436,6 +436,28 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:change_race, %{character: id, race: race_id}}, room) do
+    character =
+      room.mobiles
+      |> Map.values()
+      |> Enum.find(fn
+        %Character{id: ^id} = character ->
+          character
+
+        _ ->
+          nil
+      end)
+
+    if character do
+      character = Map.put(character, :race_id, race_id)
+      room = Room.reload_character(room, character)
+
+      {:noreply, room}
+    else
+      {:noreply, room}
+    end
+  end
+
   def handle_info(:perform_maintenance, room) do
     room =
       room

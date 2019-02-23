@@ -572,18 +572,16 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
     def magical_damage_at_level(monster, level) do
-      damage = attribute_at_level(monster, :intellect, level)
+      attribute = div(attribute_at_level(monster, :intellect, level) - 50, 5)
 
-      modifier =
-        ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyMagicalDamage")
-
-      damage * (1 + modifier / 100)
+      attribute + ability_value(monster, "ModifyDamage") +
+        ability_value(monster, "ModifyMagicalDamage")
     end
 
     def magical_resistance_at_level(monster, level) do
       willpower = attribute_at_level(monster, :willpower, level)
 
-      willpower + ability_value(monster, "MagicalResist")
+      max(willpower - 50 + ability_value(monster, "MagicalResist"), 0)
     end
 
     def max_hp_at_level(%Monster{} = monster, level) do
@@ -615,12 +613,10 @@ defmodule ApathyDrive.Monster do
     end
 
     def physical_damage_at_level(monster, level) do
-      damage = attribute_at_level(monster, :strength, level)
+      attribute = div(attribute_at_level(monster, :strength, level) - 50, 5)
 
-      modifier =
-        ability_value(monster, "ModifyDamage") + ability_value(monster, "ModifyPhysicalDamage")
-
-      damage * (1 + modifier / 100)
+      attribute + ability_value(monster, "ModifyDamage") +
+        ability_value(monster, "ModifyMagicalDamage")
     end
 
     def physical_resistance_at_level(monster, level) do
@@ -628,7 +624,7 @@ defmodule ApathyDrive.Monster do
 
       ac = ability_value(monster, "AC")
 
-      strength + ac
+      max(strength - 50 + ac, 0)
     end
 
     def power_at_level(%Monster{} = monster, level) do

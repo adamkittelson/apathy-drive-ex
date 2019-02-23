@@ -1075,7 +1075,7 @@ defmodule ApathyDrive.Ability do
 
         %{kind: "magical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           caster_damage =
-            div(trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent), 10)
+            trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent)
 
           ability_damage = Enum.random(min..max)
 

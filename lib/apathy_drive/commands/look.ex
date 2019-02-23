@@ -319,20 +319,6 @@ defmodule ApathyDrive.Commands.Look do
         {min_damage + damage.min, max_damage + damage.max}
       end)
 
-    attribute = 50 + character.level - 1
-
-    min_damage =
-      trunc(
-        (min_damage + Mobile.ability_value(character, "ModifyDamage")) *
-          (1 - attribute / (5 * 50 + attribute))
-      )
-
-    max_damage =
-      trunc(
-        (max_damage + Mobile.ability_value(character, "ModifyDamage")) *
-          (1 - attribute / (5 * 50 + attribute))
-      )
-
     average = (min_damage + max_damage) / 2
 
     dps = Float.round(average / (attack_interval / 1000), 2)

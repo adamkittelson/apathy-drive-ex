@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Gossip.Players do
   @behaviour Gossip.Client.Players
 
-  alias ApathyDrive.{ChannelHistory, Directory, Repo}
+  alias ApathyDrive.Directory
 
   @impl true
   def player_sign_in(game_name, player_name) do

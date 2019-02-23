@@ -305,6 +305,7 @@ defmodule ApathyDrive.Character do
     effect =
       RaceTrait.load_traits(race_id)
       |> Map.put("stack_key", "race")
+      |> Map.put("stack_count", 1)
 
     race = Map.take(race, [:name, :strength, :agility, :intellect, :willpower, :health, :charm])
 
@@ -319,6 +320,7 @@ defmodule ApathyDrive.Character do
     effect =
       ClassTrait.load_traits(class_id)
       |> Map.put("stack_key", "class")
+      |> Map.put("stack_count", 1)
 
     character
     |> Map.put(:class, class.name)
@@ -440,8 +442,8 @@ defmodule ApathyDrive.Character do
           %{
             kind: "physical",
             damage_type: "Normal",
-            min: min_damage + Mobile.ability_value(character, "ModifyDamage"),
-            max: max_damage + Mobile.ability_value(character, "ModifyDamage")
+            min: min_damage,
+            max: max_damage
           }
         ],
         "Dodgeable" => true,
@@ -1354,18 +1356,16 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
     def magical_damage_at_level(character, level) do
-      damage = attribute_at_level(character, :intellect, level)
+      attribute = div(attribute_at_level(character, :intellect, level) - 50, 5)
 
-      modifier =
-        ability_value(character, "ModifyDamage") + ability_value(character, "ModifyMagicalDamage")
-
-      damage * (1 + modifier / 100)
+      attribute + ability_value(character, "ModifyDamage") +
+        ability_value(character, "ModifyMagicalDamage")
     end
 
     def magical_resistance_at_level(character, level) do
       willpower = attribute_at_level(character, :willpower, level)
 
-      willpower + ability_value(character, "MagicalResist")
+      max(willpower - 50 + ability_value(character, "MagicalResist"), 0)
     end
 
     def max_hp_at_level(mobile, level) do
@@ -1398,20 +1398,17 @@ defmodule ApathyDrive.Character do
     end
 
     def physical_damage_at_level(character, level) do
-      damage = attribute_at_level(character, :strength, level)
+      attribute = div(attribute_at_level(character, :strength, level) - 50, 5)
 
-      modifier =
-        ability_value(character, "ModifyDamage") +
-          ability_value(character, "ModifyPhysicalDamage")
-
-      damage * (1 + modifier / 100)
+      attribute + ability_value(character, "ModifyDamage") +
+        ability_value(character, "ModifyPhysicalDamage")
     end
 
     def physical_resistance_at_level(character, level) do
       strength = attribute_at_level(character, :strength, level)
       ac = ability_value(character, "AC")
 
-      strength + ac
+      max(strength - 50 + ac, 0)
     end
 
     def power_at_level(%Character{} = character, level) do

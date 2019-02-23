@@ -6,6 +6,7 @@ defmodule ApathyDrive.Room do
     Area,
     Character,
     Companion,
+    Directory,
     ItemInstance,
     Match,
     Mobile,
@@ -880,6 +881,38 @@ defmodule ApathyDrive.Room do
 
   def average(list) do
     Enum.sum(list) / length(list)
+  end
+
+  def reload_character(%Room{} = room, %Character{} = character) do
+    character =
+      character
+      |> Character.load_race()
+      |> Character.load_class()
+      |> Character.set_attribute_levels()
+      |> Character.update_exp_bar()
+      |> Character.load_abilities()
+      |> Character.load_items()
+      |> Character.set_title()
+
+    Mobile.update_prompt(character)
+
+    Directory.add_character(%{
+      name: character.name,
+      bounty: character.bounty,
+      room: character.room_id,
+      ref: character.ref,
+      title: character.title
+    })
+
+    room =
+      put_in(room.mobiles[character.ref], character)
+      |> Companion.load_for_character(character)
+
+    Room.update_moblist(room)
+
+    Character.update_score(character, room)
+
+    room
   end
 
   defp sound_direction("up"), do: "above you"
