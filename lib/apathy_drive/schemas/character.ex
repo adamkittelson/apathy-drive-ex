@@ -1537,7 +1537,7 @@ defmodule ApathyDrive.Character do
         agility = attribute_at_level(character, :agility, level)
         charm = attribute_at_level(character, :charm, level)
 
-        base = agility * 3 + div(charm, 6) + level * 2
+        base = div(agility * 3 + charm, 6) + level * 2
 
         modifier =
           cond do
