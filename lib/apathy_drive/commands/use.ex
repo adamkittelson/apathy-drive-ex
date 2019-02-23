@@ -39,6 +39,10 @@ defmodule ApathyDrive.Commands.Use do
         Room.update_mobile(room, character.ref, fn char ->
           Character.load_items(char)
         end)
+
+      %Item{} = item ->
+        Mobile.send_scroll(character, "<p>You cannot use that.</p>")
+        room
     end
   end
 
