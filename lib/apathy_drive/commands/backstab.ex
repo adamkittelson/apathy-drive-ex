@@ -23,8 +23,7 @@ defmodule ApathyDrive.Commands.Backstab do
 
     cond do
       !character.sneaking ->
-        Mobile.send_scroll(character, "<p>You must be sneaking to do that!</p>")
-        room
+        ApathyDrive.Commands.Attack.execute(room, character, args)
 
       is_nil(target) ->
         Mobile.send_scroll(character, "<p>You don't see #{query} here.</p>")
