@@ -11,7 +11,8 @@ defmodule ApathyDriveWeb.RaceControllerTest do
     intellect: 40,
     willpower: 40,
     health: 40,
-    charm: 40
+    charm: 40,
+    stealth: false
   }
   @update_attrs %{description: "some updated description", name: "some updated name"}
   @invalid_attrs %{description: nil, name: nil}

@@ -7,7 +7,8 @@ defmodule ApathyDriveWeb.ClassControllerTest do
     description: "some description",
     name: "some name",
     weapon: "All",
-    armour: "Platemail"
+    armour: "Platemail",
+    stealth: false
   }
   @update_attrs %{description: "some updated description", name: "some updated name"}
   @invalid_attrs %{description: nil, name: nil}
