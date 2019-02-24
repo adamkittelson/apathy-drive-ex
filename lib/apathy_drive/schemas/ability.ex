@@ -1037,11 +1037,18 @@ defmodule ApathyDrive.Ability do
       target
       |> Map.put(:ability_shift, 0)
 
+    total_min = Enum.reduce(damages, 0, &(&1.min + &2))
+    total_max = Enum.reduce(damages, 0, &(&1.max + &2))
+
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, 0}, fn
         %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          modifier = (min + max) / (total_min + total_max)
+
           caster_damage =
-            div(trunc(Mobile.physical_damage_at_level(caster, caster_level) * round_percent), 10)
+            trunc(
+              Mobile.physical_damage_at_level(caster, caster_level) * round_percent * modifier
+            )
 
           ability_damage = Enum.random(min..max)
 
@@ -1075,8 +1082,10 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent + percent}
 
         %{kind: "magical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          modifier = (min + max) / (total_min + total_max)
+
           caster_damage =
-            trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent)
+            trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent * modifier)
 
           ability_damage = Enum.random(min..max)
 
@@ -1110,8 +1119,10 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent + percent}
 
         %{kind: "drain", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          modifier = (min + max) / (total_min + total_max)
+
           caster_damage =
-            div(trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent), 10)
+            trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent * modifier)
 
           ability_damage = Enum.random(min..max)
 
