@@ -53,6 +53,7 @@ defmodule ApathyDrive.Commands.Backstab do
       |> Map.update!(:spectator_message, &surprise_message/1)
       |> Map.update!(:target_message, &surprise_message/1)
       |> Map.update!(:user_message, &surprise_message/1)
+      |> Map.put(:attributes, %{agility: 0})
 
     Ability.execute(room, character.ref, ability, [target.ref])
   end

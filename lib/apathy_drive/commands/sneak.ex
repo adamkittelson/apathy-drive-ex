@@ -25,7 +25,12 @@ defmodule ApathyDrive.Commands.Sneak do
         Mobile.send_scroll(character, "<p>Attempting to sneak...</p>")
 
         Room.update_mobile(room, character.ref, fn character ->
-          Map.put(character, :sneaking, true)
+          character
+          |> Map.put(:sneaking, true)
+          |> Character.add_attribute_experience(%{
+            agility: 0.75,
+            charm: 0.25
+          })
         end)
 
       :else ->

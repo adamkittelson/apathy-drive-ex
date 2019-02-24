@@ -442,6 +442,10 @@ defmodule ApathyDrive.Character do
       kind: "attack",
       energy: energy,
       name: weapon.name,
+      attributes: %{
+        strength: 0,
+        agility: 0
+      },
       mana: 0,
       user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
       target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
@@ -1560,23 +1564,22 @@ defmodule ApathyDrive.Character do
     def subtract_mana(character, %{mana: cost} = ability) do
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
 
-      character =
-        character
-        |> update_in([Access.key!(:mana)], &max(0, &1 - percentage))
-        |> update_in(
-          [Access.key!(:mana_regen_attributes)],
-          &Enum.uniq(&1 ++ Map.keys(ability.attributes))
-        )
+      character
+      |> update_in([Access.key!(:mana)], &max(0, &1 - percentage))
+      |> update_in(
+        [Access.key!(:mana_regen_attributes)],
+        &Enum.uniq(&1 ++ Map.keys(ability.attributes))
+      )
+    end
+
+    def subtract_energy(character, ability) do
+      character = update_in(character.energy, &max(0, &1 - ability.energy))
 
       Enum.reduce(ability.attributes, character, fn {attribute, _value}, character ->
         Character.add_attribute_experience(character, %{
           attribute => 1 / length(Map.keys(ability.attributes))
         })
       end)
-    end
-
-    def subtract_energy(character, ability) do
-      update_in(character.energy, &max(0, &1 - ability.energy))
     end
 
     def target_level(%Character{level: _caster_level}, %Character{level: target_level}),

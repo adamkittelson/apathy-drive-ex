@@ -160,7 +160,12 @@ defmodule ApathyDrive.Commands.Move do
             |> Stealth.reveal()
 
           character.sneaking ->
-            Mobile.send_scroll(character, "<p>Sneaking...</p>")
+            character
+            |> Mobile.send_scroll("<p>Sneaking...</p>")
+            |> Character.add_attribute_experience(%{
+              agility: 0.75,
+              charm: 0.25
+            })
 
           :else ->
             character
@@ -195,7 +200,12 @@ defmodule ApathyDrive.Commands.Move do
             |> Stealth.reveal()
 
           character.sneaking ->
-            Mobile.send_scroll(character, "<p>Sneaking...</p>")
+            character
+            |> Mobile.send_scroll("<p>Sneaking...</p>")
+            |> Character.add_attribute_experience(%{
+              agility: 0.75,
+              charm: 0.25
+            })
 
           :else ->
             character
