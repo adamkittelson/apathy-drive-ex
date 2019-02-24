@@ -14,7 +14,7 @@ defmodule ApathyDrive.Commands.Sneak do
 
       character.sneaking == true ->
         Room.update_mobile(room, character.ref, fn character ->
-          Mobile.send_scroll(character, "<p>You are already sneaking!.</p>")
+          Mobile.send_scroll(character, "<p>You are already sneaking.</p>")
         end)
 
       !is_nil(character.attack_target) or Aggression.enemies_present?(room, character) ->
