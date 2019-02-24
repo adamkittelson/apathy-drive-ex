@@ -1348,6 +1348,17 @@ defmodule ApathyDrive.Character do
       |> AI.think(character.ref)
     end
 
+    def exhausted(%{energy: energy} = character) do
+      required_energy = ApathyDrive.Commands.Move.energy_cost(character)
+
+      if energy < required_energy do
+        send_scroll(character, "<p>You're too tired to move!</p>")
+        true
+      else
+        false
+      end
+    end
+
     def held(%{effects: effects} = mobile) do
       effects
       |> Map.values()

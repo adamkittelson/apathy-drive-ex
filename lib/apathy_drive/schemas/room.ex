@@ -287,6 +287,10 @@ defmodule ApathyDrive.Room do
     mobile =
       mobile
       |> Mobile.set_room_id(room.id)
+      |> update_in(
+        [Access.key!(:energy)],
+        &max(0, &1 - ApathyDrive.Commands.Move.energy_cost(mobile))
+      )
 
     room = put_in(room.mobiles[mobile.ref], mobile)
 

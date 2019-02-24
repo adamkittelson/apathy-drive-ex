@@ -547,6 +547,8 @@ defmodule ApathyDrive.Monster do
       |> Enum.member?(ability_name)
     end
 
+    def exhausted(_monster), do: false
+
     def held(%{effects: effects} = mobile) do
       effects
       |> Map.values()

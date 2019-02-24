@@ -141,7 +141,8 @@ defmodule ApathyDrive.Commands.Move do
         %{} = character,
         %{"kind" => "Normal", "destination" => destination_id} = room_exit
       ) do
-    if !Mobile.held(character) and !Mobile.confused(character, room) do
+    if !Mobile.held(character) and !Mobile.confused(character, room) and
+         !Mobile.exhausted(character) do
       Room.display_exit_message(room, %{
         mobile: character,
         message: Mobile.exit_message(character),
@@ -187,7 +188,8 @@ defmodule ApathyDrive.Commands.Move do
         %{} = character,
         %{"kind" => "Action", "destination" => destination_id} = room_exit
       ) do
-    if !Mobile.held(character) and !Mobile.confused(character, room) do
+    if !Mobile.held(character) and !Mobile.confused(character, room) and
+         !Mobile.exhausted(character) do
       character =
         cond do
           character.sneaking &&
@@ -270,4 +272,19 @@ defmodule ApathyDrive.Commands.Move do
   def party_move(room, _character, _room_exit) do
     room
   end
+
+  def energy_cost(%Character{} = character) do
+    current_encumbrance = Character.encumbrance(character)
+    max_encumbrance = Character.max_encumbrance(character)
+
+    encumbrance_percent = current_encumbrance / max_encumbrance
+
+    if character.sneaking do
+      trunc(1000 * encumbrance_percent)
+    else
+      trunc(500 * encumbrance_percent)
+    end
+  end
+
+  def energy_cost(%{} = _mobile), do: 0
 end
