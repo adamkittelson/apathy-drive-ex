@@ -872,7 +872,10 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
     if mobile = room.mobiles[ref] do
-      Mobile.send_scroll(mobile, "<p><span class='cyan'>You cast your spell.</span></p>")
+      if ability.mana > 0 do
+        Mobile.send_scroll(mobile, "<p><span class='cyan'>You cast your spell.</span></p>")
+      end
+
       room = Ability.execute(room, mobile.ref, ability, target)
       {:noreply, room}
     else

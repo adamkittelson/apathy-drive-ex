@@ -693,7 +693,11 @@ defmodule ApathyDrive.Ability do
         )
       end
 
-      Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
+      if ability.mana > 0 do
+        Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
+      else
+        Mobile.send_scroll(caster, "<p><span class='cyan'>You move into position.</span></p>")
+      end
 
       Map.put(caster, :casting, ability)
     end
