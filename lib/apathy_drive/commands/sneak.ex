@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Sneak do
   use ApathyDrive.Command
-  alias ApathyDrive.{Mobile, Stealth}
+  alias ApathyDrive.{Aggression, Mobile, Stealth}
 
   def keywords, do: ["sn", "sneak"]
 
@@ -18,7 +18,7 @@ defmodule ApathyDrive.Commands.Sneak do
           Stealth.reveal(character)
         end)
 
-      Mobile.has_ability?(character, "Revealed") ->
+      is_nil(character.attack_target) and !enemies_present?(room, character) ->
         Mobile.send_scroll(character, "<p>You can't sneak right now!</p>")
         room
 
@@ -37,5 +37,11 @@ defmodule ApathyDrive.Commands.Sneak do
 
         room
     end
+  end
+
+  defp enemies_present?(room, character) do
+    room.mobiles
+    |> Map.values()
+    |> Enum.any?(&Aggression.enemy?(&1, character))
   end
 end

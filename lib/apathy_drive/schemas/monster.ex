@@ -754,15 +754,11 @@ defmodule ApathyDrive.Monster do
     end
 
     def stealth_at_level(monster, level) do
-      if Mobile.has_ability?(monster, "Revealed") do
-        0
-      else
-        agi = attribute_at_level(monster, :agility, level)
-        cha = attribute_at_level(monster, :charm, level)
-        agi = agi + cha / 10
-        modifier = ability_value(monster, "Stealth")
-        trunc(agi * (modifier / 100))
-      end
+      agi = attribute_at_level(monster, :agility, level)
+      cha = attribute_at_level(monster, :charm, level)
+      agi = agi + cha / 10
+      modifier = ability_value(monster, "Stealth")
+      trunc(agi * (modifier / 100))
     end
 
     def subtract_mana(monster, %{mana: cost} = _ability) do

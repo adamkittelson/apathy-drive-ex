@@ -648,14 +648,10 @@ defmodule ApathyDrive.Companion do
     end
 
     def stealth_at_level(companion, level) do
-      if Mobile.has_ability?(companion, "Revealed") do
-        0
-      else
-        agi = attribute_at_level(companion, :agility, level)
-        agi = agi + attribute_at_level(companion, :charm, level) / 10
-        modifier = ability_value(companion, "Stealth")
-        trunc(agi * (modifier / 100))
-      end
+      agi = attribute_at_level(companion, :agility, level)
+      agi = agi + attribute_at_level(companion, :charm, level) / 10
+      modifier = ability_value(companion, "Stealth")
+      trunc(agi * (modifier / 100))
     end
 
     def subtract_mana(companion, %{mana: cost}) do

@@ -16,14 +16,7 @@ defmodule ApathyDrive.Stealth do
   end
 
   def reveal(sneaker) do
-    effect = %{
-      "Revealed" => true,
-      "stack_key" => :revealed,
-      "stack_count" => 1
-    }
-
     sneaker
-    |> Systems.Effect.add(effect, 4000)
     |> Map.put(:sneaking, false)
   end
 end
