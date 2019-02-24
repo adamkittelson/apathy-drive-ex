@@ -1367,7 +1367,7 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
     def magical_damage_at_level(character, level) do
-      attribute = div(attribute_at_level(character, :intellect, level) - 50, 5)
+      attribute = attribute_at_level(character, :intellect, level) - 50
 
       attribute + ability_value(character, "ModifyDamage") +
         ability_value(character, "ModifyMagicalDamage")
@@ -1409,7 +1409,7 @@ defmodule ApathyDrive.Character do
     end
 
     def physical_damage_at_level(character, level) do
-      attribute = div(attribute_at_level(character, :strength, level) - 50, 5)
+      attribute = attribute_at_level(character, :strength, level) - 50
 
       attribute + ability_value(character, "ModifyDamage") +
         ability_value(character, "ModifyPhysicalDamage")
