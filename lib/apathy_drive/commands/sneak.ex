@@ -14,6 +14,7 @@ defmodule ApathyDrive.Commands.Sneak do
 
       character.sneaking == true ->
         Room.update_mobile(room, character.ref, fn character ->
+          Mobile.send_scroll(character, "<p>You are no longer sneaking.</p>")
           Stealth.reveal(character)
         end)
 

@@ -22,10 +22,6 @@ defmodule ApathyDrive.Stealth do
       "stack_count" => 1
     }
 
-    if sneaker.sneaking do
-      Mobile.send_scroll(sneaker, "<p>You are no longer sneaking.</p>")
-    end
-
     sneaker
     |> Systems.Effect.add(effect, 4000)
     |> Map.put(:sneaking, false)
