@@ -11,8 +11,7 @@ defmodule ApathyDrive.Commands.Look do
     Item,
     Match,
     Mobile,
-    RoomServer,
-    Stealth
+    RoomServer
   }
 
   @directions [
@@ -194,12 +193,12 @@ defmodule ApathyDrive.Commands.Look do
     end)
   end
 
-  def look_mobiles(%Room{mobiles: mobiles} = room, character \\ nil) do
+  def look_mobiles(%Room{mobiles: mobiles}, character \\ nil) do
     mobiles_to_show =
       mobiles
       |> Map.values()
       |> List.delete(character)
-      |> Enum.filter(&Stealth.visible?(&1, character, room))
+      |> Enum.filter(&(!&1.sneaking))
       |> Enum.map(&Mobile.colored_name(&1))
 
     if Enum.any?(mobiles_to_show) do

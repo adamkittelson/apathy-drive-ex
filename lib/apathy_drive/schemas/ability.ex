@@ -1393,10 +1393,6 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def surprise?(caster, target, room) do
-    Stealth.invisible?(caster, target, room)
-  end
-
   def crit?(caster, caster_level, target, target_level, room) do
     caster_crit = Mobile.crits_at_level(caster, caster_level, room)
     target_crit = Mobile.crits_at_level(target, target_level, room)

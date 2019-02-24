@@ -14,7 +14,6 @@ defmodule ApathyDrive.Companion do
     Room,
     RoomMonster,
     RoomServer,
-    Stealth,
     Text,
     TimerManager
   }
@@ -60,7 +59,8 @@ defmodule ApathyDrive.Companion do
     :auto_nuke,
     :auto_roam,
     :auto_flee,
-    :alignment
+    :alignment,
+    :sneaking
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -119,7 +119,7 @@ defmodule ApathyDrive.Companion do
       |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
 
     (companion_enemies ++ character_enemies)
-    |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], companion, room))
+    |> Enum.reject(& &1.sneaking)
   end
 
   def character(%Companion{character_id: id}, %Room{} = room) do

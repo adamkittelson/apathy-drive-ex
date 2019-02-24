@@ -112,6 +112,7 @@ defmodule ApathyDrive.Character do
     field(:last_tick_at, :any, virtual: true)
     field(:last_room_id, :integer, virtual: true)
     field(:delayed, :boolean, virtual: true, default: false)
+    field(:sneaking, :boolean, virtual: true, default: false)
 
     belongs_to(:room, Room)
 
@@ -1531,31 +1532,27 @@ defmodule ApathyDrive.Character do
     end
 
     def stealth_at_level(character, level) do
-      if Mobile.has_ability?(character, "Revealed") do
-        0
-      else
-        agility = attribute_at_level(character, :agility, level)
-        charm = attribute_at_level(character, :charm, level)
+      agility = attribute_at_level(character, :agility, level)
+      charm = attribute_at_level(character, :charm, level)
 
-        base = div(agility * 3 + charm, 6) + level * 2
+      base = div(agility * 3 + charm, 6) + level * 2
 
-        modifier =
-          cond do
-            !character.race.stealth and !character.class.stealth ->
-              0
+      modifier =
+        cond do
+          !character.race.stealth and !character.class.stealth ->
+            0
 
-            !character.class.stealth ->
-              0.4
+          !character.class.stealth ->
+            0.4
 
-            !character.race.stealth ->
-              0.6
+          !character.race.stealth ->
+            0.6
 
-            :else ->
-              1
-          end
+          :else ->
+            1
+        end
 
-        max(0, trunc(base * modifier) + ability_value(character, "Stealth"))
-      end
+      max(0, trunc(base * modifier) + ability_value(character, "Stealth"))
     end
 
     def subtract_mana(character, %{mana: cost} = ability) do

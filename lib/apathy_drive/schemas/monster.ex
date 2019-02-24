@@ -20,7 +20,6 @@ defmodule ApathyDrive.Monster do
     Room,
     RoomMonster,
     RoomServer,
-    Stealth,
     Text,
     TimerManager
   }
@@ -87,6 +86,7 @@ defmodule ApathyDrive.Monster do
     field(:auto_nuke, :boolean, virtual: true, default: true)
     field(:auto_flee, :boolean, virtual: true, default: false)
     field(:drops, :any, virtual: true, default: [])
+    field(:sneaking, :boolean, virtual: true, default: false)
 
     timestamps()
 
@@ -118,7 +118,7 @@ defmodule ApathyDrive.Monster do
     |> Enum.filter(&Map.has_key?(&1, "Aggro"))
     |> Enum.map(&Map.get(&1, "Aggro"))
     |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
-    |> Enum.reject(&Stealth.invisible?(room.mobiles[&1], monster, room))
+    |> Enum.reject(&room.mobiles[&1].sneaking)
   end
 
   def hireable?(%Monster{} = monster, character, room) do

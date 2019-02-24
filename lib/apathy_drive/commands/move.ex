@@ -1,5 +1,16 @@
 defmodule ApathyDrive.Commands.Move do
-  alias ApathyDrive.{Character, Currency, Companion, Doors, Mobile, Repo, Room, RoomServer}
+  alias ApathyDrive.{
+    Character,
+    Currency,
+    Companion,
+    Doors,
+    Mobile,
+    Repo,
+    Room,
+    RoomServer,
+    Stealth
+  }
+
   require Logger
 
   def execute(%Room{} = room, %{} = character, command) when is_binary(command) do
@@ -137,9 +148,23 @@ defmodule ApathyDrive.Commands.Move do
         to: destination_id
       })
 
-      if Mobile.stealth_at_level(character, character.level) > 0 do
-        Mobile.send_scroll(character, "<p>Sneaking...</p>")
-      end
+      character =
+        cond do
+          character.sneaking &&
+              :rand.uniform(100) > Mobile.stealth_at_level(character, character.level) ->
+            character
+            |> Mobile.send_scroll(
+              "<p><span class='dark-red'>You make a noise as you enter the room!</span></p>"
+            )
+            |> Map.put(:sneaking, false)
+            |> Stealth.reveal()
+
+          character.sneaking ->
+            Mobile.send_scroll(character, "<p>Sneaking...</p>")
+
+          :else ->
+            character
+        end
 
       destination_id
       |> RoomServer.find()
@@ -158,9 +183,23 @@ defmodule ApathyDrive.Commands.Move do
         %{"kind" => "Action", "destination" => destination_id} = room_exit
       ) do
     if !Mobile.held(character) and !Mobile.confused(character, room) do
-      if Mobile.stealth_at_level(character, character.level) > 0 do
-        Mobile.send_scroll(character, "<p>Sneaking...</p>")
-      end
+      character =
+        cond do
+          character.sneaking &&
+              :rand.uniform(100) > Mobile.stealth_at_level(character, character.level) ->
+            character
+            |> Mobile.send_scroll(
+              "<p><span class='dark-red'>You make a noise as you enter the room!</span></p>"
+            )
+            |> Map.put(:sneaking, false)
+            |> Stealth.reveal()
+
+          character.sneaking ->
+            Mobile.send_scroll(character, "<p>Sneaking...</p>")
+
+          :else ->
+            character
+        end
 
       Mobile.send_scroll(
         character,

@@ -8,8 +8,6 @@ defmodule ApathyDrive.Stealth do
     observer_level = Mobile.caster_level(observer, sneaker)
     perception = Mobile.perception_at_level(observer, observer_level, room)
 
-    IO.puts("#{sneaker.name} stealth: #{stealth}, #{observer.name} perception: #{perception}")
-
     stealth < perception
   end
 
@@ -18,18 +16,18 @@ defmodule ApathyDrive.Stealth do
   end
 
   def reveal(sneaker) do
-    if Mobile.has_ability?(sneaker, "Revealed") ||
-         Mobile.stealth_at_level(sneaker, sneaker.level) > 0 do
-      effect = %{
-        "Revealed" => true,
-        "stack_key" => :revealed,
-        "stack_count" => 1,
-        "RemoveMessage" => "<span class='dark-grey'>You step into the shadows.</span>"
-      }
+    effect = %{
+      "Revealed" => true,
+      "stack_key" => :revealed,
+      "stack_count" => 1
+    }
 
-      Systems.Effect.add(sneaker, effect, 4000)
-    else
-      sneaker
+    if sneaker.sneaking do
+      Mobile.send_scroll(sneaker, "<p>You are no longer sneaking.</p>")
     end
+
+    sneaker
+    |> Systems.Effect.add(effect, 4000)
+    |> Map.put(:sneaking, false)
   end
 end
