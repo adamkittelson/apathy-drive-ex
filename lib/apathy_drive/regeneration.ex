@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Regeneration do
-  alias ApathyDrive.{Character, Mobile, TimerManager}
+  alias ApathyDrive.{Aggression, Character, Mobile, TimerManager}
 
   @ticks_per_round 5
 
@@ -15,11 +15,11 @@ defmodule ApathyDrive.Regeneration do
     max(0, trunc(round_length * energy / max_energy))
   end
 
-  def regenerate(mobile, room \\ nil) do
+  def regenerate(mobile, room) do
     mobile
     |> regenerate_energy()
     |> regenerate_hp(room)
-    |> regenerate_mana()
+    |> regenerate_mana(room)
     |> schedule_next_tick()
     |> Map.put(:last_tick_at, DateTime.utc_now())
     |> Mobile.update_prompt()
@@ -39,23 +39,23 @@ defmodule ApathyDrive.Regeneration do
     min(energy, energy_per_tick)
   end
 
-  def hp_since_last_tick(%{last_tick_at: nil} = mobile),
-    do: regen_per_tick(mobile, Mobile.hp_regen_per_round(mobile))
+  def hp_since_last_tick(room, %{last_tick_at: nil} = mobile),
+    do: regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
 
-  def hp_since_last_tick(%{last_tick_at: last_tick} = mobile) do
+  def hp_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :milliseconds)
-    hp_per_tick = regen_per_tick(mobile, Mobile.hp_regen_per_round(mobile))
+    hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
     hp = hp_per_tick * ms_since_last_tick / tick_time(mobile)
 
     min(hp, hp_per_tick)
   end
 
-  def mana_since_last_tick(%{last_tick_at: nil} = mobile),
-    do: regen_per_tick(mobile, Mobile.mana_regen_per_round(mobile))
+  def mana_since_last_tick(room, %{last_tick_at: nil} = mobile),
+    do: regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
 
-  def mana_since_last_tick(%{last_tick_at: last_tick} = mobile) do
+  def mana_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :milliseconds)
-    mana_per_tick = regen_per_tick(mobile, Mobile.mana_regen_per_round(mobile))
+    mana_per_tick = regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
     mana = mana_per_tick * ms_since_last_tick / tick_time(mobile)
 
     min(mana, mana_per_tick)
@@ -72,15 +72,15 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def regenerate_hp(%{} = mobile, room) do
-    hp = hp_since_last_tick(mobile)
+    hp = hp_since_last_tick(room, mobile)
 
     Mobile.shift_hp(mobile, hp, room)
   end
 
-  def regenerate_mana(%{mana: 1.0} = mobile), do: mobile
+  def regenerate_mana(%{mana: 1.0} = mobile, _room), do: mobile
 
-  def regenerate_mana(%{} = mobile) do
-    mana = mana_since_last_tick(mobile)
+  def regenerate_mana(%{} = mobile, room) do
+    mana = mana_since_last_tick(room, mobile)
 
     if Map.get(mobile, :mana_regen_attributes) do
       mobile
@@ -102,16 +102,16 @@ defmodule ApathyDrive.Regeneration do
 
   defp reset_mana_regen_attributes(mobile), do: mobile
 
-  def regen_per_tick(%Character{} = mobile, regen) do
-    if TimerManager.time_remaining(mobile, :rest_timer) > 0 do
-      regen / @ticks_per_round
-    else
+  def regen_per_tick(room, %Character{} = mobile, regen) do
+    if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) do
       regen / @ticks_per_round * 10
+    else
+      regen / @ticks_per_round
     end
   end
 
   # todo: fix combat detection for mobs for real or rethink out of combat hp regeneration
-  def regen_per_tick(%{} = _mobile, regen) do
+  def regen_per_tick(_room, %{} = _mobile, regen) do
     regen / @ticks_per_round
   end
 end

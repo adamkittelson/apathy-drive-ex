@@ -771,7 +771,7 @@ defmodule ApathyDrive.Monster do
       monster = update_in(monster.energy, &max(0, &1 - ability.energy))
 
       if initial_energy == monster.max_energy do
-        Regeneration.regenerate(monster)
+        Regeneration.schedule_next_tick(monster)
       else
         monster
       end

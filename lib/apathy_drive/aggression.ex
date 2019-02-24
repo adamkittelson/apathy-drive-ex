@@ -69,6 +69,9 @@ defmodule ApathyDrive.Aggression do
     end
   end
 
+  def enemy?(%{attack_target: target} = _monster, %{ref: ref} = _mob) when ref == target, do: true
+  def enemy?(%{} = _monster, %{} = _mob), do: false
+
   def attack(%Room{} = room, %{} = attacker, %{} = intruder) do
     attacker = attack_target(attacker, intruder)
 
@@ -94,5 +97,11 @@ defmodule ApathyDrive.Aggression do
     else
       attacker
     end
+  end
+
+  def enemies_present?(room, character) do
+    room.mobiles
+    |> Map.values()
+    |> Enum.any?(&enemy?(&1, character))
   end
 end

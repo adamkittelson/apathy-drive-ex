@@ -664,7 +664,7 @@ defmodule ApathyDrive.Companion do
       companion = update_in(companion.energy, &max(0, &1 - ability.energy))
 
       if initial_energy == companion.max_energy do
-        Regeneration.regenerate(companion)
+        Regeneration.schedule_next_tick(companion)
       else
         companion
       end

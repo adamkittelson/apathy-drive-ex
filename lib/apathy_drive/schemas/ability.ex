@@ -975,7 +975,8 @@ defmodule ApathyDrive.Ability do
         %{ref: caster_ref} = _caster
       )
       when kind in ["attack", "curse"] and target_ref != caster_ref do
-    TimerManager.send_after(target, {:rest_timer, 5_000, {:rest, target_ref}})
+    # players don't automatically fight back
+    target
   end
 
   def aggro_target(%{ref: target_ref} = target, %Ability{kind: kind}, %{ref: caster_ref} = caster)

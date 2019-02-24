@@ -794,14 +794,15 @@ defmodule ApathyDrive.Character do
     character
   end
 
-  def update_mana_bar(%Character{socket: socket} = character, mobile) do
+  def update_mana_bar(%Character{socket: socket} = character, mobile, room) do
     percent = mobile.mana
 
     time_to_full =
       if percent == 1.0 do
         0
       else
-        regen_per_tick = Regeneration.regen_per_tick(mobile, Mobile.mana_regen_per_round(mobile))
+        regen_per_tick =
+          Regeneration.regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
 
         ticks_remaining = (1.0 - percent) / regen_per_tick
 
@@ -824,14 +825,15 @@ defmodule ApathyDrive.Character do
 
   def update_mana_bar(%{} = character), do: character
 
-  def update_hp_bar(%Character{socket: socket} = character, mobile) do
+  def update_hp_bar(%Character{socket: socket} = character, mobile, room) do
     percent = mobile.hp
 
     time_to_full =
       if percent == 1.0 do
         0
       else
-        regen_per_tick = Regeneration.regen_per_tick(mobile, Mobile.hp_regen_per_round(mobile))
+        regen_per_tick =
+          Regeneration.regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
 
         ticks_remaining = (1.0 - percent) / regen_per_tick
 
