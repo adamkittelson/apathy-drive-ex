@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomExit do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Room, RoomExit, Exit}
+  alias ApathyDrive.{Room, RoomExit, Exit, Item}
 
   schema "rooms_exits" do
     field(:direction, :string)
@@ -10,6 +10,7 @@ defmodule ApathyDrive.RoomExit do
 
     belongs_to(:exit, Exit)
     belongs_to(:room, Room)
+    belongs_to(:item, Item)
     belongs_to(:destination, Room)
   end
 
@@ -22,14 +23,23 @@ defmodule ApathyDrive.RoomExit do
     |> preload([:destination])
     |> Repo.all()
     |> Enum.map(fn room_exit ->
-      %{
-        "direction" => room_exit.direction,
-        "area" => room_exit.destination.area_id,
-        "zone" => room_exit.destination.zone_controller_id,
-        "kind" => room_exit.exit.kind,
-        "destination" => room_exit.destination.id
-      }
-      |> Map.merge(room_exit.data)
+      exit_data =
+        %{
+          "direction" => room_exit.direction,
+          "area" => room_exit.destination.area_id,
+          "zone" => room_exit.destination.zone_controller_id,
+          "kind" => room_exit.exit.kind,
+          "destination" => room_exit.destination.id
+        }
+        |> Map.merge(room_exit.data)
+
+      cond do
+        exit_data["kind"] == "Item" ->
+          Map.put(exit_data, "item", room_exit.item_id)
+
+        :else ->
+          exit_data
+      end
     end)
   end
 

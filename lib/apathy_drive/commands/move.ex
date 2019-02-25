@@ -88,6 +88,15 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Item", "item" => item_id} = room_exit) do
+    if Enum.find(character.inventory ++ character.equipment, &(&1.id == item_id)) do
+      execute(room, character, Map.put(room_exit, "kind", "Action"))
+    else
+      Mobile.send_scroll(character, "<p>#{room_exit["failure_message"]}</p>")
+      room
+    end
+  end
+
   def execute(%Room{} = room, %{} = character, %{"kind" => "Alignment"} = room_exit) do
     if character.alignment in room_exit["allowed"] do
       execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"))
