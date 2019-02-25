@@ -51,6 +51,7 @@ defmodule ApathyDrive.Ability do
     field(:max_stacks, :integer, virtual: true, default: 1)
     field(:chance, :integer, virtual: true)
     field(:on_hit?, :boolean, virtual: true, default: false)
+    field(:can_crit, :boolean, virtual: true, default: false)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -569,6 +570,8 @@ defmodule ApathyDrive.Ability do
 
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, targets, ability)
+
+          ability = crit(caster, ability)
 
           room =
             Enum.reduce(targets, room, fn target_ref, updated_room ->
@@ -1385,44 +1388,34 @@ defmodule ApathyDrive.Ability do
     Mobile.magical_damage_at_level(caster, caster_level)
   end
 
-  def calculate_damage(damage, type, resist, potency, caster, target, _room) do
-    _caster_level = Mobile.caster_level(caster, target)
-    _target_level = Mobile.target_level(caster, target)
+  def crit(caster, %Ability{can_crit: true, traits: %{"Damage" => _}} = ability) do
+    crit_chance = Mobile.crits_at_level(caster, caster.level)
 
-    cond do
-      # surprise?(caster, target, room) ->
-      #   # max modifier to make surprise attacks with fast weapons do a full round's worth of damage
-      #   damage = (damage - resist) * (max(modifier, 100) / 100) * (Enum.random(85..115) / 100)
-      #   {:surprise, damage * 2}
-      # crit?(caster, caster_level, target, target_level, room) ->
-      #   damage = (damage - resist) * (modifier / 100) * (Enum.random(85..115) / 100)
-      #   {:crit, damage * 2}
-      true ->
-        damage = damage - resist
+    crit_message = fn message ->
+      message
+      |> String.split(" ")
+      |> List.insert_at(1, "critically")
+      |> Enum.join(" ")
+    end
 
-        elemental_modifier = Mobile.ability_value(target, "Resist#{type}")
-
-        damage = damage * (1 - elemental_modifier / 100)
-
-        damage * (potency / 100)
-        # {:normal, damage}
+    if :rand.uniform(100) < crit_chance do
+      ability
+      |> update_in([Access.key!(:traits), "Damage"], fn damages ->
+        Enum.map(damages, fn damage ->
+          damage
+          |> Map.put(:max, damage.max * 2)
+          |> Map.put(:min, damage.min * 2)
+        end)
+      end)
+      |> Map.update!(:spectator_message, &crit_message.(&1))
+      |> Map.update!(:target_message, &crit_message.(&1))
+      |> Map.update!(:user_message, &crit_message.(&1))
+    else
+      ability
     end
   end
 
-  def crit?(caster, caster_level, target, target_level, room) do
-    caster_crit = Mobile.crits_at_level(caster, caster_level, room)
-    target_crit = Mobile.crits_at_level(target, target_level, room)
-
-    caster_modifier = Mobile.ability_value(caster, "Crits")
-    target_modifier = Mobile.ability_value(target, "Crits")
-
-    chance = 30 + caster_modifier - target_modifier + (caster_crit - target_crit) * 10
-
-    chance = min(chance, 60 + caster_modifier - target_modifier)
-    chance = max(chance, 10 + caster_modifier - target_modifier)
-
-    :rand.uniform(100) < chance
-  end
+  def crit(_caster, ability), do: ability
 
   def calculate_healing(damage, modifier) do
     damage * (modifier / 100) * (Enum.random(95..105) / 100)

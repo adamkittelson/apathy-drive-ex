@@ -379,12 +379,13 @@ defmodule ApathyDrive.Companion do
       TimerManager.send_after(companion, {:heartbeat, time, {:heartbeat, companion.ref}})
     end
 
-    def crits_at_level(companion, level, room) do
-      int = attribute_at_level(companion, :intellect, level)
-      cha = Party.charm_at_level(room, companion, level)
-      int = int + cha / 10
-      modifier = ability_value(companion, "Crits")
-      trunc(int * (1 + modifier / 100))
+    def crits_at_level(companion, level) do
+      intellect = attribute_at_level(companion, :intellect, level)
+      charm = attribute_at_level(companion, :charm, level)
+
+      base = div(intellect * 3 + charm, 6) + level * 2
+
+      trunc(base / (250 + base) * 100) + ability_value(companion, "Crits")
     end
 
     def description(companion, _observer) do

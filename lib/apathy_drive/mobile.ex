@@ -10,7 +10,7 @@ defprotocol ApathyDrive.Mobile do
   def color(mobile)
   def confused(mobile, room)
   def cpr(mobile)
-  def crits_at_level(mobile, level, room)
+  def crits_at_level(mobile, level)
   def description(mobile, observer)
   def die(mobile, room)
   def dodge_at_level(mobile, level, room)

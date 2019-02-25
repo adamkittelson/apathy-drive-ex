@@ -450,12 +450,13 @@ defmodule ApathyDrive.Monster do
       TimerManager.send_after(monster, {:heartbeat, time, {:heartbeat, monster.ref}})
     end
 
-    def crits_at_level(monster, level, _room) do
-      int = attribute_at_level(monster, :intellect, level)
-      cha = attribute_at_level(monster, :charm, level)
-      int = int + cha / 10
-      modifier = ability_value(monster, "Crits")
-      trunc(int * (1 + modifier / 100))
+    def crits_at_level(monster, level) do
+      intellect = attribute_at_level(monster, :intellect, level)
+      charm = attribute_at_level(monster, :charm, level)
+
+      base = div(intellect * 3 + charm, 6) + level * 2
+
+      trunc(base / (250 + base) * 100) + ability_value(monster, "Crits")
     end
 
     def description(monster, _observer) do

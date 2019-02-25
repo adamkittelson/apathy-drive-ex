@@ -452,6 +452,7 @@ defmodule ApathyDrive.Character do
       spectator_message:
         "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
       ignores_round_cooldown?: true,
+      can_crit: true,
       traits: %{
         "Damage" => [
           %{
@@ -888,7 +889,7 @@ defmodule ApathyDrive.Character do
       alignment: character.alignment,
       perception: Mobile.perception_at_level(character, character.level, room),
       accuracy: Mobile.accuracy_at_level(character, character.level, room),
-      crits: Mobile.crits_at_level(character, character.level, room),
+      crits: Mobile.crits_at_level(character, character.level),
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
       block: Mobile.block_at_level(character, character.level),
@@ -1094,12 +1095,13 @@ defmodule ApathyDrive.Character do
       "<span class='#{color(character)}'>#{name}</span>"
     end
 
-    def crits_at_level(character, level, room) do
-      int = attribute_at_level(character, :intellect, level)
-      cha = Party.charm_at_level(room, character, level)
-      int = int + cha / 10
-      modifier = ability_value(character, "Crits")
-      trunc(int * (1 + modifier / 100))
+    def crits_at_level(character, level) do
+      intellect = attribute_at_level(character, :intellect, level)
+      charm = attribute_at_level(character, :charm, level)
+
+      base = div(intellect * 3 + charm, 6) + level * 2
+
+      trunc(base / (250 + base) * 100) + ability_value(character, "Crits")
     end
 
     def description(%Character{} = character, %Character{} = observer) do
