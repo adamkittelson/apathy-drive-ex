@@ -419,13 +419,13 @@ defmodule ApathyDrive.Room do
   def display_exit_message(room, %{mobile: mobile, message: message, to: to_room_id}) do
     room.mobiles
     |> Map.values()
-    |> List.delete(mobile)
+    |> Enum.reject(&(&1.ref == mobile.ref))
     |> Enum.each(fn
       %Character{} = observer ->
         message =
           message
           |> ApathyDrive.Text.interpolate(%{
-            "name" => Mobile.colored_name(mobile),
+            "user" => mobile,
             "direction" =>
               room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction()
           })
