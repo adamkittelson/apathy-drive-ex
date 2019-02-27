@@ -151,8 +151,10 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.join(":")
   end
 
-  def enchantment_exp(enchantment_time) do
-    div(enchantment_time, 5)
+  def enchantment_exp(enchantment) do
+    enchantment
+    |> total_enchantment_time
+    |> div(5)
   end
 
   def total_enchantment_time(%Enchantment{ability: %Ability{attributes: attributes}}) do
