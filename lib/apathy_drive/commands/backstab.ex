@@ -36,6 +36,7 @@ defmodule ApathyDrive.Commands.Backstab do
 
   def backstab(room, character, target) do
     ability = Mobile.attack_ability(character)
+    detected? = Mobile.detected?(target, character, room)
 
     attacks_per_round = Float.ceil(1000 / ability.energy + 1) |> trunc
 
@@ -49,7 +50,7 @@ defmodule ApathyDrive.Commands.Backstab do
           |> Map.put(:min, damage.min * attacks_per_round)
         end)
       end)
-      |> put_in([Access.key!(:traits), "Dodgeable"], false)
+      |> put_in([Access.key!(:traits), "Dodgeable"], detected?)
       |> Map.update!(:spectator_message, &surprise_message/1)
       |> Map.update!(:target_message, &surprise_message/1)
       |> Map.update!(:user_message, &surprise_message/1)

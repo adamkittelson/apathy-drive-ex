@@ -12,6 +12,7 @@ defprotocol ApathyDrive.Mobile do
   def cpr(mobile)
   def crits_at_level(mobile, level)
   def description(mobile, observer)
+  def detected?(mobile, sneaker, room)
   def die(mobile, room)
   def dodge_at_level(mobile, level, room)
   def enough_mana_for_ability?(mobile, ability)

@@ -463,6 +463,10 @@ defmodule ApathyDrive.Monster do
       monster.description
     end
 
+    def detected?(_monster, sneaker, _room) do
+      :rand.uniform(100) >= Mobile.stealth_at_level(sneaker, sneaker.level)
+    end
+
     def die(monster, room) do
       room =
         Enum.reduce(room.mobiles, room, fn

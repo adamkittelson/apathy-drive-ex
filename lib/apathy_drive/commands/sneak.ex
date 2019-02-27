@@ -4,7 +4,7 @@ defmodule ApathyDrive.Commands.Sneak do
 
   def keywords, do: ["sn", "sneak"]
 
-  def execute(%Room{} = room, %Character{} = character, _args) do
+  def execute(%Room{} = room, %Character{ref: ref} = character, _args) do
     stealth = Mobile.stealth_at_level(character, character.level)
 
     cond do
@@ -24,14 +24,34 @@ defmodule ApathyDrive.Commands.Sneak do
       :rand.uniform(100) < stealth ->
         Mobile.send_scroll(character, "<p>Attempting to sneak...</p>")
 
-        Room.update_mobile(room, character.ref, fn character ->
-          character
-          |> Map.put(:sneaking, true)
-          |> Character.add_attribute_experience(%{
-            agility: 0.75,
-            charm: 0.25
-          })
-        end)
+        room =
+          Room.update_mobile(room, character.ref, fn character ->
+            character
+            |> Map.put(:sneaking, true)
+            |> Character.add_attribute_experience(%{
+              agility: 0.75,
+              charm: 0.25
+            })
+          end)
+
+        room =
+          room.mobiles
+          |> Map.values()
+          |> Enum.reduce(room, fn
+            %Character{ref: ^ref}, room ->
+              room
+
+            %Character{} = observer, room ->
+              observer = update_in(observer.detected_characters, &MapSet.put(&1, character.ref))
+              put_in(room.mobiles[observer.ref], observer)
+
+            _, room ->
+              room
+          end)
+
+        Room.update_moblist(room)
+
+        room
 
       :else ->
         Mobile.send_scroll(

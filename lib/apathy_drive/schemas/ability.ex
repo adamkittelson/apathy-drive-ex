@@ -550,6 +550,8 @@ defmodule ApathyDrive.Ability do
               end
             end)
 
+          Room.update_moblist(room)
+
           Room.update_energy_bar(room, caster.ref)
           Room.update_hp_bar(room, caster.ref)
           Room.update_mana_bar(room, caster.ref)
@@ -611,6 +613,8 @@ defmodule ApathyDrive.Ability do
               end)
             end)
 
+          Room.update_moblist(room)
+
           room =
             Room.update_mobile(room, caster.ref, fn caster ->
               caster =
@@ -648,6 +652,8 @@ defmodule ApathyDrive.Ability do
           Room.update_mana_bar(room, caster.ref)
 
           room = Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
+
+          Room.update_moblist(room)
 
           room =
             if instance_id = ability.traits["DestroyItem"] do
@@ -2097,6 +2103,9 @@ defmodule ApathyDrive.Ability do
       room.mobiles
       |> Map.values()
       |> Enum.reject(&(&1.ref in Party.refs(room, caster)))
+      |> Enum.reject(
+        &(&1.sneaking && !(&1.ref in caster.detected_characters) && !(&1.ref == caster_ref))
+      )
       |> Match.one(:name_contains, query)
 
     List.wrap(match && match.ref)
@@ -2137,21 +2146,29 @@ defmodule ApathyDrive.Ability do
     []
   end
 
-  def get_targets(%Room{} = room, _caster_ref, %Ability{targets: "self or single"}, query) do
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "self or single"}, query) do
+    caster = room.mobiles[caster_ref]
+
     match =
       room.mobiles
       |> Map.values()
       |> Enum.reject(&(&1.__struct__ == Monster))
+      |> Enum.reject(
+        &(&1.sneaking && !(&1.ref in caster.detected_characters) && !(&1.ref == caster_ref))
+      )
       |> Match.one(:name_contains, query)
 
     List.wrap(match && match.ref)
   end
 
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "single"}, query) do
+    caster = room.mobiles[caster_ref]
+
     match =
       room.mobiles
       |> Map.values()
       |> Enum.reject(&(&1.__struct__ == Monster || &1.ref == caster_ref))
+      |> Enum.reject(&(&1.sneaking && !(&1.ref in caster.detected_characters)))
       |> Match.one(:name_contains, query)
 
     List.wrap(match && match.ref)

@@ -113,6 +113,7 @@ defmodule ApathyDrive.Character do
     field(:last_room_id, :integer, virtual: true)
     field(:delayed, :boolean, virtual: true, default: false)
     field(:sneaking, :boolean, virtual: true, default: false)
+    field(:detected_characters, :any, virtual: true, default: MapSet.new())
 
     belongs_to(:room, Room)
 
@@ -1211,6 +1212,13 @@ defmodule ApathyDrive.Character do
       }."
     end
 
+    def detected?(character, sneaker, room) do
+      perception = Mobile.perception_at_level(character, character.level, room)
+      stealth = Mobile.stealth_at_level(sneaker, sneaker.level)
+
+      :rand.uniform(100) >= stealth - div(perception, 3)
+    end
+
     def die(character, room) do
       character =
         character
@@ -1420,11 +1428,20 @@ defmodule ApathyDrive.Character do
     end
 
     def perception_at_level(character, level, room) do
-      int = attribute_at_level(character, :intellect, level)
-      cha = Party.charm_at_level(room, character, level)
-      int = int + cha / 10
-      modifier = ability_value(character, "Perception")
-      trunc(int * (1 + modifier / 100))
+      intellect = attribute_at_level(character, :intellect, level)
+      charm = attribute_at_level(character, :charm, level)
+
+      base = div(intellect * 3 + charm, 6) + level * 2
+
+      base = base + ability_value(character, "Perception")
+
+      light_modifier =
+        room
+        |> Room.light()
+        |> ApathyDrive.Commands.Look.light_for_character(character)
+        |> Room.light_modifier()
+
+      trunc(base * (1 - light_modifier / 100))
     end
 
     def physical_damage_at_level(character, level) do

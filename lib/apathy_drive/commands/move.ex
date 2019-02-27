@@ -152,11 +152,12 @@ defmodule ApathyDrive.Commands.Move do
       ) do
     if !Mobile.held(character) and !Mobile.confused(character, room) and
          !Mobile.exhausted(character) do
-      Room.display_exit_message(room, %{
-        mobile: character,
-        message: Mobile.exit_message(character),
-        to: destination_id
-      })
+      room =
+        Room.display_exit_message(room, %{
+          mobile: character,
+          message: Mobile.exit_message(character),
+          to: destination_id
+        })
 
       character =
         cond do
@@ -185,8 +186,12 @@ defmodule ApathyDrive.Commands.Move do
       |> RoomServer.find()
       |> RoomServer.mobile_entered(character)
 
-      put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
-      |> party_move(character, room_exit)
+      room =
+        put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+        |> party_move(character, room_exit)
+
+      Room.update_moblist(room)
+      room
     else
       room
     end
@@ -234,14 +239,19 @@ defmodule ApathyDrive.Commands.Move do
         "<span class='yellow'>#{room_exit["to_message"]}</span>"
       )
 
-      Room.display_exit_message(room, %{
-        mobile: character,
-        message: room_exit["from_message"],
-        to: destination_id
-      })
+      room =
+        Room.display_exit_message(room, %{
+          mobile: character,
+          message: room_exit["from_message"],
+          to: destination_id
+        })
 
-      put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
-      |> party_move(character, room_exit)
+      room =
+        put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+        |> party_move(character, room_exit)
+
+      Room.update_moblist(room)
+      room
     else
       room
     end

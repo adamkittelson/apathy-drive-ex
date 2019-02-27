@@ -217,7 +217,11 @@ defmodule ApathyDrive.Room do
           ref: ref,
           name: mobile.name,
           color: Mobile.color(mobile),
-          leader: leader
+          leader: leader,
+          sneaking: mobile.sneaking,
+          detected:
+            mobile.sneaking &&
+              (mobile.ref == character.ref or mobile.ref in character.detected_characters)
         }
 
         update_in(list, [leader], fn mobs ->
@@ -242,20 +246,26 @@ defmodule ApathyDrive.Room do
       <%= for mobs <- list do %>
         <ul>
           <%= for mob <- mobs do %>
-            <li>
-              <span class="<%= mob.color %>"><%= mob.name %></span>
-              <div id="<%= mob.ref %>-bars">
-                <div class="progress-bar hp">
-                  <div class="red"></div>
+            <%= if !mob.sneaking || mob.ref == character.ref || mob.detected do %>
+              <%= if mob.detected do %>
+                <li style="opacity: 0.5;">
+              <% else %>
+                <li>
+              <% end %>
+                <span class="<%= mob.color %>"><%= mob.name %></span>
+                <div id="<%= mob.ref %>-bars">
+                  <div class="progress-bar hp">
+                    <div class="red"></div>
+                    </div>
+                  <div class="progress-bar energy">
+                    <div class="yellow"></div>
+                    </div>
+                  <div class="progress-bar mana">
+                    <div class="blue"></div>
                   </div>
-                <div class="progress-bar energy">
-                  <div class="yellow"></div>
-                  </div>
-                <div class="progress-bar mana">
-                  <div class="blue"></div>
                 </div>
-              </div>
-            </li>
+              </li>
+            <% end %>
           <% end %>
         </ul>
       <% end %>
@@ -280,9 +290,9 @@ defmodule ApathyDrive.Room do
       |> Room.get_direction_by_destination(mobile.room_id)
       |> Room.enter_direction()
 
-    Room.display_enter_message(room, mobile, message)
+    room = Room.display_enter_message(room, mobile, message)
 
-    Room.audible_movement(room, from_direction)
+    unless mobile.sneaking, do: Room.audible_movement(room, from_direction)
 
     mobile =
       mobile
@@ -398,21 +408,51 @@ defmodule ApathyDrive.Room do
 
     room.mobiles
     |> Map.values()
-    |> List.delete(mobile)
-    |> Enum.each(fn
-      %Character{} = observer ->
-        message =
-          (message || Mobile.enter_message(mobile))
-          |> ApathyDrive.Text.interpolate(%{
-            "name" => Mobile.colored_name(mobile),
-            "direction" => from_direction
-          })
-          |> ApathyDrive.Text.capitalize_first()
+    |> Enum.reject(&(&1.ref == mobile.ref))
+    |> Enum.reduce(room, fn
+      %Character{} = observer, room ->
+        room =
+          if Mobile.detected?(observer, mobile, room) do
+            Room.update_mobile(room, observer.ref, fn observer ->
+              update_in(observer.detected_characters, &MapSet.put(&1, mobile.ref))
+            end)
+          else
+            room
+          end
 
-        Mobile.send_scroll(observer, "<p>#{message}</p>")
+        observer = room.mobiles[observer.ref]
 
-      _ ->
-        :noop
+        cond do
+          mobile.sneaking && !(mobile.ref in observer.detected_characters) ->
+            :noop
+
+          mobile.sneaking ->
+            message =
+              "You notice {{name}} sneak in from {{direction}}."
+              |> ApathyDrive.Text.interpolate(%{
+                "name" => Mobile.colored_name(mobile),
+                "direction" => from_direction
+              })
+              |> ApathyDrive.Text.capitalize_first()
+
+            Mobile.send_scroll(observer, "<p>#{message}</p>")
+
+          :else ->
+            message =
+              (message || Mobile.enter_message(mobile))
+              |> ApathyDrive.Text.interpolate(%{
+                "name" => Mobile.colored_name(mobile),
+                "direction" => from_direction
+              })
+              |> ApathyDrive.Text.capitalize_first()
+
+            Mobile.send_scroll(observer, "<p>#{message}</p>")
+        end
+
+        room
+
+      _, room ->
+        room
     end)
   end
 
@@ -420,20 +460,46 @@ defmodule ApathyDrive.Room do
     room.mobiles
     |> Map.values()
     |> Enum.reject(&(&1.ref == mobile.ref))
-    |> Enum.each(fn
-      %Character{} = observer ->
-        message =
-          message
-          |> ApathyDrive.Text.interpolate(%{
-            "user" => mobile,
-            "direction" =>
-              room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction()
-          })
+    |> Enum.reduce(room, fn
+      %Character{} = observer, room ->
+        to_direction =
+          room |> Room.get_direction_by_destination(to_room_id) |> Room.exit_direction()
 
-        Mobile.send_scroll(observer, "<p>#{message}</p>")
+        cond do
+          mobile.sneaking && !(mobile.ref in observer.detected_characters) ->
+            room
 
-      _ ->
-        :noop
+          mobile.sneaking ->
+            room =
+              Room.update_mobile(room, observer.ref, fn observer ->
+                update_in(observer.detected_characters, &MapSet.delete(&1, mobile.ref))
+              end)
+
+            message =
+              "You notice {{name}} sneak out to {{direction}}."
+              |> ApathyDrive.Text.interpolate(%{
+                "name" => Mobile.colored_name(mobile),
+                "direction" => to_direction
+              })
+              |> ApathyDrive.Text.capitalize_first()
+
+            Mobile.send_scroll(observer, "<p>#{message}</p>")
+            room
+
+          :else ->
+            message =
+              message
+              |> ApathyDrive.Text.interpolate(%{
+                "user" => mobile,
+                "direction" => to_direction
+              })
+
+            Mobile.send_scroll(observer, "<p>#{message}</p>")
+            room
+        end
+
+      _, room ->
+        room
     end)
   end
 
@@ -533,6 +599,9 @@ defmodule ApathyDrive.Room do
     |> Enum.reject(&(&1.ref == mobile.ref))
     |> List.insert_at(-1, mobile)
     |> Enum.reject(&(&1 == nil))
+    |> Enum.reject(
+      &(&1.sneaking && !(&1.ref in mobile.detected_characters) && !(&1.ref == mobile.ref))
+    )
     |> Match.one(:name_contains, query)
   end
 
@@ -611,6 +680,12 @@ defmodule ApathyDrive.Room do
         room.light
     end
   end
+
+  def light_modifier(light_level) when light_level <= -300, do: 40
+  def light_modifier(light_level) when light_level <= -200, do: 30
+  def light_modifier(light_level) when light_level <= -100, do: 20
+  def light_modifier(light_level) when light_level <= -25, do: 10
+  def light_modifier(_light_level), do: 0
 
   def start_room_id do
     ApathyDrive.Config.get(:start_room)

@@ -392,6 +392,10 @@ defmodule ApathyDrive.Companion do
       companion.description
     end
 
+    def detected?(_companion, sneaker, _room) do
+      :rand.uniform(100) >= stealth_at_level(sneaker, sneaker.level)
+    end
+
     def die(companion, room) do
       message =
         companion.death_message
