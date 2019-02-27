@@ -112,7 +112,7 @@ defmodule ApathyDrive.Enchantment do
 
           next_tick_time = next_tick_time(enchantment)
 
-          exp = max(1, div(enchanter.max_exp_buffer, 20))
+          exp = enchantment_exp(enchantment)
 
           enchanter =
             enchanter
@@ -124,7 +124,7 @@ defmodule ApathyDrive.Enchantment do
           Enum.reduce(enchantment.ability.attributes, enchanter, fn {attribute, _value},
                                                                     enchanter ->
             Character.add_attribute_experience(enchanter, %{
-              attribute => 1 / length(Map.keys(enchantment.ability.attributes)) * 5
+              attribute => 1 / length(Map.keys(enchantment.ability.attributes))
             })
           end)
           |> ApathyDrive.Character.add_experience(exp)
@@ -151,7 +151,11 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.join(":")
   end
 
-  def time_left(%Enchantment{ability: %Ability{attributes: attributes}} = enchantment) do
+  def enchantment_exp(enchantment_time) do
+    enchantment_time / 5
+  end
+
+  def total_enchantment_time(%Enchantment{ability: %Ability{attributes: attributes}}) do
     avg_attr_req =
       attributes
       |> Enum.reduce(0, fn {_attr, val}, total -> val + total end)
@@ -159,7 +163,11 @@ defmodule ApathyDrive.Enchantment do
 
     lt_time = 5 + (avg_attr_req - 50) * 5
 
-    lt_time * 60 - enchantment.time_elapsed_in_seconds
+    lt_time * 60
+  end
+
+  def time_left(%Enchantment{} = enchantment) do
+    total_enchantment_time(enchantment) - enchantment.time_elapsed_in_seconds
   end
 
   def next_tick_time(%Enchantment{} = enchantment) do
