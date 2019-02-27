@@ -152,7 +152,7 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def enchantment_exp(enchantment_time) do
-    div(enchantment_time / 5)
+    div(enchantment_time, 5)
   end
 
   def total_enchantment_time(%Enchantment{ability: %Ability{attributes: attributes}}) do
