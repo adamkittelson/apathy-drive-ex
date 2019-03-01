@@ -2125,13 +2125,17 @@ defmodule ApathyDrive.Ability do
     List.wrap(match && match.ref)
   end
 
-  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full party area"}, _query) do
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full party area"}, "") do
     room
     |> Room.get_mobile(caster_ref)
     |> Mobile.party_refs(room)
   end
 
-  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full attack area"}, _query) do
+  def get_targets(%Room{}, _caster_ref, %Ability{targets: "full party area"}, _query) do
+    []
+  end
+
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full attack area"}, "") do
     party =
       room
       |> Room.get_mobile(caster_ref)
@@ -2140,6 +2144,10 @@ defmodule ApathyDrive.Ability do
     room.mobiles
     |> Map.keys()
     |> Kernel.--(party)
+  end
+
+  def get_targets(%Room{}, _caster_ref, %Ability{targets: "full attack area"}, _query) do
+    []
   end
 
   def get_targets(%Room{}, _caster_ref, %Ability{targets: "self or single"}, "") do
