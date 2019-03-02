@@ -125,6 +125,33 @@ defmodule ApathyDrive.Character do
     timestamps()
   end
 
+  def top_list(number \\ 10) do
+    classes =
+      Class
+      |> Ecto.Query.select([c], %{c.id => c.name})
+      |> ApathyDrive.Repo.all()
+      |> Enum.reduce(%{}, &Map.merge/2)
+
+    Character
+    |> Ecto.Query.order_by(
+      desc:
+        fragment(
+          "strength_experience + agility_experience + intellect_experience + willpower_experience + health_experience + charm_experience"
+        )
+    )
+    |> Ecto.Query.limit(^number)
+    |> Repo.all()
+    |> Enum.map(
+      &%{
+        name: &1.name,
+        class: classes[&1.class_id],
+        exp:
+          &1.strength_experience + &1.agility_experience + &1.intellect_experience +
+            &1.willpower_experience + &1.health_experience + &1.charm_experience
+      }
+    )
+  end
+
   def legal_status(%Character{bounty: bounty}) when bounty >= 1_000_000, do: "FIEND"
   def legal_status(%Character{bounty: bounty}) when bounty >= 500_000, do: "Villain"
   def legal_status(%Character{bounty: bounty}) when bounty >= 250_000, do: "Criminal"

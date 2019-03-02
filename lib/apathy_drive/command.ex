@@ -77,6 +77,7 @@ defmodule ApathyDrive.Command do
       Commands.Sneak,
       Commands.System,
       Commands.Tell,
+      Commands.Top,
       Commands.Use,
       Commands.Wear,
       Commands.Who
