@@ -318,7 +318,8 @@ defmodule ApathyDrive.Character do
         :willpower,
         :health,
         :charm,
-        :stealth
+        :stealth,
+        :exp_modifier
       ])
 
     character
@@ -335,7 +336,7 @@ defmodule ApathyDrive.Character do
       |> Map.put("stack_count", 1)
 
     character
-    |> Map.put(:class, Map.take(class, [:name, :stealth]))
+    |> Map.put(:class, Map.take(class, [:name, :stealth, :exp_modifier]))
     |> Map.put(:weapon, class.weapon)
     |> Map.put(:armour, class.armour)
     |> Systems.Effect.add(effect)
@@ -624,6 +625,8 @@ defmodule ApathyDrive.Character do
   end
 
   def add_experience(%Character{} = character, exp) when exp > 0 do
+    modifier = 1 / ((character.race.exp_modifier + character.class.exp_modifier) / 100)
+    exp = trunc(exp * modifier)
     Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
     exp_buffer = character.exp_buffer + exp
