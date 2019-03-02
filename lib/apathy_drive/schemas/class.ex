@@ -9,6 +9,7 @@ defmodule ApathyDrive.Class do
     field(:weapon, :string)
     field(:armour, :string)
     field(:stealth, :boolean)
+    field(:exp_modifier, :integer)
 
     has_many(:classes_traits, ApathyDrive.ClassTrait)
     has_many(:traits, through: [:classes_traits, :trait])
@@ -45,8 +46,8 @@ defmodule ApathyDrive.Class do
   @doc false
   def changeset(%Class{} = class, attrs \\ %{}) do
     class
-    |> cast(attrs, [:name, :description, :weapon, :armour, :stealth])
-    |> validate_required([:name, :description, :weapon, :armour, :stealth])
+    |> cast(attrs, [:name, :description, :weapon, :armour, :stealth, :exp_modifier])
+    |> validate_required([:name, :description, :weapon, :armour, :stealth, :exp_modifier])
     |> validate_inclusion(:weapon, @weapons)
     |> validate_inclusion(:armour, @armours)
     |> cast_assoc(:classes_traits)

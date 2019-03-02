@@ -12,6 +12,7 @@ defmodule ApathyDrive.Race do
     field(:health, :integer)
     field(:charm, :integer)
     field(:stealth, :boolean)
+    field(:exp_modifier, :integer)
 
     has_many(:races_traits, ApathyDrive.RaceTrait)
     has_many(:traits, through: [:races_traits, :trait])
@@ -19,7 +20,7 @@ defmodule ApathyDrive.Race do
     timestamps()
   end
 
-  @required_fields ~w(name description strength agility intellect willpower health charm stealth)a
+  @required_fields ~w(name description strength agility intellect willpower health charm stealth exp_modifier)a
 
   @doc """
   Creates a changeset based on the `model` and `params`.

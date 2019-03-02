@@ -17,10 +17,7 @@ defmodule ApathyDrive.Commands.Experience do
       exp = Map.get(character, :"#{attribute}_experience")
       level = character.attribute_levels[attribute]
 
-      current = Level.exp_at_level(level, 1.0)
       to_level = Level.exp_at_level(level + 1, 1.0)
-
-      percent = ((exp - current) / (to_level - current) * 100) |> trunc
 
       Mobile.send_scroll(
         character,
@@ -32,7 +29,9 @@ defmodule ApathyDrive.Commands.Experience do
           level
           |> to_string
           |> String.pad_trailing(3)
-        }</span> <span class='dark-green'>Progress:</span> <span class='dark-cyan'>#{percent}%</p>"
+        }</span> <span class='dark-green'>Exp needed for next level:</span> <span class='dark-cyan'>#{
+          to_level - exp
+        }</p>"
       )
     end)
 
