@@ -52,6 +52,7 @@ defmodule ApathyDrive.Item do
     field(:enchantment_name, :string, virtual: true, default: nil)
     field(:keywords, :any, virtual: true)
     field(:uses, :integer, virtual: true)
+    field(:hidden, :boolean, virtual: true)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end

@@ -366,6 +366,13 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
+  def look_at_item(%Character{} = character, %Item{getable: false, hidden: true} = item) do
+    Mobile.send_scroll(
+      character,
+      "<p>#{item.description}</p>"
+    )
+  end
+
   def look_at_item(%Character{} = character, %Item{} = item) do
     if item.worn_on do
       Mobile.send_scroll(
