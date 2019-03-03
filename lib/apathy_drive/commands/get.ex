@@ -16,7 +16,7 @@ defmodule ApathyDrive.Commands.Get do
   end
 
   def execute(
-        %Room{items: items, item_descriptions: item_descriptions} = room,
+        %Room{items: items} = room,
         %Character{} = character,
         [first | rest] = args
       ) do
@@ -84,19 +84,14 @@ defmodule ApathyDrive.Commands.Get do
           |> Enum.filter(
             &(&1.dropped_for_character_id == character.id or is_nil(&1.dropped_for_character_id))
           )
+          |> Enum.filter(&(&1.getable == true))
           |> Match.one(:name_contains, item)
-
-        hidden_item =
-          item_descriptions["hidden"]
-          |> Map.keys()
-          |> Enum.map(&%{name: &1, keywords: String.split(&1)})
-          |> Match.one(:keyword_starts_with, item)
 
         currency =
           Currency.matches()
           |> Match.one(:name_contains, item)
 
-        case actual_item || currency || hidden_item do
+        case actual_item || currency do
           %Item{instance_id: instance_id} = item ->
             if item.weight <=
                  Character.max_encumbrance(character) - Character.encumbrance(character) do

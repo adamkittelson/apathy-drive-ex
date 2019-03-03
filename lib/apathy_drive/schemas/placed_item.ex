@@ -5,5 +5,6 @@ defmodule ApathyDrive.PlacedItem do
   schema "rooms_placed_items" do
     belongs_to(:room, Room)
     belongs_to(:item, Item)
+    field(:hidden, :boolean)
   end
 end

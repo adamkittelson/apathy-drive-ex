@@ -97,6 +97,13 @@ defmodule ApathyDrive.Item do
         :uses
       ])
 
+    values =
+      if !is_nil(ii.getable) do
+        Map.put(values, :getable, ii.getable)
+      else
+        values
+      end
+
     item
     |> Map.merge(values)
     |> Map.put(:instance_id, id)

@@ -32,7 +32,6 @@ defmodule ApathyDrive.Room do
     field(:name, :string)
     field(:description, :string)
     field(:light, :integer)
-    field(:item_descriptions, ApathyDrive.JSONB, default: %{"hidden" => %{}})
     field(:lair_size, :integer)
     field(:lair_frequency, :integer, default: 5)
     field(:commands, ApathyDrive.JSONB, default: %{})
@@ -98,8 +97,9 @@ defmodule ApathyDrive.Room do
       %ItemInstance{
         room_id: room.id,
         item_id: placed_item.item_id,
-        hidden: false,
-        equipped: false
+        hidden: placed_item.hidden,
+        equipped: false,
+        getable: !placed_item.hidden
       }
       |> Repo.insert!()
 
@@ -584,7 +584,7 @@ defmodule ApathyDrive.Room do
     |> cast(
       params,
       ~w(name description exits),
-      ~w(light item_descriptions lair_size lair_frequency commands legacy_id coordinates)
+      ~w(light lair_size lair_frequency commands legacy_id coordinates)
     )
     |> validate_format(:name, ~r/^[a-zA-Z ,]+$/)
     |> validate_length(:name, min: 1, max: 30)
@@ -691,16 +691,10 @@ defmodule ApathyDrive.Room do
     ApathyDrive.Config.get(:start_room)
   end
 
-  def find_item(%Room{items: items, item_descriptions: item_descriptions} = room, item) do
+  def find_item(%Room{items: items} = room, item) do
     actual_item =
       items
       |> Enum.map(&%{name: &1.name, keywords: String.split(&1.name), item: &1})
-      |> Match.one(:keyword_starts_with, item)
-
-    hidden_item =
-      item_descriptions["hidden"]
-      |> Map.keys()
-      |> Enum.map(&%{name: &1, keywords: String.split(&1)})
       |> Match.one(:keyword_starts_with, item)
 
     shop_item =
@@ -709,9 +703,6 @@ defmodule ApathyDrive.Room do
       end
 
     cond do
-      hidden_item ->
-        %{description: item_descriptions["hidden"][hidden_item.name]}
-
       actual_item ->
         actual_item.item
 

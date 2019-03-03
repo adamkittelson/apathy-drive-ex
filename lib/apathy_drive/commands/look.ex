@@ -289,6 +289,7 @@ defmodule ApathyDrive.Commands.Look do
       |> Enum.filter(
         &(&1.dropped_for_character_id == character.id or is_nil(&1.dropped_for_character_id))
       )
+      |> Enum.reject(& &1.hidden)
       |> Enum.map(&Item.colored_name(&1))
 
     items = Currency.to_list(room) ++ items
