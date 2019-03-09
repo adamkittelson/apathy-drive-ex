@@ -62,8 +62,15 @@ defmodule ApathyDrive.Commands.Look do
       |> Room.light()
       |> light_for_character(character)
 
+    coords =
+      if character.admin do
+        "(x:#{room.coordinates["x"]} y:#{room.coordinates["y"]} z:#{room.coordinates["z"]})"
+      else
+        ""
+      end
+
     if visible?(light) do
-      Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span></p>")
+      Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span> #{coords}</p>")
       Mobile.send_scroll(character, "<p>    #{room.description}</p>")
 
       Mobile.send_scroll(

@@ -20,53 +20,58 @@ defmodule ApathyDrive.Area do
   def update_map!() do
     Room.world_map()
     |> Repo.all()
-    |> Enum.each(fn %{id: area_id} = area ->
-      map =
-        from(
-          room in Room,
-          where: room.area_id == ^area_id and not is_nil(room.coordinates),
-          select: %{
-            id: room.id,
-            name: room.name,
-            coords: room.coordinates
-          }
-        )
-        |> Repo.all()
-        |> Enum.reduce(%{}, fn %{id: id} = room, map ->
-          directions =
-            ApathyDrive.RoomExit.load_exits(id)
-            |> Enum.filter(
-              &(&1["kind"] in [
-                  "Block Guard",
-                  "Normal",
-                  "Action",
-                  "Door",
-                  "Gate",
-                  "Trap",
-                  "Cast",
-                  "Level",
-                  "Toll",
-                  "Alignment"
-                ])
-            )
-            |> Enum.map(& &1["direction"])
-
-          room =
-            room
-            |> Map.put(:directions, directions)
-            |> Map.delete(:exits)
-
-          Map.put(map, to_string(id), room)
-        end)
-
-      area
-      |> Ecto.Changeset.change(%{
-        map: map
-      })
-      |> Repo.update!()
+    |> Enum.each(fn %Area{} = area ->
+      update_area_map!(area)
     end)
 
     send(ApathyDrive.WorldMap, :load_world_map)
+  end
+
+  def update_area_map!(%Area{id: area_id} = area) do
+    map =
+      from(
+        room in Room,
+        where: room.area_id == ^area_id and not is_nil(room.coordinates),
+        select: %{
+          id: room.id,
+          name: room.name,
+          coords: room.coordinates
+        }
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn %{id: id} = room, map ->
+        directions =
+          ApathyDrive.RoomExit.load_exits(id)
+          |> Enum.filter(
+            &(&1["kind"] in [
+                "Block Guard",
+                "Normal",
+                "Action",
+                "Class",
+                "Door",
+                "Gate",
+                "Trap",
+                "Cast",
+                "Level",
+                "Toll",
+                "Alignment"
+              ])
+          )
+          |> Enum.map(& &1["direction"])
+
+        room =
+          room
+          |> Map.put(:directions, directions)
+          |> Map.delete(:exits)
+
+        Map.put(map, to_string(id), room)
+      end)
+
+    area
+    |> Ecto.Changeset.change(%{
+      map: map
+    })
+    |> Repo.update!()
   end
 
   def find_by_name(name) do

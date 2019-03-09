@@ -285,6 +285,8 @@ defmodule ApathyDrive.Room do
   end
 
   def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do
+    IO.puts("#{mobile.name} entered!")
+
     from_direction =
       room
       |> Room.get_direction_by_destination(mobile.room_id)

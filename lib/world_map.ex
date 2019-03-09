@@ -34,6 +34,9 @@ defmodule ApathyDrive.WorldMap do
       end)
 
     Logger.info("map loaded")
+
+    ApathyDriveWeb.Endpoint.broadcast!("map", "update_map", map)
+    ApathyDriveWeb.Endpoint.broadcast!("map", "request_room_id", %{})
     {:noreply, map}
   end
 end

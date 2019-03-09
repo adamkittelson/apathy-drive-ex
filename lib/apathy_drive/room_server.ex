@@ -118,6 +118,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def mobile_entered(room, mobile, message \\ nil) do
+    IO.puts("#{mobile.name} entering #{inspect(room)}!")
     GenServer.cast(room, {:mobile_entered, mobile, message})
   end
 

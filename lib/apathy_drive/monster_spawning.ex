@@ -7,9 +7,20 @@ defmodule ApathyDrive.MonsterSpawning do
     room.id
     |> monsters_to_load()
     |> Enum.reduce(room, fn room_monster, updated_room ->
-      monster = Monster.from_room_monster(room_monster)
+      monster =
+        room.mobiles
+        |> Map.values()
+        |> Enum.find(&(&1.room_monster_id == room_monster.id))
 
-      Room.mobile_entered(updated_room, monster)
+      # make sure the monster isn't already present -- race condition
+      # with placed npcs spawning as a room loads
+      if monster do
+        updated_room
+      else
+        monster = Monster.from_room_monster(room_monster)
+
+        Room.mobile_entered(updated_room, monster)
+      end
     end)
   end
 
