@@ -10,7 +10,7 @@ defmodule ApathyDrive.MonsterSpawning do
       monster =
         room.mobiles
         |> Map.values()
-        |> Enum.find(&(&1.room_monster_id == room_monster.id))
+        |> Enum.find(&(Map.get(&1, :room_monster_id) == room_monster.id))
 
       # make sure the monster isn't already present -- race condition
       # with placed npcs spawning as a room loads

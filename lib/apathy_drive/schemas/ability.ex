@@ -1487,41 +1487,51 @@ defmodule ApathyDrive.Ability do
   end
 
   def process_duration_trait({"Damage", damages}, effects, target, caster, _ability, _room) do
-    caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
     damage_percent =
       Enum.reduce(damages, 0, fn
-        # TODO: potency isn't a thing
-        %{kind: "physical", damage_type: type, potency: potency} = damage, damage_percent ->
-          damage = raw_damage(damage, caster, caster_level)
+        %{kind: "physical", min: min, max: max, damage_type: type}, damage_percent ->
+          ability_damage = Enum.random(min..max)
+
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
           resist_percent = 1 - resist / (5 * 50 + resist)
 
+          damage = ability_damage * resist_percent
+
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
-          damage = damage * resist_percent * (potency / 100) * (1 - modifier / 100)
-          damage_percent + damage / Mobile.max_hp_at_level(target, target_level)
+          damage = damage * (1 - modifier / 100)
 
-        %{kind: "magical", damage_type: type, potency: potency} = damage, damage_percent ->
-          damage = raw_damage(damage, caster, caster_level)
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
+
+          damage_percent + percent
+
+        %{kind: "magical", min: min, max: max, damage_type: type}, damage_percent ->
+          ability_damage = Enum.random(min..max)
+
           resist = Mobile.magical_resistance_at_level(target, target_level)
+
+          resist_percent = 1 - resist / (5 * 50 + resist)
+
+          damage = ability_damage * resist_percent
+
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
-          damage = (damage - resist) * (potency / 100) * (1 - modifier / 100)
-          damage_percent + damage / Mobile.max_hp_at_level(target, target_level)
+          damage = damage * (1 - modifier / 100)
 
-        _, damage_percent ->
-          damage_percent
+          percent = damage / Mobile.max_hp_at_level(target, target_level)
+
+          damage_percent + percent
       end)
 
     effects
     |> Map.put("Damage", damage_percent)
-    |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put("Interval", 1000)
     |> Map.put(
       "NextEffectAt",
-      System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4
+      System.monotonic_time(:milliseconds) + 1000
     )
   end
 

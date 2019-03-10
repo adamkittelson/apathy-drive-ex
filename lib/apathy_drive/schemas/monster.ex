@@ -147,6 +147,7 @@ defmodule ApathyDrive.Monster do
       |> generate_monster_attributes()
       |> load_abilities()
       |> load_traits()
+      |> load_drops()
       |> Mobile.cpr()
     end
   end
@@ -322,6 +323,8 @@ defmodule ApathyDrive.Monster do
 
   def drop_loot_for_character(%Room{} = room, %Monster{} = monster, %Character{id: id}) do
     Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id}, room ->
+      IO.puts("item_id: #{item_id}, chance: #{chance}")
+
       if :rand.uniform(100) <= chance do
         %ItemInstance{
           item_id: item_id,

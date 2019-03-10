@@ -103,7 +103,8 @@ defmodule ApathyDrive.Regeneration do
   defp reset_mana_regen_attributes(mobile), do: mobile
 
   def regen_per_tick(room, %Character{} = mobile, regen) do
-    if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) do
+    if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
+         !taking_damage?(mobile) do
       regen / @ticks_per_round * 10
     else
       regen / @ticks_per_round
@@ -113,5 +114,13 @@ defmodule ApathyDrive.Regeneration do
   # todo: fix combat detection for mobs for real or rethink out of combat hp regeneration
   def regen_per_tick(_room, %{} = _mobile, regen) do
     regen / @ticks_per_round
+  end
+
+  defp taking_damage?(%{} = mobile) do
+    mobile.effects
+    |> Map.values()
+    |> Enum.find(fn effect ->
+      Map.has_key?(effect, "NextEffectAt") and Map.has_key?(effect, "Damage")
+    end)
   end
 end

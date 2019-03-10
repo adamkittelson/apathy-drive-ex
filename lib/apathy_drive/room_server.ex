@@ -634,7 +634,7 @@ defmodule ApathyDrive.RoomServer do
             end)
             |> Ability.execute(
               target_ref,
-              %Ability{traits: effect, ignores_round_cooldown?: true},
+              %Ability{traits: effect, ignores_round_cooldown?: true, energy: 0},
               [target_ref]
             )
 
@@ -826,6 +826,9 @@ defmodule ApathyDrive.RoomServer do
       Room.update_mobile(room, ref, fn mobile ->
         Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
       end)
+
+    Room.update_hp_bar(room, ref)
+    Room.update_mana_bar(room, ref)
 
     {:noreply, room}
   end
