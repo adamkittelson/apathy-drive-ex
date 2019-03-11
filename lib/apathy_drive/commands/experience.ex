@@ -5,11 +5,20 @@ defmodule ApathyDrive.Commands.Experience do
   def keywords, do: ["exp", "experience"]
 
   def execute(%Room{} = room, %Character{} = character, []) do
+    training =
+      if Character.max_level(character) > character.level do
+        "<span class='yellow'>Ready to train to next level!</span>"
+      else
+        ""
+      end
+
     Mobile.send_scroll(
       character,
       "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{
         String.pad_trailing(character.name, 10)
-      }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{character.level}</span>"
+      }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{character.level}</span>   #{
+        training
+      }"
     )
 
     [:strength, :agility, :intellect, :willpower, :health, :charm]

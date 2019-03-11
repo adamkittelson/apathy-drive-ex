@@ -153,6 +153,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       Repo.get!(Room, id)
       |> Repo.preload(area: Area.without_map())
+      |> Repo.preload(:trainer)
       |> Room.load_exits()
       |> Room.load_items()
       |> Repo.preload(:placed_items)

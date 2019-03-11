@@ -73,8 +73,8 @@ defmodule ApathyDrive.Character do
     field(:auto_flee, :boolean)
     field(:bounty, :integer, default: 0)
     field(:alignment, :string)
+    field(:level, :integer)
 
-    field(:level, :integer, virtual: true, default: 1)
     field(:race, :string, virtual: true)
     field(:class, :string, virtual: true)
     field(:monitor_ref, :any, virtual: true)
@@ -299,26 +299,23 @@ defmodule ApathyDrive.Character do
   end
 
   def set_attribute_levels(%Character{} = character) do
-    character =
-      [:strength, :agility, :intellect, :willpower, :health, :charm]
-      |> Enum.reduce(character, fn stat, character ->
-        exp = Map.get(character, :"#{stat}_experience")
+    [:strength, :agility, :intellect, :willpower, :health, :charm]
+    |> Enum.reduce(character, fn stat, character ->
+      exp = Map.get(character, :"#{stat}_experience")
 
-        level = Level.level_at_exp(exp, 1.0)
+      level = Level.level_at_exp(exp, 1.0)
 
-        character =
-          character
-          |> put_in([Access.key!(:attribute_levels), stat], level)
-          |> put_in([Access.key!(stat)], character.race[stat] + level)
-
-        Character.update_attribute_bar(character, stat)
+      character =
         character
-      end)
+        |> put_in([Access.key!(:attribute_levels), stat], level)
+        |> put_in([Access.key!(stat)], character.race[stat] + level)
 
-    Map.put(character, :level, level(character))
+      Character.update_attribute_bar(character, stat)
+      character
+    end)
   end
 
-  def level(%Character{} = character) do
+  def max_level(%Character{} = character) do
     average_attribute_level =
       character.attribute_levels
       |> Map.values()
@@ -548,8 +545,6 @@ defmodule ApathyDrive.Character do
       when buffer >= amount do
     Character.pulse_score_attribute(character, attribute)
 
-    character_level = character.level
-
     attribute_level = character.attribute_levels[attribute]
 
     character =
@@ -567,46 +562,12 @@ defmodule ApathyDrive.Character do
 
     character =
       if new_attribute_level > attribute_level do
-        old_abilities = Map.values(character.abilities)
-
-        character =
-          character
-          |> Character.set_attribute_levels()
-          |> Character.load_abilities()
-          |> Character.set_title()
-
-        new_abilities = Map.values(character.abilities)
+        character = Character.set_attribute_levels(character)
 
         Mobile.send_scroll(
           character,
           "<p><span class='yellow'>Your #{attribute} increases to #{Map.get(character, attribute)}!</span></p>"
         )
-
-        if character.level > character_level do
-          Mobile.send_scroll(
-            character,
-            "<p><span class='yellow'>Your level increases to #{character.level}!</span></p>"
-          )
-
-          Directory.add_character(%{
-            name: character.name,
-            bounty: character.bounty,
-            room: character.room_id,
-            ref: character.ref,
-            title: character.title
-          })
-        end
-
-        Enum.each(new_abilities, fn ability ->
-          unless ability in old_abilities do
-            Mobile.send_scroll(
-              character,
-              "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
-            )
-
-            Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
-          end
-        end)
 
         character
       else

@@ -17,7 +17,8 @@ defmodule ApathyDrive.Room do
     RoomServer,
     PubSub,
     Shop,
-    TimerManager
+    TimerManager,
+    Trainer
   }
 
   require Logger
@@ -44,7 +45,6 @@ defmodule ApathyDrive.Room do
     field(:silver, :integer, default: 0)
     field(:copper, :integer, default: 0)
     field(:zone_monster_limit, :integer)
-
     field(:exits, :any, virtual: true, default: [])
     field(:effects, :map, virtual: true, default: %{})
     field(:lair_next_spawn_at, :integer, virtual: true, default: 0)
@@ -69,6 +69,7 @@ defmodule ApathyDrive.Room do
     has_many(:skills, through: [:room_skills, :skill])
     has_one(:shop, Shop)
     has_many(:shop_items, through: [:shop, :shop_items])
+    belongs_to(:trainer, Trainer)
   end
 
   def load_exits(%Room{} = room) do
