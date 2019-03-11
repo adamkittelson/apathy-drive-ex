@@ -569,6 +569,13 @@ defmodule ApathyDrive.Character do
           "<p><span class='yellow'>Your #{attribute} increases to #{Map.get(character, attribute)}!</span></p>"
         )
 
+        if Character.max_level(character) > character.level do
+          Mobile.send_scroll(
+            character,
+            "<p><span class='yellow'>Ready to train to next level!</span></p>"
+          )
+        end
+
         character
       else
         character

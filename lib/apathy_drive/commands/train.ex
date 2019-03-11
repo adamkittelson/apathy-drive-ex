@@ -43,6 +43,7 @@ defmodule ApathyDrive.Commands.Train do
           char_currency = Currency.subtract(character, price_in_copper)
 
           old_abilities = Map.values(character.abilities)
+          old_hp = Mobile.max_hp_at_level(character, character.level)
 
           character =
             character
@@ -67,7 +68,14 @@ defmodule ApathyDrive.Commands.Train do
 
           Mobile.send_scroll(
             character,
-            "<p><span class='yellow'>Your level increases to #{character.level}!</span></p>"
+            "<p>Your level has increased to #{character.level}!</p>"
+          )
+
+          hp_diff = Mobile.max_hp_at_level(character, character.level) - old_hp
+
+          Mobile.send_scroll(
+            character,
+            "<p>Your maximum health is increased by #{hp_diff}.</p>"
           )
 
           Directory.add_character(%{
