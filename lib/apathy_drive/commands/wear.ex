@@ -130,6 +130,7 @@ defmodule ApathyDrive.Commands.Wear do
               |> Map.put(:inventory, inventory)
               |> Map.put(:equipment, equipment)
               |> Character.add_equipped_items_effects()
+              |> Character.load_abilities()
 
             %{equipped: item, unequipped: [item_to_remove], character: character}
 
@@ -165,6 +166,7 @@ defmodule ApathyDrive.Commands.Wear do
               |> Map.put(:inventory, inventory)
               |> Map.put(:equipment, equipment)
               |> Character.add_equipped_items_effects()
+              |> Character.load_abilities()
 
             %{equipped: item, unequipped: items_to_remove, character: character}
 
@@ -188,6 +190,7 @@ defmodule ApathyDrive.Commands.Wear do
               |> Map.put(:inventory, inventory)
               |> Map.put(:equipment, equipment)
               |> Character.add_equipped_items_effects()
+              |> Character.load_abilities()
 
             %{equipped: item, character: character}
         end

@@ -422,21 +422,18 @@ defmodule ApathyDrive.Character do
           {nil, traits}
       end
 
-    character =
-      if ability_id do
-        effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
+    if ability_id do
+      effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
-        character
-        |> Systems.Effect.remove_oldest_stack(ability_id)
-        |> Systems.Effect.add(effect)
-      else
-        effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
+      character
+      |> Systems.Effect.remove_oldest_stack(ability_id)
+      |> Systems.Effect.add(effect)
+    else
+      effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
-        character
-        |> Systems.Effect.add(effect)
-      end
-
-    load_abilities(character)
+      character
+      |> Systems.Effect.add(effect)
+    end
   end
 
   def sanitize(message) do
@@ -1233,6 +1230,7 @@ defmodule ApathyDrive.Character do
         end)
         |> Map.put(:timers, %{})
         |> Character.add_equipped_items_effects()
+        |> Character.load_abilities()
         |> Mobile.update_prompt()
         |> Mobile.cpr()
 

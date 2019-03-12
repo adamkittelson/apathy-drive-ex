@@ -92,52 +92,61 @@ defmodule ApathyDrive.Command do
 
     Logger.info("#{monster && monster.name} command: #{full_command}")
 
-    cond do
-      is_nil(monster) ->
-        room
+    {time, room} =
+      :timer.tc(fn ->
+        cond do
+          is_nil(monster) ->
+            room
 
-      command in @directions ->
-        Commands.Move.execute(room, monster, command)
+          command in @directions ->
+            Commands.Move.execute(room, monster, command)
 
-      command_exit = Room.command_exit(room, full_command) ->
-        Commands.Move.execute(room, monster, Map.put(command_exit, "kind", "Action"))
+          command_exit = Room.command_exit(room, full_command) ->
+            Commands.Move.execute(room, monster, Map.put(command_exit, "kind", "Action"))
 
-      remote_action_exit = Room.remote_action_exit(room, full_command) ->
-        Room.initiate_remote_action(room, monster, remote_action_exit)
+          remote_action_exit = Room.remote_action_exit(room, full_command) ->
+            Room.initiate_remote_action(room, monster, remote_action_exit)
 
-      scripts = Room.command(room, full_command) ->
-        execute_room_command(room, monster, scripts)
+          scripts = Room.command(room, full_command) ->
+            execute_room_command(room, monster, scripts)
 
-      cmd = Match.one(Enum.map(all(), & &1.to_struct), :match_keyword, command) ->
-        cmd.module.execute(room, monster, arguments)
+          cmd = Match.one(Enum.map(all(), & &1.to_struct), :match_keyword, command) ->
+            cmd.module.execute(room, monster, arguments)
 
-      ability = monster.abilities[String.downcase(command)] ->
-        Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
+          ability = monster.abilities[String.downcase(command)] ->
+            Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 
-      scroll = useable_scroll(monster, String.downcase(command)) ->
-        ability = scroll.traits["Learn"]
+          scroll = useable_scroll(monster, String.downcase(command)) ->
+            ability = scroll.traits["Learn"]
 
-        traits = AbilityTrait.load_traits(ability.id)
+            traits = AbilityTrait.load_traits(ability.id)
 
-        traits =
-          case AbilityDamageType.load_damage(ability.id) do
-            [] ->
-              traits
+            traits =
+              case AbilityDamageType.load_damage(ability.id) do
+                [] ->
+                  traits
 
-            damage ->
-              Map.put(traits, "Damage", damage)
-          end
-          |> Map.put("DestroyItem", scroll.instance_id)
-          |> Map.update("RequireItems", [scroll.instance_id], &[scroll.instance_id | &1])
+                damage ->
+                  Map.put(traits, "Damage", damage)
+              end
+              |> Map.put("DestroyItem", scroll.instance_id)
+              |> Map.update("RequireItems", [scroll.instance_id], &[scroll.instance_id | &1])
 
-        ability = Map.put(ability, :traits, traits)
+            ability = Map.put(ability, :traits, traits)
 
-        Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
+            Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 
-      true ->
-        Mobile.send_scroll(monster, "<p>What?</p>")
-        room
-    end
+          true ->
+            Mobile.send_scroll(monster, "<p>What?</p>")
+            room
+        end
+      end)
+
+    Logger.info(
+      "#{full_command} executed for #{monster && monster.name} in #{time / 1000 / 1000} seconds"
+    )
+
+    room
   end
 
   defp useable_scroll(%Character{} = monster, command) do
