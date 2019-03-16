@@ -268,3 +268,6 @@ CHANGELOG
 
 ---- 0.0.99 / 2019-02-18 / greet-and-ask ---------------------------------------
 * greet and ask commands
+
+---- 0.0.100 / 2019-03-16 / kill-bonuses ---------------------------------------
+* bonus exp for killing 10 / 100 / 1000 etc of a monster
