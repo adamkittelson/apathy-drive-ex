@@ -617,7 +617,9 @@ defmodule ApathyDrive.Character do
     Character.add_attribute_experience(character, attribute, 1)
   end
 
-  def add_experience(%Character{} = character, exp, silent \\ false) when exp > 0 do
+  def add_experience(character, exp, silent \\ false)
+
+  def add_experience(%Character{} = character, exp, silent) when exp > 0 do
     modifier = 1 / ((character.race.exp_modifier + character.class.exp_modifier) / 100)
     exp = trunc(exp * modifier)
 
