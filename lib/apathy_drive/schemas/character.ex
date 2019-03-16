@@ -114,6 +114,7 @@ defmodule ApathyDrive.Character do
     field(:delayed, :boolean, virtual: true, default: false)
     field(:sneaking, :boolean, virtual: true, default: false)
     field(:detected_characters, :any, virtual: true, default: MapSet.new())
+    field(:kill_counts, :map, virtual: true, default: %{})
 
     belongs_to(:room, Room)
 
@@ -616,10 +617,11 @@ defmodule ApathyDrive.Character do
     Character.add_attribute_experience(character, attribute, 1)
   end
 
-  def add_experience(%Character{} = character, exp) when exp > 0 do
+  def add_experience(%Character{} = character, exp, silent \\ false) when exp > 0 do
     modifier = 1 / ((character.race.exp_modifier + character.class.exp_modifier) / 100)
     exp = trunc(exp * modifier)
-    Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
+
+    unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
     exp_buffer = character.exp_buffer + exp
 
@@ -636,7 +638,7 @@ defmodule ApathyDrive.Character do
     Character.update_exp_bar(character)
   end
 
-  def add_experience(character, _exp), do: character
+  def add_experience(character, _exp, _silent), do: character
 
   def train_skill(%Character{} = character, %Skill{} = skill, amount) when amount > 0 do
     skill = Repo.preload(skill, :incompatible_skills)
