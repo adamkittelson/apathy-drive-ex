@@ -10,6 +10,7 @@ defmodule ApathyDrive.Monster do
     Regeneration,
     Item,
     ItemInstance,
+    KillCount,
     Mobile,
     Monster,
     MonsterAbility,
@@ -474,7 +475,7 @@ defmodule ApathyDrive.Monster do
       room =
         Enum.reduce(room.mobiles, room, fn
           {ref, %Character{} = character}, updated_room ->
-            room =
+            updated_room =
               Room.update_mobile(updated_room, ref, fn character ->
                 message =
                   monster.death_message
@@ -486,13 +487,12 @@ defmodule ApathyDrive.Monster do
                 character
                 |> Character.add_experience(monster.experience)
                 |> Character.add_currency_from_monster(monster)
-
-                # Monster.generate_loot_for_character(monster, character)
+                |> KillCount.increment(monster)
               end)
               |> Monster.drop_loot_for_character(monster, character)
 
-            Room.update_moblist(room)
-            room
+            Room.update_moblist(updated_room)
+            updated_room
 
           _, updated_room ->
             updated_room

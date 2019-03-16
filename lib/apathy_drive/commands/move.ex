@@ -182,6 +182,13 @@ defmodule ApathyDrive.Commands.Move do
             character
         end
 
+      character =
+        if room.area_id != room_exit["area"] do
+          ApathyDrive.KillCount.clear_kill_counts(character)
+        else
+          character
+        end
+
       destination_id
       |> RoomServer.find()
       |> RoomServer.mobile_entered(character)
@@ -231,6 +238,13 @@ defmodule ApathyDrive.Commands.Move do
         character,
         "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>"
       )
+
+      character =
+        if room.area_id != room_exit["area"] do
+          ApathyDrive.KillCount.clear_kill_counts(character)
+        else
+          character
+        end
 
       destination_id
       |> RoomServer.find()

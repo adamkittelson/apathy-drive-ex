@@ -578,6 +578,8 @@ defmodule ApathyDrive.Ability do
           room =
             Enum.reduce(targets, room, fn target_ref, updated_room ->
               Room.update_mobile(updated_room, target_ref, fn target ->
+                caster = updated_room.mobiles[caster.ref]
+
                 if affects_target?(target, ability) do
                   updated_room = apply_ability(updated_room, caster, target, ability)
 
