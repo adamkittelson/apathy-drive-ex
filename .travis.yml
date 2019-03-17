@@ -1,8 +1,8 @@
 language: elixir
 elixir:
-  - 1.7.4
+  - 1.8.1
 otp_release:
-  - 21.1
+  - 23.1
 addons:
   postgresql: '9.5'
 notifications:
