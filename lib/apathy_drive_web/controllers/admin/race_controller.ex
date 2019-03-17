@@ -19,7 +19,7 @@ defmodule ApathyDriveWeb.Admin.RaceController do
       {:ok, race} ->
         conn
         |> put_flash(:info, "Race created successfully.")
-        |> redirect(to: race_path(conn, :show, race))
+        |> redirect(to: Routes.race_path(conn, :show, race))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -44,7 +44,7 @@ defmodule ApathyDriveWeb.Admin.RaceController do
       {:ok, race} ->
         conn
         |> put_flash(:info, "Race updated successfully.")
-        |> redirect(to: race_path(conn, :edit, race))
+        |> redirect(to: Routes.race_path(conn, :edit, race))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", race: race, changeset: changeset)
@@ -57,6 +57,6 @@ defmodule ApathyDriveWeb.Admin.RaceController do
 
     conn
     |> put_flash(:info, "Race deleted successfully.")
-    |> redirect(to: race_path(conn, :index))
+    |> redirect(to: Routes.race_path(conn, :index))
   end
 end

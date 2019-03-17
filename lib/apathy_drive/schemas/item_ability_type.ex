@@ -7,7 +7,7 @@ defmodule ApathyDrive.ItemAbilityType do
 
     field(:delete, :boolean, virtual: true)
 
-    has_many(:item_abilities, ApathyDrive.ItemAbility)
+    has_many(:item_abilities, ApathyDrive.ItemAbility, foreign_key: :type_id)
   end
 
   @required_fields ~w(name)a

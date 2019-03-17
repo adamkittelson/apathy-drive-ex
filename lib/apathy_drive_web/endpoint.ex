@@ -1,10 +1,12 @@
 defmodule ApathyDriveWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :apathy_drive
 
-  socket "/ws", ApathyDriveWeb.UserSocket
+  socket "/ws", ApathyDriveWeb.UserSocket, websocket: true
 
   plug Plug.Static,
-    at: "/", from: :apathy_drive, gzip: false,
+    at: "/",
+    from: :apathy_drive,
+    gzip: false,
     only: ~w(css fonts images js themes favicon.ico robots.txt)
 
   # Code reloading will only work if the :code_reloader key of

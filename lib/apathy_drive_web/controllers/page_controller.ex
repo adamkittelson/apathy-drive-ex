@@ -18,7 +18,7 @@ defmodule ApathyDriveWeb.PageController do
           %Character{id: id, name: nil} ->
             conn
             |> put_session(:character, id)
-            |> redirect(to: character_path(conn, :edit))
+            |> redirect(to: Routes.character_path(conn, :edit))
 
           %Character{} ->
             conn

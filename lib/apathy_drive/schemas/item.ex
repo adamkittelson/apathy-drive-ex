@@ -43,7 +43,7 @@ defmodule ApathyDrive.Item do
     field(:required_strength, :integer)
 
     field(:instance_id, :integer, virtual: true)
-    field(:delete_at, :utc_datetime, virtual: true)
+    field(:delete_at, :utc_datetime_usec, virtual: true)
     field(:dropped_for_character_id, :integer, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
     field(:traits, :map, virtual: true, default: %{})

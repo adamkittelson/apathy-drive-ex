@@ -4,5 +4,5 @@
   <%= @race.description %>
 </p>
 
-<span><%= link "Edit", to: race_path(@conn, :edit, @race) %></span>
-<span><%= link "Back", to: race_path(@conn, :index) %></span>
+<span><%= link "Edit", to: Routes.race_path(@conn, :edit, @race) %></span>
+<span><%= link "Back", to: Routes.race_path(@conn, :index) %></span>

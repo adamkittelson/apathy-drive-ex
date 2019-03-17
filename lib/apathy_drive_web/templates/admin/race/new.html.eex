@@ -1,5 +1,5 @@
 <h2>New Race</h2>
 
-<%= render "form.html", Map.put(assigns, :action, race_path(@conn, :create)) %>
+<%= render "form.html", Map.put(assigns, :action, Routes.race_path(@conn, :create)) %>
 
-<span><%= link "Back", to: race_path(@conn, :index) %></span>
+<span><%= link "Back", to: Routes.race_path(@conn, :index) %></span>

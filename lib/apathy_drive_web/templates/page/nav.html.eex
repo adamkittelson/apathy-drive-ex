@@ -54,7 +54,7 @@
       <% end %>
       <%= if @conn.assigns[:character] do %>
         <li class="navbar-item">
-          <%= link "Sign out", to: session_path(@conn, :delete, @conn.assigns[:character]), method: :delete, class: "navbar-link" %>
+          <%= link "Sign out", to: Routes.session_path(@conn, :delete, @conn.assigns[:character]), method: :delete, class: "navbar-link" %>
         </li>
       <% end %>
     </ul>

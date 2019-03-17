@@ -8,7 +8,7 @@ defmodule ApathyDrive.ShopItem do
     field(:restock_frequency_in_minutes, :integer)
     field(:restock_chance, :integer)
     field(:restock_amount, :integer)
-    field(:next_restock_at, :utc_datetime)
+    field(:next_restock_at, :utc_datetime_usec)
     field(:count, :integer, virtual: true, default: 0)
     field(:name, :string, virtual: true)
 

@@ -7,7 +7,7 @@ config :apathy_drive, ApathyDriveWeb.Endpoint,
   watchers: [{Path.expand("node_modules/brunch/bin/brunch"), ["watch"]}],
   live_reload: [
     # url is optional
-    url: "ws://localhost:4000", 
+    url: "ws://localhost:4000",
     # `:patterns` replace `:paths` and are required for live reload
     patterns: [~r{priv/static/.*(js|css|png|jpeg|jpg|gif)$},
                ~r{web/views/.*(ex)$},
@@ -22,5 +22,4 @@ config :apathy_drive, ApathyDrive.Repo,
   database: "YOUR_DEV_DB",
   username: "YOUR_DEV_USER",
   password: "YOUR_DEV_PASSWORD",
-  hostname: "YOUR_DEV_HOST",
-  adapter: Ecto.Adapters.Postgres
+  hostname: "YOUR_DEV_HOST"

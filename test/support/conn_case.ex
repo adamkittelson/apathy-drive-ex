@@ -26,7 +26,7 @@ defmodule ApathyDriveWeb.ConnCase do
       import Ecto.Query, only: [from: 2]
 
       # Import URL helpers from the router
-      import ApathyDriveWeb.Router.Helpers
+      alias ApathyDriveWeb.Router.Helpers, as: Routes
 
       def session_conn() do
         opts =

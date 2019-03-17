@@ -19,7 +19,7 @@ defmodule ApathyDriveWeb.Admin.ClassController do
       {:ok, class} ->
         conn
         |> put_flash(:info, "Class created successfully.")
-        |> redirect(to: class_path(conn, :edit, class))
+        |> redirect(to: Routes.class_path(conn, :edit, class))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
@@ -45,7 +45,7 @@ defmodule ApathyDriveWeb.Admin.ClassController do
       {:ok, class} ->
         conn
         |> put_flash(:info, "Class updated successfully.")
-        |> redirect(to: class_path(conn, :edit, class))
+        |> redirect(to: Routes.class_path(conn, :edit, class))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", class: class, changeset: changeset)
@@ -58,6 +58,6 @@ defmodule ApathyDriveWeb.Admin.ClassController do
 
     conn
     |> put_flash(:info, "Class deleted successfully.")
-    |> redirect(to: class_path(conn, :index))
+    |> redirect(to: Routes.class_path(conn, :index))
   end
 end

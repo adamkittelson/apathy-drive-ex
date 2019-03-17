@@ -26,12 +26,12 @@
       <td><%= race.charm %></td>
 
       <td class="text-right">
-        <span><%= link "Edit", to: race_path(@conn, :edit, race), class: "btn btn-default btn-xs" %></span>
-        <span><%= link "Delete", to: race_path(@conn, :delete, race), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
+        <span><%= link "Edit", to: Routes.race_path(@conn, :edit, race), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Delete", to: Routes.race_path(@conn, :delete, race), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
 
-<span><%= link "New Race", to: race_path(@conn, :new) %></span>
+<span><%= link "New Race", to: Routes.race_path(@conn, :new) %></span>

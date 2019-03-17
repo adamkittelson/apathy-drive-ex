@@ -26,7 +26,7 @@ defmodule ApathyDriveWeb.CharacterController do
       {:ok, character} ->
         conn
         |> put_session(:character, character.id)
-        |> redirect(to: game_path(conn, :game))
+        |> redirect(to: Routes.game_path(conn, :game))
 
       {:error, changeset} ->
         render(
@@ -63,7 +63,7 @@ defmodule ApathyDriveWeb.CharacterController do
         |> Repo.save!()
 
         conn
-        |> redirect(to: game_path(conn, :game))
+        |> redirect(to: Routes.game_path(conn, :game))
 
       {:error, changeset} ->
         render(conn, "edit.html", changeset: changeset)

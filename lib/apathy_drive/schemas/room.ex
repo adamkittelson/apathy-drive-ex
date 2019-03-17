@@ -58,7 +58,6 @@ defmodule ApathyDrive.Room do
 
     timestamps()
 
-    has_many(:persisted_mobiles, Monster)
     has_many(:placed_items, PlacedItem)
     belongs_to(:ability, Ability)
     belongs_to(:area, ApathyDrive.Area)

@@ -22,7 +22,7 @@ defmodule ApathyDriveWeb do
       import Phoenix.Controller, only: [get_csrf_token: 0, get_flash: 2, view_module: 1]
 
       # Import URL helpers from the router
-      import ApathyDriveWeb.Router.Helpers
+      alias ApathyDriveWeb.Router.Helpers, as: Routes
       import ApathyDriveWeb.ErrorHelpers
       import ApathyDriveWeb.Gettext
 
@@ -39,7 +39,7 @@ defmodule ApathyDriveWeb do
       alias ApathyDrive.Repo
       import Ecto
       import Ecto.Query
-      import ApathyDriveWeb.Router.Helpers
+      alias ApathyDriveWeb.Router.Helpers, as: Routes
       import ApathyDriveWeb.Gettext
     end
   end

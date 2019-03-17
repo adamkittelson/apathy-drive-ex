@@ -9,7 +9,7 @@
     <li id="signup_tab">Create a Character</li>
   </ul>
 
-  <%= form_for @conn, session_path(@conn, :create), [as: :session, id: "signin_form"], fn f -> %>
+  <%= form_for @conn, Routes.session_path(@conn, :create), [as: :session, id: "signin_form"], fn f -> %>
     <div class="alert alert-danger">
       <%= get_flash(@conn, :sign_in) %>
     </div>
@@ -29,7 +29,7 @@
     </div>
   <% end %>
 
-  <%= form_for @changeset, character_path(@conn, :create), [id: "signup_form", style: "display: none"], fn f -> %>
+  <%= form_for @changeset, Routes.character_path(@conn, :create), [id: "signup_form", style: "display: none"], fn f -> %>
     <div class="form-group">
       <label for="name">Character Name <%= error_tag f, :name %></label>
       <%= text_input f, :name, class: "u-full-width" %>
