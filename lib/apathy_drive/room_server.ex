@@ -629,7 +629,7 @@ defmodule ApathyDrive.RoomServer do
               mobile
               |> put_in(
                 [Access.key!(:effects), key, "NextEffectAt"],
-                System.monotonic_time(:milliseconds) + interval
+                System.monotonic_time(:millisecond) + interval
               )
               |> Systems.Effect.schedule_next_periodic_effect()
             end)
