@@ -1,22 +1,24 @@
+import $ from "js/jquery-1.10.2.min";
+
 $(document).ready(function () {
   show_tab(tab);
   show_race($("#race").val())
   show_class($("#class").val())
 });
 
-$(document).on("click", "#signup_tab", function (event) {
+$("#signup_tab").on("click", function (event) {
   show_tab("signup_tab")
 });
 
-$(document).on("click", "#signin_tab", function (event) {
+$("#signin_tab").on("click", function (event) {
   show_tab("signin_tab")
 });
 
-$(document).on("change", "#race", function (event) {
+$("#race").on("change", function (event) {
   show_race(event.target.value)
 });
 
-$(document).on("change", "#class", function (event) {
+$("#class").on("change", function (event) {
   show_class(event.target.value)
 });
 

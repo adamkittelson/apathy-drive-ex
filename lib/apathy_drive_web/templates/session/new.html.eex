@@ -1,5 +1,4 @@
 <%= render ApathyDriveWeb.PageView, "nav.html", conn: @conn %>
-<script src="<%= Routes.static_path(@conn, "/js/signup.js") %>"></script>
 <script>
   var tab = "<%= @tab %>"
 </script>
@@ -89,3 +88,7 @@
   <% end %>
 
 </div>
+
+
+<script>require("js/signup")</script>
+<script>require("js/nav")</script>

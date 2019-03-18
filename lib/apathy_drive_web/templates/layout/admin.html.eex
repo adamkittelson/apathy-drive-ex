@@ -12,12 +12,19 @@
   <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/nav.css") %>">
   <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/admin.css") %>">
   <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/components.css") %>">
-  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
-  <script src="<%= Routes.static_path(@conn, "/js/nav.js") %>"></script>
-  <script src="<%= Routes.static_path(@conn, "/js/admin.js") %>"></script>
+  <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+  <script>require("js/jquery-1.10.2.min");</script>
+  <script>require("js/nav");</script>
+  <script>require("js/admin/fontawesome-all")</script>
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://unpkg.com/vuex"></script>
+  <script src="https://unpkg.com/vuetify/dist/vuetify.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
   <script>
+    require("phoenix_html");
     var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"
+    require("js/nav");
+    require("js/admin/admin.js");
   </script>
 </head>
 <body class="admin">

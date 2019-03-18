@@ -1,4 +1,3 @@
-//import css from '../css/app.css';
 import "phoenix_html"
 import { Socket } from "phoenix"
 
@@ -62,10 +61,7 @@ var socket = new Socket("" + (window.location.origin.replace('http', 'ws')) + "/
 socket.connect();
 var chan = socket.channel("mud:play", { character: characterID });
 
-chan.join().receive("error", ({ reason }) =>
-  //window.location = "" + window.location.origin
-  console.log(reason)
-)
+chan.join().receive("error", ({ reason }) => window.location = "" + window.location.origin)
 
 // chan.on("room", function(message){
 //   updateRoom(message.html);
@@ -186,9 +182,7 @@ chan.on("update room essence", function (message) {
 });
 
 chan.on("redirect", function (message) {
-  //window.location = "" + window.location.origin + message.url;
-  console.log("redirect")
-  console.log(message)
+  window.location = "" + window.location.origin + message.url;
 });
 
 chan.on("open tab", function (message) {
