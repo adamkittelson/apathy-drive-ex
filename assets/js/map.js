@@ -1,5 +1,4 @@
 import { Socket } from "phoenix"
-import $ from "js/jquery-1.10.2.min";
 
 $(document).ready(function () {
 

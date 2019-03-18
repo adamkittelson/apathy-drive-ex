@@ -1,5 +1,3 @@
-import $ from "js/jquery-1.10.2.min";
-
 $(document).ready(function () {
   $("#add_trait").click(function (event) {
     event.preventDefault()
