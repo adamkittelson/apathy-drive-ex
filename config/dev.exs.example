@@ -4,7 +4,14 @@ config :apathy_drive, ApathyDriveWeb.Endpoint,
   http: [port: 4000],
   debug_errors: true,
   cache_static_lookup: false,
-  watchers: [{Path.expand("node_modules/brunch/bin/brunch"), ["watch"]}],
+  watchers: [
+    node: [
+      "node_modules/brunch/bin/brunch",
+      "watch",
+      "--stdin",
+      cd: Path.expand("../assets", __DIR__)
+    ]
+  ],
   live_reload: [
     # url is optional
     url: "ws://localhost:4000",
