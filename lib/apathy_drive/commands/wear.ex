@@ -2,7 +2,7 @@ defmodule ApathyDrive.Commands.Wear do
   use ApathyDrive.Command
   alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo}
 
-  def keywords, do: ["wear", "equip", "wield"]
+  def keywords, do: ["wear", "equip", "eq", "wield", "arm", "ar"]
 
   def execute(%Room{} = room, %Character{} = character, []) do
     Mobile.send_scroll(character, "<p>Equip what?</p>")
