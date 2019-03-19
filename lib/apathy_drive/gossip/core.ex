@@ -10,6 +10,11 @@ defmodule ApathyDrive.Gossip.Core do
   }
 
   @impl true
+  def authenticated do
+    :noop
+  end
+
+  @impl true
   def user_agent do
     "Apathy Drive v#{to_string(Application.spec(:apathy_drive, :vsn))}"
   end

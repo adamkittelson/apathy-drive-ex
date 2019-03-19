@@ -1533,7 +1533,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Interval", 1000)
     |> Map.put(
       "NextEffectAt",
-      System.monotonic_time(:milliseconds) + 1000
+      System.monotonic_time(:millisecond) + 1000
     )
   end
 
@@ -1553,7 +1553,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
     |> Map.put(
       "NextEffectAt",
-      System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4
+      System.monotonic_time(:millisecond) + Mobile.round_length_in_ms(caster) / 4
     )
   end
 
@@ -1569,7 +1569,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
     |> Map.put(
       "NextEffectAt",
-      System.monotonic_time(:milliseconds) + Mobile.round_length_in_ms(caster) / 4
+      System.monotonic_time(:millisecond) + Mobile.round_length_in_ms(caster) / 4
     )
   end
 

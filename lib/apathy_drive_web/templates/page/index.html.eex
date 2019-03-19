@@ -1,9 +1,9 @@
 <section class="header">
   <h1 class="title">Apotheosis</h1>
   <%= if assigns[:character] do %>
-    <a class="button button-primary" href="<%= game_path @conn, :game %>">Play</a>
+    <a class="button button-primary" href="<%= Routes.game_path @conn, :game %>">Play</a>
   <% else %>
-    <a class="button button-primary" href="<%= session_path @conn, :new %>">Sign in</a>
+    <a class="button button-primary" href="<%= Routes.session_path @conn, :new %>">Sign in</a>
   <% end %>
 
   <div class="value-props row">

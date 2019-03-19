@@ -13,5 +13,4 @@ config :apathy_drive, ApathyDrive.Repo,
   database: System.get_env("DB_DATABASE"),
   username: System.get_env("DB_USERNAME"),
   password: System.get_env("DB_PASSWORD"),
-  hostname: System.get_env("DB_HOSTNAME"),
-  adapter: Ecto.Adapters.Postgres
+  hostname: System.get_env("DB_HOSTNAME")

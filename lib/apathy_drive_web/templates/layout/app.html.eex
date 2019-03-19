@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600,100' rel='stylesheet' type='text/css'>
   <link href='//fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="<%= static_path(@conn, "/css/normalize.css") %>">
-  <link rel="stylesheet" href="<%= static_path(@conn, "/css/skeleton.css") %>">
-  <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
-  <link rel="stylesheet" href="<%= static_path(@conn, "/css/nav.css") %>">
-  <link rel="stylesheet" href="<%= static_path(@conn, "/css/components.css") %>">
-  <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+  <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/normalize.css") %>">
+  <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/skeleton.css") %>">
+  <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>">
+  <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/nav.css") %>">
+  <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/components.css") %>">
+  <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   <script>require("js/jquery-1.10.2.min");</script>
   <script>require("js/nav");</script>
   <script src="https://unpkg.com/vue"></script>

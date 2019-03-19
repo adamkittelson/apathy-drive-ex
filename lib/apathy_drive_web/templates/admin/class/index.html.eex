@@ -16,12 +16,12 @@
       <td><%= class.description %></td>
 
       <td class="text-right">
-        <span><%= link "Edit", to: class_path(@conn, :edit, class), class: "btn btn-default btn-xs" %></span>
-        <span><%= link "Delete", to: class_path(@conn, :delete, class), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
+        <span><%= link "Edit", to: Routes.class_path(@conn, :edit, class), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Delete", to: Routes.class_path(@conn, :delete, class), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
 
-<span><%= link "New Class", to: class_path(@conn, :new) %></span>
+<span><%= link "New Class", to: Routes.class_path(@conn, :new) %></span>

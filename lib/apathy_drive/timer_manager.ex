@@ -15,7 +15,7 @@ defmodule ApathyDrive.TimerManager do
   end
 
   def apply_timers(%Room{timers: timers} = room) do
-    now = DateTime.utc_now() |> DateTime.to_unix(:milliseconds)
+    now = DateTime.utc_now() |> DateTime.to_unix(:millisecond)
 
     timers
     |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
@@ -31,7 +31,7 @@ defmodule ApathyDrive.TimerManager do
   end
 
   def apply_timers(%Room{} = room, mobile_ref) do
-    now = DateTime.utc_now() |> DateTime.to_unix(:milliseconds)
+    now = DateTime.utc_now() |> DateTime.to_unix(:millisecond)
 
     Room.update_mobile(room, mobile_ref, fn %{timers: timers} ->
       timers
@@ -55,7 +55,7 @@ defmodule ApathyDrive.TimerManager do
 
   def time_remaining(%{timers: timers}, name) do
     if timer = Map.get(timers, name) do
-      timer.send_at - DateTime.to_unix(DateTime.utc_now(), :milliseconds)
+      timer.send_at - DateTime.to_unix(DateTime.utc_now(), :millisecond)
     else
       0
     end

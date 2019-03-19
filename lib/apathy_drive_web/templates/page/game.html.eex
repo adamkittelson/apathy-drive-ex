@@ -46,7 +46,7 @@
 
 <script>var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"</script>
 
-<script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+<script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.2/pixi.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.2.7/interact.min.js"></script>
 <script>require("js/app")</script>

@@ -23,7 +23,7 @@ defmodule ApathyDriveWeb.SessionController do
         conn
         |> put_session(:character, character.id)
 
-      redirect(conn, to: game_path(conn, :game, %{}))
+      redirect(conn, to: Routes.game_path(conn, :game, %{}))
     else
       email_or_password_incorrect(conn)
     end

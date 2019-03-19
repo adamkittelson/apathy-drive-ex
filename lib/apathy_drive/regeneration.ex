@@ -32,7 +32,7 @@ defmodule ApathyDrive.Regeneration do
   def energy_since_last_tick(%{last_tick_at: nil} = mobile), do: energy_per_tick(mobile)
 
   def energy_since_last_tick(%{last_tick_at: last_tick} = mobile) do
-    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :milliseconds)
+    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
     energy_per_tick = energy_per_tick(mobile)
     energy = energy_per_tick * ms_since_last_tick / tick_time(mobile)
 
@@ -43,7 +43,7 @@ defmodule ApathyDrive.Regeneration do
     do: regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
 
   def hp_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
-    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :milliseconds)
+    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
     hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
     hp = hp_per_tick * ms_since_last_tick / tick_time(mobile)
 
@@ -54,7 +54,7 @@ defmodule ApathyDrive.Regeneration do
     do: regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
 
   def mana_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
-    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :milliseconds)
+    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
     mana_per_tick = regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
     mana = mana_per_tick * ms_since_last_tick / tick_time(mobile)
 

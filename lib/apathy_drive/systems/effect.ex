@@ -224,7 +224,7 @@ defmodule Systems.Effect do
     |> List.first()
     |> case do
       %{"NextEffectAt" => time, "effect_ref" => ref} ->
-        %{time: time - System.monotonic_time(:milliseconds), ref: ref}
+        %{time: time - System.monotonic_time(:millisecond), ref: ref}
 
       _ ->
         nil

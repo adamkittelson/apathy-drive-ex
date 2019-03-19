@@ -16,16 +16,16 @@
       <td><%= ability.description %></td>
 
       <td class="text-right">
-        <span><%= link "Show", to: ability_path(@conn, :show, ability), class: "btn btn-default btn-xs" %></span>
-        <span><%= link "Edit", to: ability_path(@conn, :edit, ability), class: "btn btn-default btn-xs" %></span>
-        <span><%= link "Delete", to: ability_path(@conn, :delete, ability), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
+        <span><%= link "Show", to: Routes.ability_path(@conn, :show, ability), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Edit", to: Routes.ability_path(@conn, :edit, ability), class: "btn btn-default btn-xs" %></span>
+        <span><%= link "Delete", to: Routes.ability_path(@conn, :delete, ability), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %></span>
       </td>
     </tr>
 <% end %>
   </tbody>
 </table>
 
-<span><%= link "New Ability", to: ability_path(@conn, :new) %></span>
+<span><%= link "New Ability", to: Routes.ability_path(@conn, :new) %></span>
 
 <!--
 <template id="abilities">

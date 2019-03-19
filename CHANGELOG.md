@@ -271,3 +271,6 @@ CHANGELOG
 
 ---- 0.0.100 / 2019-03-16 / kill-bonuses ---------------------------------------
 * bonus exp for killing 10 / 100 / 1000 etc of a monster
+
+---- 0.0.101 / 2019-03-18 / upgrades -------------------------------------------
+* upgrade erlang / elixir / phoenix
