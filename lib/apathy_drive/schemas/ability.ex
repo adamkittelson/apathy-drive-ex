@@ -1023,14 +1023,8 @@ defmodule ApathyDrive.Ability do
     {caster, Map.put(target, :ability_shift, value)}
   end
 
-  def apply_instant_trait({"Heal", value}, %{} = target, ability, caster, _room) do
-    roll = Enum.random(value["min"]..value["max"])
-
-    attribute_value = Mobile.spellcasting_at_level(caster, caster.level, ability)
-
-    modifier = (attribute_value + 50) / 100
-
-    healing = roll * modifier
+  def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room) do
+    healing = Enum.random(value["min"]..value["max"])
 
     percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
 

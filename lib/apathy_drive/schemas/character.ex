@@ -423,15 +423,27 @@ defmodule ApathyDrive.Character do
           {nil, traits}
       end
 
-    if ability_id do
-      effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
+    effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
+    effect =
+      if "Heal" in Map.keys(traits) do
+        effect
+        |> Map.put("Interval", 1000)
+        |> Map.put(
+          "NextEffectAt",
+          System.monotonic_time(:millisecond) + 1000
+        )
+        |> Map.put("effect_ref", make_ref())
+      else
+        effect
+      end
+
+    if ability_id do
       character
       |> Systems.Effect.remove_oldest_stack(ability_id)
       |> Systems.Effect.add(effect)
+      |> Systems.Effect.schedule_next_periodic_effect()
     else
-      effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
-
       character
       |> Systems.Effect.add(effect)
     end
