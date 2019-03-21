@@ -426,6 +426,13 @@ defmodule ApathyDrive.Character do
     effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
     effect =
+      if "DamageShield" in Map.keys(effect) do
+        Ability.process_duration_trait({"Damage", effect["Damage"]}, effect, nil, nil, nil, nil)
+      else
+        effect
+      end
+
+    effect =
       if "Heal" in Map.keys(traits) do
         Ability.process_duration_trait(
           {"Heal", traits["Heal"]},

@@ -964,16 +964,16 @@ defmodule ApathyDrive.Ability do
       |> Map.get(:effects)
       |> Map.values()
       |> Enum.filter(&Map.has_key?(&1, "DamageShield"))
-      |> Enum.reduce(room, fn %{"DamageShield" => _, "Damage" => damage} = shield, updated_room ->
+      |> Enum.reduce(room, fn %{"DamageShield" => shield}, updated_room ->
         reaction = %Ability{
           kind: "attack",
           mana: 0,
           energy: 0,
-          user_message: shield["DamageShieldUserMessage"],
-          target_message: shield["DamageShieldTargetMessage"],
-          spectator_message: shield["DamageShieldSpectatorMessage"],
+          user_message: shield["UserMessage"],
+          target_message: shield["TargetMessage"],
+          spectator_message: shield["SpectatorMessage"],
           traits: %{
-            "Damage" => damage
+            "Damage" => shield["Damage"]
           }
         }
 
@@ -1004,8 +1004,16 @@ defmodule ApathyDrive.Ability do
   def apply_instant_traits(%{} = target, %Ability{} = ability, %{} = caster, room) do
     ability.traits
     |> Map.take(@instant_traits)
-    |> Enum.reduce({caster, target}, fn trait, {updated_caster, updated_target} ->
-      apply_instant_trait(trait, updated_target, ability, updated_caster, room)
+    |> Enum.reduce({caster, target}, fn
+      {"Damage", _} = trait, {updated_caster, updated_target} ->
+        if "DamageShield" in Map.keys(ability.traits) do
+          {updated_caster, updated_target}
+        else
+          apply_instant_trait(trait, updated_target, ability, updated_caster, room)
+        end
+
+      trait, {updated_caster, updated_target} ->
+        apply_instant_trait(trait, updated_target, ability, updated_caster, room)
     end)
   end
 
@@ -1466,7 +1474,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def process_duration_trait(
-        {"Damage", _damages},
+        {"Damage", damages},
         %{"DamageShield" => _} = effects,
         _target,
         _caster,
@@ -1474,6 +1482,15 @@ defmodule ApathyDrive.Ability do
         _room
       ) do
     effects
+    |> Map.put("DamageShield", %{})
+    |> put_in(["DamageShield", "Damage"], damages)
+    |> put_in(["DamageShield", "UserMessage"], effects["DamageShieldUserMessage"])
+    |> put_in(["DamageShield", "TargetMessage"], effects["DamageShieldTargetMessage"])
+    |> put_in(["DamageShield", "SpectatorMessage"], effects["DamageShieldSpectatorMessage"])
+    |> Map.delete("Damage")
+    |> Map.delete("DamageShieldUserMessage")
+    |> Map.delete("DamageShieldTargetMessage")
+    |> Map.delete("DamageShieldSpectatorMessage")
   end
 
   def process_duration_trait({"Damage", damages}, effects, _target, _caster, _ability, _room)
@@ -1557,7 +1574,11 @@ defmodule ApathyDrive.Ability do
   end
 
   def process_duration_trait({trait, value}, effects, _target, _caster, _ability, _room) do
-    put_in(effects[trait], value)
+    if trait in Map.values(effects) do
+      put_in(effects[trait], value)
+    else
+      effects
+    end
   end
 
   def affects_target?(%{} = target, %Ability{} = ability) do
