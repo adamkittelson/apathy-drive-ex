@@ -643,13 +643,25 @@ defmodule ApathyDrive.Monster do
     end
 
     def heartbeat(%Monster{} = monster, %Room{} = room) do
-      Room.update_mobile(room, monster.ref, fn monster ->
-        monster
-        |> Regeneration.regenerate(room)
-        |> RoomServer.execute_casting_ability(room)
-      end)
-      |> ApathyDrive.Aggression.react(monster.ref)
-      |> AI.think(monster.ref)
+      room =
+        Room.update_mobile(room, monster.ref, fn monster ->
+          monster
+          |> Regeneration.regenerate(room)
+          |> RoomServer.execute_casting_ability(room)
+        end)
+        |> ApathyDrive.Aggression.react(monster.ref)
+        |> AI.think(monster.ref)
+
+      monster = room.mobiles[monster.ref]
+
+      max_hp = Mobile.max_hp_at_level(monster, monster.level)
+      hp = trunc(max_hp * monster.hp)
+
+      if hp < 1 do
+        Mobile.die(monster, room)
+      else
+        room
+      end
     end
 
     def hp_regen_per_round(%Monster{} = monster) do

@@ -1453,7 +1453,6 @@ defmodule ApathyDrive.Ability do
 
       target
       |> Systems.Effect.add(effects, :timer.seconds(duration))
-      |> Systems.Effect.schedule_next_periodic_effect()
     else
       target
     end
@@ -1524,31 +1523,21 @@ defmodule ApathyDrive.Ability do
 
     effects
     |> Map.put("Damage", damage_percent)
-    |> Map.put("Interval", 1000)
-    |> Map.put(
-      "NextEffectAt",
-      System.monotonic_time(:millisecond) + 1000
-    )
   end
 
   def process_duration_trait({"Heal", value}, effects, target, caster, ability, _room) do
-    roll = Enum.random(value["min"]..value["max"])
+    average = (value["min"] + value["max"]) / 2
 
     attribute_value = Mobile.spellcasting_at_level(caster, caster.level, ability)
 
     modifier = (attribute_value + 50) / 100
 
-    healing = roll * modifier
+    healing = average * modifier
 
     percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
 
     effects
     |> Map.put("Heal", percentage_healed)
-    |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
-    |> Map.put(
-      "NextEffectAt",
-      System.monotonic_time(:millisecond) + Mobile.round_length_in_ms(caster) / 4
-    )
   end
 
   def process_duration_trait({"HealMana", value}, effects, target, caster, _ability, _room) do

@@ -450,12 +450,24 @@ defmodule ApathyDrive.Companion do
     end
 
     def heartbeat(%Companion{} = companion, %Room{} = room) do
-      Room.update_mobile(room, companion.ref, fn companion ->
-        companion
-        |> Regeneration.regenerate(room)
-        |> RoomServer.execute_casting_ability(room)
-      end)
-      |> AI.think(companion.ref)
+      room =
+        Room.update_mobile(room, companion.ref, fn companion ->
+          companion
+          |> Regeneration.regenerate(room)
+          |> RoomServer.execute_casting_ability(room)
+        end)
+        |> AI.think(companion.ref)
+
+      companion = room.mobiles[companion.ref]
+
+      max_hp = Mobile.max_hp_at_level(companion, companion.level)
+      hp = trunc(max_hp * companion.hp)
+
+      if hp < 1 do
+        Mobile.die(companion, room)
+      else
+        room
+      end
     end
 
     def exhausted(_companion), do: false

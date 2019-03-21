@@ -39,15 +39,28 @@ defmodule ApathyDrive.Regeneration do
     min(energy, energy_per_tick)
   end
 
-  def hp_since_last_tick(room, %{last_tick_at: nil} = mobile),
-    do: regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
+  def hp_since_last_tick(room, %{last_tick_at: nil} = mobile) do
+    regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile)) + heal_effect_per_tick(mobile) -
+      damage_effect_per_tick(mobile)
+  end
 
   def hp_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
     hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
-    hp = hp_per_tick * ms_since_last_tick / tick_time(mobile)
 
-    min(hp, hp_per_tick)
+    total_hp_per_tick =
+      hp_per_tick + heal_effect_per_tick(mobile) - damage_effect_per_tick(mobile)
+
+    hp = total_hp_per_tick * ms_since_last_tick / tick_time(mobile)
+    min(hp, total_hp_per_tick)
+  end
+
+  def heal_effect_per_tick(%{} = mobile) do
+    Mobile.ability_value(mobile, "Heal") / @ticks_per_round
+  end
+
+  def damage_effect_per_tick(%{} = mobile) do
+    Mobile.ability_value(mobile, "Damage") / @ticks_per_round
   end
 
   def mana_since_last_tick(room, %{last_tick_at: nil} = mobile),
@@ -104,7 +117,7 @@ defmodule ApathyDrive.Regeneration do
 
   def regen_per_tick(room, %Character{} = mobile, regen) do
     if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
-         !taking_damage?(mobile) do
+         !taking_damage?(regen) do
       regen / @ticks_per_round * 10
     else
       regen / @ticks_per_round
@@ -116,11 +129,7 @@ defmodule ApathyDrive.Regeneration do
     regen / @ticks_per_round
   end
 
-  defp taking_damage?(%{} = mobile) do
-    mobile.effects
-    |> Map.values()
-    |> Enum.find(fn effect ->
-      Map.has_key?(effect, "NextEffectAt") and Map.has_key?(effect, "Damage")
-    end)
+  defp taking_damage?(regen) do
+    regen < 0
   end
 end

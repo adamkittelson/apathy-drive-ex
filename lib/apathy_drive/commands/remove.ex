@@ -25,32 +25,37 @@ defmodule ApathyDrive.Commands.Remove do
         |> Ecto.Changeset.change(%{equipped: false})
         |> Repo.update!()
 
-        Room.update_mobile(room, character.ref, fn char ->
-          character =
-            char
-            |> Character.load_items()
+        room =
+          Room.update_mobile(room, character.ref, fn char ->
+            character =
+              char
+              |> Character.load_items()
 
-          if item_to_remove.type == "Light" do
-            Mobile.send_scroll(
-              char,
-              "<p>You remove the #{Item.colored_name(item_to_remove)} and extinguish it.</p>"
+            if item_to_remove.type == "Light" do
+              Mobile.send_scroll(
+                char,
+                "<p>You remove the #{Item.colored_name(item_to_remove)} and extinguish it.</p>"
+              )
+            else
+              Mobile.send_scroll(char, "<p>You remove #{Item.colored_name(item_to_remove)}.</p>")
+            end
+
+            send(
+              character.socket,
+              {:update_character,
+               %{
+                 room_id: room.id,
+                 power: Mobile.power_at_level(character, character.level),
+                 level: character.level
+               }}
             )
-          else
-            Mobile.send_scroll(char, "<p>You remove #{Item.colored_name(item_to_remove)}.</p>")
-          end
 
-          send(
-            character.socket,
-            {:update_character,
-             %{
-               room_id: room.id,
-               power: Mobile.power_at_level(character, character.level),
-               level: character.level
-             }}
-          )
+            character
+          end)
 
-          character
-        end)
+        Room.update_hp_bar(room, character.ref)
+        Room.update_mana_bar(room, character.ref)
+        room
     end
   end
 end

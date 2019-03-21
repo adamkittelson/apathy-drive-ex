@@ -396,7 +396,7 @@ defmodule ApathyDrive.Character do
   end
 
   def add_equipped_item_effects(%Character{} = character, item) do
-    {ability_id, traits} =
+    {ability, traits} =
       case item.traits do
         %{"Passive" => ability} ->
           traits =
@@ -417,7 +417,7 @@ defmodule ApathyDrive.Character do
               end
             end)
 
-          {ability.id, traits}
+          {ability, traits}
 
         traits ->
           {nil, traits}
@@ -427,22 +427,22 @@ defmodule ApathyDrive.Character do
 
     effect =
       if "Heal" in Map.keys(traits) do
-        effect
-        |> Map.put("Interval", 1000)
-        |> Map.put(
-          "NextEffectAt",
-          System.monotonic_time(:millisecond) + 1000
+        Ability.process_duration_trait(
+          {"Heal", traits["Heal"]},
+          effect,
+          character,
+          character,
+          ability,
+          nil
         )
-        |> Map.put("effect_ref", make_ref())
       else
         effect
       end
 
-    if ability_id do
+    if ability do
       character
-      |> Systems.Effect.remove_oldest_stack(ability_id)
+      |> Systems.Effect.remove_oldest_stack(ability.id)
       |> Systems.Effect.add(effect)
-      |> Systems.Effect.schedule_next_periodic_effect()
     else
       character
       |> Systems.Effect.add(effect)
@@ -850,11 +850,19 @@ defmodule ApathyDrive.Character do
         0
       else
         regen_per_tick =
-          Regeneration.regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
+          Regeneration.regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile)) +
+            Regeneration.heal_effect_per_tick(mobile) -
+            Regeneration.damage_effect_per_tick(mobile)
 
-        ticks_remaining = (1.0 - percent) / regen_per_tick
+        if regen_per_tick > 0 do
+          ticks_remaining = (1.0 - percent) / regen_per_tick
 
-        Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
+          Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
+        else
+          ticks_remaining = percent / regen_per_tick
+
+          Regeneration.tick_time(mobile) * Float.floor(ticks_remaining)
+        end
       end
 
     send(
@@ -1361,13 +1369,25 @@ defmodule ApathyDrive.Character do
     end
 
     def heartbeat(%Character{} = character, %Room{} = room) do
-      Room.update_mobile(room, character.ref, fn character ->
-        character
-        |> Regeneration.regenerate(room)
-        |> Character.drain_exp_buffer()
-        |> RoomServer.execute_casting_ability(room)
-      end)
-      |> AI.think(character.ref)
+      room =
+        Room.update_mobile(room, character.ref, fn character ->
+          character
+          |> Regeneration.regenerate(room)
+          |> Character.drain_exp_buffer()
+          |> RoomServer.execute_casting_ability(room)
+        end)
+        |> AI.think(character.ref)
+
+      character = room.mobiles[character.ref]
+
+      max_hp = Mobile.max_hp_at_level(character, character.level)
+      hp = trunc(max_hp * character.hp)
+
+      if hp < 1 do
+        Mobile.die(character, room)
+      else
+        room
+      end
     end
 
     def exhausted(%{energy: energy} = character) do

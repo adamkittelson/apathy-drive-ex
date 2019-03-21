@@ -81,6 +81,8 @@ defmodule ApathyDrive.Commands.Wear do
 
         room = put_in(room.mobiles[character.ref], character)
         Character.update_score(character, room)
+        Room.update_hp_bar(room, character.ref)
+        Room.update_mana_bar(room, character.ref)
         room
     end
   end

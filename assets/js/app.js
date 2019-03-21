@@ -293,11 +293,21 @@ window.progress = function (elem, percent, time_to_full) {
   }
   else {
     if (time_to_full) {
-      var currentWidth = percent * elem.width() / 100;
+      if (time_to_full > 0) {
+        var currentWidth = percent * elem.width() / 100;
 
-      if (currentWidth >= 0) {
-        elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
+        if (currentWidth >= 0) {
+          elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
+        }
       }
+      else {
+        var currentWidth = percent * elem.width() / 100;
+
+        if (currentWidth >= 0) {
+          elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: 0 }, { duration: -time_to_full, easing: "linear" });
+        }
+      }
+
     } else {
       var currentWidth = percent * elem.width() / 100;
 

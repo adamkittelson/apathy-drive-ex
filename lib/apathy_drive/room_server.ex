@@ -616,36 +616,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:periodic_effects, target_ref, effect_ref}, room) do
-    room =
-      Room.update_mobile(room, target_ref, fn mobile ->
-        case Systems.Effect.find_by_ref(mobile, effect_ref) do
-          {key, %{"Interval" => interval} = effect} ->
-            effect = Map.take(effect, ["Heal", "Damage"])
-
-            room
-            |> Room.update_mobile(target_ref, fn mobile ->
-              mobile
-              |> put_in(
-                [Access.key!(:effects), key, "NextEffectAt"],
-                System.monotonic_time(:millisecond) + interval
-              )
-              |> Systems.Effect.schedule_next_periodic_effect()
-            end)
-            |> Ability.execute(
-              target_ref,
-              %Ability{traits: effect, ignores_round_cooldown?: true, energy: 0},
-              [target_ref]
-            )
-
-          nil ->
-            room
-        end
-      end)
-
-    {:noreply, room}
-  end
-
   def handle_info({:delay_execute_script, mobile_ref, script}, room) do
     mobile = room.mobiles[mobile_ref]
     room = put_in(room.mobiles[mobile_ref], Map.put(mobile, :delayed, false))
