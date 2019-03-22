@@ -10,7 +10,7 @@ defmodule ApathyDrive.Gossip.Players do
         ApathyDrive.Character.sanitize(game_name)
       }.</p>"
 
-    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
+    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
       html: message
     })
 
@@ -24,7 +24,7 @@ defmodule ApathyDrive.Gossip.Players do
         ApathyDrive.Character.sanitize(game_name)
       }.</p>"
 
-    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
+    ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
       html: message
     })
 

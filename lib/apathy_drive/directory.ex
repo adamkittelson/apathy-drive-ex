@@ -169,7 +169,7 @@ defmodule ApathyDrive.Directory do
               ApathyDrive.Character.sanitize(game)
             }.</p>"
 
-          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
+          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
             html: message
           })
 
@@ -184,7 +184,7 @@ defmodule ApathyDrive.Directory do
       new_list
       |> Enum.reduce(updated_list, fn %{name: name, game: game} = player, updated_list ->
         if !MapSet.member?(updated_list, player) do
-          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
+          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
             html:
               "<p>#{ApathyDrive.Character.sanitize(name)} just entered the distant Realm of #{
                 ApathyDrive.Character.sanitize(game)
