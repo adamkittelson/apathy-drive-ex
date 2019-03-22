@@ -194,18 +194,18 @@ chan.on("up", function (message) {
 });
 
 chan.on("scroll", function (message) {
-  addToScroll("#scroll", _.unescape(message.html));
+  addToScroll("#scroll", message.html);
 });
 
 chan.on("chat", function (message) {
-  message = linkify(_.unescape(message.html));
+  message = linkify(message.html);
   addToScroll("#scroll", message);
   $("#chat").append(message);
   return adjustChatTop();
 });
 
 chan.on("chat-sidebar", function (message) {
-  message = linkify(_.unescape(message.html));
+  message = linkify(message.html);
   $("#chat").append(message);
   return adjustChatTop();
 });
