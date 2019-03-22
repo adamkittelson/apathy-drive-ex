@@ -56,6 +56,7 @@ defmodule ApathyDrive.Command do
       Commands.Experience,
       Commands.Get,
       Commands.Gossip,
+      Commands.Grapevine,
       Commands.Greet,
       Commands.Help,
       Commands.Hire,
