@@ -4,7 +4,9 @@ defmodule ApathyDrive.Commands.Who do
 
   def keywords, do: ["who"]
 
-  def execute(%Room{} = room, %Character{} = character, _arguments) do
+  def execute(%Room{} = room, %Character{} = character, arguments) do
+    who_game = Enum.join(arguments) |> String.downcase()
+
     Mobile.send_scroll(
       character,
       "<p><span class='yellow'>        Current Adventurers</span></p>"
@@ -29,28 +31,32 @@ defmodule ApathyDrive.Commands.Who do
     |> Enum.sort_by(&String.downcase(&1.name))
     |> Enum.each(fn
       %{name: name, game: game} ->
-        name = name |> String.pad_trailing(longest_name_length)
+        if String.length(who_game) > 0 and String.starts_with?(String.downcase(game), who_game) do
+          name = name |> String.pad_trailing(longest_name_length)
 
-        Mobile.send_scroll(
-          character,
-          "<p>        <span class='dark-green'>#{name} -</span> <span class='dark-magenta'>Stranger</span> <span class='dark-green'>of</span> <span class='dark-yellow'>#{
-            game
-          }</span>"
-        )
+          Mobile.send_scroll(
+            character,
+            "<p>        <span class='dark-green'>#{name} -</span> <span class='dark-magenta'>Outlander</span> <span class='dark-green'>of</span> <span class='dark-yellow'>#{
+              game
+            }</span>"
+          )
+        end
 
       %{name: name, title: title, bounty: bounty} ->
-        legal_status = Character.legal_status(%Character{bounty: bounty})
-        color = color(legal_status)
-        legal_status = legal_status |> String.pad_leading(7)
-        legal_status = "<span class='#{color}'>#{legal_status}</span>"
-        name = name |> String.pad_trailing(longest_name_length)
+        if who_game == "" do
+          legal_status = Character.legal_status(%Character{bounty: bounty})
+          color = color(legal_status)
+          legal_status = legal_status |> String.pad_leading(7)
+          legal_status = "<span class='#{color}'>#{legal_status}</span>"
+          name = name |> String.pad_trailing(longest_name_length)
 
-        Mobile.send_scroll(
-          character,
-          "<p>#{legal_status} <span class='dark-green'>#{name} - <span class='dark-magenta'>#{
-            title
-          }</span></p>"
-        )
+          Mobile.send_scroll(
+            character,
+            "<p>#{legal_status} <span class='dark-green'>#{name} - <span class='dark-magenta'>#{
+              title
+            }</span></p>"
+          )
+        end
     end)
 
     room
