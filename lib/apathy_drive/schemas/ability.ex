@@ -1536,6 +1536,9 @@ defmodule ApathyDrive.Ability do
           percent = damage / Mobile.max_hp_at_level(target, target_level)
 
           damage_percent + percent
+
+        %{kind: "drain", min: min, max: max, damage_type: type}, damage_percent ->
+          damage_percent
       end)
 
     effects

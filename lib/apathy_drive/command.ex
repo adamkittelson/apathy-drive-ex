@@ -91,7 +91,7 @@ defmodule ApathyDrive.Command do
 
     monster = room.mobiles[monster_ref]
 
-    Logger.info("#{monster && monster.name} command: #{full_command}")
+    unless reattempt, do: Logger.info("#{monster && monster.name} command: #{full_command}")
 
     {time, response} =
       :timer.tc(fn ->
@@ -148,9 +148,11 @@ defmodule ApathyDrive.Command do
         end
       end)
 
-    Logger.info(
-      "#{full_command} executed for #{monster && monster.name} in #{time / 1000 / 1000} seconds"
-    )
+    if match?(%Room{}, response) do
+      Logger.info(
+        "#{full_command} executed for #{monster && monster.name} in #{time / 1000 / 1000} seconds"
+      )
+    end
 
     response
   end
