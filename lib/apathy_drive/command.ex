@@ -86,24 +86,29 @@ defmodule ApathyDrive.Command do
     ]
   end
 
-  def execute(%Room{} = room, monster_ref, command, arguments) do
+  def execute(%Room{} = room, monster_ref, command, arguments, reattempt \\ false) do
     full_command = Enum.join([command | arguments], " ")
 
     monster = room.mobiles[monster_ref]
 
     Logger.info("#{monster && monster.name} command: #{full_command}")
 
-    {time, room} =
+    {time, response} =
       :timer.tc(fn ->
         cond do
           is_nil(monster) ->
             room
 
           command in @directions ->
-            Commands.Move.execute(room, monster, command)
+            Commands.Move.execute(room, monster, command, reattempt)
 
           command_exit = Room.command_exit(room, full_command) ->
-            Commands.Move.execute(room, monster, Map.put(command_exit, "kind", "Action"))
+            Commands.Move.execute(
+              room,
+              monster,
+              Map.put(command_exit, "kind", "Action"),
+              reattempt
+            )
 
           remote_action_exit = Room.remote_action_exit(room, full_command) ->
             Room.initiate_remote_action(room, monster, remote_action_exit)
@@ -147,7 +152,7 @@ defmodule ApathyDrive.Command do
       "#{full_command} executed for #{monster && monster.name} in #{time / 1000 / 1000} seconds"
     )
 
-    room
+    response
   end
 
   defp useable_scroll(%Character{} = monster, command) do

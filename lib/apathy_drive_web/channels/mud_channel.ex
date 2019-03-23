@@ -197,15 +197,37 @@ defmodule ApathyDriveWeb.MUDChannel do
       [command | arguments] ->
         socket.assigns[:room_id]
         |> RoomServer.find()
-        |> RoomServer.execute_command(socket.assigns[:monster_ref], command, arguments)
+        |> RoomServer.execute_command(
+          socket.assigns[:monster_ref],
+          command,
+          arguments,
+          socket.assigns[:reattempt]
+        )
+        |> case do
+          :ok ->
+            {:noreply, assign(socket, :reattempt, false)}
+
+          :too_tired ->
+            payload = message
+
+            message = %Phoenix.Socket.Message{
+              topic: "mud:play",
+              event: "command",
+              payload: payload,
+              ref: make_ref()
+            }
+
+            Process.send_after(self(), message, 250)
+            {:noreply, assign(socket, :reattempt, true)}
+        end
 
       [] ->
         socket.assigns[:room_id]
         |> RoomServer.find()
         |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
-    end
 
-    {:noreply, socket}
+        {:noreply, socket}
+    end
   end
 
   def handle_in("map", "request_room_id", socket) do

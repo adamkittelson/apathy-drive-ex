@@ -105,8 +105,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:mirror_open_fail, mirror_room_id, room_exit})
   end
 
-  def execute_command(room, spirit_id, command, arguments) do
-    GenServer.call(room, {:execute_command, spirit_id, command, arguments})
+  def execute_command(room, spirit_id, command, arguments, reattempt \\ false) do
+    GenServer.call(room, {:execute_command, spirit_id, command, arguments, reattempt})
   end
 
   def look(room, spirit_id, args \\ []) do
@@ -189,9 +189,14 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_call({:execute_command, mobile_ref, command, arguments}, _from, room) do
-    room = ApathyDrive.Command.execute(room, mobile_ref, command, arguments)
-    {:reply, :ok, room}
+  def handle_call({:execute_command, mobile_ref, command, arguments, reattempt}, _from, room) do
+    case ApathyDrive.Command.execute(room, mobile_ref, command, arguments, reattempt) do
+      %Room{} = room ->
+        {:reply, :ok, room}
+
+      {:error, :too_tired, %Room{} = room} ->
+        {:reply, :too_tired, room}
+    end
   end
 
   def handle_call({:lock, direction}, _from, room) do

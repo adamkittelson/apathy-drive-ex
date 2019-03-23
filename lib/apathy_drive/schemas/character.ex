@@ -1401,7 +1401,6 @@ defmodule ApathyDrive.Character do
       required_energy = ApathyDrive.Commands.Move.energy_cost(character)
 
       if energy < required_energy do
-        send_scroll(character, "<p>You're too tired to move!</p>")
         true
       else
         false

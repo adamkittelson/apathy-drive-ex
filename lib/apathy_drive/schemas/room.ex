@@ -17,6 +17,7 @@ defmodule ApathyDrive.Room do
     RoomServer,
     PubSub,
     Shop,
+    Stealth,
     TimerManager,
     Trainer
   }
@@ -285,6 +286,18 @@ defmodule ApathyDrive.Room do
   end
 
   def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do
+    mobile =
+      if mobile.sneaking && :rand.uniform(100) > Mobile.stealth_at_level(mobile, mobile.level) do
+        mobile
+        |> Mobile.send_scroll(
+          "<p><span class='dark-red'>You make a noise as you enter the room!</span></p>"
+        )
+        |> Map.put(:sneaking, false)
+        |> Stealth.reveal()
+      else
+        mobile
+      end
+
     from_direction =
       room
       |> Room.get_direction_by_destination(mobile.room_id)
