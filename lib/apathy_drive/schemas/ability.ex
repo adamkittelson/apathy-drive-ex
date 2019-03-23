@@ -1537,7 +1537,7 @@ defmodule ApathyDrive.Ability do
 
           damage_percent + percent
 
-        %{kind: "drain", min: min, max: max, damage_type: type}, damage_percent ->
+        %{kind: "drain", min: _min, max: _max, damage_type: _type}, damage_percent ->
           damage_percent
       end)
 

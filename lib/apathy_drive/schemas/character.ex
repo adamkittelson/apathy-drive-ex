@@ -8,6 +8,7 @@ defmodule ApathyDrive.Character do
     AbilityDamageType,
     AbilityTrait,
     AI,
+    ChannelHistory,
     Character,
     CharacterSkill,
     Class,
@@ -581,15 +582,30 @@ defmodule ApathyDrive.Character do
       if new_attribute_level > attribute_level do
         character = Character.set_attribute_levels(character)
 
-        Mobile.send_scroll(
+        message =
+          "<p><span class='yellow'>Your #{attribute} increased to #{Map.get(character, attribute)}!</span></p>"
+
+        Repo.insert!(%ChannelHistory{
+          character_id: character.id,
+          message: message
+        })
+
+        Character.send_chat(
           character,
-          "<p><span class='yellow'>Your #{attribute} increases to #{Map.get(character, attribute)}!</span></p>"
+          message
         )
 
         if Character.max_level(character) > character.level do
-          Mobile.send_scroll(
+          message = "<p><span class='yellow'>Ready to train to next level!</span></p>"
+
+          Repo.insert!(%ChannelHistory{
+            character_id: character.id,
+            message: message
+          })
+
+          Character.send_chat(
             character,
-            "<p><span class='yellow'>Ready to train to next level!</span></p>"
+            message
           )
         end
 

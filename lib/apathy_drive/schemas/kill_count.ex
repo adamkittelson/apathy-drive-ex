@@ -1,6 +1,6 @@
 defmodule ApathyDrive.KillCount do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, KillCount, Mobile, Monster, Repo}
+  alias ApathyDrive.{ChannelHistory, Character, KillCount, Mobile, Monster, Repo}
 
   schema "kill_counts" do
     belongs_to(:character, Character)
@@ -69,13 +69,25 @@ defmodule ApathyDrive.KillCount do
   def clear_kill_counts(mobile), do: mobile
 
   defp give_bonus_experience(%Character{} = character, %KillCount{} = kill_count, exp) do
+    {character, kills_required} =
+      {character, []}
+      |> give_bonus_experience(kill_count, :lifetime_count, exp, 2)
+      |> give_bonus_experience(kill_count, :daily_count, exp, 2)
+      |> give_bonus_experience(kill_count, :weekly_count, exp, 2)
+
+    if Enum.any?(kills_required) do
+      kills = Enum.min(kills_required)
+
+      Mobile.send_scroll(
+        character,
+        "<p>#{kills} more #{kill_count.monster_name} kills until bonus.</p>"
+      )
+    end
+
     character
-    |> give_bonus_experience(kill_count, :lifetime_count, exp, 10)
-    |> give_bonus_experience(kill_count, :daily_count, exp, 10)
-    |> give_bonus_experience(kill_count, :weekly_count, exp, 10)
   end
 
-  defp give_bonus_experience(character, kill_count, count, exp, multiplier) do
+  defp give_bonus_experience({character, kills_required}, kill_count, count, exp, multiplier) do
     case give_bonus_experience?(kill_count, count, multiplier) do
       true ->
         bonus = exp * multiplier
@@ -83,15 +95,37 @@ defmodule ApathyDrive.KillCount do
         modifier = 1 / ((character.race.exp_modifier + character.class.exp_modifier) / 100)
         exp = trunc(bonus * modifier)
 
-        character
-        |> Mobile.send_scroll(message(kill_count, count, exp))
-        |> Character.add_experience(bonus, true)
+        message = message(kill_count, count, exp)
+
+        character =
+          if count == :lifetime_count do
+            Repo.insert!(%ChannelHistory{
+              character_id: character.id,
+              message: message
+            })
+
+            character
+            |> Character.send_chat(message)
+            |> Character.add_experience(bonus, true)
+          else
+            character
+            |> Mobile.send_scroll(message)
+            |> Character.add_experience(bonus, true)
+          end
+
+        {character, kills_required}
+
+      {:done, kills_left} ->
+        {character, [kills_left | kills_required]}
 
       false ->
-        give_bonus_experience(character, kill_count, count, exp, multiplier * 10)
-
-      :done ->
-        character
+        give_bonus_experience(
+          {character, kills_required},
+          kill_count,
+          count,
+          exp,
+          multiplier * 2
+        )
     end
   end
 
@@ -100,7 +134,7 @@ defmodule ApathyDrive.KillCount do
 
     cond do
       multiplier > count ->
-        :done
+        {:done, multiplier - count}
 
       count == multiplier ->
         true
@@ -141,9 +175,14 @@ defmodule ApathyDrive.KillCount do
   end
 
   defp message(kill_count, count, bonus) do
-    "<p><span class='yellow'>You receive #{bonus} bonus experience for killing your #{
-      Map.get(kill_count, count)
-    }th #{kill_count.monster_name}#{count_type(count)}!</span></p>"
+    number =
+      kill_count
+      |> Map.get(count)
+      |> Ordinal.ordinalize()
+
+    "<p><span class='yellow'>You receive #{bonus} bonus experience for killing your #{number} #{
+      kill_count.monster_name
+    }#{count_type(count)}!</span></p>"
   end
 
   defp count_type(:lifetime_count), do: ""
