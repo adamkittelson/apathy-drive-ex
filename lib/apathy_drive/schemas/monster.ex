@@ -652,13 +652,15 @@ defmodule ApathyDrive.Monster do
         |> ApathyDrive.Aggression.react(monster.ref)
         |> AI.think(monster.ref)
 
-      monster = room.mobiles[monster.ref]
+      if monster = room.mobiles[monster.ref] do
+        max_hp = Mobile.max_hp_at_level(monster, monster.level)
+        hp = trunc(max_hp * monster.hp)
 
-      max_hp = Mobile.max_hp_at_level(monster, monster.level)
-      hp = trunc(max_hp * monster.hp)
-
-      if hp < 1 do
-        Mobile.die(monster, room)
+        if hp < 1 do
+          Mobile.die(monster, room)
+        else
+          room
+        end
       else
         room
       end

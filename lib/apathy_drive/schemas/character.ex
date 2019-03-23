@@ -1385,13 +1385,15 @@ defmodule ApathyDrive.Character do
         end)
         |> AI.think(character.ref)
 
-      character = room.mobiles[character.ref]
+      if character = room.mobiles[character.ref] do
+        max_hp = Mobile.max_hp_at_level(character, character.level)
+        hp = trunc(max_hp * character.hp)
 
-      max_hp = Mobile.max_hp_at_level(character, character.level)
-      hp = trunc(max_hp * character.hp)
-
-      if hp < 1 do
-        Mobile.die(character, room)
+        if hp < 1 do
+          Mobile.die(character, room)
+        else
+          room
+        end
       else
         room
       end

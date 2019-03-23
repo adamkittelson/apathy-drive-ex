@@ -458,13 +458,15 @@ defmodule ApathyDrive.Companion do
         end)
         |> AI.think(companion.ref)
 
-      companion = room.mobiles[companion.ref]
+      if companion = room.mobiles[companion.ref] do
+        max_hp = Mobile.max_hp_at_level(companion, companion.level)
+        hp = trunc(max_hp * companion.hp)
 
-      max_hp = Mobile.max_hp_at_level(companion, companion.level)
-      hp = trunc(max_hp * companion.hp)
-
-      if hp < 1 do
-        Mobile.die(companion, room)
+        if hp < 1 do
+          Mobile.die(companion, room)
+        else
+          room
+        end
       else
         room
       end
