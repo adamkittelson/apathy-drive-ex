@@ -113,7 +113,7 @@ defmodule ApathyDrive.KillCount do
             |> Character.add_experience(bonus, true)
           end
 
-        {character, kills_required}
+        {character, [multiplier | kills_required]}
 
       {:done, kills_left} ->
         {character, [kills_left | kills_required]}
