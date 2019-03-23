@@ -97,7 +97,7 @@ defmodule ApathyDrive.Command do
       :timer.tc(fn ->
         cond do
           is_nil(monster) ->
-            room
+            {:error, :not_here, room}
 
           command in @directions ->
             Commands.Move.execute(room, monster, command, reattempt)

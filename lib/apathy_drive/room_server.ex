@@ -194,8 +194,8 @@ defmodule ApathyDrive.RoomServer do
       %Room{} = room ->
         {:reply, :ok, room}
 
-      {:error, :too_tired, %Room{} = room} ->
-        {:reply, :too_tired, room}
+      {:error, error, %Room{} = room} ->
+        {:reply, error, room}
     end
   end
 
@@ -600,7 +600,7 @@ defmodule ApathyDrive.RoomServer do
 
         if Enum.any?(exits) do
           room_exit = Enum.random(exits)
-          {:noreply, Commands.Move.execute(room, mobile, room_exit)}
+          {:noreply, Commands.Move.execute(room, mobile, room_exit, false)}
         else
           {:noreply, Room.move_after(room, ref)}
         end

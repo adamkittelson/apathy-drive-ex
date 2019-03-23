@@ -587,7 +587,7 @@ defmodule ApathyDrive.Script do
       "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
     }
 
-    room = ApathyDrive.Commands.Move.execute(room, monster, room_exit)
+    room = ApathyDrive.Commands.Move.execute(room, monster, room_exit, false)
 
     room_id
     |> RoomServer.find()

@@ -207,6 +207,19 @@ defmodule ApathyDriveWeb.MUDChannel do
           :ok ->
             {:noreply, assign(socket, :reattempt, false)}
 
+          :not_here ->
+            payload = message
+
+            message = %Phoenix.Socket.Message{
+              topic: "mud:play",
+              event: "command",
+              payload: payload,
+              ref: make_ref()
+            }
+
+            Process.send_after(self(), message, 50)
+            {:noreply, assign(socket, :reattempt, true)}
+
           :too_tired ->
             payload = message
 
@@ -217,7 +230,7 @@ defmodule ApathyDriveWeb.MUDChannel do
               ref: make_ref()
             }
 
-            Process.send_after(self(), message, 250)
+            Process.send_after(self(), message, 50)
             {:noreply, assign(socket, :reattempt, true)}
         end
 
