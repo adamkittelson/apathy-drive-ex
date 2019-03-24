@@ -289,7 +289,9 @@ $(document).on('keyup', "input", function (event) {
 
 window.progress = function (elem, percent, time_to_full) {
   if (percent == 100) {
-    elem.find('div').stop().width(elem.width())
+    // I don't remember why this was here, but it seems to
+    // cause flickering to 100 when it shouldn't
+    // elem.find('div').stop().width(elem.width())
   }
   else {
     if (time_to_full) {
