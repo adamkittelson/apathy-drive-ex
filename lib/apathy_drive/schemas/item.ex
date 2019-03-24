@@ -212,7 +212,7 @@ defmodule ApathyDrive.Item do
   def colored_name(%{name: name} = item, opts \\ []) do
     name =
       if item.enchantment_name do
-        name <> " " <> "(#{item.enchantment_name})"
+        name <> " of " <> "(#{item.enchantment_name |> String.split("song of ") |> List.last()})"
       else
         name
       end

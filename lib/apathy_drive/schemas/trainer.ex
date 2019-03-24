@@ -2,7 +2,7 @@ defmodule ApathyDrive.Trainer do
   use ApathyDriveWeb, :model
   require Logger
 
-  alias ApathyDrive.{Character, Room, Trainer}
+  alias ApathyDrive.{Character, Mobile, Room, Trainer}
 
   schema "trainers" do
     field(:cost_multiplier, :float)
