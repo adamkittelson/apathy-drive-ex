@@ -795,7 +795,11 @@ defmodule ApathyDrive.Character do
         character.editing.name
       }*</span>:"
     else
-      "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}]:"
+      if max_mana > 0 do
+        "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}]:"
+      else
+        "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>]:"
+      end
     end
   end
 
@@ -1479,7 +1483,9 @@ defmodule ApathyDrive.Character do
     def max_mana_at_level(mobile, level) do
       mana_per_level = ability_value(mobile, "ManaPerLevel")
 
-      mana_per_level * (level - 1) + 6
+      base_mana = if mana_per_level > 0, do: 6, else: 0
+
+      mana_per_level * (level - 1) + base_mana
     end
 
     def party_refs(character, room) do
@@ -1649,6 +1655,8 @@ defmodule ApathyDrive.Character do
 
       max(0, trunc(base * modifier) + ability_value(character, "Stealth"))
     end
+
+    def subtract_mana(character, %{mana: 0} = _ability), do: character
 
     def subtract_mana(character, %{mana: cost} = ability) do
       percentage = cost / Mobile.max_mana_at_level(character, character.level)

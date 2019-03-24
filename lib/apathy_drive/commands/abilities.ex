@@ -61,8 +61,8 @@ defmodule ApathyDrive.Commands.Abilities do
       )
 
       abilities
-      |> Enum.each(fn %{name: name, command: command, mana: mana} = _ability ->
-        mana_cost = String.pad_trailing(to_string(mana), 6)
+      |> Enum.each(fn %{name: name, command: command, mana: _mana} = _ability ->
+        mana_cost = String.pad_trailing(to_string(0), 6)
 
         command =
           command

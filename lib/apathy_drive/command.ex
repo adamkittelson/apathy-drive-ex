@@ -140,7 +140,10 @@ defmodule ApathyDrive.Command do
               |> Map.put("DestroyItem", scroll.instance_id)
               |> Map.update("RequireItems", [scroll.instance_id], &[scroll.instance_id | &1])
 
-            ability = Map.put(ability, :traits, traits)
+            ability =
+              ability
+              |> Map.put(:traits, traits)
+              |> Map.put(:mana, 0)
 
             Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 

@@ -78,9 +78,16 @@ defmodule ApathyDrive.KillCount do
     if Enum.any?(kills_required) do
       kills = Enum.min(kills_required)
 
+      message =
+        if kills == 1 do
+          "<p>You will gain bonus experience in 1 more kill.</p>"
+        else
+          "<p>You will gain bonus experience in #{kills} more kills.</p>"
+        end
+
       Mobile.send_scroll(
         character,
-        "<p>#{kills} more #{kill_count.monster_name} kills until bonus.</p>"
+        message
       )
     end
 
