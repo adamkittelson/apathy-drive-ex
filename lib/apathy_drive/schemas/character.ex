@@ -1054,7 +1054,8 @@ defmodule ApathyDrive.Character do
     end
 
     def attribute_at_level(%Character{} = character, attribute, _level) do
-      Map.get(character, attribute)
+      Map.get(character, attribute) +
+        ability_value(character, attribute |> to_string |> String.capitalize())
     end
 
     def attack_ability(character) do

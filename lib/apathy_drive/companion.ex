@@ -284,7 +284,8 @@ defmodule ApathyDrive.Companion do
     end
 
     def attribute_at_level(%Companion{} = companion, attribute, level) do
-      Map.get(companion, attribute) + level - 1
+      Map.get(companion, attribute) + level - 1 +
+        ability_value(companion, attribute |> to_string |> String.capitalize())
     end
 
     def attack_ability(companion) do

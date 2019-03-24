@@ -380,7 +380,8 @@ defmodule ApathyDrive.Monster do
     def alignment(monster, _room), do: monster.alignment
 
     def attribute_at_level(%Monster{} = monster, attribute, level) do
-      Map.get(monster, attribute) + level - 1
+      Map.get(monster, attribute) + level - 1 +
+        ability_value(monster, attribute |> to_string |> String.capitalize())
     end
 
     def attack_ability(monster) do
