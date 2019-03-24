@@ -199,7 +199,8 @@ defmodule ApathyDrive.Character do
 
   def max_encumbrance(%Character{} = character) do
     trunc(
-      character.strength * 48 * (1 + Systems.Effect.effect_bonus(character, "Encumbrance") / 100)
+      Mobile.attribute_at_level(character, :strength, character.level) * 48 *
+        (1 + Systems.Effect.effect_bonus(character, "Encumbrance") / 100)
     )
   end
 
