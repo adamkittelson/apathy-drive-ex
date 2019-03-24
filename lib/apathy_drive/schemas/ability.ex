@@ -52,6 +52,7 @@ defmodule ApathyDrive.Ability do
     field(:chance, :integer, virtual: true)
     field(:on_hit?, :boolean, virtual: true, default: false)
     field(:can_crit, :boolean, virtual: true, default: false)
+    field(:spell?, :boolean, virtual: true, default: true)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -334,6 +335,7 @@ defmodule ApathyDrive.Ability do
   def heal_abilities(%{abilities: abilities} = mobile) do
     abilities
     |> Map.values()
+    |> List.flatten()
     |> Enum.filter(&(&1.kind == "heal"))
     |> useable(mobile)
   end
@@ -341,6 +343,7 @@ defmodule ApathyDrive.Ability do
   def drain_abilities(%{abilities: abilities} = mobile, %{} = target) do
     abilities
     |> Map.values()
+    |> List.flatten()
     |> Enum.filter(fn ability ->
       Map.has_key?(ability.traits, "Damage") and
         Enum.any?(ability.traits["Damage"], &(&1.kind == "drain"))
@@ -352,19 +355,21 @@ defmodule ApathyDrive.Ability do
   end
 
   def bless_abilities(%{abilities: abilities} = mobile, %{} = target) do
-    abilities
-    |> Map.values()
-    |> Enum.filter(&(&1.kind == "blessing"))
-    |> Enum.reject(fn ability ->
-      Ability.removes_blessing?(target, ability) or
-        Character.wearing_enchanted_item?(mobile, ability)
-    end)
-    |> useable(mobile)
+    abilities =
+      abilities
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.filter(&(&1.kind == "blessing"))
+      |> Enum.reject(fn ability ->
+        removes_blessing?(target, ability)
+      end)
+      |> useable(mobile)
   end
 
   def curse_abilities(%{abilities: abilities} = mobile, %{} = target) do
     abilities
     |> Map.values()
+    |> List.flatten()
     |> Enum.filter(&(&1.kind == "curse"))
     |> Enum.reject(fn ability ->
       Ability.removes_blessing?(target, ability)
@@ -375,6 +380,7 @@ defmodule ApathyDrive.Ability do
   def attack_abilities(%{abilities: abilities} = mobile, %{} = target) do
     abilities
     |> Map.values()
+    |> List.flatten()
     |> Enum.filter(&(&1.kind == "attack"))
     |> Enum.filter(fn ability ->
       Ability.affects_target?(target, ability)
@@ -384,8 +390,9 @@ defmodule ApathyDrive.Ability do
 
   def useable(abilities, %{} = mobile) do
     abilities
-    |> Enum.reject(fn ability ->
-      ability.mana > 0 && !Mobile.enough_mana_for_ability?(mobile, ability)
+    |> List.flatten()
+    |> Enum.filter(fn ability ->
+      Mobile.enough_mana_for_ability?(mobile, ability) && !Ability.on_cooldown?(mobile, ability)
     end)
   end
 
@@ -400,6 +407,24 @@ defmodule ApathyDrive.Ability do
 
   def removes_blessing?(mobile, ability) do
     Systems.Effect.max_stacks?(mobile, ability)
+  end
+
+  def select_ability(_character, [ability]), do: ability
+
+  def select_ability(character, abilities) do
+    Enum.sort_by(abilities, fn ability ->
+      cond do
+        ability.cooldown > 0 and !Ability.on_cooldown?(character, ability) ->
+          -1
+
+        is_nil(ability.cooldown) ->
+          0
+
+        cd = on_cooldown?(character, ability) ->
+          time_remaining(character, cd)
+      end
+    end)
+    |> List.first()
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "")
@@ -704,7 +729,7 @@ defmodule ApathyDrive.Ability do
         )
       end
 
-      if ability.mana > 0 do
+      if ability.spell? do
         Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
       else
         Mobile.send_scroll(caster, "<p><span class='cyan'>You move into position...</span></p>")
@@ -1443,27 +1468,23 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster, duration, room) do
-    if !Character.wearing_enchanted_item?(target, ability) do
-      effects =
-        ability.traits
-        |> Map.take(@duration_traits)
-        |> Map.put("stack_key", ability.id)
-        |> Map.put("stack_count", 1)
-        |> process_duration_traits(target, caster, ability, room)
-        |> Map.put("effect_ref", make_ref())
+    effects =
+      ability.traits
+      |> Map.take(@duration_traits)
+      |> Map.put("stack_key", ability.id)
+      |> Map.put("stack_count", 1)
+      |> process_duration_traits(target, caster, ability, room)
+      |> Map.put("effect_ref", make_ref())
 
-      if message = effects["StatusMessage"] do
-        Mobile.send_scroll(
-          target,
-          "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
-        )
-      end
-
-      target
-      |> Systems.Effect.add(effects, :timer.seconds(duration))
-    else
-      target
+    if message = effects["StatusMessage"] do
+      Mobile.send_scroll(
+        target,
+        "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+      )
     end
+
+    target
+    |> Systems.Effect.add(effects, :timer.seconds(duration))
   end
 
   def process_duration_traits(effects, target, caster, ability, room) do
@@ -1621,7 +1642,7 @@ defmodule ApathyDrive.Ability do
       caster,
       %{
         "cooldown" => name,
-        "RemoveMessage" => "#{Text.capitalize_first(name)} is ready for use again."
+        "RemoveMessage" => "#{name} is ready for use again."
       },
       cooldown
     )
@@ -2112,7 +2133,7 @@ defmodule ApathyDrive.Ability do
   def on_cooldown?(%{effects: effects} = _mobile, %Ability{name: name} = _ability) do
     effects
     |> Map.values()
-    |> Enum.any?(&(&1["cooldown"] == name))
+    |> Enum.find(&(&1["cooldown"] == name))
   end
 
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "monster or single"}, query) do

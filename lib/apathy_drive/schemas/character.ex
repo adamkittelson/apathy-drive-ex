@@ -161,14 +161,6 @@ defmodule ApathyDrive.Character do
   def legal_status(%Character{bounty: bounty}) when bounty > 0, do: "Seedy"
   def legal_status(%Character{bounty: _bounty}), do: "Lawful"
 
-  def wearing_enchanted_item?(%Character{} = character, %Ability{} = ability) do
-    Enum.any?(character.equipment, fn item ->
-      Item.enchantment(item) == ability.id
-    end)
-  end
-
-  def wearing_enchanted_item?(%{} = _mobile, %Ability{}), do: false
-
   def set_title(%Character{} = character) do
     Map.put(character, :title, Title.for_character(character))
   end
@@ -287,13 +279,19 @@ defmodule ApathyDrive.Character do
             end
 
           update_in(character.abilities, fn abilities ->
-            Map.put(abilities, ability.command, ability)
+            abilities
+            |> Map.put_new(ability.command, [])
+            |> update_in([ability.command], &[ability | &1])
           end)
       end)
 
     Enum.reduce(character.equipment, character, fn item, character ->
       if ability = item.traits["Grant"] do
-        put_in(character.abilities[ability.command], ability)
+        update_in(character.abilities, fn abilities ->
+          abilities
+          |> Map.put_new(ability.command, [])
+          |> update_in([ability.command], &[ability | &1])
+        end)
       else
         character
       end
@@ -383,12 +381,16 @@ defmodule ApathyDrive.Character do
 
   def add_equipped_items_effects(%Character{} = character) do
     character =
-      Enum.reduce(character.effects, character, fn {_key, %{"stack_key" => key}}, character ->
-        if is_binary(key) and String.starts_with?(key, "item") do
-          Systems.Effect.remove_oldest_stack(character, key)
-        else
+      Enum.reduce(character.effects, character, fn
+        {_key, %{"stack_key" => key}}, character ->
+          if is_binary(key) and String.starts_with?(key, "item") do
+            Systems.Effect.remove_oldest_stack(character, key)
+          else
+            character
+          end
+
+        _, character ->
           character
-        end
       end)
 
     Enum.reduce(character.equipment, character, fn item, updated_character ->
@@ -491,6 +493,7 @@ defmodule ApathyDrive.Character do
         agility: 0
       },
       mana: 0,
+      spell?: false,
       user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
       target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
       spectator_message:

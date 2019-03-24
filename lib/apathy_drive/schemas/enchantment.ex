@@ -200,18 +200,20 @@ defmodule ApathyDrive.Enchantment do
           damage ->
             update_in(ability.traits, &Map.put(&1, "Damage", damage))
         end
+        |> Map.put(:cooldown, :timer.minutes(1))
+        |> Map.put(:mana, 0)
 
-      traits =
-        cond do
-          ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
-            Map.put(traits, "OnHit", ability)
+      traits = Map.put(traits, "Grant", ability)
+      # cond do
+      #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
+      #     Map.put(traits, "OnHit", ability)
 
-          ability.kind == "blessing" ->
-            Map.put(traits, "Passive", ability)
+      #   ability.kind == "blessing" ->
+      #     Map.put(traits, "Passive", ability)
 
-          :else ->
-            Map.put(traits, "Grant", ability)
-        end
+      #   :else ->
+      #     Map.put(traits, "Grant", ability)
+      # end
 
       item
       |> Map.put(:traits, traits)

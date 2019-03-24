@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Item, Mobile}
+  alias ApathyDrive.{Ability, Character, Enchantment, Item, Mobile}
   require Ecto.Query
 
   def keywords, do: ["abilities", "spells"]
@@ -24,6 +24,8 @@ defmodule ApathyDrive.Commands.Abilities do
   def display_abilities(%Character{} = character) do
     character.abilities
     |> Map.values()
+    |> Enum.map(&Ability.select_ability(character, &1))
+    |> Enum.sort_by(&Enchantment.enchantment_exp(%Enchantment{ability: &1}))
     |> Enum.each(fn %{name: name, command: command, mana: mana} ->
       mana_cost = String.pad_trailing(to_string(mana), 6)
 
