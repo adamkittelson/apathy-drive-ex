@@ -80,16 +80,20 @@ defmodule ApathyDrive.Shop do
   end
 
   def buy_price(%Shop{} = shop, %Character{} = character, %Item{} = item) do
+    charm = Mobile.attribute_at_level(character, :charm, character.level)
+
     trunc(
       Item.cost_in_copper(item) * shop.cost_multiplier *
-        (1 - (div(character.charm, 5) - 10) / 100)
+        (1 - (div(charm, 5) - 10) / 100)
     )
   end
 
   def sell_price(shop, %Character{} = character, %Item{} = item) do
+    charm = Mobile.attribute_at_level(character, :charm, character.level)
+
     sell_price =
       trunc(
-        (Item.cost_in_copper(item) + enchantment_value(item)) * (div(character.charm, 2) + 25) /
+        (Item.cost_in_copper(item) + enchantment_value(item)) * (div(charm, 2) + 25) /
           100
       )
 

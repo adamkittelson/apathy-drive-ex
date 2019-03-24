@@ -970,15 +970,17 @@ defmodule ApathyDrive.Character do
     weapon = weapon || Character.weapon(character)
     encumbrance = Character.encumbrance(character)
     max_encumbrance = Character.max_encumbrance(character)
+    agility = Mobile.attribute_at_level(character, :agility, character.level)
+    strength = Mobile.attribute_at_level(character, :strength, character.level)
 
     cost =
       weapon.speed * 1000 /
-        ((character.level * (character.combat_level + 2) + 45) * (character.agility + 150) * 1500 /
+        ((character.level * (character.combat_level + 2) + 45) * (agility + 150) * 1500 /
            9000.0)
 
     cost =
-      if character.strength < weapon.required_strength do
-        ((weapon.required_strength - character.strength) * 3 + 200) * cost / 200.0
+      if strength < weapon.required_strength do
+        ((weapon.required_strength - strength) * 3 + 200) * cost / 200.0
       else
         cost
       end
@@ -1049,7 +1051,10 @@ defmodule ApathyDrive.Character do
     end
 
     def accuracy_at_level(character, _level, _room) do
-      agi = character.agility + character.charm / 10
+      agility = Mobile.attribute_at_level(character, :agility, character.level)
+      charm = Mobile.attribute_at_level(character, :charm, character.level)
+
+      agi = agility + charm / 10
       modifier = ability_value(character, "Accuracy")
       trunc(agi * (1 + modifier / 100))
     end

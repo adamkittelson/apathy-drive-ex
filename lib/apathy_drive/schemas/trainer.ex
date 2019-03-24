@@ -17,8 +17,10 @@ defmodule ApathyDrive.Trainer do
   def trainer?(%Room{}), do: false
 
   def training_cost(%Trainer{} = trainer, %Character{level: level} = character) do
+    charm = Mobile.attribute_at_level(character, :charm, character.level)
+
     next_level = level + 1
-    charm_mod = 1 - (trunc(character.charm / 5.0) - 10) / 100
+    charm_mod = 1 - (trunc(charm / 5.0) - 10) / 100
     trunc(next_level * 5 * (trainer.cost_multiplier + 1) * 10 * charm_mod)
   end
 end
