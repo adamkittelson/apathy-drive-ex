@@ -109,12 +109,12 @@ defmodule ApathyDrive.RoomServer do
     GenServer.call(room, {:execute_command, spirit_id, command, arguments, reattempt})
   end
 
-  def look(room, spirit_id, args \\ []) do
-    GenServer.cast(room, {:look, spirit_id, args})
+  def tell_monsters_to_follow(room, character, destination) do
+    GenServer.cast(room, {:tell_monsters_to_follow, character, destination})
   end
 
-  def display_exit_message(room, data) do
-    GenServer.cast(room, {:mobile_left, data})
+  def look(room, spirit_id, args \\ []) do
+    GenServer.cast(room, {:look, spirit_id, args})
   end
 
   def mobile_entered(room, mobile, message \\ nil) do
@@ -276,6 +276,11 @@ defmodule ApathyDrive.RoomServer do
   def handle_cast({:send_scroll, html}, %Room{} = room) do
     Room.send_scroll(room, html)
 
+    {:noreply, room}
+  end
+
+  def handle_cast({:tell_monsters_to_follow, character, destination}, room) do
+    room = Room.tell_monsters_to_follow(room, character, destination)
     {:noreply, room}
   end
 

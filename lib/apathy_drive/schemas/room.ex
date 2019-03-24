@@ -285,6 +285,18 @@ defmodule ApathyDrive.Room do
     |> Repo.one()
   end
 
+  def tell_monsters_to_follow(%Room{} = room, character, destination) do
+    room.mobiles
+    |> Map.values()
+    |> Enum.reduce(room, fn
+      %Monster{} = monster, room ->
+        Monster.chase(monster, room, character, destination)
+
+      _, room ->
+        room
+    end)
+  end
+
   def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do
     mobile =
       if mobile.sneaking && :rand.uniform(100) > Mobile.stealth_at_level(mobile, mobile.level) do
@@ -305,7 +317,13 @@ defmodule ApathyDrive.Room do
 
     room = Room.display_enter_message(room, mobile, message)
 
-    unless mobile.sneaking, do: Room.audible_movement(room, from_direction)
+    unless mobile.sneaking do
+      mobile.room_id
+      |> RoomServer.find()
+      |> RoomServer.tell_monsters_to_follow(mobile, room.id)
+
+      Room.audible_movement(room, from_direction)
+    end
 
     mobile =
       mobile

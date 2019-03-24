@@ -228,13 +228,13 @@ defmodule ApathyDrive.AI do
     |> Enum.random()
   end
 
-  defp exits_in_area(%Room{exits: exits} = room, %Character{} = mobile) do
+  def exits_in_area(%Room{exits: exits} = room, %Character{} = mobile) do
     Enum.filter(exits, fn %{"direction" => _direction} = room_exit ->
       room_exit["area"] == room.area.id && passable?(room, room_exit, mobile)
     end)
   end
 
-  defp exits_in_area(%Room{exits: exits} = room, mobile) do
+  def exits_in_area(%Room{exits: exits} = room, mobile) do
     Enum.filter(exits, fn %{"direction" => _direction} = room_exit ->
       room_exit["zone"] == room.zone_controller_id && passable?(room, room_exit, mobile)
     end)

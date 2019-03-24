@@ -4,6 +4,7 @@ defmodule ApathyDrive.Monster do
 
   alias ApathyDrive.{
     Ability,
+    Aggression,
     AI,
     Character,
     Currency,
@@ -126,6 +127,23 @@ defmodule ApathyDrive.Monster do
     !(Mobile.has_ability?(monster, "NonLiving") or Mobile.has_ability?(monster, "Animal") or
         Mobile.has_ability?(monster, "Undead") or monster.hostile or
         character.ref in enemies(monster, room))
+  end
+
+  def chase_exit(monster, room, destination) do
+    room
+    |> AI.exits_in_area(monster)
+    |> Enum.find(&(&1["destination"] == destination))
+  end
+
+  def chase(%Monster{} = monster, room, character, destination) do
+    with {:aggro?, true} <- {:aggro?, Aggression.enemy?(monster, character)},
+         {:follow?, true} <- {:follow?, :rand.uniform(100) < monster.chance_to_follow},
+         {:exit, %{} = room_exit} <- {:exit, chase_exit(monster, room, destination)} do
+      ApathyDrive.Commands.Move.execute(room, monster, room_exit, false)
+    else
+      _ ->
+        room
+    end
   end
 
   def from_room_monster(%RoomMonster{id: nil, room_id: room_id, monster_id: monster_id} = rm) do
