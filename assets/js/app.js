@@ -302,7 +302,7 @@ window.progress = function (elem, percent, time_to_full) {
           elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
         }
       }
-      else {
+      else if (time_to_full < 0) {
         var currentWidth = percent * elem.width() / 100;
 
         if (currentWidth >= 0) {
