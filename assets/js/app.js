@@ -99,12 +99,20 @@ var update_score_attribute = function (attribute, new_value) {
 }
 
 chan.on("update exp bar", function (data) {
-  progress($(".score .experience"), data.percentage)
+  var elem = $(".score .experience")
+
+  var currentWidth = data.percentage * elem.width() / 100;
+
+  elem.find('div').width(currentWidth)
 })
 
 
 chan.on("update attribute bar", function (data) {
-  progress($(".score ." + data.attribute), data.percentage)
+  var elem = $(".score ." + data.attribute)
+
+  var currentWidth = data.percentage * elem.width() / 100;
+
+  elem.find('div').width(currentWidth)
 })
 
 chan.on("update energy bar", function (data) {
@@ -289,9 +297,7 @@ $(document).on('keyup', "input", function (event) {
 
 window.progress = function (elem, percent, time_to_full) {
   if (percent == 100) {
-    // I don't remember why this was here, but it seems to
-    // cause flickering to 100 when it shouldn't
-    // elem.find('div').stop().width(elem.width())
+    elem.find('div').stop().width(elem.width())
   }
   else {
     if (time_to_full) {
@@ -302,18 +308,13 @@ window.progress = function (elem, percent, time_to_full) {
           elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
         }
       }
-      else if (time_to_full < 0) {
+      else {
         var currentWidth = percent * elem.width() / 100;
 
         if (currentWidth >= 0) {
           elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: 0 }, { duration: -time_to_full, easing: "linear" });
         }
       }
-
-    } else {
-      var currentWidth = percent * elem.width() / 100;
-
-      elem.find('div').width(currentWidth)
     }
 
   }
