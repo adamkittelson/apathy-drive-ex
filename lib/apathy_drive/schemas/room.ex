@@ -220,6 +220,9 @@ defmodule ApathyDrive.Room do
           color: Mobile.color(mobile),
           leader: leader,
           sneaking: mobile.sneaking,
+          hp_percent: mobile.hp * 100,
+          mana_percent: mobile.mana * 100,
+          energy_percent: mobile.energy / 1000,
           detected:
             mobile.sneaking &&
               (mobile.ref == character.ref or mobile.ref in character.detected_characters)
@@ -256,13 +259,13 @@ defmodule ApathyDrive.Room do
                 <span class="<%= mob.color %>"><%= mob.name %></span>
                 <div id="<%= mob.ref %>-bars">
                   <div class="progress-bar hp">
-                    <div class="red"></div>
+                    <div class="red" style="width: <%= mob.hp_percent %>%;"></div>
                     </div>
                   <div class="progress-bar energy">
-                    <div class="yellow"></div>
+                    <div class="yellow" style="width: <%= mob.mana_percent %>%;"></div>
                     </div>
                   <div class="progress-bar mana">
-                    <div class="blue"></div>
+                    <div class="blue" style="width: <%= mob.energy_percent %>%;"></div>
                   </div>
                 </div>
               </li>
