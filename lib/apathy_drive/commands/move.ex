@@ -119,37 +119,60 @@ defmodule ApathyDrive.Commands.Move do
         %{"kind" => "Toll"} = room_exit,
         reattempt
       ) do
-    amount_in_gold = room_exit["amount_in_gold"]
-    amount_in_copper = amount_in_gold * 100
+    character =
+      if character.sneaking && !reattempt do
+        character
+        |> Mobile.send_scroll("<p>Sneaking...</p>")
+        |> Character.add_attribute_experience(%{
+          agility: 0.75,
+          charm: 0.25
+        })
+      else
+        character
+      end
 
-    if Currency.wealth(character) < amount_in_copper do
-      message = "<p>You do not have enough to cover the toll of #{amount_in_gold} gold crowns.<p>"
-
-      Mobile.send_scroll(character, message)
-      room
+    if Mobile.exhausted(character) do
+      room = put_in(room.mobiles[character.ref], character)
+      {:error, :too_tired, room}
     else
-      message = "<p>You just paid #{amount_in_gold} gold crowns in toll charges.</p>"
+      amount_in_gold = room_exit["amount_in_gold"]
+      amount_in_copper = amount_in_gold * 100
 
-      Mobile.send_scroll(character, message)
+      if Currency.wealth(character) < amount_in_copper do
+        message =
+          "<p>You do not have enough to cover the toll of #{amount_in_gold} gold crowns.<p>"
 
-      room =
-        Room.update_mobile(room, character.ref, fn char ->
-          char_currency = Currency.subtract(char, amount_in_copper)
+        Mobile.send_scroll(character, message)
+        room
+      else
+        message = "<p>You just paid #{amount_in_gold} gold crowns in toll charges.</p>"
 
-          char
-          |> Ecto.Changeset.change(%{
-            runic: char_currency.runic,
-            platinum: char_currency.platinum,
-            gold: char_currency.gold,
-            silver: char_currency.silver,
-            copper: char_currency.copper
-          })
-          |> Repo.update!()
-          |> Character.load_items()
-          |> Repo.save!()
-        end)
+        Mobile.send_scroll(character, message)
 
-      execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"), reattempt)
+        room =
+          Room.update_mobile(room, character.ref, fn char ->
+            char_currency = Currency.subtract(char, amount_in_copper)
+
+            char
+            |> Ecto.Changeset.change(%{
+              runic: char_currency.runic,
+              platinum: char_currency.platinum,
+              gold: char_currency.gold,
+              silver: char_currency.silver,
+              copper: char_currency.copper
+            })
+            |> Repo.update!()
+            |> Character.load_items()
+            |> Repo.save!()
+          end)
+
+        execute(
+          room,
+          room.mobiles[character.ref],
+          Map.put(room_exit, "kind", "Normal"),
+          reattempt
+        )
+      end
     end
   end
 
