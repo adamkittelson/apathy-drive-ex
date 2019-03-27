@@ -274,3 +274,6 @@ CHANGELOG
 
 ---- 0.0.101 / 2019-03-18 / upgrades -------------------------------------------
 * upgrade erlang / elixir / phoenix
+
+---- 0.0.102 / 2019-03-27 / scroll-reading-redux -------------------------------
+* read scrolls to learn spells, forget spells
