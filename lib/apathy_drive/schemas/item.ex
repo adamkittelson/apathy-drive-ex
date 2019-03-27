@@ -3,6 +3,7 @@ defmodule ApathyDrive.Item do
 
   alias ApathyDrive.{
     Character,
+    ClassAbility,
     Currency,
     Enchantment,
     Item,
@@ -11,6 +12,7 @@ defmodule ApathyDrive.Item do
     ItemInstance,
     ItemRace,
     ItemTrait,
+    Mobile,
     ShopItem
   }
 
@@ -314,9 +316,20 @@ defmodule ApathyDrive.Item do
   end
 
   def attribute_requirement_not_met?(character, %Item{traits: %{"Learn" => ability}}) do
-    Enum.any?(ability.attributes, fn {attribute, value} ->
-      Map.get(character, attribute) < value
-    end)
+    attribute_not_met? =
+      Enum.any?(ability.attributes, fn {attribute, value} ->
+        Mobile.attribute_at_level(character, attribute, character.level) < value
+      end)
+
+    class_ability =
+      ClassAbility
+      |> Repo.get_by(class_id: character.class_id, ability_id: ability.id)
+
+    if class_ability do
+      class_ability.level > character.level and attribute_not_met?
+    else
+      attribute_not_met?
+    end
   end
 
   def attribute_requirement_not_met?(_character, _item), do: false
