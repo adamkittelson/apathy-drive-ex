@@ -11,4 +11,10 @@ config :apathy_drive, ApathyDrive.Repo,
   hostname: System.get_env("DB_HOSTNAME"),
   pool: Ecto.Adapters.SQL.Sandbox
 
+config :logger,
+  level: :warn,
+  handle_sasl_reports: false
+
 config :rollbax, enabled: :log
+
+config :apathy_drive, :gossip, enabled: false

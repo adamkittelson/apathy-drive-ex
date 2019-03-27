@@ -48,7 +48,7 @@ defmodule ApathyDrive.Mixfile do
       {:comeonin, "~> 3.2.0"},
       {:statix, "~> 1.1.0"},
       {:rollbax, "~> 0.8.2"},
-      {:gossip, "~> 1.3.0", except: :test},
+      {:gossip, "~> 1.3.0"},
       {:distillery, "~> 2.0.12"},
       {:toml, "~> 0.5.2"},
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
