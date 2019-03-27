@@ -239,18 +239,24 @@ defmodule ApathyDrive.Character do
     |> validate_length(:name, min: 1, max: 12)
   end
 
-  def load_abilities(%Character{} = character) do
+  def load_abilities(%Character{id: id} = character) do
     character =
       character
       |> Map.put(:abilities, %{})
       |> Map.put(:skills, %{})
 
     abilities =
+      ApathyDrive.CharacterAbility
+      |> Ecto.Query.where([ca], ca.character_id == ^id)
+      |> Ecto.Query.preload([:ability])
+      |> Repo.all()
+
+    class_abilities =
       character.class_id
       |> ApathyDrive.ClassAbility.abilities_at_level(character.level)
 
     character =
-      abilities
+      (abilities ++ class_abilities)
       |> Enum.reduce(character, fn
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
@@ -1630,13 +1636,6 @@ defmodule ApathyDrive.Character do
         |> div(map_size(ability.attributes))
 
       sc + ability_value(character, "Spellcasting")
-    end
-
-    def abilities_at_level(%Character{abilities: abilities}, level) do
-      abilities
-      |> Map.values()
-      |> Enum.filter(&(&1.level <= level))
-      |> Enum.sort_by(& &1.level)
     end
 
     def stealth_at_level(character, level) do

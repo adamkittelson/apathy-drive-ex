@@ -5,11 +5,15 @@ defmodule ApathyDrive.Commands.Help do
     Ability,
     AbilityDamageType,
     AbilityTrait,
+    Class,
+    ClassAbility,
     Commands.Inventory,
     Mobile,
     Repo,
     Room
   }
+
+  require Ecto.Query
 
   def keywords, do: ["help"]
 
@@ -100,6 +104,23 @@ defmodule ApathyDrive.Commands.Help do
           "<p>  <span class='dark-green'>#{attribute}:</span> <span class='dark-cyan'>#{value}</span></p>"
         )
       end)
+    end
+
+    classes =
+      ClassAbility
+      |> Ecto.Query.where(ability_id: ^ability.id)
+      |> Repo.all()
+      |> Enum.map(fn ca ->
+        Repo.get(Class, ca.class_id).name
+      end)
+
+    if Enum.any?(classes) do
+      Mobile.send_scroll(
+        character,
+        "\n\n<p><span class='dark-green'>Learnable By: </span><span class='dark-cyan'>#{
+          ApathyDrive.Commands.Inventory.to_sentence(classes)
+        }</span></p>"
+      )
     end
 
     traits = AbilityTrait.load_traits(ability.id)

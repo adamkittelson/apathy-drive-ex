@@ -4,6 +4,7 @@ defmodule ApathyDrive.ClassAbility do
 
   schema "classes_abilities" do
     field(:level, :integer)
+    field(:auto_learn, :boolean)
 
     belongs_to(:ability, Ability)
     belongs_to(:class, Class)
@@ -16,7 +17,10 @@ defmodule ApathyDrive.ClassAbility do
 
   def abilities_at_level(class_id, level) do
     ApathyDrive.ClassAbility
-    |> Ecto.Query.where([ss], ss.class_id == ^class_id and ss.level <= ^level)
+    |> Ecto.Query.where(
+      [ss],
+      ss.class_id == ^class_id and ss.level <= ^level and ss.auto_learn == true
+    )
     |> Ecto.Query.preload([:ability])
     |> Repo.all()
   end
