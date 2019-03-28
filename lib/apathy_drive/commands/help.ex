@@ -90,6 +90,15 @@ defmodule ApathyDrive.Commands.Help do
       )
     end
 
+    chance =
+      min(100, Mobile.spellcasting_at_level(character, character.level, ability)) +
+        ability.difficulty
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{chance}%</span></p>"
+    )
+
     if map_size(ability.attributes) > 0 do
       Mobile.send_scroll(
         character,

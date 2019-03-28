@@ -662,9 +662,37 @@ defmodule ApathyDrive.Companion do
       sc =
         ability.attributes
         |> Map.keys()
-        |> Enum.map(&Mobile.attribute_at_level(companion, &1, level))
-        |> Enum.sum()
-        |> div(map_size(ability.attributes))
+        |> case do
+          [:intellect] ->
+            intellect = Mobile.attribute_at_level(companion, :intellect, level)
+            willpower = Mobile.attribute_at_level(companion, :willpower, level)
+
+            trunc((intellect * 3 + willpower * 3) / 6 + level * 2)
+
+          [:willpower] ->
+            intellect = Mobile.attribute_at_level(companion, :intellect, level)
+            willpower = Mobile.attribute_at_level(companion, :willpower, level)
+
+            trunc((willpower * 3 + intellect * 3) / 6 + level * 2)
+
+          [:agility] ->
+            agility = Mobile.attribute_at_level(companion, :agility, level)
+            willpower = Mobile.attribute_at_level(companion, :willpower, level)
+
+            trunc((agility * 3 + willpower * 3) / 6 + level * 2)
+
+          [:intellect, :willpower] ->
+            intellect = Mobile.attribute_at_level(companion, :intellect, level)
+            willpower = Mobile.attribute_at_level(companion, :willpower, level)
+
+            trunc((willpower + intellect) / 3 + level * 2)
+
+          [:charm] ->
+            charm = Mobile.attribute_at_level(companion, :charm, level)
+            willpower = Mobile.attribute_at_level(companion, :willpower, level)
+
+            trunc((charm * 3 + willpower * 3) / 6 + level * 2)
+        end
 
       sc + ability_value(companion, "Spellcasting")
     end

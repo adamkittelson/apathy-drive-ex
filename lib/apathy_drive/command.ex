@@ -146,6 +146,7 @@ defmodule ApathyDrive.Command do
               ability
               |> Map.put(:traits, traits)
               |> Map.put(:mana, 0)
+              |> Map.put(:difficulty, 0)
 
             Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 

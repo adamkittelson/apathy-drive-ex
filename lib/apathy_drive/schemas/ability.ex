@@ -40,6 +40,7 @@ defmodule ApathyDrive.Ability do
     field(:cooldown, :integer)
     field(:cast_time, :integer)
     field(:energy, :integer, default: 1000)
+    field(:difficulty, :integer)
 
     field(:traits, :map, virtual: true, default: %{})
     field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
@@ -487,6 +488,9 @@ defmodule ApathyDrive.Ability do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
           mobile
 
+        casting_failed?(caster, ability) ->
+          casting_failed(room, caster_ref, ability)
+
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, item, ability)
 
@@ -593,6 +597,9 @@ defmodule ApathyDrive.Ability do
       cond do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
           mobile
+
+        casting_failed?(caster, ability) ->
+          casting_failed(room, caster_ref, ability)
 
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, targets, ability)
@@ -738,16 +745,8 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def duration(%Ability{duration: duration} = ability, %{} = caster, %{} = target, _room) do
-    if duration > 0 do
-      caster_level = Mobile.caster_level(caster, target)
-
-      caster_sc = Mobile.spellcasting_at_level(caster, caster_level, ability)
-
-      trunc(duration * :math.pow(1.005, caster_sc))
-    else
-      duration
-    end
+  def duration(%Ability{duration: duration} = _ability, %{} = _caster, %{} = _target, _room) do
+    duration
   end
 
   def dodged?(%{} = caster, %{} = target, room) do
@@ -1565,14 +1564,8 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Damage", damage_percent)
   end
 
-  def process_duration_trait({"Heal", value}, effects, target, caster, ability, _room) do
-    average = (value["min"] + value["max"]) / 2
-
-    attribute_value = Mobile.spellcasting_at_level(caster, caster.level, ability)
-
-    modifier = (attribute_value + 50) / 100
-
-    healing = average * modifier
+  def process_duration_trait({"Heal", value}, effects, target, _caster, _ability, _room) do
+    healing = (value["min"] + value["max"]) / 2
 
     percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
 
@@ -2244,5 +2237,39 @@ defmodule ApathyDrive.Ability do
         "<p><span class='cyan'>You do not have enough mana to use that ability.</span></p>"
       )
     end
+  end
+
+  def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false
+
+  def casting_failed?(%{} = caster, %Ability{difficulty: difficulty} = ability) do
+    spellcasting = Mobile.spellcasting_at_level(caster, caster.level, ability)
+    :rand.uniform(100) > spellcasting + difficulty
+  end
+
+  def casting_failed(room, caster_ref, ability) do
+    room =
+      Room.update_mobile(room, caster_ref, fn caster ->
+        Mobile.send_scroll(
+          caster,
+          "<p><span class='dark-cyan'>You attempt to cast #{ability.name}, but fail.</span></p>"
+        )
+
+        Room.send_scroll(
+          room,
+          "<p><span class='dark-cyan'>#{caster.name} attempts to cast #{ability.name}, but fails.</span></p>",
+          [caster]
+        )
+
+        ability = Map.put(ability, :mana, div(ability.mana, 2))
+
+        caster
+        |> Mobile.subtract_mana(ability)
+        |> Mobile.subtract_energy(ability)
+      end)
+
+    Room.update_energy_bar(room, caster_ref)
+    Room.update_mana_bar(room, caster_ref)
+
+    room
   end
 end
