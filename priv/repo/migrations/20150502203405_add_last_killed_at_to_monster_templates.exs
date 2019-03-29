@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddLastKilledAtToMonsterTemplates do
 
   def change do
     alter table(:monster_templates) do
-      add(:last_killed_at, :datetime)
+      add(:last_killed_at, :utc_datetime)
     end
   end
 end
