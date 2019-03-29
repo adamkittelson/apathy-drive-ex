@@ -277,3 +277,6 @@ CHANGELOG
 
 ---- 0.0.102 / 2019-03-27 / scroll-reading-redux -------------------------------
 * read scrolls to learn spells, forget spells
+
+---- 0.0.103 / 2019-03-29 / dns-things -----------------------------------------
+* update dns settings to point at current ip periodically (prep for when i host at home with a dynamic ip)
