@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveQuestionsFromMonsters do
 
   def change do
     alter table(:mobiles) do
-      remove :questions
+      remove(:questions)
     end
   end
 end

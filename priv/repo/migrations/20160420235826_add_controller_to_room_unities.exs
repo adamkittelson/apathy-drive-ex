@@ -3,10 +3,9 @@ defmodule ApathyDrive.Repo.Migrations.AddControllerToRoomUnities do
 
   def change do
     alter table(:room_unities) do
-      add :controlled_by, :text
+      add(:controlled_by, :text)
     end
 
-    create index(:room_unities, [:controlled_by])
-
+    create(index(:room_unities, [:controlled_by]))
   end
 end

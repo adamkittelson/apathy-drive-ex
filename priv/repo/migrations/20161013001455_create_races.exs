@@ -3,14 +3,14 @@ defmodule ApathyDrive.Repo.Migrations.CreateRaces do
 
   def change do
     create table(:races) do
-      add :name, :text
-      add :description, :text
-      add :strength, :integer
-      add :agility, :integer
-      add :intellect, :integer
-      add :willpower, :integer
-      add :health, :integer
-      add :charm, :integer
+      add(:name, :text)
+      add(:description, :text)
+      add(:strength, :integer)
+      add(:agility, :integer)
+      add(:intellect, :integer)
+      add(:willpower, :integer)
+      add(:health, :integer)
+      add(:charm, :integer)
 
       timestamps
     end

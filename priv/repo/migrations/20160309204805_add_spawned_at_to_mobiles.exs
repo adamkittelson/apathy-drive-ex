@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddSpawnedAtToMonsters do
 
   def change do
     alter table(:mobiles) do
-      add :spawned_at, :integer
+      add(:spawned_at, :integer)
     end
   end
 end

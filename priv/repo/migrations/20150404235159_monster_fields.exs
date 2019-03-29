@@ -3,30 +3,31 @@ defmodule ApathyDrive.Repo.Migrations.MonsterFields do
 
   def up do
     alter table(:monsters) do
-      remove :experience
-      remove :alignment
-      remove :level
-      remove :skills
-      remove :limbs
+      remove(:experience)
+      remove(:alignment)
+      remove(:level)
+      remove(:skills)
+      remove(:limbs)
     end
-    
+
     alter table(:monster_templates) do
-      remove :possession_level
-      add :level, :integer
+      remove(:possession_level)
+      add(:level, :integer)
     end
   end
 
   def down do
     alter table(:monsters) do
-      add :experience, :integer
-      add :alignment,  :integer
-      add :level,      :integer
-      add :skills,     :jsonb
-      add :limbs,      :jsonb
+      add(:experience, :integer)
+      add(:alignment, :integer)
+      add(:level, :integer)
+      add(:skills, :jsonb)
+      add(:limbs, :jsonb)
     end
+
     alter table(:monster_templates) do
-      remove :level
-      add :possession_level, :integer
+      remove(:level)
+      add(:possession_level, :integer)
     end
   end
 end

@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddAreaToRooms do
 
   def change do
     alter table(:rooms) do
-      add :area, :text
+      add(:area, :text)
     end
   end
 end

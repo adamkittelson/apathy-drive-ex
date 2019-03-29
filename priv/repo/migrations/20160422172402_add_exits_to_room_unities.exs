@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddExitsToRoomUnities do
 
   def change do
     alter table(:room_unities) do
-      add :exits, :jsonb
+      add(:exits, :jsonb)
     end
   end
 end

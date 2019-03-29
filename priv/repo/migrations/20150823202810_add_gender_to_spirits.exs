@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddGenderToSpirits do
 
   def change do
     alter table(:spirits) do
-      add :gender, :text
+      add(:gender, :text)
     end
   end
 end

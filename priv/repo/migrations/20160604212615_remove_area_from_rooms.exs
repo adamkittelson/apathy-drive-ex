@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveAreaFromRooms do
 
   def change do
     alter table(:rooms) do
-      remove :area
+      remove(:area)
     end
   end
 end

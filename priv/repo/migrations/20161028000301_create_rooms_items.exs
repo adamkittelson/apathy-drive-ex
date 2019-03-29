@@ -3,9 +3,9 @@ defmodule ApathyDrive.Repo.Migrations.CreateRoomsItems do
 
   def change do
     create table(:rooms_items) do
-      add :room_id, references(:rooms)
-      add :item_id, references(:items)
-      add :level, :integer
+      add(:room_id, references(:rooms))
+      add(:item_id, references(:items))
+      add(:level, :integer)
 
       timestamps
     end

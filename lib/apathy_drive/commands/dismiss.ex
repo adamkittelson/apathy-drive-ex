@@ -10,10 +10,10 @@ defmodule ApathyDrive.Commands.Dismiss do
     case Room.find_mobile_in_room(room, character, query) do
       %Companion{} = companion ->
         Companion.dismiss(companion, room)
+
       _ ->
         Mobile.send_scroll(character, "<p>You don't see #{query} here!</p>")
         room
     end
   end
-
 end

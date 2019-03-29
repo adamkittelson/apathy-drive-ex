@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddRegenTimeToMonsterTemplates do
 
   def change do
     alter table(:monster_templates) do
-      add :regen_time_in_minutes, :integer
+      add(:regen_time_in_minutes, :integer)
     end
   end
 end

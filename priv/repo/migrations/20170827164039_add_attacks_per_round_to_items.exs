@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddAttacksPerRoundToItems do
 
   def change do
     alter table(:items) do
-      add :attacks_per_round, :integer
+      add(:attacks_per_round, :integer)
     end
   end
 end

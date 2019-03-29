@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddCooldownInMsToSpells do
 
   def change do
     alter table(:spells) do
-      add :cooldown_in_ms, :integer
+      add(:cooldown_in_ms, :integer)
     end
   end
 end

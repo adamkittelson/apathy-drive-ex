@@ -3,10 +3,11 @@ defmodule ApathyDrive.Repo.Migrations.AddUnityToSpiritsAndMonsters do
 
   def change do
     alter table(:mobiles) do
-      add :unity, :text
+      add(:unity, :text)
     end
+
     alter table(:spirits) do
-      add :unity, :text
+      add(:unity, :text)
     end
   end
 end

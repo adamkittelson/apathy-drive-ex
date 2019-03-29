@@ -3,9 +3,9 @@ defmodule ApathyDrive.Repo.Migrations.AddAttributesToMonsterTemplates do
 
   def change do
     alter table(:monster_templates) do
-      add :strength, :integer
-      add :agility,  :integer
-      add :will,     :integer
+      add(:strength, :integer)
+      add(:agility, :integer)
+      add(:will, :integer)
     end
   end
 end

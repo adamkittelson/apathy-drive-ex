@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddPermanentToMonsterTemplates do
 
   def change do
     alter table(:monster_templates) do
-      add :permanent, :boolean
+      add(:permanent, :boolean)
     end
   end
 end

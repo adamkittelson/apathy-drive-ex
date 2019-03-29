@@ -5,8 +5,10 @@ defmodule ApathyDrive.JSONB do
 
   def cast(json) when is_binary(json) do
     case Poison.decode(json) do
-      {:ok, any} -> {:ok, any}
-      _          ->
+      {:ok, any} ->
+        {:ok, any}
+
+      _ ->
         if String.contains?(json, ["{", "}", "[", "]"]) do
           :error
         else
@@ -14,16 +16,17 @@ defmodule ApathyDrive.JSONB do
         end
     end
   end
-  def cast(%{} = map),               do: {:ok, map}
+
+  def cast(%{} = map), do: {:ok, map}
   def cast(list) when is_list(list), do: {:ok, list}
   def cast(number) when is_number(number), do: {:ok, number}
   def cast(_), do: :error
 
   def blank?(nil), do: true
-  def blank?(_),   do: false
-
+  def blank?(_), do: false
 
   def load(""), do: {:ok, nil}
+
   def load(json) when is_binary(json) do
     case Poison.decode(json) do
       {:ok, any} -> {:ok, any}
@@ -34,13 +37,14 @@ defmodule ApathyDrive.JSONB do
       _ -> :error
     end
   end
+
   def load(nil), do: {:ok, nil}
   def load(value), do: {:ok, value}
 
   def dump(json) when is_binary(json), do: {:ok, json}
   def dump(nil), do: {:ok, nil}
+
   def dump(any) do
     {:ok, any}
   end
-
 end

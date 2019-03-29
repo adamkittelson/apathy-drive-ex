@@ -6,15 +6,17 @@ defmodule ApathyDrive.System do
   def add_admin(name) do
     case Repo.get_by(Character, name: name) do
       %Character{admin: true} ->
-        Logger.info "#{name} is already an admin"
+        Logger.info("#{name} is already an admin")
+
       %Character{} = character ->
         character
         |> Map.put(:admin, true)
-        |> Repo.save!
+        |> Repo.save!()
 
-        Logger.info "#{name} is now an admin"
+        Logger.info("#{name} is now an admin")
+
       nil ->
-        Logger.info "#{name} does not exist"
+        Logger.info("#{name} does not exist")
     end
   end
 
@@ -23,13 +25,15 @@ defmodule ApathyDrive.System do
       %Character{admin: true} = character ->
         character
         |> Map.put(:admin, false)
-        |> Repo.save!
+        |> Repo.save!()
 
-        Logger.info "#{name} is no longer an admin"
+        Logger.info("#{name} is no longer an admin")
+
       %Character{} ->
-        Logger.info "#{name} is not an admin"
+        Logger.info("#{name} is not an admin")
+
       nil ->
-        Logger.info "#{name} does not exist"
+        Logger.info("#{name} does not exist")
     end
   end
 end

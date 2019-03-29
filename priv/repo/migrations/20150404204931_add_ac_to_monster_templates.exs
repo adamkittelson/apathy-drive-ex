@@ -3,13 +3,13 @@ defmodule ApathyDrive.Repo.Migrations.AddAcToMonsterTemplates do
 
   def up do
     alter table(:monster_templates) do
-      add :ac, :integer
+      add(:ac, :integer)
     end
   end
 
   def down do
     alter table(:monster_templates) do
-      remove :ac
+      remove(:ac)
     end
   end
 end

@@ -3,12 +3,12 @@ defmodule ApathyDrive.Repo.Migrations.AddMinimumEssenceAndUnitiesToMonsterTempla
 
   def change do
     alter table(:monster_templates) do
-      add :unities, {:array, :string}
-      add :minimum_essence, :bigint
+      add(:unities, {:array, :string})
+      add(:minimum_essence, :bigint)
     end
 
     alter table(:mobiles) do
-      add :minimum_essence, :bigint
+      add(:minimum_essence, :bigint)
     end
   end
 end

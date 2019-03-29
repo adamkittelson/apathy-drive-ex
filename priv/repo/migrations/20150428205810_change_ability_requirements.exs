@@ -3,9 +3,9 @@ defmodule ApathyDrive.Repo.Migrations.ChangeAbilityRequirements do
 
   def change do
     alter table(:abilities) do
-      add :level, :integer
-      add :school, :text
-      remove :required_skills
+      add(:level, :integer)
+      add(:school, :text)
+      remove(:required_skills)
     end
   end
 end

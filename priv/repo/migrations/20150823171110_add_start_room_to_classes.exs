@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddStartRoomToClasses do
 
   def change do
     alter table(:classes) do
-      add :start_room_id, :integer
+      add(:start_room_id, :integer)
     end
   end
 end

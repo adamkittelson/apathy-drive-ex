@@ -3,8 +3,8 @@ defmodule ApathyDrive.Repo.Migrations.AddEmailAndPasswordToSpirits do
 
   def change do
     alter table(:spirits) do
-      add :email, :text
-      add :password, :text
+      add(:email, :text)
+      add(:password, :text)
     end
   end
 end

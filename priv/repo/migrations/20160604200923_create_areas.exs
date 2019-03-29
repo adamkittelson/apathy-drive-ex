@@ -3,17 +3,16 @@ defmodule ApathyDrive.Repo.Migrations.CreateAreas do
 
   def change do
     create table(:areas) do
-      add :name,   :text
-      add :level,  :integer
+      add(:name, :text)
+      add(:level, :integer)
 
       timestamps
     end
 
     alter table(:rooms) do
-      add :area_id, :integer
+      add(:area_id, :integer)
     end
 
-    create index(:rooms, [:area_id])
-
+    create(index(:rooms, [:area_id]))
   end
 end

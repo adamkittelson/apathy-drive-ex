@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddDurationToCrits do
 
   def change do
     alter table(:crits) do
-      add :duration, :integer
+      add(:duration, :integer)
     end
   end
 end

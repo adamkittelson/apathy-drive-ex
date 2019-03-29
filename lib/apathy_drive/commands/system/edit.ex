@@ -8,19 +8,26 @@ defmodule ApathyDrive.Commands.System.Edit do
       nil ->
         Mobile.send_scroll(character, "<p>\"#{ability_name}\" does not match any abilities.</p>")
         room
+
       %Ability{} = ability ->
         Mobile.send_scroll(character, "<p>You are now editing #{ability.name}.</p>")
 
         Room.update_mobile(room, character.ref, fn character ->
           character
           |> Map.put(:editing, ability)
-          |> Mobile.update_prompt
+          |> Mobile.update_prompt()
         end)
+
       matches ->
-        Mobile.send_scroll(character, "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
-        Enum.each(matches, fn(match) ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+        )
+
+        Enum.each(matches, fn match ->
           Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
         end)
+
         room
     end
   end
@@ -32,19 +39,26 @@ defmodule ApathyDrive.Commands.System.Edit do
       nil ->
         Mobile.send_scroll(character, "<p>\"#{skill_name}\" does not match any skills.</p>")
         room
+
       %Skill{} = skill ->
         Mobile.send_scroll(character, "<p>You are now editing #{skill.name}.</p>")
 
         Room.update_mobile(room, character.ref, fn character ->
           character
           |> Map.put(:editing, skill)
-          |> Mobile.update_prompt
+          |> Mobile.update_prompt()
         end)
+
       matches ->
-        Mobile.send_scroll(character, "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>")
-        Enum.each(matches, fn(match) ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+        )
+
+        Enum.each(matches, fn match ->
           Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
         end)
+
         room
     end
   end
@@ -54,6 +68,4 @@ defmodule ApathyDrive.Commands.System.Edit do
 
     room
   end
-
-
 end

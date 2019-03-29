@@ -3,13 +3,13 @@ defmodule ApathyDrive.Repo.Migrations.AddSkillsToSpirits do
 
   def up do
     alter table(:spirits) do
-      add :skills, :jsonb
+      add(:skills, :jsonb)
     end
   end
 
   def down do
     alter table(:spirits) do
-      remove :skills
+      remove(:skills)
     end
   end
 end

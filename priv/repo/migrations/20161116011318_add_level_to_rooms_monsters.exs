@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddLevelToRoomsMonsters do
 
   def change do
     alter table(:rooms_monsters) do
-      add :level, :integer
+      add(:level, :integer)
     end
   end
 end

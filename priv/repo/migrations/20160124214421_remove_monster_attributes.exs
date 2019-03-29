@@ -3,11 +3,11 @@ defmodule ApathyDrive.Repo.Migrations.RemoveMonsterAttributes do
 
   def change do
     alter table(:monster_templates) do
-      remove :strength
-      remove :agility
-      remove :will
+      remove(:strength)
+      remove(:agility)
+      remove(:will)
     end
 
-    drop table(:monsters)
+    drop(table(:monsters))
   end
 end

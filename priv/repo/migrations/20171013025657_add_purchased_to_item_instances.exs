@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddPurchasedToItemInstances do
 
   def change do
     alter table(:items_instances) do
-      add :purchased, :boolean
+      add(:purchased, :boolean)
     end
   end
 end

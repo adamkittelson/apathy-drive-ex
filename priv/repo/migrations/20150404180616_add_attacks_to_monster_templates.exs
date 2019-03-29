@@ -3,13 +3,13 @@ defmodule ApathyDrive.Repo.Migrations.AddAttacksToMonsterTemplates do
 
   def up do
     alter table(:monster_templates) do
-      add :attacks, :jsonb
+      add(:attacks, :jsonb)
     end
   end
 
   def down do
     alter table(:monster_templates) do
-      remove :attacks
+      remove(:attacks)
     end
   end
 end

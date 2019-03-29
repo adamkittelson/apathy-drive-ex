@@ -3,16 +3,16 @@ defmodule ApathyDrive.Repo.Migrations.CreateHints do
 
   def up do
     create table(:hints) do
-      add :name, :text
-      add :body, :text
+      add(:name, :text)
+      add(:body, :text)
 
       timestamps
     end
 
-    create index(:hints, [:name])
+    create(index(:hints, [:name]))
   end
 
   def down do
-    drop table(:hints)
+    drop(table(:hints))
   end
 end

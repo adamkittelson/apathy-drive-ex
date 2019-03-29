@@ -11,11 +11,17 @@ defmodule ApathyDrive.Commands.RemoteAction do
       room =
         room
         |> clear_triggers?(exit_to_trigger, room_exit)
-        |> trigger(%{direction: exit_to_trigger["direction"], remote_exit: %{"direction" => direction, "room" => from}})
+        |> trigger(%{
+          direction: exit_to_trigger["direction"],
+          remote_exit: %{"direction" => direction, "room" => from}
+        })
 
       if Doors.open?(room, exit_to_trigger) do
         if exit_to_trigger["message_when_revealed"] do
-          Room.send_scroll(room, "<p><span class='white'>#{exit_to_trigger["message_when_revealed"]}</span></p>")
+          Room.send_scroll(
+            room,
+            "<p><span class='white'>#{exit_to_trigger["message_when_revealed"]}</span></p>"
+          )
         end
       end
 
@@ -25,32 +31,41 @@ defmodule ApathyDrive.Commands.RemoteAction do
 
   defp trigger(room, exit_to_trigger) do
     room
-    |> Systems.Effect.add(%{:triggered => exit_to_trigger, "stack_key" => exit_to_trigger, "stack_count" => 1}, 300_000)
+    |> Systems.Effect.add(
+      %{:triggered => exit_to_trigger, "stack_key" => exit_to_trigger, "stack_count" => 1},
+      300_000
+    )
   end
 
   defp open(room, direction) do
     room
-    |> Systems.Effect.add(%{:opened_remotely => direction, "stack_key" => "open-#{direction}", "stack_count" => 1}, 300_000)
+    |> Systems.Effect.add(
+      %{:opened_remotely => direction, "stack_key" => "open-#{direction}", "stack_count" => 1},
+      300_000
+    )
   end
 
   defp exit_to_trigger(%Room{exits: exits}, %{"direction" => direction}, from) do
     exits
-    |> Enum.find(fn(exit_to_trigger) ->
-         exit_to_trigger
-         |> Map.get("remote_action_exits", [])
-         |> Enum.find(fn
-              %{"room" => ^from, "direction" => ^direction} ->
-                true
-              _ ->
-                false
-            end)
-       end)
+    |> Enum.find(fn exit_to_trigger ->
+      exit_to_trigger
+      |> Map.get("remote_action_exits", [])
+      |> Enum.find(fn
+        %{"room" => ^from, "direction" => ^direction} ->
+          true
+
+        _ ->
+          false
+      end)
+    end)
   end
 
-  def clear_triggers?(room, %{"remote_action_order_matters" => true, "direction" => direction}, %{"remote_action_order" => order}) do
+  def clear_triggers?(room, %{"remote_action_order_matters" => true, "direction" => direction}, %{
+        "remote_action_order" => order
+      }) do
     triggered_count =
       Doors.triggered?(room, direction)
-      |> Enum.count
+      |> Enum.count()
 
     if order != triggered_count + 1 do
       clear_triggers(room, direction)
@@ -58,14 +73,15 @@ defmodule ApathyDrive.Commands.RemoteAction do
       room
     end
   end
+
   def clear_triggers?(room, _exit_to_trigger, _room_exit), do: room
 
   def clear_triggers(room, direction) do
     room.effects
-    |> Map.keys
-    |> Enum.filter(fn(key) ->
-         room.effects[key][:triggered][:direction] == direction
-       end)
-    |> Enum.reduce(room, &(Systems.Effect.remove(&2, &1, show_expiration_message: true)))
+    |> Map.keys()
+    |> Enum.filter(fn key ->
+      room.effects[key][:triggered][:direction] == direction
+    end)
+    |> Enum.reduce(room, &Systems.Effect.remove(&2, &1, show_expiration_message: true))
   end
 end

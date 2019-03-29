@@ -3,22 +3,21 @@ defmodule ApathyDrive.Repo.Migrations.CreateSpirits do
 
   def up do
     create table(:spirits) do
-      add :name,              :text
-      add :experience,        :integer
-      add :level,             :integer
-      add :url,               :text
-      add :hints,             {:array, :string}
-      add :disabled_hints,    {:array, :string}
-      add :room_id,           references(:rooms)
+      add(:name, :text)
+      add(:experience, :integer)
+      add(:level, :integer)
+      add(:url, :text)
+      add(:hints, {:array, :string})
+      add(:disabled_hints, {:array, :string})
+      add(:room_id, references(:rooms))
 
       timestamps
     end
 
-    create index(:spirits, [:room_id])
+    create(index(:spirits, [:room_id]))
   end
 
   def down do
-    drop table(:spirits)
+    drop(table(:spirits))
   end
-
 end

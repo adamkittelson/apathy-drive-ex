@@ -3,8 +3,8 @@ defmodule ApathyDrive.Repo.Migrations.AddPhysicalAndMagicalResistanceToItems do
 
   def change do
     alter table(:items) do
-      add :physical_resistance, :integer
-      add :magical_resistance, :integer
+      add(:physical_resistance, :integer)
+      add(:magical_resistance, :integer)
     end
   end
 end

@@ -3,8 +3,9 @@ defmodule ApathyDrive.Repo.Migrations.RemoveSkills do
 
   def change do
     alter table(:rooms) do
-      remove :trainable_skills
+      remove(:trainable_skills)
     end
-    drop table(:skills)
+
+    drop(table(:skills))
   end
 end

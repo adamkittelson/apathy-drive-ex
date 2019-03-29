@@ -3,21 +3,21 @@ defmodule ApathyDrive.Repo.Migrations.CreateSkills do
 
   def up do
     create table(:skills) do
-      add :name,         :text
-      add :level,        :integer
-      add :cost,         :decimal
-      add :universal,    :boolean
-      add :strength,     :integer
-      add :agility,      :integer
-      add :intelligence, :integer
-      add :health,       :integer
-      add :description,  :text
+      add(:name, :text)
+      add(:level, :integer)
+      add(:cost, :decimal)
+      add(:universal, :boolean)
+      add(:strength, :integer)
+      add(:agility, :integer)
+      add(:intelligence, :integer)
+      add(:health, :integer)
+      add(:description, :text)
 
       timestamps
     end
   end
 
   def down do
-    drop table(:skills)
+    drop(table(:skills))
   end
 end

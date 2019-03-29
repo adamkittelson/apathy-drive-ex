@@ -3,13 +3,13 @@ defmodule ApathyDrive.Repo.Migrations.AddTypeToAbilities do
 
   def up do
     alter table(:abilities) do
-      add :kind, :text
+      add(:kind, :text)
     end
   end
 
   def down do
     alter table(:abilities) do
-      remove :kind
+      remove(:kind)
     end
   end
 end

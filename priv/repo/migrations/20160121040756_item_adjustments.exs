@@ -3,12 +3,12 @@ defmodule ApathyDrive.Repo.Migrations.ItemAdjustments do
 
   def change do
     alter table(:items) do
-      remove :grade
-      add :grade, :text
-      remove :strength
-      remove :agility
-      remove :will
-      add :global_drop, :boolean
+      remove(:grade)
+      add(:grade, :text)
+      remove(:strength)
+      remove(:agility)
+      remove(:will)
+      add(:global_drop, :boolean)
     end
   end
 end

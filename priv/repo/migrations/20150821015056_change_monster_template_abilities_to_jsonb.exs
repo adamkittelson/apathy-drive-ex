@@ -3,8 +3,8 @@ defmodule ApathyDrive.Repo.Migrations.ChangeMonsterTemplateAbilitiesToJsonb do
 
   def change do
     alter table(:monster_templates) do
-      remove :abilities
-      add :abilities, :jsonb
+      remove(:abilities)
+      add(:abilities, :jsonb)
     end
   end
 end

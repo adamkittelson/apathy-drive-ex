@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddUnitiesToClasses do
 
   def change do
     alter table(:classes) do
-      add :unities, {:array, :string}
+      add(:unities, {:array, :string})
     end
   end
 end

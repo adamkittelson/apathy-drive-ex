@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddCommandsToRooms do
 
   def change do
     alter table(:rooms) do
-      add :commands, :jsonb
+      add(:commands, :jsonb)
     end
   end
 end

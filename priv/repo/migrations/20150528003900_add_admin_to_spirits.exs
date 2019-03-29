@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddAdminToSpirits do
 
   def change do
     alter table(:spirits) do
-      add :admin, :boolean, default: false
+      add(:admin, :boolean, default: false)
     end
   end
 end

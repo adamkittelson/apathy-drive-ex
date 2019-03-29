@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveUrlFromSpirits do
 
   def change do
     alter table(:spirits) do
-      remove :url
+      remove(:url)
     end
   end
 end

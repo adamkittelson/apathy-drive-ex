@@ -1,5 +1,4 @@
 defmodule ApathyDrive.PubSub do
-
   def broadcast!(topic, message) do
     Phoenix.PubSub.broadcast!(:pub_sub, topic, message)
   end
@@ -19,13 +18,14 @@ defmodule ApathyDrive.PubSub do
   def broadcast_except(exceptions, topic, message) do
     topic
     |> subscribers
-    |> Enum.each(fn(pid) ->
-         if Enum.member?(exceptions, pid) do
-           :noop
-         else
-           send(pid, message)
-         end
-       end)
+    |> Enum.each(fn pid ->
+      if Enum.member?(exceptions, pid) do
+        :noop
+      else
+        send(pid, message)
+      end
+    end)
+
     :ok
   end
 
@@ -40,5 +40,4 @@ defmodule ApathyDrive.PubSub do
   def unsubscribe(topic) do
     Phoenix.PubSub.unsubscribe(:pub_sub, topic)
   end
-
 end

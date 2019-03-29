@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddCoordinatesToRooms do
 
   def change do
     alter table(:rooms) do
-      add :coordinates, :jsonb
+      add(:coordinates, :jsonb)
     end
   end
 end

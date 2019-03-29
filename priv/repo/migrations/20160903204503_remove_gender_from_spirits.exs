@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveGenderFromSpirits do
 
   def change do
     alter table(:spirits) do
-      remove :gender
+      remove(:gender)
     end
   end
 end

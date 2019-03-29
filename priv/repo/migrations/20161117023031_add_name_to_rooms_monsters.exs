@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddNameToRoomsMonsters do
 
   def change do
     alter table(:rooms_monsters) do
-      add :name, :string
+      add(:name, :string)
     end
   end
 end

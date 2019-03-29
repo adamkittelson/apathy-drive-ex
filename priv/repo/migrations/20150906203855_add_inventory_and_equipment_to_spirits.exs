@@ -3,8 +3,8 @@ defmodule ApathyDrive.Repo.Migrations.AddInventoryAndEquipmentToSpirits do
 
   def change do
     alter table(:spirits) do
-      add :inventory, :jsonb
-      add :equipment, :jsonb
+      add(:inventory, :jsonb)
+      add(:equipment, :jsonb)
     end
   end
 end

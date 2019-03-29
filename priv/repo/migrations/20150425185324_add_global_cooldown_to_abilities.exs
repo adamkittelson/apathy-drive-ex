@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddGlobalCooldownToAbilities do
 
   def change do
     alter table(:abilities) do
-      add :global_cooldown, :float
+      add(:global_cooldown, :float)
     end
   end
 end

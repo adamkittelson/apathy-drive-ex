@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveExitsFromRoomUnities do
 
   def change do
     alter table(:room_unities) do
-      remove :exits
+      remove(:exits)
     end
   end
 end

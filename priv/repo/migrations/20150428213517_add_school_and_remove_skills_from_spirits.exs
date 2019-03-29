@@ -3,8 +3,8 @@ defmodule ApathyDrive.Repo.Migrations.AddSchoolAndRemoveSkillsFromSpirits do
 
   def change do
     alter table(:spirits) do
-      add :school, :text
-      remove :skills
+      add(:school, :text)
+      remove(:skills)
     end
   end
 end

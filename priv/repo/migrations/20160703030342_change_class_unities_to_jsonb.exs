@@ -3,15 +3,15 @@ defmodule ApathyDrive.Repo.Migrations.ChangeClassUnitiesToJsonb do
 
   def up do
     alter table(:classes) do
-      remove :unities
-      add :unities, :jsonb
+      remove(:unities)
+      add(:unities, :jsonb)
     end
   end
-  
+
   def down do
     alter table(:classes) do
-      remove :unities
-      add :unities, {:array, :string}
+      remove(:unities)
+      add(:unities, {:array, :string})
     end
   end
 end

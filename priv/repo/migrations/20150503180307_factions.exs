@@ -3,18 +3,17 @@ defmodule ApathyDrive.Repo.Migrations.Factions do
 
   def change do
     alter table(:abilities) do
-      add :faction, :text
-      remove :school
+      add(:faction, :text)
+      remove(:school)
     end
 
     alter table(:spirits) do
-      add :faction, :text
-      remove :school
+      add(:faction, :text)
+      remove(:school)
     end
 
     alter table(:rooms) do
-      add :lair_faction, :text
+      add(:lair_faction, :text)
     end
   end
-
 end

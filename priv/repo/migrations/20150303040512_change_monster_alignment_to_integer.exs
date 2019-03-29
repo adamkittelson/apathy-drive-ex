@@ -3,13 +3,13 @@ defmodule ApathyDrive.Repo.Migrations.ChangeMonsterAlignmentToInteger do
 
   def up do
     alter table(:monsters) do
-      modify :alignment, :integer
+      modify(:alignment, :integer)
     end
   end
 
   def down do
     alter table(:monsters) do
-      modify :alignment, :decimal
+      modify(:alignment, :decimal)
     end
   end
 end

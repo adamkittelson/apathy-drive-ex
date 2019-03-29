@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddPermanentNpcToRooms do
 
   def change do
     alter table(:rooms) do
-      add :permanent_npc, :integer
+      add(:permanent_npc, :integer)
     end
   end
 end

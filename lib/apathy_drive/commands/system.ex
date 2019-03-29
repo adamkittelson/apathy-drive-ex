@@ -38,6 +38,7 @@ defmodule ApathyDrive.Commands.System do
     character =
       character
       |> Map.put(:editing, Repo.get(Ability, ability.id))
+
     System.Ability.execute(room, character, args)
   end
 
@@ -45,11 +46,11 @@ defmodule ApathyDrive.Commands.System do
     character =
       character
       |> Map.put(:editing, Repo.get(Skill, skill.id))
+
     System.Skill.execute(room, character, args)
   end
 
   def system(%Room{} = room, character, args) do
     System.Misc.execute(room, character, args)
   end
-
 end

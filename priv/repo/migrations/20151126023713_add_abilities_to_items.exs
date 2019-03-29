@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddAbilitiesToItems do
 
   def change do
     alter table(:items) do
-      add :abilities, :jsonb
+      add(:abilities, :jsonb)
     end
   end
 end

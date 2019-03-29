@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveUnitiesFromSpirits do
 
   def change do
     alter table(:spirits) do
-      remove :unities
+      remove(:unities)
     end
   end
 end

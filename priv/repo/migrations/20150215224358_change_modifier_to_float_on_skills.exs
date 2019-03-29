@@ -3,13 +3,13 @@ defmodule ApathyDrive.Repo.Migrations.ChangeDecimalsToFloats do
 
   def up do
     alter table(:skills) do
-      modify :cost, :float
+      modify(:cost, :float)
     end
   end
 
   def down do
     alter table(:skills) do
-      modify :cost, :decimal
+      modify(:cost, :decimal)
     end
   end
 end

@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveStartRoomFromRooms do
 
   def change do
     alter table(:rooms) do
-      remove :start_room
+      remove(:start_room)
     end
   end
 end

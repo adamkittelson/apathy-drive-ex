@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddAlignmentToSpirits do
 
   def change do
     alter table(:spirits) do
-      add :alignment, :text
+      add(:alignment, :text)
     end
   end
 end

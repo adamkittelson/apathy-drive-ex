@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddFlagsToSpirits do
 
   def change do
     alter table(:spirits) do
-      add :flags, :jsonb
+      add(:flags, :jsonb)
     end
   end
 end

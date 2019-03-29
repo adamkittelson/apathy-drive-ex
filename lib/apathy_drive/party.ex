@@ -3,19 +3,19 @@ defmodule ApathyDrive.Party do
 
   def invitees(%Room{} = room, %{} = member) do
     leader(room, member).invitees
-    |> Enum.uniq
+    |> Enum.uniq()
   end
 
   def members(%Room{} = room, %{leader: ref}) do
     room.mobiles
-    |> Map.values
-    |> Enum.filter(& Map.get(&1, :leader) == ref)
+    |> Map.values()
+    |> Enum.filter(&(Map.get(&1, :leader) == ref))
   end
 
   def size(%Room{} = room, member) do
     room
     |> members(member)
-    |> Enum.count
+    |> Enum.count()
   end
 
   def refs(%Room{} = room, member) do
@@ -31,6 +31,6 @@ defmodule ApathyDrive.Party do
   def charm_at_level(%Room{} = room, member, level) do
     room
     |> members(member)
-    |> Enum.reduce(0, & &2 + Mobile.attribute_at_level(&1, :charm, level))
+    |> Enum.reduce(0, &(&2 + Mobile.attribute_at_level(&1, :charm, level)))
   end
 end

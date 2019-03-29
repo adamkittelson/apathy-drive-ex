@@ -3,17 +3,17 @@ defmodule ApathyDrive.Repo.Migrations.AddPoeAttributesToMonsterTemplates do
 
   def up do
     alter table(:monster_templates) do
-      add :abilities, :jsonb
+      add(:abilities, :jsonb)
 
-      remove :permanent
+      remove(:permanent)
     end
   end
 
   def down do
     alter table(:monster_templates) do
-      remove :abilities
+      remove(:abilities)
 
-      add :permanent, :boolean
+      add(:permanent, :boolean)
     end
   end
 end

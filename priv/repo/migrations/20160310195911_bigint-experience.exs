@@ -3,10 +3,11 @@ defmodule :"Elixir.ApathyDrive.Repo.Migrations.Bigint-experience" do
 
   def change do
     alter table(:mobiles) do
-      modify :experience, :bigint
+      modify(:experience, :bigint)
     end
+
     alter table(:spirits) do
-      modify :experience, :bigint
+      modify(:experience, :bigint)
     end
   end
 end

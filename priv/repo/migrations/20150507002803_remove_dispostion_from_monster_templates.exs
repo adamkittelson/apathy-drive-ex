@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.RemoveDispostionFromMonsterTemplates do
 
   def change do
     alter table(:monster_templates) do
-      remove :disposition
+      remove(:disposition)
     end
   end
 end

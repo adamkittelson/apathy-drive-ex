@@ -3,19 +3,21 @@ defmodule ApathyDrive.Repo.Migrations.AddFlagsToAbilitiesAndMonsterTemplates do
 
   def up do
     alter table(:abilities) do
-      add :flags, {:array, :string}
+      add(:flags, {:array, :string})
     end
+
     alter table(:monster_templates) do
-      add :flags, {:array, :string}
+      add(:flags, {:array, :string})
     end
   end
 
   def down do
     alter table(:abilities) do
-      remove :flags
+      remove(:flags)
     end
+
     alter table(:monster_templates) do
-      remove :flags
+      remove(:flags)
     end
   end
 end

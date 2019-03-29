@@ -3,7 +3,7 @@ defmodule ApathyDrive.Repo.Migrations.AddGoldToCharacters do
 
   def change do
     alter table(:characters) do
-      add :gold, :bigint
+      add(:gold, :bigint)
     end
   end
 end
