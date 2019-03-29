@@ -18,7 +18,7 @@ defmodule ApathyDrive.Repo.Migrations.AddEntitiesItems do
       add(:health, :integer)
       add(:charm, :integer)
 
-      timestamps
+      timestamps()
     end
 
     create(index(:entities_items, [:assoc_table, :assoc_id]))

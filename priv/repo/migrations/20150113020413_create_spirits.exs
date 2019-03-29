@@ -11,7 +11,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateSpirits do
       add(:disabled_hints, {:array, :string})
       add(:room_id, references(:rooms))
 
-      timestamps
+      timestamps()
     end
 
     create(index(:spirits, [:room_id]))

@@ -9,7 +9,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateAbilities do
       add(:required_skills, :jsonb)
       add(:properties, :jsonb)
 
-      timestamps
+      timestamps()
     end
   end
 

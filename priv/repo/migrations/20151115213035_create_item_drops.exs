@@ -7,7 +7,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateItemDrops do
       add(:item_id, references(:items))
       add(:chance, :integer)
 
-      timestamps
+      timestamps()
     end
 
     create(unique_index(:item_drops, [:monster_id, :item_id]))

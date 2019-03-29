@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.CreatePlayer do
       add(:external_id, :string)
       add(:admin, :boolean, default: false)
 
-      timestamps
+      timestamps()
     end
   end
 end

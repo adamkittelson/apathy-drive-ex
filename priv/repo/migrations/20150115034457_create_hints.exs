@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateHints do
       add(:name, :text)
       add(:body, :text)
 
-      timestamps
+      timestamps()
     end
 
     create(index(:hints, [:name]))

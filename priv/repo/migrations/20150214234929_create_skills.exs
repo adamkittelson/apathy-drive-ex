@@ -13,7 +13,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateSkills do
       add(:health, :integer)
       add(:description, :text)
 
-      timestamps
+      timestamps()
     end
   end
 

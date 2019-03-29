@@ -7,7 +7,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateRace do
       add(:description, :text)
       add(:properties, :jsonb)
 
-      timestamps
+      timestamps()
     end
   end
 end

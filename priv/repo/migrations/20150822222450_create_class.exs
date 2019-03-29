@@ -13,7 +13,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateClass do
       add(:will_per_level, :integer)
       add(:abilities, :jsonb)
 
-      timestamps
+      timestamps()
     end
   end
 end

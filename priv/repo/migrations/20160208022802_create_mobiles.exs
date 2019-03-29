@@ -20,7 +20,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateMonsters do
       add(:auto_attack_interval, :float)
       add(:questions, :jsonb)
 
-      timestamps
+      timestamps()
     end
   end
 end

@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateMonsterAbilities do
       add(:monster_template_id, references(:monster_templates))
       add(:ability_id, references(:abilities))
 
-      timestamps
+      timestamps()
     end
 
     create(unique_index(:monster_abilities, [:monster_template_id, :ability_id]))

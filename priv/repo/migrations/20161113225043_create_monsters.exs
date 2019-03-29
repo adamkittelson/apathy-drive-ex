@@ -15,7 +15,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateMonsters do
       add(:death_message, :text)
       add(:adjectives, :jsonb)
 
-      timestamps
+      timestamps()
     end
   end
 end

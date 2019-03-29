@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateScripts do
       add(:mongo_id, :text)
       add(:instructions, :jsonb)
 
-      timestamps
+      timestamps()
     end
 
     create(unique_index(:scripts, [:mongo_id]))

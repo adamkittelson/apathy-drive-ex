@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateSpiritItemRecipes do
       add(:spirit_id, references(:spirits))
       add(:item_id, references(:items))
 
-      timestamps
+      timestamps()
     end
 
     create(unique_index(:spirit_item_recipes, [:spirit_id, :item_id]))

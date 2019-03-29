@@ -8,7 +8,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateRoomUnities do
       add(:room_id, :integer)
       add(:expires_at, :utc_datetime)
 
-      timestamps
+      timestamps()
     end
 
     create(index(:room_unities, [:room_id]))

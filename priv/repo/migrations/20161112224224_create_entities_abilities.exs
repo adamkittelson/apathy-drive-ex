@@ -11,7 +11,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateEntitiesAbilities do
       add(:ability, :string)
       add(:value, :jsonb)
 
-      timestamps
+      timestamps()
     end
 
     create(index(:entities_abilities, [:assoc_table, :assoc_id]))

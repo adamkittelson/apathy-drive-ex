@@ -10,7 +10,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateEntitiesSpells do
       add(:spell_id, :integer)
       add(:level, :integer)
 
-      timestamps
+      timestamps()
     end
   end
 end

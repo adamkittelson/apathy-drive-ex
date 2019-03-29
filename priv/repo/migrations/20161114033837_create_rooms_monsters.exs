@@ -13,7 +13,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateRoomsMonsters do
       add(:health, :integer)
       add(:charm, :integer)
 
-      timestamps
+      timestamps()
     end
   end
 end

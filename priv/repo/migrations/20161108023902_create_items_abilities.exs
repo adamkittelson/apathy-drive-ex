@@ -11,7 +11,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateItemsAbilities do
       add(:ability_id, :integer)
       add(:value, :jsonb)
 
-      timestamps
+      timestamps()
     end
   end
 end

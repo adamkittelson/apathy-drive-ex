@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateShopItems do
       add(:room_id, references(:rooms))
       add(:item_id, references(:items))
 
-      timestamps
+      timestamps()
     end
 
     create(unique_index(:shop_items, [:room_id, :item_id]))

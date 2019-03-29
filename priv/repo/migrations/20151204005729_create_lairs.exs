@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateLairs do
       add(:room_id, references(:rooms))
       add(:monster_template_id, references(:monster_templates))
 
-      timestamps
+      timestamps()
     end
 
     alter table(:rooms) do

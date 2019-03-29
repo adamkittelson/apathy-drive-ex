@@ -8,7 +8,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateCharactersItems do
       add(:equipped, :boolean)
       add(:level, :integer)
 
-      timestamps
+      timestamps()
     end
   end
 end

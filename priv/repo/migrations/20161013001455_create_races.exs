@@ -12,7 +12,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateRaces do
       add(:health, :integer)
       add(:charm, :integer)
 
-      timestamps
+      timestamps()
     end
   end
 end

@@ -7,7 +7,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateRoomsItems do
       add(:item_id, references(:items))
       add(:level, :integer)
 
-      timestamps
+      timestamps()
     end
   end
 end

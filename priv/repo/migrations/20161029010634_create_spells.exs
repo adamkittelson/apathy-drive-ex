@@ -16,14 +16,14 @@ defmodule ApathyDrive.Repo.Migrations.CreateSpells do
       add(:spectator_message, :text)
       add(:duration_in_ms, :integer)
 
-      timestamps
+      timestamps()
     end
 
     create table(:abilities) do
       add(:name, :text)
       add(:description, :text)
 
-      timestamps
+      timestamps()
     end
 
     create table(:spells_abilities) do
@@ -31,7 +31,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateSpells do
       add(:ability_id, :integer)
       add(:value, :jsonb)
 
-      timestamps
+      timestamps()
     end
 
     create table(:classes_spells) do
@@ -39,7 +39,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateSpells do
       add(:spell_id, :integer)
       add(:level, :integer)
 
-      timestamps
+      timestamps()
     end
   end
 end

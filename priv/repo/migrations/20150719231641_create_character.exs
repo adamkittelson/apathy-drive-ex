@@ -10,7 +10,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateCharacter do
       add(:experience, :integer)
       add(:alignment, :integer)
 
-      timestamps
+      timestamps()
     end
   end
 end

@@ -18,7 +18,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateCharacters do
       add(:equipment, :jsonb)
       add(:flags, :jsonb)
 
-      timestamps
+      timestamps()
     end
 
     create(index(:characters, ["lower(name)"], unique: true, name: :characters_lower_name_index))

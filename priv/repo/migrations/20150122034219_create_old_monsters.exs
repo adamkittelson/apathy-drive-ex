@@ -12,7 +12,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateOldMonsters do
       add(:skills, :jsonb)
       add(:limbs, :jsonb)
 
-      timestamps
+      timestamps()
     end
 
     create(index(:monsters, [:monster_template_id]))

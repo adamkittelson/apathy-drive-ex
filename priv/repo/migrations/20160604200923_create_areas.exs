@@ -6,7 +6,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateAreas do
       add(:name, :text)
       add(:level, :integer)
 
-      timestamps
+      timestamps()
     end
 
     alter table(:rooms) do

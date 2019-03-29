@@ -27,7 +27,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateMonsterTemplates do
       add(:limbs, :jsonb)
       add(:questions, :jsonb)
 
-      timestamps
+      timestamps()
     end
   end
 

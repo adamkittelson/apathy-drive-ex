@@ -11,7 +11,7 @@ defmodule ApathyDrive.Repo.Migrations.RedoClasses do
       add(:weapon, :text)
       add(:abilities, :jsonb)
 
-      timestamps
+      timestamps()
     end
 
     alter table(:races) do

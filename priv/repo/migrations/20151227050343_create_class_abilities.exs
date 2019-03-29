@@ -7,7 +7,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateClassAbilities do
       add(:ability_id, references(:abilities))
       add(:level, :integer)
 
-      timestamps
+      timestamps()
     end
 
     alter table(:classes) do

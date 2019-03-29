@@ -15,7 +15,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateItem do
       add(:will, :integer)
       add(:grade, :integer)
 
-      timestamps
+      timestamps()
     end
   end
 end

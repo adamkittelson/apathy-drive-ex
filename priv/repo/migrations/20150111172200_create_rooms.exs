@@ -18,7 +18,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateRooms do
       add(:trainable_skills, {:array, :string})
       add(:exits, :jsonb)
 
-      timestamps
+      timestamps()
     end
 
     create(index(:rooms, [:legacy_id]))

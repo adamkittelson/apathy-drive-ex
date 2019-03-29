@@ -7,7 +7,7 @@ defmodule ApathyDrive.Repo.Migrations.CreateCrits do
       add(:letter, :text)
       add(:abilities, :jsonb)
 
-      timestamps
+      timestamps()
     end
 
     create(index(:crits, [:crit_table, :letter]))
