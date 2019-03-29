@@ -18,4 +18,10 @@ config :rollbax,
   access_token: "",
   environment: "development"
 
+config :gossip, :callback_modules,
+  core: ApathyDrive.Gossip.Core,
+  players: ApathyDrive.Gossip.Players,
+  tells: ApathyDrive.Gossip.Tells,
+  games: ApathyDrive.Gossip.Games
+
 import_config "#{Mix.env}.exs"
