@@ -16,7 +16,8 @@ defmodule ApathyDrive do
       supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
       worker(ApathyDrive.Metrics, []),
       worker(ApathyDrive.WorldMap, []),
-      worker(ApathyDrive, [], function: :load_shops, restart: :transient)
+      worker(ApathyDrive, [], function: :load_shops, restart: :transient),
+      worker(ApathyDrive.DomainName, [], restart: :transient)
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

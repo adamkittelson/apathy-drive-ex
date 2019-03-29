@@ -53,7 +53,8 @@ defmodule ApathyDrive.Mixfile do
       {:toml, "~> 0.5.2"},
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
       {:auto_linker, "~> 0.2.2"},
-      {:ordinal, "~> 0.1.0"}
+      {:ordinal, "~> 0.1.0"},
+      {:dnsimple, "~> 1.4.0"}
     ]
   end
 
