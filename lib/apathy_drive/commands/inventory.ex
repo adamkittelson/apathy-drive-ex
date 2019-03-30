@@ -106,6 +106,8 @@ defmodule ApathyDrive.Commands.Inventory do
         end
       end)
 
+    list = Enum.reverse(list)
+
     case length(list) do
       0 ->
         ""
