@@ -92,6 +92,20 @@ defmodule ApathyDrive.Commands.Inventory do
   end
 
   def to_sentence(list) do
+    list =
+      list
+      |> Enum.group_by(& &1)
+      |> Map.values()
+      |> Enum.map(fn items ->
+        case length(items) do
+          1 ->
+            List.first(items)
+
+          n ->
+            "#{n} #{List.first(items)}"
+        end
+      end)
+
     case length(list) do
       0 ->
         ""
