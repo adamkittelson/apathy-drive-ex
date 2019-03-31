@@ -366,16 +366,7 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
 
-    item.traits
-    |> Enum.reject(fn {_key, val} ->
-      !is_list(val)
-    end)
-    |> Enum.each(fn {trait, val} ->
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{Enum.sum(val)}</span></p>"
-      )
-    end)
+    display_traits(character, item.traits)
 
     display_enchantment(character, item)
   end
@@ -422,18 +413,7 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
 
-    traits =
-      Enum.reject(item.traits, fn {_key, val} ->
-        !is_list(val)
-      end)
-
-    traits
-    |> Enum.each(fn {trait, value} ->
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{Enum.sum(value)}</span></p>"
-      )
-    end)
+    display_traits(character, item.traits)
 
     display_enchantment(character, item)
   end
@@ -450,6 +430,28 @@ defmodule ApathyDrive.Commands.Look do
       item ->
         look_at_item(mobile, item)
     end
+  end
+
+  def display_traits(character, traits) do
+    Enum.each(traits, &display_trait(character, &1))
+  end
+
+  def display_trait(_character, {"Learn", _list}), do: :noop
+
+  def display_trait(character, {"Magical", list}) do
+    if Enum.any?(list) do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-cyan'>This item is Magical.</span></p>"
+      )
+    end
+  end
+
+  def display_trait(character, {trait, list}) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{Enum.sum(list)}</span></p>"
+    )
   end
 
   def display_enchantment(character, %Item{traits: %{"Learn" => ability}}) do

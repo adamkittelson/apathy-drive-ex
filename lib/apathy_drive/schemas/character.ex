@@ -409,6 +409,8 @@ defmodule ApathyDrive.Character do
     {ability, traits} =
       case item.traits do
         %{"Passive" => ability} ->
+          IO.puts("adding ability: #{ability.name}")
+
           traits =
             Enum.reduce(ability.traits, item.traits, fn {trait, value}, traits ->
               if trait in Map.keys(traits) do

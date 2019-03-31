@@ -54,6 +54,7 @@ defmodule ApathyDrive.Ability do
     field(:on_hit?, :boolean, virtual: true, default: false)
     field(:can_crit, :boolean, virtual: true, default: false)
     field(:spell?, :boolean, virtual: true, default: true)
+    field(:reaction_energy, :integer, virtual: true)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -992,6 +993,7 @@ defmodule ApathyDrive.Ability do
           kind: "attack",
           mana: 0,
           energy: 0,
+          reaction_energy: Enum.random(100..300),
           user_message: shield["UserMessage"],
           target_message: shield["TargetMessage"],
           spectator_message: shield["SpectatorMessage"],
@@ -1071,7 +1073,7 @@ defmodule ApathyDrive.Ability do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
-    round_percent = ability.energy / caster.max_energy
+    round_percent = (ability.reaction_energy || ability.energy) / caster.max_energy
 
     target =
       target
