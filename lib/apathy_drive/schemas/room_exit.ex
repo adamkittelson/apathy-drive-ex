@@ -1,6 +1,6 @@
 defmodule ApathyDrive.RoomExit do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Room, RoomExit, Exit, Item}
+  alias ApathyDrive.{Class, Room, RoomExit, Exit, Item}
 
   schema "rooms_exits" do
     field(:direction, :string)
@@ -9,6 +9,7 @@ defmodule ApathyDrive.RoomExit do
     field(:delete, :boolean, virtual: true)
 
     belongs_to(:exit, Exit)
+    belongs_to(:class, Class)
     belongs_to(:room, Room)
     belongs_to(:item, Item)
     belongs_to(:destination, Room)
@@ -39,6 +40,9 @@ defmodule ApathyDrive.RoomExit do
 
         exit_data["kind"] == "Key" ->
           Map.put(exit_data, "key", room_exit.item_id)
+
+        exit_data["kind"] == "Class" ->
+          Map.put(exit_data, "class_id", room_exit.class_id)
 
         :else ->
           exit_data
