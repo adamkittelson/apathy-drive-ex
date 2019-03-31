@@ -857,7 +857,7 @@ defmodule ApathyDrive.Room do
 
   def open!(%Room{} = room, direction) do
     if open_duration = get_exit(room, direction)["open_duration_in_seconds"] do
-      Systems.Effect.add(room, %{open: direction}, open_duration)
+      Systems.Effect.add(room, %{open: direction}, :timer.seconds(open_duration))
     else
       exits =
         room.exits

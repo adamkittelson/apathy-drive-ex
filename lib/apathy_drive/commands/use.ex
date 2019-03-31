@@ -1,22 +1,119 @@
 defmodule ApathyDrive.Commands.Use do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Item, ItemInstance, Match, Mobile, Repo, Room}
+  alias ApathyDrive.{Character, Doors, Item, ItemInstance, Match, Mobile, Repo, Room}
 
   def keywords, do: ["use", "light"]
 
-  def execute(%Room{} = room, %Character{} = character, []) do
-    Mobile.send_scroll(character, "<p>Use what?</p>")
-    room
-  end
+  @directions [
+    "n",
+    "north",
+    "ne",
+    "northeast",
+    "e",
+    "east",
+    "se",
+    "southeast",
+    "s",
+    "south",
+    "sw",
+    "southwest",
+    "w",
+    "west",
+    "nw",
+    "northwest",
+    "u",
+    "up",
+    "d",
+    "down"
+  ]
 
-  def execute(%Room{} = room, %Character{} = character, arguments) do
-    item_name = Enum.join(arguments, " ")
-
+  def execute(%Room{} = room, %Character{} = character, [item_name, target]) do
     character.inventory
     |> Match.one(:name_contains, item_name)
     |> case do
       nil ->
-        Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\".</p>")
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Syntax: USE {Item to use} [{target}]</red></p>"
+        )
+
+        room
+
+      %Item{type: "Key", id: id} = item ->
+        if target in @directions do
+          case Room.get_exit(room, target) do
+            %{"key" => ^id, "kind" => kind} = room_exit ->
+              name = if kind == "Gate", do: "gate", else: "door"
+
+              if Doors.open?(room, room_exit) do
+                Mobile.send_scroll(character, "<p>The #{name} is already open.</p>")
+                room
+              else
+                ApathyDrive.Commands.Open.mirror_open!(room_exit, room.id)
+                Mobile.send_scroll(character, "<p>You successfully unlocked the #{name}.</p>")
+                Mobile.send_scroll(character, "<p>You opened the #{name}.</p>")
+
+                Room.send_scroll(
+                  room,
+                  "<p>You see #{Mobile.colored_name(character)} open the #{name} #{
+                    ApathyDrive.Exit.direction_description(room_exit["direction"])
+                  }.</p>",
+                  [character]
+                )
+
+                room
+                |> Room.open!(room_exit["direction"])
+                |> deduct_uses(character.ref, item)
+              end
+
+            %{"kind" => kind} = room_exit when kind in ["Door", "Gate", "Key"] ->
+              name = if kind == "Gate", do: "gate", else: "door"
+
+              if Doors.open?(room, room_exit) do
+                Mobile.send_scroll(character, "<p>The #{name} is already open.</p>")
+                room
+              else
+                Mobile.send_scroll(
+                  character,
+                  "<p>The #{item.name} doesn't seem to fit that lock.</p>"
+                )
+
+                room
+              end
+
+            _ ->
+              Mobile.send_scroll(
+                character,
+                "<p>There is no lock there.</p>"
+              )
+
+              room
+          end
+        else
+          Mobile.send_scroll(
+            character,
+            "<p><span class='red'>Syntax: USE {Item to use} [{target}]</red></p>"
+          )
+
+          room
+        end
+
+      %Item{} ->
+        Mobile.send_scroll(character, "<p>You may not use that item!</p>")
+        room
+    end
+  end
+
+  def execute(%Room{} = room, %Character{} = character, [item_name]) do
+    character.inventory
+    |> Match.one(:name_contains, item_name)
+    |> case do
+      nil ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Syntax: USE {Item to use} [{target}]</red></p>"
+        )
+
         room
 
       %Item{type: "Light", instance_id: instance_id} = item ->
@@ -41,30 +138,47 @@ defmodule ApathyDrive.Commands.Use do
         end)
 
       %Item{} ->
-        Mobile.send_scroll(character, "<p>You cannot use that.</p>")
+        Mobile.send_scroll(character, "<p>You may not use that item!</p>")
         room
     end
   end
 
+  def execute(%Room{} = room, %Character{} = character, _args) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='red'>Syntax: USE {Item to use} [{target}]</red></p>"
+    )
+
+    room
+  end
+
   def use_light_source(%Room{} = room, mobile_ref) do
-    Room.update_mobile(room, mobile_ref, fn mobile ->
-      if light = equipped_light_source(mobile) do
-        if light.uses > 1 do
+    if light = equipped_light_source(room.mobiles[mobile_ref]) do
+      deduct_uses(room, mobile_ref, light)
+    else
+      room
+    end
+  end
+
+  def deduct_uses(room, character_ref, item) do
+    Room.update_mobile(room, character_ref, fn character ->
+      if item.uses do
+        if item.uses > 1 do
           ItemInstance
-          |> Repo.get(light.instance_id)
+          |> Repo.get(item.instance_id)
           |> Ecto.Changeset.change(%{
-            uses: light.uses - 1
+            uses: item.uses - 1
           })
           |> Repo.update!()
 
-          Character.load_items(mobile)
+          Character.load_items(character)
         else
           ItemInstance
-          |> Repo.get(light.instance_id)
+          |> Repo.get(item.instance_id)
           |> Repo.delete!()
 
-          Mobile.send_scroll(mobile, "<p>#{light.destruct_message}</p>")
-          Character.load_items(mobile)
+          Mobile.send_scroll(character, "<p>#{item.destruct_message}</p>")
+          Character.load_items(character)
         end
       else
         room

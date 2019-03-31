@@ -20,14 +20,20 @@ defmodule ApathyDrive.Commands.Open do
     |> open(mobile, room)
   end
 
+  def mirror_open!(%{"destination" => destination} = room_exit, room_id) do
+    destination
+    |> RoomServer.find()
+    |> RoomServer.mirror_open(room_id, room_exit)
+  end
+
   defp open(nil, %{} = mobile, %Room{} = room) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
     room
   end
 
   defp open(%{"kind" => kind} = room_exit, %{} = mobile, %Room{} = room)
-       when kind in ["Door", "Gate"] do
-    name = String.downcase(kind)
+       when kind in ["Door", "Gate", "Key"] do
+    name = if kind == "Gate", do: "gate", else: "door"
 
     cond do
       Doors.open?(room, room_exit) ->
@@ -67,12 +73,6 @@ defmodule ApathyDrive.Commands.Open do
   defp open(_room_exit, %{} = mobile, %Room{} = room) do
     Mobile.send_scroll(mobile, "<p>That exit has no door.</p>")
     room
-  end
-
-  defp mirror_open!(%{"destination" => destination} = room_exit, room_id) do
-    destination
-    |> RoomServer.find()
-    |> RoomServer.mirror_open(room_id, room_exit)
   end
 
   defp open_fail!(%{"destination" => destination} = room_exit, room_id) do

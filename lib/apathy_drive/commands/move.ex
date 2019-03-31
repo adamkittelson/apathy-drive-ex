@@ -20,13 +20,15 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def execute(%Room{} = room, %{} = mob, %{"kind" => kind} = re, reattempt)
-      when kind in ["Door", "Gate"] do
+      when kind in ["Door", "Gate", "Key"] do
     if Doors.open?(room, re) do
       execute(room, mob, Map.put(re, "kind", "Normal"), reattempt)
     else
+      name = if kind == "Gate", do: "gate", else: "door"
+
       Mobile.send_scroll(
         mob,
-        "<p><span class='red'>The #{String.downcase(kind)} is closed!</span></p>"
+        "<p><span class='red'>There is a closed #{name} in that direction!</span></p>"
       )
 
       room

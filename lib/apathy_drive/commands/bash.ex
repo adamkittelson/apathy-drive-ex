@@ -26,7 +26,7 @@ defmodule ApathyDrive.Commands.Bash do
   end
 
   defp bash(%{"kind" => kind} = room_exit, %{} = mobile, %Room{} = room)
-       when kind in ["Door", "Gate"] do
+       when kind in ["Door", "Gate", "Key"] do
     name = String.downcase(kind)
 
     cond do
@@ -68,6 +68,8 @@ defmodule ApathyDrive.Commands.Bash do
     Mobile.send_scroll(mobile, "<p>That exit has no door.</p>")
     room
   end
+
+  defp bash?(%{"kind" => "Key"}, _strength), do: false
 
   defp bash?(%{"difficulty" => difficulty}, strength) do
     strength + difficulty >= :rand.uniform(100)

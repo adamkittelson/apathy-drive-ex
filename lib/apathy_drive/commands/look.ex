@@ -125,6 +125,14 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def look(%Room{} = room, %Character{} = character, %{"kind" => "Key"} = room_exit) do
+    if Doors.open?(room, room_exit) do
+      look(room, character, Map.put(room_exit, "kind", "Normal"))
+    else
+      Mobile.send_scroll(character, "<p>The door is closed in that direction!</p>")
+    end
+  end
+
   def look(%Room{} = room, %Character{} = character, %{"kind" => "Hidden"} = room_exit) do
     if Doors.open?(room, room_exit) do
       look(room, character, Map.put(room_exit, "kind", "Normal"))
@@ -258,6 +266,12 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_direction(%{"kind" => "Door", "direction" => direction} = room_exit, room) do
+    if Doors.open?(room, room_exit),
+      do: "open door #{direction}",
+      else: "closed door #{direction}"
+  end
+
+  def display_direction(%{"kind" => "Key", "direction" => direction} = room_exit, room) do
     if Doors.open?(room, room_exit),
       do: "open door #{direction}",
       else: "closed door #{direction}"

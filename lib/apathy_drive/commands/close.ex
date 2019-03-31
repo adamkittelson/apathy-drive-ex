@@ -26,8 +26,8 @@ defmodule ApathyDrive.Commands.Close do
   end
 
   defp close(%{"kind" => kind} = room_exit, %{} = mobile, %Room{} = room)
-       when kind in ["Door", "Gate"] do
-    name = String.downcase(kind)
+       when kind in ["Door", "Gate", "Key"] do
+    name = if kind == "Gate", do: "gate", else: "door"
 
     cond do
       Doors.open?(room, room_exit) ->

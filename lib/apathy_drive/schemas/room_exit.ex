@@ -37,6 +37,9 @@ defmodule ApathyDrive.RoomExit do
         exit_data["kind"] == "Item" ->
           Map.put(exit_data, "item", room_exit.item_id)
 
+        exit_data["kind"] == "Key" ->
+          Map.put(exit_data, "key", room_exit.item_id)
+
         :else ->
           exit_data
       end
