@@ -353,6 +353,25 @@ defmodule ApathyDrive.Commands.Move do
 
     encumbrance_percent = current_encumbrance / max_encumbrance
 
+    encumbrance_percent =
+      cond do
+        encumbrance_percent < 0.17 ->
+          # none
+          encumbrance_percent * 0.25
+
+        encumbrance_percent < 0.34 ->
+          # light
+          encumbrance_percent * 0.5
+
+        encumbrance_percent < 0.67 ->
+          # medium
+          encumbrance_percent * 0.75
+
+        :else ->
+          # heavy
+          encumbrance_percent
+      end
+
     if character.sneaking do
       trunc(1000 * encumbrance_percent)
     else
