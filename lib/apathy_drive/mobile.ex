@@ -38,7 +38,7 @@ defprotocol ApathyDrive.Mobile do
   def round_length_in_ms(mobile)
   def send_scroll(mobile, html)
   def set_room_id(mobile, room_id)
-  def shift_hp(mobile, percentage, room)
+  def shift_hp(mobile, percentage)
   def silenced(mobile, room)
   def spellcasting_at_level(mobile, level, ability)
   def stealth_at_level(mobile, level)

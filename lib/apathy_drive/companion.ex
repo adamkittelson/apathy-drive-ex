@@ -618,28 +618,8 @@ defmodule ApathyDrive.Companion do
       |> Map.put(:room_id, room_id)
     end
 
-    def shift_hp(companion, percentage, room \\ nil) do
-      hp_description = hp_description(companion)
-      companion = update_in(companion.hp, &min(1.0, &1 + percentage))
-      updated_hp_description = hp_description(companion)
-
-      if room && (companion.hp > 0 and hp_description != updated_hp_description) do
-        room.mobiles
-        |> Map.values()
-        |> List.delete(companion)
-        |> Enum.each(fn
-          %Character{} = observer ->
-            Mobile.send_scroll(
-              observer,
-              "<p>#{Mobile.colored_name(companion)} is #{updated_hp_description}.</p>"
-            )
-
-          _ ->
-            :noop
-        end)
-      end
-
-      companion
+    def shift_hp(companion, percentage) do
+      update_in(companion.hp, &min(1.0, &1 + percentage))
     end
 
     def silenced(%Companion{effects: effects} = companion, %Room{} = room) do

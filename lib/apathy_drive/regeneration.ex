@@ -87,7 +87,7 @@ defmodule ApathyDrive.Regeneration do
   def regenerate_hp(%{} = mobile, room) do
     hp = hp_since_last_tick(room, mobile)
 
-    Mobile.shift_hp(mobile, hp, room)
+    Mobile.shift_hp(mobile, hp)
   end
 
   def regenerate_mana(%{mana: 1.0} = mobile, _room), do: mobile

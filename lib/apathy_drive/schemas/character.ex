@@ -409,8 +409,6 @@ defmodule ApathyDrive.Character do
     {ability, traits} =
       case item.traits do
         %{"Passive" => ability} ->
-          IO.puts("adding ability: #{ability.name}")
-
           traits =
             Enum.reduce(ability.traits, item.traits, fn {trait, value}, traits ->
               if trait in Map.keys(traits) do
@@ -528,26 +526,33 @@ defmodule ApathyDrive.Character do
     }
 
     if on_hit = weapon.traits["OnHit"] do
-      if on_hit.kind == "attack" do
-        modifier = energy / 1000
+      # if on_hit.kind == "attack" do
+      #   modifier = energy / 1000
 
-        Enum.reduce(on_hit.traits["Damage"], ability, fn damage, ability ->
-          damage =
-            damage
-            |> update_in([:min], &trunc(&1 * modifier))
-            |> update_in([:max], &trunc(&1 * modifier))
+      #   Enum.reduce(on_hit.traits["Damage"], ability, fn damage, ability ->
+      #     damage =
+      #       damage
+      #       |> update_in([:min], &trunc(&1 * modifier))
+      #       |> update_in([:max], &trunc(&1 * modifier))
 
-          update_in(ability, [Access.key!(:traits), "Damage"], &[damage | &1])
-        end)
-      else
-        on_hit =
-          on_hit
+      #     update_in(ability, [Access.key!(:traits), "Damage"], &[damage | &1])
+      #   end)
+      # else
+      on_hit =
+        Enum.map(on_hit, fn ability ->
+          ability
           |> Map.put(:energy, 0)
+          |> Map.put(:reaction_energy, 200)
           |> Map.put(:mana, 0)
           |> Map.put(:on_hit?, true)
+          |> Map.put(:difficulty, nil)
+        end)
 
-        put_in(ability.traits["OnHit"], on_hit)
-      end
+      ability
+      |> put_in([Access.key!(:traits), "OnHit"], on_hit)
+      |> put_in([Access.key!(:traits), "OnHit%"], weapon.traits["OnHit%"])
+
+      # end
     else
       ability
     end
@@ -1589,28 +1594,8 @@ defmodule ApathyDrive.Character do
       |> Repo.save!()
     end
 
-    def shift_hp(character, percentage, room \\ nil) do
-      hp_description = hp_description(character)
-      character = update_in(character.hp, &min(1.0, &1 + percentage))
-      updated_hp_description = hp_description(character)
-
-      if room && (character.hp > 0 and hp_description != updated_hp_description) do
-        room.mobiles
-        |> Map.values()
-        |> Enum.reject(&(&1.ref == character.ref))
-        |> Enum.each(fn
-          %Character{} = observer ->
-            Mobile.send_scroll(
-              observer,
-              "<p>#{Mobile.colored_name(character)} is #{updated_hp_description}.</p>"
-            )
-
-          _ ->
-            :noop
-        end)
-      end
-
-      character
+    def shift_hp(character, percentage) do
+      update_in(character.hp, &min(1.0, &1 + percentage))
     end
 
     def silenced(%Character{effects: effects} = character, %Room{} = room) do

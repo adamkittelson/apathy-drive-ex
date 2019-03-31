@@ -713,9 +713,10 @@ defmodule ApathyDrive.Ability do
               room
             end
 
-          if (on_hit = ability.traits["OnHit"]) && is_nil(Process.get(:ability_result)) do
+          if (on_hit = ability.traits["OnHit"]) && is_nil(Process.get(:ability_result)) &&
+               :rand.uniform(100) <= ability.traits["OnHit%"] do
             Process.delete(:ability_result)
-            execute(room, caster_ref, on_hit, targets)
+            execute(room, caster_ref, Enum.random(on_hit), targets)
           else
             Process.delete(:ability_result)
             room
@@ -949,7 +950,7 @@ defmodule ApathyDrive.Ability do
 
         target =
           if ability_shift do
-            Mobile.shift_hp(target, ability_shift, room)
+            Mobile.shift_hp(target, ability_shift)
           else
             target
           end
@@ -1182,7 +1183,7 @@ defmodule ApathyDrive.Ability do
 
           heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
 
-          caster = Mobile.shift_hp(caster, heal_percent, room)
+          caster = Mobile.shift_hp(caster, heal_percent)
 
           Mobile.update_prompt(caster)
 

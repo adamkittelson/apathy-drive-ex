@@ -41,7 +41,13 @@ defmodule ApathyDrive.ItemAbility do
               update_in(ability.traits, &Map.put(&1, "Damage", damage))
           end
 
-        Map.put(traits, item_ability.type.name, ability)
+        if item_ability.type.name == "OnHit" do
+          traits
+          |> Map.put_new("OnHit", [])
+          |> update_in(["OnHit"], &[ability | &1])
+        else
+          Map.put(traits, item_ability.type.name, ability)
+        end
       end)
 
     Map.put(item, :traits, traits)

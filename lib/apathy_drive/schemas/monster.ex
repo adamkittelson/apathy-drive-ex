@@ -745,28 +745,8 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:room_id, room_id)
     end
 
-    def shift_hp(monster, percentage, room \\ nil) do
-      hp_description = hp_description(monster)
-      monster = update_in(monster.hp, &min(1.0, &1 + percentage))
-      updated_hp_description = hp_description(monster)
-
-      if room && (monster.hp > 0 and hp_description != updated_hp_description) do
-        room.mobiles
-        |> Map.values()
-        |> List.delete(monster)
-        |> Enum.each(fn
-          %Character{} = observer ->
-            Mobile.send_scroll(
-              observer,
-              "<p>#{Mobile.colored_name(monster)} is #{updated_hp_description}.</p>"
-            )
-
-          _ ->
-            :noop
-        end)
-      end
-
-      monster
+    def shift_hp(monster, percentage) do
+      update_in(monster.hp, &min(1.0, &1 + percentage))
     end
 
     def silenced(%Monster{effects: effects} = monster, %Room{} = room) do

@@ -447,6 +447,18 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def display_trait(character, {"OnHit", abilities}) do
+    names =
+      abilities
+      |> Enum.map(& &1.name)
+      |> ApathyDrive.Commands.Inventory.to_sentence()
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>OnHit:</span> <span class='dark-cyan'>#{names}</span></p>"
+    )
+  end
+
   def display_trait(character, {trait, list}) do
     Mobile.send_scroll(
       character,
