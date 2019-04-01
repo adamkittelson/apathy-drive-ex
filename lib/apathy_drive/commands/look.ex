@@ -433,7 +433,9 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_traits(character, traits) do
-    Enum.each(traits, &display_trait(character, &1))
+    traits
+    |> Enum.filter(fn {_trait, value} -> is_list(value) end)
+    |> Enum.each(&display_trait(character, &1))
   end
 
   def display_trait(_character, {"Learn", _list}), do: :noop

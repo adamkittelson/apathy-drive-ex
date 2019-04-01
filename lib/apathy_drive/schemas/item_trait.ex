@@ -1,6 +1,6 @@
 defmodule ApathyDrive.ItemTrait do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Item, ItemTrait, Trait}
+  alias ApathyDrive.{Item, ItemTrait, ItemResistance, Trait}
 
   schema "items_traits" do
     field(:value, ApathyDrive.JSONB)
@@ -19,12 +19,13 @@ defmodule ApathyDrive.ItemTrait do
     |> Repo.all()
     |> Enum.reduce(%{}, fn
       %{trait: %{name: "OnHit%"} = trait, value: value}, abilities ->
-        Map.put(abilities, "OnHit%", value)
+        Map.put(abilities, trait.name, value)
 
       %{trait: trait, value: value}, abilities ->
         abilities = Map.put_new(abilities, trait.name, [])
         Map.put(abilities, trait.name, [value | abilities[trait.name]])
     end)
+    |> Map.merge(ItemResistance.load_resistances(item_id))
   end
 
   def changeset(%ItemTrait{} = rt, attrs) do

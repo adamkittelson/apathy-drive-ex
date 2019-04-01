@@ -518,7 +518,7 @@ defmodule ApathyDrive.Companion do
       base = companion.base_hp
       bonus = (health - 50) * level / 16
 
-      base + bonus + ability_value(mobile, "MaxHP")
+      base + bonus + ability_value(companion, "MaxHP")
     end
 
     def max_mana_at_level(mobile, level) do
