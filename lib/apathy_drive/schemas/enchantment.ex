@@ -203,7 +203,12 @@ defmodule ApathyDrive.Enchantment do
         |> Map.put(:cooldown, :timer.minutes(1))
         |> Map.put(:mana, 0)
 
-      traits = Map.put(traits, "Grant", ability)
+      traits =
+        traits
+        |> Map.put("Grant", ability)
+        |> Map.put("Quality", 1)
+        |> Map.put("Magical", true)
+
       # cond do
       #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
       #     Map.put(traits, "OnHit", ability)

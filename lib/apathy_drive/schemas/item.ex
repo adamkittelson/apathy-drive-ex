@@ -202,9 +202,17 @@ defmodule ApathyDrive.Item do
 
   def price(%Item{}), do: 5
 
-  def color(%Item{}) do
-    "dark-cyan"
-  end
+  def color(%Item{traits: %{"Quality" => 5}}), do: "red"
+  def color(%Item{traits: %{"Quality" => 4}}), do: "olive"
+  def color(%Item{traits: %{"Quality" => 3}}), do: "darkmagenta"
+  def color(%Item{traits: %{"Quality" => 2}}), do: "blue"
+  def color(%Item{traits: %{"Quality" => 1}}), do: "chartreuse"
+  def color(%Item{traits: %{"Quality" => [5]}}), do: "red"
+  def color(%Item{traits: %{"Quality" => [4]}}), do: "olive"
+  def color(%Item{traits: %{"Quality" => [3]}}), do: "darkmagenta"
+  def color(%Item{traits: %{"Quality" => [2]}}), do: "blue"
+  def color(%Item{traits: %{"Quality" => [1]}}), do: "chartreuse"
+  def color(%Item{}), do: "teal"
 
   def enchantment(item) do
     enchantment = item.traits["Grant"] || item.traits["OnHit"] || item.traits["Passive"]
@@ -221,7 +229,7 @@ defmodule ApathyDrive.Item do
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 
-    "<span class='dark-cyan'>#{name}</span>"
+    "<span style='color: #{color(item)};'>#{name}</span>"
   end
 
   def cost_in_copper(%Item{cost_currency: nil}), do: 0
