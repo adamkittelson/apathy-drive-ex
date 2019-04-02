@@ -619,7 +619,7 @@ defmodule ApathyDrive.Monster do
       base = monster.base_hp
       bonus = (health - 50) * level / 16
 
-      base + bonus + ability_value(monster, "MaxHP")
+      trunc(base + bonus + ability_value(monster, "MaxHP"))
     end
 
     def max_mana_at_level(monster, level) do
