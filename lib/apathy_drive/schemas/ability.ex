@@ -1484,8 +1484,32 @@ defmodule ApathyDrive.Ability do
       )
     end
 
-    target
-    |> Systems.Effect.add(effects, :timer.seconds(duration))
+    if has_passive_ability?(target, ability.id) do
+      target
+    else
+      target
+      |> Systems.Effect.add(effects, :timer.seconds(duration))
+    end
+  end
+
+  def has_passive_ability?(target, ability_id) do
+    target.effects
+    |> Map.values()
+    |> Enum.filter(&Map.has_key?(&1, "Passive"))
+    |> Enum.any?(fn %{"Passive" => ability} ->
+      has_ability? = ability_id == ability.id
+
+      has_conflicting_ability? =
+        case ability.traits["RemoveSpells"] do
+          nil ->
+            false
+
+          list ->
+            ability_id in list
+        end
+
+      has_ability? or has_conflicting_ability?
+    end)
   end
 
   def process_duration_traits(effects, target, caster, ability, room) do

@@ -119,6 +119,7 @@ defmodule ApathyDrive.AI do
       |> Ability.bless_abilities(member_to_bless)
       |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
       |> reject_light_spells_if_it_isnt_dark(room)
+      |> reject_target_has_ability_passively(member_to_bless)
       |> random_ability(mobile)
 
     if ability do
@@ -297,6 +298,11 @@ defmodule ApathyDrive.AI do
     else
       abilities
     end
+  end
+
+  defp reject_target_has_ability_passively(abilities, member_to_bless) do
+    abilities
+    |> Enum.reject(&Ability.has_passive_ability?(member_to_bless, &1.id))
   end
 
   defp reject_light_spells_if_it_isnt_dark(abilities, room) do

@@ -2,6 +2,7 @@ defmodule ApathyDrive.Item do
   use ApathyDriveWeb, :model
 
   alias ApathyDrive.{
+    Ability,
     Character,
     ClassAbility,
     Currency,
@@ -215,8 +216,16 @@ defmodule ApathyDrive.Item do
   def color(%Item{}), do: "teal"
 
   def enchantment(item) do
-    enchantment = item.traits["Grant"] || item.traits["OnHit"] || item.traits["Passive"]
-    enchantment && enchantment.id
+    case item.traits["Grant"] || item.traits["OnHit"] || item.traits["Passive"] do
+      nil ->
+        nil
+
+      %Ability{} = ability ->
+        ability.id
+
+      [%Ability{} = ability | _rest] ->
+        ability.id
+    end
   end
 
   def colored_name(%{name: name} = item, opts \\ []) do
