@@ -99,7 +99,9 @@ defmodule ApathyDrive.Enchantment do
             "<p><span class='blue'>You've enchanted #{item.name} with #{enchantment.ability.name}.</span></p>"
           )
 
-          Character.load_items(enchanter)
+          enchanter
+          |> add_enchantment_exp(enchantment)
+          |> Character.load_items()
         else
           Mobile.send_scroll(enchanter, "<p>#{enchantment.ability.traits["TickMessage"]}</p>")
 
@@ -112,8 +114,6 @@ defmodule ApathyDrive.Enchantment do
 
           next_tick_time = next_tick_time(enchantment)
 
-          exp = enchantment_exp(enchantment)
-
           enchanter =
             enchanter
             |> TimerManager.send_after(
@@ -121,16 +121,22 @@ defmodule ApathyDrive.Enchantment do
                {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
             )
 
-          Enum.reduce(enchantment.ability.attributes, enchanter, fn {attribute, _value},
-                                                                    enchanter ->
-            Character.add_attribute_experience(enchanter, %{
-              attribute => 1 / length(Map.keys(enchantment.ability.attributes))
-            })
-          end)
-          |> ApathyDrive.Character.add_experience(exp)
+          add_enchantment_exp(enchanter, enchantment)
         end
       end
     end)
+  end
+
+  def add_enchantment_exp(enchanter, enchantment) do
+    exp = enchantment_exp(enchanter)
+
+    Enum.reduce(enchantment.ability.attributes, enchanter, fn {attribute, _value}, enchanter ->
+      Character.add_attribute_experience(enchanter, %{
+        attribute => 1 / length(Map.keys(enchantment.ability.attributes))
+      })
+    end)
+    |> ApathyDrive.Character.add_experience(exp)
+    |> ApathyDrive.Character.add_skill_experience("enchantment", exp)
   end
 
   def present?(%Character{} = enchanter, instance_id) do
@@ -151,21 +157,12 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.join(":")
   end
 
-  def enchantment_exp(enchantment) do
-    enchantment
-    |> total_enchantment_time
-    |> div(5)
+  def enchantment_exp(character) do
+    max(1, character.skills["enchantment"].level) * 60
   end
 
-  def total_enchantment_time(%Enchantment{ability: %Ability{attributes: attributes}}) do
-    avg_attr_req =
-      attributes
-      |> Enum.reduce(0, fn {_attr, val}, total -> val + total end)
-      |> div(map_size(attributes))
-
-    lt_time = 5 + (avg_attr_req - 50) * 5
-
-    lt_time * 60
+  def total_enchantment_time(%Enchantment{ability: %Ability{level: level}}) do
+    level * 5 * 60
   end
 
   def time_left(%Enchantment{} = enchantment) do

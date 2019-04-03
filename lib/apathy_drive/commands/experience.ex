@@ -18,7 +18,12 @@ defmodule ApathyDrive.Commands.Experience do
         String.pad_trailing(character.name, 10)
       }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{character.level}</span>   #{
         training
-      }"
+      }</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "\n<p><span class='white'>Attributes:</span></p>"
     )
 
     [:strength, :agility, :intellect, :willpower, :health, :charm]
@@ -32,6 +37,34 @@ defmodule ApathyDrive.Commands.Experience do
         character,
         "<p><span class='dark-green'>Stat:</span> <span class='dark-cyan'>#{
           attribute
+          |> to_string
+          |> String.pad_trailing(10)
+        }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
+          level
+          |> to_string
+          |> String.pad_trailing(3)
+        }</span> <span class='dark-green'>Exp needed for next level:</span> <span class='dark-cyan'>#{
+          to_level - exp
+        }</p>"
+      )
+    end)
+
+    Mobile.send_scroll(
+      character,
+      "\n<p><span class='white'>Skills:</span></p>"
+    )
+
+    character.skills
+    |> Enum.each(fn {name, skill} ->
+      exp = skill.experience
+      level = skill.level
+
+      to_level = Level.exp_at_level(level + 1, skill.exp_multiplier)
+
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{
+          name
           |> to_string
           |> String.pad_trailing(10)
         }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{

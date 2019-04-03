@@ -65,8 +65,6 @@ defmodule ApathyDrive.Room do
     belongs_to(:zone_controller, ApathyDrive.Room)
     has_many(:lairs, ApathyDrive.LairMonster)
     has_many(:lair_monsters, through: [:lairs, :monster])
-    has_many(:room_skills, ApathyDrive.RoomSkill)
-    has_many(:skills, through: [:room_skills, :skill])
     has_one(:shop, Shop)
     has_many(:shop_items, through: [:shop, :shop_items])
     belongs_to(:trainer, Trainer)
@@ -106,10 +104,6 @@ defmodule ApathyDrive.Room do
 
       Room.load_items(room)
     end
-  end
-
-  def load_skills(%Room{} = room) do
-    Repo.preload(room, :skills, force: true)
   end
 
   def load_abilities(%Room{} = room) do

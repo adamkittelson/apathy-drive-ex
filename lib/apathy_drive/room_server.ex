@@ -156,7 +156,6 @@ defmodule ApathyDrive.RoomServer do
       |> Room.load_exits()
       |> Room.load_items()
       |> Repo.preload(:placed_items)
-      |> Room.load_skills()
       |> Shop.load()
 
     Logger.metadata(room: room.name <> "##{room.id}")
@@ -245,6 +244,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_race()
         |> Character.load_class()
         |> Character.set_attribute_levels()
+        |> Character.set_skill_levels()
         |> Character.update_exp_bar()
         |> Character.load_abilities()
         |> Character.load_items()

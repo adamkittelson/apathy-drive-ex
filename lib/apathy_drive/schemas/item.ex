@@ -13,7 +13,6 @@ defmodule ApathyDrive.Item do
     ItemInstance,
     ItemRace,
     ItemTrait,
-    Mobile,
     ShopItem
   }
 
@@ -333,10 +332,7 @@ defmodule ApathyDrive.Item do
   end
 
   def attribute_requirement_not_met?(character, %Item{traits: %{"Learn" => ability}}) do
-    attribute_not_met? =
-      Enum.any?(ability.attributes, fn {attribute, value} ->
-        Mobile.attribute_at_level(character, attribute, character.level) < value
-      end)
+    attribute_not_met? = max(1, character.skills["enchantment"].level) < ability.level
 
     class_ability =
       ClassAbility

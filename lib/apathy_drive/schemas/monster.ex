@@ -539,9 +539,8 @@ defmodule ApathyDrive.Monster do
     def dodge_at_level(monster, level, _room) do
       agi = attribute_at_level(monster, :agility, level)
       cha = attribute_at_level(monster, :charm, level)
-      agi = agi + cha / 10
-      modifier = ability_value(monster, "Dodge")
-      trunc(agi * (1 + modifier / 100))
+      base = agi + cha / 10
+      trunc(base + ability_value(monster, "Dodge"))
     end
 
     def block_at_level(monster, _level) do

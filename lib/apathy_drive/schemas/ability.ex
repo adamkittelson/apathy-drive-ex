@@ -41,6 +41,7 @@ defmodule ApathyDrive.Ability do
     field(:cast_time, :integer)
     field(:energy, :integer, default: 1000)
     field(:difficulty, :integer)
+    field(:level, :integer)
 
     field(:traits, :map, virtual: true, default: %{})
     field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
@@ -2242,9 +2243,9 @@ defmodule ApathyDrive.Ability do
   end
 
   def item_target(room, caster_ref, query) do
-    %Character{inventory: inventory} = room.mobiles[caster_ref]
+    %Character{inventory: inventory, equipment: equipment} = room.mobiles[caster_ref]
 
-    item = Match.one(inventory, :keyword_starts_with, query)
+    item = Match.one(inventory ++ equipment, :keyword_starts_with, query)
 
     case item do
       nil ->

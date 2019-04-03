@@ -18,17 +18,6 @@ defmodule ApathyDrive.Commands.System.Skill do
     create(room, character, skill_name)
   end
 
-  def execute(%Room{} = room, character, ["set", "cost" | skill_and_cost]) do
-    cost = List.last(skill_and_cost)
-
-    skill =
-      skill_and_cost
-      |> List.delete(cost)
-      |> Enum.join(" ")
-
-    set_cost(room, character, skill, cost)
-  end
-
   def execute(%Room{} = room, character, ["set", "incompatible" | skills]) do
     if length(skills) >= 3 and Enum.member?(skills, "and") do
       set_incompatible(room, character, skills)
@@ -107,33 +96,6 @@ defmodule ApathyDrive.Commands.System.Skill do
     end)
 
     room
-  end
-
-  def set_cost(%Room{} = room, character, skill_name, cost) do
-    if skill = Skill.match_by_name(skill_name) do
-      skill
-      |> Skill.set_cost_changeset(cost)
-      |> Repo.update()
-      |> case do
-        {:ok, %Skill{name: name, training_cost_multiplier: cost}} ->
-          Mobile.send_scroll(character, "<p>Training cost for #{name} updated to #{cost}.</p>")
-
-        {:error, changeset} ->
-          message =
-            changeset.errors
-            |> Enum.map(fn {field, error} ->
-              "#{field}: #{ApathyDriveWeb.ErrorHelpers.translate_error(error)}"
-            end)
-            |> Enum.join(", ")
-
-          Mobile.send_scroll(character, "<p>#{message}</p>")
-      end
-
-      room
-    else
-      Mobile.send_scroll(character, "<p>Could not find a skill called '#{skill_name}'.</p>")
-      room
-    end
   end
 
   def set_incompatible(%Room{} = room, character, skills) do

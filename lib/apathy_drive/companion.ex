@@ -415,9 +415,8 @@ defmodule ApathyDrive.Companion do
     def dodge_at_level(companion, level, room) do
       agi = attribute_at_level(companion, :agility, level)
       cha = Party.charm_at_level(room, companion, level)
-      agi = agi + cha / 10
-      modifier = ability_value(companion, "Dodge")
-      trunc(agi * (1 + modifier / 100))
+      base = agi + cha / 10
+      trunc(base + ability_value(companion, "Dodge"))
     end
 
     def block_at_level(companion, _level) do

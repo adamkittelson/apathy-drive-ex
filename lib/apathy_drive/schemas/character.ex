@@ -165,6 +165,11 @@ defmodule ApathyDrive.Character do
     Map.put(character, :title, Title.for_character(character))
   end
 
+  def modified_experience(%Character{} = character, exp) do
+    modifier = 1 / ((character.race.exp_modifier + character.class.exp_modifier) / 100)
+    trunc(exp * modifier)
+  end
+
   def max_active_abilities(%Character{level: level}) do
     5 + div(level, 5)
   end
@@ -243,7 +248,6 @@ defmodule ApathyDrive.Character do
     character =
       character
       |> Map.put(:abilities, %{})
-      |> Map.put(:skills, %{})
 
     abilities =
       ApathyDrive.CharacterAbility
@@ -319,6 +323,35 @@ defmodule ApathyDrive.Character do
 
       Character.update_attribute_bar(character, stat)
       character
+    end)
+  end
+
+  def set_skill_levels(%Character{} = character) do
+    Skill
+    |> Repo.all()
+    |> Enum.reduce(character, fn %Skill{id: id, name: name, exp_multiplier: multiplier},
+                                 character ->
+      case Repo.get_by(CharacterSkill, skill_id: id, character_id: character.id) do
+        nil ->
+          skill =
+            Repo.insert!(%CharacterSkill{
+              character_id: character.id,
+              skill_id: id,
+              experience: 0,
+              exp_multiplier: multiplier
+            })
+            |> Skill.set_level()
+
+          put_in(character.skills[name], skill)
+
+        %CharacterSkill{} = skill ->
+          skill =
+            skill
+            |> Map.put(:exp_multiplier, multiplier)
+            |> Skill.set_level()
+
+          put_in(character.skills[name], skill)
+      end
     end)
   end
 
@@ -651,6 +684,40 @@ defmodule ApathyDrive.Character do
 
   def add_attribute_experience(%{} = character, %{} = _attributes), do: character
 
+  def add_skill_experience(%Character{} = character, skill_name, amount) do
+    amount = Character.modified_experience(character, amount)
+    skill_level = character.skills[skill_name].level
+
+    skill =
+      character.skills[skill_name]
+      |> Ecto.Changeset.change(%{
+        experience: character.skills[skill_name].experience + trunc(amount)
+      })
+      |> Repo.update!()
+      |> Skill.set_level()
+
+    character = put_in(character.skills[skill_name], skill)
+
+    new_skill_level = skill.level
+
+    if new_skill_level > skill_level do
+      message =
+        "<p><span class='yellow'>Your #{skill_name} skill increased to #{new_skill_level}!</span></p>"
+
+      Repo.insert!(%ChannelHistory{
+        character_id: character.id,
+        message: message
+      })
+
+      Character.send_chat(
+        character,
+        message
+      )
+    else
+      character
+    end
+  end
+
   def drain_exp_buffer(%Character{exp_buffer: 0} = character), do: character
 
   def drain_exp_buffer(%Character{} = character) do
@@ -672,8 +739,7 @@ defmodule ApathyDrive.Character do
   def add_experience(character, exp, silent \\ false)
 
   def add_experience(%Character{} = character, exp, silent) when exp > 0 do
-    modifier = 1 / ((character.race.exp_modifier + character.class.exp_modifier) / 100)
-    exp = trunc(exp * modifier)
+    exp = modified_experience(character, exp)
 
     unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
@@ -693,110 +759,6 @@ defmodule ApathyDrive.Character do
   end
 
   def add_experience(character, _exp, _silent), do: character
-
-  def train_skill(%Character{} = character, %Skill{} = skill, amount) when amount > 0 do
-    skill = Repo.preload(skill, :incompatible_skills)
-    incompatible_skills = Enum.map(skill.incompatible_skills, & &1.name)
-
-    Repo.insert(
-      %CharacterSkill{
-        character_id: character.id,
-        skill_id: skill.id,
-        experience: skill.experience + amount
-      },
-      on_conflict: :replace_all,
-      conflict_target: [:character_id, :skill_id]
-    )
-
-    old_abilities = Map.values(character.abilities)
-
-    character = load_abilities(character)
-
-    new_abilities = Map.values(character.abilities)
-
-    level = character.skills[skill.name].level
-
-    tnl =
-      Level.exp_to_next_skill_level(
-        level,
-        character.skills[skill.name].experience,
-        skill.training_cost_multiplier
-      )
-
-    tnl =
-      if tnl > character.experience do
-        "<span class='dark-red'>#{tnl}</span>"
-      else
-        "<span class='green'>#{tnl}</span>"
-      end
-
-    Mobile.send_scroll(
-      character,
-      "<p>You spend #{amount} experience to advance #{skill.name} to level #{level}, it will cost #{
-        tnl
-      } experience to train it any further.</p>"
-    )
-
-    Enum.each(new_abilities, fn ability ->
-      unless ability in old_abilities do
-        Mobile.send_scroll(
-          character,
-          "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
-        )
-
-        Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
-      end
-    end)
-
-    character.skills
-    |> Enum.reduce(character, fn {skill_name, %Skill{experience: skill_exp}}, character ->
-      if skill_name in incompatible_skills do
-        incompatible_skill = Skill.match_by_name(skill_name)
-        level = Level.level_at_exp(skill_exp, incompatible_skill.training_cost_multiplier)
-
-        if level > 0 do
-          new_level = level - 1
-          new_exp = Level.exp_at_level(level, incompatible_skill.training_cost_multiplier)
-
-          Repo.insert(
-            %CharacterSkill{
-              character_id: character.id,
-              skill_id: incompatible_skill.id,
-              experience: new_exp
-            },
-            on_conflict: :replace_all,
-            conflict_target: [:character_id, :skill_id]
-          )
-
-          Mobile.send_scroll(
-            character,
-            "<p>Your #{incompatible_skill.name} skill falls to level #{new_level}.</p>"
-          )
-
-          old_abilities = Map.values(character.abilities)
-
-          character = load_abilities(character)
-
-          new_abilities = Map.values(character.abilities)
-
-          Enum.each(old_abilities, fn ability ->
-            unless ability in new_abilities do
-              Mobile.send_scroll(
-                character,
-                "<p>You've forgotten the <span class='dark-cyan'>#{ability.name}</span> ability.</p>"
-              )
-            end
-          end)
-
-          character
-        else
-          character
-        end
-      else
-        character
-      end
-    end)
-  end
 
   def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do
     max_hp = Mobile.max_hp_at_level(character, level)
@@ -1325,37 +1287,27 @@ defmodule ApathyDrive.Character do
       room
     end
 
-    def dodge_at_level(character, level, room) do
-      skill = character.skills["dodge"] || Repo.get_by(Skill, name: "dodge")
-      skill_level = skill.level
-      level = min(level, skill_level)
-
+    def dodge_at_level(character, level, _room) do
       agi = attribute_at_level(character, :agility, level)
-      cha = Party.charm_at_level(room, character, level)
-      agi = agi + cha / 10
-      modifier = ability_value(character, "Dodge")
-      trunc(agi * (1 + modifier / 100))
+      cha = attribute_at_level(character, :charm, level)
+      base = agi + cha / 10
+
+      trunc(base + ability_value(character, "Dodge"))
     end
 
     def block_at_level(character, level) do
-      skill = character.skills["shield"] || Repo.get_by(Skill, name: "shield")
-      skill_level = skill.level
-      level = min(level, skill_level)
-
-      str = Mobile.attribute_at_level(character, :strength, level)
-      cha = Mobile.attribute_at_level(character, :charm, level)
-      str = str + cha / 10
-      modifier = Mobile.ability_value(character, "Block")
-      trunc(str * (1 + modifier / 100))
+      str = attribute_at_level(character, :strength, level)
+      cha = attribute_at_level(character, :charm, level)
+      base = str + cha / 10
+      trunc(base + ability_value(character, "Block"))
     end
 
     def parry_at_level(character, _level) do
       str = Mobile.attribute_at_level(character, :strength, character.level)
       agi = Mobile.attribute_at_level(character, :agility, character.level)
       cha = Mobile.attribute_at_level(character, :charm, character.level)
-      raw = (str + agi) / 2 + cha / 10
-      modifier = Mobile.ability_value(character, "Parry")
-      trunc(raw * (1 + modifier / 100))
+      base = (str + agi) / 2 + cha / 10
+      trunc(base + Mobile.ability_value(character, "Parry"))
     end
 
     def enough_mana_for_ability?(character, %Ability{mana: cost} = _ability) do

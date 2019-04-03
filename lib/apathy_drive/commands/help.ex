@@ -92,10 +92,13 @@ defmodule ApathyDrive.Commands.Help do
 
     if map_size(ability.attributes) > 0 do
       chance =
-        max(
-          0,
-          min(100, Mobile.spellcasting_at_level(character, character.level, ability)) +
-            ability.difficulty
+        min(
+          100,
+          max(
+            0,
+            min(100, Mobile.spellcasting_at_level(character, character.level, ability)) +
+              ability.difficulty
+          )
         )
 
       Mobile.send_scroll(
@@ -103,20 +106,25 @@ defmodule ApathyDrive.Commands.Help do
         "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{chance}%</span></p>"
       )
 
+      attributes =
+        ability.attributes
+        |> Map.keys()
+        |> Enum.map(&to_string/1)
+        |> Enum.map(&String.capitalize/1)
+        |> ApathyDrive.Commands.Inventory.to_sentence()
+
       Mobile.send_scroll(
         character,
-        "\n\n<p><span class='dark-green'>Required Attributes:</span></p>"
+        "<p><span class='dark-green'>Casting Attributes: </span><span class='dark-cyan'>#{
+          attributes
+        }</span></p>"
       )
-
-      Enum.each(ability.attributes, fn {attribute, value} ->
-        attribute = attribute |> to_string |> String.capitalize()
-
-        Mobile.send_scroll(
-          character,
-          "<p>  <span class='dark-green'>#{attribute}:</span> <span class='dark-cyan'>#{value}</span></p>"
-        )
-      end)
     end
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Required Level: </span><span class='dark-cyan'>#{ability.level}</span></p>"
+    )
 
     classes =
       ClassAbility
@@ -129,7 +137,7 @@ defmodule ApathyDrive.Commands.Help do
     if Enum.any?(classes) do
       Mobile.send_scroll(
         character,
-        "\n\n<p><span class='dark-green'>Learnable By: </span><span class='dark-cyan'>#{
+        "<p><span class='dark-green'>Learnable By: </span><span class='dark-cyan'>#{
           ApathyDrive.Commands.Inventory.to_sentence(classes)
         }</span></p>"
       )
