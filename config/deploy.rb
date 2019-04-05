@@ -5,7 +5,7 @@ set :application, 'apathy_drive'
 set :deploy_to, '/data/apathy_drive'
 set :releases_to_keep, 5
 set :default_env, {
-  'RELEASE_CONFIG_DIR' => '/home/deploy'
+  'RELEASE_CONFIG_DIR' => '/data/apathy_drive/shared/config'
 }
 
 Rake::Task["deploy"].clear_actions
@@ -79,29 +79,29 @@ namespace :deploy do
   desc "Stop the application"
   task :stop do
     on roles(:app) do |host|
-      execute :sudo, "stop", "apathy_drive"
+      execute :sudo, "systemctl", "stop", "apathy_drive"
     end
   end
 
   desc "Start the application"
   task :start do
     on roles(:app) do |host|
-      execute :sudo, "start", "apathy_drive"
+      execute :sudo, "systemctl", "start", "apathy_drive"
     end
   end
 
   desc "Reset game state"
   task :reset do
     on roles(:app) do |host|
-      execute :sudo, "stop", "apathy_drive" rescue nil
-      execute :sudo, "start", "apathy_drive", "RESET_GAME=true"
+      execute :sudo, "systemctl", "stop", "apathy_drive" rescue nil
+      execute :sudo, "systemctl", "start", "apathy_drive", "RESET_GAME=true"
     end
   end
 
   desc "Restart application"
   task :restart do
     on roles(:app) do |host|
-      execute :sudo, "restart", "apathy_drive"
+      execute :sudo, "systemctl", "restart", "apathy_drive"
     end
   end
 

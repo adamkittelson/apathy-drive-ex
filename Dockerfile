@@ -1,4 +1,4 @@
-FROM quay.io/adamkittelson/elixir-dockerfile:erlang-21.2.7-elixir-1.8.1
+FROM quay.io/brightcove/ubuntu12-elixir:elixir-1.8.1-erlang-21.3-ubuntu-18.04
 
 ENV REFRESHED_AT 2018-07-01
 
