@@ -37,7 +37,7 @@ defmodule ApathyDrive.Mixfile do
       {:jason, "~> 1.1.2"},
       {:postgrex, "~> 0.13"},
       {:phoenix, "~> 1.4.2"},
-      {:phoenix_live_reload, "~> 1.1.0", only: :dev},
+      {:phoenix_live_reload, "~> 1.2.0", only: :dev},
       {:ecto_sql, "~> 3.0"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.10.0"},
