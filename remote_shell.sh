@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SSH_TUNNEL_COMMAND="ssh -f -N -L 4369:localhost:4369 -L 49000:localhost:49000 -L 49001:localhost:49001 -L 49002:localhost:49002 -L 49003:localhost:49003 -L 49004:localhost:49004 apotheos.is"
+SSH_TUNNEL_COMMAND="ssh -v -f -N -L 4369:localhost:4369 -L 49000:localhost:49000 -L 49001:localhost:49001 -L 49002:localhost:49002 -L 49003:localhost:49003 -L 49004:localhost:49004 adam@apotheos.is -p 14113"
 
 eval $SSH_TUNNEL_COMMAND
 set -e
