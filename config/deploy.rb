@@ -5,7 +5,8 @@ set :application, 'apathy_drive'
 set :deploy_to, '/data/apathy_drive'
 set :releases_to_keep, 5
 set :default_env, {
-  'RELEASE_CONFIG_DIR' => '/data/apathy_drive/shared/config'
+  'RELEASE_CONFIG_DIR' => '/data/apathy_drive/shared/config',
+  'RUNNER_LOG_DIR' => '/data/apathy_drive/shared/log'
 }
 
 Rake::Task["deploy"].clear_actions
@@ -27,8 +28,6 @@ task :deploy do
     execute :sudo, "rm", "-rf", "#{fetch(:deploy_to)}/app"
     execute :mkdir, "#{fetch(:deploy_to)}/app"
     execute "tar", "xfz", "#{fetch(:deploy_to)}/releases/#{release}/apathy_drive.tar.gz", "-C", "#{fetch(:deploy_to)}/app"
-    execute :sudo, "rm", "-rf", "#{fetch(:deploy_to)}/app/log"
-    execute :ln, "-s", "#{fetch(:deploy_to)}/shared/log", "#{fetch(:deploy_to)}/app/var/log"
     invoke "deploy:start"
   end
 
