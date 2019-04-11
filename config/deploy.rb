@@ -20,7 +20,7 @@ task :deploy do
   end
   run_locally do
     roles(:app).each do |host|
-      execute :sudo, "scp", "-P", "#{host.port}", "apathy_drive.tar.gz", "#{host.user}@#{host.hostname}:#{fetch(:deploy_to)}/releases/#{release}/"
+      execute :sudo, "scp", "apathy_drive.tar.gz", "#{host.user}@#{host.hostname}:#{fetch(:deploy_to)}/releases/#{release}/"
     end
   end
   on roles(:app) do |host|

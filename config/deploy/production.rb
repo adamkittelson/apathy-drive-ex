@@ -1,3 +1,3 @@
-server 'apotheosis', user: 'adam', roles: 'app', port: 14113
+server 'apotheosis', user: 'adam', roles: 'app'
 
 set :mix_env, "prod"
