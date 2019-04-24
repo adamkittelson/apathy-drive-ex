@@ -30,7 +30,8 @@ defmodule ApathyDrive.Character do
     Statix,
     Text,
     TimerManager,
-    Title
+    Title,
+    Trait
   }
 
   require Logger
@@ -439,28 +440,18 @@ defmodule ApathyDrive.Character do
   end
 
   def add_equipped_item_effects(%Character{} = character, item) do
-    {ability, traits} =
+    {abilities, traits} =
       case item.traits do
+        %{"Passive" => abilities} when is_list(abilities) ->
+          Enum.reduce(abilities, {[], item.traits}, fn ability, {abilities, traits} ->
+            traits = Trait.merge_traits(traits, ability.traits)
+            {[ability | abilities], traits}
+          end)
+
         %{"Passive" => ability} ->
-          traits =
-            Enum.reduce(ability.traits, item.traits, fn {trait, value}, traits ->
-              if trait in Map.keys(traits) do
-                cond do
-                  is_integer(traits[trait]) ->
-                    Map.put(traits, trait, traits[trait] + value)
+          traits = Trait.merge_traits(item.traits, ability.traits)
 
-                  is_list(traits[trait]) ->
-                    Map.put(traits, trait, [value | traits[trait]])
-
-                  :else ->
-                    Map.put(traits, trait, value)
-                end
-              else
-                Map.put(traits, trait, value)
-              end
-            end)
-
-          {ability, traits}
+          {[ability], traits}
 
         traits ->
           {nil, traits}
@@ -482,16 +473,18 @@ defmodule ApathyDrive.Character do
           effect,
           character,
           character,
-          ability,
+          nil,
           nil
         )
       else
         effect
       end
 
-    if ability do
-      character
-      |> Systems.Effect.remove_oldest_stack(ability.id)
+    if abilities do
+      Enum.reduce(abilities, character, fn ability, character ->
+        character
+        |> Systems.Effect.remove_oldest_stack(ability.id)
+      end)
       |> Systems.Effect.add(effect)
     else
       character

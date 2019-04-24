@@ -13,7 +13,8 @@ defmodule ApathyDrive.Enchantment do
     Match,
     Mobile,
     Room,
-    TimerManager
+    TimerManager,
+    Trait
   }
 
   schema "enchantments" do
@@ -176,7 +177,7 @@ defmodule ApathyDrive.Enchantment do
   def load_enchantment(%Item{instance_id: nil} = item),
     do: Map.put(item, :keywords, Match.keywords(item.name))
 
-  def load_enchantment(%Item{instance_id: id, traits: traits} = item) do
+  def load_enchantment(%Item{instance_id: id, traits: item_traits} = item) do
     enchantment =
       __MODULE__
       |> where([ia], ia.items_instances_id == ^id and ia.finished == true)
@@ -198,11 +199,11 @@ defmodule ApathyDrive.Enchantment do
             update_in(ability.traits, &Map.put(&1, "Damage", damage))
         end
 
-      traits =
-        traits
-        |> Map.put("Grant", ability)
-        |> Map.put("Quality", 1)
-        |> Map.put("Magical", true)
+      traits = %{
+        "Grant" => ability,
+        "Quality" => [1],
+        "Magical" => true
+      }
 
       traits =
         if ability.kind == "blessing" do
@@ -221,6 +222,8 @@ defmodule ApathyDrive.Enchantment do
       #   :else ->
       #     Map.put(traits, "Grant", ability)
       # end
+
+      traits = Trait.merge_traits(item_traits, traits)
 
       item
       |> Map.put(:traits, traits)

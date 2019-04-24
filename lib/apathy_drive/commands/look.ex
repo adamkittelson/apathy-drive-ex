@@ -11,7 +11,8 @@ defmodule ApathyDrive.Commands.Look do
     Item,
     Match,
     Mobile,
-    RoomServer
+    RoomServer,
+    Trait
   }
 
   @directions [
@@ -461,9 +462,11 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_trait(character, {trait, list}) when is_list(list) do
+    value = Trait.value(trait, list)
+
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{Enum.sum(list)}</span></p>"
+      "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{value}</span></p>"
     )
   end
 

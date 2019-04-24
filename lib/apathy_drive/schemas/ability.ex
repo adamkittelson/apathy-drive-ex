@@ -1497,19 +1497,36 @@ defmodule ApathyDrive.Ability do
     target.effects
     |> Map.values()
     |> Enum.filter(&Map.has_key?(&1, "Passive"))
-    |> Enum.any?(fn %{"Passive" => ability} ->
-      has_ability? = ability_id == ability.id
+    |> Enum.any?(fn
+      %{"Passive" => abilities} when is_list(abilities) ->
+        has_ability? = ability_id in Enum.map(abilities, & &1.id)
 
-      has_conflicting_ability? =
-        case ability.traits["RemoveSpells"] do
-          nil ->
-            false
+        has_conflicting_ability? =
+          Enum.any?(abilities, fn ability ->
+            case ability.traits["RemoveSpells"] do
+              nil ->
+                false
 
-          list ->
-            ability_id in list
-        end
+              list ->
+                ability_id in list
+            end
+          end)
 
-      has_ability? or has_conflicting_ability?
+        has_ability? or has_conflicting_ability?
+
+      %{"Passive" => ability} ->
+        has_ability? = ability_id == ability.id
+
+        has_conflicting_ability? =
+          case ability.traits["RemoveSpells"] do
+            nil ->
+              false
+
+            list ->
+              ability_id in list
+          end
+
+        has_ability? or has_conflicting_ability?
     end)
   end
 

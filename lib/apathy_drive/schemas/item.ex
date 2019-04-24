@@ -13,7 +13,8 @@ defmodule ApathyDrive.Item do
     ItemInstance,
     ItemRace,
     ItemTrait,
-    ShopItem
+    ShopItem,
+    Trait
   }
 
   require Logger
@@ -202,16 +203,28 @@ defmodule ApathyDrive.Item do
 
   def price(%Item{}), do: 5
 
-  def color(%Item{traits: %{"Quality" => 5}}), do: "red"
-  def color(%Item{traits: %{"Quality" => 4}}), do: "olive"
-  def color(%Item{traits: %{"Quality" => 3}}), do: "darkmagenta"
-  def color(%Item{traits: %{"Quality" => 2}}), do: "blue"
-  def color(%Item{traits: %{"Quality" => 1}}), do: "chartreuse"
-  def color(%Item{traits: %{"Quality" => [5]}}), do: "red"
-  def color(%Item{traits: %{"Quality" => [4]}}), do: "olive"
-  def color(%Item{traits: %{"Quality" => [3]}}), do: "darkmagenta"
-  def color(%Item{traits: %{"Quality" => [2]}}), do: "blue"
-  def color(%Item{traits: %{"Quality" => [1]}}), do: "chartreuse"
+  def color(%Item{traits: %{"Quality" => quality}}) do
+    case Trait.value("Quality", quality) do
+      5 ->
+        "red"
+
+      4 ->
+        "olive"
+
+      3 ->
+        "darkmagenta"
+
+      2 ->
+        "blue"
+
+      1 ->
+        "chartreuse"
+
+      :else ->
+        "teal"
+    end
+  end
+
   def color(%Item{}), do: "teal"
 
   def enchantment(item) do
