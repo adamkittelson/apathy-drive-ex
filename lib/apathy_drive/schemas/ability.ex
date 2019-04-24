@@ -866,6 +866,7 @@ defmodule ApathyDrive.Ability do
           })
 
         put_in(room.mobiles[target.ref], target)
+        |> trigger_damage_shields(caster.ref, target.ref, ability)
 
       parried?(caster, target, room) ->
         Process.put(:ability_result, :parried)
@@ -881,6 +882,7 @@ defmodule ApathyDrive.Ability do
           })
 
         put_in(room.mobiles[target.ref], target)
+        |> trigger_damage_shields(caster.ref, target.ref, ability)
 
       true ->
         apply_ability(
