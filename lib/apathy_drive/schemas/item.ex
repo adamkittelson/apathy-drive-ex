@@ -220,7 +220,7 @@ defmodule ApathyDrive.Item do
       1 ->
         "chartreuse"
 
-      :else ->
+      _else ->
         "teal"
     end
   end
