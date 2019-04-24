@@ -185,10 +185,23 @@ defmodule ApathyDrive.AI do
 
   def auto_attack(mobile, room) do
     if target_ref = Mobile.auto_attack_target(mobile, room) do
-      attack = Mobile.attack_ability(mobile)
+      if mobile.energy == mobile.max_energy && !mobile.casting do
+        {attacks, _energy} =
+          Enum.reduce(1..5, {[], mobile.energy}, fn _n, {attacks, energy} ->
+            attack = Mobile.attack_ability(mobile)
 
-      if attack && mobile.energy >= attack.energy && !mobile.casting do
-        Ability.execute(room, mobile.ref, attack, [target_ref])
+            if attack && attack.energy <= energy do
+              {[attack | attacks], energy - attack.energy}
+            else
+              {attacks, energy}
+            end
+          end)
+
+        if Enum.any?(attacks) do
+          Enum.reduce(attacks, room, fn attack, room ->
+            Ability.execute(room, mobile.ref, attack, [target_ref])
+          end)
+        end
       end
     else
       case mobile do
