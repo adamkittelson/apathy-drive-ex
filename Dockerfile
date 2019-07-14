@@ -1,4 +1,4 @@
-FROM quay.io/brightcove/ubuntu12-elixir:elixir-1.8.1-erlang-21.2.6-ubuntu-18.04
+FROM quay.io/brightcove/ubuntu12-elixir:elixir-1.8.2-erlang-22.0.4-ubuntu-18.04
 
 ENV REFRESHED_AT 2018-07-01
 
