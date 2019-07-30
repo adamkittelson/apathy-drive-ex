@@ -4,6 +4,7 @@ defmodule ApathyDrive.ItemTrait do
 
   schema "items_traits" do
     field(:value, ApathyDrive.JSONB)
+    field(:level, :integer)
     field(:delete, :boolean, virtual: true)
 
     belongs_to(:item, Item)
@@ -12,20 +13,27 @@ defmodule ApathyDrive.ItemTrait do
 
   @required_fields ~w(trait_id value)a
 
-  def load_traits(item_id) do
-    __MODULE__
-    |> where([mt], mt.item_id == ^item_id)
-    |> preload([:trait])
-    |> Repo.all()
-    |> Enum.reduce(%{}, fn
-      %{trait: %{name: "OnHit%"} = trait, value: value}, abilities ->
-        Map.put(abilities, trait.name, value)
+  def load_traits(item_id, level \\ nil) do
+    traits =
+      __MODULE__
+      |> where([mt], mt.item_id == ^item_id and mt.level == ^level)
+      |> preload([:trait])
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn
+        %{trait: %{name: "OnHit%"} = trait, value: value}, abilities ->
+          Map.put(abilities, trait.name, value)
 
-      %{trait: trait, value: value}, abilities ->
-        abilities = Map.put_new(abilities, trait.name, [])
-        Map.put(abilities, trait.name, [value | abilities[trait.name]])
-    end)
-    |> Map.merge(ItemResistance.load_resistances(item_id))
+        %{trait: trait, value: value}, abilities ->
+          abilities = Map.put_new(abilities, trait.name, [])
+          Map.put(abilities, trait.name, [value | abilities[trait.name]])
+      end)
+      |> Map.merge(ItemResistance.load_resistances(item_id))
+
+    if level do
+      Map.put(traits, "MinLevel", level)
+    else
+      traits
+    end
   end
 
   def changeset(%ItemTrait{} = rt, attrs) do

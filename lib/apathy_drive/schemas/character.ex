@@ -480,6 +480,8 @@ defmodule ApathyDrive.Character do
         effect
       end
 
+    IO.inspect(effect)
+
     if abilities do
       Enum.reduce(abilities, character, fn ability, character ->
         character
@@ -1484,7 +1486,7 @@ defmodule ApathyDrive.Character do
       strength = attribute_at_level(character, :strength, level)
       ac = ability_value(character, "AC")
 
-      max(strength - 50 + ac, 0)
+      trunc(max(max(strength - 50, 0) + ac, 0))
     end
 
     def power_at_level(%Character{} = character, level) do

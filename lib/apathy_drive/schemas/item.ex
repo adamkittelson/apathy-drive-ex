@@ -111,7 +111,7 @@ defmodule ApathyDrive.Item do
     item
     |> Map.merge(values)
     |> Map.put(:instance_id, id)
-    |> Map.put(:traits, ItemTrait.load_traits(item.id))
+    |> Map.put(:traits, ItemTrait.load_traits(item.id, values.level))
     |> Map.put(:uses, ii.uses || item.max_uses)
     |> load_required_races_and_classes()
     |> load_item_abilities()
