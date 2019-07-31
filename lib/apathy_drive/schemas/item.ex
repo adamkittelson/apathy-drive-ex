@@ -65,15 +65,10 @@ defmodule ApathyDrive.Item do
 
   @armours [
     "Natural",
-    "Robes",
-    "Padded",
-    "Soft Leather",
-    "Soft Studded Leather",
-    "Rigid Leather",
-    "Studded Rigid Leather",
-    "Chainmail",
-    "Scalemail",
-    "Platemail"
+    "Cloth",
+    "Leather",
+    "Mail",
+    "Plate"
   ]
 
   @doc """
