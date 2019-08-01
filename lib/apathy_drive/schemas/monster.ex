@@ -7,12 +7,12 @@ defmodule ApathyDrive.Monster do
     Aggression,
     AI,
     Character,
+    CraftingRecipe,
     Currency,
     Regeneration,
     Item,
     ItemInstance,
     KillCount,
-    MaterialItem,
     Mobile,
     Monster,
     MonsterAbility,
@@ -364,7 +364,7 @@ defmodule ApathyDrive.Monster do
         room
       end
     end)
-    |> MaterialItem.drop_loot_for_character(character)
+    |> CraftingRecipe.drop_loot_for_character(character)
     |> Room.load_items()
   end
 

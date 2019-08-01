@@ -480,8 +480,6 @@ defmodule ApathyDrive.Character do
         effect
       end
 
-    IO.inspect(effect)
-
     if abilities do
       Enum.reduce(abilities, character, fn ability, character ->
         character

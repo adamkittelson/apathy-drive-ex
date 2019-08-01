@@ -5,6 +5,8 @@ defmodule ApathyDrive.Item do
     Ability,
     Character,
     ClassAbility,
+    CraftingRecipe,
+    CraftingRecipeTrait,
     Currency,
     Enchantment,
     Item,
@@ -46,6 +48,7 @@ defmodule ApathyDrive.Item do
     field(:required_strength, :integer)
 
     field(:instance_id, :integer, virtual: true)
+    field(:level, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
     field(:dropped_for_character_id, :integer, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
@@ -103,10 +106,38 @@ defmodule ApathyDrive.Item do
         values
       end
 
+    item =
+      item
+      |> Map.merge(values)
+      |> Map.put(:instance_id, id)
+
+    item_traits = ItemTrait.load_traits(item.id)
+
+    item =
+      if recipe = CraftingRecipe.for_item(item) do
+        recipe_traits = CraftingRecipeTrait.load_traits(recipe.id)
+
+        traits =
+          item_traits
+          |> Map.merge(recipe_traits)
+          |> Map.put("MinLevel", item.level)
+
+        item
+        |> Map.put(:traits, traits)
+        |> Map.put(:weight, recipe.weight)
+        |> Map.put(:speed, recipe.speed)
+        |> Map.put(:cost_value, recipe.cost_value)
+        |> Map.put(:cost_currency, recipe.cost_currency)
+      else
+        traits =
+          item_traits
+          |> Map.put("MinLevel", item.level)
+
+        item
+        |> Map.put(:traits, traits)
+      end
+
     item
-    |> Map.merge(values)
-    |> Map.put(:instance_id, id)
-    |> Map.put(:traits, ItemTrait.load_traits(item.id, values.level))
     |> Map.put(:uses, ii.uses || item.max_uses)
     |> load_required_races_and_classes()
     |> load_item_abilities()
