@@ -46,6 +46,7 @@ defmodule ApathyDrive.Item do
     field(:miss_verbs, ApathyDrive.JSONB)
     field(:destruct_message, :string)
     field(:required_strength, :integer)
+    field(:global_drop_rarity, :string)
 
     field(:instance_id, :integer, virtual: true)
     field(:level, :integer, virtual: true)
@@ -120,7 +121,7 @@ defmodule ApathyDrive.Item do
         traits =
           item_traits
           |> Map.merge(recipe_traits)
-          |> Map.put("MinLevel", item.level)
+          |> Map.put_new("MinLevel", item.level)
 
         item
         |> Map.put(:traits, traits)
@@ -131,7 +132,7 @@ defmodule ApathyDrive.Item do
       else
         traits =
           item_traits
-          |> Map.put("MinLevel", item.level)
+          |> Map.put_new("MinLevel", item.level)
 
         item
         |> Map.put(:traits, traits)

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.CraftingRecipe do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, CraftingRecipe, Item, ItemInstance, Material, Room, Skill}
+  alias ApathyDrive.{Character, CraftingRecipe, Item, ItemInstance, Material, Mobile, Room, Skill}
 
   schema "crafting_recipes" do
     field(:level, :integer)
@@ -41,67 +41,87 @@ defmodule ApathyDrive.CraftingRecipe do
   end
 
   def drop_loot_for_character(%Room{} = room, %Character{level: level} = character) do
-    count =
-      __MODULE__
-      |> where([mi], mi.level == ^level)
-      |> select([mi], count(mi.id))
-      |> Repo.one()
+    rarity =
+      case :rand.uniform(100) do
+        n when n > 95 ->
+          "rare"
 
-    item =
-      __MODULE__
-      |> where([mi], mi.level == ^level)
-      |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-      |> select([mi], mi)
-      |> Repo.one()
-      |> case do
-        %CraftingRecipe{type: "Armour"} = mi ->
-          count =
+        n when n > 50 ->
+          "common"
+
+        _ ->
+          nil
+      end
+
+    if !is_nil(rarity) do
+      count =
+        __MODULE__
+        |> where([mi], mi.level == ^level)
+        |> select([mi], count(mi.id))
+        |> Repo.one()
+
+      item =
+        __MODULE__
+        |> where([mi], mi.level == ^level)
+        |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+        |> select([mi], mi)
+        |> Repo.one()
+        |> case do
+          %CraftingRecipe{type: "Armour"} = mi ->
+            count =
+              Item
+              |> where([i], i.type == ^mi.type)
+              |> where([i], i.armour_type == ^mi.armour_type)
+              |> where([i], i.worn_on == ^mi.worn_on)
+              |> where([i], i.global_drop_rarity == ^rarity)
+              |> select([i], count(i.id))
+              |> Repo.one()
+
             Item
             |> where([i], i.type == ^mi.type)
             |> where([i], i.armour_type == ^mi.armour_type)
             |> where([i], i.worn_on == ^mi.worn_on)
-            |> select([i], count(i.id))
+            |> where([i], i.global_drop_rarity == ^rarity)
+            |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+            |> select([i], i)
             |> Repo.one()
+            |> Map.put(:level, mi.level)
 
-          Item
-          |> where([i], i.type == ^mi.type)
-          |> where([i], i.armour_type == ^mi.armour_type)
-          |> where([i], i.worn_on == ^mi.worn_on)
-          |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-          |> select([i], i)
-          |> Repo.one()
-          |> Map.put(:level, mi.level)
+          %CraftingRecipe{type: "Weapon"} = mi ->
+            count =
+              Item
+              |> where([i], i.type == ^mi.type)
+              |> where([i], i.weapon_type == ^mi.weapon_type)
+              |> where([i], i.worn_on == ^mi.worn_on)
+              |> where([i], i.global_drop_rarity == ^rarity)
+              |> select([i], count(i.id))
+              |> Repo.one()
 
-        %CraftingRecipe{type: "Weapon"} = mi ->
-          count =
             Item
             |> where([i], i.type == ^mi.type)
             |> where([i], i.weapon_type == ^mi.weapon_type)
             |> where([i], i.worn_on == ^mi.worn_on)
-            |> select([i], count(i.id))
+            |> where([i], i.global_drop_rarity == ^rarity)
+            |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+            |> select([i], i)
             |> Repo.one()
+            |> Map.put(:level, mi.level)
+        end
 
-          Item
-          |> where([i], i.type == ^mi.type)
-          |> where([i], i.weapon_type == ^mi.weapon_type)
-          |> where([i], i.worn_on == ^mi.worn_on)
-          |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-          |> select([i], i)
-          |> Repo.one()
-          |> Map.put(:level, mi.level)
-      end
+      Mobile.send_scroll(character, "<p>A #{Item.colored_name(item)} drops to the floor.</p>")
 
-    %ItemInstance{
-      item_id: item.id,
-      room_id: room.id,
-      level: item.level,
-      character_id: nil,
-      dropped_for_character_id: character.id,
-      equipped: false,
-      hidden: false,
-      delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
-    }
-    |> Repo.insert!()
+      %ItemInstance{
+        item_id: item.id,
+        room_id: room.id,
+        level: item.level,
+        character_id: nil,
+        dropped_for_character_id: character.id,
+        equipped: false,
+        hidden: false,
+        delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
+      }
+      |> Repo.insert!()
+    end
 
     room
   end
