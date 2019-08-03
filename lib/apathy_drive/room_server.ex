@@ -249,6 +249,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_abilities()
         |> Character.load_items()
         |> Character.set_title()
+        |> Character.load_materials()
         |> Mobile.cpr()
 
       Mobile.update_prompt(character)

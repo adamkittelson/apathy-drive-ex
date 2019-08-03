@@ -10,6 +10,7 @@ defmodule ApathyDrive.Character do
     AI,
     ChannelHistory,
     Character,
+    CharacterMaterial,
     CharacterSkill,
     Class,
     ClassTrait,
@@ -117,6 +118,7 @@ defmodule ApathyDrive.Character do
     field(:sneaking, :boolean, virtual: true, default: false)
     field(:detected_characters, :any, virtual: true, default: MapSet.new())
     field(:kill_counts, :map, virtual: true, default: %{})
+    field(:materials, :map, virtual: true, default: %{})
 
     belongs_to(:room, Room)
 
@@ -124,6 +126,8 @@ defmodule ApathyDrive.Character do
 
     has_many(:characters_skills, ApathyDrive.CharacterSkill)
     has_many(:trained_skills, through: [:characters_skills, :skill])
+
+    has_many(:characters_materials, ApathyDrive.CharacterMaterial)
 
     timestamps()
   end
@@ -390,6 +394,10 @@ defmodule ApathyDrive.Character do
     character
     |> Map.put(:race, race)
     |> Systems.Effect.add(effect)
+  end
+
+  def load_materials(%Character{} = character) do
+    CharacterMaterial.load_for_character(character)
   end
 
   def load_class(%Character{class_id: class_id} = character) do

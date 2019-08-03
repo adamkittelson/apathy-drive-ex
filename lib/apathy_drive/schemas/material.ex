@@ -6,6 +6,8 @@ defmodule ApathyDrive.Material do
 
   schema "materials" do
     field(:name, :string)
+
+    has_many(:characters_materials, ApathyDrive.CharacterMaterial)
   end
 
   @required_fields ~w(name)a
