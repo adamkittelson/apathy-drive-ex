@@ -287,8 +287,6 @@ defmodule ApathyDrive.Item do
   end
 
   def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
-    IO.inspect(character.weapon)
-
     cond do
       Enum.any?(weapon.required_classes) and !(character.class_id in weapon.required_classes) ->
         false

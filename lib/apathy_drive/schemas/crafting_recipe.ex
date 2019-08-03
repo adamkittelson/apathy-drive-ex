@@ -40,7 +40,15 @@ defmodule ApathyDrive.CraftingRecipe do
     |> Repo.one()
   end
 
+  def random_level(level) do
+    1..min(50, level)
+    |> Enum.flat_map(&List.duplicate(&1, &1))
+    |> Enum.random()
+  end
+
   def drop_loot_for_character(%Room{} = room, %Character{level: level} = character) do
+    level = random_level(level)
+
     rarity =
       case :rand.uniform(100) do
         n when n > 95 ->
