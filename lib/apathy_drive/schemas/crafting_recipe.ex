@@ -18,6 +18,18 @@ defmodule ApathyDrive.CraftingRecipe do
     belongs_to(:skill, Skill)
   end
 
+  def types_for_skill(skill_id) do
+    Ecto.Adapters.SQL.query!(
+      Repo,
+      "select distinct type, armour_type, weapon_type, worn_on from crafting_recipes where skill_id = $1",
+      [skill_id]
+    )
+    |> case do
+      %Postgrex.Result{rows: rows} ->
+        rows
+    end
+  end
+
   def for_item(%Item{level: nil}), do: nil
 
   def for_item(%Item{type: "Armour"} = item) do

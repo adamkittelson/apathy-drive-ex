@@ -4,6 +4,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
   alias ApathyDrive.{
     Character,
     CharacterMaterial,
+    CharacterStyle,
     CraftingRecipe,
     Item,
     ItemInstance,
@@ -43,6 +44,8 @@ defmodule ApathyDrive.Commands.Deconstruct do
           "<p>You deconstruct #{Item.colored_name(item)} and receive #{amount} #{material.name}.</p>"
         )
 
+        learn_style(character, item)
+
         Room.update_mobile(room, character.ref, fn character ->
           case character.materials[material.name] do
             %CharacterMaterial{amount: current} = cm ->
@@ -74,6 +77,8 @@ defmodule ApathyDrive.Commands.Deconstruct do
           character,
           "<p>You deconstruct #{Item.colored_name(item)} but fail to extract any materials.</p>"
         )
+
+        learn_style(character, item)
 
         room
       end
@@ -109,6 +114,22 @@ defmodule ApathyDrive.Commands.Deconstruct do
 
           room
         end
+    end
+  end
+
+  defp learn_style(%Character{} = character, %Item{} = item) do
+    %CharacterStyle{}
+    |> Ecto.Changeset.change(character_id: character.id, item_id: item.id)
+    |> Ecto.Changeset.unique_constraint(:character_id,
+      name: :characters_styles_character_id_item_id_index
+    )
+    |> Repo.insert()
+    |> case do
+      {:ok, _style} ->
+        Mobile.send_scroll(character, "<p>You learn how to craft #{Item.colored_name(item)}!")
+
+      _ ->
+        :noop
     end
   end
 end
