@@ -77,6 +77,10 @@ defmodule ApathyDrive.Match do
 
   def match_keyword("", _pid), do: false
 
+  def match_keyword(string, %{name: name, keywords: nil} = map) do
+    match_keyword(string, Map.put(map, :keywords, keywords(name)))
+  end
+
   def match_keyword(string, %{keywords: keywords}) do
     keywords
     |> Enum.any?(fn keyword ->

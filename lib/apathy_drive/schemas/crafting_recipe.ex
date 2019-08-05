@@ -1,6 +1,18 @@
 defmodule ApathyDrive.CraftingRecipe do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, CraftingRecipe, Item, ItemInstance, Material, Mobile, Room, Skill}
+
+  alias ApathyDrive.{
+    Character,
+    CraftingRecipe,
+    CraftingRecipeTrait,
+    Item,
+    ItemInstance,
+    ItemTrait,
+    Material,
+    Mobile,
+    Room,
+    Skill
+  }
 
   schema "crafting_recipes" do
     field(:level, :integer)
@@ -56,6 +68,24 @@ defmodule ApathyDrive.CraftingRecipe do
     1..min(50, level)
     |> Enum.flat_map(&List.duplicate(&1, &1))
     |> Enum.random()
+  end
+
+  def item_with_traits(%CraftingRecipe{} = recipe, %Item{} = item) do
+    item_traits = ItemTrait.load_traits(item.id)
+
+    recipe_traits = CraftingRecipeTrait.load_traits(recipe.id)
+
+    traits =
+      item_traits
+      |> Map.merge(recipe_traits)
+      |> Map.put_new("MinLevel", item.level)
+
+    item
+    |> Map.put(:traits, traits)
+    |> Map.put(:weight, recipe.weight)
+    |> Map.put(:speed, recipe.speed)
+    |> Map.put(:cost_value, recipe.cost_value)
+    |> Map.put(:cost_currency, recipe.cost_currency)
   end
 
   def drop_loot_for_character(%Room{} = room, %Character{level: level} = character) do

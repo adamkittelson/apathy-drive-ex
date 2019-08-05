@@ -6,7 +6,6 @@ defmodule ApathyDrive.Item do
     Character,
     ClassAbility,
     CraftingRecipe,
-    CraftingRecipeTrait,
     Currency,
     Enchantment,
     Item,
@@ -112,24 +111,13 @@ defmodule ApathyDrive.Item do
       |> Map.merge(values)
       |> Map.put(:instance_id, id)
 
-    item_traits = ItemTrait.load_traits(item.id)
-
     item =
       if recipe = CraftingRecipe.for_item(item) do
-        recipe_traits = CraftingRecipeTrait.load_traits(recipe.id)
-
-        traits =
-          item_traits
-          |> Map.merge(recipe_traits)
-          |> Map.put_new("MinLevel", item.level)
-
-        item
-        |> Map.put(:traits, traits)
-        |> Map.put(:weight, recipe.weight)
-        |> Map.put(:speed, recipe.speed)
-        |> Map.put(:cost_value, recipe.cost_value)
-        |> Map.put(:cost_currency, recipe.cost_currency)
+        recipe
+        |> CraftingRecipe.item_with_traits(item)
       else
+        item_traits = ItemTrait.load_traits(item.id)
+
         traits =
           item_traits
           |> Map.put_new("MinLevel", item.level)
