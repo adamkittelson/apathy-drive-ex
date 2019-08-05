@@ -9,6 +9,7 @@ defmodule ApathyDrive.Commands.Craft do
     ItemInstance,
     ItemTrait,
     Match,
+    Material,
     Mobile,
     Repo
   }
@@ -48,25 +49,49 @@ defmodule ApathyDrive.Commands.Craft do
               |> Map.put(:level, level)
               |> CraftingRecipe.for_item()
 
-            if item.weight <=
-                 Character.max_encumbrance(character) - Character.encumbrance(character) do
-              %ItemInstance{
-                item_id: item.id,
-                level: level,
-                character_id: character.id,
-                equipped: false,
-                hidden: false
-              }
-              |> Repo.insert!()
+            material = Repo.get(Material, recipe.material_id)
 
-              room
-              |> Room.update_mobile(character.ref, fn char ->
-                char
-                |> Character.load_items()
-                |> Mobile.send_scroll("<p>You craft a #{Item.colored_name(item)}.</p>")
-              end)
+            if character.materials[material.name] &&
+                 character.materials[material.name].amount >=
+                   recipe.material_amount do
+              if item.weight <=
+                   Character.max_encumbrance(character) - Character.encumbrance(character) do
+                character.materials[material.name]
+                |> Ecto.Changeset.change(%{
+                  amount: character.materials[material.name].amount - recipe.material_amount
+                })
+                |> Repo.update!()
+
+                %ItemInstance{
+                  item_id: item.id,
+                  level: level,
+                  character_id: character.id,
+                  equipped: false,
+                  hidden: false
+                }
+                |> Repo.insert!()
+
+                room
+                |> Room.update_mobile(character.ref, fn char ->
+                  char
+                  |> Character.load_materials()
+                  |> Character.load_items()
+                  |> Mobile.send_scroll(
+                    "<p>You use #{recipe.material_amount} #{material.name} to craft a #{
+                      Item.colored_name(item)
+                    }.</p>"
+                  )
+                end)
+              else
+                Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
+                room
+              end
             else
-              Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
+              Mobile.send_scroll(
+                character,
+                "<p>You don't have the required #{recipe.material_amount} #{material.name}.</p>"
+              )
+
               room
             end
 
