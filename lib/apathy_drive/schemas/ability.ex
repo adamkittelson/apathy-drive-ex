@@ -474,6 +474,88 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def execute(%Room{} = room, caster_ref, nil, %Item{} = item) do
+    Room.update_mobile(room, caster_ref, fn
+      caster ->
+        room =
+          Room.update_mobile(room, caster.ref, fn caster ->
+            caster =
+              caster
+              |> Stealth.reveal()
+
+            Mobile.update_prompt(caster)
+
+            caster =
+              if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='cyan'>You interrupt your work.</span></p>"
+                )
+
+                TimerManager.cancel(caster, lt)
+              else
+                caster
+              end
+
+            Enchantment
+            |> Ecto.Query.where(
+              [e],
+              e.items_instances_id == ^item.instance_id and is_nil(e.ability_id)
+            )
+            |> Repo.all()
+            |> case do
+              [%Enchantment{finished: false} = enchantment] ->
+                enchantment = Repo.preload(enchantment, :items_instances)
+                time = Enchantment.next_tick_time(enchantment)
+
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='cyan'>You continue your work.</span></p>"
+                )
+
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                    Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                  }</span></p>"
+                )
+
+                TimerManager.send_after(
+                  caster,
+                  {{:longterm, item.instance_id}, :timer.seconds(time),
+                   {:lt_tick, time, caster_ref, enchantment}}
+                )
+
+              [] ->
+                enchantment =
+                  %Enchantment{items_instances_id: item.instance_id, ability_id: nil}
+                  |> Repo.insert!()
+                  |> Repo.preload(:items_instances)
+
+                time = Enchantment.next_tick_time(enchantment)
+                Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
+
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                    Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                  }</span></p>"
+                )
+
+                TimerManager.send_after(
+                  caster,
+                  {{:longterm, item.instance_id}, :timer.seconds(time),
+                   {:lt_tick, time, caster_ref, enchantment}}
+                )
+            end
+          end)
+
+        Room.update_moblist(room)
+
+        room
+    end)
+  end
+
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, %Item{} = item) do
     traits =
       ability.traits

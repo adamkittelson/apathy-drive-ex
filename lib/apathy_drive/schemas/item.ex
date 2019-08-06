@@ -59,6 +59,7 @@ defmodule ApathyDrive.Item do
     field(:keywords, :any, virtual: true)
     field(:uses, :integer, virtual: true)
     field(:hidden, :boolean, virtual: true)
+    field(:unfinished, :boolean, virtual: true)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end
@@ -257,10 +258,15 @@ defmodule ApathyDrive.Item do
 
   def colored_name(%{name: name} = item, opts \\ []) do
     name =
-      if item.enchantment_name do
-        name <> " of " <> "#{item.enchantment_name |> String.split("song of ") |> List.last()}"
-      else
-        name
+      cond do
+        item.enchantment_name ->
+          name <> " of " <> "#{item.enchantment_name |> String.split("song of ") |> List.last()}"
+
+        item.unfinished ->
+          "unfinished " <> name
+
+        :else ->
+          name
       end
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)

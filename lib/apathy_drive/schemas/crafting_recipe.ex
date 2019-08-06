@@ -158,6 +158,8 @@ defmodule ApathyDrive.CraftingRecipe do
             |> Map.put(:level, mi.level)
         end
 
+      item = Map.put(item, :traits, ItemTrait.load_traits(item.id))
+
       Mobile.send_scroll(character, "<p>A #{Item.colored_name(item)} drops to the floor.</p>")
 
       %ItemInstance{

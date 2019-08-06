@@ -6,6 +6,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
     CharacterMaterial,
     CharacterStyle,
     CraftingRecipe,
+    Enchantment,
     Item,
     ItemInstance,
     Match,
@@ -64,13 +65,17 @@ defmodule ApathyDrive.Commands.Deconstruct do
               |> Repo.insert!()
           end
 
-          ItemInstance
-          |> Repo.get(item.instance_id)
-          |> Repo.delete!()
+          item_instance =
+            ItemInstance
+            |> Repo.get(item.instance_id)
+            |> Map.put(:item, item)
+
+          Repo.delete!(item_instance)
 
           character
           |> Character.load_materials()
           |> Character.load_items()
+          |> Enchantment.add_enchantment_exp(%Enchantment{items_instances: item_instance})
         end)
       else
         Mobile.send_scroll(

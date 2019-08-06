@@ -2,6 +2,7 @@ defmodule ApathyDrive.Commands.Craft do
   use ApathyDrive.Command
 
   alias ApathyDrive.{
+    Ability,
     Character,
     CharacterStyle,
     CraftingRecipe,
@@ -44,10 +45,13 @@ defmodule ApathyDrive.Commands.Craft do
             Mobile.send_scroll(character, "<p>You do not know how to craft #{item_name}.</p>")
 
           %Item{} = item ->
+            item = Map.put(item, :traits, ItemTrait.load_traits(item.id))
+
             recipe =
               item
               |> Map.put(:level, level)
               |> CraftingRecipe.for_item()
+              |> Repo.preload(:skill)
 
             material = Repo.get(Material, recipe.material_id)
 
@@ -56,32 +60,54 @@ defmodule ApathyDrive.Commands.Craft do
                    recipe.material_amount do
               if item.weight <=
                    Character.max_encumbrance(character) - Character.encumbrance(character) do
-                character.materials[material.name]
-                |> Ecto.Changeset.change(%{
-                  amount: character.materials[material.name].amount - recipe.material_amount
-                })
-                |> Repo.update!()
+                if character.skills[recipe.skill.name].level >= level do
+                  character.materials[material.name]
+                  |> Ecto.Changeset.change(%{
+                    amount: character.materials[material.name].amount - recipe.material_amount
+                  })
+                  |> Repo.update!()
 
-                %ItemInstance{
-                  item_id: item.id,
-                  level: level,
-                  character_id: character.id,
-                  equipped: false,
-                  hidden: false
-                }
-                |> Repo.insert!()
+                  instance =
+                    %ItemInstance{
+                      item_id: item.id,
+                      level: level,
+                      character_id: character.id,
+                      equipped: false,
+                      hidden: false,
+                      dropped_for_character_id: character.id
+                    }
+                    |> Repo.insert!()
 
-                room
-                |> Room.update_mobile(character.ref, fn char ->
-                  char
-                  |> Character.load_materials()
-                  |> Character.load_items()
-                  |> Mobile.send_scroll(
-                    "<p>You use #{recipe.material_amount} #{material.name} to craft a #{
-                      Item.colored_name(item)
+                  room =
+                    room
+                    |> Room.update_mobile(character.ref, fn char ->
+                      char
+                      |> Character.load_materials()
+                      |> Character.load_items()
+                      |> Mobile.send_scroll(
+                        "<p>You set aside #{recipe.material_amount} #{material.name} to craft a #{
+                          Item.colored_name(item)
+                        }.</p>"
+                      )
+                    end)
+
+                  item =
+                    Enum.find(
+                      room.mobiles[character.ref].inventory,
+                      &(&1.instance_id == instance.id)
+                    )
+
+                  Ability.execute(room, character.ref, nil, item)
+                else
+                  Mobile.send_scroll(
+                    character,
+                    "<p>Your #{recipe.skill.name} skill is too low to craft a level #{level} #{
+                      item.name
                     }.</p>"
                   )
-                end)
+
+                  room
+                end
               else
                 Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
                 room
@@ -118,13 +144,32 @@ defmodule ApathyDrive.Commands.Craft do
     end
   end
 
-  def execute(%Room{} = room, %Character{} = character, _arguments) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='red'>Syntax: craft level {level} {item}</span></p>"
-    )
+  def execute(%Room{} = room, %Character{} = character, unfinished_item) do
+    item_name = Enum.join(unfinished_item, " ")
 
-    room
+    character.inventory
+    |> Enum.filter(& &1.unfinished)
+    |> Match.one(:name_contains, item_name)
+    |> case do
+      nil ->
+        Mobile.send_scroll(character, "<p>You do not have an unfinished #{item_name}.</p>")
+        room
+
+      %Item{} = item ->
+        Ability.execute(room, character.ref, nil, item)
+
+      matches ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+        )
+
+        Enum.each(matches, fn match ->
+          Mobile.send_scroll(character, "<p>-- #{Item.colored_name(match)}</p>")
+        end)
+
+        room
+    end
   end
 
   def display_crafts(%Character{} = character) do

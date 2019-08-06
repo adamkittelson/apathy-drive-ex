@@ -7,12 +7,14 @@ defmodule ApathyDrive.Enchantment do
     AbilityDamageType,
     AbilityTrait,
     Character,
+    CraftingRecipe,
     Enchantment,
     Item,
     ItemInstance,
     Match,
     Mobile,
     Room,
+    Skill,
     TimerManager,
     Trait
   }
@@ -22,6 +24,83 @@ defmodule ApathyDrive.Enchantment do
     field(:time_elapsed_in_seconds, :integer, default: 0)
     belongs_to(:items_instances, ItemInstance)
     belongs_to(:ability, Ability)
+  end
+
+  # crafting an item
+  def tick(%Room{} = room, time, enchanter_ref, %Enchantment{ability_id: nil} = enchantment) do
+    Room.update_mobile(room, enchanter_ref, fn enchanter ->
+      if !present?(enchanter, enchantment.items_instances_id) do
+        Mobile.send_scroll(
+          enchanter,
+          "<p><span class='cyan'>You interrupt your work.</span></p>"
+        )
+
+        enchanter
+      else
+        {:ok, enchantment} =
+          enchantment
+          |> Ecto.Changeset.change(%{
+            time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time
+          })
+          |> Repo.update()
+
+        enchantment =
+          enchantment
+          |> Repo.preload(:items_instances)
+          |> update_in([Access.key!(:items_instances)], &Repo.preload(&1, :item))
+
+        enchantment =
+          enchantment
+          |> put_in(
+            [Access.key!(:items_instances), Access.key!(:item)],
+            Item.from_assoc(enchantment.items_instances)
+          )
+
+        item = enchantment.items_instances.item
+
+        time_left = time_left(enchantment)
+
+        if time_left <= 0 do
+          Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
+
+          enchantment
+          |> Ecto.Changeset.change(%{finished: true, dropped_for_character_id: nil})
+          |> Repo.update!()
+
+          Mobile.send_scroll(
+            enchanter,
+            "<p><span class='blue'>You've finished crafting #{item.name}.</span></p>"
+          )
+
+          enchanter
+          |> add_enchantment_exp(enchantment)
+          |> Character.load_items()
+        else
+          Mobile.send_scroll(
+            enchanter,
+            "<p><span class='dark-cyan'>You continue you work on the #{item.name}.</span></p>"
+          )
+
+          Mobile.send_scroll(
+            enchanter,
+            "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+              formatted_time_left(time_left)
+            }</span></p>"
+          )
+
+          next_tick_time = next_tick_time(enchantment)
+
+          enchanter =
+            enchanter
+            |> TimerManager.send_after(
+              {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
+               {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
+            )
+
+          add_enchantment_exp(enchanter, enchantment)
+        end
+      end
+    end)
   end
 
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{} = enchantment) do
@@ -128,6 +207,16 @@ defmodule ApathyDrive.Enchantment do
     end)
   end
 
+  def add_enchantment_exp(enchanter, %{ability_id: nil} = enchantment) do
+    recipe = CraftingRecipe.for_item(enchantment.items_instances.item)
+    skill = Repo.get(Skill, recipe.skill_id).name
+    exp = enchantment_exp(enchanter, skill)
+
+    enchanter
+    |> ApathyDrive.Character.add_experience(exp)
+    |> ApathyDrive.Character.add_skill_experience(skill, exp)
+  end
+
   def add_enchantment_exp(enchanter, enchantment) do
     exp = enchantment_exp(enchanter)
 
@@ -158,11 +247,15 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.join(":")
   end
 
-  def enchantment_exp(character) do
-    max(1, character.skills["enchantment"].level) * 60
+  def enchantment_exp(character, skill \\ "enchantment") do
+    max(1, character.skills[skill].level) * 60
   end
 
   def total_enchantment_time(%Enchantment{ability: %Ability{level: level}}) do
+    level * 5 * 60
+  end
+
+  def total_enchantment_time(%Enchantment{items_instances: %{level: level}}) do
     level * 5 * 60
   end
 
@@ -178,60 +271,78 @@ defmodule ApathyDrive.Enchantment do
     do: Map.put(item, :keywords, Match.keywords(item.name))
 
   def load_enchantment(%Item{instance_id: id, traits: item_traits} = item) do
-    enchantment =
-      __MODULE__
-      |> where([ia], ia.items_instances_id == ^id and ia.finished == true)
-      |> preload([:ability])
-      |> Repo.one()
+    Enchantment
+    |> Ecto.Query.where(
+      [e],
+      e.items_instances_id == ^item.instance_id and is_nil(e.ability_id)
+    )
+    |> Repo.all()
+    |> case do
+      [%Enchantment{finished: false}] ->
+        item
+        |> Map.put(:unfinished, true)
+        |> Map.put(:keywords, ["unfinished" | Match.keywords(item.name)])
 
-    if enchantment do
-      attributes = AbilityAttribute.load_attributes(enchantment.ability.id)
-      ability = Map.put(enchantment.ability, :attributes, attributes)
+      [%Enchantment{finished: true}] ->
+        item
+        |> Map.put(:keywords, Match.keywords(item.name))
 
-      ability = put_in(ability.traits, AbilityTrait.load_traits(enchantment.ability.id))
+      _ ->
+        enchantment =
+          __MODULE__
+          |> where([ia], ia.items_instances_id == ^id and ia.finished == true)
+          |> preload([:ability])
+          |> Repo.one()
 
-      ability =
-        case AbilityDamageType.load_damage(enchantment.ability.id) do
-          [] ->
-            ability
+        if enchantment do
+          attributes = AbilityAttribute.load_attributes(enchantment.ability.id)
+          ability = Map.put(enchantment.ability, :attributes, attributes)
 
-          damage ->
-            update_in(ability.traits, &Map.put(&1, "Damage", damage))
-        end
+          ability = put_in(ability.traits, AbilityTrait.load_traits(enchantment.ability.id))
 
-      traits = %{
-        "Grant" => ability,
-        "Quality" => [1],
-        "Magical" => true
-      }
+          ability =
+            case AbilityDamageType.load_damage(enchantment.ability.id) do
+              [] ->
+                ability
 
-      traits =
-        if ability.kind == "blessing" do
-          Map.put(traits, "Passive", ability)
+              damage ->
+                update_in(ability.traits, &Map.put(&1, "Damage", damage))
+            end
+
+          traits = %{
+            "Grant" => ability,
+            "Quality" => [1],
+            "Magical" => true
+          }
+
+          traits =
+            if ability.kind == "blessing" do
+              Map.put(traits, "Passive", ability)
+            else
+              traits
+            end
+
+          # cond do
+          #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
+          #     Map.put(traits, "OnHit", ability)
+
+          #   ability.kind == "blessing" ->
+          #     Map.put(traits, "Passive", ability)
+
+          #   :else ->
+          #     Map.put(traits, "Grant", ability)
+          # end
+
+          traits = Trait.merge_traits(item_traits, traits)
+
+          item
+          |> Map.put(:traits, traits)
+          |> Map.put(:enchantment_name, ability.name)
+          |> Map.put(:keywords, Match.keywords(item.name <> " " <> ability.name))
         else
-          traits
+          item
+          |> Map.put(:keywords, Match.keywords(item.name))
         end
-
-      # cond do
-      #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
-      #     Map.put(traits, "OnHit", ability)
-
-      #   ability.kind == "blessing" ->
-      #     Map.put(traits, "Passive", ability)
-
-      #   :else ->
-      #     Map.put(traits, "Grant", ability)
-      # end
-
-      traits = Trait.merge_traits(item_traits, traits)
-
-      item
-      |> Map.put(:traits, traits)
-      |> Map.put(:enchantment_name, ability.name)
-      |> Map.put(:keywords, Match.keywords(item.name <> " " <> ability.name))
-    else
-      item
-      |> Map.put(:keywords, Match.keywords(item.name))
     end
   end
 

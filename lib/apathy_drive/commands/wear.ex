@@ -100,6 +100,9 @@ defmodule ApathyDrive.Commands.Wear do
       !Item.useable_by_character?(character, item) ->
         false
 
+      item.unfinished ->
+        false
+
       :else ->
         cond do
           Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
