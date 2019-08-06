@@ -15,6 +15,7 @@ defmodule ApathyDrive.Enchantment do
     Mobile,
     Room,
     Skill,
+    SkillAttribute,
     TimerManager,
     Trait
   }
@@ -209,12 +210,23 @@ defmodule ApathyDrive.Enchantment do
 
   def add_enchantment_exp(enchanter, %{ability_id: nil} = enchantment) do
     recipe = CraftingRecipe.for_item(enchantment.items_instances.item)
-    skill = Repo.get(Skill, recipe.skill_id).name
-    exp = enchantment_exp(enchanter, skill)
+
+    skill =
+      Skill
+      |> Repo.get(recipe.skill_id)
+      |> Map.put(:attributes, SkillAttribute.attributes(recipe.skill_id))
+
+    exp = enchantment_exp(enchanter, skill.name)
+
+    Enum.reduce(skill.attributes, enchanter, fn attribute, enchanter ->
+      Character.add_attribute_experience(enchanter, %{
+        attribute => 1 / length(skill.attributes)
+      })
+    end)
 
     enchanter
     |> ApathyDrive.Character.add_experience(exp)
-    |> ApathyDrive.Character.add_skill_experience(skill, exp)
+    |> ApathyDrive.Character.add_skill_experience(skill.name, exp)
   end
 
   def add_enchantment_exp(enchanter, enchantment) do

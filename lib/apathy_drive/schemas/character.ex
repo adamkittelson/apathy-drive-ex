@@ -1376,7 +1376,6 @@ defmodule ApathyDrive.Character do
         Room.update_mobile(room, character.ref, fn character ->
           character
           |> Regeneration.regenerate(room)
-          |> Character.drain_exp_buffer()
           |> RoomServer.execute_casting_ability(room)
         end)
         |> AI.think(character.ref)

@@ -85,7 +85,19 @@ defmodule ApathyDrive.Commands.Deconstruct do
 
         learn_style(character, item)
 
-        room
+        Room.update_mobile(room, character.ref, fn character ->
+          item_instance =
+            ItemInstance
+            |> Repo.get(item.instance_id)
+            |> Map.put(:item, item)
+
+          Repo.delete!(item_instance)
+
+          character
+          |> Character.load_materials()
+          |> Character.load_items()
+          |> Enchantment.add_enchantment_exp(%Enchantment{items_instances: item_instance})
+        end)
       end
     else
       Mobile.send_scroll(character, "<p>You cannot deconstruct #{Item.colored_name(item)}.</p>")
