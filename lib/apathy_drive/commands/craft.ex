@@ -97,7 +97,12 @@ defmodule ApathyDrive.Commands.Craft do
                       &(&1.instance_id == instance.id)
                     )
 
-                  Ability.execute(room, character.ref, nil, item)
+                  room = Ability.execute(room, character.ref, nil, item)
+
+                  room
+                  |> Room.update_mobile(character.ref, fn char ->
+                    Character.load_items(char)
+                  end)
                 else
                   Mobile.send_scroll(
                     character,
@@ -195,65 +200,67 @@ defmodule ApathyDrive.Commands.Craft do
       end)
     end)
     |> Enum.reject(&Enum.empty?/1)
-    |> Enum.each(fn recipe ->
-      case recipe |> List.flatten() |> Enum.reject(&is_nil/1) do
-        [skill, "Armour", subtype, worn_on] ->
-          styles
-          |> Enum.filter(
-            &(&1.item.type == "Armour" and &1.item.armour_type == subtype and
-                &1.item.worn_on == worn_on)
-          )
-          |> Enum.map(&[&1.item.type, &1.item.armour_type, &1.item.worn_on, &1])
-          |> Enum.group_by(&Enum.slice(&1, 0..2))
-          |> Enum.each(fn {[_type, subtype, worn_on], styles} ->
-            styles =
-              styles
-              |> Enum.map(&List.last/1)
-              |> Enum.map(fn %{item: item} ->
-                Map.put(item, :traits, ItemTrait.load_traits(item.id))
-              end)
-              |> Enum.sort_by(& &1.traits["Quality"])
-              |> Enum.map(&Item.colored_name(&1))
-
-            Mobile.send_scroll(
-              character,
-              "<p><span class='dark-cyan'>#{String.pad_trailing(skill, 13)} #{
-                String.pad_trailing(subtype, 13)
-              } #{String.pad_trailing(worn_on, 13)}</span></p>"
+    |> Enum.each(fn recipes_for_skill ->
+      Enum.each(recipes_for_skill, fn recipe ->
+        case recipe |> List.flatten() |> Enum.reject(&is_nil/1) do
+          [skill, "Armour", subtype, worn_on] ->
+            styles
+            |> Enum.filter(
+              &(&1.item.type == "Armour" and &1.item.armour_type == subtype and
+                  &1.item.worn_on == worn_on)
             )
+            |> Enum.map(&[&1.item.type, &1.item.armour_type, &1.item.worn_on, &1])
+            |> Enum.group_by(&Enum.slice(&1, 0..2))
+            |> Enum.each(fn {[_type, subtype, worn_on], styles} ->
+              styles =
+                styles
+                |> Enum.map(&List.last/1)
+                |> Enum.map(fn %{item: item} ->
+                  Map.put(item, :traits, ItemTrait.load_traits(item.id))
+                end)
+                |> Enum.sort_by(& &1.traits["Quality"])
+                |> Enum.map(&Item.colored_name(&1))
 
-            Mobile.send_scroll(
-              character,
-              "<p>  #{ApathyDrive.Commands.Inventory.to_sentence(styles)}</p>"
+              Mobile.send_scroll(
+                character,
+                "<p><span class='dark-cyan'>#{String.pad_trailing(skill, 13)} #{
+                  String.pad_trailing(subtype, 13)
+                } #{String.pad_trailing(worn_on, 13)}</span></p>"
+              )
+
+              Mobile.send_scroll(
+                character,
+                "<p>  #{ApathyDrive.Commands.Inventory.to_sentence(styles)}</p>"
+              )
+            end)
+
+          [skill, "Weapon", subtype, worn_on] ->
+            styles
+            |> Enum.filter(
+              &(&1.item.type == "Weapon" and &1.item.weapon_type == subtype and
+                  &1.item.worn_on == worn_on)
             )
-          end)
-
-        [skill, "Weapon", subtype, worn_on] ->
-          styles
-          |> Enum.filter(
-            &(&1.item.type == "Weapon" and &1.item.weapon_type == subtype and
-                &1.item.worn_on == worn_on)
-          )
-          |> Enum.map(
-            &[&1.item.type, &1.item.weapon_type, &1.item.worn_on, Item.colored_name(&1.item)]
-          )
-          |> Enum.group_by(&Enum.slice(&1, 0..2))
-          |> Enum.each(fn {[_type, subtype, worn_on], styles} ->
-            styles = Enum.map(styles, &List.last/1)
-
-            Mobile.send_scroll(
-              character,
-              "<p><span class='dark-cyan'>#{String.pad_trailing(skill, 13)} #{
-                String.pad_trailing(subtype, 13)
-              } #{String.pad_trailing(worn_on, 13)}</span></p>"
+            |> Enum.map(
+              &[&1.item.type, &1.item.weapon_type, &1.item.worn_on, Item.colored_name(&1.item)]
             )
+            |> Enum.group_by(&Enum.slice(&1, 0..2))
+            |> Enum.each(fn {[_type, subtype, worn_on], styles} ->
+              styles = Enum.map(styles, &List.last/1)
 
-            Mobile.send_scroll(
-              character,
-              "<p>  #{ApathyDrive.Commands.Inventory.to_sentence(styles)}</p>"
-            )
-          end)
-      end
+              Mobile.send_scroll(
+                character,
+                "<p><span class='dark-cyan'>#{String.pad_trailing(skill, 13)} #{
+                  String.pad_trailing(subtype, 13)
+                } #{String.pad_trailing(worn_on, 13)}</span></p>"
+              )
+
+              Mobile.send_scroll(
+                character,
+                "<p>  #{ApathyDrive.Commands.Inventory.to_sentence(styles)}</p>"
+              )
+            end)
+        end
+      end)
     end)
   end
 end
