@@ -32,6 +32,8 @@ defmodule ApathyDrive.Commands.Craft do
   def execute(%Room{} = room, %Character{} = character, ["level", level | item]) do
     case Integer.parse(level) do
       {level, ""} ->
+        level = min(level, 50)
+
         item_name = Enum.join(item, " ")
 
         character
@@ -55,75 +57,86 @@ defmodule ApathyDrive.Commands.Craft do
 
             material = Repo.get(Material, recipe.material_id)
 
-            if character.materials[material.name] &&
-                 character.materials[material.name].amount >=
-                   recipe.material_amount do
-              if item.weight <=
-                   Character.max_encumbrance(character) - Character.encumbrance(character) do
-                if character.skills[recipe.skill.name].level >= level do
-                  character.materials[material.name]
-                  |> Ecto.Changeset.change(%{
-                    amount: character.materials[material.name].amount - recipe.material_amount
-                  })
-                  |> Repo.update!()
+            min_level = item.traits["MinLevel"] && Enum.sum(item.traits["MinLevel"])
 
-                  instance =
-                    %ItemInstance{
-                      item_id: item.id,
-                      level: level,
-                      character_id: character.id,
-                      equipped: false,
-                      hidden: false,
-                      dropped_for_character_id: character.id
-                    }
-                    |> Repo.insert!()
-
-                  room =
-                    room
-                    |> Room.update_mobile(character.ref, fn char ->
-                      char
-                      |> Character.load_materials()
-                      |> Character.load_items()
-                      |> Mobile.send_scroll(
-                        "<p>You set aside #{recipe.material_amount} #{material.name} to craft a #{
-                          Item.colored_name(item)
-                        }.</p>"
-                      )
-                    end)
-
-                  item =
-                    Enum.find(
-                      room.mobiles[character.ref].inventory,
-                      &(&1.instance_id == instance.id)
-                    )
-
-                  room = Ability.execute(room, character.ref, nil, item)
-
-                  room
-                  |> Room.update_mobile(character.ref, fn char ->
-                    Character.load_items(char)
-                  end)
-                else
-                  Mobile.send_scroll(
-                    character,
-                    "<p>Your #{recipe.skill.name} skill is too low to craft a level #{level} #{
-                      item.name
-                    }.</p>"
-                  )
-
-                  room
-                end
-              else
-                Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
-                room
-              end
-            else
+            if min_level > level do
               Mobile.send_scroll(
                 character,
-                "<p>You don't have the required #{recipe.material_amount} #{material.name}.</p>"
+                "<p>#{Item.colored_name(item)} must be at least level #{min_level}.</p>"
               )
 
               room
+            else
+              if character.materials[material.name] &&
+                   character.materials[material.name].amount >=
+                     recipe.material_amount do
+                if item.weight <=
+                     Character.max_encumbrance(character) - Character.encumbrance(character) do
+                  if character.skills[recipe.skill.name].level >= level do
+                    character.materials[material.name]
+                    |> Ecto.Changeset.change(%{
+                      amount: character.materials[material.name].amount - recipe.material_amount
+                    })
+                    |> Repo.update!()
+
+                    instance =
+                      %ItemInstance{
+                        item_id: item.id,
+                        level: level,
+                        character_id: character.id,
+                        equipped: false,
+                        hidden: false,
+                        dropped_for_character_id: character.id
+                      }
+                      |> Repo.insert!()
+
+                    room =
+                      room
+                      |> Room.update_mobile(character.ref, fn char ->
+                        char
+                        |> Character.load_materials()
+                        |> Character.load_items()
+                        |> Mobile.send_scroll(
+                          "<p>You set aside #{recipe.material_amount} #{material.name} to craft a #{
+                            Item.colored_name(item)
+                          }.</p>"
+                        )
+                      end)
+
+                    item =
+                      Enum.find(
+                        room.mobiles[character.ref].inventory,
+                        &(&1.instance_id == instance.id)
+                      )
+
+                    room = Ability.execute(room, character.ref, nil, item)
+
+                    room
+                    |> Room.update_mobile(character.ref, fn char ->
+                      Character.load_items(char)
+                    end)
+                  else
+                    Mobile.send_scroll(
+                      character,
+                      "<p>Your #{recipe.skill.name} skill is too low to craft a level #{level} #{
+                        item.name
+                      }.</p>"
+                    )
+
+                    room
+                  end
+                else
+                  Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
+                  room
+                end
+              else
+                Mobile.send_scroll(
+                  character,
+                  "<p>You don't have the required #{recipe.material_amount} #{material.name}.</p>"
+                )
+
+                room
+              end
             end
 
           matches ->
