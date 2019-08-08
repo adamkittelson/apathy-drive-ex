@@ -44,7 +44,6 @@ defmodule ApathyDrive.Item do
     field(:hit_verbs, ApathyDrive.JSONB)
     field(:miss_verbs, ApathyDrive.JSONB)
     field(:destruct_message, :string)
-    field(:required_strength, :integer)
     field(:global_drop_rarity, :string)
 
     field(:instance_id, :integer, virtual: true)
@@ -258,18 +257,29 @@ defmodule ApathyDrive.Item do
 
   def colored_name(%{name: name} = item, opts \\ []) do
     name =
-      cond do
-        item.enchantment_name ->
-          name <> " of " <> "#{item.enchantment_name |> String.split("song of ") |> List.last()}"
-
-        item.unfinished ->
-          "unfinished " <> name
-
-        :else ->
-          name
+      if item.enchantment_name do
+        name <> " of " <> "#{item.enchantment_name |> String.split("song of ") |> List.last()}"
+      else
+        name
       end
-      |> String.pad_trailing(opts[:pad_trailing] || 0)
-      |> String.pad_leading(opts[:pad_leading] || 0)
+
+    name =
+      if item.unfinished do
+        "unfinished " <> name
+      else
+        name
+      end
+
+    name =
+      if item.level do
+        name <> "<sup> Lv" <> to_string(item.level) <> "</sup>"
+      else
+        name
+      end
+
+    name
+    |> String.pad_trailing(opts[:pad_trailing] || 0)
+    |> String.pad_leading(opts[:pad_leading] || 0)
 
     "<span style='color: #{color(item)};'>#{name}</span>"
   end

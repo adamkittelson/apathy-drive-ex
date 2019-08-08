@@ -35,7 +35,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
   end
 
   def deconstruct(%Room{} = room, character, %Item{} = item) do
-    if recipe = CraftingRecipe.for_item(item) do
+    if (recipe = CraftingRecipe.for_item(item)) && !item.unfinished do
       material = Repo.get(Material, recipe.material_id)
       amount = 0..recipe.material_amount |> Enum.random()
 

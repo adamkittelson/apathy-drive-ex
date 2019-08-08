@@ -22,9 +22,9 @@ defmodule ApathyDrive.CraftingRecipe do
     field(:worn_on, :string)
     field(:weapon_type, :string)
     field(:weight, :integer)
-    field(:speed, :integer)
     field(:cost_value, :integer)
     field(:cost_currency, :string)
+    field(:damage, :integer)
 
     belongs_to(:material, Material)
     belongs_to(:skill, Skill)
@@ -80,12 +80,21 @@ defmodule ApathyDrive.CraftingRecipe do
       |> Map.merge(recipe_traits)
       |> Map.put_new("MinLevel", item.level)
 
-    item
-    |> Map.put(:traits, traits)
-    |> Map.put(:weight, recipe.weight)
-    |> Map.put(:speed, recipe.speed)
-    |> Map.put(:cost_value, recipe.cost_value)
-    |> Map.put(:cost_currency, recipe.cost_currency)
+    item =
+      item
+      |> Map.put(:traits, traits)
+      |> Map.put(:weight, recipe.weight)
+      |> Map.put(:cost_value, recipe.cost_value)
+      |> Map.put(:cost_currency, recipe.cost_currency)
+
+    case item do
+      %Item{type: "Weapon"} = item ->
+        damage = Character.weapon_damage(item.speed, recipe.damage, item.level)
+        Map.merge(item, damage)
+
+      item ->
+        item
+    end
   end
 
   def drop_loot_for_character(%Room{} = room, %Character{level: level} = character) do

@@ -40,11 +40,13 @@ defmodule ApathyDrive.Commands.Craft do
         |> CharacterStyle.for_character()
         |> Ecto.Query.preload(:item)
         |> Repo.all()
-        |> Enum.map(& &1.item)
-        |> Match.all(:name_starts_with, item_name)
+        |> Enum.map(&Map.put(&1.item, :keywords, Match.keywords(&1.item.name)))
+        |> Match.all(:keyword_starts_with, item_name)
         |> case do
           nil ->
             Mobile.send_scroll(character, "<p>You do not know how to craft #{item_name}.</p>")
+
+            room
 
           %Item{} = item ->
             item = Map.put(item, :traits, ItemTrait.load_traits(item.id))
@@ -59,7 +61,7 @@ defmodule ApathyDrive.Commands.Craft do
 
             min_level = item.traits["MinLevel"] && Enum.sum(item.traits["MinLevel"])
 
-            if min_level > level do
+            if min_level && min_level > level do
               Mobile.send_scroll(
                 character,
                 "<p>#{Item.colored_name(item)} must be at least level #{min_level}.</p>"

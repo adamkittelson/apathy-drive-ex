@@ -942,24 +942,35 @@ defmodule ApathyDrive.Character do
     }
   end
 
+  def weapon_damage(weapon_speed, target_damage_per_round, level) do
+    # 50% encumbrance
+    character = %Character{
+      level: level,
+      combat_level: 3,
+      strength: 50,
+      agility: 49 + level,
+      inventory: [%{weight: 1200}]
+    }
+
+    weapon = %Item{speed: weapon_speed}
+
+    energy = max(200, energy_per_swing(character, weapon))
+
+    avg = target_damage_per_round * (energy / 1000)
+
+    %{min_damage: avg * 0.75, max_damage: avg * 1.25}
+  end
+
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
     encumbrance = Character.encumbrance(character)
     max_encumbrance = Character.max_encumbrance(character)
     agility = Mobile.attribute_at_level(character, :agility, character.level)
-    strength = Mobile.attribute_at_level(character, :strength, character.level)
 
     cost =
       weapon.speed * 1000 /
         ((character.level * (character.combat_level + 2) + 45) * (agility + 150) * 1500 /
            9000.0)
-
-    cost =
-      if strength < weapon.required_strength do
-        ((weapon.required_strength - strength) * 3 + 200) * cost / 200.0
-      else
-        cost
-      end
 
     energy =
       trunc(
@@ -1048,8 +1059,7 @@ defmodule ApathyDrive.Character do
         miss_verbs: ["throw a punch", "throws a punch"],
         min_damage: 2,
         max_damage: 7,
-        speed: 1150,
-        required_strength: 0
+        speed: 1150
       }
 
       weapon = Character.weapon(character) || punch

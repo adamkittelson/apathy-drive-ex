@@ -352,7 +352,7 @@ defmodule ApathyDrive.Commands.Look do
         "<span class='dark-green'>Kind:</span> " <>
         "<span class='dark-cyan'>#{item.weapon_type}</span> " <>
         "<span class='dark-green'>DPS:</span> " <>
-        "<span class='dark-cyan'>#{dps} (#{min_damage}-#{max_damage} @ #{
+        "<span class='dark-cyan'>#{dps} (#{trunc(min_damage)}-#{trunc(max_damage)} @ #{
           trunc(ability.energy / 10)
         }% energy per swing)</span></p>"
     )

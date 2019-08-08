@@ -1165,12 +1165,14 @@ defmodule ApathyDrive.Ability do
       target
       |> Map.put(:ability_shift, 0)
 
-    total_min = Enum.reduce(damages, 0, &(&1.min + &2))
-    total_max = Enum.reduce(damages, 0, &(&1.max + &2))
+    total_min = trunc(Enum.reduce(damages, 0, &(&1.min + &2)))
+    total_max = trunc(Enum.reduce(damages, 0, &(&1.max + &2)))
 
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, 0}, fn
         %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          min = trunc(min)
+          max = trunc(max)
           modifier = (min + max) / (total_min + total_max)
 
           caster_damage =
@@ -1210,6 +1212,9 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent + percent}
 
         %{kind: "magical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          min = trunc(min)
+          max = trunc(max)
+
           modifier = (min + max) / (total_min + total_max)
 
           caster_damage =
@@ -1247,6 +1252,9 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent + percent}
 
         %{kind: "drain", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          min = trunc(min)
+          max = trunc(max)
+
           modifier = (min + max) / (total_min + total_max)
 
           caster_damage =
@@ -1652,6 +1660,9 @@ defmodule ApathyDrive.Ability do
     damage_percent =
       Enum.reduce(damages, 0, fn
         %{kind: "physical", min: min, max: max, damage_type: type}, damage_percent ->
+          min = trunc(min)
+          max = trunc(max)
+
           ability_damage = Enum.random(min..max)
 
           resist = Mobile.physical_resistance_at_level(target, target_level)
@@ -1669,6 +1680,9 @@ defmodule ApathyDrive.Ability do
           damage_percent + percent
 
         %{kind: "magical", min: min, max: max, damage_type: type}, damage_percent ->
+          min = trunc(min)
+          max = trunc(max)
+
           ability_damage = Enum.random(min..max)
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
