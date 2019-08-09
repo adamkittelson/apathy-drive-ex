@@ -2,7 +2,7 @@ defmodule ApathyDrive.Shop do
   use ApathyDriveWeb, :model
   require Logger
 
-  alias ApathyDrive.{Character, Enchantment, Item, ItemInstance, Mobile, Room, Shop, ShopItem}
+  alias ApathyDrive.{Character, Item, ItemInstance, Mobile, Room, Shop, ShopItem}
 
   schema "shops" do
     field(:cost_multiplier, :float)
@@ -91,40 +91,14 @@ defmodule ApathyDrive.Shop do
   def sell_price(shop, %Character{} = character, %Item{} = item) do
     charm = Mobile.attribute_at_level(character, :charm, character.level)
 
-    sell_price =
-      trunc(
-        (Item.cost_in_copper(item) + enchantment_value(item)) * (div(charm, 2) + 25) /
-          100
-      )
+    sell_price = trunc(Item.cost_in_copper(item) * (div(charm, 2) + 25) / 100)
 
     buy_price = buy_price(shop, character, item)
 
     # the lesser of the sell price or 90% of the buy price
     # to ensure that a player with enough charm can't buy and sell the same item
     # repeatedly for a profit
-    #
-    # if the enchantment is worth more than than this though give
-    # them the value of the enchantment, it will be stripped
-    # when selling the item so they can't buy it back and sell at a profit
-    # (without re-enchanting)
-
     min(sell_price, trunc(buy_price * 0.9))
-    |> max(enchantment_value(item))
-  end
-
-  def enchantment_value(%Item{instance_id: nil}), do: 0
-
-  def enchantment_value(%Item{instance_id: id}) do
-    enchantment =
-      Enchantment
-      |> Ecto.Query.where([e], e.items_instances_id == ^id and e.finished == true)
-      |> Repo.one()
-
-    if enchantment do
-      enchantment.time_elapsed_in_seconds * 5
-    else
-      0
-    end
   end
 
   def item_disclaimer(item, character) do

@@ -277,9 +277,10 @@ defmodule ApathyDrive.Item do
         name
       end
 
-    name
-    |> String.pad_trailing(opts[:pad_trailing] || 0)
-    |> String.pad_leading(opts[:pad_leading] || 0)
+    name =
+      name
+      |> String.pad_trailing(opts[:pad_trailing] || 0)
+      |> String.pad_leading(opts[:pad_leading] || 0)
 
     "<span style='color: #{color(item)};'>#{name}</span>"
   end

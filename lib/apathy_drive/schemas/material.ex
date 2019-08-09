@@ -6,6 +6,8 @@ defmodule ApathyDrive.Material do
 
   schema "materials" do
     field(:name, :string)
+    field(:cost_value, :integer)
+    field(:cost_currency, :string)
 
     has_many(:characters_materials, ApathyDrive.CharacterMaterial)
   end

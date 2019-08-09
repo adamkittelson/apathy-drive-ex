@@ -5,6 +5,7 @@ defmodule ApathyDrive.CraftingRecipe do
     Character,
     CraftingRecipe,
     CraftingRecipeTrait,
+    Currency,
     Item,
     ItemInstance,
     ItemTrait,
@@ -22,8 +23,6 @@ defmodule ApathyDrive.CraftingRecipe do
     field(:worn_on, :string)
     field(:weapon_type, :string)
     field(:weight, :integer)
-    field(:cost_value, :integer)
-    field(:cost_currency, :string)
     field(:damage, :integer)
 
     belongs_to(:material, Material)
@@ -71,6 +70,7 @@ defmodule ApathyDrive.CraftingRecipe do
   end
 
   def item_with_traits(%CraftingRecipe{} = recipe, %Item{} = item) do
+    material = Repo.get(Material, recipe.material_id)
     item_traits = ItemTrait.load_traits(item.id)
 
     recipe_traits = CraftingRecipeTrait.load_traits(recipe.id)
@@ -80,12 +80,27 @@ defmodule ApathyDrive.CraftingRecipe do
       |> Map.merge(recipe_traits)
       |> Map.put_new("MinLevel", item.level)
 
+    item_value =
+      if item.cost_currency,
+        do: Currency.copper_value(item.cost_currency) * item.cost_value,
+        else: 0
+
+    recipe_value =
+      Currency.copper_value(material.cost_currency) * material.cost_value * recipe.material_amount
+
+    value = max(item_value, recipe_value)
+
+    {currency, amount} =
+      value
+      |> Currency.set_value()
+      |> Enum.find(fn {_currency, amount} -> amount != 0 end)
+
     item =
       item
       |> Map.put(:traits, traits)
       |> Map.put(:weight, recipe.weight)
-      |> Map.put(:cost_value, recipe.cost_value)
-      |> Map.put(:cost_currency, recipe.cost_currency)
+      |> Map.put(:cost_value, amount)
+      |> Map.put(:cost_currency, Currency.name_from_currency(currency))
 
     case item do
       %Item{type: "Weapon"} = item ->

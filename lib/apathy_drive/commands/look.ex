@@ -12,6 +12,7 @@ defmodule ApathyDrive.Commands.Look do
     Match,
     Mobile,
     RoomServer,
+    Shop,
     Trait
   }
 
@@ -345,6 +346,16 @@ defmodule ApathyDrive.Commands.Look do
 
     dps = Float.round(average / (attack_interval / 1000), 2)
 
+    value =
+      %Shop{cost_multiplier: 1}
+      |> Shop.sell_price(character, item)
+      |> Currency.set_value()
+      |> Currency.to_string()
+      |> case do
+        "" -> "FREE"
+        value -> value
+      end
+
     Mobile.send_scroll(
       character,
       "<p><span class='dark-green'>Name:</span> " <>
@@ -354,7 +365,10 @@ defmodule ApathyDrive.Commands.Look do
         "<span class='dark-green'>DPS:</span> " <>
         "<span class='dark-cyan'>#{dps} (#{trunc(min_damage)}-#{trunc(max_damage)} @ #{
           trunc(ability.energy / 10)
-        }% energy per swing)</span></p>"
+        }% energy per swing)</span> " <>
+        "<span class='dark-green'>Value:</span> " <>
+        "<span class='dark-cyan'>#{value}</span>" <>
+        "</p>"
     )
 
     Mobile.send_scroll(character, "<p>#{item.description}</p>")
@@ -387,12 +401,23 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Item{} = item) do
+    value =
+      %Shop{cost_multiplier: 1}
+      |> Shop.sell_price(character, item)
+      |> Currency.set_value()
+      |> Currency.to_string()
+      |> case do
+        "" -> "FREE"
+        value -> value
+      end
+
     if item.worn_on do
       Mobile.send_scroll(
         character,
         "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span> <span class='dark-green'>Type:</span> <span class='dark-cyan'>#{
           item.armour_type
-        }</span> <span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span></p>"
+        }</span> <span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> <span class='dark-green'>Value:</span> " <>
+          "<span class='dark-cyan'>#{value}</span> </p>"
       )
     else
       Mobile.send_scroll(
