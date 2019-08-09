@@ -22,7 +22,6 @@ defmodule ApathyDrive.CraftingRecipe do
     field(:armour_type, :string)
     field(:worn_on, :string)
     field(:weapon_type, :string)
-    field(:weight, :integer)
     field(:damage, :integer)
 
     belongs_to(:material, Material)
@@ -98,7 +97,6 @@ defmodule ApathyDrive.CraftingRecipe do
     item =
       item
       |> Map.put(:traits, traits)
-      |> Map.put(:weight, recipe.weight)
       |> Map.put(:cost_value, amount)
       |> Map.put(:cost_currency, Currency.name_from_currency(currency))
 
