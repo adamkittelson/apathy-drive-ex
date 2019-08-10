@@ -115,10 +115,10 @@ defmodule ApathyDrive.CraftingRecipe do
 
     rarity =
       case :rand.uniform(100) do
-        n when n > 95 ->
+        n when n > 99 ->
           "rare"
 
-        n when n > 50 ->
+        n when n >= 75 ->
           "common"
 
         _ ->
