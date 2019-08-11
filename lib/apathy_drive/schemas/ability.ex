@@ -1168,6 +1168,11 @@ defmodule ApathyDrive.Ability do
     total_min = trunc(Enum.reduce(damages, 0, &(&1.min + &2)))
     total_max = trunc(Enum.reduce(damages, 0, &(&1.max + &2)))
 
+    level =
+      target.level
+      |> max(caster.level)
+      |> min(50)
+
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, 0}, fn
         %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
@@ -1184,7 +1189,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = (caster_damage + ability_damage) * resist_percent
 
@@ -1199,7 +1204,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent} ->
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = dmg * resist_percent
 
@@ -1224,7 +1229,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = (caster_damage + ability_damage) * resist_percent
 
@@ -1239,7 +1244,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent} ->
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = damage * resist_percent
 
@@ -1264,7 +1269,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = (caster_damage + ability_damage) * resist_percent
 
@@ -1667,7 +1672,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (target_level * 50 + resist)
 
           damage = ability_damage * resist_percent
 
@@ -1687,7 +1692,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (target_level * 50 + resist)
 
           damage = ability_damage * resist_percent
 

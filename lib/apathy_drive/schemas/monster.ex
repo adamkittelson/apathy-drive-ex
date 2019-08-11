@@ -360,9 +360,9 @@ defmodule ApathyDrive.Monster do
           delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
         }
         |> Repo.insert!()
-      else
-        room
       end
+
+      room
     end)
     |> CraftingRecipe.drop_loot_for_character(character)
     |> Room.load_items()
