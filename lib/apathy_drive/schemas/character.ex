@@ -1448,7 +1448,9 @@ defmodule ApathyDrive.Character do
     def magical_resistance_at_level(character, level) do
       willpower = attribute_at_level(character, :willpower, level)
 
-      max(willpower - 50 + ability_value(character, "MagicalResist"), 0)
+      mr = ability_value(character, "MagicalResist")
+
+      trunc(max(max(willpower - 50, 0) + mr, 0))
     end
 
     def max_hp_at_level(mobile, level) do

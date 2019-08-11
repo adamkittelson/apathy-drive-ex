@@ -111,7 +111,10 @@ defmodule ApathyDrive.CraftingRecipe do
   end
 
   def drop_loot_for_character(%Room{} = room, %Character{level: level} = character) do
-    level = random_level(level)
+    level =
+      room.area.level
+      |> min(level)
+      |> random_level()
 
     rarity =
       case :rand.uniform(100) do
