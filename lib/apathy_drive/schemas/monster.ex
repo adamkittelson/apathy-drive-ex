@@ -7,6 +7,7 @@ defmodule ApathyDrive.Monster do
     Aggression,
     AI,
     Character,
+    CraftingRecipe,
     Currency,
     Regeneration,
     Item,
@@ -340,7 +341,11 @@ defmodule ApathyDrive.Monster do
     |> Map.get(:ref)
   end
 
-  def drop_loot_for_character(%Room{} = room, %Monster{} = monster, %Character{id: id}) do
+  def drop_loot_for_character(
+        %Room{} = room,
+        %Monster{} = monster,
+        %Character{id: id} = character
+      ) do
     Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id}, room ->
       IO.puts("item_id: #{item_id}, chance: #{chance}")
 
@@ -355,12 +360,12 @@ defmodule ApathyDrive.Monster do
           delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
         }
         |> Repo.insert!()
-
-        Room.load_items(room)
-      else
-        room
       end
+
+      room
     end)
+    |> CraftingRecipe.drop_loot_for_character(character)
+    |> Room.load_items()
   end
 
   defimpl ApathyDrive.Mobile, for: Monster do

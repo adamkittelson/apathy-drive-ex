@@ -54,6 +54,12 @@ defmodule ApathyDrive.Commands.Experience do
       "\n<p><span class='white'>Skills:</span></p>"
     )
 
+    skill_pad =
+      character.skills
+      |> Map.keys()
+      |> Enum.map(&String.length/1)
+      |> Enum.max()
+
     character.skills
     |> Enum.each(fn {name, skill} ->
       exp = skill.experience
@@ -66,7 +72,7 @@ defmodule ApathyDrive.Commands.Experience do
         "<p><span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{
           name
           |> to_string
-          |> String.pad_trailing(10)
+          |> String.pad_trailing(skill_pad)
         }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
           level
           |> to_string

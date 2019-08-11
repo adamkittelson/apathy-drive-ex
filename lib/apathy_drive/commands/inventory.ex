@@ -49,10 +49,23 @@ defmodule ApathyDrive.Commands.Inventory do
       Mobile.send_scroll(character, "<p>You are carrying nothing.</p>")
     end
 
-    Mobile.send_scroll(
-      character,
-      "<p>You have the following keys: #{Enum.map(keys, & &1.name) |> to_sentence()}</p>"
-    )
+    if Enum.any?(keys) do
+      Mobile.send_scroll(
+        character,
+        "<p>You have the following keys: #{Enum.map(keys, & &1.name) |> to_sentence()}</p>"
+      )
+    end
+
+    mats = Map.values(character.materials)
+
+    if Enum.any?(mats) do
+      Mobile.send_scroll(
+        character,
+        "<p>You have the following crafting materials: #{
+          Enum.map(mats, &(to_string(&1.amount) <> " " <> &1.material.name)) |> to_sentence()
+        }</p>"
+      )
+    end
 
     Mobile.send_scroll(
       character,

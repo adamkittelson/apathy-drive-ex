@@ -474,6 +474,88 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def execute(%Room{} = room, caster_ref, nil, %Item{} = item) do
+    Room.update_mobile(room, caster_ref, fn
+      caster ->
+        room =
+          Room.update_mobile(room, caster.ref, fn caster ->
+            caster =
+              caster
+              |> Stealth.reveal()
+
+            Mobile.update_prompt(caster)
+
+            caster =
+              if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='cyan'>You interrupt your work.</span></p>"
+                )
+
+                TimerManager.cancel(caster, lt)
+              else
+                caster
+              end
+
+            Enchantment
+            |> Ecto.Query.where(
+              [e],
+              e.items_instances_id == ^item.instance_id and is_nil(e.ability_id)
+            )
+            |> Repo.all()
+            |> case do
+              [%Enchantment{finished: false} = enchantment] ->
+                enchantment = Repo.preload(enchantment, :items_instances)
+                time = Enchantment.next_tick_time(enchantment)
+
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='cyan'>You continue your work.</span></p>"
+                )
+
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                    Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                  }</span></p>"
+                )
+
+                TimerManager.send_after(
+                  caster,
+                  {{:longterm, item.instance_id}, :timer.seconds(time),
+                   {:lt_tick, time, caster_ref, enchantment}}
+                )
+
+              [] ->
+                enchantment =
+                  %Enchantment{items_instances_id: item.instance_id, ability_id: nil}
+                  |> Repo.insert!()
+                  |> Repo.preload(:items_instances)
+
+                time = Enchantment.next_tick_time(enchantment)
+                Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
+
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                    Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                  }</span></p>"
+                )
+
+                TimerManager.send_after(
+                  caster,
+                  {{:longterm, item.instance_id}, :timer.seconds(time),
+                   {:lt_tick, time, caster_ref, enchantment}}
+                )
+            end
+          end)
+
+        Room.update_moblist(room)
+
+        room
+    end)
+  end
+
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, %Item{} = item) do
     traits =
       ability.traits
@@ -1083,12 +1165,19 @@ defmodule ApathyDrive.Ability do
       target
       |> Map.put(:ability_shift, 0)
 
-    total_min = Enum.reduce(damages, 0, &(&1.min + &2))
-    total_max = Enum.reduce(damages, 0, &(&1.max + &2))
+    total_min = trunc(Enum.reduce(damages, 0, &(&1.min + &2)))
+    total_max = trunc(Enum.reduce(damages, 0, &(&1.max + &2)))
+
+    level =
+      target.level
+      |> max(caster.level)
+      |> min(50)
 
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, 0}, fn
         %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          min = trunc(min)
+          max = trunc(max)
           modifier = (min + max) / (total_min + total_max)
 
           caster_damage =
@@ -1100,7 +1189,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = (caster_damage + ability_damage) * resist_percent
 
@@ -1115,7 +1204,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent} ->
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = dmg * resist_percent
 
@@ -1128,6 +1217,9 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent + percent}
 
         %{kind: "magical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          min = trunc(min)
+          max = trunc(max)
+
           modifier = (min + max) / (total_min + total_max)
 
           caster_damage =
@@ -1137,7 +1229,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = (caster_damage + ability_damage) * resist_percent
 
@@ -1152,7 +1244,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent} ->
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = damage * resist_percent
 
@@ -1165,6 +1257,9 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent + percent}
 
         %{kind: "drain", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          min = trunc(min)
+          max = trunc(max)
+
           modifier = (min + max) / (total_min + total_max)
 
           caster_damage =
@@ -1174,7 +1269,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (level * 50 + resist)
 
           damage = (caster_damage + ability_damage) * resist_percent
 
@@ -1570,11 +1665,14 @@ defmodule ApathyDrive.Ability do
     damage_percent =
       Enum.reduce(damages, 0, fn
         %{kind: "physical", min: min, max: max, damage_type: type}, damage_percent ->
+          min = trunc(min)
+          max = trunc(max)
+
           ability_damage = Enum.random(min..max)
 
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (target_level * 50 + resist)
 
           damage = ability_damage * resist_percent
 
@@ -1587,11 +1685,14 @@ defmodule ApathyDrive.Ability do
           damage_percent + percent
 
         %{kind: "magical", min: min, max: max, damage_type: type}, damage_percent ->
+          min = trunc(min)
+          max = trunc(max)
+
           ability_damage = Enum.random(min..max)
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (5 * 50 + resist)
+          resist_percent = 1 - resist / (target_level * 50 + resist)
 
           damage = ability_damage * resist_percent
 

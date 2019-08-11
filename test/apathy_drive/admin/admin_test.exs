@@ -10,7 +10,7 @@ defmodule ApathyDrive.AdminTest do
       description: "some description",
       name: "some name",
       weapon: "All",
-      armour: "Platemail",
+      armour: "Plate",
       stealth: false,
       exp_modifier: 100
     }

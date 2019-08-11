@@ -64,19 +64,20 @@ defmodule ApathyDrive.Commands.Sell do
   end
 
   def sell(%Room{} = room, character, %Item{instance_id: instance_id} = item) do
-    if Enum.find(room.shop.shop_items, &(&1.item_id == item.id)) do
-      cost_in_copper = Shop.sell_price(room.shop, character, item)
+    cost_in_copper = Shop.sell_price(room.shop, character, item)
 
+    if item.unfinished do
+      Mobile.send_scroll(
+        character,
+        "<p>You may not sell unfinished items!</p>"
+      )
+
+      room
+    else
       Room.update_mobile(room, character.ref, fn char ->
         ItemInstance
         |> Repo.get!(instance_id)
-        |> Ecto.Changeset.change(%{
-          shop_id: room.shop.id,
-          character_id: nil,
-          equipped: false,
-          hidden: false
-        })
-        |> Repo.update!()
+        |> Repo.delete!()
 
         enchantment =
           Enchantment
@@ -115,10 +116,6 @@ defmodule ApathyDrive.Commands.Sell do
         |> Repo.update!()
         |> Character.load_items()
       end)
-      |> Shop.load()
-    else
-      Mobile.send_scroll(character, "<p>You cannot sell #{item.name} here.</p>")
-      room
     end
   end
 

@@ -280,3 +280,6 @@ CHANGELOG
 
 ---- 0.0.103 / 2019-03-29 / dns-things -----------------------------------------
 * update dns settings to point at current ip periodically (prep for when i host at home with a dynamic ip)
+
+---- 0.0.104 / 2019-08-11 / crafting -------------------------------------------
+* item drops / deconstruction / crafting

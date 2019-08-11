@@ -5,6 +5,7 @@ defmodule ApathyDrive.Item do
     Ability,
     Character,
     ClassAbility,
+    CraftingRecipe,
     Currency,
     Enchantment,
     Item,
@@ -43,9 +44,10 @@ defmodule ApathyDrive.Item do
     field(:hit_verbs, ApathyDrive.JSONB)
     field(:miss_verbs, ApathyDrive.JSONB)
     field(:destruct_message, :string)
-    field(:required_strength, :integer)
+    field(:global_drop_rarity, :string)
 
     field(:instance_id, :integer, virtual: true)
+    field(:level, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
     field(:dropped_for_character_id, :integer, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
@@ -56,6 +58,7 @@ defmodule ApathyDrive.Item do
     field(:keywords, :any, virtual: true)
     field(:uses, :integer, virtual: true)
     field(:hidden, :boolean, virtual: true)
+    field(:unfinished, :boolean, virtual: true)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end
@@ -65,15 +68,10 @@ defmodule ApathyDrive.Item do
 
   @armours [
     "Natural",
-    "Robes",
-    "Padded",
-    "Soft Leather",
-    "Soft Studded Leather",
-    "Rigid Leather",
-    "Studded Rigid Leather",
-    "Chainmail",
-    "Scalemail",
-    "Platemail"
+    "Cloth",
+    "Leather",
+    "Mail",
+    "Plate"
   ]
 
   @doc """
@@ -108,10 +106,27 @@ defmodule ApathyDrive.Item do
         values
       end
 
+    item =
+      item
+      |> Map.merge(values)
+      |> Map.put(:instance_id, id)
+
+    item =
+      if recipe = CraftingRecipe.for_item(item) do
+        recipe
+        |> CraftingRecipe.item_with_traits(item)
+      else
+        item_traits = ItemTrait.load_traits(item.id)
+
+        traits =
+          item_traits
+          |> Map.put_new("MinLevel", item.level)
+
+        item
+        |> Map.put(:traits, traits)
+      end
+
     item
-    |> Map.merge(values)
-    |> Map.put(:instance_id, id)
-    |> Map.put(:traits, ItemTrait.load_traits(item.id))
     |> Map.put(:uses, ii.uses || item.max_uses)
     |> load_required_races_and_classes()
     |> load_item_abilities()
@@ -247,6 +262,23 @@ defmodule ApathyDrive.Item do
       else
         name
       end
+
+    name =
+      if item.unfinished do
+        "unfinished " <> name
+      else
+        name
+      end
+
+    name =
+      if item.level do
+        name <> "<sup> Lv" <> to_string(item.level) <> "</sup>"
+      else
+        name
+      end
+
+    name =
+      name
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 

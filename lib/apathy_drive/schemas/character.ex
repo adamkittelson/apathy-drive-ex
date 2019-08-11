@@ -10,6 +10,7 @@ defmodule ApathyDrive.Character do
     AI,
     ChannelHistory,
     Character,
+    CharacterMaterial,
     CharacterSkill,
     Class,
     ClassTrait,
@@ -117,6 +118,7 @@ defmodule ApathyDrive.Character do
     field(:sneaking, :boolean, virtual: true, default: false)
     field(:detected_characters, :any, virtual: true, default: MapSet.new())
     field(:kill_counts, :map, virtual: true, default: %{})
+    field(:materials, :map, virtual: true, default: %{})
 
     belongs_to(:room, Room)
 
@@ -124,6 +126,8 @@ defmodule ApathyDrive.Character do
 
     has_many(:characters_skills, ApathyDrive.CharacterSkill)
     has_many(:trained_skills, through: [:characters_skills, :skill])
+
+    has_many(:characters_materials, ApathyDrive.CharacterMaterial)
 
     timestamps()
   end
@@ -390,6 +394,10 @@ defmodule ApathyDrive.Character do
     character
     |> Map.put(:race, race)
     |> Systems.Effect.add(effect)
+  end
+
+  def load_materials(%Character{} = character) do
+    CharacterMaterial.load_for_character(character)
   end
 
   def load_class(%Character{class_id: class_id} = character) do
@@ -934,24 +942,35 @@ defmodule ApathyDrive.Character do
     }
   end
 
+  def weapon_damage(weapon_speed, target_damage_per_round, level) do
+    # 50% encumbrance
+    character = %Character{
+      level: level,
+      combat_level: 3,
+      strength: 50,
+      agility: 49 + level,
+      inventory: [%{weight: 1200}]
+    }
+
+    weapon = %Item{speed: weapon_speed}
+
+    energy = max(200, energy_per_swing(character, weapon))
+
+    avg = target_damage_per_round * (energy / 1000)
+
+    %{min_damage: avg * 0.75, max_damage: avg * 1.25}
+  end
+
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
     encumbrance = Character.encumbrance(character)
     max_encumbrance = Character.max_encumbrance(character)
     agility = Mobile.attribute_at_level(character, :agility, character.level)
-    strength = Mobile.attribute_at_level(character, :strength, character.level)
 
     cost =
       weapon.speed * 1000 /
         ((character.level * (character.combat_level + 2) + 45) * (agility + 150) * 1500 /
            9000.0)
-
-    cost =
-      if strength < weapon.required_strength do
-        ((weapon.required_strength - strength) * 3 + 200) * cost / 200.0
-      else
-        cost
-      end
 
     energy =
       trunc(
@@ -1040,8 +1059,7 @@ defmodule ApathyDrive.Character do
         miss_verbs: ["throw a punch", "throws a punch"],
         min_damage: 2,
         max_damage: 7,
-        speed: 1150,
-        required_strength: 0
+        speed: 1150
       }
 
       weapon = Character.weapon(character) || punch
@@ -1368,7 +1386,6 @@ defmodule ApathyDrive.Character do
         Room.update_mobile(room, character.ref, fn character ->
           character
           |> Regeneration.regenerate(room)
-          |> Character.drain_exp_buffer()
           |> RoomServer.execute_casting_ability(room)
         end)
         |> AI.think(character.ref)
@@ -1431,7 +1448,9 @@ defmodule ApathyDrive.Character do
     def magical_resistance_at_level(character, level) do
       willpower = attribute_at_level(character, :willpower, level)
 
-      max(willpower - 50 + ability_value(character, "MagicalResist"), 0)
+      mr = ability_value(character, "MagicalResist")
+
+      trunc(max(max(willpower - 50, 0) + mr, 0))
     end
 
     def max_hp_at_level(mobile, level) do
@@ -1484,7 +1503,7 @@ defmodule ApathyDrive.Character do
       strength = attribute_at_level(character, :strength, level)
       ac = ability_value(character, "AC")
 
-      max(strength - 50 + ac, 0)
+      trunc(max(max(strength - 50, 0) + ac, 0))
     end
 
     def power_at_level(%Character{} = character, level) do
