@@ -362,8 +362,8 @@ defmodule ApathyDrive.Item do
   def useable_by_character?(_character, _item), do: true
 
   def too_powerful_for_character?(character, item) do
-    too_high_level_for_character?(character, item) or
-      attribute_requirement_not_met?(character, item)
+    # or attribute_requirement_not_met?(character, item)
+    too_high_level_for_character?(character, item)
   end
 
   def too_high_level_for_character?(character, item) do

@@ -14,10 +14,7 @@ defmodule ApathyDrive.Level do
   def exp_for_level(0, _multiplier), do: 0
 
   def exp_for_level(lvl, multiplier) do
-    pre_nerf = (1 + :math.pow(lvl - 1, 1.50 + lvl / 75.0)) * 100_000 / 150 * multiplier
-
-    # make exp req drastically lower at level 1 and step up until it's back to normal at level 20
-    trunc(pre_nerf * min(1.0, 0.05 * lvl))
+    trunc((1 + :math.pow(lvl - 1, 1.50 + lvl / 75.0)) * 100_000 / 150 * multiplier)
   end
 
   def exp_at_level(level, multiplier \\ 1.0)

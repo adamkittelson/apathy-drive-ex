@@ -471,7 +471,11 @@ defmodule ApathyDrive.Script do
         %{"add_experience" => exp},
         script
       ) do
-    character = Character.add_experience(character, exp)
+    character =
+      character
+      |> Character.add_experience_to_buffer(exp)
+      |> Character.add_class_experience(exp)
+
     room = put_in(room.mobiles[character.ref], character)
     execute_script(room, character, script)
   end

@@ -26,7 +26,7 @@ defmodule ApathyDrive.Commands.Train do
         Mobile.send_scroll(character, message)
         room
 
-      character.level >= Character.max_level(character) ->
+      character.level > Character.max_level(character) ->
         message = "<p>You don't have the experience required to train!</p>"
         Mobile.send_scroll(character, message)
         room
@@ -46,9 +46,17 @@ defmodule ApathyDrive.Commands.Train do
           old_hp = Mobile.max_hp_at_level(character, character.level)
 
           character =
+            update_in(character.class, fn character_class ->
+              character_class
+              |> Ecto.Changeset.change(%{
+                level: character_class.level + 1
+              })
+              |> Repo.update!()
+            end)
+
+          character =
             character
             |> Ecto.Changeset.change(%{
-              level: character.level + 1,
               runic: char_currency.runic,
               platinum: char_currency.platinum,
               gold: char_currency.gold,
@@ -56,8 +64,10 @@ defmodule ApathyDrive.Commands.Train do
               copper: char_currency.copper
             })
             |> Repo.update!()
+            |> Character.load_class()
             |> Character.load_abilities()
             |> Character.set_title()
+            |> Character.update_exp_bar()
 
           new_abilities = Map.values(character.abilities)
 
