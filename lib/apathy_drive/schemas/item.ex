@@ -110,21 +110,7 @@ defmodule ApathyDrive.Item do
       item
       |> Map.merge(values)
       |> Map.put(:instance_id, id)
-
-    item =
-      if recipe = CraftingRecipe.for_item(item) do
-        recipe
-        |> CraftingRecipe.item_with_traits(item)
-      else
-        item_traits = ItemTrait.load_traits(item.id)
-
-        traits =
-          item_traits
-          |> Map.put_new("MinLevel", item.level)
-
-        item
-        |> Map.put(:traits, traits)
-      end
+      |> with_traits_for_level(ii.level)
 
     item
     |> Map.put(:uses, ii.uses || item.max_uses)
@@ -134,9 +120,27 @@ defmodule ApathyDrive.Item do
 
   def from_assoc(%ShopItem{item: item}) do
     item
-    |> Map.put(:traits, ItemTrait.load_traits(item.id))
+    |> with_traits_for_level(1)
     |> load_required_races_and_classes()
     |> load_item_abilities()
+  end
+
+  def with_traits_for_level(%Item{} = item, level \\ 1) do
+    item = Map.put(item, :level, level)
+
+    if recipe = CraftingRecipe.for_item(item) do
+      recipe
+      |> CraftingRecipe.item_with_traits(item)
+    else
+      item_traits = ItemTrait.load_traits(item.id)
+
+      traits =
+        item_traits
+        |> Map.put_new("MinLevel", item.level)
+
+      item
+      |> Map.put(:traits, traits)
+    end
   end
 
   def slots do

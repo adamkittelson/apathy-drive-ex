@@ -223,8 +223,6 @@ defmodule ApathyDrive.Enchantment do
         attribute => 1 / length(skill.attributes)
       })
     end)
-
-    enchanter
     |> ApathyDrive.Character.add_experience_to_buffer(exp)
     |> ApathyDrive.Character.add_skill_experience(skill.name, exp)
   end

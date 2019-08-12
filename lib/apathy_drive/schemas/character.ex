@@ -362,9 +362,7 @@ defmodule ApathyDrive.Character do
   end
 
   def max_level(%Character{} = character) do
-    IO.inspect(
-      Level.level_at_exp(character.class.experience, character.class.class.exp_modifier / 100)
-    )
+    Level.level_at_exp(character.class.experience, character.class.class.exp_modifier / 100)
   end
 
   def load_race(%Character{race_id: race_id} = character) do

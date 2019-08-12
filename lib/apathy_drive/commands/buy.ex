@@ -77,7 +77,8 @@ defmodule ApathyDrive.Commands.Buy do
                 shop_id: nil,
                 character_id: char.id,
                 equipped: false,
-                hidden: false
+                hidden: false,
+                level: char.level
               })
               |> Repo.update!()
 
