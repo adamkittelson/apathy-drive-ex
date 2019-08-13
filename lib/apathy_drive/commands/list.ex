@@ -27,7 +27,7 @@ defmodule ApathyDrive.Commands.List do
         if item.cost_value do
           Mobile.send_scroll(
             character,
-            "<p>#{Item.colored_name(item, pad_trailing: 30)}<span class='dark-cyan'>#{
+            "<p>#{Item.colored_name(item, pad_trailing: 42)}<span class='dark-cyan'>#{
               String.pad_trailing(to_string(shop_item.count), 12)
             }</span><span class='dark-cyan'>#{trunc(item.cost_value * multiplier)} #{
               item.cost_currency
@@ -36,7 +36,7 @@ defmodule ApathyDrive.Commands.List do
         else
           Mobile.send_scroll(
             character,
-            "<p>#{Item.colored_name(item, pad_trailing: 30)}<span class='dark-cyan'>#{
+            "<p>#{Item.colored_name(item, pad_trailing: 42)}<span class='dark-cyan'>#{
               String.pad_trailing(to_string(shop_item.count), 12)
             }</span><span class='dark-cyan'>FREE</span> #{Shop.item_disclaimer(item, character)}</p>"
           )

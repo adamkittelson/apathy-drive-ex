@@ -260,6 +260,9 @@ defmodule ApathyDrive.Character do
       |> Ecto.Query.where([ca], ca.character_id == ^id)
       |> Ecto.Query.preload([:ability])
       |> Repo.all()
+      |> Enum.reject(fn %{ability: ability} ->
+        ApathyDrive.Commands.Read.wrong_class?(character, ability)
+      end)
 
     class_abilities =
       character.class_id

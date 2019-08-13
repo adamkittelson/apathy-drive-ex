@@ -12,9 +12,7 @@ defmodule ApathyDrive.Commands.Train do
         room
 
       room.trainer.class_id && room.trainer.class_id != character.class_id ->
-        message = "<p>This shop is not suitable for your training.</p>"
-        Mobile.send_scroll(character, message)
-        room
+        change_class(room, character, room.trainer.class_id)
 
       character.level + 1 < room.trainer.min_level ->
         message = "<p>You have not progressed far enough to use the training provided here.</p>"
@@ -110,5 +108,47 @@ defmodule ApathyDrive.Commands.Train do
           character
         end)
     end
+  end
+
+  def change_class(room, character, class_id) do
+    room =
+      Room.update_mobile(room, character.ref, fn character ->
+        character =
+          character
+          |> Ecto.Changeset.change(%{
+            class_id: class_id
+          })
+          |> Repo.update!()
+          |> Character.load_class()
+          |> Character.load_abilities()
+          |> Character.set_title()
+          |> Character.update_exp_bar()
+
+        Directory.add_character(%{
+          name: character.name,
+          bounty: character.bounty,
+          room: character.room_id,
+          ref: character.ref,
+          title: character.title
+        })
+
+        character
+      end)
+
+    character = room.mobiles[character.ref]
+
+    room = ApathyDrive.Commands.Remove.execute(room, character, ["all"])
+
+    character = room.mobiles[character.ref]
+
+    room = ApathyDrive.Commands.Wear.execute(room, character, ["all"])
+
+    character = room.mobiles[character.ref]
+
+    message = "<p>You are now a #{character.class.class.name}.</p>"
+
+    Mobile.send_scroll(character, message)
+
+    room
   end
 end
