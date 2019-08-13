@@ -27,7 +27,7 @@ defmodule ApathyDrive.Commands.Inventory do
         Mobile.send_scroll(
           character,
           "<p><span class='dark-cyan'>#{worn_on}</span><span class='dark-green'>#{
-            Item.colored_name(item)
+            Item.colored_name(item, character: character)
           }</span></p>"
         )
       end)

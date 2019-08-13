@@ -45,8 +45,7 @@ defmodule ApathyDrive.Commands.Read do
             room
 
           wrong_class?(character, ability) ->
-            message =
-              "<p>Your class cannot learn #{ability.name}, however, if you have the required enchanting skill level, you may cast the spell once if the scroll is in your inventory.</p>"
+            message = "<p>Your class cannot learn #{ability.name}.</p>"
 
             Mobile.send_scroll(character, message)
             room
@@ -63,11 +62,15 @@ defmodule ApathyDrive.Commands.Read do
     end
   end
 
+  def wrong_class?(_character, nil), do: true
+
   def wrong_class?(character, ability) do
     !Repo.get_by(ClassAbility, class_id: character.class_id, ability_id: ability.id)
   end
 
-  defp already_learned?(character, ability) do
+  def already_learned?(_character, nil), do: false
+
+  def already_learned?(character, ability) do
     !!Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id)
   end
 

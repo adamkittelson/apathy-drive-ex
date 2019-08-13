@@ -22,12 +22,15 @@ defmodule ApathyDrive.Commands.List do
     items
     |> Enum.each(fn %ShopItem{} = shop_item ->
       if shop_item.count > 0 do
-        item = Item.with_traits_for_level(shop_item.item, character.level)
+        shop_item = put_in(shop_item.item.level, character.level)
+        item = Item.from_assoc(shop_item)
+
+        padding = if item.type in ["Weapon", "Armour"], do: 42, else: 30
 
         if item.cost_value do
           Mobile.send_scroll(
             character,
-            "<p>#{Item.colored_name(item, pad_trailing: 42)}<span class='dark-cyan'>#{
+            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{
               String.pad_trailing(to_string(shop_item.count), 12)
             }</span><span class='dark-cyan'>#{trunc(item.cost_value * multiplier)} #{
               item.cost_currency
@@ -36,7 +39,7 @@ defmodule ApathyDrive.Commands.List do
         else
           Mobile.send_scroll(
             character,
-            "<p>#{Item.colored_name(item, pad_trailing: 42)}<span class='dark-cyan'>#{
+            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{
               String.pad_trailing(to_string(shop_item.count), 12)
             }</span><span class='dark-cyan'>FREE</span> #{Shop.item_disclaimer(item, character)}</p>"
           )

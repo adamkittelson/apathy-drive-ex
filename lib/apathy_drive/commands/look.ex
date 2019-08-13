@@ -332,8 +332,8 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.any?(&Map.has_key?(&1, "blinded"))
   end
 
-  def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
-    ability = Character.ability_for_weapon(character, item)
+  def weapon_damage(%Character{} = character, ability \\ nil) do
+    ability = ability || Mobile.attack_ability(character)
 
     attack_interval = Regeneration.duration_for_energy(character, ability.energy)
 
@@ -345,6 +345,13 @@ defmodule ApathyDrive.Commands.Look do
     average = (min_damage + max_damage) / 2
 
     dps = Float.round(average / (attack_interval / 1000), 2)
+
+    %{dps: dps, min_damage: min_damage, max_damage: max_damage, ability: ability}
+  end
+
+  def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
+    ability = Character.ability_for_weapon(character, item)
+    damage = weapon_damage(character, ability)
 
     value =
       %Shop{cost_multiplier: 1}
@@ -363,9 +370,9 @@ defmodule ApathyDrive.Commands.Look do
         "<span class='dark-green'>Kind:</span> " <>
         "<span class='dark-cyan'>#{item.weapon_type}</span> " <>
         "<span class='dark-green'>DPS:</span> " <>
-        "<span class='dark-cyan'>#{dps} (#{trunc(min_damage)}-#{trunc(max_damage)} @ #{
-          trunc(ability.energy / 10)
-        }% energy per swing)</span> " <>
+        "<span class='dark-cyan'>#{damage.dps} (#{trunc(damage.min_damage)}-#{
+          trunc(damage.max_damage)
+        } @ #{trunc(damage.ability.energy / 10)}% energy per swing)</span> " <>
         "<span class='dark-green'>Value:</span> " <>
         "<span class='dark-cyan'>#{value}</span>" <>
         "</p>"

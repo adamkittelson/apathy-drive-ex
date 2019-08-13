@@ -4,6 +4,7 @@ defmodule ApathyDrive.Item do
   alias ApathyDrive.{
     Ability,
     Character,
+    CharacterStyle,
     ClassAbility,
     CraftingRecipe,
     Currency,
@@ -14,6 +15,7 @@ defmodule ApathyDrive.Item do
     ItemInstance,
     ItemRace,
     ItemTrait,
+    Mobile,
     ShopItem,
     Trait
   }
@@ -120,13 +122,18 @@ defmodule ApathyDrive.Item do
 
   def from_assoc(%ShopItem{item: item}) do
     item
-    |> with_traits_for_level(1)
+    |> with_traits_for_level(item.level)
     |> load_required_races_and_classes()
     |> load_item_abilities()
   end
 
-  def with_traits_for_level(%Item{} = item, level \\ 1) do
-    item = Map.put(item, :level, level)
+  def with_traits_for_level(%Item{type: type} = item, level \\ 1) do
+    item =
+      if type in ["Weapon", "Armour"] do
+        Map.put(item, :level, level)
+      else
+        Map.put(item, :level, nil)
+      end
 
     if recipe = CraftingRecipe.for_item(item) do
       recipe
@@ -259,7 +266,80 @@ defmodule ApathyDrive.Item do
     end
   end
 
+  def upgrade_for_character?(%Item{type: "Armour"} = item, %Character{} = character) do
+    unless item in character.equipment do
+      original_ac = Mobile.physical_resistance_at_level(character, character.level)
+      original_mr = Mobile.magical_resistance_at_level(character, character.level)
+
+      case ApathyDrive.Commands.Wear.equip_item(character, item, false) do
+        %{character: with_item} ->
+          ac = Mobile.physical_resistance_at_level(with_item, with_item.level)
+          mr = Mobile.magical_resistance_at_level(with_item, with_item.level)
+
+          ac + mr > original_ac + original_mr
+
+        _other ->
+          false
+      end
+    end
+  end
+
+  def upgrade_for_character?(%Item{type: "Weapon"} = item, %Character{} = character) do
+    unless item in character.equipment do
+      %{dps: original_dps} = ApathyDrive.Commands.Look.weapon_damage(character)
+
+      case ApathyDrive.Commands.Wear.equip_item(character, item, false) do
+        %{character: with_item} ->
+          %{dps: dps} = ApathyDrive.Commands.Look.weapon_damage(with_item)
+
+          dps > original_dps
+
+        _other ->
+          false
+      end
+    end
+  end
+
+  def upgrade_for_character?(_item, _character), do: false
+
+  def researchable?(%Item{} = item, %Character{} = character) do
+    cond do
+      !!CraftingRecipe.for_item(item) and !item.unfinished ->
+        !Repo.get_by(CharacterStyle, character_id: character.id, item_id: item.id)
+
+      !item.type == "Scroll" ->
+        false
+
+      Item.too_powerful_for_character?(character, item) ->
+        false
+
+      ApathyDrive.Commands.Read.already_learned?(character, item.traits["Learn"]) ->
+        IO.puts("#{item.name} too powerful")
+        false
+
+      ApathyDrive.Commands.Read.wrong_class?(character, item.traits["Learn"]) ->
+        false
+
+      :else ->
+        true
+    end
+  end
+
+  def researchable?(_item, _character), do: false
+
   def colored_name(%{name: name} = item, opts \\ []) do
+    name =
+      cond do
+        upgrade_for_character?(item, opts[:character]) ->
+          "↑ " <> name
+
+        researchable?(item, opts[:character]) ->
+          "⌕ " <> name
+
+        :else ->
+          name
+      end
+
     name =
       if item.enchantment_name do
         name <> " of " <> "#{item.enchantment_name |> String.split("song of ") |> List.last()}"
@@ -293,6 +373,14 @@ defmodule ApathyDrive.Item do
 
   def cost_in_copper(%Item{} = item) do
     item.cost_value * Currency.copper_value(item.cost_currency)
+  end
+
+  def useable_by_character?(character, %Item{traits: %{"Learn" => ability}}) do
+    class_ability =
+      ClassAbility
+      |> Repo.get_by(class_id: character.class_id, ability_id: ability.id)
+
+    !!class_ability
   end
 
   def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
@@ -363,11 +451,12 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def useable_by_character?(_character, _item), do: true
+  def useable_by_character?(_character, _item) do
+    true
+  end
 
   def too_powerful_for_character?(character, item) do
-    # or attribute_requirement_not_met?(character, item)
-    too_high_level_for_character?(character, item)
+    too_high_level_for_character?(character, item) or class_too_low?(character, item)
   end
 
   def too_high_level_for_character?(character, item) do
@@ -380,21 +469,17 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def attribute_requirement_not_met?(character, %Item{traits: %{"Learn" => ability}}) do
-    attribute_not_met? = max(1, character.skills["enchantment"].level) < ability.level
-
+  def class_too_low?(character, %Item{traits: %{"Learn" => ability}}) do
     class_ability =
       ClassAbility
       |> Repo.get_by(class_id: character.class_id, ability_id: ability.id)
 
     if class_ability do
-      class_ability.level > character.level and attribute_not_met?
-    else
-      attribute_not_met?
+      class_ability.level > character.level
     end
   end
 
-  def attribute_requirement_not_met?(_character, _item), do: false
+  def class_too_low?(_character, _item), do: false
 
   defp load_required_races_and_classes(%Item{} = item) do
     item
