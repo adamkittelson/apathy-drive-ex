@@ -229,7 +229,8 @@ defmodule ApathyDrive.Item do
 
   def price(%Item{}), do: 5
 
-  def color(%Item{traits: %{"Quality" => quality}}) do
+  def color(%Item{type: type, traits: %{"Quality" => quality}})
+      when type in ["Armour", "Weapon"] do
     case Trait.value("Quality", quality) do
       5 ->
         "red"
