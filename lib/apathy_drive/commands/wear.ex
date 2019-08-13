@@ -116,7 +116,7 @@ defmodule ApathyDrive.Commands.Wear do
 
             if persist do
               %ItemInstance{id: item_to_remove.instance_id}
-              |> Ecto.Changeset.change(%{equipped: false})
+              |> Ecto.Changeset.change(%{equipped: false, class_id: nil})
               |> Repo.update!()
             end
 
@@ -147,7 +147,7 @@ defmodule ApathyDrive.Commands.Wear do
             if persist do
               Enum.each(items_to_remove, fn item_to_remove ->
                 %ItemInstance{id: item_to_remove.instance_id}
-                |> Ecto.Changeset.change(%{equipped: false})
+                |> Ecto.Changeset.change(%{equipped: false, class_id: nil})
                 |> Repo.update!()
               end)
             end

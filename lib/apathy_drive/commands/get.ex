@@ -102,6 +102,7 @@ defmodule ApathyDrive.Commands.Get do
                 character_id: character.id,
                 dropped_for_character_id: nil,
                 equipped: false,
+                class_id: nil,
                 hidden: false
               })
               |> Repo.update!()

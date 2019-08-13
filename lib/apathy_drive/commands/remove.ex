@@ -31,7 +31,7 @@ defmodule ApathyDrive.Commands.Remove do
       %{} = item_to_remove ->
         ItemInstance
         |> Repo.get(item_to_remove.instance_id)
-        |> Ecto.Changeset.change(%{equipped: false})
+        |> Ecto.Changeset.change(%{equipped: false, class_id: nil})
         |> Repo.update!()
 
         room =
