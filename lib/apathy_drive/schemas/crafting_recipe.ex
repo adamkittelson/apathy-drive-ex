@@ -138,55 +138,61 @@ defmodule ApathyDrive.CraftingRecipe do
         |> select([mi], count(mi.id))
         |> Repo.one()
 
-      item =
+      {recipe, item} =
         __MODULE__
         |> where([mi], mi.level == ^level)
         |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
         |> select([mi], mi)
         |> Repo.one()
         |> case do
-          %CraftingRecipe{type: "Armour"} = mi ->
+          %CraftingRecipe{type: "Armour"} = recipe ->
             count =
               Item
-              |> where([i], i.type == ^mi.type)
-              |> where([i], i.armour_type == ^mi.armour_type)
-              |> where([i], i.worn_on == ^mi.worn_on)
+              |> where([i], i.type == ^recipe.type)
+              |> where([i], i.armour_type == ^recipe.armour_type)
+              |> where([i], i.worn_on == ^recipe.worn_on)
               |> where([i], i.global_drop_rarity == ^rarity)
               |> select([i], count(i.id))
               |> Repo.one()
 
-            Item
-            |> where([i], i.type == ^mi.type)
-            |> where([i], i.armour_type == ^mi.armour_type)
-            |> where([i], i.worn_on == ^mi.worn_on)
-            |> where([i], i.global_drop_rarity == ^rarity)
-            |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-            |> select([i], i)
-            |> Repo.one()
-            |> Map.put(:level, mi.level)
+            item =
+              Item
+              |> where([i], i.type == ^recipe.type)
+              |> where([i], i.armour_type == ^recipe.armour_type)
+              |> where([i], i.worn_on == ^recipe.worn_on)
+              |> where([i], i.global_drop_rarity == ^rarity)
+              |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+              |> select([i], i)
+              |> Repo.one()
+              |> Map.put(:level, recipe.level)
 
-          %CraftingRecipe{type: "Weapon"} = mi ->
+            {recipe, item}
+
+          %CraftingRecipe{type: "Weapon"} = recipe ->
             count =
               Item
-              |> where([i], i.type == ^mi.type)
-              |> where([i], i.weapon_type == ^mi.weapon_type)
-              |> where([i], i.worn_on == ^mi.worn_on)
+              |> where([i], i.type == ^recipe.type)
+              |> where([i], i.weapon_type == ^recipe.weapon_type)
+              |> where([i], i.worn_on == ^recipe.worn_on)
               |> where([i], i.global_drop_rarity == ^rarity)
               |> select([i], count(i.id))
               |> Repo.one()
 
-            Item
-            |> where([i], i.type == ^mi.type)
-            |> where([i], i.weapon_type == ^mi.weapon_type)
-            |> where([i], i.worn_on == ^mi.worn_on)
-            |> where([i], i.global_drop_rarity == ^rarity)
-            |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-            |> select([i], i)
-            |> Repo.one()
-            |> Map.put(:level, mi.level)
+            item =
+              Item
+              |> where([i], i.type == ^recipe.type)
+              |> where([i], i.weapon_type == ^recipe.weapon_type)
+              |> where([i], i.worn_on == ^recipe.worn_on)
+              |> where([i], i.global_drop_rarity == ^rarity)
+              |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+              |> select([i], i)
+              |> Repo.one()
+              |> Map.put(:level, recipe.level)
+
+            {recipe, item}
         end
 
-      item = Map.put(item, :traits, ItemTrait.load_traits(item.id))
+      item = item_with_traits(recipe, item)
 
       if item.traits["MinLevel"] && Enum.sum(item.traits["MinLevel"]) > level do
         drop_loot_for_character(room, character)
