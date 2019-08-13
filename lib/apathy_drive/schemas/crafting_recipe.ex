@@ -194,7 +194,7 @@ defmodule ApathyDrive.CraftingRecipe do
 
       item = item_with_traits(recipe, item)
 
-      if item.traits["MinLevel"] && Enum.sum(item.traits["MinLevel"]) > level do
+      if item.traits["MinLevel"] && item.traits["MinLevel"] > level do
         drop_loot_for_character(room, character)
       else
         Mobile.send_scroll(
