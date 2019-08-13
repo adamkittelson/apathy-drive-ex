@@ -42,7 +42,9 @@ defmodule ApathyDrive.Commands.Deconstruct do
       if amount > 0 do
         Mobile.send_scroll(
           character,
-          "<p>You deconstruct #{Item.colored_name(item)} and receive #{amount} #{material.name}.</p>"
+          "<p>You deconstruct #{Item.colored_name(item, character: character)} and receive #{
+            amount
+          } #{material.name}.</p>"
         )
 
         learn_style(character, item)
@@ -80,7 +82,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
       else
         Mobile.send_scroll(
           character,
-          "<p>You deconstruct #{Item.colored_name(item)} but fail to extract any materials.</p>"
+          "<p>You deconstruct #{Item.colored_name(item, character: character)} but fail to extract any materials.</p>"
         )
 
         learn_style(character, item)
@@ -100,7 +102,11 @@ defmodule ApathyDrive.Commands.Deconstruct do
         end)
       end
     else
-      Mobile.send_scroll(character, "<p>You cannot deconstruct #{Item.colored_name(item)}.</p>")
+      Mobile.send_scroll(
+        character,
+        "<p>You cannot deconstruct #{Item.colored_name(item, character: character)}.</p>"
+      )
+
       room
     end
   end
@@ -126,7 +132,10 @@ defmodule ApathyDrive.Commands.Deconstruct do
           )
 
           Enum.each(matches, fn match ->
-            Mobile.send_scroll(character, "<p>-- #{Item.colored_name(match)}</p>")
+            Mobile.send_scroll(
+              character,
+              "<p>-- #{Item.colored_name(match, character: character)}</p>"
+            )
           end)
 
           room
@@ -143,7 +152,10 @@ defmodule ApathyDrive.Commands.Deconstruct do
     |> Repo.insert()
     |> case do
       {:ok, _style} ->
-        Mobile.send_scroll(character, "<p>You learn how to craft #{Item.colored_name(item)}!")
+        Mobile.send_scroll(
+          character,
+          "<p>You learn how to craft #{Item.colored_name(item, character: character)}!"
+        )
 
       _ ->
         :noop

@@ -61,7 +61,9 @@ defmodule ApathyDrive.Commands.Buy do
           Currency.wealth(character) < price_in_copper ->
             Mobile.send_scroll(
               character,
-              "<p>You cannot afford to buy #{Item.colored_name(shop_item.item)}.<p>"
+              "<p>You cannot afford to buy #{
+                Item.colored_name(shop_item.item, character: character)
+              }.<p>"
             )
 
             room
@@ -88,12 +90,12 @@ defmodule ApathyDrive.Commands.Buy do
               if price_in_copper == 0 do
                 Mobile.send_scroll(
                   char,
-                  "<p>You purchase #{Item.colored_name(item_instance.item)} for nothing.</p>"
+                  "<p>You purchase #{Item.colored_name(item_instance.item, character: char)} for nothing.</p>"
                 )
               else
                 Mobile.send_scroll(
                   char,
-                  "<p>You purchase #{Item.colored_name(item_instance.item)} for #{
+                  "<p>You purchase #{Item.colored_name(item_instance.item, character: char)} for #{
                     Currency.to_string(currency)
                   }.</p>"
                 )
@@ -121,7 +123,10 @@ defmodule ApathyDrive.Commands.Buy do
         )
 
         Enum.each(matches, fn match ->
-          Mobile.send_scroll(character, "<p>-- #{Item.colored_name(match.item)}</p>")
+          Mobile.send_scroll(
+            character,
+            "<p>-- #{Item.colored_name(match.item, character: character)}</p>"
+          )
         end)
 
         room

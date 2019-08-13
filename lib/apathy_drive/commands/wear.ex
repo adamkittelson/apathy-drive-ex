@@ -37,12 +37,15 @@ defmodule ApathyDrive.Commands.Wear do
           case equip_item(character, item) do
             %{equipped: equipped, unequipped: unequipped, character: character} ->
               Enum.each(unequipped, fn item ->
-                Mobile.send_scroll(character, "<p>You remove #{Item.colored_name(item)}.</p>")
+                Mobile.send_scroll(
+                  character,
+                  "<p>You remove #{Item.colored_name(item, character: character)}.</p>"
+                )
               end)
 
               Mobile.send_scroll(
                 character,
-                "<p>You are now wearing #{Item.colored_name(equipped)}.</p>"
+                "<p>You are now wearing #{Item.colored_name(equipped, character: character)}.</p>"
               )
 
               send(
@@ -60,7 +63,7 @@ defmodule ApathyDrive.Commands.Wear do
             %{equipped: equipped, character: character} ->
               Mobile.send_scroll(
                 character,
-                "<p>You are now wearing #{Item.colored_name(equipped)}.</p>"
+                "<p>You are now wearing #{Item.colored_name(equipped, character: character)}.</p>"
               )
 
               send(
@@ -76,7 +79,10 @@ defmodule ApathyDrive.Commands.Wear do
               character
 
             false ->
-              Mobile.send_scroll(character, "<p>You cannot equip #{Item.colored_name(item)}.</p>")
+              Mobile.send_scroll(
+                character,
+                "<p>You cannot equip #{Item.colored_name(item, character: character)}.</p>"
+              )
           end
 
         room = put_in(room.mobiles[character.ref], character)

@@ -96,12 +96,14 @@ defmodule ApathyDrive.Commands.Sell do
         if cost_in_copper == 0 do
           Mobile.send_scroll(
             char,
-            "<p>You sold #{Item.colored_name(item)} for nothing.</p>"
+            "<p>You sold #{Item.colored_name(item, character: char)} for nothing.</p>"
           )
         else
           Mobile.send_scroll(
             char,
-            "<p>You sold #{Item.colored_name(item)} for #{Currency.to_string(currency)}.</p>"
+            "<p>You sold #{Item.colored_name(item, character: char)} for #{
+              Currency.to_string(currency)
+            }.</p>"
           )
         end
 
@@ -140,7 +142,10 @@ defmodule ApathyDrive.Commands.Sell do
           )
 
           Enum.each(matches, fn match ->
-            Mobile.send_scroll(character, "<p>-- #{Item.colored_name(match)}</p>")
+            Mobile.send_scroll(
+              character,
+              "<p>-- #{Item.colored_name(match, character: character)}</p>"
+            )
           end)
 
           room

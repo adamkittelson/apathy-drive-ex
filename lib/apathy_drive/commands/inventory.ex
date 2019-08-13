@@ -39,7 +39,7 @@ defmodule ApathyDrive.Commands.Inventory do
 
     inventory = inventory -- keys
 
-    item_names = inventory |> Enum.map(&Item.colored_name(&1))
+    item_names = inventory |> Enum.map(&Item.colored_name(&1, character: character))
 
     item_names = Currency.to_list(character) ++ item_names
 

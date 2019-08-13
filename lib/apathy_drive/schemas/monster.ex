@@ -275,7 +275,9 @@ defmodule ApathyDrive.Monster do
 
           %Item{instance_id: _id} = item ->
             character
-            |> Mobile.send_scroll("<p>You receive #{Item.colored_name(item)}!</p>")
+            |> Mobile.send_scroll(
+              "<p>You receive #{Item.colored_name(item, character: character)}!</p>"
+            )
             |> Character.load_items()
         end
       else

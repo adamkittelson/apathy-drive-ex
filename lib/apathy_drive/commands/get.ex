@@ -113,7 +113,9 @@ defmodule ApathyDrive.Commands.Get do
                 |> Room.update_mobile(character.ref, fn char ->
                   char
                   |> Character.load_items()
-                  |> Mobile.send_scroll("<p>You took #{Item.colored_name(item)}.</p>")
+                  |> Mobile.send_scroll(
+                    "<p>You took #{Item.colored_name(item, character: char)}.</p>"
+                  )
                 end)
 
               Room.send_scroll(
@@ -126,7 +128,11 @@ defmodule ApathyDrive.Commands.Get do
 
               room
             else
-              Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
+              Mobile.send_scroll(
+                character,
+                "<p>#{Item.colored_name(item, character: character)} is too heavy.</p>"
+              )
+
               room
             end
 

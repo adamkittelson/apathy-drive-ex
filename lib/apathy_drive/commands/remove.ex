@@ -46,7 +46,10 @@ defmodule ApathyDrive.Commands.Remove do
                 "<p>You remove the #{Item.colored_name(item_to_remove)} and extinguish it.</p>"
               )
             else
-              Mobile.send_scroll(char, "<p>You remove #{Item.colored_name(item_to_remove)}.</p>")
+              Mobile.send_scroll(
+                char,
+                "<p>You remove #{Item.colored_name(item_to_remove, character: char)}.</p>"
+              )
             end
 
             send(

@@ -102,11 +102,15 @@ defmodule ApathyDrive.Commands.Drop do
               char =
                 char
                 |> Character.load_items()
-                |> Mobile.send_scroll("<p>You dropped #{Item.colored_name(item)}.</p>")
+                |> Mobile.send_scroll(
+                  "<p>You dropped #{Item.colored_name(item, character: character)}.</p>"
+                )
 
               Room.send_scroll(
                 room,
-                "<p><span class='dark-yellow'>#{char.name} dropped #{Item.colored_name(item)}.</span></p>",
+                "<p><span class='dark-yellow'>#{char.name} dropped #{
+                  Item.colored_name(item, character: character)
+                }.</span></p>",
                 [char]
               )
 

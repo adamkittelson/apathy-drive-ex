@@ -64,7 +64,9 @@ defmodule ApathyDrive.Commands.Craft do
             if min_level && min_level > level do
               Mobile.send_scroll(
                 character,
-                "<p>#{Item.colored_name(item)} must be at least level #{min_level}.</p>"
+                "<p>#{Item.colored_name(item, character: character)} must be at least level #{
+                  min_level
+                }.</p>"
               )
 
               room
@@ -100,7 +102,7 @@ defmodule ApathyDrive.Commands.Craft do
                         |> Character.load_items()
                         |> Mobile.send_scroll(
                           "<p>You set aside #{recipe.material_amount} #{material.name} to craft a #{
-                            Item.colored_name(item)
+                            Item.colored_name(item, character: character)
                           }.</p>"
                         )
                       end)
@@ -128,7 +130,11 @@ defmodule ApathyDrive.Commands.Craft do
                     room
                   end
                 else
-                  Mobile.send_scroll(character, "<p>#{Item.colored_name(item)} is too heavy.</p>")
+                  Mobile.send_scroll(
+                    character,
+                    "<p>#{Item.colored_name(item, character: character)} is too heavy.</p>"
+                  )
+
                   room
                 end
               else
@@ -148,7 +154,10 @@ defmodule ApathyDrive.Commands.Craft do
             )
 
             Enum.each(matches, fn match ->
-              Mobile.send_scroll(character, "<p>-- #{Item.colored_name(match)}</p>")
+              Mobile.send_scroll(
+                character,
+                "<p>-- #{Item.colored_name(match, character: character)}</p>"
+              )
             end)
 
             room
@@ -185,7 +194,10 @@ defmodule ApathyDrive.Commands.Craft do
         )
 
         Enum.each(matches, fn match ->
-          Mobile.send_scroll(character, "<p>-- #{Item.colored_name(match)}</p>")
+          Mobile.send_scroll(
+            character,
+            "<p>-- #{Item.colored_name(match, character: character)}</p>"
+          )
         end)
 
         room
@@ -234,7 +246,7 @@ defmodule ApathyDrive.Commands.Craft do
                   Map.put(item, :traits, ItemTrait.load_traits(item.id))
                 end)
                 |> Enum.sort_by(& &1.traits["Quality"])
-                |> Enum.map(&Item.colored_name(&1))
+                |> Enum.map(&Item.colored_name(&1, character: character))
 
               Mobile.send_scroll(
                 character,
@@ -256,7 +268,12 @@ defmodule ApathyDrive.Commands.Craft do
                   &1.item.worn_on == worn_on)
             )
             |> Enum.map(
-              &[&1.item.type, &1.item.weapon_type, &1.item.worn_on, Item.colored_name(&1.item)]
+              &[
+                &1.item.type,
+                &1.item.weapon_type,
+                &1.item.worn_on,
+                Item.colored_name(&1.item, character: character)
+              ]
             )
             |> Enum.group_by(&Enum.slice(&1, 0..2))
             |> Enum.each(fn {[_type, subtype, worn_on], styles} ->
