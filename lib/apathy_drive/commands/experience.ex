@@ -5,19 +5,27 @@ defmodule ApathyDrive.Commands.Experience do
   def keywords, do: ["exp", "experience"]
 
   def execute(%Room{} = room, %Character{} = character, []) do
-    training =
-      if Character.max_level(character) > character.level do
-        "<span class='yellow'>Ready to train to next level!</span>"
-      else
-        ""
-      end
+    Mobile.send_scroll(
+      character,
+      "\n<p><span class='white'>Class:</span></p>"
+    )
+
+    exp = character.class.experience
+    level = character.level
+
+    to_level = Level.exp_at_level(level, character.class.class.exp_modifier / 100)
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{
-        String.pad_trailing(character.name, 10)
-      }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{character.level}</span>   #{
-        training
+      "<p><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{
+        character.class.class.name
+        |> String.pad_trailing(10)
+      }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
+        level
+        |> to_string
+        |> String.pad_trailing(3)
+      }</span> <span class='dark-green'>Exp needed for next level:</span> <span class='dark-cyan'>#{
+        max(0, to_level - exp)
       }</p>"
     )
 
@@ -31,7 +39,9 @@ defmodule ApathyDrive.Commands.Experience do
       exp = Map.get(character, :"#{attribute}_experience")
       level = character.attribute_levels[attribute]
 
-      to_level = Level.exp_at_level(level + 1, 1.0)
+      modifier = (100 + character.race.exp_modifier) / 100
+
+      to_level = Level.exp_at_level(level + 1, modifier)
 
       Mobile.send_scroll(
         character,
@@ -65,7 +75,7 @@ defmodule ApathyDrive.Commands.Experience do
       exp = skill.experience
       level = skill.level
 
-      to_level = Level.exp_at_level(level + 1, skill.exp_multiplier)
+      to_level = Level.exp_at_level(level + 1, 1.0)
 
       Mobile.send_scroll(
         character,

@@ -12,7 +12,8 @@ defmodule ApathyDrive.CraftingRecipe do
     Material,
     Mobile,
     Room,
-    Skill
+    Skill,
+    Trait
   }
 
   schema "crafting_recipes" do
@@ -62,6 +63,8 @@ defmodule ApathyDrive.CraftingRecipe do
     |> Repo.one()
   end
 
+  def for_item(%Item{}), do: nil
+
   def random_level(level) do
     1..min(50, level)
     |> Enum.flat_map(&List.duplicate(&1, &1))
@@ -76,7 +79,7 @@ defmodule ApathyDrive.CraftingRecipe do
 
     traits =
       item_traits
-      |> Map.merge(recipe_traits)
+      |> Trait.merge_traits(recipe_traits)
       |> Map.put_new("MinLevel", item.level)
 
     item_value =

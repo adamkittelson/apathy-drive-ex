@@ -283,3 +283,6 @@ CHANGELOG
 
 ---- 0.0.104 / 2019-08-11 / crafting -------------------------------------------
 * item drops / deconstruction / crafting
+
+---- 0.0.105 / 2019-08-12 / character_progression ------------------------------
+* class changing

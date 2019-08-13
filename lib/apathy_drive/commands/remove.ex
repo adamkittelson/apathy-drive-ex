@@ -9,6 +9,15 @@ defmodule ApathyDrive.Commands.Remove do
     room
   end
 
+  def execute(%Room{} = room, %Character{ref: ref} = character, ["all"]) do
+    character.equipment
+    |> Enum.map(& &1.name)
+    |> Enum.reduce(room, fn item_name, updated_room ->
+      character = updated_room.mobiles[ref]
+      execute(updated_room, character, [item_name])
+    end)
+  end
+
   def execute(%Room{} = room, %Character{} = character, arguments) do
     item_name = Enum.join(arguments, " ")
 

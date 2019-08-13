@@ -63,12 +63,12 @@ defmodule ApathyDrive.Commands.Read do
     end
   end
 
-  defp already_learned?(character, ability) do
-    !!Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id)
+  def wrong_class?(character, ability) do
+    !Repo.get_by(ClassAbility, class_id: character.class_id, ability_id: ability.id)
   end
 
-  defp wrong_class?(character, ability) do
-    !Repo.get_by(ClassAbility, class_id: character.class_id, ability_id: ability.id)
+  defp already_learned?(character, ability) do
+    !!Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id)
   end
 
   defp learn_ability(room, character, scroll, ability) do

@@ -22,23 +22,23 @@ defmodule ApathyDrive.Commands.List do
     items
     |> Enum.each(fn %ShopItem{} = shop_item ->
       if shop_item.count > 0 do
-        if shop_item.item.cost_value do
+        item = Item.with_traits_for_level(shop_item.item, character.level)
+
+        if item.cost_value do
           Mobile.send_scroll(
             character,
-            "<p>#{Item.colored_name(shop_item.item, pad_trailing: 30)}<span class='dark-cyan'>#{
+            "<p>#{Item.colored_name(item, pad_trailing: 42)}<span class='dark-cyan'>#{
               String.pad_trailing(to_string(shop_item.count), 12)
-            }</span><span class='dark-cyan'>#{trunc(shop_item.item.cost_value * multiplier)} #{
-              shop_item.item.cost_currency
-            }s #{Shop.item_disclaimer(shop_item.item, character)}</span></p>"
+            }</span><span class='dark-cyan'>#{trunc(item.cost_value * multiplier)} #{
+              item.cost_currency
+            }s #{Shop.item_disclaimer(item, character)}</span></p>"
           )
         else
           Mobile.send_scroll(
             character,
-            "<p>#{Item.colored_name(shop_item.item, pad_trailing: 30)}<span class='dark-cyan'>#{
+            "<p>#{Item.colored_name(item, pad_trailing: 42)}<span class='dark-cyan'>#{
               String.pad_trailing(to_string(shop_item.count), 12)
-            }</span><span class='dark-cyan'>FREE</span> #{
-              Shop.item_disclaimer(shop_item.item, character)
-            }</p>"
+            }</span><span class='dark-cyan'>FREE</span> #{Shop.item_disclaimer(item, character)}</p>"
           )
         end
       end

@@ -31,7 +31,7 @@ defmodule ApathyDrive.Trait do
   def merge_traits(traits1, traits2) do
     Enum.reduce(traits2, traits1, fn {trait, value}, traits ->
       if trait in Map.keys(traits) do
-        Map.put(traits, trait, [value | List.wrap(traits[trait])])
+        Map.put(traits, trait, List.flatten([value | List.wrap(traits[trait])]))
       else
         Map.put(traits, trait, value)
       end

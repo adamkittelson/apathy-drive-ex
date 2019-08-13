@@ -99,7 +99,7 @@ defmodule ApathyDrive.KillCount do
       true ->
         bonus = exp * multiplier
 
-        modifier = 1 / ((character.race.exp_modifier + character.class.exp_modifier) / 100)
+        modifier = 1 / ((character.race.exp_modifier + character.class.class.exp_modifier) / 100)
         exp = trunc(bonus * modifier)
 
         message = message(kill_count, count, exp)
@@ -113,11 +113,13 @@ defmodule ApathyDrive.KillCount do
 
             character
             |> Character.send_chat(message)
-            |> Character.add_experience(bonus, true)
+            |> Character.add_experience_to_buffer(bonus, true)
+            |> Character.add_class_experience(bonus)
           else
             character
             |> Mobile.send_scroll(message)
-            |> Character.add_experience(bonus, true)
+            |> Character.add_experience_to_buffer(bonus, true)
+            |> Character.add_class_experience(bonus)
           end
 
         {character, [multiplier | kills_required]}

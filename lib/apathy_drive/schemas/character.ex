@@ -10,6 +10,7 @@ defmodule ApathyDrive.Character do
     AI,
     ChannelHistory,
     Character,
+    CharacterClass,
     CharacterMaterial,
     CharacterSkill,
     Class,
@@ -76,10 +77,10 @@ defmodule ApathyDrive.Character do
     field(:auto_flee, :boolean)
     field(:bounty, :integer, default: 0)
     field(:alignment, :string)
-    field(:level, :integer)
 
+    field(:level, :integer, virtual: true)
     field(:race, :string, virtual: true)
-    field(:class, :string, virtual: true)
+    field(:class, :any, virtual: true)
     field(:monitor_ref, :any, virtual: true)
     field(:ref, :any, virtual: true)
     field(:socket, :any, virtual: true)
@@ -259,6 +260,9 @@ defmodule ApathyDrive.Character do
       |> Ecto.Query.where([ca], ca.character_id == ^id)
       |> Ecto.Query.preload([:ability])
       |> Repo.all()
+      |> Enum.reject(fn %{ability: ability} ->
+        ApathyDrive.Commands.Read.wrong_class?(character, ability)
+      end)
 
     class_abilities =
       character.class_id
@@ -361,13 +365,7 @@ defmodule ApathyDrive.Character do
   end
 
   def max_level(%Character{} = character) do
-    average_attribute_level =
-      character.attribute_levels
-      |> Map.values()
-      |> Enum.sum()
-      |> div(6)
-
-    average_attribute_level + 1
+    Level.level_at_exp(character.class.experience, character.class.class.exp_modifier / 100)
   end
 
   def load_race(%Character{race_id: race_id} = character) do
@@ -401,7 +399,18 @@ defmodule ApathyDrive.Character do
   end
 
   def load_class(%Character{class_id: class_id} = character) do
-    class = Repo.get(Class, class_id)
+    character_class =
+      CharacterClass
+      |> Repo.get_by(%{character_id: character.id, class_id: class_id})
+      |> case do
+        %CharacterClass{} = character_class ->
+          character_class
+
+        nil ->
+          %CharacterClass{character_id: character.id, class_id: class_id, level: 1, experience: 0}
+          |> Repo.insert!()
+      end
+      |> Repo.preload(:class)
 
     effect =
       ClassTrait.load_traits(class_id)
@@ -409,9 +418,10 @@ defmodule ApathyDrive.Character do
       |> Map.put("stack_count", 1)
 
     character
-    |> Map.put(:class, Map.take(class, [:name, :stealth, :exp_modifier]))
-    |> Map.put(:weapon, class.weapon)
-    |> Map.put(:armour, class.armour)
+    |> Map.put(:level, character_class.level)
+    |> Map.put(:class, character_class)
+    |> Map.put(:weapon, character_class.class.weapon)
+    |> Map.put(:armour, character_class.class.armour)
     |> Systems.Effect.add(effect)
   end
 
@@ -686,7 +696,6 @@ defmodule ApathyDrive.Character do
   def add_attribute_experience(%{} = character, %{} = _attributes), do: character
 
   def add_skill_experience(%Character{} = character, skill_name, amount) do
-    amount = Character.modified_experience(character, amount)
     skill_level = character.skills[skill_name].level
 
     skill =
@@ -737,12 +746,13 @@ defmodule ApathyDrive.Character do
     Character.add_attribute_experience(character, attribute, 1)
   end
 
-  def add_experience(character, exp, silent \\ false)
+  def add_experience_to_buffer(character, exp, silent \\ false)
 
-  def add_experience(%Character{} = character, exp, silent) when exp > 0 do
-    exp = modified_experience(character, exp)
-
+  def add_experience_to_buffer(%Character{} = character, exp, silent) when exp > 0 do
     unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
+
+    # 6 attributes, give 6 times the exp so stats level at approximately the same rate as classes
+    exp = exp * 6
 
     exp_buffer = character.exp_buffer + exp
 
@@ -759,7 +769,20 @@ defmodule ApathyDrive.Character do
     Character.update_exp_bar(character)
   end
 
-  def add_experience(character, _exp, _silent), do: character
+  def add_experience_to_buffer(character, _exp, _silent), do: character
+
+  def add_class_experience(%Character{} = character, exp) when exp > 0 do
+    character =
+      update_in(character.class, fn character_class ->
+        character_class
+        |> Ecto.Changeset.change(%{
+          experience: character_class.experience + exp
+        })
+        |> Repo.update!()
+      end)
+
+    Character.update_exp_bar(character)
+  end
 
   def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do
     max_hp = Mobile.max_hp_at_level(character, level)
@@ -911,7 +934,7 @@ defmodule ApathyDrive.Character do
     %{
       name: character.name,
       race: character.race.name,
-      class: character.class.name,
+      class: character.class.class.name,
       level: character.level,
       alignment: character.alignment,
       perception: Mobile.perception_at_level(character, character.level, room),
@@ -986,12 +1009,13 @@ defmodule ApathyDrive.Character do
   end
 
   def update_exp_bar(%Character{socket: socket} = character) do
-    percent =
-      if character.max_exp_buffer > 0 do
-        trunc(character.exp_buffer / character.max_exp_buffer * 100)
-      else
-        0
-      end
+    level = character.class.level
+
+    last_level = Level.exp_at_level(level - 1, character.class.class.exp_modifier / 100)
+
+    next_level = Level.exp_at_level(level, character.class.class.exp_modifier / 100)
+
+    percent = (character.class.experience - last_level) / (next_level - last_level) * 100
 
     send(
       socket,
@@ -1624,10 +1648,10 @@ defmodule ApathyDrive.Character do
 
       modifier =
         cond do
-          !character.race.stealth and !character.class.stealth ->
+          !character.race.stealth and !character.class.class.stealth ->
             0
 
-          !character.class.stealth ->
+          !character.class.class.stealth ->
             0.4
 
           !character.race.stealth ->
