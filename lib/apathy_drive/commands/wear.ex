@@ -124,7 +124,7 @@ defmodule ApathyDrive.Commands.Wear do
 
             if persist do
               %ItemInstance{id: item.instance_id}
-              |> Ecto.Changeset.change(%{equipped: true})
+              |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
               |> Repo.update!()
             end
 
@@ -160,7 +160,7 @@ defmodule ApathyDrive.Commands.Wear do
 
             if persist do
               %ItemInstance{id: item.instance_id}
-              |> Ecto.Changeset.change(%{equipped: true})
+              |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
               |> Repo.update!()
             end
 
@@ -182,7 +182,7 @@ defmodule ApathyDrive.Commands.Wear do
 
             if persist do
               %ItemInstance{id: item.instance_id}
-              |> Ecto.Changeset.change(%{equipped: true})
+              |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
               |> Repo.update!()
             end
 

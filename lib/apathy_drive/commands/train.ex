@@ -111,44 +111,30 @@ defmodule ApathyDrive.Commands.Train do
   end
 
   def change_class(room, character, class_id) do
-    room =
-      Room.update_mobile(room, character.ref, fn character ->
-        character =
-          character
-          |> Ecto.Changeset.change(%{
-            class_id: class_id
-          })
-          |> Repo.update!()
-          |> Character.load_class()
-          |> Character.load_abilities()
-          |> Character.set_title()
-          |> Character.update_exp_bar()
-
-        Directory.add_character(%{
-          name: character.name,
-          bounty: character.bounty,
-          room: character.room_id,
-          ref: character.ref,
-          title: character.title
-        })
-
+    Room.update_mobile(room, character.ref, fn character ->
+      character =
         character
-      end)
+        |> Ecto.Changeset.change(%{
+          class_id: class_id
+        })
+        |> Repo.update!()
+        |> Character.load_class()
+        |> Character.load_items()
+        |> Character.load_abilities()
+        |> Character.set_title()
+        |> Character.update_exp_bar()
 
-    character = room.mobiles[character.ref]
+      Directory.add_character(%{
+        name: character.name,
+        bounty: character.bounty,
+        room: character.room_id,
+        ref: character.ref,
+        title: character.title
+      })
 
-    room = ApathyDrive.Commands.Remove.execute(room, character, ["all"])
+      message = "<p>You are now a #{character.class.class.name}.</p>"
 
-    character = room.mobiles[character.ref]
-
-    room = ApathyDrive.Commands.Wear.execute(room, character, ["all"])
-
-    character = room.mobiles[character.ref]
-
-    message = "<p>You are now a #{character.class.class.name}.</p>"
-
-    Mobile.send_scroll(character, message)
-
-    room
+      Mobile.send_scroll(character, message)
+    end)
   end
 end

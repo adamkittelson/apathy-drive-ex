@@ -372,11 +372,11 @@ defmodule ApathyDrive.Item do
 
   def too_high_level_for_character?(character, item) do
     case item.traits["MinLevel"] do
+      nil ->
+        false
+
       min_level ->
         character.level < min_level
-
-      _ ->
-        false
     end
   end
 
