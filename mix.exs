@@ -5,7 +5,7 @@ defmodule ApathyDrive.Mixfile do
     [
       app: :apathy_drive,
       version: version(),
-      elixir: "~> 1.8.1",
+      elixir: "~> 1.9.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       deps: deps(),
@@ -54,7 +54,9 @@ defmodule ApathyDrive.Mixfile do
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
       {:auto_linker, "~> 0.2.2"},
       {:ordinal, "~> 0.1.0"},
-      {:dnsimple, "~> 1.4.0"}
+      {:dnsimple, "~> 1.4.0"},
+      {:tzdata, "~> 1.0.1"},
+      {:timex, "~> 3.6.1"}
     ]
   end
 
