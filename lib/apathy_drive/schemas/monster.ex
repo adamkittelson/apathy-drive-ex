@@ -352,16 +352,25 @@ defmodule ApathyDrive.Monster do
       IO.puts("item_id: #{item_id}, chance: #{chance}")
 
       if :rand.uniform(100) <= chance do
-        %ItemInstance{
-          item_id: item_id,
-          room_id: room.id,
-          character_id: nil,
-          dropped_for_character_id: id,
-          equipped: false,
-          hidden: false,
-          delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
-        }
-        |> Repo.insert!()
+        item =
+          %ItemInstance{
+            item_id: item_id,
+            room_id: room.id,
+            character_id: nil,
+            dropped_for_character_id: id,
+            equipped: false,
+            hidden: false,
+            level: character.level,
+            delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
+          }
+          |> Repo.insert!()
+          |> Repo.preload(:item)
+          |> Item.from_assoc()
+
+        Mobile.send_scroll(
+          character,
+          "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+        )
       end
 
       room
