@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :apathy_drive, ApathyDriveWeb.Endpoint,
   url: [host: System.get_env("HOST")],
