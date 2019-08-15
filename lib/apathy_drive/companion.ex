@@ -119,7 +119,7 @@ defmodule ApathyDrive.Companion do
       |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
 
     (companion_enemies ++ character_enemies)
-    |> Enum.reject(& &1.sneaking)
+    |> Enum.reject(&room.mobiles[&1].sneaking)
   end
 
   def character(%Companion{character_id: id}, %Room{} = room) do
