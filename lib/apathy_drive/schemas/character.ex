@@ -1490,9 +1490,11 @@ defmodule ApathyDrive.Character do
     def max_mana_at_level(mobile, level) do
       mana_per_level = ability_value(mobile, "ManaPerLevel")
 
+      bonus = ability_value(mobile, "MaxMana")
+
       base_mana = if mana_per_level > 0, do: 6, else: 0
 
-      mana_per_level * (level - 1) + base_mana
+      mana_per_level * (level - 1) + base_mana + bonus
     end
 
     def party_refs(character, room) do

@@ -7,9 +7,9 @@ defmodule ApathyDrive.KillCount do
     belongs_to(:monster, Monster)
 
     field(:daily_count, :integer)
-    field(:daily_reset_at, :utc_datetime)
+    field(:daily_reset_at, :utc_datetime_usec)
     field(:weekly_count, :integer)
-    field(:weekly_reset_at, :utc_datetime)
+    field(:weekly_reset_at, :utc_datetime_usec)
     field(:lifetime_count, :integer)
 
     field(:monster_name, :string, virtual: true)
