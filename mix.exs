@@ -30,7 +30,7 @@ defmodule ApathyDrive.Mixfile do
         config_providers: [
           {Toml.Provider,
            [
-             path: "/data/apathy_drive/shared/config/apathy_drive.toml",
+             path: {:system, "RELEASE_CONFIG_DIR", "apathy_drive.toml"},
              transforms: []
            ]}
         ]
@@ -78,7 +78,8 @@ defmodule ApathyDrive.Mixfile do
       {:rollbax, "~> 0.8.2"},
       {:gossip, "~> 1.3.0"},
       {:distillery, "~> 2.0.12"},
-      {:toml, github: "bitwalker/toml-elixir", ref: "476136b47265e06cea0ced80d37602ec99fa5a7b"},
+      {:toml,
+       github: "adamkittelson/toml-elixir", ref: "4c0b24a2b409f6bdec78876c1324eea16f74a093"},
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
       {:auto_linker, "~> 0.2.2"},
       {:ordinal, "~> 0.1.0"},

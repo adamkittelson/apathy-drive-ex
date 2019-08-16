@@ -5,6 +5,7 @@ config :apathy_drive, ApathyDriveWeb.Endpoint,
   debug_errors: true
 
 config :apathy_drive, ApathyDrive.Repo,
+  migration_timestamps: [type: :utc_datetime_usec],
   database: System.get_env("DB_DATABASE"),
   username: System.get_env("DB_USERNAME"),
   password: System.get_env("DB_PASSWORD"),
