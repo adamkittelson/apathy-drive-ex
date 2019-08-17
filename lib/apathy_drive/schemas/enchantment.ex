@@ -65,7 +65,7 @@ defmodule ApathyDrive.Enchantment do
           Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
 
           enchantment
-          |> Ecto.Changeset.change(%{finished: true, dropped_for_character_id: nil})
+          |> Ecto.Changeset.change(%{finished: true})
           |> Repo.update!()
 
           Mobile.send_scroll(

@@ -108,11 +108,12 @@ namespace :deploy do
   task :build do
     run_locally do
       build_output = capture("docker build --build-arg MIX_ENV=#{fetch(:mix_env)} .")
-      version  = /Archiving apathy_drive-(\d+\.\d+\.\d+)/.match(build_output)[1]
+      version  = /assembling apathy_drive-(\d+\.\d+\.\d+)/.match(build_output)[1]
       image_id = /Successfully built (\w+)/.match(build_output)[1]
       raise "build error" unless version && image_id
       container_id = capture("docker create #{image_id}")
-      `docker cp #{container_id}:/usr/src/app/_build/#{fetch(:mix_env)}/rel/apathy_drive/releases/#{version}/apathy_drive.tar.gz .`
+      #`docker cp #{container_id}:/usr/src/app/_build/#{fetch(:mix_env)}/rel/apathy_drive/releases/#{version}/apathy_drive.tar.gz .`
+      `docker cp #{container_id}:/usr/src/app/_build/#{fetch(:mix_env)}/rel/apathy_drive/apathy_drive.tar.gz .`
       `docker rm -v #{container_id}`
     end
   end

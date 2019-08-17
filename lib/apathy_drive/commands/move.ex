@@ -213,7 +213,7 @@ defmodule ApathyDrive.Commands.Move do
         })
 
       character =
-        if character.sneaking and !reattempt do
+        if character.sneaking && !reattempt do
           character
           |> Mobile.send_scroll("<p>Sneaking...</p>")
           |> Character.add_attribute_experience(%{

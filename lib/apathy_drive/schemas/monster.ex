@@ -641,7 +641,9 @@ defmodule ApathyDrive.Monster do
     def max_mana_at_level(monster, level) do
       mana_per_level = ability_value(monster, "ManaPerLevel")
 
-      mana_per_level * (level - 1) + 6
+      bonus = ability_value(monster, "MaxMana")
+
+      mana_per_level * (level - 1) + 6 + bonus
     end
 
     def party_refs(monster, room) do

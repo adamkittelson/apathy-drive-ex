@@ -52,7 +52,7 @@ defmodule ApathyDrive.Commands.Party do
       name: String.pad_trailing(member.name, 13),
       hp: trunc(member.hp * 100) |> to_string |> String.pad_leading(3),
       mana: trunc(member.mana * 100) |> to_string |> String.pad_leading(3),
-      class: member.class
+      class: member.class.class.name
     }
 
     Mobile.send_scroll(

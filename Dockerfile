@@ -1,4 +1,4 @@
-FROM quay.io/brightcove/ubuntu12-elixir:elixir-1.8.2-erlang-22.0.4-ubuntu-18.04
+FROM quay.io/brightcove/ubuntu12-elixir:elixir-1.9.0-erlang-22.0.7-ubuntu-18.04
 
 ENV REFRESHED_AT 2018-07-01
 
@@ -10,4 +10,4 @@ ENV MIX_ENV ${MIX_ENV}
 
 RUN mix deps.get
 
-RUN mix compile && mix phx.digest && mix release.clean && mix release --verbose --env=${MIX_ENV}
+RUN mix compile && mix phx.digest && mix release apathy_drive

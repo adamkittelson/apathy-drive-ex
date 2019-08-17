@@ -5,12 +5,13 @@ defmodule ApathyDrive.Mixfile do
     [
       app: :apathy_drive,
       version: version(),
-      elixir: "~> 1.8.1",
+      elixir: "~> 1.9.0",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       deps: deps(),
       build_embedded: Mix.env() == :prod,
-      start_permanent: Mix.env() == :prod
+      start_permanent: Mix.env() == :prod,
+      releases: releases()
     ]
   end
 
@@ -20,6 +21,33 @@ defmodule ApathyDrive.Mixfile do
       mod: {ApathyDrive, []},
       extra_applications: extra_applications()
     ]
+  end
+
+  defp releases() do
+    [
+      apathy_drive: [
+        steps: [:assemble, &make_tarball/1],
+        config_providers: [
+          {Toml.Provider,
+           [
+             path: {:system, "RELEASE_CONFIG_DIR", "apathy_drive.toml"},
+             transforms: []
+           ]}
+        ]
+      ]
+    ]
+  end
+
+  defp make_tarball(release) do
+    File.cd("/usr/src/app/_build/prod/rel/apathy_drive")
+
+    System.cmd("tar", [
+      "czf",
+      "/usr/src/app/_build/prod/rel/apathy_drive/apathy_drive.tar.gz",
+      "."
+    ])
+
+    release
   end
 
   defp extra_applications() do
@@ -38,7 +66,7 @@ defmodule ApathyDrive.Mixfile do
       {:postgrex, "~> 0.13"},
       {:phoenix, "~> 1.4.2"},
       {:phoenix_live_reload, "~> 1.2.0", only: :dev},
-      {:ecto_sql, "~> 3.0"},
+      {:ecto_sql, "~> 3.1.6"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.10.0"},
       {:plug_cowboy, "~> 2.0"},
@@ -55,7 +83,9 @@ defmodule ApathyDrive.Mixfile do
       {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
       {:auto_linker, "~> 0.2.2"},
       {:ordinal, "~> 0.1.0"},
-      {:dnsimple, "~> 1.4.0"}
+      {:dnsimple, "~> 1.4.0"},
+      {:tzdata, "~> 1.0.1"},
+      {:timex, "~> 3.6.1"}
     ]
   end
 

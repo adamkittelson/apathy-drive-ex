@@ -324,7 +324,7 @@ defmodule ApathyDrive.Companion do
     def color(%Companion{alignment: "good"}), do: "grey"
 
     def colored_name(%Companion{name: name} = companion) do
-      "<span style='color: #{color(companion)};'>#{name}</span>"
+      "<span class='#{color(companion)}'>#{name}</span>"
     end
 
     def confused(%Companion{effects: effects} = companion, %Room{} = room) do
@@ -523,7 +523,9 @@ defmodule ApathyDrive.Companion do
     def max_mana_at_level(mobile, level) do
       mana_per_level = ability_value(mobile, "ManaPerLevel")
 
-      mana_per_level * (level - 1) + 6
+      bonus = ability_value(mobile, "MaxMana")
+
+      mana_per_level * (level - 1) + 6 + bonus
     end
 
     def party_refs(companion, room) do
