@@ -36,10 +36,10 @@ defmodule ApathyDrive.Commands.Experience do
 
     [:strength, :agility, :intellect, :willpower, :health, :charm]
     |> Enum.each(fn attribute ->
-      exp = Map.get(character, :"#{attribute}_experience")
+      exp = get_in(character, [Access.key!(:race), Access.key!(:"#{attribute}_experience")])
       level = character.attribute_levels[attribute]
 
-      modifier = (100 + character.race.exp_modifier) / 100
+      modifier = (100 + character.race.race.exp_modifier) / 100
 
       to_level = Level.exp_at_level(level + 1, modifier)
 

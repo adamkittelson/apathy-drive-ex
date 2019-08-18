@@ -9,6 +9,8 @@ defmodule ApathyDrive.Commands.Help do
     ClassAbility,
     Commands.Inventory,
     Mobile,
+    Race,
+    RaceTrait,
     Repo,
     Room
   }
@@ -16,6 +18,167 @@ defmodule ApathyDrive.Commands.Help do
   require Ecto.Query
 
   def keywords, do: ["help"]
+
+  def execute(%Room{} = room, character, []) do
+    Mobile.send_scroll(
+      character,
+      "<p>Type <span class='yellow'>HELP</span> followed by a topic for help on that topic\n\n</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Tips</span>     - A few tips to help you get started.</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Commands</span> - A list of commands available within the game</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Stats1</span>   - An explanation of the statistics of your character</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Stats2</span>   - A continuation of stats1, including help on allocating your stats</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Combat</span>   - Everything you need to know about killing others</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Races</span>    - A list of the various races</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Classes</span>  - For help on a certain class, type Help <Classname></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Commun</span>   - Communicating with others in the realm</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Info</span>     - A list of information commands, and how to use them</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Spells</span>   - Everything you need to know about spellcasting</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Shops</span>    - Buying and selling of items in the Realm</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Laws</span>     - Before thinking of doing anything nasty, read this</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Movement</span> - How to travel throughout the Realm</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Party</span>    - You have friends? Well here's how to use them</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Items</span>    - Commands related to items within the game</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Help</span>     - A quick description of how to use the help system</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Topics</span>   - A list of all available topics</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Profile</span>  - Setting up your personal options within the game</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Misc</span>     - Miscellaneous commands</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>Set</span>      - Various toggleable profile options</p>"
+    )
+
+    room
+  end
+
+  def execute(%Room{} = room, character, [arg]) when arg in ["races", "Races"] do
+    Mobile.send_scroll(
+      character,
+      "<p>Type <span class='yellow'>HELP</span> <span class='cyan'>&lt;Race Name&gt;</span> for specific help on a race.\n\n</p>"
+    )
+
+    Race
+    |> Repo.all()
+    |> Enum.each(fn race ->
+      Mobile.send_scroll(
+        character,
+        "<p>#{race.name}</p>"
+      )
+    end)
+
+    room
+  end
+
+  def execute(%Room{} = room, character, [arg]) when arg in ["tips", "Tips"] do
+    Mobile.send_scroll(
+      character,
+      "<p>Here are some helpful \"hints\" or advice to get you started...\n\n</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>1.</span> Read all of the help files, or at least glance through them. This will save you a lot of time and effort overall.\n\n</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>2.</span> Pick a class that you feel comfortable with. We have tried to make ALL of the classes equal in efficiency, but each one has its own unique features.\n\n</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>3.</span> Once you have your character made, check out all of the stores in Newhaven and equip yourself with weaponry, armour, and spells (if you are a spellcaster). Don't go down into the arena until you are armed and ready.\n\n</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>4.</span> To familiarize yourself with the combat system, go to the Newhaven Arena. Here you will be able to earn experience for your next level, and gold to purchase better weaponry and armour. Once you have enough experience to obtain your next level, go to the guild and train.\n\n</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='yellow'>5.</span> Now that you have completed these steps, you could try adventuring in the dungeon past the north door in the Newhaven Arena. Type \"bash north\" or \"picklock north\" (If you have the skill) to open the lock/door.\n\n</p>"
+    )
+
+    room
+  end
 
   def execute(%Room{} = room, character, args) do
     query = Enum.join(args, " ")
@@ -39,6 +202,72 @@ defmodule ApathyDrive.Commands.Help do
     end
 
     room
+  end
+
+  def help(character, %Race{} = race) do
+    traits = RaceTrait.load_traits(race.id)
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>+------------------------------------------------------------------+</span></p>"
+    )
+
+    Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{race.name}</span></p>")
+
+    Mobile.send_scroll(
+      character,
+      "<p>    #{race.description}</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "\n\n<p><span class='dark-green'>Strength:</span>  <span class='dark-cyan'>#{race.strength}</span>  <span class='dark-green'>Agility:</span> <span class='dark-cyan'>#{
+        race.agility
+      }</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Intellect:</span> <span class='dark-cyan'>#{race.intellect}</span>  <span class='dark-green'>Health:</span>  <span class='dark-cyan'>#{
+        race.health
+      }</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Willpower:</span> <span class='dark-cyan'>#{race.willpower}</span>  <span class='dark-green'>Charm:</span>   <span class='dark-cyan'>#{
+        race.charm
+      }</span></p>"
+    )
+
+    Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Traits:</span></p>")
+
+    traits
+    |> Enum.map(&massage_trait/1)
+    |> List.flatten()
+    |> Enum.reject(&is_nil/1)
+    |> Enum.each(fn
+      {name, nil} ->
+        Mobile.send_scroll(character, "<p>  <span class='dark-green'>#{name}</span></p>")
+
+      {name, value} ->
+        Mobile.send_scroll(
+          character,
+          "<p>  <span class='dark-green'>#{name}:</span> <span class='dark-cyan'>#{value}</span></p>"
+        )
+    end)
+
+    Mobile.send_scroll(
+      character,
+      "<p>  <span class='dark-green'>Stealth:</span> <span class='dark-cyan'>#{
+        if race.stealth, do: "Yes", else: "No"
+      }</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>+------------------------------------------------------------------+</span></p>"
+    )
   end
 
   def help(character, %Ability{} = ability) do
@@ -178,9 +407,9 @@ defmodule ApathyDrive.Commands.Help do
   end
 
   def topic(query) do
-    [Ability.match_by_name(query, true)]
-    |> Enum.reject(&is_nil/1)
+    [Ability.match_by_name(query, true), Race.match_by_name(query)]
     |> List.flatten()
+    |> Enum.reject(&is_nil/1)
   end
 
   defp massage_trait({"RemoveSpells", ids}) do

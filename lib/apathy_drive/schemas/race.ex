@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Race do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.Race
+  alias ApathyDrive.{Match, Race}
 
   schema "races" do
     field(:name, :string)
@@ -55,5 +55,13 @@ defmodule ApathyDrive.Race do
     |> Ecto.Query.select([:name])
     |> Repo.one()
     |> Map.get(:name)
+  end
+
+  def match_by_name(name) do
+    races =
+      __MODULE__
+      |> ApathyDrive.Repo.all()
+
+    Match.all(races, :keyword_starts_with, name)
   end
 end

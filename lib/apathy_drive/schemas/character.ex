@@ -12,6 +12,7 @@ defmodule ApathyDrive.Character do
     Character,
     CharacterClass,
     CharacterMaterial,
+    CharacterRace,
     CharacterSkill,
     Class,
     ClassTrait,
@@ -24,7 +25,6 @@ defmodule ApathyDrive.Character do
     Monster,
     Mobile,
     Party,
-    Race,
     RaceTrait,
     Room,
     RoomServer,
@@ -52,12 +52,6 @@ defmodule ApathyDrive.Character do
     field(:password, :string)
     field(:exp_buffer, :integer, default: 0)
     field(:max_exp_buffer, :integer, default: 0)
-    field(:strength_experience, :integer, default: 0)
-    field(:agility_experience, :integer, default: 0)
-    field(:intellect_experience, :integer, default: 0)
-    field(:willpower_experience, :integer, default: 0)
-    field(:health_experience, :integer, default: 0)
-    field(:charm_experience, :integer, default: 0)
     field(:timers, :map, virtual: true, default: %{})
     field(:admin, :boolean)
     field(:flags, :map, default: %{})
@@ -79,7 +73,7 @@ defmodule ApathyDrive.Character do
     field(:alignment, :string)
 
     field(:level, :integer, virtual: true)
-    field(:race, :string, virtual: true)
+    field(:race, :any, virtual: true)
     field(:class, :any, virtual: true)
     field(:monitor_ref, :any, virtual: true)
     field(:ref, :any, virtual: true)
@@ -321,14 +315,17 @@ defmodule ApathyDrive.Character do
   def set_attribute_levels(%Character{} = character) do
     [:strength, :agility, :intellect, :willpower, :health, :charm]
     |> Enum.reduce(character, fn stat, character ->
-      exp = Map.get(character, :"#{stat}_experience")
+      exp = get_in(character, [Access.key!(:race), Access.key!(:"#{stat}_experience")])
 
       level = Level.level_at_exp(exp, 1.0)
 
       character =
         character
         |> put_in([Access.key!(:attribute_levels), stat], level)
-        |> put_in([Access.key!(stat)], character.race[stat] + level)
+        |> put_in(
+          [Access.key!(stat)],
+          get_in(character, [Access.key!(:race), Access.key!(:race), Access.key!(stat)]) + level
+        )
 
       Character.update_attribute_bar(character, stat)
       character
@@ -369,28 +366,26 @@ defmodule ApathyDrive.Character do
   end
 
   def load_race(%Character{race_id: race_id} = character) do
-    race = Repo.get(Race, race_id)
+    character_race =
+      CharacterRace
+      |> Repo.get_by(%{character_id: character.id, race_id: race_id})
+      |> case do
+        %CharacterRace{} = character_race ->
+          character_race
+
+        nil ->
+          %CharacterRace{character_id: character.id, race_id: race_id}
+          |> Repo.insert!()
+      end
+      |> Repo.preload(:race)
 
     effect =
       RaceTrait.load_traits(race_id)
       |> Map.put("stack_key", "race")
       |> Map.put("stack_count", 1)
 
-    race =
-      Map.take(race, [
-        :name,
-        :strength,
-        :agility,
-        :intellect,
-        :willpower,
-        :health,
-        :charm,
-        :stealth,
-        :exp_modifier
-      ])
-
     character
-    |> Map.put(:race, race)
+    |> Map.put(:race, character_race)
     |> Systems.Effect.add(effect)
   end
 
@@ -629,14 +624,21 @@ defmodule ApathyDrive.Character do
     character =
       character
       |> Ecto.Changeset.change(%{
-        "#{attribute}_experience": Map.get(character, :"#{attribute}_experience") + trunc(amount),
         exp_buffer: Map.get(character, :exp_buffer) - amount
       })
       |> Repo.update!()
+      |> update_in([:race], fn character_race ->
+        character_race
+        |> Ecto.Changeset.change(%{
+          "#{attribute}_experience":
+            Map.get(character_race, :"#{attribute}_experience") + trunc(amount)
+        })
+        |> Repo.update!()
+      end)
 
     new_attribute_level =
       character
-      |> Map.get(:"#{attribute}_experience")
+      |> get_in([Access.key!(:race), Access.key!(:"#{attribute}_experience")])
       |> Level.level_at_exp(1.0)
 
     character =
@@ -933,7 +935,7 @@ defmodule ApathyDrive.Character do
 
     %{
       name: character.name,
-      race: character.race.name,
+      race: character.race.race.name,
       class: character.class.class.name,
       level: character.level,
       alignment: character.alignment,
@@ -1031,7 +1033,7 @@ defmodule ApathyDrive.Character do
   def update_attribute_bar(%Character{socket: socket} = character, attribute) do
     level = character.attribute_levels[attribute]
 
-    exp = Map.get(character, :"#{attribute}_experience")
+    exp = get_in(character, [Access.key!(:race), Access.key!(:"#{attribute}_experience")])
     current = Level.exp_at_level(level, 1.0)
     to_level = Level.exp_at_level(level + 1, 1.0)
 
@@ -1296,10 +1298,11 @@ defmodule ApathyDrive.Character do
         |> Map.put(:attack_roam, false)
         |> update_in([:effects], fn effects ->
           effects
-          |> Enum.filter(fn {_key, effect} -> effect["stack_key"] in ["race", "class"] end)
+          |> Enum.filter(fn {_key, effect} -> effect["stack_key"] == "class" end)
           |> Enum.into(%{})
         end)
         |> Map.put(:timers, %{})
+        |> Character.load_race()
         |> Character.add_equipped_items_effects()
         |> Character.load_abilities()
         |> Mobile.update_prompt()
@@ -1650,13 +1653,13 @@ defmodule ApathyDrive.Character do
 
       modifier =
         cond do
-          !character.race.stealth and !character.class.class.stealth ->
+          !character.race.race.stealth and !character.class.class.stealth ->
             0
 
           !character.class.class.stealth ->
             0.4
 
-          !character.race.stealth ->
+          !character.race.race.stealth ->
             0.6
 
           :else ->
