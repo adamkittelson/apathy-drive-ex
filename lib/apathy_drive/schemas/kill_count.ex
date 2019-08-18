@@ -99,7 +99,9 @@ defmodule ApathyDrive.KillCount do
       true ->
         bonus = exp * multiplier
 
-        modifier = 1 / ((character.race.exp_modifier + character.class.class.exp_modifier) / 100)
+        modifier =
+          1 / ((character.race.race.exp_modifier + character.class.class.exp_modifier) / 100)
+
         exp = trunc(bonus * modifier)
 
         message = message(kill_count, count, exp)

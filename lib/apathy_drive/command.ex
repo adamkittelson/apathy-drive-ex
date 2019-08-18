@@ -78,6 +78,7 @@ defmodule ApathyDrive.Command do
       Commands.Say,
       Commands.Search,
       Commands.Sell,
+      Commands.Set,
       Commands.Sneak,
       Commands.System,
       Commands.Tell,

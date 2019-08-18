@@ -114,6 +114,7 @@ defmodule ApathyDrive.Character do
     field(:detected_characters, :any, virtual: true, default: MapSet.new())
     field(:kill_counts, :map, virtual: true, default: %{})
     field(:materials, :map, virtual: true, default: %{})
+    field(:death_race_id, :integer, virtual: true)
 
     belongs_to(:room, Room)
 
@@ -166,7 +167,7 @@ defmodule ApathyDrive.Character do
   end
 
   def modified_experience(%Character{} = character, exp) do
-    modifier = 1 / ((character.race.exp_modifier + character.class.exp_modifier) / 100)
+    modifier = 1 / ((character.race.race.exp_modifier + character.class.exp_modifier) / 100)
     trunc(exp * modifier)
   end
 
@@ -1272,7 +1273,7 @@ defmodule ApathyDrive.Character do
         end)
 
       "#{character.name} is a #{descriptions[:health]}, #{descriptions[:strength]} #{
-        character.race.name
+        character.race.race.name
       }. {{target:He moves/She moves/They move}} #{descriptions[:agility]}, and {{target:is/is/are}} #{
         descriptions[:charm]
       } #{character.name} appears to be #{descriptions[:intellect]} and #{
@@ -1291,6 +1292,7 @@ defmodule ApathyDrive.Character do
       character =
         character
         |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
+        |> Map.put(:race_id, character.death_race_id || character.race_id)
         |> Map.put(:hp, 1.0)
         |> Map.put(:mana, 1.0)
         |> Map.put(:energy, character.max_energy)
@@ -1303,6 +1305,7 @@ defmodule ApathyDrive.Character do
         end)
         |> Map.put(:timers, %{})
         |> Character.load_race()
+        |> Character.set_attribute_levels()
         |> Character.add_equipped_items_effects()
         |> Character.load_abilities()
         |> Mobile.update_prompt()

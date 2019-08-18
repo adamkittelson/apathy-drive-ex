@@ -48,7 +48,7 @@ defmodule ApathyDrive.Commands.Experience do
         "<p><span class='dark-green'>Stat:</span> <span class='dark-cyan'>#{
           attribute
           |> to_string
-          |> String.pad_trailing(10)
+          |> String.pad_trailing(11)
         }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
           level
           |> to_string
