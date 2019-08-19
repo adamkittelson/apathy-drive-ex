@@ -446,7 +446,7 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
 
-    display_traits(character, item.traits)
+    display_traits(character, IO.inspect(item.traits))
 
     display_enchantment(character, item)
   end
@@ -511,43 +511,16 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def display_enchantment(character, %Item{traits: %{"Learn" => ability}}) do
+  def display_enchantment(character, %Item{enchantments: list}) when length(list) > 0 do
     Mobile.send_scroll(
       character,
-      "<p><span class='white'>This scroll will allow you a single use of following ability:</span></p>"
+      "<p><span class='dark-green'>Enchantments:</span> <span class='dark-cyan'>#{
+        ApathyDrive.Commands.Inventory.to_sentence(list)
+      }</span></p>"
     )
-
-    ApathyDrive.Commands.Help.help(character, ability)
   end
 
-  def display_enchantment(character, %Item{traits: %{"Passive" => ability}}) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='white'>Equipping this item will grant you the benefits of the following ability:</span></p>"
-    )
-
-    ApathyDrive.Commands.Help.help(character, ability)
-  end
-
-  def display_enchantment(character, %Item{traits: %{"OnHit" => %{kind: "curse"} = ability}}) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='white'>Striking an enemy with this weapon will afflict your target with the following ability:</span></p>"
-    )
-
-    ApathyDrive.Commands.Help.help(character, ability)
-  end
-
-  def display_enchantment(character, %Item{traits: %{"Grant" => ability}}) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='white'>Equipping this item will grant you the usage of the following ability:</span></p>"
-    )
-
-    ApathyDrive.Commands.Help.help(character, ability)
-  end
-
-  def display_enchantment(_character, %Item{} = _item), do: :noop
+  def display_enchantment(_character, %Item{}), do: :noop
 
   defp find_item(%Character{inventory: items, equipment: equipment}, item) do
     item =

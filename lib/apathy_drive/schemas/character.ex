@@ -51,7 +51,6 @@ defmodule ApathyDrive.Character do
     field(:email, :string)
     field(:password, :string)
     field(:exp_buffer, :integer, default: 0)
-    field(:max_exp_buffer, :integer, default: 0)
     field(:timers, :map, virtual: true, default: %{})
     field(:admin, :boolean)
     field(:flags, :map, default: %{})
@@ -263,8 +262,14 @@ defmodule ApathyDrive.Character do
       character.class_id
       |> ApathyDrive.ClassAbility.abilities_at_level(character.level)
 
+    skill_abilities =
+      Enum.map(character.skills, fn {_name, %CharacterSkill{skill_id: id, level: level}} ->
+        ApathyDrive.SkillAbility.abilities_at_level(id, level)
+      end)
+      |> List.flatten()
+
     character =
-      (abilities ++ class_abilities)
+      (abilities ++ class_abilities ++ skill_abilities)
       |> Enum.reduce(character, fn
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
@@ -762,8 +767,7 @@ defmodule ApathyDrive.Character do
     character =
       character
       |> Ecto.Changeset.change(%{
-        exp_buffer: exp_buffer,
-        max_exp_buffer: max(exp_buffer, character.max_exp_buffer)
+        exp_buffer: exp_buffer
       })
       |> Repo.update!()
 
