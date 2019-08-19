@@ -446,7 +446,7 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
 
-    display_traits(character, IO.inspect(item.traits))
+    display_traits(character, item.traits)
 
     display_enchantment(character, item)
   end

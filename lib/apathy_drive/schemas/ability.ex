@@ -21,7 +21,8 @@ defmodule ApathyDrive.Ability do
     Room,
     Stealth,
     Text,
-    TimerManager
+    TimerManager,
+    Trait
   }
 
   require Logger
@@ -2417,12 +2418,11 @@ defmodule ApathyDrive.Ability do
   end
 
   def quality_too_high?(%Ability{} = ability, %Item{} = item) do
-    ability_quality = ability.traits["Quality"] || 0
-    item_quality = item.traits["Quality"] || 0
+    quality = Enum.sum(Trait.merge_traits(ability.traits, item.traits)["Quality"])
 
     max_quality = Item.max_quality(item)
 
-    item_quality + ability_quality > max_quality
+    quality > max_quality
   end
 
   def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false
