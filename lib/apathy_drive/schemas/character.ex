@@ -529,8 +529,11 @@ defmodule ApathyDrive.Character do
       hit_verbs: hit_verbs,
       miss_verbs: [singular_miss, plural_miss],
       min_damage: min_damage,
-      max_damage: max_damage
+      max_damage: max_damage,
+      traits: traits
     } = weapon
+
+    bonus_damage = traits["WeaponDamage"] || []
 
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
 
@@ -560,6 +563,7 @@ defmodule ApathyDrive.Character do
             min: min_damage,
             max: max_damage
           }
+          | bonus_damage
         ],
         "Dodgeable" => true,
         "DodgeUserMessage" =>

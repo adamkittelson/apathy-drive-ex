@@ -241,15 +241,15 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def enchantment_exp(character, skill \\ "enchanting") do
-    max(1, character.skills[skill].level) * 60
+    max(1, character.skills[skill].level) * 20
   end
 
   def total_enchantment_time(%Enchantment{ability: %Ability{level: level}}) do
-    level * 5 * 60
+    trunc(level * 1.6 * 60)
   end
 
   def total_enchantment_time(%Enchantment{items_instances: %{level: level}}) do
-    level * 5 * 60
+    trunc(level * 1.6 * 60)
   end
 
   def time_left(%Enchantment{} = enchantment) do
@@ -293,7 +293,7 @@ defmodule ApathyDrive.Enchantment do
                 ability
 
               damage ->
-                update_in(ability.traits, &Map.put(&1, "Damage", damage))
+                update_in(ability.traits, &Map.put(&1, "WeaponDamage", damage))
             end
 
           # cond do
@@ -307,12 +307,7 @@ defmodule ApathyDrive.Enchantment do
           #     Map.put(traits, "Grant", ability)
           # end
 
-          IO.puts("item traits: #{inspect(item.traits)}")
-          IO.puts("ability traits: #{inspect(ability.traits)}")
-
           traits = Trait.merge_traits(item.traits, ability.traits)
-
-          IO.puts("merged traits: #{inspect(traits)}")
 
           item
           |> Map.put(:traits, traits)

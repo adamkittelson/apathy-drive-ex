@@ -481,6 +481,8 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def display_trait(_character, {"WeaponDamage", _damage}), do: :noop
+
   def display_trait(character, {"OnHit", abilities}) do
     names =
       abilities

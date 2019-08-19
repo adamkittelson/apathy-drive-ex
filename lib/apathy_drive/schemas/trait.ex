@@ -38,11 +38,11 @@ defmodule ApathyDrive.Trait do
     end)
   end
 
-  def value(trait, list) when is_list(list) do
+  def value(_trait, list) when is_list(list) do
     list = List.flatten(list)
 
     Enum.sum(list)
   end
 
-  def value(trait, value), do: value
+  def value(_trait, value), do: value
 end

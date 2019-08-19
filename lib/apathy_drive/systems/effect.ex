@@ -176,7 +176,12 @@ defmodule Systems.Effect do
           value = Map.get(effect, key, 0)
 
           if is_list(value) do
-            Enum.sum(value)
+            try do
+              Enum.sum(value)
+            rescue
+              _ ->
+                value
+            end
           else
             value
           end

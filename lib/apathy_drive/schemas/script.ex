@@ -591,7 +591,14 @@ defmodule ApathyDrive.Script do
       "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
     }
 
-    room = ApathyDrive.Commands.Move.execute(room, monster, room_exit, false)
+    room =
+      case ApathyDrive.Commands.Move.execute(room, monster, room_exit, false) do
+        %Room{} = room ->
+          room
+
+        {:error, :too_tired, room} ->
+          room
+      end
 
     room_id
     |> RoomServer.find()

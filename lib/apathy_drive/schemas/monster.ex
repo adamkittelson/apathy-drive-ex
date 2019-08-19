@@ -140,7 +140,13 @@ defmodule ApathyDrive.Monster do
     with {:aggro?, true} <- {:aggro?, Aggression.enemy?(monster, character)},
          {:follow?, true} <- {:follow?, :rand.uniform(100) < monster.chance_to_follow},
          {:exit, %{} = room_exit} <- {:exit, chase_exit(monster, room, destination)} do
-      ApathyDrive.Commands.Move.execute(room, monster, room_exit, false)
+      case ApathyDrive.Commands.Move.execute(room, monster, room_exit, false) do
+        %Room{} = room ->
+          room
+
+        {:error, :too_tired, room} ->
+          room
+      end
     else
       _ ->
         room

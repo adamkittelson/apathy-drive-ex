@@ -41,7 +41,13 @@ defmodule ApathyDrive.AI do
               Enum.find(exits, &(&1["destination"] == mobile.last_room_id))
           end
 
-        ApathyDrive.Commands.Move.execute(room, mobile, room_exit, false)
+        case ApathyDrive.Commands.Move.execute(room, mobile, room_exit, false) do
+          %Room{} = room ->
+            room
+
+          {:error, :too_tired, room} ->
+            room
+        end
       end
     end
   end
@@ -58,7 +64,13 @@ defmodule ApathyDrive.AI do
         end
 
       if Enum.any?(exits) do
-        ApathyDrive.Commands.Move.execute(room, mobile, Enum.random(exits), false)
+        case ApathyDrive.Commands.Move.execute(room, mobile, Enum.random(exits), false) do
+          %Room{} = room ->
+            room
+
+          {:error, :too_tired, room} ->
+            room
+        end
       end
     end
   end
