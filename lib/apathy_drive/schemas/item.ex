@@ -56,7 +56,7 @@ defmodule ApathyDrive.Item do
     field(:traits, :map, virtual: true, default: %{})
     field(:required_races, :any, virtual: true, default: [])
     field(:required_classes, :any, virtual: true, default: [])
-    field(:enchantment_name, :string, virtual: true, default: nil)
+    field(:enchantments, :string, virtual: true, default: [])
     field(:keywords, :any, virtual: true)
     field(:uses, :integer, virtual: true)
     field(:hidden, :boolean, virtual: true)
@@ -229,6 +229,10 @@ defmodule ApathyDrive.Item do
 
   def price(%Item{}), do: 5
 
+  def max_quality(%Item{level: level}) do
+    min(div(level, 10) + 1, 5)
+  end
+
   def color(%Item{type: type, traits: %{"Quality" => quality}})
       when type in ["Armour", "Weapon"] do
     case Trait.value("Quality", quality) do
@@ -339,13 +343,6 @@ defmodule ApathyDrive.Item do
 
         :else ->
           name
-      end
-
-    name =
-      if item.enchantment_name do
-        name <> " of " <> "#{item.enchantment_name |> String.split("song of ") |> List.last()}"
-      else
-        name
       end
 
     name =
@@ -491,6 +488,6 @@ defmodule ApathyDrive.Item do
   defp load_item_abilities(%Item{} = item) do
     item
     |> ItemAbility.load_abilities()
-    |> Enchantment.load_enchantment()
+    |> Enchantment.load_enchantments()
   end
 end

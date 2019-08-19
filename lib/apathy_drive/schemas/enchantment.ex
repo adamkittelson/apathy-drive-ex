@@ -65,8 +65,7 @@ defmodule ApathyDrive.Enchantment do
           Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
 
           enchantment
-          |> Ecto.Changeset.change(%{finished: true})
-          |> Repo.update!()
+          |> Repo.delete!()
 
           Mobile.send_scroll(
             enchanter,
@@ -155,22 +154,6 @@ defmodule ApathyDrive.Enchantment do
               enchanter
             end
 
-          if old_enchantment =
-               Repo.get_by(Enchantment, items_instances_id: item.instance_id, finished: true) do
-            old_enchantment =
-              old_enchantment
-              |> Repo.preload(:ability)
-
-            Repo.delete!(old_enchantment)
-
-            Mobile.send_scroll(
-              enchanter,
-              "<p><span class='dark-yellow'>You've removed #{old_enchantment.ability.name} from #{
-                item.name
-              }.</span></p>"
-            )
-          end
-
           enchantment
           |> Ecto.Changeset.change(%{finished: true})
           |> Repo.update!()
@@ -236,7 +219,7 @@ defmodule ApathyDrive.Enchantment do
       })
     end)
     |> ApathyDrive.Character.add_experience_to_buffer(exp)
-    |> ApathyDrive.Character.add_skill_experience("enchantment", exp)
+    |> ApathyDrive.Character.add_skill_experience("enchanting", exp)
   end
 
   def present?(%Character{} = enchanter, instance_id) do
@@ -257,7 +240,7 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.join(":")
   end
 
-  def enchantment_exp(character, skill \\ "enchantment") do
+  def enchantment_exp(character, skill \\ "enchanting") do
     max(1, character.skills[skill].level) * 60
   end
 
@@ -277,10 +260,10 @@ defmodule ApathyDrive.Enchantment do
     min(67, time_left(enchantment))
   end
 
-  def load_enchantment(%Item{instance_id: nil} = item),
+  def load_enchantments(%Item{instance_id: nil} = item),
     do: Map.put(item, :keywords, Match.keywords(item.name))
 
-  def load_enchantment(%Item{instance_id: id, traits: item_traits} = item) do
+  def load_enchantments(%Item{instance_id: id} = item) do
     Enchantment
     |> Ecto.Query.where(
       [e],
@@ -293,18 +276,12 @@ defmodule ApathyDrive.Enchantment do
         |> Map.put(:unfinished, true)
         |> Map.put(:keywords, ["unfinished" | Match.keywords(item.name)])
 
-      [%Enchantment{finished: true}] ->
-        item
-        |> Map.put(:keywords, Match.keywords(item.name))
-
       _ ->
-        enchantment =
-          __MODULE__
-          |> where([ia], ia.items_instances_id == ^id and ia.finished == true)
-          |> preload([:ability])
-          |> Repo.one()
-
-        if enchantment do
+        __MODULE__
+        |> where([ia], ia.items_instances_id == ^id and ia.finished == true)
+        |> preload([:ability])
+        |> Repo.all()
+        |> Enum.reduce(item, fn enchantment, item ->
           attributes = AbilityAttribute.load_attributes(enchantment.ability.id)
           ability = Map.put(enchantment.ability, :attributes, attributes)
 
@@ -319,19 +296,6 @@ defmodule ApathyDrive.Enchantment do
                 update_in(ability.traits, &Map.put(&1, "Damage", damage))
             end
 
-          traits = %{
-            "Grant" => ability,
-            "Quality" => [1],
-            "Magical" => true
-          }
-
-          traits =
-            if ability.kind == "blessing" do
-              Map.put(traits, "Passive", ability)
-            else
-              traits
-            end
-
           # cond do
           #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
           #     Map.put(traits, "OnHit", ability)
@@ -343,16 +307,18 @@ defmodule ApathyDrive.Enchantment do
           #     Map.put(traits, "Grant", ability)
           # end
 
-          traits = Trait.merge_traits(item_traits, traits)
+          IO.puts("item traits: #{inspect(item.traits)}")
+          IO.puts("ability traits: #{inspect(ability.traits)}")
+
+          traits = Trait.merge_traits(item.traits, ability.traits)
+
+          IO.puts("merged traits: #{inspect(traits)}")
 
           item
           |> Map.put(:traits, traits)
-          |> Map.put(:enchantment_name, ability.name)
-          |> Map.put(:keywords, Match.keywords(item.name <> " " <> ability.name))
-        else
-          item
-          |> Map.put(:keywords, Match.keywords(item.name))
-        end
+          |> Map.put(:enchantments, [ability.name | item.enchantments])
+        end)
+        |> Map.put(:keywords, Match.keywords(item.name))
     end
   end
 

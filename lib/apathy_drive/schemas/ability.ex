@@ -81,7 +81,8 @@ defmodule ApathyDrive.Ability do
     "full attack area",
     "single",
     "full area",
-    "weapon"
+    "weapon",
+    "armour"
   ]
   @target_required_targets ["monster or single", "monster", "single"]
 
@@ -329,7 +330,14 @@ defmodule ApathyDrive.Ability do
       |> preload(:ability)
       |> Repo.all()
 
-    (class_ability_ids ++ scroll_ability_ids)
+    skill_ability_ids =
+      ApathyDrive.SkillAbility
+      |> select([:ability_id])
+      |> distinct(true)
+      |> preload(:ability)
+      |> Repo.all()
+
+    (class_ability_ids ++ scroll_ability_ids ++ skill_ability_ids)
     |> Enum.map(& &1.ability)
     |> Enum.uniq()
     |> Enum.reject(&(is_nil(&1.name) or &1.name == ""))
@@ -456,18 +464,17 @@ defmodule ApathyDrive.Ability do
             end
 
           _ ->
-            if item = item_target(room, caster_ref, query) do
-              execute(room, caster_ref, ability, item)
-            else
-              room
-              |> Room.get_mobile(caster_ref)
-              |> Mobile.send_scroll(
-                "<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>"
-              )
+            room
+            |> Room.get_mobile(caster_ref)
+            |> Mobile.send_scroll(
+              "<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>"
+            )
 
-              room
-            end
+            room
         end
+
+      :too_many_matches ->
+        room
 
       targets ->
         execute(room, caster_ref, ability, targets)
@@ -556,7 +563,7 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def execute(%Room{} = room, caster_ref, %Ability{} = ability, %Item{} = item) do
+  def execute(%Room{} = room, caster_ref, %Ability{kind: "long-term"} = ability, %Item{} = item) do
     traits =
       ability.traits
       |> Map.update("RequireItems", [item.instance_id], &[item.instance_id | &1])
@@ -574,6 +581,16 @@ defmodule ApathyDrive.Ability do
 
         casting_failed?(caster, ability) ->
           casting_failed(room, caster_ref, ability)
+
+        quality_too_high?(ability, item) ->
+          Mobile.send_scroll(
+            caster,
+            "<p>#{Item.colored_name(item)} cannot be enchanted to a quality level higher than #{
+              Item.max_quality(item)
+            }.<p>"
+          )
+
+          caster
 
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, item, ability)
@@ -604,18 +621,9 @@ defmodule ApathyDrive.Ability do
               case Repo.get_by(
                      Enchantment,
                      items_instances_id: item.instance_id,
-                     ability_id: ability.id
+                     ability_id: ability.id,
+                     finished: false
                    ) do
-                %Enchantment{finished: true} = enchantment ->
-                  Repo.delete!(enchantment)
-
-                  Mobile.send_scroll(
-                    caster,
-                    "<p><span class='blue'>You've removed #{ability.name} from #{item.name}.</span></p>"
-                  )
-
-                  Character.load_items(caster)
-
                 %Enchantment{finished: false} = enchantment ->
                   enchantment = Map.put(enchantment, :ability, ability)
                   time = Enchantment.next_tick_time(enchantment)
@@ -639,26 +647,7 @@ defmodule ApathyDrive.Ability do
                   )
 
                 nil ->
-                  enchantment =
-                    %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id}
-                    |> Repo.insert!()
-                    |> Map.put(:ability, ability)
-
-                  time = Enchantment.next_tick_time(enchantment)
-                  Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
-
-                  Mobile.send_scroll(
-                    caster,
-                    "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                      Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
-                    }</span></p>"
-                  )
-
-                  TimerManager.send_after(
-                    caster,
-                    {{:longterm, item.instance_id}, :timer.seconds(time),
-                     {:lt_tick, time, caster_ref, enchantment}}
-                  )
+                  start_enchantment(caster, item, ability)
               end
             end)
 
@@ -809,6 +798,29 @@ defmodule ApathyDrive.Ability do
           room
       end
     end)
+  end
+
+  def start_enchantment(caster, item, ability) do
+    enchantment =
+      %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id}
+      |> Repo.insert!()
+      |> Map.put(:ability, ability)
+
+    time = Enchantment.next_tick_time(enchantment)
+    Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
+
+    Mobile.send_scroll(
+      caster,
+      "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+        Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+      }</span></p>"
+    )
+
+    TimerManager.send_after(
+      caster,
+      {{:longterm, item.instance_id}, :timer.seconds(time),
+       {:lt_tick, time, caster.ref, enchantment}}
+    )
   end
 
   def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
@@ -2362,17 +2374,34 @@ defmodule ApathyDrive.Ability do
     List.wrap(match && match.ref)
   end
 
-  def item_target(room, caster_ref, query) do
-    %Character{inventory: inventory, equipment: equipment} = room.mobiles[caster_ref]
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: target}, query)
+      when target in ["weapon", "armour"] do
+    %Character{inventory: inventory, equipment: equipment} = character = room.mobiles[caster_ref]
 
-    item = Match.one(inventory ++ equipment, :keyword_starts_with, query)
-
-    case item do
+    (inventory ++ equipment)
+    |> Enum.filter(&(&1.type == String.capitalize(target)))
+    |> Match.all(:keyword_starts_with, query)
+    |> case do
       nil ->
-        nil
+        []
 
       %Item{} = item ->
         item
+
+      matches ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+        )
+
+        Enum.each(matches, fn match ->
+          Mobile.send_scroll(
+            character,
+            "<p>-- #{Item.colored_name(match, character: character)}</p>"
+          )
+        end)
+
+        :too_many_matches
     end
   end
 
@@ -2385,6 +2414,15 @@ defmodule ApathyDrive.Ability do
         "<p><span class='cyan'>You do not have enough mana to use that ability.</span></p>"
       )
     end
+  end
+
+  def quality_too_high?(%Ability{} = ability, %Item{} = item) do
+    ability_quality = ability.traits["Quality"] || 0
+    item_quality = item.traits["Quality"] || 0
+
+    max_quality = Item.max_quality(item)
+
+    item_quality + ability_quality > max_quality
   end
 
   def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false

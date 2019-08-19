@@ -350,10 +350,33 @@ defmodule ApathyDrive.Commands.Help do
       )
     end
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Required Level: </span><span class='dark-cyan'>#{ability.level}</span></p>"
-    )
+    if ability.kind == "long-term" do
+      skill_ability =
+        ApathyDrive.SkillAbility
+        |> Repo.get_by(ability_id: ability.id)
+        |> Repo.preload(:skill)
+
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Skill: </span><span class='dark-cyan'>#{
+          skill_ability.skill.name
+        }</span></p>"
+      )
+
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Skill Level: </span><span class='dark-cyan'>#{
+          skill_ability.level
+        }</span></p>"
+      )
+    else
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Required Level: </span><span class='dark-cyan'>#{
+          ability.level
+        }</span></p>"
+      )
+    end
 
     classes =
       ClassAbility
