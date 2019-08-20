@@ -485,12 +485,12 @@ defmodule ApathyDrive.Item do
   end
 
   def too_high_level_for_character?(character, item) do
-    case item.traits["MinLevel"] do
+    case IO.inspect(item.traits["MinLevel"]) do
       nil ->
         false
 
       min_level ->
-        character.level < min_level
+        character.level < Enum.sum(min_level)
     end
   end
 
