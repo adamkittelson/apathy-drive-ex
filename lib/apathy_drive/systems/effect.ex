@@ -180,7 +180,7 @@ defmodule Systems.Effect do
         if Enum.any?(list), do: Enum.reduce(list, 1, &(&1 * &2)), else: nil
 
       "list" ->
-        list
+        List.wrap(list)
 
       "replace" ->
         List.last(list)

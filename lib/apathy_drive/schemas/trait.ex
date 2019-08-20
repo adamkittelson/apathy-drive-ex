@@ -67,7 +67,7 @@ defmodule ApathyDrive.Trait do
             Map.put(traits, trait, value * traits[trait])
 
           "list" ->
-            Map.put(traits, trait, [value | traits[trait]])
+            Map.put(traits, trait, [value | List.wrap(traits[trait])])
 
           "replace" ->
             Map.put(traits, trait, value)

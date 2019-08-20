@@ -416,9 +416,7 @@ defmodule ApathyDrive.Item do
       Enum.any?(weapon.required_races) and !(character.race_id in weapon.required_races) ->
         false
 
-      Enum.any?(weapon.traits, fn {name, value} ->
-        name == "ClassOk" and character.class_id in value
-      end) ->
+      character.class_id in List.wrap(weapon.traits["ClassOk"]) ->
         true
 
       :else ->

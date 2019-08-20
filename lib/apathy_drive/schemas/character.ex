@@ -1076,7 +1076,7 @@ defmodule ApathyDrive.Character do
             (value || 1) * (bonus || 1)
 
           "list" ->
-            [bonus | value]
+            [bonus | List.wrap(value)]
             |> List.flatten()
             |> Enum.reject(&is_nil/1)
 
