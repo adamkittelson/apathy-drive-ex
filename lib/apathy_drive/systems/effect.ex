@@ -1,6 +1,6 @@
 defmodule Systems.Effect do
   use Timex
-  alias ApathyDrive.{Mobile, Room, TimerManager}
+  alias ApathyDrive.{Mobile, Room, TimerManager, Trait}
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
     add_effect(entity, key + 1, effect)
@@ -160,39 +160,31 @@ defmodule Systems.Effect do
     end)
   end
 
-  def effect_bonus(%{effects: effects}, name) do
-    effects
-    |> Map.values()
-    |> Enum.map(fn
-      %{} = effect ->
-        key =
-          effect
-          |> Map.keys()
-          |> Enum.find(fn key ->
-            String.downcase(to_string(key)) == String.downcase(to_string(name))
-          end)
-
-        if key do
-          value = Map.get(effect, key, 0)
-
-          if is_list(value) do
-            try do
-              Enum.sum(value)
-            rescue
-              _ ->
-                value
-            end
-          else
-            value
-          end
+  def effect_bonus(%{effects: effects}, name, merge_by \\ nil) do
+    list =
+      effects
+      |> Map.values()
+      |> Enum.reduce([], fn %{} = effect, list ->
+        if value = Map.get(effect, name) do
+          [value | list]
         else
-          0
+          list
         end
+      end)
 
-      _ ->
-        0
-    end)
-    |> Enum.sum()
+    case merge_by || Trait.merge_by(name) do
+      "add" ->
+        Enum.sum(list)
+
+      "multiply" ->
+        if Enum.any?(list), do: Enum.reduce(list, 1, &(&1 * &2)), else: nil
+
+      "list" ->
+        list
+
+      "replace" ->
+        List.last(list)
+    end
   end
 
   def effect_list(%{effects: effects}, name) do

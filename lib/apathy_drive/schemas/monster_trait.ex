@@ -17,6 +17,6 @@ defmodule ApathyDrive.MonsterTrait do
     |> Enum.reduce(%{}, fn %{trait: trait, value: value}, abilities ->
       Map.put(abilities, trait.name, value)
     end)
-    |> Map.merge(MonsterResistance.load_resistances(monster_id))
+    |> Trait.merge_traits(MonsterResistance.load_resistances(monster_id))
   end
 end

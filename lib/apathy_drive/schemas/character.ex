@@ -1062,14 +1062,28 @@ defmodule ApathyDrive.Character do
 
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
-      character_value = Systems.Effect.effect_bonus(character, ability)
+      merge_by = Trait.merge_by(ability)
+      character_value = Systems.Effect.effect_bonus(character, ability, merge_by)
 
-      equipment_value =
-        Enum.reduce(character.equipment, 0, fn item, total ->
-          total + Systems.Effect.effect_bonus(item, ability)
-        end)
+      Enum.reduce(character.equipment, character_value, fn item, value ->
+        bonus = Systems.Effect.effect_bonus(item, ability, merge_by)
 
-      character_value + equipment_value
+        case merge_by do
+          "add" ->
+            (value || 0) + (bonus || 0)
+
+          "multiply" ->
+            (value || 1) * (bonus || 1)
+
+          "list" ->
+            [bonus | value]
+            |> List.flatten()
+            |> Enum.reject(&is_nil/1)
+
+          "replace" ->
+            bonus || value
+        end
+      end)
     end
 
     def accuracy_at_level(character, _level, _room) do
@@ -1554,12 +1568,7 @@ defmodule ApathyDrive.Character do
     def round_length_in_ms(character) do
       speed = ability_value(character, "Speed")
 
-      modifier =
-        if speed == 0 do
-          1
-        else
-          speed / 100
-        end
+      modifier = if speed, do: speed, else: 1
 
       trunc(modifier * Application.get_env(:apathy_drive, :round_length_in_ms))
     end

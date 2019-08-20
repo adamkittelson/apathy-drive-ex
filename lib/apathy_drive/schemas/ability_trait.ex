@@ -22,7 +22,7 @@ defmodule ApathyDrive.AbilityTrait do
     |> Enum.reduce(%{}, fn %{trait: trait, value: value}, abilities ->
       Map.put(abilities, trait.name, value)
     end)
-    |> Map.merge(AbilityResistance.load_resistances(ability_id))
+    |> Trait.merge_traits(AbilityResistance.load_resistances(ability_id))
   end
 
   def add_trait_changeset(model, description) do

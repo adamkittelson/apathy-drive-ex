@@ -95,7 +95,7 @@ defmodule ApathyDrive.Item do
       when not is_nil(room_id) and type in ["Weapon", "Armour"] do
     traits = ItemTrait.load_traits(item.id)
 
-    min_level = traits["MinLevel"] && Enum.sum(traits["MinLevel"])
+    min_level = traits["MinLevel"]
 
     area_id =
       Room
@@ -485,12 +485,12 @@ defmodule ApathyDrive.Item do
   end
 
   def too_high_level_for_character?(character, item) do
-    case IO.inspect(item.traits["MinLevel"]) do
+    case item.traits["MinLevel"] do
       nil ->
         false
 
       min_level ->
-        character.level < Enum.sum(min_level)
+        character.level < min_level
     end
   end
 

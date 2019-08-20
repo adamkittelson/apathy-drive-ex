@@ -59,7 +59,7 @@ defmodule ApathyDrive.Commands.Craft do
 
             material = Repo.get(Material, recipe.material_id)
 
-            min_level = item.traits["MinLevel"] && Enum.sum(item.traits["MinLevel"])
+            min_level = item.traits["MinLevel"]
 
             if min_level && min_level > level do
               Mobile.send_scroll(

@@ -126,8 +126,6 @@ defmodule ApathyDrive.Ability do
     "Encumbrance",
     "EndCast",
     "EndCast%",
-    "EnhanceSpell",
-    "EnhanceSpellDamage",
     "Fear",
     "Heal",
     "Health",
@@ -2418,7 +2416,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def quality_too_high?(%Ability{} = ability, %Item{} = item) do
-    quality = Enum.sum(Trait.merge_traits(ability.traits, item.traits)["Quality"])
+    quality = Trait.merge_traits(ability.traits, item.traits)["Quality"]
 
     max_quality = Item.max_quality(item)
 

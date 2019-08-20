@@ -18,12 +18,9 @@ defmodule ApathyDrive.CraftingRecipeTrait do
     |> preload([:trait])
     |> Repo.all()
     |> Enum.reduce(%{}, fn
-      %{trait: %{name: "OnHit%"} = trait, value: value}, abilities ->
-        Map.put(abilities, trait.name, value)
-
-      %{trait: trait, value: value}, abilities ->
-        abilities = Map.put_new(abilities, trait.name, [])
-        Map.put(abilities, trait.name, [value | abilities[trait.name]])
+      %{trait: %{name: name}, value: value}, abilities ->
+        trait = %{name => value}
+        Trait.merge_traits(abilities, trait)
     end)
   end
 

@@ -20,7 +20,7 @@ defmodule ApathyDrive.RaceTrait do
     |> Enum.reduce(%{}, fn %{trait: trait, value: value}, abilities ->
       Map.put(abilities, trait.name, value)
     end)
-    |> Map.merge(RaceResistance.load_resistances(race_id))
+    |> Trait.merge_traits(RaceResistance.load_resistances(race_id))
   end
 
   def changeset(%RaceTrait{} = rt, attrs) do
