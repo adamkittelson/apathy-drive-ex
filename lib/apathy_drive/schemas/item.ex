@@ -3,6 +3,7 @@ defmodule ApathyDrive.Item do
 
   alias ApathyDrive.{
     Ability,
+    Area,
     Character,
     CharacterStyle,
     ClassAbility,
@@ -16,6 +17,7 @@ defmodule ApathyDrive.Item do
     ItemRace,
     ItemTrait,
     Mobile,
+    Room,
     ShopItem,
     Trait
   }
@@ -86,6 +88,31 @@ defmodule ApathyDrive.Item do
     model
     |> cast(params, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
+  end
+
+  # set a level on placed items that have already been placed
+  def from_assoc(%ItemInstance{item: %Item{type: type} = item, level: nil, room_id: room_id} = ii)
+      when not is_nil(room_id) and type in ["Weapon", "Armour"] do
+    traits = ItemTrait.load_traits(item.id)
+
+    min_level = traits["MinLevel"] && Enum.sum(traits["MinLevel"])
+
+    area_id =
+      Room
+      |> Repo.get(room_id)
+      |> Map.get(:area_id)
+
+    area_level =
+      Area
+      |> Repo.get(area_id)
+      |> Map.get(:level)
+
+    ii
+    |> Ecto.Changeset.change(%{
+      level: min_level || area_level
+    })
+    |> Repo.update!()
+    |> from_assoc
   end
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
