@@ -65,8 +65,8 @@ defmodule ApathyDrive.CraftingRecipe do
 
   def for_item(%Item{}), do: nil
 
-  def random_level(level) do
-    1..min(50, level)
+  def random_level(min, max) do
+    min..min(50, max)
     |> Enum.flat_map(&List.duplicate(&1, &1))
     |> Enum.random()
   end
@@ -114,11 +114,6 @@ defmodule ApathyDrive.CraftingRecipe do
   end
 
   def drop_loot_for_character(%Room{} = room, %Character{level: level} = character) do
-    level =
-      room.area.level
-      |> min(level)
-      |> random_level()
-
     rarity =
       case :rand.uniform(100) do
         n when n > 99 ->
@@ -132,6 +127,11 @@ defmodule ApathyDrive.CraftingRecipe do
       end
 
     if !is_nil(rarity) do
+      min_level = max(room.area.level - 10, 1)
+      max_level = min(room.area.level + 5, level)
+
+      level = random_level(min_level, max_level)
+
       count =
         __MODULE__
         |> where([mi], mi.level == ^level)
