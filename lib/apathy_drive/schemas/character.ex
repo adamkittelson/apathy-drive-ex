@@ -386,7 +386,9 @@ defmodule ApathyDrive.Character do
       |> Repo.preload(:race)
 
     effect =
-      RaceTrait.load_traits(race_id)
+      race_id
+      |> RaceTrait.load_traits()
+      |> Ability.process_duration_traits(character, character)
       |> Map.put("stack_key", "race")
       |> Map.put("stack_count", 1)
 
@@ -473,14 +475,14 @@ defmodule ApathyDrive.Character do
           {[ability], traits}
 
         traits ->
-          {nil, traits}
+          {nil, Ability.process_duration_traits(traits, character, character)}
       end
 
     effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
     effect =
       if "DamageShield" in Map.keys(effect) do
-        Ability.process_duration_trait({"Damage", effect["Damage"]}, effect, nil, nil, nil, nil)
+        Ability.process_duration_trait({"Damage", effect["Damage"]}, effect, nil, nil)
       else
         effect
       end
@@ -491,9 +493,7 @@ defmodule ApathyDrive.Character do
           {"Heal", traits["Heal"]},
           effect,
           character,
-          character,
-          nil,
-          nil
+          character
         )
       else
         effect
@@ -1500,7 +1500,7 @@ defmodule ApathyDrive.Character do
     def magical_resistance_at_level(character, level) do
       willpower = attribute_at_level(character, :willpower, level)
 
-      mr = ability_value(character, "MagicalResist")
+      mr = ability_value(character, "MR")
 
       trunc(max(max(willpower - 50, 0) + mr, 0))
     end

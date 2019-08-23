@@ -508,7 +508,7 @@ defmodule ApathyDrive.Companion do
     def magical_resistance_at_level(companion, level) do
       willpower = attribute_at_level(companion, :willpower, level)
 
-      max(willpower - 50 + ability_value(companion, "MagicalResist"), 0)
+      max(willpower - 50 + ability_value(companion, "MR"), 0)
     end
 
     def max_hp_at_level(%Companion{} = companion, level) do

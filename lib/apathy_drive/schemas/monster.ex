@@ -631,7 +631,7 @@ defmodule ApathyDrive.Monster do
     def magical_resistance_at_level(monster, level) do
       willpower = attribute_at_level(monster, :willpower, level)
 
-      max(willpower - 50 + ability_value(monster, "MagicalResist"), 0)
+      max(willpower - 50 + ability_value(monster, "MR"), 0)
     end
 
     def max_hp_at_level(%Monster{} = monster, level) do

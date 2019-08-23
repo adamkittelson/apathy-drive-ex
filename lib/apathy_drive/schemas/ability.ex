@@ -107,6 +107,7 @@ defmodule ApathyDrive.Ability do
 
   @duration_traits [
     "AC",
+    "AC%",
     "Accuracy",
     "Agility",
     "Charm",
@@ -133,7 +134,8 @@ defmodule ApathyDrive.Ability do
     "Intellect",
     "Light",
     "LightVision",
-    "MagicalResist",
+    "MR",
+    "MR%",
     "ManaRegen",
     "MaxHP",
     "MaxMana",
@@ -181,6 +183,11 @@ defmodule ApathyDrive.Ability do
     model
     |> cast(params, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
+  end
+
+  def ac_for_mitigation_at_level(mitigation_percent, level) do
+    percent = mitigation_percent / 100
+    trunc(Float.round(-(50 * level * percent / (percent - 1))))
   end
 
   def data_for_admin_index do
@@ -1054,7 +1061,7 @@ defmodule ApathyDrive.Ability do
         target
         |> Map.put(:ability_shift, nil)
         |> Map.put(:ability_special, nil)
-        |> apply_duration_traits(ability, caster, duration, room)
+        |> apply_duration_traits(ability, caster, duration)
         |> Mobile.update_prompt()
       end)
 
@@ -1577,13 +1584,13 @@ defmodule ApathyDrive.Ability do
     Systems.Effect.add(item, effects)
   end
 
-  def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster, duration, room) do
+  def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster, duration) do
     effects =
       ability.traits
       |> Map.take(@duration_traits)
       |> Map.put("stack_key", ability.id)
       |> Map.put("stack_count", 1)
-      |> process_duration_traits(target, caster, ability, room)
+      |> process_duration_traits(target, caster)
       |> Map.put("effect_ref", make_ref())
 
     if message = effects["StatusMessage"] do
@@ -1638,10 +1645,10 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def process_duration_traits(effects, target, caster, ability, room) do
+  def process_duration_traits(effects, target, caster) do
     effects
     |> Enum.reduce(effects, fn effect, updated_effects ->
-      process_duration_trait(effect, updated_effects, target, caster, ability, room)
+      process_duration_trait(effect, updated_effects, target, caster)
     end)
   end
 
@@ -1649,9 +1656,7 @@ defmodule ApathyDrive.Ability do
         {"Damage", damages},
         %{"DamageShield" => _} = effects,
         _target,
-        _caster,
-        _ability,
-        _room
+        _caster
       ) do
     effects
     |> Map.put("DamageShield", %{})
@@ -1665,12 +1670,12 @@ defmodule ApathyDrive.Ability do
     |> Map.delete("DamageShieldSpectatorMessage")
   end
 
-  def process_duration_trait({"Damage", damages}, effects, _target, _caster, _ability, _room)
+  def process_duration_trait({"Damage", damages}, effects, _target, _caster)
       when is_float(damages) do
     effects
   end
 
-  def process_duration_trait({"Damage", damages}, effects, target, caster, _ability, _room) do
+  def process_duration_trait({"Damage", damages}, effects, target, caster) do
     target_level = Mobile.target_level(caster, target)
 
     damage_percent =
@@ -1723,7 +1728,23 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Damage", damage_percent)
   end
 
-  def process_duration_trait({"Heal", value}, effects, target, _caster, _ability, _room) do
+  def process_duration_trait({"AC%", percent}, effects, target, _caster) do
+    ac_from_percent = ac_for_mitigation_at_level(percent, target.level)
+
+    effects
+    |> Map.put("AC", ac_from_percent)
+    |> Map.delete("AC%")
+  end
+
+  def process_duration_trait({"MR%", percent}, effects, target, _caster) do
+    mr_from_percent = ac_for_mitigation_at_level(percent, target.level)
+
+    effects
+    |> Map.put("MR", mr_from_percent)
+    |> Map.delete("MR%")
+  end
+
+  def process_duration_trait({"Heal", value}, effects, target, _caster) do
     healing = (value["min"] + value["max"]) / 2
 
     percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
@@ -1732,7 +1753,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Heal", percentage_healed)
   end
 
-  def process_duration_trait({"HealMana", value}, effects, target, caster, _ability, _room) do
+  def process_duration_trait({"HealMana", value}, effects, target, caster) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
 
@@ -1748,7 +1769,7 @@ defmodule ApathyDrive.Ability do
     )
   end
 
-  def process_duration_trait({trait, value}, effects, _target, _caster, _ability, _room) do
+  def process_duration_trait({trait, value}, effects, _target, _caster) do
     if trait in Map.values(effects) do
       put_in(effects[trait], value)
     else

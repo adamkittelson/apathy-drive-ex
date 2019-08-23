@@ -243,7 +243,7 @@ defmodule ApathyDrive.Commands.Help do
     Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Traits:</span></p>")
 
     traits
-    |> Enum.map(&massage_trait/1)
+    |> Enum.map(&massage_trait(&1, character))
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.each(fn
@@ -409,7 +409,7 @@ defmodule ApathyDrive.Commands.Help do
     Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Effects:</span></p>")
 
     traits
-    |> Enum.map(&massage_trait/1)
+    |> Enum.map(&massage_trait(&1, character))
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.each(fn
@@ -435,7 +435,7 @@ defmodule ApathyDrive.Commands.Help do
     |> Enum.reject(&is_nil/1)
   end
 
-  defp massage_trait({"RemoveSpells", ids}) do
+  defp massage_trait({"RemoveSpells", ids}, _character) do
     spells =
       ids
       |> Enum.map(fn id ->
@@ -449,22 +449,32 @@ defmodule ApathyDrive.Commands.Help do
     end
   end
 
-  defp massage_trait({"Heal", %{"max" => max, "min" => min}}) do
+  defp massage_trait({"Heal", %{"max" => max, "min" => min}}, _character) do
     {"Restores", "#{min}-#{max} HP"}
   end
 
-  defp massage_trait({"Damage", damages}) do
+  defp massage_trait({"Damage", damages}, _character) do
     Enum.map(damages, fn %{damage_type: type, kind: kind, max: max, min: min} ->
       {"Damage", "#{min}-#{max} #{kind} damage (#{String.downcase(type)})"}
     end)
   end
 
-  defp massage_trait({"Dodge", amount}) do
+  defp massage_trait({"Dodge", amount}, _character) do
     {"Modifies Dodge Skill By", amount}
   end
 
-  defp massage_trait({"AffectsLiving", _}), do: {"Only affects living targets", nil}
-  defp massage_trait({"StatusMessage", _}), do: nil
-  defp massage_trait({"RemoveMessage", _}), do: nil
-  defp massage_trait({name, value}), do: {name, inspect(value)}
+  defp massage_trait({"AC%", amount}, character) do
+    ac_from_percent = Ability.ac_for_mitigation_at_level(amount, character.level)
+    {"AC", ac_from_percent}
+  end
+
+  defp massage_trait({"MR%", amount}, character) do
+    ac_from_percent = Ability.ac_for_mitigation_at_level(amount, character.level)
+    {"MR", ac_from_percent}
+  end
+
+  defp massage_trait({"AffectsLiving", _}, _character), do: {"Only affects living targets", nil}
+  defp massage_trait({"StatusMessage", _}, _character), do: nil
+  defp massage_trait({"RemoveMessage", _}, _character), do: nil
+  defp massage_trait({name, value}, _character), do: {name, inspect(value)}
 end

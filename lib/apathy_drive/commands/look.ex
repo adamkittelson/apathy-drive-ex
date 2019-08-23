@@ -3,6 +3,7 @@ defmodule ApathyDrive.Commands.Look do
   use ApathyDrive.Command
 
   alias ApathyDrive.{
+    Ability,
     Character,
     Commands.Inventory,
     Currency,
@@ -465,51 +466,57 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def display_traits(character, traits) do
-    traits
-    |> Enum.each(&display_trait(character, &1))
+  def display_traits(character, traits, indent \\ 0) do
+    traits = Ability.process_duration_traits(traits, character, character)
+
+    Enum.each(traits, &display_trait(character, traits, &1, indent))
   end
 
-  def display_trait(_character, {"Learn", _list}), do: :noop
+  def display_trait(_character, _traits, {"Learn", _list}, _indent), do: :noop
 
-  def display_trait(character, {"Magical", list}) when is_list(list) do
+  def display_trait(character, _traits, {"Magical", list}, indent) when is_list(list) do
     if Enum.any?(list) do
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-green'>Magical:</span> <span class='dark-cyan'>true</span></p>"
+        "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Magical:</span> <span class='dark-cyan'>true</span></p>"
       )
     end
   end
 
-  def display_trait(_character, {"WeaponDamage", _damage}), do: :noop
+  def display_trait(_character, _traits, {"WeaponDamage", _damage}, _indent), do: :noop
 
-  def display_trait(character, {"OnHit", abilities}) do
-    names =
-      abilities
-      |> Enum.map(& &1.name)
-      |> ApathyDrive.Commands.Inventory.to_sentence()
+  def display_trait(_character, _traits, {"OnHit%", _abilities}, _indent), do: :noop
 
+  def display_trait(character, traits, {"OnHit", abilities}, indent) do
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>OnHit:</span> <span class='dark-cyan'>#{names}</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{traits["OnHit%"] || "100"}% chance of:</span></p>"
     )
+
+    Enum.each(abilities, fn ability ->
+      display_traits(character, ability.traits, 2)
+    end)
   end
 
-  def display_trait(character, {trait, list}) when is_list(list) do
+  def display_trait(character, _traits, {trait, list}, indent) when is_list(list) do
     value = Trait.value(trait, list)
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{value}</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
+        value
+      }</span></p>"
     )
   end
 
-  def display_trait(_character, {_trait, %{}}), do: :noop
+  def display_trait(_character, _traits, {_trait, %{}}, _indent), do: :noop
 
-  def display_trait(character, {trait, value}) do
+  def display_trait(character, _traits, {trait, value}, indent) do
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{value}</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
+        value
+      }</span></p>"
     )
   end
 
