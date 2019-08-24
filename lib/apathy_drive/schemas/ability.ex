@@ -8,7 +8,6 @@ defmodule ApathyDrive.Ability do
     AbilityTrait,
     Character,
     Companion,
-    Currency,
     Directory,
     Enchantment,
     Item,
@@ -939,6 +938,9 @@ defmodule ApathyDrive.Ability do
       ) do
     cond do
       dodged?(caster, target, room) ->
+        room = add_evil_points(room, ability, caster, target)
+        caster = room.mobiles[caster.ref]
+        target = room.mobiles[target.ref]
         Process.put(:ability_result, :dodged)
         display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
 
@@ -953,6 +955,9 @@ defmodule ApathyDrive.Ability do
         put_in(room.mobiles[target.ref], target)
 
       blocked?(caster, target, room) ->
+        room = add_evil_points(room, ability, caster, target)
+        caster = room.mobiles[caster.ref]
+        target = room.mobiles[target.ref]
         Process.put(:ability_result, :blocked)
         display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
 
@@ -969,6 +974,9 @@ defmodule ApathyDrive.Ability do
         |> trigger_damage_shields(caster.ref, target.ref, ability)
 
       parried?(caster, target, room) ->
+        room = add_evil_points(room, ability, caster, target)
+        caster = room.mobiles[caster.ref]
+        target = room.mobiles[target.ref]
         Process.put(:ability_result, :parried)
         display_cast_message(room, caster, target, Map.put(ability, :result, :parried))
 
@@ -1012,6 +1020,10 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{} = ability) do
+    room = add_evil_points(room, ability, caster, target)
+    caster = room.mobiles[caster.ref]
+    target = room.mobiles[target.ref]
+
     {caster, target} =
       target
       |> apply_instant_traits(ability, caster, room)
@@ -1043,6 +1055,105 @@ defmodule ApathyDrive.Ability do
       |> finish_ability(caster.ref, target.ref, ability, target.ability_shift)
     end
   end
+
+  def add_evil_points(room, %Ability{kind: kind} = ability, %Character{} = caster, target)
+      when kind in ["attack", "auto attack", "curse"] do
+    evil_points = Mobile.evil_points(target, caster)
+
+    if evil_points > 0 do
+      initial_caster_legal_status = Character.legal_status(caster)
+
+      Logger.info("increasing #{caster.name}'s evil points by #{evil_points}")
+
+      caster =
+        caster
+        |> Ecto.Changeset.change(%{
+          evil_points: min(300, caster.evil_points + evil_points),
+          last_evil_action_at: DateTime.utc_now()
+        })
+        |> Repo.update!()
+
+      Directory.add_character(%{
+        name: caster.name,
+        evil_points: caster.evil_points,
+        room: caster.room_id,
+        ref: caster.ref,
+        title: caster.title
+      })
+
+      caster_legal_status = Character.legal_status(caster)
+
+      Mobile.send_scroll(
+        caster,
+        "<p><span class='dark-grey'>A dark cloud passes over you</span></p>"
+      )
+
+      if caster_legal_status != initial_caster_legal_status do
+        color = ApathyDrive.Commands.Who.color(caster_legal_status)
+
+        status = "<span class='#{color}'>#{caster_legal_status}</span>"
+
+        Mobile.send_scroll(
+          caster,
+          "<p>Your legal status has changed to #{status}.</p>"
+        )
+
+        Room.send_scroll(
+          room,
+          "<p>#{Mobile.colored_name(caster)}'s legal status has changed to #{status}.",
+          [caster]
+        )
+      end
+
+      retaliate(room, ability, caster, target)
+    else
+      retaliate(room, ability, caster, target)
+    end
+  end
+
+  def add_evil_points(room, ability, caster, target) do
+    retaliate(room, ability, caster, target)
+  end
+
+  def retaliate?(caster, target) do
+    targets =
+      caster.effects
+      |> Map.values()
+      |> Enum.filter(&Map.has_key?(&1, "Aggro"))
+      |> Enum.map(&Map.get(&1, "Aggro"))
+
+    target.ref in targets
+  end
+
+  def retaliate(room, %Ability{kind: kind}, caster, target)
+      when kind in ["attack", "auto attack", "curse"] do
+    caster =
+      Systems.Effect.add(
+        caster,
+        %{
+          "Retaliation" => target.ref,
+          "stack_key" => {:retaliation, target.ref},
+          "stack_count" => 1
+        },
+        :timer.minutes(20)
+      )
+
+    target =
+      Systems.Effect.add(
+        target,
+        %{
+          "Retaliation" => caster.ref,
+          "stack_key" => {:retaliation, caster.ref},
+          "stack_count" => 1
+        },
+        :timer.minutes(20)
+      )
+
+    room = put_in(room.mobiles[caster.ref], caster)
+    put_in(room.mobiles[target.ref], target)
+  end
+
+  def retaliate(room, _ability, _caster, _target), do: room
 
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
     room =
@@ -1173,7 +1284,7 @@ defmodule ApathyDrive.Ability do
     {caster, Map.put(target, :ability_shift, -value)}
   end
 
-  def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
+  def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, _room) do
     caster_level = Mobile.caster_level(caster, target)
     target_level = Mobile.target_level(caster, target)
 
@@ -1331,187 +1442,7 @@ defmodule ApathyDrive.Ability do
         :health => 0.8
       })
 
-    case {caster, target} do
-      {%Character{bounty: bounty} = caster, %Character{bounty: target_bounty} = target} ->
-        percent = 1 / (target.hp / abs(damage_percent))
-
-        cond do
-          target_bounty < 0 ->
-            initial_caster_legal_status = Character.legal_status(caster)
-
-            Logger.info(
-              "increasing #{caster.name}'s bounty by #{trunc(abs(target_bounty) * abs(percent))} (#{
-                abs(target_bounty)
-              } * #{abs(percent)}) (#{target.hp} / #{abs(damage_percent)})"
-            )
-
-            new_bounty =
-              min(abs(target_bounty), max(bounty, 0) + trunc(abs(target_bounty) * abs(percent)))
-
-            caster =
-              caster
-              |> Ecto.Changeset.change(%{
-                bounty: new_bounty
-              })
-              |> Repo.update!()
-
-            Directory.add_character(%{
-              name: caster.name,
-              bounty: caster.bounty,
-              room: caster.room_id,
-              ref: caster.ref,
-              title: caster.title
-            })
-
-            caster_legal_status = Character.legal_status(caster)
-
-            if caster_legal_status != initial_caster_legal_status do
-              color = ApathyDrive.Commands.Who.color(caster_legal_status)
-
-              status = "<span class='#{color}'>#{caster_legal_status}</span>"
-
-              Mobile.send_scroll(
-                caster,
-                "<p>Your legal status has changed to #{status}.</p>"
-              )
-
-              Room.send_scroll(
-                room,
-                "<p>#{Mobile.colored_name(caster)}'s legal status has changed to #{status}.",
-                [caster]
-              )
-            end
-
-            {caster, target}
-
-          target_bounty > 0 ->
-            bounty = trunc(abs(target_bounty) * abs(percent))
-            copper = min(bounty, Currency.wealth(target))
-
-            if copper > 0 do
-              initial_caster_legal_status = Character.legal_status(caster)
-              initial_target_legal_status = Character.legal_status(target)
-
-              currency = Currency.set_value(copper)
-              caster_currency = Currency.add(caster, copper)
-              target_currency = Currency.subtract(target, copper)
-
-              new_caster_bounty =
-                if caster.bounty > 0 do
-                  max(0, caster.bounty - copper)
-                else
-                  caster.bounty
-                end
-
-              caster =
-                caster
-                |> Ecto.Changeset.change(%{
-                  bounty: new_caster_bounty,
-                  runic: caster_currency.runic,
-                  platinum: caster_currency.platinum,
-                  gold: caster_currency.gold,
-                  silver: caster_currency.silver,
-                  copper: caster_currency.copper
-                })
-                |> Repo.update!()
-
-              target =
-                target
-                |> Ecto.Changeset.change(%{
-                  bounty: target_bounty - copper,
-                  runic: target_currency.runic,
-                  platinum: target_currency.platinum,
-                  gold: target_currency.gold,
-                  silver: target_currency.silver,
-                  copper: target_currency.copper
-                })
-                |> Repo.update!()
-
-              Directory.add_character(%{
-                name: caster.name,
-                bounty: caster.bounty,
-                room: caster.room_id,
-                ref: caster.ref,
-                title: caster.title
-              })
-
-              Directory.add_character(%{
-                name: target.name,
-                bounty: target.bounty,
-                room: target.room_id,
-                ref: target.ref,
-                title: target.title
-              })
-
-              Mobile.send_scroll(
-                caster,
-                "<p>You receive #{Currency.to_string(currency)} from #{
-                  Mobile.colored_name(target)
-                }'s bounty."
-              )
-
-              Mobile.send_scroll(
-                target,
-                "<p>#{Mobile.colored_name(caster)} receives #{Currency.to_string(currency)} from your bounty."
-              )
-
-              Room.send_scroll(
-                room,
-                "<p>#{Mobile.colored_name(caster)} receives #{Currency.to_string(currency)} from #{
-                  Mobile.colored_name(target)
-                }'s bounty.",
-                [caster, target]
-              )
-
-              caster_legal_status = Character.legal_status(caster)
-              target_legal_status = Character.legal_status(target)
-
-              if caster_legal_status != initial_caster_legal_status do
-                color = ApathyDrive.Commands.Who.color(caster_legal_status)
-
-                status = "<span class='#{color}'>#{caster_legal_status}</span>"
-
-                Mobile.send_scroll(
-                  caster,
-                  "<p>Your legal status has changed to #{status}.</p>"
-                )
-
-                Room.send_scroll(
-                  room,
-                  "<p>#{Mobile.colored_name(caster)}'s legal status has changed to #{status}.",
-                  [caster]
-                )
-              end
-
-              if target_legal_status != initial_target_legal_status do
-                color = ApathyDrive.Commands.Who.color(target_legal_status)
-
-                status = "<span class='#{color}'>#{target_legal_status}</span>"
-
-                Mobile.send_scroll(
-                  target,
-                  "<p>Your legal status has changed to #{status}.</p>"
-                )
-
-                Room.send_scroll(
-                  room,
-                  "<p>#{Mobile.colored_name(target)}'s legal status has changed to #{status}.",
-                  [target]
-                )
-              end
-
-              {caster, target}
-            else
-              {caster, target}
-            end
-
-          :else ->
-            {caster, target}
-        end
-
-      {caster, target} ->
-        {caster, target}
-    end
+    {caster, target}
   end
 
   # just to silence the Not Implemented, handled elsewhere

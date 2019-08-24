@@ -389,6 +389,27 @@ defmodule ApathyDrive.Companion do
       trunc(base / (250 + base) * 100) + ability_value(companion, "Crits")
     end
 
+    def evil_points(companion, %Character{} = attacker) do
+      cond do
+        Ability.retaliate?(companion, attacker) ->
+          # attacker has already received evil points for attacking companion
+          0
+
+        Ability.retaliate?(attacker, companion) ->
+          # companion has attacked the character, it's not evil to fight back
+          0
+
+        companion.alignment == "good" ->
+          40
+
+        :else ->
+          0
+      end
+    end
+
+    # only characters can receive evil points
+    def evil_points(_companion, %{} = _attacker), do: 0
+
     def description(companion, _observer) do
       companion.description
     end

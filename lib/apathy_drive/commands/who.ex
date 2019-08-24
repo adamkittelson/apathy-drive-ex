@@ -42,9 +42,9 @@ defmodule ApathyDrive.Commands.Who do
           )
         end
 
-      %{name: name, title: title, bounty: bounty} ->
+      %{name: name, title: title, evil_points: evil_points} ->
         if who_game == "" do
-          legal_status = Character.legal_status(%Character{bounty: bounty})
+          legal_status = Character.legal_status(%Character{evil_points: evil_points})
           color = color(legal_status)
           legal_status = legal_status |> String.pad_leading(7)
           legal_status = "<span class='#{color}'>#{legal_status}</span>"
@@ -62,7 +62,9 @@ defmodule ApathyDrive.Commands.Who do
     room
   end
 
-  def color("Lawful"), do: "white"
+  def color("Saint"), do: "white"
+  def color("Good"), do: "white"
+  def color("Neutral"), do: "dark-cyan"
   def color("Seedy"), do: "dark-grey"
   def color("Outlaw"), do: "dark-red"
   def color("Criminal"), do: "dark-yellow"

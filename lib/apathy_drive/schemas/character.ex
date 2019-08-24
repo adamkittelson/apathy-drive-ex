@@ -68,8 +68,8 @@ defmodule ApathyDrive.Character do
     field(:auto_nuke, :boolean)
     field(:auto_roam, :boolean)
     field(:auto_flee, :boolean)
-    field(:bounty, :integer, default: 0)
-    field(:alignment, :string)
+    field(:evil_points, :float)
+    field(:last_evil_action_at, :utc_datetime_usec)
 
     field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)
@@ -154,12 +154,35 @@ defmodule ApathyDrive.Character do
     )
   end
 
-  def legal_status(%Character{bounty: bounty}) when bounty >= 1_000_000, do: "FIEND"
-  def legal_status(%Character{bounty: bounty}) when bounty >= 500_000, do: "Villain"
-  def legal_status(%Character{bounty: bounty}) when bounty >= 250_000, do: "Criminal"
-  def legal_status(%Character{bounty: bounty}) when bounty >= 10_000, do: "Outlaw"
-  def legal_status(%Character{bounty: bounty}) when bounty > 0, do: "Seedy"
-  def legal_status(%Character{bounty: _bounty}), do: "Lawful"
+  def legal_status(%Character{evil_points: points}) when points >= 210, do: "FIEND"
+  def legal_status(%Character{evil_points: points}) when points >= 120, do: "Villain"
+  def legal_status(%Character{evil_points: points}) when points >= 80, do: "Criminal"
+  def legal_status(%Character{evil_points: points}) when points >= 40, do: "Outlaw"
+  def legal_status(%Character{evil_points: points}) when points >= 30, do: "Seedy"
+  def legal_status(%Character{evil_points: points}) when points > -50, do: "Neutral"
+  def legal_status(%Character{evil_points: points}) when points > -200, do: "Good"
+  def legal_status(%Character{}), do: "Saint"
+
+  def alignment(character) do
+    case legal_status(character) do
+      status when status in ["Saint", "Good"] ->
+        "good"
+
+      "Neutral" ->
+        "neutral"
+
+      _ ->
+        "evil"
+    end
+  end
+
+  def reduce_evil_points?(%Character{last_evil_action_at: nil}), do: true
+
+  def reduce_evil_points?(%Character{last_evil_action_at: time}) do
+    one_day_ago = Timex.shift(DateTime.utc_now(), days: -1)
+
+    :lt == DateTime.compare(time, one_day_ago)
+  end
 
   def set_title(%Character{} = character) do
     Map.put(character, :title, Title.for_character(character))
@@ -795,6 +818,8 @@ defmodule ApathyDrive.Character do
     Character.update_exp_bar(character)
   end
 
+  def add_class_experience(%Character{} = character, _exp), do: character
+
   def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do
     max_hp = Mobile.max_hp_at_level(character, level)
     max_mana = Mobile.max_mana_at_level(character, level)
@@ -947,7 +972,7 @@ defmodule ApathyDrive.Character do
       race: character.race.race.name,
       class: character.class.class.name,
       level: character.level,
-      alignment: character.alignment,
+      alignment: legal_status(character),
       perception: Mobile.perception_at_level(character, character.level, room),
       accuracy: Mobile.accuracy_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level),
@@ -1132,7 +1157,7 @@ defmodule ApathyDrive.Character do
       character
       |> TimerManager.send_after({:heartbeat, time, {:heartbeat, character.ref}})
       |> TimerManager.send_after(
-        {:reduce_bounty, :timer.seconds(60), {:reduce_bounty, character.ref}}
+        {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
       )
     end
 
@@ -1179,9 +1204,18 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def color(%Character{alignment: "evil"}), do: "magenta"
-    def color(%Character{alignment: "neutral"}), do: "dark-cyan"
-    def color(%Character{alignment: "good"}), do: "grey"
+    def color(%Character{} = character) do
+      case Character.alignment(character) do
+        "good" ->
+          "grey"
+
+        "neutral" ->
+          "dark-cyan"
+
+        "evil" ->
+          "magenta"
+      end
+    end
 
     def colored_name(%Character{name: name} = character) do
       "<span class='#{color(character)}'>#{name}</span>"
@@ -1378,6 +1412,38 @@ defmodule ApathyDrive.Character do
 
       mana >= cost
     end
+
+    def evil_points(character, %Character{} = attacker) do
+      cond do
+        Ability.retaliate?(character, attacker) ->
+          # attacker has already received evil points for attacking character
+          0
+
+        Ability.retaliate?(attacker, character) ->
+          # character has attacked the attacker, it's not evil to fight back
+          0
+
+        :else ->
+          character
+          |> Character.legal_status()
+          |> case do
+            "Saint" ->
+              60
+
+            "Good" ->
+              40
+
+            "Neutral" ->
+              20
+
+            _ ->
+              0
+          end
+      end
+    end
+
+    # only characters can receive evil points
+    def evil_points(_character, %{} = _attacker), do: 0
 
     def enter_message(%Character{name: name}) do
       "<p><span class='yellow'>#{name}</span><span class='dark-green'> walks in from {{direction}}.</span></p>"
@@ -1593,7 +1659,7 @@ defmodule ApathyDrive.Character do
 
       Directory.add_character(%{
         name: character.name,
-        bounty: character.bounty,
+        evil_points: character.evil_points,
         room: room_id,
         ref: character.ref,
         title: character.title
