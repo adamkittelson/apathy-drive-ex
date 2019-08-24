@@ -184,7 +184,7 @@ defmodule ApathyDrive.Companion do
         rm
         |> from_room_monster()
         |> Map.put(:leader, character.ref)
-        |> Map.put(:alignment, character.alignment)
+        |> Map.put(:alignment, Character.alignment(character))
         |> Map.put(:character_id, id)
 
       mobiles =
