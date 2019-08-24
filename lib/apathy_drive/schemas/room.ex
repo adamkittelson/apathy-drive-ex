@@ -996,7 +996,7 @@ defmodule ApathyDrive.Room do
 
     Directory.add_character(%{
       name: character.name,
-      bounty: character.bounty,
+      evil_points: character.evil_points,
       room: character.room_id,
       ref: character.ref,
       title: character.title

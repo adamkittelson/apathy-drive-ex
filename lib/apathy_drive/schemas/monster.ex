@@ -398,8 +398,6 @@ defmodule ApathyDrive.Monster do
       trunc(agi * (1 + modifier / 100))
     end
 
-    def alignment(monster, _room), do: monster.alignment
-
     def attribute_at_level(%Monster{} = monster, attribute, level) do
       Map.get(monster, attribute) + level - 1 +
         ability_value(monster, attribute |> to_string |> String.capitalize())
@@ -578,6 +576,27 @@ defmodule ApathyDrive.Monster do
 
       monster.mana >= cost / mana
     end
+
+    def evil_points(monster, %Character{} = attacker) do
+      cond do
+        Ability.retaliate?(monster, attacker) ->
+          # attacker has already received evil points for attacking monster
+          0
+
+        Ability.retaliate?(attacker, monster) ->
+          # monster has attacked the character, it's not evil to fight back
+          0
+
+        monster.alignment == "good" ->
+          40
+
+        :else ->
+          0
+      end
+    end
+
+    # only characters can receive evil points
+    def evil_points(_monster, %{} = _attacker), do: 0
 
     def enter_message(%Monster{name: name}) do
       "<p><span class='yellow'>#{name}</span><span class='dark-green'> walks in from {{direction}}.</span></p>"

@@ -292,3 +292,6 @@ CHANGELOG
 
 ---- 0.0.107 / 2019-08-18 / enchanting -----------------------------------------
 * enchanting
+
+---- 0.0.108 / 2019-08-24 / alignment-tweaks -----------------------------------
+* make alignment more like default

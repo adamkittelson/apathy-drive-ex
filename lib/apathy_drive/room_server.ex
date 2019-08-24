@@ -262,7 +262,7 @@ defmodule ApathyDrive.RoomServer do
 
       Directory.add_character(%{
         name: character.name,
-        bounty: character.bounty,
+        evil_points: character.evil_points,
         room: character.room_id,
         ref: character.ref,
         title: character.title
@@ -567,17 +567,21 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:reduce_bounty, mobile_ref}, room) do
+  def handle_info({:reduce_evil_points, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn character ->
         character =
-          character
-          |> Ecto.Changeset.change(%{bounty: character.bounty - 1})
-          |> Repo.update!()
+          if Character.reduce_evil_points?(character) do
+            character
+            |> Ecto.Changeset.change(%{evil_points: max(-220, character.evil_points - 5 / 60)})
+            |> Repo.update!()
+          else
+            character
+          end
 
         Directory.add_character(%{
           name: character.name,
-          bounty: character.bounty,
+          evil_points: character.evil_points,
           room: character.room_id,
           ref: character.ref,
           title: character.title
@@ -585,7 +589,7 @@ defmodule ApathyDrive.RoomServer do
 
         TimerManager.send_after(
           character,
-          {:reduce_bounty, :timer.seconds(60), {:reduce_bounty, character.ref}}
+          {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
         )
       end)
 
