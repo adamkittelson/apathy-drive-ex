@@ -1728,6 +1728,9 @@ defmodule ApathyDrive.Character do
             willpower = Mobile.attribute_at_level(character, :willpower, level)
 
             trunc((charm * 3 + willpower * 3) / 6 + level * 2)
+
+          _ ->
+            100
         end
 
       sc + ability_value(character, "Spellcasting")
