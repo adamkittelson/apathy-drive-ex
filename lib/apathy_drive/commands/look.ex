@@ -194,6 +194,18 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(character, "<p>#{description}</p>")
     Mobile.send_scroll(character, "<p>#{hp_description}\n\n</p>")
 
+    ac = Mobile.physical_resistance_at_level(target, max(target.level, character.level))
+    mr = Mobile.magical_resistance_at_level(target, max(target.level, character.level))
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>#{String.pad_trailing("AC:", 16)}</span> <span class='dark-cyan'>#{
+        String.pad_leading(to_string(ac), 3)
+      }</span>     <span class='dark-green'>#{String.pad_trailing("MR:", 16)}</span> <span class='dark-cyan'>#{
+        String.pad_leading(to_string(mr), 3)
+      }</span></p>"
+    )
+
     ApathyDrive.DamageType
     |> ApathyDrive.Repo.all()
     |> Enum.map(&{&1.name, Mobile.ability_value(target, "Resist#{&1.name}")})

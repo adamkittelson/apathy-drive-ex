@@ -530,7 +530,13 @@ defmodule ApathyDrive.Companion do
     def magical_resistance_at_level(companion, level) do
       willpower = attribute_at_level(companion, :willpower, level)
 
-      max(willpower - 50 + ability_value(companion, "MR"), 0)
+      mr_percent = ability_value(companion, "MR%")
+
+      mr_from_percent = Ability.ac_for_mitigation_at_level(mr_percent, level)
+
+      mr = ability_value(companion, "MR")
+
+      max(willpower - 50 + mr + mr_from_percent, 0)
     end
 
     def max_hp_at_level(%Companion{} = companion, level) do
@@ -571,10 +577,15 @@ defmodule ApathyDrive.Companion do
     end
 
     def physical_resistance_at_level(companion, level) do
-      str = attribute_at_level(companion, :strength, level)
+      strength = attribute_at_level(companion, :strength, level)
+
+      ac_percent = ability_value(companion, "AC%")
+
+      ac_from_percent = Ability.ac_for_mitigation_at_level(ac_percent, level)
+
       ac = ability_value(companion, "AC")
 
-      max(str - 50 + ac, 0)
+      max(strength - 50 + ac + ac_from_percent, 0)
     end
 
     def power_at_level(%Companion{} = companion, level) do

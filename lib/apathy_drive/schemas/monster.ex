@@ -651,7 +651,13 @@ defmodule ApathyDrive.Monster do
     def magical_resistance_at_level(monster, level) do
       willpower = attribute_at_level(monster, :willpower, level)
 
-      max(willpower - 50 + ability_value(monster, "MR"), 0)
+      mr_percent = ability_value(monster, "MR%")
+
+      mr_from_percent = Ability.ac_for_mitigation_at_level(mr_percent, level)
+
+      mr = ability_value(monster, "MR")
+
+      max(willpower - 50 + mr + mr_from_percent, 0)
     end
 
     def max_hp_at_level(%Monster{} = monster, level) do
@@ -694,9 +700,13 @@ defmodule ApathyDrive.Monster do
     def physical_resistance_at_level(monster, level) do
       strength = attribute_at_level(monster, :strength, level)
 
+      ac_percent = ability_value(monster, "AC%")
+
+      ac_from_percent = Ability.ac_for_mitigation_at_level(ac_percent, level)
+
       ac = ability_value(monster, "AC")
 
-      max(strength - 50 + ac, 0)
+      max(strength - 50 + ac + ac_from_percent, 0)
     end
 
     def power_at_level(%Monster{} = monster, level) do
