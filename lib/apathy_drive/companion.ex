@@ -519,11 +519,12 @@ defmodule ApathyDrive.Companion do
     def hp_description(%Companion{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Companion{hp: _hp}), do: "very critically wounded"
 
-    def magical_damage_at_level(companion, level) do
+    def magical_penetration_at_level(companion, level) do
       attribute = attribute_at_level(companion, :intellect, level) - 50
 
-      attribute + ability_value(companion, "ModifyDamage") +
-        ability_value(companion, "ModifyMagicalDamage")
+      penetration = attribute + ability_value(companion, "MagicalPenetration")
+
+      max(0, penetration)
     end
 
     def magical_resistance_at_level(companion, level) do
@@ -561,11 +562,12 @@ defmodule ApathyDrive.Companion do
       trunc(int * (1 + modifier / 100))
     end
 
-    def physical_damage_at_level(companion, level) do
-      attribute = attribute_at_level(companion, :intellect, level) - 50
+    def physical_penetration_at_level(companion, level) do
+      attribute = attribute_at_level(companion, :strength, level) - 50
 
-      attribute + ability_value(companion, "ModifyDamage") +
-        ability_value(companion, "ModifyMagicalDamage")
+      penetration = attribute + ability_value(companion, "PhysicalPenetration")
+
+      max(0, penetration)
     end
 
     def physical_resistance_at_level(companion, level) do

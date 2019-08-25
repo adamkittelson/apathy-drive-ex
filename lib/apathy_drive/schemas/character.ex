@@ -981,7 +981,7 @@ defmodule ApathyDrive.Character do
       block: Mobile.block_at_level(character, character.level),
       parry: Mobile.parry_at_level(character, character.level),
       physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
-      magical_damage: Mobile.magical_damage_at_level(character, character.level),
+      magical_damage: Mobile.magical_penetration_at_level(character, character.level),
       magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
       hp: hp_at_level(character, character.level),
       max_hp: Mobile.max_hp_at_level(character, character.level),
@@ -1556,11 +1556,12 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
-    def magical_damage_at_level(character, level) do
+    def magical_penetration_at_level(character, level) do
       attribute = attribute_at_level(character, :intellect, level) - 50
 
-      attribute + ability_value(character, "ModifyDamage") +
-        ability_value(character, "ModifyMagicalDamage")
+      penetration = attribute + ability_value(character, "MagicalPenetration")
+
+      max(0, penetration)
     end
 
     def magical_resistance_at_level(character, level) do
@@ -1612,11 +1613,12 @@ defmodule ApathyDrive.Character do
       trunc(base * (1 - light_modifier / 100))
     end
 
-    def physical_damage_at_level(character, level) do
+    def physical_penetration_at_level(character, level) do
       attribute = attribute_at_level(character, :strength, level) - 50
 
-      attribute + ability_value(character, "ModifyDamage") +
-        ability_value(character, "ModifyPhysicalDamage")
+      penetration = attribute + ability_value(character, "PhysicalPenetration")
+
+      max(0, penetration)
     end
 
     def physical_resistance_at_level(character, level) do

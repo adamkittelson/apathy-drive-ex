@@ -1294,9 +1294,6 @@ defmodule ApathyDrive.Ability do
       target
       |> Map.put(:ability_shift, 0)
 
-    total_min = trunc(Enum.reduce(damages, 0, &(&1.min + &2)))
-    total_max = trunc(Enum.reduce(damages, 0, &(&1.max + &2)))
-
     level =
       target.level
       |> max(caster.level)
@@ -1307,20 +1304,18 @@ defmodule ApathyDrive.Ability do
         %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           min = trunc(min)
           max = trunc(max)
-          modifier = (min + max) / (total_min + total_max)
-
-          caster_damage =
-            trunc(
-              Mobile.physical_damage_at_level(caster, caster_level) * round_percent * modifier
-            )
 
           ability_damage = Enum.random(min..max)
 
+          bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
+
           resist = Mobile.physical_resistance_at_level(target, target_level)
+
+          resist = resist - Mobile.physical_penetration_at_level(caster, caster_level)
 
           resist_percent = 1 - resist / (level * 50 + resist)
 
-          damage = (caster_damage + ability_damage) * resist_percent
+          damage = (ability_damage + bonus_damage) * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -1349,18 +1344,17 @@ defmodule ApathyDrive.Ability do
           min = trunc(min)
           max = trunc(max)
 
-          modifier = (min + max) / (total_min + total_max)
-
-          caster_damage =
-            trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent * modifier)
-
           ability_damage = Enum.random(min..max)
+
+          bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
+          resist = resist - Mobile.magical_penetration_at_level(caster, caster_level)
+
           resist_percent = 1 - resist / (level * 50 + resist)
 
-          damage = (caster_damage + ability_damage) * resist_percent
+          damage = (ability_damage + bonus_damage) * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -1389,18 +1383,17 @@ defmodule ApathyDrive.Ability do
           min = trunc(min)
           max = trunc(max)
 
-          modifier = (min + max) / (total_min + total_max)
-
-          caster_damage =
-            trunc(Mobile.magical_damage_at_level(caster, caster_level) * round_percent * modifier)
-
           ability_damage = Enum.random(min..max)
+
+          bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
 
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
+          resist = resist - Mobile.magical_penetration_at_level(caster, caster_level)
+
           resist_percent = 1 - resist / (level * 50 + resist)
 
-          damage = (caster_damage + ability_damage) * resist_percent
+          damage = (ability_damage + bonus_damage) * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -1453,22 +1446,6 @@ defmodule ApathyDrive.Ability do
   def apply_instant_trait({ability_name, _value}, %{} = target, _ability, caster, _room) do
     Mobile.send_scroll(caster, "<p><span class='red'>Not Implemented: #{ability_name}")
     {caster, target}
-  end
-
-  def raw_damage(%{kind: "physical", level: level}, caster, caster_level) do
-    Mobile.physical_damage_at_level(caster, min(caster_level, level))
-  end
-
-  def raw_damage(%{kind: "physical"}, caster, caster_level) do
-    Mobile.physical_damage_at_level(caster, caster_level)
-  end
-
-  def raw_damage(%{level: level}, caster, caster_level) do
-    Mobile.magical_damage_at_level(caster, min(caster_level, level))
-  end
-
-  def raw_damage(%{}, caster, caster_level) do
-    Mobile.magical_damage_at_level(caster, caster_level)
   end
 
   def crit(caster, %Ability{can_crit: true, traits: %{"Damage" => _}} = ability) do
@@ -1617,11 +1594,15 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
+          bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
+
           resist = Mobile.physical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (target_level * 50 + resist)
+          resist = resist - Mobile.physical_penetration_at_level(caster, caster.level)
 
-          damage = ability_damage * resist_percent
+          resist_percent = 1 - resist / (target.level * 50 + resist)
+
+          damage = (ability_damage + bonus_damage) * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -1637,11 +1618,15 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
+          bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
+
           resist = Mobile.magical_resistance_at_level(target, target_level)
 
-          resist_percent = 1 - resist / (target_level * 50 + resist)
+          resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
 
-          damage = ability_damage * resist_percent
+          resist_percent = 1 - resist / (target.level * 50 + resist)
+
+          damage = (ability_damage + bonus_damage) * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -1686,7 +1671,7 @@ defmodule ApathyDrive.Ability do
 
   def process_duration_trait({"HealMana", value}, effects, target, caster) do
     level = min(target.level, caster.level)
-    healing = Mobile.magical_damage_at_level(caster, level) * (value / 100)
+    healing = Mobile.magical_penetration_at_level(caster, level) * (value / 100)
 
     percentage_healed =
       calculate_healing(healing, value) / Mobile.max_mana_at_level(target, level)
