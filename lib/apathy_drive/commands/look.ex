@@ -389,7 +389,7 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
 
-    display_traits(character, item.traits)
+    display_traits(character, item)
 
     display_enchantment(character, item)
   end
@@ -447,7 +447,7 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
 
-    display_traits(character, item.traits)
+    display_traits(character, item)
 
     display_enchantment(character, item)
   end
@@ -466,15 +466,13 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def display_traits(character, traits, indent \\ 0) do
-    traits = Ability.process_duration_traits(traits, character, character)
-
-    Enum.each(traits, &display_trait(character, traits, &1, indent))
+  def display_traits(character, item, indent \\ 0) do
+    Enum.each(item.traits, &display_trait(character, item, &1, indent))
   end
 
-  def display_trait(_character, _traits, {"Learn", _list}, _indent), do: :noop
+  def display_trait(_character, _item, {"Learn", _list}, _indent), do: :noop
 
-  def display_trait(character, _traits, {"Magical", list}, indent) when is_list(list) do
+  def display_trait(character, _item, {"Magical", list}, indent) when is_list(list) do
     if Enum.any?(list) do
       Mobile.send_scroll(
         character,
@@ -483,22 +481,57 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def display_trait(_character, _traits, {"WeaponDamage", _damage}, _indent), do: :noop
+  def display_trait(_character, _item, {"WeaponDamage", _damage}, _indent), do: :noop
 
-  def display_trait(_character, _traits, {"OnHit%", _abilities}, _indent), do: :noop
+  def display_trait(_character, _item, {"OnHit%", _abilities}, _indent), do: :noop
 
-  def display_trait(character, traits, {"OnHit", abilities}, indent) do
+  def display_trait(character, item, {"OnHit", abilities}, indent) do
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{traits["OnHit%"] || "100"}% chance of:</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{
+        item.traits["OnHit%"] || "100"
+      }% chance of:</span></p>"
     )
 
     Enum.each(abilities, fn ability ->
-      display_traits(character, ability.traits, 2)
+      display_traits(character, Map.put(item, :traits, ability.traits), 2)
     end)
   end
 
-  def display_trait(character, _traits, {trait, list}, indent) when is_list(list) do
+  def display_trait(character, _item, {"Damage", list}, indent) when is_list(list) do
+    Enum.each(list, fn %{kind: kind, damage_type: type, min: min, max: max} ->
+      Mobile.send_scroll(
+        character,
+        "<p>#{String.pad_trailing("", indent)}<span class='dark-cyan'>#{min}-#{max} #{kind} #{
+          String.downcase(type)
+        } damage</span></p>"
+      )
+    end)
+  end
+
+  def display_trait(character, item, {"AC%", value}, indent) do
+    ac_from_percent = Ability.ac_for_mitigation_at_level(value, item.level)
+
+    Mobile.send_scroll(
+      character,
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>AC:</span> <span class='dark-cyan'>#{
+        ac_from_percent
+      }</span></p>"
+    )
+  end
+
+  def display_trait(character, item, {"MR%", value}, indent) do
+    ac_from_percent = Ability.ac_for_mitigation_at_level(value, item.level)
+
+    Mobile.send_scroll(
+      character,
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>MR:</span> <span class='dark-cyan'>#{
+        ac_from_percent
+      }</span></p>"
+    )
+  end
+
+  def display_trait(character, _item, {trait, list}, indent) when is_list(list) do
     value = Trait.value(trait, list)
 
     Mobile.send_scroll(
@@ -509,9 +542,9 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def display_trait(_character, _traits, {_trait, %{}}, _indent), do: :noop
+  def display_trait(_character, _item, {_trait, %{}}, _indent), do: :noop
 
-  def display_trait(character, _traits, {trait, value}, indent) do
+  def display_trait(character, _item, {trait, value}, indent) do
     Mobile.send_scroll(
       character,
       "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
