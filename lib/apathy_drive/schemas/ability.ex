@@ -1179,7 +1179,9 @@ defmodule ApathyDrive.Ability do
     room =
       if script_id = ability.traits["Script"] do
         Room.update_mobile(room, caster_ref, fn caster ->
-          ApathyDrive.Script.execute_script(room, caster, script_id)
+          IO.puts("executing script #{script_id}")
+          script = ApathyDrive.Script.find(script_id)
+          ApathyDrive.Script.execute(room, caster, script)
         end)
       else
         room

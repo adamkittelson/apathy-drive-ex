@@ -70,6 +70,18 @@ defmodule ApathyDrive.Room do
     belongs_to(:trainer, Trainer)
   end
 
+  def load_ability(%Room{ability_id: nil} = room), do: room
+
+  def load_ability(%Room{ability_id: id} = room) do
+    ability =
+      id
+      |> Ability.find()
+      |> Map.put(:ignores_round_cooldown?, true)
+      |> Map.put(:energy, 0)
+
+    Map.put(room, :ability, ability)
+  end
+
   def load_exits(%Room{} = room) do
     exits = ApathyDrive.RoomExit.load_exits(room.id)
     Map.put(room, :exits, exits)

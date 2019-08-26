@@ -157,6 +157,7 @@ defmodule ApathyDrive.RoomServer do
       |> Room.load_items()
       |> Repo.preload(:placed_items)
       |> Shop.load()
+      |> Room.load_ability()
 
     Logger.metadata(room: room.name <> "##{room.id}")
 
@@ -179,6 +180,10 @@ defmodule ApathyDrive.RoomServer do
 
     if room.zone_controller_id > 0 && room.zone_controller_id != room.id do
       send(self(), :spawn_zone_monster)
+    end
+
+    if room.ability_id do
+      send(self(), :execute_room_ability)
     end
 
     Process.send_after(self(), :save, 2000)
@@ -858,6 +863,22 @@ defmodule ApathyDrive.RoomServer do
     else
       {:noreply, room}
     end
+  end
+
+  def handle_info(:execute_room_ability, room) do
+    room =
+      Enum.reduce(room.mobiles, room, fn
+        {ref, %Character{name: name}}, room ->
+          IO.puts("executing #{room.ability.id} for #{name}")
+          Ability.execute(room, ref, room.ability, [ref])
+
+        _, room ->
+          room
+      end)
+
+    Process.send_after(self(), :execute_room_ability, :timer.seconds(5))
+
+    {:noreply, room}
   end
 
   def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
