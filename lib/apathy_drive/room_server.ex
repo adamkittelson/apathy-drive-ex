@@ -869,7 +869,6 @@ defmodule ApathyDrive.RoomServer do
     room =
       Enum.reduce(room.mobiles, room, fn
         {ref, %Character{name: name}}, room ->
-          IO.puts("executing #{room.ability.id} for #{name}")
           Ability.execute(room, ref, room.ability, [ref])
 
         _, room ->

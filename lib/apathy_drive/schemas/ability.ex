@@ -18,6 +18,7 @@ defmodule ApathyDrive.Ability do
     Party,
     Repo,
     Room,
+    Scripts,
     Stealth,
     Text,
     TimerManager,
@@ -1177,11 +1178,9 @@ defmodule ApathyDrive.Ability do
       end)
 
     room =
-      if script_id = ability.traits["Script"] do
+      if script = ability.traits["Script"] do
         Room.update_mobile(room, caster_ref, fn caster ->
-          IO.puts("executing script #{script_id}")
-          script = ApathyDrive.Script.find(script_id)
-          ApathyDrive.Script.execute(room, caster, script)
+          Module.safe_concat([Scripts, Macro.camelize(script)]).execute(room, caster.ref)
         end)
       else
         room
