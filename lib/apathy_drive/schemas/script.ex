@@ -1,6 +1,18 @@
 defmodule ApathyDrive.Script do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, Character, Currency, Item, ItemInstance, Mobile, Room, RoomServer}
+
+  alias ApathyDrive.{
+    Ability,
+    Character,
+    CharacterTrait,
+    Currency,
+    Item,
+    ItemInstance,
+    Mobile,
+    Room,
+    RoomServer,
+    Trait
+  }
 
   schema "scripts" do
     field(:instructions, ApathyDrive.JSONB, default: [])
@@ -83,20 +95,11 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(
         %Room{} = room,
-        %{spirit: nil},
-        %{"fail_flag" => %{"failure_message" => _message, "flag" => _flag}},
-        _script
-      ) do
-    room
-  end
-
-  def execute_instruction(
-        %Room{} = room,
-        %{spirit: spirit} = monster,
+        %Character{} = monster,
         %{"fail_flag" => %{"failure_message" => message, "flag" => flag}},
         script
       ) do
-    if Map.has_key?(spirit.flags, flag) do
+    if Mobile.has_ability?(monster, flag) do
       Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
       room
     else
@@ -106,11 +109,29 @@ defmodule ApathyDrive.Script do
 
   def execute_instruction(
         %Room{} = room,
-        %{spirit: nil},
-        %{"give_flag" => %{"flag" => _flag, "value" => _value}},
-        _script
+        %Character{} = character,
+        %{"add_flag" => %{"flag" => flag, "value" => value}},
+        script
       ) do
-    room
+    room =
+      Room.update_mobile(room, character.ref, fn char ->
+        %Trait{id: id} = Repo.get_by!(Trait, name: flag)
+
+        case Repo.get_by(CharacterTrait, character_id: char.id, trait_id: id) do
+          %CharacterTrait{value: original} = ct ->
+            ct
+            |> Ecto.Changeset.change(%{value: original + value})
+            |> Repo.update!()
+
+          _ ->
+            %CharacterTrait{character_id: char.id, trait_id: id, value: value}
+            |> Repo.insert!()
+        end
+
+        Character.load_traits(char)
+      end)
+
+    execute_script(room, room.mobiles[character.ref], script)
   end
 
   def execute_instruction(
@@ -121,8 +142,20 @@ defmodule ApathyDrive.Script do
       ) do
     room =
       Room.update_mobile(room, character.ref, fn char ->
-        update_in(char.flags, &Map.put(&1, flag, value))
-        |> Repo.save!()
+        %Trait{id: id} = Repo.get_by!(Trait, name: flag)
+
+        case Repo.get_by(CharacterTrait, character_id: char.id, trait_id: id) do
+          %CharacterTrait{} = ct ->
+            ct
+            |> Ecto.Changeset.change(%{value: value})
+            |> Repo.update!()
+
+          _ ->
+            %CharacterTrait{character_id: char.id, trait_id: id, value: value}
+            |> Repo.insert!()
+        end
+
+        Character.load_traits(char)
       end)
 
     execute_script(room, room.mobiles[character.ref], script)
@@ -372,8 +405,18 @@ defmodule ApathyDrive.Script do
     execute_script(room, monster, script)
   end
 
-  def execute_instruction(%Room{} = room, %{} = monster, %{"no_monsters" => _}, script) do
-    execute_script(room, monster, script)
+  def execute_instruction(
+        %Room{} = room,
+        %{} = monster,
+        %{"no_monsters" => %{"failure_message" => message}},
+        script
+      ) do
+    if Enum.any?(room.mobiles, fn {_ref, mobile} -> mobile.__struct__ == ApathyDrive.Monster end) do
+      Mobile.send_scroll(monster, "<p><span class='dark-green'>#{message}</p>")
+      room
+    else
+      execute_script(room, monster, script)
+    end
   end
 
   def execute_instruction(%Room{} = room, %{} = mobile, %{"give_coins" => coins}, script) do
@@ -496,9 +539,9 @@ defmodule ApathyDrive.Script do
           |> Map.put(:ignores_round_cooldown?, true)
           |> Map.put(:energy, 0)
 
-        room
-        |> Ability.execute(monster.ref, ability, [monster.ref])
-        |> execute_script(monster, script)
+        room = Ability.execute(room, monster.ref, ability, [monster.ref])
+        monster = room.mobiles[monster.ref]
+        execute_script(room, monster, script)
     end
   end
 

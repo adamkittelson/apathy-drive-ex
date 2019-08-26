@@ -117,7 +117,7 @@ defmodule ApathyDrive.Regeneration do
 
   def regen_per_tick(room, %Character{} = mobile, regen) do
     if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
-         !taking_damage?(regen) do
+         !taking_damage?(mobile) do
       regen / @ticks_per_round * 10
     else
       regen / @ticks_per_round
@@ -129,7 +129,7 @@ defmodule ApathyDrive.Regeneration do
     regen / @ticks_per_round
   end
 
-  defp taking_damage?(regen) do
-    regen < 0
+  defp taking_damage?(%{} = mobile) do
+    Mobile.ability_value(mobile, "Damage") > 0
   end
 end

@@ -14,6 +14,7 @@ defmodule ApathyDrive.Character do
     CharacterMaterial,
     CharacterRace,
     CharacterSkill,
+    CharacterTrait,
     Class,
     ClassTrait,
     Companion,
@@ -53,7 +54,6 @@ defmodule ApathyDrive.Character do
     field(:exp_buffer, :integer, default: 0)
     field(:timers, :map, virtual: true, default: %{})
     field(:admin, :boolean)
-    field(:flags, :map, default: %{})
     field(:copper, :integer, default: 0)
     field(:silver, :integer, default: 0)
     field(:gold, :integer, default: 0)
@@ -152,6 +152,18 @@ defmodule ApathyDrive.Character do
             &1.willpower_experience + &1.health_experience + &1.charm_experience
       }
     )
+  end
+
+  def load_traits(%Character{} = character) do
+    effect =
+      character.id
+      |> CharacterTrait.load_traits()
+      |> Ability.process_duration_traits(character, character)
+      |> Map.put("stack_key", "character")
+      |> Map.put("stack_count", 1)
+
+    character
+    |> Systems.Effect.add(effect)
   end
 
   def legal_status(%Character{evil_points: points}) when points >= 210, do: "FIEND"
@@ -1361,6 +1373,7 @@ defmodule ApathyDrive.Character do
         end)
         |> Map.put(:timers, %{})
         |> Character.load_race()
+        |> Character.load_traits()
         |> Character.set_attribute_levels()
         |> Character.add_equipped_items_effects()
         |> Character.load_abilities()

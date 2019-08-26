@@ -984,6 +984,7 @@ defmodule ApathyDrive.Room do
   def reload_character(%Room{} = room, %Character{} = character) do
     character =
       character
+      |> Character.load_traits()
       |> Character.load_race()
       |> Character.load_class()
       |> Character.set_attribute_levels()

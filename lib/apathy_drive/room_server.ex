@@ -241,6 +241,7 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:ref, ref)
         |> Map.put(:leader, ref)
         |> Map.put(:socket, socket)
+        |> Character.load_traits()
         |> Character.load_class()
         |> Character.load_race()
         |> Character.set_attribute_levels()
@@ -853,7 +854,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:execute_script, mobile_ref, script}, room) do
     if mobile = room.mobiles[mobile_ref] do
-      {:noreply, ApathyDrive.Script.execute(room, mobile, script)}
+      {:noreply, ApathyDrive.Script.execute_script(room, mobile, script)}
     else
       {:noreply, room}
     end

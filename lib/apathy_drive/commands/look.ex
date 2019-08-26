@@ -340,9 +340,7 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def blind?(%Character{} = character) do
-    character.effects
-    |> Map.values()
-    |> Enum.any?(&Map.has_key?(&1, "blinded"))
+    Mobile.has_ability?(character, "Blind")
   end
 
   def weapon_damage(%Character{} = character, ability \\ nil) do

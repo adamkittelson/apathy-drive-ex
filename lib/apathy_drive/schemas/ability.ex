@@ -282,7 +282,7 @@ defmodule ApathyDrive.Ability do
     ability = ApathyDrive.Repo.get(__MODULE__, id)
 
     if ability do
-      put_in(ability.traits, AbilityTrait.load_traits(id))
+      ability = put_in(ability.traits, AbilityTrait.load_traits(id))
 
       case AbilityDamageType.load_damage(id) do
         [] ->
