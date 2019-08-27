@@ -526,6 +526,72 @@ defmodule ApathyDrive.Scripts do
     end
   end
 
+  def random_item_895(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 5 ->
+        give_item(room, mobile_ref, "bloodstone")
+
+      roll <= 10 ->
+        give_item(room, mobile_ref, "carnelian stone")
+
+      roll <= 15 ->
+        # moonstone
+        give_item(room, mobile_ref, 889)
+
+      roll <= 20 ->
+        give_item(room, mobile_ref, "onyx stone")
+
+      roll <= 25 ->
+        give_item(room, mobile_ref, "piece of crystal")
+
+      roll <= 34 ->
+        give_item(room, mobile_ref, "piece of amber")
+
+      roll <= 43 ->
+        give_item(room, mobile_ref, "amethyst stone")
+
+      roll <= 52 ->
+        give_item(room, mobile_ref, "piece of jade")
+
+      roll <= 58 ->
+        give_item(room, mobile_ref, "aquamarine stone")
+
+      roll <= 64 ->
+        give_item(room, mobile_ref, "garnet")
+
+      roll <= 70 ->
+        # pearl
+        give_item(room, mobile_ref, 897)
+
+      roll <= 76 ->
+        give_item(room, mobile_ref, "topaz stone")
+
+      roll <= 81 ->
+        give_item(room, mobile_ref, "black opal")
+
+      roll <= 86 ->
+        give_item(room, mobile_ref, "fire opal")
+
+      roll <= 92 ->
+        give_item(room, mobile_ref, "opal")
+
+      roll <= 94 ->
+        # diamond
+        give_item(room, mobile_ref, 902)
+
+      roll <= 96 ->
+        give_item(room, mobile_ref, "emerald")
+
+      roll <= 98 ->
+        give_item(room, mobile_ref, "ruby")
+
+      roll <= 100 ->
+        give_item(room, mobile_ref, "sapphire")
+    end
+  end
+
   def random_item_898(room, mobile_ref) do
     roll = :rand.uniform(100)
 
