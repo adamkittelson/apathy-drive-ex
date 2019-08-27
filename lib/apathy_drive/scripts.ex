@@ -1,5 +1,16 @@
 defmodule ApathyDrive.Scripts do
-  alias ApathyDrive.{Character, Currency, Item, ItemInstance, Mobile, Repo, Room}
+  alias ApathyDrive.{
+    Character,
+    Currency,
+    Item,
+    ItemInstance,
+    Mobile,
+    Monster,
+    Repo,
+    Room,
+    RoomMonster
+  }
+
   require Ecto.Query
 
   def give_coins_up_to(%Room{} = room, mobile_ref, %{} = coins) do
@@ -712,6 +723,39 @@ defmodule ApathyDrive.Scripts do
 
       roll <= 100 ->
         give_item(room, mobile_ref, "wicked bone scythe")
+    end
+  end
+
+  def summon(%Room{} = room, mobile_ref, monster_id) when is_integer(monster_id) do
+    Repo.get!(Monster, monster_id)
+
+    Room.update_mobile(room, mobile_ref, fn _mobile ->
+      monster =
+        %RoomMonster{
+          room_id: room.id,
+          monster_id: monster_id,
+          level: room.area.level,
+          spawned_at: room.id,
+          zone_spawned_at: room.zone_controller_id
+        }
+        |> Monster.from_room_monster()
+
+      if monster do
+        Room.mobile_entered(room, monster)
+      end
+    end)
+  end
+
+  def summon(%Room{} = room, mobile_ref, name) do
+    Monster
+    |> Ecto.Query.where(name: ^name)
+    |> Repo.one()
+    |> case do
+      %Monster{id: monster_id} ->
+        summon(room, mobile_ref, monster_id)
+
+      nil ->
+        raise "Monster for Scripts.summon/3 not found: #{name}"
     end
   end
 end

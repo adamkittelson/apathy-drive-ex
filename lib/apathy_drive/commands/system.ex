@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
   import ApathyDrive.Scripts
-  alias ApathyDrive.{Ability, Character, Item, Match, Repo, Room, Skill}
+  alias ApathyDrive.{Ability, Character, Item, Match, Monster, Repo, Room, Skill}
   alias ApathyDrive.Commands.System
   require Ecto.Query
 
@@ -53,6 +53,92 @@ defmodule ApathyDrive.Commands.System do
 
             room
         end
+    end
+  end
+
+  def system(%Room{} = room, character, ["summon_monster" | monster_id_or_name]) do
+    monster_id_or_name = Enum.join(monster_id_or_name, " ")
+
+    monster_id_or_name
+    |> Integer.parse()
+    |> case do
+      {monster_id, ""} ->
+        summon(room, character.ref, monster_id)
+
+      _ ->
+        Monster
+        |> Ecto.Query.where(name: ^monster_id_or_name)
+        |> Repo.all()
+        |> Match.all(:match_name, monster_id_or_name)
+        |> case do
+          %Monster{id: monster_id} ->
+            summon(room, character.ref, monster_id)
+
+          nil ->
+            Mobile.send_scroll(character, "<p>Monster not found.</p>")
+            room
+
+          items ->
+            Mobile.send_scroll(
+              character,
+              "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+            )
+
+            Enum.each(items, fn match ->
+              Mobile.send_scroll(
+                character,
+                "<p>-- #{Item.colored_name(match, character: character)} (#{match.id})</p>"
+              )
+            end)
+
+            room
+        end
+    end
+  end
+
+  def system(%Room{} = room, character, ["kill" | monster]) do
+    monster = Enum.join(monster, " ")
+
+    room.mobiles
+    |> Map.values()
+    |> Match.all(:match_keyword, monster)
+    |> case do
+      %{} = mobile ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>You slowly draw a finger across your throat, and then point at #{
+            mobile.name
+          }.</span></p>"
+        )
+
+        Room.send_scroll(
+          room,
+          "<p><span class='red'>#{character.name()} slowly draws a finger across their throat, and then points at #{
+            mobile.name
+          }.</span></p>",
+          [character]
+        )
+
+        Mobile.die(mobile, room)
+
+      nil ->
+        Mobile.send_scroll(character, "<p>Victim not found.</p>")
+        room
+
+      items ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+        )
+
+        Enum.each(items, fn match ->
+          Mobile.send_scroll(
+            character,
+            "<p>-- #{Item.colored_name(match, character: character)} (#{match.id})</p>"
+          )
+        end)
+
+        room
     end
   end
 
