@@ -868,7 +868,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:execute_room_ability, room) do
     room =
       Enum.reduce(room.mobiles, room, fn
-        {ref, %Character{name: name}}, room ->
+        {ref, %Character{}}, room ->
           Ability.execute(room, ref, room.ability, [ref])
 
         _, room ->
