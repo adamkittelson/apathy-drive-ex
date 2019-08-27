@@ -38,7 +38,7 @@ defmodule ApathyDrive.Scripts do
     item = Repo.get!(Item, item_id)
 
     Room.update_mobile(room, mobile_ref, fn mobile ->
-      level = if item.type in ["Armour", "Weapon"], do: mobile.level, else: nil
+      level = if item.type in ["Armour", "Shield,", "Weapon"], do: mobile.level, else: nil
 
       if item.weight <= Character.max_encumbrance(mobile) - Character.encumbrance(mobile) do
         instance =

@@ -260,7 +260,7 @@ defmodule ApathyDrive.Item do
   end
 
   def color(%Item{type: type, traits: %{"Quality" => quality}})
-      when type in ["Armour", "Weapon"] do
+      when type in ["Armour", "Shield", "Weapon"] do
     case Trait.value("Quality", quality) do
       5 ->
         "red"
