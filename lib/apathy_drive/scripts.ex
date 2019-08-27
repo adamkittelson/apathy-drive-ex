@@ -308,6 +308,224 @@ defmodule ApathyDrive.Scripts do
     end
   end
 
+  def random_item_886(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 4 ->
+        give_item(room, mobile_ref, "azurite stone")
+
+      roll <= 8 ->
+        give_item(room, mobile_ref, "agate stone")
+
+      roll <= 12 ->
+        give_item(room, mobile_ref, "hematite stone")
+
+      roll <= 17 ->
+        give_item(room, mobile_ref, "malachite stone")
+
+      roll <= 21 ->
+        give_item(room, mobile_ref, "obsidian stone")
+
+      roll <= 26 ->
+        give_item(room, mobile_ref, "turquoise stone")
+
+      roll <= 31 ->
+        give_item(room, mobile_ref, "bloodstone")
+
+      roll <= 36 ->
+        give_item(room, mobile_ref, "carnelian stone")
+
+      roll <= 41 ->
+        # moonstone
+        give_item(room, mobile_ref, 889)
+
+      roll <= 46 ->
+        give_item(room, mobile_ref, "onyx stone")
+
+      roll <= 51 ->
+        give_item(room, mobile_ref, "piece of crystal")
+
+      roll <= 59 ->
+        give_item(room, mobile_ref, "piece of amber")
+
+      roll <= 67 ->
+        give_item(room, mobile_ref, "amethyst stone")
+
+      roll <= 75 ->
+        give_item(room, mobile_ref, "piece of jade")
+
+      roll <= 78 ->
+        give_item(room, mobile_ref, "aquamarine stone")
+
+      roll <= 81 ->
+        give_item(room, mobile_ref, "garnet")
+
+      roll <= 84 ->
+        # pearl
+        give_item(room, mobile_ref, 897)
+
+      roll <= 87 ->
+        give_item(room, mobile_ref, "topaz stone")
+
+      roll <= 90 ->
+        give_item(room, mobile_ref, "black opal")
+
+      roll <= 93 ->
+        give_item(room, mobile_ref, "fire opal")
+
+      roll <= 96 ->
+        give_item(room, mobile_ref, "opal")
+
+      roll <= 97 ->
+        give_item(room, mobile_ref, "diamond")
+
+      roll <= 98 ->
+        give_item(room, mobile_ref, "emerald")
+
+      roll <= 99 ->
+        give_item(room, mobile_ref, "ruby")
+
+      roll <= 100 ->
+        give_item(room, mobile_ref, "sapphire")
+    end
+  end
+
+  def random_item_889(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 10 ->
+        give_item(room, mobile_ref, "turquoise potion")
+
+      roll <= 15 ->
+        give_item(room, mobile_ref, "shimmering vial")
+
+      roll <= 18 ->
+        give_item(room, mobile_ref, "green potion")
+
+      roll <= 23 ->
+        give_item(room, mobile_ref, "orange potion")
+
+      roll <= 25 ->
+        give_item(room, mobile_ref, "jade amulet")
+
+      roll <= 27 ->
+        give_item(room, mobile_ref, "ethereal amulet")
+
+      roll <= 29 ->
+        give_item(room, mobile_ref, "serpent armbands")
+
+      roll <= 30 ->
+        give_item(room, mobile_ref, "cat's-eye pendant")
+
+      roll <= 31 ->
+        give_item(room, mobile_ref, "demonhide bracers")
+
+      roll <= 32 ->
+        give_item(room, mobile_ref, "crimson bracers")
+
+      roll <= 33 ->
+        give_item(room, mobile_ref, "mithril ring")
+
+      roll <= 34 ->
+        give_item(room, mobile_ref, "moonstone ring")
+
+      roll <= 37 ->
+        give_item(room, mobile_ref, "belt of might")
+
+      roll <= 40 ->
+        give_item(room, mobile_ref, "eagle helm")
+
+      roll <= 43 ->
+        give_item(room, mobile_ref, "shadow cloak")
+
+      roll <= 46 ->
+        give_item(room, mobile_ref, "elven cloak")
+
+      roll <= 48 ->
+        give_item(room, mobile_ref, "elven boots")
+
+      roll <= 50 ->
+        give_item(room, mobile_ref, "crested war helm")
+
+      roll <= 52 ->
+        give_item(room, mobile_ref, "gauntlets of power")
+
+      roll <= 54 ->
+        give_item(room, mobile_ref, "high-necked robes")
+
+      roll <= 56 ->
+        give_item(room, mobile_ref, "wyvernhide tunic")
+
+      roll <= 58 ->
+        give_item(room, mobile_ref, "dwarven chainmail hauberk")
+
+      roll <= 60 ->
+        give_item(room, mobile_ref, "crystal platemail")
+
+      roll <= 61 ->
+        give_item(room, mobile_ref, "long battle shield")
+
+      roll <= 62 ->
+        give_item(room, mobile_ref, "prismatic robes")
+
+      roll <= 63 ->
+        give_item(room, mobile_ref, "lacquered battle armour")
+
+      roll <= 64 ->
+        give_item(room, mobile_ref, "adamantite chainmail hauberk")
+
+      roll <= 65 ->
+        give_item(room, mobile_ref, "adamantite platemail tunic")
+
+      roll <= 69 ->
+        give_item(room, mobile_ref, "skull shield")
+
+      roll <= 73 ->
+        give_item(room, mobile_ref, "dwarven axe")
+
+      roll <= 75 ->
+        give_item(room, mobile_ref, "dwarven hammer")
+
+      roll <= 77 ->
+        give_item(room, mobile_ref, "soulsword")
+
+      roll <= 78 ->
+        give_item(room, mobile_ref, "runic warhammer")
+
+      roll <= 79 ->
+        give_item(room, mobile_ref, "sunsword")
+
+      roll <= 83 ->
+        give_item(room, mobile_ref, "starsteel mace")
+
+      roll <= 87 ->
+        give_item(room, mobile_ref, "bladed staff")
+
+      roll <= 91 ->
+        give_item(room, mobile_ref, "three-headed flail")
+
+      roll <= 93 ->
+        give_item(room, mobile_ref, "long golden staff")
+
+      roll <= 95 ->
+        give_item(room, mobile_ref, "elven war-spear")
+
+      roll <= 97 ->
+        give_item(room, mobile_ref, "dwarven-craft hammer")
+
+      roll <= 98 ->
+        give_item(room, mobile_ref, "staff of the elements")
+
+      roll <= 99 ->
+        give_item(room, mobile_ref, "dragontooth trident")
+
+      roll <= 100 ->
+        give_item(room, mobile_ref, "serpent staff")
+    end
+  end
+
   def random_item_898(room, mobile_ref) do
     roll = :rand.uniform(100)
 
