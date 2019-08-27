@@ -93,6 +93,8 @@ defmodule ApathyDrive.Monster do
 
     timestamps()
 
+    belongs_to(:death_ability, ApathyDrive.Ability)
+
     has_many(:lairs, ApathyDrive.LairMonster)
     has_many(:lair_rooms, through: [:lairs, :room])
 
@@ -550,6 +552,19 @@ defmodule ApathyDrive.Monster do
         |> Repo.update!()
       end
 
+      room =
+        if monster.death_ability_id do
+          ability =
+            monster.death_ability_id
+            |> Ability.find()
+            |> Map.put(:ignores_round_cooldown?, true)
+            |> Map.put(:energy, 0)
+
+          Ability.execute(room, monster.ref, ability, [monster.ref])
+        else
+          room
+        end
+
       room = put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
 
       Room.update_moblist(room)
@@ -847,6 +862,9 @@ defmodule ApathyDrive.Monster do
             willpower = Mobile.attribute_at_level(monster, :willpower, level)
 
             trunc((charm * 3 + willpower * 3) / 6 + level * 2)
+
+          _ ->
+            100
         end
 
       sc + ability_value(monster, "Spellcasting")

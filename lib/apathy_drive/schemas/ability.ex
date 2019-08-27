@@ -61,6 +61,8 @@ defmodule ApathyDrive.Ability do
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
 
+    has_many(:death_monsters, ApathyDrive.Monster, foreign_key: :death_ability_id)
+
     has_many(:abilities_traits, ApathyDrive.AbilityTrait)
     has_many(:trait_records, through: [:abilities_traits, :trait])
 

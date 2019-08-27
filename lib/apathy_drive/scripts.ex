@@ -741,7 +741,7 @@ defmodule ApathyDrive.Scripts do
         |> Monster.from_room_monster()
 
       if monster do
-        Room.mobile_entered(room, monster)
+        Room.mobile_entered(room, monster, "")
       end
     end)
   end
