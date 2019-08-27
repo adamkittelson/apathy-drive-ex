@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Use do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Doors, Item, ItemInstance, Match, Mobile, Repo, Room}
+  alias ApathyDrive.{Ability, Character, Doors, Item, ItemInstance, Match, Mobile, Repo, Room}
 
   def keywords, do: ["use", "light"]
 
@@ -136,6 +136,13 @@ defmodule ApathyDrive.Commands.Use do
         Room.update_mobile(room, character.ref, fn char ->
           Character.load_items(char)
         end)
+
+      %Item{type: "Container"} = item ->
+        ability = item.traits["OnUse"]
+
+        room
+        |> Ability.execute(character.ref, ability, [character.ref])
+        |> deduct_uses(character.ref, item)
 
       %Item{} ->
         Mobile.send_scroll(character, "<p>You may not use that item!</p>")

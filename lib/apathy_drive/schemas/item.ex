@@ -169,8 +169,7 @@ defmodule ApathyDrive.Item do
       item_traits = ItemTrait.load_traits(item.id)
 
       traits =
-        item_traits
-        |> Map.put_new("MinLevel", item.level)
+        if item.level, do: Map.put_new(item_traits, "MinLevel", item.level), else: item_traits
 
       item
       |> Map.put(:traits, traits)

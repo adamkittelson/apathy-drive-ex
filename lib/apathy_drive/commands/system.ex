@@ -1,7 +1,9 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
-  alias ApathyDrive.{Ability, Character, Repo, Room, Skill}
+  import ApathyDrive.Scripts
+  alias ApathyDrive.{Ability, Character, Item, Match, Repo, Room, Skill}
   alias ApathyDrive.Commands.System
+  require Ecto.Query
 
   def keywords, do: ["system", "sys"]
 
@@ -12,6 +14,46 @@ defmodule ApathyDrive.Commands.System do
   def execute(%Room{} = room, %Character{} = character, _args) do
     Mobile.send_scroll(character, "<p>You do not have permission to do that.</p>")
     room
+  end
+
+  def system(%Room{} = room, character, ["give_item" | item_id_or_name]) do
+    item_id_or_name = Enum.join(item_id_or_name, " ")
+
+    item_id_or_name
+    |> Integer.parse()
+    |> case do
+      {item_id, ""} ->
+        give_item(room, character.ref, item_id)
+
+      _ ->
+        Item
+        |> Ecto.Query.where(name: ^item_id_or_name)
+        |> Repo.all()
+        |> Match.all(:match_name, item_id_or_name)
+        |> case do
+          %Item{id: item_id} ->
+            give_item(room, character.ref, item_id)
+
+          nil ->
+            Mobile.send_scroll(character, "<p>Item not found.</p>")
+            room
+
+          items ->
+            Mobile.send_scroll(
+              character,
+              "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+            )
+
+            Enum.each(items, fn match ->
+              Mobile.send_scroll(
+                character,
+                "<p>-- #{Item.colored_name(match, character: character)} (#{match.id})</p>"
+              )
+            end)
+
+            room
+        end
+    end
   end
 
   def system(%Room{} = room, character, ["edit" | args]) do

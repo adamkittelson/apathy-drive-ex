@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.Silvermere do
-  use ApathyDrive.Scripts
+  alias ApathyDrive.{Mobile, Room}
 
   def execute(%Room{} = room, mobile_ref) do
     messages = [

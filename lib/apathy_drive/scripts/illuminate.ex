@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Scripts.Illuminate do
-  use ApathyDrive.Scripts
+  import ApathyDrive.Scripts
+  alias ApathyDrive.Room
 
   def execute(%Room{} = room, mobile_ref) do
     # light ball
