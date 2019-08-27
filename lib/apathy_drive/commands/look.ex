@@ -104,6 +104,7 @@ defmodule ApathyDrive.Commands.Look do
         look_at_mobile(target, character)
 
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
+        target = Map.put(target, :level, target.level || character.level)
         look_at_item(character, target)
 
       true ->
