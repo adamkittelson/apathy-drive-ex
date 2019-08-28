@@ -1157,8 +1157,6 @@ defmodule ApathyDrive.Character do
       if room.mobiles[target], do: target
     end
 
-    def caster_level(%Character{level: caster_level}, %{} = _target), do: caster_level
-
     def cpr(%Character{} = character) do
       time =
         min(
@@ -1243,8 +1241,8 @@ defmodule ApathyDrive.Character do
     end
 
     def description(%Character{} = character, %Character{} = observer) do
-      character_level = Mobile.target_level(observer, character)
-      observer_level = Mobile.caster_level(observer, character)
+      character_level = character.lvel
+      observer_level = observer.level
 
       descriptions =
         [
@@ -1795,15 +1793,6 @@ defmodule ApathyDrive.Character do
         })
       end)
     end
-
-    def target_level(%Character{level: _caster_level}, %Character{level: target_level}),
-      do: target_level
-
-    def target_level(%Character{level: _caster_level}, %Companion{level: target_level}),
-      do: target_level
-
-    def target_level(%Character{level: caster_level}, %Monster{level: target_level}),
-      do: max(caster_level, target_level)
 
     def tracking_at_level(character, level, room) do
       perception = perception_at_level(character, level, room)

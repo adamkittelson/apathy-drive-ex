@@ -56,7 +56,7 @@ defmodule ApathyDrive.Commands.System do
     end
   end
 
-  def system(%Room{} = room, character, ["summon_monster" | monster_id_or_name]) do
+  def system(%Room{} = room, character, ["summon" | monster_id_or_name]) do
     monster_id_or_name = Enum.join(monster_id_or_name, " ")
 
     monster_id_or_name

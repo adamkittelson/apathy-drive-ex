@@ -705,8 +705,7 @@ defmodule ApathyDrive.Ability do
                         target
                       end
 
-                    target_level = Mobile.target_level(caster, target)
-                    max_hp = Mobile.max_hp_at_level(target, target_level)
+                    max_hp = Mobile.max_hp_at_level(target, target.level)
                     hp = trunc(max_hp * target.hp)
 
                     if hp < 1 do
@@ -855,11 +854,9 @@ defmodule ApathyDrive.Ability do
   end
 
   def dodged?(%{} = caster, %{} = target, room) do
-    caster_level = Mobile.caster_level(caster, target)
-    accuracy = Mobile.accuracy_at_level(caster, caster_level, room)
+    accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
-    target_level = Mobile.target_level(caster, target)
-    dodge = Mobile.dodge_at_level(target, target_level, room)
+    dodge = Mobile.dodge_at_level(target, target.level, room)
 
     modifier = Mobile.ability_value(target, "Dodge")
 
@@ -877,11 +874,9 @@ defmodule ApathyDrive.Ability do
 
   def blocked?(%{} = caster, %Character{} = target, room) do
     if Character.shield(target) do
-      caster_level = Mobile.caster_level(caster, target)
-      accuracy = Mobile.accuracy_at_level(caster, caster_level, room)
+      accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
-      target_level = Mobile.target_level(caster, target)
-      block = Mobile.block_at_level(target, target_level)
+      block = Mobile.block_at_level(target, target.level)
 
       modifier = Mobile.ability_value(target, "Block")
 
@@ -906,11 +901,9 @@ defmodule ApathyDrive.Ability do
 
   def parried?(%{} = caster, %Character{} = target, room) do
     if Character.weapon(target) do
-      caster_level = Mobile.caster_level(caster, target)
-      accuracy = Mobile.accuracy_at_level(caster, caster_level, room)
+      accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
-      target_level = Mobile.target_level(caster, target)
-      dodge = Mobile.parry_at_level(target, target_level)
+      dodge = Mobile.parry_at_level(target, target.level)
 
       modifier = Mobile.ability_value(target, "Parry")
 
@@ -1288,9 +1281,6 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, _room) do
-    caster_level = Mobile.caster_level(caster, target)
-    target_level = Mobile.target_level(caster, target)
-
     round_percent = (ability.reaction_energy || ability.energy) / caster.max_energy
 
     target =
@@ -1312,9 +1302,9 @@ defmodule ApathyDrive.Ability do
 
           bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
 
-          resist = Mobile.physical_resistance_at_level(target, target_level)
+          resist = Mobile.physical_resistance_at_level(target, target.level)
 
-          resist = resist - Mobile.physical_penetration_at_level(caster, caster_level)
+          resist = resist - Mobile.physical_penetration_at_level(caster, caster.level)
 
           resist_percent = 1 - resist / (level * 50 + resist)
 
@@ -1324,12 +1314,12 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target.level)
 
           {caster, damage_percent + percent}
 
         %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent} ->
-          resist = Mobile.physical_resistance_at_level(target, target_level)
+          resist = Mobile.physical_resistance_at_level(target, target.level)
 
           resist_percent = 1 - resist / (level * 50 + resist)
 
@@ -1339,7 +1329,7 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target.level)
 
           {caster, damage_percent + percent}
 
@@ -1349,26 +1339,46 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
+          IO.puts("damage: #{ability_damage}")
+
           bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
 
-          resist = Mobile.magical_resistance_at_level(target, target_level)
+          resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist = resist - Mobile.magical_penetration_at_level(caster, caster_level)
+          IO.puts("resist: #{resist}")
+
+          resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
+
+          IO.puts("final resist: #{resist}")
 
           resist_percent = 1 - resist / (level * 50 + resist)
+
+          IO.puts("percent: #{resist_percent}")
 
           damage = (ability_damage + bonus_damage) * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
+          IO.puts("modifier: #{modifier}")
+
           damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target_level)
+          IO.puts("final damage: #{damage}")
+
+          IO.puts("target level: #{target.level}")
+
+          max_hp = Mobile.max_hp_at_level(target, target.level)
+
+          IO.puts("max_hp: #{max_hp}")
+
+          percent = damage / max_hp
+
+          IO.puts("percent: #{percent}")
 
           {caster, damage_percent + percent}
 
         %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent} ->
-          resist = Mobile.magical_resistance_at_level(target, target_level)
+          resist = Mobile.magical_resistance_at_level(target, target.level)
 
           resist_percent = 1 - resist / (level * 50 + resist)
 
@@ -1378,7 +1388,7 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target.level)
 
           {caster, damage_percent + percent}
 
@@ -1390,9 +1400,9 @@ defmodule ApathyDrive.Ability do
 
           bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
 
-          resist = Mobile.magical_resistance_at_level(target, target_level)
+          resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist = resist - Mobile.magical_penetration_at_level(caster, caster_level)
+          resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
 
           resist_percent = 1 - resist / (level * 50 + resist)
 
@@ -1402,9 +1412,9 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-          heal_percent = damage / Mobile.max_hp_at_level(caster, caster_level)
+          heal_percent = damage / Mobile.max_hp_at_level(caster, caster.level)
 
           caster = Mobile.shift_hp(caster, heal_percent)
 
@@ -1587,8 +1597,6 @@ defmodule ApathyDrive.Ability do
   end
 
   def process_duration_trait({"Damage", damages}, effects, target, caster) do
-    target_level = Mobile.target_level(caster, target)
-
     damage_percent =
       Enum.reduce(damages, 0, fn
         %{kind: "physical", min: min, max: max, damage_type: type}, damage_percent ->
@@ -1599,7 +1607,7 @@ defmodule ApathyDrive.Ability do
 
           bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
 
-          resist = Mobile.physical_resistance_at_level(target, target_level)
+          resist = Mobile.physical_resistance_at_level(target, target.level)
 
           resist = resist - Mobile.physical_penetration_at_level(caster, caster.level)
 
@@ -1611,7 +1619,7 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target.level)
 
           damage_percent + percent
 
@@ -1623,7 +1631,7 @@ defmodule ApathyDrive.Ability do
 
           bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
 
-          resist = Mobile.magical_resistance_at_level(target, target_level)
+          resist = Mobile.magical_resistance_at_level(target, target.level)
 
           resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
 
@@ -1635,7 +1643,7 @@ defmodule ApathyDrive.Ability do
 
           damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target_level)
+          percent = damage / Mobile.max_hp_at_level(target, target.level)
 
           damage_percent + percent
 

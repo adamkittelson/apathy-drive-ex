@@ -317,8 +317,6 @@ defmodule ApathyDrive.Companion do
       character_target || companion_target
     end
 
-    def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
-
     def color(%Companion{alignment: "evil"}), do: "magenta"
     def color(%Companion{alignment: "neutral"}), do: "dark-cyan"
     def color(%Companion{alignment: "good"}), do: "grey"
@@ -731,15 +729,6 @@ defmodule ApathyDrive.Companion do
         companion
       end
     end
-
-    def target_level(%Companion{level: _caster_level}, %Character{level: target_level}),
-      do: target_level
-
-    def target_level(%Companion{level: _caster_level}, %Companion{level: target_level}),
-      do: target_level
-
-    def target_level(%Companion{level: caster_level}, %Monster{level: target_level}),
-      do: max(caster_level, target_level)
 
     def tracking_at_level(companion, level, room) do
       perception = perception_at_level(companion, level, room)
