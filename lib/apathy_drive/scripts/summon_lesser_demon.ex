@@ -1,0 +1,87 @@
+defmodule ApathyDrive.Scripts.SummonLesserDemon do
+  alias ApathyDrive.{Companion, Mobile, Monster, Repo, Room, RoomMonster}
+
+  def execute(%Room{} = room, mobile_ref) do
+    monster = Repo.get!(Monster, 1121)
+
+    Room.update_mobile(room, mobile_ref, fn mobile ->
+      failure = Enum.random([:return, :attack, :roam])
+
+      cond do
+        :random.uniform(100) < mobile.willpower ->
+          monster =
+            %RoomMonster{
+              room_id: room.id,
+              monster_id: monster.id,
+              level: 5,
+              spawned_at: nil,
+              zone_spawned_at: nil,
+              character_id: mobile.id
+            }
+            |> Monster.from_room_monster()
+
+          Mobile.send_scroll(mobile, "<p>The lesser demon was successfully controlled.</p>")
+
+          if monster do
+            room
+            |> Room.mobile_entered(monster, "")
+            |> Companion.convert_for_character(monster, mobile)
+          end
+
+        failure == :return ->
+          Mobile.send_scroll(
+            mobile,
+            "<p>The demon is not controlled. Annoyed, he returns to his plane.</p>"
+          )
+
+          room
+
+        failure == :attack ->
+          monster =
+            %RoomMonster{
+              room_id: room.id,
+              monster_id: monster.id,
+              level: 5,
+              spawned_at: nil,
+              zone_spawned_at: nil
+            }
+            |> Monster.from_room_monster()
+
+          Mobile.send_scroll(
+            mobile,
+            "<p>The demon is not controlled. He angrily attacks you!</p>"
+          )
+
+          if monster do
+            Room.mobile_entered(room, monster, "")
+          end
+
+        failure == :roam ->
+          monster =
+            %RoomMonster{
+              room_id: room.id,
+              monster_id: monster.id,
+              level: 5,
+              spawned_at: nil,
+              zone_spawned_at: nil
+            }
+            |> Monster.from_room_monster()
+            |> Map.put(:lawful, true)
+
+          Mobile.send_scroll(
+            mobile,
+            "<p>The demon is not controlled, and he goes off in search of bigger and better things.</p>"
+          )
+
+          if monster do
+            room = Room.mobile_entered(room, monster, "")
+
+            ApathyDrive.AI.move(monster, room, true)
+          end
+
+        :else ->
+          nil
+      end
+    end)
+  end
+end

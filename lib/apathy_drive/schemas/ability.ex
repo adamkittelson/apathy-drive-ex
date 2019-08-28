@@ -1339,41 +1339,23 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
-          IO.puts("damage: #{ability_damage}")
-
           bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
 
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          IO.puts("resist: #{resist}")
-
           resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
 
-          IO.puts("final resist: #{resist}")
-
           resist_percent = 1 - resist / (level * 50 + resist)
-
-          IO.puts("percent: #{resist_percent}")
 
           damage = (ability_damage + bonus_damage) * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
-          IO.puts("modifier: #{modifier}")
-
           damage = damage * (1 - modifier / 100)
-
-          IO.puts("final damage: #{damage}")
-
-          IO.puts("target level: #{target.level}")
 
           max_hp = Mobile.max_hp_at_level(target, target.level)
 
-          IO.puts("max_hp: #{max_hp}")
-
           percent = damage / max_hp
-
-          IO.puts("percent: #{percent}")
 
           {caster, damage_percent + percent}
 

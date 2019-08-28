@@ -13,8 +13,8 @@ defmodule ApathyDrive.AI do
     end)
   end
 
-  def move(%{} = mobile, %Room{} = room) do
-    if should_move?(mobile, room) do
+  def move(%{} = mobile, %Room{} = room, force \\ false) do
+    if should_move?(mobile, room) or force do
       exits =
         case room.exits do
           nil ->
@@ -296,7 +296,11 @@ defmodule ApathyDrive.AI do
 
   defp should_flee?(%ApathyDrive.Companion{}, _room), do: false
 
-  defp should_flee?(%{movement: "stationary"}, _room), do: false
+  defp should_flee?(%Monster{movement: "stationary"}, _room), do: false
+
+  defp should_flee?(%Monster{} = monster, room) do
+    is_nil(Mobile.auto_attack_target(monster, room)) and :rand.uniform(100) > 99
+  end
 
   defp should_flee?(%{auto_flee: true} = mobile, room) do
     hp_low? = mobile.hp < 0.20

@@ -19,8 +19,6 @@ defmodule ApathyDrive.Aggression do
     end)
   end
 
-  def enemy?(%Monster{}, %Monster{}), do: false
-
   def enemy?(%Monster{alignment: "neutral"}, %{} = _mobile) do
     false
   end
@@ -39,6 +37,10 @@ defmodule ApathyDrive.Aggression do
 
   def enemy?(%Monster{alignment: "evil", lawful: true}, %Character{} = character) do
     if Character.alignment(character) == "evil", do: false, else: true
+  end
+
+  def enemy?(%Monster{alignment: "evil", lawful: true}, %Monster{alignment: "evil", lawful: false}) do
+    true
   end
 
   def enemy?(%Monster{alignment: "evil"}, %Character{}) do
