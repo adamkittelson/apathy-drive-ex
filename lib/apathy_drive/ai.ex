@@ -169,6 +169,14 @@ defmodule ApathyDrive.AI do
 
       attack_abilities = Ability.attack_abilities(mobile, target)
 
+      attack_abilities =
+        if mobile.__struct__ == Monster do
+          attack_abilities
+          |> Enum.filter(&is_nil(&1.chance))
+        else
+          attack_abilities
+        end
+
       {ability, targets} =
         if length(potential_targets) > 1 and
              Enum.any?(attack_abilities, &(&1.targets == "full attack area")) do

@@ -291,10 +291,25 @@ defmodule ApathyDrive.Companion do
     def attack_ability(companion) do
       companion.abilities
       |> Map.values()
-      |> Enum.filter(&(&1.kind == "auto attack"))
-      |> Enum.random()
-      |> Map.put(:kind, "attack")
-      |> Map.put(:ignores_round_cooldown?, true)
+      |> Enum.filter(&(&1.kind == "auto attack" or !is_nil(&1.chance)))
+      |> case do
+        [] ->
+          nil
+
+        attacks ->
+          attacks =
+            attacks
+            |> Enum.sort_by(& &1.chance)
+
+          attacks
+          |> Enum.find(fn attack ->
+            rand = :rand.uniform(100)
+
+            attack.chance > rand or attack == List.last(attacks)
+          end)
+          |> Map.put(:kind, "attack")
+          |> Map.put(:ignores_round_cooldown?, true)
+      end
     end
 
     def auto_attack_target(%Companion{} = companion, room) do
@@ -547,7 +562,7 @@ defmodule ApathyDrive.Companion do
     end
 
     def max_mana_at_level(mobile, level) do
-      mana_per_level = ability_value(mobile, "ManaPerLevel")
+      mana_per_level = ability_value(mobile, "ManaPerLevel") || 4
 
       bonus = ability_value(mobile, "MaxMana")
 

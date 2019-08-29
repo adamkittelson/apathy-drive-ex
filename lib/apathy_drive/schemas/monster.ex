@@ -409,7 +409,7 @@ defmodule ApathyDrive.Monster do
     def attack_ability(monster) do
       monster.abilities
       |> Map.values()
-      |> Enum.filter(&(&1.kind == "auto attack"))
+      |> Enum.filter(&(&1.kind == "auto attack" or !is_nil(&1.chance)))
       |> case do
         [] ->
           nil
@@ -681,7 +681,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def max_mana_at_level(monster, level) do
-      mana_per_level = ability_value(monster, "ManaPerLevel")
+      mana_per_level = ability_value(monster, "ManaPerLevel") || 4
 
       bonus = ability_value(monster, "MaxMana")
 
