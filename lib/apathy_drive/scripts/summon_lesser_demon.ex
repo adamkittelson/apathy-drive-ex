@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.SummonLesserDemon do
-  alias ApathyDrive.{Companion, Mobile, Monster, Repo, Room, RoomMonster}
+  alias ApathyDrive.{Character, Companion, Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref) do
     monster = Repo.get!(Monster, 1121)
@@ -9,6 +9,13 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
 
       cond do
         :random.uniform(100) < mobile.willpower ->
+          room =
+            if companion = Character.companion(mobile, room) do
+              Companion.dismiss(companion, room)
+            else
+              room
+            end
+
           monster =
             %RoomMonster{
               room_id: room.id,
@@ -20,7 +27,10 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
             }
             |> Monster.from_room_monster()
 
-          Mobile.send_scroll(mobile, "<p>The lesser demon was successfully controlled.</p>")
+          Mobile.send_scroll(
+            mobile,
+            "<p>The #{Mobile.colored_name(monster)} was successfully controlled.</p>"
+          )
 
           if monster do
             room
@@ -31,7 +41,7 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
         failure == :return ->
           Mobile.send_scroll(
             mobile,
-            "<p>The demon is not controlled. Annoyed, he returns to his plane.</p>"
+            "<p>The #{Mobile.colored_name(monster)} is not controlled. Annoyed, he returns to his plane.</p>"
           )
 
           room
@@ -49,7 +59,7 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
 
           Mobile.send_scroll(
             mobile,
-            "<p>The demon is not controlled. He angrily attacks you!</p>"
+            "<p>The #{Mobile.colored_name(monster)} is not controlled. He angrily attacks you!</p>"
           )
 
           if monster do
@@ -70,7 +80,7 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
 
           Mobile.send_scroll(
             mobile,
-            "<p>The demon is not controlled, and he goes off in search of bigger and better things.</p>"
+            "<p>The #{Mobile.colored_name(monster)} is not controlled, and he goes off in search of bigger and better things.</p>"
           )
 
           if monster do

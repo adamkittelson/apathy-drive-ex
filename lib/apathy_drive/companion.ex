@@ -163,7 +163,7 @@ defmodule ApathyDrive.Companion do
     |> Ecto.Changeset.change(changes)
     |> Repo.update!()
 
-    Mobile.send_scroll(character, "<p>#{monster.name} started to follow you</p>")
+    Mobile.send_scroll(character, "<p>#{Mobile.colored_name(monster)} started to follow you</p>")
 
     room =
       load_for_character(room, character)
