@@ -53,7 +53,8 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
               monster_id: monster.id,
               level: 5,
               spawned_at: nil,
-              zone_spawned_at: nil
+              zone_spawned_at: nil,
+              decay: true
             }
             |> Monster.from_room_monster()
 
@@ -73,7 +74,8 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
               monster_id: monster.id,
               level: 5,
               spawned_at: nil,
-              zone_spawned_at: nil
+              zone_spawned_at: nil,
+              decay: true
             }
             |> Monster.from_room_monster()
             |> Map.put(:lawful, true)

@@ -25,6 +25,12 @@ defmodule ApathyDrive.Regeneration do
     |> Mobile.update_prompt()
   end
 
+  def decay(%{decay: true} = mobile) do
+    update_in(mobile.decay_max_hp, &(&1 - 1))
+  end
+
+  def decay(%{} = mobile), do: mobile
+
   def energy_per_tick(mobile) do
     mobile.max_energy / @ticks_per_round
   end

@@ -80,13 +80,16 @@ defmodule ApathyDrive.Scripts.BindDemon do
         RoomMonster
         |> Repo.get(demon.room_monster_id)
         |> Ecto.Changeset.change(%{
-          character_id: nil
+          character_id: nil,
+          decay: true
         })
         |> Repo.update!()
 
       room = update_in(room, [:mobiles], &Map.delete(&1, demon.ref))
 
-      monster = Monster.from_room_monster(room_monster)
+      monster =
+        room_monster
+        |> Monster.from_room_monster()
 
       Mobile.send_scroll(
         mobile,

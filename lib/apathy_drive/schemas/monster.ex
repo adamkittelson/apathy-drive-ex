@@ -91,6 +91,8 @@ defmodule ApathyDrive.Monster do
     field(:auto_flee, :boolean, virtual: true, default: false)
     field(:drops, :any, virtual: true, default: [])
     field(:sneaking, :boolean, virtual: true, default: false)
+    field(:decay, :boolean, virtual: true, default: false)
+    field(:decay_max_hp, :integer, virtual: true, default: 0)
 
     timestamps()
 
@@ -167,6 +169,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:level, rm.level)
       |> Map.put(:spawned_at, rm.spawned_at)
       |> Map.put(:zone_spawned_at, rm.zone_spawned_at)
+      |> Map.put(:decay, rm.decay)
 
     if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
       ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -194,7 +197,8 @@ defmodule ApathyDrive.Monster do
         :charm,
         :name,
         :spawned_at,
-        :room_spawned_at
+        :room_spawned_at,
+        :decay
       ])
 
     ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -520,13 +524,23 @@ defmodule ApathyDrive.Monster do
 
                 Mobile.send_scroll(character, "<p>#{message}</p>")
 
-                character
-                |> Character.add_experience_to_buffer(monster.experience)
-                |> Character.add_class_experience(monster.experience)
-                |> Character.add_currency_from_monster(monster)
-                |> KillCount.increment(monster)
+                if !monster.decay do
+                  character
+                  |> Character.add_experience_to_buffer(monster.experience)
+                  |> Character.add_class_experience(monster.experience)
+                  |> Character.add_currency_from_monster(monster)
+                  |> KillCount.increment(monster)
+                else
+                  character
+                end
               end)
-              |> Monster.drop_loot_for_character(monster, character)
+
+            updated_room =
+              if !monster.decay do
+                Monster.drop_loot_for_character(room, monster, character)
+              else
+                updated_room
+              end
 
             Room.update_moblist(updated_room)
             updated_room
@@ -677,7 +691,13 @@ defmodule ApathyDrive.Monster do
       base = monster.base_hp
       bonus = (health - 50) * level / 16
 
-      trunc(base + bonus + ability_value(monster, "MaxHP"))
+      hp = trunc(base + bonus + ability_value(monster, "MaxHP"))
+
+      if monster.decay do
+        hp + monster.decay_max_hp
+      else
+        hp
+      end
     end
 
     def max_mana_at_level(monster, level) do
@@ -736,13 +756,16 @@ defmodule ApathyDrive.Monster do
         |> AI.think(monster.ref)
 
       if monster = room.mobiles[monster.ref] do
+        monster = Regeneration.decay(monster)
+
         max_hp = Mobile.max_hp_at_level(monster, monster.level)
+
         hp = trunc(max_hp * monster.hp)
 
         if hp < 1 do
           Mobile.die(monster, room)
         else
-          room
+          put_in(room.mobiles[monster.ref], monster)
         end
       else
         room
