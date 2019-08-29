@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
   import ApathyDrive.Scripts
-  alias ApathyDrive.{Ability, Character, Item, Match, Monster, Repo, Room, Skill}
+  alias ApathyDrive.{Ability, Character, Item, Match, Mobile, Monster, Repo, Room, Skill}
   alias ApathyDrive.Commands.System
   require Ecto.Query
 
@@ -134,7 +134,7 @@ defmodule ApathyDrive.Commands.System do
         Enum.each(items, fn match ->
           Mobile.send_scroll(
             character,
-            "<p>-- #{Item.colored_name(match, character: character)} (#{match.id})</p>"
+            "<p>-- #{Mobile.colored_name(match)} (#{match.id})</p>"
           )
         end)
 

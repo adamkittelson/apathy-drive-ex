@@ -281,19 +281,31 @@ defmodule ApathyDrive.Ability do
     |> validate_inclusion(:kind, @kinds)
   end
 
+  def find(name) when is_binary(name) do
+    ability = ApathyDrive.Repo.get_by(__MODULE__, name: name)
+
+    if ability do
+      load(ability)
+    end
+  end
+
   def find(id) do
     ability = ApathyDrive.Repo.get(__MODULE__, id)
 
     if ability do
-      ability = put_in(ability.traits, AbilityTrait.load_traits(id))
+      load(ability)
+    end
+  end
 
-      case AbilityDamageType.load_damage(id) do
-        [] ->
-          ability
+  def load(ability) do
+    ability = put_in(ability.traits, AbilityTrait.load_traits(ability.id))
 
-        damage ->
-          update_in(ability.traits, &Map.put(&1, "Damage", damage))
-      end
+    case AbilityDamageType.load_damage(ability.id) do
+      [] ->
+        ability
+
+      damage ->
+        update_in(ability.traits, &Map.put(&1, "Damage", damage))
     end
   end
 
@@ -1492,7 +1504,7 @@ defmodule ApathyDrive.Ability do
       ability.traits
       |> Map.take(@duration_traits)
       |> Map.put("stack_key", ability.id)
-      |> Map.put("stack_count", 1)
+      |> Map.put("stack_count", ability.traits["StackCount"] || 1)
       |> process_duration_traits(target, caster)
       |> Map.put("effect_ref", make_ref())
 

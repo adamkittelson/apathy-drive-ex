@@ -302,8 +302,14 @@ defmodule ApathyDrive.Character do
       end)
       |> List.flatten()
 
+    granted_abilities =
+      character
+      |> Mobile.ability_value("Grant")
+      |> Enum.uniq()
+      |> Enum.map(&%{ability: Ability.find(&1)})
+
     character =
-      (abilities ++ class_abilities ++ skill_abilities)
+      (abilities ++ class_abilities ++ skill_abilities ++ granted_abilities)
       |> Enum.reduce(character, fn
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
