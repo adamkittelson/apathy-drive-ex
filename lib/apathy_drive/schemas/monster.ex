@@ -56,6 +56,7 @@ defmodule ApathyDrive.Monster do
     field(:game_limit, :integer)
     field(:alignment, :string)
     field(:lawful, :boolean)
+    field(:npc, :boolean)
 
     field(:leader, :any, virtual: true)
     field(:hp, :float, virtual: true, default: 1.0)
