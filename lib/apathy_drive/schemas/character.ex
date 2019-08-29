@@ -338,11 +338,15 @@ defmodule ApathyDrive.Character do
                 update_in(ability.traits, &Map.put(&1, "Damage", damage))
             end
 
-          update_in(character.abilities, fn abilities ->
-            abilities
-            |> Map.put_new(ability.command, [])
-            |> update_in([ability.command], &[ability | &1])
-          end)
+          if Ability.appropriate_alignment?(ability, character) do
+            update_in(character.abilities, fn abilities ->
+              abilities
+              |> Map.put_new(ability.command, [])
+              |> update_in([ability.command], &[ability | &1])
+            end)
+          else
+            character
+          end
       end)
 
     Enum.reduce(character.equipment, character, fn item, character ->

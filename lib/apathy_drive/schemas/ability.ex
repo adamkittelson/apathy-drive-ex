@@ -203,6 +203,19 @@ defmodule ApathyDrive.Ability do
     )
   end
 
+  def appropriate_alignment?(%Ability{traits: traits}, %Character{} = mobile) do
+    case Character.alignment(mobile) do
+      "good" ->
+        Map.has_key?(traits, "Good") or !Map.has_key?(traits, "NotGood")
+
+      "neutral" ->
+        Map.has_key?(traits, "Neutral") or !Map.has_key?(traits, "NotNeutral")
+
+      "evil" ->
+        Map.has_key?(traits, "Evil") or !Map.has_key?(traits, "NotEvil")
+    end
+  end
+
   def total_damage(%Ability{traits: %{"Damage" => damage}}) do
     damage
     |> Enum.map(& &1.damage)
