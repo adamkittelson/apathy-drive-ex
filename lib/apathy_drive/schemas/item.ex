@@ -156,7 +156,7 @@ defmodule ApathyDrive.Item do
 
   def with_traits_for_level(%Item{type: type} = item, level \\ 1) do
     item =
-      if type in ["Weapon", "Armour"] do
+      if type in ["Weapon", "Armour", "Shield"] do
         Map.put(item, :level, level)
       else
         Map.put(item, :level, nil)
@@ -345,10 +345,12 @@ defmodule ApathyDrive.Item do
         false
 
       ApathyDrive.Commands.Read.already_learned?(character, item.traits["Learn"]) ->
-        IO.puts("#{item.name} too powerful")
         false
 
       ApathyDrive.Commands.Read.wrong_class?(character, item.traits["Learn"]) ->
+        false
+
+      !Ability.appropriate_alignment?(item.traits["Learn"], character) ->
         false
 
       :else ->
@@ -404,7 +406,7 @@ defmodule ApathyDrive.Item do
       ClassAbility
       |> Repo.get_by(class_id: character.class_id, ability_id: ability.id)
 
-    !!class_ability
+    !!class_ability and Ability.appropriate_alignment?(ability, character)
   end
 
   def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do

@@ -8,7 +8,7 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
       failure = Enum.random([:return, :attack, :roam])
 
       cond do
-        :random.uniform(100) < mobile.willpower ->
+        :random.uniform(100) <= mobile.willpower ->
           room =
             if companion = Character.companion(mobile, room) do
               Companion.dismiss(companion, room)
@@ -85,14 +85,9 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
             "<p>The #{Mobile.colored_name(monster)} is not controlled, and he goes off in search of bigger and better things.</p>"
           )
 
-          if monster do
-            room = Room.mobile_entered(room, monster, "")
+          room = Room.mobile_entered(room, monster, "")
 
-            ApathyDrive.AI.move(monster, room, true)
-          end
-
-        :else ->
-          nil
+          ApathyDrive.AI.move(monster, room, true)
       end
     end)
   end

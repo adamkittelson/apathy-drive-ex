@@ -50,6 +50,12 @@ defmodule ApathyDrive.Commands.Read do
             Mobile.send_scroll(character, message)
             room
 
+          !Ability.appropriate_alignment?(ability, character) ->
+            message = "<p>You don't have the disposition to learn #{ability.name}.</p>"
+
+            Mobile.send_scroll(character, message)
+            room
+
           :else ->
             learn_ability(room, character, item, ability)
         end

@@ -56,12 +56,22 @@ defmodule ApathyDrive.Scripts.BindDemon do
         "<p>You successfully bind the #{Mobile.colored_name(demon)}.</p>"
       )
 
-      Mobile.send_scroll(
-        mobile,
-        "<p>You've gain the ability to cast <span class='dark-cyan'>#{
-          ApathyDrive.Commands.Inventory.to_sentence(abilities)
-        }</span>!</p>"
-      )
+      known_abilities =
+        mobile.abilities
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.map(& &1.name)
+
+      abilities = abilities -- known_abilities
+
+      if Enum.any?(abilities) do
+        Mobile.send_scroll(
+          mobile,
+          "<p>You've gain the ability to cast <span class='dark-cyan'>#{
+            ApathyDrive.Commands.Inventory.to_sentence(abilities)
+          }</span>!</p>"
+        )
+      end
 
       mobile =
         mobile
