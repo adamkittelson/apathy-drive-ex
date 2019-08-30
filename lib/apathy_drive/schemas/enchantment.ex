@@ -11,6 +11,7 @@ defmodule ApathyDrive.Enchantment do
     Enchantment,
     Item,
     ItemInstance,
+    Level,
     Match,
     Mobile,
     Room,
@@ -241,15 +242,23 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def enchantment_exp(character, skill \\ "enchanting") do
-    max(1, character.skills[skill].level) * 20
+    skill = character.skills[skill]
+    exp = skill.experience
+    level = skill.level
+
+    if level == 0 do
+      Level.exp_at_level(level + 1, 1.0) - exp
+    else
+      max(1, level) * 20
+    end
   end
 
   def total_enchantment_time(%Enchantment{ability: %Ability{level: level}}) do
-    trunc(level * 1.6 * 60)
+    600 + trunc(level * 1.6 * 60)
   end
 
   def total_enchantment_time(%Enchantment{items_instances: %{level: level}}) do
-    trunc(level * 1.6 * 60)
+    600 + trunc(level * 1.6 * 60)
   end
 
   def time_left(%Enchantment{} = enchantment) do

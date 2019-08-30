@@ -2,6 +2,7 @@ defmodule ApathyDrive.Commands.Read do
   use ApathyDrive.Command
 
   alias ApathyDrive.{
+    Ability,
     Character,
     CharacterAbility,
     ClassAbility,

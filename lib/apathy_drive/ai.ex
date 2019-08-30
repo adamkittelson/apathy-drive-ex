@@ -110,6 +110,7 @@ defmodule ApathyDrive.AI do
       ability =
         mobile
         |> Ability.heal_abilities()
+        |> Enum.reject(&(&1.targets == "self"))
         |> random_ability(mobile)
 
       if ability do

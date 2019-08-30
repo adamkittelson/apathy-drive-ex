@@ -106,6 +106,12 @@ defmodule ApathyDrive.CraftingRecipe do
     case item do
       %Item{type: "Weapon"} = item ->
         damage = Character.weapon_damage(item.speed, recipe.damage, item.level)
+
+        damage = %{
+          min_damage: (item.min_damage + damage.min_damage) / 2,
+          max_damage: (item.max_damage + damage.max_damage) / 2
+        }
+
         Map.merge(item, damage)
 
       item ->
