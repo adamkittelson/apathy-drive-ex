@@ -698,6 +698,78 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
+  def execute(%Room{} = room, caster_ref, %Ability{} = ability, %Item{} = item) do
+    Room.update_mobile(room, caster_ref, fn caster ->
+      cond do
+        mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
+          mobile
+
+        casting_failed?(caster, ability) ->
+          casting_failed(room, caster_ref, ability)
+
+        can_execute?(room, caster, ability) ->
+          display_pre_cast_message(room, caster, item, ability)
+
+          caster =
+            caster
+            |> apply_cooldowns(ability)
+            |> Mobile.subtract_mana(ability)
+            |> Mobile.subtract_energy(ability)
+
+          effects =
+            ability.traits
+            |> Map.take(@duration_traits)
+            |> Map.put("stack_key", ability.id)
+            |> Map.put("stack_count", 1)
+            |> Map.put("effect_ref", make_ref())
+
+          item = Systems.Effect.add(item, effects, :timer.seconds(ability.duration))
+
+          caster =
+            if item.equipped do
+              location =
+                Enum.find_index(
+                  caster.equipment,
+                  &(&1.instance_id == item.instance_id)
+                )
+
+              update_in(caster.equipment, &List.replace_at(&1, location, item))
+            else
+              location =
+                Enum.find_index(
+                  caster.inventory,
+                  &(&1.instance_id == item.instance_id)
+                )
+
+              update_in(caster.inventory, &List.replace_at(&1, location, item))
+            end
+
+          Mobile.update_prompt(caster)
+          room = put_in(room.mobiles[caster_ref], caster)
+
+          Room.update_energy_bar(room, caster_ref)
+          Room.update_hp_bar(room, caster_ref)
+          Room.update_mana_bar(room, caster_ref)
+
+          Room.update_moblist(room)
+
+          if script = ability.traits["Script"] do
+            room
+            |> Room.update_mobile(caster_ref, fn caster ->
+              room = Map.put(room, :script_args, item)
+              Module.safe_concat([Scripts, Macro.camelize(script)]).execute(room, caster.ref)
+            end)
+            |> Map.put(:script_args, nil)
+          else
+            room
+          end
+
+        :else ->
+          room
+      end
+    end)
+  end
+
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) when is_list(targets) do
     Room.update_mobile(room, caster_ref, fn caster ->
       cond do
@@ -1109,22 +1181,27 @@ defmodule ApathyDrive.Ability do
         "<p><span class='dark-grey'>A dark cloud passes over you</span></p>"
       )
 
-      if caster_legal_status != initial_caster_legal_status do
-        color = ApathyDrive.Commands.Who.color(caster_legal_status)
+      caster =
+        if caster_legal_status != initial_caster_legal_status do
+          color = ApathyDrive.Commands.Who.color(caster_legal_status)
 
-        status = "<span class='#{color}'>#{caster_legal_status}</span>"
+          status = "<span class='#{color}'>#{caster_legal_status}</span>"
 
-        Mobile.send_scroll(
-          caster,
-          "<p>Your legal status has changed to #{status}.</p>"
-        )
+          Mobile.send_scroll(
+            caster,
+            "<p>Your legal status has changed to #{status}.</p>"
+          )
 
-        Room.send_scroll(
-          room,
-          "<p>#{Mobile.colored_name(caster)}'s legal status has changed to #{status}.",
-          [caster]
-        )
-      end
+          Room.send_scroll(
+            room,
+            "<p>#{Mobile.colored_name(caster)}'s legal status has changed to #{status}.",
+            [caster]
+          )
+
+          Character.load_abilities(caster)
+        else
+          caster
+        end
 
       retaliate(room, ability, caster, target)
     else
@@ -1499,17 +1576,6 @@ defmodule ApathyDrive.Ability do
 
   def calculate_healing(damage, modifier) do
     damage * (modifier / 100) * (Enum.random(95..105) / 100)
-  end
-
-  def apply_item_enchantment(%Item{} = item, %Ability{} = ability) do
-    effects =
-      ability.traits
-      |> Map.take(@duration_traits)
-      |> Map.put("stack_key", ability.id)
-      |> Map.put("stack_count", 1)
-      |> Map.put("effect_ref", make_ref())
-
-    Systems.Effect.add(item, effects)
   end
 
   def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster, duration) do

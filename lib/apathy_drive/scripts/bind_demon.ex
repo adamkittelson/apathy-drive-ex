@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.BindDemon do
-  alias ApathyDrive.{Character, Companion, Mobile, Monster, Repo, Room, RoomMonster}
+  alias ApathyDrive.{Ability, Character, Companion, Mobile, Monster, Repo, Room, RoomMonster}
 
   @demon_ids [
     # lesser demon
@@ -25,7 +25,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
 
   def bind_demon(room, mobile, demon) do
     if :random.uniform(100) < mobile.willpower do
-      abilities = ["disruption bolt", "lesser blood surge"]
+      abilities = ["disruption bolt"]
 
       effects =
         %{
@@ -42,14 +42,20 @@ defmodule ApathyDrive.Scripts.BindDemon do
           "MR%" => 1,
           "Speed" => 0.99,
           "ManaRegen" => 10,
-          "MaxMana" => 2,
           "Encumbrance" => 1,
-          "HPRegen" => 10,
           "Accuracy" => 1,
           "Dodge" => 1,
           "RemoveMessage" => "The #{Mobile.colored_name(demon)} returns to its plane."
         }
         |> Map.put("effect_ref", make_ref())
+
+      effects =
+        Ability.process_duration_trait(
+          {"Heal", %{"max" => 1, "min" => 1}},
+          effects,
+          mobile,
+          mobile
+        )
 
       Mobile.send_scroll(
         mobile,

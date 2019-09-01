@@ -56,6 +56,7 @@ defmodule ApathyDrive.Room do
     field(:items, :any, virtual: true, default: [])
     field(:allies, :any, virtual: true, default: %{})
     field(:enemies, :any, virtual: true, default: %{})
+    field(:script_args, :any, virtual: true)
 
     timestamps()
 
