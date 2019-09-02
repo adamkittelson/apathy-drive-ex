@@ -56,7 +56,7 @@ defmodule ApathyDrive.Ability do
     field(:on_hit?, :boolean, virtual: true, default: false)
     field(:can_crit, :boolean, virtual: true, default: false)
     field(:spell?, :boolean, virtual: true, default: true)
-    field(:reaction_energy, :integer, virtual: true)
+    field(:reaction_energy, :integer, virtual: true, default: 0)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -1044,8 +1044,12 @@ defmodule ApathyDrive.Ability do
             agility: 0.9,
             charm: 0.1
           })
+          |> Map.put(:energy, min(target.max_energy, target.energy + 200))
 
-        put_in(room.mobiles[target.ref], target)
+        room = put_in(room.mobiles[target.ref], target)
+
+        Room.update_energy_bar(room, target.ref)
+        room
 
       blocked?(caster, target, room) ->
         room = add_evil_points(room, ability, caster, target)
@@ -1063,8 +1067,11 @@ defmodule ApathyDrive.Ability do
             charm: 0.1
           })
 
-        put_in(room.mobiles[target.ref], target)
-        |> trigger_damage_shields(caster.ref, target.ref, ability)
+        room = put_in(room.mobiles[target.ref], target)
+
+        caster = Map.put(caster, :energy, caster.energy - ability.energy)
+
+        put_in(room.mobiles[caster.ref], caster)
 
       parried?(caster, target, room) ->
         room = add_evil_points(room, ability, caster, target)
@@ -1082,8 +1089,11 @@ defmodule ApathyDrive.Ability do
             charm: 0.1
           })
 
-        put_in(room.mobiles[target.ref], target)
-        |> trigger_damage_shields(caster.ref, target.ref, ability)
+        room = put_in(room.mobiles[target.ref], target)
+
+        riposte = Mobile.attack_ability(target, true)
+
+        Ability.execute(room, target.ref, riposte, [caster.ref])
 
       true ->
         apply_ability(

@@ -566,7 +566,7 @@ defmodule ApathyDrive.Character do
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
   end
 
-  def ability_for_weapon(character, weapon) do
+  def ability_for_weapon(character, weapon, riposte) do
     %Item{
       type: "Weapon",
       name: name,
@@ -577,6 +577,13 @@ defmodule ApathyDrive.Character do
       traits: traits
     } = weapon
 
+    {hit_verbs, singular_miss, plural_miss} =
+      if riposte do
+        {[["riposte", "ripostes"]], "riposte", "ripostes"}
+      else
+        {hit_verbs, singular_miss, plural_miss}
+      end
+
     bonus_damage = traits["WeaponDamage"] || []
 
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
@@ -585,7 +592,7 @@ defmodule ApathyDrive.Character do
 
     ability = %Ability{
       kind: "attack",
-      energy: energy,
+      energy: if(riposte, do: 0, else: energy),
       name: weapon.name,
       attributes: %{
         strength: 0,
@@ -609,7 +616,7 @@ defmodule ApathyDrive.Character do
           }
           | bonus_damage
         ],
-        "Dodgeable" => true,
+        "Dodgeable" => if(riposte, do: false, else: true),
         "DodgeUserMessage" =>
           "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
         "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
@@ -1146,7 +1153,7 @@ defmodule ApathyDrive.Character do
         ability_value(character, attribute |> to_string |> String.capitalize())
     end
 
-    def attack_ability(character) do
+    def attack_ability(character, riposte) do
       punch = %Item{
         type: "Weapon",
         name: "fist",
@@ -1159,7 +1166,7 @@ defmodule ApathyDrive.Character do
 
       weapon = Character.weapon(character) || punch
 
-      Character.ability_for_weapon(character, weapon)
+      Character.ability_for_weapon(character, weapon, riposte)
     end
 
     def auto_attack_target(%Character{attack_target: target} = _character, room) do
@@ -1794,7 +1801,7 @@ defmodule ApathyDrive.Character do
     end
 
     def subtract_energy(character, ability) do
-      character = update_in(character.energy, &max(0, &1 - ability.energy))
+      character = update_in(character.energy, &(&1 - ability.energy))
 
       Enum.reduce(ability.attributes, character, fn {attribute, _value}, character ->
         Character.add_attribute_experience(character, %{

@@ -410,7 +410,7 @@ defmodule ApathyDrive.Monster do
         ability_value(monster, attribute |> to_string |> String.capitalize())
     end
 
-    def attack_ability(monster) do
+    def attack_ability(monster, _riposte) do
       monster.abilities
       |> Map.values()
       |> Enum.filter(&(&1.kind == "auto attack" or !is_nil(&1.chance)))
@@ -904,7 +904,7 @@ defmodule ApathyDrive.Monster do
 
     def subtract_energy(monster, ability) do
       initial_energy = monster.energy
-      monster = update_in(monster.energy, &max(0, &1 - ability.energy))
+      monster = update_in(monster.energy, &(&1 - ability.energy))
 
       if initial_energy == monster.max_energy do
         Regeneration.schedule_next_tick(monster)

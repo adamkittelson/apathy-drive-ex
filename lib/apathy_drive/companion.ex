@@ -288,7 +288,7 @@ defmodule ApathyDrive.Companion do
         ability_value(companion, attribute |> to_string |> String.capitalize())
     end
 
-    def attack_ability(companion) do
+    def attack_ability(companion, _riposte) do
       companion.abilities
       |> Map.values()
       |> Enum.filter(&(&1.kind == "auto attack" or !is_nil(&1.chance)))
@@ -736,7 +736,7 @@ defmodule ApathyDrive.Companion do
 
     def subtract_energy(companion, ability) do
       initial_energy = companion.energy
-      companion = update_in(companion.energy, &max(0, &1 - ability.energy))
+      companion = update_in(companion.energy, &(&1 - ability.energy))
 
       if initial_energy == companion.max_energy do
         Regeneration.schedule_next_tick(companion)
