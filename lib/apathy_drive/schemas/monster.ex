@@ -537,7 +537,11 @@ defmodule ApathyDrive.Monster do
 
             updated_room =
               if !monster.decay do
-                Monster.drop_loot_for_character(room, monster, character)
+                Monster.drop_loot_for_character(
+                  updated_room,
+                  monster,
+                  room.mobiles[character.ref]
+                )
               else
                 updated_room
               end

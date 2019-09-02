@@ -98,7 +98,6 @@ defmodule ApathyDrive.Character do
     field(:skills, :map, virtual: true, default: %{})
     field(:editing, :any, virtual: true)
     field(:attribute_levels, :any, virtual: true, default: %{})
-    field(:combat_level, :integer, virtual: true, default: 3)
     field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:reply_to, :string, virtual: true)
@@ -1033,7 +1032,7 @@ defmodule ApathyDrive.Character do
     # 50% encumbrance
     character = %Character{
       level: level,
-      combat_level: 3,
+      class: %{class: %{combat_level: 3}},
       strength: 50,
       agility: 49 + level,
       inventory: [%{weight: 1200}]
@@ -1056,7 +1055,8 @@ defmodule ApathyDrive.Character do
 
     cost =
       weapon.speed * 1000 /
-        ((character.level * (character.combat_level + 2) + 45) * (agility + 150) * 1500 /
+        ((character.level * (character.class.class.combat_level + 2) + 45) * (agility + 150) *
+           1500 /
            9000.0)
 
     energy =

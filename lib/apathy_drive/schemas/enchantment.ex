@@ -258,11 +258,11 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def total_enchantment_time(%Enchantment{ability: %Ability{level: level}}) do
-    600 + trunc(level * 1.6 * 60)
+    trunc(level * 1.6 * 60)
   end
 
   def total_enchantment_time(%Enchantment{items_instances: %{level: level}}) do
-    600 + trunc(level * 1.6 * 60)
+    trunc(level * 1.6 * 60)
   end
 
   def time_left(%Enchantment{} = enchantment) do
