@@ -726,36 +726,32 @@ defmodule ApathyDrive.Scripts do
     end
   end
 
-  def summon(%Room{} = room, mobile_ref, monster_id) when is_integer(monster_id) do
+  def summon(%Room{} = room, monster_id) when is_integer(monster_id) do
     Repo.get!(Monster, monster_id)
 
-    Room.update_mobile(room, mobile_ref, fn _mobile ->
-      monster =
-        %RoomMonster{
-          room_id: room.id,
-          monster_id: monster_id,
-          level: room.area.level,
-          spawned_at: room.id,
-          zone_spawned_at: room.zone_controller_id
-        }
-        |> Monster.from_room_monster()
+    monster =
+      %RoomMonster{
+        room_id: room.id,
+        monster_id: monster_id,
+        level: room.area.level,
+        spawned_at: room.id,
+        zone_spawned_at: room.zone_controller_id
+      }
+      |> Monster.from_room_monster()
 
-      if monster do
-        Room.mobile_entered(room, monster, "")
-      end
-    end)
+    Room.mobile_entered(room, monster, "")
   end
 
-  def summon(%Room{} = room, mobile_ref, name) do
+  def summon(%Room{} = room, name) do
     Monster
     |> Ecto.Query.where(name: ^name)
     |> Repo.one()
     |> case do
       %Monster{id: monster_id} ->
-        summon(room, mobile_ref, monster_id)
+        summon(room, monster_id)
 
       nil ->
-        raise "Monster for Scripts.summon/3 not found: #{name}"
+        raise "Monster for Scripts.summon/2 not found: #{name}"
     end
   end
 end

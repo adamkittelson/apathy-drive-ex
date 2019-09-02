@@ -63,7 +63,7 @@ defmodule ApathyDrive.Commands.System do
     |> Integer.parse()
     |> case do
       {monster_id, ""} ->
-        summon(room, character.ref, monster_id)
+        summon(room, monster_id)
 
       _ ->
         Monster
@@ -72,7 +72,7 @@ defmodule ApathyDrive.Commands.System do
         |> Match.all(:match_name, monster_id_or_name)
         |> case do
           %Monster{id: monster_id} ->
-            summon(room, character.ref, monster_id)
+            summon(room, monster_id)
 
           nil ->
             Mobile.send_scroll(character, "<p>Monster not found.</p>")

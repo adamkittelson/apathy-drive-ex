@@ -11,7 +11,7 @@ defmodule ApathyDrive.Scripts.TrollDeath do
         "<p><span class='blue'>The swamp troll regenerates, and gets back up!"
       )
 
-      summon(room, mobile_ref, "swamp troll")
+      summon(room, "swamp troll")
     else
       room
     end

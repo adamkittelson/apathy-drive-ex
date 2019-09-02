@@ -32,11 +32,9 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
             "<p>The #{Mobile.colored_name(monster)} was successfully controlled.</p>"
           )
 
-          if monster do
-            room
-            |> Room.mobile_entered(monster, "")
-            |> Companion.convert_for_character(monster, mobile)
-          end
+          room
+          |> Room.mobile_entered(monster, "")
+          |> Companion.convert_for_character(monster, mobile)
 
         failure == :return ->
           Mobile.send_scroll(
@@ -63,9 +61,7 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
             "<p>The #{Mobile.colored_name(monster)} is not controlled. He angrily attacks you!</p>"
           )
 
-          if monster do
-            Room.mobile_entered(room, monster, "")
-          end
+          Room.mobile_entered(room, monster, "")
 
         failure == :roam ->
           monster =
