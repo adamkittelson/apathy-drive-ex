@@ -576,11 +576,37 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:reduce_evil_points, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn character ->
+        initial_legal_status = Character.legal_status(character)
+
         character =
           if Character.reduce_evil_points?(character) do
             character
             |> Ecto.Changeset.change(%{evil_points: max(-220, character.evil_points - 5 / 60)})
             |> Repo.update!()
+          else
+            character
+          end
+
+        legal_status = Character.legal_status(character)
+
+        character =
+          if legal_status != initial_legal_status do
+            color = ApathyDrive.Commands.Who.color(legal_status)
+
+            status = "<span class='#{color}'>#{legal_status}</span>"
+
+            Mobile.send_scroll(
+              character,
+              "<p>Your legal status has changed to #{status}.</p>"
+            )
+
+            Room.send_scroll(
+              room,
+              "<p>#{Mobile.colored_name(character)}'s legal status has changed to #{status}.",
+              [character]
+            )
+
+            Character.load_abilities(character)
           else
             character
           end

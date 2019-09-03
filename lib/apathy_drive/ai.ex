@@ -23,6 +23,7 @@ defmodule ApathyDrive.AI do
           _exits ->
             exits_in_area(room, mobile)
         end
+        |> IO.inspect()
 
       if Enum.any?(exits) do
         new_exits =

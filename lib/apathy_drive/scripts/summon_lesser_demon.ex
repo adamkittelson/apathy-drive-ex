@@ -7,84 +7,93 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
     Room.update_mobile(room, mobile_ref, fn mobile ->
       failure = Enum.random([:return, :attack, :roam])
 
-      cond do
-        :random.uniform(100) <= mobile.willpower ->
-          room =
-            if companion = Character.companion(mobile, room) do
-              Companion.dismiss(companion, room)
-            else
-              room
-            end
+      %Room{} =
+        cond do
+          :random.uniform(100) <= mobile.willpower ->
+            IO.puts("summon successful")
 
-          monster =
-            %RoomMonster{
-              room_id: room.id,
-              monster_id: monster.id,
-              level: 5,
-              spawned_at: nil,
-              zone_spawned_at: nil,
-              character_id: mobile.id
-            }
-            |> Monster.from_room_monster()
+            room =
+              if companion = Character.companion(mobile, room) do
+                Companion.dismiss(companion, room)
+              else
+                room
+              end
 
-          Mobile.send_scroll(
-            mobile,
-            "<p>The #{Mobile.colored_name(monster)} was successfully controlled.</p>"
-          )
+            monster =
+              %RoomMonster{
+                room_id: room.id,
+                monster_id: monster.id,
+                level: 5,
+                spawned_at: nil,
+                zone_spawned_at: nil,
+                character_id: mobile.id
+              }
+              |> Monster.from_room_monster()
 
-          room
-          |> Room.mobile_entered(monster, "")
-          |> Companion.convert_for_character(monster, mobile)
+            Mobile.send_scroll(
+              mobile,
+              "<p>The #{Mobile.colored_name(monster)} was successfully controlled.</p>"
+            )
 
-        failure == :return ->
-          Mobile.send_scroll(
-            mobile,
-            "<p>The #{Mobile.colored_name(monster)} is not controlled. Annoyed, he returns to his plane.</p>"
-          )
+            room
+            |> Room.mobile_entered(monster, "")
+            |> Companion.convert_for_character(monster, mobile)
 
-          room
+          failure == :return ->
+            IO.puts("summon returned")
 
-        failure == :attack ->
-          monster =
-            %RoomMonster{
-              room_id: room.id,
-              monster_id: monster.id,
-              level: 5,
-              spawned_at: nil,
-              zone_spawned_at: nil,
-              decay: true
-            }
-            |> Monster.from_room_monster()
+            Mobile.send_scroll(
+              mobile,
+              "<p>The #{Mobile.colored_name(monster)} is not controlled. Annoyed, he returns to his plane.</p>"
+            )
 
-          Mobile.send_scroll(
-            mobile,
-            "<p>The #{Mobile.colored_name(monster)} is not controlled. He angrily attacks you!</p>"
-          )
+            room
 
-          Room.mobile_entered(room, monster, "")
+          failure == :attack ->
+            IO.puts("summon attacked")
 
-        failure == :roam ->
-          monster =
-            %RoomMonster{
-              room_id: room.id,
-              monster_id: monster.id,
-              level: 5,
-              spawned_at: nil,
-              zone_spawned_at: nil,
-              decay: true
-            }
-            |> Monster.from_room_monster()
-            |> Map.put(:lawful, true)
+            monster =
+              %RoomMonster{
+                room_id: room.id,
+                monster_id: monster.id,
+                level: 5,
+                spawned_at: nil,
+                zone_spawned_at: nil,
+                decay: true
+              }
+              |> Monster.from_room_monster()
 
-          Mobile.send_scroll(
-            mobile,
-            "<p>The #{Mobile.colored_name(monster)} is not controlled, and he goes off in search of bigger and better things.</p>"
-          )
+            Mobile.send_scroll(
+              mobile,
+              "<p>The #{Mobile.colored_name(monster)} is not controlled. He angrily attacks you!</p>"
+            )
 
-          room = Room.mobile_entered(room, monster, "")
+            Room.mobile_entered(room, monster, "")
 
-          ApathyDrive.AI.move(monster, room, true)
-      end
+          failure == :roam ->
+            IO.puts("summon roamed")
+
+            monster =
+              %RoomMonster{
+                room_id: room.id,
+                monster_id: monster.id,
+                level: 5,
+                spawned_at: nil,
+                zone_spawned_at: nil,
+                decay: true
+              }
+              |> Monster.from_room_monster()
+              |> Map.put(:lawful, true)
+
+            Mobile.send_scroll(
+              mobile,
+              "<p>The #{Mobile.colored_name(monster)} is not controlled, and he goes off in search of bigger and better things.</p>"
+            )
+
+            room = Room.mobile_entered(room, monster, "")
+
+            ApathyDrive.AI.move(monster, room, true) || room
+        end
     end)
   end
 end

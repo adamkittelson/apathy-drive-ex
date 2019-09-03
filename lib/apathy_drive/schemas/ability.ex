@@ -112,6 +112,7 @@ defmodule ApathyDrive.Ability do
     "AC%",
     "Accuracy",
     "Agility",
+    "Alignment",
     "Charm",
     "Blind",
     "Charm",

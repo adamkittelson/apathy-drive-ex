@@ -54,7 +54,7 @@ defmodule ApathyDrive.Aggression do
   def enemy?(%Monster{} = monster, %{alignment: "evil"} = mob) do
     cond do
       monster.alignment == "good" ->
-        true
+        !Mobile.ability_value(mob, "Alignment")
 
       monster.spawned_at == Map.get(mob, :spawned_at) ->
         false
