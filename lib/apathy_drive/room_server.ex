@@ -157,6 +157,7 @@ defmodule ApathyDrive.RoomServer do
       |> Room.load_items()
       |> Repo.preload(:placed_items)
       |> Shop.load()
+      |> Room.load_ability()
 
     Logger.metadata(room: room.name <> "##{room.id}")
 
@@ -179,6 +180,10 @@ defmodule ApathyDrive.RoomServer do
 
     if room.zone_controller_id > 0 && room.zone_controller_id != room.id do
       send(self(), :spawn_zone_monster)
+    end
+
+    if room.ability_id do
+      send(self(), :execute_room_ability)
     end
 
     Process.send_after(self(), :save, 2000)
@@ -571,11 +576,37 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:reduce_evil_points, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn character ->
+        initial_legal_status = Character.legal_status(character)
+
         character =
           if Character.reduce_evil_points?(character) do
             character
             |> Ecto.Changeset.change(%{evil_points: max(-220, character.evil_points - 5 / 60)})
             |> Repo.update!()
+          else
+            character
+          end
+
+        legal_status = Character.legal_status(character)
+
+        character =
+          if legal_status != initial_legal_status do
+            color = ApathyDrive.Commands.Who.color(legal_status)
+
+            status = "<span class='#{color}'>#{legal_status}</span>"
+
+            Mobile.send_scroll(
+              character,
+              "<p>Your legal status has changed to #{status}.</p>"
+            )
+
+            Room.send_scroll(
+              room,
+              "<p>#{Mobile.colored_name(character)}'s legal status has changed to #{status}.",
+              [character]
+            )
+
+            Character.load_abilities(character)
           else
             character
           end
@@ -860,6 +891,21 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def handle_info(:execute_room_ability, room) do
+    room =
+      Enum.reduce(room.mobiles, room, fn
+        {ref, %Character{}}, room ->
+          Ability.execute(room, ref, room.ability, [ref])
+
+        _, room ->
+          room
+      end)
+
+    Process.send_after(self(), :execute_room_ability, :timer.seconds(5))
+
+    {:noreply, room}
+  end
+
   def handle_info({:execute_ability, %{caster: ref, ability: ability, target: target}}, room) do
     if mobile = room.mobiles[ref] do
       if ability.mana > 0 do
@@ -885,7 +931,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
-    if ability.energy <= mobile.energy do
+    if max(ability.energy, ability.reaction_energy) <= mobile.energy do
       mobile = Map.put(mobile, :casting, nil)
       room = put_in(room.mobiles[mobile.ref], mobile)
       Ability.execute(room, mobile.ref, %Ability{} = ability, ability.target_list)

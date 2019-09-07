@@ -56,6 +56,7 @@ defmodule ApathyDrive.Room do
     field(:items, :any, virtual: true, default: [])
     field(:allies, :any, virtual: true, default: %{})
     field(:enemies, :any, virtual: true, default: %{})
+    field(:script_args, :any, virtual: true)
 
     timestamps()
 
@@ -68,6 +69,18 @@ defmodule ApathyDrive.Room do
     has_one(:shop, Shop)
     has_many(:shop_items, through: [:shop, :shop_items])
     belongs_to(:trainer, Trainer)
+  end
+
+  def load_ability(%Room{ability_id: nil} = room), do: room
+
+  def load_ability(%Room{ability_id: id} = room) do
+    ability =
+      id
+      |> Ability.find()
+      |> Map.put(:ignores_round_cooldown?, true)
+      |> Map.put(:energy, 0)
+
+    Map.put(room, :ability, ability)
   end
 
   def load_exits(%Room{} = room) do

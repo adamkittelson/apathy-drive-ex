@@ -76,7 +76,7 @@ defmodule ApathyDrive.Mixfile do
       {:comeonin, "~> 3.2.0"},
       {:statix, "~> 1.1.0"},
       {:rollbax, "~> 0.8.2"},
-      {:gossip, "~> 1.3.0"},
+      {:gossip, "~> 1.4.0"},
       {:distillery, "~> 2.0.12"},
       {:toml,
        github: "adamkittelson/toml-elixir", ref: "4c0b24a2b409f6bdec78876c1324eea16f74a093"},

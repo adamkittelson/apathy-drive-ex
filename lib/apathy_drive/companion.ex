@@ -163,7 +163,7 @@ defmodule ApathyDrive.Companion do
     |> Ecto.Changeset.change(changes)
     |> Repo.update!()
 
-    Mobile.send_scroll(character, "<p>#{monster.name} started to follow you</p>")
+    Mobile.send_scroll(character, "<p>#{Mobile.colored_name(monster)} started to follow you</p>")
 
     room =
       load_for_character(room, character)
@@ -288,13 +288,28 @@ defmodule ApathyDrive.Companion do
         ability_value(companion, attribute |> to_string |> String.capitalize())
     end
 
-    def attack_ability(companion) do
+    def attack_ability(companion, _riposte) do
       companion.abilities
       |> Map.values()
-      |> Enum.filter(&(&1.kind == "auto attack"))
-      |> Enum.random()
-      |> Map.put(:kind, "attack")
-      |> Map.put(:ignores_round_cooldown?, true)
+      |> Enum.filter(&(&1.kind == "auto attack" or !is_nil(&1.chance)))
+      |> case do
+        [] ->
+          nil
+
+        attacks ->
+          attacks =
+            attacks
+            |> Enum.sort_by(& &1.chance)
+
+          attacks
+          |> Enum.find(fn attack ->
+            rand = :rand.uniform(100)
+
+            attack.chance > rand or attack == List.last(attacks)
+          end)
+          |> Map.put(:kind, "attack")
+          |> Map.put(:ignores_round_cooldown?, true)
+      end
     end
 
     def auto_attack_target(%Companion{} = companion, room) do
@@ -316,8 +331,6 @@ defmodule ApathyDrive.Companion do
 
       character_target || companion_target
     end
-
-    def caster_level(%Companion{level: caster_level}, %{} = _target), do: caster_level
 
     def color(%Companion{alignment: "evil"}), do: "magenta"
     def color(%Companion{alignment: "neutral"}), do: "dark-cyan"
@@ -549,7 +562,7 @@ defmodule ApathyDrive.Companion do
     end
 
     def max_mana_at_level(mobile, level) do
-      mana_per_level = ability_value(mobile, "ManaPerLevel")
+      mana_per_level = ability_value(mobile, "ManaPerLevel") || 4
 
       bonus = ability_value(mobile, "MaxMana")
 
@@ -701,6 +714,9 @@ defmodule ApathyDrive.Companion do
             willpower = Mobile.attribute_at_level(companion, :willpower, level)
 
             trunc((charm * 3 + willpower * 3) / 6 + level * 2)
+
+          _ ->
+            100
         end
 
       sc + ability_value(companion, "Spellcasting")
@@ -720,7 +736,7 @@ defmodule ApathyDrive.Companion do
 
     def subtract_energy(companion, ability) do
       initial_energy = companion.energy
-      companion = update_in(companion.energy, &max(0, &1 - ability.energy))
+      companion = update_in(companion.energy, &(&1 - ability.energy))
 
       if initial_energy == companion.max_energy do
         Regeneration.schedule_next_tick(companion)
@@ -728,15 +744,6 @@ defmodule ApathyDrive.Companion do
         companion
       end
     end
-
-    def target_level(%Companion{level: _caster_level}, %Character{level: target_level}),
-      do: target_level
-
-    def target_level(%Companion{level: _caster_level}, %Companion{level: target_level}),
-      do: target_level
-
-    def target_level(%Companion{level: caster_level}, %Monster{level: target_level}),
-      do: max(caster_level, target_level)
 
     def tracking_at_level(companion, level, room) do
       perception = perception_at_level(companion, level, room)

@@ -69,8 +69,8 @@ defmodule ApathyDrive.Commands.System.Misc do
     room
   end
 
-  def execute(%Room{} = room, character, _args) do
-    Mobile.send_scroll(character, "<p>Invalid system command.</p>")
+  def execute(%Room{} = room, character, args) do
+    Mobile.send_scroll(character, "<p>Invalid system command: #{inspect(args)}</p>")
 
     room
   end

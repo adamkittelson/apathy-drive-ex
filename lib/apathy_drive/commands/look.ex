@@ -104,6 +104,7 @@ defmodule ApathyDrive.Commands.Look do
         look_at_mobile(target, character)
 
       target = Room.find_item(room, Enum.join(arguments, " ")) ->
+        target = Map.put(target, :level, target.level || character.level)
         look_at_item(character, target)
 
       true ->
@@ -361,7 +362,7 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
-    ability = Character.ability_for_weapon(character, item)
+    ability = Character.ability_for_weapon(character, item, false)
     damage = weapon_damage(character, ability)
 
     value =

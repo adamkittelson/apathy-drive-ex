@@ -13,8 +13,8 @@ defmodule ApathyDrive.AI do
     end)
   end
 
-  def move(%{} = mobile, %Room{} = room) do
-    if should_move?(mobile, room) do
+  def move(%{} = mobile, %Room{} = room, force \\ false) do
+    if should_move?(mobile, room) or force do
       exits =
         case room.exits do
           nil ->
@@ -23,6 +23,7 @@ defmodule ApathyDrive.AI do
           _exits ->
             exits_in_area(room, mobile)
         end
+        |> IO.inspect()
 
       if Enum.any?(exits) do
         new_exits =
@@ -110,6 +111,7 @@ defmodule ApathyDrive.AI do
       ability =
         mobile
         |> Ability.heal_abilities()
+        |> Enum.reject(&(&1.targets == "self"))
         |> random_ability(mobile)
 
       if ability do
@@ -168,6 +170,14 @@ defmodule ApathyDrive.AI do
         Ability.get_targets(room, mobile.ref, %Ability{targets: "full attack area"}, "")
 
       attack_abilities = Ability.attack_abilities(mobile, target)
+
+      attack_abilities =
+        if mobile.__struct__ == Monster do
+          attack_abilities
+          |> Enum.filter(&is_nil(&1.chance))
+        else
+          attack_abilities
+        end
 
       {ability, targets} =
         if length(potential_targets) > 1 and
@@ -296,7 +306,11 @@ defmodule ApathyDrive.AI do
 
   defp should_flee?(%ApathyDrive.Companion{}, _room), do: false
 
-  defp should_flee?(%{movement: "stationary"}, _room), do: false
+  defp should_flee?(%Monster{movement: "stationary"}, _room), do: false
+
+  defp should_flee?(%Monster{} = monster, room) do
+    is_nil(Mobile.auto_attack_target(monster, room)) and :rand.uniform(100) > 99
+  end
 
   defp should_flee?(%{auto_flee: true} = mobile, room) do
     hp_low? = mobile.hp < 0.20

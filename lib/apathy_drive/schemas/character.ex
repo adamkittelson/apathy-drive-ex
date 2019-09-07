@@ -98,7 +98,6 @@ defmodule ApathyDrive.Character do
     field(:skills, :map, virtual: true, default: %{})
     field(:editing, :any, virtual: true)
     field(:attribute_levels, :any, virtual: true, default: %{})
-    field(:combat_level, :integer, virtual: true, default: 3)
     field(:energy, :integer, virtual: true, default: 1000)
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:reply_to, :string, virtual: true)
@@ -263,8 +262,8 @@ defmodule ApathyDrive.Character do
 
   def sign_up_changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(email password name race_id gender class_id alignment))
-    |> validate_required(~w(email password name race_id gender class_id alignment)a)
+    |> cast(params, ~w(email password name race_id gender class_id)a)
+    |> validate_required(~w(email password name race_id gender class_id)a)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:email, min: 3, max: 100)
     |> validate_length(:password, min: 6)
@@ -273,7 +272,6 @@ defmodule ApathyDrive.Character do
     |> validate_inclusion(:race_id, ApathyDrive.Race.ids())
     |> validate_inclusion(:class_id, ApathyDrive.Class.ids())
     |> validate_inclusion(:gender, ["male", "female"])
-    |> validate_inclusion(:alignment, ["good", "neutral", "evil"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, name: :characters_lower_name_index, on: Repo)
     |> validate_length(:name, min: 1, max: 12)
@@ -303,8 +301,14 @@ defmodule ApathyDrive.Character do
       end)
       |> List.flatten()
 
+    granted_abilities =
+      character
+      |> Mobile.ability_value("Grant")
+      |> Enum.uniq()
+      |> Enum.map(&%{ability: Ability.find(&1)})
+
     character =
-      (abilities ++ class_abilities ++ skill_abilities)
+      (abilities ++ class_abilities ++ skill_abilities ++ granted_abilities)
       |> Enum.reduce(character, fn
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
@@ -333,11 +337,15 @@ defmodule ApathyDrive.Character do
                 update_in(ability.traits, &Map.put(&1, "Damage", damage))
             end
 
-          update_in(character.abilities, fn abilities ->
-            abilities
-            |> Map.put_new(ability.command, [])
-            |> update_in([ability.command], &[ability | &1])
-          end)
+          if Ability.appropriate_alignment?(ability, character) do
+            update_in(character.abilities, fn abilities ->
+              abilities
+              |> Map.put_new(ability.command, [])
+              |> update_in([ability.command], &[ability | &1])
+            end)
+          else
+            character
+          end
       end)
 
     Enum.reduce(character.equipment, character, fn item, character ->
@@ -557,7 +565,7 @@ defmodule ApathyDrive.Character do
     |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
   end
 
-  def ability_for_weapon(character, weapon) do
+  def ability_for_weapon(character, weapon, riposte) do
     %Item{
       type: "Weapon",
       name: name,
@@ -568,6 +576,13 @@ defmodule ApathyDrive.Character do
       traits: traits
     } = weapon
 
+    {hit_verbs, singular_miss, plural_miss} =
+      if riposte do
+        {[["riposte", "ripostes"]], "riposte", "ripostes"}
+      else
+        {hit_verbs, singular_miss, plural_miss}
+      end
+
     bonus_damage = traits["WeaponDamage"] || []
 
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
@@ -576,7 +591,7 @@ defmodule ApathyDrive.Character do
 
     ability = %Ability{
       kind: "attack",
-      energy: energy,
+      energy: if(riposte, do: 0, else: energy),
       name: weapon.name,
       attributes: %{
         strength: 0,
@@ -600,7 +615,7 @@ defmodule ApathyDrive.Character do
           }
           | bonus_damage
         ],
-        "Dodgeable" => true,
+        "Dodgeable" => if(riposte, do: false, else: true),
         "DodgeUserMessage" =>
           "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
         "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
@@ -1017,7 +1032,7 @@ defmodule ApathyDrive.Character do
     # 50% encumbrance
     character = %Character{
       level: level,
-      combat_level: 3,
+      class: %{class: %{combat_level: 3}},
       strength: 50,
       agility: 49 + level,
       inventory: [%{weight: 1200}]
@@ -1040,7 +1055,8 @@ defmodule ApathyDrive.Character do
 
     cost =
       weapon.speed * 1000 /
-        ((character.level * (character.combat_level + 2) + 45) * (agility + 150) * 1500 /
+        ((character.level * (character.class.class.combat_level + 2) + 45) * (agility + 150) *
+           1500 /
            9000.0)
 
     energy =
@@ -1137,7 +1153,7 @@ defmodule ApathyDrive.Character do
         ability_value(character, attribute |> to_string |> String.capitalize())
     end
 
-    def attack_ability(character) do
+    def attack_ability(character, riposte) do
       punch = %Item{
         type: "Weapon",
         name: "fist",
@@ -1150,14 +1166,12 @@ defmodule ApathyDrive.Character do
 
       weapon = Character.weapon(character) || punch
 
-      Character.ability_for_weapon(character, weapon)
+      Character.ability_for_weapon(character, weapon, riposte)
     end
 
     def auto_attack_target(%Character{attack_target: target} = _character, room) do
       if room.mobiles[target], do: target
     end
-
-    def caster_level(%Character{level: caster_level}, %{} = _target), do: caster_level
 
     def cpr(%Character{} = character) do
       time =
@@ -1243,8 +1257,8 @@ defmodule ApathyDrive.Character do
     end
 
     def description(%Character{} = character, %Character{} = observer) do
-      character_level = Mobile.target_level(observer, character)
-      observer_level = Mobile.caster_level(observer, character)
+      character_level = character.lvel
+      observer_level = observer.level
 
       descriptions =
         [
@@ -1787,7 +1801,7 @@ defmodule ApathyDrive.Character do
     end
 
     def subtract_energy(character, ability) do
-      character = update_in(character.energy, &max(0, &1 - ability.energy))
+      character = update_in(character.energy, &(&1 - ability.energy))
 
       Enum.reduce(ability.attributes, character, fn {attribute, _value}, character ->
         Character.add_attribute_experience(character, %{
@@ -1795,15 +1809,6 @@ defmodule ApathyDrive.Character do
         })
       end)
     end
-
-    def target_level(%Character{level: _caster_level}, %Character{level: target_level}),
-      do: target_level
-
-    def target_level(%Character{level: _caster_level}, %Companion{level: target_level}),
-      do: target_level
-
-    def target_level(%Character{level: caster_level}, %Monster{level: target_level}),
-      do: max(caster_level, target_level)
 
     def tracking_at_level(character, level, room) do
       perception = perception_at_level(character, level, room)

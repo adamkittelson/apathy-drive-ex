@@ -23,6 +23,12 @@
     <%= error_tag f, :armour %>
   </div>
 
+  <div class="form-group">
+    <%= label f, :combat_level, class: "control-label" %>
+    <%= select(f, :combat_level, 1..5, prompt: "Combat Level", class: "u-full-width") %>
+    <%= error_tag f, :combat_level %>
+  </div>
+
 
   <div class="form-group">
     <%= label f, :description, class: "control-label" %>

@@ -6,6 +6,8 @@ defmodule ApathyDrive.Party do
     |> Enum.uniq()
   end
 
+  def members(%Room{}, %{leader: nil} = mobile), do: [mobile]
+
   def members(%Room{} = room, %{leader: ref}) do
     room.mobiles
     |> Map.values()

@@ -2,6 +2,22 @@ defmodule ApathyDrive.Commands.Inventory do
   use ApathyDrive.Command
   alias ApathyDrive.{Character, Currency, Item, Mobile}
 
+  @slot_order [
+    "Weapon Hand",
+    "Two Handed",
+    "Head",
+    "Torso",
+    "Back",
+    "Hands",
+    "Waist",
+    "Legs",
+    "Feet",
+    "Neck",
+    "Wrist",
+    "Arms",
+    "Finger"
+  ]
+
   def keywords, do: ["i", "inv", "inventory"]
 
   def execute(
@@ -16,6 +32,9 @@ defmodule ApathyDrive.Commands.Inventory do
       )
 
       equipment
+      |> Enum.sort_by(fn item ->
+        Enum.find_index(@slot_order, &(&1 == item.worn_on))
+      end)
       |> Enum.each(fn item ->
         worn_on =
           if item.type == "Light" do
@@ -39,7 +58,10 @@ defmodule ApathyDrive.Commands.Inventory do
 
     inventory = inventory -- keys
 
-    item_names = inventory |> Enum.map(&Item.colored_name(&1, character: character))
+    item_names =
+      inventory
+      |> Enum.sort_by(& &1.name)
+      |> Enum.map(&Item.colored_name(&1, character: character))
 
     item_names = Currency.to_list(character) ++ item_names
 
@@ -105,17 +127,21 @@ defmodule ApathyDrive.Commands.Inventory do
   end
 
   def to_sentence(list) do
-    list =
+    unique_list = Enum.uniq(list)
+
+    grouped_list =
       list
       |> Enum.group_by(& &1)
-      |> Map.values()
-      |> Enum.map(fn items ->
-        case length(items) do
+
+    list =
+      unique_list
+      |> Enum.map(fn item ->
+        case length(grouped_list[item]) do
           1 ->
-            List.first(items)
+            item
 
           n ->
-            "#{n} #{List.first(items)}"
+            "#{n} #{item}"
         end
       end)
 

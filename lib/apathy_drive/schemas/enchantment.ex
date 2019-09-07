@@ -11,6 +11,7 @@ defmodule ApathyDrive.Enchantment do
     Enchantment,
     Item,
     ItemInstance,
+    Level,
     Match,
     Mobile,
     Room,
@@ -219,7 +220,7 @@ defmodule ApathyDrive.Enchantment do
       })
     end)
     |> ApathyDrive.Character.add_experience_to_buffer(exp)
-    |> ApathyDrive.Character.add_skill_experience("enchanting", exp)
+    |> ApathyDrive.Character.add_class_experience(exp)
   end
 
   def present?(%Character{} = enchanter, instance_id) do
@@ -240,8 +241,20 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.join(":")
   end
 
-  def enchantment_exp(character, skill \\ "enchanting") do
-    max(1, character.skills[skill].level) * 20
+  def enchantment_exp(character, skill \\ nil) do
+    if skill do
+      skill = character.skills[skill]
+      exp = skill.experience
+      level = skill.level
+
+      if level == 0 do
+        Level.exp_at_level(level + 1, 1.0) - exp
+      else
+        max(1, level) * 20
+      end
+    else
+      character.level * 20
+    end
   end
 
   def total_enchantment_time(%Enchantment{ability: %Ability{level: level}}) do

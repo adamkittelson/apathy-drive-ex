@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Open do
   use ApathyDrive.Command
-  alias ApathyDrive.Doors
+  alias ApathyDrive.{Doors, Item, Match}
 
   def keywords, do: ["open"]
 
@@ -10,14 +10,25 @@ defmodule ApathyDrive.Commands.Open do
   end
 
   def execute(%Room{} = room, %{} = mobile, arguments) do
-    direction =
+    arguments =
       arguments
       |> Enum.join(" ")
-      |> Room.direction()
 
-    room
-    |> Room.get_exit(direction)
-    |> open(mobile, room)
+    mobile.inventory
+    |> Match.one(:name_contains, arguments)
+    |> case do
+      %Item{type: "Container"} = item ->
+        ApathyDrive.Commands.Use.execute(room, mobile, [item.name])
+
+      _ ->
+        direction =
+          arguments
+          |> Room.direction()
+
+        room
+        |> Room.get_exit(direction)
+        |> open(mobile, room)
+    end
   end
 
   def mirror_open!(%{"destination" => destination} = room_exit, room_id) do

@@ -54,12 +54,12 @@ defmodule ApathyDrive.CurrencyTest do
     end
 
     test "someone with 2 gold and 10 silver is worth 2 gold crowns and 10 silver nobles" do
-      assert "10 silver nobles and 2 gold crowns" ==
+      assert "2 gold crowns and 10 silver nobles" ==
                Currency.to_string(%{copper: 0, silver: 10, gold: 2, platinum: 0, runic: 0})
     end
 
     test "someone with 2 gold and 10 silver is worth 2 gold crowns" do
-      assert "10 silver nobles, 2 gold crowns and 4 platinum pieces" ==
+      assert "4 platinum pieces, 2 gold crowns and 10 silver nobles" ==
                Currency.to_string(%{copper: 0, silver: 10, gold: 2, platinum: 4, runic: 0})
     end
   end

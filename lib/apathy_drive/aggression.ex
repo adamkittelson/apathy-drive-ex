@@ -19,7 +19,9 @@ defmodule ApathyDrive.Aggression do
     end)
   end
 
-  def enemy?(%Monster{}, %Monster{}), do: false
+  def enemy?(%Monster{npc: true}, %{} = _mobile) do
+    false
+  end
 
   def enemy?(%Monster{alignment: "neutral"}, %{} = _mobile) do
     false
@@ -41,6 +43,10 @@ defmodule ApathyDrive.Aggression do
     if Character.alignment(character) == "evil", do: false, else: true
   end
 
+  def enemy?(%Monster{alignment: "evil", lawful: true}, %Monster{alignment: "evil", lawful: false}) do
+    true
+  end
+
   def enemy?(%Monster{alignment: "evil"}, %Character{}) do
     true
   end
@@ -48,7 +54,7 @@ defmodule ApathyDrive.Aggression do
   def enemy?(%Monster{} = monster, %{alignment: "evil"} = mob) do
     cond do
       monster.alignment == "good" ->
-        true
+        !Mobile.ability_value(mob, "Alignment")
 
       monster.spawned_at == Map.get(mob, :spawned_at) ->
         false

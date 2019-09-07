@@ -2,6 +2,7 @@ defmodule ApathyDrive.Commands.Read do
   use ApathyDrive.Command
 
   alias ApathyDrive.{
+    Ability,
     Character,
     CharacterAbility,
     ClassAbility,
@@ -46,6 +47,12 @@ defmodule ApathyDrive.Commands.Read do
 
           wrong_class?(character, ability) ->
             message = "<p>Your class cannot learn #{ability.name}.</p>"
+
+            Mobile.send_scroll(character, message)
+            room
+
+          !Ability.appropriate_alignment?(ability, character) ->
+            message = "<p>You don't have the disposition to learn #{ability.name}.</p>"
 
             Mobile.send_scroll(character, message)
             room

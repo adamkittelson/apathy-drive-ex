@@ -295,3 +295,6 @@ CHANGELOG
 
 ---- 0.0.108 / 2019-08-24 / alignment-tweaks -----------------------------------
 * make alignment more like default
+
+---- 0.0.109 / 2019-09-07 / script-things --------------------------------------
+* script stuff

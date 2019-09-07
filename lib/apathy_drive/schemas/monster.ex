@@ -56,6 +56,7 @@ defmodule ApathyDrive.Monster do
     field(:game_limit, :integer)
     field(:alignment, :string)
     field(:lawful, :boolean)
+    field(:npc, :boolean)
 
     field(:leader, :any, virtual: true)
     field(:hp, :float, virtual: true, default: 1.0)
@@ -90,8 +91,12 @@ defmodule ApathyDrive.Monster do
     field(:auto_flee, :boolean, virtual: true, default: false)
     field(:drops, :any, virtual: true, default: [])
     field(:sneaking, :boolean, virtual: true, default: false)
+    field(:decay, :boolean, virtual: true, default: false)
+    field(:decay_max_hp, :integer, virtual: true, default: 0)
 
     timestamps()
+
+    belongs_to(:death_ability, ApathyDrive.Ability)
 
     has_many(:lairs, ApathyDrive.LairMonster)
     has_many(:lair_rooms, through: [:lairs, :room])
@@ -164,6 +169,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:level, rm.level)
       |> Map.put(:spawned_at, rm.spawned_at)
       |> Map.put(:zone_spawned_at, rm.zone_spawned_at)
+      |> Map.put(:decay, rm.decay)
 
     if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
       ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -191,7 +197,8 @@ defmodule ApathyDrive.Monster do
         :charm,
         :name,
         :spawned_at,
-        :room_spawned_at
+        :room_spawned_at,
+        :decay
       ])
 
     ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -403,10 +410,10 @@ defmodule ApathyDrive.Monster do
         ability_value(monster, attribute |> to_string |> String.capitalize())
     end
 
-    def attack_ability(monster) do
+    def attack_ability(monster, _riposte) do
       monster.abilities
       |> Map.values()
-      |> Enum.filter(&(&1.kind == "auto attack"))
+      |> Enum.filter(&(&1.kind == "auto attack" or !is_nil(&1.chance)))
       |> case do
         [] ->
           nil
@@ -432,11 +439,6 @@ defmodule ApathyDrive.Monster do
 
       Monster.auto_attack_target(monster, enemies, room)
     end
-
-    def caster_level(%Monster{level: level}, %Monster{} = _target), do: level
-
-    def caster_level(%Monster{level: level}, %{level: target_level} = _target),
-      do: max(level, target_level)
 
     def color(%Monster{alignment: "evil"}), do: "magenta"
     def color(%Monster{alignment: "neutral"}), do: "dark-cyan"
@@ -522,13 +524,27 @@ defmodule ApathyDrive.Monster do
 
                 Mobile.send_scroll(character, "<p>#{message}</p>")
 
-                character
-                |> Character.add_experience_to_buffer(monster.experience)
-                |> Character.add_class_experience(monster.experience)
-                |> Character.add_currency_from_monster(monster)
-                |> KillCount.increment(monster)
+                if !monster.decay do
+                  character
+                  |> Character.add_experience_to_buffer(monster.experience)
+                  |> Character.add_class_experience(monster.experience)
+                  |> Character.add_currency_from_monster(monster)
+                  |> KillCount.increment(monster)
+                else
+                  character
+                end
               end)
-              |> Monster.drop_loot_for_character(monster, character)
+
+            updated_room =
+              if !monster.decay do
+                Monster.drop_loot_for_character(
+                  updated_room,
+                  monster,
+                  room.mobiles[character.ref]
+                )
+              else
+                updated_room
+              end
 
             Room.update_moblist(updated_room)
             updated_room
@@ -549,6 +565,19 @@ defmodule ApathyDrive.Monster do
         |> Ecto.Changeset.change(next_spawn_at: spawn_at)
         |> Repo.update!()
       end
+
+      room =
+        if monster.death_ability_id do
+          ability =
+            monster.death_ability_id
+            |> Ability.find()
+            |> Map.put(:ignores_round_cooldown?, true)
+            |> Map.put(:energy, 0)
+
+          Ability.execute(room, monster.ref, ability, [monster.ref])
+        else
+          room
+        end
 
       room = put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
 
@@ -666,11 +695,17 @@ defmodule ApathyDrive.Monster do
       base = monster.base_hp
       bonus = (health - 50) * level / 16
 
-      trunc(base + bonus + ability_value(monster, "MaxHP"))
+      hp = trunc(base + bonus + ability_value(monster, "MaxHP"))
+
+      if monster.decay do
+        hp + monster.decay_max_hp
+      else
+        hp
+      end
     end
 
     def max_mana_at_level(monster, level) do
-      mana_per_level = ability_value(monster, "ManaPerLevel")
+      mana_per_level = ability_value(monster, "ManaPerLevel") || 4
 
       bonus = ability_value(monster, "MaxMana")
 
@@ -725,13 +760,16 @@ defmodule ApathyDrive.Monster do
         |> AI.think(monster.ref)
 
       if monster = room.mobiles[monster.ref] do
+        monster = Regeneration.decay(monster)
+
         max_hp = Mobile.max_hp_at_level(monster, monster.level)
+
         hp = trunc(max_hp * monster.hp)
 
         if hp < 1 do
           Mobile.die(monster, room)
         else
-          room
+          put_in(room.mobiles[monster.ref], monster)
         end
       else
         room
@@ -847,6 +885,9 @@ defmodule ApathyDrive.Monster do
             willpower = Mobile.attribute_at_level(monster, :willpower, level)
 
             trunc((charm * 3 + willpower * 3) / 6 + level * 2)
+
+          _ ->
+            100
         end
 
       sc + ability_value(monster, "Spellcasting")
@@ -867,7 +908,7 @@ defmodule ApathyDrive.Monster do
 
     def subtract_energy(monster, ability) do
       initial_energy = monster.energy
-      monster = update_in(monster.energy, &max(0, &1 - ability.energy))
+      monster = update_in(monster.energy, &(&1 - ability.energy))
 
       if initial_energy == monster.max_energy do
         Regeneration.schedule_next_tick(monster)
@@ -875,12 +916,6 @@ defmodule ApathyDrive.Monster do
         monster
       end
     end
-
-    def target_level(%Monster{level: monster_level}, %Monster{level: _target_level}),
-      do: monster_level
-
-    def target_level(%Monster{level: monster_level}, %{level: target_level}),
-      do: max(target_level, monster_level)
 
     def tracking_at_level(monster, level, room) do
       perception = perception_at_level(monster, level, room)

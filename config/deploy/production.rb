@@ -1,3 +1,3 @@
-server 'apotheosis', user: 'adam', roles: 'app'
+server 'apotheos.is', user: 'adam', roles: 'app'
 
 set :mix_env, "prod"
