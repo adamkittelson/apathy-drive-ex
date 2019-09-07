@@ -2,7 +2,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
   alias ApathyDrive.{Ability, Character, Companion, Mobile, Monster, Repo, Room, RoomMonster}
 
   @demon_ids [
-    # lesser demon
+    # minor blood demon
     1121
   ]
 
@@ -25,33 +25,26 @@ defmodule ApathyDrive.Scripts.BindDemon do
 
   def bind_demon(room, mobile, demon) do
     if :random.uniform(100) < mobile.willpower do
-      abilities = ["disruption bolt"]
+      abilities = ["vampiric touch", "blur", "ethereal shield"]
 
       effects =
         %{
           "StatusMessage" => "You are possesed by a #{demon.name}.",
-          "Strength" => 1,
-          "Agility" => 1,
-          "Intellect" => 1,
-          "Health" => 1,
-          "Charm" => 1,
-          "Willpower" => -5,
+          "Strength" => 2,
+          "Health" => 2,
           "Grant" => abilities,
-          "DarkVision" => 10,
-          "AC%" => 1,
-          "MR%" => 1,
-          "Speed" => 0.99,
-          "ManaRegen" => 10,
-          "Encumbrance" => 1,
-          "Accuracy" => 1,
-          "Dodge" => 1,
-          "RemoveMessage" => "The #{Mobile.colored_name(demon)} returns to its plane."
+          "AC%" => 2,
+          "MR%" => 2,
+          "Encumbrance" => 5,
+          "RemoveMessage" => "The #{Mobile.colored_name(demon)} returns to its plane.",
+          "stack_key" => "bind-demon",
+          "stack_count" => 3
         }
         |> Map.put("effect_ref", make_ref())
 
       effects =
         Ability.process_duration_trait(
-          {"Heal", %{"max" => 1, "min" => 1}},
+          {"Heal", %{"max" => 2, "min" => 2}},
           effects,
           mobile,
           mobile

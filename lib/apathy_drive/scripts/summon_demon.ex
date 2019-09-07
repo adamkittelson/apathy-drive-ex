@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Scripts.SummonLesserDemon do
+defmodule ApathyDrive.Scripts.SummonDemon do
   alias ApathyDrive.{Character, Companion, Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref) do
