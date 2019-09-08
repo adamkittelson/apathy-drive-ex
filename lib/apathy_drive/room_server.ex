@@ -249,6 +249,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_traits()
         |> Character.load_class()
         |> Character.load_race()
+        |> Character.load_limbs()
         |> Character.set_attribute_levels()
         |> Character.set_skill_levels()
         |> Character.update_exp_bar()

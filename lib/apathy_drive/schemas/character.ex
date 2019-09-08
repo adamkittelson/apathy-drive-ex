@@ -23,6 +23,7 @@ defmodule ApathyDrive.Character do
     Regeneration,
     Item,
     Level,
+    LimbSet,
     Monster,
     Mobile,
     Party,
@@ -113,6 +114,7 @@ defmodule ApathyDrive.Character do
     field(:kill_counts, :map, virtual: true, default: %{})
     field(:materials, :map, virtual: true, default: %{})
     field(:death_race_id, :integer, virtual: true)
+    field(:limbs, :map, virtual: true, default: %{})
 
     belongs_to(:room, Room)
 
@@ -438,6 +440,12 @@ defmodule ApathyDrive.Character do
     character
     |> Map.put(:race, character_race)
     |> Systems.Effect.add(effect)
+  end
+
+  def load_limbs(%Character{race: %{race: race}} = character) do
+    limbs = LimbSet.load_limbs(race.limb_set_id)
+
+    Map.put(character, :limbs, limbs)
   end
 
   def load_materials(%Character{} = character) do
@@ -983,14 +991,13 @@ defmodule ApathyDrive.Character do
       |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
       |> Enum.map(& &1["StatusMessage"])
 
-    resistances =
-      ApathyDrive.DamageType
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn damage_type, resistances ->
+    limbs =
+      character.limbs
+      |> Enum.reduce(%{}, fn {limb_name, limb}, limbs ->
         Map.put(
-          resistances,
-          damage_type.name,
-          Mobile.ability_value(character, "Resist#{damage_type.name}")
+          limbs,
+          limb_name,
+          "#{trunc(limb.health * 100)}%"
         )
       end)
 
@@ -1023,7 +1030,7 @@ defmodule ApathyDrive.Character do
       health: Mobile.attribute_at_level(character, :health, character.level),
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
-      resistances: resistances,
+      limbs: limbs,
       round_length_in_ms: Mobile.round_length_in_ms(character)
     }
   end
@@ -1387,6 +1394,7 @@ defmodule ApathyDrive.Character do
         end)
         |> Map.put(:timers, %{})
         |> Character.load_race()
+        |> Character.load_limbs()
         |> Character.load_traits()
         |> Character.set_attribute_levels()
         |> Character.add_equipped_items_effects()
