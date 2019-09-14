@@ -10,8 +10,6 @@ defmodule ApathyDrive.Scripts.SummonDemon do
       %Room{} =
         cond do
           :random.uniform(100) <= mobile.willpower ->
-            IO.puts("summon successful")
-
             room =
               if companion = Character.companion(mobile, room) do
                 Companion.dismiss(companion, room)
@@ -40,8 +38,6 @@ defmodule ApathyDrive.Scripts.SummonDemon do
             |> Companion.convert_for_character(monster, mobile)
 
           failure == :return ->
-            IO.puts("summon returned")
-
             Mobile.send_scroll(
               mobile,
               "<p>The #{Mobile.colored_name(monster)} is not controlled. Annoyed, he returns to his plane.</p>"
@@ -50,8 +46,6 @@ defmodule ApathyDrive.Scripts.SummonDemon do
             room
 
           failure == :attack ->
-            IO.puts("summon attacked")
-
             monster =
               %RoomMonster{
                 room_id: room.id,
@@ -71,8 +65,6 @@ defmodule ApathyDrive.Scripts.SummonDemon do
             Room.mobile_entered(room, monster, "")
 
           failure == :roam ->
-            IO.puts("summon roamed")
-
             monster =
               %RoomMonster{
                 room_id: room.id,

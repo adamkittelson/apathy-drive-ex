@@ -58,6 +58,7 @@ defmodule ApathyDrive.Regeneration do
       hp_per_tick + heal_effect_per_tick(mobile) - damage_effect_per_tick(mobile)
 
     hp = total_hp_per_tick * ms_since_last_tick / tick_time(mobile)
+
     min(hp, total_hp_per_tick)
   end
 

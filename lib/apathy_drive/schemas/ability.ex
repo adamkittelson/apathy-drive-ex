@@ -1264,6 +1264,97 @@ defmodule ApathyDrive.Ability do
 
   def retaliate(room, _ability, _caster, _target), do: room
 
+  def limb(room, target_ref, _ability) do
+    target = room.mobiles[target_ref]
+
+    cond do
+      is_nil(target) ->
+        nil
+
+      Map.has_key?(target, :limbs) ->
+        target.limbs
+        |> Map.keys()
+        |> Enum.filter(&(target.limbs[&1].health > 0))
+        |> Enum.random()
+
+      :else ->
+        nil
+    end
+  end
+
+  def damage_limb(room, target_ref, limb, percentage) when percentage < 0 do
+    Room.update_mobile(room, target_ref, fn target ->
+      initial_limb_health = target.limbs[limb].health
+
+      target = update_in(target.limbs[limb].health, &(&1 + percentage * 2))
+
+      limb_health = target.limbs[limb].health
+
+      cond do
+        limb_health <= 0 ->
+          Mobile.send_scroll(target, "<p>Your #{limb} is severed!</p>")
+
+          Room.send_scroll(
+            room,
+            "<p>#{Mobile.colored_name(target)}'s #{limb} is severed!</p>",
+            [target]
+          )
+
+        initial_limb_health >= 0.5 and limb_health < 0.5 ->
+          Mobile.send_scroll(target, "<p>Your #{limb} is crippled!</p>")
+
+          Room.send_scroll(
+            room,
+            "<p>#{Mobile.colored_name(target)}'s #{limb} is crippled!</p>",
+            [target]
+          )
+
+        :else ->
+          :noop
+      end
+
+      target
+    end)
+  end
+
+  def heal_limbs(room, target_ref, percentage) do
+    Room.update_mobile(room, target_ref, fn target ->
+      if Map.has_key?(target, :limbs) do
+        limbs =
+          target.limbs
+          |> Map.keys()
+          |> Enum.filter(&(target.limbs[&1].health > 0 and target.limbs[&1].health < 1.0))
+
+        limbs
+        |> Enum.reduce(target, fn limb, target ->
+          initial_limb_health = target.limbs[limb].health
+
+          target =
+            update_in(
+              target.limbs[limb].health,
+              &min(1.0, &1 + percentage / length(limbs))
+            )
+
+          limb_health = target.limbs[limb].health
+
+          if initial_limb_health < 0.5 and limb_health >= 0.5 do
+            Mobile.send_scroll(target, "<p>Your #{limb} is no longer crippled!</p>")
+
+            Room.send_scroll(
+              room,
+              "<p>#{Mobile.colored_name(target)}'s #{limb} is no longer crippled!</p>",
+              [target]
+            )
+          end
+
+          target
+        end)
+      else
+        target
+      end
+    end)
+  end
+
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
     room =
       Room.update_mobile(room, target_ref, fn target ->
@@ -1284,6 +1375,21 @@ defmodule ApathyDrive.Ability do
         |> apply_duration_traits(ability, caster, duration)
         |> Mobile.update_prompt()
       end)
+
+    room =
+      cond do
+        is_nil(ability_shift) ->
+          room
+
+        ability_shift > 0 ->
+          heal_limbs(room, target_ref, ability_shift)
+
+        limb = limb(room, target_ref, ability) ->
+          damage_limb(room, target_ref, limb, ability_shift)
+
+        :else ->
+          room
+      end
 
     room =
       if script = ability.traits["Script"] do

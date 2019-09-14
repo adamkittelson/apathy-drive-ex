@@ -905,7 +905,8 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: Mobile.round_length_in_ms(mobile) * (1 - percent)
+         time_to_full: Mobile.round_length_in_ms(mobile) * (1 - percent),
+         max_percent: 100
        }}
     )
 
@@ -934,7 +935,8 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: time_to_full
+         time_to_full: time_to_full,
+         max_percent: 100
        }}
     )
 
@@ -946,9 +948,15 @@ defmodule ApathyDrive.Character do
   def update_hp_bar(%Character{socket: socket} = character, mobile, room) do
     percent = mobile.hp
 
+    max_percent =
+      character.limbs
+      |> Map.values()
+      |> Enum.map(& &1.health)
+      |> Room.average()
+
     time_to_full =
-      if percent == 1.0 do
-        0
+      if percent == max_percent do
+        10_000
       else
         regen_per_tick =
           Regeneration.regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile)) +
@@ -956,9 +964,13 @@ defmodule ApathyDrive.Character do
             Regeneration.damage_effect_per_tick(mobile)
 
         if regen_per_tick > 0 do
-          ticks_remaining = (1.0 - percent) / regen_per_tick
+          ticks_remaining = (max_percent - percent) / regen_per_tick
 
-          Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
+          if ticks_remaining <= 1 do
+            10_000
+          else
+            Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
+          end
         else
           ticks_remaining = percent / regen_per_tick
 
@@ -966,15 +978,19 @@ defmodule ApathyDrive.Character do
         end
       end
 
+    payload = %{
+      ref: mobile.ref,
+      player: mobile.ref == character.ref,
+      percentage: trunc(percent * 100),
+      time_to_full: time_to_full,
+      max_percent: trunc(max_percent * 100)
+    }
+
+    if payload.player, do: IO.inspect(payload)
+
     send(
       socket,
-      {:update_hp_bar,
-       %{
-         ref: mobile.ref,
-         player: mobile.ref == character.ref,
-         percentage: trunc(percent * 100),
-         time_to_full: time_to_full
-       }}
+      {:update_hp_bar, payload}
     )
 
     character
@@ -1535,9 +1551,16 @@ defmodule ApathyDrive.Character do
     end
 
     def heartbeat(%Character{} = character, %Room{} = room) do
+      max_hp = Mobile.max_hp_at_level(character, character.level)
+      initial_hp = trunc(max_hp * character.hp)
+
       room =
         Room.update_mobile(room, character.ref, fn character ->
-          character
+          hp = Regeneration.hp_since_last_tick(room, character)
+
+          room = Ability.heal_limbs(room, character.ref, hp)
+
+          room.mobiles[character.ref]
           |> Regeneration.regenerate(room)
           |> RoomServer.execute_casting_ability(room)
         end)
@@ -1546,6 +1569,8 @@ defmodule ApathyDrive.Character do
       if character = room.mobiles[character.ref] do
         max_hp = Mobile.max_hp_at_level(character, character.level)
         hp = trunc(max_hp * character.hp)
+
+        if hp > initial_hp, do: Room.update_hp_bar(room, character.ref)
 
         if hp < 1 do
           Mobile.die(character, room)
@@ -1710,7 +1735,13 @@ defmodule ApathyDrive.Character do
     end
 
     def shift_hp(character, percentage) do
-      update_in(character.hp, &min(1.0, &1 + percentage))
+      max_hp =
+        character.limbs
+        |> Map.values()
+        |> Enum.map(& &1.health)
+        |> Room.average()
+
+      update_in(character.hp, &min(max_hp, &1 + percentage))
     end
 
     def silenced(%Character{effects: effects} = character, %Room{} = room) do
