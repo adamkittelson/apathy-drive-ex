@@ -7,6 +7,7 @@ defmodule ApathyDrive.LimbSetLimb do
 
     belongs_to(:limb_set, LimbSet)
     belongs_to(:limb, Limb)
+    belongs_to(:parent_limb, LimbSetLimb, foreign_key: :depends_on)
   end
 
   @required_fields ~w(name)a

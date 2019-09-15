@@ -27,6 +27,7 @@ defmodule ApathyDrive.LimbSet do
     LimbSetLimb
     |> where(limb_set_id: ^limb_set_id)
     |> preload(:limb)
+    |> preload(parent_limb: [:limb])
     |> Repo.all()
     |> Enum.reduce(%{}, fn limb, limbs ->
       limb_name =
@@ -34,9 +35,25 @@ defmodule ApathyDrive.LimbSet do
         |> Enum.reject(&is_nil/1)
         |> Enum.join(" ")
 
-      limb = %{
-        health: 1.0
-      }
+      limb =
+        cond do
+          limb.parent_limb ->
+            %{
+              health: 1.0,
+              parent: limb.parent_limb.location <> " " <> limb.parent_limb.limb.type
+            }
+
+          limb_name == "torso" ->
+            %{
+              health: 1.0
+            }
+
+          :else ->
+            %{
+              health: 1.0,
+              parent: "torso"
+            }
+        end
 
       Map.put(limbs, limb_name, limb)
     end)

@@ -957,14 +957,19 @@ defmodule ApathyDrive.Character do
             Regeneration.heal_effect_per_tick(mobile) -
             Regeneration.damage_effect_per_tick(mobile)
 
-        if regen_per_tick > 0 do
-          ticks_remaining = (1.0 - percent) / regen_per_tick
+        cond do
+          regen_per_tick > 0 ->
+            ticks_remaining = (1.0 - percent) / regen_per_tick
 
-          Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
-        else
-          ticks_remaining = percent / regen_per_tick
+            Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
 
-          Regeneration.tick_time(mobile) * Float.floor(ticks_remaining)
+          regen_per_tick == 0 ->
+            nil
+
+          :else ->
+            ticks_remaining = percent / regen_per_tick
+
+            Regeneration.tick_time(mobile) * Float.floor(ticks_remaining)
         end
       end
 
@@ -1379,6 +1384,10 @@ defmodule ApathyDrive.Character do
       :rand.uniform(100) >= stealth - div(perception, 3)
     end
 
+    def die?(_character) do
+      false
+    end
+
     def die(character, room) do
       character =
         character
@@ -1498,7 +1507,7 @@ defmodule ApathyDrive.Character do
       |> Enum.member?(ability_name)
     end
 
-    def hp_regen_per_round(%Character{} = character) do
+    def hp_regen_per_round(%Character{hp: hp} = character) when hp >= 0 do
       round_length = Mobile.round_length_in_ms(character)
 
       base_hp_regen =
@@ -1511,6 +1520,8 @@ defmodule ApathyDrive.Character do
 
       modified_hp_regen / max_hp
     end
+
+    def hp_regen_per_round(%Character{hp: _hp} = _character), do: 0
 
     def mana_regen_per_round(%Character{} = character) do
       round_length = Mobile.round_length_in_ms(character)
@@ -1537,11 +1548,17 @@ defmodule ApathyDrive.Character do
     end
 
     def heartbeat(%Character{} = character, %Room{} = room) do
+      initial_hp = character.hp
+      initial_max_hp = Mobile.max_hp_at_level(character, character.level)
+
       room =
         Room.update_mobile(room, character.ref, fn character ->
           hp = Regeneration.hp_since_last_tick(room, character)
 
-          room = Ability.heal_limbs(room, character.ref, hp)
+          room =
+            room
+            |> Regeneration.heal_limbs(character.ref, hp)
+            |> Regeneration.balance_limbs(character.ref)
 
           room.mobiles[character.ref]
           |> Regeneration.regenerate(room)
@@ -1550,12 +1567,30 @@ defmodule ApathyDrive.Character do
         |> AI.think(character.ref)
 
       if character = room.mobiles[character.ref] do
-        max_hp = Mobile.max_hp_at_level(character, character.level)
-        hp = trunc(max_hp * character.hp)
-
-        if hp < 1 do
+        if Mobile.die?(character) do
           Mobile.die(character, room)
         else
+          cond do
+            initial_hp < 0 and character.hp >= 0 ->
+              Room.send_scroll(
+                room,
+                "<p>#{Mobile.colored_name(character)} stands up.</p>",
+                [
+                  character
+                ]
+              )
+
+              Mobile.send_scroll(character, "<p>You stand up.</p>")
+
+              Room.update_hp_bar(room, character.ref)
+
+            initial_max_hp != Mobile.max_hp_at_level(character, character.level) ->
+              Room.update_hp_bar(room, character.ref)
+
+            :else ->
+              :noop
+          end
+
           room
         end
       else

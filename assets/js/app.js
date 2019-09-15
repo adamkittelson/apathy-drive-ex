@@ -301,7 +301,7 @@ $(document).on('keyup', "input", function (event) {
 
 window.progress = function (elem, percent, time_to_full) {
   if (percent < 0) {
-    percent = 0;
+    return elem.find('div').stop().width(0);
   }
   if (percent == 100) {
     elem.find('div').stop().width(elem.width())

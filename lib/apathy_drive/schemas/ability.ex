@@ -16,6 +16,7 @@ defmodule ApathyDrive.Ability do
     Mobile,
     Monster,
     Party,
+    Regeneration,
     Repo,
     Room,
     Scripts,
@@ -803,10 +804,7 @@ defmodule ApathyDrive.Ability do
                         target
                       end
 
-                    max_hp = Mobile.max_hp_at_level(target, target.level)
-                    hp = trunc(max_hp * target.hp)
-
-                    if hp < 1 do
+                    if Mobile.die?(target) do
                       Mobile.die(target, updated_room)
                     else
                       put_in(updated_room.mobiles[target.ref], target)
@@ -1317,44 +1315,6 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def heal_limbs(room, target_ref, percentage) do
-    Room.update_mobile(room, target_ref, fn target ->
-      if Map.has_key?(target, :limbs) do
-        limbs =
-          target.limbs
-          |> Map.keys()
-          |> Enum.filter(&(target.limbs[&1].health > 0 and target.limbs[&1].health < 1.0))
-
-        limbs
-        |> Enum.reduce(target, fn limb, target ->
-          initial_limb_health = target.limbs[limb].health
-
-          target =
-            update_in(
-              target.limbs[limb].health,
-              &min(1.0, &1 + percentage / length(limbs))
-            )
-
-          limb_health = target.limbs[limb].health
-
-          if initial_limb_health < 0.5 and limb_health >= 0.5 do
-            Mobile.send_scroll(target, "<p>Your #{limb} is no longer crippled!</p>")
-
-            Room.send_scroll(
-              room,
-              "<p>#{Mobile.colored_name(target)}'s #{limb} is no longer crippled!</p>",
-              [target]
-            )
-          end
-
-          target
-        end)
-      else
-        target
-      end
-    end)
-  end
-
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
     room =
       Room.update_mobile(room, target_ref, fn target ->
@@ -1364,7 +1324,40 @@ defmodule ApathyDrive.Ability do
 
         target =
           if ability_shift do
-            Mobile.shift_hp(target, ability_shift)
+            initial_hp = target.hp
+
+            target = Mobile.shift_hp(target, ability_shift)
+
+            cond do
+              initial_hp > 0 and target.hp < 0 ->
+                Mobile.send_scroll(target, "<p>You fall to the ground, bleeding!</p>")
+
+                Room.send_scroll(
+                  room,
+                  "<p>#{Mobile.colored_name(target)} falls to the ground!</p>",
+                  [
+                    target
+                  ]
+                )
+
+                target
+
+              initial_hp < 0 and target.hp > 0 ->
+                Mobile.send_scroll(target, "<p>You stand up.</p>")
+
+                Room.send_scroll(
+                  room,
+                  "<p>#{Mobile.colored_name(target)} stands up.</p>",
+                  [
+                    target
+                  ]
+                )
+
+                target
+
+              :else ->
+                target
+            end
           else
             target
           end
@@ -1382,7 +1375,7 @@ defmodule ApathyDrive.Ability do
           room
 
         ability_shift > 0 ->
-          heal_limbs(room, target_ref, ability_shift)
+          Regeneration.heal_limbs(room, target_ref, ability_shift)
 
         limb = limb(room, target_ref, ability) ->
           damage_limb(room, target_ref, limb, ability_shift)

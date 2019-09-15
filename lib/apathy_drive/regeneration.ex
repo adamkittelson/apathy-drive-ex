@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Regeneration do
-  alias ApathyDrive.{Aggression, Character, Mobile, TimerManager}
+  alias ApathyDrive.{Aggression, Character, Mobile, Room, TimerManager}
 
   @ticks_per_round 5
 
@@ -134,6 +134,111 @@ defmodule ApathyDrive.Regeneration do
   # todo: fix combat detection for mobs for real or rethink out of combat hp regeneration
   def regen_per_tick(_room, %{} = _mobile, regen) do
     regen / @ticks_per_round
+  end
+
+  def heal_limbs(room, target_ref, percentage) do
+    Room.update_mobile(room, target_ref, fn target ->
+      if Map.has_key?(target, :limbs) do
+        limbs =
+          target.limbs
+          |> Map.keys()
+          |> Enum.filter(&(target.limbs[&1].health > 0 and target.limbs[&1].health < 1.0))
+
+        Enum.reduce(limbs, room, fn limb, room ->
+          percentage = percentage / length(limbs)
+
+          heal_limb(room, target_ref, percentage, limb)
+        end)
+      else
+        target
+      end
+    end)
+  end
+
+  def heal_limb(room, target_ref, percentage, limb) do
+    Room.update_mobile(room, target_ref, fn target ->
+      if Map.has_key?(target, :limbs) do
+        initial_limb_health = target.limbs[limb].health
+
+        target =
+          update_in(
+            target.limbs[limb].health,
+            &min(1.0, &1 + percentage)
+          )
+
+        limb_health = target.limbs[limb].health
+
+        if initial_limb_health < 0.5 and limb_health >= 0.5 do
+          Mobile.send_scroll(target, "<p>Your #{limb} is no longer crippled!</p>")
+
+          Room.send_scroll(
+            room,
+            "<p>#{Mobile.colored_name(target)}'s #{limb} is no longer crippled!</p>",
+            [target]
+          )
+        end
+
+        target
+      else
+        target
+      end
+    end)
+  end
+
+  def balance_limbs(room, target_ref) do
+    Room.update_mobile(room, target_ref, fn target ->
+      target.limbs
+      |> Enum.reduce(room, fn {limb_name, _limb}, room ->
+        Room.update_mobile(room, target_ref, fn target ->
+          limb = target.limbs[limb_name]
+
+          cond do
+            target.hp < 0 ->
+              if is_nil(limb[:parent]) do
+                Mobile.send_scroll(
+                  target,
+                  "<p><span class='dark-red'>You are bleeding!</span></p>"
+                )
+
+                Room.send_scroll(
+                  room,
+                  "<p><span class='dark-red'>#{Mobile.colored_name(target)} is bleeding!</span></p>",
+                  [target]
+                )
+
+                target
+                |> update_in([:limbs, limb_name, :health], &(&1 - 0.02))
+                |> update_in([:hp], &(&1 + 0.01))
+              else
+                target
+              end
+
+            is_nil(limb[:parent]) ->
+              target
+
+            limb.health < 0 ->
+              Mobile.send_scroll(
+                target,
+                "<p><span class='dark-red'>You are bleeding!</span></p>"
+              )
+
+              Room.send_scroll(
+                room,
+                "<p><span class='dark-red'>#{Mobile.colored_name(target)} is bleeding!</span></p>",
+                [target]
+              )
+
+              room
+              |> heal_limb(target.ref, 0.02, limb_name)
+              |> update_in([:mobiles, target.ref, :hp], &(&1 - 0.01))
+              |> update_in([:mobiles, target.ref, :limbs, limb_name, :health], &min(0, &1))
+
+            :else ->
+              target
+          end
+        end)
+      end)
+    end)
   end
 
   defp taking_damage?(%{} = mobile) do
