@@ -124,9 +124,13 @@ defmodule ApathyDrive.Command do
             cmd.module.execute(room, monster, arguments)
 
           abilities = monster.abilities[String.downcase(command)] ->
-            ability = Ability.select_ability(monster, abilities)
+            if Mobile.unconcious(monster) do
+              room
+            else
+              ability = Ability.select_ability(monster, abilities)
 
-            Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
+              Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
+            end
 
           scroll = useable_scroll(monster, String.downcase(command)) ->
             ability = scroll.traits["Learn"]

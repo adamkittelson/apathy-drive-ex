@@ -2431,6 +2431,9 @@ defmodule ApathyDrive.Ability do
 
         false
 
+      Mobile.unconcious(mobile, true) ->
+        false
+
       Mobile.confused(mobile, room) ->
         false
 

@@ -205,7 +205,8 @@ defmodule ApathyDrive.Commands.Move do
         %{"kind" => "Normal", "destination" => destination_id} = room_exit,
         reattempt
       ) do
-    if !Mobile.held(character) and !Mobile.confused(character, room) do
+    if !Mobile.held(character) and !Mobile.confused(character, room) and
+         !Mobile.unconcious(character) do
       room =
         Room.display_exit_message(room, %{
           mobile: character,

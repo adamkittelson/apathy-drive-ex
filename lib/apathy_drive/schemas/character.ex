@@ -1866,6 +1866,14 @@ defmodule ApathyDrive.Character do
       perception * (modifier / 100)
     end
 
+    def unconcious(%Character{hp: hp} = character, false) when hp < 0 do
+      Mobile.send_scroll(character, "<p>You can't do that while you're unconcious!</p>")
+    end
+
+    def unconcious(%Character{hp: hp}, true) when hp < 0, do: true
+
+    def unconcious(%Character{}, _silent), do: false
+
     def update_prompt(%Character{socket: socket} = character) do
       send(socket, {:update_prompt, Character.prompt(character)})
       character
