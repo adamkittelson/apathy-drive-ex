@@ -4,6 +4,7 @@ defmodule ApathyDrive.LimbSetLimb do
 
   schema "limb_set_limbs" do
     field(:location, :string)
+    field(:fatal, :boolean)
 
     belongs_to(:limb_set, LimbSet)
     belongs_to(:limb, Limb)

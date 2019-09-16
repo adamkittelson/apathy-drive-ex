@@ -1280,38 +1280,83 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def damage_limb(room, target_ref, limb, percentage) when percentage < 0 do
+  def damage_limb(room, target_ref, limb_name, percentage) when percentage < 0 do
     Room.update_mobile(room, target_ref, fn target ->
-      initial_limb_health = target.limbs[limb].health
+      initial_limb_health = target.limbs[limb_name].health
 
-      target = update_in(target.limbs[limb].health, &(&1 + percentage * 2))
+      target = update_in(target.limbs[limb_name].health, &(&1 + percentage * 2))
 
-      limb_health = target.limbs[limb].health
+      limb = target.limbs[limb_name]
 
       cond do
-        limb_health <= 0 ->
-          Mobile.send_scroll(target, "<p>Your #{limb} is severed!</p>")
+        limb.health <= 0 ->
+          target =
+            if !is_nil(limb[:parent]) do
+              Mobile.send_scroll(target, "<p>Your #{limb_name} is severed!</p>")
+
+              Room.send_scroll(
+                room,
+                "<p>#{Mobile.colored_name(target)}'s #{limb_name} is severed!</p>",
+                [target]
+              )
+
+              Systems.Effect.remove_oldest_stack(target, {:crippled, limb_name})
+            else
+              target
+            end
+
+          if limb.fatal do
+            if is_nil(limb[:parent]) do
+              Mobile.send_scroll(
+                target,
+                "<p>You are dealt a mortal blow to the #{limb_name}!</p>"
+              )
+
+              Room.send_scroll(
+                room,
+                "<p>#{Mobile.colored_name(target)} is dealt a mortal blow to the #{limb_name}!</p>",
+                [target]
+              )
+            end
+
+            Mobile.die(target, room)
+          else
+            target
+            |> Ecto.Changeset.change(%{
+              missing_limbs: [limb_name | target.missing_limbs]
+            })
+            |> Repo.update!()
+
+            room = put_in(room.mobiles[target.ref], target)
+
+            Enum.reduce(target.limbs, room, fn {other_limb_name, other_limb}, room ->
+              if other_limb[:parent] == limb_name and other_limb.health > 0 do
+                damage_limb(room, target_ref, other_limb_name, -other_limb.health)
+              else
+                room
+              end
+            end)
+          end
+
+        initial_limb_health >= 0.5 and limb.health < 0.5 and !limb.fatal ->
+          Mobile.send_scroll(target, "<p>Your #{limb_name} is crippled!</p>")
 
           Room.send_scroll(
             room,
-            "<p>#{Mobile.colored_name(target)}'s #{limb} is severed!</p>",
+            "<p>#{Mobile.colored_name(target)}'s #{limb_name} is crippled!</p>",
             [target]
           )
 
-        initial_limb_health >= 0.5 and limb_health < 0.5 ->
-          Mobile.send_scroll(target, "<p>Your #{limb} is crippled!</p>")
+          effect = %{
+            "StatusMessage" => "Your #{limb_name} is crippled!",
+            "stack_key" => {:crippled, limb_name}
+          }
 
-          Room.send_scroll(
-            room,
-            "<p>#{Mobile.colored_name(target)}'s #{limb} is crippled!</p>",
-            [target]
-          )
+          Systems.Effect.add(target, effect)
 
         :else ->
-          :noop
+          target
       end
-
-      target
     end)
   end
 
@@ -1330,11 +1375,11 @@ defmodule ApathyDrive.Ability do
 
             cond do
               initial_hp > 0 and target.hp < 0 ->
-                Mobile.send_scroll(target, "<p>You fall to the ground, bleeding!</p>")
+                Mobile.send_scroll(target, "<p>You lose conciousness!</p>")
 
                 Room.send_scroll(
                   room,
-                  "<p>#{Mobile.colored_name(target)} falls to the ground!</p>",
+                  "<p>#{Mobile.colored_name(target)} loses conciousness!</p>",
                   [
                     target
                   ]
@@ -1343,11 +1388,11 @@ defmodule ApathyDrive.Ability do
                 target
 
               initial_hp < 0 and target.hp > 0 ->
-                Mobile.send_scroll(target, "<p>You stand up.</p>")
+                Mobile.send_scroll(target, "<p>You regain conciousness.</p>")
 
                 Room.send_scroll(
                   room,
-                  "<p>#{Mobile.colored_name(target)} stands up.</p>",
+                  "<p>#{Mobile.colored_name(target)} regains conciousness.</p>",
                   [
                     target
                   ]

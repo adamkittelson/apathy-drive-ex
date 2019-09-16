@@ -23,39 +23,39 @@ defmodule ApathyDrive.LimbSet do
     |> cast_assoc(:limb_sets)
   end
 
-  def load_limbs(limb_set_id) do
+  def load_limbs(mobile, limb_set_id) do
     LimbSetLimb
     |> where(limb_set_id: ^limb_set_id)
     |> preload(:limb)
     |> preload(parent_limb: [:limb])
     |> Repo.all()
     |> Enum.reduce(%{}, fn limb, limbs ->
-      limb_name =
-        [limb.location, limb.limb.type]
-        |> Enum.reject(&is_nil/1)
-        |> Enum.join(" ")
+      limb_name = limb_name(limb)
+      health = if limb_name in mobile.missing_limbs, do: 0.0, else: 1.0
 
       limb =
         cond do
-          limb.parent_limb ->
+          limb.depends_on ->
             %{
-              health: 1.0,
-              parent: limb.parent_limb.location <> " " <> limb.parent_limb.limb.type
-            }
-
-          limb_name == "torso" ->
-            %{
-              health: 1.0
+              health: health,
+              parent: limb_name(limb.parent_limb),
+              fatal: limb.fatal
             }
 
           :else ->
             %{
-              health: 1.0,
-              parent: "torso"
+              health: health,
+              fatal: limb.fatal
             }
         end
 
       Map.put(limbs, limb_name, limb)
     end)
+  end
+
+  defp limb_name(limb) do
+    [limb.location, limb.limb.type]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" ")
   end
 end

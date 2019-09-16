@@ -71,6 +71,7 @@ defmodule ApathyDrive.Character do
     field(:auto_flee, :boolean)
     field(:evil_points, :float)
     field(:last_evil_action_at, :utc_datetime_usec)
+    field(:missing_limbs, {:array, :string}, default: [])
 
     field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)
@@ -443,7 +444,7 @@ defmodule ApathyDrive.Character do
   end
 
   def load_limbs(%Character{race: %{race: race}} = character) do
-    limbs = LimbSet.load_limbs(race.limb_set_id)
+    limbs = LimbSet.load_limbs(character, race.limb_set_id)
 
     Map.put(character, :limbs, limbs)
   end
@@ -725,20 +726,6 @@ defmodule ApathyDrive.Character do
           character,
           message
         )
-
-        if Character.max_level(character) > character.level do
-          message = "<p><span class='yellow'>Ready to train to next level!</span></p>"
-
-          Repo.insert!(%ChannelHistory{
-            character_id: character.id,
-            message: message
-          })
-
-          Character.send_chat(
-            character,
-            message
-          )
-        end
 
         character
       else
@@ -1405,6 +1392,10 @@ defmodule ApathyDrive.Character do
         end)
         |> Map.put(:timers, %{})
         |> Character.load_race()
+        |> Ecto.Changeset.change(%{
+          missing_limbs: []
+        })
+        |> Repo.update!()
         |> Character.load_limbs()
         |> Character.load_traits()
         |> Character.set_attribute_levels()
@@ -1508,17 +1499,21 @@ defmodule ApathyDrive.Character do
     end
 
     def hp_regen_per_round(%Character{hp: hp} = character) when hp >= 0 do
-      round_length = Mobile.round_length_in_ms(character)
+      if Enum.any?(character.limbs, fn {_name, limb} -> limb.health < 0 end) do
+        0
+      else
+        round_length = Mobile.round_length_in_ms(character)
 
-      base_hp_regen =
-        (character.level + 30) * attribute_at_level(character, :health, character.level) / 500.0 *
-          round_length / 30_000
+        base_hp_regen =
+          (character.level + 30) * attribute_at_level(character, :health, character.level) / 500.0 *
+            round_length / 30_000
 
-      modified_hp_regen = base_hp_regen * (1 + ability_value(character, "HPRegen") / 100)
+        modified_hp_regen = base_hp_regen * (1 + ability_value(character, "HPRegen") / 100)
 
-      max_hp = max_hp_at_level(character, character.level)
+        max_hp = max_hp_at_level(character, character.level)
 
-      modified_hp_regen / max_hp
+        modified_hp_regen / max_hp
+      end
     end
 
     def hp_regen_per_round(%Character{hp: _hp} = _character), do: 0
