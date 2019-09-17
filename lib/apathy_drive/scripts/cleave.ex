@@ -11,55 +11,49 @@ defmodule ApathyDrive.Scripts.Cleave do
 
       targets = Enum.take_random(targets, count)
 
-      attack = Mobile.attack_ability(character)
+      attack =
+        character
+        |> Mobile.attack_ability()
+        |> update_in([Access.key!(:energy)], &min(&1 * 2, character.max_energy))
 
-      if attack.energy > div(character.max_energy, 2) do
+      if character.energy < attack.energy do
+        if character.casting do
+          Mobile.send_scroll(
+            character,
+            "<p><span class='dark-red'>You interrupt your other ability.</span></p>"
+          )
+        end
+
         Mobile.send_scroll(
           character,
-          "<p><span class='cyan'>You are not proficient enough with your equipped weapon to cleave.</span></p>"
+          "<p><span class='cyan'>You move into position...</span></p>"
         )
 
-        character
+        ability =
+          "cleave"
+          |> Ability.find()
+          |> Map.put(:target_list, "")
+          |> Map.put(:reaction_energy, attack.energy)
+
+        Map.put(character, :casting, ability)
       else
-        if character.energy < attack.energy * 2 do
-          if character.casting do
-            Mobile.send_scroll(
-              character,
-              "<p><span class='dark-red'>You interrupt your other ability.</span></p>"
-            )
-          end
+        character = Map.put(character, :energy, character.energy - attack.energy)
 
-          Mobile.send_scroll(
-            character,
-            "<p><span class='cyan'>You move into position...</span></p>"
-          )
+        attack =
+          attack
+          |> Map.put(:energy, 0)
+          |> Map.put(:ignores_round_cooldown?, true)
 
-          ability =
-            "cleave"
-            |> Ability.find()
-            |> Map.put(:target_list, "")
-            |> Map.put(:reaction_energy, attack.energy * 2)
+        room = put_in(room.mobiles[character.ref], character)
 
-          Map.put(character, :casting, ability)
-        else
-          character = Map.put(character, :energy, character.energy - attack.energy * 2)
+        Room.update_energy_bar(room, character.ref)
 
-          attack =
-            attack
-            |> Map.put(:energy, 0)
-            |> Map.put(:ignores_round_cooldown?, true)
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>You swing your weapon in a wide arc...</span></p>"
+        )
 
-          room = put_in(room.mobiles[character.ref], character)
-
-          Room.update_energy_bar(room, character.ref)
-
-          Mobile.send_scroll(
-            character,
-            "<p><span class='red'>You swing your weapon in a wide arc...</span></p>"
-          )
-
-          Ability.execute(room, mobile_ref, attack, targets)
-        end
+        Ability.execute(room, mobile_ref, attack, targets)
       end
     end)
   end

@@ -2,7 +2,7 @@ defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
   alias ApathyDrive.{Character, Currency, Item, ItemInstance, Match, Mobile, Repo}
 
-  def keywords, do: ["get"]
+  def keywords, do: ["get", "g"]
 
   def execute(%Room{} = room, %Character{} = character, []) do
     Mobile.send_scroll(character, "<p>Get what?</p>")
