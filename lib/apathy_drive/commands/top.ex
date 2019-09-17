@@ -34,6 +34,7 @@ defmodule ApathyDrive.Commands.Top do
 
     number
     |> Character.top_list()
+    |> Enum.sort_by(&(-&1.exp))
     |> Enum.with_index()
     |> Enum.each(fn {%{name: name, exp: exp, class: class}, index} ->
       index = (index + 1) |> to_string |> String.pad_leading(3)
