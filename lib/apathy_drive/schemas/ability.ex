@@ -1300,7 +1300,14 @@ defmodule ApathyDrive.Ability do
                 [target]
               )
 
-              Systems.Effect.remove_oldest_stack(target, {:crippled, limb_name})
+              effect = %{
+                "StatusMessage" => "Your #{limb_name} is severed!",
+                "stack_key" => {:severed, limb_name}
+              }
+
+              target
+              |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
+              |> Systems.Effect.add(effect)
             else
               target
             end
