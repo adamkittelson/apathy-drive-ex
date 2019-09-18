@@ -206,15 +206,29 @@ defmodule ApathyDrive.Ability do
   end
 
   def appropriate_alignment?(%Ability{traits: traits}, %Character{} = mobile) do
-    case Character.alignment(mobile) do
-      "good" ->
-        Map.has_key?(traits, "Good") or !Map.has_key?(traits, "NotGood")
+    alignment = Character.alignment(mobile)
 
-      "neutral" ->
-        Map.has_key?(traits, "Neutral") or !Map.has_key?(traits, "NotNeutral")
+    cond do
+      Map.has_key?(traits, "Good") and alignment != "good" ->
+        false
 
-      "evil" ->
-        Map.has_key?(traits, "Evil") or !Map.has_key?(traits, "NotEvil")
+      Map.has_key?(traits, "NotGood") and alignment == "good" ->
+        false
+
+      Map.has_key?(traits, "Neutral") and alignment != "neutral" ->
+        false
+
+      Map.has_key?(traits, "NotNeutral") and alignment == "neutral" ->
+        false
+
+      Map.has_key?(traits, "Evil") and alignment != "evil" ->
+        false
+
+      Map.has_key?(traits, "NotEvil") and alignment == "evil" ->
+        false
+
+      :else ->
+        true
     end
   end
 
