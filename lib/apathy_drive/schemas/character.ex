@@ -1451,6 +1451,9 @@ defmodule ApathyDrive.Character do
 
     def evil_points(character, %Character{} = attacker) do
       cond do
+        character.ref == attacker.ref ->
+          0
+
         Ability.retaliate?(character, attacker) ->
           # attacker has already received evil points for attacking character
           0
