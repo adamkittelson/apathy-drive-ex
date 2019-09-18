@@ -22,6 +22,7 @@ defmodule ApathyDrive.Character do
     Regeneration,
     Item,
     Level,
+    LimbSet,
     Monster,
     Mobile,
     Party,
@@ -69,6 +70,7 @@ defmodule ApathyDrive.Character do
     field(:auto_flee, :boolean)
     field(:evil_points, :float)
     field(:last_evil_action_at, :utc_datetime_usec)
+    field(:missing_limbs, {:array, :string}, default: [])
 
     field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)
@@ -112,6 +114,7 @@ defmodule ApathyDrive.Character do
     field(:kill_counts, :map, virtual: true, default: %{})
     field(:materials, :map, virtual: true, default: %{})
     field(:death_race_id, :integer, virtual: true)
+    field(:limbs, :map, virtual: true, default: %{})
 
     belongs_to(:room, Room)
 
@@ -426,6 +429,25 @@ defmodule ApathyDrive.Character do
     |> Systems.Effect.add(effect)
   end
 
+  def load_limbs(%Character{race: %{race: race}} = character) do
+    limbs = LimbSet.load_limbs(character, race.limb_set_id)
+
+    limbs
+    |> Enum.reduce(character, fn {limb_name, limb}, character ->
+      if limb.health == 0 do
+        effect = %{
+          "StatusMessage" => "Your #{limb_name} is severed!",
+          "stack_key" => {:severed, limb_name}
+        }
+
+        Systems.Effect.add(character, effect)
+      else
+        character
+      end
+    end)
+    |> Map.put(:limbs, limbs)
+  end
+
   def load_materials(%Character{} = character) do
     CharacterMaterial.load_for_character(character)
   end
@@ -704,20 +726,6 @@ defmodule ApathyDrive.Character do
           message
         )
 
-        if Character.max_level(character) > character.level do
-          message = "<p><span class='yellow'>Ready to train to next level!</span></p>"
-
-          Repo.insert!(%ChannelHistory{
-            character_id: character.id,
-            message: message
-          })
-
-          Character.send_chat(
-            character,
-            message
-          )
-        end
-
         character
       else
         character
@@ -883,7 +891,8 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: Mobile.round_length_in_ms(mobile) * (1 - percent)
+         time_to_full: Mobile.round_length_in_ms(mobile) * (1 - percent),
+         max_percent: 100
        }}
     )
 
@@ -912,7 +921,8 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: time_to_full
+         time_to_full: time_to_full,
+         max_percent: 100
        }}
     )
 
@@ -933,14 +943,19 @@ defmodule ApathyDrive.Character do
             Regeneration.heal_effect_per_tick(mobile) -
             Regeneration.damage_effect_per_tick(mobile)
 
-        if regen_per_tick > 0 do
-          ticks_remaining = (1.0 - percent) / regen_per_tick
+        cond do
+          regen_per_tick > 0 ->
+            ticks_remaining = (1.0 - percent) / regen_per_tick
 
-          Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
-        else
-          ticks_remaining = percent / regen_per_tick
+            Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
 
-          Regeneration.tick_time(mobile) * Float.floor(ticks_remaining)
+          regen_per_tick == 0 ->
+            nil
+
+          :else ->
+            ticks_remaining = percent / regen_per_tick
+
+            Regeneration.tick_time(mobile) * Float.floor(ticks_remaining)
         end
       end
 
@@ -969,14 +984,13 @@ defmodule ApathyDrive.Character do
       |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
       |> Enum.map(& &1["StatusMessage"])
 
-    resistances =
-      ApathyDrive.DamageType
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn damage_type, resistances ->
+    limbs =
+      character.limbs
+      |> Enum.reduce(%{}, fn {limb_name, limb}, limbs ->
         Map.put(
-          resistances,
-          damage_type.name,
-          Mobile.ability_value(character, "Resist#{damage_type.name}")
+          limbs,
+          limb_name,
+          "#{trunc(limb.health * 100)}%"
         )
       end)
 
@@ -1009,7 +1023,7 @@ defmodule ApathyDrive.Character do
       health: Mobile.attribute_at_level(character, :health, character.level),
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
-      resistances: resistances,
+      limbs: limbs,
       round_length_in_ms: Mobile.round_length_in_ms(character)
     }
   end
@@ -1356,6 +1370,10 @@ defmodule ApathyDrive.Character do
       :rand.uniform(100) >= stealth - div(perception, 3)
     end
 
+    def die?(_character) do
+      false
+    end
+
     def die(character, room) do
       character =
         character
@@ -1373,6 +1391,11 @@ defmodule ApathyDrive.Character do
         end)
         |> Map.put(:timers, %{})
         |> Character.load_race()
+        |> Ecto.Changeset.change(%{
+          missing_limbs: []
+        })
+        |> Repo.update!()
+        |> Character.load_limbs()
         |> Character.load_traits()
         |> Character.set_attribute_levels()
         |> Character.add_equipped_items_effects()
@@ -1474,19 +1497,25 @@ defmodule ApathyDrive.Character do
       |> Enum.member?(ability_name)
     end
 
-    def hp_regen_per_round(%Character{} = character) do
-      round_length = Mobile.round_length_in_ms(character)
+    def hp_regen_per_round(%Character{hp: hp} = character) when hp >= 0 do
+      if Enum.any?(character.limbs, fn {_name, limb} -> limb.health < 0 end) do
+        0
+      else
+        round_length = Mobile.round_length_in_ms(character)
 
-      base_hp_regen =
-        (character.level + 30) * attribute_at_level(character, :health, character.level) / 500.0 *
-          round_length / 30_000
+        base_hp_regen =
+          (character.level + 30) * attribute_at_level(character, :health, character.level) / 500.0 *
+            round_length / 30_000
 
-      modified_hp_regen = base_hp_regen * (1 + ability_value(character, "HPRegen") / 100)
+        modified_hp_regen = base_hp_regen * (1 + ability_value(character, "HPRegen") / 100)
 
-      max_hp = max_hp_at_level(character, character.level)
+        max_hp = max_hp_at_level(character, character.level)
 
-      modified_hp_regen / max_hp
+        modified_hp_regen / max_hp
+      end
     end
+
+    def hp_regen_per_round(%Character{hp: _hp} = _character), do: 0
 
     def mana_regen_per_round(%Character{} = character) do
       round_length = Mobile.round_length_in_ms(character)
@@ -1513,21 +1542,49 @@ defmodule ApathyDrive.Character do
     end
 
     def heartbeat(%Character{} = character, %Room{} = room) do
+      initial_hp = character.hp
+      initial_max_hp = Mobile.max_hp_at_level(character, character.level)
+
       room =
         Room.update_mobile(room, character.ref, fn character ->
-          character
+          hp = Regeneration.hp_since_last_tick(room, character)
+
+          room =
+            room
+            |> Regeneration.heal_limbs(character.ref, hp)
+            |> Regeneration.balance_limbs(character.ref)
+
+          room.mobiles[character.ref]
           |> Regeneration.regenerate(room)
           |> RoomServer.execute_casting_ability(room)
         end)
         |> AI.think(character.ref)
 
       if character = room.mobiles[character.ref] do
-        max_hp = Mobile.max_hp_at_level(character, character.level)
-        hp = trunc(max_hp * character.hp)
-
-        if hp < 1 do
+        if Mobile.die?(character) do
           Mobile.die(character, room)
         else
+          cond do
+            initial_hp < 0 and character.hp >= 0 ->
+              Room.send_scroll(
+                room,
+                "<p>#{Mobile.colored_name(character)} stands up.</p>",
+                [
+                  character
+                ]
+              )
+
+              Mobile.send_scroll(character, "<p>You stand up.</p>")
+
+              Room.update_hp_bar(room, character.ref)
+
+            initial_max_hp != Mobile.max_hp_at_level(character, character.level) ->
+              Room.update_hp_bar(room, character.ref)
+
+            :else ->
+              :noop
+          end
+
           room
         end
       else
@@ -1592,7 +1649,13 @@ defmodule ApathyDrive.Character do
       hp_per_level = ability_value(mobile, "HPPerLevel") * level
       bonus = (health - 50) * level / 16
 
-      trunc(base + hp_per_level + bonus + ability_value(mobile, "MaxHP"))
+      max_hp =
+        mobile.limbs
+        |> Map.values()
+        |> Enum.map(& &1.health)
+        |> Room.average()
+
+      trunc((base + hp_per_level + bonus + ability_value(mobile, "MaxHP")) * max_hp)
     end
 
     def max_mana_at_level(mobile, level) do
@@ -1801,6 +1864,14 @@ defmodule ApathyDrive.Character do
       modifier = ability_value(character, "Tracking")
       perception * (modifier / 100)
     end
+
+    def unconcious(%Character{hp: hp} = character, false) when hp < 0 do
+      Mobile.send_scroll(character, "<p>You can't do that while you're unconcious!</p>")
+    end
+
+    def unconcious(%Character{hp: hp}, true) when hp < 0, do: true
+
+    def unconcious(%Character{}, _silent), do: false
 
     def update_prompt(%Character{socket: socket} = character) do
       send(socket, {:update_prompt, Character.prompt(character)})

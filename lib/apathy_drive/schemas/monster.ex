@@ -511,6 +511,13 @@ defmodule ApathyDrive.Monster do
       :rand.uniform(100) >= Mobile.stealth_at_level(sneaker, sneaker.level)
     end
 
+    def die?(monster) do
+      max_hp = Mobile.max_hp_at_level(monster, monster.level)
+      hp = trunc(max_hp * monster.hp)
+
+      hp < 1
+    end
+
     def die(monster, room) do
       room =
         Enum.reduce(room.mobiles, room, fn
@@ -922,6 +929,9 @@ defmodule ApathyDrive.Monster do
       modifier = ability_value(monster, "Tracking")
       perception * (modifier / 100)
     end
+
+    def unconcious(%{hp: hp}, _silent) when hp < 0, do: true
+    def unconcious(%{}, _silent), do: false
 
     def update_prompt(%Monster{} = monster) do
       monster

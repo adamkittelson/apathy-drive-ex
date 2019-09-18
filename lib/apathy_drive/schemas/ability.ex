@@ -16,6 +16,7 @@ defmodule ApathyDrive.Ability do
     Mobile,
     Monster,
     Party,
+    Regeneration,
     Repo,
     Room,
     Scripts,
@@ -803,10 +804,7 @@ defmodule ApathyDrive.Ability do
                         target
                       end
 
-                    max_hp = Mobile.max_hp_at_level(target, target.level)
-                    hp = trunc(max_hp * target.hp)
-
-                    if hp < 1 do
+                    if Mobile.die?(target) do
                       Mobile.die(target, updated_room)
                     else
                       put_in(updated_room.mobiles[target.ref], target)
@@ -1264,6 +1262,146 @@ defmodule ApathyDrive.Ability do
 
   def retaliate(room, _ability, _caster, _target), do: room
 
+  def limb(room, target_ref, _ability) do
+    target = room.mobiles[target_ref]
+
+    cond do
+      is_nil(target) ->
+        nil
+
+      Map.has_key?(target, :limbs) ->
+        target.limbs
+        |> Map.keys()
+        |> Enum.filter(&(target.limbs[&1].health > 0))
+        |> Enum.random()
+
+      :else ->
+        nil
+    end
+  end
+
+  def damage_limb(room, target_ref, limb_name, percentage) when percentage < 0 do
+    Room.update_mobile(room, target_ref, fn target ->
+      initial_limb_health = target.limbs[limb_name].health
+
+      target = update_in(target.limbs[limb_name].health, &(&1 + percentage * 2))
+
+      limb = target.limbs[limb_name]
+
+      cond do
+        limb.health <= 0 ->
+          target =
+            if !is_nil(limb[:parent]) do
+              Mobile.send_scroll(target, "<p>Your #{limb_name} is severed!</p>")
+
+              Room.send_scroll(
+                room,
+                "<p>#{Mobile.colored_name(target)}'s #{limb_name} is severed!</p>",
+                [target]
+              )
+
+              effect = %{
+                "StatusMessage" => "Your #{limb_name} is severed!",
+                "stack_key" => {:severed, limb_name}
+              }
+
+              target =
+                target
+                |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
+                |> Systems.Effect.add(effect)
+
+              limb.slots
+              |> IO.inspect()
+              |> Enum.reduce(target, fn slot, target ->
+                item_to_remove = Enum.find(target.equipment, &(&1.worn_on == slot))
+
+                if item_to_remove do
+                  %ItemInstance{id: item_to_remove.instance_id}
+                  |> Ecto.Changeset.change(%{
+                    equipped: false,
+                    class_id: nil
+                  })
+                  |> Repo.update!()
+
+                  target = Character.load_items(target)
+
+                  Mobile.send_scroll(
+                    target,
+                    "<p>You unequip your #{Item.colored_name(item_to_remove, character: target)}.</p>"
+                  )
+
+                  Room.send_scroll(
+                    room,
+                    "<p>#{target.name} unequipped their #{
+                      Item.colored_name(item_to_remove, character: target)
+                    }.</p>",
+                    [target]
+                  )
+
+                  target
+                else
+                  target
+                end
+              end)
+            else
+              target
+            end
+
+          if limb.fatal do
+            if is_nil(limb[:parent]) do
+              Mobile.send_scroll(
+                target,
+                "<p>You are dealt a mortal blow to the #{limb_name}!</p>"
+              )
+
+              Room.send_scroll(
+                room,
+                "<p>#{Mobile.colored_name(target)} is dealt a mortal blow to the #{limb_name}!</p>",
+                [target]
+              )
+            end
+
+            Mobile.die(target, room)
+          else
+            target
+            |> Ecto.Changeset.change(%{
+              missing_limbs: [limb_name | target.missing_limbs]
+            })
+            |> Repo.update!()
+
+            room = put_in(room.mobiles[target.ref], target)
+
+            Enum.reduce(target.limbs, room, fn {other_limb_name, other_limb}, room ->
+              if other_limb[:parent] == limb_name and other_limb.health > 0 do
+                damage_limb(room, target_ref, other_limb_name, -other_limb.health)
+              else
+                room
+              end
+            end)
+          end
+
+        initial_limb_health >= 0.5 and limb.health < 0.5 and !limb.fatal ->
+          Mobile.send_scroll(target, "<p>Your #{limb_name} is crippled!</p>")
+
+          Room.send_scroll(
+            room,
+            "<p>#{Mobile.colored_name(target)}'s #{limb_name} is crippled!</p>",
+            [target]
+          )
+
+          effect = %{
+            "StatusMessage" => "Your #{limb_name} is crippled!",
+            "stack_key" => {:crippled, limb_name}
+          }
+
+          Systems.Effect.add(target, effect)
+
+        :else ->
+          target
+      end
+    end)
+  end
+
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
     room =
       Room.update_mobile(room, target_ref, fn target ->
@@ -1273,7 +1411,40 @@ defmodule ApathyDrive.Ability do
 
         target =
           if ability_shift do
-            Mobile.shift_hp(target, ability_shift)
+            initial_hp = target.hp
+
+            target = Mobile.shift_hp(target, ability_shift)
+
+            cond do
+              initial_hp > 0 and target.hp < 0 ->
+                Mobile.send_scroll(target, "<p>You lose conciousness!</p>")
+
+                Room.send_scroll(
+                  room,
+                  "<p>#{Mobile.colored_name(target)} loses conciousness!</p>",
+                  [
+                    target
+                  ]
+                )
+
+                target
+
+              initial_hp < 0 and target.hp > 0 ->
+                Mobile.send_scroll(target, "<p>You regain conciousness.</p>")
+
+                Room.send_scroll(
+                  room,
+                  "<p>#{Mobile.colored_name(target)} regains conciousness.</p>",
+                  [
+                    target
+                  ]
+                )
+
+                target
+
+              :else ->
+                target
+            end
           else
             target
           end
@@ -1284,6 +1455,21 @@ defmodule ApathyDrive.Ability do
         |> apply_duration_traits(ability, caster, duration)
         |> Mobile.update_prompt()
       end)
+
+    room =
+      cond do
+        is_nil(ability_shift) ->
+          room
+
+        ability_shift > 0 ->
+          Regeneration.heal_limbs(room, target_ref, ability_shift)
+
+        limb = limb(room, target_ref, ability) ->
+          damage_limb(room, target_ref, limb, ability_shift)
+
+        :else ->
+          room
+      end
 
     room =
       if script = ability.traits["Script"] do
@@ -2285,6 +2471,9 @@ defmodule ApathyDrive.Ability do
           "<p>#{ability.name} is on cooldown: #{time_remaining(mobile, cd)} seconds remaining.</p>"
         )
 
+        false
+
+      Mobile.unconcious(mobile, true) ->
         false
 
       Mobile.confused(mobile, room) ->

@@ -107,10 +107,8 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def execute(%Room{} = room, %{} = character, %{"kind" => "Alignment"} = room_exit, reattempt) do
-    if IO.inspect(Character.alignment(character)) in room_exit["allowed"] or
-         IO.inspect(Mobile.ability_value(character, "Alignment")) in IO.inspect(
-           room_exit["allowed"]
-         ) do
+    if Character.alignment(character) in room_exit["allowed"] or
+         Mobile.ability_value(character, "Alignment") in room_exit["allowed"] do
       execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"), reattempt)
     else
       Mobile.send_scroll(character, "<p>A strange power holds you back!</p>")
@@ -207,7 +205,8 @@ defmodule ApathyDrive.Commands.Move do
         %{"kind" => "Normal", "destination" => destination_id} = room_exit,
         reattempt
       ) do
-    if !Mobile.held(character) and !Mobile.confused(character, room) do
+    if !Mobile.held(character) and !Mobile.confused(character, room) and
+         !Mobile.unconcious(character) do
       room =
         Room.display_exit_message(room, %{
           mobile: character,

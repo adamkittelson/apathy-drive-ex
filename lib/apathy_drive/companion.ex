@@ -431,6 +431,13 @@ defmodule ApathyDrive.Companion do
       :rand.uniform(100) >= stealth_at_level(sneaker, sneaker.level)
     end
 
+    def die?(companion) do
+      max_hp = Mobile.max_hp_at_level(companion, companion.level)
+      hp = trunc(max_hp * companion.hp)
+
+      hp < 1
+    end
+
     def die(companion, room) do
       message =
         companion.death_message
@@ -750,6 +757,9 @@ defmodule ApathyDrive.Companion do
       modifier = ability_value(companion, "Tracking")
       perception * (modifier / 100)
     end
+
+    def unconcious(%{hp: hp}, _silent) when hp < 0, do: true
+    def unconcious(%{}, _silent), do: false
 
     def update_prompt(%Companion{} = companion) do
       companion

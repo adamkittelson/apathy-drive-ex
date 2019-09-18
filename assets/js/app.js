@@ -166,12 +166,16 @@ chan.on("update score", function (score_data) {
   update_score_attribute("crits", score_data.crits);
   update_score_attribute("willpower", _.padEnd(score_data.willpower, 7));
   update_score_attribute("charm", _.padEnd(score_data.charm, 8));
-  update_score_attribute("stone", _.padEnd(score_data.resistances.Stone, 5));
-  update_score_attribute("lightning", score_data.resistances.Electricity);
-  update_score_attribute("fire", _.padEnd(score_data.resistances.Fire, 5));
-  update_score_attribute("cold", score_data.resistances.Cold);
-  update_score_attribute("water", _.padEnd(score_data.resistances.Water, 5));
-  update_score_attribute("poison", score_data.resistances.Poison);
+  update_score_attribute("head", _.padEnd(score_data.limbs.head, 5));
+  update_score_attribute("torso", score_data.limbs.torso);
+  update_score_attribute("right-arm", _.padEnd(score_data.limbs['right arm'], 5));
+  update_score_attribute("left-arm", _.padEnd(score_data.limbs['left arm'], 5));
+  update_score_attribute("left-hand", _.padEnd(score_data.limbs['left hand'], 5));
+  update_score_attribute("right-hand", _.padEnd(score_data.limbs['right hand'], 5));
+  update_score_attribute("left-leg", _.padEnd(score_data.limbs['left leg'], 5));
+  update_score_attribute("right-leg", _.padEnd(score_data.limbs['right leg'], 5));
+  update_score_attribute("left-foot", _.padEnd(score_data.limbs['left foot'], 5));
+  update_score_attribute("right-foot", _.padEnd(score_data.limbs['right foot'], 5));
   update_score_attribute("effects", _.join(score_data.effects, "\n  "));
 });
 
@@ -297,7 +301,7 @@ $(document).on('keyup', "input", function (event) {
 
 window.progress = function (elem, percent, time_to_full) {
   if (percent < 0) {
-    percent = 0;
+    return elem.find('div').stop().width(0);
   }
   if (percent == 100) {
     elem.find('div').stop().width(elem.width())
