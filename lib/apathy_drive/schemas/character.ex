@@ -432,7 +432,20 @@ defmodule ApathyDrive.Character do
   def load_limbs(%Character{race: %{race: race}} = character) do
     limbs = LimbSet.load_limbs(character, race.limb_set_id)
 
-    Map.put(character, :limbs, limbs)
+    limbs
+    |> Enum.reduce(character, fn {limb_name, limb}, character ->
+      if limb.health == 0 do
+        effect = %{
+          "StatusMessage" => "Your #{limb_name} is severed!",
+          "stack_key" => {:severed, limb_name}
+        }
+
+        Systems.Effect.add(character, effect)
+      else
+        character
+      end
+    end)
+    |> Map.put(:limbs, limbs)
   end
 
   def load_materials(%Character{} = character) do

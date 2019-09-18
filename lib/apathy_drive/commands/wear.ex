@@ -93,6 +93,26 @@ defmodule ApathyDrive.Commands.Wear do
     end
   end
 
+  def limbs_for_slot(character, slot) do
+    character.limbs
+    |> Map.keys()
+    |> Enum.filter(&(slot in character.limbs[&1].slots))
+  end
+
+  def worn_on_max(%{worn_on: "Finger"}), do: 2
+  def worn_on_max(%{worn_on: "Wrist"}), do: 2
+  def worn_on_max(%{worn_on: _}), do: 1
+
+  def worn_on_max(%Character{} = character, %Item{} = item) do
+    missing_limbs =
+      character
+      |> limbs_for_slot(item.worn_on)
+      |> Enum.filter(&(&1 in character.missing_limbs))
+      |> length
+
+    worn_on_max(item) - missing_limbs
+  end
+
   def equip_item(%Character{} = character, %{worn_on: worn_on} = item, persist \\ true) do
     %{inventory: inventory, equipment: equipment} = character
 
@@ -111,39 +131,43 @@ defmodule ApathyDrive.Commands.Wear do
 
       :else ->
         cond do
-          Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
+          Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(character, item) ->
             item_to_remove =
               equipment
               |> Enum.find(&(&1.worn_on == worn_on))
 
-            equipment = List.delete(equipment, item_to_remove)
+            if item_to_remove do
+              equipment = List.delete(equipment, item_to_remove)
 
-            inventory = List.delete(inventory, item)
+              inventory = List.delete(inventory, item)
 
-            if persist do
-              %ItemInstance{id: item_to_remove.instance_id}
-              |> Ecto.Changeset.change(%{equipped: false, class_id: nil})
-              |> Repo.update!()
+              if persist do
+                %ItemInstance{id: item_to_remove.instance_id}
+                |> Ecto.Changeset.change(%{equipped: false, class_id: nil})
+                |> Repo.update!()
+              end
+
+              inventory = List.insert_at(inventory, -1, item_to_remove)
+
+              if persist do
+                %ItemInstance{id: item.instance_id}
+                |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
+                |> Repo.update!()
+              end
+
+              equipment = List.insert_at(equipment, -1, item)
+
+              character =
+                character
+                |> Map.put(:inventory, inventory)
+                |> Map.put(:equipment, equipment)
+                |> Character.add_equipped_items_effects()
+                |> Character.load_abilities()
+
+              %{equipped: item, unequipped: [item_to_remove], character: character}
+            else
+              false
             end
-
-            inventory = List.insert_at(inventory, -1, item_to_remove)
-
-            if persist do
-              %ItemInstance{id: item.instance_id}
-              |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
-              |> Repo.update!()
-            end
-
-            equipment = List.insert_at(equipment, -1, item)
-
-            character =
-              character
-              |> Map.put(:inventory, inventory)
-              |> Map.put(:equipment, equipment)
-              |> Character.add_equipped_items_effects()
-              |> Character.load_abilities()
-
-            %{equipped: item, unequipped: [item_to_remove], character: character}
 
           items_to_remove = conflicting_items(item, equipment) ->
             equipment = Enum.reject(equipment, &(&1 in items_to_remove))
@@ -207,10 +231,6 @@ defmodule ApathyDrive.Commands.Wear do
         end
     end
   end
-
-  def worn_on_max(%{worn_on: "Finger"}), do: 2
-  def worn_on_max(%{worn_on: "Wrist"}), do: 2
-  def worn_on_max(%{worn_on: _}), do: 1
 
   defp conflicting_worn_on("Weapon Hand"), do: ["Two Handed"]
   defp conflicting_worn_on("Off-Hand"), do: ["Two Handed"]

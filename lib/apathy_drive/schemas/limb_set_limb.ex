@@ -1,11 +1,12 @@
 defmodule ApathyDrive.LimbSetLimb do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{LimbSet, LimbSetLimb, Limb}
+  alias ApathyDrive.{LimbSet, LimbSetLimb, LimbSetLimbSlot, Limb}
 
   schema "limb_set_limbs" do
     field(:location, :string)
     field(:fatal, :boolean)
 
+    has_many(:limb_set_limb_slots, LimbSetLimbSlot)
     belongs_to(:limb_set, LimbSet)
     belongs_to(:limb, Limb)
     belongs_to(:parent_limb, LimbSetLimb, foreign_key: :depends_on)

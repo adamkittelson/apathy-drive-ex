@@ -1305,9 +1305,44 @@ defmodule ApathyDrive.Ability do
                 "stack_key" => {:severed, limb_name}
               }
 
-              target
-              |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
-              |> Systems.Effect.add(effect)
+              target =
+                target
+                |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
+                |> Systems.Effect.add(effect)
+
+              limb.slots
+              |> IO.inspect()
+              |> Enum.reduce(target, fn slot, target ->
+                item_to_remove = Enum.find(target.equipment, &(&1.worn_on == slot))
+
+                if item_to_remove do
+                  %ItemInstance{id: item_to_remove.instance_id}
+                  |> Ecto.Changeset.change(%{
+                    equipped: false,
+                    class_id: nil
+                  })
+                  |> Repo.update!()
+
+                  target = Character.load_items(target)
+
+                  Mobile.send_scroll(
+                    target,
+                    "<p>You unequip your #{Item.colored_name(item_to_remove, character: target)}.</p>"
+                  )
+
+                  Room.send_scroll(
+                    room,
+                    "<p>#{target.name} unequipped their #{
+                      Item.colored_name(item_to_remove, character: target)
+                    }.</p>",
+                    [target]
+                  )
+
+                  target
+                else
+                  target
+                end
+              end)
             else
               target
             end

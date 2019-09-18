@@ -28,6 +28,7 @@ defmodule ApathyDrive.LimbSet do
     |> where(limb_set_id: ^limb_set_id)
     |> preload(:limb)
     |> preload(parent_limb: [:limb])
+    |> preload(limb_set_limb_slots: [:slot])
     |> Repo.all()
     |> Enum.reduce(%{}, fn limb, limbs ->
       limb_name = limb_name(limb)
@@ -39,13 +40,15 @@ defmodule ApathyDrive.LimbSet do
             %{
               health: health,
               parent: limb_name(limb.parent_limb),
-              fatal: limb.fatal
+              fatal: limb.fatal,
+              slots: Enum.map(limb.limb_set_limb_slots, & &1.slot.name)
             }
 
           :else ->
             %{
               health: health,
-              fatal: limb.fatal
+              fatal: limb.fatal,
+              slots: Enum.map(limb.limb_set_limb_slots, & &1.slot.name)
             }
         end
 
