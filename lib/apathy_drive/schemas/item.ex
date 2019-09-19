@@ -180,21 +180,24 @@ defmodule ApathyDrive.Item do
 
   def slots do
     [
-      "Arms",
+      "Arm",
+      "Arm",
       "Back",
       "Ears",
-      "Feet",
+      "Foot",
+      "Foot",
       "Finger",
       "Finger",
-      "Hands",
+      "Hand",
+      "Hand",
       "Head",
       "Two Handed",
       "Legs",
       "Neck",
-      "Off-Hand",
       "Torso",
       "Waist",
-      "Weapon Hand",
+      "Held",
+      "Held",
       "Wrist",
       "Wrist"
     ]

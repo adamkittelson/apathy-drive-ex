@@ -570,7 +570,14 @@ defmodule ApathyDrive.Character do
 
   def weapon(%Character{} = character) do
     character.equipment
-    |> Enum.find(&(&1.worn_on in ["Weapon Hand", "Two Handed"]))
+    |> Enum.filter(&(&1.worn_on in ["Held", "Two Handed"]))
+    |> case do
+      [] ->
+        nil
+
+      list ->
+        Enum.random(list)
+    end
   end
 
   def ability_for_weapon(character, weapon, riposte) do
@@ -1257,7 +1264,7 @@ defmodule ApathyDrive.Character do
     end
 
     def description(%Character{} = character, %Character{} = observer) do
-      character_level = character.lvel
+      character_level = character.level
       observer_level = observer.level
 
       descriptions =

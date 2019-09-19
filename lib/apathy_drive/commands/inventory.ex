@@ -3,18 +3,18 @@ defmodule ApathyDrive.Commands.Inventory do
   alias ApathyDrive.{Character, Currency, Item, Mobile}
 
   @slot_order [
-    "Weapon Hand",
+    "Held",
     "Two Handed",
     "Head",
     "Torso",
     "Back",
-    "Hands",
+    "Hand",
     "Waist",
     "Legs",
-    "Feet",
+    "Foot",
     "Neck",
     "Wrist",
-    "Arms",
+    "Arm",
     "Finger"
   ]
 

@@ -99,8 +99,10 @@ defmodule ApathyDrive.Commands.Wear do
     |> Enum.filter(&(slot in character.limbs[&1].slots))
   end
 
-  def worn_on_max(%{worn_on: "Finger"}), do: 2
-  def worn_on_max(%{worn_on: "Wrist"}), do: 2
+  def worn_on_max(%{worn_on: slot})
+      when slot in ["Finger", "Wrist", "Foot", "Arm", "Hand", "Held"],
+      do: 2
+
   def worn_on_max(%{worn_on: _}), do: 1
 
   def worn_on_max(%Character{} = character, %Item{} = item) do
@@ -232,9 +234,8 @@ defmodule ApathyDrive.Commands.Wear do
     end
   end
 
-  defp conflicting_worn_on("Weapon Hand"), do: ["Two Handed"]
-  defp conflicting_worn_on("Off-Hand"), do: ["Two Handed"]
-  defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
+  defp conflicting_worn_on("Held"), do: ["Two Handed"]
+  defp conflicting_worn_on("Two Handed"), do: ["Held"]
   defp conflicting_worn_on(_), do: []
 
   defp conflicting_items(item, equipment) do
