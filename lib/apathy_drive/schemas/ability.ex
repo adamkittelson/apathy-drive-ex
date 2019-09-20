@@ -1298,7 +1298,7 @@ defmodule ApathyDrive.Ability do
     Room.update_mobile(room, target_ref, fn target ->
       initial_limb_health = target.limbs[limb_name].health
 
-      target = update_in(target.limbs[limb_name].health, &(&1 + percentage * 2))
+      target = update_in(target.limbs[limb_name].health, &(&1 + percentage))
 
       limb = target.limbs[limb_name]
 
@@ -1325,7 +1325,6 @@ defmodule ApathyDrive.Ability do
                 |> Systems.Effect.add(effect)
 
               limb.slots
-              |> IO.inspect()
               |> Enum.reduce(target, fn slot, target ->
                 item_to_remove = Enum.find(target.equipment, &(&1.worn_on == slot))
 
@@ -1377,11 +1376,12 @@ defmodule ApathyDrive.Ability do
 
             Mobile.die(target, room)
           else
-            target
-            |> Ecto.Changeset.change(%{
-              missing_limbs: [limb_name | target.missing_limbs]
-            })
-            |> Repo.update!()
+            target =
+              target
+              |> Ecto.Changeset.change(%{
+                missing_limbs: [limb_name | target.missing_limbs]
+              })
+              |> Repo.update!()
 
             room = put_in(room.mobiles[target.ref], target)
 
@@ -1408,7 +1408,19 @@ defmodule ApathyDrive.Ability do
             "stack_key" => {:crippled, limb_name}
           }
 
-          Systems.Effect.add(target, effect)
+          target = Systems.Effect.add(target, effect)
+
+          room = put_in(room.mobiles[target.ref], target)
+
+          Enum.reduce(target.limbs, room, fn {other_limb_name, other_limb}, room ->
+            if other_limb[:parent] == limb_name and other_limb.health > limb.health do
+              amount = other_limb.health - limb.health
+
+              damage_limb(room, target_ref, other_limb_name, -amount)
+            else
+              room
+            end
+          end)
 
         :else ->
           target
@@ -1479,7 +1491,7 @@ defmodule ApathyDrive.Ability do
           Regeneration.heal_limbs(room, target_ref, ability_shift)
 
         limb = limb(room, target_ref, ability) ->
-          damage_limb(room, target_ref, limb, ability_shift)
+          damage_limb(room, target_ref, limb, ability_shift * 2)
 
         :else ->
           room

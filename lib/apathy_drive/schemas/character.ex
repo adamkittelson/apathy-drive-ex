@@ -1564,9 +1564,15 @@ defmodule ApathyDrive.Character do
             |> Regeneration.heal_limbs(character.ref, hp)
             |> Regeneration.balance_limbs(character.ref)
 
-          room.mobiles[character.ref]
-          |> Regeneration.regenerate(room)
-          |> RoomServer.execute_casting_ability(room)
+          character = room.mobiles[character.ref]
+
+          if character do
+            character
+            |> Regeneration.regenerate(room)
+            |> RoomServer.execute_casting_ability(room)
+          else
+            room
+          end
         end)
         |> AI.think(character.ref)
 
