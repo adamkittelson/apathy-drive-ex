@@ -94,7 +94,7 @@ defmodule ApathyDrive.Item do
 
   # set a level on placed items that have already been placed
   def from_assoc(%ItemInstance{item: %Item{type: type} = item, level: nil, room_id: room_id} = ii)
-      when not is_nil(room_id) and type in ["Weapon", "Armour"] do
+      when not is_nil(room_id) and type in ["Weapon", "Armour", "Shield"] do
     traits = ItemTrait.load_traits(item.id)
 
     min_level = traits["MinLevel"]
