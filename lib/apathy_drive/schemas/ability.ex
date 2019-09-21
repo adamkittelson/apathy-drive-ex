@@ -45,6 +45,7 @@ defmodule ApathyDrive.Ability do
     field(:difficulty, :integer)
     field(:level, :integer)
 
+    field(:limbs, :any, virtual: true, default: [])
     field(:traits, :map, virtual: true, default: %{})
     field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
     field(:result, :any, virtual: true)
@@ -963,8 +964,20 @@ defmodule ApathyDrive.Ability do
     duration
   end
 
-  def dodged?(%{} = caster, %{} = target, room) do
+  def dodged?(%{} = caster, %{} = target, ability, room) do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
+
+    limb_modifier =
+      ability.limbs
+      |> Enum.reduce(1.0, fn limb, modifier ->
+        if caster.limbs do
+          max(0, IO.inspect(caster.limbs)[limb].health) * modifier
+        else
+          modifier
+        end
+      end)
+
+    accuracy = accuracy * limb_modifier
 
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
@@ -982,9 +995,21 @@ defmodule ApathyDrive.Ability do
     :rand.uniform(100) < chance
   end
 
-  def blocked?(%{} = caster, %Character{} = target, room) do
+  def blocked?(%{} = caster, %Character{} = target, _ability, room) do
     if Character.shield(target) do
       accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
+
+      limb_modifier =
+        ability.limbs
+        |> Enum.reduce(1.0, fn limb, modifier ->
+          if caster.limbs do
+            max(0, IO.inspect(caster.limbs)[limb].health) * modifier
+          else
+            modifier
+          end
+        end)
+
+      accuracy = accuracy * limb_modifier
 
       block = Mobile.block_at_level(target, target.level)
 
@@ -1005,13 +1030,25 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def blocked?(%{} = _caster, %{} = target, _room) do
+  def blocked?(%{} = _caster, %{} = target, _ability, _room) do
     :rand.uniform(100) < Mobile.ability_value(target, "Block")
   end
 
-  def parried?(%{} = caster, %Character{} = target, room) do
+  def parried?(%{} = caster, %Character{} = target, _ability, room) do
     if Character.weapon(target) do
       accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
+
+      limb_modifier =
+        ability.limbs
+        |> Enum.reduce(1.0, fn limb, modifier ->
+          if caster.limbs do
+            max(0, IO.inspect(caster.limbs)[limb].health) * modifier
+          else
+            modifier
+          end
+        end)
+
+      accuracy = accuracy * limb_modifier
 
       dodge = Mobile.parry_at_level(target, target.level)
 
@@ -1032,7 +1069,7 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def parried?(%{} = _caster, %{} = target, _room) do
+  def parried?(%{} = _caster, %{} = target, _ability, _room) do
     :rand.uniform(100) < Mobile.ability_value(target, "Parry")
   end
 
@@ -1043,7 +1080,7 @@ defmodule ApathyDrive.Ability do
         %Ability{traits: %{"Dodgeable" => true}} = ability
       ) do
     cond do
-      dodged?(caster, target, room) ->
+      dodged?(caster, target, ability, room) ->
         room = add_evil_points(room, ability, caster, target)
         caster = room.mobiles[caster.ref]
         target = room.mobiles[target.ref]
@@ -1064,7 +1101,7 @@ defmodule ApathyDrive.Ability do
         Room.update_energy_bar(room, target.ref)
         room
 
-      blocked?(caster, target, room) ->
+      blocked?(caster, target, ability, room) ->
         room = add_evil_points(room, ability, caster, target)
         caster = room.mobiles[caster.ref]
         target = room.mobiles[target.ref]
@@ -1086,7 +1123,7 @@ defmodule ApathyDrive.Ability do
 
         put_in(room.mobiles[caster.ref], caster)
 
-      parried?(caster, target, room) ->
+      parried?(caster, target, ability, room) ->
         room = add_evil_points(room, ability, caster, target)
         caster = room.mobiles[caster.ref]
         target = room.mobiles[target.ref]

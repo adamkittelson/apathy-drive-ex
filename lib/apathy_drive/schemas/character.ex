@@ -623,8 +623,11 @@ defmodule ApathyDrive.Character do
       miss_verbs: [singular_miss, plural_miss],
       min_damage: min_damage,
       max_damage: max_damage,
-      traits: traits
+      traits: traits,
+      limb: limb
     } = weapon
+
+    limbs = if limb, do: [limb], else: ["left hand", "right hand"]
 
     {hit_verbs, singular_miss, plural_miss} =
       if riposte do
@@ -671,7 +674,8 @@ defmodule ApathyDrive.Character do
         "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
         "DodgeSpectatorMessage" =>
           "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
-      }
+      },
+      limbs: limbs
     }
 
     if on_hit = weapon.traits["OnHit"] do
