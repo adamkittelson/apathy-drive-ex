@@ -850,21 +850,25 @@ defmodule ApathyDrive.Ability do
               Mobile.update_prompt(caster)
 
               if ability.kind in ["attack", "curse"] and !(caster.ref in targets) do
-                [target_ref | _] = targets
+                if targets == [] do
+                  caster
+                else
+                  [target_ref | _] = targets
 
-                if Map.has_key?(caster, :attack_target) do
-                  if is_nil(caster.attack_target) do
-                    caster
-                    |> Map.put(:attack_target, target_ref)
-                    |> Mobile.send_scroll(
-                      "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
-                    )
+                  if Map.has_key?(caster, :attack_target) do
+                    if is_nil(caster.attack_target) do
+                      caster
+                      |> Map.put(:attack_target, target_ref)
+                      |> Mobile.send_scroll(
+                        "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
+                      )
+                    else
+                      caster
+                      |> Map.put(:attack_target, target_ref)
+                    end
                   else
                     caster
-                    |> Map.put(:attack_target, target_ref)
                   end
-                else
-                  caster
                 end
               else
                 caster
@@ -1525,7 +1529,7 @@ defmodule ApathyDrive.Ability do
             target = Mobile.shift_hp(target, ability_shift)
 
             cond do
-              initial_hp > 0 and target.hp < 0 ->
+              initial_hp > 0 and target.hp < 0 and target.__struct__ == Character ->
                 Mobile.send_scroll(target, "<p>You lose conciousness!</p>")
 
                 Room.send_scroll(

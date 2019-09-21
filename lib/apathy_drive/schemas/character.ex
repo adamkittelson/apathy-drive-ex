@@ -512,8 +512,6 @@ defmodule ApathyDrive.Character do
             end
           end)
 
-        IO.puts("setting #{item.name} limb to #{limb}")
-
         equipment = List.delete(character.equipment, item)
 
         item = Map.put(item, :limb, limb)
