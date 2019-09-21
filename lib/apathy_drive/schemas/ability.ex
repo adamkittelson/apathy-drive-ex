@@ -1324,11 +1324,9 @@ defmodule ApathyDrive.Ability do
                 |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
                 |> Systems.Effect.add(effect)
 
-              limb.slots
-              |> Enum.reduce(target, fn slot, target ->
-                item_to_remove = Enum.find(target.equipment, &(&1.worn_on == slot))
-
-                if item_to_remove do
+              target.equipment
+              |> Enum.reduce(target, fn item_to_remove, target ->
+                if item_to_remove.limb == limb_name do
                   %ItemInstance{id: item_to_remove.instance_id}
                   |> Ecto.Changeset.change(%{
                     equipped: false,

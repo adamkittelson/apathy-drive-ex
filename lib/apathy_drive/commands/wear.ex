@@ -85,6 +85,8 @@ defmodule ApathyDrive.Commands.Wear do
               )
           end
 
+        character = Character.assign_limbs_to_equipment(character)
+
         room = put_in(room.mobiles[character.ref], character)
         Character.update_score(character, room)
         Room.update_hp_bar(room, character.ref)

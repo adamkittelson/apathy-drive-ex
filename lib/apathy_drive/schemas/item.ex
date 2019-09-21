@@ -50,6 +50,7 @@ defmodule ApathyDrive.Item do
     field(:destruct_message, :string)
     field(:global_drop_rarity, :string)
 
+    field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
     field(:level, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)

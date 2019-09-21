@@ -3,19 +3,19 @@ defmodule ApathyDrive.Commands.Inventory do
   alias ApathyDrive.{Character, Currency, Item, Mobile}
 
   @slot_order [
+    "Head",
+    "Neck",
     "Held",
     "Two Handed",
-    "Head",
+    "Arm",
+    "Hand",
+    "Wrist",
+    "Finger",
     "Torso",
     "Back",
-    "Hand",
     "Waist",
     "Legs",
-    "Foot",
-    "Neck",
-    "Wrist",
-    "Arm",
-    "Finger"
+    "Foot"
   ]
 
   def keywords, do: ["i", "inv", "inventory"]
@@ -40,7 +40,17 @@ defmodule ApathyDrive.Commands.Inventory do
           if item.type == "Light" do
             String.pad_trailing("(Readied/#{item.uses})", 15)
           else
-            String.pad_trailing("(#{item.worn_on})", 15)
+            if ApathyDrive.Commands.Wear.worn_on_max(item) > 1 do
+              worn_on =
+                item.limb
+                |> String.split(" ")
+                |> Enum.map(&String.capitalize/1)
+                |> Enum.join(" ")
+
+              String.pad_trailing("(#{worn_on})", 15)
+            else
+              String.pad_trailing("(#{item.worn_on})", 15)
+            end
           end
 
         Mobile.send_scroll(

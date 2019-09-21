@@ -485,11 +485,46 @@ defmodule ApathyDrive.Character do
     character
     |> Map.put(:inventory, Enum.reject(items, & &1.equipped))
     |> Map.put(:equipment, Enum.filter(items, & &1.equipped))
+    |> assign_limbs_to_equipment()
     |> add_equipped_items_effects()
     |> load_abilities()
     |> TimerManager.send_after(
       {:use_light_source, :timer.seconds(30), {:use_light_source, character.ref}}
     )
+  end
+
+  def assign_limbs_to_equipment(%Character{} = character) do
+    Enum.reduce(character.equipment, character, fn item, character ->
+      if is_nil(item.limb) do
+        limbs = ApathyDrive.Commands.Wear.limbs_for_slot(character, item.worn_on)
+
+        limb =
+          Enum.find(limbs, fn limb ->
+            if character.limbs[limb].health <= 0 do
+              false
+            else
+              items_for_slot =
+                character.equipment
+                |> Enum.filter(&(&1.worn_on == item.worn_on))
+                |> Enum.reject(&(&1 == item))
+
+              Enum.all?(items_for_slot, &(&1.limb != limb))
+            end
+          end)
+
+        IO.puts("setting #{item.name} limb to #{limb}")
+
+        equipment = List.delete(character.equipment, item)
+
+        item = Map.put(item, :limb, limb)
+
+        equipment = [item | equipment]
+
+        put_in(character.equipment, equipment)
+      else
+        character
+      end
+    end)
   end
 
   def add_equipped_items_effects(%Character{} = character) do
