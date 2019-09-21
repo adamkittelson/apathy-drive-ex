@@ -1120,6 +1120,14 @@ defmodule ApathyDrive.Ability do
         %Ability{traits: %{"Dodgeable" => true}} = ability
       ) do
     cond do
+      Mobile.unconcious(target, true) ->
+        apply_ability(
+          room,
+          caster,
+          target,
+          update_in(ability.traits, &Map.delete(&1, "Dodgeable"))
+        )
+
       dodged?(caster, target, ability, room) ->
         room = add_evil_points(room, ability, caster, target)
         caster = room.mobiles[caster.ref]
