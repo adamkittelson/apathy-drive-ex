@@ -967,43 +967,59 @@ defmodule ApathyDrive.Ability do
   def dodged?(%{} = caster, %{} = target, ability, room) do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
-    limb_modifier =
+    accuracy_modifier =
       ability.limbs
       |> Enum.reduce(1.0, fn limb, modifier ->
         if caster.limbs do
-          max(0, IO.inspect(caster.limbs)[limb].health) * modifier
+          max(0, caster.limbs[limb].health) * modifier
         else
           modifier
         end
       end)
 
-    accuracy = accuracy * limb_modifier
+    accuracy = accuracy * accuracy_modifier
 
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
+    dodge_modifier =
+      if Map.has_key?(target, :limbs) do
+        target.limbs
+        |> Enum.reduce(1.0, fn {_name, limb}, modifier ->
+          if limb.type in ["leg", "foot"] do
+            max(0, limb.health) * modifier
+          else
+            modifier
+          end
+        end)
+      else
+        1.0
+      end
+
     modifier = Mobile.ability_value(target, "Dodge")
+
+    dodge = (dodge + modifier) * dodge_modifier
 
     difference = dodge - accuracy
 
     chance =
       if difference > 0 do
-        30 + modifier + difference * 0.3
+        30 + difference * 0.3
       else
-        30 + modifier + difference * 0.7
+        30 + difference * 0.7
       end
 
     :rand.uniform(100) < chance
   end
 
-  def blocked?(%{} = caster, %Character{} = target, _ability, room) do
-    if Character.shield(target) do
+  def blocked?(%{} = caster, %Character{} = target, ability, room) do
+    if shield = Character.shield(target) do
       accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
       limb_modifier =
         ability.limbs
         |> Enum.reduce(1.0, fn limb, modifier ->
           if caster.limbs do
-            max(0, IO.inspect(caster.limbs)[limb].health) * modifier
+            max(0, caster.limbs[limb].health) * modifier
           else
             modifier
           end
@@ -1013,15 +1029,24 @@ defmodule ApathyDrive.Ability do
 
       block = Mobile.block_at_level(target, target.level)
 
+      block_modifier =
+        if Map.has_key?(target, :limbs) do
+          max(0, target.limbs[shield.limb].health)
+        else
+          1.0
+        end
+
       modifier = Mobile.ability_value(target, "Block")
+
+      block = (block + modifier) * block_modifier
 
       difference = block - accuracy
 
       chance =
         if difference > 0 do
-          30 + modifier + difference * 0.3
+          30 + difference * 0.3
         else
-          30 + modifier + difference * 0.7
+          30 + difference * 0.7
         end
 
       :rand.uniform(100) < chance
@@ -1034,15 +1059,15 @@ defmodule ApathyDrive.Ability do
     :rand.uniform(100) < Mobile.ability_value(target, "Block")
   end
 
-  def parried?(%{} = caster, %Character{} = target, _ability, room) do
-    if Character.weapon(target) do
+  def parried?(%{} = caster, %Character{} = target, ability, room) do
+    if weapon = Character.weapon(target) do
       accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
       limb_modifier =
         ability.limbs
         |> Enum.reduce(1.0, fn limb, modifier ->
           if caster.limbs do
-            max(0, IO.inspect(caster.limbs)[limb].health) * modifier
+            max(0, caster.limbs[limb].health) * modifier
           else
             modifier
           end
@@ -1050,17 +1075,32 @@ defmodule ApathyDrive.Ability do
 
       accuracy = accuracy * limb_modifier
 
-      dodge = Mobile.parry_at_level(target, target.level)
+      parry = Mobile.parry_at_level(target, target.level)
 
-      modifier = Mobile.ability_value(target, "Parry")
+      limbs =
+        if weapon.worn_on == "Two Handed" do
+          ["left hand", "right hand"]
+        else
+          [weapon.limb]
+        end
 
-      difference = dodge - accuracy
+      parry_modifier =
+        limbs
+        |> Enum.reduce(1.0, fn limb, modifier ->
+          max(0, target.limbs[limb].health) * modifier
+        end)
+
+      modifier = Mobile.ability_value(target, "Block")
+
+      parry = (parry + modifier) * parry_modifier
+
+      difference = parry - accuracy
 
       chance =
         if difference > 0 do
-          30 + modifier + difference * 0.3
+          30 + difference * 0.3
         else
-          30 + modifier + difference * 0.7
+          30 + difference * 0.7
         end
 
       :rand.uniform(100) < chance
