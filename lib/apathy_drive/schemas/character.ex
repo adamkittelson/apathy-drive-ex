@@ -1765,7 +1765,21 @@ defmodule ApathyDrive.Character do
     def round_length_in_ms(character) do
       speed = ability_value(character, "Speed")
 
-      modifier = if speed, do: speed, else: 1
+      modifier = if speed, do: speed, else: 1.0
+
+      limbs =
+        character.limbs
+        |> Map.values()
+        |> Enum.filter(&(&1.type in ["arm", "hand", "leg", "foot"]))
+
+      limb_modifier =
+        Enum.reduce(limbs, 0, fn limb, limb_modifier ->
+          max(0, limb.health) + limb_modifier
+        end)
+
+      limb_modifier = limb_modifier / length(limbs)
+
+      modifier = modifier * (1 - limb_modifier + 1)
 
       trunc(modifier * Application.get_env(:apathy_drive, :round_length_in_ms))
     end
@@ -1862,7 +1876,7 @@ defmodule ApathyDrive.Character do
             100
         end
 
-      sc + ability_value(character, "Spellcasting")
+      trunc((sc + ability_value(character, "Spellcasting")) * character.limbs["head"].health)
     end
 
     def stealth_at_level(character, level) do
