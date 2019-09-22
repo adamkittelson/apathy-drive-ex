@@ -164,15 +164,6 @@ defmodule ApathyDrive.Directory do
       |> Enum.filter(&(&1.game == game))
       |> Enum.reduce(state.remote, fn %{name: name, game: game} = player, updated_list ->
         if !MapSet.member?(new_list, player) do
-          message =
-            "<p>#{ApathyDrive.Character.sanitize(name)} just left the distant Realm of #{
-              ApathyDrive.Character.sanitize(game)
-            }.</p>"
-
-          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-            html: message
-          })
-
           MapSet.delete(updated_list, player)
         else
           updated_list
@@ -184,13 +175,6 @@ defmodule ApathyDrive.Directory do
       new_list
       |> Enum.reduce(updated_list, fn %{name: name, game: game} = player, updated_list ->
         if !MapSet.member?(updated_list, player) do
-          ApathyDriveWeb.Endpoint.broadcast!("mud:play", "scroll", %{
-            html:
-              "<p>#{ApathyDrive.Character.sanitize(name)} just entered the distant Realm of #{
-                ApathyDrive.Character.sanitize(game)
-              }.</p>"
-          })
-
           MapSet.put(updated_list, player)
         else
           updated_list
