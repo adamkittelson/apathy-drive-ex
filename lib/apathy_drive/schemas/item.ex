@@ -146,6 +146,8 @@ defmodule ApathyDrive.Item do
 
     item
     |> Map.put(:uses, ii.uses || item.max_uses)
+    |> Map.put(:name, ii.name || item.name)
+    |> Map.put(:description, ii.description || item.description)
     |> load_required_races_and_classes()
     |> load_item_abilities()
   end

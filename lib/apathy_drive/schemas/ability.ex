@@ -1476,6 +1476,19 @@ defmodule ApathyDrive.Ability do
 
             room = put_in(room.mobiles[target.ref], target)
 
+            %ItemInstance{
+              item_id: 1,
+              room_id: room.id,
+              equipped: false,
+              hidden: false,
+              name: limb_name <> " of " <> target.name,
+              description: "This is the " <> limb_name <> " of " <> target.name <> ".",
+              delete_at: Timex.shift(DateTime.utc_now(), minutes: 5)
+            }
+            |> Repo.insert!()
+
+            room = Room.load_items(room)
+
             Enum.reduce(target.limbs, room, fn {other_limb_name, other_limb}, room ->
               if other_limb[:parent] == limb_name and other_limb.health > 0 do
                 damage_limb(room, target_ref, other_limb_name, -other_limb.health)

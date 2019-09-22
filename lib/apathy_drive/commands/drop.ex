@@ -73,6 +73,13 @@ defmodule ApathyDrive.Commands.Drop do
             room
 
           %Item{instance_id: instance_id} = item ->
+            delete_at =
+              if item.__struct__ == ApathyDrive.Sign do
+                5
+              else
+                Item.cost_in_copper(item)
+              end
+
             ItemInstance
             |> Repo.get(instance_id)
             |> Ecto.Changeset.change(%{
@@ -81,7 +88,7 @@ defmodule ApathyDrive.Commands.Drop do
               equipped: false,
               class_id: nil,
               hidden: false,
-              delete_at: Timex.shift(DateTime.utc_now(), minutes: Item.cost_in_copper(item))
+              delete_at: Timex.shift(DateTime.utc_now(), minutes: delete_at)
             })
             |> Repo.update!()
 

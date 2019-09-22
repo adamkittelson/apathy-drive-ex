@@ -12,6 +12,11 @@ defmodule ApathyDrive.ItemInstance do
     field(:uses, :integer)
     field(:getable, :boolean)
 
+    # overrides name and description of an item
+    # used for severed limbs
+    field(:name, :string)
+    field(:description, :string)
+
     belongs_to(:item, Item)
     belongs_to(:room, Room)
     belongs_to(:character, Character)
