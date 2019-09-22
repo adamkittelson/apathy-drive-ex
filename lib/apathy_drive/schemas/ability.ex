@@ -1387,12 +1387,21 @@ defmodule ApathyDrive.Ability do
     Room.update_mobile(room, target_ref, fn target ->
       initial_limb_health = target.limbs[limb_name].health
 
-      target = update_in(target.limbs[limb_name].health, &(&1 + percentage))
+      updated_health = initial_limb_health + percentage
+
+      updated_health =
+        if updated_health < 0 do
+          min(-0.25, updated_health)
+        else
+          updated_health
+        end
+
+      target = put_in(target.limbs[limb_name].health, updated_health)
 
       limb = target.limbs[limb_name]
 
       cond do
-        limb.health <= 0 ->
+        updated_health <= 0 ->
           target =
             if !is_nil(limb[:parent]) do
               Mobile.send_scroll(target, "<p>Your #{limb_name} is severed!</p>")

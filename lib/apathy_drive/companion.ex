@@ -20,6 +20,12 @@ defmodule ApathyDrive.Companion do
 
   require Ecto.Query
 
+  @behaviour Access
+  defdelegate get_and_update(container, key, fun), to: Map
+  defdelegate fetch(container, key), to: Map
+  defdelegate get(container, key, default), to: Map
+  defdelegate pop(container, key), to: Map
+
   defstruct [
     :gender,
     :description,
@@ -493,10 +499,24 @@ defmodule ApathyDrive.Companion do
     def heartbeat(%Companion{} = companion, %Room{} = room) do
       room =
         Room.update_mobile(room, companion.ref, fn companion ->
-          companion
-          |> Regeneration.regenerate(room)
-          |> RoomServer.execute_casting_ability(room)
+          hp = Regeneration.hp_since_last_tick(room, companion)
+
+          room =
+            room
+            |> Regeneration.heal_limbs(companion.ref, hp)
+            |> Regeneration.balance_limbs(companion.ref)
+
+          companion = room.mobiles[companion.ref]
+
+          if companion do
+            companion
+            |> Regeneration.regenerate(room)
+            |> RoomServer.execute_casting_ability(room)
+          else
+            room
+          end
         end)
+        |> ApathyDrive.Aggression.react(companion.ref)
         |> AI.think(companion.ref)
 
       if companion = room.mobiles[companion.ref] do

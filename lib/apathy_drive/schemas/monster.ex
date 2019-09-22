@@ -30,6 +30,12 @@ defmodule ApathyDrive.Monster do
 
   require Logger
 
+  @behaviour Access
+  defdelegate get_and_update(container, key, fun), to: Map
+  defdelegate fetch(container, key), to: Map
+  defdelegate get(container, key, default), to: Map
+  defdelegate pop(container, key), to: Map
+
   schema "monsters" do
     field(:name, :string)
     field(:gender, :string)
@@ -786,9 +792,22 @@ defmodule ApathyDrive.Monster do
     def heartbeat(%Monster{} = monster, %Room{} = room) do
       room =
         Room.update_mobile(room, monster.ref, fn monster ->
-          monster
-          |> Regeneration.regenerate(room)
-          |> RoomServer.execute_casting_ability(room)
+          hp = Regeneration.hp_since_last_tick(room, monster)
+
+          room =
+            room
+            |> Regeneration.heal_limbs(monster.ref, hp)
+            |> Regeneration.balance_limbs(monster.ref)
+
+          monster = room.mobiles[monster.ref]
+
+          if monster do
+            monster
+            |> Regeneration.regenerate(room)
+            |> RoomServer.execute_casting_ability(room)
+          else
+            room
+          end
         end)
         |> ApathyDrive.Aggression.react(monster.ref)
         |> AI.think(monster.ref)
