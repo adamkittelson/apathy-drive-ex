@@ -162,7 +162,7 @@ defmodule ApathyDrive.Directory do
     updated_list =
       state.remote
       |> Enum.filter(&(&1.game == game))
-      |> Enum.reduce(state.remote, fn %{name: name, game: game} = player, updated_list ->
+      |> Enum.reduce(state.remote, fn %{name: _name, game: _game} = player, updated_list ->
         if !MapSet.member?(new_list, player) do
           MapSet.delete(updated_list, player)
         else
@@ -173,7 +173,7 @@ defmodule ApathyDrive.Directory do
     # add players who were missing
     updated_list =
       new_list
-      |> Enum.reduce(updated_list, fn %{name: name, game: game} = player, updated_list ->
+      |> Enum.reduce(updated_list, fn %{name: _name, game: _game} = player, updated_list ->
         if !MapSet.member?(updated_list, player) do
           MapSet.put(updated_list, player)
         else
