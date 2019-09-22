@@ -1413,36 +1413,40 @@ defmodule ApathyDrive.Ability do
                 |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
                 |> Systems.Effect.add(effect)
 
-              target.equipment
-              |> Enum.reduce(target, fn item_to_remove, target ->
-                if item_to_remove.limb == limb_name do
-                  %ItemInstance{id: item_to_remove.instance_id}
-                  |> Ecto.Changeset.change(%{
-                    equipped: false,
-                    class_id: nil
-                  })
-                  |> Repo.update!()
+              if Map.has_key?(target, :equipment) do
+                target.equipment
+                |> Enum.reduce(target, fn item_to_remove, target ->
+                  if item_to_remove.limb == limb_name do
+                    %ItemInstance{id: item_to_remove.instance_id}
+                    |> Ecto.Changeset.change(%{
+                      equipped: false,
+                      class_id: nil
+                    })
+                    |> Repo.update!()
 
-                  target = Character.load_items(target)
+                    target = Character.load_items(target)
 
-                  Mobile.send_scroll(
-                    target,
-                    "<p>You unequip your #{Item.colored_name(item_to_remove, character: target)}.</p>"
-                  )
+                    Mobile.send_scroll(
+                      target,
+                      "<p>You unequip your #{Item.colored_name(item_to_remove, character: target)}.</p>"
+                    )
 
-                  Room.send_scroll(
-                    room,
-                    "<p>#{target.name} unequipped their #{
-                      Item.colored_name(item_to_remove, character: target)
-                    }.</p>",
-                    [target]
-                  )
+                    Room.send_scroll(
+                      room,
+                      "<p>#{target.name} unequipped their #{
+                        Item.colored_name(item_to_remove, character: target)
+                      }.</p>",
+                      [target]
+                    )
 
-                  target
-                else
-                  target
-                end
-              end)
+                    target
+                  else
+                    target
+                  end
+                end)
+              else
+                target
+              end
             else
               target
             end

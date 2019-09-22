@@ -145,7 +145,7 @@ defmodule ApathyDrive.Regeneration do
           |> Enum.filter(&(target.limbs[&1].health > 0 and target.limbs[&1].health < 1.0))
 
         Enum.reduce(limbs, room, fn limb, room ->
-          percentage = percentage / length(limbs)
+          percentage = percentage * 2 / length(limbs)
 
           heal_limb(room, target_ref, percentage, limb)
         end)
