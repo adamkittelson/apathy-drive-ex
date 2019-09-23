@@ -48,6 +48,7 @@ defmodule ApathyDrive.Item do
     field(:hit_verbs, ApathyDrive.JSONB)
     field(:miss_verbs, ApathyDrive.JSONB)
     field(:destruct_message, :string)
+    field(:room_destruct_message, :string)
     field(:global_drop_rarity, :string)
 
     field(:limb, :string, virtual: true)
@@ -148,6 +149,7 @@ defmodule ApathyDrive.Item do
     |> Map.put(:uses, ii.uses || item.max_uses)
     |> Map.put(:name, ii.name || item.name)
     |> Map.put(:description, ii.description || item.description)
+    |> Map.put(:room_destruct_message, ii.room_destruct_message || item.room_destruct_message)
     |> load_required_races_and_classes()
     |> load_item_abilities()
   end

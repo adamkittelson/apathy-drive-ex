@@ -16,6 +16,7 @@ defmodule ApathyDrive.ItemInstance do
     # used for severed limbs
     field(:name, :string)
     field(:description, :string)
+    field(:room_destruct_message, :string)
 
     belongs_to(:item, Item)
     belongs_to(:room, Room)

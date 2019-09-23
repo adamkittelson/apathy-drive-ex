@@ -520,12 +520,16 @@ defmodule ApathyDrive.RoomServer do
             })
             |> Repo.update!()
           else
+            if item.room_destruct_message do
+              Room.send_scroll(room, item.room_destruct_message)
+            end
+
             Repo.delete!(%ItemInstance{id: id})
           end
         end
     end)
 
-    Process.send_after(self(), :cleanup, :timer.hours(1))
+    Process.send_after(self(), :cleanup, :timer.minutes(1))
 
     room = Room.load_items(room)
     {:noreply, room}
