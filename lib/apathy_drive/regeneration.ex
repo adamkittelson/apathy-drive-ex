@@ -243,10 +243,14 @@ defmodule ApathyDrive.Regeneration do
               if max_hp > 0 do
                 amount = max(0.01, 1 / max_hp)
 
+                room =
+                  room
+                  |> heal_limb(target.ref, amount * 2, limb_name)
+                  |> update_in([:mobiles, target.ref, :hp], &(&1 - amount))
+                  |> update_in([:mobiles, target.ref, :limbs, limb_name, :health], &min(0, &1))
+
+                Room.update_hp_bar(room, target.ref)
                 room
-                |> heal_limb(target.ref, amount * 2, limb_name)
-                |> update_in([:mobiles, target.ref, :hp], &(&1 - amount))
-                |> update_in([:mobiles, target.ref, :limbs, limb_name, :health], &min(0, &1))
               else
                 room
               end

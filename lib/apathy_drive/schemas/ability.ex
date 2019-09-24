@@ -1391,13 +1391,16 @@ defmodule ApathyDrive.Ability do
         initial_limb_health = target.limbs[limb_name].health
 
         updated_health = initial_limb_health + percentage
+        IO.puts("updated health: #{updated_health}")
 
         updated_health =
-          if updated_health < 0 do
+          if updated_health <= 0 do
             min(-0.25, updated_health)
           else
             updated_health
           end
+
+        IO.puts("updated updated health: #{updated_health}")
 
         target = put_in(target.limbs[limb_name].health, updated_health)
 

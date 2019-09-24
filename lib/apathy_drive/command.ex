@@ -71,6 +71,7 @@ defmodule ApathyDrive.Command do
       Commands.Look,
       Commands.Open,
       Commands.Party,
+      Commands.Pray,
       Commands.Read,
       Commands.Remove,
       Commands.Reply,

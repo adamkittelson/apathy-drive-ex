@@ -1546,7 +1546,7 @@ defmodule ApathyDrive.Character do
 
     def hp_regen_per_round(%Character{hp: hp} = character) when hp >= 0 do
       if Enum.any?(character.limbs, fn {_name, limb} -> limb.health < 0 end) do
-        0
+        0.0001
       else
         round_length = Mobile.round_length_in_ms(character)
 
