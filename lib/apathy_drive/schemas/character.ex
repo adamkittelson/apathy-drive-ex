@@ -1527,6 +1527,7 @@ defmodule ApathyDrive.Character do
           missing_limbs: []
         })
         |> Repo.update!()
+        |> Character.decrement_highest_attribute()
         |> Character.load_limbs()
         |> Character.load_traits()
         |> Character.set_attribute_levels()

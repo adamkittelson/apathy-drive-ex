@@ -59,7 +59,6 @@ defmodule ApathyDrive.Commands.Pray do
             |> Systems.Effect.remove_oldest_stack({:severed, limb_name})
             |> Systems.Effect.add(effect)
             |> put_in([:limbs, limb_name, :health], 0.01)
-            |> Character.decrement_highest_attribute()
           else
             character
           end
@@ -68,6 +67,7 @@ defmodule ApathyDrive.Commands.Pray do
           missing_limbs: []
         })
         |> Repo.update!()
+        |> Character.decrement_highest_attribute()
       end)
     else
       Mobile.send_scroll(character, "<p>You have no missing limbs.</p>")
