@@ -5,15 +5,24 @@ defmodule ApathyDrive.Commands.Pray do
   def keywords, do: ["pray"]
 
   def execute(%Room{} = room, %Character{} = character, _) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='blue'>You pray for limbs to be restored.</span></p>"
-    )
+    if !Mobile.unconcious(character) do
+      if character.evil_points < 30 do
+        Mobile.send_scroll(
+          character,
+          "<p><span class='blue'>You pray for your limbs to be restored.</span></p>"
+        )
 
-    if character.evil_points < 40 do
-      restore_limbs(room, character)
+        restore_limbs(room, character)
+      else
+        Mobile.send_scroll(
+          character,
+          "<p><span class='blue'>You pray for absolution.</span></p>"
+        )
+
+        smite(room, character)
+      end
     else
-      smite(room, character)
+      room
     end
   end
 
@@ -23,12 +32,14 @@ defmodule ApathyDrive.Commands.Pray do
       targets: "self",
       energy: 0,
       kind: "attack",
-      user_message: "The gods smite you for your impertinence for {{amount}} damage!",
+      user_message: "The gods smite you in atonement for your sins!",
       ignores_round_cooldown?: true,
       difficulty: nil
     }
 
-    Ability.execute(room, character.ref, ability, [character.ref])
+    room
+    |> Room.update_mobile(character.ref, &Character.alter_evil_points(&1, -20))
+    |> Ability.execute(character.ref, ability, [character.ref])
   end
 
   def restore_limbs(room, character) do
@@ -48,6 +59,7 @@ defmodule ApathyDrive.Commands.Pray do
             |> Systems.Effect.remove_oldest_stack({:severed, limb_name})
             |> Systems.Effect.add(effect)
             |> put_in([:limbs, limb_name, :health], 0.01)
+            |> Character.decrement_highest_attribute()
           else
             character
           end
@@ -59,6 +71,7 @@ defmodule ApathyDrive.Commands.Pray do
       end)
     else
       Mobile.send_scroll(character, "<p>You have no missing limbs.</p>")
+      room
     end
   end
 end

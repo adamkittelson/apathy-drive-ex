@@ -355,7 +355,9 @@ defmodule ApathyDrive.Character do
     |> Enum.reduce(character, fn stat, character ->
       exp = get_in(character, [Access.key!(:race), Access.key!(:"#{stat}_experience")])
 
-      level = Level.level_at_exp(exp, 1.0)
+      modifier = (100 + character.race.race.exp_modifier) / 100
+
+      level = Level.level_at_exp(exp, modifier)
 
       character =
         character
@@ -727,6 +729,41 @@ defmodule ApathyDrive.Character do
     dummy_checkpw()
   end
 
+  def decrement_highest_attribute(%Character{} = character) do
+    {attribute, level} =
+      Enum.max_by(character.attribute_levels, fn {_attribute, level} -> level end)
+
+    if level > 1 do
+      modifier = (100 + character.race.race.exp_modifier) / 100
+
+      exp = Level.exp_at_level(level - 1, modifier)
+
+      character =
+        character
+        |> update_in([:race], fn character_race ->
+          character_race
+          |> Ecto.Changeset.change(%{"#{attribute}_experience": exp})
+          |> Repo.update!()
+        end)
+        |> set_attribute_levels()
+
+      message =
+        "<p><span class='yellow'>Your #{attribute} decreased to #{Map.get(character, attribute)}!</span></p>"
+
+      Repo.insert!(%ChannelHistory{
+        character_id: character.id,
+        message: message
+      })
+
+      Character.send_chat(
+        character,
+        message
+      )
+    else
+      character
+    end
+  end
+
   def add_attribute_experience(%Character{exp_buffer: buffer} = character, attribute, amount)
       when buffer >= amount do
     Character.pulse_score_attribute(character, attribute)
@@ -748,10 +785,12 @@ defmodule ApathyDrive.Character do
         |> Repo.update!()
       end)
 
+    modifier = (100 + character.race.race.exp_modifier) / 100
+
     new_attribute_level =
       character
       |> get_in([Access.key!(:race), Access.key!(:"#{attribute}_experience")])
-      |> Level.level_at_exp(1.0)
+      |> Level.level_at_exp(modifier)
 
     character =
       if new_attribute_level > attribute_level do
@@ -1155,6 +1194,55 @@ defmodule ApathyDrive.Character do
     )
 
     character
+  end
+
+  def alter_evil_points(character, points) do
+    initial_legal_status = Character.legal_status(character)
+
+    change =
+      if points > 0 do
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-grey'>A dark cloud passes over you</span></p>"
+        )
+
+        %{
+          evil_points: min(300.0, character.evil_points + points),
+          last_evil_action_at: DateTime.utc_now()
+        }
+      else
+        %{evil_points: max(-220.0, character.evil_points + points)}
+      end
+
+    character =
+      character
+      |> Ecto.Changeset.cast(change, ~w(evil_points last_evil_action_at)a)
+      |> Repo.update!()
+
+    Directory.add_character(%{
+      name: character.name,
+      evil_points: character.evil_points,
+      room: character.room_id,
+      ref: character.ref,
+      title: character.title
+    })
+
+    legal_status = Character.legal_status(character)
+
+    if legal_status != initial_legal_status do
+      color = ApathyDrive.Commands.Who.color(legal_status)
+
+      status = "<span class='#{color}'>#{legal_status}</span>"
+
+      Mobile.send_scroll(
+        character,
+        "<p>Your legal status has changed to #{status}.</p>"
+      )
+
+      Character.load_abilities(character)
+    else
+      character
+    end
   end
 
   defimpl ApathyDrive.Mobile, for: Character do
@@ -1708,7 +1796,7 @@ defmodule ApathyDrive.Character do
         |> Enum.map(& &1.health)
         |> Room.average()
 
-      trunc((base + hp_per_level + bonus + ability_value(mobile, "MaxHP")) * max_hp)
+      max(1, trunc((base + hp_per_level + bonus + ability_value(mobile, "MaxHP")) * max_hp))
     end
 
     def max_mana_at_level(mobile, level) do

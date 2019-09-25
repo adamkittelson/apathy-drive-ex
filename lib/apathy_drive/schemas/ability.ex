@@ -8,7 +8,6 @@ defmodule ApathyDrive.Ability do
     AbilityTrait,
     Character,
     Companion,
-    Directory,
     Enchantment,
     Item,
     ItemInstance,
@@ -1266,54 +1265,7 @@ defmodule ApathyDrive.Ability do
     evil_points = Mobile.evil_points(target, caster)
 
     if evil_points > 0 do
-      initial_caster_legal_status = Character.legal_status(caster)
-
-      Logger.info("increasing #{caster.name}'s evil points by #{evil_points}")
-
-      caster =
-        caster
-        |> Ecto.Changeset.change(%{
-          evil_points: min(300, caster.evil_points + evil_points),
-          last_evil_action_at: DateTime.utc_now()
-        })
-        |> Repo.update!()
-
-      Directory.add_character(%{
-        name: caster.name,
-        evil_points: caster.evil_points,
-        room: caster.room_id,
-        ref: caster.ref,
-        title: caster.title
-      })
-
-      caster_legal_status = Character.legal_status(caster)
-
-      Mobile.send_scroll(
-        caster,
-        "<p><span class='dark-grey'>A dark cloud passes over you</span></p>"
-      )
-
-      caster =
-        if caster_legal_status != initial_caster_legal_status do
-          color = ApathyDrive.Commands.Who.color(caster_legal_status)
-
-          status = "<span class='#{color}'>#{caster_legal_status}</span>"
-
-          Mobile.send_scroll(
-            caster,
-            "<p>Your legal status has changed to #{status}.</p>"
-          )
-
-          Room.send_scroll(
-            room,
-            "<p>#{Mobile.colored_name(caster)}'s legal status has changed to #{status}.",
-            [caster]
-          )
-
-          Character.load_abilities(caster)
-        else
-          caster
-        end
+      caster = Character.alter_evil_points(caster, evil_points)
 
       retaliate(room, ability, caster, target)
     else
@@ -1391,7 +1343,6 @@ defmodule ApathyDrive.Ability do
         initial_limb_health = target.limbs[limb_name].health
 
         updated_health = initial_limb_health + percentage
-        IO.puts("updated health: #{updated_health}")
 
         updated_health =
           if updated_health <= 0 do
@@ -1399,8 +1350,6 @@ defmodule ApathyDrive.Ability do
           else
             updated_health
           end
-
-        IO.puts("updated updated health: #{updated_health}")
 
         target = put_in(target.limbs[limb_name].health, updated_health)
 
