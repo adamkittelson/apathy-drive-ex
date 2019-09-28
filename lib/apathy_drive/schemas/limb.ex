@@ -4,9 +4,10 @@ defmodule ApathyDrive.Limb do
 
   schema "limbs" do
     field(:type, :string)
+    field(:name, :string)
   end
 
-  @required_fields ~w(name)a
+  @required_fields ~w(name type)a
 
   @doc """
   Creates a changeset based on the `model` and `params`.

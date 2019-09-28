@@ -42,7 +42,8 @@ defmodule ApathyDrive.LimbSet do
               parent: limb_name(limb.parent_limb),
               fatal: limb.fatal,
               slots: Enum.map(limb.limb_set_limb_slots, & &1.slot.name),
-              type: limb.limb.type
+              type: limb.limb.type,
+              name: limb.limb.name
             }
 
           :else ->
@@ -50,7 +51,8 @@ defmodule ApathyDrive.LimbSet do
               health: health,
               fatal: limb.fatal,
               slots: Enum.map(limb.limb_set_limb_slots, & &1.slot.name),
-              type: limb.limb.type
+              type: limb.limb.type,
+              name: limb.limb.name
             }
         end
 
@@ -59,7 +61,7 @@ defmodule ApathyDrive.LimbSet do
   end
 
   defp limb_name(limb) do
-    [limb.location, limb.limb.type]
+    [limb.location, limb.limb.name]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" ")
   end
