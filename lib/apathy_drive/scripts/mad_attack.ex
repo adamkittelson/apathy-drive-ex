@@ -1,5 +1,4 @@
 defmodule ApathyDrive.Scripts.MadAttack do
-  import ApathyDrive.Scripts
   alias ApathyDrive.{Mobile, Room}
 
   def execute(%Room{} = room, mobile_ref, target_ref) do

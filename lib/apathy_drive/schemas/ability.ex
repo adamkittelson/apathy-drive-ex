@@ -1317,7 +1317,7 @@ defmodule ApathyDrive.Ability do
     end)
     |> Enum.reject(&is_nil/1)
 
-    [find(5645)]
+    [find(5649)]
   end
 
   def roll_for_letter(crit_chance) do
