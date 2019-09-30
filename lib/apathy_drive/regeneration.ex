@@ -94,6 +94,13 @@ defmodule ApathyDrive.Regeneration do
   def regenerate_hp(%{} = mobile, room) do
     hp = hp_since_last_tick(room, mobile)
 
+    if hp < 0 do
+      Mobile.send_scroll(
+        mobile,
+        "<p><span class='dark-magenta'>You are taking damage!</span></p>"
+      )
+    end
+
     Mobile.shift_hp(mobile, hp)
   end
 
@@ -221,7 +228,7 @@ defmodule ApathyDrive.Regeneration do
               |> Room.update_mobile(target_ref, fn target ->
                 update_in(target, [:hp], &(&1 + amount))
               end)
-              |> Ability.damage_limb(target_ref, healthiest_limb, -amount * 2)
+              |> Ability.damage_limb(target_ref, healthiest_limb, -amount * 2, true)
 
             is_nil(limb[:parent]) ->
               target
@@ -241,13 +248,13 @@ defmodule ApathyDrive.Regeneration do
               max_hp = Mobile.max_hp_at_level(target, target.level)
 
               if max_hp > 0 do
-                amount = max(0.01, 1 / max_hp)
+                hp_amount = max(0.01, 1 / max_hp)
+                limb_amount = min(hp_amount * 2, abs(target.limbs[limb_name].health))
 
                 room =
                   room
-                  |> heal_limb(target.ref, amount * 2, limb_name)
-                  |> update_in([:mobiles, target.ref, :hp], &(&1 - amount))
-                  |> update_in([:mobiles, target.ref, :limbs, limb_name, :health], &min(0, &1))
+                  |> heal_limb(target.ref, limb_amount, limb_name)
+                  |> update_in([:mobiles, target.ref, :hp], &(&1 - hp_amount))
 
                 Room.update_hp_bar(room, target.ref)
                 room

@@ -6,7 +6,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
     1121
   ]
 
-  def execute(%Room{} = room, mobile_ref) do
+  def execute(%Room{} = room, mobile_ref, _target_ref) do
     Room.update_mobile(room, mobile_ref, fn mobile ->
       case Character.companion(mobile, room) do
         %Companion{monster_id: id} = demon when id in @demon_ids ->
@@ -47,7 +47,8 @@ defmodule ApathyDrive.Scripts.BindDemon do
           {"Heal", %{"max" => 2, "min" => 2}},
           effects,
           mobile,
-          mobile
+          mobile,
+          nil
         )
 
       Mobile.send_scroll(

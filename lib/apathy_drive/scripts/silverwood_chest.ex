@@ -2,7 +2,7 @@ defmodule ApathyDrive.Scripts.SilverwoodChest do
   import ApathyDrive.Scripts
   alias ApathyDrive.{Mobile, Room}
 
-  def execute(%Room{} = room, mobile_ref) do
+  def execute(%Room{} = room, mobile_ref, _target_ref) do
     Room.update_mobile(room, mobile_ref, fn mobile ->
       Mobile.send_scroll(mobile, "<p>You open the silverwood chest, and find...</p>")
 

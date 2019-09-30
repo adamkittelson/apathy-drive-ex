@@ -2,7 +2,7 @@ defmodule ApathyDrive.Scripts.MassiveWoodenChest do
   import ApathyDrive.Scripts
   alias ApathyDrive.{Mobile, Room}
 
-  def execute(%Room{} = room, mobile_ref) do
+  def execute(%Room{} = room, mobile_ref, _target_ref) do
     Room.update_mobile(room, mobile_ref, fn mobile ->
       Mobile.send_scroll(mobile, "<p>You open the massive wooden chest, and find...</p>")
 

@@ -10,7 +10,7 @@ defmodule ApathyDrive.Scripts.SilverRiver do
     1181
   ]
 
-  def execute(%Room{} = room, mobile_ref) do
+  def execute(%Room{} = room, mobile_ref, _target_ref) do
     Room.update_mobile(room, mobile_ref, fn character ->
       if Enum.any?(character.inventory, &(&1.id in @boats)) do
         character

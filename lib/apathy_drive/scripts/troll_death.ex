@@ -2,7 +2,7 @@ defmodule ApathyDrive.Scripts.TrollDeath do
   alias ApathyDrive.Room
   import ApathyDrive.Scripts
 
-  def execute(%Room{} = room, _mobile_ref) do
+  def execute(%Room{} = room, _mobile_ref, _target_ref) do
     roll = :rand.uniform(100)
 
     if roll <= 25 do

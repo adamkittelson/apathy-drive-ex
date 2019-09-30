@@ -2,7 +2,7 @@ defmodule ApathyDrive.Scripts.DarkwoodForest do
   alias ApathyDrive.{Mobile, Room}
   import ApathyDrive.Scripts
 
-  def execute(%Room{} = room, mobile_ref) do
+  def execute(%Room{} = room, mobile_ref, _target_ref) do
     roll = :rand.uniform(100)
 
     cond do

@@ -43,6 +43,7 @@ defmodule ApathyDrive.Ability do
     field(:energy, :integer, default: 1000)
     field(:difficulty, :integer)
     field(:level, :integer)
+    field(:letter, :string)
 
     field(:limbs, :any, virtual: true, default: [])
     field(:traits, :map, virtual: true, default: %{})
@@ -58,6 +59,9 @@ defmodule ApathyDrive.Ability do
     field(:can_crit, :boolean, virtual: true, default: false)
     field(:spell?, :boolean, virtual: true, default: true)
     field(:reaction_energy, :integer, virtual: true, default: 0)
+    field(:crit_tables, :any, virtual: true, default: [])
+
+    belongs_to(:crit_table, ApathyDrive.DamageType)
 
     has_many(:monsters_abilities, ApathyDrive.MonsterAbility)
     has_many(:monsters, through: [:monsters_abilities, :monster])
@@ -122,6 +126,7 @@ defmodule ApathyDrive.Ability do
     "ConfusionSpectatorMessage",
     "Crits",
     "Damage",
+    "DamageOverTime",
     "DamageShield",
     "DamageShieldUserMessage",
     "DamageShieldTargetMessage",
@@ -818,11 +823,7 @@ defmodule ApathyDrive.Ability do
                         target
                       end
 
-                    if Mobile.die?(target) do
-                      Mobile.die(target, updated_room)
-                    else
-                      put_in(updated_room.mobiles[target.ref], target)
-                    end
+                    put_in(updated_room.mobiles[target.ref], target)
                   else
                     updated_room
                   end
@@ -961,10 +962,6 @@ defmodule ApathyDrive.Ability do
 
       Map.put(caster, :casting, ability)
     end
-  end
-
-  def duration(%Ability{duration: duration} = _ability, %{} = _caster, %{} = _target, _room) do
-    duration
   end
 
   def dodged?(%{} = caster, %{} = target, ability, room) do
@@ -1237,9 +1234,7 @@ defmodule ApathyDrive.Ability do
     room = put_in(room.mobiles[caster.ref], caster)
     room = put_in(room.mobiles[target.ref], target)
 
-    duration = duration(ability, caster, target, room)
-
-    if ability.kind == "curse" and duration < 1 do
+    if ability.kind == "curse" and ability.duration < 1 do
       Process.put(:ability_result, :resisted)
       display_cast_message(room, caster, target, Map.put(ability, :result, :resisted))
 
@@ -1256,7 +1251,94 @@ defmodule ApathyDrive.Ability do
 
       room
       |> trigger_damage_shields(caster.ref, target.ref, ability)
+      |> apply_criticals(caster.ref, target.ref, ability)
       |> finish_ability(caster.ref, target.ref, ability, target.ability_shift)
+    end
+  end
+
+  def apply_criticals(%Room{} = room, caster_ref, target_ref, ability) do
+    caster = room.mobiles[caster_ref]
+    target = room.mobiles[target_ref]
+
+    remaining_energy = caster.energy - ability.energy
+
+    cond do
+      ability.energy <= remaining_energy ->
+        # don't apply criticals for every swing, just the last swing
+        room
+
+      :else ->
+        target.ability_shift
+        # ability.crit_tables
+        |> critical_abilities([17])
+        |> Enum.reduce(room, fn ability, updated_room ->
+          caster = updated_room.mobiles[caster_ref]
+          target = updated_room.mobiles[target_ref]
+
+          if caster && target do
+            cond do
+              Mobile.die?(caster) ->
+                Mobile.die(caster, updated_room)
+
+              Mobile.die?(target) ->
+                Mobile.die(target, updated_room)
+
+              :else ->
+                apply_ability(updated_room, caster, target, ability)
+            end
+          else
+            updated_room
+          end
+        end)
+    end
+  end
+
+  def critical_abilities(ability_shift, crit_tables) do
+    percent = trunc(abs(ability_shift) * 100)
+
+    crit_tables
+    |> Enum.map(fn table ->
+      letter = roll_for_letter(percent)
+
+      if letter do
+        count =
+          __MODULE__
+          |> where(crit_table_id: ^table, letter: ^letter)
+          |> select([crit], count(crit.id))
+          |> Repo.one()
+
+        __MODULE__
+        |> where(crit_table_id: ^table, letter: ^letter)
+        |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+        |> select([crit], crit.id)
+        |> Repo.one()
+        |> find()
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+
+    [find(5645)]
+  end
+
+  def roll_for_letter(crit_chance) do
+    case :rand.uniform(1_000_000) do
+      roll when roll > crit_chance * 10_000 ->
+        nil
+
+      roll when roll > crit_chance * 5000 ->
+        "A"
+
+      roll when roll > crit_chance * 2500 ->
+        "B"
+
+      roll when roll > crit_chance * 1250 ->
+        "C"
+
+      roll when roll > crit_chance * 625 ->
+        "D"
+
+      _ ->
+        "E"
     end
   end
 
@@ -1335,7 +1417,8 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def damage_limb(room, target_ref, limb_name, percentage) when percentage < 0 do
+  def damage_limb(room, target_ref, limb_name, percentage, bleeding \\ false)
+      when percentage < 0 do
     Room.update_mobile(room, target_ref, fn target ->
       if map_size(target.limbs) == 1 do
         target
@@ -1359,13 +1442,15 @@ defmodule ApathyDrive.Ability do
           updated_health <= 0 ->
             target =
               if !is_nil(limb[:parent]) do
-                Mobile.send_scroll(target, "<p>Your #{limb_name} is severed!</p>")
+                unless bleeding and limb[:fatal] do
+                  Mobile.send_scroll(target, "<p>Your #{limb_name} is severed!</p>")
 
-                Room.send_scroll(
-                  room,
-                  "<p>#{Mobile.colored_name(target)}'s #{limb_name} is severed!</p>",
-                  [target]
-                )
+                  Room.send_scroll(
+                    room,
+                    "<p>#{Mobile.colored_name(target)}'s #{limb_name} is severed!</p>",
+                    [target]
+                  )
+                end
 
                 effect = %{
                   "StatusMessage" => "Your #{limb_name} is severed!",
@@ -1418,7 +1503,7 @@ defmodule ApathyDrive.Ability do
               end
 
             if limb.fatal do
-              if is_nil(limb[:parent]) do
+              if is_nil(limb[:parent]) and !bleeding do
                 Mobile.send_scroll(
                   target,
                   "<p>You are dealt a mortal blow to the #{limb_name}!</p>"
@@ -1504,8 +1589,6 @@ defmodule ApathyDrive.Ability do
       Room.update_mobile(room, target_ref, fn target ->
         caster = room.mobiles[caster_ref]
 
-        duration = duration(ability, caster, target, room)
-
         target =
           if ability_shift do
             initial_hp = target.hp
@@ -1549,7 +1632,7 @@ defmodule ApathyDrive.Ability do
         target
         |> Map.put(:ability_shift, nil)
         |> Map.put(:ability_special, nil)
-        |> apply_duration_traits(ability, caster, duration)
+        |> apply_duration_traits(ability, caster)
         |> Mobile.update_prompt()
       end)
 
@@ -1571,7 +1654,77 @@ defmodule ApathyDrive.Ability do
     room =
       if script = ability.traits["Script"] do
         Room.update_mobile(room, caster_ref, fn caster ->
-          Module.safe_concat([Scripts, Macro.camelize(script)]).execute(room, caster.ref)
+          Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
+            room,
+            caster.ref,
+            target_ref
+          )
+        end)
+      else
+        room
+      end
+
+    room =
+      if room.mobiles[target_ref] && ability.traits["CrippleLimb"] do
+        ability.traits["CrippleLimb"]
+        |> Enum.reduce(room, fn limb_type, room ->
+          target = room.mobiles[target_ref]
+
+          target.limbs
+          |> Enum.filter(fn {_limb_name, limb} ->
+            correct_limb_type =
+              if limb_type == "non_fatal" do
+                !limb.fatal
+              else
+                limb.type == limb_type
+              end
+
+            correct_limb_type and limb.health >= 0.5
+          end)
+          |> case do
+            [] ->
+              room
+
+            limbs ->
+              {limb_name, limb} = Enum.random(limbs)
+
+              percentage = 0.25 - limb.health
+
+              damage_limb(room, target_ref, limb_name, percentage)
+          end
+        end)
+      else
+        room
+      end
+
+    room =
+      if room.mobiles[target_ref] && ability.traits["SeverLimb"] do
+        ability.traits["SeverLimb"]
+        |> Enum.reduce(room, fn limb_type, room ->
+          target = room.mobiles[target_ref]
+
+          target.limbs
+          |> Enum.filter(fn {_limb_name, limb} ->
+            correct_limb_type =
+              if limb_type == "non_fatal" do
+                !limb.fatal
+              else
+                limb.type == limb_type
+              end
+
+            correct_limb_type and limb.health > 0
+          end)
+          |> case do
+            [] ->
+              room
+
+            limbs ->
+              {limb_name, limb} = Enum.random(limbs)
+
+              percentage = 0.0 - limb.health
+
+              damage_limb(room, target_ref, limb_name, percentage)
+          end
         end)
       else
         room
@@ -1582,7 +1735,16 @@ defmodule ApathyDrive.Ability do
     Room.update_mana_bar(room, caster_ref)
     Room.update_mana_bar(room, target_ref)
 
-    room
+    cond do
+      (target = room.mobiles[target_ref]) && ability.traits["Kill"] ->
+        Mobile.die(target, room)
+
+      (target = room.mobiles[target_ref]) && Mobile.die?(target) ->
+        Mobile.die(target, room)
+
+      :else ->
+        room
+    end
   end
 
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, _ability)
@@ -1690,6 +1852,17 @@ defmodule ApathyDrive.Ability do
 
     {caster, damage_percent} =
       Enum.reduce(damages, {caster, 0}, fn
+        %{kind: "raw", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+          damage = Enum.random(min..max)
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = damage * (1 - modifier / 100)
+
+          percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+          {caster, damage_percent + percent}
+
         %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
           min = trunc(min)
           max = trunc(max)
@@ -1872,13 +2045,15 @@ defmodule ApathyDrive.Ability do
     damage * (modifier / 100) * (Enum.random(95..105) / 100)
   end
 
-  def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster, duration) do
+  def apply_duration_traits(%{} = target, %Ability{} = _ability, nil), do: target
+
+  def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster) do
     effects =
       ability.traits
       |> Map.take(@duration_traits)
       |> Map.put("stack_key", ability.id)
       |> Map.put("stack_count", ability.traits["StackCount"] || 1)
-      |> process_duration_traits(target, caster)
+      |> process_duration_traits(target, caster, ability.duration)
       |> Map.put("effect_ref", make_ref())
 
     if message = effects["StatusMessage"] do
@@ -1892,7 +2067,7 @@ defmodule ApathyDrive.Ability do
       target
     else
       target
-      |> Systems.Effect.add(effects, :timer.seconds(duration))
+      |> Systems.Effect.add(effects, :timer.seconds(ability.duration))
     end
   end
 
@@ -1933,10 +2108,10 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def process_duration_traits(effects, target, caster) do
+  def process_duration_traits(effects, target, caster, duration) do
     effects
     |> Enum.reduce(effects, fn effect, updated_effects ->
-      process_duration_trait(effect, updated_effects, target, caster)
+      process_duration_trait(effect, updated_effects, target, caster, duration)
     end)
   end
 
@@ -1944,7 +2119,8 @@ defmodule ApathyDrive.Ability do
         {"Damage", damages},
         %{"DamageShield" => _} = effects,
         _target,
-        _caster
+        _caster,
+        _duration
       ) do
     effects
     |> Map.put("DamageShield", %{})
@@ -1958,14 +2134,35 @@ defmodule ApathyDrive.Ability do
     |> Map.delete("DamageShieldSpectatorMessage")
   end
 
-  def process_duration_trait({"Damage", damages}, effects, _target, _caster)
+  def process_duration_trait({"DamageOverTime", damage}, effects, target, _caster, duration) do
+    damage = damage / duration
+
+    percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+    effects
+    |> Map.delete("DamageOverTime")
+    |> Map.put("Damage", percent)
+  end
+
+  def process_duration_trait({"Damage", damages}, effects, _target, _caster, _duration)
       when is_float(damages) do
     effects
   end
 
-  def process_duration_trait({"Damage", damages}, effects, target, caster) do
+  def process_duration_trait({"Damage", damages}, effects, target, caster, _duration) do
     damage_percent =
       Enum.reduce(damages, 0, fn
+        %{kind: "raw", min: min, max: max, damage_type: type}, damage_percent ->
+          damage = Enum.random(min..max)
+
+          modifier = Mobile.ability_value(target, "Resist#{type}")
+
+          damage = damage * (1 - modifier / 100)
+
+          percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+          damage_percent + percent
+
         %{kind: "physical", min: min, max: max, damage_type: type}, damage_percent ->
           min = trunc(min)
           max = trunc(max)
@@ -2022,7 +2219,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Damage", damage_percent)
   end
 
-  def process_duration_trait({"AC%", percent}, effects, target, _caster) do
+  def process_duration_trait({"AC%", percent}, effects, target, _caster, _duration) do
     ac_from_percent = ac_for_mitigation_at_level(percent, target.level)
 
     effects
@@ -2030,7 +2227,7 @@ defmodule ApathyDrive.Ability do
     |> Map.delete("AC%")
   end
 
-  def process_duration_trait({"MR%", percent}, effects, target, _caster) do
+  def process_duration_trait({"MR%", percent}, effects, target, _caster, _duration) do
     mr_from_percent = ac_for_mitigation_at_level(percent, target.level)
 
     effects
@@ -2038,7 +2235,7 @@ defmodule ApathyDrive.Ability do
     |> Map.delete("MR%")
   end
 
-  def process_duration_trait({"Heal", value}, effects, target, _caster) do
+  def process_duration_trait({"Heal", value}, effects, target, _caster, _duration) do
     healing = (value["min"] + value["max"]) / 2
 
     percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
@@ -2047,7 +2244,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Heal", percentage_healed)
   end
 
-  def process_duration_trait({"HealMana", value}, effects, target, caster) do
+  def process_duration_trait({"HealMana", value}, effects, target, caster, _duration) do
     level = min(target.level, caster.level)
     healing = Mobile.magical_penetration_at_level(caster, level) * (value / 100)
 
@@ -2063,7 +2260,7 @@ defmodule ApathyDrive.Ability do
     )
   end
 
-  def process_duration_trait({trait, value}, effects, _target, _caster) do
+  def process_duration_trait({trait, value}, effects, _target, _caster, _duration) do
     if trait in Map.values(effects) do
       put_in(effects[trait], value)
     else

@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Scripts.TempleNoise do
   alias ApathyDrive.{Mobile, Room}
 
-  def execute(%Room{} = room, mobile_ref) do
+  def execute(%Room{} = room, mobile_ref, _target_ref) do
     messages = [
       "The smell of incense wafts faintly in the air.",
       "The angelic sound of a choir floats down through the air.",

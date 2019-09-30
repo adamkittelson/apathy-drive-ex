@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Scripts.SummonDemon do
   alias ApathyDrive.{Character, Companion, Mobile, Monster, Repo, Room, RoomMonster}
 
-  def execute(%Room{} = room, mobile_ref) do
+  def execute(%Room{} = room, mobile_ref, _target_ref) do
     monster = Repo.get!(Monster, 1121)
 
     Room.update_mobile(room, mobile_ref, fn mobile ->

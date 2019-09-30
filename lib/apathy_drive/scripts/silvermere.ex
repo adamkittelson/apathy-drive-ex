@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Scripts.Silvermere do
   alias ApathyDrive.{Mobile, Room}
 
-  def execute(%Room{} = room, mobile_ref) do
+  def execute(%Room{} = room, mobile_ref, _target_ref) do
     messages = [
       "A guardsman shouts out the time of day.",
       "A voice shouts aloud \"Read the bulletin in the Adventurer's Guild!\"",

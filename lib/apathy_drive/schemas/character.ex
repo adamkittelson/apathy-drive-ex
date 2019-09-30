@@ -146,7 +146,7 @@ defmodule ApathyDrive.Character do
     effect =
       character.id
       |> CharacterTrait.load_traits()
-      |> Ability.process_duration_traits(character, character)
+      |> Ability.process_duration_traits(character, character, nil)
       |> Map.put("stack_key", "character")
       |> Map.put("stack_count", 1)
 
@@ -422,7 +422,7 @@ defmodule ApathyDrive.Character do
     effect =
       race_id
       |> RaceTrait.load_traits()
-      |> Ability.process_duration_traits(character, character)
+      |> Ability.process_duration_traits(character, character, nil)
       |> Map.put("stack_key", "race")
       |> Map.put("stack_count", 1)
 
@@ -561,14 +561,14 @@ defmodule ApathyDrive.Character do
           {[ability], traits}
 
         traits ->
-          {nil, Ability.process_duration_traits(traits, character, character)}
+          {nil, Ability.process_duration_traits(traits, character, character, nil)}
       end
 
     effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
 
     effect =
       if "DamageShield" in Map.keys(effect) do
-        Ability.process_duration_trait({"Damage", effect["Damage"]}, effect, nil, nil)
+        Ability.process_duration_trait({"Damage", effect["Damage"]}, effect, nil, nil, nil)
       else
         effect
       end
@@ -579,7 +579,8 @@ defmodule ApathyDrive.Character do
           {"Heal", traits["Heal"]},
           effect,
           character,
-          character
+          character,
+          nil
         )
       else
         effect
@@ -658,6 +659,7 @@ defmodule ApathyDrive.Character do
         "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
       ignores_round_cooldown?: true,
       can_crit: true,
+      crit_tables: [17],
       traits: %{
         "Damage" => [
           %{

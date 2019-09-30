@@ -52,7 +52,7 @@ defmodule ApathyDrive.MonsterSpawning do
         monster_id = Enum.random(monster_ids)
 
         if updated_room = spawn_monster(room, monster_id) do
-          Logger.info("#{room.name} spawned #{monster_id} for zone #{id}")
+          Logger.debug("#{room.name} spawned #{monster_id} for zone #{id}")
           updated_room
         else
           room

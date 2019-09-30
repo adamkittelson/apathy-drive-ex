@@ -10,7 +10,7 @@ defmodule ApathyDrive.Text do
           case user.gender do
             "male" ->
               string =
-                Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/?(.+?)?\}\}/, string, fn _, m, _, _ ->
+                Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)?\}\}/, string, fn _, m, _, _ ->
                   m
                 end)
 
@@ -20,7 +20,7 @@ defmodule ApathyDrive.Text do
 
             "female" ->
               string =
-                Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/?(.+?)?\}\}/, string, fn _, _, f, _ ->
+                Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)?\}\}/, string, fn _, _, f, _ ->
                   f
                 end)
 
@@ -30,7 +30,7 @@ defmodule ApathyDrive.Text do
 
             _other ->
               string =
-                Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/?(.+?)?\}\}/, string, fn _, _, _, o ->
+                Regex.replace(~r/\{\{user:(.+?)\/(.+?)\/(.+?)?\}\}/, string, fn _, _, _, o ->
                   o
                 end)
 
