@@ -1793,13 +1793,11 @@ defmodule ApathyDrive.Character do
       hp_per_level = ability_value(mobile, "HPPerLevel") * level
       bonus = (health - 50) * level / 16
 
-      max_hp =
-        mobile.limbs
-        |> Map.values()
-        |> Enum.map(& &1.health)
-        |> Room.average()
+      max_hp_percent = ability_value(mobile, "MaxHP%")
 
-      max(1, trunc((base + hp_per_level + bonus + ability_value(mobile, "MaxHP")) * max_hp))
+      modifier = if max_hp_percent, do: max_hp_percent, else: 1.0
+
+      max(1, trunc((base + hp_per_level + bonus + ability_value(mobile, "MaxHP")) * modifier))
     end
 
     def max_mana_at_level(mobile, level) do

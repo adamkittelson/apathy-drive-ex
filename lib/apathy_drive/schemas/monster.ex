@@ -735,7 +735,11 @@ defmodule ApathyDrive.Monster do
       base = monster.base_hp
       bonus = (health - 50) * level / 16
 
-      hp = trunc(base + bonus + ability_value(monster, "MaxHP"))
+      max_hp_percent = ability_value(monster, "MaxHP%")
+
+      modifier = if max_hp_percent, do: max_hp_percent, else: 1.0
+
+      hp = trunc((base + bonus + ability_value(monster, "MaxHP")) * modifier)
 
       if monster.decay do
         hp + monster.decay_max_hp

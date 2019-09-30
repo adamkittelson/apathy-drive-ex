@@ -585,7 +585,11 @@ defmodule ApathyDrive.Companion do
       base = companion.base_hp
       bonus = (health - 50) * level / 16
 
-      trunc(base + bonus + ability_value(companion, "MaxHP"))
+      max_hp_percent = ability_value(companion, "MaxHP%")
+
+      modifier = if max_hp_percent, do: max_hp_percent, else: 1.0
+
+      trunc((base + bonus + ability_value(companion, "MaxHP")) * modifier)
     end
 
     def max_mana_at_level(mobile, level) do

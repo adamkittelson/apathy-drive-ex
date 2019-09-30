@@ -143,6 +143,8 @@ defmodule ApathyDrive.Ability do
     "Intellect",
     "Light",
     "LightVision",
+    "MaxHP",
+    "MaxHP%",
     "MR",
     "MR%",
     "ManaRegen",
@@ -1284,6 +1286,7 @@ defmodule ApathyDrive.Ability do
                 Mobile.die(target, updated_room)
 
               :else ->
+                ability = put_in(ability.traits["StackCount"], 10)
                 apply_ability(updated_room, caster, target, ability)
             end
           else
@@ -1317,7 +1320,7 @@ defmodule ApathyDrive.Ability do
     end)
     |> Enum.reject(&is_nil/1)
 
-    [find(5649)]
+    [find(5887)]
   end
 
   def roll_for_letter(crit_chance) do
