@@ -713,9 +713,9 @@ defmodule ApathyDrive.Room do
         # room is light and magical darkness is present, sum them
         room.light + light_source_average
 
-      room.light >= 0 and light_source_average > 0 ->
-        # room is light and light sources are present, just use room light
-        room.light
+      room.light >= 0 and light_source_average > room.light ->
+        # room is light but light sources are present and lighter than the room, use light source
+        light_source_average
 
       :else ->
         room.light

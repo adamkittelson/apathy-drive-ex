@@ -1320,7 +1320,7 @@ defmodule ApathyDrive.Ability do
     end)
     |> Enum.reject(&is_nil/1)
 
-    [find(5887)]
+    [find(6117)]
   end
 
   def roll_for_letter(crit_chance) do
@@ -2048,12 +2048,23 @@ defmodule ApathyDrive.Ability do
     damage * (modifier / 100) * (Enum.random(95..105) / 100)
   end
 
+  def duration_traits(%Ability{kind: "critical"} = ability) do
+    ability.traits
+    |> Map.take(@duration_traits)
+    |> Map.delete("Damage")
+  end
+
+  def duration_traits(%Ability{} = ability) do
+    ability.traits
+    |> Map.take(@duration_traits)
+  end
+
   def apply_duration_traits(%{} = target, %Ability{} = _ability, nil), do: target
 
   def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster) do
     effects =
-      ability.traits
-      |> Map.take(@duration_traits)
+      ability
+      |> duration_traits()
       |> Map.put("stack_key", ability.id)
       |> Map.put("stack_count", ability.traits["StackCount"] || 1)
       |> process_duration_traits(target, caster, ability.duration)
