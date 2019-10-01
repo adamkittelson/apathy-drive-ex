@@ -72,59 +72,65 @@ defmodule ApathyDrive.Commands.Drop do
             Mobile.send_scroll(character, "<p>You don't have \"#{item_name}\" to drop!</p>")
             room
 
-          %Item{instance_id: instance_id} = item ->
-            delete_at =
-              if item.__struct__ == ApathyDrive.Sign do
-                5
-              else
-                Item.cost_in_copper(item)
-              end
-
-            ItemInstance
-            |> Repo.get(instance_id)
-            |> Ecto.Changeset.change(%{
-              room_id: room.id,
-              character_id: nil,
-              equipped: false,
-              class_id: nil,
-              hidden: false,
-              delete_at: Timex.shift(DateTime.utc_now(), minutes: delete_at)
-            })
-            |> Repo.update!()
-
-            update_in(room.items, &[item | &1])
-            |> Room.update_mobile(character.ref, fn char ->
-              char =
-                if {:longterm, instance_id} in TimerManager.timers(char) do
-                  Mobile.send_scroll(
-                    char,
-                    "<p><span class='cyan'>You interrupt your work.</span></p>"
-                  )
-
-                  TimerManager.cancel(char, {:longterm, instance_id})
-                else
-                  char
-                end
-
-              char =
-                char
-                |> Character.load_items()
-                |> Mobile.send_scroll(
-                  "<p>You dropped #{Item.colored_name(item, character: character)}.</p>"
-                )
-
-              Room.send_scroll(
-                room,
-                "<p><span class='dark-yellow'>#{char.name} dropped #{
-                  Item.colored_name(item, character: character)
-                }.</span></p>",
-                [char]
-              )
-
-              char
-            end)
-            |> Room.load_items()
+          %Item{instance_id: _instance_id} = item ->
+            drop_item(room, character, item)
         end
     end
+  end
+
+  def drop_item(room, character, %Item{instance_id: instance_id} = item, reload \\ true) do
+    delete_at =
+      if item.__struct__ == ApathyDrive.Sign do
+        5
+      else
+        Item.cost_in_copper(item)
+      end
+
+    ItemInstance
+    |> Repo.get(instance_id)
+    |> Ecto.Changeset.change(%{
+      room_id: room.id,
+      character_id: nil,
+      equipped: false,
+      class_id: nil,
+      hidden: false,
+      delete_at: Timex.shift(DateTime.utc_now(), minutes: delete_at)
+    })
+    |> Repo.update!()
+
+    room =
+      update_in(room.items, &[item | &1])
+      |> Room.update_mobile(character.ref, fn char ->
+        char =
+          if {:longterm, instance_id} in TimerManager.timers(char) do
+            Mobile.send_scroll(
+              char,
+              "<p><span class='cyan'>You interrupt your work.</span></p>"
+            )
+
+            TimerManager.cancel(char, {:longterm, instance_id})
+          else
+            char
+          end
+
+        char = if reload, do: Character.load_items(char), else: char
+
+        Mobile.send_scroll(
+          char,
+          "<p>You dropped #{Item.colored_name(item, character: character)}.</p>"
+        )
+
+        Room.send_scroll(
+          room,
+          "<p><span class='dark-yellow'>#{char.name} dropped #{
+            Item.colored_name(item, character: character)
+          }.</span></p>",
+          [char]
+        )
+
+        char
+      end)
+
+    if reload, do: Room.load_items(room), else: room
   end
 end
