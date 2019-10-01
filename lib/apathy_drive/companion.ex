@@ -66,7 +66,13 @@ defmodule ApathyDrive.Companion do
     :auto_roam,
     :auto_flee,
     :alignment,
-    :sneaking
+    :sneaking,
+    :runic,
+    :platinum,
+    :gold,
+    :silver,
+    :copper,
+    :limbs
   ]
 
   def dismiss(nil, %Room{} = room), do: room
@@ -224,6 +230,7 @@ defmodule ApathyDrive.Companion do
     monster =
       Monster
       |> Repo.get(monster_id)
+      |> Monster.load_limbs()
       |> Map.take([
         :base_hp,
         :hp_regen,
@@ -246,7 +253,13 @@ defmodule ApathyDrive.Companion do
         :auto_curse,
         :auto_nuke,
         :auto_roam,
-        :auto_flee
+        :auto_flee,
+        :limbs,
+        :runic,
+        :platinum,
+        :gold,
+        :silver,
+        :copper
       ])
 
     room_monster =
