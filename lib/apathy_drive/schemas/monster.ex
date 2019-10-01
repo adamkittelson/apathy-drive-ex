@@ -802,6 +802,7 @@ defmodule ApathyDrive.Monster do
             room
             |> Regeneration.heal_limbs(monster.ref, hp)
             |> Regeneration.balance_limbs(monster.ref)
+            |> Ability.unbalance(monster.ref)
 
           monster = room.mobiles[monster.ref]
 

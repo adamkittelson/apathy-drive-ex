@@ -169,6 +169,7 @@ defmodule ApathyDrive.Ability do
     "Stealth",
     "Strength",
     "Tracking",
+    "Unbalanced",
     "Willpower"
   ]
 
@@ -194,6 +195,84 @@ defmodule ApathyDrive.Ability do
     model
     |> cast(params, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
+  end
+
+  def unbalance(room, mobile_ref) do
+    Room.update_mobile(room, mobile_ref, fn mobile ->
+      if Mobile.has_ability?(mobile, "Unbalanced") do
+        if :rand.uniform(100) < 20 do
+          case :rand.uniform(4) do
+            1 ->
+              if mobile.__struct__ == Character do
+                if weapon = Character.weapon(mobile) do
+                  Mobile.send_scroll(
+                    mobile,
+                    "<p><span class='dark-yellow'>You clumsily drop your weapon!</span></p>"
+                  )
+
+                  ApathyDrive.Commands.Drop.drop_item(room, mobile, weapon)
+                else
+                  mobile
+                end
+              else
+                mobile
+              end
+
+            2 ->
+              ability = %Ability{
+                kind: "attack",
+                energy: 0,
+                mana: 0,
+                spell?: false,
+                user_message: "You trip and fall!",
+                spectator_message: "{{user}} trips and falls!",
+                ignores_round_cooldown?: true,
+                traits: %{
+                  "Damage" => 0.10
+                }
+              }
+
+              Ability.execute(room, mobile_ref, ability, [mobile_ref])
+
+            3 ->
+              ability = %Ability{
+                kind: "attack",
+                energy: 0,
+                mana: 0,
+                spell?: false,
+                user_message: "You stumble into a wall!",
+                spectator_message: "{{user}} stumbles into a wall!",
+                ignores_round_cooldown?: true,
+                traits: %{
+                  "Damage" => 0.10
+                }
+              }
+
+              Ability.execute(room, mobile_ref, ability, [mobile_ref])
+
+            4 ->
+              ability = %Ability{
+                kind: "attack",
+                energy: 0,
+                mana: 0,
+                spell?: false,
+                user_message: "You collapse to the ground!",
+                spectator_message: "{{user}} collapses to the ground!",
+                ignores_round_cooldown?: true,
+                traits: %{
+                  "Damage" => 0.10
+                }
+              }
+
+              Ability.execute(room, mobile_ref, ability, [mobile_ref])
+          end
+        else
+          mobile
+        end
+      else
+        mobile
+      end
+    end)
   end
 
   def ac_for_mitigation_at_level(mitigation_percent, level) do
@@ -1320,7 +1399,7 @@ defmodule ApathyDrive.Ability do
     end)
     |> Enum.reject(&is_nil/1)
 
-    [find(6356)]
+    [find(6484)]
   end
 
   def roll_for_letter(crit_chance) do

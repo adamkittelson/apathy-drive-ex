@@ -518,6 +518,7 @@ defmodule ApathyDrive.Companion do
             room
             |> Regeneration.heal_limbs(companion.ref, hp)
             |> Regeneration.balance_limbs(companion.ref)
+            |> Ability.unbalance(companion.ref)
 
           companion = room.mobiles[companion.ref]
 

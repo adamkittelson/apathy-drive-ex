@@ -94,13 +94,6 @@ defmodule ApathyDrive.Regeneration do
   def regenerate_hp(%{} = mobile, room) do
     hp = hp_since_last_tick(room, mobile)
 
-    if hp < 0 do
-      Mobile.send_scroll(
-        mobile,
-        "<p><span class='dark-magenta'>You are taking damage!</span></p>"
-      )
-    end
-
     Mobile.shift_hp(mobile, hp)
   end
 

@@ -1691,6 +1691,7 @@ defmodule ApathyDrive.Character do
             room
             |> Regeneration.heal_limbs(character.ref, hp)
             |> Regeneration.balance_limbs(character.ref)
+            |> Ability.unbalance(character.ref)
 
           character = room.mobiles[character.ref]
 

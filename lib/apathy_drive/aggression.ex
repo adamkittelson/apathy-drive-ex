@@ -3,20 +3,24 @@ defmodule ApathyDrive.Aggression do
   require Logger
 
   def react(%Room{} = room, monster_ref) do
-    Enum.reduce(room.mobiles, room, fn
-      # don't consider attacking self
-      {^monster_ref, %{} = _mobile}, updated_room ->
-        updated_room
-
-      {_ref, %{} = mobile}, updated_room ->
-        monster = updated_room.mobiles[monster_ref]
-
-        if enemy?(monster, mobile) do
-          attack(updated_room, monster, mobile)
-        else
+    if room.mobiles[monster_ref] do
+      Enum.reduce(room.mobiles, room, fn
+        # don't consider attacking self
+        {^monster_ref, %{} = _mobile}, updated_room ->
           updated_room
-        end
-    end)
+
+        {_ref, %{} = mobile}, updated_room ->
+          monster = updated_room.mobiles[monster_ref]
+
+          if enemy?(monster, mobile) do
+            attack(updated_room, monster, mobile)
+          else
+            updated_room
+          end
+      end)
+    else
+      room
+    end
   end
 
   def enemy?(%Monster{npc: true}, %{} = _mobile) do
