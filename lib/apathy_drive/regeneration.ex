@@ -222,7 +222,7 @@ defmodule ApathyDrive.Regeneration do
                 [target]
               )
 
-              amount = max(0.01, 1 / Mobile.max_hp_at_level(target, target.level))
+              amount = max(0.10, 1 / Mobile.max_hp_at_level(target, target.level))
 
               room
               |> Room.update_mobile(target_ref, fn target ->
@@ -248,7 +248,7 @@ defmodule ApathyDrive.Regeneration do
               max_hp = Mobile.max_hp_at_level(target, target.level)
 
               if max_hp > 0 do
-                hp_amount = max(0.01, 1 / max_hp)
+                hp_amount = max(0.1, 1 / max_hp)
                 limb_amount = min(hp_amount * 2, abs(target.limbs[limb_name].health))
 
                 room =
