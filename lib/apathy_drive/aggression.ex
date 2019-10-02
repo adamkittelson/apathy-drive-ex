@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Character, Mobile, Monster, Room}
+  alias ApathyDrive.{Character, Companion, Mobile, Monster, Room}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
@@ -12,7 +12,7 @@ defmodule ApathyDrive.Aggression do
         {_ref, %{} = mobile}, updated_room ->
           monster = updated_room.mobiles[monster_ref]
 
-          if enemy?(monster, mobile) do
+          if enemy?(monster, mobile) or attacking_owner?(monster, mobile, room) do
             attack(updated_room, monster, mobile)
           else
             updated_room
@@ -23,6 +23,32 @@ defmodule ApathyDrive.Aggression do
     end
   end
 
+  def attacking_owner?(%Monster{owner_id: nil}, _mobile, _room), do: false
+
+  def attacking_owner?(%Monster{owner_id: id}, mobile, room) do
+    owner =
+      room.mobiles
+      |> Map.values()
+      |> Enum.find(fn mob ->
+        (Map.get(mob, :room_monster_id) || Map.get(mob, :id)) == id
+      end)
+
+    if owner do
+      case mobile do
+        %Character{attack_target: target} ->
+          target == owner.ref
+
+        %Monster{} = monster ->
+          owner.ref in Monster.enemies(monster, room)
+
+        %Companion{} = monster ->
+          owner.ref in Companion.enemies(monster, room)
+      end
+    else
+      false
+    end
+  end
+
   def enemy?(%Monster{npc: true}, %{} = _mobile) do
     false
   end
@@ -30,6 +56,8 @@ defmodule ApathyDrive.Aggression do
   def enemy?(%Monster{alignment: "neutral"}, %{} = _mobile) do
     false
   end
+
+  def enemy?(%Monster{owner_id: id}, _) when not is_nil(id), do: false
 
   def enemy?(%Monster{alignment: "good", lawful: true}, %Character{} = character) do
     if Character.legal_status(character) in ["Outlaw", "Criminal", "Villain", "FIEND"] do
@@ -92,7 +120,18 @@ defmodule ApathyDrive.Aggression do
     Room.update_hp_bar(room, attacker.ref)
     Room.update_mana_bar(room, attacker.ref)
 
-    room
+    room.mobiles
+    |> Enum.reduce(room, fn {_ref, mobile}, room ->
+      if owner_id = Map.get(mobile, :owner_id) do
+        if owner_id == (Map.get(attacker, :room_monster_id) || Map.get(attacker, :id)) do
+          attack(room, mobile, intruder)
+        else
+          room
+        end
+      else
+        room
+      end
+    end)
   end
 
   def attack_target(%{} = attacker, %{ref: ref} = _intruder) do

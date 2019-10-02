@@ -1349,6 +1349,9 @@ defmodule ApathyDrive.Ability do
         # don't apply criticals for every swing, just the last swing
         room
 
+      caster.__struct__ != Character ->
+        room
+
       :else ->
         target.ability_shift
         # ability.crit_tables
@@ -1400,7 +1403,7 @@ defmodule ApathyDrive.Ability do
     # end)
     # |> Enum.reject(&is_nil/1)
 
-    [find(6559)]
+    [find(6560)]
   end
 
   def roll_for_letter(crit_chance) do

@@ -65,6 +65,7 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
+    field(:owner_id, :integer, virtual: true)
     field(:leader, :any, virtual: true)
     field(:hp, :float, virtual: true, default: 1.0)
     field(:mana, :float, virtual: true, default: 1.0)
@@ -181,6 +182,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:zone_spawned_at, rm.zone_spawned_at)
       |> Map.put(:decay, rm.decay)
       |> Map.put(:missing_limbs, rm.missing_limbs)
+      |> Map.put(:owner_id, rm.owner_id)
 
     if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
       ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -211,7 +213,8 @@ defmodule ApathyDrive.Monster do
         :spawned_at,
         :room_spawned_at,
         :decay,
-        :missing_limbs
+        :missing_limbs,
+        :owner_id
       ])
 
     ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -275,7 +278,9 @@ defmodule ApathyDrive.Monster do
       monster_id: monster.id,
       spawned_at: monster.spawned_at,
       zone_spawned_at: monster.zone_spawned_at,
-      name: name_with_adjective(monster.name, monster.adjectives)
+      name: name_with_adjective(monster.name, monster.adjectives),
+      decay: monster.decay,
+      owner_id: monster.owner_id
     }
 
     room_monster =
