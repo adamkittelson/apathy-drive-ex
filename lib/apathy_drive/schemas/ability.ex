@@ -18,6 +18,7 @@ defmodule ApathyDrive.Ability do
     Regeneration,
     Repo,
     Room,
+    RoomMonster,
     Scripts,
     Stealth,
     Text,
@@ -1735,6 +1736,28 @@ defmodule ApathyDrive.Ability do
 
         :else ->
           room
+      end
+
+    room =
+      if monster_id = ability.traits["Summon"] do
+        caster = room.mobiles[caster_ref]
+        monster = Repo.get!(Monster, monster_id)
+
+        monster =
+          %RoomMonster{
+            room_id: room.id,
+            monster_id: monster.id,
+            level: caster.level,
+            spawned_at: nil,
+            zone_spawned_at: nil,
+            decay: Map.get(caster, :decay),
+            owner_id: Map.get(caster, :owner_id)
+          }
+          |> Monster.from_room_monster()
+
+        room = Room.mobile_entered(room, monster, "")
+      else
+        room
       end
 
     room =
