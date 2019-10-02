@@ -153,6 +153,7 @@ defmodule ApathyDrive.Ability do
     "ModifyDamage",
     "Perception",
     "Picklocks",
+    "Poison",
     "PoisonImmunity",
     "RemoveMessage",
     "ResistCold",
@@ -1376,30 +1377,30 @@ defmodule ApathyDrive.Ability do
   end
 
   def critical_abilities(ability_shift, crit_tables) do
-    percent = trunc(abs(ability_shift) * 100)
+    # percent = trunc(abs(ability_shift) * 100)
 
-    crit_tables
-    |> Enum.map(fn table ->
-      letter = roll_for_letter(percent)
+    # crit_tables
+    # |> Enum.map(fn table ->
+    #   letter = roll_for_letter(percent)
 
-      if letter do
-        count =
-          __MODULE__
-          |> where(crit_table_id: ^table, letter: ^letter)
-          |> select([crit], count(crit.id))
-          |> Repo.one()
+    #   if letter do
+    #     count =
+    #       __MODULE__
+    #       |> where(crit_table_id: ^table, letter: ^letter)
+    #       |> select([crit], count(crit.id))
+    #       |> Repo.one()
 
-        __MODULE__
-        |> where(crit_table_id: ^table, letter: ^letter)
-        |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-        |> select([crit], crit.id)
-        |> Repo.one()
-        |> find()
-      end
-    end)
-    |> Enum.reject(&is_nil/1)
+    #     __MODULE__
+    #     |> where(crit_table_id: ^table, letter: ^letter)
+    #     |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+    #     |> select([crit], crit.id)
+    #     |> Repo.one()
+    #     |> find()
+    #   end
+    # end)
+    # |> Enum.reject(&is_nil/1)
 
-    [find(6484)]
+    [find(6559)]
   end
 
   def roll_for_letter(crit_chance) do
@@ -1902,6 +1903,38 @@ defmodule ApathyDrive.Ability do
     {caster, target}
   end
 
+  def apply_instant_trait({"CurePoison", _args}, %{} = target, _ability, caster, _room) do
+    target =
+      target.effects
+      |> Enum.filter(fn {_key, effect} ->
+        Map.has_key?(effect, "Poison")
+      end)
+      |> Enum.map(fn {key, _effect} -> key end)
+      |> Enum.reduce(
+        target,
+        &Systems.Effect.remove(&2, &1, fire_after_cast: true, show_expiration_message: true)
+      )
+
+    {caster, target}
+  end
+
+  def apply_instant_trait({"DispelMagic", trait_id}, %{} = target, _ability, caster, _room) do
+    trait = Repo.get!(ApathyDrive.Trait, trait_id).name
+
+    target =
+      target.effects
+      |> Enum.filter(fn {_key, effect} ->
+        Map.has_key?(effect, trait)
+      end)
+      |> Enum.map(fn {key, _effect} -> key end)
+      |> Enum.reduce(
+        target,
+        &Systems.Effect.remove(&2, &1, fire_after_cast: true, show_expiration_message: true)
+      )
+
+    {caster, target}
+  end
+
   def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room)
       when is_float(value) do
     {caster, Map.put(target, :ability_shift, value)}
@@ -1913,6 +1946,20 @@ defmodule ApathyDrive.Ability do
     percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
 
     {caster, Map.put(target, :ability_shift, percentage_healed)}
+  end
+
+  def apply_instant_trait({"Poison", damage}, target, _ability, caster, _room) do
+    if Mobile.has_ability?(target, "PoisonImmunity") do
+      {caster, Map.put(target, :ability_shift, 0)}
+    else
+      modifier = Mobile.ability_value(target, "ResistPoison")
+
+      damage = damage * (1 - modifier / 100)
+
+      percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+      {caster, Map.put(target, :ability_shift, -percent)}
+    end
   end
 
   def apply_instant_trait({"Damage", value}, %{} = target, _ability, caster, _room)
@@ -2235,6 +2282,20 @@ defmodule ApathyDrive.Ability do
     effects
     |> Map.delete("DamageOverTime")
     |> Map.put("Damage", percent)
+  end
+
+  def process_duration_trait({"Poison", damage}, effects, target, _caster, _duration) do
+    if Mobile.has_ability?(target, "PoisonImmunity") do
+      Map.put(effects, "Damage", 0)
+    else
+      modifier = Mobile.ability_value(target, "ResistPoison")
+
+      damage = damage * (1 - modifier / 100)
+
+      percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+      Map.put(effects, "Damage", percent)
+    end
   end
 
   def process_duration_trait({"Damage", damages}, effects, _target, _caster, _duration)

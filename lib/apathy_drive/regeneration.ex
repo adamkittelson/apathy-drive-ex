@@ -264,6 +264,6 @@ defmodule ApathyDrive.Regeneration do
   end
 
   defp taking_damage?(%{} = mobile) do
-    Mobile.ability_value(mobile, "Damage") > 0
+    Mobile.ability_value(mobile, "Damage") > 0 || Mobile.has_ability?(mobile, "Poison")
   end
 end
