@@ -3,7 +3,7 @@ defmodule ApathyDrive.Scripts.MeltArmour do
 
   def execute(%Room{} = room, _mobile_ref, target_ref) do
     Room.update_mobile(room, target_ref, fn
-      %Character{} = character ->
+      _room, %Character{} = character ->
         Enum.each(character.equipment, fn item ->
           if item.type == "Armour" do
             Mobile.send_scroll(
@@ -19,7 +19,7 @@ defmodule ApathyDrive.Scripts.MeltArmour do
 
         Character.load_items(character)
 
-      _ ->
+      room, _ ->
         room
     end)
   end

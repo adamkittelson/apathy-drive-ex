@@ -27,7 +27,7 @@ defmodule ApathyDrive.Commands.Search do
     if Enum.any?(detected_characters) do
       room =
         Enum.reduce(detected_characters, room, fn detected, room ->
-          Room.update_mobile(room, character.ref, fn character ->
+          Room.update_mobile(room, character.ref, fn _room, character ->
             update_in(character.detected_characters, &MapSet.put(&1, detected))
           end)
         end)

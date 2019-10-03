@@ -551,17 +551,23 @@ defmodule ApathyDrive.Monster do
 
     def die?(monster) do
       max_hp = Mobile.max_hp_at_level(monster, monster.level)
-      hp = trunc(max_hp * monster.hp)
 
-      hp < 1
+      missing_fatal_limb =
+        monster.limbs
+        |> Map.values()
+        |> Enum.any?(&(&1.fatal && &1.health <= 0))
+
+      max_hp <= 0 or monster.hp <= 0 or missing_fatal_limb
     end
 
     def die(monster, room) do
+      if monster.id == 306, do: IO.puts("killing monster #{monster.room_monster_id}")
+
       room =
         Enum.reduce(room.mobiles, room, fn
           {ref, %Character{} = character}, updated_room ->
             updated_room =
-              Room.update_mobile(updated_room, ref, fn character ->
+              Room.update_mobile(updated_room, ref, fn _updated_room, character ->
                 message =
                   monster.death_message
                   |> Text.interpolate(%{"name" => monster.name})
@@ -598,8 +604,6 @@ defmodule ApathyDrive.Monster do
             updated_room
         end)
 
-      ApathyDrive.Repo.delete!(%RoomMonster{id: monster.room_monster_id})
-
       if monster.regen_time_in_hours do
         spawn_at =
           DateTime.utc_now()
@@ -619,10 +623,18 @@ defmodule ApathyDrive.Monster do
             |> Map.put(:ignores_round_cooldown?, true)
             |> Map.put(:energy, 0)
 
+          IO.puts(
+            "executing death ability #{monster.death_ability_id} - #{ability.name} for #{
+              monster.name
+            }"
+          )
+
           Ability.execute(room, monster.ref, ability, [monster.ref])
         else
           room
         end
+
+      ApathyDrive.Repo.delete!(%RoomMonster{id: monster.room_monster_id})
 
       room = put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
 
@@ -799,44 +811,27 @@ defmodule ApathyDrive.Monster do
     end
 
     def heartbeat(%Monster{} = monster, %Room{} = room) do
-      room =
-        Room.update_mobile(room, monster.ref, fn monster ->
-          hp = Regeneration.hp_since_last_tick(room, monster)
-
-          room =
-            room
-            |> Regeneration.heal_limbs(monster.ref, hp)
-            |> Regeneration.balance_limbs(monster.ref)
-            |> Ability.unbalance(monster.ref)
-
-          monster = room.mobiles[monster.ref]
-
-          if monster do
-            monster
-            |> Regeneration.regenerate(room)
-            |> RoomServer.execute_casting_ability(room)
-          else
-            room
-          end
-        end)
-        |> ApathyDrive.Aggression.react(monster.ref)
-        |> AI.think(monster.ref)
-
-      if monster = room.mobiles[monster.ref] do
+      room
+      |> Room.update_mobile(monster.ref, fn room, monster ->
+        if monster.id == 306 and monster.hp < 0.1, do: IO.inspect(monster)
         monster = Regeneration.decay(monster)
 
-        max_hp = Mobile.max_hp_at_level(monster, monster.level)
-
-        hp = trunc(max_hp * monster.hp)
-
-        if hp < 1 do
+        if Mobile.die?(monster) do
           Mobile.die(monster, room)
         else
-          put_in(room.mobiles[monster.ref], monster)
+          monster
         end
-      else
-        room
-      end
+      end)
+      |> Regeneration.heal_limbs(monster.ref)
+      |> Regeneration.balance_limbs(monster.ref)
+      |> Ability.unbalance(monster.ref)
+      |> Room.update_mobile(monster.ref, fn room, monster ->
+        monster
+        |> Regeneration.regenerate(room)
+        |> RoomServer.execute_casting_ability(room)
+      end)
+      |> ApathyDrive.Aggression.react(monster.ref)
+      |> AI.think(monster.ref)
     end
 
     def hp_regen_per_round(%Monster{} = monster) do

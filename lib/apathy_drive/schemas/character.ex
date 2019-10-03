@@ -1504,8 +1504,10 @@ defmodule ApathyDrive.Character do
       :rand.uniform(100) >= stealth - div(perception, 3)
     end
 
-    def die?(_character) do
-      false
+    def die?(character) do
+      character.limbs
+      |> Map.values()
+      |> Enum.any?(&(&1.fatal && &1.health <= 0))
     end
 
     def die(character, room) do
@@ -1684,7 +1686,7 @@ defmodule ApathyDrive.Character do
       initial_max_hp = Mobile.max_hp_at_level(character, character.level)
 
       room =
-        Room.update_mobile(room, character.ref, fn character ->
+        Room.update_mobile(room, character.ref, fn room, character ->
           hp = Regeneration.hp_since_last_tick(room, character)
 
           room =

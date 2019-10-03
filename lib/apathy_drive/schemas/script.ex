@@ -114,7 +114,7 @@ defmodule ApathyDrive.Script do
         script
       ) do
     room =
-      Room.update_mobile(room, character.ref, fn char ->
+      Room.update_mobile(room, character.ref, fn _room, char ->
         %Trait{id: id} = Repo.get_by!(Trait, name: flag)
 
         case Repo.get_by(CharacterTrait, character_id: char.id, trait_id: id) do
@@ -141,7 +141,7 @@ defmodule ApathyDrive.Script do
         script
       ) do
     room =
-      Room.update_mobile(room, character.ref, fn char ->
+      Room.update_mobile(room, character.ref, fn _room, char ->
         %Trait{id: id} = Repo.get_by!(Trait, name: flag)
 
         case Repo.get_by(CharacterTrait, character_id: char.id, trait_id: id) do

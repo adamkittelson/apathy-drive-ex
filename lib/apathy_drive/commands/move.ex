@@ -169,7 +169,7 @@ defmodule ApathyDrive.Commands.Move do
         Mobile.send_scroll(character, message)
 
         room =
-          Room.update_mobile(room, character.ref, fn char ->
+          Room.update_mobile(room, character.ref, fn _room, char ->
             char_currency = Currency.subtract(char, amount_in_copper)
 
             char

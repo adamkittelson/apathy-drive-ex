@@ -74,7 +74,7 @@ defmodule ApathyDrive.Commands.Sell do
 
       room
     else
-      Room.update_mobile(room, character.ref, fn char ->
+      Room.update_mobile(room, character.ref, fn _room, char ->
         ItemInstance
         |> Repo.get!(instance_id)
         |> Repo.delete!()

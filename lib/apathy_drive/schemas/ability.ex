@@ -200,7 +200,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def unbalance(room, mobile_ref) do
-    Room.update_mobile(room, mobile_ref, fn mobile ->
+    Room.update_mobile(room, mobile_ref, fn room, mobile ->
       if Mobile.has_ability?(mobile, "Unbalanced") do
         if :rand.uniform(100) < 20 do
           case :rand.uniform(4) do
@@ -619,84 +619,83 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, nil, %Item{} = item) do
-    Room.update_mobile(room, caster_ref, fn
-      caster ->
-        room =
-          Room.update_mobile(room, caster.ref, fn caster ->
-            caster =
+    Room.update_mobile(room, caster_ref, fn room, caster ->
+      room =
+        Room.update_mobile(room, caster.ref, fn _room, caster ->
+          caster =
+            caster
+            |> Stealth.reveal()
+
+          Mobile.update_prompt(caster)
+
+          caster =
+            if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='cyan'>You interrupt your work.</span></p>"
+              )
+
+              TimerManager.cancel(caster, lt)
+            else
               caster
-              |> Stealth.reveal()
-
-            Mobile.update_prompt(caster)
-
-            caster =
-              if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
-                Mobile.send_scroll(
-                  caster,
-                  "<p><span class='cyan'>You interrupt your work.</span></p>"
-                )
-
-                TimerManager.cancel(caster, lt)
-              else
-                caster
-              end
-
-            Enchantment
-            |> Ecto.Query.where(
-              [e],
-              e.items_instances_id == ^item.instance_id and is_nil(e.ability_id)
-            )
-            |> Repo.all()
-            |> case do
-              [%Enchantment{finished: false} = enchantment] ->
-                enchantment = Repo.preload(enchantment, :items_instances)
-                time = Enchantment.next_tick_time(enchantment)
-
-                Mobile.send_scroll(
-                  caster,
-                  "<p><span class='cyan'>You continue your work.</span></p>"
-                )
-
-                Mobile.send_scroll(
-                  caster,
-                  "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                    Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
-                  }</span></p>"
-                )
-
-                TimerManager.send_after(
-                  caster,
-                  {{:longterm, item.instance_id}, :timer.seconds(time),
-                   {:lt_tick, time, caster_ref, enchantment}}
-                )
-
-              [] ->
-                enchantment =
-                  %Enchantment{items_instances_id: item.instance_id, ability_id: nil}
-                  |> Repo.insert!()
-                  |> Repo.preload(:items_instances)
-
-                time = Enchantment.next_tick_time(enchantment)
-                Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
-
-                Mobile.send_scroll(
-                  caster,
-                  "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                    Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
-                  }</span></p>"
-                )
-
-                TimerManager.send_after(
-                  caster,
-                  {{:longterm, item.instance_id}, :timer.seconds(time),
-                   {:lt_tick, time, caster_ref, enchantment}}
-                )
             end
-          end)
 
-        Room.update_moblist(room)
+          Enchantment
+          |> Ecto.Query.where(
+            [e],
+            e.items_instances_id == ^item.instance_id and is_nil(e.ability_id)
+          )
+          |> Repo.all()
+          |> case do
+            [%Enchantment{finished: false} = enchantment] ->
+              enchantment = Repo.preload(enchantment, :items_instances)
+              time = Enchantment.next_tick_time(enchantment)
 
-        room
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='cyan'>You continue your work.</span></p>"
+              )
+
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                  Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                }</span></p>"
+              )
+
+              TimerManager.send_after(
+                caster,
+                {{:longterm, item.instance_id}, :timer.seconds(time),
+                 {:lt_tick, time, caster_ref, enchantment}}
+              )
+
+            [] ->
+              enchantment =
+                %Enchantment{items_instances_id: item.instance_id, ability_id: nil}
+                |> Repo.insert!()
+                |> Repo.preload(:items_instances)
+
+              time = Enchantment.next_tick_time(enchantment)
+              Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
+
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                  Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                }</span></p>"
+              )
+
+              TimerManager.send_after(
+                caster,
+                {{:longterm, item.instance_id}, :timer.seconds(time),
+                 {:lt_tick, time, caster_ref, enchantment}}
+              )
+          end
+        end)
+
+      Room.update_moblist(room)
+
+      room
     end)
   end
 
@@ -711,7 +710,7 @@ defmodule ApathyDrive.Ability do
 
     ability = Map.put(ability, :traits, traits)
 
-    Room.update_mobile(room, caster_ref, fn caster ->
+    Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
           mobile
@@ -733,7 +732,7 @@ defmodule ApathyDrive.Ability do
           display_pre_cast_message(room, caster, item, ability)
 
           room =
-            Room.update_mobile(room, caster.ref, fn caster ->
+            Room.update_mobile(room, caster.ref, fn _room, caster ->
               caster =
                 caster
                 |> apply_cooldowns(ability)
@@ -803,7 +802,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, %Item{} = item) do
-    Room.update_mobile(room, caster_ref, fn caster ->
+    Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
           mobile
@@ -859,7 +858,7 @@ defmodule ApathyDrive.Ability do
 
           if script = ability.traits["Script"] do
             room
-            |> Room.update_mobile(caster_ref, fn caster ->
+            |> Room.update_mobile(caster_ref, fn room, caster ->
               room = Map.put(room, :script_args, item)
               Module.safe_concat([Scripts, Macro.camelize(script)]).execute(room, caster.ref)
             end)
@@ -875,22 +874,30 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) when is_list(targets) do
-    Room.update_mobile(room, caster_ref, fn caster ->
+    if ability.name == "medium divides", do: IO.puts("executing medium divides")
+
+    if ability.name == "medium divides" and !room.mobiles[caster_ref],
+      do: IO.puts("monster not in room")
+
+    Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
+          if ability.name == "medium divides", do: IO.puts("not enough energy")
           mobile
 
         casting_failed?(caster, ability) ->
+          if ability.name == "medium divides", do: IO.puts("casting failed")
           casting_failed(room, caster_ref, ability)
 
         can_execute?(room, caster, ability) ->
+          if ability.name == "medium divides", do: IO.puts("can execute")
           display_pre_cast_message(room, caster, targets, ability)
 
           ability = crit(caster, ability)
 
           room =
             Enum.reduce(targets, room, fn target_ref, updated_room ->
-              Room.update_mobile(updated_room, target_ref, fn target ->
+              Room.update_mobile(updated_room, target_ref, fn _room, target ->
                 caster = updated_room.mobiles[caster.ref]
 
                 if affects_target?(target, ability) do
@@ -923,7 +930,7 @@ defmodule ApathyDrive.Ability do
           Room.update_moblist(room)
 
           room =
-            Room.update_mobile(room, caster.ref, fn caster ->
+            Room.update_mobile(room, caster.ref, fn _room, caster ->
               caster =
                 caster
                 |> apply_cooldowns(ability)
@@ -962,13 +969,14 @@ defmodule ApathyDrive.Ability do
           Room.update_hp_bar(room, caster.ref)
           Room.update_mana_bar(room, caster.ref)
 
-          room = Room.update_mobile(room, caster_ref, &Stealth.reveal(&1))
+          room =
+            Room.update_mobile(room, caster_ref, fn _room, caster -> Stealth.reveal(caster) end)
 
           Room.update_moblist(room)
 
           room =
             if instance_id = ability.traits["DestroyItem"] do
-              Room.update_mobile(room, caster_ref, fn caster ->
+              Room.update_mobile(room, caster_ref, fn _room, caster ->
                 scroll =
                   (caster.inventory ++ caster.equipment)
                   |> Enum.find(&(&1.instance_id == instance_id))
@@ -1362,17 +1370,8 @@ defmodule ApathyDrive.Ability do
           target = updated_room.mobiles[target_ref]
 
           if caster && target do
-            cond do
-              Mobile.die?(caster) ->
-                Mobile.die(caster, updated_room)
-
-              Mobile.die?(target) ->
-                Mobile.die(target, updated_room)
-
-              :else ->
-                ability = put_in(ability.traits["StackCount"], 10)
-                apply_ability(updated_room, caster, target, ability)
-            end
+            ability = put_in(ability.traits["StackCount"], 10)
+            apply_ability(updated_room, caster, target, ability)
           else
             updated_room
           end
@@ -1380,7 +1379,7 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def critical_abilities(ability_shift, crit_tables) do
+  def critical_abilities(_ability_shift, _crit_tables) do
     # percent = trunc(abs(ability_shift) * 100)
 
     # crit_tables
@@ -1506,7 +1505,7 @@ defmodule ApathyDrive.Ability do
 
   def damage_limb(room, target_ref, limb_name, percentage, bleeding \\ false)
       when percentage < 0 do
-    Room.update_mobile(room, target_ref, fn target ->
+    Room.update_mobile(room, target_ref, fn room, target ->
       if map_size(target.limbs) == 1 do
         target
       else
@@ -1603,7 +1602,7 @@ defmodule ApathyDrive.Ability do
                 )
               end
 
-              Mobile.die(target, room)
+              put_in(room.mobiles[target.ref], target)
             else
               target =
                 target
@@ -1672,8 +1671,10 @@ defmodule ApathyDrive.Ability do
   end
 
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
+    if ability.name == "medium divides", do: IO.puts("finishing medium divides")
+
     room =
-      Room.update_mobile(room, target_ref, fn target ->
+      Room.update_mobile(room, target_ref, fn room, target ->
         caster = room.mobiles[caster_ref]
 
         target =
@@ -1743,6 +1744,8 @@ defmodule ApathyDrive.Ability do
         caster = room.mobiles[caster_ref]
         monster = Repo.get!(Monster, monster_id)
 
+        IO.puts("summoning #{monster.name} to room #{room.id}")
+
         monster =
           %RoomMonster{
             room_id: room.id,
@@ -1755,14 +1758,14 @@ defmodule ApathyDrive.Ability do
           }
           |> Monster.from_room_monster()
 
-        room = Room.mobile_entered(room, monster, "")
+        Room.mobile_entered(room, monster, "")
       else
         room
       end
 
     room =
       if script = ability.traits["Script"] do
-        Room.update_mobile(room, caster_ref, fn caster ->
+        Room.update_mobile(room, caster_ref, fn room, caster ->
           Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
             room,
             caster.ref,
@@ -1844,15 +1847,10 @@ defmodule ApathyDrive.Ability do
     Room.update_mana_bar(room, caster_ref)
     Room.update_mana_bar(room, target_ref)
 
-    cond do
-      (target = room.mobiles[target_ref]) && ability.traits["Kill"] ->
-        Mobile.die(target, room)
-
-      (target = room.mobiles[target_ref]) && Mobile.die?(target) ->
-        Mobile.die(target, room)
-
-      :else ->
-        room
+    if (target = room.mobiles[target_ref]) && ability.traits["Kill"] do
+      Mobile.die(target, room)
+    else
+      room
     end
   end
 
@@ -3127,7 +3125,7 @@ defmodule ApathyDrive.Ability do
 
   def casting_failed(room, caster_ref, ability) do
     room =
-      Room.update_mobile(room, caster_ref, fn caster ->
+      Room.update_mobile(room, caster_ref, fn room, caster ->
         Mobile.send_scroll(
           caster,
           "<p><span class='dark-cyan'>You attempt to cast #{ability.name}, but fail.</span></p>"

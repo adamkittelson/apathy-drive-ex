@@ -35,7 +35,7 @@ defmodule ApathyDrive.Commands.Train do
         room
 
       :else ->
-        Room.update_mobile(room, character.ref, fn character ->
+        Room.update_mobile(room, character.ref, fn room, character ->
           price_in_copper = Trainer.training_cost(room.trainer, character)
           currency = Currency.set_value(price_in_copper)
           char_currency = Currency.subtract(character, price_in_copper)
@@ -115,7 +115,7 @@ defmodule ApathyDrive.Commands.Train do
   end
 
   def change_class(room, character, class_id) do
-    Room.update_mobile(room, character.ref, fn character ->
+    Room.update_mobile(room, character.ref, fn _room, character ->
       character =
         character
         |> Ecto.Changeset.change(%{

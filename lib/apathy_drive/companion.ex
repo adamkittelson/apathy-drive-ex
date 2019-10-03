@@ -454,7 +454,12 @@ defmodule ApathyDrive.Companion do
       max_hp = Mobile.max_hp_at_level(companion, companion.level)
       hp = trunc(max_hp * companion.hp)
 
-      hp < 1
+      missing_fatal_limb =
+        companion.limbs
+        |> Map.values()
+        |> Enum.any?(&(&1.fatal && &1.health <= 0))
+
+      hp < 1 or missing_fatal_limb
     end
 
     def die(companion, room) do
@@ -511,7 +516,7 @@ defmodule ApathyDrive.Companion do
 
     def heartbeat(%Companion{} = companion, %Room{} = room) do
       room =
-        Room.update_mobile(room, companion.ref, fn companion ->
+        Room.update_mobile(room, companion.ref, fn room, companion ->
           hp = Regeneration.hp_since_last_tick(room, companion)
 
           room =
@@ -534,10 +539,7 @@ defmodule ApathyDrive.Companion do
         |> AI.think(companion.ref)
 
       if companion = room.mobiles[companion.ref] do
-        max_hp = Mobile.max_hp_at_level(companion, companion.level)
-        hp = trunc(max_hp * companion.hp)
-
-        if hp < 1 do
+        if Mobile.die?(companion) do
           Mobile.die(companion, room)
         else
           room

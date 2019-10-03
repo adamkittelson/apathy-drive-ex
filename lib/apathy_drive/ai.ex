@@ -2,7 +2,7 @@ defmodule ApathyDrive.AI do
   alias ApathyDrive.{Ability, Character, Mobile, Monster, Party, Room}
 
   def think(%Room{} = room, ref) do
-    Room.update_mobile(room, ref, fn mobile ->
+    Room.update_mobile(room, ref, fn room, mobile ->
       if mobile.casting do
         flee(mobile, room) || mobile
       else

@@ -136,8 +136,10 @@ defmodule ApathyDrive.Regeneration do
     regen / @ticks_per_round
   end
 
-  def heal_limbs(room, target_ref, percentage) do
-    Room.update_mobile(room, target_ref, fn target ->
+  def heal_limbs(room, target_ref, percentage \\ nil) do
+    Room.update_mobile(room, target_ref, fn room, target ->
+      percentage = percentage || hp_since_last_tick(room, target)
+
       if Map.has_key?(target, :limbs) do
         limbs =
           target.limbs
@@ -156,7 +158,7 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def heal_limb(room, target_ref, percentage, limb) do
-    Room.update_mobile(room, target_ref, fn target ->
+    Room.update_mobile(room, target_ref, fn room, target ->
       if Map.has_key?(target, :limbs) do
         initial_limb_health = target.limbs[limb].health
 
@@ -188,7 +190,7 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def balance_limbs(room, target_ref) do
-    Room.update_mobile(room, target_ref, fn target ->
+    Room.update_mobile(room, target_ref, fn room, target ->
       healthiest_limb =
         target.limbs
         |> Map.keys()
@@ -199,7 +201,7 @@ defmodule ApathyDrive.Regeneration do
 
       target.limbs
       |> Enum.reduce(room, fn {limb_name, _limb}, room ->
-        Room.update_mobile(room, target_ref, fn target ->
+        Room.update_mobile(room, target_ref, fn room, target ->
           limb = target.limbs[limb_name]
 
           cond do
@@ -218,7 +220,7 @@ defmodule ApathyDrive.Regeneration do
               amount = max(0.10, 1 / Mobile.max_hp_at_level(target, target.level))
 
               room
-              |> Room.update_mobile(target_ref, fn target ->
+              |> Room.update_mobile(target_ref, fn _room, target ->
                 update_in(target, [:hp], &(&1 + amount))
               end)
               |> Ability.damage_limb(target_ref, healthiest_limb, -amount * 2, true)

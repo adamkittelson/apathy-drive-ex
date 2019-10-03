@@ -30,7 +30,7 @@ defmodule ApathyDrive.Enchantment do
 
   # crafting an item
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{ability_id: nil} = enchantment) do
-    Room.update_mobile(room, enchanter_ref, fn enchanter ->
+    Room.update_mobile(room, enchanter_ref, fn _room, enchanter ->
       if !present?(enchanter, enchantment.items_instances_id) do
         Mobile.send_scroll(
           enchanter,
@@ -105,7 +105,7 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{} = enchantment) do
-    Room.update_mobile(room, enchanter_ref, fn enchanter ->
+    Room.update_mobile(room, enchanter_ref, fn _room, enchanter ->
       if !Enum.all?(enchantment.ability.traits["RequireItems"], &present?(enchanter, &1)) do
         Mobile.send_scroll(
           enchanter,

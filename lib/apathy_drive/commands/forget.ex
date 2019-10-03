@@ -34,7 +34,7 @@ defmodule ApathyDrive.Commands.Forget do
   end
 
   defp deactivate_ability(room, character, ability) do
-    Room.update_mobile(room, character.ref, fn character ->
+    Room.update_mobile(room, character.ref, fn _room, character ->
       character_ability =
         Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id)
 

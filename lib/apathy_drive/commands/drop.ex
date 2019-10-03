@@ -30,7 +30,7 @@ defmodule ApathyDrive.Commands.Drop do
               room_currency = Map.get(room, currency)
 
               room =
-                Room.update_mobile(room, character.ref, fn char ->
+                Room.update_mobile(room, character.ref, fn _room, char ->
                   char
                   |> Ecto.Changeset.change(%{
                     currency => current - amount
@@ -100,7 +100,7 @@ defmodule ApathyDrive.Commands.Drop do
 
     room =
       update_in(room.items, &[item | &1])
-      |> Room.update_mobile(character.ref, fn char ->
+      |> Room.update_mobile(character.ref, fn _room, char ->
         char =
           if {:longterm, instance_id} in TimerManager.timers(char) do
             Mobile.send_scroll(

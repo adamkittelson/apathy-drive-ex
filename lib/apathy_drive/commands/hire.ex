@@ -41,7 +41,7 @@ defmodule ApathyDrive.Commands.Hire do
               |> Repo.update!()
 
               room
-              |> Room.update_mobile(character.ref, fn char ->
+              |> Room.update_mobile(character.ref, fn _room, char ->
                 update_in(char.gold, &(&1 - price))
               end)
               |> Companion.convert_for_character(monster, character)

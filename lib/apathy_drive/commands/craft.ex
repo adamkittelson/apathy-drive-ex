@@ -96,7 +96,7 @@ defmodule ApathyDrive.Commands.Craft do
 
                     room =
                       room
-                      |> Room.update_mobile(character.ref, fn char ->
+                      |> Room.update_mobile(character.ref, fn _room, char ->
                         char
                         |> Character.load_materials()
                         |> Character.load_items()
@@ -116,7 +116,7 @@ defmodule ApathyDrive.Commands.Craft do
                     room = Ability.execute(room, character.ref, nil, item)
 
                     room
-                    |> Room.update_mobile(character.ref, fn char ->
+                    |> Room.update_mobile(character.ref, fn _room, char ->
                       Character.load_items(char)
                     end)
                   else

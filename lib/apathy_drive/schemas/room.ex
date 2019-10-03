@@ -122,7 +122,7 @@ defmodule ApathyDrive.Room do
   def load_abilities(%Room{} = room) do
     Enum.reduce(room.mobiles, room, fn
       {ref, %Character{}}, updated_room ->
-        Room.update_mobile(updated_room, ref, fn character ->
+        Room.update_mobile(updated_room, ref, fn _updated_room, character ->
           Character.load_abilities(character)
         end)
 
@@ -134,7 +134,7 @@ defmodule ApathyDrive.Room do
   def update_mobile(%Room{} = room, mobile_ref, fun) do
     if mobile = room.mobiles[mobile_ref] do
       room =
-        case fun.(mobile) do
+        case fun.(room, mobile) do
           %Room{} = updated_room ->
             updated_room
 
@@ -351,22 +351,7 @@ defmodule ApathyDrive.Room do
 
     room
     |> MonsterSpawning.spawn_permanent_npc()
-    |> Room.move_after(mobile.ref)
     |> Room.start_timer()
-  end
-
-  def move_after(%Room{} = room, ref) do
-    Room.update_mobile(room, ref, fn
-      %Monster{} = monster ->
-        monster
-
-      # TimerManager.send_after(monster, {:monster_movement, jitter(:timer.seconds(frequency)), {:auto_move, ref}})
-      %Character{} = character ->
-        character
-
-      %Companion{} = companion ->
-        companion
-    end)
   end
 
   def local_hated_targets(%Room{mobiles: mobiles}, %{hate: hate}) do
@@ -454,7 +439,7 @@ defmodule ApathyDrive.Room do
       %Character{} = observer, room ->
         room =
           if Mobile.detected?(observer, mobile, room) do
-            Room.update_mobile(room, observer.ref, fn observer ->
+            Room.update_mobile(room, observer.ref, fn _room, observer ->
               update_in(observer.detected_characters, &MapSet.put(&1, mobile.ref))
             end)
           else
@@ -512,7 +497,7 @@ defmodule ApathyDrive.Room do
 
           mobile.sneaking ->
             room =
-              Room.update_mobile(room, observer.ref, fn observer ->
+              Room.update_mobile(room, observer.ref, fn _room, observer ->
                 update_in(observer.detected_characters, &MapSet.delete(&1, mobile.ref))
               end)
 

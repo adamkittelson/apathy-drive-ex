@@ -35,7 +35,7 @@ defmodule ApathyDrive.Commands.Remove do
         |> Repo.update!()
 
         room =
-          Room.update_mobile(room, character.ref, fn char ->
+          Room.update_mobile(room, character.ref, fn room, char ->
             character =
               char
               |> Character.load_items()

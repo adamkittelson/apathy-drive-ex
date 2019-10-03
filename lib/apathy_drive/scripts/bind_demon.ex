@@ -7,7 +7,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
   ]
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
-    Room.update_mobile(room, mobile_ref, fn mobile ->
+    Room.update_mobile(room, mobile_ref, fn room, mobile ->
       case Character.companion(mobile, room) do
         %Companion{monster_id: id} = demon when id in @demon_ids ->
           bind_demon(room, mobile, demon)

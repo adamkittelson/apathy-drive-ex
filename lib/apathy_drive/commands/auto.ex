@@ -50,7 +50,7 @@ defmodule ApathyDrive.Commands.Auto do
 
   def execute(%Room{} = room, %Character{ref: ref}, ["heal"]) do
     room =
-      Room.update_mobile(room, ref, fn character ->
+      Room.update_mobile(room, ref, fn _room, character ->
         character
         |> Ecto.Changeset.change(%{auto_heal: !character.auto_heal})
         |> Repo.update!()
@@ -61,7 +61,7 @@ defmodule ApathyDrive.Commands.Auto do
 
   def execute(%Room{} = room, %Character{ref: ref}, ["flee"]) do
     room =
-      Room.update_mobile(room, ref, fn character ->
+      Room.update_mobile(room, ref, fn _room, character ->
         character
         |> Ecto.Changeset.change(%{auto_flee: !character.auto_flee})
         |> Repo.update!()
@@ -72,7 +72,7 @@ defmodule ApathyDrive.Commands.Auto do
 
   def execute(%Room{} = room, %Character{ref: ref}, ["bless"]) do
     room =
-      Room.update_mobile(room, ref, fn character ->
+      Room.update_mobile(room, ref, fn _room, character ->
         character
         |> Ecto.Changeset.change(%{auto_bless: !character.auto_bless})
         |> Repo.update!()
@@ -83,7 +83,7 @@ defmodule ApathyDrive.Commands.Auto do
 
   def execute(%Room{} = room, %Character{ref: ref}, ["curse"]) do
     room =
-      Room.update_mobile(room, ref, fn character ->
+      Room.update_mobile(room, ref, fn _room, character ->
         character
         |> Ecto.Changeset.change(%{auto_curse: !character.auto_curse})
         |> Repo.update!()
@@ -94,7 +94,7 @@ defmodule ApathyDrive.Commands.Auto do
 
   def execute(%Room{} = room, %Character{ref: ref}, ["nuke"]) do
     room =
-      Room.update_mobile(room, ref, fn character ->
+      Room.update_mobile(room, ref, fn _room, character ->
         character
         |> Ecto.Changeset.change(%{auto_nuke: !character.auto_nuke})
         |> Repo.update!()
@@ -105,7 +105,7 @@ defmodule ApathyDrive.Commands.Auto do
 
   def execute(%Room{} = room, %Character{ref: ref}, ["roam"]) do
     room =
-      Room.update_mobile(room, ref, fn character ->
+      Room.update_mobile(room, ref, fn _room, character ->
         character
         |> Ecto.Changeset.change(%{auto_roam: !character.auto_roam})
         |> Repo.update!()

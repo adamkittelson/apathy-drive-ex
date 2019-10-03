@@ -3,7 +3,7 @@ defmodule ApathyDrive.Scripts.MeltInv do
 
   def execute(%Room{} = room, _mobile_ref, target_ref) do
     Room.update_mobile(room, target_ref, fn
-      %Character{} = character ->
+      _room, %Character{} = character ->
         Enum.each(character.inventory, fn item ->
           Mobile.send_scroll(
             character,
@@ -17,7 +17,7 @@ defmodule ApathyDrive.Scripts.MeltInv do
 
         Character.load_items(character)
 
-      _ ->
+      room, _ ->
         room
     end)
   end

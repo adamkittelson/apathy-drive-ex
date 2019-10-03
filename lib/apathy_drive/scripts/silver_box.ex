@@ -3,7 +3,7 @@ defmodule ApathyDrive.Scripts.SilverBox do
   alias ApathyDrive.{Mobile, Room}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
-    Room.update_mobile(room, mobile_ref, fn mobile ->
+    Room.update_mobile(room, mobile_ref, fn room, mobile ->
       Mobile.send_scroll(mobile, "<p>You open the silver box, and find...</p>")
 
       room

@@ -20,13 +20,13 @@ defmodule ApathyDrive.Commands.Join do
 
           ref in invitees ->
             room
-            |> Room.update_mobile(character.ref, fn character ->
+            |> Room.update_mobile(character.ref, fn _room, character ->
               Mobile.send_scroll(character, "<p>You are now following #{target.name}</p>")
 
               character
               |> put_in([:leader], target.ref)
             end)
-            |> Room.update_mobile(target.ref, fn target ->
+            |> Room.update_mobile(target.ref, fn _room, target ->
               Mobile.send_scroll(target, "<p>#{character.name} started to follow you</p>")
 
               target

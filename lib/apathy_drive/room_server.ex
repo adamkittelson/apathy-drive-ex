@@ -220,7 +220,7 @@ defmodule ApathyDrive.RoomServer do
         end
 
       room =
-        Room.update_mobile(room, existing_character.ref, fn mob ->
+        Room.update_mobile(room, existing_character.ref, fn _room, mob ->
           mob
           |> Map.put(:socket, socket)
           |> TimerManager.cancel(:logout)
@@ -294,7 +294,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast({:tell, from_character_name, from_game, to_character_ref, message}, room) do
     room =
-      Room.update_mobile(room, to_character_ref, fn character ->
+      Room.update_mobile(room, to_character_ref, fn _room, character ->
         from_character =
           [from_character_name, from_game]
           |> Enum.reject(&is_nil/1)
@@ -491,7 +491,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       case Room.find_monitor_ref(room, monitor_ref) do
         %Character{ref: ref} ->
-          Room.update_mobile(room, ref, fn character ->
+          Room.update_mobile(room, ref, fn _room, character ->
             TimerManager.send_after(character, {:logout, 30_000, {:logout, ref}})
           end)
 
@@ -558,7 +558,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:heartbeat, mobile_ref}, room) do
     room =
-      Room.update_mobile(room, mobile_ref, fn mobile ->
+      Room.update_mobile(room, mobile_ref, fn room, mobile ->
         Mobile.heartbeat(mobile, room)
       end)
 
@@ -580,7 +580,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:reduce_evil_points, mobile_ref}, room) do
     room =
-      Room.update_mobile(room, mobile_ref, fn character ->
+      Room.update_mobile(room, mobile_ref, fn _room, character ->
         character =
           if Character.reduce_evil_points?(character) do
             Character.alter_evil_points(character, -5 / 60)
@@ -621,10 +621,10 @@ defmodule ApathyDrive.RoomServer do
           room_exit = Enum.random(exits)
           {:noreply, Commands.Move.execute(room, mobile, room_exit, false)}
         else
-          {:noreply, Room.move_after(room, ref)}
+          {:noreply, room}
         end
       else
-        {:noreply, Room.move_after(room, ref)}
+        {:noreply, room}
       end
     else
       {:noreply, room}
@@ -633,7 +633,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:expire_invite, ref, invitee_ref}, %Room{} = room) do
     room =
-      Room.update_mobile(room, ref, fn mobile ->
+      Room.update_mobile(room, ref, fn _room, mobile ->
         update_in(mobile.invitees, &List.delete(&1, invitee_ref))
       end)
 
@@ -817,7 +817,7 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_info({:remove_effect, ref, key}, room) do
     room =
-      Room.update_mobile(room, ref, fn mobile ->
+      Room.update_mobile(room, ref, fn _room, mobile ->
         Systems.Effect.remove(mobile, key, fire_after_cast: true, show_expiration_message: true)
       end)
 
@@ -834,7 +834,7 @@ defmodule ApathyDrive.RoomServer do
   def handle_info(:room_deleted, room) do
     room =
       Enum.reduce(room.mobiles, room, fn {ref, _mobile}, updated_room ->
-        Room.update_mobile(room, ref, &Mobile.die(&1, updated_room))
+        Room.update_mobile(updated_room, ref, &Mobile.die(&2, &1))
       end)
 
     {:stop, :normal, room}

@@ -2,7 +2,7 @@ defmodule ApathyDrive.Scripts.Cleave do
   alias ApathyDrive.{Ability, Mobile, Room}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
-    Room.update_mobile(room, mobile_ref, fn character ->
+    Room.update_mobile(room, mobile_ref, fn room, character ->
       targets = Ability.get_targets(room, mobile_ref, %Ability{targets: "full attack area"}, "")
 
       min_targets = min(2, length(targets))

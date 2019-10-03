@@ -38,13 +38,15 @@ defmodule ApathyDrive.Commands.Pray do
     }
 
     room
-    |> Room.update_mobile(character.ref, &Character.alter_evil_points(&1, -20))
+    |> Room.update_mobile(character.ref, fn _room, character ->
+      Character.alter_evil_points(character, -20)
+    end)
     |> Ability.execute(character.ref, ability, [character.ref])
   end
 
   def restore_limbs(room, character) do
     if Enum.any?(character.limbs, fn {_, limb} -> limb.health <= 0 end) do
-      Room.update_mobile(room, character.ref, fn character ->
+      Room.update_mobile(room, character.ref, fn _room, character ->
         character.limbs
         |> Enum.reduce(character, fn {limb_name, limb}, character ->
           if limb.health <= 0 do

@@ -73,7 +73,7 @@ defmodule ApathyDrive.Commands.Buy do
               room.shop.item_instances
               |> Enum.find(&(&1.item_id == shop_item.item_id))
 
-            Room.update_mobile(room, character.ref, fn char ->
+            Room.update_mobile(room, character.ref, fn _room, char ->
               item_instance
               |> Ecto.Changeset.change(%{
                 shop_id: nil,

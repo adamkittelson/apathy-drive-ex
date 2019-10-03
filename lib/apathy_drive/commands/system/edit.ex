@@ -12,7 +12,7 @@ defmodule ApathyDrive.Commands.System.Edit do
       %Ability{} = ability ->
         Mobile.send_scroll(character, "<p>You are now editing #{ability.name}.</p>")
 
-        Room.update_mobile(room, character.ref, fn character ->
+        Room.update_mobile(room, character.ref, fn _room, character ->
           character
           |> Map.put(:editing, ability)
           |> Mobile.update_prompt()
@@ -43,7 +43,7 @@ defmodule ApathyDrive.Commands.System.Edit do
       %Skill{} = skill ->
         Mobile.send_scroll(character, "<p>You are now editing #{skill.name}.</p>")
 
-        Room.update_mobile(room, character.ref, fn character ->
+        Room.update_mobile(room, character.ref, fn _room, character ->
           character
           |> Map.put(:editing, skill)
           |> Mobile.update_prompt()

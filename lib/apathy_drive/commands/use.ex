@@ -133,7 +133,7 @@ defmodule ApathyDrive.Commands.Use do
 
         Mobile.send_scroll(character, "<p>You lit the #{Item.colored_name(item)}.</p>")
 
-        Room.update_mobile(room, character.ref, fn char ->
+        Room.update_mobile(room, character.ref, fn _room, char ->
           Character.load_items(char)
         end)
 
@@ -168,7 +168,7 @@ defmodule ApathyDrive.Commands.Use do
   end
 
   def deduct_uses(room, character_ref, item) do
-    Room.update_mobile(room, character_ref, fn character ->
+    Room.update_mobile(room, character_ref, fn room, character ->
       if item.uses do
         if item.uses > 1 do
           ItemInstance

@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.RobMoney do
-  alias ApathyDrive.{Character, Item, ItemInstance, Mobile, Repo, Room}
+  alias ApathyDrive.{Character, Repo, Room}
 
   def execute(%Room{} = room, mobile_ref, target_ref) do
     mobile = room.mobiles[mobile_ref]

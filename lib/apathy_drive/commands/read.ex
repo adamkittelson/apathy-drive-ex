@@ -82,7 +82,7 @@ defmodule ApathyDrive.Commands.Read do
   end
 
   defp learn_ability(room, character, scroll, ability) do
-    Room.update_mobile(room, character.ref, fn character ->
+    Room.update_mobile(room, character.ref, fn _room, character ->
       message =
         "<p>As you read the #{scroll.name} it crumbles to dust. You now have the knowledge of #{
           ability.name

@@ -49,7 +49,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
 
         learn_style(character, item)
 
-        Room.update_mobile(room, character.ref, fn character ->
+        Room.update_mobile(room, character.ref, fn _room, character ->
           case character.materials[material.name] do
             %CharacterMaterial{amount: current} = cm ->
               cm
@@ -87,7 +87,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
 
         learn_style(character, item)
 
-        Room.update_mobile(room, character.ref, fn character ->
+        Room.update_mobile(room, character.ref, fn _room, character ->
           item_instance =
             ItemInstance
             |> Repo.get(item.instance_id)

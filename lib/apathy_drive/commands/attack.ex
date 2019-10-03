@@ -23,7 +23,7 @@ defmodule ApathyDrive.Commands.Attack do
       |> Match.one(:name_contains, query)
 
     room =
-      Room.update_mobile(room, character.ref, fn %{} = attacker ->
+      Room.update_mobile(room, character.ref, fn _room, %{} = attacker ->
         attack(attacker, target)
       end)
 

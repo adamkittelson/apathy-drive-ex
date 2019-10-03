@@ -110,7 +110,7 @@ defmodule ApathyDrive.Commands.Get do
               room =
                 room
                 |> Room.load_items()
-                |> Room.update_mobile(character.ref, fn char ->
+                |> Room.update_mobile(character.ref, fn _room, char ->
                   char
                   |> Character.load_items()
                   |> Mobile.send_scroll(

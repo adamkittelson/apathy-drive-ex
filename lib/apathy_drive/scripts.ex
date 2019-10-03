@@ -28,7 +28,7 @@ defmodule ApathyDrive.Scripts do
     # smallest number of coins
     coins = Currency.set_value(coins, value)
 
-    Room.update_mobile(room, mobile_ref, fn mobile ->
+    Room.update_mobile(room, mobile_ref, fn _room, mobile ->
       Mobile.send_scroll(mobile, "<p>You receive #{Currency.to_string(coins)}.</p>")
 
       char_currency = Currency.add(mobile, value)
@@ -48,7 +48,7 @@ defmodule ApathyDrive.Scripts do
   def give_item(%Room{} = room, mobile_ref, item_id) when is_integer(item_id) do
     item = Repo.get!(Item, item_id)
 
-    Room.update_mobile(room, mobile_ref, fn mobile ->
+    Room.update_mobile(room, mobile_ref, fn room, mobile ->
       level = if item.type in ["Armour", "Shield,", "Weapon"], do: mobile.level, else: nil
 
       if item.weight <= Character.max_encumbrance(mobile) - Character.encumbrance(mobile) do

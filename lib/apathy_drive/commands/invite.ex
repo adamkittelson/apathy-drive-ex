@@ -9,7 +9,7 @@ defmodule ApathyDrive.Commands.Invite do
 
     case Room.find_mobile_in_room(room, character, query) do
       %Character{ref: ref, name: name} = target ->
-        Room.update_mobile(room, character.ref, fn character ->
+        Room.update_mobile(room, character.ref, fn _room, character ->
           Mobile.send_scroll(
             character,
             "<p><span class='blue'>You have invited #{name} to follow you.</span></p>"

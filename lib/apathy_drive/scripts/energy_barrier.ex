@@ -2,7 +2,7 @@ defmodule ApathyDrive.Scripts.EnergyBarrier do
   alias ApathyDrive.{Ability, Room}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
-    Room.update_mobile(room, mobile_ref, fn mobile ->
+    Room.update_mobile(room, mobile_ref, fn _room, mobile ->
       ac =
         15..40
         |> Enum.random()

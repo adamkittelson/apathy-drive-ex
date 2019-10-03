@@ -39,7 +39,7 @@ defmodule ApathyDrive.Commands.Set do
   end
 
   defp set_race(%Room{} = room, %Character{} = character, %Race{} = race) do
-    Room.update_mobile(room, character.ref, fn character ->
+    Room.update_mobile(room, character.ref, fn _room, character ->
       message = "<p>You will be resurrected as a #{race.name} next time you die.</p>"
 
       Mobile.send_scroll(character, message)
