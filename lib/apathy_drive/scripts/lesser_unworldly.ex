@@ -17,7 +17,7 @@ defmodule ApathyDrive.Scripts.LesserUnworldly do
           level: 25,
           spawned_at: nil,
           zone_spawned_at: nil,
-          decay: true,
+          delete_at: Timex.shift(DateTime.utc_now(), minutes: 1),
           owner_id: owner_id
         }
         |> Monster.from_room_monster()

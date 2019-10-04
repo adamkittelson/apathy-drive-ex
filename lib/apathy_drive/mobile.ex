@@ -8,7 +8,6 @@ defprotocol ApathyDrive.Mobile do
   def colored_name(mobile)
   def color(mobile)
   def confused(mobile, room)
-  def cpr(mobile)
   def crits_at_level(mobile, level)
   def description(mobile, observer)
   def detected?(mobile, sneaker, room)

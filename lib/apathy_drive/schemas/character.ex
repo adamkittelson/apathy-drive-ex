@@ -1307,20 +1307,6 @@ defmodule ApathyDrive.Character do
       if room.mobiles[target], do: target
     end
 
-    def cpr(%Character{} = character) do
-      time =
-        min(
-          Mobile.round_length_in_ms(character),
-          TimerManager.time_remaining(character, :heartbeat)
-        )
-
-      character
-      |> TimerManager.send_after({:heartbeat, time, {:heartbeat, character.ref}})
-      |> TimerManager.send_after(
-        {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
-      )
-    end
-
     def confused(%Character{effects: effects} = character, %Room{} = room) do
       effects
       |> Map.values()
@@ -1538,7 +1524,9 @@ defmodule ApathyDrive.Character do
         |> Character.add_equipped_items_effects()
         |> Character.load_abilities()
         |> Mobile.update_prompt()
-        |> Mobile.cpr()
+        |> TimerManager.send_after(
+          {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
+        )
 
       Room.start_room_id()
       |> RoomServer.find()

@@ -14,8 +14,7 @@ defmodule ApathyDrive.Companion do
     Room,
     RoomMonster,
     RoomServer,
-    Text,
-    TimerManager
+    Text
   }
 
   require Ecto.Query
@@ -286,7 +285,6 @@ defmodule ApathyDrive.Companion do
     |> Map.put(:level, rm.level)
     |> load_abilities()
     |> load_traits()
-    |> Mobile.cpr()
   end
 
   defimpl ApathyDrive.Mobile, for: Companion do
@@ -400,16 +398,6 @@ defmodule ApathyDrive.Companion do
       )
 
       true
-    end
-
-    def cpr(%Companion{} = companion) do
-      time =
-        min(
-          Mobile.round_length_in_ms(companion),
-          TimerManager.time_remaining(companion, :heartbeat)
-        )
-
-      TimerManager.send_after(companion, {:heartbeat, time, {:heartbeat, companion.ref}})
     end
 
     def crits_at_level(companion, level) do
@@ -782,14 +770,7 @@ defmodule ApathyDrive.Companion do
     end
 
     def subtract_energy(companion, ability) do
-      initial_energy = companion.energy
-      companion = update_in(companion.energy, &(&1 - ability.energy))
-
-      if initial_energy == companion.max_energy do
-        Regeneration.schedule_next_tick(companion)
-      else
-        companion
-      end
+      update_in(companion.energy, &(&1 - ability.energy))
     end
 
     def tracking_at_level(companion, level, room) do

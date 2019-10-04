@@ -53,7 +53,7 @@ defmodule ApathyDrive.Scripts.SummonDemon do
                 level: 5,
                 spawned_at: nil,
                 zone_spawned_at: nil,
-                decay: true
+                delete_at: Timex.shift(DateTime.utc_now(), minutes: 1)
               }
               |> Monster.from_room_monster()
 
@@ -72,7 +72,7 @@ defmodule ApathyDrive.Scripts.SummonDemon do
                 level: 5,
                 spawned_at: nil,
                 zone_spawned_at: nil,
-                decay: true
+                delete_at: Timex.shift(DateTime.utc_now(), minutes: 1)
               }
               |> Monster.from_room_monster()
               |> Map.put(:lawful, true)

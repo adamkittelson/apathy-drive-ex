@@ -91,7 +91,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
         |> Repo.get(demon.room_monster_id)
         |> Ecto.Changeset.change(%{
           character_id: nil,
-          decay: true
+          delete_at: Timex.shift(DateTime.utc_now(), minutes: 1)
         })
         |> Repo.update!()
 

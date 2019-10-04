@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Regeneration do
-  alias ApathyDrive.{Ability, Aggression, Character, Mobile, Room, TimerManager}
+  alias ApathyDrive.{Ability, Aggression, Character, Mobile, Room}
 
   @ticks_per_round 5
 
@@ -20,16 +20,9 @@ defmodule ApathyDrive.Regeneration do
     |> regenerate_energy()
     |> regenerate_hp(room)
     |> regenerate_mana(room)
-    |> schedule_next_tick()
     |> Map.put(:last_tick_at, DateTime.utc_now())
     |> Mobile.update_prompt()
   end
-
-  def decay(%{decay: true} = mobile) do
-    update_in(mobile.decay_max_hp, &(&1 - 1))
-  end
-
-  def decay(%{} = mobile), do: mobile
 
   def energy_per_tick(mobile) do
     mobile.max_energy / @ticks_per_round
@@ -110,10 +103,6 @@ defmodule ApathyDrive.Regeneration do
       mobile
       |> update_in([Access.key!(:mana)], &min(1.0, &1 + mana))
     end
-  end
-
-  def schedule_next_tick(mobile) do
-    TimerManager.send_after(mobile, {:heartbeat, tick_time(mobile), {:heartbeat, mobile.ref}})
   end
 
   defp reset_mana_regen_attributes(%{mana_regen_attributes: _, mana: 1.0} = mobile) do

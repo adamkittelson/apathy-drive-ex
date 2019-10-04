@@ -24,8 +24,7 @@ defmodule ApathyDrive.Monster do
     Room,
     RoomMonster,
     RoomServer,
-    Text,
-    TimerManager
+    Text
   }
 
   require Logger
@@ -99,8 +98,7 @@ defmodule ApathyDrive.Monster do
     field(:auto_flee, :boolean, virtual: true, default: false)
     field(:drops, :any, virtual: true, default: [])
     field(:sneaking, :boolean, virtual: true, default: false)
-    field(:decay, :boolean, virtual: true, default: false)
-    field(:decay_max_hp, :integer, virtual: true, default: 0)
+    field(:delete_at, :any, virtual: true)
     field(:limbs, :map, virtual: true, default: %{})
     field(:missing_limbs, {:array, :string}, virtual: true, default: [])
 
@@ -180,7 +178,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:level, rm.level)
       |> Map.put(:spawned_at, rm.spawned_at)
       |> Map.put(:zone_spawned_at, rm.zone_spawned_at)
-      |> Map.put(:decay, rm.decay)
+      |> Map.put(:delete_at, rm.delete_at)
       |> Map.put(:missing_limbs, rm.missing_limbs)
       |> Map.put(:owner_id, rm.owner_id)
 
@@ -194,7 +192,6 @@ defmodule ApathyDrive.Monster do
       |> load_abilities()
       |> load_traits()
       |> load_drops()
-      |> Mobile.cpr()
     end
   end
 
@@ -212,7 +209,7 @@ defmodule ApathyDrive.Monster do
         :name,
         :spawned_at,
         :room_spawned_at,
-        :decay,
+        :delete_at,
         :missing_limbs,
         :owner_id
       ])
@@ -228,7 +225,6 @@ defmodule ApathyDrive.Monster do
     |> load_abilities()
     |> load_traits()
     |> load_drops()
-    |> Mobile.cpr()
   end
 
   def spawnable?(%Monster{next_spawn_at: nil}, _now), do: true
@@ -279,7 +275,7 @@ defmodule ApathyDrive.Monster do
       spawned_at: monster.spawned_at,
       zone_spawned_at: monster.zone_spawned_at,
       name: name_with_adjective(monster.name, monster.adjectives),
-      decay: monster.decay,
+      delete_at: monster.delete_at,
       owner_id: monster.owner_id
     }
 
@@ -525,13 +521,6 @@ defmodule ApathyDrive.Monster do
       true
     end
 
-    def cpr(%Monster{} = monster) do
-      time =
-        min(Mobile.round_length_in_ms(monster), TimerManager.time_remaining(monster, :heartbeat))
-
-      TimerManager.send_after(monster, {:heartbeat, time, {:heartbeat, monster.ref}})
-    end
-
     def crits_at_level(monster, level) do
       intellect = attribute_at_level(monster, :intellect, level)
       charm = attribute_at_level(monster, :charm, level)
@@ -561,8 +550,6 @@ defmodule ApathyDrive.Monster do
     end
 
     def die(monster, room) do
-      if monster.id == 306, do: IO.puts("killing monster #{monster.room_monster_id}")
-
       room =
         Enum.reduce(room.mobiles, room, fn
           {ref, %Character{} = character}, updated_room ->
@@ -575,27 +562,19 @@ defmodule ApathyDrive.Monster do
 
                 Mobile.send_scroll(character, "<p>#{message}</p>")
 
-                if !monster.decay do
-                  character
-                  |> Character.add_experience_to_buffer(monster.experience)
-                  |> Character.add_class_experience(monster.experience)
-                  |> Character.add_currency_from_monster(monster)
-                  |> KillCount.increment(monster)
-                else
-                  character
-                end
+                character
+                |> Character.add_experience_to_buffer(monster.experience)
+                |> Character.add_class_experience(monster.experience)
+                |> Character.add_currency_from_monster(monster)
+                |> KillCount.increment(monster)
               end)
 
             updated_room =
-              if !monster.decay do
-                Monster.drop_loot_for_character(
-                  updated_room,
-                  monster,
-                  room.mobiles[character.ref]
-                )
-              else
-                updated_room
-              end
+              Monster.drop_loot_for_character(
+                updated_room,
+                monster,
+                room.mobiles[character.ref]
+              )
 
             Room.update_moblist(updated_room)
             updated_room
@@ -622,12 +601,6 @@ defmodule ApathyDrive.Monster do
             |> Ability.find()
             |> Map.put(:ignores_round_cooldown?, true)
             |> Map.put(:energy, 0)
-
-          IO.puts(
-            "executing death ability #{monster.death_ability_id} - #{ability.name} for #{
-              monster.name
-            }"
-          )
 
           Ability.execute(room, monster.ref, ability, [monster.ref])
         else
@@ -756,13 +729,7 @@ defmodule ApathyDrive.Monster do
 
       modifier = if max_hp_percent, do: max_hp_percent, else: 1.0
 
-      hp = trunc((base + bonus + ability_value(monster, "MaxHP")) * modifier)
-
-      if monster.decay do
-        hp + monster.decay_max_hp
-      else
-        hp
-      end
+      trunc((base + bonus + ability_value(monster, "MaxHP")) * modifier)
     end
 
     def max_mana_at_level(monster, level) do
@@ -813,13 +780,25 @@ defmodule ApathyDrive.Monster do
     def heartbeat(%Monster{} = monster, %Room{} = room) do
       room
       |> Room.update_mobile(monster.ref, fn room, monster ->
-        if monster.id == 306 and monster.hp < 0.1, do: IO.inspect(monster)
-        monster = Regeneration.decay(monster)
+        cond do
+          monster.delete_at && :lt == DateTime.compare(monster.delete_at, DateTime.utc_now()) ->
+            Room.send_scroll(
+              room,
+              "<p><span class='dark-yellow'>#{monster.name} winks out of existence.</span></p>"
+            )
 
-        if Mobile.die?(monster) do
-          Mobile.die(monster, room)
-        else
-          monster
+            ApathyDrive.Repo.delete!(%RoomMonster{id: monster.room_monster_id})
+
+            room = put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
+
+            Room.update_moblist(room)
+            room
+
+          Mobile.die?(monster) ->
+            Mobile.die(monster, room)
+
+          :else ->
+            monster
         end
       end)
       |> Regeneration.heal_limbs(monster.ref)
@@ -965,14 +944,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def subtract_energy(monster, ability) do
-      initial_energy = monster.energy
-      monster = update_in(monster.energy, &(&1 - ability.energy))
-
-      if initial_energy == monster.max_energy do
-        Regeneration.schedule_next_tick(monster)
-      else
-        monster
-      end
+      update_in(monster.energy, &(&1 - ability.energy))
     end
 
     def tracking_at_level(monster, level, room) do

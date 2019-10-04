@@ -874,23 +874,15 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) when is_list(targets) do
-    if ability.name == "medium divides", do: IO.puts("executing medium divides")
-
-    if ability.name == "medium divides" and !room.mobiles[caster_ref],
-      do: IO.puts("monster not in room")
-
     Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
-          if ability.name == "medium divides", do: IO.puts("not enough energy")
           mobile
 
         casting_failed?(caster, ability) ->
-          if ability.name == "medium divides", do: IO.puts("casting failed")
           casting_failed(room, caster_ref, ability)
 
         can_execute?(room, caster, ability) ->
-          if ability.name == "medium divides", do: IO.puts("can execute")
           display_pre_cast_message(room, caster, targets, ability)
 
           ability = crit(caster, ability)
@@ -1671,8 +1663,6 @@ defmodule ApathyDrive.Ability do
   end
 
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
-    if ability.name == "medium divides", do: IO.puts("finishing medium divides")
-
     room =
       Room.update_mobile(room, target_ref, fn room, target ->
         caster = room.mobiles[caster_ref]
@@ -1744,8 +1734,6 @@ defmodule ApathyDrive.Ability do
         caster = room.mobiles[caster_ref]
         monster = Repo.get!(Monster, monster_id)
 
-        IO.puts("summoning #{monster.name} to room #{room.id}")
-
         monster =
           %RoomMonster{
             room_id: room.id,
@@ -1753,7 +1741,7 @@ defmodule ApathyDrive.Ability do
             level: caster.level,
             spawned_at: nil,
             zone_spawned_at: nil,
-            decay: Map.get(caster, :decay),
+            delete_at: Map.get(caster, :delete_at),
             owner_id: Map.get(caster, :owner_id)
           }
           |> Monster.from_room_monster()
@@ -2937,6 +2925,9 @@ defmodule ApathyDrive.Ability do
 
   def can_execute?(%Room{} = room, mobile, ability) do
     cond do
+      Map.get(mobile, :death_ability_id, :none) == ability.id ->
+        true
+
       cd = on_cooldown?(mobile, ability) ->
         Mobile.send_scroll(
           mobile,
