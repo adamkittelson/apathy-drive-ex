@@ -915,8 +915,6 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
-    mobile = room.mobiles[mobile.ref]
-
     if max(ability.energy, ability.reaction_energy) <= mobile.energy do
       mobile = Map.put(mobile, :casting, nil)
       room = put_in(room.mobiles[mobile.ref], mobile)
