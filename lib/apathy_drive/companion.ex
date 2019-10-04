@@ -642,12 +642,10 @@ defmodule ApathyDrive.Companion do
     end
 
     def hp_regen_per_round(%Companion{} = companion) do
-      round_length = Mobile.round_length_in_ms(companion)
-
       base_hp_regen =
         (companion.hp_regen +
            (companion.level + 30) * attribute_at_level(companion, :health, companion.level) /
-             500.0) * round_length / 30_000
+             500.0) * 5000 / 30_000
 
       modified_hp_regen = base_hp_regen * (1 + ability_value(companion, "HPRegen") / 100)
 
@@ -657,13 +655,11 @@ defmodule ApathyDrive.Companion do
     end
 
     def mana_regen_per_round(%Companion{} = companion) do
-      round_length = Mobile.round_length_in_ms(companion)
-
       max_mana = max_mana_at_level(companion, companion.level)
 
       base_mana_regen =
         (companion.level + 20) * attribute_at_level(companion, :willpower, companion.level) *
-          (div(ability_value(companion, "ManaPerLevel"), 2) + 2) / 1650.0 * round_length / 30_000
+          (div(ability_value(companion, "ManaPerLevel"), 2) + 2) / 1650.0 * 5000 / 30_000
 
       modified_mana_regen = base_mana_regen * (1 + ability_value(companion, "ManaRegen") / 100)
 
@@ -672,14 +668,6 @@ defmodule ApathyDrive.Companion do
       else
         0
       end
-    end
-
-    def round_length_in_ms(companion) do
-      speed = ability_value(companion, "Speed")
-
-      modifier = if speed, do: speed, else: 1
-
-      trunc(modifier * Application.get_env(:apathy_drive, :round_length_in_ms))
     end
 
     def send_scroll(%Companion{} = companion, _html) do

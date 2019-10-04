@@ -976,7 +976,7 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: Mobile.round_length_in_ms(mobile) * (1 - percent),
+         time_to_full: 5000 * (1 - percent),
          max_percent: 100
        }}
     )
@@ -1109,7 +1109,7 @@ defmodule ApathyDrive.Character do
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
       limbs: limbs,
-      round_length_in_ms: Mobile.round_length_in_ms(character)
+      round_length_in_ms: 5000
     }
   end
 
@@ -1629,11 +1629,9 @@ defmodule ApathyDrive.Character do
       if Enum.any?(character.limbs, fn {_name, limb} -> limb.health < 0 end) do
         0.0001
       else
-        round_length = Mobile.round_length_in_ms(character)
-
         base_hp_regen =
           (character.level + 30) * attribute_at_level(character, :health, character.level) / 500.0 *
-            round_length / 30_000
+            5000 / 30_000
 
         modified_hp_regen = base_hp_regen * (1 + ability_value(character, "HPRegen") / 100)
 
@@ -1646,8 +1644,6 @@ defmodule ApathyDrive.Character do
     def hp_regen_per_round(%Character{hp: _hp} = _character), do: 0
 
     def mana_regen_per_round(%Character{} = character) do
-      round_length = Mobile.round_length_in_ms(character)
-
       max_mana = max_mana_at_level(character, character.level)
 
       attribute_value =
@@ -1658,7 +1654,7 @@ defmodule ApathyDrive.Character do
 
       base_mana_regen =
         (character.level + 20) * attribute_value *
-          (div(ability_value(character, "ManaPerLevel"), 2) + 2) / 1650.0 * round_length / 30_000
+          (div(ability_value(character, "ManaPerLevel"), 2) + 2) / 1650.0 * 5000 / 30_000
 
       modified_mana_regen = base_mana_regen * (1 + ability_value(character, "ManaRegen") / 100)
 
@@ -1840,28 +1836,6 @@ defmodule ApathyDrive.Character do
     def power_at_level(%Character{} = character, level) do
       [:strength, :agility, :intellect, :willpower, :health, :charm]
       |> Enum.reduce(0, &(&2 + Mobile.attribute_at_level(character, &1, level)))
-    end
-
-    def round_length_in_ms(character) do
-      speed = ability_value(character, "Speed")
-
-      modifier = if speed, do: speed, else: 1.0
-
-      limbs =
-        character.limbs
-        |> Map.values()
-        |> Enum.filter(&(&1.type in ["arm", "hand", "leg", "foot"]))
-
-      limb_modifier =
-        Enum.reduce(limbs, 0, fn limb, limb_modifier ->
-          max(0, limb.health) + limb_modifier
-        end)
-
-      limb_modifier = limb_modifier / length(limbs)
-
-      modifier = modifier * (1 - limb_modifier + 1)
-
-      trunc(modifier * Application.get_env(:apathy_drive, :round_length_in_ms))
     end
 
     def send_scroll(%Character{socket: socket} = character, html) do

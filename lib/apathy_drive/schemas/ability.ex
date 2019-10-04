@@ -2419,10 +2419,10 @@ defmodule ApathyDrive.Ability do
 
     effects
     |> Map.put("HealMana", percentage_healed)
-    |> Map.put("Interval", Mobile.round_length_in_ms(caster) / 4)
+    |> Map.put("Interval", 1250)
     |> Map.put(
       "NextEffectAt",
-      System.monotonic_time(:millisecond) + Mobile.round_length_in_ms(caster) / 4
+      System.monotonic_time(:millisecond) + 1250
     )
   end
 
