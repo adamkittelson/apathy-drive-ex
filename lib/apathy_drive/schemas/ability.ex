@@ -406,6 +406,8 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def find(nil), do: nil
+
   def find(id) do
     ability = ApathyDrive.Repo.get(__MODULE__, id)
 
@@ -1379,23 +1381,27 @@ defmodule ApathyDrive.Ability do
     #   letter = roll_for_letter(percent)
 
     #   if letter do
-    #     count =
-    #       __MODULE__
-    #       |> where(crit_table_id: ^table, letter: ^letter)
-    #       |> select([crit], count(crit.id))
-    #       |> Repo.one()
-
-    #     __MODULE__
-    #     |> where(crit_table_id: ^table, letter: ^letter)
-    #     |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
-    #     |> select([crit], crit.id)
-    #     |> Repo.one()
-    #     |> find()
+    #     critical_ability(table, letter)
     #   end
     # end)
     # |> Enum.reject(&is_nil/1)
 
-    [find(6571)]
+    [find(6639)]
+  end
+
+  def critical_ability(table, letter) do
+    count =
+      __MODULE__
+      |> where(crit_table_id: ^table, letter: ^letter)
+      |> select([crit], count(crit.id))
+      |> Repo.one()
+
+    __MODULE__
+    |> where(crit_table_id: ^table, letter: ^letter)
+    |> offset(fragment("floor(random()*?) LIMIT 1", ^count))
+    |> select([crit], crit.id)
+    |> Repo.one()
+    |> find()
   end
 
   def roll_for_letter(crit_chance) do
