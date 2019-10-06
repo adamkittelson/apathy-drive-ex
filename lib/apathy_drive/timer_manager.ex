@@ -1,5 +1,5 @@
 defmodule ApathyDrive.TimerManager do
-  alias ApathyDrive.{Room, RoomServer}
+  alias ApathyDrive.{Character, Room, RoomServer}
   require Logger
 
   def seconds(seconds), do: seconds |> :timer.seconds() |> trunc
@@ -17,28 +17,11 @@ defmodule ApathyDrive.TimerManager do
   def apply_timers(%Room{timers: timers} = room) do
     now = DateTime.utc_now() |> DateTime.to_unix(:millisecond)
 
-    timers
-    |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
-      if send_at < now do
-        updated_room = update_in(updated_room.timers, &Map.delete(&1, name))
-
-        {:noreply, updated_room} = RoomServer.handle_info(message, updated_room)
-        updated_room
-      else
-        updated_room
-      end
-    end)
-  end
-
-  def apply_timers(%Room{} = room, mobile_ref) do
-    now = DateTime.utc_now() |> DateTime.to_unix(:millisecond)
-
-    Room.update_mobile(room, mobile_ref, fn room, %{timers: timers} ->
+    room =
       timers
       |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
-        # handling the prevoius message may have removed the mobile from the room
-        if updated_room.mobiles[mobile_ref] && send_at < now do
-          updated_room = update_in(updated_room.mobiles[mobile_ref].timers, &Map.delete(&1, name))
+        if send_at < now do
+          updated_room = update_in(updated_room.timers, &Map.delete(&1, name))
 
           {:noreply, updated_room} = RoomServer.handle_info(message, updated_room)
           updated_room
@@ -46,6 +29,107 @@ defmodule ApathyDrive.TimerManager do
           updated_room
         end
       end)
+
+    Enum.reduce(room.items, room, fn item, room ->
+      item.timers
+      |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, room ->
+        if send_at < now do
+          item = update_in(item.timers, &Map.delete(&1, name))
+
+          location =
+            Enum.find_index(
+              room.items,
+              &(&1.instance_id == item.instance_id)
+            )
+
+          update_in(room.items, &List.replace_at(&1, location, item))
+
+          {:noreply, room} = RoomServer.handle_info(message, room)
+          room
+        else
+          room
+        end
+      end)
+    end)
+  end
+
+  def apply_timers(%Room{} = room, mobile_ref) do
+    now = DateTime.utc_now() |> DateTime.to_unix(:millisecond)
+
+    room =
+      Room.update_mobile(room, mobile_ref, fn room, %{timers: timers} = mobile ->
+        timers
+        |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
+          # handling the previous message may have removed the mobile from the room
+          if updated_room.mobiles[mobile_ref] && send_at < now do
+            updated_room =
+              update_in(updated_room.mobiles[mobile_ref].timers, &Map.delete(&1, name))
+
+            {:noreply, updated_room} = RoomServer.handle_info(message, updated_room)
+            updated_room
+          else
+            updated_room
+          end
+        end)
+      end)
+
+    Room.update_mobile(room, mobile_ref, fn
+      room, %Character{} = mobile ->
+        room =
+          Enum.reduce(mobile.inventory, room, fn item, room ->
+            item.timers
+            |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, room ->
+              if send_at < now do
+                item = update_in(item.timers, &Map.delete(&1, name))
+
+                location =
+                  Enum.find_index(
+                    mobile.inventory,
+                    &(&1.instance_id == item.instance_id)
+                  )
+
+                room =
+                  update_in(
+                    room.mobiles[mobile.ref].inventory,
+                    &List.replace_at(&1, location, item)
+                  )
+
+                {:noreply, room} = RoomServer.handle_info(message, room)
+                room
+              else
+                room
+              end
+            end)
+          end)
+
+        Enum.reduce(mobile.equipment, room, fn item, room ->
+          item.timers
+          |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, room ->
+            if send_at < now do
+              item = update_in(item.timers, &Map.delete(&1, name))
+
+              location =
+                Enum.find_index(
+                  mobile.equipment,
+                  &(&1.instance_id == item.instance_id)
+                )
+
+              room =
+                update_in(
+                  room.mobiles[mobile.ref].equipment,
+                  &List.replace_at(&1, location, item)
+                )
+
+              {:noreply, room} = RoomServer.handle_info(message, room)
+              room
+            else
+              room
+            end
+          end)
+        end)
+
+      _room, %{} = mobile ->
+        mobile
     end)
   end
 

@@ -624,7 +624,6 @@ defmodule ApathyDrive.Character do
       miss_verbs: [singular_miss, plural_miss],
       min_damage: min_damage,
       max_damage: max_damage,
-      traits: traits,
       limb: limb
     } = weapon
 
@@ -637,7 +636,7 @@ defmodule ApathyDrive.Character do
         {hit_verbs, singular_miss, plural_miss}
       end
 
-    bonus_damage = traits["WeaponDamage"] || []
+    bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage")
 
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
 

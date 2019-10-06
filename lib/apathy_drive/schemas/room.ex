@@ -369,10 +369,22 @@ defmodule ApathyDrive.Room do
   end
 
   def next_timer(%Room{} = room) do
-    [
-      TimerManager.next_timer(room)
-      | Enum.map(Map.values(room.mobiles), &TimerManager.next_timer/1)
-    ]
+    room_items = [room, room.items]
+
+    mobile_items =
+      room.mobiles
+      |> Map.values()
+      |> Enum.map(fn
+        %Character{} = character ->
+          [character | [character.inventory | character.equipment]]
+
+        %{} ->
+          []
+      end)
+
+    [room_items, mobile_items]
+    |> List.flatten()
+    |> Enum.map(&TimerManager.next_timer/1)
     |> Enum.reject(&is_nil/1)
     |> Enum.sort()
     |> List.first()

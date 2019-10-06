@@ -822,6 +822,78 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:remove_effect, item_instance_id, key}, room)
+      when is_integer(item_instance_id) do
+    room =
+      room.items
+      |> Enum.reduce(room, fn
+        %{instance_id: ^item_instance_id} = item, room ->
+          item =
+            Systems.Effect.remove(item, key, fire_after_cast: false, show_expiration_message: room)
+
+          location =
+            Enum.find_index(
+              room.items,
+              &(&1.instance_id == item.instance_id)
+            )
+
+          update_in(room.items, &List.replace_at(&1, location, item))
+
+        _, room ->
+          room
+      end)
+
+    room =
+      room.mobiles
+      |> Map.values()
+      |> Enum.reduce(room, fn
+        %Character{} = character, room ->
+          room =
+            Enum.reduce(character.inventory, room, fn item, room ->
+              item =
+                Systems.Effect.remove(item, key,
+                  fire_after_cast: false,
+                  show_expiration_message: character
+                )
+
+              location =
+                Enum.find_index(
+                  character.inventory,
+                  &(&1.instance_id == item.instance_id)
+                )
+
+              update_in(
+                room.mobiles[character.ref].inventory,
+                &List.replace_at(&1, location, item)
+              )
+            end)
+
+          Enum.reduce(character.equipment, room, fn item, room ->
+            item =
+              Systems.Effect.remove(item, key,
+                fire_after_cast: false,
+                show_expiration_message: character
+              )
+
+            location =
+              Enum.find_index(
+                character.equipment,
+                &(&1.instance_id == item.instance_id)
+              )
+
+            update_in(
+              room.mobiles[character.ref].equipment,
+              &List.replace_at(&1, location, item)
+            )
+          end)
+
+        _mobile, room ->
+          room
+      end)
+
+    {:noreply, room}
+  end
+
   def handle_info({:remove_effect, ref, key}, room) do
     room =
       Room.update_mobile(room, ref, fn _room, mobile ->

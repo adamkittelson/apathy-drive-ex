@@ -1,6 +1,6 @@
 defmodule Systems.Effect do
   use Timex
-  alias ApathyDrive.{Mobile, Room, TimerManager, Trait}
+  alias ApathyDrive.{Item, Mobile, Room, TimerManager, Trait}
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
     add_effect(entity, key + 1, effect)
@@ -13,6 +13,12 @@ defmodule Systems.Effect do
       case entity do
         %{ref: ref} ->
           TimerManager.send_after(entity, {{:effect, key}, duration, {:remove_effect, ref, key}})
+
+        %{instance_id: instance_id} ->
+          TimerManager.send_after(
+            entity,
+            {{:effect, key}, duration, {:remove_effect, instance_id, key}}
+          )
 
         %{} ->
           TimerManager.send_after(entity, {{:effect, key}, duration, {:remove_effect, key}})
@@ -106,6 +112,15 @@ defmodule Systems.Effect do
             %Room{} ->
               Room.send_scroll(entity, message)
 
+            %Item{} ->
+              case opts[:show_expiration_message] do
+                %Room{} = room ->
+                  Room.send_scroll(entity, message)
+
+                %{} = mobile ->
+                  Mobile.send_scroll(mobile, message)
+              end
+
             _ ->
               Mobile.send_scroll(entity, message)
           end
@@ -180,7 +195,9 @@ defmodule Systems.Effect do
         if Enum.any?(list), do: Enum.reduce(list, 1, &(&1 * &2)), else: nil
 
       "list" ->
-        List.wrap(list)
+        list
+        |> List.wrap()
+        |> List.flatten()
 
       "replace" ->
         List.last(list)
