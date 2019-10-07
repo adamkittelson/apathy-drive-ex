@@ -1386,7 +1386,7 @@ defmodule ApathyDrive.Ability do
     # end)
     # |> Enum.reject(&is_nil/1)
 
-    [find(7864)]
+    [find(7884)]
   end
 
   def critical_ability(table, letter) do
