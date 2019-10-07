@@ -567,7 +567,7 @@ defmodule ApathyDrive.RoomServer do
         Mobile.heartbeat(mobile, room)
       end)
 
-    Process.send_after(self(), :heartbeat, 100)
+    Process.send_after(self(), :heartbeat, ApathyDrive.Regeneration.tick_time(nil))
 
     {:noreply, room}
   end

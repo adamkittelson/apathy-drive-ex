@@ -798,7 +798,9 @@ defmodule ApathyDrive.Ability do
           room
 
         :else ->
-          room
+          Room.update_mobile(room, caster_ref, fn _room, caster ->
+            Mobile.subtract_energy(caster, ability)
+          end)
       end
     end)
   end
@@ -870,7 +872,9 @@ defmodule ApathyDrive.Ability do
           end
 
         :else ->
-          room
+          Room.update_mobile(room, caster_ref, fn _room, caster ->
+            Mobile.subtract_energy(caster, ability)
+          end)
       end
     end)
   end
@@ -1002,7 +1006,9 @@ defmodule ApathyDrive.Ability do
           end
 
         :else ->
-          room
+          Room.update_mobile(room, caster_ref, fn _room, caster ->
+            Mobile.subtract_energy(caster, ability)
+          end)
       end
     end)
   end
@@ -1232,7 +1238,9 @@ defmodule ApathyDrive.Ability do
         room = put_in(room.mobiles[target.ref], target)
 
         Room.update_energy_bar(room, target.ref)
+
         room
+        |> apply_criticals(caster.ref, target.ref, ability)
 
       blocked?(caster, target, ability, room) ->
         room = add_evil_points(room, ability, caster, target)
@@ -1255,6 +1263,7 @@ defmodule ApathyDrive.Ability do
         caster = Map.put(caster, :energy, caster.energy - ability.energy)
 
         put_in(room.mobiles[caster.ref], caster)
+        |> apply_criticals(caster.ref, target.ref, ability)
 
       parried?(caster, target, ability, room) ->
         room = add_evil_points(room, ability, caster, target)
@@ -1276,7 +1285,9 @@ defmodule ApathyDrive.Ability do
 
         riposte = Mobile.attack_ability(target, true)
 
-        Ability.execute(room, target.ref, riposte, [caster.ref])
+        room
+        |> apply_criticals(caster.ref, target.ref, ability)
+        |> Ability.execute(target.ref, riposte, [caster.ref])
 
       true ->
         apply_ability(
@@ -1347,47 +1358,46 @@ defmodule ApathyDrive.Ability do
 
     remaining_energy = caster.energy - ability.energy
 
-    cond do
-      ability.energy <= remaining_energy ->
-        # don't apply criticals for every swing, just the last swing
-        room
+    crits = critical_abilities(target.ability_shift, ability.crit_tables)
 
-      caster.__struct__ != Character ->
-        room
+    room = update_in(room.mobiles[caster_ref].crits, &(crits ++ &1))
 
-      :else ->
-        target.ability_shift
-        # ability.crit_tables
-        |> critical_abilities([17])
-        |> Enum.reduce(room, fn ability, updated_room ->
-          caster = updated_room.mobiles[caster_ref]
-          target = updated_room.mobiles[target_ref]
+    if ability.energy <= remaining_energy do
+      # don't apply criticals for every swing, just the last swing
+      room
+    else
+      room.mobiles[caster_ref].crits
+      |> Enum.reduce(room, fn ability, updated_room ->
+        caster = updated_room.mobiles[caster_ref]
+        target = updated_room.mobiles[target_ref]
 
-          if caster && target do
-            ability = put_in(ability.traits["StackCount"], 10)
-            apply_ability(updated_room, caster, target, ability)
-          else
-            updated_room
-          end
-        end)
+        if caster && target do
+          ability = put_in(ability.traits["StackCount"], 10)
+          apply_ability(updated_room, caster, target, ability)
+        else
+          updated_room
+        end
+      end)
+      |> put_in([:mobiles, caster_ref, :crits], [])
     end
   end
 
-  def critical_abilities(_ability_shift, _crit_tables) do
-    # percent = trunc(abs(ability_shift) * 100)
+  def critical_abilities(ability_shift, crit_tables)
+      when is_number(ability_shift) and ability_shift < 0 do
+    percent = trunc(abs(ability_shift) * 100)
 
-    # crit_tables
-    # |> Enum.map(fn table ->
-    #   letter = roll_for_letter(percent)
+    crit_tables
+    |> Enum.map(fn table ->
+      letter = roll_for_letter(percent)
 
-    #   if letter do
-    #     critical_ability(table, letter)
-    #   end
-    # end)
-    # |> Enum.reject(&is_nil/1)
-
-    [find(7884)]
+      if letter do
+        critical_ability(table, letter)
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
   end
+
+  def critical_abilities(_ability_shift, _crit_tables), do: []
 
   def critical_ability(table, letter) do
     count =
@@ -2211,7 +2221,8 @@ defmodule ApathyDrive.Ability do
 
   def apply_duration_traits(%{} = target, %Ability{} = _ability, nil), do: target
 
-  def apply_duration_traits(%{} = target, %Ability{} = ability, %{} = caster) do
+  def apply_duration_traits(%{} = target, %Ability{duration: duration} = ability, %{} = caster)
+      when is_integer(duration) and duration > 0 do
     effects =
       ability
       |> duration_traits()
@@ -2234,6 +2245,8 @@ defmodule ApathyDrive.Ability do
       |> Systems.Effect.add(effects, :timer.seconds(ability.duration))
     end
   end
+
+  def apply_duration_traits(%{} = target, _ability, _caster), do: target
 
   def has_passive_ability?(target, ability_id) do
     target.effects

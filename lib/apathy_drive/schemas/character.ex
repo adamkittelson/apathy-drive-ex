@@ -72,6 +72,7 @@ defmodule ApathyDrive.Character do
     field(:last_evil_action_at, :utc_datetime_usec)
     field(:missing_limbs, {:array, :string}, default: [])
 
+    field(:crits, :any, virtual: true, default: [])
     field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)
     field(:class, :any, virtual: true)
@@ -617,6 +618,43 @@ defmodule ApathyDrive.Character do
   end
 
   def ability_for_weapon(character, weapon, riposte) do
+    verbs = %{
+      "beat" => "Crushing",
+      "bludgeon" => "Crushing",
+      "chop" => "Cutting",
+      "claw" => "Cutting",
+      "cleave" => "Cutting",
+      "clobber" => "Crushing",
+      "crush" => "Crushing",
+      "cut" => "Cutting",
+      "double-shoot two arrows at" => "Impaling",
+      "hack" => "Cutting",
+      "hurl your chakram and strike" => "Cutting",
+      "hurl your nexus spear at" => "Impaling",
+      "hurl your shuriken and strike" => "Cutting",
+      "hurl your throwing hammer and strike" => "Impact",
+      "hurl your throwing knife and strike" => "Impaling",
+      "impale" => "Impaling",
+      "impale your nexus spear into" => "Impaling",
+      "jab" => "Impaling",
+      "lash" => "Cutting",
+      "pierce" => "Impaling",
+      "pound" => "Crushing",
+      "rip" => "Cutting",
+      "shoot a bolt at" => "Impaling",
+      "shoot an arrow and strike" => "Impaling",
+      "skewer" => "Impaling",
+      "slam" => "Crushing",
+      "slash" => "Cutting",
+      "slice" => "Cutting",
+      "slice and dice" => "Cutting",
+      "smack" => "Impact",
+      "smash" => "Crushing",
+      "stab" => "Impaling",
+      "whap" => "Crushing",
+      "whip" => "Cutting"
+    }
+
     %Item{
       type: "Weapon",
       name: name,
@@ -629,16 +667,18 @@ defmodule ApathyDrive.Character do
 
     limbs = if limb, do: [limb], else: ["left hand", "right hand"]
 
-    {hit_verbs, singular_miss, plural_miss} =
-      if riposte do
-        {[["riposte", "ripostes"]], "riposte", "ripostes"}
-      else
-        {hit_verbs, singular_miss, plural_miss}
-      end
-
     bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage")
 
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
+
+    table = verbs[singular_hit] || "Crushing"
+
+    [singular_hit, plural_hit] =
+      if riposte do
+        ["riposte", "ripostes"]
+      else
+        [singular_hit, plural_hit]
+      end
 
     energy = Character.energy_per_swing(character, weapon)
 
@@ -658,12 +698,11 @@ defmodule ApathyDrive.Character do
         "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
       ignores_round_cooldown?: true,
       can_crit: true,
-      crit_tables: [17],
       traits: %{
         "Damage" => [
           %{
             kind: "physical",
-            damage_type: "Normal",
+            damage_type: table,
             min: min_damage,
             max: max_damage
           }
@@ -678,6 +717,16 @@ defmodule ApathyDrive.Character do
       },
       limbs: limbs
     }
+
+    crit_types =
+      Enum.map(ability.traits["Damage"], fn damage ->
+        if damage.damage_type == nil, do: IO.inspect(damage)
+        Repo.get_by(ApathyDrive.DamageType, name: damage.damage_type)
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.map(&Map.get(&1, :id))
+
+    ability = Map.put(ability, :crit_tables, crit_types)
 
     if on_hit = weapon.traits["OnHit"] do
       # if on_hit.kind == "attack" do

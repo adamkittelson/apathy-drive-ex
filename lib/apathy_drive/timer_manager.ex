@@ -57,7 +57,7 @@ defmodule ApathyDrive.TimerManager do
     now = DateTime.utc_now() |> DateTime.to_unix(:millisecond)
 
     room =
-      Room.update_mobile(room, mobile_ref, fn room, %{timers: timers} = mobile ->
+      Room.update_mobile(room, mobile_ref, fn room, %{timers: timers} ->
         timers
         |> Enum.reduce(room, fn {name, %{send_at: send_at, message: message}}, updated_room ->
           # handling the previous message may have removed the mobile from the room
