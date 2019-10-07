@@ -115,7 +115,7 @@ defmodule Systems.Effect do
             %Item{} ->
               case opts[:show_expiration_message] do
                 %Room{} = room ->
-                  Room.send_scroll(entity, message)
+                  Room.send_scroll(room, message)
 
                 %{} = mobile ->
                   Mobile.send_scroll(mobile, message)

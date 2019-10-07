@@ -1386,7 +1386,7 @@ defmodule ApathyDrive.Ability do
     # end)
     # |> Enum.reject(&is_nil/1)
 
-    [find(7820)]
+    [find(7842)]
   end
 
   def critical_ability(table, letter) do
@@ -1494,7 +1494,13 @@ defmodule ApathyDrive.Ability do
         target.limbs
         |> Map.keys()
         |> Enum.filter(&(target.limbs[&1].health > 0))
-        |> Enum.random()
+        |> case do
+          [] ->
+            nil
+
+          limbs ->
+            Enum.random(limbs)
+        end
 
       :else ->
         nil

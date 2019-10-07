@@ -109,14 +109,21 @@ defmodule ApathyDrive.Commands.Get do
 
               room =
                 room
-                |> Room.load_items()
                 |> Room.update_mobile(character.ref, fn _room, char ->
                   char
-                  |> Character.load_items()
                   |> Mobile.send_scroll(
                     "<p>You took #{Item.colored_name(item, character: char)}.</p>"
                   )
+
+                  item =
+                    item
+                    |> Map.put(:equipped, false)
+                    |> Map.put(:hidden, false)
+
+                  update_in(char.inventory, &[item | &1])
                 end)
+
+              room = update_in(room.items, &List.delete(&1, item))
 
               Room.send_scroll(
                 room,

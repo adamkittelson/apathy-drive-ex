@@ -36,9 +36,17 @@ defmodule ApathyDrive.Commands.Remove do
 
         room =
           Room.update_mobile(room, character.ref, fn room, char ->
-            character =
-              char
-              |> Character.load_items()
+            char = update_in(char.equipment, &List.delete(&1, item_to_remove))
+
+            item_to_remove =
+              item_to_remove
+              |> Map.put(:equipped, false)
+              |> Map.put(:limb, nil)
+
+            char =
+              update_in(char.inventory, &[item_to_remove | &1])
+              |> Character.add_equipped_items_effects()
+              |> Character.load_abilities()
 
             if item_to_remove.type == "Light" do
               Mobile.send_scroll(
@@ -53,16 +61,16 @@ defmodule ApathyDrive.Commands.Remove do
             end
 
             send(
-              character.socket,
+              char.socket,
               {:update_character,
                %{
                  room_id: room.id,
-                 power: Mobile.power_at_level(character, character.level),
-                 level: character.level
+                 power: Mobile.power_at_level(char, char.level),
+                 level: char.level
                }}
             )
 
-            character
+            char
           end)
 
         Room.update_hp_bar(room, character.ref)

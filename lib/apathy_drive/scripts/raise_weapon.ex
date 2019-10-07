@@ -6,27 +6,31 @@ defmodule ApathyDrive.Scripts.RaiseWeapon do
       _room, %Character{} = mobile ->
         weapon = Character.weapon(mobile)
 
-        effect = %{
-          "WeaponDamage" => [
-            %{
-              kind: "raw",
-              damage_type: "Normal",
-              min: 1,
-              max: 1
-            }
-          ],
-          "RemoveMessage" => "The shimmer on your weapon fades."
-        }
+        if weapon do
+          effect = %{
+            "WeaponDamage" => [
+              %{
+                kind: "raw",
+                damage_type: "Normal",
+                min: 1,
+                max: 1
+              }
+            ],
+            "RemoveMessage" => "The shimmer on your weapon fades."
+          }
 
-        weapon = Systems.Effect.add(weapon, effect, :timer.seconds(10))
+          weapon = Systems.Effect.add(weapon, effect, :timer.minutes(1))
 
-        location =
-          Enum.find_index(
-            mobile.equipment,
-            &(&1.instance_id == weapon.instance_id)
-          )
+          location =
+            Enum.find_index(
+              mobile.equipment,
+              &(&1.instance_id == weapon.instance_id)
+            )
 
-        update_in(mobile.equipment, &List.replace_at(&1, location, weapon))
+          update_in(mobile.equipment, &List.replace_at(&1, location, weapon))
+        else
+          mobile
+        end
 
       room, _mobile ->
         room

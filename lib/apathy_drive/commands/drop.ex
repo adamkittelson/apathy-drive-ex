@@ -78,7 +78,7 @@ defmodule ApathyDrive.Commands.Drop do
     end
   end
 
-  def drop_item(room, character, %Item{instance_id: instance_id} = item, reload \\ true) do
+  def drop_item(room, character, %Item{instance_id: instance_id} = item) do
     delete_at =
       if item.__struct__ == ApathyDrive.Sign do
         5
@@ -99,7 +99,7 @@ defmodule ApathyDrive.Commands.Drop do
     |> Repo.update!()
 
     room =
-      update_in(room.items, &[item | &1])
+      room
       |> Room.update_mobile(character.ref, fn _room, char ->
         char =
           if {:longterm, instance_id} in TimerManager.timers(char) do
@@ -113,7 +113,7 @@ defmodule ApathyDrive.Commands.Drop do
             char
           end
 
-        char = if reload, do: Character.load_items(char), else: char
+        char = update_in(char.inventory, &List.delete(&1, item))
 
         Mobile.send_scroll(
           char,
@@ -131,6 +131,11 @@ defmodule ApathyDrive.Commands.Drop do
         char
       end)
 
-    if reload, do: Room.load_items(room), else: room
+    item =
+      item
+      |> Map.put(:equipped, false)
+      |> Map.put(:hidden, false)
+
+    update_in(room.items, &[item | &1])
   end
 end
