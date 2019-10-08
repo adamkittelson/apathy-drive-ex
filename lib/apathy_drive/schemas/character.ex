@@ -72,6 +72,7 @@ defmodule ApathyDrive.Character do
     field(:last_evil_action_at, :utc_datetime_usec)
     field(:missing_limbs, {:array, :string}, default: [])
 
+    field(:lore, :any, virtual: true)
     field(:crits, :any, virtual: true, default: [])
     field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)

@@ -27,6 +27,75 @@ defmodule ApathyDrive.Commands.Use do
     "down"
   ]
 
+  @lores %{
+    "fire" => %{
+      name: "fire",
+      level: 1,
+      damage_types: [
+        %{
+          kind: "magical",
+          damage_type: "Fire"
+        }
+      ]
+    },
+    "earth" => %{
+      name: "earth",
+      level: 1,
+      damage_types: [
+        %{
+          kind: "magical",
+          damage_type: "Crushing"
+        }
+      ]
+    },
+    "electricity" => %{
+      name: "electricity",
+      level: 1,
+      damage_types: [
+        %{
+          kind: "magical",
+          damage_type: "Electricity"
+        }
+      ]
+    }
+  }
+
+  def execute(%Room{} = room, %Character{class: %{class: %{name: "Elementalist"}}} = character, [
+        lore,
+        "lore"
+      ]) do
+    case @lores[lore] do
+      nil ->
+        Mobile.send_scroll(character, "<p>You don't know of a #{lore} lore!</p>")
+        room
+
+      lore ->
+        if lore.level <= character.level do
+          lore =
+            update_in(lore.damage_types, fn damage_types ->
+              Enum.map(damage_types, fn damage_type ->
+                Map.put(
+                  damage_type,
+                  :damage_type_id,
+                  Repo.get_by(ApathyDrive.DamageType, name: damage_type.damage_type).id
+                )
+              end)
+            end)
+
+          Mobile.send_scroll(character, "<p>You are now using the lore of #{lore.name}.</p>")
+
+          put_in(room.mobiles[character.ref].lore, lore)
+        else
+          Mobile.send_scroll(
+            character,
+            "<p>You must be at least level #{lore.level} to use #{lore.name} lore!</p>"
+          )
+
+          room
+        end
+    end
+  end
+
   def execute(%Room{} = room, %Character{} = character, [item_name, target]) do
     character.inventory
     |> Match.one(:name_contains, item_name)
