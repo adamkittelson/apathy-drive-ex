@@ -324,7 +324,11 @@ defmodule ApathyDrive.Character do
                 ability
 
               damage ->
-                update_in(ability.traits, &Map.put(&1, "Damage", damage))
+                ability = update_in(ability.traits, &Map.put(&1, "Damage", damage))
+
+                crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
+
+                Map.put(ability, :crit_tables, crit_types)
             end
 
           if Ability.appropriate_alignment?(ability, character) do
@@ -704,7 +708,8 @@ defmodule ApathyDrive.Character do
             kind: "physical",
             damage_type: table,
             min: min_damage,
-            max: max_damage
+            max: max_damage,
+            damage_type_id: Repo.get_by(ApathyDrive.DamageType, name: table).id
           }
           | bonus_damage
         ],
@@ -718,13 +723,7 @@ defmodule ApathyDrive.Character do
       limbs: limbs
     }
 
-    crit_types =
-      Enum.map(ability.traits["Damage"], fn damage ->
-        if damage.damage_type == nil, do: IO.inspect(damage)
-        Repo.get_by(ApathyDrive.DamageType, name: damage.damage_type)
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.map(&Map.get(&1, :id))
+    crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
 
     ability = Map.put(ability, :crit_tables, crit_types)
 

@@ -424,7 +424,11 @@ defmodule ApathyDrive.Ability do
         ability
 
       damage ->
-        update_in(ability.traits, &Map.put(&1, "Damage", damage))
+        ability = update_in(ability.traits, &Map.put(&1, "Damage", damage))
+
+        crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
+
+        Map.put(ability, :crit_tables, crit_types)
     end
   end
 
@@ -1352,7 +1356,8 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def apply_criticals(%Room{} = room, caster_ref, target_ref, ability) do
+  def apply_criticals(%Room{} = room, caster_ref, target_ref, %Ability{kind: kind} = ability)
+      when kind == "attack" do
     caster = room.mobiles[caster_ref]
     target = room.mobiles[target_ref]
 
@@ -1362,7 +1367,7 @@ defmodule ApathyDrive.Ability do
 
     room = update_in(room.mobiles[caster_ref].crits, &(crits ++ &1))
 
-    if ability.energy <= remaining_energy do
+    if ability.energy > 0 and ability.energy <= remaining_energy do
       # don't apply criticals for every swing, just the last swing
       room
     else
@@ -1381,6 +1386,8 @@ defmodule ApathyDrive.Ability do
       |> put_in([:mobiles, caster_ref, :crits], [])
     end
   end
+
+  def apply_criticals(%Room{} = room, _caster_ref, _target_ref, _ability), do: room
 
   def critical_abilities(ability_shift, crit_tables)
       when is_number(ability_shift) and ability_shift < 0 do
@@ -1416,7 +1423,7 @@ defmodule ApathyDrive.Ability do
 
   def roll_for_letter(crit_chance) do
     case :rand.uniform(1_000_000) do
-      roll when roll > crit_chance * 10_000 ->
+      roll when roll > crit_chance * 100_000 ->
         nil
 
       roll when roll > crit_chance * 5000 ->

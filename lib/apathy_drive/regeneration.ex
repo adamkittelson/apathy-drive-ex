@@ -1,9 +1,9 @@
 defmodule ApathyDrive.Regeneration do
   alias ApathyDrive.{Ability, Aggression, Character, Mobile, Room}
 
-  @ticks_per_round 50
+  @ticks_per_round 20
 
-  def tick_time(_mobile), do: 100
+  def tick_time(_mobile), do: trunc(5000 / @ticks_per_round)
 
   def duration_for_energy(mobile, energy) do
     max_energy = mobile.max_energy
