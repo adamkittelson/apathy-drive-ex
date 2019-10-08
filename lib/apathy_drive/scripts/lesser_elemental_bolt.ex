@@ -41,7 +41,7 @@ defmodule ApathyDrive.Scripts.LesserElementalBolt do
       else
         Mobile.send_scroll(
           character,
-          "<p><span class='red'>Elemental spells require an active lore! (use &lt;lore&gt; lore)</span></p>"
+          "<p><span class='red'>Elemental spells require an active lore! (see \"help lores\")</span></p>"
         )
       end
     end)

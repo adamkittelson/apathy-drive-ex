@@ -8,6 +8,7 @@ defmodule ApathyDrive.Commands.Help do
     Class,
     ClassAbility,
     Commands.Inventory,
+    ElementalLores,
     Mobile,
     Race,
     RaceTrait,
@@ -123,6 +124,49 @@ defmodule ApathyDrive.Commands.Help do
     Mobile.send_scroll(
       character,
       "<p><span class='yellow'>Set</span>      - Various toggleable profile options</p>"
+    )
+
+    room
+  end
+
+  def execute(%Room{} = room, character, ["lores"]) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='white'>The following lores are available for use by Elementalists:</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-magenta'>Level   Lore          Damage Types</span></p>"
+    )
+
+    ElementalLores.lores()
+    |> Map.values()
+    |> Enum.sort_by(& &1.level)
+    |> Enum.each(fn lore ->
+      level = to_string(lore.level) |> String.pad_leading(5)
+      name = to_string(lore.name) |> String.pad_trailing(13)
+
+      damage =
+        lore.damage_types
+        |> Enum.map(& &1.damage_type)
+        |> Enum.sort()
+        |> ApathyDrive.Commands.Inventory.to_sentence()
+
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-cyan'>#{level}   #{name} #{damage}</span></p>"
+      )
+    end)
+
+    Mobile.send_scroll(
+      character,
+      "<p>\n<span class='dark-green'>Example usage:</span> <span class='dark-cyan'>\"use fire lore\"</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p>Once a lore is selected all elemental spells cast will be cast with the selected elemental college until a different lore is selected.</p>"
     )
 
     room

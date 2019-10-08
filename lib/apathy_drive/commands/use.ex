@@ -1,6 +1,18 @@
 defmodule ApathyDrive.Commands.Use do
   use ApathyDrive.Command
-  alias ApathyDrive.{Ability, Character, Doors, Item, ItemInstance, Match, Mobile, Repo, Room}
+
+  alias ApathyDrive.{
+    Ability,
+    Character,
+    Doors,
+    ElementalLores,
+    Item,
+    ItemInstance,
+    Match,
+    Mobile,
+    Repo,
+    Room
+  }
 
   def keywords, do: ["use", "light"]
 
@@ -27,44 +39,11 @@ defmodule ApathyDrive.Commands.Use do
     "down"
   ]
 
-  @lores %{
-    "fire" => %{
-      name: "fire",
-      level: 1,
-      damage_types: [
-        %{
-          kind: "magical",
-          damage_type: "Fire"
-        }
-      ]
-    },
-    "earth" => %{
-      name: "earth",
-      level: 1,
-      damage_types: [
-        %{
-          kind: "magical",
-          damage_type: "Crushing"
-        }
-      ]
-    },
-    "electricity" => %{
-      name: "electricity",
-      level: 1,
-      damage_types: [
-        %{
-          kind: "magical",
-          damage_type: "Electricity"
-        }
-      ]
-    }
-  }
-
   def execute(%Room{} = room, %Character{class: %{class: %{name: "Elementalist"}}} = character, [
         lore,
         "lore"
       ]) do
-    case @lores[lore] do
+    case ElementalLores.lores()[lore] do
       nil ->
         Mobile.send_scroll(character, "<p>You don't know of a #{lore} lore!</p>")
         room
