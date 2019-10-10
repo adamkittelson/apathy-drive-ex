@@ -156,7 +156,8 @@ defmodule Systems.Effect do
     end
   end
 
-  def max_stacks?(%{} = mobile, %{duration: d, id: stack_key, max_stacks: max}) when d > 0 do
+  def max_stacks?(%{} = mobile, %{id: stack_key} = ability) do
+    max = ability.traits["StackCount"] || 1
     stack_count(mobile, stack_key) >= max
   end
 

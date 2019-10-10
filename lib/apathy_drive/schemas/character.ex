@@ -1339,6 +1339,13 @@ defmodule ApathyDrive.Character do
         speed: 1150
       }
 
+      punch =
+        if damage = Mobile.ability_value(character, "WeaponDamage") do
+          put_in(punch.effects[1], %{"WeaponDamage" => damage})
+        else
+          punch
+        end
+
       weapon = Character.weapon(character) || punch
 
       Character.ability_for_weapon(character, weapon, riposte)

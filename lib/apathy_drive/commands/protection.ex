@@ -42,6 +42,8 @@ defmodule ApathyDrive.Commands.Protection do
 
   def keywords, do: ["protection", "prot"]
 
+  def damage_types, do: @damage_types
+
   def execute(%Room{} = room, character, _args) do
     show_protection(character)
     room
@@ -78,9 +80,11 @@ defmodule ApathyDrive.Commands.Protection do
     @damage_types
     |> Map.keys()
     |> Enum.each(fn damage_type ->
-      {color, protection} =
-        protection_amount(character, damage_type)
-        |> protection_level
+      amount = protection_amount(character, damage_type)
+
+      {color, protection} = protection_level(amount)
+
+      protection = protection <> " (#{trunc(amount * 100)}%)"
 
       Mobile.send_scroll(
         character,

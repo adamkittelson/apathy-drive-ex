@@ -156,11 +156,24 @@ defmodule ApathyDrive.Ability do
     "Poison",
     "PoisonImmunity",
     "RemoveMessage",
+    "ResistAether",
     "ResistCold",
+    "ResistCrushing",
+    "ResistCutting",
+    "ResistDisruption",
+    "ResistElectricity",
     "ResistFire",
-    "ResistLightning",
-    "ResistStone",
-    "Root",
+    "ResistHoly",
+    "ResistImpact",
+    "ResistImpaling",
+    "ResistInfernal",
+    "ResistPlasma",
+    "ResistPoison",
+    "ResistSonic",
+    "ResistStress",
+    "ResistStrike",
+    "ResistUnholy",
+    "ResistVacuum",
     "SeeHidden",
     "Shadowform",
     "Silence",
@@ -171,7 +184,8 @@ defmodule ApathyDrive.Ability do
     "Strength",
     "Tracking",
     "Unbalanced",
-    "Willpower"
+    "Willpower",
+    "WeaponDamage"
   ]
 
   @resist_message %{
@@ -1376,8 +1390,6 @@ defmodule ApathyDrive.Ability do
 
           target =
             if ability.traits["ConfusionMessage"] == "You are stunned and cannot move!" do
-              IO.puts("stunning for #{ability.duration} seconds!")
-
               target.effects
               |> Enum.filter(fn {_key, effect} ->
                 Map.has_key?(effect, "Confusion")
@@ -1441,19 +1453,19 @@ defmodule ApathyDrive.Ability do
 
   def roll_for_letter(crit_chance) do
     case :rand.uniform(1_000_000) do
-      roll when roll > crit_chance * 100_000 ->
+      roll when roll > crit_chance * 10_000 ->
         nil
 
-      roll when roll > crit_chance * 5000 ->
+      roll when roll > crit_chance * 2500 ->
         "A"
 
-      roll when roll > crit_chance * 2500 ->
+      roll when roll > crit_chance * 625 ->
         "B"
 
-      roll when roll > crit_chance * 1250 ->
+      roll when roll > crit_chance * 150 ->
         "C"
 
-      roll when roll > crit_chance * 625 ->
+      roll when roll > crit_chance * 50 ->
         "D"
 
       _ ->
