@@ -4,7 +4,6 @@ defmodule ApathyDrive.Character do
 
   alias ApathyDrive.{
     Ability,
-    AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
     AI,
@@ -15,6 +14,7 @@ defmodule ApathyDrive.Character do
     CharacterRace,
     CharacterSkill,
     CharacterTrait,
+    ClassSpellcastingAttribute,
     ClassTrait,
     Companion,
     Currency,
@@ -107,7 +107,6 @@ defmodule ApathyDrive.Character do
     field(:casting, :any, virtual: true, default: nil)
     field(:weapon, :string, virtual: true)
     field(:armour, :string, virtual: true)
-    field(:mana_regen_attributes, :any, virtual: true, default: [])
     field(:last_tick_at, :any, virtual: true)
     field(:last_room_id, :integer, virtual: true)
     field(:delayed, :boolean, virtual: true, default: false)
@@ -310,15 +309,6 @@ defmodule ApathyDrive.Character do
             ability
             |> put_in([Access.key!(:traits)], AbilityTrait.load_traits(id))
 
-          attributes = AbilityAttribute.load_attributes(id)
-
-          ability =
-            if map_size(attributes) == 0 do
-              Map.put(ability, :attributes, %{willpower: 40})
-            else
-              Map.put(ability, :attributes, attributes)
-            end
-
           ability =
             case AbilityDamageType.load_damage(id) do
               [] ->
@@ -473,6 +463,11 @@ defmodule ApathyDrive.Character do
           |> Repo.insert!()
       end
       |> Repo.preload(:class)
+
+    spellcasting_attributes = ClassSpellcastingAttribute.load_attributes(character_class.class_id)
+
+    character_class =
+      put_in(character_class.class.spellcasting_attributes, spellcasting_attributes)
 
     effect =
       ClassTrait.load_traits(class_id)
@@ -691,10 +686,7 @@ defmodule ApathyDrive.Character do
       kind: "attack",
       energy: if(riposte, do: 0, else: energy),
       name: weapon.name,
-      attributes: %{
-        strength: 0,
-        agility: 0
-      },
+      attributes: ["agility", "strength"],
       mana: 0,
       spell?: false,
       user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
@@ -1157,7 +1149,8 @@ defmodule ApathyDrive.Character do
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
       limbs: limbs,
-      round_length_in_ms: 5000
+      round_length_in_ms: 5000,
+      spellcasting: Mobile.spellcasting_at_level(character, character.level)
     }
   end
 
@@ -1694,14 +1687,10 @@ defmodule ApathyDrive.Character do
     def mana_regen_per_round(%Character{} = character) do
       max_mana = max_mana_at_level(character, character.level)
 
-      attribute_value =
-        character.mana_regen_attributes
-        |> Enum.map(&attribute_at_level(character, &1, character.level))
-        |> Enum.sum()
-        |> div(length(character.mana_regen_attributes))
+      spellcasting = Mobile.spellcasting_at_level(character, character.level)
 
       base_mana_regen =
-        (character.level + 20) * attribute_value *
+        (character.level + 20) * spellcasting *
           (div(ability_value(character, "ManaPerLevel"), 2) + 2) / 1650.0 * 5000 / 30_000
 
       modified_mana_regen = base_mana_regen * (1 + ability_value(character, "ManaRegen") / 100)
@@ -1939,44 +1928,15 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def spellcasting_at_level(character, level, ability) do
-      sc =
-        ability.attributes
-        |> Map.keys()
-        |> case do
-          [:intellect] ->
-            intellect = Mobile.attribute_at_level(character, :intellect, level)
-            willpower = Mobile.attribute_at_level(character, :willpower, level)
+    def spellcasting_at_level(character, level) do
+      attribute_value =
+        character.class.class.spellcasting_attributes
+        |> Enum.map(&Map.get(character, String.to_atom(&1)))
+        |> Room.average()
 
-            trunc((intellect * 3 + willpower * 3) / 6 + level * 2)
+      sc = trunc(attribute_value * 2 / 3)
 
-          [:willpower] ->
-            intellect = Mobile.attribute_at_level(character, :intellect, level)
-            willpower = Mobile.attribute_at_level(character, :willpower, level)
-
-            trunc((willpower * 3 + intellect * 3) / 6 + level * 2)
-
-          [:agility] ->
-            agility = Mobile.attribute_at_level(character, :agility, level)
-            willpower = Mobile.attribute_at_level(character, :willpower, level)
-
-            trunc((agility * 3 + willpower * 3) / 6 + level * 2)
-
-          [:intellect, :willpower] ->
-            intellect = Mobile.attribute_at_level(character, :intellect, level)
-            willpower = Mobile.attribute_at_level(character, :willpower, level)
-
-            trunc((willpower + intellect) / 3 + level * 2)
-
-          [:charm] ->
-            charm = Mobile.attribute_at_level(character, :charm, level)
-            willpower = Mobile.attribute_at_level(character, :willpower, level)
-
-            trunc((charm * 3 + willpower * 3) / 6 + level * 2)
-
-          _ ->
-            100
-        end
+      sc = sc + level * 2
 
       trunc((sc + ability_value(character, "Spellcasting")) * character.limbs["head"].health)
     end
@@ -2007,23 +1967,21 @@ defmodule ApathyDrive.Character do
 
     def subtract_mana(character, %{mana: 0} = _ability), do: character
 
-    def subtract_mana(character, %{mana: cost} = ability) do
+    def subtract_mana(character, %Ability{mana: cost}) do
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
 
       character
       |> update_in([Access.key!(:mana)], &max(0, &1 - percentage))
-      |> update_in(
-        [Access.key!(:mana_regen_attributes)],
-        &Enum.uniq(&1 ++ Map.keys(ability.attributes))
-      )
     end
 
     def subtract_energy(character, ability) do
       character = update_in(character.energy, &(&1 - ability.energy))
 
-      Enum.reduce(ability.attributes, character, fn {attribute, _value}, character ->
+      attributes = ability.attributes || character.class.class.spellcasting_attributes
+
+      Enum.reduce(attributes, character, fn attribute, character ->
         Character.add_attribute_experience(character, %{
-          attribute => 1 / length(Map.keys(ability.attributes))
+          String.to_atom(attribute) => 1 / length(attributes)
         })
       end)
     end

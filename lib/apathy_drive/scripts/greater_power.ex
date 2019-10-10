@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.GreaterPower do
-  alias ApathyDrive.{Ability, Room, Scripts}
+  alias ApathyDrive.{Room, Scripts}
 
   def execute(%Room{} = room, mobile_ref, target_ref) do
     room

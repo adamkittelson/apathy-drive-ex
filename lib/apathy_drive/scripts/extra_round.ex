@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.ExtraRound do
-  alias ApathyDrive.{Mobile, Room}
+  alias ApathyDrive.Room
 
   def execute(%Room{} = room, mobile_ref, target_ref) do
     mobile = room.mobiles[mobile_ref]

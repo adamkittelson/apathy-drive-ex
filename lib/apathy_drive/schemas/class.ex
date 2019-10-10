@@ -12,6 +12,8 @@ defmodule ApathyDrive.Class do
     field(:stealth, :boolean)
     field(:exp_modifier, :integer)
 
+    field(:spellcasting_attributes, :any, virtual: true)
+
     has_many(:classes_traits, ApathyDrive.ClassTrait)
     has_many(:traits, through: [:classes_traits, :trait])
 

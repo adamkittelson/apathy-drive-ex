@@ -877,46 +877,12 @@ defmodule ApathyDrive.Monster do
       true
     end
 
-    def spellcasting_at_level(monster, level, ability) do
-      sc =
-        ability.attributes
-        |> Map.keys()
-        |> case do
-          [:intellect] ->
-            intellect = Mobile.attribute_at_level(monster, :intellect, level)
-            willpower = Mobile.attribute_at_level(monster, :willpower, level)
+    def spellcasting_at_level(monster, level) do
+      attribute_value = Room.average([monster.intellect, monster.willpower])
 
-            trunc((intellect * 3 + willpower * 3) / 6 + level * 2)
+      sc = attribute_value + level * 2
 
-          [:willpower] ->
-            intellect = Mobile.attribute_at_level(monster, :intellect, level)
-            willpower = Mobile.attribute_at_level(monster, :willpower, level)
-
-            trunc((willpower * 3 + intellect * 3) / 6 + level * 2)
-
-          [:agility] ->
-            agility = Mobile.attribute_at_level(monster, :agility, level)
-            willpower = Mobile.attribute_at_level(monster, :willpower, level)
-
-            trunc((agility * 3 + willpower * 3) / 6 + level * 2)
-
-          [:intellect, :willpower] ->
-            intellect = Mobile.attribute_at_level(monster, :intellect, level)
-            willpower = Mobile.attribute_at_level(monster, :willpower, level)
-
-            trunc((willpower + intellect) / 3 + level * 2)
-
-          [:charm] ->
-            charm = Mobile.attribute_at_level(monster, :charm, level)
-            willpower = Mobile.attribute_at_level(monster, :willpower, level)
-
-            trunc((charm * 3 + willpower * 3) / 6 + level * 2)
-
-          _ ->
-            100
-        end
-
-      sc + ability_value(monster, "Spellcasting")
+      trunc(sc + ability_value(monster, "Spellcasting"))
     end
 
     def stealth_at_level(monster, level) do

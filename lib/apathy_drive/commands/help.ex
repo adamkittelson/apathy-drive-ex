@@ -363,36 +363,12 @@ defmodule ApathyDrive.Commands.Help do
       )
     end
 
-    if map_size(ability.attributes) > 0 do
-      chance =
-        min(
-          100,
-          max(
-            0,
-            min(100, Mobile.spellcasting_at_level(character, character.level, ability)) +
-              ability.difficulty
-          )
-        )
+    chance = Mobile.spellcasting_at_level(character, character.level) + ability.difficulty
 
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{chance}%</span></p>"
-      )
-
-      attributes =
-        ability.attributes
-        |> Map.keys()
-        |> Enum.map(&to_string/1)
-        |> Enum.map(&String.capitalize/1)
-        |> ApathyDrive.Commands.Inventory.to_sentence()
-
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Casting Attributes: </span><span class='dark-cyan'>#{
-          attributes
-        }</span></p>"
-      )
-    end
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{chance}%</span></p>"
+    )
 
     if ability.kind == "long-term" do
       skill_ability =

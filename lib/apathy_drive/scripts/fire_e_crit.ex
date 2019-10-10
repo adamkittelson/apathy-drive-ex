@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.FireECrit do
-  alias ApathyDrive.{Ability, DamageType, Mobile, Repo, Room}
+  alias ApathyDrive.{Ability, DamageType, Repo, Room}
 
   def execute(%Room{} = room, mobile_ref, target_ref) do
     mobile = room.mobiles[mobile_ref]

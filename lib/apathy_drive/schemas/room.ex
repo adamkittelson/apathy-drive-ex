@@ -985,7 +985,7 @@ defmodule ApathyDrive.Room do
     end
   end
 
-  def average([]), do: nil
+  def average([]), do: 0
 
   def average(list) do
     Enum.sum(list) / length(list)

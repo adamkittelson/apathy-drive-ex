@@ -97,21 +97,8 @@ defmodule ApathyDrive.Regeneration do
   def regenerate_mana(%{} = mobile, room) do
     mana = mana_since_last_tick(room, mobile)
 
-    if Map.get(mobile, :mana_regen_attributes) do
-      mobile
-      |> update_in([Access.key!(:mana)], &min(1.0, &1 + mana))
-      |> reset_mana_regen_attributes()
-    else
-      mobile
-      |> update_in([Access.key!(:mana)], &min(1.0, &1 + mana))
-    end
+    update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + mana))
   end
-
-  defp reset_mana_regen_attributes(%{mana_regen_attributes: _, mana: 1.0} = mobile) do
-    Map.put(mobile, :mana_regen_attributes, [])
-  end
-
-  defp reset_mana_regen_attributes(mobile), do: mobile
 
   def regen_per_tick(room, %Character{} = mobile, regen) do
     if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and

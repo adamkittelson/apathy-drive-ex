@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.IncreaseStr do
-  alias ApathyDrive.{Ability, Room}
+  alias ApathyDrive.Room
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     Room.update_mobile(room, mobile_ref, fn _room, mobile ->

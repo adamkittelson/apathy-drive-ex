@@ -3,7 +3,6 @@ defmodule ApathyDrive.MonsterAbility do
 
   alias ApathyDrive.{
     Ability,
-    AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
     Companion,
@@ -54,15 +53,6 @@ defmodule ApathyDrive.MonsterAbility do
               crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
 
               Map.put(ability, :crit_tables, crit_types)
-          end
-
-        attributes = AbilityAttribute.load_attributes(id)
-
-        ability =
-          if map_size(attributes) == 0 do
-            Map.put(ability, :attributes, %{willpower: 40})
-          else
-            Map.put(ability, :attributes, attributes)
           end
 
         Map.put(abilities, ability.command || ability.id, ability)

@@ -146,26 +146,27 @@ chan.on("update mob list", function (data) {
 
 chan.on("update score", function (score_data) {
   update_score_attribute("name", _.padEnd(score_data.name, 12));
-  update_score_attribute("level", _.padEnd(score_data.level, 10));
+  update_score_attribute("level", _.padEnd(score_data.level, 12));
   update_score_attribute("accuracy", score_data.accuracy);
   update_score_attribute("race", _.padEnd(score_data.race, 12));
-  update_score_attribute("class", _.padEnd(score_data.class, 10));
+  update_score_attribute("class", _.padEnd(score_data.class, 12));
   update_score_attribute("dodge", score_data.dodge);
   update_score_attribute("alignment", _.padEnd(_.capitalize(score_data.alignment), 7));
-  update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '/' + score_data.magical_resistance, 10));
+  update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '/' + score_data.magical_resistance, 12));
   update_score_attribute("parry", score_data.parry);
   update_score_attribute("hp", _.padEnd(score_data.hp + "/" + score_data.max_hp, 12));
-  update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 10));
+  update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 12));
   update_score_attribute("block", score_data.block);
   update_score_attribute("stealth", score_data.stealth);
   update_score_attribute("strength", _.padEnd(score_data.strength, 7))
-  update_score_attribute("agility", _.padEnd(score_data.agility, 8));
+  update_score_attribute("agility", _.padEnd(score_data.agility, 10));
   update_score_attribute("perception", score_data.perception);
   update_score_attribute("intellect", _.padEnd(score_data.intellect, 7));
-  update_score_attribute("health", _.padEnd(score_data.health, 8));
+  update_score_attribute("health", _.padEnd(score_data.health, 10));
   update_score_attribute("crits", score_data.crits);
   update_score_attribute("willpower", _.padEnd(score_data.willpower, 7));
-  update_score_attribute("charm", _.padEnd(score_data.charm, 8));
+  update_score_attribute("charm", _.padEnd(score_data.charm, 10));
+  update_score_attribute("spellcasting", score_data.spellcasting);
   update_score_attribute("head", _.padEnd(score_data.limbs.head, 5));
   update_score_attribute("torso", score_data.limbs.torso);
   update_score_attribute("right-arm", _.padEnd(score_data.limbs['right arm'], 5));

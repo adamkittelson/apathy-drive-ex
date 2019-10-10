@@ -3,7 +3,6 @@ defmodule ApathyDrive.ItemAbility do
 
   alias ApathyDrive.{
     Ability,
-    AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
     ItemAbility,
@@ -27,8 +26,7 @@ defmodule ApathyDrive.ItemAbility do
       |> preload([:type, :ability])
       |> Repo.all()
       |> Enum.reduce(traits, fn item_ability, traits ->
-        attributes = AbilityAttribute.load_attributes(item_ability.ability.id)
-        ability = Map.put(item_ability.ability, :attributes, attributes)
+        ability = item_ability.ability
 
         ability = put_in(ability.traits, AbilityTrait.load_traits(ability.id))
 

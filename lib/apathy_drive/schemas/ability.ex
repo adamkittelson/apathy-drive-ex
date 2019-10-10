@@ -3,7 +3,6 @@ defmodule ApathyDrive.Ability do
 
   alias ApathyDrive.{
     Ability,
-    AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
     Character,
@@ -53,7 +52,7 @@ defmodule ApathyDrive.Ability do
     field(:cast_complete, :boolean, virtual: true, default: false)
     field(:skills, :any, virtual: true, default: [])
     field(:target_list, :any, virtual: true)
-    field(:attributes, :map, virtual: true, default: %{})
+    field(:attributes, :any, virtual: true)
     field(:max_stacks, :integer, virtual: true, default: 1)
     field(:chance, :integer, virtual: true)
     field(:on_hit?, :boolean, virtual: true, default: false)
@@ -442,10 +441,6 @@ defmodule ApathyDrive.Ability do
         |> distinct(true)
         |> ApathyDrive.Repo.all()
       end
-      |> Enum.map(fn ability ->
-        attributes = AbilityAttribute.load_attributes(ability.id)
-        Map.put(ability, :attributes, attributes)
-      end)
 
     Match.all(abilities, :keyword_starts_with, name)
   end
@@ -1378,6 +1373,29 @@ defmodule ApathyDrive.Ability do
 
         if caster && target do
           ability = put_in(ability.traits["StackCount"], 10)
+
+          target =
+            if ability.traits["ConfusionMessage"] == "You are stunned and cannot move!" do
+              IO.puts("stunning for #{ability.duration} seconds!")
+
+              target.effects
+              |> Enum.filter(fn {_key, effect} ->
+                Map.has_key?(effect, "Confusion")
+              end)
+              |> Enum.map(fn {key, _effect} -> key end)
+              |> Enum.reduce(
+                target,
+                &Systems.Effect.remove(&2, &1,
+                  fire_after_cast: true,
+                  show_expiration_message: false
+                )
+              )
+            else
+              target
+            end
+
+          updated_room = put_in(updated_room.mobiles[target_ref], target)
+
           apply_ability(updated_room, caster, target, ability)
         else
           updated_room
@@ -3145,8 +3163,8 @@ defmodule ApathyDrive.Ability do
 
   def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false
 
-  def casting_failed?(%{} = caster, %Ability{difficulty: difficulty} = ability) do
-    spellcasting = Mobile.spellcasting_at_level(caster, caster.level, ability)
+  def casting_failed?(%{} = caster, %Ability{difficulty: difficulty}) do
+    spellcasting = Mobile.spellcasting_at_level(caster, caster.level)
     :rand.uniform(100) > spellcasting + difficulty
   end
 

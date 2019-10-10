@@ -20,7 +20,6 @@ defmodule ApathyDrive.Scripts.LesserElementalBolt do
           name: "lesser elemental bolt",
           energy: 0,
           mana: 0,
-          attributes: %{intellect: 1},
           user_message:
             "You fire a lesser #{lore.name} bolt at {{target}} for {{amount}} damage!",
           target_message:

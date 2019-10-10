@@ -11,7 +11,7 @@
   <div class="progress-bar intellect attribute"><div class="dark-green"></div></div><div class="progress-bar health attribute"><div class="dark-green"></div></div>
   <div class="progress-bar willpower attribute"><div class="dark-green"></div></div><div class="progress-bar charm attribute"><div class="dark-green"></div></div>
   <span class="attribute-row"><span class="dark-green">Intellect:</span> <span id="score-intellect" class="dark-cyan"></span> <span class="dark-green">Health:</span>  <span id="score-health" class="dark-cyan"></span> <span class="dark-green">Crits:</span>    <span id="score-crits" class="dark-cyan"></span>
-  <span class="dark-green">Willpower:</span> <span id="score-willpower" class="dark-cyan"></span> <span class="dark-green">Charm:</span>   <span id="score-charm" class="dark-cyan"></span>
+  <span class="dark-green">Willpower:</span> <span id="score-willpower" class="dark-cyan"></span> <span class="dark-green">Charm:</span>   <span id="score-charm" class="dark-cyan"></span> <span class="dark-green">Casting:</span>  <span id="score-spellcasting" class="dark-cyan"></span>
 
   <span class="dark-green">Head:</span>      <span id="score-head" class="dark-cyan"></span>   <span class="dark-green">Torso:</span>      <span id="score-torso" class="dark-cyan"></span>
   <span class="dark-green">Left Arm:</span>  <span id="score-left-arm" class="dark-cyan"></span>   <span class="dark-green">Right Arm:</span>  <span id="score-right-arm" class="dark-cyan"></span>
