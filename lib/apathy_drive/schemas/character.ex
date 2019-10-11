@@ -72,6 +72,7 @@ defmodule ApathyDrive.Character do
     field(:last_evil_action_at, :utc_datetime_usec)
     field(:missing_limbs, {:array, :string}, default: [])
 
+    field(:next_drain_at, :integer, virtual: true)
     field(:lore, :any, virtual: true)
     field(:crits, :any, virtual: true, default: [])
     field(:level, :integer, virtual: true)
@@ -190,7 +191,7 @@ defmodule ApathyDrive.Character do
   end
 
   def modified_experience(%Character{} = character, exp) do
-    modifier = 1 / ((character.race.race.exp_modifier + character.class.exp_modifier) / 100)
+    modifier = 1 / (character.race.race.exp_modifier / 100)
     trunc(exp * modifier)
   end
 
@@ -398,7 +399,7 @@ defmodule ApathyDrive.Character do
   end
 
   def max_level(%Character{} = character) do
-    Level.level_at_exp(character.class.experience, character.class.class.exp_modifier / 100)
+    Level.level_at_exp(character.class.experience) + 1
   end
 
   def load_race(%Character{race_id: race_id} = character) do
@@ -911,20 +912,18 @@ defmodule ApathyDrive.Character do
 
   def drain_exp_buffer(%Character{exp_buffer: 0} = character), do: character
 
-  def drain_exp_buffer(%Character{} = character) do
-    sorted_attributes =
-      Enum.sort_by([:strength, :agility, :intellect, :willpower, :health, :charm], fn attribute ->
-        Map.get(character, attribute)
-      end)
+  def drain_exp_buffer(%Character{next_drain_at: drain_at} = character) do
+    now = DateTime.utc_now() |> DateTime.to_unix(:millisecond) |> trunc
 
-    attribute =
-      sorted_attributes
-      |> Enum.filter(
-        &(Map.get(character, &1) == Map.get(character, List.first(sorted_attributes)))
-      )
-      |> Enum.random()
+    if is_nil(drain_at) or drain_at < now do
+      amount = Character.drain_rate(character)
 
-    Character.add_attribute_experience(character, attribute, 1)
+      character
+      |> put_in([:next_drain_at], now + :timer.seconds(10))
+      |> add_class_experience(amount)
+    else
+      character
+    end
   end
 
   def add_experience_to_buffer(character, exp, silent \\ false)
@@ -961,7 +960,67 @@ defmodule ApathyDrive.Character do
         |> Repo.update!()
       end)
 
-    Character.update_exp_bar(character)
+    if character.level < Character.max_level(character) do
+      old_abilities = Map.values(character.abilities)
+      old_hp = Mobile.max_hp_at_level(character, character.level)
+
+      character =
+        update_in(character.class, fn character_class ->
+          character_class
+          |> Ecto.Changeset.change(%{
+            level: character_class.level + 1
+          })
+          |> Repo.update!()
+        end)
+
+      character =
+        character
+        |> Character.load_class()
+        |> Character.load_race()
+        # |> Character.load_items()
+        |> Character.load_abilities()
+        |> Character.set_title()
+        |> Character.update_exp_bar()
+
+      new_abilities = Map.values(character.abilities)
+
+      Mobile.send_scroll(
+        character,
+        "<p>Your level has increased to #{character.level}!</p>"
+      )
+
+      hp_diff = Mobile.max_hp_at_level(character, character.level) - old_hp
+
+      Mobile.send_scroll(
+        character,
+        "<p>Your maximum health is increased by #{hp_diff}.</p>"
+      )
+
+      Directory.add_character(%{
+        name: character.name,
+        evil_points: character.evil_points,
+        room: character.room_id,
+        ref: character.ref,
+        title: character.title
+      })
+
+      Enum.each(new_abilities, fn ability ->
+        unless ability in old_abilities do
+          [ability] = ability
+
+          Mobile.send_scroll(
+            character,
+            "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+          )
+
+          Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
+        end
+      end)
+
+      character
+    else
+      Character.update_exp_bar(character)
+    end
   end
 
   def add_class_experience(%Character{} = character, _exp), do: character
@@ -1198,14 +1257,24 @@ defmodule ApathyDrive.Character do
     character
   end
 
+  def drain_rate(character) do
+    exp_to_level = Level.exp_at_level(character.level) - Level.exp_at_level(character.level - 1)
+
+    target_time = 20 * character.level
+
+    trunc(max(Float.round(exp_to_level / (target_time * 60) * 10), 10.0))
+  end
+
+  def max_exp_buffer(character) do
+    rate = drain_rate(character)
+
+    trunc(rate / 10 * 60 * 60)
+  end
+
   def update_exp_bar(%Character{socket: socket} = character) do
-    level = character.class.level
+    max_buffer = Character.max_exp_buffer(character)
 
-    last_level = Level.exp_at_level(level - 1, character.class.class.exp_modifier / 100)
-
-    next_level = Level.exp_at_level(level, character.class.class.exp_modifier / 100)
-
-    percent = (character.class.experience - last_level) / (next_level - last_level) * 100
+    percent = min(100, character.exp_buffer / max_buffer * 100)
 
     send(
       socket,
@@ -1728,6 +1797,7 @@ defmodule ApathyDrive.Character do
           if character do
             character
             |> Regeneration.regenerate(room)
+            |> Character.drain_exp_buffer()
             |> RoomServer.execute_casting_ability(room)
           else
             room

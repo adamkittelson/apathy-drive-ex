@@ -37,12 +37,6 @@
   </div>
 
   <div class="form-group">
-    <%= label f, :exp_modifier, class: "control-label" %>
-    <%= number_input f, :exp_modifier %>
-    <%= error_tag f, :exp_modifier %>
-  </div>
-
-  <div class="form-group">
     <%= label f, :stealth, class: "control-label" %>
     <%= checkbox f, :stealth %>
     <%= error_tag f, :stealth %>

@@ -13,7 +13,7 @@ defmodule ApathyDrive.Commands.Experience do
     exp = character.class.experience
     level = character.level
 
-    to_level = Level.exp_at_level(level, character.class.class.exp_modifier / 100)
+    to_level = Level.exp_at_level(level)
 
     Mobile.send_scroll(
       character,

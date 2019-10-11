@@ -24,7 +24,7 @@ defmodule ApathyDrive.Commands.Top do
   def top(character, number \\ 10) do
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-red'>Rank</span> <span class='dark-green'>Name</span>                  <span class='dark-magenta'>Class</span>      <span class='dark-yellow'>Experience</span></p>"
+      "<p><span class='dark-red'>Rank</span> <span class='dark-green'>Name</span>                  <span class='dark-magenta'>Class</span>         <span class='dark-yellow'>Experience</span></p>"
     )
 
     Mobile.send_scroll(
@@ -39,7 +39,7 @@ defmodule ApathyDrive.Commands.Top do
     |> Enum.each(fn {%{name: name, exp: exp, class: class}, index} ->
       index = (index + 1) |> to_string |> String.pad_leading(3)
       name = String.pad_trailing(name, 22)
-      class = String.pad_trailing(class, 11)
+      class = String.pad_trailing(class, 14)
 
       Mobile.send_scroll(
         character,

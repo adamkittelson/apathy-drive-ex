@@ -219,7 +219,6 @@ defmodule ApathyDrive.Enchantment do
       })
     end)
     |> ApathyDrive.Character.add_experience_to_buffer(exp)
-    |> ApathyDrive.Character.add_class_experience(exp)
   end
 
   def present?(%Character{} = enchanter, instance_id) do

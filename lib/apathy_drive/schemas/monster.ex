@@ -565,7 +565,6 @@ defmodule ApathyDrive.Monster do
 
                 character
                 |> Character.add_experience_to_buffer(monster.experience)
-                |> Character.add_class_experience(monster.experience)
                 |> Character.add_currency_from_monster(monster)
                 |> KillCount.increment(monster)
               end)
