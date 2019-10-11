@@ -32,6 +32,7 @@ defmodule ApathyDrive.Scripts.BodyOfElements do
           |> Map.put("Strength", 5)
           |> Map.put("Agility", 5)
           |> Map.put("Intellect", 5)
+          |> Map.put("DarkVision", 80)
 
         ability = %Ability{
           id: 8110,

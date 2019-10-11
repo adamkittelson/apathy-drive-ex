@@ -51,8 +51,7 @@ defmodule ApathyDrive.Class do
       :weapon,
       :armour,
       :combat_level,
-      :stealth,
-      :exp_modifier
+      :stealth
     ])
     |> validate_inclusion(:weapon, @weapons)
     |> validate_inclusion(:armour, @armours)
