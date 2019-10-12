@@ -866,7 +866,11 @@ defmodule ApathyDrive.Character do
   def add_attribute_experience(%Character{} = character, _attribute, _amount), do: character
 
   def add_attribute_experience(%Character{} = character, %{} = attributes) do
-    exp = max(1, trunc(character.exp_buffer * 0.01))
+    max_buffer = Character.max_exp_buffer(character)
+
+    percent = min(1.0, character.exp_buffer / max_buffer) * 2
+
+    exp = max(1, trunc(character.exp_buffer * 0.01) * percent)
 
     Enum.reduce(attributes, character, fn {attribute, percent}, character ->
       amount = max(1, trunc(exp * percent))
@@ -920,6 +924,7 @@ defmodule ApathyDrive.Character do
 
       character
       |> put_in([:next_drain_at], now + :timer.seconds(10))
+      |> update_in([:exp_buffer], &max(0, &1 - amount))
       |> add_class_experience(amount)
     else
       character
@@ -977,7 +982,6 @@ defmodule ApathyDrive.Character do
         character
         |> Character.load_class()
         |> Character.load_race()
-        # |> Character.load_items()
         |> Character.load_abilities()
         |> Character.set_title()
         |> Character.update_exp_bar()
