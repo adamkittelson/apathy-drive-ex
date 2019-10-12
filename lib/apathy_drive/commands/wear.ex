@@ -151,6 +151,8 @@ defmodule ApathyDrive.Commands.Wear do
                 |> Repo.update!()
               end
 
+              item_to_remove = Map.put(item_to_remove, :equipped, false)
+
               inventory = List.insert_at(inventory, -1, item_to_remove)
 
               if persist do
@@ -158,6 +160,8 @@ defmodule ApathyDrive.Commands.Wear do
                 |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
                 |> Repo.update!()
               end
+
+              item = Map.put(item, :equipped, true)
 
               equipment = List.insert_at(equipment, -1, item)
 
@@ -188,6 +192,7 @@ defmodule ApathyDrive.Commands.Wear do
 
             inventory =
               items_to_remove
+              |> Map.put(:equipped, false)
               |> Enum.reduce(inventory, fn item_to_remove, inv ->
                 List.insert_at(inv, -1, item_to_remove)
               end)
@@ -197,6 +202,8 @@ defmodule ApathyDrive.Commands.Wear do
               |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
               |> Repo.update!()
             end
+
+            item = Map.put(item, :equipped, false)
 
             equipment = List.insert_at(equipment, -1, item)
 
@@ -219,6 +226,8 @@ defmodule ApathyDrive.Commands.Wear do
               |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
               |> Repo.update!()
             end
+
+            item = Map.put(item, :equipped, true)
 
             equipment =
               equipment

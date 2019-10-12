@@ -876,10 +876,12 @@ defmodule ApathyDrive.Ability do
           if script = ability.traits["Script"] do
             room
             |> Room.update_mobile(caster_ref, fn room, caster ->
-              room = Map.put(room, :script_args, item)
-              Module.safe_concat([Scripts, Macro.camelize(script)]).execute(room, caster.ref)
+              Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
+                room,
+                caster.ref,
+                item
+              )
             end)
-            |> Map.put(:script_args, nil)
           else
             room
           end
@@ -2267,7 +2269,7 @@ defmodule ApathyDrive.Ability do
     effects =
       ability
       |> duration_traits()
-      |> Map.put("stack_key", ability.id)
+      |> Map.put("stack_key", ability.traits["StackKey"] || ability.id)
       |> Map.put("stack_count", ability.traits["StackCount"] || 1)
       |> process_duration_traits(target, caster, ability.duration)
       |> Map.put("effect_ref", make_ref())

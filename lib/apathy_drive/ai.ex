@@ -135,8 +135,19 @@ defmodule ApathyDrive.AI do
       |> reject_target_has_ability_passively(member_to_bless)
       |> random_ability(mobile)
 
-    if ability do
-      Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
+    case ability do
+      nil ->
+        nil
+
+      %Ability{targets: "weapon"} = ability ->
+        if weapon = Character.weapon(mobile) do
+          unless Systems.Effect.max_stacks?(weapon, ability) do
+            Ability.execute(room, mobile.ref, ability, weapon)
+          end
+        end
+
+      ability ->
+        Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
     end
   end
 
@@ -332,7 +343,7 @@ defmodule ApathyDrive.AI do
 
   defp reject_self_only_if_not_targetting_self(abilities, mobile, member_to_bless) do
     if mobile.ref !== member_to_bless.ref do
-      Enum.reject(abilities, &(&1.targets == "self"))
+      Enum.reject(abilities, &(&1.targets in ["self", "weapon"]))
     else
       abilities
     end

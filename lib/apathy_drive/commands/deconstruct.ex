@@ -76,7 +76,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
 
           character
           |> Character.load_materials()
-          |> Character.load_items()
+          |> update_in([:inventory], &List.delete(&1, item))
           |> Enchantment.add_enchantment_exp(%Enchantment{items_instances: item_instance})
         end)
       else
@@ -97,7 +97,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
 
           character
           |> Character.load_materials()
-          |> Character.load_items()
+          |> update_in([:inventory], &List.delete(&1, item))
           |> Enchantment.add_enchantment_exp(%Enchantment{items_instances: item_instance})
         end)
       end

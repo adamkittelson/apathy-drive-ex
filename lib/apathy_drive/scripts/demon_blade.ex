@@ -6,7 +6,7 @@ defmodule ApathyDrive.Scripts.DemonBlade do
     1121
   ]
 
-  def execute(%Room{script_args: item} = room, mobile_ref, _target_ref) do
+  def execute(%Room{} = room, mobile_ref, item) do
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       case Character.companion(mobile, room) do
         %Companion{monster_id: id} = demon when id in @demon_ids ->

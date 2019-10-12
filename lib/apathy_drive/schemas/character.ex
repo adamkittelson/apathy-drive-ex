@@ -216,7 +216,6 @@ defmodule ApathyDrive.Character do
         copper: character.copper + currency.copper
       })
       |> Repo.update!()
-      |> load_items()
       |> Character.add_attribute_experience(%{charm: 1})
     else
       character
