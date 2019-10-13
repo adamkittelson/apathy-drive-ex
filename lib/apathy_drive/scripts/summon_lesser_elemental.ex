@@ -19,6 +19,7 @@ defmodule ApathyDrive.Scripts.SummonLesserElemental do
           owner_id: owner_id
         }
         |> Monster.from_room_monster()
+        |> Map.put(:follow, true)
 
       Mobile.send_scroll(mobile, "<p><span class='blue'>You summon a #{monster.name}!</span></p>")
 
@@ -26,7 +27,14 @@ defmodule ApathyDrive.Scripts.SummonLesserElemental do
         mobile
       ])
 
-      Room.mobile_entered(room, monster, "")
+      room = Room.mobile_entered(room, monster, "A #{Mobile.colored_name(monster)} materializes!")
+
+      Mobile.send_scroll(
+        mobile,
+        "<p>#{Mobile.colored_name(monster)} begins to follow you.</span></p>"
+      )
+
+      room
     end)
   end
 end
