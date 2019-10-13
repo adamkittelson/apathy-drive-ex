@@ -174,6 +174,7 @@ defmodule ApathyDrive.Ability do
     "ResistStrike",
     "ResistUnholy",
     "ResistVacuum",
+    "Root",
     "SeeHidden",
     "Shadowform",
     "Silence",

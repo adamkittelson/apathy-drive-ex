@@ -989,14 +989,14 @@ defmodule ApathyDrive.Character do
 
       Mobile.send_scroll(
         character,
-        "<p>Your level has increased to #{character.level}!</p>"
+        "<p><span class='yellow'>Your level has increased to #{character.level}!</span></p>"
       )
 
       hp_diff = Mobile.max_hp_at_level(character, character.level) - old_hp
 
       Mobile.send_scroll(
         character,
-        "<p>Your maximum health is increased by #{hp_diff}.</p>"
+        "<p><span class='yellow'>Your maximum health is increased by #{hp_diff}.</span></p>"
       )
 
       Directory.add_character(%{
@@ -1854,14 +1854,14 @@ defmodule ApathyDrive.Character do
       effects
       |> Map.values()
       |> Enum.find(fn effect ->
-        Map.has_key?(effect, "held")
+        Map.has_key?(effect, "Root")
       end)
       |> held(mobile)
     end
 
     def held(nil, %{}), do: false
 
-    def held(%{"effect_message" => message}, %{} = mobile) do
+    def held(%{"StatusMessage" => message}, %{} = mobile) do
       send_scroll(mobile, "<p>#{message}</p>")
       true
     end

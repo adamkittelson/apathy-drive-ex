@@ -708,14 +708,14 @@ defmodule ApathyDrive.Monster do
       effects
       |> Map.values()
       |> Enum.find(fn effect ->
-        Map.has_key?(effect, "held")
+        Map.has_key?(effect, "Root")
       end)
       |> held(mobile)
     end
 
     def held(nil, %{}), do: false
 
-    def held(%{"effect_message" => message}, %{} = mobile) do
+    def held(%{"StatusMessage" => message}, %{} = mobile) do
       send_scroll(mobile, "<p>#{message}</p>")
       true
     end
