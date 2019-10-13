@@ -203,7 +203,7 @@ defmodule ApathyDrive.Commands.Wear do
               |> Repo.update!()
             end
 
-            item = Map.put(item, :equipped, false)
+            item = Map.put(item, :equipped, true)
 
             equipment = List.insert_at(equipment, -1, item)
 
