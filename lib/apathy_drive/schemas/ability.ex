@@ -1996,6 +1996,21 @@ defmodule ApathyDrive.Ability do
     {caster, target}
   end
 
+  def apply_instant_trait({"Freedom", _args}, %{} = target, _ability, caster, _room) do
+    target =
+      target.effects
+      |> Enum.filter(fn {_key, effect} ->
+        Map.has_key?(effect, "Root")
+      end)
+      |> Enum.map(fn {key, _effect} -> key end)
+      |> Enum.reduce(
+        target,
+        &Systems.Effect.remove(&2, &1, fire_after_cast: true, show_expiration_message: true)
+      )
+
+    {caster, target}
+  end
+
   def apply_instant_trait({"DispelMagic", trait_id}, %{} = target, _ability, caster, _room) do
     if trait_id == 0 do
       target =
