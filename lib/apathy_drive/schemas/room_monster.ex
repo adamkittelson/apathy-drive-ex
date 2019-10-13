@@ -17,6 +17,7 @@ defmodule ApathyDrive.RoomMonster do
     field(:spawned_at, :integer)
     field(:zone_spawned_at, :integer)
     field(:name, :string)
+    field(:lore, :string)
     field(:delete_at, :utc_datetime_usec)
     field(:missing_limbs, {:array, :string}, default: [])
 

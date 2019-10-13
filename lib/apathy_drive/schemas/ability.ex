@@ -2996,6 +2996,9 @@ defmodule ApathyDrive.Ability do
       Map.get(mobile, :death_ability_id, :none) == ability.id ->
         true
 
+      lore_missing(mobile, ability) ->
+        false
+
       cd = on_cooldown?(mobile, ability) ->
         Mobile.send_scroll(
           mobile,
@@ -3017,6 +3020,24 @@ defmodule ApathyDrive.Ability do
         false
 
       true ->
+        true
+    end
+  end
+
+  def lore_missing(mobile, ability) do
+    cond do
+      !ability.traits["Elemental"] ->
+        false
+
+      Map.get(mobile, :lore) ->
+        false
+
+      :else ->
+        Mobile.send_scroll(
+          mobile,
+          "<p><span class='red'>Elemental spells require an active lore! (see \"help lores\")</span></p>"
+        )
+
         true
     end
   end

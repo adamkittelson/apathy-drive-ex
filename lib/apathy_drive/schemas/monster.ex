@@ -102,6 +102,8 @@ defmodule ApathyDrive.Monster do
     field(:delete_at, :any, virtual: true)
     field(:limbs, :map, virtual: true, default: %{})
     field(:missing_limbs, {:array, :string}, virtual: true, default: [])
+    field(:lore, :any, virtual: true)
+    field(:follow, :boolean, virtual: true)
 
     timestamps()
 
@@ -164,7 +166,15 @@ defmodule ApathyDrive.Monster do
       end
     else
       _ ->
-        room
+        if monster.owner_id == character.id and monster.follow do
+          room_exit =
+            room.exits
+            |> Enum.find(&(&1["destination"] == destination))
+
+          ApathyDrive.Commands.Move.execute(room, monster, room_exit, true)
+        else
+          room
+        end
     end
   end
 
@@ -182,6 +192,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:delete_at, rm.delete_at)
       |> Map.put(:missing_limbs, rm.missing_limbs)
       |> Map.put(:owner_id, rm.owner_id)
+      |> Map.put(:lore, ApathyDrive.ElementalLores.lore(rm.lore))
 
     if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
       ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
@@ -219,6 +230,7 @@ defmodule ApathyDrive.Monster do
 
     monster
     |> Map.merge(attributes)
+    |> Map.put(:lore, ApathyDrive.ElementalLores.lore([rm.lore]))
     |> Map.put(:room_monster_id, id)
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
@@ -269,13 +281,20 @@ defmodule ApathyDrive.Monster do
   end
 
   def generate_monster_attributes(%Monster{level: level} = monster) do
+    name =
+      if monster.lore do
+        monster.lore.name <> " " <> monster.name
+      else
+        monster.name
+      end
+
     room_monster = %RoomMonster{
       level: level,
       room_id: monster.room_id,
       monster_id: monster.id,
       spawned_at: monster.spawned_at,
       zone_spawned_at: monster.zone_spawned_at,
-      name: name_with_adjective(monster.name, monster.adjectives),
+      name: name_with_adjective(name, monster.adjectives),
       delete_at: monster.delete_at,
       owner_id: monster.owner_id
     }
@@ -458,12 +477,22 @@ defmodule ApathyDrive.Monster do
             attacks
             |> Enum.sort_by(& &1.chance)
 
-          attacks
-          |> Enum.find(fn attack ->
-            rand = :rand.uniform(100)
+          attack =
+            attacks
+            |> Enum.find(fn attack ->
+              rand = :rand.uniform(100)
 
-            attack.chance > rand or attack == List.last(attacks)
-          end)
+              attack.chance > rand or attack == List.last(attacks)
+            end)
+
+          auto_attack? = attack.kind == "auto attack"
+
+          if auto_attack? do
+            damage = Mobile.ability_value(monster, "WeaponDamage")
+            update_in(attack.traits["Damage"], &(damage ++ &1))
+          else
+            attack
+          end
           |> Map.put(:kind, "attack")
           |> Map.put(:ignores_round_cooldown?, true)
       end

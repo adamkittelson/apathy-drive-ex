@@ -1,4 +1,6 @@
 defmodule ApathyDrive.ElementalLores do
+  alias ApathyDrive.Repo
+
   @lores %{
     "earth" => %{
       name: "earth",
@@ -160,5 +162,19 @@ defmodule ApathyDrive.ElementalLores do
 
   def lores do
     @lores
+  end
+
+  def lore(lore) do
+    if lore = @lores[lore] do
+      update_in(lore.damage_types, fn damage_types ->
+        Enum.map(damage_types, fn damage_type ->
+          Map.put(
+            damage_type,
+            :damage_type_id,
+            Repo.get_by(ApathyDrive.DamageType, name: damage_type.damage_type).id
+          )
+        end)
+      end)
+    end
   end
 end

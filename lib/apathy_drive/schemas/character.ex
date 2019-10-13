@@ -2011,7 +2011,7 @@ defmodule ApathyDrive.Character do
     def spellcasting_at_level(character, level) do
       attribute_value =
         character.class.class.spellcasting_attributes
-        |> Enum.map(&Map.get(character, String.to_atom(&1)))
+        |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
         |> Room.average()
 
       sc = trunc(attribute_value * 2 / 3)

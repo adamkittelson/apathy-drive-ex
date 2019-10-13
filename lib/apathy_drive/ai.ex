@@ -95,10 +95,38 @@ defmodule ApathyDrive.AI do
 
   def drain(%{} = _mobile, %Room{}), do: nil
 
+  def pets_and_party(room, mobile) do
+    party = Party.members(room, mobile)
+
+    pets =
+      room.mobiles
+      |> Map.values()
+      |> Enum.filter(fn mob ->
+        if owner_id = Map.get(mob, :owner_id) do
+          owner_id == Map.get(mobile, :room_monster_id) or
+            owner_id == mobile.id
+        end
+      end)
+
+    owner =
+      room.mobiles
+      |> Map.values()
+      |> Enum.find(fn mob ->
+        if owner_id = Map.get(mobile, :owner_id) do
+          owner_id == Map.get(mob, :room_monster_id) or owner_id == Map.get(mob, :id)
+        end
+      end)
+
+    [party, pets, owner]
+    |> List.flatten()
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
   def heal(%{auto_heal: true} = mobile, %Room{} = room) do
     injured_party_member =
       room
-      |> Party.members(mobile)
+      |> pets_and_party(mobile)
       |> Enum.sort_by(& &1.hp)
       |> List.first()
 
@@ -124,13 +152,14 @@ defmodule ApathyDrive.AI do
   def bless(%{auto_bless: true, mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
     member_to_bless =
       room
-      |> Party.members(mobile)
+      |> pets_and_party(mobile)
       |> Enum.random()
 
     ability =
       mobile
       |> Ability.bless_abilities(member_to_bless)
       |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
+      |> reject_elemental_if_no_lore(mobile)
       |> reject_light_spells_if_it_isnt_dark(room)
       |> reject_target_has_ability_passively(member_to_bless)
       |> random_ability(mobile)
@@ -179,7 +208,10 @@ defmodule ApathyDrive.AI do
       potential_targets =
         Ability.get_targets(room, mobile.ref, %Ability{targets: "full attack area"}, "")
 
-      attack_abilities = Ability.attack_abilities(mobile, target)
+      attack_abilities =
+        mobile
+        |> Ability.attack_abilities(target)
+        |> reject_elemental_if_no_lore(mobile)
 
       attack_abilities =
         if mobile.__struct__ == Monster do
@@ -344,6 +376,14 @@ defmodule ApathyDrive.AI do
   defp reject_self_only_if_not_targetting_self(abilities, mobile, member_to_bless) do
     if mobile.ref !== member_to_bless.ref do
       Enum.reject(abilities, &(&1.targets in ["self", "weapon"]))
+    else
+      abilities
+    end
+  end
+
+  defp reject_elemental_if_no_lore(abilities, mobile) do
+    if !Map.get(mobile, :lore) do
+      Enum.reject(abilities, & &1.traits["Elemental"])
     else
       abilities
     end
