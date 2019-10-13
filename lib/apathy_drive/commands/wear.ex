@@ -192,8 +192,8 @@ defmodule ApathyDrive.Commands.Wear do
 
             inventory =
               items_to_remove
-              |> Map.put(:equipped, false)
               |> Enum.reduce(inventory, fn item_to_remove, inv ->
+                item_to_remove = Map.put(item_to_remove, :equipped, false)
                 List.insert_at(inv, -1, item_to_remove)
               end)
 
