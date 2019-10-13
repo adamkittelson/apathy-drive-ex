@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Scripts.LesserElementalStorm do
   alias ApathyDrive.{Ability, Room}
 
-  @damage %{min: 16, max: 50}
+  @damage %{min: 10, max: 30}
 
   def execute(%Room{} = room, mobile_ref, target_ref) do
     Room.update_mobile(room, mobile_ref, fn room, character ->
@@ -21,9 +21,10 @@ defmodule ApathyDrive.Scripts.LesserElementalStorm do
         name: "lesser elemental storm",
         energy: 0,
         mana: 0,
-        user_message: "A bolt of #{lore.name} strikes {{target}} for {{amount}} damage!",
-        target_message: "A bolt of #{lore.name} strikes you for {{amount}} damage!",
-        spectator_message: "A bolt of #{lore.name} strikes {{target}} for {{amount}} damage!",
+        user_message: "A lesser bolt of #{lore.name} strikes {{target}} for {{amount}} damage!",
+        target_message: "A lesser bolt of #{lore.name} strikes you for {{amount}} damage!",
+        spectator_message:
+          "A lesser bolt of #{lore.name} strikes {{target}} for {{amount}} damage!",
         traits: %{
           "Damage" => damage
         }

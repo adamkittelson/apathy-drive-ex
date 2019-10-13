@@ -1996,20 +1996,35 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_instant_trait({"DispelMagic", trait_id}, %{} = target, _ability, caster, _room) do
-    trait = Repo.get!(ApathyDrive.Trait, trait_id).name
+    if trait_id == 0 do
+      target =
+        target.effects
+        |> Enum.reject(fn {_key, effect} ->
+          String.match?(to_string(effect["stack_key"]), ~r/character|item|class|race/)
+        end)
+        |> Enum.map(fn {key, _effect} -> key end)
+        |> Enum.reduce(
+          target,
+          &Systems.Effect.remove(&2, &1, fire_after_cast: true, show_expiration_message: true)
+        )
 
-    target =
-      target.effects
-      |> Enum.filter(fn {_key, effect} ->
-        Map.has_key?(effect, trait)
-      end)
-      |> Enum.map(fn {key, _effect} -> key end)
-      |> Enum.reduce(
-        target,
-        &Systems.Effect.remove(&2, &1, fire_after_cast: true, show_expiration_message: true)
-      )
+      {caster, target}
+    else
+      trait = Repo.get!(ApathyDrive.Trait, trait_id).name
 
-    {caster, target}
+      target =
+        target.effects
+        |> Enum.filter(fn {_key, effect} ->
+          Map.has_key?(effect, trait)
+        end)
+        |> Enum.map(fn {key, _effect} -> key end)
+        |> Enum.reduce(
+          target,
+          &Systems.Effect.remove(&2, &1, fire_after_cast: true, show_expiration_message: true)
+        )
+
+      {caster, target}
+    end
   end
 
   def apply_instant_trait({"Heal", value}, %{} = target, _ability, caster, _room)
@@ -3091,8 +3106,8 @@ defmodule ApathyDrive.Ability do
 
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full party area"}, "") do
     room
-    |> Room.get_mobile(caster_ref)
-    |> Mobile.party_refs(room)
+    |> ApathyDrive.AI.pets_and_party(room.mobiles[caster_ref])
+    |> Enum.map(& &1.ref)
   end
 
   def get_targets(%Room{}, _caster_ref, %Ability{targets: "full party area"}, _query) do
@@ -3102,8 +3117,8 @@ defmodule ApathyDrive.Ability do
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "full attack area"}, "") do
     party =
       room
-      |> Room.get_mobile(caster_ref)
-      |> Mobile.party_refs(room)
+      |> ApathyDrive.AI.pets_and_party(room.mobiles[caster_ref])
+      |> Enum.map(& &1.ref)
 
     room.mobiles
     |> Map.keys()
