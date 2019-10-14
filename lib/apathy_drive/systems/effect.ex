@@ -90,6 +90,16 @@ defmodule Systems.Effect do
     remove(entity, oldest)
   end
 
+  def remove_all_stacks(%{effects: _effects} = entity, stack_key) do
+    stacks =
+      entity
+      |> stack(stack_key)
+
+    Enum.reduce(stacks, entity, fn stack, entity ->
+      remove(entity, stack)
+    end)
+  end
+
   def remove_all(%{effects: effects} = entity) do
     effects
     |> Map.keys()
@@ -161,8 +171,6 @@ defmodule Systems.Effect do
     stack_key = ability.traits["StackKey"] || ability.traits["stack_key"] || ability.id
     stack_count(mobile, stack_key) >= max
   end
-
-  def max_stacks?(%{}, %{}), do: false
 
   def stack_count(%{effects: _effects} = entity, stack_key) do
     stack(entity, stack_key)

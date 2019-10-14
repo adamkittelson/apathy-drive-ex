@@ -1975,7 +1975,7 @@ defmodule ApathyDrive.Ability do
   def apply_instant_trait({"RemoveSpells", ability_ids}, %{} = target, _ability, caster, _room) do
     target =
       Enum.reduce(ability_ids, target, fn ability_id, updated_target ->
-        Systems.Effect.remove_oldest_stack(updated_target, ability_id)
+        Systems.Effect.remove_all_stacks(updated_target, ability_id)
       end)
 
     {caster, target}
