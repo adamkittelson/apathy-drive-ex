@@ -125,12 +125,10 @@ defmodule ApathyDrive.Command do
           cmd = Match.one(Enum.map(all(), & &1.to_struct), :match_keyword, command) ->
             cmd.module.execute(room, monster, arguments)
 
-          abilities = monster.abilities[String.downcase(command)] ->
+          ability = monster.abilities[String.downcase(command)] ->
             if Mobile.unconcious(monster) do
               room
             else
-              ability = Ability.select_ability(monster, abilities)
-
               Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
             end
 

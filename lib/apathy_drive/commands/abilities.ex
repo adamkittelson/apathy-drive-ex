@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
-  alias ApathyDrive.{Ability, Character, Item, Mobile}
+  alias ApathyDrive.{Character, Item, Mobile}
   require Ecto.Query
 
   def keywords, do: ["abilities", "spells"]
@@ -13,7 +13,7 @@ defmodule ApathyDrive.Commands.Abilities do
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-magenta'>Mana   Command  Ability Name</span></p>"
+      "<p><span class='dark-magenta'>Auto   Mana   Command  Ability Name</span></p>"
     )
 
     display_abilities(character)
@@ -25,10 +25,9 @@ defmodule ApathyDrive.Commands.Abilities do
   def display_abilities(%Character{} = character) do
     character.abilities
     |> Map.values()
-    |> Enum.map(&Ability.select_ability(character, &1))
     |> Enum.sort_by(& &1.level)
     |> Enum.reject(&(&1.kind == "long-term"))
-    |> Enum.each(fn %{name: name, command: command, mana: mana} ->
+    |> Enum.each(fn %{name: name, command: command, mana: mana, auto: auto} ->
       mana_cost = String.pad_trailing(to_string(mana), 6)
 
       command =
@@ -38,7 +37,7 @@ defmodule ApathyDrive.Commands.Abilities do
 
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-cyan'>#{mana_cost} #{command} #{name}</span></p>"
+        "<p><span class='dark-cyan'> #{emoji(auto)}     #{mana_cost} #{command} #{name}</span></p>"
       )
     end)
   end
@@ -47,7 +46,6 @@ defmodule ApathyDrive.Commands.Abilities do
     abilities =
       character.abilities
       |> Map.values()
-      |> Enum.map(&Ability.select_ability(character, &1))
       |> Enum.sort_by(& &1.level)
       |> Enum.filter(&(&1.kind == "long-term"))
 
@@ -120,4 +118,7 @@ defmodule ApathyDrive.Commands.Abilities do
           !Item.too_powerful_for_character?(character, &1))
     )
   end
+
+  def emoji(true), do: "✅"
+  def emoji(_), do: "❌"
 end

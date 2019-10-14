@@ -272,13 +272,12 @@ defmodule ApathyDrive.Character do
       character
       |> Map.put(:abilities, %{})
 
-    abilities =
+    auto_abilities =
       ApathyDrive.CharacterAbility
       |> Ecto.Query.where([ca], ca.character_id == ^id)
-      |> Ecto.Query.preload([:ability])
       |> Repo.all()
-      |> Enum.reject(fn %{ability: ability} ->
-        ApathyDrive.Commands.Read.wrong_class?(character, ability)
+      |> Enum.reduce(%{}, fn auto_ability, auto_abilities ->
+        Map.put(auto_abilities, auto_ability.ability_id, auto_ability.auto)
       end)
 
     class_abilities =
@@ -298,7 +297,7 @@ defmodule ApathyDrive.Character do
       |> Enum.map(&%{ability: Ability.find(&1)})
 
     character =
-      (abilities ++ class_abilities ++ skill_abilities ++ granted_abilities)
+      (class_abilities ++ skill_abilities ++ granted_abilities)
       |> Enum.reduce(character, fn
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
@@ -308,6 +307,7 @@ defmodule ApathyDrive.Character do
           ability =
             ability
             |> put_in([Access.key!(:traits)], AbilityTrait.load_traits(id))
+            |> put_in([Access.key!(:auto)], !!auto_abilities[id])
 
           ability =
             case AbilityDamageType.load_damage(id) do
@@ -325,8 +325,7 @@ defmodule ApathyDrive.Character do
           if Ability.appropriate_alignment?(ability, character) do
             update_in(character.abilities, fn abilities ->
               abilities
-              |> Map.put_new(ability.command, [])
-              |> update_in([ability.command], &[ability | &1])
+              |> Map.put(ability.command, ability)
             end)
           else
             character
@@ -336,9 +335,7 @@ defmodule ApathyDrive.Character do
     Enum.reduce(character.equipment, character, fn item, character ->
       if ability = item.traits["Grant"] do
         update_in(character.abilities, fn abilities ->
-          abilities
-          |> Map.put_new(ability.command, [])
-          |> update_in([ability.command], &[ability | &1])
+          Map.put(abilities, ability.command, ability)
         end)
       else
         character

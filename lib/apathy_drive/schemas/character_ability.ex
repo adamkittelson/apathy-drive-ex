@@ -3,12 +3,13 @@ defmodule ApathyDrive.CharacterAbility do
   alias ApathyDrive.{Ability, Character}
 
   schema "characters_abilities" do
+    field :auto, :boolean
     belongs_to(:ability, Ability)
     belongs_to(:character, Character)
   end
 
   def changeset(model, params \\ %{}) do
     model
-    |> cast(params, ~w(ability_id class_id)a)
+    |> cast(params, ~w(ability_id character_id auto)a)
   end
 end

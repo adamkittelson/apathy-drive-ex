@@ -1,124 +1,41 @@
 defmodule ApathyDrive.Commands.Auto do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile, Repo}
+  alias ApathyDrive.{Character, CharacterAbility, Mobile, Repo}
 
   def keywords, do: ["auto"]
 
-  def execute(%Room{} = room, %Character{} = character, []) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='white'>You have the following automation settings:</span></p>"
-    )
+  def execute(%Room{} = room, %Character{abilities: abilities} = character, [command]) do
+    if ability = abilities[String.downcase(command)] do
+      case Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id) do
+        nil ->
+          %CharacterAbility{character_id: character.id, ability_id: ability.id, auto: true}
+          |> Repo.insert!()
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-magenta'>Setting   Enabled?</span></p>"
-    )
+        ca ->
+          ca
+          |> CharacterAbility.changeset(%{auto: !ca.auto})
+          |> Repo.update!()
+      end
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-cyan'>Heal        #{emoji(character.auto_heal)}</span></p>"
-    )
+      room =
+        update_in(room.mobiles[character.ref].abilities[String.downcase(command)].auto, &(!&1))
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-cyan'>Flee        #{emoji(character.auto_flee)}</span></p>"
-    )
+      ApathyDrive.Commands.Abilities.execute(room, room.mobiles[character.ref], [])
+    else
+      message = "<p><span class='red'>You don't know #{command}.</span></p>"
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-cyan'>Bless       #{emoji(character.auto_bless)}</span></p>"
-    )
+      Mobile.send_scroll(character, message)
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-cyan'>Curse       #{emoji(character.auto_curse)}</span></p>"
-    )
+      room
+    end
+  end
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-cyan'>Nuke        #{emoji(character.auto_nuke)}</span></p>"
-    )
+  def execute(%Room{} = room, %Character{} = character, _) do
+    message =
+      "<p><span class='red'>Syntax: 'AUTO {ability command}', e.g. 'auto mmis' to toggle automatically casting magic missile.</span></p>"
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-cyan'>Roam        #{emoji(character.auto_roam)}</span></p>"
-    )
+    Mobile.send_scroll(character, message)
 
     room
   end
-
-  def execute(%Room{} = room, %Character{ref: ref}, ["heal"]) do
-    room =
-      Room.update_mobile(room, ref, fn _room, character ->
-        character
-        |> Ecto.Changeset.change(%{auto_heal: !character.auto_heal})
-        |> Repo.update!()
-      end)
-
-    execute(room, room.mobiles[ref], [])
-  end
-
-  def execute(%Room{} = room, %Character{ref: ref}, ["flee"]) do
-    room =
-      Room.update_mobile(room, ref, fn _room, character ->
-        character
-        |> Ecto.Changeset.change(%{auto_flee: !character.auto_flee})
-        |> Repo.update!()
-      end)
-
-    execute(room, room.mobiles[ref], [])
-  end
-
-  def execute(%Room{} = room, %Character{ref: ref}, ["bless"]) do
-    room =
-      Room.update_mobile(room, ref, fn _room, character ->
-        character
-        |> Ecto.Changeset.change(%{auto_bless: !character.auto_bless})
-        |> Repo.update!()
-      end)
-
-    execute(room, room.mobiles[ref], [])
-  end
-
-  def execute(%Room{} = room, %Character{ref: ref}, ["curse"]) do
-    room =
-      Room.update_mobile(room, ref, fn _room, character ->
-        character
-        |> Ecto.Changeset.change(%{auto_curse: !character.auto_curse})
-        |> Repo.update!()
-      end)
-
-    execute(room, room.mobiles[ref], [])
-  end
-
-  def execute(%Room{} = room, %Character{ref: ref}, ["nuke"]) do
-    room =
-      Room.update_mobile(room, ref, fn _room, character ->
-        character
-        |> Ecto.Changeset.change(%{auto_nuke: !character.auto_nuke})
-        |> Repo.update!()
-      end)
-
-    execute(room, room.mobiles[ref], [])
-  end
-
-  def execute(%Room{} = room, %Character{ref: ref}, ["roam"]) do
-    room =
-      Room.update_mobile(room, ref, fn _room, character ->
-        character
-        |> Ecto.Changeset.change(%{auto_roam: !character.auto_roam})
-        |> Repo.update!()
-      end)
-
-    execute(room, room.mobiles[ref], [])
-  end
-
-  def execute(%Room{} = room, %Character{} = character, _args) do
-    Mobile.send_scroll(character, "<p>What?</p>")
-    room
-  end
-
-  def emoji(true), do: "✅"
-  def emoji(_), do: "❌"
 end

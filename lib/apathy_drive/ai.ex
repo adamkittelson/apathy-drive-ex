@@ -75,7 +75,7 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def drain(%{auto_heal: true} = mobile, %Room{} = room) do
+  def drain(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
     chance = trunc(:math.pow(20, 2 - mobile.hp) - 20)
 
@@ -85,6 +85,7 @@ defmodule ApathyDrive.AI do
       ability =
         mobile
         |> Ability.drain_abilities(target)
+        |> Enum.reject(&(!&1.auto))
         |> random_ability(mobile)
 
       if ability do
@@ -92,8 +93,6 @@ defmodule ApathyDrive.AI do
       end
     end
   end
-
-  def drain(%{} = _mobile, %Room{}), do: nil
 
   def pets_and_party(room, mobile) do
     party = Party.members(room, mobile)
@@ -123,7 +122,7 @@ defmodule ApathyDrive.AI do
     |> Enum.uniq()
   end
 
-  def heal(%{auto_heal: true} = mobile, %Room{} = room) do
+  def heal(%{} = mobile, %Room{} = room) do
     injured_party_member =
       room
       |> pets_and_party(mobile)
@@ -139,6 +138,7 @@ defmodule ApathyDrive.AI do
         mobile
         |> Ability.heal_abilities()
         |> Enum.reject(&(&1.targets == "self"))
+        |> Enum.reject(&(!&1.auto))
         |> random_ability(mobile)
 
       if ability do
@@ -147,9 +147,7 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def heal(%{} = _mobile, %Room{}), do: nil
-
-  def bless(%{auto_bless: true, mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
+  def bless(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
     member_to_bless =
       room
       |> pets_and_party(mobile)
@@ -158,6 +156,7 @@ defmodule ApathyDrive.AI do
     ability =
       mobile
       |> Ability.bless_abilities(member_to_bless)
+      |> Enum.reject(&(!&1.auto))
       |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
       |> reject_elemental_if_no_lore(mobile)
       |> reject_light_spells_if_it_isnt_dark(room)
@@ -182,13 +181,14 @@ defmodule ApathyDrive.AI do
 
   def bless(%{} = _mobile, %Room{}), do: nil
 
-  def curse(%{auto_curse: true} = mobile, %Room{} = room) do
+  def curse(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
     if target && :rand.uniform(100) > 95 do
       ability =
         mobile
         |> Ability.curse_abilities(target)
+        |> Enum.reject(&(!&1.auto))
         |> random_ability(mobile)
 
       if ability do
@@ -197,9 +197,7 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def curse(%{} = _mobile, %Room{}), do: nil
-
-  def attack(%{auto_nuke: true} = mobile, %Room{} = room) do
+  def attack(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
     energy_pct = mobile.energy / mobile.max_energy * 100
@@ -211,6 +209,7 @@ defmodule ApathyDrive.AI do
       attack_abilities =
         mobile
         |> Ability.attack_abilities(target)
+        |> Enum.reject(&(!&1.auto))
         |> reject_elemental_if_no_lore(mobile)
 
       attack_abilities =
@@ -244,8 +243,6 @@ defmodule ApathyDrive.AI do
       end
     end
   end
-
-  def attack(%{} = _mobile, %Room{}), do: nil
 
   def auto_attack(mobile, room, target_ref \\ nil) do
     if target_ref = target_ref || Mobile.auto_attack_target(mobile, room) do

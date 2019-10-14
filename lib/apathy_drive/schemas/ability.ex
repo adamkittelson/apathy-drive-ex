@@ -60,6 +60,7 @@ defmodule ApathyDrive.Ability do
     field(:spell?, :boolean, virtual: true, default: true)
     field(:reaction_energy, :integer, virtual: true, default: 0)
     field(:crit_tables, :any, virtual: true, default: [])
+    field(:auto, :boolean, virtual: true, default: true)
 
     belongs_to(:crit_table, ApathyDrive.DamageType)
 
@@ -571,24 +572,6 @@ defmodule ApathyDrive.Ability do
 
   def removes_blessing?(mobile, ability) do
     Systems.Effect.max_stacks?(mobile, ability)
-  end
-
-  def select_ability(_character, [ability]), do: ability
-
-  def select_ability(character, abilities) do
-    Enum.sort_by(abilities, fn ability ->
-      cond do
-        ability.cooldown > 0 and !Ability.on_cooldown?(character, ability) ->
-          -1
-
-        is_nil(ability.cooldown) ->
-          0
-
-        cd = on_cooldown?(character, ability) ->
-          time_remaining(character, cd)
-      end
-    end)
-    |> List.first()
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{targets: targets}, "")
