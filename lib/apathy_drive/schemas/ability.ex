@@ -527,6 +527,7 @@ defmodule ApathyDrive.Ability do
       removes_blessing?(target, ability)
     end)
     |> useable(mobile)
+    |> Enum.sort_by(&(-&1.level))
   end
 
   def curse_abilities(%{abilities: abilities} = mobile, %{} = target) do
@@ -1842,6 +1843,7 @@ defmodule ApathyDrive.Ability do
               if limb_type == "non_fatal" do
                 !limb.fatal
               else
+                IO.puts("#{inspect(limb)} == #{limb_type}")
                 limb.type == limb_type
               end
 
@@ -1875,6 +1877,7 @@ defmodule ApathyDrive.Ability do
               if limb_type == "non_fatal" do
                 !limb.fatal
               else
+                IO.puts("#{inspect(limb)} == #{limb_type}")
                 limb.type == limb_type
               end
 

@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Scripts.LesserElementalBlade do
+defmodule ApathyDrive.Scripts.LesserElementalWeapon do
   alias ApathyDrive.{Mobile, Room}
 
   @damage %{min: 1, max: 1}
@@ -19,18 +19,18 @@ defmodule ApathyDrive.Scripts.LesserElementalBlade do
       effect = %{
         "WeaponDamage" => damage,
         "RemoveMessage" => "A #{lore.name} damage spell fades from your #{item.name}.",
-        "stack_key" => "elemental blade",
+        "stack_key" => "elemental weapon",
         "stack_count" => 3
       }
 
       Mobile.send_scroll(
         character,
-        "<p><span class='blue'>You cast lesser #{lore.name} blade at #{item.name}!</span></p>"
+        "<p><span class='blue'>You cast lesser #{lore.name} weapon at #{item.name}!</span></p>"
       )
 
       Room.send_scroll(
         room,
-        "<p><span class='blue'>#{character.name} casts lesser #{lore.name} blade at #{item.name}!</span></p>",
+        "<p><span class='blue'>#{character.name} casts lesser #{lore.name} weapon at #{item.name}!</span></p>",
         [character]
       )
 

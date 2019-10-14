@@ -1,8 +1,8 @@
-defmodule ApathyDrive.Scripts.BodyOfElements do
+defmodule ApathyDrive.Scripts.ElementalTransformation do
   alias ApathyDrive.{Ability, Room}
 
-  @damage %{min: 1, max: 1}
-  @lore_resistance 25
+  @damage %{min: 5, max: 10}
+  @lore_resistance 50
 
   def execute(%Room{} = room, mobile_ref, target_ref) do
     Room.update_mobile(room, mobile_ref, fn room, character ->
@@ -31,17 +31,17 @@ defmodule ApathyDrive.Scripts.BodyOfElements do
         |> Map.put("StatusMessage", "Your have a body of #{lore.name}!")
         |> Map.put("RemoveMessage", "Your body returns to normal.")
         |> Map.put("StackKey", "elemental transformation")
-        |> Map.put("Strength", 5)
-        |> Map.put("Agility", 5)
-        |> Map.put("Intellect", 5)
-        |> Map.put("Willpower", 5)
-        |> Map.put("Charm", 5)
-        |> Map.put("Health", 5)
+        |> Map.put("Strength", 10)
+        |> Map.put("Agility", 10)
+        |> Map.put("Intellect", 10)
+        |> Map.put("Willpower", 10)
+        |> Map.put("Charm", 10)
+        |> Map.put("Health", 10)
 
       ability = %Ability{
         id: 8110,
         kind: "blessing",
-        name: "body of elements",
+        name: "elemental transformation",
         energy: 0,
         mana: 0,
         duration: 600,
