@@ -284,7 +284,7 @@ $(document).on('keyup', function (event) {
   setFocus("#command");
 });
 
-$(document).on('keyup', "input", function (event) {
+$(document).on('keyup', "textarea", function (event) {
   var command, params;
   event.preventDefault();
   if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {

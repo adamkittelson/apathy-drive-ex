@@ -25,7 +25,7 @@
   <div id="scroll">
   </div>
   <footer id="footer" class="twelve columns">
-    <div id="prompt"></div><input id="command" size="50" class="prompt" autocomplete="off"/>
+    <div id="prompt"></div><textarea id="command" class="prompt" autocomplete="off"></textarea>
   </footer>
 </div>
 <div id="right-sidebar">

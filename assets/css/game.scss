@@ -25,10 +25,6 @@ a.autolink {
   input {
     background: #141414;
   }
-  textarea {
-    background: #141414;
-    height: 150px;
-  }
   select {
     color: black;
   }
@@ -79,17 +75,21 @@ canvas {
 }
 
 
-input.prompt {
+textarea.prompt {
   background-color: black !important;
   border: none;
   color: silver;
   outline: none;
-  display: inline;
+  display: inline-block;
   margin-bottom: 0px;
-  width: 80%;
+  width: 45%;
   position: relative;
-  top: 1px;
+  line-height: 23px;
+  resize: none;
   font-size: 1.10em;
+  padding: 0;
+  min-height: 0px !important;
+  height: auto !important;
 }
 
 #player-bars {
