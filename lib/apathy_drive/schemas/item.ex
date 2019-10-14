@@ -344,27 +344,10 @@ defmodule ApathyDrive.Item do
   def upgrade_for_character?(_item, _character), do: false
 
   def researchable?(%Item{} = item, %Character{} = character) do
-    cond do
-      !!CraftingRecipe.for_item(item) and !item.unfinished ->
-        !Repo.get_by(CharacterStyle, character_id: character.id, item_id: item.id)
-
-      !item.type == "Scroll" ->
-        false
-
-      Item.too_powerful_for_character?(character, item) ->
-        false
-
-      ApathyDrive.Commands.Read.already_learned?(character, item.traits["Learn"]) ->
-        false
-
-      ApathyDrive.Commands.Read.wrong_class?(character, item.traits["Learn"]) ->
-        false
-
-      !Ability.appropriate_alignment?(item.traits["Learn"], character) ->
-        false
-
-      :else ->
-        true
+    if !!CraftingRecipe.for_item(item) and !item.unfinished do
+      !Repo.get_by(CharacterStyle, character_id: character.id, item_id: item.id)
+    else
+      false
     end
   end
 
