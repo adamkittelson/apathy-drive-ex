@@ -1,7 +1,7 @@
 import "phoenix_html"
 import { Socket } from "phoenix"
 
-var pruneBackscroll, addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, history_marker, setFocus, updateRoom, socket, push;
+var pruneBackscroll, addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, history, history_marker, setFocus, updateRoom, socket, push;
 focus = null;
 $('html').on('click', function (event) {
   if (window.getSelection().type !== "Range") {
@@ -247,9 +247,8 @@ disableField = function (selector) {
 };
 
 history_marker = null;
+history = [];
 command_history = function (direction) {
-  var history;
-  history = $('.prompt:disabled');
   if (history.length === 0) {
     return;
   }
@@ -261,7 +260,7 @@ command_history = function (direction) {
   } else if (direction === "down") {
     history_marker = Math.min(history.length - 1, history_marker + 1);
   }
-  $("#command").val(history[history_marker].value);
+  $("#command").val(history[history_marker]);
   return setFocus("#command").select();
 };
 
@@ -284,14 +283,27 @@ $(document).on('keyup', function (event) {
   setFocus("#command");
 });
 
+// prevents hitting enter from clearing selected text
+$(document).on('keydown', "textarea", function (event) {
+  if (event.which === 13 || (event.which === 9 && !event.shiftKey) || (event.which === 38) || (event.which === 40)) {
+    event.preventDefault();
+  }
+})
+
 $(document).on('keyup', "textarea", function (event) {
   var command, params;
   event.preventDefault();
   if (event.which === 13 || (event.which === 9 && !event.shiftKey)) {
     history_marker = null;
-    command = $(event.target).val();
-    setFocus("#command").select();
+    command = $(event.target).val().trim();
     addToScroll($("#scroll"), "<p>" + $("#prompt").html() + " <span class='dark-yellow'>" + command + "</span></p>")
+    // sets the value of the textarea to the command without the newline
+    // so hitting enter will send the command again
+    $("#command").val(command);
+    history.push(command);
+    // selects the text in the box so the user can hit backspace (or any other key)
+    // to remove the previous command
+    setFocus("#command").select();
     return window.push(event.target.id, command);
   } else if (event.which === 38) {
     return command_history("up");
