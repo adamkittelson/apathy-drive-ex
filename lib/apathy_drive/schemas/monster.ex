@@ -97,6 +97,7 @@ defmodule ApathyDrive.Monster do
     field(:auto_curse, :boolean, virtual: true, default: true)
     field(:auto_nuke, :boolean, virtual: true, default: true)
     field(:auto_flee, :boolean, virtual: true, default: false)
+    field(:auto_roam, :boolean, virtual: true, default: true)
     field(:drops, :any, virtual: true, default: [])
     field(:sneaking, :boolean, virtual: true, default: false)
     field(:delete_at, :any, virtual: true)

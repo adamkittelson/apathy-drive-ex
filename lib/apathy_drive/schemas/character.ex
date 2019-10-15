@@ -1006,8 +1006,6 @@ defmodule ApathyDrive.Character do
 
       Enum.each(new_abilities, fn ability ->
         unless ability in old_abilities do
-          [ability] = ability
-
           Mobile.send_scroll(
             character,
             "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"

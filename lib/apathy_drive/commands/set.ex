@@ -5,14 +5,6 @@ defmodule ApathyDrive.Commands.Set do
 
   def keywords, do: ["set"]
 
-  def execute(%Room{} = room, %Character{} = character, []) do
-    message = "<p>Valid SET options: RACE</p>"
-
-    Mobile.send_scroll(character, message)
-
-    room
-  end
-
   def execute(%Room{} = room, %Character{} = character, ["race" | args]) do
     query = Enum.join(args, " ")
 
@@ -36,6 +28,14 @@ defmodule ApathyDrive.Commands.Set do
 
         room
     end
+  end
+
+  def execute(%Room{} = room, %Character{} = character, _args) do
+    message = "<p>Valid SET options: race</p>"
+
+    Mobile.send_scroll(character, message)
+
+    room
   end
 
   defp set_race(%Room{} = room, %Character{} = character, %Race{} = race) do
