@@ -762,7 +762,9 @@ defmodule ApathyDrive.Monster do
     end
 
     def max_mana_at_level(monster, level) do
-      mana_per_level = ability_value(monster, "ManaPerLevel") || 4
+      mana_per_level = ability_value(monster, "ManaPerLevel")
+
+      mana_per_level = if mana_per_level == 0, do: 4, else: 0
 
       bonus = ability_value(monster, "MaxMana")
 

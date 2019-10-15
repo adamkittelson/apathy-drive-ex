@@ -54,11 +54,6 @@ defmodule ApathyDrive.Directory do
 
       message = "<p>#{character.name} just entered the Realm.</p>"
 
-      Repo.insert!(%ChannelHistory{
-        character_name: character.name,
-        message: message
-      })
-
       ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
         html: message
       })
@@ -119,11 +114,6 @@ defmodule ApathyDrive.Directory do
 
       ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
         html: message
-      })
-
-      Repo.insert!(%ChannelHistory{
-        character_name: ApathyDrive.Character.sanitize(character.name),
-        message: message
       })
     end
 
