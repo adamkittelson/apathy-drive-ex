@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Directory do
   use GenServer
-  alias ApathyDrive.{ChannelHistory, Match, Repo}
+  alias ApathyDrive.Match
 
   def start_link do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)

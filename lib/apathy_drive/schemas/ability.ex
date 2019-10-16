@@ -1357,71 +1357,55 @@ defmodule ApathyDrive.Ability do
     caster = room.mobiles[caster_ref]
     target = room.mobiles[target_ref]
 
-    remaining_energy = caster.energy - ability.energy
+    crit = crit_for_damage(target.ability_shift, ability.crit_tables)
 
-    crits = critical_abilities(target.ability_shift, ability.crit_tables)
+    if caster && target && crit do
+      crit = put_in(crit.traits["StackCount"], 10)
 
-    room = update_in(room.mobiles[caster_ref].crits, &(crits ++ &1))
-
-    if ability.energy > 0 and ability.energy <= remaining_energy do
-      # don't apply criticals for every swing, just the last swing
-      room
-    else
-      room.mobiles[caster_ref].crits
-      |> Enum.reduce(room, fn ability, updated_room ->
-        caster = updated_room.mobiles[caster_ref]
-        target = updated_room.mobiles[target_ref]
-
-        if caster && target do
-          ability = put_in(ability.traits["StackCount"], 10)
-
-          target =
-            if ability.traits["ConfusionMessage"] == "You are stunned and cannot move!" do
-              target.effects
-              |> Enum.filter(fn {_key, effect} ->
-                Map.has_key?(effect, "Confusion")
-              end)
-              |> Enum.map(fn {key, _effect} -> key end)
-              |> Enum.reduce(
-                target,
-                &Systems.Effect.remove(&2, &1,
-                  fire_after_cast: true,
-                  show_expiration_message: false
-                )
-              )
-            else
-              target
-            end
-
-          updated_room = put_in(updated_room.mobiles[target_ref], target)
-
-          apply_ability(updated_room, caster, target, ability)
+      target =
+        if ability.traits["ConfusionMessage"] == "You are stunned and cannot move!" do
+          target.effects
+          |> Enum.filter(fn {_key, effect} ->
+            Map.has_key?(effect, "Confusion")
+          end)
+          |> Enum.map(fn {key, _effect} -> key end)
+          |> Enum.reduce(
+            target,
+            &Systems.Effect.remove(&2, &1,
+              fire_after_cast: true,
+              show_expiration_message: false
+            )
+          )
         else
-          updated_room
+          target
         end
-      end)
-      |> put_in([:mobiles, caster_ref, :crits], [])
+
+      room = put_in(room.mobiles[target_ref], target)
+
+      apply_ability(room, caster, target, crit)
+    else
+      room
     end
   end
 
   def apply_criticals(%Room{} = room, _caster_ref, _target_ref, _ability), do: room
 
-  def critical_abilities(ability_shift, crit_tables)
+  def crit_for_damage(ability_shift, crit_tables)
       when is_number(ability_shift) and ability_shift < 0 do
     percent = trunc(abs(ability_shift) * 100)
 
     crit_tables
-    |> Enum.map(fn table ->
+    |> Enum.shuffle()
+    |> Enum.find_value(fn table ->
       letter = roll_for_letter(percent)
 
       if letter do
         critical_ability(table, letter)
       end
     end)
-    |> Enum.reject(&is_nil/1)
   end
 
-  def critical_abilities(_ability_shift, _crit_tables), do: []
+  def crit_for_damage(_ability_shift, _crit_tables), do: nil
 
   def critical_ability(table, letter) do
     count =
@@ -1826,7 +1810,6 @@ defmodule ApathyDrive.Ability do
               if limb_type == "non_fatal" do
                 !limb.fatal
               else
-                IO.puts("#{inspect(limb)} == #{limb_type}")
                 limb.type == limb_type
               end
 
@@ -1860,7 +1843,6 @@ defmodule ApathyDrive.Ability do
               if limb_type == "non_fatal" do
                 !limb.fatal
               else
-                IO.puts("#{inspect(limb)} == #{limb_type}")
                 limb.type == limb_type
               end
 
@@ -2668,7 +2650,7 @@ defmodule ApathyDrive.Ability do
     amount = -trunc(shift * Mobile.max_hp_at_level(target, mobile.level))
 
     cond do
-      amount < 1 and has_ability?(ability, "Damage") ->
+      amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
         if List.first(ability.traits["Damage"]).kind == "magical" do
           Map.put(ability, :result, :resisted)
         else
@@ -2783,7 +2765,7 @@ defmodule ApathyDrive.Ability do
     amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level))
 
     cond do
-      amount < 1 and has_ability?(ability, "Damage") ->
+      amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
         if List.first(ability.traits["Damage"]).kind == "magical" do
           Map.put(ability, :result, :resisted)
         else
@@ -2907,7 +2889,7 @@ defmodule ApathyDrive.Ability do
     amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level))
 
     cond do
-      amount < 1 and has_ability?(ability, "Damage") ->
+      amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
         if List.first(ability.traits["Damage"]).kind == "magical" do
           Map.put(ability, :result, :resisted)
         else

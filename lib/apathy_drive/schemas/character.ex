@@ -74,7 +74,6 @@ defmodule ApathyDrive.Character do
 
     field(:next_drain_at, :integer, virtual: true)
     field(:lore, :any, virtual: true)
-    field(:crits, :any, virtual: true, default: [])
     field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)
     field(:class, :any, virtual: true)

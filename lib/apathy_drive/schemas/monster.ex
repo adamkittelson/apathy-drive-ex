@@ -64,7 +64,6 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
-    field(:crits, :any, virtual: true, default: [])
     field(:owner_id, :integer, virtual: true)
     field(:leader, :any, virtual: true)
     field(:hp, :float, virtual: true, default: 1.0)
@@ -417,8 +416,6 @@ defmodule ApathyDrive.Monster do
         %Character{id: id} = character
       ) do
     Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id}, room ->
-      IO.puts("item_id: #{item_id}, chance: #{chance}")
-
       if :rand.uniform(100) <= chance do
         item =
           %ItemInstance{
