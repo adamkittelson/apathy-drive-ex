@@ -6,6 +6,7 @@ defmodule ApathyDrive.Commands.Craft do
     Character,
     CharacterStyle,
     CraftingRecipe,
+    Enchantment,
     Item,
     ItemInstance,
     ItemTrait,
@@ -94,30 +95,27 @@ defmodule ApathyDrive.Commands.Craft do
                       }
                       |> Repo.insert!()
 
-                    room =
-                      room
-                      |> Room.update_mobile(character.ref, fn _room, char ->
-                        char
-                        |> Character.load_materials()
-                        |> Character.load_items()
-                        |> Mobile.send_scroll(
-                          "<p>You set aside #{recipe.material_amount} #{material.name} to craft a #{
-                            Item.colored_name(item, character: character)
-                          }.</p>"
-                        )
-                      end)
-
                     item =
-                      Enum.find(
-                        room.mobiles[character.ref].inventory,
-                        &(&1.instance_id == instance.id)
-                      )
+                      instance
+                      |> Map.put(:item, item)
+                      |> Item.from_assoc()
+
+                    character
+                    |> Mobile.send_scroll(
+                      "<p>You set aside #{recipe.material_amount} #{material.name} to craft a #{
+                        Item.colored_name(item, character: character)
+                      }.</p>"
+                    )
 
                     room = Ability.execute(room, character.ref, nil, item)
 
+                    item = Enchantment.load_enchantments(item)
+
                     room
                     |> Room.update_mobile(character.ref, fn _room, char ->
-                      Character.load_items(char)
+                      char
+                      |> Character.load_materials()
+                      |> update_in([:inventory], &[item | &1])
                     end)
                   else
                     Mobile.send_scroll(

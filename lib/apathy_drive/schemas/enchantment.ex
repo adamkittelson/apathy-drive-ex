@@ -72,9 +72,17 @@ defmodule ApathyDrive.Enchantment do
             "<p><span class='blue'>You've finished crafting #{item.name}.</span></p>"
           )
 
+          location =
+            Enum.find_index(
+              enchanter.inventory,
+              &(&1.instance_id == item.instance_id)
+            )
+
+          item = load_enchantments(item)
+
           enchanter
           |> add_enchantment_exp(enchantment)
-          |> Character.load_items()
+          |> update_in([:inventory], &List.replace_at(&1, location, item))
         else
           Mobile.send_scroll(
             enchanter,
@@ -288,41 +296,45 @@ defmodule ApathyDrive.Enchantment do
         |> Map.put(:keywords, ["unfinished" | Match.keywords(item.name)])
 
       _ ->
-        __MODULE__
-        |> where([ia], ia.items_instances_id == ^id and ia.finished == true)
-        |> preload([:ability])
-        |> Repo.all()
-        |> Enum.reduce(item, fn enchantment, item ->
-          ability = enchantment.ability
+        item =
+          __MODULE__
+          |> where([ia], ia.items_instances_id == ^id and ia.finished == true)
+          |> preload([:ability])
+          |> Repo.all()
+          |> Enum.reduce(item, fn enchantment, item ->
+            ability = enchantment.ability
 
-          ability = put_in(ability.traits, AbilityTrait.load_traits(enchantment.ability.id))
+            ability = put_in(ability.traits, AbilityTrait.load_traits(enchantment.ability.id))
 
-          ability =
-            case AbilityDamageType.load_damage(enchantment.ability.id) do
-              [] ->
-                ability
+            ability =
+              case AbilityDamageType.load_damage(enchantment.ability.id) do
+                [] ->
+                  ability
 
-              damage ->
-                update_in(ability.traits, &Map.put(&1, "WeaponDamage", damage))
-            end
+                damage ->
+                  update_in(ability.traits, &Map.put(&1, "WeaponDamage", damage))
+              end
 
-          # cond do
-          #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
-          #     Map.put(traits, "OnHit", ability)
+            # cond do
+            #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
+            #     Map.put(traits, "OnHit", ability)
 
-          #   ability.kind == "blessing" ->
-          #     Map.put(traits, "Passive", ability)
+            #   ability.kind == "blessing" ->
+            #     Map.put(traits, "Passive", ability)
 
-          #   :else ->
-          #     Map.put(traits, "Grant", ability)
-          # end
+            #   :else ->
+            #     Map.put(traits, "Grant", ability)
+            # end
 
-          traits = Trait.merge_traits(item.traits, ability.traits)
+            traits = Trait.merge_traits(item.traits, ability.traits)
 
-          item
-          |> Map.put(:traits, traits)
-          |> Map.put(:enchantments, [ability.name | item.enchantments])
-        end)
+            item
+            |> Map.put(:traits, traits)
+            |> Map.put(:enchantments, [ability.name | item.enchantments])
+          end)
+
+        item
+        |> Map.put(:unfinished, false)
         |> Map.put(:keywords, Match.keywords(item.name))
     end
   end
