@@ -25,6 +25,7 @@ defmodule ApathyDrive.Enchantment do
     field(:time_elapsed_in_seconds, :integer, default: 0)
     belongs_to(:items_instances, ItemInstance)
     belongs_to(:ability, Ability)
+    belongs_to(:skill, Skill)
   end
 
   # crafting an item
@@ -59,7 +60,7 @@ defmodule ApathyDrive.Enchantment do
 
         item = enchantment.items_instances.item
 
-        time_left = time_left(enchantment)
+        time_left = time_left(enchanter, enchantment)
 
         if time_left <= 0 do
           Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
@@ -96,7 +97,7 @@ defmodule ApathyDrive.Enchantment do
             }</span></p>"
           )
 
-          next_tick_time = next_tick_time(enchantment)
+          next_tick_time = next_tick_time(enchanter, enchantment)
 
           enchanter =
             enchanter
@@ -135,7 +136,7 @@ defmodule ApathyDrive.Enchantment do
           |> Repo.preload(:item)
           |> Item.from_assoc()
 
-        time_left = time_left(enchantment)
+        time_left = time_left(enchanter, enchantment)
 
         if time_left <= 0 do
           Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
@@ -184,7 +185,7 @@ defmodule ApathyDrive.Enchantment do
             }</span></p>"
           )
 
-          next_tick_time = next_tick_time(enchantment)
+          next_tick_time = next_tick_time(enchanter, enchantment)
 
           enchanter =
             enchanter
@@ -263,20 +264,30 @@ defmodule ApathyDrive.Enchantment do
     end
   end
 
-  def total_enchantment_time(%Enchantment{ability: %Ability{level: level}}) do
-    trunc(level * 1.6 * 60)
+  def total_enchantment_time(
+        enchanter,
+        %Enchantment{ability: %Ability{level: level}}
+      ) do
+    total_enchantment_time(enchanter.class.class.level, level)
   end
 
-  def total_enchantment_time(%Enchantment{items_instances: %{level: level}}) do
-    trunc(level * 1.6 * 60)
+  def total_enchantment_time(
+        enchanter,
+        %Enchantment{items_instances: %{level: level}} = enchantment
+      ) do
+    total_enchantment_time(enchanter.skills[enchantment.skill.name].level, level)
   end
 
-  def time_left(%Enchantment{} = enchantment) do
-    total_enchantment_time(enchantment) - enchantment.time_elapsed_in_seconds
+  def total_enchantment_time(skill_level, enchant_level) do
+    max(300, (enchant_level * 5 - (skill_level - enchant_level) * 5) * 60)
   end
 
-  def next_tick_time(%Enchantment{} = enchantment) do
-    min(67, time_left(enchantment))
+  def time_left(enchanter, %Enchantment{} = enchantment) do
+    total_enchantment_time(enchanter, enchantment) - enchantment.time_elapsed_in_seconds
+  end
+
+  def next_tick_time(enchanter, %Enchantment{} = enchantment) do
+    min(67, time_left(enchanter, enchantment))
   end
 
   def load_enchantments(%Item{instance_id: nil} = item),
@@ -288,6 +299,7 @@ defmodule ApathyDrive.Enchantment do
       [e],
       e.items_instances_id == ^item.instance_id and is_nil(e.ability_id)
     )
+    |> Ecto.Query.preload(:skill)
     |> Repo.all()
     |> case do
       [%Enchantment{finished: false}] ->

@@ -7,6 +7,7 @@ defmodule ApathyDrive.Ability do
     AbilityTrait,
     Character,
     Companion,
+    CraftingRecipe,
     Enchantment,
     Item,
     ItemInstance,
@@ -649,7 +650,7 @@ defmodule ApathyDrive.Ability do
           |> case do
             [%Enchantment{finished: false} = enchantment] ->
               enchantment = Repo.preload(enchantment, :items_instances)
-              time = Enchantment.next_tick_time(enchantment)
+              time = Enchantment.next_tick_time(caster, enchantment)
 
               Mobile.send_scroll(
                 caster,
@@ -659,7 +660,7 @@ defmodule ApathyDrive.Ability do
               Mobile.send_scroll(
                 caster,
                 "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                  Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                  Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()
                 }</span></p>"
               )
 
@@ -670,18 +671,25 @@ defmodule ApathyDrive.Ability do
               )
 
             [] ->
+              recipe = CraftingRecipe.for_item(item)
+
               enchantment =
-                %Enchantment{items_instances_id: item.instance_id, ability_id: nil}
+                %Enchantment{
+                  items_instances_id: item.instance_id,
+                  ability_id: nil,
+                  skill_id: recipe.skill_id
+                }
                 |> Repo.insert!()
                 |> Repo.preload(:items_instances)
+                |> Repo.preload(:skill)
 
-              time = Enchantment.next_tick_time(enchantment)
+              time = Enchantment.next_tick_time(caster, enchantment)
               Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
 
               Mobile.send_scroll(
                 caster,
                 "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                  Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                  Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()
                 }</span></p>"
               )
 
@@ -762,7 +770,7 @@ defmodule ApathyDrive.Ability do
                    ) do
                 %Enchantment{finished: false} = enchantment ->
                   enchantment = Map.put(enchantment, :ability, ability)
-                  time = Enchantment.next_tick_time(enchantment)
+                  time = Enchantment.next_tick_time(caster, enchantment)
 
                   Mobile.send_scroll(
                     caster,
@@ -772,7 +780,8 @@ defmodule ApathyDrive.Ability do
                   Mobile.send_scroll(
                     caster,
                     "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                      Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+                      Enchantment.time_left(caster, enchantment)
+                      |> Enchantment.formatted_time_left()
                     }</span></p>"
                   )
 
@@ -1019,13 +1028,13 @@ defmodule ApathyDrive.Ability do
       |> Repo.insert!()
       |> Map.put(:ability, ability)
 
-    time = Enchantment.next_tick_time(enchantment)
+    time = Enchantment.next_tick_time(caster, enchantment)
     Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")
 
     Mobile.send_scroll(
       caster,
       "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-        Enchantment.time_left(enchantment) |> Enchantment.formatted_time_left()
+        Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()
       }</span></p>"
     )
 

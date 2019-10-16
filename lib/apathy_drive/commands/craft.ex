@@ -77,56 +77,45 @@ defmodule ApathyDrive.Commands.Craft do
                      recipe.material_amount do
                 if item.weight <=
                      Character.max_encumbrance(character) - Character.encumbrance(character) do
-                  if character.skills[recipe.skill.name].level >= level do
-                    character.materials[material.name]
-                    |> Ecto.Changeset.change(%{
-                      amount: character.materials[material.name].amount - recipe.material_amount
-                    })
-                    |> Repo.update!()
+                  character.materials[material.name]
+                  |> Ecto.Changeset.change(%{
+                    amount: character.materials[material.name].amount - recipe.material_amount
+                  })
+                  |> Repo.update!()
 
-                    instance =
-                      %ItemInstance{
-                        item_id: item.id,
-                        level: level,
-                        character_id: character.id,
-                        equipped: false,
-                        hidden: false,
-                        dropped_for_character_id: character.id
-                      }
-                      |> Repo.insert!()
+                  instance =
+                    %ItemInstance{
+                      item_id: item.id,
+                      level: level,
+                      character_id: character.id,
+                      equipped: false,
+                      hidden: false,
+                      dropped_for_character_id: character.id
+                    }
+                    |> Repo.insert!()
 
-                    item =
-                      instance
-                      |> Map.put(:item, item)
-                      |> Item.from_assoc()
+                  item =
+                    instance
+                    |> Map.put(:item, item)
+                    |> Item.from_assoc()
 
-                    character
-                    |> Mobile.send_scroll(
-                      "<p>You set aside #{recipe.material_amount} #{material.name} to craft a #{
-                        Item.colored_name(item, character: character)
-                      }.</p>"
-                    )
+                  character
+                  |> Mobile.send_scroll(
+                    "<p>You set aside #{recipe.material_amount} #{material.name} to craft a #{
+                      Item.colored_name(item, character: character)
+                    }.</p>"
+                  )
 
-                    room = Ability.execute(room, character.ref, nil, item)
+                  room = Ability.execute(room, character.ref, nil, item)
 
-                    item = Enchantment.load_enchantments(item)
+                  item = Enchantment.load_enchantments(item)
 
-                    room
-                    |> Room.update_mobile(character.ref, fn _room, char ->
-                      char
-                      |> Character.load_materials()
-                      |> update_in([:inventory], &[item | &1])
-                    end)
-                  else
-                    Mobile.send_scroll(
-                      character,
-                      "<p>Your #{recipe.skill.name} skill is too low to craft a level #{level} #{
-                        item.name
-                      }.</p>"
-                    )
-
-                    room
-                  end
+                  room
+                  |> Room.update_mobile(character.ref, fn _room, char ->
+                    char
+                    |> Character.load_materials()
+                    |> update_in([:inventory], &[item | &1])
+                  end)
                 else
                   Mobile.send_scroll(
                     character,
