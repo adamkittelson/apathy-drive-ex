@@ -981,6 +981,19 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:goo_janitor, name}, room) do
+    Room.send_scroll(room, "<p>A <span class='dark-cyan'>janitor</span> arrives.")
+
+    Room.send_scroll(
+      room,
+      "<p>The <span class='dark-cyan'>janitor</span> mops up the puddle that was #{name}."
+    )
+
+    Room.send_scroll(room, "<p>The <span class='dark-cyan'>janitor</span> leaves.")
+
+    {:noreply, room}
+  end
+
   def handle_info(message, room) do
     IO.inspect(message)
     {:noreply, room}
