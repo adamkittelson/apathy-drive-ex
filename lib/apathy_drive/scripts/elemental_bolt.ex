@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Scripts.ElementalBolt do
   alias ApathyDrive.{Ability, Room}
 
-  @damage %{min: 30, max: 73}
+  @damage %{min: 60, max: 100}
 
   def execute(%Room{} = room, mobile_ref, target_ref) do
     Room.update_mobile(room, mobile_ref, fn room, character ->
