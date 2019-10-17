@@ -649,6 +649,7 @@ defmodule ApathyDrive.Ability do
           |> Repo.all()
           |> case do
             [%Enchantment{finished: false} = enchantment] ->
+              enchantment = Repo.preload(enchantment, :skill)
               enchantment = Repo.preload(enchantment, :items_instances)
               time = Enchantment.next_tick_time(caster, enchantment)
 
