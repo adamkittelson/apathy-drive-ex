@@ -1,5 +1,5 @@
-defmodule ApathyDrive.Scripts.SummonDemon do
-  alias ApathyDrive.{Character, Companion, Mobile, Monster, Repo, Room, RoomMonster}
+defmodule ApathyDrive.Scripts.SummonLesserDemon do
+  alias ApathyDrive.{Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     monster = Repo.get!(Monster, 1121)
@@ -7,35 +7,44 @@ defmodule ApathyDrive.Scripts.SummonDemon do
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       failure = Enum.random([:return, :attack, :roam])
 
+      spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 15
+
       %Room{} =
         cond do
-          :random.uniform(100) <= mobile.willpower ->
-            room =
-              if companion = Character.companion(mobile, room) do
-                Companion.dismiss(companion, room)
-              else
-                room
-              end
+          :random.uniform(100) <= spellcasting ->
+            owner_id = Map.get(mobile, :room_monster_id) || Map.get(mobile, :id)
 
             monster =
               %RoomMonster{
                 room_id: room.id,
                 monster_id: monster.id,
-                level: 5,
+                level: 4,
                 spawned_at: nil,
                 zone_spawned_at: nil,
-                character_id: mobile.id
+                delete_at: Timex.shift(DateTime.utc_now(), minutes: 24),
+                owner_id: owner_id
               }
               |> Monster.from_room_monster()
+              |> Map.put(:follow, true)
 
             Mobile.send_scroll(
               mobile,
-              "<p>The #{Mobile.colored_name(monster)} was successfully controlled.</p>"
+              "<p><span class='blue'>You summon a #{monster.name}!</span></p>"
+            )
+
+            room =
+              Room.mobile_entered(
+                room,
+                monster,
+                "A #{Mobile.colored_name(monster)} materializes!"
+              )
+
+            Mobile.send_scroll(
+              mobile,
+              "<p>#{Mobile.colored_name(monster)} begins to follow you.</span></p>"
             )
 
             room
-            |> Room.mobile_entered(monster, "")
-            |> Companion.convert_for_character(monster, mobile)
 
           failure == :return ->
             Mobile.send_scroll(
@@ -59,10 +68,22 @@ defmodule ApathyDrive.Scripts.SummonDemon do
 
             Mobile.send_scroll(
               mobile,
+              "<p><span class='blue'>You summon a #{monster.name}!</span></p>"
+            )
+
+            room =
+              Room.mobile_entered(
+                room,
+                monster,
+                "A #{Mobile.colored_name(monster)} materializes!"
+              )
+
+            Mobile.send_scroll(
+              mobile,
               "<p>The #{Mobile.colored_name(monster)} is not controlled. He angrily attacks you!</p>"
             )
 
-            Room.mobile_entered(room, monster, "")
+            room
 
           failure == :roam ->
             monster =
@@ -72,17 +93,27 @@ defmodule ApathyDrive.Scripts.SummonDemon do
                 level: 5,
                 spawned_at: nil,
                 zone_spawned_at: nil,
-                delete_at: Timex.shift(DateTime.utc_now(), minutes: 1)
+                delete_at: Timex.shift(DateTime.utc_now(), minutes: 24)
               }
               |> Monster.from_room_monster()
               |> Map.put(:lawful, true)
 
             Mobile.send_scroll(
               mobile,
-              "<p>The #{Mobile.colored_name(monster)} is not controlled, and he goes off in search of bigger and better things.</p>"
+              "<p><span class='blue'>You summon a #{monster.name}!</span></p>"
             )
 
-            room = Room.mobile_entered(room, monster, "")
+            room =
+              Room.mobile_entered(
+                room,
+                monster,
+                "A #{Mobile.colored_name(monster)} materializes!"
+              )
+
+            Mobile.send_scroll(
+              mobile,
+              "<p>The #{Mobile.colored_name(monster)} is not controlled, and he goes off in search of bigger and better things.</p>"
+            )
 
             ApathyDrive.AI.move(monster, room, true) || room
         end

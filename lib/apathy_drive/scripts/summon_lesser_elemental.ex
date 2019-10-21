@@ -23,10 +23,6 @@ defmodule ApathyDrive.Scripts.SummonLesserElemental do
 
       Mobile.send_scroll(mobile, "<p><span class='blue'>You summon a #{monster.name}!</span></p>")
 
-      Room.send_scroll(room, "<p><span class='blue'>You summon a #{monster.name}!</span></p>", [
-        mobile
-      ])
-
       room = Room.mobile_entered(room, monster, "A #{Mobile.colored_name(monster)} materializes!")
 
       Mobile.send_scroll(

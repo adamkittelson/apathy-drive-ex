@@ -394,7 +394,11 @@ defmodule ApathyDrive.AI do
     # don't cast positive light spells if the room isn't dark
     # but treat darkness spells like regular blessings
     if Room.light(room) >= 0 do
-      Enum.reject(abilities, &(!is_nil(&1.traits["Light"]) and &1.traits["Light"] > 0))
+      Enum.reject(
+        abilities,
+        &((!is_nil(&1.traits["Light"]) and &1.traits["Light"] > 0) or
+            (!is_nil(&1.traits["DarkVision"]) and &1.traits["DarkVision"] > 0))
+      )
     else
       abilities
     end
