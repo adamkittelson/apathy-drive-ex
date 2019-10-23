@@ -1,13 +1,15 @@
 defmodule ApathyDrive.Scripts.SummonLesserDemon do
-  alias ApathyDrive.{Mobile, Monster, Repo, Room, RoomMonster}
+  alias ApathyDrive.{Character, Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     monster = Repo.get!(Monster, 1121)
 
+    room = update_in(room.mobiles[mobile_ref], &Character.alter_evil_points(&1, 1))
+
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       failure = Enum.random([:return, :attack, :roam])
 
-      spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 15
+      spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
 
       %Room{} =
         cond do
@@ -18,7 +20,7 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
               %RoomMonster{
                 room_id: room.id,
                 monster_id: monster.id,
-                level: 4,
+                level: 1,
                 spawned_at: nil,
                 zone_spawned_at: nil,
                 delete_at: Timex.shift(DateTime.utc_now(), minutes: 24),

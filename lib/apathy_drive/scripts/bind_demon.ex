@@ -7,6 +7,8 @@ defmodule ApathyDrive.Scripts.BindDemon do
   ]
 
   def execute(%Room{} = room, mobile_ref, _) do
+    room = update_in(room.mobiles[mobile_ref], &Character.alter_evil_points(&1, 1))
+
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       owner_id = mobile.id
 
@@ -31,7 +33,13 @@ defmodule ApathyDrive.Scripts.BindDemon do
   end
 
   def bind_lesser_demon(room, mobile, demon) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 15
+    abilities =
+      demon.abilities
+      |> Map.values()
+      |> Enum.reject(&(&1.kind == "auto attack"))
+      |> Enum.map(& &1.name)
+
+    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
 
     if :random.uniform(100) < spellcasting do
       effects =
@@ -43,6 +51,8 @@ defmodule ApathyDrive.Scripts.BindDemon do
           "AC%" => 5,
           "MR%" => 5,
           "Heal" => %{"max" => 2, "min" => 2},
+          "Encumbrance" => 5,
+          "Grant" => abilities,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
           "stack_key" => "bind-demon",
@@ -55,6 +65,23 @@ defmodule ApathyDrive.Scripts.BindDemon do
         mobile,
         "<p>You successfully bind the #{Mobile.colored_name(demon)} to your skin.</p>"
       )
+
+      known_abilities =
+        mobile.abilities
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.map(& &1.name)
+
+      abilities = abilities -- known_abilities
+
+      if Enum.any?(abilities) do
+        Mobile.send_scroll(
+          mobile,
+          "<p>You've gain the ability to cast <span class='dark-cyan'>#{
+            ApathyDrive.Commands.Inventory.to_sentence(abilities)
+          }</span>!</p>"
+        )
+      end
 
       mobile =
         mobile

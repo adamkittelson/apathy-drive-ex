@@ -363,7 +363,12 @@ defmodule ApathyDrive.Commands.Help do
       )
     end
 
-    chance = Mobile.spellcasting_at_level(character, character.level) + ability.difficulty
+    chance =
+      if ability.difficulty do
+        Mobile.spellcasting_at_level(character, character.level) + ability.difficulty
+      else
+        100
+      end
 
     Mobile.send_scroll(
       character,

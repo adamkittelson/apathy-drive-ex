@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.DemonWeapon do
-  alias ApathyDrive.{Item, Mobile, Monster, Repo, Room, RoomMonster}
+  alias ApathyDrive.{Character, Item, Mobile, Monster, Repo, Room, RoomMonster}
 
   @demon_ids [
     # lesser demon
@@ -7,6 +7,8 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
   ]
 
   def execute(%Room{} = room, mobile_ref, item) do
+    room = update_in(room.mobiles[mobile_ref], &Character.alter_evil_points(&1, 1))
+
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       owner_id = mobile.id
 
@@ -31,7 +33,7 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
   end
 
   def lesser_demon_weapon(room, mobile, demon, item) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 10
+    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
 
     if :random.uniform(100) < spellcasting do
       Mobile.send_scroll(
