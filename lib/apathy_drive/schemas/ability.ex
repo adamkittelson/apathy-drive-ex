@@ -901,7 +901,9 @@ defmodule ApathyDrive.Ability do
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, targets, ability)
 
-          ability = crit(caster, ability)
+          {caster, ability} = crit(caster, ability)
+
+          room = put_in(room.mobiles[caster_ref], caster)
 
           room =
             Enum.reduce(targets, room, fn target_ref, updated_room ->
@@ -2238,23 +2240,32 @@ defmodule ApathyDrive.Ability do
     end
 
     if :rand.uniform(100) < crit_chance do
-      ability
-      |> update_in([Access.key!(:traits), "Damage"], fn damages ->
-        Enum.map(damages, fn damage ->
-          damage
-          |> Map.put(:max, damage.max * 2)
-          |> Map.put(:min, damage.min * 2)
+      caster =
+        Character.add_attribute_experience(caster, %{
+          intellect: 0.5,
+          charm: 0.5
+        })
+
+      ability =
+        ability
+        |> update_in([Access.key!(:traits), "Damage"], fn damages ->
+          Enum.map(damages, fn damage ->
+            damage
+            |> Map.put(:max, damage.max * 2)
+            |> Map.put(:min, damage.min * 2)
+          end)
         end)
-      end)
-      |> Map.update!(:spectator_message, &crit_message.(&1))
-      |> Map.update!(:target_message, &crit_message.(&1))
-      |> Map.update!(:user_message, &crit_message.(&1))
+        |> Map.update!(:spectator_message, &crit_message.(&1))
+        |> Map.update!(:target_message, &crit_message.(&1))
+        |> Map.update!(:user_message, &crit_message.(&1))
+
+      {caster, ability}
     else
-      ability
+      {caster, ability}
     end
   end
 
-  def crit(_caster, ability), do: ability
+  def crit(caster, ability), do: {caster, ability}
 
   def calculate_healing(damage, modifier) do
     damage * (modifier / 100) * (Enum.random(95..105) / 100)

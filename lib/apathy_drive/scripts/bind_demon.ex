@@ -51,7 +51,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
           "AC%" => 5,
           "MR%" => 5,
           "Heal" => %{"max" => 2, "min" => 2},
-          "Encumbrance" => 5,
+          "Encumbrance" => 10,
           "Grant" => abilities,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
