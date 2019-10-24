@@ -3,7 +3,9 @@ defmodule ApathyDrive.Scripts.BindDemon do
 
   @demon_ids [
     # lesser demon
-    1121
+    1121,
+    # demon
+    1126
   ]
 
   def execute(%Room{} = room, mobile_ref, _) do
@@ -20,6 +22,9 @@ defmodule ApathyDrive.Scripts.BindDemon do
       case demon do
         %Monster{id: 1121} = demon ->
           bind_lesser_demon(room, mobile, demon)
+
+        %Monster{id: 1126} = demon ->
+          bind_demon(room, mobile, demon)
 
         _ ->
           Mobile.send_scroll(
@@ -41,7 +46,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
 
     spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
 
-    if :random.uniform(100) < spellcasting do
+    if :rand.uniform(100) < spellcasting do
       effects =
         %{
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
@@ -86,6 +91,94 @@ defmodule ApathyDrive.Scripts.BindDemon do
       mobile =
         mobile
         |> Systems.Effect.add(effects, :timer.minutes(80))
+        |> Character.load_abilities()
+
+      RoomMonster
+      |> Repo.get(demon.room_monster_id)
+      |> Repo.delete!()
+
+      room
+      |> update_in([:mobiles], &Map.delete(&1, demon.ref))
+      |> put_in([:mobiles, mobile.ref], mobile)
+    else
+      room_monster =
+        RoomMonster
+        |> Repo.get(demon.room_monster_id)
+        |> Ecto.Changeset.change(%{
+          owner_id: nil,
+          delete_at: Timex.shift(DateTime.utc_now(), minutes: 1)
+        })
+        |> Repo.update!()
+
+      room = update_in(room, [:mobiles], &Map.delete(&1, demon.ref))
+
+      monster =
+        room_monster
+        |> Monster.from_room_monster()
+
+      Mobile.send_scroll(
+        mobile,
+        "<p>The #{Mobile.colored_name(monster)} resists your attempt to bind it, and attacks!</p>"
+      )
+
+      Room.mobile_entered(room, monster, "")
+    end
+  end
+
+  def bind_demon(room, mobile, demon) do
+    abilities =
+      demon.abilities
+      |> Map.values()
+      |> Enum.reject(&(&1.kind == "auto attack"))
+      |> Enum.map(& &1.name)
+
+    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level)
+
+    if :rand.uniform(100) < spellcasting do
+      effects =
+        %{
+          "StatusMessage" => "A #{demon.name} is bound to your skin.",
+          "Strength" => 10,
+          "Willpower" => 10,
+          "Agility" => 10,
+          "AC%" => 10,
+          "MR%" => 10,
+          "Heal" => %{"max" => 3, "min" => 3},
+          "Encumbrance" => 15,
+          "Grant" => abilities,
+          "RemoveMessage" =>
+            "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
+          "stack_key" => "bind-demon",
+          "stack_count" => 3
+        }
+        |> Map.put("effect_ref", make_ref())
+        |> Ability.process_duration_traits(mobile, mobile, :timer.minutes(95))
+
+      Mobile.send_scroll(
+        mobile,
+        "<p>You successfully bind the #{Mobile.colored_name(demon)} to your skin.</p>"
+      )
+
+      known_abilities =
+        mobile.abilities
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.map(& &1.name)
+
+      abilities = abilities -- known_abilities
+
+      if Enum.any?(abilities) do
+        Mobile.send_scroll(
+          mobile,
+          "<p>You've gain the ability to cast <span class='dark-cyan'>#{
+            ApathyDrive.Commands.Inventory.to_sentence(abilities)
+          }</span>!</p>"
+        )
+      end
+
+      mobile =
+        mobile
+        |> Systems.Effect.add(effects, :timer.minutes(95))
         |> Character.load_abilities()
 
       RoomMonster

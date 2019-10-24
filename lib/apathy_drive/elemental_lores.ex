@@ -105,6 +105,10 @@ defmodule ApathyDrive.ElementalLores do
         %{
           kind: "magical",
           damage_type: "Disruption"
+        },
+        %{
+          kind: "magical",
+          damage_type: "Fire"
         }
       ]
     },

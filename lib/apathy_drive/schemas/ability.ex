@@ -2161,20 +2161,7 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent + percent}
 
         %{kind: "drain", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
-          min = trunc(min)
-          max = trunc(max)
-
-          ability_damage = Enum.random(min..max)
-
-          bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
-
-          resist = Mobile.magical_resistance_at_level(target, target.level)
-
-          resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
-
-          resist_percent = 1 - resist / (level * 50 + resist)
-
-          damage = (ability_damage + bonus_damage) * resist_percent
+          damage = Enum.random(min..max)
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 

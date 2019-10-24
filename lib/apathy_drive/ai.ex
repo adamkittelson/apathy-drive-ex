@@ -158,6 +158,7 @@ defmodule ApathyDrive.AI do
       |> Ability.bless_abilities(member_to_bless)
       |> Enum.reject(&(!&1.auto))
       |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
+      |> reject_item_if_monster(mobile)
       |> reject_elemental_if_no_lore(mobile)
       |> reject_light_spells_if_it_isnt_dark(room)
       |> reject_target_has_ability_passively(member_to_bless)
@@ -376,6 +377,12 @@ defmodule ApathyDrive.AI do
       abilities
     end
   end
+
+  defp reject_item_if_monster(abilities, %Monster{}) do
+    Enum.reject(abilities, &(&1.targets in ["armour", "weapon", "item"]))
+  end
+
+  defp reject_item_if_monster(abilities, %{}), do: abilities
 
   defp reject_elemental_if_no_lore(abilities, mobile) do
     if !Map.get(mobile, :lore) do
