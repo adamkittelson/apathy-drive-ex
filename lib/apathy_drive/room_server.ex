@@ -192,6 +192,8 @@ defmodule ApathyDrive.RoomServer do
 
     send(self(), :cleanup)
 
+    send(self(), :restore_limbs)
+
     {:noreply, room}
   end
 
@@ -502,6 +504,21 @@ defmodule ApathyDrive.RoomServer do
         nil ->
           room
       end
+
+    {:noreply, room}
+  end
+
+  def handle_info(:restore_limbs, room) do
+    room =
+      Enum.reduce(room.mobiles, room, fn {_ref, mobile}, room ->
+        if Mobile.has_ability?(mobile, "RestoreLimbs") do
+          ApathyDrive.Commands.Pray.restore_limbs(room, mobile)
+        else
+          room
+        end
+      end)
+
+    Process.send_after(self(), :restore_limbs, :timer.minutes(5))
 
     {:noreply, room}
   end
