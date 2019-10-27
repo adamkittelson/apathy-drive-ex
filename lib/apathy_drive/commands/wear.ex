@@ -12,6 +12,7 @@ defmodule ApathyDrive.Commands.Wear do
   def execute(%Room{} = room, %Character{ref: ref} = character, ["all"]) do
     character.inventory
     |> Enum.reject(&is_nil(&1.worn_on))
+    |> Enum.reject(&(!(&1.type in ["Armour", "Shield", "Weapon"])))
     |> Enum.map(& &1.name)
     |> Enum.reduce(room, fn item_name, updated_room ->
       character = updated_room.mobiles[ref]

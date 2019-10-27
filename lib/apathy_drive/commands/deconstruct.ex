@@ -113,6 +113,7 @@ defmodule ApathyDrive.Commands.Deconstruct do
 
   def deconstruct(%Room{} = room, character, item_name) do
     character.inventory
+    |> Enum.reject(&(!(&1.type in ["Armour", "Shield", "Weapon"])))
     |> Match.all(:name_contains, item_name)
     |> case do
       nil ->
