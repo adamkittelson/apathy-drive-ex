@@ -24,6 +24,8 @@ defmodule ApathyDrive.Commands.Wear do
     item_name = Enum.join(args, " ")
 
     character.inventory
+    |> Enum.reject(&is_nil(&1.worn_on))
+    |> Enum.reject(&(!(&1.type in ["Armour", "Shield", "Weapon"])))
     |> Match.one(:name_contains, item_name)
     |> case do
       nil ->
