@@ -353,7 +353,13 @@ defmodule ApathyDrive.Item do
 
   def researchable?(_item, _character), do: false
 
-  def colored_name(%{name: name} = item, opts \\ []) do
+  def colored_name(item, opts \\ [])
+
+  def colored_name(%{name: "sanctuary spell"} = _item, _opts) do
+    "a <span class='white'>sanctuary</span> spell surrounding the room"
+  end
+
+  def colored_name(%{name: name} = item, opts) do
     name =
       cond do
         upgrade_for_character?(item, opts[:character]) ->

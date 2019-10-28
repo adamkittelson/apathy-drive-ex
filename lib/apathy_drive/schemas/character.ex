@@ -1164,6 +1164,14 @@ defmodule ApathyDrive.Character do
       |> Map.values()
       |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
       |> Enum.map(& &1["StatusMessage"])
+      |> Enum.group_by(& &1)
+      |> Enum.map(fn {effect, list} ->
+        if length(list) > 1 do
+          effect <> " (x#{length(list)})"
+        else
+          effect
+        end
+      end)
 
     limbs =
       character.limbs
