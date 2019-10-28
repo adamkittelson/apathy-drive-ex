@@ -73,7 +73,7 @@ defmodule ApathyDrive.Scripts.Sanctuary do
               exit_direction
             } by the sanctuary spell!</span>",
           "to_message" =>
-            "<span class='yellow'>#{mobile.name}</span> <span class='dark-green'>enters #{
+            "<span class='yellow'>#{mobile.name}</span> <span class='dark-green'>enters from #{
               enter_direction
             }!</span>"
         })
