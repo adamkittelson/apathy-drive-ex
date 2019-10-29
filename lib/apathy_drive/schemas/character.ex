@@ -603,7 +603,7 @@ defmodule ApathyDrive.Character do
 
   def weapon(%Character{} = character) do
     character.equipment
-    |> Enum.filter(&(&1.worn_on in ["Held", "Two Handed"]))
+    |> Enum.filter(&(&1.type == "Weapon"))
     |> case do
       [] ->
         nil
@@ -751,7 +751,14 @@ defmodule ApathyDrive.Character do
 
   def shield(%Character{} = character) do
     character.equipment
-    |> Enum.find(&(&1.worn_on == "Off-Hand" and &1.type == "Shield"))
+    |> Enum.filter(&(&1.type == "Shield"))
+    |> case do
+      [] ->
+        nil
+
+      list ->
+        Enum.random(list)
+    end
   end
 
   def sign_in(email, password) do
