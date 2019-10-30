@@ -6,9 +6,11 @@ defmodule ApathyDrive.Regeneration do
   def tick_time(_mobile), do: trunc(5000 / @ticks_per_round)
 
   def duration_for_energy(mobile, energy) do
-    max_energy = mobile.max_energy
+    regen_per_tick = energy_per_tick(mobile)
 
-    max(0, trunc(5000 * energy / max_energy))
+    ticks_for_energy = energy / regen_per_tick
+
+    trunc(tick_time(mobile) * ticks_for_energy)
   end
 
   def regenerate(mobile, room) do
@@ -27,7 +29,7 @@ defmodule ApathyDrive.Regeneration do
 
     modifier = if speed, do: speed, else: 1
 
-    trunc(energy * 1 / modifier)
+    trunc(energy * (1 / modifier))
   end
 
   def energy_since_last_tick(%{last_tick_at: nil} = mobile), do: energy_per_tick(mobile)

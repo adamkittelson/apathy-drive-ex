@@ -1072,6 +1072,17 @@ defmodule ApathyDrive.Character do
   def update_energy_bar(%Character{socket: socket} = character, mobile) do
     percent = mobile.energy / mobile.max_energy
 
+    time_to_full =
+      if percent == 1.0 do
+        0
+      else
+        regen_per_tick = Regeneration.energy_per_tick(mobile)
+
+        ticks_remaining = mobile.max_energy * (1.0 - percent) / regen_per_tick
+
+        Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
+      end
+
     send(
       socket,
       {:update_energy_bar,
@@ -1079,7 +1090,7 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: 5000 * (1 - percent),
+         time_to_full: time_to_full,
          max_percent: 100
        }}
     )
