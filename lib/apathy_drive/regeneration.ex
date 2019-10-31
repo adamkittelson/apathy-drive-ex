@@ -103,12 +103,19 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def regen_per_tick(room, %Character{} = mobile, regen) do
-    if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
-         !taking_damage?(mobile) do
-      regen / @ticks_per_round * 10
-    else
-      regen / @ticks_per_round
-    end
+    regen =
+      if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
+           !taking_damage?(mobile) do
+        regen / @ticks_per_round * 10
+      else
+        regen / @ticks_per_round
+      end
+
+    speed = Mobile.ability_value(mobile, "Speed")
+
+    modifier = if speed, do: speed, else: 1
+
+    regen * (1 / modifier)
   end
 
   # todo: fix combat detection for mobs for real or rethink out of combat hp regeneration

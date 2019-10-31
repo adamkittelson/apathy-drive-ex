@@ -1900,20 +1900,61 @@ defmodule ApathyDrive.Ability do
       |> Map.values()
       |> Enum.filter(&Map.has_key?(&1, "DamageShield"))
       |> Enum.reduce(room, fn %{"DamageShield" => shield}, updated_room ->
-        reaction = %Ability{
-          kind: "attack",
-          mana: 0,
-          energy: 0,
-          reaction_energy: Enum.random(100..300),
-          user_message: shield["UserMessage"],
-          target_message: shield["TargetMessage"],
-          spectator_message: shield["SpectatorMessage"],
-          traits: %{
-            "Damage" => shield["Damage"]
-          }
-        }
+        case shield["Damage"] do
+          [%{max: nil, min: nil} | _] = damages ->
+            roll = :rand.uniform(100)
 
-        apply_ability(updated_room, room.mobiles[target_ref], room.mobiles[caster_ref], reaction)
+            chance = Mobile.crits_at_level(target, target.level)
+
+            if roll <= chance do
+              caster = room.mobiles[caster_ref]
+
+              display_cast_message(
+                room,
+                target,
+                caster,
+                %Ability{
+                  user_message: shield["UserMessage"],
+                  target_message: shield["TargetMessage"],
+                  spectator_message: shield["SpectatorMessage"]
+                }
+              )
+
+              damage = Enum.random(damages)
+              letter = Enum.random(["A", "B", "C"])
+              reaction = critical_ability(damage.damage_type_id, letter)
+
+              apply_ability(
+                updated_room,
+                room.mobiles[target_ref],
+                room.mobiles[caster_ref],
+                reaction
+              )
+            else
+              room
+            end
+
+          damage ->
+            reaction = %Ability{
+              kind: "attack",
+              mana: 0,
+              energy: 0,
+              reaction_energy: Enum.random(100..300),
+              user_message: shield["UserMessage"],
+              target_message: shield["TargetMessage"],
+              spectator_message: shield["SpectatorMessage"],
+              traits: %{
+                "Damage" => damage
+              }
+            }
+
+            apply_ability(
+              updated_room,
+              room.mobiles[target_ref],
+              room.mobiles[caster_ref],
+              reaction
+            )
+        end
       end)
     else
       room

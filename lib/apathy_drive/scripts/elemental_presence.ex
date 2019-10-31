@@ -1,21 +1,13 @@
 defmodule ApathyDrive.Scripts.ElementalPresence do
   alias ApathyDrive.{Ability, Room}
 
-  @damage %{min: 4, max: 12}
   @lore_resistance 5
 
   def execute(%Room{} = room, mobile_ref, target_ref) do
     Room.update_mobile(room, mobile_ref, fn room, character ->
       lore = character.lore
 
-      damage =
-        lore.damage_types
-        |> Enum.map(fn damage_type ->
-          Map.merge(damage_type, %{
-            min: div(@damage.min, length(lore.damage_types)),
-            max: div(@damage.max, length(lore.damage_types))
-          })
-        end)
+      damage = lore.damage_types
 
       traits =
         ApathyDrive.Commands.Protection.damage_types()
@@ -33,15 +25,15 @@ defmodule ApathyDrive.Scripts.ElementalPresence do
         |> Map.put("DamageShield", true)
         |> Map.put(
           "DamageShieldUserMessage",
-          "Your #{lore.name} presence strikes {{target}} for {{amount}} damage!"
+          "Your #{lore.name} presence reacts to {{target}}'s attack!"
         )
         |> Map.put(
           "DamageShieldTargetMessage",
-          "{{User}}'s' #{lore.name} presence strikes you for {{amount}} damage!"
+          "{{User}}'s' #{lore.name} presence reacts to your attack!"
         )
         |> Map.put(
           "DamageShieldSpectatorMessage",
-          "{{User}}'s' #{lore.name} presence strikes {{target}} for {{amount}} damage!"
+          "{{User}}'s' #{lore.name} presence reacts to {{target}}'s attack!"
         )
 
       ability = %Ability{
