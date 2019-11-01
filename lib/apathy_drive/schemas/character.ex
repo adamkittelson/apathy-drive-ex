@@ -131,6 +131,7 @@ defmodule ApathyDrive.Character do
 
   def top_list(number \\ 10) do
     CharacterClass
+    |> Ecto.Query.order_by(desc: :experience)
     |> Ecto.Query.preload([:class, :character])
     |> Ecto.Query.limit(^number)
     |> ApathyDrive.Repo.all()
