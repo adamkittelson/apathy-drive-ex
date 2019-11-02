@@ -1893,36 +1893,90 @@ defmodule ApathyDrive.Ability do
       when target_ref == caster_ref,
       do: room
 
+  def trigger_damage_shields(%Room{} = room, _caster_ref, _target_ref, %Ability{kind: "critical"}),
+    do: room
+
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, ability) do
     if (target = room.mobiles[target_ref]) && "Damage" in Map.keys(ability.traits) do
       target
       |> Map.get(:effects)
       |> Map.values()
       |> Enum.filter(&Map.has_key?(&1, "DamageShield"))
-      |> Enum.reduce(room, fn %{"DamageShield" => shield}, updated_room ->
-        case shield["Damage"] do
-          [%{max: nil, min: nil} | _] = damages ->
-            roll = :rand.uniform(100)
+      |> Enum.reduce(room, fn
+        %{"DamageShield" => percentage}, updated_room when is_integer(percentage) ->
+          amount =
+            -trunc(
+              target.ability_shift *
+                Mobile.max_hp_at_level(target, room.mobiles[caster_ref].level)
+            )
 
-            chance = Mobile.crits_at_level(target, target.level)
+          reaction = %Ability{
+            kind: "attack",
+            mana: 0,
+            energy: 0,
+            user_message: ability.traits["DamageShieldUserMessage"],
+            target_message: ability.traits["DamageShieldTargetMessage"],
+            spectator_message: ability.traits["DamageShieldSpectatorMessage"],
+            traits: %{
+              "Damage" => [%{kind: "raw", min: amount, max: amount, damage_type: "Unaspected"}]
+            }
+          }
 
-            if roll <= chance do
-              caster = room.mobiles[caster_ref]
+          apply_ability(
+            updated_room,
+            room.mobiles[target_ref],
+            room.mobiles[caster_ref],
+            reaction
+          )
 
-              display_cast_message(
-                room,
-                target,
-                caster,
-                %Ability{
-                  user_message: shield["UserMessage"],
-                  target_message: shield["TargetMessage"],
-                  spectator_message: shield["SpectatorMessage"]
+        %{"DamageShield" => shield}, updated_room ->
+          case shield["Damage"] do
+            [%{max: nil, min: nil} | _] = damages ->
+              roll = :rand.uniform(100)
+
+              chance = Mobile.crits_at_level(target, target.level)
+
+              if roll <= chance do
+                caster = room.mobiles[caster_ref]
+
+                display_cast_message(
+                  room,
+                  target,
+                  caster,
+                  %Ability{
+                    user_message: shield["UserMessage"],
+                    target_message: shield["TargetMessage"],
+                    spectator_message: shield["SpectatorMessage"]
+                  }
+                )
+
+                damage = Enum.random(damages)
+                letter = Enum.random(["A", "B", "C"])
+                reaction = critical_ability(damage.damage_type_id, letter)
+
+                apply_ability(
+                  updated_room,
+                  room.mobiles[target_ref],
+                  room.mobiles[caster_ref],
+                  reaction
+                )
+              else
+                room
+              end
+
+            damage ->
+              reaction = %Ability{
+                kind: "attack",
+                mana: 0,
+                energy: 0,
+                reaction_energy: Enum.random(100..300),
+                user_message: shield["UserMessage"],
+                target_message: shield["TargetMessage"],
+                spectator_message: shield["SpectatorMessage"],
+                traits: %{
+                  "Damage" => damage
                 }
-              )
-
-              damage = Enum.random(damages)
-              letter = Enum.random(["A", "B", "C"])
-              reaction = critical_ability(damage.damage_type_id, letter)
+              }
 
               apply_ability(
                 updated_room,
@@ -1930,31 +1984,7 @@ defmodule ApathyDrive.Ability do
                 room.mobiles[caster_ref],
                 reaction
               )
-            else
-              room
-            end
-
-          damage ->
-            reaction = %Ability{
-              kind: "attack",
-              mana: 0,
-              energy: 0,
-              reaction_energy: Enum.random(100..300),
-              user_message: shield["UserMessage"],
-              target_message: shield["TargetMessage"],
-              spectator_message: shield["SpectatorMessage"],
-              traits: %{
-                "Damage" => damage
-              }
-            }
-
-            apply_ability(
-              updated_room,
-              room.mobiles[target_ref],
-              room.mobiles[caster_ref],
-              reaction
-            )
-        end
+          end
       end)
     else
       room
@@ -2386,7 +2416,7 @@ defmodule ApathyDrive.Ability do
 
   def process_duration_trait(
         {"Damage", damages},
-        %{"DamageShield" => _} = effects,
+        %{"DamageShield" => true} = effects,
         _target,
         _caster,
         _duration
