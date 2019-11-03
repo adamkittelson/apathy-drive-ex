@@ -141,6 +141,7 @@ defmodule ApathyDrive.Ability do
     "Fear",
     "Heal",
     "Health",
+    "HolyMission",
     "HPRegen",
     "Intellect",
     "Light",
@@ -1716,39 +1717,55 @@ defmodule ApathyDrive.Ability do
 
         target =
           if ability_shift do
-            initial_hp = target.hp
+            if ability_shift < 0 and Mobile.has_ability?(target, "HolyMission") do
+              duration = :timer.seconds(60)
+              rounds = duration / 5000
 
-            target = Mobile.shift_hp(target, ability_shift)
+              Systems.Effect.add(
+                target,
+                %{
+                  "Damage" => -ability_shift / rounds,
+                  "StatusMessage" => "You are taking damage!",
+                  "stack_key" => :holy_mission_damage,
+                  "stack_count" => :infinity
+                },
+                duration
+              )
+            else
+              initial_hp = target.hp
 
-            cond do
-              initial_hp > 0 and target.hp < 0 and target.__struct__ == Character ->
-                Mobile.send_scroll(target, "<p>You lose conciousness!</p>")
+              target = Mobile.shift_hp(target, ability_shift)
 
-                Room.send_scroll(
-                  room,
-                  "<p>#{Mobile.colored_name(target)} loses conciousness!</p>",
-                  [
-                    target
-                  ]
-                )
+              cond do
+                initial_hp > 0 and target.hp < 0 and target.__struct__ == Character ->
+                  Mobile.send_scroll(target, "<p>You lose conciousness!</p>")
 
-                target
+                  Room.send_scroll(
+                    room,
+                    "<p>#{Mobile.colored_name(target)} loses conciousness!</p>",
+                    [
+                      target
+                    ]
+                  )
 
-              initial_hp < 0 and target.hp > 0 ->
-                Mobile.send_scroll(target, "<p>You regain conciousness.</p>")
+                  target
 
-                Room.send_scroll(
-                  room,
-                  "<p>#{Mobile.colored_name(target)} regains conciousness.</p>",
-                  [
-                    target
-                  ]
-                )
+                initial_hp < 0 and target.hp > 0 ->
+                  Mobile.send_scroll(target, "<p>You regain conciousness.</p>")
 
-                target
+                  Room.send_scroll(
+                    room,
+                    "<p>#{Mobile.colored_name(target)} regains conciousness.</p>",
+                    [
+                      target
+                    ]
+                  )
 
-              :else ->
-                target
+                  target
+
+                :else ->
+                  target
+              end
             end
           else
             target
@@ -2434,9 +2451,11 @@ defmodule ApathyDrive.Ability do
   end
 
   def process_duration_trait({"DamageOverTime", damage}, effects, target, _caster, duration) do
-    damage = damage / duration
+    rounds = :timer.seconds(duration) / 5000
 
     percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+    percentt = percent / rounds
 
     effects
     |> Map.delete("DamageOverTime")

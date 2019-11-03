@@ -16,6 +16,23 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
+  def system(%Room{} = room, character, ["ouch"]) do
+    Room.update_mobile(room, character.ref, fn _room, character ->
+      ability = %ApathyDrive.Ability{
+        traits: %{"Damage" => 0.1},
+        targets: "self",
+        energy: 0,
+        kind: "attack",
+        user_message: "The gods smite you in atonement for your sins!",
+        ignores_round_cooldown?: true,
+        difficulty: nil
+      }
+
+      room
+      |> Ability.execute(character.ref, ability, [character.ref])
+    end)
+  end
+
   def system(%Room{} = room, character, ["advance"]) do
     Room.update_mobile(room, character.ref, fn _room, character ->
       exp = character.class.experience

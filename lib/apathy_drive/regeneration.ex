@@ -43,16 +43,24 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def hp_since_last_tick(room, %{last_tick_at: nil} = mobile) do
-    regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile)) + heal_effect_per_tick(mobile) -
-      damage_effect_per_tick(mobile)
+    hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
+    heal_per_tick = heal_effect_per_tick(mobile)
+    damage_per_tick = damage_effect_per_tick(mobile)
+
+    total_hp_per_tick = hp_per_tick + heal_per_tick - damage_per_tick
+
+    total_hp_per_tick
   end
 
   def hp_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
+
     hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
 
-    total_hp_per_tick =
-      hp_per_tick + heal_effect_per_tick(mobile) - damage_effect_per_tick(mobile)
+    heal_per_tick = heal_effect_per_tick(mobile)
+    damage_per_tick = damage_effect_per_tick(mobile)
+
+    total_hp_per_tick = hp_per_tick + heal_per_tick - damage_per_tick
 
     hp = total_hp_per_tick * ms_since_last_tick / tick_time(mobile)
 

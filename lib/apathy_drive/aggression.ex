@@ -94,6 +94,9 @@ defmodule ApathyDrive.Aggression do
       monster.zone_spawned_at == Map.get(mob, :zone_spawned_at) ->
         false
 
+      is_nil(monster.owner_id) and is_nil(Map.get(mob, :owner_id)) ->
+        false
+
       monster.alignment == "evil" and !monster.lawful ->
         true
 
