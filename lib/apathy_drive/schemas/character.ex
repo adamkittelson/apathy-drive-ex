@@ -940,7 +940,7 @@ defmodule ApathyDrive.Character do
     unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
     # 6 attributes, give 6 times the exp so stats level at approximately the same rate as classes
-    exp = exp * 6
+    # exp = exp * 6
 
     exp_buffer = character.exp_buffer + exp
 
@@ -1192,16 +1192,6 @@ defmodule ApathyDrive.Character do
         end
       end)
 
-    limbs =
-      character.limbs
-      |> Enum.reduce(%{}, fn {limb_name, limb}, limbs ->
-        Map.put(
-          limbs,
-          limb_name,
-          "#{trunc(limb.health * 100)}%"
-        )
-      end)
-
     %{
       name: character.name,
       race: character.race.race.name,
@@ -1231,7 +1221,6 @@ defmodule ApathyDrive.Character do
       health: Mobile.attribute_at_level(character, :health, character.level),
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
-      limbs: limbs,
       round_length_in_ms: 5000,
       spellcasting: Mobile.spellcasting_at_level(character, character.level)
     }
@@ -1632,9 +1621,14 @@ defmodule ApathyDrive.Character do
     end
 
     def die?(character) do
-      character.limbs
-      |> Map.values()
-      |> Enum.any?(&(&1.fatal && &1.health <= 0))
+      max_hp = Mobile.max_hp_at_level(character, character.level)
+
+      missing_fatal_limb =
+        character.limbs
+        |> Map.values()
+        |> Enum.any?(&(&1.fatal && &1.health <= 0))
+
+      max_hp <= 0 or character.hp <= 0 or missing_fatal_limb
     end
 
     def die(character, room) do
@@ -2092,14 +2086,6 @@ defmodule ApathyDrive.Character do
       modifier = ability_value(character, "Tracking")
       perception * (modifier / 100)
     end
-
-    def unconcious(%Character{hp: hp} = character, false) when hp < 0 do
-      Mobile.send_scroll(character, "<p>You can't do that while you're unconcious!</p>")
-    end
-
-    def unconcious(%Character{hp: hp}, true) when hp < 0, do: true
-
-    def unconcious(%Character{}, _silent), do: false
 
     def update_prompt(%Character{socket: socket} = character) do
       send(socket, {:update_prompt, Character.prompt(character)})

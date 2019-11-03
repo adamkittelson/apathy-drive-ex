@@ -23,6 +23,9 @@ defmodule ApathyDrive.ClassAbility do
     )
     |> Ecto.Query.preload([:ability])
     |> Repo.all()
+    |> Enum.map(fn class_ability ->
+      put_in(class_ability.ability.level, class_ability.level)
+    end)
   end
 
   def load_damage(ability_id) do

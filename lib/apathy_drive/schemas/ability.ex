@@ -1225,14 +1225,6 @@ defmodule ApathyDrive.Ability do
         %Ability{traits: %{"Dodgeable" => true}} = ability
       ) do
     cond do
-      Mobile.unconcious(target, true) ->
-        apply_ability(
-          room,
-          caster,
-          target,
-          update_in(ability.traits, &Map.delete(&1, "Dodgeable"))
-        )
-
       dodged?(caster, target, ability, room) ->
         room = add_evil_points(room, ability, caster, target)
         caster = room.mobiles[caster.ref]
@@ -2455,11 +2447,12 @@ defmodule ApathyDrive.Ability do
 
     percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-    percentt = percent / rounds
+    percent = percent / rounds
 
     effects
     |> Map.delete("DamageOverTime")
     |> Map.put("Damage", percent)
+    |> Map.put("StatusMessage", "You are taking damage!")
   end
 
   def process_duration_trait({"Poison", damage}, effects, target, _caster, _duration) do
@@ -3103,9 +3096,6 @@ defmodule ApathyDrive.Ability do
           "<p>#{ability.name} is on cooldown: #{time_remaining(mobile, cd)} seconds remaining.</p>"
         )
 
-        false
-
-      Mobile.unconcious(mobile, true) ->
         false
 
       Mobile.confused(mobile, room) ->

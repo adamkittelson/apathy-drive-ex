@@ -44,6 +44,5 @@ defprotocol ApathyDrive.Mobile do
   def subtract_mana(mobile, ability)
   def subtract_energy(mobile, ability)
   def tracking_at_level(mobile, level, room)
-  def unconcious(mobile, silent \\ false)
   def update_prompt(mobile)
 end

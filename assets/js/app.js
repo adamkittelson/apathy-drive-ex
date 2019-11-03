@@ -167,16 +167,6 @@ chan.on("update score", function (score_data) {
   update_score_attribute("willpower", _.padEnd(score_data.willpower, 7));
   update_score_attribute("charm", _.padEnd(score_data.charm, 10));
   update_score_attribute("spellcasting", score_data.spellcasting);
-  update_score_attribute("head", _.padEnd(score_data.limbs.head, 5));
-  update_score_attribute("torso", score_data.limbs.torso);
-  update_score_attribute("right-arm", _.padEnd(score_data.limbs['right arm'], 5));
-  update_score_attribute("left-arm", _.padEnd(score_data.limbs['left arm'], 5));
-  update_score_attribute("left-hand", _.padEnd(score_data.limbs['left hand'], 5));
-  update_score_attribute("right-hand", _.padEnd(score_data.limbs['right hand'], 5));
-  update_score_attribute("left-leg", _.padEnd(score_data.limbs['left leg'], 5));
-  update_score_attribute("right-leg", _.padEnd(score_data.limbs['right leg'], 5));
-  update_score_attribute("left-foot", _.padEnd(score_data.limbs['left foot'], 5));
-  update_score_attribute("right-foot", _.padEnd(score_data.limbs['right foot'], 5));
   update_score_attribute("effects", _.join(score_data.effects, "\n  "));
 });
 

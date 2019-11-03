@@ -122,11 +122,7 @@ defmodule ApathyDrive.Command do
             cmd.module.execute(room, monster, arguments)
 
           ability = monster.abilities[String.downcase(command)] ->
-            if Mobile.unconcious(monster) do
-              room
-            else
-              Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
-            end
+            Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 
           true ->
             Mobile.send_scroll(monster, "<p>What?</p>")

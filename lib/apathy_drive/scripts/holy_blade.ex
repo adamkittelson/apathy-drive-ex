@@ -3,13 +3,23 @@ defmodule ApathyDrive.Scripts.HolyBlade do
 
   def execute(%Room{} = room, mobile_ref, item) do
     Room.update_mobile(room, mobile_ref, fn room, character ->
+      level = min(character.level, item.level)
+
+      min_damage = div(level, 6)
+      max_damage = div(level, 3)
+
       effect = %{
         "WeaponDamage" => [
-          %{kind: "magical", min: 2, max: 2, damage_type: "Holy", damage_type_id: 9}
+          %{
+            kind: "magical",
+            min: min_damage,
+            max: max_damage,
+            damage_type: "Holy",
+            damage_type_id: 9
+          }
         ],
         "RemoveMessage" => "A holy blade spell wears off on your #{item.name}.",
-        "stack_key" => "sanctify blade",
-        "stack_count" => 3
+        "stack_key" => "holy blade"
       }
 
       Mobile.send_scroll(

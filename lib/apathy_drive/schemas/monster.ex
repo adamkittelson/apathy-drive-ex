@@ -941,9 +941,6 @@ defmodule ApathyDrive.Monster do
       perception * (modifier / 100)
     end
 
-    def unconcious(%{hp: hp}, _silent) when hp < 0, do: true
-    def unconcious(%{}, _silent), do: false
-
     def update_prompt(%Monster{} = monster) do
       monster
     end

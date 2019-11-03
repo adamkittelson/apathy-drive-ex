@@ -733,9 +733,6 @@ defmodule ApathyDrive.Companion do
       perception * (modifier / 100)
     end
 
-    def unconcious(%{hp: hp}, _silent) when hp < 0, do: true
-    def unconcious(%{}, _silent), do: false
-
     def update_prompt(%Companion{} = companion) do
       companion
     end

@@ -5,33 +5,29 @@ defmodule ApathyDrive.Commands.Pray do
   def keywords, do: ["pray"]
 
   def execute(%Room{} = room, %Character{} = character, _) do
-    if !Mobile.unconcious(character) do
-      if character.evil_points < 30 do
-        Mobile.send_scroll(
-          character,
-          "<p><span class='blue'>You pray for your limbs to be restored.</span></p>"
-        )
+    if character.evil_points < 30 do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='blue'>You pray for your limbs to be restored.</span></p>"
+      )
 
-        if Enum.any?(character.limbs, fn {_, limb} -> limb.health <= 0 end) do
-          room
-          |> restore_limbs(character)
-          |> Room.update_mobile(character.ref, fn _room, character ->
-            Character.decrement_highest_attribute(character)
-          end)
-        else
-          Mobile.send_scroll(character, "<p>You have no missing limbs.</p>")
-          room
-        end
+      if Enum.any?(character.limbs, fn {_, limb} -> limb.health <= 0 end) do
+        room
+        |> restore_limbs(character)
+        |> Room.update_mobile(character.ref, fn _room, character ->
+          Character.decrement_highest_attribute(character)
+        end)
       else
-        Mobile.send_scroll(
-          character,
-          "<p><span class='blue'>You pray for absolution.</span></p>"
-        )
-
-        smite(room, character)
+        Mobile.send_scroll(character, "<p>You have no missing limbs.</p>")
+        room
       end
     else
-      room
+      Mobile.send_scroll(
+        character,
+        "<p><span class='blue'>You pray for absolution.</span></p>"
+      )
+
+      smite(room, character)
     end
   end
 
