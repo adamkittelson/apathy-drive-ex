@@ -1632,52 +1632,109 @@ defmodule ApathyDrive.Character do
     end
 
     def die(character, room) do
-      character =
-        character
-        |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
-        |> Map.put(:race_id, character.death_race_id || character.race_id)
-        |> Map.put(:hp, 1.0)
-        |> Map.put(:mana, 1.0)
-        |> Map.put(:energy, character.max_energy)
-        |> Map.put(:attack_target, nil)
-        |> Map.put(:attack_roam, false)
-        |> update_in([:effects], fn effects ->
-          effects
-          |> Enum.filter(fn {_key, effect} -> effect["stack_key"] == "class" end)
-          |> Enum.into(%{})
-        end)
-        |> Map.put(:timers, %{})
-        |> Character.load_race()
-        |> Ecto.Changeset.change(%{
-          missing_limbs: []
-        })
-        |> Repo.update!()
-        |> Character.decrement_highest_attribute()
-        |> Character.load_limbs()
-        |> Character.load_traits()
-        |> Character.set_attribute_levels()
-        |> Character.add_equipped_items_effects()
-        |> Character.load_abilities()
-        |> Mobile.update_prompt()
-        |> TimerManager.send_after(
-          {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
-        )
+      if Mobile.has_ability?(character, "DeusExMachina") do
+        room =
+          Room.update_mobile(room, character.ref, fn room, character ->
+            Room.send_scroll(
+              room,
+              "<p><span class='red'>#{character.name} has died.</span></p>",
+              [
+                character
+              ]
+            )
 
-      Room.start_room_id()
-      |> RoomServer.find()
-      |> RoomServer.mobile_entered(character)
+            Room.send_scroll(
+              room,
+              "<p><span class='blue'>#{character.name} has been resurrected!</span></p>",
+              [character]
+            )
 
-      room =
-        character
-        |> Character.companion(room)
-        |> Companion.dismiss(room)
+            character =
+              character
+              |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
+              |> Mobile.send_scroll("<p><span class='blue'>You have been resurrected!</span></p>")
+              |> Map.put(:hp, 1.0)
+              |> Map.put(:mana, 1.0)
+              |> Map.put(:energy, character.max_energy)
+              |> Systems.Effect.remove_all_stacks(:holy_mission_damage)
 
-      room =
-        put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
-        |> Room.send_scroll("<p><span class='red'>#{character.name} has died.</span></p>")
+            character =
+              character.effects
+              |> Enum.filter(fn {_key, effect} ->
+                Map.has_key?(effect, "DeusExMachina")
+              end)
+              |> Enum.map(fn {key, _effect} -> key end)
+              |> Enum.reduce(
+                character,
+                &Systems.Effect.remove(&2, &1,
+                  fire_after_cast: true,
+                  show_expiration_message: true
+                )
+              )
 
-      Room.update_moblist(room)
-      room
+            character.limbs
+            |> Enum.reduce(character, fn {limb_name, _limb}, character ->
+              character
+              |> Systems.Effect.remove_oldest_stack({:severed, limb_name})
+              |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
+            end)
+            |> Ecto.Changeset.change(%{
+              missing_limbs: []
+            })
+            |> Repo.update!()
+            |> Character.load_limbs()
+          end)
+
+        Room.update_moblist(room)
+        room
+      else
+        character =
+          character
+          |> Mobile.send_scroll("<p><span class='red'>You have died.</span></p>")
+          |> Map.put(:race_id, character.death_race_id || character.race_id)
+          |> Map.put(:hp, 1.0)
+          |> Map.put(:mana, 1.0)
+          |> Map.put(:energy, character.max_energy)
+          |> Map.put(:attack_target, nil)
+          |> Map.put(:attack_roam, false)
+          |> update_in([:effects], fn effects ->
+            effects
+            |> Enum.filter(fn {_key, effect} -> effect["stack_key"] == "class" end)
+            |> Enum.into(%{})
+          end)
+          |> Map.put(:timers, %{})
+          |> Character.load_race()
+          |> Ecto.Changeset.change(%{
+            missing_limbs: []
+          })
+          |> Repo.update!()
+          |> Character.decrement_highest_attribute()
+          |> Character.load_limbs()
+          |> Character.load_traits()
+          |> Character.set_attribute_levels()
+          |> Character.add_equipped_items_effects()
+          |> Character.load_abilities()
+          |> Mobile.update_prompt()
+          |> TimerManager.send_after(
+            {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
+          )
+
+        Room.start_room_id()
+        |> RoomServer.find()
+        |> RoomServer.mobile_entered(character)
+
+        room =
+          character
+          |> Character.companion(room)
+          |> Companion.dismiss(room)
+
+        room =
+          put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+          |> Room.send_scroll("<p><span class='red'>#{character.name} has died.</span></p>")
+
+        Room.update_moblist(room)
+        room
+      end
     end
 
     def dodge_at_level(character, level, _room) do

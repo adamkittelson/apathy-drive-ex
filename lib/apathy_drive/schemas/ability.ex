@@ -134,6 +134,7 @@ defmodule ApathyDrive.Ability do
     "DamageShieldTargetMessage",
     "DamageShieldSpectatorMessage",
     "DarkVision",
+    "DeusExMachina",
     "Dodge",
     "Encumbrance",
     "EndCast",
@@ -1710,7 +1711,7 @@ defmodule ApathyDrive.Ability do
         target =
           if ability_shift do
             if ability_shift < 0 and Mobile.has_ability?(target, "HolyMission") do
-              duration = :timer.seconds(60)
+              duration = :timer.seconds(30)
               rounds = duration / 5000
 
               Systems.Effect.add(
@@ -1913,30 +1914,34 @@ defmodule ApathyDrive.Ability do
       |> Enum.filter(&Map.has_key?(&1, "DamageShield"))
       |> Enum.reduce(room, fn
         %{"DamageShield" => percentage}, updated_room when is_integer(percentage) ->
-          amount =
-            -trunc(
-              target.ability_shift *
-                Mobile.max_hp_at_level(target, room.mobiles[caster_ref].level)
-            )
+          if is_number(target.ability_shift) and target.ability_shift < 0 do
+            amount =
+              -trunc(
+                target.ability_shift *
+                  Mobile.max_hp_at_level(target, room.mobiles[caster_ref].level)
+              )
 
-          reaction = %Ability{
-            kind: "attack",
-            mana: 0,
-            energy: 0,
-            user_message: ability.traits["DamageShieldUserMessage"],
-            target_message: ability.traits["DamageShieldTargetMessage"],
-            spectator_message: ability.traits["DamageShieldSpectatorMessage"],
-            traits: %{
-              "Damage" => [%{kind: "raw", min: amount, max: amount, damage_type: "Unaspected"}]
+            reaction = %Ability{
+              kind: "attack",
+              mana: 0,
+              energy: 0,
+              user_message: ability.traits["DamageShieldUserMessage"],
+              target_message: ability.traits["DamageShieldTargetMessage"],
+              spectator_message: ability.traits["DamageShieldSpectatorMessage"],
+              traits: %{
+                "Damage" => [%{kind: "raw", min: amount, max: amount, damage_type: "Unaspected"}]
+              }
             }
-          }
 
-          apply_ability(
-            updated_room,
-            room.mobiles[target_ref],
-            room.mobiles[caster_ref],
-            reaction
-          )
+            apply_ability(
+              updated_room,
+              room.mobiles[target_ref],
+              room.mobiles[caster_ref],
+              reaction
+            )
+          else
+            updated_room
+          end
 
         %{"DamageShield" => shield}, updated_room ->
           case shield["Damage"] do
@@ -2632,7 +2637,7 @@ defmodule ApathyDrive.Ability do
         "cooldown" => name,
         "RemoveMessage" => "#{name} is ready for use again."
       },
-      cooldown
+      :timer.seconds(cooldown)
     )
   end
 
