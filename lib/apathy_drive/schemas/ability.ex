@@ -1537,8 +1537,6 @@ defmodule ApathyDrive.Ability do
   def damage_limb(%Room{} = room, target_ref, limb_name, percentage, bleeding)
       when percentage < 0 do
     Room.update_mobile(room, target_ref, fn room, target ->
-      damage_limb(target, limb_name, percentage, bleeding)
-
       if map_size(target.limbs) == 1 do
         target
       else
