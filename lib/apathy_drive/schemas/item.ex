@@ -359,6 +359,10 @@ defmodule ApathyDrive.Item do
     "a <span class='white'>sanctuary</span> spell surrounding the room"
   end
 
+  def colored_name(%{name: "asylum spell"} = _item, _opts) do
+    "an <span class='dark-grey'>asylum</span> spell surrounding the room"
+  end
+
   def colored_name(%{name: name} = item, opts) do
     name =
       cond do

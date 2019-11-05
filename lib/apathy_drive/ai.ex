@@ -353,7 +353,7 @@ defmodule ApathyDrive.AI do
 
   defp should_move?(%{auto_roam: true} = mobile, room) do
     not_attacking? = is_nil(Mobile.auto_attack_target(mobile, room))
-    roll? = :rand.uniform(100) > 99
+    roll? = :rand.uniform(10000) > 9990
 
     not_attacking? and roll?
   end

@@ -126,7 +126,7 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
   end
 
   def demon_weapon(room, mobile, demon, item) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
+    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level)
 
     if :rand.uniform(100) < spellcasting do
       Mobile.send_scroll(

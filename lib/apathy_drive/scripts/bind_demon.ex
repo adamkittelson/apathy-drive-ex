@@ -38,27 +38,28 @@ defmodule ApathyDrive.Scripts.BindDemon do
   end
 
   def bind_lesser_demon(room, mobile, demon) do
-    abilities =
-      demon.abilities
-      |> Map.values()
-      |> Enum.reject(&(&1.kind == "auto attack"))
-      |> Enum.map(& &1.name)
-
     spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
 
     if :rand.uniform(100) < spellcasting do
       effects =
         %{
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "Strength" => 5,
-          "Willpower" => 5,
-          "Agility" => 5,
+          "Strength" => 2,
+          "Willpower" => 2,
+          "Agility" => 2,
           "AC%" => 5,
           "MR%" => 5,
+          "DarkVision" => 75,
           "RestoreLimbs" => true,
           "Heal" => %{"max" => 2, "min" => 2},
           "Encumbrance" => 10,
-          "Grant" => abilities,
+          # "Grant" => abilities,
+          "ResistImpaling" => 4,
+          "ResistCrushing" => 4,
+          "ResistCutting" => 4,
+          "ResistHoly" => 4,
+          "ResistStrike" => 4,
+          "ResistImpact" => 4,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
           "stack_key" => "bind-demon",
@@ -71,23 +72,6 @@ defmodule ApathyDrive.Scripts.BindDemon do
         mobile,
         "<p>You successfully bind the #{Mobile.colored_name(demon)} to your skin.</p>"
       )
-
-      known_abilities =
-        mobile.abilities
-        |> Map.values()
-        |> List.flatten()
-        |> Enum.map(& &1.name)
-
-      abilities = abilities -- known_abilities
-
-      if Enum.any?(abilities) do
-        Mobile.send_scroll(
-          mobile,
-          "<p>You've gain the ability to cast <span class='dark-cyan'>#{
-            ApathyDrive.Commands.Inventory.to_sentence(abilities)
-          }</span>!</p>"
-        )
-      end
 
       mobile =
         mobile
@@ -127,27 +111,31 @@ defmodule ApathyDrive.Scripts.BindDemon do
   end
 
   def bind_demon(room, mobile, demon) do
-    abilities =
-      demon.abilities
-      |> Map.values()
-      |> Enum.reject(&(&1.kind == "auto attack"))
-      |> Enum.map(& &1.name)
-
     spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level)
 
     if :rand.uniform(100) < spellcasting do
       effects =
         %{
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "Strength" => 10,
-          "Willpower" => 10,
-          "Agility" => 10,
+          "Strength" => 4,
+          "Willpower" => 4,
+          "Agility" => 4,
           "AC%" => 10,
           "MR%" => 10,
+          "DarkVision" => 75,
           "RestoreLimbs" => true,
           "Heal" => %{"max" => 3, "min" => 3},
           "Encumbrance" => 15,
-          "Grant" => abilities,
+          # "Grant" => abilities,
+          "ResistImpaling" => 7,
+          "ResistCrushing" => 7,
+          "ResistCutting" => 7,
+          "ResistHoly" => 7,
+          "ResistStrike" => 7,
+          "ResistFire" => 5,
+          "ResistCold" => 5,
+          "ResistElectricity" => 4,
+          "ResistImpact" => 5,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
           "stack_key" => "bind-demon",
@@ -161,27 +149,9 @@ defmodule ApathyDrive.Scripts.BindDemon do
         "<p>You successfully bind the #{Mobile.colored_name(demon)} to your skin.</p>"
       )
 
-      known_abilities =
-        mobile.abilities
-        |> Map.values()
-        |> List.flatten()
-        |> Enum.map(& &1.name)
-
-      abilities = abilities -- known_abilities
-
-      if Enum.any?(abilities) do
-        Mobile.send_scroll(
-          mobile,
-          "<p>You've gain the ability to cast <span class='dark-cyan'>#{
-            ApathyDrive.Commands.Inventory.to_sentence(abilities)
-          }</span>!</p>"
-        )
-      end
-
       mobile =
         mobile
         |> Systems.Effect.add(effects, :timer.minutes(95))
-        |> Character.load_abilities()
 
       RoomMonster
       |> Repo.get(demon.room_monster_id)

@@ -145,17 +145,17 @@ chan.on("update mob list", function (data) {
 })
 
 chan.on("update score", function (score_data) {
-  update_score_attribute("name", _.padEnd(score_data.name, 12));
-  update_score_attribute("level", _.padEnd(score_data.level, 12));
+  update_score_attribute("name", _.padEnd(score_data.name, 13));
+  update_score_attribute("level", _.padEnd(score_data.level, 11));
   update_score_attribute("accuracy", score_data.accuracy);
-  update_score_attribute("race", _.padEnd(score_data.race, 12));
-  update_score_attribute("class", _.padEnd(score_data.class, 12));
+  update_score_attribute("race", _.padEnd(score_data.race, 13));
+  update_score_attribute("class", _.padEnd(score_data.class, 11));
   update_score_attribute("dodge", score_data.dodge);
-  update_score_attribute("alignment", _.padEnd(_.capitalize(score_data.alignment), 7));
-  update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '/' + score_data.magical_resistance, 12));
+  update_score_attribute("alignment", _.padEnd(_.capitalize(score_data.alignment), 8));
+  update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '/' + score_data.magical_resistance, 11));
   update_score_attribute("parry", score_data.parry);
-  update_score_attribute("hp", _.padEnd(score_data.hp + "/" + score_data.max_hp, 12));
-  update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 12));
+  update_score_attribute("hp", _.padEnd(score_data.hp + "/" + score_data.max_hp, 13));
+  update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 11));
   update_score_attribute("block", score_data.block);
   update_score_attribute("stealth", score_data.stealth);
   update_score_attribute("strength", _.padEnd(score_data.strength, 7))

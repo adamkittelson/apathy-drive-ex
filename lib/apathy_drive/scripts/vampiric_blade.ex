@@ -14,12 +14,12 @@ defmodule ApathyDrive.Scripts.VampiricBlade do
 
       Mobile.send_scroll(
         character,
-        "<p><span class='blue'>You cast vampiric weapon at #{item.name}!</span></p>"
+        "<p><span class='blue'>You cast vampiric blade at #{item.name}!</span></p>"
       )
 
       Room.send_scroll(
         room,
-        "<p><span class='blue'>#{character.name} casts vampiric weapon at #{item.name}!</span></p>",
+        "<p><span class='blue'>#{character.name} casts vampiric blade at #{item.name}!</span></p>",
         [character]
       )
 
