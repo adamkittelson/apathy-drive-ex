@@ -44,6 +44,11 @@ defmodule ApathyDrive.Regeneration do
 
   def hp_since_last_tick(room, %{last_tick_at: nil} = mobile) do
     hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
+
+    multiplier = regen_multiplier(room, mobile, :hp)
+
+    hp_per_tick = hp_per_tick * multiplier
+
     heal_per_tick = heal_effect_per_tick(mobile)
     damage_per_tick = damage_effect_per_tick(mobile)
 
@@ -56,6 +61,10 @@ defmodule ApathyDrive.Regeneration do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
 
     hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
+
+    multiplier = regen_multiplier(room, mobile, :hp)
+
+    hp_per_tick = hp_per_tick * multiplier
 
     heal_per_tick = heal_effect_per_tick(mobile)
     damage_per_tick = damage_effect_per_tick(mobile)
@@ -81,6 +90,11 @@ defmodule ApathyDrive.Regeneration do
   def mana_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
     mana_per_tick = regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
+
+    multiplier = regen_multiplier(room, mobile, :mana)
+
+    mana_per_tick = mana_per_tick * multiplier
+
     mana = mana_per_tick * ms_since_last_tick / tick_time(mobile)
 
     min(mana, mana_per_tick)
@@ -110,25 +124,35 @@ defmodule ApathyDrive.Regeneration do
     update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + mana))
   end
 
-  def regen_per_tick(room, %Character{} = mobile, regen) do
-    regen =
-      if is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
-           !taking_damage?(mobile) do
-        regen / @ticks_per_round * 10
+  def regen_per_tick(_room, %{} = _mobile, regen) do
+    regen / @ticks_per_round
+  end
+
+  def regen_multiplier(room, %Character{} = mobile, resource) do
+    multiplier =
+      if use_rest_rate?(room, mobile, resource) do
+        10
       else
-        regen / @ticks_per_round
+        1
       end
 
     speed = Mobile.ability_value(mobile, "Speed")
 
     modifier = if speed, do: speed, else: 1
 
-    regen * (1 / modifier)
+    multiplier * (1 / modifier)
   end
 
   # todo: fix combat detection for mobs for real or rethink out of combat hp regeneration
-  def regen_per_tick(_room, %{} = _mobile, regen) do
-    regen / @ticks_per_round
+  def regen_multiplier(_room, %{} = _mobile, _resource), do: 1
+
+  def use_rest_rate?(room, mobile, :hp) do
+    is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
+      !taking_damage?(mobile)
+  end
+
+  def use_rest_rate?(room, mobile, :mana) do
+    is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile)
   end
 
   def heal_limbs(room, target_ref, percentage \\ nil) do

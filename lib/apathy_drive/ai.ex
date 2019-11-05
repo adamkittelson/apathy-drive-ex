@@ -126,10 +126,10 @@ defmodule ApathyDrive.AI do
     injured_party_member =
       room
       |> pets_and_party(mobile)
-      |> Enum.sort_by(& &1.hp)
+      |> Enum.sort_by(&injury_level/1)
       |> List.first()
 
-    chance = trunc(:math.pow(20, 2 - injured_party_member.hp) - 20)
+    chance = trunc(:math.pow(15, 2 - injury_level(injured_party_member)) - 15)
 
     roll = :rand.uniform(100)
 
@@ -145,6 +145,19 @@ defmodule ApathyDrive.AI do
         Ability.execute(room, mobile.ref, ability, [injured_party_member.ref])
       end
     end
+  end
+
+  # average of health of lowest non severed limb and overall hp
+  def injury_level(%{} = mobile) do
+    lowest_limb =
+      mobile.limbs
+      |> Map.values()
+      |> Enum.map(& &1.health)
+      |> Enum.sort()
+      |> Enum.reject(&(&1 <= 0.0))
+      |> List.first()
+
+    (lowest_limb + mobile.hp) / 2
   end
 
   def bless(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do

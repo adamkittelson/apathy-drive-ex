@@ -1109,6 +1109,10 @@ defmodule ApathyDrive.Character do
         regen_per_tick =
           Regeneration.regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
 
+        multiplier = Regeneration.regen_multiplier(room, mobile, :mana)
+
+        regen_per_tick = regen_per_tick * multiplier
+
         ticks_remaining = (1.0 - percent) / regen_per_tick
 
         Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
@@ -1139,9 +1143,16 @@ defmodule ApathyDrive.Character do
         0
       else
         regen_per_tick =
-          Regeneration.regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile)) +
-            Regeneration.heal_effect_per_tick(mobile) -
-            Regeneration.damage_effect_per_tick(mobile)
+          regen_per_tick =
+          Regeneration.regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
+
+        multiplier = Regeneration.regen_multiplier(room, mobile, :hp)
+
+        regen_per_tick = regen_per_tick * multiplier
+
+        regen_per_tick +
+          Regeneration.heal_effect_per_tick(mobile) -
+          Regeneration.damage_effect_per_tick(mobile)
 
         cond do
           regen_per_tick > 0 ->
@@ -1192,6 +1203,16 @@ defmodule ApathyDrive.Character do
         end
       end)
 
+    limbs =
+      character.limbs
+      |> Enum.reduce(%{}, fn {limb_name, limb}, limbs ->
+        Map.put(
+          limbs,
+          limb_name,
+          "#{trunc(limb.health * 100)}%"
+        )
+      end)
+
     %{
       name: character.name,
       race: character.race.race.name,
@@ -1221,6 +1242,7 @@ defmodule ApathyDrive.Character do
       health: Mobile.attribute_at_level(character, :health, character.level),
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
+      limbs: limbs,
       round_length_in_ms: 5000,
       spellcasting: Mobile.spellcasting_at_level(character, character.level)
     }

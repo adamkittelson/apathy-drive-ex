@@ -1508,7 +1508,7 @@ defmodule ApathyDrive.Ability do
 
   def retaliate(room, _ability, _caster, _target), do: room
 
-  def limb(room, target_ref, _ability) do
+  def limb(room, target_ref) do
     target = room.mobiles[target_ref]
 
     cond do
@@ -1534,9 +1534,11 @@ defmodule ApathyDrive.Ability do
 
   def damage_limb(room, target_ref, limb_name, percentage, bleeding \\ false)
 
-  def damage_limb(room, target_ref, limb_name, percentage, bleeding)
+  def damage_limb(%Room{} = room, target_ref, limb_name, percentage, bleeding)
       when percentage < 0 do
     Room.update_mobile(room, target_ref, fn room, target ->
+      damage_limb(target, limb_name, percentage, bleeding)
+
       if map_size(target.limbs) == 1 do
         target
       else
@@ -1701,7 +1703,7 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def damage_limb(room, _target_ref, _limb_name, _percentage, _bleeding), do: room
+  def damage_limb(%Room{} = room, _target_ref, _limb_name, _percentage, _bleeding), do: room
 
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
     room =
@@ -1771,15 +1773,20 @@ defmodule ApathyDrive.Ability do
         |> Mobile.update_prompt()
       end)
 
+    target = room.mobiles[target_ref]
+
     room =
       cond do
+        is_nil(target) ->
+          room
+
         is_nil(ability_shift) ->
           room
 
         ability_shift > 0 ->
           Regeneration.heal_limbs(room, target_ref, ability_shift)
 
-        limb = limb(room, target_ref, ability) ->
+        limb = limb(room, target_ref) and !Mobile.has_ability?(target, "HolyMission") ->
           damage_limb(room, target_ref, limb, ability_shift * 2)
 
         :else ->
@@ -1975,7 +1982,7 @@ defmodule ApathyDrive.Ability do
                   reaction
                 )
               else
-                room
+                updated_room
               end
 
             damage ->

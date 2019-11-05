@@ -883,7 +883,7 @@ defmodule ApathyDrive.Monster do
     def set_room_id(%Monster{} = monster, room_id) do
       %RoomMonster{id: monster.room_monster_id}
       |> Ecto.Changeset.change(%{room_id: room_id})
-      |> Repo.update!()
+      |> Repo.update()
 
       monster
       |> Map.put(:last_room_id, monster.room_id)
