@@ -1786,7 +1786,7 @@ defmodule ApathyDrive.Ability do
         ability_shift > 0 ->
           Regeneration.heal_limbs(room, target_ref, ability_shift)
 
-        limb = limb(room, target_ref) and !Mobile.has_ability?(target, "HolyMission") ->
+        (limb = limb(room, target_ref)) && !Mobile.has_ability?(target, "HolyMission") ->
           damage_limb(room, target_ref, limb, ability_shift * 2)
 
         :else ->
