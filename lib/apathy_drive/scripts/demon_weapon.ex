@@ -77,6 +77,13 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
 
       item = Systems.Effect.add(item, effect, :timer.minutes(30))
 
+      effect = %{
+        "StatusMessage" => "A #{demon.name} is bound to your #{item.name}."
+      }
+
+      room =
+        update_in(room.mobiles[mobile.ref], &Systems.Effect.add(&1, effect, :timer.minutes(30)))
+
       equipment_location =
         Enum.find_index(
           mobile.equipment,
@@ -165,6 +172,13 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
       }
 
       item = Systems.Effect.add(item, effect, :timer.minutes(60))
+
+      effect = %{
+        "StatusMessage" => "A #{demon.name} is bound to your #{item.name}."
+      }
+
+      room =
+        update_in(room.mobiles[mobile.ref], &Systems.Effect.add(&1, effect, :timer.minutes(60)))
 
       equipment_location =
         Enum.find_index(
