@@ -42,10 +42,17 @@ defmodule ApathyDrive.Commands.Say do
       room.mobiles
       |> Map.values()
       |> Enum.filter(&(Map.get(&1, :owner_id) == character.id))
+      |> IO.inspect()
       |> Match.all(:keyword_starts_with, target)
-      |> Enum.reduce(room, fn pet, room ->
-        command_pet(pet, command, character, room)
-      end)
+      |> case do
+        nil ->
+          room
+
+        matches ->
+          Enum.reduce(matches, room, fn pet, room ->
+            command_pet(pet, command, character, room)
+          end)
+      end
     else
       room.mobiles
       |> Map.values()
