@@ -11,8 +11,8 @@ defmodule ApathyDrive do
     children = [
       worker(ApathyDriveWeb.Endpoint, []),
       worker(ApathyDrive.Repo, []),
-      worker(ApathyDrive.Trait, [], restart: :transient),
       worker(ApathyDrive.Migrator, [], restart: :temporary),
+      worker(ApathyDrive.Trait, [], restart: :transient),
       worker(ApathyDrive.Directory, []),
       supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
       worker(ApathyDrive.Metrics, []),
