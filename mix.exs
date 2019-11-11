@@ -64,11 +64,11 @@ defmodule ApathyDrive.Mixfile do
     [
       {:jason, "~> 1.1.2"},
       {:postgrex, "~> 0.13"},
-      {:phoenix, "~> 1.4.2"},
-      {:phoenix_live_reload, "~> 1.2.0", only: :dev},
+      {:phoenix, "~> 1.4.11"},
+      {:phoenix_live_reload, "~> 1.2.1", only: :dev},
+      {:phoenix_live_view, "~> 0.4.1"},
       {:ecto_sql, "~> 3.1.6"},
-      {:phoenix_ecto, "~> 4.0"},
-      {:phoenix_html, "~> 2.10.0"},
+      {:phoenix_ecto, "~> 4.1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:plug, "~> 1.7"},
       {:scrivener_ecto, "~> 2.1.1"},
@@ -85,7 +85,8 @@ defmodule ApathyDrive.Mixfile do
       {:ordinal, "~> 0.1.0"},
       {:dnsimple, "~> 1.4.0"},
       {:tzdata, "~> 1.0.1"},
-      {:timex, "~> 3.6.1"}
+      {:timex, "~> 3.6.1"},
+      {:floki, ">= 0.0.0", only: :test}
     ]
   end
 

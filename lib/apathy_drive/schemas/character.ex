@@ -1150,9 +1150,10 @@ defmodule ApathyDrive.Character do
 
         regen_per_tick = regen_per_tick * multiplier
 
-        regen_per_tick +
-          Regeneration.heal_effect_per_tick(mobile) -
-          Regeneration.damage_effect_per_tick(mobile)
+        regen_per_tick =
+          regen_per_tick +
+            Regeneration.heal_effect_per_tick(mobile) -
+            Regeneration.damage_effect_per_tick(mobile)
 
         cond do
           regen_per_tick > 0 ->
