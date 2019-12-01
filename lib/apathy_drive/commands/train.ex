@@ -5,20 +5,22 @@ defmodule ApathyDrive.Commands.Train do
   def keywords, do: ["train"]
 
   def execute(%Room{} = room, %Character{} = character, _args) do
-    cond do
-      !Trainer.trainer?(room) ->
-        message = "<p>You must be in an appropriate training room to train!</p>"
-        Mobile.send_scroll(character, message)
-        room
+    Character.show_talent_tree(character, room)
+    room
+    # cond do
+    #   !Trainer.trainer?(room) ->
+    #     message = "<p>You must be in an appropriate training room to train!</p>"
+    #     Mobile.send_scroll(character, message)
+    #     room
 
-      room.trainer.class_id && room.trainer.class_id != character.class_id ->
-        change_class(room, character, room.trainer.class_id)
+    #   room.trainer.class_id && room.trainer.class_id != character.class_id ->
+    #     change_class(room, character, room.trainer.class_id)
 
-      :else ->
-        message = "<p>You are already training in this clas</p>"
-        Mobile.send_scroll(character, message)
-        room
-    end
+    #   :else ->
+    #     message = "<p>You are already training in this class.</p>"
+    #     Mobile.send_scroll(character, message)
+    #     room
+    # end
   end
 
   def change_class(room, character, class_id) do

@@ -20,7 +20,6 @@
   <span class="dark-green">Left Foot:</span> <span id="score-left-foot" class="dark-cyan"></span>   <span class="dark-green">Right Foot:</span> <span id="score-right-foot" class="dark-cyan"></span>
   <span id="score-effects"></span></span>
 </div>
-
 <div id="scroll-container">
   <div id="scroll">
   </div>
@@ -29,11 +28,11 @@
   </footer>
 </div>
 <div id="right-sidebar">
-    <div id="chat">
-    </div>
-    <div id="moblist">
-    </div>
+  <div id="chat">
   </div>
+  <div id="moblist">
+  </div>
+</div>
 <div id="player-bars">
   <div class="progress-bar hp">
     <div class="red"></div>
@@ -45,7 +44,20 @@
     <div class="blue"></div>
   </div>
 </div>
-
+<div id="talents" class="w3-modal">
+  <div class="w3-modal-content w3-animate-zoom w3-card-4">
+    <header class="w3-container w3-teal">
+      <h2>Modal Header</h2>
+    </header>
+    <div class="w3-container">
+      <p>Some text..</p>
+      <p>Some text..</p>
+    </div>
+    <footer class="w3-container w3-teal">
+      <p>Modal Footer</p>
+    </footer>
+  </div>
+</div>
 <script>var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"</script>
 
 <script src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>

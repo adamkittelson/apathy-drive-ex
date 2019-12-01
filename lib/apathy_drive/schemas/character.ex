@@ -1070,6 +1070,10 @@ defmodule ApathyDrive.Character do
     send(socket, {:update_score, data})
   end
 
+  def show_talent_tree(%Character{socket: socket} = _character, _room) do
+    send(socket, :show_talent_tree)
+  end
+
   def update_energy_bar(%Character{socket: socket} = character, mobile) do
     percent = mobile.energy / mobile.max_energy
 

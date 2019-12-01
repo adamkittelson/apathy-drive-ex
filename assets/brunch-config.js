@@ -27,6 +27,7 @@ exports.config = {
         "css/admin.css": /admin\.scss$/,
         "css/app.css": /(app\.scss)$/,
         "css/game.css": /(game\.scss)$/,
+        "css/w3-modal.css": /(w3-modal\.css)$/,
         "css/normalize.css": /(normalize\.css)$/,
         "css/skeleton.css": /(skeleton\.css)$/,
         "css/nav.css": /(nav\.scss)$/
