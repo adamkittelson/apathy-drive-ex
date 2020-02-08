@@ -45,17 +45,147 @@
   </div>
 </div>
 <div id="talents" class="w3-modal">
-  <div class="w3-modal-content w3-animate-zoom w3-card-4">
-    <header class="w3-container w3-teal">
-      <h2>Modal Header</h2>
-    </header>
-    <div class="w3-container">
-      <p>Some text..</p>
-      <p>Some text..</p>
-    </div>
-    <footer class="w3-container w3-teal">
-      <p>Modal Footer</p>
-    </footer>
+  <div class="talent-tree-panel w3-animate-zoom">
+    <h3 class="talent-tree-title">Demonology <span class="talent-tree-points">(0)</span></h3>
+    <div class="talent-tree"
+      style="background-image: url(&quot;images/backgrounds/background-warlock-demonology.jpg&quot;); background-repeat: no-repeat; background-size: cover; background-position: center center;">
+      <div class="skill is-enabled" style="grid-row-start: 1; grid-column-start: 1;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/improved-healthstone.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/2</span>
+
+      </div>
+      <div class="skill is-enabled" style="grid-row-start: 1; grid-column-start: 2;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/improved-imp.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/3</span>
+
+      </div>
+      <div class="skill is-enabled" style="grid-row-start: 1; grid-column-start: 3;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/demonic-embrace.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/5</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 2; grid-column-start: 1;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/improved-health-funnel.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/2</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 2; grid-column-start: 2;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/improved-voidwalker.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/3</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 2; grid-column-start: 3;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/fel-intellect.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/5</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 3; grid-column-start: 1;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/improved-succubus.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/3</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 3; grid-column-start: 2;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/fel-domination.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/1</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 3; grid-column-start: 3;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/fel-stamina.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/5</span>
+
+      </div>
+      <div class="skill down-arrow" style="grid-row-start: 4; grid-column-start: 2;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/master-summoner.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/2</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 4; grid-column-start: 3;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/unholy-power.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/5</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 5; grid-column-start: 1;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/improved-enslave-demon.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/5</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 5; grid-column-start: 2;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/demonic-sacrifice.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/1</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 5; grid-column-start: 4;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/improved-firestone.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/2</span>
+
+      </div>
+      <div class="skill down-arrow medium-arrow" style="grid-row-start: 6; grid-column-start: 3;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/master-demonologist.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/5</span>
+
+      </div>
+      <div class="skill down-arrow medium-arrow" style="grid-row-start: 7; grid-column-start: 2;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/soul-link.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/1</span>
+
+      </div>
+      <div class="skill" style="grid-row-start: 7; grid-column-start: 3;">
+        <div class="skill-icon"><img src="images/skill-icons/warlock/demonology/improved-spellstone.jpg"
+            class="skill-icon-image">
+
+
+        </div><span class="skill-rank">0/1</span>
+
+      </div>
+    </div><span class="talent-tree-reset">Reset</span>
   </div>
 </div>
 <script>var characterID = "<%= Phoenix.Token.sign(@conn, "character", @character) %>"</script>
