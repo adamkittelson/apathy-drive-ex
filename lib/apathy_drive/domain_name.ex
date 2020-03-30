@@ -10,7 +10,8 @@ defmodule ApathyDrive.DomainName do
     state = %{
       client: client(),
       zone: Application.get_env(:dnsimple, :zone),
-      account_id: Application.get_env(:dnsimple, :account_id)
+      account_id: Application.get_env(:dnsimple, :account_id),
+      ip: nil
     }
 
     Process.send_after(self(), :update_ip_address, :timer.seconds(60))
@@ -20,9 +21,8 @@ defmodule ApathyDrive.DomainName do
 
   def handle_info(:update_ip_address, state) do
     if Application.get_env(:dnsimple, :enabled, false) do
-      update_ip_address(state)
       Process.send_after(self(), :update_ip_address, :timer.seconds(60))
-      {:noreply, state}
+      {:noreply, update_ip_address(state)}
     else
       Logger.info("Dnsimple disabled, exiting DomainName process.")
       {:stop, :normal, state}
@@ -31,7 +31,9 @@ defmodule ApathyDrive.DomainName do
 
   defp update_ip_address(state) do
     %{"id" => record_id, "content" => a_record_ip} = a_record(state)
-    ip = ip_address()
+    ip = ip_address(state)
+
+    state = Map.put(state, :ip, ip)
 
     if a_record_ip != ip do
       body = %{
@@ -47,6 +49,8 @@ defmodule ApathyDrive.DomainName do
 
       Logger.info("ip address for #{state.zone} updated from #{a_record_ip} to #{ip}")
     end
+
+    state
   end
 
   defp client do
@@ -66,8 +70,13 @@ defmodule ApathyDrive.DomainName do
     |> Enum.find(&(&1["type"] == "A"))
   end
 
-  defp ip_address do
-    {:ok, 200, _headers, ip} = :hackney.get("https://api.ipify.org", [], [], with_body: true)
-    ip
+  defp ip_address(state) do
+    case :hackney.get("https://api.ipify.org", [], [], with_body: true) do
+      {:ok, 200, _headers, ip} ->
+        ip
+
+      _ ->
+        state.ip
+    end
   end
 end
