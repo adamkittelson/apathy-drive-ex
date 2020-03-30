@@ -17,6 +17,13 @@
     "vue-brunch": "2.0.1",
     "brunch": "2.10.17",
     "clean-css-brunch": "2.10.0",
-    "uglify-js-brunch": "2.10.0"
+    "uglify-js-brunch": "2.10.0",
+    "lodash": ">=4.17.12",
+    "macaddress": ">=0.2.9",
+    "cryptiles": ">=4.1.2",
+    "tar": ">=2.2.2",
+    "sshpk": ">=1.13.2",
+    "tough-cookie": ">=2.3.3",
+    "js-yaml": ">=3.13.1"
   }
 }
