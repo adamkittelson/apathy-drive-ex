@@ -24,6 +24,16 @@
     "tar": ">=2.2.2",
     "sshpk": ">=1.13.2",
     "tough-cookie": ">=2.3.3",
-    "js-yaml": ">=3.13.1"
+    "js-yaml": ">=3.13.1",
+    "acorn": ">=5.7.4",
+    "minimist": ">=1.2.2",
+    "extend": ">=3.0.2",
+    "stringstream": ">=0.0.6",
+    "braces": ">=2.3.1",
+    "clean-css": ">=4.1.11",
+    "fstream": ">=1.0.12",
+    "randomatic": ">=3.0.0",
+    "debug": ">=2.6.9",
+    "hoek": ">=4.2.1"
   }
 }
