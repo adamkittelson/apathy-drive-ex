@@ -7,7 +7,10 @@ config :apathy_drive, ApathyDriveWeb.Endpoint,
   pubsub: [name: :pub_sub,
            adapter: Phoenix.PubSub.PG2],
   root: Path.expand("..", __DIR__),
-  start_room: 2164
+  start_room: 2164,
+  live_view: [
+    signing_salt: "eMpv8pKl+ViZsvGZfzYUTvbIBEKHqxCy"
+  ]
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

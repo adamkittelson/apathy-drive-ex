@@ -27,6 +27,8 @@ exports.config = {
         "css/admin.css": /admin\.scss$/,
         "css/app.css": /(app\.scss)$/,
         "css/game.css": /(game\.scss)$/,
+        "css/talent-trees.css": /(talent-trees\.scss)$/,
+        "css/w3-modal.css": /(w3-modal\.css)$/,
         "css/normalize.css": /(normalize\.css)$/,
         "css/skeleton.css": /(skeleton\.css)$/,
         "css/nav.css": /(nav\.scss)$/
@@ -38,7 +40,8 @@ exports.config = {
     // This option sets where we should place non-css and non-js assets in.
     // By default, we set this to "/assets/static". Files in this directory
     // will be copied to `paths.public`, which is "priv/static" by default.
-    assets: /^(static)/
+    ignored: () => false,
+    assets: "/assets/static"
   },
 
   // Phoenix paths configuration

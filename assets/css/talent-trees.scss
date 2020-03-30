@@ -1,0 +1,254 @@
+// mixins
+@mixin wow-border {
+	border: 2px solid #6b6b6c;
+	border-radius: 5px;
+	border-top-color: #c7c9cb;
+	border-bottom-color: #46474a;
+}
+
+@mixin wow-thin-border {
+	border: 1px solid #6b6b6c;
+	border-radius: 5px;
+	border-top-color: #c7c9cb;
+	border-bottom-color: #46474a;
+}
+
+// talents-trees
+.talent-trees{
+	display: flex;
+	justify-content: space-around;
+	flex-wrap: wrap;
+}
+.talent-tree-panel{
+	max-width: 350px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center;
+  top: 25%;
+}
+.talent-tree{
+  color: #fff;
+	padding: 5px !important;
+	display: grid;
+	//grid-template-columns: repeat(4, 75px);
+	grid-template-rows: repeat(7, 1fr);
+	@include wow-border;
+}
+.talent-tree-title{
+  color: #fff;
+	text-align:center;
+	font-size: 18px;
+  padding: 10px 20px;
+  margin-bottom: 0;
+  background-color: #000;
+	display: inline-block;
+	border: 1px solid #666;
+	border-top-color: #c7c9cb;
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+	border-bottom: 0;
+}
+.talent-tree-points{
+	font-size: 15px;
+}
+.talent-tree-reset{
+	text-align: center;
+  color: #d4d4d4;
+  background-color: #000;
+	padding: 6px 15px;
+	display: inline-block;
+	cursor: pointer;
+	text-transform: uppercase;
+	font-size: 10px;
+	border: 1px solid #46474a;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+	border-top: 0;
+}
+.talent-tree-reset:hover{
+	color: #efefef;
+}
+
+@media only screen and (min-width: 640px) {
+	.talent-tree-panel{
+		margin: 0 5px 20px;
+	}
+}
+@media only screen and (min-width: 1200px) {
+	.talent-trees{
+		justify-content: space-between;
+	}
+	.talent-tree{
+		padding: 10px;
+	}
+}
+
+// skills
+.skill{
+	position: relative;
+	margin: 8px;
+	padding: 1px;
+	border: 2px solid transparent;
+	border-radius: 5px;
+	border-bottom: none;
+	width: 58px;
+	-moz-user-select:none;
+    -ms-user-select:none;
+    -webkit-user-select:none;
+}
+.skill-icon{
+	width: 100%;
+	overflow: hidden;
+	box-shadow: 0 1px 5px #000;
+	@include wow-border;
+}
+.skill-rank{
+	position: absolute;
+	bottom: -8px;
+	right: -15px;
+	background: #000;
+	border-radius: 3px;
+	padding: 4px 6px;
+	cursor: default;
+	border-radius: 5px;
+	font-size: 12px;
+}
+.skill-icon-image{
+	filter: grayscale(100%);
+	width: 100%;
+	display: block;
+	pointer-events: none;
+	-moz-user-select:none;
+    -ms-user-select:none;
+    -webkit-user-select:none;
+}
+.skill.is-enabled{
+	cursor: pointer;
+	border-color: #16ba17;
+	background: #000;
+}
+.skill.is-max-rank{
+	border-color: #ffd200;
+}
+.skill.is-enabled .skill-icon-image{
+	filter: grayscale(0);
+}
+.skill.is-enabled .skill-rank{
+	cursor: pointer;
+}
+.skill.is-faded{
+	opacity: 0.3;
+}
+.is-max-level .skill.is-enabled{
+	border-color: #efefef;
+}
+
+// skill-arrows
+.down-arrow:before{
+	content:'';
+	background:url('../images/arrows/down-arrow.png') no-repeat bottom;
+	position: absolute;
+	bottom: 54px;
+	left: 50%;
+	margin-left: -10px;
+	width: 20px;
+	height: 20px;
+	z-index: 1;
+	cursor: default;
+	filter: grayscale(100%) brightness(60%);
+}
+.down-arrow.medium-arrow:before{
+	height: 91px;
+}
+.down-arrow.large-arrow:before{
+	height: 163px;
+}
+.side-arrow:after{
+	content:'';
+	background:url('../images/arrows/down-arrow.png') no-repeat bottom;
+	position: absolute;
+	bottom: 16px;
+	left: -19px;
+	width: 20px;
+	height: 24px;
+	transform: rotate(-90deg);
+	filter: grayscale(100%) brightness(60%);
+}
+.corner-arrow:before{
+	content:'';
+	background:url('../images/arrows/right-down-arrow.png') no-repeat right;
+	position: absolute;
+	bottom: 91px;
+	left: -22px;
+	width: 58px;
+	height: 20px;
+	cursor: default;
+	filter: grayscale(100%) brightness(60%);
+}
+.corner-arrow:after{
+	content:'';
+	background:url('../images/arrows/down-arrow.png') no-repeat bottom;
+	position: absolute;
+	bottom: 52px;
+	left: 18px;
+	width: 20px;
+	z-index:1;
+	height: 41px;
+	cursor: default;
+	filter: grayscale(100%) brightness(60%);
+}
+
+.skill.is-enabled.side-arrow:after,
+.skill.is-enabled.down-arrow:before,
+.skill.is-enabled.corner-arrow:before,
+.skill.is-enabled.corner-arrow:after{
+	filter: grayscale(0%) brightness(100%);
+}
+
+// buttons
+.button{
+	border: 0;
+	background: #2e2458;
+	padding: 12px 35px;
+	cursor: pointer;
+	color: #efefef;
+	border-radius: 3px;
+	outline: none;
+	border: 1px solid #463684;
+	border-top: 1px solid #7262b1;
+	border-bottom: 1px solid transparent;
+}
+
+.button:hover{
+	background: #382d6b;
+}
+
+.button:active{
+	border-top: 1px solid transparent;
+	border-bottom: 1px solid #7262b1;
+}
+
+.skill-mobile-button{
+	position: absolute;
+	top: 50%;
+	margin-top: -12px;
+	padding: 4px 4px;
+	width: 24px;
+	background: #030215;
+	border: 1px solid #6b6b6c;
+	border-radius: 3px;
+	border-top-color: #c7c9cb;
+	border-bottom-color: #46474a;
+	box-shadow: 0 1px 5px #000;
+	color: #efefef;
+	z-index: 2;
+	outline: none;
+}
+
+.skill-mobile-button-decrease{
+	left: -26px;
+}
+
+.skill-mobile-button-increase{
+	right: -26px;
+}

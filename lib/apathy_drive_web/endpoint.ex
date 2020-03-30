@@ -2,6 +2,7 @@ defmodule ApathyDriveWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :apathy_drive
 
   socket "/ws", ApathyDriveWeb.UserSocket, websocket: true
+  socket "/live", Phoenix.LiveView.Socket
 
   plug Plug.Static,
     at: "/",

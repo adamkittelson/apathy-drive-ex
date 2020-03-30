@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.SummonAngel do
-  alias ApathyDrive.{Character, Mobile, Monster, Repo, Room, RoomMonster}
+  alias ApathyDrive.{Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     monster = Repo.get!(Monster, 1127)

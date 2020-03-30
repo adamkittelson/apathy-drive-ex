@@ -1,13 +1,25 @@
 import "phoenix_html"
 import { Socket } from "phoenix"
+import LiveSocket from "phoenix_live_view"
+
+let liveSocket = new LiveSocket("/live", Socket)
+liveSocket.connect()
 
 var pruneBackscroll, addToScroll, adjustScrollTop, clearScroll, command_history, disableField, focus, history, history_marker, setFocus, updateRoom, socket, push;
 focus = null;
+
+var modal = document.getElementById('talents');
+
 $('html').on('click', function (event) {
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+
   if (window.getSelection().type !== "Range") {
     return setFocus("#command");
   }
 });
+
 
 updateRoom = function (data) {
   $('#room .title').html(data['name']);
@@ -143,6 +155,11 @@ chan.on("update mob list", function (data) {
   $("#moblist").html(data.html);
   adjustChatTop();
 })
+
+chan.on("show talents", function (score_data) {
+  $("#command").blur();
+  document.getElementById('talents').style.display = 'block';
+});
 
 chan.on("update score", function (score_data) {
   update_score_attribute("name", _.padEnd(score_data.name, 13));

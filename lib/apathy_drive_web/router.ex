@@ -5,6 +5,7 @@ defmodule ApathyDriveWeb.Router do
     plug(:accepts, ~w(html))
     plug(:fetch_session)
     plug(:fetch_flash)
+    plug Phoenix.LiveView.Flash
     plug(:protect_from_forgery)
     plug(:assign_character)
     plug(:put_secure_browser_headers)
