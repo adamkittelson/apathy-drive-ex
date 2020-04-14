@@ -15,7 +15,7 @@ defmodule ApathyDrive.Commands.System.Edit do
         Room.update_mobile(room, character.ref, fn _room, character ->
           character
           |> Map.put(:editing, ability)
-          |> Mobile.update_prompt()
+          |> Mobile.update_prompt(room)
         end)
 
       matches ->
@@ -46,7 +46,7 @@ defmodule ApathyDrive.Commands.System.Edit do
         Room.update_mobile(room, character.ref, fn _room, character ->
           character
           |> Map.put(:editing, skill)
-          |> Mobile.update_prompt()
+          |> Mobile.update_prompt(room)
         end)
 
       matches ->

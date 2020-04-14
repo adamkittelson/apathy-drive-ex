@@ -74,14 +74,6 @@ defmodule ApathyDrive.Item do
   @required_fields ~w(name)a
   @optional_fields ~w()a
 
-  @armours [
-    "Natural",
-    "Cloth",
-    "Leather",
-    "Mail",
-    "Plate"
-  ]
-
   @doc """
   Creates a changeset based on the `model` and `params`.
 
@@ -413,68 +405,44 @@ defmodule ApathyDrive.Item do
   end
 
   def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
+    class_ids =
+      character.classes
+      |> Enum.map(& &1.class_id)
+      |> Enum.into(MapSet.new())
+
+    required_classes = Enum.into(weapon.required_classes, MapSet.new())
+
     cond do
-      Enum.any?(weapon.required_classes) and !(character.class_id in weapon.required_classes) ->
+      Enum.any?(required_classes) and !Enum.any?(MapSet.intersection(class_ids, required_classes)) ->
         false
 
       Enum.any?(weapon.required_races) and !(character.race_id in weapon.required_races) ->
         false
 
-      character.class_id in List.wrap(weapon.traits["ClassOk"]) ->
-        true
-
       :else ->
-        case character.weapon do
-          "One Handed Blunt" ->
-            weapon.weapon_type == "Blunt"
-
-          "Two Handed Blunt" ->
-            weapon.weapon_type == "Two Handed Blunt"
-
-          "One Handed Blade" ->
-            weapon.weapon_type == "Blade"
-
-          "Two Handed Blade" ->
-            weapon.weapon_type == "Two Handed Blade"
-
-          "Any Blade" ->
-            weapon.weapon_type in ["Blade", "Two Handed Blade"]
-
-          "Any Blunt" ->
-            weapon.weapon_type in ["Blunt", "Two Handed Blunt"]
-
-          "Any One Handed" ->
-            weapon.weapon_type in ["Blade", "Blunt"]
-
-          "Any Two Handed" ->
-            weapon.weapon_type in ["Two Handed Blunt", "Two Handed Blade"]
-
-          "All" ->
-            true
-
-          "Limited" ->
-            false
-        end
+        true
     end
   end
 
   def useable_by_character?(%Character{} = character, %Item{type: type} = armour)
       when type in ["Armour", "Shield"] do
-    cond do
-      Enum.any?(armour.required_classes) and !(character.class_id in armour.required_classes) ->
-        false
+    class_ids =
+      character.classes
+      |> Enum.map(& &1.class_id)
+      |> Enum.into(MapSet.new())
 
+    required_classes = Enum.into(armour.required_classes, MapSet.new())
+
+    cond do
       Enum.any?(armour.required_races) and !(character.race_id in armour.required_races) ->
         false
 
-      Enum.any?(armour.traits, fn {name, value} ->
-        name == "ClassOk" and character.class_id in value
-      end) ->
-        true
+      Enum.any?(armour.required_races) and
+          !Enum.any?(MapSet.intersection(class_ids, required_classes)) ->
+        false
 
       :else ->
-        Enum.find_index(@armours, &(&1 == armour.armour_type)) <=
-          Enum.find_index(@armours, &(&1 == character.armour))
+        true
     end
   end
 

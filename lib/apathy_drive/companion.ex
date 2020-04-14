@@ -733,7 +733,10 @@ defmodule ApathyDrive.Companion do
       perception * (modifier / 100)
     end
 
-    def update_prompt(%Companion{} = companion) do
+    def update_prompt(%Companion{} = companion, room) do
+      Room.update_hp_bar(room, companion.ref)
+      Room.update_mana_bar(room, companion.ref)
+      Room.update_energy_bar(room, companion.ref)
       companion
     end
   end

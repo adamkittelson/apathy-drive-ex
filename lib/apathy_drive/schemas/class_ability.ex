@@ -16,16 +16,33 @@ defmodule ApathyDrive.ClassAbility do
   end
 
   def abilities_at_level(class_id, level) do
-    ApathyDrive.ClassAbility
-    |> Ecto.Query.where(
-      [ss],
-      ss.class_id == ^class_id and ss.level <= ^level and ss.auto_learn == true
-    )
-    |> Ecto.Query.preload([:ability])
-    |> Repo.all()
-    |> Enum.map(fn class_ability ->
-      put_in(class_ability.ability.level, class_ability.level)
-    end)
+    leveled_abilities =
+      ApathyDrive.ClassAbility
+      |> Ecto.Query.where(
+        [ss],
+        ss.class_id == ^class_id and ss.level <= ^level and ss.auto_learn == true
+      )
+      |> Ecto.Query.preload([:ability])
+      |> Repo.all()
+      |> Enum.map(fn class_ability ->
+        put_in(class_ability.ability.level, class_ability.level)
+      end)
+
+    IO.puts("loading abilities for level #{level}")
+
+    base_abilities =
+      ApathyDrive.ClassAbility
+      |> Ecto.Query.where(
+        [ss],
+        ss.class_id == ^class_id and is_nil(ss.level) and ss.auto_learn == true
+      )
+      |> Ecto.Query.preload([:ability])
+      |> Repo.all()
+      |> Enum.map(fn class_ability ->
+        put_in(class_ability.ability.level, level)
+      end)
+
+    base_abilities ++ leveled_abilities
   end
 
   def load_damage(ability_id) do

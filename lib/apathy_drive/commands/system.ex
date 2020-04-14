@@ -40,7 +40,7 @@ defmodule ApathyDrive.Commands.System do
 
       to_level = Level.exp_at_level(level) - exp
 
-      Character.add_class_experience(character, to_level)
+      Character.add_character_experience(character, to_level)
     end)
   end
 

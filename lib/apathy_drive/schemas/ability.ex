@@ -120,6 +120,7 @@ defmodule ApathyDrive.Ability do
     "Accuracy",
     "Agility",
     "Alignment",
+    "Bubble",
     "Charm",
     "Blind",
     "Charm",
@@ -630,7 +631,7 @@ defmodule ApathyDrive.Ability do
             caster
             |> Stealth.reveal()
 
-          Mobile.update_prompt(caster)
+          Mobile.update_prompt(caster, room)
 
           caster =
             if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
@@ -752,7 +753,7 @@ defmodule ApathyDrive.Ability do
                 |> Mobile.subtract_energy(ability)
                 |> Stealth.reveal()
 
-              Mobile.update_prompt(caster)
+              Mobile.update_prompt(caster, room)
 
               caster =
                 if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
@@ -862,7 +863,7 @@ defmodule ApathyDrive.Ability do
               update_in(caster.inventory, &List.replace_at(&1, location, item))
             end
 
-          Mobile.update_prompt(caster)
+          Mobile.update_prompt(caster, room)
           room = put_in(room.mobiles[caster_ref], caster)
 
           Room.update_energy_bar(room, caster_ref)
@@ -950,7 +951,7 @@ defmodule ApathyDrive.Ability do
                 |> Mobile.subtract_mana(ability)
                 |> Mobile.subtract_energy(ability)
 
-              Mobile.update_prompt(caster)
+              Mobile.update_prompt(caster, room)
 
               if ability.kind in ["attack", "curse"] and !(caster.ref in targets) do
                 if targets == [] do
@@ -1345,7 +1346,7 @@ defmodule ApathyDrive.Ability do
         target
         |> Map.put(:ability_shift, nil)
         |> Map.put(:ability_special, nil)
-        |> Mobile.update_prompt()
+        |> Mobile.update_prompt(room)
 
       room
       |> put_in([:mobiles, target.ref], target)
@@ -1537,7 +1538,7 @@ defmodule ApathyDrive.Ability do
   def damage_limb(%Room{} = room, target_ref, limb_name, percentage, bleeding)
       when percentage < 0 do
     Room.update_mobile(room, target_ref, fn room, target ->
-      if map_size(target.limbs) == 1 do
+      if map_size(target.limbs) == 1 or Mobile.ability_value(target, "Bubble") > 0 do
         target
       else
         initial_limb_health = target.limbs[limb_name].health
@@ -1710,6 +1711,40 @@ defmodule ApathyDrive.Ability do
 
         target =
           if ability_shift do
+            {target, ability_shift} =
+              if ability_shift < 0 do
+                target.effects
+                |> Enum.reduce({target, ability_shift}, fn
+                  {id, %{"Bubble" => bubble} = effect}, {target, ability_shift} ->
+                    IO.puts("bubble: #{bubble}, damage: #{ability_shift}")
+
+                    cond do
+                      bubble > abs(ability_shift) ->
+                        target = update_in(target.effects[id]["Bubble"], &(&1 + ability_shift))
+                        {target, 0}
+
+                      bubble <= abs(ability_shift) ->
+                        if effect["MaxBubble"] do
+                          effects = put_in(target.effects[id]["Bubble"], 0)
+                          target = Map.put(target, :effects, effects)
+                          {target, ability_shift + bubble}
+                        else
+                          IO.puts("removing shield")
+
+                          target =
+                            Systems.Effect.remove(target, id, show_expiration_message: true)
+
+                          {target, ability_shift + bubble}
+                        end
+                    end
+
+                  {_id, _effect}, {target, ability_shift} ->
+                    {target, ability_shift}
+                end)
+              else
+                {target, ability_shift}
+              end
+
             if ability_shift < 0 and Mobile.has_ability?(target, "HolyMission") do
               duration = :timer.seconds(30)
               rounds = duration / 5000
@@ -1768,7 +1803,7 @@ defmodule ApathyDrive.Ability do
         |> Map.put(:ability_shift, nil)
         |> Map.put(:ability_special, nil)
         |> apply_duration_traits(ability, caster)
-        |> Mobile.update_prompt()
+        |> Mobile.update_prompt(room)
       end)
 
     target = room.mobiles[target_ref]
@@ -2146,7 +2181,7 @@ defmodule ApathyDrive.Ability do
     {caster, Map.put(target, :ability_shift, -value)}
   end
 
-  def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, _room) do
+  def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
     round_percent = (ability.reaction_energy || ability.energy) / caster.max_energy
 
     target =
@@ -2264,7 +2299,7 @@ defmodule ApathyDrive.Ability do
 
           caster = Mobile.shift_hp(caster, heal_percent)
 
-          Mobile.update_prompt(caster)
+          Mobile.update_prompt(caster, room)
 
           {caster, damage_percent + percent}
       end)
@@ -2577,6 +2612,43 @@ defmodule ApathyDrive.Ability do
 
     effects
     |> Map.put("Heal", percentage_healed)
+  end
+
+  def process_duration_trait(
+        {"Bubble", %{"min" => min, "max" => max}},
+        effects,
+        target,
+        caster,
+        duration
+      ) do
+    bubble = (min + max) / 2
+
+    process_duration_trait({"Bubble", bubble}, effects, target, caster, duration)
+  end
+
+  def process_duration_trait({"Bubble", value}, effects, target, _caster, _duration) do
+    percentage = value / Mobile.max_hp_at_level(target, target.level)
+
+    effects
+    |> Map.put("Bubble", percentage)
+  end
+
+  def process_duration_trait({"Bubble%", value}, effects, _target, _caster, _duration) do
+    percentage = value / 100
+
+    effects
+    |> Map.put("Bubble", percentage)
+  end
+
+  def process_duration_trait(
+        {"BubbleRegen%PerSecond", _value},
+        effects,
+        _target,
+        _caster,
+        _duration
+      ) do
+    effects
+    |> Map.put("MaxBubble", Map.get(effects, "Bubble"))
   end
 
   def process_duration_trait({"HealMana", value}, effects, target, caster, _duration) do

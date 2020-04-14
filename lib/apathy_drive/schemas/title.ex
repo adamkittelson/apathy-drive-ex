@@ -12,14 +12,18 @@ defmodule ApathyDrive.Title do
 
   @required_fields ~w(class_id level text)a
 
-  def for_character(%Character{class_id: id, level: level} = character) do
-    __MODULE__
-    |> where([t], t.class_id == ^id and t.level <= ^level)
-    |> order_by(desc: :level)
-    |> limit(1)
-    |> select([t], t.text)
-    |> Repo.one()
-    |> Text.interpolate(%{"user" => character})
+  def for_character(%Character{} = character) do
+    if class = Enum.max_by(character.classes, & &1.level, fn -> nil end) do
+      __MODULE__
+      |> where([t], t.class_id == ^class.id and t.level <= ^class.level)
+      |> order_by(desc: :level)
+      |> limit(1)
+      |> select([t], t.text)
+      |> Repo.one()
+      |> Text.interpolate(%{"user" => character})
+    else
+      "Adventurer"
+    end
   end
 
   def changeset(%Title{} = t, attrs) do

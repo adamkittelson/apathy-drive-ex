@@ -52,17 +52,6 @@
     <% end %>
 
     <div class="form-group">
-      <label for="class">Class <%= error_tag f, :class_id %></label>
-      <%= select(f, :class_id, ApathyDrive.Class.select, prompt: "Choose Your Character's Class", class: "u-full-width", id: "class") %>
-    </div>
-
-    <%= for class <- ApathyDrive.Class.all do %>
-      <div id="class-<%= class.id %>" class="classes" style="display: none;">
-        <p><%= class.description %></p>
-      </div>
-    <% end %>
-
-    <div class="form-group">
       <label for="email">Email Address <%= error_tag f, :email %></label>
       <%= text_input f, :email, class: "u-full-width" %>
     </div>

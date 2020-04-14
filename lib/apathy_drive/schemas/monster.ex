@@ -426,7 +426,7 @@ defmodule ApathyDrive.Monster do
             dropped_for_character_id: id,
             equipped: false,
             hidden: false,
-            level: character.level,
+            level: max(1, character.level),
             delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
           }
           |> Repo.insert!()
@@ -941,7 +941,10 @@ defmodule ApathyDrive.Monster do
       perception * (modifier / 100)
     end
 
-    def update_prompt(%Monster{} = monster) do
+    def update_prompt(%Monster{} = monster, room) do
+      Room.update_hp_bar(room, monster.ref)
+      Room.update_mana_bar(room, monster.ref)
+      Room.update_energy_bar(room, monster.ref)
       monster
     end
   end

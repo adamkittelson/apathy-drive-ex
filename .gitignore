@@ -18,3 +18,4 @@ _build
 apathy_drive.tar.gz
 database.tar
 /priv/static/
+.elixir_ls/

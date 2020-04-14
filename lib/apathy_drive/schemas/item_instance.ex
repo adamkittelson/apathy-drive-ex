@@ -33,12 +33,11 @@ defmodule ApathyDrive.ItemInstance do
     |> Enum.map(&Item.from_assoc/1)
   end
 
-  def load_items(%Character{id: id, class_id: class_id}) do
+  def load_items(%Character{id: id}) do
     __MODULE__
     |> where([ri], ri.character_id == ^id)
     |> preload(:item)
     |> Repo.all()
-    |> Enum.filter(&(&1.class_id == class_id or is_nil(&1.class_id)))
     |> Enum.map(&Item.from_assoc/1)
   end
 end

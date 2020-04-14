@@ -42,7 +42,6 @@ defmodule ApathyDrive.Commands.Say do
       room.mobiles
       |> Map.values()
       |> Enum.filter(&(Map.get(&1, :owner_id) == character.id))
-      |> IO.inspect()
       |> Match.all(:keyword_starts_with, target)
       |> case do
         nil ->

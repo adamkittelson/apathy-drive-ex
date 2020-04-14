@@ -34,15 +34,9 @@
   </div>
 </div>
 <div id="player-bars">
-  <div class="progress-bar hp">
-    <div class="red"></div>
-    </div>
-  <div class="progress-bar energy">
-    <div class="yellow"></div>
-    </div>
-  <div class="progress-bar mana">
-    <div class="blue"></div>
-  </div>
+  <div class="progress-bar hp"></div>
+  <div class="progress-bar energy"></div>
+  <div class="progress-bar mana"></div>
 </div>
 <div id="talents" class="w3-modal">
   <div class="talent-tree-panel w3-animate-zoom">

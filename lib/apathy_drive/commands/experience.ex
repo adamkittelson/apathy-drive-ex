@@ -7,20 +7,17 @@ defmodule ApathyDrive.Commands.Experience do
   def execute(%Room{} = room, %Character{} = character, []) do
     Mobile.send_scroll(
       character,
-      "\n<p><span class='white'>Class:</span></p>"
+      "\n<p><span class='white'>Character:</span></p>"
     )
 
-    exp = character.class.experience
+    exp = character.experience
     level = character.level
 
-    to_level = Level.exp_at_level(level)
+    to_level = Level.exp_at_level(max(1, level))
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{
-        character.class.class.name
-        |> String.pad_trailing(10)
-      }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
+      "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
         level
         |> to_string
         |> String.pad_trailing(3)

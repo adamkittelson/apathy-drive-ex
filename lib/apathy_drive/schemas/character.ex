@@ -14,8 +14,6 @@ defmodule ApathyDrive.Character do
     CharacterRace,
     CharacterSkill,
     CharacterTrait,
-    ClassSpellcastingAttribute,
-    ClassTrait,
     Companion,
     Currency,
     Directory,
@@ -59,8 +57,8 @@ defmodule ApathyDrive.Character do
     field(:gold, :integer, default: 0)
     field(:platinum, :integer, default: 0)
     field(:runic, :integer, default: 0)
+    field(:experience, :integer, default: 0)
     field(:race_id, :integer)
-    field(:class_id, :integer)
     field(:pity_modifier, :integer, default: 0)
     field(:auto_heal, :boolean)
     field(:auto_bless, :boolean)
@@ -76,7 +74,7 @@ defmodule ApathyDrive.Character do
     field(:lore, :any, virtual: true)
     field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)
-    field(:class, :any, virtual: true)
+    field(:classes, :any, virtual: true)
     field(:monitor_ref, :any, virtual: true)
     field(:ref, :any, virtual: true)
     field(:socket, :any, virtual: true)
@@ -105,8 +103,6 @@ defmodule ApathyDrive.Character do
     field(:max_energy, :integer, virtual: true, default: 1000)
     field(:reply_to, :string, virtual: true)
     field(:casting, :any, virtual: true, default: nil)
-    field(:weapon, :string, virtual: true)
-    field(:armour, :string, virtual: true)
     field(:last_tick_at, :any, virtual: true)
     field(:last_room_id, :integer, virtual: true)
     field(:delayed, :boolean, virtual: true, default: false)
@@ -125,6 +121,8 @@ defmodule ApathyDrive.Character do
     has_many(:trained_skills, through: [:characters_skills, :skill])
 
     has_many(:characters_materials, ApathyDrive.CharacterMaterial)
+
+    has_many(:character_classes, ApathyDrive.CharacterClass)
 
     timestamps()
   end
@@ -252,15 +250,14 @@ defmodule ApathyDrive.Character do
 
   def sign_up_changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(email password name race_id gender class_id)a)
-    |> validate_required(~w(email password name race_id gender class_id)a)
+    |> cast(params, ~w(email password name race_id gender)a)
+    |> validate_required(~w(email password name race_id gender)a)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:email, min: 3, max: 100)
     |> validate_length(:password, min: 6)
     |> unique_constraint(:email, name: :characters_lower_email_index, on: Repo)
     |> validate_confirmation(:password)
     |> validate_inclusion(:race_id, ApathyDrive.Race.ids())
-    |> validate_inclusion(:class_id, ApathyDrive.Class.ids())
     |> validate_inclusion(:gender, ["male", "female"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, name: :characters_lower_name_index, on: Repo)
@@ -280,9 +277,14 @@ defmodule ApathyDrive.Character do
         Map.put(auto_abilities, auto_ability.ability_id, auto_ability.auto)
       end)
 
+    IO.puts("loading class abilities")
+
     class_abilities =
-      character.class_id
-      |> ApathyDrive.ClassAbility.abilities_at_level(character.level)
+      Enum.reduce(character.classes, [], fn %{class_id: class_id}, abilities ->
+        Enum.uniq(
+          ApathyDrive.ClassAbility.abilities_at_level(class_id, character.level) ++ abilities
+        )
+      end)
 
     skill_abilities =
       Enum.map(character.skills, fn {_name, %CharacterSkill{skill_id: id, level: level}} ->
@@ -299,6 +301,19 @@ defmodule ApathyDrive.Character do
     character =
       (class_abilities ++ skill_abilities ++ granted_abilities)
       |> Enum.reduce(character, fn
+        %{ability: %Ability{id: id, kind: "base-class", level: level}}, character ->
+          effect =
+            id
+            |> AbilityTrait.load_traits()
+            |> Enum.reduce(%{}, fn {key, val}, effect ->
+              effect
+              |> Map.put(key, val * level)
+              |> Map.put("stack_key", id)
+              |> Map.put("stack_count", 1)
+            end)
+
+          Systems.Effect.add(character, effect)
+
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
           Systems.Effect.add(character, effect)
@@ -395,7 +410,27 @@ defmodule ApathyDrive.Character do
   end
 
   def max_level(%Character{} = character) do
-    Level.level_at_exp(character.class.experience) + 1
+    Level.level_at_exp(character.experience) + 1
+  end
+
+  def load_classes(%Character{} = character) do
+    classes =
+      character
+      |> Ecto.assoc(:character_classes)
+      |> Repo.all()
+
+    character
+    |> Map.put(:classes, classes)
+    |> set_level()
+  end
+
+  def set_level(%Character{classes: []} = character) do
+    Map.put(character, :level, 0)
+  end
+
+  def set_level(%Character{classes: classes} = character) do
+    level = Enum.reduce(classes, 0, &(&1.level + &2))
+    Map.put(character, :level, level)
   end
 
   def load_race(%Character{race_id: race_id} = character) do
@@ -445,38 +480,6 @@ defmodule ApathyDrive.Character do
 
   def load_materials(%Character{} = character) do
     CharacterMaterial.load_for_character(character)
-  end
-
-  def load_class(%Character{class_id: class_id} = character) do
-    character_class =
-      CharacterClass
-      |> Repo.get_by(%{character_id: character.id, class_id: class_id})
-      |> case do
-        %CharacterClass{} = character_class ->
-          character_class
-
-        nil ->
-          %CharacterClass{character_id: character.id, class_id: class_id, level: 1, experience: 0}
-          |> Repo.insert!()
-      end
-      |> Repo.preload(:class)
-
-    spellcasting_attributes = ClassSpellcastingAttribute.load_attributes(character_class.class_id)
-
-    character_class =
-      put_in(character_class.class.spellcasting_attributes, spellcasting_attributes)
-
-    effect =
-      ClassTrait.load_traits(class_id)
-      |> Map.put("stack_key", "class")
-      |> Map.put("stack_count", 1)
-
-    character
-    |> Map.put(:level, character_class.level)
-    |> Map.put(:class, character_class)
-    |> Map.put(:weapon, character_class.class.weapon)
-    |> Map.put(:armour, character_class.class.armour)
-    |> Systems.Effect.add(effect)
   end
 
   def load_items(%Character{} = character) do
@@ -928,7 +931,7 @@ defmodule ApathyDrive.Character do
       character
       |> put_in([:next_drain_at], now + :timer.seconds(10))
       |> update_in([:exp_buffer], &max(0, &1 - amount))
-      |> add_class_experience(amount)
+      |> add_character_experience(amount)
     else
       character
     end
@@ -958,77 +961,18 @@ defmodule ApathyDrive.Character do
 
   def add_experience_to_buffer(character, _exp, _silent), do: character
 
-  def add_class_experience(%Character{} = character, exp) when exp > 0 do
+  def add_character_experience(%Character{} = character, exp) when exp > 0 do
     character =
-      update_in(character.class, fn character_class ->
-        character_class
-        |> Ecto.Changeset.change(%{
-          experience: character_class.experience + exp
-        })
-        |> Repo.update!()
-      end)
-
-    if character.level < Character.max_level(character) do
-      old_abilities = Map.values(character.abilities)
-      old_hp = Mobile.max_hp_at_level(character, character.level)
-
-      character =
-        update_in(character.class, fn character_class ->
-          character_class
-          |> Ecto.Changeset.change(%{
-            level: character_class.level + 1
-          })
-          |> Repo.update!()
-        end)
-
-      character =
-        character
-        |> Character.load_class()
-        |> Character.load_race()
-        |> Character.load_abilities()
-        |> Character.set_title()
-        |> Character.update_exp_bar()
-
-      new_abilities = Map.values(character.abilities)
-
-      Mobile.send_scroll(
-        character,
-        "<p><span class='yellow'>Your level has increased to #{character.level}!</span></p>"
-      )
-
-      hp_diff = Mobile.max_hp_at_level(character, character.level) - old_hp
-
-      Mobile.send_scroll(
-        character,
-        "<p><span class='yellow'>Your maximum health is increased by #{hp_diff}.</span></p>"
-      )
-
-      Directory.add_character(%{
-        name: character.name,
-        evil_points: character.evil_points,
-        room: character.room_id,
-        ref: character.ref,
-        title: character.title
-      })
-
-      Enum.each(new_abilities, fn ability ->
-        unless ability in old_abilities do
-          Mobile.send_scroll(
-            character,
-            "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
-          )
-
-          Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
-        end
-      end)
-
       character
-    else
-      Character.update_exp_bar(character)
-    end
+      |> Ecto.Changeset.change(%{
+        experience: character.experience + exp
+      })
+      |> Repo.update!()
+
+    Character.update_exp_bar(character)
   end
 
-  def add_class_experience(%Character{} = character, _exp), do: character
+  def add_character_experience(%Character{} = character, _exp), do: character
 
   def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do
     max_hp = Mobile.max_hp_at_level(character, level)
@@ -1077,17 +1021,6 @@ defmodule ApathyDrive.Character do
   def update_energy_bar(%Character{socket: socket} = character, mobile) do
     percent = mobile.energy / mobile.max_energy
 
-    time_to_full =
-      if percent == 1.0 do
-        0
-      else
-        regen_per_tick = Regeneration.energy_per_tick(mobile)
-
-        ticks_remaining = mobile.max_energy * (1.0 - percent) / regen_per_tick
-
-        Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
-      end
-
     send(
       socket,
       {:update_energy_bar,
@@ -1095,7 +1028,6 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: time_to_full,
          max_percent: 100
        }}
     )
@@ -1103,24 +1035,8 @@ defmodule ApathyDrive.Character do
     character
   end
 
-  def update_mana_bar(%Character{socket: socket} = character, mobile, room) do
+  def update_mana_bar(%Character{socket: socket} = character, mobile, _room) do
     percent = mobile.mana
-
-    time_to_full =
-      if percent == 1.0 do
-        0
-      else
-        regen_per_tick =
-          Regeneration.regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
-
-        multiplier = Regeneration.regen_multiplier(room, mobile, :mana)
-
-        regen_per_tick = regen_per_tick * multiplier
-
-        ticks_remaining = (1.0 - percent) / regen_per_tick
-
-        Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
-      end
 
     send(
       socket,
@@ -1129,7 +1045,6 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: time_to_full,
          max_percent: 100
        }}
     )
@@ -1139,41 +1054,8 @@ defmodule ApathyDrive.Character do
 
   def update_mana_bar(%{} = character), do: character
 
-  def update_hp_bar(%Character{socket: socket} = character, mobile, room) do
+  def update_hp_bar(%Character{socket: socket} = character, mobile, _room) do
     percent = mobile.hp
-
-    time_to_full =
-      if percent == 1.0 do
-        0
-      else
-        regen_per_tick =
-          regen_per_tick =
-          Regeneration.regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
-
-        multiplier = Regeneration.regen_multiplier(room, mobile, :hp)
-
-        regen_per_tick = regen_per_tick * multiplier
-
-        regen_per_tick =
-          regen_per_tick +
-            Regeneration.heal_effect_per_tick(mobile) -
-            Regeneration.damage_effect_per_tick(mobile)
-
-        cond do
-          regen_per_tick > 0 ->
-            ticks_remaining = (1.0 - percent) / regen_per_tick
-
-            Regeneration.tick_time(mobile) * Float.ceil(ticks_remaining)
-
-          regen_per_tick == 0 ->
-            nil
-
-          :else ->
-            ticks_remaining = percent / regen_per_tick
-
-            Regeneration.tick_time(mobile) * Float.floor(ticks_remaining)
-        end
-      end
 
     send(
       socket,
@@ -1182,7 +1064,7 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
-         time_to_full: time_to_full
+         shield: Mobile.ability_value(mobile, "Bubble")
        }}
     )
 
@@ -1221,8 +1103,8 @@ defmodule ApathyDrive.Character do
     %{
       name: character.name,
       race: character.race.race.name,
-      class: character.class.class.name,
       level: character.level,
+      max_level: max_level(character),
       alignment: legal_status(character),
       perception: Mobile.perception_at_level(character, character.level, room),
       accuracy: Mobile.accuracy_at_level(character, character.level, room),
@@ -1257,7 +1139,6 @@ defmodule ApathyDrive.Character do
     # 50% encumbrance
     character = %Character{
       level: level,
-      class: %{class: %{combat_level: 3}},
       strength: 50,
       agility: 49 + level,
       inventory: [%{weight: 1200}]
@@ -1278,9 +1159,11 @@ defmodule ApathyDrive.Character do
     max_encumbrance = Character.max_encumbrance(character)
     agility = Mobile.attribute_at_level(character, :agility, character.level)
 
+    combat_level = 3
+
     cost =
       weapon.speed * 1000 /
-        ((character.level * (character.class.class.combat_level + 2) + 45) * (agility + 150) *
+        ((character.level * (combat_level + 2) + 45) * (agility + 150) *
            1500 /
            9000.0)
 
@@ -1298,9 +1181,11 @@ defmodule ApathyDrive.Character do
   end
 
   def drain_rate(character) do
-    exp_to_level = Level.exp_at_level(character.level) - Level.exp_at_level(character.level - 1)
+    level = max(1, character.level)
 
-    target_time = 20 * character.level
+    exp_to_level = Level.exp_at_level(level) - Level.exp_at_level(level - 1)
+
+    target_time = 20 * level
 
     trunc(max(Float.round(exp_to_level / (target_time * 60) * 10), 10.0))
   end
@@ -1741,7 +1626,7 @@ defmodule ApathyDrive.Character do
           |> Character.set_attribute_levels()
           |> Character.add_equipped_items_effects()
           |> Character.load_abilities()
-          |> Mobile.update_prompt()
+          |> Mobile.update_prompt(room)
           |> TimerManager.send_after(
             {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
           )
@@ -2008,7 +1893,7 @@ defmodule ApathyDrive.Character do
 
       bonus = ability_value(mobile, "MaxMana")
 
-      base_mana = if mana_per_level > 0, do: 6, else: 0
+      base_mana = 6
 
       mana_per_level * (level - 1) + base_mana + bonus
     end
@@ -2108,10 +1993,11 @@ defmodule ApathyDrive.Character do
     end
 
     def spellcasting_at_level(character, level) do
-      attribute_value =
-        character.class.class.spellcasting_attributes
-        |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
-        |> Room.average()
+      attribute_value = 50
+
+      # character.class.class.spellcasting_attributes
+      # |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
+      # |> Room.average()
 
       sc = trunc(attribute_value * 2 / 3)
 
@@ -2130,9 +2016,6 @@ defmodule ApathyDrive.Character do
         cond do
           !character.race.race.stealth and !character.class.class.stealth ->
             0
-
-          !character.class.class.stealth ->
-            0.4
 
           !character.race.race.stealth ->
             0.6
@@ -2156,7 +2039,7 @@ defmodule ApathyDrive.Character do
     def subtract_energy(character, ability) do
       character = update_in(character.energy, &(&1 - ability.energy))
 
-      attributes = ability.attributes || character.class.class.spellcasting_attributes
+      attributes = ability.attributes || %{}
 
       Enum.reduce(attributes, character, fn attribute, character ->
         Character.add_attribute_experience(character, %{
@@ -2171,7 +2054,10 @@ defmodule ApathyDrive.Character do
       perception * (modifier / 100)
     end
 
-    def update_prompt(%Character{socket: socket} = character) do
+    def update_prompt(%Character{socket: socket} = character, room) do
+      Room.update_hp_bar(room, character.ref)
+      Room.update_mana_bar(room, character.ref)
+      Room.update_energy_bar(room, character.ref)
       send(socket, {:update_prompt, Character.prompt(character)})
       character
     end

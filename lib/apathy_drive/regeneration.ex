@@ -2,8 +2,9 @@ defmodule ApathyDrive.Regeneration do
   alias ApathyDrive.{Ability, Aggression, Character, Mobile, Room}
 
   @ticks_per_round 20
+  @round_length 5000
 
-  def tick_time(_mobile), do: trunc(5000 / @ticks_per_round)
+  def tick_time(_mobile), do: trunc(@round_length / @ticks_per_round)
 
   def duration_for_energy(mobile, energy) do
     regen_per_tick = energy_per_tick(mobile)
@@ -17,9 +18,10 @@ defmodule ApathyDrive.Regeneration do
     mobile
     |> regenerate_energy()
     |> regenerate_hp(room)
+    |> regenerate_bubble()
     |> regenerate_mana(room)
     |> Map.put(:last_tick_at, DateTime.utc_now())
-    |> Mobile.update_prompt()
+    |> Mobile.update_prompt(room)
   end
 
   def energy_per_tick(mobile) do
@@ -76,6 +78,20 @@ defmodule ApathyDrive.Regeneration do
     min(hp, total_hp_per_tick)
   end
 
+  def bubble_since_last_tick(%{last_tick_at: nil} = mobile, bubble_per_second) do
+    bubble_per_second / (1000 / tick_time(mobile)) / 100
+  end
+
+  def bubble_since_last_tick(%{last_tick_at: last_tick} = mobile, bubble_per_second) do
+    ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
+
+    bubble_per_tick = bubble_per_second / (1000 / tick_time(mobile)) / 100
+
+    bubble = bubble_per_tick * ms_since_last_tick / tick_time(mobile)
+
+    min(bubble, bubble_per_tick)
+  end
+
   def heal_effect_per_tick(%{} = mobile) do
     Mobile.ability_value(mobile, "Heal") / @ticks_per_round
   end
@@ -111,9 +127,35 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def regenerate_hp(%{} = mobile, room) do
-    hp = hp_since_last_tick(room, mobile)
+    percentage = hp_since_last_tick(room, mobile)
 
-    Mobile.shift_hp(mobile, hp)
+    Mobile.shift_hp(mobile, percentage)
+  end
+
+  def regenerate_bubble(%{} = mobile) do
+    effects =
+      mobile.effects
+      |> Enum.reduce(mobile.effects, fn
+        {id, %{"Bubble" => bubble, "MaxBubble" => max, "BubbleRegen%PerSecond" => rate}}, effects
+        when max > bubble ->
+          percentage = bubble_since_last_tick(mobile, rate)
+          remaining = max - bubble
+
+          cond do
+            remaining >= percentage ->
+              effects = update_in(effects[id]["Bubble"], &(&1 + percentage))
+              effects
+
+            remaining < percentage ->
+              effects = put_in(effects[id]["Bubble"], max)
+              effects
+          end
+
+        {_id, _effect}, effects ->
+          effects
+      end)
+
+    Map.put(mobile, :effects, effects)
   end
 
   def regenerate_mana(%{mana: 1.0} = mobile, _room), do: mobile
