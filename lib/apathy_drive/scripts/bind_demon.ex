@@ -38,7 +38,8 @@ defmodule ApathyDrive.Scripts.BindDemon do
   end
 
   def bind_lesser_demon(room, mobile, demon) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
+    spellcasting =
+      Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]}) + 45
 
     if :rand.uniform(100) < spellcasting do
       effects =
@@ -113,7 +114,8 @@ defmodule ApathyDrive.Scripts.BindDemon do
   end
 
   def bind_demon(room, mobile, demon) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level)
+    spellcasting =
+      Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]})
 
     if :rand.uniform(100) < spellcasting do
       effects =

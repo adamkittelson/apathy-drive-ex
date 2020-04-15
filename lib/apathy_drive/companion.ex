@@ -703,7 +703,7 @@ defmodule ApathyDrive.Companion do
       true
     end
 
-    def spellcasting_at_level(companion, level) do
+    def spellcasting_at_level(companion, level, _ability) do
       attribute_value = Room.average([companion.intellect, companion.willpower])
 
       sc = attribute_value + level * 2

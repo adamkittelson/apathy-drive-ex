@@ -9,7 +9,8 @@ defmodule ApathyDrive.Scripts.SummonDemon do
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       failure = Enum.random([:return, :attack, :roam])
 
-      spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level)
+      spellcasting =
+        Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]})
 
       %Room{} =
         cond do

@@ -5,7 +5,8 @@ defmodule ApathyDrive.Scripts.SummonAngel do
     monster = Repo.get!(Monster, 1127)
 
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
-      spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level)
+      spellcasting =
+        Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]})
 
       %Room{} =
         if :rand.uniform(100) < spellcasting do

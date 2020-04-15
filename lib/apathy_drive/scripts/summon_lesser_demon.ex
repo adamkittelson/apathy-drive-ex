@@ -9,7 +9,8 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       failure = Enum.random([:return, :attack, :roam])
 
-      spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
+      spellcasting =
+        Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]}) + 45
 
       %Room{} =
         cond do

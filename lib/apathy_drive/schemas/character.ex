@@ -277,8 +277,6 @@ defmodule ApathyDrive.Character do
         Map.put(auto_abilities, auto_ability.ability_id, auto_ability.auto)
       end)
 
-    IO.puts("loading class abilities")
-
     class_abilities =
       Enum.reduce(character.classes, [], fn %{class_id: class_id}, abilities ->
         Enum.uniq(
@@ -1131,7 +1129,10 @@ defmodule ApathyDrive.Character do
       effects: effects,
       limbs: limbs,
       round_length_in_ms: 5000,
-      spellcasting: Mobile.spellcasting_at_level(character, character.level)
+      spellcasting:
+        Mobile.spellcasting_at_level(character, character.level, %{
+          attributes: ["intellect", "willpower"]
+        })
     }
   end
 
@@ -1750,7 +1751,8 @@ defmodule ApathyDrive.Character do
     def mana_regen_per_round(%Character{} = character) do
       max_mana = max_mana_at_level(character, character.level)
 
-      spellcasting = Mobile.spellcasting_at_level(character, character.level)
+      spellcasting =
+        Mobile.spellcasting_at_level(character, character.level, %{attributes: ["willpower"]})
 
       base_mana_regen =
         (character.level + 20) * spellcasting *
@@ -1992,12 +1994,11 @@ defmodule ApathyDrive.Character do
       true
     end
 
-    def spellcasting_at_level(character, level) do
-      attribute_value = 50
-
-      # character.class.class.spellcasting_attributes
-      # |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
-      # |> Room.average()
+    def spellcasting_at_level(character, level, ability) do
+      attribute_value =
+        (ability.attributes || [])
+        |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
+        |> Room.average()
 
       sc = trunc(attribute_value * 2 / 3)
 

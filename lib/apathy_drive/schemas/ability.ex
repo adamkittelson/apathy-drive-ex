@@ -1716,8 +1716,6 @@ defmodule ApathyDrive.Ability do
                 target.effects
                 |> Enum.reduce({target, ability_shift}, fn
                   {id, %{"Bubble" => bubble} = effect}, {target, ability_shift} ->
-                    IO.puts("bubble: #{bubble}, damage: #{ability_shift}")
-
                     cond do
                       bubble > abs(ability_shift) ->
                         target = update_in(target.effects[id]["Bubble"], &(&1 + ability_shift))
@@ -1725,12 +1723,10 @@ defmodule ApathyDrive.Ability do
 
                       bubble <= abs(ability_shift) ->
                         if effect["MaxBubble"] do
-                          effects = put_in(target.effects[id]["Bubble"], 0)
-                          target = Map.put(target, :effects, effects)
+                          target = put_in(target.effects[id]["Bubble"], 0)
+                          # target = Map.put(target, :effects, effects)
                           {target, ability_shift + bubble}
                         else
-                          IO.puts("removing shield")
-
                           target =
                             Systems.Effect.remove(target, id, show_expiration_message: true)
 
@@ -3368,8 +3364,8 @@ defmodule ApathyDrive.Ability do
 
   def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false
 
-  def casting_failed?(%{} = caster, %Ability{difficulty: difficulty}) do
-    spellcasting = Mobile.spellcasting_at_level(caster, caster.level)
+  def casting_failed?(%{} = caster, %Ability{difficulty: difficulty} = ability) do
+    spellcasting = Mobile.spellcasting_at_level(caster, caster.level, ability)
     :rand.uniform(100) > spellcasting + difficulty
   end
 

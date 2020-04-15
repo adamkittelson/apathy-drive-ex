@@ -1,6 +1,6 @@
 defmodule ApathyDrive.ClassAbility do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, Class}
+  alias ApathyDrive.{Ability, AbilityAttribute, Class}
 
   schema "classes_abilities" do
     field(:level, :integer)
@@ -25,10 +25,13 @@ defmodule ApathyDrive.ClassAbility do
       |> Ecto.Query.preload([:ability])
       |> Repo.all()
       |> Enum.map(fn class_ability ->
-        put_in(class_ability.ability.level, class_ability.level)
-      end)
+        class_ability = put_in(class_ability.ability.level, class_ability.level)
 
-    IO.puts("loading abilities for level #{level}")
+        put_in(
+          class_ability.ability.attributes,
+          AbilityAttribute.load_attributes(class_ability.ability.id)
+        )
+      end)
 
     base_abilities =
       ApathyDrive.ClassAbility

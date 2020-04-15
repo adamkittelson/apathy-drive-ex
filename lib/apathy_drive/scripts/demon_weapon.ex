@@ -38,7 +38,8 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
   end
 
   def lesser_demon_weapon(room, mobile, demon, item) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
+    spellcasting =
+      Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]}) + 45
 
     if :rand.uniform(100) < spellcasting do
       Mobile.send_scroll(
@@ -133,7 +134,8 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
   end
 
   def demon_weapon(room, mobile, demon, item) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level)
+    spellcasting =
+      Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]})
 
     if :rand.uniform(100) < spellcasting do
       Mobile.send_scroll(

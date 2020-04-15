@@ -910,7 +910,7 @@ defmodule ApathyDrive.Monster do
       true
     end
 
-    def spellcasting_at_level(monster, level) do
+    def spellcasting_at_level(monster, level, _ability) do
       attribute_value = Room.average([monster.intellect, monster.willpower])
 
       sc = attribute_value + level * 2
