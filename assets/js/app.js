@@ -163,7 +163,7 @@ chan.on("show talents", function (score_data) {
 
 chan.on("update score", function (score_data) {
   update_score_attribute("name", _.padEnd(score_data.name, 13));
-  update_score_attribute("level", _.padEnd(score_data.level + "/" + score_data.max_level, 11));
+  update_score_attribute("level", _.padEnd(score_data.level, 11));
   update_score_attribute("accuracy", score_data.accuracy);
   update_score_attribute("race", _.padEnd(score_data.race, 13));
   update_score_attribute("class", _.padEnd(score_data.class, 11));

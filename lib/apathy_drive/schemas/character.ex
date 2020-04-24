@@ -14,6 +14,7 @@ defmodule ApathyDrive.Character do
     CharacterRace,
     CharacterSkill,
     CharacterTrait,
+    Class,
     Companion,
     Currency,
     Directory,
@@ -407,10 +408,6 @@ defmodule ApathyDrive.Character do
     end)
   end
 
-  def max_level(%Character{} = character) do
-    Level.level_at_exp(character.experience) + 1
-  end
-
   def load_classes(%Character{} = character) do
     classes =
       character
@@ -711,7 +708,8 @@ defmodule ApathyDrive.Character do
         "DodgeSpectatorMessage" =>
           "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
       },
-      limbs: limbs
+      limbs: limbs,
+      skills: [weapon.weapon_type]
     }
 
     crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
@@ -811,6 +809,20 @@ defmodule ApathyDrive.Character do
     end
   end
 
+  def trainable_experience(%Character{} = character) do
+    used_experience =
+      Enum.reduce(character.classes, 0, fn character_class, used_experience ->
+        level = character_class.level
+        class = Repo.get(Class, character_class.class_id)
+
+        modifier = class.exp_modifier / 100
+
+        used_experience + Level.exp_at_level(level, modifier)
+      end)
+
+    character.experience - used_experience
+  end
+
   def add_attribute_experience(%Character{exp_buffer: buffer} = character, attribute, amount)
       when buffer >= amount do
     Character.pulse_score_attribute(character, attribute)
@@ -885,7 +897,20 @@ defmodule ApathyDrive.Character do
 
   def add_attribute_experience(%{} = character, %{} = _attributes), do: character
 
-  def add_skill_experience(%Character{} = character, skill_name, amount) do
+  def add_skill_experience(%Character{} = character, skill_name, amount \\ nil) do
+    amount =
+      if amount do
+        amount
+      else
+        max_buffer = Character.max_exp_buffer(character)
+
+        percent = min(1.0, character.exp_buffer / max_buffer) * 2
+
+        exp = max(1, trunc(character.exp_buffer * 0.01) * percent)
+
+        max(1, exp * character.skills[skill_name].exp_multiplier)
+      end
+
     skill_level = character.skills[skill_name].level
 
     skill =
@@ -1102,7 +1127,6 @@ defmodule ApathyDrive.Character do
       name: character.name,
       race: character.race.race.name,
       level: character.level,
-      max_level: max_level(character),
       alignment: legal_status(character),
       perception: Mobile.perception_at_level(character, character.level, room),
       accuracy: Mobile.accuracy_at_level(character, character.level, room),
@@ -2015,14 +2039,11 @@ defmodule ApathyDrive.Character do
 
       modifier =
         cond do
-          !character.race.race.stealth and !character.class.class.stealth ->
-            0
-
-          !character.race.race.stealth ->
-            0.6
+          character.race.race.stealth ->
+            0.4
 
           :else ->
-            1
+            0
         end
 
       max(0, trunc(base * modifier) + ability_value(character, "Stealth"))
