@@ -279,10 +279,8 @@ defmodule ApathyDrive.Character do
       end)
 
     class_abilities =
-      Enum.reduce(character.classes, [], fn %{class_id: class_id}, abilities ->
-        Enum.uniq(
-          ApathyDrive.ClassAbility.abilities_at_level(class_id, character.level) ++ abilities
-        )
+      Enum.reduce(character.classes, [], fn %{class_id: class_id, level: level}, abilities ->
+        Enum.uniq(ApathyDrive.ClassAbility.abilities_at_level(class_id, level) ++ abilities)
       end)
 
     skill_abilities =
@@ -309,6 +307,7 @@ defmodule ApathyDrive.Character do
               |> Map.put(key, val * level)
               |> Map.put("stack_key", id)
               |> Map.put("stack_count", 1)
+              |> Map.put("ClassLevel", level)
             end)
 
           Systems.Effect.add(character, effect)
@@ -1126,6 +1125,7 @@ defmodule ApathyDrive.Character do
     %{
       name: character.name,
       race: character.race.race.name,
+      combat: Character.combat_level(character),
       level: character.level,
       alignment: legal_status(character),
       perception: Mobile.perception_at_level(character, character.level, room),
@@ -1178,13 +1178,34 @@ defmodule ApathyDrive.Character do
     %{min_damage: avg * 0.75, max_damage: avg * 1.25}
   end
 
+  def combat_level(%Character{} = character) do
+    {total_combat, total_level} =
+      character.effects
+      |> Map.values()
+      |> Enum.reduce({0, 0}, fn
+        %{"ClassCombatLevel" => combat, "ClassLevel" => level}, {total_combat, total_level} ->
+          {combat + total_combat, level + total_level}
+
+        _, {total_combat, total_level} ->
+          {total_combat, total_level}
+      end)
+
+    if total_level > 0 do
+      class_combat_level = Float.round(total_combat / total_level, 2)
+
+      class_combat_level + Mobile.ability_value(character, "CombatLevel")
+    else
+      Mobile.ability_value(character, "CombatLevel")
+    end
+  end
+
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
     encumbrance = Character.encumbrance(character)
     max_encumbrance = Character.max_encumbrance(character)
     agility = Mobile.attribute_at_level(character, :agility, character.level)
 
-    combat_level = 3
+    combat_level = Character.combat_level(character)
 
     cost =
       weapon.speed * 1000 /
