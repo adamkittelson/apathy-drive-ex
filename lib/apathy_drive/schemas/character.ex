@@ -309,6 +309,7 @@ defmodule ApathyDrive.Character do
               |> Map.put("stack_count", 1)
               |> Map.put("ClassLevel", level)
             end)
+            |> Ability.process_duration_traits(character, character, nil)
 
           Systems.Effect.add(character, effect)
 
