@@ -264,15 +264,9 @@ defmodule ApathyDrive.Room do
               <% end %>
                 <span class="<%= mob.color %>"><%= mob.name %></span>
                 <div id="<%= mob.ref %>-bars">
-                  <div class="progress-bar hp">
-                    <div class="red" style="width: <%= mob.hp_percent %>%;"></div>
-                    </div>
-                  <div class="progress-bar energy">
-                    <div class="yellow" style="width: <%= mob.energy_percent %>%;"></div>
-                    </div>
-                  <div class="progress-bar mana">
-                    <div class="blue" style="width: <%= mob.mana_percent %>%;"></div>
-                  </div>
+                  <div class="progress-bar hp"></div>
+                  <div class="progress-bar energy"></div>
+                  <div class="progress-bar mana"></div>
                 </div>
               </li>
             <% end %>
@@ -997,14 +991,14 @@ defmodule ApathyDrive.Room do
       |> Character.load_traits()
       |> Character.load_race()
       |> Character.load_limbs()
-      |> Character.load_class()
+      |> Character.load_classes()
       |> Character.set_attribute_levels()
       |> Character.update_exp_bar()
       |> Character.load_abilities()
       |> Character.load_items()
       |> Character.set_title()
 
-    Mobile.update_prompt(character)
+    Mobile.update_prompt(character, room)
 
     Directory.add_character(%{
       name: character.name,

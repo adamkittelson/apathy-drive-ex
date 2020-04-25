@@ -365,14 +365,26 @@ defmodule ApathyDrive.Commands.Help do
 
     chance =
       if ability.difficulty do
-        Mobile.spellcasting_at_level(character, character.level) + ability.difficulty
+        ability =
+          Map.put(ability, :attributes, ApathyDrive.AbilityAttribute.load_attributes(ability.id))
+
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-green'>Attributes:</span> <span class='dark-cyan'>#{
+            Enum.join(ability.attributes, ", ")
+          }</span></p>"
+        )
+
+        Mobile.spellcasting_at_level(character, character.level, ability) + ability.difficulty
       else
         100
       end
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{chance}%</span></p>"
+      "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{
+        min(100, chance)
+      }%</span></p>"
     )
 
     if ability.kind == "long-term" do

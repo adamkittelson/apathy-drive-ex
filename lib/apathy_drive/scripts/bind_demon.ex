@@ -38,32 +38,35 @@ defmodule ApathyDrive.Scripts.BindDemon do
   end
 
   def bind_lesser_demon(room, mobile, demon) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level) + 45
+    spellcasting =
+      Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]}) + 45
 
     if :rand.uniform(100) < spellcasting do
       effects =
         %{
+          "Bubble%" => 10,
+          "BubbleRegen%PerSecond" => 0.5,
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "Strength" => 2,
-          "Willpower" => 2,
-          "Agility" => 2,
-          "AC%" => 5,
-          "MR%" => 5,
-          "DarkVision" => 75,
+          "Strength" => 6,
+          "Willpower" => 6,
+          "Agility" => 6,
+          "AC%" => 15,
+          "MR%" => 15,
+          "DarkVision" => 225,
           "RestoreLimbs" => true,
-          "Heal" => %{"max" => 2, "min" => 2},
-          "Encumbrance" => 10,
+          "Heal" => %{"max" => 6, "min" => 6},
+          "Encumbrance" => 30,
           # "Grant" => abilities,
-          "ResistImpaling" => 4,
-          "ResistCrushing" => 4,
-          "ResistCutting" => 4,
-          "ResistHoly" => 4,
-          "ResistStrike" => 4,
-          "ResistImpact" => 4,
+          "ResistImpaling" => 12,
+          "ResistCrushing" => 12,
+          "ResistCutting" => 12,
+          "ResistHoly" => 12,
+          "ResistStrike" => 12,
+          "ResistImpact" => 12,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
           "stack_key" => "bind-demon",
-          "stack_count" => 3
+          "stack_count" => 1
         }
         |> Map.put("effect_ref", make_ref())
         |> Ability.process_duration_traits(mobile, mobile, :timer.minutes(80))
@@ -111,35 +114,38 @@ defmodule ApathyDrive.Scripts.BindDemon do
   end
 
   def bind_demon(room, mobile, demon) do
-    spellcasting = Mobile.spellcasting_at_level(mobile, mobile.level)
+    spellcasting =
+      Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]})
 
     if :rand.uniform(100) < spellcasting do
       effects =
         %{
+          "Bubble%" => 15,
+          "BubbleRegen%PerSecond" => 0.5,
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "Strength" => 4,
-          "Willpower" => 4,
-          "Agility" => 4,
-          "AC%" => 10,
-          "MR%" => 10,
-          "DarkVision" => 75,
+          "Strength" => 12,
+          "Willpower" => 12,
+          "Agility" => 12,
+          "AC%" => 30,
+          "MR%" => 30,
+          "DarkVision" => 225,
           "RestoreLimbs" => true,
-          "Heal" => %{"max" => 3, "min" => 3},
-          "Encumbrance" => 15,
+          "Heal" => %{"max" => 9, "min" => 9},
+          "Encumbrance" => 45,
           # "Grant" => abilities,
-          "ResistImpaling" => 7,
-          "ResistCrushing" => 7,
-          "ResistCutting" => 7,
-          "ResistHoly" => 7,
-          "ResistStrike" => 7,
-          "ResistFire" => 5,
-          "ResistCold" => 5,
-          "ResistElectricity" => 4,
-          "ResistImpact" => 5,
+          "ResistImpaling" => 21,
+          "ResistCrushing" => 21,
+          "ResistCutting" => 21,
+          "ResistHoly" => 21,
+          "ResistStrike" => 21,
+          "ResistFire" => 15,
+          "ResistCold" => 15,
+          "ResistElectricity" => 12,
+          "ResistImpact" => 15,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
           "stack_key" => "bind-demon",
-          "stack_count" => 3
+          "stack_count" => 1
         }
         |> Map.put("effect_ref", make_ref())
         |> Ability.process_duration_traits(mobile, mobile, :timer.minutes(95))

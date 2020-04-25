@@ -232,7 +232,7 @@ defmodule ApathyDrive.RoomServer do
         end)
 
       room.mobiles[existing_character.ref]
-      |> Mobile.update_prompt()
+      |> Mobile.update_prompt(room)
       |> Character.set_attribute_levels()
       |> Character.update_exp_bar()
 
@@ -251,7 +251,7 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:leader, ref)
         |> Map.put(:socket, socket)
         |> Character.load_traits()
-        |> Character.load_class()
+        |> Character.load_classes()
         |> Character.load_race()
         |> Character.load_limbs()
         |> Character.set_attribute_levels()
@@ -265,7 +265,7 @@ defmodule ApathyDrive.RoomServer do
           {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, ref}}
         )
 
-      Mobile.update_prompt(character)
+      Mobile.update_prompt(character, room)
 
       room =
         put_in(room.mobiles[character.ref], character)

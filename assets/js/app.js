@@ -129,26 +129,26 @@ chan.on("update attribute bar", function (data) {
 
 chan.on("update energy bar", function (data) {
   if (data.player) {
-    progress($("#player-bars .energy"), data.percentage, data.time_to_full)
+    progress($("#player-bars .energy"), data.percentage)
   }
 
-  progress($("#" + data.ref + "-bars .energy"), data.percentage, data.time_to_full)
+  progress($("#" + data.ref + "-bars .energy"), data.percentage)
 })
 
 chan.on("update mana bar", function (data) {
   if (data.player) {
-    progress($("#player-bars .mana"), data.percentage, data.time_to_full)
+    progress($("#player-bars .mana"), data.percentage)
   }
 
-  progress($("#" + data.ref + "-bars .mana"), data.percentage, data.time_to_full)
+  progress($("#" + data.ref + "-bars .mana"), data.percentage)
 })
 
 chan.on("update hp bar", function (data) {
   if (data.player) {
-    progress($("#player-bars .hp"), data.percentage, data.time_to_full)
+    progress($("#player-bars .hp"), data.percentage, data.shield)
   }
 
-  progress($("#" + data.ref + "-bars .hp"), data.percentage, data.time_to_full)
+  progress($("#" + data.ref + "-bars .hp"), data.percentage, data.shield)
 })
 
 chan.on("update mob list", function (data) {
@@ -166,7 +166,7 @@ chan.on("update score", function (score_data) {
   update_score_attribute("level", _.padEnd(score_data.level, 11));
   update_score_attribute("accuracy", score_data.accuracy);
   update_score_attribute("race", _.padEnd(score_data.race, 13));
-  update_score_attribute("class", _.padEnd(score_data.class, 11));
+  update_score_attribute("combat", _.padEnd(score_data.combat, 10));
   update_score_attribute("dodge", score_data.dodge);
   update_score_attribute("alignment", _.padEnd(_.capitalize(score_data.alignment), 8));
   update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '/' + score_data.magical_resistance, 11));
@@ -329,31 +329,23 @@ $(document).on('keyup', "textarea", function (event) {
   }
 });
 
-window.progress = function (elem, percent, time_to_full) {
-  if (percent < 0) {
-    return elem.find('div').stop().width(0);
-  }
-  if (percent == 100) {
-    elem.find('div').stop().width(elem.width())
+window.progress = function (elem, percent, secondary_percent) {
+  console.log('percent: ' + percent + ', secondary: ' + secondary_percent)
+  if (typeof secondary_percent !== 'undefined') {
+    percent = (1 - secondary_percent) * percent
   }
   else {
-    if (time_to_full) {
-      if (time_to_full > 0) {
-        var currentWidth = percent * elem.width() / 100;
-
-        if (currentWidth >= 0) {
-          elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
-        }
-      }
-      else {
-        var currentWidth = percent * elem.width() / 100;
-
-        if (currentWidth >= 0) {
-          elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: 0 }, { duration: -time_to_full, easing: "linear" });
-        }
-      }
-    }
-
+    secondary_percent = 0;
   }
+
+  var modified = percent + (secondary_percent * 100)
+
+  console.log('percent:' + percent)
+  console.log('secondary:' + secondary_percent)
+  console.log('modified:' + modified)
+
+  var setting = percent + '%, ' + modified + '%, 100%';
+  console.log("setting to " + setting)
+  $(elem).css('background-size', setting)
 
 }

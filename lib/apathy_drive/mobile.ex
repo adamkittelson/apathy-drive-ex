@@ -39,10 +39,10 @@ defprotocol ApathyDrive.Mobile do
   def set_room_id(mobile, room_id)
   def shift_hp(mobile, percentage)
   def silenced(mobile, room)
-  def spellcasting_at_level(mobile, level)
+  def spellcasting_at_level(mobile, level, ability)
   def stealth_at_level(mobile, level)
   def subtract_mana(mobile, ability)
   def subtract_energy(mobile, ability)
   def tracking_at_level(mobile, level, room)
-  def update_prompt(mobile)
+  def update_prompt(mobile, room)
 end

@@ -150,7 +150,7 @@ defmodule ApathyDrive.Commands.Wear do
 
               if persist do
                 %ItemInstance{id: item_to_remove.instance_id}
-                |> Ecto.Changeset.change(%{equipped: false, class_id: nil})
+                |> Ecto.Changeset.change(%{equipped: false})
                 |> Repo.update!()
               end
 
@@ -160,7 +160,7 @@ defmodule ApathyDrive.Commands.Wear do
 
               if persist do
                 %ItemInstance{id: item.instance_id}
-                |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
+                |> Ecto.Changeset.change(%{equipped: true})
                 |> Repo.update!()
               end
 
@@ -188,7 +188,7 @@ defmodule ApathyDrive.Commands.Wear do
             if persist do
               Enum.each(items_to_remove, fn item_to_remove ->
                 %ItemInstance{id: item_to_remove.instance_id}
-                |> Ecto.Changeset.change(%{equipped: false, class_id: nil})
+                |> Ecto.Changeset.change(%{equipped: false})
                 |> Repo.update!()
               end)
             end
@@ -202,7 +202,7 @@ defmodule ApathyDrive.Commands.Wear do
 
             if persist do
               %ItemInstance{id: item.instance_id}
-              |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
+              |> Ecto.Changeset.change(%{equipped: true})
               |> Repo.update!()
             end
 
@@ -226,7 +226,7 @@ defmodule ApathyDrive.Commands.Wear do
 
             if persist do
               %ItemInstance{id: item.instance_id}
-              |> Ecto.Changeset.change(%{equipped: true, class_id: character.class_id})
+              |> Ecto.Changeset.change(%{equipped: true})
               |> Repo.update!()
             end
 
