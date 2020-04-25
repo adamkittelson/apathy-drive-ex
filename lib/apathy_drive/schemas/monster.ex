@@ -317,57 +317,6 @@ defmodule ApathyDrive.Monster do
 
   def generate_monster_attributes(%Monster{} = monster), do: monster
 
-  def generate_loot_for_character(%Monster{} = monster, %Character{} = character) do
-    rarity = nil
-
-    if rarity do
-      Logger.info("spawning #{rarity} item for #{character.name}")
-
-      item_id = 1
-
-      if item_id do
-        Item
-        |> Repo.get(item_id)
-        |> Item.generate_for_character!(character, :loot)
-        |> case do
-          %Item{instance_id: nil} = item ->
-            gold =
-              item
-              |> Item.price()
-              |> div(10)
-
-            character
-            |> Ecto.Changeset.change(%{gold: character.gold + gold})
-            |> Repo.update!()
-            |> Mobile.send_scroll("<p>You find #{gold} gold crowns on the body.</p>")
-
-          %Item{instance_id: _id} = item ->
-            character
-            |> Mobile.send_scroll(
-              "<p>You receive #{Item.colored_name(item, character: character)}!</p>"
-            )
-            |> Character.load_items()
-        end
-      else
-        character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
-
-        %Character{id: character.id}
-        |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
-        |> Repo.update!()
-
-        character
-      end
-    else
-      character = update_in(character.pity_modifier, &(&1 + Monster.pity_bonus(monster)))
-
-      %Character{id: character.id}
-      |> Ecto.Changeset.change(%{pity_modifier: character.pity_modifier})
-      |> Repo.update!()
-
-      character
-    end
-  end
-
   def pity_bonus(%Monster{grade: "weak"}), do: 10
   def pity_bonus(%Monster{grade: "normal"}), do: 100
   def pity_bonus(%Monster{grade: "strong"}), do: 1_000
@@ -441,7 +390,7 @@ defmodule ApathyDrive.Monster do
 
       room
     end)
-    |> CraftingRecipe.drop_loot_for_character(character)
+    # |> CraftingRecipe.drop_loot_for_character(character)
     |> Room.load_items()
   end
 
