@@ -3,11 +3,8 @@ defmodule ApathyDrive.Item do
 
   alias ApathyDrive.{
     Ability,
-    Area,
     Character,
-    CharacterStyle,
     ClassAbility,
-    CraftingRecipe,
     Currency,
     Enchantment,
     Item,
@@ -17,9 +14,55 @@ defmodule ApathyDrive.Item do
     ItemRace,
     ItemTrait,
     Mobile,
-    Room,
     ShopItem,
     Trait
+  }
+
+  @weapon_type_modifier %{
+    "blunt" => 1.0,
+    "blade" => 1.1,
+    "two handed blunt" => 1.15,
+    "two handed blade" => 1.25
+  }
+
+  @armour_type_protection %{
+    "cloth armour" => 0.10,
+    "leather armour" => 0.15,
+    "chainmail armour" => 0.20,
+    "scalemail armour" => 0.25,
+    "platemail armour" => 0.30
+  }
+
+  @slot_physical_protection_modifier %{
+    "Head" => 0.15,
+    "Torso" => 0.15,
+    "Arm" => 0.1,
+    "Back" => 0.1,
+    "Foot" => 0.1,
+    "Hand" => 0.1,
+    "Legs" => 0.15,
+    "Held" => 0.1,
+    "Waist" => 0.05,
+    "Ears" => 0.0,
+    "Finger" => 0.0,
+    "Neck" => 0.0,
+    "Wrist" => 0.0
+  }
+
+  @slot_magical_protection_modifier %{
+    "Head" => 0.0,
+    "Torso" => 0.0,
+    "Arm" => 0.0,
+    "Back" => 0.0,
+    "Foot" => 0.0,
+    "Hand" => 0.0,
+    "Legs" => 0.0,
+    "Held" => 0.0,
+    "Waist" => 0.0,
+    "Ears" => 0.3,
+    "Finger" => 0.2,
+    "Neck" => 0.3,
+    "Wrist" => 0.2
   }
 
   require Logger
@@ -50,10 +93,10 @@ defmodule ApathyDrive.Item do
     field(:destruct_message, :string)
     field(:room_destruct_message, :string)
     field(:global_drop_rarity, :string)
+    field(:level, :integer)
 
     field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
-    field(:level, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
     field(:dropped_for_character_id, :integer, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
@@ -86,36 +129,67 @@ defmodule ApathyDrive.Item do
     |> validate_required(@required_fields)
   end
 
-  # set a level on placed items that have already been placed
-  def from_assoc(%ItemInstance{item: %Item{type: type} = item, level: nil, room_id: room_id} = ii)
-      when not is_nil(room_id) and type in ["Weapon", "Armour", "Shield"] do
-    traits = ItemTrait.load_traits(item.id)
+  def target_damage(0), do: 0
+  def target_damage(1), do: 6
 
-    min_level = traits["MinLevel"]
+  def target_damage(level) do
+    trunc(round(target_damage(level - 1) + max(1, (level - 1) / 6)))
+  end
 
-    area_id =
-      Room
-      |> Repo.get(room_id)
-      |> Map.get(:area_id)
+  def target_damage(weapon_type, skill_level) do
+    trunc(target_damage(skill_level) * @weapon_type_modifier[weapon_type])
+  end
 
-    area_level =
-      Area
-      |> Repo.get(area_id)
-      |> Map.get(:level)
+  def ac_for_character(%Character{} = character, %Item{type: "Armour"} = item) do
+    type = item.armour_type
 
-    ii
-    |> Ecto.Changeset.change(%{
-      level: min_level || area_level
-    })
-    |> Repo.update!()
-    |> from_assoc
+    skill_level =
+      case character.skills[type] do
+        %{level: level} ->
+          level
+
+        _ ->
+          0
+      end
+
+    ac(type, skill_level, item.worn_on)
+  end
+
+  def ac_for_character(_character, _item), do: 0
+
+  def mr_for_character(%Character{} = character, %Item{type: "Armour"} = item) do
+    type = item.armour_type
+
+    skill_level =
+      case character.skills[type] do
+        %{level: level} ->
+          level
+
+        _ ->
+          0
+      end
+
+    mr(type, skill_level, item.worn_on)
+  end
+
+  def mr_for_character(_character, _item), do: 0
+
+  def ac(type, level, slot) do
+    mitigation = @armour_type_protection[type]
+    base = -(50 * level * mitigation / (mitigation - 1))
+    trunc(base * @slot_physical_protection_modifier[slot])
+  end
+
+  def mr(type, level, slot) do
+    mitigation = @armour_type_protection[type]
+    base = -(50 * level * mitigation / (mitigation - 1))
+    trunc(base * @slot_magical_protection_modifier[slot])
   end
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
     values =
       ii
       |> Map.take([
-        :level,
         :equipped,
         :hidden,
         :purchased,
@@ -135,7 +209,7 @@ defmodule ApathyDrive.Item do
       item
       |> Map.merge(values)
       |> Map.put(:instance_id, id)
-      |> with_traits_for_level(ii.level)
+      |> with_traits()
 
     item
     |> Map.put(:uses, ii.uses || item.max_uses)
@@ -148,31 +222,16 @@ defmodule ApathyDrive.Item do
 
   def from_assoc(%ShopItem{item: item}) do
     item
-    |> with_traits_for_level(item.level)
+    |> with_traits()
     |> load_required_races_and_classes()
     |> load_item_abilities()
   end
 
-  def with_traits_for_level(%Item{type: type} = item, level \\ 1) do
-    item =
-      if type in ["Weapon", "Armour", "Shield"] do
-        Map.put(item, :level, level)
-      else
-        Map.put(item, :level, nil)
-      end
+  def with_traits(%Item{} = item) do
+    item_traits = ItemTrait.load_traits(item.id)
 
-    if recipe = CraftingRecipe.for_item(item) do
-      recipe
-      |> CraftingRecipe.item_with_traits(item)
-    else
-      item_traits = ItemTrait.load_traits(item.id)
-
-      traits =
-        if item.level, do: Map.put_new(item_traits, "MinLevel", item.level), else: item_traits
-
-      item
-      |> Map.put(:traits, traits)
-    end
+    item
+    |> Map.put(:traits, item_traits)
   end
 
   def slots do
@@ -335,14 +394,6 @@ defmodule ApathyDrive.Item do
 
   def upgrade_for_character?(_item, _character), do: false
 
-  def researchable?(%Item{} = item, %Character{} = character) do
-    if !!CraftingRecipe.for_item(item) and !item.unfinished do
-      !Repo.get_by(CharacterStyle, character_id: character.id, item_id: item.id)
-    else
-      false
-    end
-  end
-
   def researchable?(_item, _character), do: false
 
   def colored_name(item, opts \\ [])
@@ -371,13 +422,6 @@ defmodule ApathyDrive.Item do
     name =
       if item.unfinished do
         "unfinished " <> name
-      else
-        name
-      end
-
-    name =
-      if item.level do
-        name <> "<sup> Lv" <> to_string(item.level) <> "</sup>"
       else
         name
       end

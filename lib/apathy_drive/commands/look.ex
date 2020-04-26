@@ -478,7 +478,18 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_traits(character, item, indent \\ 0) do
-    Enum.each(item.traits, &display_trait(character, item, &1, indent))
+    ac = Item.ac_for_character(character, item)
+    mr = Item.mr_for_character(character, item)
+
+    traits =
+      item.traits
+      |> Ability.process_duration_traits(character, character, nil)
+      |> Map.put_new("AC", 0)
+      |> update_in(["AC"], &div(&1 + ac, 2))
+      |> Map.put_new("MR", 0)
+      |> update_in(["MR"], &div(&1 + mr, 2))
+
+    Enum.each(traits, &display_trait(character, item, &1, indent))
   end
 
   def display_trait(_character, _item, {"Learn", _list}, _indent), do: :noop

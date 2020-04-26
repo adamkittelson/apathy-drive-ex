@@ -569,6 +569,16 @@ defmodule ApathyDrive.Character do
         effect
       end
 
+    ac = Item.ac_for_character(character, item)
+    mr = Item.mr_for_character(character, item)
+
+    effect =
+      effect
+      |> Map.put_new("AC", 0)
+      |> update_in(["AC"], &div(&1 + ac, 2))
+      |> Map.put_new("MR", 0)
+      |> update_in(["MR"], &div(&1 + mr, 2))
+
     effect =
       if "Heal" in Map.keys(traits) do
         Ability.process_duration_trait(
@@ -650,13 +660,27 @@ defmodule ApathyDrive.Character do
       "whip" => "Cutting"
     }
 
+    {min_damage, max_damage} =
+      if weapon.weapon_type do
+        skill_level = get_in(character.skills, [weapon.weapon_type, Access.key!(:level)]) || 0
+
+        target_damage = Item.target_damage(weapon.weapon_type, skill_level)
+
+        damage = weapon_damage(weapon.speed, target_damage, skill_level)
+
+        min_damage = (weapon.min_damage + damage.min_damage) / 2
+        max_damage = (weapon.max_damage + damage.max_damage) / 2
+
+        {min_damage, max_damage}
+      else
+        {weapon.min_damage, weapon.max_damage}
+      end
+
     %Item{
       type: "Weapon",
       name: name,
       hit_verbs: hit_verbs,
       miss_verbs: [singular_miss, plural_miss],
-      min_damage: min_damage,
-      max_damage: max_damage,
       limb: limb
     } = weapon
 
@@ -897,7 +921,10 @@ defmodule ApathyDrive.Character do
 
   def add_attribute_experience(%{} = character, %{} = _attributes), do: character
 
-  def add_skill_experience(%Character{} = character, skill_name, amount \\ nil) do
+  def add_skill_experience(character, skill_name, amount \\ nil)
+  def add_skill_experience(%Character{} = character, nil, amount), do: character
+
+  def add_skill_experience(%Character{} = character, skill_name, amount) do
     amount =
       if amount do
         amount

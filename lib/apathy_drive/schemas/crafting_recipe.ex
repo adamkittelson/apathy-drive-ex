@@ -4,15 +4,13 @@ defmodule ApathyDrive.CraftingRecipe do
   alias ApathyDrive.{
     Character,
     CraftingRecipe,
-    CraftingRecipeTrait,
     Item,
     ItemInstance,
     ItemTrait,
     Material,
     Mobile,
     Room,
-    Skill,
-    Trait
+    Skill
   }
 
   schema "crafting_recipes" do
@@ -73,16 +71,9 @@ defmodule ApathyDrive.CraftingRecipe do
   def item_with_traits(%CraftingRecipe{} = recipe, %Item{} = item) do
     item_traits = ItemTrait.load_traits(item.id)
 
-    recipe_traits = CraftingRecipeTrait.load_traits(recipe.id)
-
-    traits =
-      item_traits
-      |> Trait.merge_traits(recipe_traits)
-      |> Map.put_new("MinLevel", item.level)
-
     item =
       item
-      |> Map.put(:traits, traits)
+      |> Map.put(:traits, item_traits)
 
     case item do
       %Item{type: "Weapon"} = item ->
