@@ -10,7 +10,7 @@ defmodule ApathyDrive.Commands.Experience do
       "\n<p><span class='white'>Character:</span></p>"
     )
 
-    exp = character.experience
+    exp = Character.trainable_experience(character)
     level = character.level
 
     Mobile.send_scroll(

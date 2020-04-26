@@ -66,6 +66,7 @@ defmodule ApathyDrive.Commands.Train do
           character
           |> Character.load_classes()
           |> Character.load_race()
+          |> Character.add_equipped_items_effects()
           |> Character.load_abilities()
           |> Character.set_title()
           |> Character.update_exp_bar()

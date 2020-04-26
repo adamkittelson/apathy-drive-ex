@@ -4,16 +4,13 @@ defmodule ApathyDrive.CraftingRecipe do
   alias ApathyDrive.{
     Character,
     CraftingRecipe,
-    CraftingRecipeTrait,
-    Currency,
     Item,
     ItemInstance,
     ItemTrait,
     Material,
     Mobile,
     Room,
-    Skill,
-    Trait
+    Skill
   }
 
   schema "crafting_recipes" do
@@ -72,36 +69,11 @@ defmodule ApathyDrive.CraftingRecipe do
   end
 
   def item_with_traits(%CraftingRecipe{} = recipe, %Item{} = item) do
-    material = Repo.get(Material, recipe.material_id)
     item_traits = ItemTrait.load_traits(item.id)
-
-    recipe_traits = CraftingRecipeTrait.load_traits(recipe.id)
-
-    traits =
-      item_traits
-      |> Trait.merge_traits(recipe_traits)
-      |> Map.put_new("MinLevel", item.level)
-
-    item_value =
-      if item.cost_currency,
-        do: Currency.copper_value(item.cost_currency) * item.cost_value,
-        else: 0
-
-    recipe_value =
-      Currency.copper_value(material.cost_currency) * material.cost_value * recipe.material_amount
-
-    value = max(item_value, recipe_value)
-
-    {currency, amount} =
-      value
-      |> Currency.set_value()
-      |> Enum.find(fn {_currency, amount} -> amount != 0 end)
 
     item =
       item
-      |> Map.put(:traits, traits)
-      |> Map.put(:cost_value, amount)
-      |> Map.put(:cost_currency, Currency.name_from_currency(currency))
+      |> Map.put(:traits, item_traits)
 
     case item do
       %Item{type: "Weapon"} = item ->
