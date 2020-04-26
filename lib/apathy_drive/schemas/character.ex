@@ -835,7 +835,9 @@ defmodule ApathyDrive.Character do
 
   def trainable_experience(%Character{} = character) do
     used_experience =
-      Enum.reduce(character.classes, 0, fn character_class, used_experience ->
+      character.classes
+      |> Enum.sort_by(fn c -> Repo.get(Class, c.class_id).exp_modifier end, &>=/2)
+      |> Enum.reduce(0, fn character_class, used_experience ->
         level = character_class.level
         class = Repo.get(Class, character_class.class_id)
 
