@@ -7,7 +7,6 @@ defmodule ApathyDrive.Monster do
     Aggression,
     AI,
     Character,
-    CraftingRecipe,
     Currency,
     Regeneration,
     Item,

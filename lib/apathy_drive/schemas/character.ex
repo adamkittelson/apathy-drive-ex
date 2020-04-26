@@ -924,7 +924,7 @@ defmodule ApathyDrive.Character do
   def add_attribute_experience(%{} = character, %{} = _attributes), do: character
 
   def add_skill_experience(character, skill_name, amount \\ nil)
-  def add_skill_experience(%Character{} = character, nil, amount), do: character
+  def add_skill_experience(%Character{} = character, nil, _amount), do: character
 
   def add_skill_experience(%Character{} = character, skill_name, amount) do
     amount =
