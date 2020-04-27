@@ -176,14 +176,14 @@ defmodule ApathyDrive.Item do
 
   def ac(type, level, slot) do
     mitigation = @armour_type_protection[type]
-    base = max(1, -(50 * level * mitigation / (mitigation - 1)))
-    trunc(base * @slot_physical_protection_modifier[slot])
+    base = -(50 * level * mitigation / (mitigation - 1))
+    max(1, trunc(base * @slot_physical_protection_modifier[slot]))
   end
 
   def mr(type, level, slot) do
     mitigation = @armour_type_protection[type]
-    base = max(1, -(50 * level * mitigation / (mitigation - 1)))
-    trunc(base * @slot_magical_protection_modifier[slot])
+    base = -(50 * level * mitigation / (mitigation - 1))
+    max(1, trunc(base * @slot_magical_protection_modifier[slot]))
   end
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do

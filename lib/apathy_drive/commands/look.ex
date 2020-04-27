@@ -481,13 +481,17 @@ defmodule ApathyDrive.Commands.Look do
     ac = Item.ac_for_character(character, item)
     mr = Item.mr_for_character(character, item)
 
+    IO.puts("ac: #{ac}")
+
     traits =
       item.traits
       |> Ability.process_duration_traits(character, character, nil)
+      |> IO.inspect()
       |> Map.put_new("AC", 0)
       |> update_in(["AC"], &div(&1 + ac, 2))
       |> Map.put_new("MR", 0)
       |> update_in(["MR"], &div(&1 + mr, 2))
+      |> IO.inspect()
 
     Enum.each(traits, &display_trait(character, item, &1, indent))
   end

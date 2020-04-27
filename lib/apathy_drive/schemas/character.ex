@@ -843,7 +843,7 @@ defmodule ApathyDrive.Character do
 
         modifier = class.exp_modifier / 100
 
-        used_experience + Level.exp_at_level(level, modifier)
+        used_experience + Level.exp_at_level(level - 1, modifier)
       end)
 
     character.experience - used_experience
