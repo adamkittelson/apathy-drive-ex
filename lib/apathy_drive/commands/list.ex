@@ -25,7 +25,7 @@ defmodule ApathyDrive.Commands.List do
         shop_item = put_in(shop_item.item.level, character.level)
         item = Item.from_assoc(shop_item)
 
-        padding = if item.type in ["Weapon", "Armour"], do: 42, else: 30
+        padding = 30
 
         if item.cost_value do
           Mobile.send_scroll(

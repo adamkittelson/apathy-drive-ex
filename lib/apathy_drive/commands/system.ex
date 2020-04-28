@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
   import ApathyDrive.Scripts
-  alias ApathyDrive.{Ability, Character, Item, Level, Match, Mobile, Monster, Repo, Room, Skill}
+  alias ApathyDrive.{Ability, Character, Item, Match, Mobile, Monster, Repo, Room, Skill}
   alias ApathyDrive.Commands.System
   require Ecto.Query
 
@@ -33,15 +33,8 @@ defmodule ApathyDrive.Commands.System do
     end)
   end
 
-  def system(%Room{} = room, character, ["advance"]) do
-    Room.update_mobile(room, character.ref, fn _room, character ->
-      exp = character.class.experience
-      level = character.level
-
-      to_level = Level.exp_at_level(level) - exp
-
-      Character.add_character_experience(character, to_level)
-    end)
+  def system(%Room{} = room, character, ["train"]) do
+    ApathyDrive.Commands.Train.execute(room, character, true)
   end
 
   def system(%Room{} = room, character, ["give_item" | item_id_or_name]) do

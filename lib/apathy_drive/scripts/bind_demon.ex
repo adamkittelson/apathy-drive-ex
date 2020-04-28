@@ -9,8 +9,6 @@ defmodule ApathyDrive.Scripts.BindDemon do
   ]
 
   def execute(%Room{} = room, mobile_ref, _) do
-    room = update_in(room.mobiles[mobile_ref], &Character.alter_evil_points(&1, 1))
-
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       owner_id = mobile.id
 
@@ -44,25 +42,15 @@ defmodule ApathyDrive.Scripts.BindDemon do
     if :rand.uniform(100) < spellcasting do
       effects =
         %{
-          "Bubble%" => 10,
-          "BubbleRegen%PerSecond" => 0.5,
+          # "Bubble%" => 10,
+          # "BubbleRegen%PerSecond" => 0.5,
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "Strength" => 6,
-          "Willpower" => 6,
-          "Agility" => 6,
-          "AC%" => 15,
-          "MR%" => 15,
+          "AC%" => 5,
+          "MR%" => 10,
           "DarkVision" => 225,
           "RestoreLimbs" => true,
-          "Heal" => %{"max" => 6, "min" => 6},
-          "Encumbrance" => 30,
+          "Encumbrance" => 10,
           # "Grant" => abilities,
-          "ResistImpaling" => 12,
-          "ResistCrushing" => 12,
-          "ResistCutting" => 12,
-          "ResistHoly" => 12,
-          "ResistStrike" => 12,
-          "ResistImpact" => 12,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
           "stack_key" => "bind-demon",
@@ -120,28 +108,15 @@ defmodule ApathyDrive.Scripts.BindDemon do
     if :rand.uniform(100) < spellcasting do
       effects =
         %{
-          "Bubble%" => 15,
-          "BubbleRegen%PerSecond" => 0.5,
+          # "Bubble%" => 15,
+          # "BubbleRegen%PerSecond" => 0.5,
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "Strength" => 12,
-          "Willpower" => 12,
-          "Agility" => 12,
-          "AC%" => 30,
-          "MR%" => 30,
+          "AC%" => 10,
+          "MR%" => 20,
           "DarkVision" => 225,
           "RestoreLimbs" => true,
-          "Heal" => %{"max" => 9, "min" => 9},
-          "Encumbrance" => 45,
+          "Encumbrance" => 15,
           # "Grant" => abilities,
-          "ResistImpaling" => 21,
-          "ResistCrushing" => 21,
-          "ResistCutting" => 21,
-          "ResistHoly" => 21,
-          "ResistStrike" => 21,
-          "ResistFire" => 15,
-          "ResistCold" => 15,
-          "ResistElectricity" => 12,
-          "ResistImpact" => 15,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
           "stack_key" => "bind-demon",

@@ -14,13 +14,13 @@ defmodule ApathyDrive.Commands.Train do
 
   def keywords, do: ["train"]
 
-  def execute(%Room{} = room, %Character{} = character, _args) do
+  def execute(%Room{} = room, %Character{} = character, args) do
     if !Trainer.trainer?(room) || !room.trainer_id || !room.trainer.class_id do
       message = "<p>You must be in an appropriate training room to train!</p>"
       Mobile.send_scroll(character, message)
       room
     else
-      train(room, character, room.trainer.class_id)
+      train(room, character, room.trainer.class_id, args)
     end
   end
 
@@ -39,10 +39,10 @@ defmodule ApathyDrive.Commands.Train do
     end
   end
 
-  def train(room, character, class_id) do
+  def train(room, character, class_id, force) do
     required_exp = required_experience(character, class_id)
 
-    if Character.trainable_experience(character) >= required_exp do
+    if Character.trainable_experience(character) >= required_exp or force == true do
       Room.update_mobile(room, character.ref, fn _room, character ->
         old_abilities = Map.values(character.abilities)
         old_hp = Mobile.max_hp_at_level(character, character.level)

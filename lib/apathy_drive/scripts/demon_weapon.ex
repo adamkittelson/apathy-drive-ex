@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.DemonWeapon do
-  alias ApathyDrive.{Character, Item, Mobile, Monster, Repo, Room, RoomMonster}
+  alias ApathyDrive.{Item, Mobile, Monster, Repo, Room, RoomMonster}
 
   @demon_ids [
     # lesser demon
@@ -9,8 +9,6 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
   ]
 
   def execute(%Room{} = room, mobile_ref, item) do
-    room = update_in(room.mobiles[mobile_ref], &Character.alter_evil_points(&1, 1))
-
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       owner_id = mobile.id
 
@@ -68,12 +66,12 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
 
       effect = %{
         "WeaponDamage" => [
-          %{kind: "magical", min: 0, max: 1, damage_type: "Disruption", damage_type_id: 13},
-          %{kind: "magical", min: 0, max: 1, damage_type: "Fire", damage_type_id: 5}
+          %{kind: "magical", min: 1, max: 1, damage_type: "Disruption", damage_type_id: 13},
+          %{kind: "magical", min: 1, max: 1, damage_type: "Fire", damage_type_id: 5}
         ],
         "RemoveMessage" => "The #{demon.name} bound to your #{item.name} returns to its plane.",
         "stack_key" => "demon-weapon",
-        "stack_count" => 3
+        "stack_count" => 1
       }
 
       item = Systems.Effect.add(item, effect, :timer.minutes(30))
@@ -164,13 +162,13 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
 
       effect = %{
         "WeaponDamage" => [
-          %{kind: "magical", min: 1, max: 2, damage_type: "Disruption", damage_type_id: 13},
-          %{kind: "magical", min: 1, max: 2, damage_type: "Fire", damage_type_id: 5},
-          %{kind: "magical", min: 1, max: 2, damage_type: "Stress", damage_type_id: 21}
+          %{kind: "magical", min: 2, max: 2, damage_type: "Disruption", damage_type_id: 13},
+          %{kind: "magical", min: 2, max: 2, damage_type: "Fire", damage_type_id: 5},
+          %{kind: "magical", min: 2, max: 2, damage_type: "Stress", damage_type_id: 21}
         ],
         "RemoveMessage" => "The #{demon.name} bound to your #{item.name} returns to its plane.",
         "stack_key" => "demon-weapon",
-        "stack_count" => 3
+        "stack_count" => 1
       }
 
       item = Systems.Effect.add(item, effect, :timer.minutes(60))

@@ -2325,21 +2325,6 @@ defmodule ApathyDrive.Ability do
         :health => 0.8
       })
 
-    target =
-      target
-      |> Map.get(:equipment, [])
-      |> Enum.map(& &1.armour_type)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.reduce(target, fn armour_type, target ->
-        Character.add_skill_experience(target, armour_type)
-      end)
-
-    caster =
-      ability.skills
-      |> Enum.reduce(caster, fn skill, caster ->
-        Character.add_skill_experience(caster, skill)
-      end)
-
     {caster, target}
   end
 

@@ -1,10 +1,8 @@
 defmodule ApathyDrive.Scripts.SummonDemon do
-  alias ApathyDrive.{Character, Mobile, Monster, Repo, Room, RoomMonster}
+  alias ApathyDrive.{Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     monster = Repo.get!(Monster, 1126)
-
-    room = update_in(room.mobiles[mobile_ref], &Character.alter_evil_points(&1, 1))
 
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       failure = Enum.random([:return, :attack, :roam])

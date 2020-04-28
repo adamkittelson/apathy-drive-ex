@@ -46,7 +46,8 @@ defmodule ApathyDrive.Item do
     "Ears" => 0.0,
     "Finger" => 0.0,
     "Neck" => 0.0,
-    "Wrist" => 0.0
+    "Wrist" => 0.0,
+    "Worn" => 0.0
   }
 
   @slot_magical_protection_modifier %{
@@ -62,7 +63,8 @@ defmodule ApathyDrive.Item do
     "Ears" => 0.3,
     "Finger" => 0.2,
     "Neck" => 0.3,
-    "Wrist" => 0.2
+    "Wrist" => 0.2,
+    "Worn" => 0.0
   }
 
   require Logger

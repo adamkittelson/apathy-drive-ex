@@ -76,40 +76,6 @@ defmodule ApathyDrive.Commands.Experience do
       )
     end)
 
-    Mobile.send_scroll(
-      character,
-      "\n<p><span class='white'>Skills:</span></p>"
-    )
-
-    skill_pad =
-      character.skills
-      |> Map.keys()
-      |> Enum.map(&String.length/1)
-      |> Enum.max()
-
-    character.skills
-    |> Enum.each(fn {name, skill} ->
-      exp = skill.experience
-      level = skill.level
-
-      to_level = Level.exp_at_level(level + 1, 1.0)
-
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Skill:</span> <span class='dark-cyan'>#{
-          name
-          |> to_string
-          |> String.pad_trailing(skill_pad)
-        }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
-          level
-          |> to_string
-          |> String.pad_trailing(3)
-        }</span> <span class='dark-green'>Exp needed for next level:</span> <span class='dark-cyan'>#{
-          to_level - exp
-        }</p>"
-      )
-    end)
-
     room
   end
 end
