@@ -1959,7 +1959,7 @@ defmodule ApathyDrive.Ability do
               )
 
             reaction = %Ability{
-              kind: "attack",
+              kind: "critical",
               mana: 0,
               energy: 0,
               user_message: ability.traits["DamageShieldUserMessage"],
@@ -2017,7 +2017,7 @@ defmodule ApathyDrive.Ability do
 
             damage ->
               reaction = %Ability{
-                kind: "attack",
+                kind: "critical",
                 mana: 0,
                 energy: 0,
                 reaction_energy: Enum.random(100..300),
