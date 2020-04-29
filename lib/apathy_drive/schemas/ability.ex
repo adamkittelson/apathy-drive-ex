@@ -121,6 +121,7 @@ defmodule ApathyDrive.Ability do
     "Agility",
     "Alignment",
     "Bubble",
+    "Bubble%",
     "Charm",
     "Blind",
     "Charm",

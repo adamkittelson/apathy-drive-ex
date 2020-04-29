@@ -1,8 +1,8 @@
-defmodule ApathyDrive.Scripts.SummonLesserDemon do
+defmodule ApathyDrive.Scripts.SummonGreaterDemon do
   alias ApathyDrive.{Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
-    monster = Repo.get!(Monster, 1121)
+    monster = Repo.get!(Monster, 1128)
 
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       failure = Enum.random([:return, :attack, :roam])
@@ -12,14 +12,14 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
 
       %Room{} =
         cond do
-          :rand.uniform(100) < spellcasting + 15 ->
+          :rand.uniform(100) < spellcasting - 20 ->
             owner_id = Map.get(mobile, :room_monster_id) || Map.get(mobile, :id)
 
             monster =
               %RoomMonster{
                 room_id: room.id,
                 monster_id: monster.id,
-                level: 1,
+                level: 15,
                 spawned_at: nil,
                 zone_spawned_at: nil,
                 delete_at: Timex.shift(DateTime.utc_now(), minutes: 24),
@@ -60,7 +60,7 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
               %RoomMonster{
                 room_id: room.id,
                 monster_id: monster.id,
-                level: 5,
+                level: 15,
                 spawned_at: nil,
                 zone_spawned_at: nil,
                 delete_at: Timex.shift(DateTime.utc_now(), minutes: 1)
@@ -91,7 +91,7 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
               %RoomMonster{
                 room_id: room.id,
                 monster_id: monster.id,
-                level: 5,
+                level: 15,
                 spawned_at: nil,
                 zone_spawned_at: nil,
                 delete_at: Timex.shift(DateTime.utc_now(), minutes: 24)

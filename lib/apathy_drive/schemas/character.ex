@@ -2075,7 +2075,9 @@ defmodule ApathyDrive.Character do
         |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
         |> Room.average()
 
-      sc = trunc(attribute_value * 2 / 3)
+      magic_level = div(Mobile.max_mana_at_level(character, level) - 6, 6)
+
+      sc = trunc(attribute_value * 2 / 3) + magic_level * 5
 
       sc = sc + level * 2
 

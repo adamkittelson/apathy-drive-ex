@@ -8,11 +8,11 @@ defmodule ApathyDrive.Scripts.SummonDemon do
       failure = Enum.random([:return, :attack, :roam])
 
       spellcasting =
-        Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["willpower"]})
+        Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["intellect"]})
 
       %Room{} =
         cond do
-          :rand.uniform(100) < spellcasting ->
+          :rand.uniform(100) < spellcasting - 5 ->
             owner_id = Map.get(mobile, :room_monster_id) || Map.get(mobile, :id)
 
             monster =
