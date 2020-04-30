@@ -2190,9 +2190,9 @@ defmodule ApathyDrive.Ability do
       |> max(caster.level)
       |> min(50)
 
-    {caster, damage_percent} =
-      Enum.reduce(damages, {caster, 0}, fn
-        %{kind: "raw", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+    {caster, damage_percent, target} =
+      Enum.reduce(damages, {caster, 0, target}, fn
+        %{kind: "raw", min: min, max: max, damage_type: type}, {caster, damage_percent, target} ->
           damage = Enum.random(min..max)
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
@@ -2201,9 +2201,10 @@ defmodule ApathyDrive.Ability do
 
           percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-          {caster, damage_percent + percent}
+          {caster, damage_percent + percent, target}
 
-        %{kind: "physical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+        %{kind: "physical", min: min, max: max, damage_type: type},
+        {caster, damage_percent, target} ->
           min = trunc(min)
           max = trunc(max)
 
@@ -2225,9 +2226,9 @@ defmodule ApathyDrive.Ability do
 
           percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-          {caster, damage_percent + percent}
+          {caster, damage_percent + percent, target}
 
-        %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent} ->
+        %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent, target} ->
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
           resist_percent = 1 - resist / (level * 50 + resist)
@@ -2240,9 +2241,10 @@ defmodule ApathyDrive.Ability do
 
           percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-          {caster, damage_percent + percent}
+          {caster, damage_percent + percent, target}
 
-        %{kind: "magical", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+        %{kind: "magical", min: min, max: max, damage_type: type},
+        {caster, damage_percent, target} ->
           min = trunc(min)
           max = trunc(max)
 
@@ -2266,9 +2268,9 @@ defmodule ApathyDrive.Ability do
 
           percent = damage / max_hp
 
-          {caster, damage_percent + percent}
+          {caster, damage_percent + percent, target}
 
-        %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent} ->
+        %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent, target} ->
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
           resist_percent = 1 - resist / (level * 50 + resist)
@@ -2281,9 +2283,10 @@ defmodule ApathyDrive.Ability do
 
           percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-          {caster, damage_percent + percent}
+          {caster, damage_percent + percent, target}
 
-        %{kind: "drain", min: min, max: max, damage_type: type}, {caster, damage_percent} ->
+        %{kind: "drain", min: min, max: max, damage_type: type},
+        {caster, damage_percent, target} ->
           damage = Enum.random(min..max)
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
@@ -2298,7 +2301,26 @@ defmodule ApathyDrive.Ability do
 
           Mobile.update_prompt(caster, room)
 
-          {caster, damage_percent + percent}
+          {caster, damage_percent + percent, target}
+
+        %{kind: "mana-drain", min: min, max: max}, {caster, damage_percent, target} ->
+          damage = Enum.random(min..max)
+
+          percent = damage / Mobile.max_mana_at_level(target, target.level)
+
+          heal_percent = damage / Mobile.max_mana_at_level(caster, caster.level)
+
+          caster =
+            caster
+            |> update_in([Access.key!(:mana)], &min(1.0, &1 + heal_percent))
+
+          target =
+            target
+            |> update_in([Access.key!(:mana)], &max(0, &1 - percent))
+
+          Mobile.update_prompt(caster, room)
+
+          {caster, damage_percent + percent, target}
       end)
 
     damage_percent =
