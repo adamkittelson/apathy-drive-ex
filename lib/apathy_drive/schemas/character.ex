@@ -1867,6 +1867,7 @@ defmodule ApathyDrive.Character do
             room
           end
         end)
+        |> ApathyDrive.Aggression.react(character.ref)
         |> AI.think(character.ref)
 
       if character = room.mobiles[character.ref] do

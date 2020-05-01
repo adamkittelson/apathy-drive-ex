@@ -4,6 +4,16 @@ defmodule ApathyDrive.Commands.Auto do
 
   def keywords, do: ["auto"]
 
+  def execute(%Room{} = room, %Character{ref: ref} = character, ["roam"]) do
+    Mobile.send_scroll(character, "<p>Toggling auto-roam.</p>")
+
+    Room.update_mobile(room, ref, fn _room, character ->
+      character
+      |> Ecto.Changeset.change(%{auto_roam: !character.auto_roam})
+      |> Repo.update!()
+    end)
+  end
+
   def execute(%Room{} = room, %Character{abilities: abilities} = character, [command]) do
     if ability = abilities[String.downcase(command)] do
       case Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id) do
