@@ -2118,6 +2118,7 @@ defmodule ApathyDrive.Ability do
     if trait_id == 0 do
       target =
         target.effects
+        |> IO.inspect()
         |> Enum.reject(fn {_key, effect} ->
           String.match?(to_string(effect["stack_key"]), ~r/character|item|class|race/)
         end)
