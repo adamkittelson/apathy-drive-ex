@@ -51,7 +51,7 @@ defmodule ApathyDrive.Aggression do
 
   def attacking_owner?(%{}, _mobile, _room), do: false
 
-  def enemy?(%Character{auto_roam: true} = character, %Monster{} = monster) do
+  def enemy?(%Character{} = character, %Monster{} = monster) do
     enemy?(monster, character)
   end
 

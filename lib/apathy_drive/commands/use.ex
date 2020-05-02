@@ -170,11 +170,14 @@ defmodule ApathyDrive.Commands.Use do
         end)
 
       %Item{type: "Container"} = item ->
-        ability = item.traits["OnUse"]
-
-        room
-        |> Ability.execute(character.ref, ability, [character.ref])
-        |> deduct_uses(character.ref, item)
+        if ability = item.traits["OnUse"] do
+          room
+          |> Ability.execute(character.ref, ability, [character.ref])
+          |> deduct_uses(character.ref, item)
+        else
+          Mobile.send_scroll(character, "<p>This container is not yet implemented!</p>")
+          room
+        end
 
       %Item{} ->
         Mobile.send_scroll(character, "<p>You may not use that item!</p>")

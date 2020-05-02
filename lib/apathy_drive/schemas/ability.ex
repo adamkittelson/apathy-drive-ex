@@ -1361,6 +1361,8 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def apply_ability(%Room{} = room, _caster, _target, _ability), do: room
+
   def apply_criticals(%Room{} = room, caster_ref, target_ref, %Ability{kind: kind} = ability)
       when kind == "attack" do
     caster = room.mobiles[caster_ref]
@@ -1972,8 +1974,8 @@ defmodule ApathyDrive.Ability do
 
             apply_ability(
               updated_room,
-              room.mobiles[target_ref],
-              room.mobiles[caster_ref],
+              updated_room.mobiles[target_ref],
+              updated_room.mobiles[caster_ref],
               reaction
             )
           else
@@ -2007,8 +2009,8 @@ defmodule ApathyDrive.Ability do
 
                 apply_ability(
                   updated_room,
-                  room.mobiles[target_ref],
-                  room.mobiles[caster_ref],
+                  updated_room.mobiles[target_ref],
+                  updated_room.mobiles[caster_ref],
                   reaction
                 )
               else
@@ -2031,8 +2033,8 @@ defmodule ApathyDrive.Ability do
 
               apply_ability(
                 updated_room,
-                room.mobiles[target_ref],
-                room.mobiles[caster_ref],
+                updated_room.mobiles[target_ref],
+                updated_room.mobiles[caster_ref],
                 reaction
               )
           end

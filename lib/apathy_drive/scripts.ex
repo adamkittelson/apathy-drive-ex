@@ -431,10 +431,10 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "cat's-eye pendant")
 
       roll <= 31 ->
-        give_item(room, mobile_ref, "demonhide bracers")
+        give_item(room, mobile_ref, "demonhide bracer")
 
       roll <= 32 ->
-        give_item(room, mobile_ref, "crimson bracers")
+        give_item(room, mobile_ref, "crimson bracer")
 
       roll <= 33 ->
         give_item(room, mobile_ref, "mithril ring")
@@ -626,7 +626,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "starsteel plate leggings")
 
       roll <= 14 ->
-        give_item(room, mobile_ref, "starsteel bracers")
+        give_item(room, mobile_ref, "starsteel bracer")
 
       roll <= 16 ->
         give_item(room, mobile_ref, "starsteel shortsword")
@@ -638,7 +638,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "turquoise potion")
 
       roll <= 22 ->
-        give_item(room, mobile_ref, "crimson bracers")
+        give_item(room, mobile_ref, "crimson bracer")
 
       roll <= 26 ->
         give_item(room, mobile_ref, "mithril ring")
@@ -656,7 +656,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "prismatic robes")
 
       roll <= 48 ->
-        give_item(room, mobile_ref, "laquered battle armour")
+        give_item(room, mobile_ref, "lacquered battle armour")
 
       roll <= 53 ->
         give_item(room, mobile_ref, "adamantite chainmail hauberk")
@@ -723,6 +723,110 @@ defmodule ApathyDrive.Scripts do
 
       roll <= 100 ->
         give_item(room, mobile_ref, "wicked bone scythe")
+    end
+  end
+
+  # 45:message 1437:giveitem 410
+  # 50:message 1437:giveitem 414
+  # 52:message 1434:giveitem 226
+  # 54:message 1433:giveitem 426
+  # 60:message 1433:giveitem 428
+  # 69:message 1429:giveitem 878
+  # 71:message 1423:giveitem 882
+  # 74:message 1423:giveitem 883
+  # 79:message 1424:giveitem 885
+  # 80:message 1428:giveitem 903
+  # 87:message 2622:giveitem 1889
+  # 94:message 2622:giveitem 1342
+  # 100:random 2944
+
+  def random_item_2944(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 3 ->
+        give_item(room, mobile_ref, "sapphire")
+
+      roll <= 6 ->
+        give_item(room, mobile_ref, "diamond")
+
+      roll <= 9 ->
+        give_item(room, mobile_ref, "onyx stone")
+
+      roll <= 14 ->
+        # moonstone
+        give_item(room, mobile_ref, 889)
+
+      roll <= 29 ->
+        give_item(room, mobile_ref, "glowing broadsword")
+
+      roll <= 32 ->
+        room = give_item(room, mobile_ref, "ice crystal falchion")
+        character = room.mobiles[mobile_ref]
+
+        # if ice crystal falchion could not be spawned because it is a limited item
+        # then give a longsword instead
+        if !Enum.find(character.inventory ++ room.items, &(&1.name == "ice crystal falchion")) do
+          give_item(room, mobile_ref, "longsword")
+        else
+          room
+        end
+
+      roll <= 33 ->
+        give_item(room, mobile_ref, "azurite stone")
+
+      roll <= 35 ->
+        give_item(room, mobile_ref, "serpent armbands")
+
+      roll <= 36 ->
+        give_item(room, mobile_ref, "crimson scale gauntlets")
+
+      roll <= 37 ->
+        give_item(room, mobile_ref, "vorpal sword")
+
+      roll <= 38 ->
+        give_item(room, mobile_ref, "emerald-studded bracelet")
+
+      roll <= 45 ->
+        give_item(room, mobile_ref, "gilded robes")
+
+      roll <= 50 ->
+        give_item(room, mobile_ref, "gianthair vest")
+
+      roll <= 52 ->
+        give_item(room, mobile_ref, "red dragon boots")
+
+      roll <= 54 ->
+        give_item(room, mobile_ref, "silver bracelet")
+
+      roll <= 60 ->
+        give_item(room, mobile_ref, "fingerbone bracelet")
+
+      roll <= 69 ->
+        give_item(room, mobile_ref, "shimmering vial")
+
+      roll <= 71 ->
+        give_item(room, mobile_ref, "agate stone")
+
+      roll <= 74 ->
+        give_item(room, mobile_ref, "hematite stone")
+
+      roll <= 79 ->
+        give_item(room, mobile_ref, "obsidian stone")
+
+      roll <= 80 ->
+        give_item(room, mobile_ref, "emerald")
+
+      roll <= 87 ->
+        # "icy scroll"
+        give_item(room, mobile_ref, 1889)
+
+      roll <= 94 ->
+        # another "icy scroll"?
+        give_item(room, mobile_ref, 1342)
+
+      roll <= 100 ->
+        random_item_2944(room, mobile_ref)
     end
   end
 
