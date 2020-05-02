@@ -607,7 +607,7 @@ defmodule ApathyDrive.Character do
   def sanitize(message) do
     {:safe, message} = Phoenix.HTML.html_escape(message)
 
-    message
+    to_string(message)
   end
 
   def weapon(%Character{} = character) do

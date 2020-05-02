@@ -442,13 +442,7 @@ defmodule ApathyDrive.Item do
     item.cost_value * Currency.copper_value(item.cost_currency)
   end
 
-  def useable_by_character?(character, %Item{traits: %{"Learn" => ability}}) do
-    class_ability =
-      ClassAbility
-      |> Repo.get_by(class_id: character.class_id, ability_id: ability.id)
-
-    !!class_ability and Ability.appropriate_alignment?(ability, character)
-  end
+  def useable_by_character?(character, %Item{traits: %{"Learn" => ability}}), do: false
 
   def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
     class_ids =
