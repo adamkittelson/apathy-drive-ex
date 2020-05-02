@@ -1,9 +1,37 @@
 defmodule ApathyDrive.Commands.Set do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Race, Room}
+  alias ApathyDrive.{Character, Race, Repo, Room}
   require Ecto.Query
 
   def keywords, do: ["set"]
+
+  def execute(%Room{} = room, %Character{} = character, ["combat", type, "color", color])
+      when type in ["attack", "target", "spectator"] do
+    Mobile.send_scroll(
+      character,
+      "<p style='color: #{color};'>#{String.capitalize(type)} color set.</p>"
+    )
+
+    character =
+      case type do
+        "attack" ->
+          character
+          |> Ecto.Changeset.change(%{attack_color: color})
+          |> Repo.update!()
+
+        "target" ->
+          character
+          |> Ecto.Changeset.change(%{target_color: color})
+          |> Repo.update!()
+
+        "spectator" ->
+          character
+          |> Ecto.Changeset.change(%{spectator_color: color})
+          |> Repo.update!()
+      end
+
+    put_in(room.mobiles[character.ref], character)
+  end
 
   def execute(%Room{} = room, %Character{} = character, ["race" | args]) do
     query = Enum.join(args, " ")
@@ -31,7 +59,11 @@ defmodule ApathyDrive.Commands.Set do
   end
 
   def execute(%Room{} = room, %Character{} = character, _args) do
-    message = "<p>Valid SET options: race</p>"
+    message = "<p>Valid SET option examples:
+  race dwarf
+  combat attack color blue
+  combat target color red
+  combat spectator color #ff00ff</p>"
 
     Mobile.send_scroll(character, message)
 

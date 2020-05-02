@@ -70,6 +70,9 @@ defmodule ApathyDrive.Character do
     field(:evil_points, :float)
     field(:last_evil_action_at, :utc_datetime_usec)
     field(:missing_limbs, {:array, :string}, default: [])
+    field(:attack_color, :string, default: "red")
+    field(:target_color, :string, default: "red")
+    field(:spectator_color, :string, default: "red")
 
     field(:next_drain_at, :integer, virtual: true)
     field(:lore, :any, virtual: true)

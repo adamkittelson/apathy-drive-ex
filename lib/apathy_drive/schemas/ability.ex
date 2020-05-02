@@ -2432,7 +2432,7 @@ defmodule ApathyDrive.Ability do
     if message = effects["StatusMessage"] do
       Mobile.send_scroll(
         target,
-        "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+        "<p><span style='color: #{message_color(ability, target, :target)};'>#{message}</span></p>"
       )
     end
 
@@ -2814,18 +2814,18 @@ defmodule ApathyDrive.Ability do
     "<p><span class='dark-red'>#{message}</span></p>"
   end
 
-  def caster_cast_message(%Ability{} = ability, %{} = _caster, %Item{} = target, _mobile) do
+  def caster_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, _mobile) do
     message =
       ability.user_message
       |> Text.interpolate(%{"target" => target})
       |> Text.capitalize_first()
 
-    "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+    "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
   end
 
   def caster_cast_message(
         %Ability{} = ability,
-        %{} = _caster,
+        %{} = caster,
         %{ability_shift: nil} = target,
         _mobile
       ) do
@@ -2834,7 +2834,7 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"target" => target})
       |> Text.capitalize_first()
 
-    "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+    "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
   end
 
   def caster_cast_message(
@@ -2860,7 +2860,7 @@ defmodule ApathyDrive.Ability do
           |> Text.interpolate(%{"target" => target, "amount" => abs(amount)})
           |> Text.capitalize_first()
 
-        "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+        "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
     end
   end
 
@@ -2941,7 +2941,7 @@ defmodule ApathyDrive.Ability do
   def target_cast_message(
         %Ability{} = ability,
         %{} = caster,
-        %{ability_shift: nil} = _target,
+        %{ability_shift: nil} = target,
         _mobile
       ) do
     message =
@@ -2949,7 +2949,7 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster})
       |> Text.capitalize_first()
 
-    "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+    "<p><span style='color: #{message_color(ability, target, :target)};'>#{message}</span></p>"
   end
 
   def target_cast_message(
@@ -2975,7 +2975,7 @@ defmodule ApathyDrive.Ability do
           |> Text.interpolate(%{"user" => caster, "amount" => abs(amount)})
           |> Text.capitalize_first()
 
-        "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+        "<p><span style='color: #{message_color(ability, target, :target)};'>#{message}</span></p>"
     end
   end
 
@@ -3053,27 +3053,27 @@ defmodule ApathyDrive.Ability do
     "<p><span class='dark-red'>#{message}</span></p>"
   end
 
-  def spectator_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, _mobile) do
+  def spectator_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, mobile) do
     message =
       ability.spectator_message
       |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first()
 
-    "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+    "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
   end
 
   def spectator_cast_message(
         %Ability{} = ability,
         %{} = caster,
         %{ability_shift: nil} = target,
-        _mobile
+        mobile
       ) do
     message =
       ability.spectator_message
       |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first()
 
-    "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+    "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
   end
 
   def spectator_cast_message(
@@ -3099,7 +3099,7 @@ defmodule ApathyDrive.Ability do
           |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => abs(amount)})
           |> Text.capitalize_first()
 
-        "<p><span class='#{message_color(ability)}'>#{message}</span></p>"
+        "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
     end
   end
 
@@ -3153,7 +3153,10 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"target" => target})
       |> Text.capitalize_first()
 
-    Mobile.send_scroll(caster, "<p><span class='#{message_color(ability)}'>#{message}</span></p>")
+    Mobile.send_scroll(
+      caster,
+      "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+    )
 
     display_pre_cast_message(
       room,
@@ -3176,15 +3179,35 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first()
 
-    Room.send_scroll(room, "<p><span class='#{message_color(ability)}'>#{message}</span></p>", [
-      caster
-    ])
+    Room.send_scroll(
+      room,
+      "<p><span style='color: #{message_color(ability, target, :spectator)};'>#{message}</span></p>",
+      [
+        caster
+      ]
+    )
   end
 
   def display_pre_cast_message(_room, _caster, _targets, _ability), do: :noop
 
-  def message_color(%Ability{kind: kind}) when kind in ["attack", "critical"], do: "red"
-  def message_color(%Ability{}), do: "blue"
+  def message_color(%Ability{kind: kind}, %Character{} = character, :caster)
+      when kind in ["attack", "critical"] do
+    character.attack_color
+  end
+
+  def message_color(%Ability{kind: kind}, %Character{} = character, :spectator)
+      when kind in ["attack", "critical"],
+      do: character.spectator_color
+
+  def message_color(%Ability{kind: kind}, %Character{} = character, :target)
+      when kind in ["attack", "critical"],
+      do: character.target_color
+
+  def message_color(%Ability{kind: kind}, _mobile, _perspective)
+      when kind in ["attack", "critical"],
+      do: "red"
+
+  def message_color(%Ability{}, _, _), do: "blue"
 
   def can_execute?(%Room{} = room, mobile, ability) do
     cond do
