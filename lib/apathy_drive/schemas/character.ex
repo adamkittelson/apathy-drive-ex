@@ -121,7 +121,7 @@ defmodule ApathyDrive.Character do
     has_many(:characters_skills, ApathyDrive.CharacterSkill)
     has_many(:trained_skills, through: [:characters_skills, :skill])
 
-    has_many(:characters_materials, ApathyDrive.CharacterMaterial)
+    has_many(:characters_materials, CharacterMaterial)
 
     has_many(:character_classes, ApathyDrive.CharacterClass)
 
