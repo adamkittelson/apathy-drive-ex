@@ -133,17 +133,23 @@ defmodule ApathyDrive.Character do
 
   def top_list(number \\ 10) do
     CharacterClass
-    |> Ecto.Query.order_by(desc: :experience)
+    |> Ecto.Query.order_by(desc: :level)
     |> Ecto.Query.preload([:class, :character])
-    |> Ecto.Query.limit(^number)
     |> ApathyDrive.Repo.all()
     |> Enum.map(
       &%{
         name: &1.character.name,
         class: &1.class.name,
-        exp: &1.experience
+        level: &1.level,
+        exp: &1.character.experience
       }
     )
+    |> Enum.group_by(& &1.name)
+    |> Enum.map(fn {_name, list} ->
+      Enum.max_by(list, & &1.level)
+    end)
+    |> Enum.sort_by(&{&1.exp}, &>=/2)
+    |> Enum.take(number)
   end
 
   def load_traits(%Character{} = character) do
