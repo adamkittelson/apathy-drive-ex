@@ -248,27 +248,16 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.join(":")
   end
 
-  def enchantment_exp(character, skill \\ nil) do
-    if skill do
-      skill = character.skills[skill]
-      exp = skill.experience
-      level = skill.level
-
-      if level == 0 do
-        Level.exp_at_level(level + 1, 1.0) - exp
-      else
-        max(1, level) * 20
-      end
-    else
-      character.level * 20
-    end
+  def enchantment_exp(character, _skill \\ nil) do
+    Character.drain_rate(character) * 8
   end
 
   def total_enchantment_time(
         enchanter,
-        %Enchantment{ability: %Ability{level: level}}
+        %Enchantment{ability: %Ability{level: level, class_id: class_id}}
       ) do
-    total_enchantment_time(enchanter.class.class.level, level)
+    class_level = Enum.find(enchanter.classes, &(&1.class_id == class_id)).level
+    total_enchantment_time(class_level, level)
   end
 
   def total_enchantment_time(
@@ -338,10 +327,8 @@ defmodule ApathyDrive.Enchantment do
             #     Map.put(traits, "Grant", ability)
             # end
 
-            traits = Trait.merge_traits(item.traits, ability.traits)
-
             item
-            |> Map.put(:traits, traits)
+            |> Systems.Effect.add(ability.traits)
             |> Map.put(:enchantments, [ability.name | item.enchantments])
           end)
 

@@ -393,19 +393,21 @@ defmodule ApathyDrive.Commands.Help do
         |> Repo.get_by(ability_id: ability.id)
         |> Repo.preload(:skill)
 
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Skill: </span><span class='dark-cyan'>#{
-          skill_ability.skill.name
-        }</span></p>"
-      )
+      if skill_ability do
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-green'>Skill: </span><span class='dark-cyan'>#{
+            skill_ability.skill.name
+          }</span></p>"
+        )
 
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Skill Level: </span><span class='dark-cyan'>#{
-          skill_ability.level
-        }</span></p>"
-      )
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-green'>Skill Level: </span><span class='dark-cyan'>#{
+            skill_ability.level
+          }</span></p>"
+        )
+      end
     else
       Mobile.send_scroll(
         character,

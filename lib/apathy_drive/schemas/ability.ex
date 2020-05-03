@@ -62,6 +62,7 @@ defmodule ApathyDrive.Ability do
     field(:reaction_energy, :integer, virtual: true, default: 0)
     field(:crit_tables, :any, virtual: true, default: [])
     field(:auto, :boolean, virtual: true, default: true)
+    field(:class_id, :integer, virtual: true)
 
     belongs_to(:crit_table, ApathyDrive.DamageType)
 
@@ -2120,7 +2121,6 @@ defmodule ApathyDrive.Ability do
     if trait_id == 0 do
       target =
         target.effects
-        |> IO.inspect()
         |> Enum.reject(fn {_key, effect} ->
           String.match?(to_string(effect["stack_key"]), ~r/character|item|class|race/)
         end)

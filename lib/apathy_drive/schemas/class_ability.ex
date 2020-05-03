@@ -26,6 +26,7 @@ defmodule ApathyDrive.ClassAbility do
       |> Repo.all()
       |> Enum.map(fn class_ability ->
         class_ability = put_in(class_ability.ability.level, class_ability.level)
+        class_ability = put_in(class_ability.ability.class_id, class_id)
 
         put_in(
           class_ability.ability.attributes,
@@ -42,7 +43,8 @@ defmodule ApathyDrive.ClassAbility do
       |> Ecto.Query.preload([:ability])
       |> Repo.all()
       |> Enum.map(fn class_ability ->
-        put_in(class_ability.ability.level, level)
+        class_ability = put_in(class_ability.ability.level, level)
+        put_in(class_ability.ability.class_id, class_id)
       end)
 
     base_abilities ++ leveled_abilities
