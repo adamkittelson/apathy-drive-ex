@@ -14,8 +14,7 @@ defmodule ApathyDrive.Item do
     ItemRace,
     ItemTrait,
     Mobile,
-    ShopItem,
-    Trait
+    ShopItem
   }
 
   @weapon_type_modifier %{
@@ -322,9 +321,9 @@ defmodule ApathyDrive.Item do
     min(div(level, 10) + 1, 5)
   end
 
-  def color(%Item{type: type, traits: %{"Quality" => quality}})
+  def color(%Item{type: type} = item)
       when type in ["Armour", "Shield", "Weapon"] do
-    case Trait.value("Quality", quality) do
+    case Systems.Effect.effect_bonus(item, "Quality") do
       5 ->
         "red"
 
