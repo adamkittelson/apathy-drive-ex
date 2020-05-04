@@ -96,6 +96,7 @@ defmodule ApathyDrive.Item do
     field(:global_drop_rarity, :string)
     field(:level, :integer)
 
+    field(:shatter_chance, :float, virtual: true, default: 0.0)
     field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
@@ -321,30 +322,26 @@ defmodule ApathyDrive.Item do
     min(div(level, 10) + 1, 5)
   end
 
-  def color(%Item{type: type} = item)
+  def color(%Item{type: type} = item, opts)
       when type in ["Armour", "Shield", "Weapon"] do
-    case Systems.Effect.effect_bonus(item, "Quality") do
-      5 ->
-        "red"
+    shatter_chance = Enchantment.shatter_chance(opts[:character], item)
 
-      4 ->
-        "olive"
-
-      3 ->
+    cond do
+      shatter_chance > 0.25 ->
         "darkmagenta"
 
-      2 ->
+      shatter_chance > 0.1 ->
         "blue"
 
-      1 ->
+      shatter_chance > 0 ->
         "chartreuse"
 
-      _else ->
+      :else ->
         "teal"
     end
   end
 
-  def color(%Item{}), do: "teal"
+  def color(%Item{}, _opts), do: "teal"
 
   def enchantment(item) do
     case item.traits["Grant"] || item.traits["OnHit"] || item.traits["Passive"] do
@@ -432,7 +429,7 @@ defmodule ApathyDrive.Item do
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 
-    "<span style='color: #{color(item)};'>#{name}</span>"
+    "<span style='color: #{color(item, opts)};'>#{name}</span>"
   end
 
   def cost_in_copper(%Item{cost_currency: nil}), do: 0

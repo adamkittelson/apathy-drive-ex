@@ -71,6 +71,11 @@ defmodule ApathyDrive.Trait do
 
           "replace" ->
             Map.put(traits, trait, value)
+
+          "mult%" ->
+            value = (1 - value / 100) * (1 - traits[trait] / 100)
+            value = (1 - value) * 100
+            Map.put(traits, trait, value)
         end
       else
         Map.put(traits, trait, value)

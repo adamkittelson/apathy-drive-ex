@@ -483,6 +483,7 @@ defmodule ApathyDrive.Commands.Look do
 
     traits =
       item.traits
+      |> IO.inspect()
       |> Ability.process_duration_traits(character, character, nil)
       |> Map.put_new("AC", 0)
       |> update_in(["AC"], &div(&1 + ac, 2))

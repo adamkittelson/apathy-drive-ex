@@ -733,16 +733,6 @@ defmodule ApathyDrive.Ability do
         casting_failed?(caster, ability) ->
           casting_failed(room, caster_ref, ability)
 
-        quality_too_high?(ability, item) ->
-          Mobile.send_scroll(
-            caster,
-            "<p>#{Item.colored_name(item)} cannot be enchanted to a quality level higher than #{
-              Item.max_quality(item)
-            }.<p>"
-          )
-
-          caster
-
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, item, ability)
 
@@ -3401,14 +3391,6 @@ defmodule ApathyDrive.Ability do
         "<p><span class='cyan'>You do not have enough mana to use that ability.</span></p>"
       )
     end
-  end
-
-  def quality_too_high?(%Ability{} = ability, %Item{} = item) do
-    quality = Trait.merge_traits(ability.traits, item.traits)["Quality"]
-
-    max_quality = Item.max_quality(item)
-
-    quality > max_quality
   end
 
   def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false

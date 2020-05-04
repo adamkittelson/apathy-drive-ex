@@ -695,7 +695,10 @@ defmodule ApathyDrive.Character do
 
     limbs = if limb, do: [limb], else: ["left hand", "right hand"]
 
-    bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage")
+    enchantment_damage = List.flatten(Map.get(weapon.traits, "WeaponDamage", []))
+
+    bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage") ++ enchantment_damage
+    IO.inspect(bonus_damage)
 
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
 
