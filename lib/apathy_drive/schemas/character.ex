@@ -764,7 +764,7 @@ defmodule ApathyDrive.Character do
 
       ability
       |> put_in([Access.key!(:traits), "OnHit"], on_hit)
-      |> put_in([Access.key!(:traits), "OnHit%"], weapon.traits["OnHit%"])
+      |> put_in([Access.key!(:traits), "OnHit%"], Systems.Effect.effect_bonus(weapon, "OnHit%"))
 
       # end
     else

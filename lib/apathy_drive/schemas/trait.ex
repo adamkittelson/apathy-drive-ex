@@ -133,7 +133,8 @@ defmodule ApathyDrive.Trait do
             "stack_key",
             "timers",
             "Aggro",
-            "effect_ref"
+            "effect_ref",
+            "ClassLevel"
           ] ->
             "replace"
 
