@@ -40,8 +40,9 @@ defmodule ApathyDrive.Commands.Use do
   ]
 
   def execute(%Room{} = room, %Character{} = character, [requested_lore, "lore"]) do
-    if (lore = ElementalLores.lore(requested_lore)) && Mobile.has_ability?(character, "Elemental") do
-      if lore.level <= character.level do
+    if (lore = ElementalLores.lore(requested_lore)) &&
+         Mobile.ability_value(character, "Elemental") do
+      if lore.level <= Mobile.ability_value(character, "Elemental") do
         Mobile.send_scroll(character, "<p>You are now using the lore of #{lore.name}.</p>")
 
         put_in(room.mobiles[character.ref].lore, lore)

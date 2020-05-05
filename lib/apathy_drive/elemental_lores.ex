@@ -4,7 +4,7 @@ defmodule ApathyDrive.ElementalLores do
   @lores %{
     "earth" => %{
       name: "earth",
-      level: 1,
+      level: 3,
       damage_types: [
         %{
           kind: "magical",
@@ -18,7 +18,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "ice" => %{
       name: "ice",
-      level: 5,
+      level: 6,
       damage_types: [
         %{
           kind: "magical",
@@ -32,7 +32,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "fire" => %{
       name: "fire",
-      level: 10,
+      level: 9,
       damage_types: [
         %{
           kind: "magical",
@@ -46,7 +46,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "wind" => %{
       name: "wind",
-      level: 15,
+      level: 12,
       damage_types: [
         %{
           kind: "magical",
@@ -60,7 +60,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "electricity" => %{
       name: "electricity",
-      level: 20,
+      level: 15,
       damage_types: [
         %{
           kind: "magical",
@@ -78,7 +78,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "vacid" => %{
       name: "vacid",
-      level: 25,
+      level: 18,
       damage_types: [
         %{
           kind: "magical",
@@ -96,7 +96,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "chaos" => %{
       name: "chaos",
-      level: 30,
+      level: 21,
       damage_types: [
         %{
           kind: "magical",
@@ -114,7 +114,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "plasma" => %{
       name: "plasma",
-      level: 35,
+      level: 24,
       damage_types: [
         %{
           kind: "magical",
@@ -132,7 +132,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "aether" => %{
       name: "aether",
-      level: 40,
+      level: 27,
       damage_types: [
         %{
           kind: "magical",
@@ -146,7 +146,7 @@ defmodule ApathyDrive.ElementalLores do
     },
     "nexus" => %{
       name: "nexus",
-      level: 50,
+      level: 30,
       damage_types: [
         %{
           kind: "magical",
