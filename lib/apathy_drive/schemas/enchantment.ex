@@ -275,7 +275,15 @@ defmodule ApathyDrive.Enchantment do
         enchanter,
         %Enchantment{ability: %Ability{level: level}}
       ) do
-    enchantment_level = Map.get(enchanter.skills, "enchantment", 1)
+    enchantment_level =
+      case Map.get(enchanter.skills, "enchanting") do
+        nil ->
+          1
+
+        skill ->
+          skill.level
+      end
+
     total_enchantment_time(enchantment_level, level)
   end
 
@@ -299,7 +307,14 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def shatter_chance(%Character{} = character, %Item{} = item) do
-    enchanter_level = Map.get(character.skills, "enchantment", 0)
+    enchanter_level =
+      case Map.get(character.skills, "enchanting") do
+        nil ->
+          1
+
+        skill ->
+          skill.level
+      end
 
     item.shatter_chance * :math.pow(0.90, enchanter_level)
   end

@@ -2,7 +2,6 @@ defmodule ApathyDrive.Item do
   use ApathyDriveWeb, :model
 
   alias ApathyDrive.{
-    Ability,
     Character,
     Currency,
     Enchantment,
@@ -418,10 +417,26 @@ defmodule ApathyDrive.Item do
     "<span style='color: #{color(item, opts)};'>#{name}</span>"
   end
 
-  def cost_in_copper(%Item{cost_currency: nil}), do: 0
+  def cost_in_copper(%Item{cost_currency: nil, shatter_chance: shatter_chance}) do
+    shatter_chance * 10000
+  end
 
-  def cost_in_copper(%Item{} = item) do
-    item.cost_value * Currency.copper_value(item.cost_currency)
+  def cost_in_copper(%Item{shatter_chance: shatter_chance} = item) do
+    value = item.cost_value * Currency.copper_value(item.cost_currency)
+
+    if shatter_chance > 0 do
+      multiplier = 1 + shatter_chance
+
+      # to have some kind of value when enchanting free items
+      base = trunc(shatter_chance * 10000)
+
+      # increase item value by multiplier derived from shatter chance (how much magic an item has)
+      multiplied = trunc(value * multiplier)
+
+      max(base, multiplied)
+    else
+      value
+    end
   end
 
   def has_ability?(%Item{} = item, ability_name) do
