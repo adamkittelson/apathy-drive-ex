@@ -18,7 +18,7 @@ defmodule ApathyDrive.Commands.Experience do
       "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
         level
         |> to_string
-        |> String.pad_trailing(3)
+        |> String.pad_trailing(10)
       }</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{exp}</p>"
     )
 
@@ -35,8 +35,10 @@ defmodule ApathyDrive.Commands.Experience do
 
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{class.name}</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
-            level
+          "<p><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{
+            String.pad_trailing(class.name, 10)
+          }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
+            character_class.level
             |> to_string
             |> String.pad_trailing(3)
           }</span> <span class='dark-green'>Exp needed for next level:</span> <span class='dark-cyan'>#{
