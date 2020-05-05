@@ -295,7 +295,7 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def total_enchantment_time(skill_level, enchant_level) do
-    max(60, (enchant_level * 5 - (skill_level - enchant_level) * 10) * 60)
+    max(300, (enchant_level * 5 - (skill_level - enchant_level) * 10) * 60)
   end
 
   def time_left(enchanter, %Enchantment{} = enchantment) do
