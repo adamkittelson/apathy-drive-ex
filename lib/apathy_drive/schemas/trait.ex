@@ -2,6 +2,8 @@ defmodule ApathyDrive.Trait do
   use ApathyDriveWeb, :model
   use GenServer
 
+  require Logger
+
   schema "traits" do
     field(:name, :string)
     field(:description, :string)
@@ -57,30 +59,62 @@ defmodule ApathyDrive.Trait do
   end
 
   def merge_traits(traits1, traits2) do
-    Enum.reduce(traits2, traits1, fn {trait, value}, traits ->
-      if trait in Map.keys(traits) do
-        case merge_by(trait) do
-          "add" ->
-            Map.put(traits, trait, value + traits[trait])
+    # IO.puts("traits1: #{inspect(traits1)}, traits2: #{inspect(traits2)}")
 
-          "multiply" ->
-            Map.put(traits, trait, value * traits[trait])
+    Enum.reduce(traits2, traits1, fn
+      {trait, value}, traits ->
+        if trait in Map.keys(traits) and !is_nil(value) do
+          case merge_by(trait) do
+            "add" ->
+              Map.put(traits, trait, value + traits[trait])
 
-          "list" ->
-            Map.put(traits, trait, [value | List.wrap(traits[trait])])
+            "multiply" ->
+              Map.put(traits, trait, value * traits[trait])
 
-          "replace" ->
-            Map.put(traits, trait, value)
+            "list" ->
+              Map.put(traits, trait, [value | List.wrap(traits[trait])])
 
-          "mult%" ->
-            value = (1 - value / 100) * (1 - traits[trait] / 100)
-            value = (1 - value) * 100
-            Map.put(traits, trait, value)
+            "replace" ->
+              Map.put(traits, trait, value)
+
+            "mult%" ->
+              value = (1 - value / 100) * (1 - traits[trait] / 100)
+              value = (1 - value) * 100
+              Map.put(traits, trait, value)
+          end
+        else
+          Map.put(traits, trait, value)
         end
-      else
-        Map.put(traits, trait, value)
-      end
     end)
+  end
+
+  def value(traits, name) do
+    if value = traits[name] do
+      cond do
+        merge_by(name) == "list" ->
+          List.flatten(value)
+
+        :else ->
+          value
+      end
+    else
+      case merge_by(name) do
+        "add" ->
+          0
+
+        "multiply" ->
+          0
+
+        "list" ->
+          []
+
+        "replace" ->
+          nil
+
+        "mult%" ->
+          0
+      end
+    end
   end
 
   def merge_by(trait_name) do
@@ -89,15 +123,24 @@ defmodule ApathyDrive.Trait do
         merge_by
 
       _ ->
-        "add"
+        cond do
+          String.starts_with?(trait_name, "Resist") ->
+            "add"
+
+          trait_name in [
+            "Retaliation",
+            "stack_count",
+            "stack_key",
+            "timers",
+            "Aggro",
+            "effect_ref"
+          ] ->
+            "replace"
+
+          :else ->
+            Logger.info("#{trait_name} trait not found")
+            "replace"
+        end
     end
   end
-
-  def value(_trait, list) when is_list(list) do
-    list = List.flatten(list)
-
-    Enum.sum(list)
-  end
-
-  def value(_trait, value), do: value
 end

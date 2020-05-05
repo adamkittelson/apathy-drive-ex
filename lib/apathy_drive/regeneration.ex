@@ -29,7 +29,7 @@ defmodule ApathyDrive.Regeneration do
 
     speed = Mobile.ability_value(mobile, "Speed")
 
-    modifier = if speed, do: speed, else: 1
+    modifier = if speed == 0, do: 1, else: speed
 
     trunc(energy * (1 / modifier))
   end
@@ -180,7 +180,7 @@ defmodule ApathyDrive.Regeneration do
 
     speed = Mobile.ability_value(mobile, "Speed")
 
-    modifier = if speed, do: speed, else: 1
+    modifier = if speed == 0, do: 1, else: speed
 
     multiplier * (1 / modifier)
   end

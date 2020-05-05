@@ -172,26 +172,22 @@ defmodule ApathyDrive.CraftingRecipe do
 
       item = item_with_traits(recipe, item)
 
-      if item.traits["MinLevel"] && item.traits["MinLevel"] > level do
-        drop_loot_for_character(room, character)
-      else
-        Mobile.send_scroll(
-          character,
-          "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
-        )
+      Mobile.send_scroll(
+        character,
+        "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+      )
 
-        %ItemInstance{
-          item_id: item.id,
-          room_id: room.id,
-          level: item.level,
-          character_id: nil,
-          dropped_for_character_id: character.id,
-          equipped: false,
-          hidden: false,
-          delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
-        }
-        |> Repo.insert!()
-      end
+      %ItemInstance{
+        item_id: item.id,
+        room_id: room.id,
+        level: item.level,
+        character_id: nil,
+        dropped_for_character_id: character.id,
+        equipped: false,
+        hidden: false,
+        delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
+      }
+      |> Repo.insert!()
     end
 
     room

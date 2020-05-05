@@ -7,6 +7,7 @@ defmodule ApathyDrive.Room do
     Character,
     Companion,
     Directory,
+    Item,
     ItemInstance,
     Match,
     Mobile,
@@ -647,7 +648,7 @@ defmodule ApathyDrive.Room do
 
   def delete_items_for_maintenance(%Room{} = room) do
     Enum.reduce(room.items, room, fn item, room ->
-      if Map.has_key?(item.traits, "Del@Maint") do
+      if Item.has_ability?(item, "Del@Maint") do
         ItemInstance
         |> Repo.get!(item.instance_id)
         |> Repo.delete!()

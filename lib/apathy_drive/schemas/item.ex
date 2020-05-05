@@ -4,7 +4,6 @@ defmodule ApathyDrive.Item do
   alias ApathyDrive.{
     Ability,
     Character,
-    ClassAbility,
     Currency,
     Enchantment,
     Item,
@@ -104,7 +103,6 @@ defmodule ApathyDrive.Item do
     field(:effects, :map, virtual: true, default: %{})
     field(:last_effect_key, :integer, virtual: true, default: 0)
     field(:timers, :map, virtual: true, default: %{})
-    field(:traits, :map, virtual: true, default: %{})
     field(:required_races, :any, virtual: true, default: [])
     field(:required_classes, :any, virtual: true, default: [])
     field(:enchantments, :string, virtual: true, default: [])
@@ -230,10 +228,11 @@ defmodule ApathyDrive.Item do
   end
 
   def with_traits(%Item{} = item) do
-    item_traits = ItemTrait.load_traits(item.id)
+    item_traits =
+      item.id
+      |> ItemTrait.load_traits()
 
-    item
-    |> Map.put(:traits, item_traits)
+    Systems.Effect.add(item, item_traits)
   end
 
   def slots do
@@ -343,19 +342,6 @@ defmodule ApathyDrive.Item do
 
   def color(%Item{}, _opts), do: "teal"
 
-  def enchantment(item) do
-    case item.traits["Grant"] || item.traits["OnHit"] || item.traits["Passive"] do
-      nil ->
-        nil
-
-      %Ability{} = ability ->
-        ability.id
-
-      [%Ability{} = ability | _rest] ->
-        ability.id
-    end
-  end
-
   def upgrade_for_character?(%Item{type: "Armour"} = item, %Character{} = character) do
     unless item in character.equipment do
       original_ac = Mobile.physical_resistance_at_level(character, character.level)
@@ -438,7 +424,13 @@ defmodule ApathyDrive.Item do
     item.cost_value * Currency.copper_value(item.cost_currency)
   end
 
-  def useable_by_character?(_character, %Item{traits: %{"Learn" => _ability}}), do: false
+  def has_ability?(%Item{} = item, ability_name) do
+    item.effects
+    |> Map.values()
+    |> Enum.map(&Map.keys/1)
+    |> List.flatten()
+    |> Enum.member?(ability_name)
+  end
 
   def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
     class_ids =
@@ -482,16 +474,14 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def useable_by_character?(_character, _item) do
-    true
-  end
+  def useable_by_character?(_character, %Item{} = item), do: !has_ability?(item, "Learn")
 
   def too_powerful_for_character?(character, item) do
-    too_high_level_for_character?(character, item) or class_too_low?(character, item)
+    too_high_level_for_character?(character, item)
   end
 
   def too_high_level_for_character?(character, item) do
-    case item.traits["MinLevel"] do
+    case Systems.Effect.effect_bonus(item, "MinLevel") do
       nil ->
         false
 
@@ -499,18 +489,6 @@ defmodule ApathyDrive.Item do
         character.level < min_level
     end
   end
-
-  def class_too_low?(character, %Item{traits: %{"Learn" => ability}}) do
-    class_ability =
-      ClassAbility
-      |> Repo.get_by(class_id: character.class_id, ability_id: ability.id)
-
-    if class_ability do
-      class_ability.level > character.level
-    end
-  end
-
-  def class_too_low?(_character, _item), do: false
 
   defp load_required_races_and_classes(%Item{} = item) do
     item

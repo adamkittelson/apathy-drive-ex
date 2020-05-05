@@ -6,7 +6,8 @@ defmodule ApathyDrive.ItemAbility do
     AbilityDamageType,
     AbilityTrait,
     ItemAbility,
-    Item
+    Item,
+    Trait
   }
 
   schema "items_abilities" do
@@ -19,13 +20,13 @@ defmodule ApathyDrive.ItemAbility do
 
   @required_fields ~w(item_id ability_id)a
 
-  def load_abilities(%Item{id: id, traits: traits} = item) do
+  def load_abilities(%Item{id: id} = item) do
     traits =
       __MODULE__
       |> where([ia], ia.item_id == ^id)
       |> preload([:type, :ability])
       |> Repo.all()
-      |> Enum.reduce(traits, fn item_ability, traits ->
+      |> Enum.reduce(%{}, fn item_ability, traits ->
         ability = item_ability.ability
 
         ability = put_in(ability.traits, AbilityTrait.load_traits(ability.id))
@@ -43,16 +44,19 @@ defmodule ApathyDrive.ItemAbility do
               Map.put(ability, :crit_tables, crit_types)
           end
 
-        if item_ability.type.name == "OnHit" do
-          traits
-          |> Map.put_new("OnHit", [])
-          |> update_in(["OnHit"], &[ability | &1])
-        else
-          Map.put(traits, item_ability.type.name, ability)
-        end
+        ability_traits =
+          if item_ability.type.name == "OnHit" do
+            traits
+            |> Map.put_new("OnHit", [])
+            |> update_in(["OnHit"], &[ability | &1])
+          else
+            Map.put(traits, item_ability.type.name, ability)
+          end
+
+        Trait.merge_traits(traits, ability_traits)
       end)
 
-    Map.put(item, :traits, traits)
+    Systems.Effect.add(item, traits)
   end
 
   def changeset(%ItemAbility{} = rt, attrs) do

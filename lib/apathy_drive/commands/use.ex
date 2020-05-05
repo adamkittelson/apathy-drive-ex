@@ -170,7 +170,7 @@ defmodule ApathyDrive.Commands.Use do
         end)
 
       %Item{type: "Container"} = item ->
-        if ability = item.traits["OnUse"] do
+        if ability = Systems.Effect.effect_bonus(item, "OnUse") do
           room
           |> Ability.execute(character.ref, ability, [character.ref])
           |> deduct_uses(character.ref, item)

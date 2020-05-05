@@ -254,9 +254,7 @@ defmodule ApathyDrive.Commands.Wear do
 
   defp conflicting_items(item, equipment) do
     Enum.filter(equipment, fn equipped_item ->
-      equipped_item.worn_on in conflicting_worn_on(item.worn_on) or
-        (!is_nil(Item.enchantment(item)) and
-           Item.enchantment(item) == Item.enchantment(equipped_item))
+      equipped_item.worn_on in conflicting_worn_on(item.worn_on)
     end)
     |> case do
       [] ->

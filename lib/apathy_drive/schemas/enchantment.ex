@@ -15,8 +15,7 @@ defmodule ApathyDrive.Enchantment do
     Room,
     Skill,
     SkillAttribute,
-    TimerManager,
-    Trait
+    TimerManager
   }
 
   schema "enchantments" do
@@ -173,7 +172,11 @@ defmodule ApathyDrive.Enchantment do
 
           roll = :rand.uniform()
 
-          if roll > shatter_chance(enchanter, item) do
+          shatter_chance = shatter_chance(enchanter, item)
+
+          IO.puts("roll: #{roll}, shatter_chance: #{shatter_chance}")
+
+          if roll > shatter_chance do
             Mobile.send_scroll(
               enchanter,
               "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
@@ -309,78 +312,79 @@ defmodule ApathyDrive.Enchantment do
   def load_enchantments(%Item{instance_id: id} = item) do
     item = Map.put(item, :shatter_chance, 0)
 
-    Enchantment
-    |> Ecto.Query.where(
-      [e],
-      e.items_instances_id == ^item.instance_id and is_nil(e.ability_id)
-    )
-    |> Ecto.Query.preload(:skill)
-    |> Repo.all()
-    |> case do
-      [%Enchantment{time_elapsed_in_seconds: time, finished: false}] ->
-        item
-        |> Map.put(:unfinished, true)
-        |> Map.put(:keywords, ["unfinished" | Match.keywords(item.name)])
-        |> Map.put(:shatter_chance, item.shatter_chance + time / 60 / 100)
+    item =
+      Enchantment
+      |> Ecto.Query.where(
+        [e],
+        e.items_instances_id == ^item.instance_id and is_nil(e.ability_id)
+      )
+      |> Ecto.Query.preload(:skill)
+      |> Repo.all()
+      |> case do
+        [%Enchantment{time_elapsed_in_seconds: time, finished: false}] ->
+          item
+          |> Map.put(:unfinished, true)
+          |> Map.put(:keywords, ["unfinished" | Match.keywords(item.name)])
+          |> Map.put(:shatter_chance, item.shatter_chance + time / 60 / 100)
 
-      _ ->
-        item =
-          __MODULE__
-          |> where([ia], ia.items_instances_id == ^id)
-          |> preload([:ability])
-          |> Repo.all()
-          |> Enum.reduce(item, fn enchantment, item ->
-            if enchantment.finished do
-              ability = enchantment.ability
+        _ ->
+          item =
+            __MODULE__
+            |> where([ia], ia.items_instances_id == ^id)
+            |> preload([:ability])
+            |> Repo.all()
+            |> Enum.reduce(item, fn enchantment, item ->
+              if enchantment.finished do
+                ability = enchantment.ability
 
-              traits =
-                enchantment.ability.id
-                |> AbilityTrait.load_traits()
+                traits =
+                  enchantment.ability.id
+                  |> AbilityTrait.load_traits()
 
-              ability = put_in(ability.traits, traits)
+                ability = put_in(ability.traits, traits)
 
-              ability =
-                case AbilityDamageType.load_damage(enchantment.ability.id) do
-                  [] ->
-                    ability
+                ability =
+                  case AbilityDamageType.load_damage(enchantment.ability.id) do
+                    [] ->
+                      ability
 
-                  damage ->
-                    update_in(ability.traits, &Map.put(&1, "WeaponDamage", damage))
-                end
+                    damage ->
+                      update_in(ability.traits, &Map.put(&1, "WeaponDamage", damage))
+                  end
 
-              # cond do
-              #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
-              #     Map.put(traits, "OnHit", ability)
+                # cond do
+                #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
+                #     Map.put(traits, "OnHit", ability)
 
-              #   ability.kind == "blessing" ->
-              #     Map.put(traits, "Passive", ability)
+                #   ability.kind == "blessing" ->
+                #     Map.put(traits, "Passive", ability)
 
-              #   :else ->
-              #     Map.put(traits, "Grant", ability)
-              # end
+                #   :else ->
+                #     Map.put(traits, "Grant", ability)
+                # end
 
-              traits = Trait.merge_traits(item.traits, ability.traits)
+                item
+                |> Systems.Effect.add(ability.traits)
+                |> Map.put(:enchantments, [ability.name | item.enchantments])
+                |> Map.put(
+                  :shatter_chance,
+                  item.shatter_chance + enchantment.time_elapsed_in_seconds / 60 / 100
+                )
+              else
+                item
+                |> Map.put(
+                  :shatter_chance,
+                  item.shatter_chance + enchantment.time_elapsed_in_seconds / 60 / 100
+                )
+              end
+            end)
 
-              item
-              |> Map.put(:traits, traits)
-              |> Map.put(:enchantments, [ability.name | item.enchantments])
-              |> Map.put(
-                :shatter_chance,
-                item.shatter_chance + enchantment.time_elapsed_in_seconds / 60 / 100
-              )
-            else
-              item
-              |> Map.put(
-                :shatter_chance,
-                item.shatter_chance + enchantment.time_elapsed_in_seconds / 60 / 100
-              )
-            end
-          end)
+          item
+          |> Map.put(:unfinished, false)
+          |> Map.put(:keywords, Match.keywords(item.name))
+      end
 
-        item
-        |> Map.put(:unfinished, false)
-        |> Map.put(:keywords, Match.keywords(item.name))
-    end
+    item
   end
 
   def enchantment_time(%Item{instance_id: nil}), do: 0

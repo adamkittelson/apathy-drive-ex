@@ -60,7 +60,7 @@ defmodule ApathyDrive.Commands.Craft do
 
             material = Repo.get(Material, recipe.material_id)
 
-            min_level = item.traits["MinLevel"]
+            min_level = Systems.Effect.effect_bonus(item, "MinLevel")
 
             if min_level && min_level > level do
               Mobile.send_scroll(

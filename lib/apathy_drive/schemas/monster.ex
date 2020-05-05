@@ -707,7 +707,7 @@ defmodule ApathyDrive.Monster do
 
       max_hp_percent = ability_value(monster, "MaxHP%")
 
-      modifier = if max_hp_percent, do: max_hp_percent, else: 1.0
+      modifier = if max_hp_percent > 0, do: max_hp_percent, else: 1.0
 
       trunc((base + bonus + ability_value(monster, "MaxHP")) * modifier)
     end

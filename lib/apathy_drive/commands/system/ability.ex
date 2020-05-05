@@ -7,8 +7,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     DamageType,
     Mobile,
     Repo,
-    Room,
-    Trait
+    Room
   }
 
   def execute(%Room{} = room, character, ["create" | ability_name]) do

@@ -22,8 +22,7 @@ defmodule ApathyDrive.Ability do
     Scripts,
     Stealth,
     Text,
-    TimerManager,
-    Trait
+    TimerManager
   }
 
   require Logger
@@ -430,12 +429,16 @@ defmodule ApathyDrive.Ability do
 
   def find(nil), do: nil
 
-  def find(id) do
+  def find(id) when is_integer(id) do
     ability = ApathyDrive.Repo.get(__MODULE__, id)
 
     if ability do
       load(ability)
     end
+  end
+
+  def find(id) do
+    raise "error finding ability: #{inspect(id)}"
   end
 
   def load(ability) do

@@ -185,33 +185,15 @@ defmodule Systems.Effect do
     end)
   end
 
-  def effect_bonus(%{effects: effects}, name, merge_by \\ nil) do
-    list =
+  def effect_bonus(%{effects: effects}, name) do
+    merged =
       effects
       |> Map.values()
-      |> Enum.reduce([], fn %{} = effect, list ->
-        if value = Map.get(effect, name) do
-          [value | list]
-        else
-          list
-        end
+      |> Enum.reduce(%{}, fn effect, merged ->
+        Trait.merge_traits(merged, effect)
       end)
 
-    case merge_by || Trait.merge_by(name) do
-      "add" ->
-        Enum.sum(list)
-
-      "multiply" ->
-        if Enum.any?(list), do: Enum.reduce(list, 1, &(&1 * &2)), else: nil
-
-      "list" ->
-        list
-        |> List.wrap()
-        |> List.flatten()
-
-      "replace" ->
-        List.last(list)
-    end
+    Trait.value(merged, name)
   end
 
   def effect_list(%{effects: effects}, name) do

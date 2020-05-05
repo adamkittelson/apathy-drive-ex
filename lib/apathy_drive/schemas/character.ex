@@ -301,6 +301,7 @@ defmodule ApathyDrive.Character do
     granted_abilities =
       character
       |> Mobile.ability_value("Grant")
+      |> List.flatten()
       |> Enum.uniq()
       |> Enum.map(&%{ability: Ability.find(&1)})
 
@@ -356,7 +357,11 @@ defmodule ApathyDrive.Character do
       end)
 
     Enum.reduce(character.equipment, character, fn item, character ->
-      if ability = item.traits["Grant"] do
+      abilities = Systems.Effect.effect_bonus(item, "Grant")
+
+      if Enum.any?(abilities) do
+        [ability] = abilities
+
         update_in(character.abilities, fn abilities ->
           Map.put(abilities, ability.command, ability)
         end)
@@ -489,15 +494,18 @@ defmodule ApathyDrive.Character do
   def load_items(%Character{} = character) do
     items = ApathyDrive.ItemInstance.load_items(character)
 
+    character =
+      character
+      |> Map.put(:inventory, Enum.reject(items, & &1.equipped))
+      |> Map.put(:equipment, Enum.filter(items, & &1.equipped))
+      |> assign_limbs_to_equipment()
+      |> add_equipped_items_effects()
+      |> load_abilities()
+      |> TimerManager.send_after(
+        {:use_light_source, :timer.seconds(30), {:use_light_source, character.ref}}
+      )
+
     character
-    |> Map.put(:inventory, Enum.reject(items, & &1.equipped))
-    |> Map.put(:equipment, Enum.filter(items, & &1.equipped))
-    |> assign_limbs_to_equipment()
-    |> add_equipped_items_effects()
-    |> load_abilities()
-    |> TimerManager.send_after(
-      {:use_light_source, :timer.seconds(30), {:use_light_source, character.ref}}
-    )
   end
 
   def assign_limbs_to_equipment(%Character{} = character) do
@@ -552,24 +560,13 @@ defmodule ApathyDrive.Character do
   end
 
   def add_equipped_item_effects(%Character{} = character, item) do
-    {abilities, traits} =
-      case item.traits do
-        %{"Passive" => abilities} when is_list(abilities) ->
-          Enum.reduce(abilities, {[], item.traits}, fn ability, {abilities, traits} ->
-            traits = Trait.merge_traits(traits, ability.traits)
-            {[ability | abilities], traits}
-          end)
-
-        %{"Passive" => ability} ->
-          traits = Trait.merge_traits(item.traits, ability.traits)
-
-          {[ability], traits}
-
-        traits ->
-          {nil, Ability.process_duration_traits(traits, character, character, nil)}
-      end
-
-    effect = Map.put(traits, "stack_key", "item-#{item.instance_id}")
+    effect =
+      item.effects
+      |> Map.values()
+      |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
+      |> Ability.process_duration_traits(character, character, nil)
+      |> Map.put("stack_key", "item-#{item.instance_id}")
+      |> Map.put("stack_count", 1)
 
     effect =
       if "DamageShield" in Map.keys(effect) do
@@ -589,9 +586,9 @@ defmodule ApathyDrive.Character do
       |> update_in(["MR"], &div(&1 + mr, 2))
 
     effect =
-      if "Heal" in Map.keys(traits) do
+      if "Heal" in Map.keys(effect) do
         Ability.process_duration_trait(
-          {"Heal", traits["Heal"]},
+          {"Heal", effect["Heal"]},
           effect,
           character,
           character,
@@ -601,16 +598,8 @@ defmodule ApathyDrive.Character do
         effect
       end
 
-    if abilities do
-      Enum.reduce(abilities, character, fn ability, character ->
-        character
-        |> Systems.Effect.remove_oldest_stack(ability.id)
-      end)
-      |> Systems.Effect.add(effect)
-    else
-      character
-      |> Systems.Effect.add(effect)
-    end
+    character
+    |> Systems.Effect.add(effect)
   end
 
   def sanitize(message) do
@@ -695,10 +684,7 @@ defmodule ApathyDrive.Character do
 
     limbs = if limb, do: [limb], else: ["left hand", "right hand"]
 
-    enchantment_damage = List.flatten(Map.get(weapon.traits, "WeaponDamage", []))
-
-    bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage") ++ enchantment_damage
-    IO.inspect(bonus_damage)
+    bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage")
 
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
 
@@ -752,7 +738,7 @@ defmodule ApathyDrive.Character do
 
     ability = Map.put(ability, :crit_tables, crit_types)
 
-    if on_hit = weapon.traits["OnHit"] do
+    if on_hit = Systems.Effect.effect_bonus(weapon, "OnHit") do
       # if on_hit.kind == "attack" do
       #   modifier = energy / 1000
 
@@ -1372,28 +1358,13 @@ defmodule ApathyDrive.Character do
 
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
-      merge_by = Trait.merge_by(ability)
-      character_value = Systems.Effect.effect_bonus(character, ability, merge_by)
+      character_value = Systems.Effect.effect_bonus(character, ability)
 
-      Enum.reduce(character.equipment, character_value, fn item, value ->
-        bonus = Systems.Effect.effect_bonus(item, ability, merge_by)
-
-        case merge_by do
-          "add" ->
-            (value || 0) + (bonus || 0)
-
-          "multiply" ->
-            (value || 1) * (bonus || 1)
-
-          "list" ->
-            [bonus | List.wrap(value)]
-            |> List.flatten()
-            |> Enum.reject(&is_nil/1)
-
-          "replace" ->
-            bonus || value
-        end
+      Enum.reduce(character.equipment, %{ability => character_value}, fn item, value ->
+        bonus = Systems.Effect.effect_bonus(item, ability)
+        Trait.merge_traits(value, %{ability => bonus})
       end)
+      |> Map.get(ability)
     end
 
     def accuracy_at_level(character, _level, _room) do
@@ -1973,7 +1944,7 @@ defmodule ApathyDrive.Character do
 
       max_hp_percent = ability_value(mobile, "MaxHP%")
 
-      modifier = if max_hp_percent, do: max_hp_percent, else: 1.0
+      modifier = if max_hp_percent > 0, do: max_hp_percent, else: 1.0
 
       max(1, trunc((base + hp_per_level + bonus + ability_value(mobile, "MaxHP")) * modifier))
     end

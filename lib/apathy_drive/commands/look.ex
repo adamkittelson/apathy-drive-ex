@@ -482,8 +482,9 @@ defmodule ApathyDrive.Commands.Look do
     mr = Item.mr_for_character(character, item)
 
     traits =
-      item.traits
-      |> IO.inspect()
+      item.effects
+      |> Map.values()
+      |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
       |> Ability.process_duration_traits(character, character, nil)
       |> Map.put_new("AC", 0)
       |> update_in(["AC"], &div(&1 + ac, 2))
@@ -509,11 +510,11 @@ defmodule ApathyDrive.Commands.Look do
   def display_trait(_character, _item, {"OnHit%", _abilities}, _indent), do: :noop
 
   def display_trait(character, item, {"OnHit", abilities}, indent) do
+    on_hit = Systems.Effect.effect_bonus(item, "OnHit%")
+
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{
-        item.traits["OnHit%"] || "100"
-      }% chance of:</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{on_hit || "100"}% chance of:</span></p>"
     )
 
     Enum.each(abilities, fn ability ->
