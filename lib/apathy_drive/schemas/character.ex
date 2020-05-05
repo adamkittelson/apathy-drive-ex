@@ -272,6 +272,7 @@ defmodule ApathyDrive.Character do
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, name: :characters_lower_name_index, on: Repo)
     |> validate_length(:name, min: 1, max: 12)
+    |> put_change(:email, String.downcase(params["email"]))
   end
 
   def load_abilities(%Character{id: id} = character) do
@@ -784,7 +785,7 @@ defmodule ApathyDrive.Character do
   end
 
   def sign_in(email, password) do
-    player = Repo.get_by(Character, email: email)
+    player = Repo.get_by(Character, email: String.downcase(email))
     sign_in?(player, password) && player
   end
 

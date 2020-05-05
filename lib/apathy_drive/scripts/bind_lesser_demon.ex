@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Scripts.BindDemon do
+defmodule ApathyDrive.Scripts.BindLesserDemon do
   alias ApathyDrive.{Ability, Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref, _) do
@@ -8,10 +8,10 @@ defmodule ApathyDrive.Scripts.BindDemon do
       demon =
         room.mobiles
         |> Map.values()
-        |> Enum.find(&(&1.id == 1126 and &1.owner_id == owner_id))
+        |> Enum.find(&(&1.id == 1121 and &1.owner_id == owner_id))
 
       if demon do
-        bind_demon(room, mobile, demon)
+        bind_lesser_demon(room, mobile, demon)
       else
         Mobile.send_scroll(
           mobile,
@@ -23,21 +23,21 @@ defmodule ApathyDrive.Scripts.BindDemon do
     end)
   end
 
-  def bind_demon(room, mobile, demon) do
+  def bind_lesser_demon(room, mobile, demon) do
     spellcasting =
       Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["intellect"]})
 
-    if :rand.uniform(100) < spellcasting - 5 do
+    if :rand.uniform(100) < spellcasting + 15 do
       effects =
         %{
-          # "Bubble%" => 15,
+          # "Bubble%" => 10,
           # "BubbleRegen%PerSecond" => 0.5,
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "AC%" => 10,
-          "MR%" => 20,
+          "AC%" => 5,
+          "MR%" => 10,
           "DarkVision" => 225,
           "RestoreLimbs" => true,
-          "Encumbrance" => 15,
+          "Encumbrance" => 10,
           # "Grant" => abilities,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
@@ -45,7 +45,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
           "stack_count" => 1
         }
         |> Map.put("effect_ref", make_ref())
-        |> Ability.process_duration_traits(mobile, mobile, :timer.minutes(95))
+        |> Ability.process_duration_traits(mobile, mobile, :timer.minutes(80))
 
       Mobile.send_scroll(
         mobile,
@@ -54,7 +54,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
 
       mobile =
         mobile
-        |> Systems.Effect.add(effects, :timer.minutes(95))
+        |> Systems.Effect.add(effects, :timer.minutes(80))
 
       RoomMonster
       |> Repo.get(demon.room_monster_id)

@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Scripts.DemonWeapon do
+defmodule ApathyDrive.Scripts.LesserDemonWeapon do
   alias ApathyDrive.{Item, Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref, item) do
@@ -8,10 +8,10 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
       demon =
         room.mobiles
         |> Map.values()
-        |> Enum.find(&(&1.id == 1126 and &1.owner_id == owner_id))
+        |> Enum.find(&(&1.id == 1121 and &1.owner_id == owner_id))
 
       if demon do
-        demon_weapon(room, mobile, demon, item)
+        lesser_demon_weapon(room, mobile, demon, item)
       else
         Mobile.send_scroll(
           mobile,
@@ -23,11 +23,11 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
     end)
   end
 
-  def demon_weapon(room, mobile, demon, item) do
+  def lesser_demon_weapon(room, mobile, demon, item) do
     spellcasting =
       Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["intellect"]})
 
-    if :rand.uniform(100) < spellcasting - 5 do
+    if :rand.uniform(100) < spellcasting + 15 do
       Mobile.send_scroll(
         mobile,
         "<p>You successfully bind the #{Mobile.colored_name(demon)} to your #{
@@ -52,20 +52,17 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
         |> update_in([:mobiles], &Map.delete(&1, demon.ref))
         |> put_in([:mobiles, mobile.ref], mobile)
 
-      Room.update_moblist(room)
-
       effect = %{
         "WeaponDamage" => [
-          %{kind: "magical", min: 2, max: 2, damage_type: "Disruption", damage_type_id: 13},
-          %{kind: "magical", min: 2, max: 2, damage_type: "Fire", damage_type_id: 5},
-          %{kind: "magical", min: 2, max: 2, damage_type: "Stress", damage_type_id: 21}
+          %{kind: "magical", min: 1, max: 1, damage_type: "Disruption", damage_type_id: 13},
+          %{kind: "magical", min: 1, max: 1, damage_type: "Fire", damage_type_id: 5}
         ],
         "RemoveMessage" => "The #{demon.name} bound to your #{item.name} returns to its plane.",
         "stack_key" => "demon-weapon",
         "stack_count" => 1
       }
 
-      item = Systems.Effect.add(item, effect, :timer.minutes(60))
+      item = Systems.Effect.add(item, effect, :timer.minutes(30))
 
       effect = %{
         "StatusMessage" => "A #{demon.name} is bound to your #{item.name}.",
@@ -74,7 +71,7 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
       }
 
       room =
-        update_in(room.mobiles[mobile.ref], &Systems.Effect.add(&1, effect, :timer.minutes(60)))
+        update_in(room.mobiles[mobile.ref], &Systems.Effect.add(&1, effect, :timer.minutes(30)))
 
       equipment_location =
         Enum.find_index(

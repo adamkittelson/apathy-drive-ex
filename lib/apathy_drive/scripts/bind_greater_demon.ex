@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Scripts.BindDemon do
+defmodule ApathyDrive.Scripts.BindGreaterDemon do
   alias ApathyDrive.{Ability, Mobile, Monster, Repo, Room, RoomMonster}
 
   def execute(%Room{} = room, mobile_ref, _) do
@@ -8,14 +8,14 @@ defmodule ApathyDrive.Scripts.BindDemon do
       demon =
         room.mobiles
         |> Map.values()
-        |> Enum.find(&(&1.id == 1126 and &1.owner_id == owner_id))
+        |> Enum.find(&(&1.id == 1128 and &1.owner_id == owner_id))
 
       if demon do
-        bind_demon(room, mobile, demon)
+        bind_greater_demon(room, mobile, demon)
       else
         Mobile.send_scroll(
           mobile,
-          "<p><span style='dark-cyan'>A demon that was summoned and controlled by you must be present.</span></p>"
+          "<p><span style='dark-cyan'>A greater demon that was summoned and controlled by you must be present.</span></p>"
         )
 
         room
@@ -23,21 +23,21 @@ defmodule ApathyDrive.Scripts.BindDemon do
     end)
   end
 
-  def bind_demon(room, mobile, demon) do
+  def bind_greater_demon(room, mobile, demon) do
     spellcasting =
       Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["intellect"]})
 
-    if :rand.uniform(100) < spellcasting - 5 do
+    if :rand.uniform(100) < spellcasting - 20 do
       effects =
         %{
           # "Bubble%" => 15,
           # "BubbleRegen%PerSecond" => 0.5,
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "AC%" => 10,
-          "MR%" => 20,
+          "AC%" => 15,
+          "MR%" => 30,
           "DarkVision" => 225,
           "RestoreLimbs" => true,
-          "Encumbrance" => 15,
+          "Encumbrance" => 20,
           # "Grant" => abilities,
           "RemoveMessage" =>
             "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
@@ -54,7 +54,7 @@ defmodule ApathyDrive.Scripts.BindDemon do
 
       mobile =
         mobile
-        |> Systems.Effect.add(effects, :timer.minutes(95))
+        |> Systems.Effect.add(effects, :timer.minutes(110))
 
       RoomMonster
       |> Repo.get(demon.room_monster_id)
