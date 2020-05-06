@@ -518,7 +518,7 @@ defmodule ApathyDrive.Commands.Look do
     )
 
     Enum.each(abilities, fn ability ->
-      display_traits(character, Map.put(item, :traits, ability.traits), 2)
+      display_traits(character, Map.put(item, :effects, %{1 => ability.traits}), 2)
     end)
   end
 
