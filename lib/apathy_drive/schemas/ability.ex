@@ -1050,7 +1050,7 @@ defmodule ApathyDrive.Ability do
   def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
     if req_energy > energy && !ability.on_hit? do
       if caster.casting do
-        Character.send_chat(
+        Mobile.send_scroll(
           caster,
           "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
         )
