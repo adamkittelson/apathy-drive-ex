@@ -3358,8 +3358,12 @@ defmodule ApathyDrive.Ability do
       when target in ["weapon", "armour"] do
     %Character{inventory: inventory, equipment: equipment} = character = room.mobiles[caster_ref]
 
+    target = String.capitalize(target)
+
+    targets = if target == "Armour", do: ["Shield", "Armour"], else: [target]
+
     (inventory ++ equipment)
-    |> Enum.filter(&(&1.type == String.capitalize(target)))
+    |> Enum.filter(&(&1.type in targets))
     |> Match.all(:keyword_starts_with, query)
     |> case do
       nil ->
