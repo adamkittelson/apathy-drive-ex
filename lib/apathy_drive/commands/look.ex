@@ -494,6 +494,12 @@ defmodule ApathyDrive.Commands.Look do
     Enum.each(traits, &display_trait(character, item, &1, indent))
   end
 
+  def display_trait(_character, _item, {"AC", 0}, _indent), do: :noop
+  def display_trait(_character, _item, {"MR", 0}, _indent), do: :noop
+  def display_trait(_character, _item, {"RemoveMessage", _msg}, _indent), do: :noop
+  def display_trait(_character, _item, {"stack_count", _msg}, _indent), do: :noop
+  def display_trait(_character, _item, {"stack_key", _msg}, _indent), do: :noop
+
   def display_trait(_character, _item, {"Learn", _list}, _indent), do: :noop
 
   def display_trait(character, _item, {"Magical", list}, indent) when is_list(list) do
@@ -554,6 +560,8 @@ defmodule ApathyDrive.Commands.Look do
       }</span></p>"
     )
   end
+
+  def display_trait(_character, _item, {"timers", _list}, _indent), do: :noop
 
   def display_trait(character, _item, {trait, list}, indent) when is_list(list) do
     value = Trait.value(trait, list)

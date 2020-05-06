@@ -30,10 +30,9 @@ defmodule ApathyDrive.Enchantment do
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{ability_id: nil} = enchantment) do
     Room.update_mobile(room, enchanter_ref, fn _room, enchanter ->
       if !present?(enchanter, enchantment.items_instances_id) do
-        Mobile.send_scroll(
-          enchanter,
-          "<p><span class='cyan'>You interrupt your work.</span></p>"
-        )
+        message = "<p><span class='cyan'>You interrupt your work.</span></p>"
+
+        Character.send_chat(enchanter, message)
 
         enchanter
       else
@@ -66,10 +65,9 @@ defmodule ApathyDrive.Enchantment do
           enchantment
           |> Repo.delete!()
 
-          Mobile.send_scroll(
-            enchanter,
-            "<p><span class='blue'>You've finished crafting #{item.name}.</span></p>"
-          )
+          message = "<p><span class='blue'>You've finished crafting #{item.name}.</span></p>"
+
+          Character.send_chat(enchanter, message)
 
           enchanter
           |> add_enchantment_exp(enchantment)
@@ -105,10 +103,9 @@ defmodule ApathyDrive.Enchantment do
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{} = enchantment) do
     Room.update_mobile(room, enchanter_ref, fn _room, enchanter ->
       if !Enum.all?(enchantment.ability.traits["RequireItems"], &present?(enchanter, &1)) do
-        Mobile.send_scroll(
-          enchanter,
-          "<p><span class='cyan'>You interrupt your work.</span></p>"
-        )
+        message = "<p><span class='cyan'>You interrupt your work.</span></p>"
+
+        Character.send_chat(enchanter, message)
 
         enchanter
       else
@@ -157,10 +154,10 @@ defmodule ApathyDrive.Enchantment do
           |> Ecto.Changeset.change(%{finished: true})
           |> Repo.update!()
 
-          Mobile.send_scroll(
-            enchanter,
+          message =
             "<p><span class='blue'>You've enchanted #{item.name} with #{enchantment.ability.name}.</span></p>"
-          )
+
+          Character.send_chat(enchanter, message)
 
           enchanter
           |> add_enchantment_exp(enchantment)
@@ -201,10 +198,10 @@ defmodule ApathyDrive.Enchantment do
             |> Repo.get!(item.instance_id)
             |> Repo.delete!()
 
-            Mobile.send_scroll(
-              enchanter,
+            message =
               "<p><span class='magenta'>The #{item.name} shatters into a million pieces!</span></p>"
-            )
+
+            Character.send_chat(enchanter, message)
 
             Room.send_scroll(
               room,

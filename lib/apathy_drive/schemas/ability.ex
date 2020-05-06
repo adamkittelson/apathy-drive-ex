@@ -640,7 +640,7 @@ defmodule ApathyDrive.Ability do
 
           caster =
             if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
-              Mobile.send_scroll(
+              Character.send_chat(
                 caster,
                 "<p><span class='cyan'>You interrupt your work.</span></p>"
               )
@@ -752,7 +752,7 @@ defmodule ApathyDrive.Ability do
 
               caster =
                 if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
-                  Mobile.send_scroll(
+                  Character.send_chat(
                     caster,
                     "<p><span class='cyan'>You interrupt your work.</span></p>"
                   )
@@ -1050,7 +1050,7 @@ defmodule ApathyDrive.Ability do
   def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
     if req_energy > energy && !ability.on_hit? do
       if caster.casting do
-        Mobile.send_scroll(
+        Character.send_chat(
           caster,
           "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
         )

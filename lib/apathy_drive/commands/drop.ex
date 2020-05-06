@@ -103,7 +103,7 @@ defmodule ApathyDrive.Commands.Drop do
       |> Room.update_mobile(character.ref, fn _room, char ->
         char =
           if {:longterm, instance_id} in TimerManager.timers(char) do
-            Mobile.send_scroll(
+            Character.send_chat(
               char,
               "<p><span class='cyan'>You interrupt your work.</span></p>"
             )
