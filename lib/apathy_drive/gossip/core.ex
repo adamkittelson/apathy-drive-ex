@@ -45,13 +45,6 @@ defmodule ApathyDrive.Gossip.Core do
         ApathyDrive.Character.sanitize(payload.message)
       }</p>"
 
-    Repo.insert!(%ChannelHistory{
-      character_name: ApathyDrive.Character.sanitize(payload.name),
-      game_name: ApathyDrive.Character.sanitize(payload.game),
-      channel_name: channel,
-      message: message
-    })
-
     ApathyDriveWeb.Endpoint.broadcast!("chat:#{payload.channel}", "chat", %{
       html: message
     })
