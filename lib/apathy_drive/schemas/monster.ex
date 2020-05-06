@@ -171,7 +171,18 @@ defmodule ApathyDrive.Monster do
             room.exits
             |> Enum.find(&(&1["destination"] == destination))
 
-          ApathyDrive.Commands.Move.execute(room, monster, room_exit, true)
+          case room_exit do
+            %{"kind" => "Command"} ->
+              ApathyDrive.Commands.Move.execute(
+                room,
+                monster,
+                Map.put(room_exit, "kind", "Action"),
+                true
+              )
+
+            _ ->
+              ApathyDrive.Commands.Move.execute(room, monster, room_exit, true)
+          end
         else
           room
         end
