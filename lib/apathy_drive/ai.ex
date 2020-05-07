@@ -116,7 +116,14 @@ defmodule ApathyDrive.AI do
         end
       end)
 
-    [party, pets, owner]
+    list =
+      if Map.get(mobile, :auto_pet_casting) do
+        [party, pets, owner]
+      else
+        [party, owner]
+      end
+
+    list
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()

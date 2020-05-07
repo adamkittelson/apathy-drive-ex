@@ -5,11 +5,21 @@ defmodule ApathyDrive.Commands.Auto do
   def keywords, do: ["auto"]
 
   def execute(%Room{} = room, %Character{ref: ref} = character, ["roam"]) do
-    Mobile.send_scroll(character, "<p>Toggling auto-roam.</p>")
+    Mobile.send_scroll(character, "<p>Toggling auto roam.</p>")
 
     Room.update_mobile(room, ref, fn _room, character ->
       character
       |> Ecto.Changeset.change(%{auto_roam: !character.auto_roam})
+      |> Repo.update!()
+    end)
+  end
+
+  def execute(%Room{} = room, %Character{ref: ref} = character, ["pet", "casting"]) do
+    Mobile.send_scroll(character, "<p>Toggling auto pet casting.</p>")
+
+    Room.update_mobile(room, ref, fn _room, character ->
+      character
+      |> Ecto.Changeset.change(%{auto_pet_casting: !character.auto_pet_casting})
       |> Repo.update!()
     end)
   end

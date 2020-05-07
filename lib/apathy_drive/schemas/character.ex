@@ -67,6 +67,7 @@ defmodule ApathyDrive.Character do
     field(:auto_nuke, :boolean)
     field(:auto_roam, :boolean)
     field(:auto_flee, :boolean)
+    field(:auto_pet_casting, :boolean, default: true)
     field(:evil_points, :float)
     field(:last_evil_action_at, :utc_datetime_usec)
     field(:missing_limbs, {:array, :string}, default: [])

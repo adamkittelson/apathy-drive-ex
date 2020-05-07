@@ -42,8 +42,8 @@ defmodule ApathyDrive.Commands.Join do
             room
         end
 
-      mobile ->
-        Mobile.send_scroll(mobile, "<p>You don't see #{query} here!</p>")
+      _other ->
+        Mobile.send_scroll(character, "<p>You don't see #{query} here!</p>")
         room
     end
   end

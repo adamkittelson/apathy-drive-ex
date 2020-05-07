@@ -388,15 +388,17 @@ defmodule ApathyDrive.Commands.Help do
       }%</span></p>"
     )
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Enchant Time: </span><span class='dark-cyan'>#{
-        Float.round(
-          Enchantment.total_enchantment_time(character, %Enchantment{ability: ability}) / 60,
-          2
-        )
-      } minutes</span></p>"
-    )
+    if ability.cast_time do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Enchant Time: </span><span class='dark-cyan'>#{
+          Float.round(
+            Enchantment.total_enchantment_time(character, %Enchantment{ability: ability}) / 60,
+            2
+          )
+        } minutes</span></p>"
+      )
+    end
 
     classes =
       ClassAbility
