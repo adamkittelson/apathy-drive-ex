@@ -94,7 +94,6 @@ defmodule ApathyDrive.Item do
     field(:global_drop_rarity, :string)
     field(:level, :integer)
 
-    field(:shatter_chance, :float, virtual: true, default: 0.0)
     field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
@@ -320,18 +319,18 @@ defmodule ApathyDrive.Item do
     min(div(level, 10) + 1, 5)
   end
 
-  def color(%Item{type: type} = item, opts)
+  def color(%Item{type: type} = item, _opts)
       when type in ["Armour", "Shield", "Weapon"] do
-    shatter_chance = Enchantment.shatter_chance(opts[:character], item)
+    count = Enchantment.count(item)
 
     cond do
-      shatter_chance > 0.25 ->
+      count > 3 ->
         "darkmagenta"
 
-      shatter_chance > 0.1 ->
+      count >= 3 ->
         "blue"
 
-      shatter_chance > 0 ->
+      count >= 1 ->
         "chartreuse"
 
       :else ->
@@ -417,26 +416,14 @@ defmodule ApathyDrive.Item do
     "<span style='color: #{color(item, opts)};'>#{name}</span>"
   end
 
-  def cost_in_copper(%Item{cost_currency: nil, shatter_chance: shatter_chance}) do
-    shatter_chance * 10000
+  def cost_in_copper(%Item{cost_currency: nil} = item) do
+    0 + Enchantment.copper_value(item)
   end
 
-  def cost_in_copper(%Item{shatter_chance: shatter_chance} = item) do
+  def cost_in_copper(%Item{} = item) do
     value = item.cost_value * Currency.copper_value(item.cost_currency)
 
-    if shatter_chance > 0 do
-      multiplier = 1 + shatter_chance
-
-      # to have some kind of value when enchanting free items
-      base = trunc(shatter_chance * 10000)
-
-      # increase item value by multiplier derived from shatter chance (how much magic an item has)
-      multiplied = trunc(value * multiplier)
-
-      max(base, multiplied)
-    else
-      value
-    end
+    value + Enchantment.copper_value(item)
   end
 
   def has_ability?(%Item{} = item, ability_name) do

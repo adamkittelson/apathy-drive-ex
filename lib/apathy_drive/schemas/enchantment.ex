@@ -169,11 +169,8 @@ defmodule ApathyDrive.Enchantment do
 
           roll = :rand.uniform()
 
-          shatter_chance = shatter_chance(enchanter, item)
-
-          IO.puts("roll: #{roll}, shatter_chance: #{shatter_chance}")
-
-          if roll > shatter_chance do
+          # 1% chance per tick to shatter
+          if roll > 0.01 do
             Mobile.send_scroll(
               enchanter,
               "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
@@ -270,7 +267,7 @@ defmodule ApathyDrive.Enchantment do
 
   def total_enchantment_time(
         enchanter,
-        %Enchantment{ability: %Ability{level: level}}
+        %Enchantment{ability: %Ability{cast_time: cast_time}}
       ) do
     enchantment_level =
       case Map.get(enchanter.skills, "enchanting") do
@@ -281,18 +278,11 @@ defmodule ApathyDrive.Enchantment do
           skill.level
       end
 
-    total_enchantment_time(enchantment_level, level)
+    total_enchantment_time(enchantment_level, cast_time)
   end
 
-  def total_enchantment_time(
-        enchanter,
-        %Enchantment{items_instances: %{level: level}} = enchantment
-      ) do
-    total_enchantment_time(enchanter.skills[enchantment.skill.name].level, level)
-  end
-
-  def total_enchantment_time(skill_level, enchant_level) do
-    max(300, (enchant_level * 5 - (skill_level - enchant_level) * 10) * 60)
+  def total_enchantment_time(skill_level, cast_time) do
+    trunc(cast_time * 25 / (25 + (2.5 * skill_level - 1)))
   end
 
   def time_left(enchanter, %Enchantment{} = enchantment) do
@@ -303,27 +293,35 @@ defmodule ApathyDrive.Enchantment do
     min(67, time_left(enchanter, enchantment))
   end
 
-  def shatter_chance(%Character{} = character, %Item{} = item) do
-    enchanter_level =
-      case Map.get(character.skills, "enchanting") do
-        nil ->
-          1
+  def count(%Item{instance_id: nil}), do: 0
 
-        skill ->
-          skill.level
-      end
+  def count(%Item{} = item) do
+    query =
+      from e in Enchantment,
+        where: e.items_instances_id == ^item.instance_id,
+        select: count()
 
-    item.shatter_chance * :math.pow(0.90, enchanter_level)
+    Repo.one(query)
   end
 
-  def shatter_chance(_character, %Item{} = item), do: item.shatter_chance
+  def copper_value(%Item{instance_id: nil}), do: 0
+
+  def copper_value(%Item{} = item) do
+    Enchantment
+    |> Ecto.Query.where(
+      [e],
+      e.items_instances_id == ^item.instance_id
+    )
+    |> Ecto.Query.preload(:ability)
+    |> Repo.all()
+    |> Enum.map(& &1.ability.cast_time)
+    |> Enum.sum()
+  end
 
   def load_enchantments(%Item{instance_id: nil} = item),
     do: Map.put(item, :keywords, Match.keywords(item.name))
 
   def load_enchantments(%Item{instance_id: id} = item) do
-    item = Map.put(item, :shatter_chance, 0)
-
     item =
       Enchantment
       |> Ecto.Query.where(
@@ -333,11 +331,10 @@ defmodule ApathyDrive.Enchantment do
       |> Ecto.Query.preload(:skill)
       |> Repo.all()
       |> case do
-        [%Enchantment{time_elapsed_in_seconds: time, finished: false}] ->
+        [%Enchantment{finished: false}] ->
           item
           |> Map.put(:unfinished, true)
           |> Map.put(:keywords, ["unfinished" | Match.keywords(item.name)])
-          |> Map.put(:shatter_chance, item.shatter_chance + time / 60 / 100)
 
         _ ->
           item =
@@ -378,16 +375,8 @@ defmodule ApathyDrive.Enchantment do
                 item
                 |> Systems.Effect.add(ability.traits)
                 |> Map.put(:enchantments, [ability.name | item.enchantments])
-                |> Map.put(
-                  :shatter_chance,
-                  item.shatter_chance + enchantment.time_elapsed_in_seconds / 60 / 100
-                )
               else
                 item
-                |> Map.put(
-                  :shatter_chance,
-                  item.shatter_chance + enchantment.time_elapsed_in_seconds / 60 / 100
-                )
               end
             end)
 

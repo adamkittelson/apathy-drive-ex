@@ -44,7 +44,7 @@ defmodule ApathyDrive.Commands.Get do
               amount = min(amount, max)
 
               room =
-                Room.update_mobile(room, character.ref, fn char ->
+                Room.update_mobile(room, character.ref, fn _room, char ->
                   char
                   |> Ecto.Changeset.change(%{
                     currency => current + amount

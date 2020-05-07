@@ -9,6 +9,7 @@ defmodule ApathyDrive.Commands.Help do
     ClassAbility,
     Commands.Inventory,
     ElementalLores,
+    Enchantment,
     Mobile,
     Race,
     RaceTrait,
@@ -387,35 +388,15 @@ defmodule ApathyDrive.Commands.Help do
       }%</span></p>"
     )
 
-    if ability.kind == "long-term" do
-      skill_ability =
-        ApathyDrive.SkillAbility
-        |> Repo.get_by(ability_id: ability.id)
-        |> Repo.preload(:skill)
-
-      if skill_ability do
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Skill: </span><span class='dark-cyan'>#{
-            skill_ability.skill.name
-          }</span></p>"
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Enchant Time: </span><span class='dark-cyan'>#{
+        Float.round(
+          Enchantment.total_enchantment_time(character, %Enchantment{ability: ability}) / 60,
+          2
         )
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Skill Level: </span><span class='dark-cyan'>#{
-            skill_ability.level
-          }</span></p>"
-        )
-      end
-    else
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Required Level: </span><span class='dark-cyan'>#{
-          ability.level
-        }</span></p>"
-      )
-    end
+      } minutes</span></p>"
+    )
 
     classes =
       ClassAbility
