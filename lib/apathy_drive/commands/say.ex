@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Say do
   use ApathyDrive.Command
-  alias ApathyDrive.{Match, Mobile, Monster}
+  alias ApathyDrive.{ChannelHistory, Match, Mobile, Monster, Repo}
 
   def keywords, do: ["say"]
 
@@ -18,16 +18,30 @@ defmodule ApathyDrive.Commands.Say do
         message =
           "<p>#{Mobile.colored_name(character)} says: <span class='dark-green'>\"#{message}\"</span></p>"
 
-        Mobile.send_scroll(observer, "<p><span class='dark-magenta'>#{message}</span></p>")
+        message = "<p><span class='dark-magenta'>#{message}</span></p>"
+
+        Character.send_chat(observer, message)
+
+        Repo.insert!(%ChannelHistory{
+          character_id: observer.id,
+          message: message
+        })
 
       _ ->
         :noop
     end)
 
-    Mobile.send_scroll(
+    message = "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>"
+
+    Character.send_chat(
       character,
-      "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>"
+      message
     )
+
+    Repo.insert!(%ChannelHistory{
+      character_id: character.id,
+      message: message
+    })
 
     command_pets(room, character, message)
   end

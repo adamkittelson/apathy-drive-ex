@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Gossip.Core do
   require Logger
-  alias ApathyDrive.{ChannelHistory, Directory, Repo}
+  alias ApathyDrive.Directory
 
   @behaviour Gossip.Client.Core
 
