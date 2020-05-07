@@ -298,10 +298,30 @@ defmodule ApathyDrive.Enchantment do
   def count(%Item{} = item) do
     query =
       from e in Enchantment,
-        where: e.items_instances_id == ^item.instance_id,
+        where: e.items_instances_id == ^item.instance_id and e.finished == true,
         select: count()
 
     Repo.one(query)
+  end
+
+  def max_stacks?(%Item{} = item, %Ability{} = ability) do
+    stack_count = ability.traits["StackCount"] || 1
+
+    count(item, ability) >= stack_count
+  end
+
+  def count(%Item{} = item, %Ability{} = ability) do
+    stack_key = ability.traits["StackKey"] || ability.id
+
+    query =
+      from e in Enchantment,
+        where: e.items_instances_id == ^item.instance_id and e.finished == true
+
+    query
+    |> Repo.all()
+    |> Enum.map(&Ability.find(&1.ability_id))
+    |> Enum.filter(&((&1.traits["StackKey"] || &1.id) == stack_key))
+    |> Enum.count()
   end
 
   def copper_value(%Item{instance_id: nil}), do: 0

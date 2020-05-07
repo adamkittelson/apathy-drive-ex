@@ -512,8 +512,9 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_trait(_character, _item, {"WeaponDamage", _damage}, _indent), do: :noop
-
   def display_trait(_character, _item, {"OnHit%", _abilities}, _indent), do: :noop
+  def display_trait(_character, _item, {"StackCount", _damage}, _indent), do: :noop
+  def display_trait(_character, _item, {"StackKey", _damage}, _indent), do: :noop
 
   def display_trait(character, item, {"OnHit", abilities}, indent) do
     on_hit = Systems.Effect.effect_bonus(item, "OnHit%")

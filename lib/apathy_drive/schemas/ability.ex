@@ -718,96 +718,105 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{kind: "long-term"} = ability, %Item{} = item) do
-    traits =
-      ability.traits
-      |> Map.update("RequireItems", [item.instance_id], &[item.instance_id | &1])
-      |> Map.put(
-        "TickMessage",
-        "<p><span class='dark-cyan'>You continue enchanting the #{item.name}.</span></p>"
-      )
-
-    ability = Map.put(ability, :traits, traits)
-
     Room.update_mobile(room, caster_ref, fn room, caster ->
-      cond do
-        mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
-          mobile
+      if Enchantment.max_stacks?(item, ability) do
+        Mobile.send_scroll(
+          caster,
+          "<p><span class='dark-cyan'>This #{item.name} can receive no more #{ability.name} enchantments.</span></p>"
+        )
 
-        casting_failed?(caster, ability) ->
-          casting_failed(room, caster_ref, ability)
+        room
+      else
+        traits =
+          ability.traits
+          |> Map.update("RequireItems", [item.instance_id], &[item.instance_id | &1])
+          |> Map.put(
+            "TickMessage",
+            "<p><span class='dark-cyan'>You continue enchanting the #{item.name}.</span></p>"
+          )
 
-        can_execute?(room, caster, ability) ->
-          display_pre_cast_message(room, caster, item, ability)
+        ability = Map.put(ability, :traits, traits)
 
-          room =
-            Room.update_mobile(room, caster.ref, fn _room, caster ->
-              caster =
-                caster
-                |> apply_cooldowns(ability)
-                |> Mobile.subtract_mana(ability)
-                |> Mobile.subtract_energy(ability)
-                |> Stealth.reveal()
+        cond do
+          mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
+            mobile
 
-              Mobile.update_prompt(caster, room)
+          casting_failed?(caster, ability) ->
+            casting_failed(room, caster_ref, ability)
 
-              caster =
-                if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
-                  Character.send_chat(
-                    caster,
-                    "<p><span class='cyan'>You interrupt your work.</span></p>"
-                  )
+          can_execute?(room, caster, ability) ->
+            display_pre_cast_message(room, caster, item, ability)
 
-                  TimerManager.cancel(caster, lt)
-                else
+            room =
+              Room.update_mobile(room, caster.ref, fn _room, caster ->
+                caster =
                   caster
+                  |> apply_cooldowns(ability)
+                  |> Mobile.subtract_mana(ability)
+                  |> Mobile.subtract_energy(ability)
+                  |> Stealth.reveal()
+
+                Mobile.update_prompt(caster, room)
+
+                caster =
+                  if lt = Enum.find(TimerManager.timers(caster), &match?({:longterm, _}, &1)) do
+                    Character.send_chat(
+                      caster,
+                      "<p><span class='cyan'>You interrupt your work.</span></p>"
+                    )
+
+                    TimerManager.cancel(caster, lt)
+                  else
+                    caster
+                  end
+
+                case Repo.get_by(
+                       Enchantment,
+                       items_instances_id: item.instance_id,
+                       ability_id: ability.id,
+                       finished: false
+                     ) do
+                  %Enchantment{finished: false} = enchantment ->
+                    enchantment = Map.put(enchantment, :ability, ability)
+                    time = Enchantment.next_tick_time(caster, enchantment)
+
+                    Mobile.send_scroll(
+                      caster,
+                      "<p><span class='cyan'>You continue your work.</span></p>"
+                    )
+
+                    Mobile.send_scroll(
+                      caster,
+                      "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                        Enchantment.time_left(caster, enchantment)
+                        |> Enchantment.formatted_time_left()
+                      }</span></p>"
+                    )
+
+                    TimerManager.send_after(
+                      caster,
+                      {{:longterm, item.instance_id}, :timer.seconds(time),
+                       {:lt_tick, time, caster_ref, enchantment}}
+                    )
+
+                  nil ->
+                    start_enchantment(caster, item, ability)
                 end
+              end)
 
-              case Repo.get_by(
-                     Enchantment,
-                     items_instances_id: item.instance_id,
-                     ability_id: ability.id,
-                     finished: false
-                   ) do
-                %Enchantment{finished: false} = enchantment ->
-                  enchantment = Map.put(enchantment, :ability, ability)
-                  time = Enchantment.next_tick_time(caster, enchantment)
+            Room.update_moblist(room)
 
-                  Mobile.send_scroll(
-                    caster,
-                    "<p><span class='cyan'>You continue your work.</span></p>"
-                  )
+            Room.update_energy_bar(room, caster.ref)
+            Room.update_hp_bar(room, caster.ref)
+            Room.update_mana_bar(room, caster.ref)
 
-                  Mobile.send_scroll(
-                    caster,
-                    "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                      Enchantment.time_left(caster, enchantment)
-                      |> Enchantment.formatted_time_left()
-                    }</span></p>"
-                  )
+            room
 
-                  TimerManager.send_after(
-                    caster,
-                    {{:longterm, item.instance_id}, :timer.seconds(time),
-                     {:lt_tick, time, caster_ref, enchantment}}
-                  )
-
-                nil ->
-                  start_enchantment(caster, item, ability)
-              end
+          :else ->
+            Room.update_mobile(room, caster_ref, fn _room, caster ->
+              Mobile.subtract_energy(caster, ability)
             end)
-
-          Room.update_moblist(room)
-
-          Room.update_energy_bar(room, caster.ref)
-          Room.update_hp_bar(room, caster.ref)
-          Room.update_mana_bar(room, caster.ref)
-
-          room
-
-        :else ->
-          Room.update_mobile(room, caster_ref, fn _room, caster ->
-            Mobile.subtract_energy(caster, ability)
-          end)
+        end
       end
     end)
   end
