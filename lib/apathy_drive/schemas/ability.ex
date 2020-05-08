@@ -1988,37 +1988,38 @@ defmodule ApathyDrive.Ability do
         %{"DamageShield" => shield}, updated_room ->
           case shield["Damage"] do
             [%{max: nil, min: nil} | _] = damages ->
-              roll = :rand.uniform(100)
+              # roll = :rand.uniform(100)
 
-              chance = Mobile.crits_at_level(target, target.level)
+              # chance = Mobile.crits_at_level(target, target.level)
 
-              if roll <= chance do
-                caster = room.mobiles[caster_ref]
+              # if roll <= chance do
+              caster = room.mobiles[caster_ref]
 
-                display_cast_message(
-                  room,
-                  target,
-                  caster,
-                  %Ability{
-                    user_message: shield["UserMessage"],
-                    target_message: shield["TargetMessage"],
-                    spectator_message: shield["SpectatorMessage"]
-                  }
-                )
+              display_cast_message(
+                room,
+                target,
+                caster,
+                %Ability{
+                  user_message: shield["UserMessage"],
+                  target_message: shield["TargetMessage"],
+                  spectator_message: shield["SpectatorMessage"]
+                }
+              )
 
-                damage = Enum.random(damages)
-                letter = Enum.random(["A", "B", "C"])
-                reaction = critical_ability(damage.damage_type_id, letter)
+              damage = Enum.random(damages)
+              letter = Enum.random(["A", "B", "C"])
+              reaction = critical_ability(damage.damage_type_id, letter)
 
-                apply_ability(
-                  updated_room,
-                  updated_room.mobiles[target_ref],
-                  updated_room.mobiles[caster_ref],
-                  reaction
-                )
-              else
-                updated_room
-              end
+              apply_ability(
+                updated_room,
+                updated_room.mobiles[target_ref],
+                updated_room.mobiles[caster_ref],
+                reaction
+              )
+
+            # else
+            #   updated_room
+            # end
 
             damage ->
               reaction = %Ability{

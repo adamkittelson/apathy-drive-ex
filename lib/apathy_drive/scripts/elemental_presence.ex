@@ -7,7 +7,14 @@ defmodule ApathyDrive.Scripts.ElementalPresence do
     Room.update_mobile(room, mobile_ref, fn room, character ->
       lore = character.lore
 
-      damage = lore.damage_types
+      damage =
+        lore.damage_types
+        |> Enum.map(fn damage_type ->
+          Map.merge(damage_type, %{
+            min: nil,
+            max: nil
+          })
+        end)
 
       traits =
         ApathyDrive.Commands.Protection.damage_types()
