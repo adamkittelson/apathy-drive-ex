@@ -1360,7 +1360,7 @@ defmodule ApathyDrive.Character do
 
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
-      character_value = Systems.Effect.effect_bonus(character, ability)
+      character_value = Systems.Effect.effect_bonus(character, ability) || 0
 
       Enum.reduce(character.equipment, %{ability => character_value}, fn item, value ->
         bonus = Systems.Effect.effect_bonus(item, ability)
