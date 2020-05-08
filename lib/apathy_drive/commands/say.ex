@@ -5,7 +5,7 @@ defmodule ApathyDrive.Commands.Say do
   def keywords, do: ["say"]
 
   def execute(%Room{} = room, %Character{} = character, args) do
-    message =
+    raw_message =
       args
       |> Enum.join(" ")
       |> Character.sanitize()
@@ -16,7 +16,7 @@ defmodule ApathyDrive.Commands.Say do
     |> Enum.each(fn
       %Character{} = observer when character != observer ->
         message =
-          "<p>#{Mobile.colored_name(character)} says: <span class='dark-green'>\"#{message}\"</span></p>"
+          "<p>#{Mobile.colored_name(character)} says: <span class='dark-green'>\"#{raw_message}\"</span></p>"
 
         message = "<p><span class='dark-magenta'>#{message}</span></p>"
 
@@ -31,7 +31,7 @@ defmodule ApathyDrive.Commands.Say do
         :noop
     end)
 
-    message = "<p>You say: <span class='dark-green'>\"#{message}\"</span></p>"
+    message = "<p>You say: <span class='dark-green'>\"#{raw_message}\"</span></p>"
 
     Character.send_chat(
       character,
@@ -43,7 +43,7 @@ defmodule ApathyDrive.Commands.Say do
       message: message
     })
 
-    command_pets(room, character, message)
+    command_pets(room, character, raw_message)
   end
 
   defp command_pets(room, character, message) do
@@ -60,6 +60,9 @@ defmodule ApathyDrive.Commands.Say do
       |> case do
         nil ->
           room
+
+        %Monster{} = pet ->
+          command_pet(pet, command, character, room)
 
         matches ->
           Enum.reduce(matches, room, fn pet, room ->
