@@ -75,9 +75,10 @@ defmodule ApathyDrive.Character do
     field(:attack_color, :string, default: "red")
     field(:target_color, :string, default: "red")
     field(:spectator_color, :string, default: "red")
-    field(:lore, :string)
+    field(:lore_name, :string)
 
     field(:next_drain_at, :integer, virtual: true)
+    field(:lore, :any, virtual: true)
     field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)
     field(:classes, :any, virtual: true)
@@ -201,14 +202,8 @@ defmodule ApathyDrive.Character do
   end
 
   def set_lore(%Character{} = character) do
-    case character.lore do
-      %{} = _lore ->
-        character
-
-      lore ->
-        lore = ElementalLores.lore(lore)
-        Map.put(character, :lore, lore)
-    end
+    lore = ElementalLores.lore(character.lore_name)
+    Map.put(character, :lore, lore)
   end
 
   def modified_experience(%Character{} = character, exp) do

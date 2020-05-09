@@ -46,7 +46,7 @@ defmodule ApathyDrive.Commands.Use do
         Mobile.send_scroll(character, "<p>You are now using the lore of #{lore.name}.</p>")
 
         character
-        |> Ecto.Changeset.change(%{lore: requested_lore})
+        |> Ecto.Changeset.change(%{lore_name: requested_lore})
         |> Repo.update!()
 
         put_in(room.mobiles[character.ref].lore, lore)
