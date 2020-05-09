@@ -252,6 +252,9 @@ defmodule ApathyDrive.Commands.Help do
       [] ->
         Mobile.send_scroll(character, "<p>Sorry! No help is available for that topic.</p>")
 
+      nil ->
+        Mobile.send_scroll(character, "<p>Sorry! No help is available for that topic.</p>")
+
       list when is_list(list) ->
         Mobile.send_scroll(
           character,

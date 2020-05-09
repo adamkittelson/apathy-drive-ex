@@ -511,7 +511,7 @@ defmodule ApathyDrive.Ability do
     (class_ability_ids ++ scroll_ability_ids ++ skill_ability_ids)
     |> Enum.map(& &1.ability)
     |> Enum.uniq()
-    |> Enum.reject(&(is_nil(&1.name) or &1.name == ""))
+    |> Enum.reject(&(is_nil(&1.name) or &1.name == "" or &1.kind == "base-class"))
   end
 
   def heal_abilities(%{abilities: abilities} = mobile) do
