@@ -359,6 +359,13 @@ defmodule ApathyDrive.Ability do
     |> validate_length(:description, min: 20, max: 500)
   end
 
+  def set_name_changeset(model, name) do
+    model
+    |> cast(%{name: name}, [:name])
+    |> validate_required(:name)
+    |> validate_length(:name, min: 1, max: 25)
+  end
+
   def set_duration_changeset(model, duration) do
     model
     |> cast(%{duration: duration}, [:duration])

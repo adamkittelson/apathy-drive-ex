@@ -47,6 +47,15 @@ defmodule ApathyDrive.Commands.System.Ability do
 
   def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
         "set",
+        "name" | description
+      ]) do
+    set_name(character, description)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
+        "set",
         "duration" | duration
       ]) do
     set_duration(character, duration)
@@ -197,6 +206,23 @@ defmodule ApathyDrive.Commands.System.Ability do
 
     ability
     |> Ability.set_description_changeset(description)
+    |> Repo.update()
+    |> case do
+      {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        help(character, ability.name)
+
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect(changeset.errors)}</p>")
+    end
+  end
+
+  defp set_name(character, description) do
+    description = Enum.join(description, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_name_changeset(description)
     |> Repo.update()
     |> case do
       {:ok, _ability} ->

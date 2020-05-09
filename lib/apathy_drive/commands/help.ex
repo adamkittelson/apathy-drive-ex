@@ -10,6 +10,7 @@ defmodule ApathyDrive.Commands.Help do
     Commands.Inventory,
     ElementalLores,
     Enchantment,
+    Match,
     Mobile,
     Race,
     RaceTrait,
@@ -191,6 +192,25 @@ defmodule ApathyDrive.Commands.Help do
     room
   end
 
+  def execute(%Room{} = room, character, [arg]) when arg in ["classes", "Classes"] do
+    Mobile.send_scroll(
+      character,
+      "<p>Type <span class='yellow'>HELP</span> <span class='cyan'>&lt;Class Name&gt;</span> for specific help on a race.\n\n</p>"
+    )
+
+    Class
+    |> Repo.all()
+    |> Enum.sort_by(& &1.id)
+    |> Enum.each(fn class ->
+      Mobile.send_scroll(
+        character,
+        "<p>#{class.name}</p>"
+      )
+    end)
+
+    room
+  end
+
   def execute(%Room{} = room, character, [arg]) when arg in ["tips", "Tips"] do
     Mobile.send_scroll(
       character,
@@ -232,10 +252,7 @@ defmodule ApathyDrive.Commands.Help do
       [] ->
         Mobile.send_scroll(character, "<p>Sorry! No help is available for that topic.</p>")
 
-      [topic] ->
-        help(character, topic)
-
-      list ->
+      list when is_list(list) ->
         Mobile.send_scroll(
           character,
           "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
@@ -244,6 +261,9 @@ defmodule ApathyDrive.Commands.Help do
         Enum.each(list, fn match ->
           Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
         end)
+
+      topic ->
+        help(character, topic)
     end
 
     room
@@ -308,6 +328,88 @@ defmodule ApathyDrive.Commands.Help do
         if race.stealth, do: "Yes", else: "No"
       }</span></p>"
     )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>+------------------------------------------------------------------+</span></p>"
+    )
+  end
+
+  def help(character, %Class{id: class_id} = class) do
+    traits =
+      ApathyDrive.ClassAbility
+      |> Ecto.Query.where(
+        [ss],
+        ss.class_id == ^class_id and is_nil(ss.level) and ss.auto_learn == true
+      )
+      |> Ecto.Query.select([:ability_id])
+      |> Repo.one()
+      |> Map.get(:ability_id)
+      |> Ability.find()
+      |> Map.get(:traits)
+
+    abilities =
+      ApathyDrive.ClassAbility
+      |> Ecto.Query.where(
+        [ss],
+        ss.class_id == ^class_id and not is_nil(ss.level) and ss.auto_learn == true
+      )
+      |> Repo.all()
+      |> Enum.sort_by(& &1.level)
+      |> Enum.map(&{&1.level, Ability.find(&1.ability_id).name})
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>+-------------------------------------------------------------------+</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p> <span class='white'>#{String.pad_trailing(class.name, 48)}</span><span class='dark-green'>Exp Modifier:</span>  <span class='dark-cyan'>#{
+        class.exp_modifier
+      }%</p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p style='max-width: 69ch; padding: 0 1ch;'>    #{class.description}</p>"
+    )
+
+    Mobile.send_scroll(character, "\n\n<p><span class='white'>Traits:</span></p>")
+
+    traits
+    |> Enum.map(&massage_trait(&1, character))
+    |> List.flatten()
+    |> Enum.reject(&is_nil/1)
+    |> Enum.each(fn
+      {name, nil} ->
+        Mobile.send_scroll(character, "<p>  <span class='dark-green'>#{name}</span></p>")
+
+      {name, value} ->
+        Mobile.send_scroll(
+          character,
+          "<p>  <span class='dark-green'>#{name}:</span> <span class='dark-cyan'>#{value}</span></p>"
+        )
+    end)
+
+    if Enum.any?(abilities) do
+      Mobile.send_scroll(character, "\n\n<p><span class='white'>Abilities:</span></p>")
+
+      Mobile.send_scroll(character, "<p>  <span class='dark-magenta'>Level    Name</span></p>")
+
+      abilities
+      |> Enum.each(fn {level, name} ->
+        level =
+          level
+          |> to_string()
+          |> String.pad_trailing(9)
+
+        Mobile.send_scroll(
+          character,
+          "<p>  <span class='dark-cyan'>#{level}#{name}</span></p>"
+        )
+      end)
+    end
 
     Mobile.send_scroll(
       character,
@@ -452,9 +554,10 @@ defmodule ApathyDrive.Commands.Help do
   end
 
   def topic(query) do
-    [Ability.match_by_name(query, true), Race.match_by_name(query)]
+    [Race.match_by_name(query), Class.match_by_name(query), Ability.match_by_name(query, true)]
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
+    |> Match.all(:keyword_starts_with, query)
   end
 
   defp massage_trait({"RemoveSpells", ids}, _character) do
@@ -483,6 +586,18 @@ defmodule ApathyDrive.Commands.Help do
 
   defp massage_trait({"Dodge", amount}, _character) do
     {"Modifies Dodge Skill By", amount}
+  end
+
+  defp massage_trait({"ClassCombatLevel", value}, _character) do
+    {"Combat Proficiency", Character.combat_proficiency(value)}
+  end
+
+  defp massage_trait({"MaxHP", amount}, _character) do
+    {"Bonus HP per level", amount}
+  end
+
+  defp massage_trait({"MaxMana", amount}, _character) do
+    {"Bonus Mana per level", amount}
   end
 
   defp massage_trait({"AC%", amount}, character) do

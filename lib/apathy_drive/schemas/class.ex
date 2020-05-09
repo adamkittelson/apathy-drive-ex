@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Class do
   use Ecto.Schema
   import Ecto.Changeset
-  alias ApathyDrive.{Class, Repo}
+  alias ApathyDrive.{Class, Match, Repo}
 
   schema "classes" do
     field(:description, :string)
@@ -79,5 +79,13 @@ defmodule ApathyDrive.Class do
 
   def armour_select do
     Enum.map(@armours, &{&1, &1})
+  end
+
+  def match_by_name(name) do
+    races =
+      __MODULE__
+      |> ApathyDrive.Repo.all()
+
+    Match.all(races, :keyword_starts_with, name)
   end
 end

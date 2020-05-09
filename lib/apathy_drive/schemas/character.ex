@@ -1155,7 +1155,7 @@ defmodule ApathyDrive.Character do
     %{
       name: character.name,
       race: character.race.race.name,
-      combat: Character.combat_level(character),
+      combat: character |> Character.combat_level() |> Character.combat_proficiency(),
       level: character.level,
       alignment: legal_status(character),
       perception: Mobile.perception_at_level(character, character.level, room),
@@ -1228,6 +1228,12 @@ defmodule ApathyDrive.Character do
       Mobile.ability_value(character, "CombatLevel")
     end
   end
+
+  def combat_proficiency(combat_level) when combat_level > 4.5, do: "Excellent"
+  def combat_proficiency(combat_level) when combat_level > 3.5, do: "Good"
+  def combat_proficiency(combat_level) when combat_level > 2.5, do: "Average"
+  def combat_proficiency(combat_level) when combat_level > 1.5, do: "Fair"
+  def combat_proficiency(_combat_level), do: "Poor"
 
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
