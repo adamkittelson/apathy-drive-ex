@@ -96,7 +96,7 @@ defmodule ApathyDrive.Ability do
   ]
   @target_required_targets ["monster or single", "monster", "single"]
 
-  @kinds ["heal", "attack", "auto attack", "curse", "utility", "blessing", "passive"]
+  @kinds ["heal", "attack", "auto attack", "curse", "utility", "blessing", "passive", "long-term"]
 
   @instant_traits [
     "CurePoison",
@@ -474,6 +474,7 @@ defmodule ApathyDrive.Ability do
         |> Repo.all()
 
       (learnable ++ exact)
+      |> Enum.uniq()
       |> Match.all(:keyword_starts_with, name)
     else
       __MODULE__
