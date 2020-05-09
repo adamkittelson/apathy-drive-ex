@@ -58,6 +58,24 @@ defmodule ApathyDrive.Commands.System.Ability do
 
   def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
         "set",
+        "energy" | description
+      ]) do
+    set_energy(room, character, description)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
+        "set",
+        "difficulty" | description
+      ]) do
+    set_difficulty(room, character, description)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
+        "set",
         "duration" | duration
       ]) do
     set_duration(room, character, duration)
@@ -242,6 +260,40 @@ defmodule ApathyDrive.Commands.System.Ability do
 
     ability
     |> Ability.set_duration_changeset(duration)
+    |> Repo.update()
+    |> case do
+      {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        Help.execute(room, character, [ability.name])
+
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect(changeset.errors)}</p>")
+    end
+  end
+
+  defp set_energy(room, character, energy) do
+    energy = Enum.join(energy, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_energy_changeset(energy)
+    |> Repo.update()
+    |> case do
+      {:ok, _ability} ->
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        Help.execute(room, character, [ability.name])
+
+      {:error, changeset} ->
+        Mobile.send_scroll(character, "<p>#{inspect(changeset.errors)}</p>")
+    end
+  end
+
+  defp set_difficulty(room, character, difficulty) do
+    difficulty = Enum.join(difficulty, " ")
+    ability = character.editing
+
+    ability
+    |> Ability.set_difficulty_changeset(difficulty)
     |> Repo.update()
     |> case do
       {:ok, _ability} ->

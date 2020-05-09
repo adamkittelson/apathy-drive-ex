@@ -373,6 +373,20 @@ defmodule ApathyDrive.Ability do
     |> validate_number(:duration, greater_than: 0)
   end
 
+  def set_energy_changeset(model, energy) do
+    model
+    |> cast(%{energy: energy}, [:energy])
+    |> validate_required(:energy)
+    |> validate_number(:energy, greater_than_or_equal_to: 0)
+  end
+
+  def set_difficulty_changeset(model, difficulty) do
+    model
+    |> cast(%{difficulty: difficulty}, [:difficulty])
+    |> validate_required(:difficulty)
+    |> validate_number(:difficulty, [])
+  end
+
   def set_mana_changeset(model, mana) do
     model
     |> cast(%{mana: mana}, [:mana])
