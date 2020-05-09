@@ -476,7 +476,7 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def useable_by_character?(_character, %Item{} = item), do: !has_ability?(item, "Learn")
+  def useable_by_character?(_character, %Item{}), do: true
 
   def too_powerful_for_character?(character, item) do
     too_high_level_for_character?(character, item)

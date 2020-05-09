@@ -70,6 +70,7 @@ defmodule ApathyDrive.Command do
       Commands.Party,
       Commands.Pray,
       Commands.Protection,
+      Commands.Read,
       Commands.Remove,
       Commands.Reply,
       Commands.Return,
