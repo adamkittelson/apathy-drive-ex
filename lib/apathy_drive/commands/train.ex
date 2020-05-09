@@ -47,20 +47,22 @@ defmodule ApathyDrive.Commands.Train do
         old_abilities = Map.values(character.abilities)
         old_hp = Mobile.max_hp_at_level(character, character.level)
 
-        CharacterClass
-        |> Repo.get_by(%{character_id: character.id, class_id: class_id})
-        |> case do
-          %CharacterClass{} = character_class ->
-            character_class
-            |> Ecto.Changeset.change(%{
-              level: character_class.level + 1
-            })
-            |> Repo.update!()
+        character_class =
+          CharacterClass
+          |> Repo.get_by(%{character_id: character.id, class_id: class_id})
+          |> Repo.preload([:class])
+          |> case do
+            %CharacterClass{} = character_class ->
+              character_class
+              |> Ecto.Changeset.change(%{
+                level: character_class.level + 1
+              })
+              |> Repo.update!()
 
-          nil ->
-            %CharacterClass{character_id: character.id, class_id: class_id, level: 1}
-            |> Repo.insert!()
-        end
+            nil ->
+              %CharacterClass{character_id: character.id, class_id: class_id, level: 1}
+              |> Repo.insert!()
+          end
 
         character =
           character
@@ -75,7 +77,9 @@ defmodule ApathyDrive.Commands.Train do
 
         Mobile.send_scroll(
           character,
-          "<p><span class='yellow'>Your level has increased to #{character.level}!</span></p>"
+          "<p><span class='yellow'>Your #{character_class.class.name} level has increased to #{
+            character_class.level
+          }!</span></p>"
         )
 
         hp_diff = Mobile.max_hp_at_level(character, character.level) - old_hp

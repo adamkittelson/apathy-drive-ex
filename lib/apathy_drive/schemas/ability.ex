@@ -2658,6 +2658,18 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Bubble", percentage)
   end
 
+  def process_duration_trait(
+        {"Bubble%", %{"min" => min, "max" => max}},
+        effects,
+        target,
+        caster,
+        duration
+      ) do
+    bubble = (min + max) / 2
+
+    process_duration_trait({"Bubble%", bubble}, effects, target, caster, duration)
+  end
+
   def process_duration_trait({"Bubble%", value}, effects, _target, _caster, _duration) do
     percentage = value / 100
 
