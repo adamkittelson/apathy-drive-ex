@@ -37,13 +37,6 @@ defmodule ApathyDrive.Metrics do
       Statix.gauge("players", count, tags: ["game:#{String.downcase(game)}"])
     end)
 
-    room_count =
-      "rooms"
-      |> ApathyDrive.PubSub.subscribers()
-      |> length()
-
-    Statix.gauge("rooms", room_count)
-
     memory_used_in_mb = trunc(:erlang.memory()[:total] / 1024 / 1024)
 
     Statix.gauge("memory_used", memory_used_in_mb)

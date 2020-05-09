@@ -9,6 +9,7 @@ defmodule ApathyDrive do
     :ok = ApathyDrive.Statix.connect()
 
     children = [
+      {Phoenix.PubSub, name: ApathyDrive.PubSub},
       worker(ApathyDriveWeb.Endpoint, []),
       worker(ApathyDrive.Repo, []),
       worker(ApathyDrive.Migrator, [], restart: :temporary),

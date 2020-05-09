@@ -18,7 +18,8 @@ defmodule ApathyDriveWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
-      use Phoenix.ConnTest
+      import Plug.Conn
+      import Phoenix.ConnTest
 
       # Alias the data repository and import query/model functions
       alias ApathyDrive.Repo

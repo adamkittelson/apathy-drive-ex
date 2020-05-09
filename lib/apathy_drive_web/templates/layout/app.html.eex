@@ -19,7 +19,7 @@
 </head>
 <body class="app">
   <div class="container">
-    <%= render @view_module, @view_template, assigns %>
+    <%= @inner_content %>
   </div>
   <!-- Page Footer Layout
        –––––––––––––––––––––––––––––––––––––––––––––––––– -->

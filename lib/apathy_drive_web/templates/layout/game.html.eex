@@ -19,7 +19,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.4/lodash.min.js"></script>
 </head>
 <body class="app">
-  <%= render @view_module, @view_template, assigns %>
+  <%= @inner_content %>
   <!-- Page Footer Layout
        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <script>require("phoenix_html");</script>
