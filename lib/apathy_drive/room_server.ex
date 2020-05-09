@@ -260,6 +260,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_abilities()
         |> Character.load_items()
         |> Character.set_title()
+        |> Character.set_lore()
         |> Character.load_materials()
         |> TimerManager.send_after(
           {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, ref}}
