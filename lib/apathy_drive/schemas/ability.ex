@@ -465,17 +465,24 @@ defmodule ApathyDrive.Ability do
   end
 
   def match_by_name(name, all \\ false) do
-    abilities =
-      if all do
+    if all do
+      learnable =
         learnable_abilities()
-      else
-        __MODULE__
-        |> where([ability], not is_nil(ability.name) and ability.name != "")
-        |> distinct(true)
-        |> ApathyDrive.Repo.all()
-      end
+        |> Match.all(:keyword_starts_with, name)
 
-    Match.all(abilities, :keyword_starts_with, name)
+      exact =
+        Ability
+        |> where(name: ^name)
+        |> Repo.all()
+
+      learnable || exact
+    else
+      __MODULE__
+      |> where([ability], not is_nil(ability.name) and ability.name != "")
+      |> distinct(true)
+      |> ApathyDrive.Repo.all()
+      |> Match.all(:keyword_starts_with, name)
+    end
   end
 
   def learnable_abilities do
