@@ -330,7 +330,6 @@ $(document).on('keyup', "textarea", function (event) {
 });
 
 window.progress = function (elem, percent, secondary_percent) {
-  console.log('percent: ' + percent + ', secondary: ' + secondary_percent)
   if (typeof secondary_percent !== 'undefined') {
     percent = (1 - secondary_percent) * percent
   }
@@ -340,12 +339,7 @@ window.progress = function (elem, percent, secondary_percent) {
 
   var modified = percent + (secondary_percent * 100)
 
-  console.log('percent:' + percent)
-  console.log('secondary:' + secondary_percent)
-  console.log('modified:' + modified)
-
   var setting = percent + '%, ' + modified + '%, 100%';
-  console.log("setting to " + setting)
   $(elem).css('background-size', setting)
 
 }
