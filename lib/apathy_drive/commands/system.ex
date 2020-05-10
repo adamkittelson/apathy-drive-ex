@@ -37,6 +37,14 @@ defmodule ApathyDrive.Commands.System do
     ApathyDrive.Commands.Train.execute(room, character, true)
   end
 
+  def system(%Room{} = room, character, ["add_admin", name]) do
+    {:ok, message} = ApathyDrive.System.add_admin(name)
+
+    Mobile.send_scroll(character, "<p>#{message}</p>")
+
+    room
+  end
+
   def system(%Room{} = room, character, ["give_item" | item_id_or_name]) do
     item_id_or_name = Enum.join(item_id_or_name, " ")
 

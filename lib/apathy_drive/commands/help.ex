@@ -560,6 +560,7 @@ defmodule ApathyDrive.Commands.Help do
     [Race.match_by_name(query), Class.match_by_name(query), Ability.match_by_name(query, true)]
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
     |> Match.all(:keyword_starts_with, query)
   end
 

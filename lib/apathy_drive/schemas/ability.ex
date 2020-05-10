@@ -488,7 +488,7 @@ defmodule ApathyDrive.Ability do
         |> Repo.all()
 
       (learnable ++ exact)
-      |> Enum.uniq()
+      |> Enum.uniq_by(& &1.name)
       |> Match.all(:keyword_starts_with, name)
     else
       __MODULE__

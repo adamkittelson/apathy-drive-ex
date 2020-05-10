@@ -31,27 +31,6 @@
           </ul>
         </div>
       </li>
-      <%= if @conn.assigns[:admin?] do %>
-        <li class="navbar-item">
-          <a class="navbar-link" href="#admin" data-popover="#adminPopover">Administration</a>
-          <div id="adminPopover" class="popover">
-            <ul class="popover-list">
-              <li class="popover-item">
-                <a class="popover-link" href="/admin/abilities" target="_blank">Abilities</a>
-              </li>
-              <li class="popover-item">
-                <a class="popover-link" href="/admin/classes" target="_blank">Classes</a>
-              </li>
-              <li class="popover-item">
-                <a class="popover-link" href="/admin/damage-types" target="_blank">Damage Types</a>
-              </li>
-              <li class="popover-item">
-                <a class="popover-link" href="/admin/races" target="_blank">Races</a>
-              </li>
-            </ul>
-          </div>
-        </li>
-      <% end %>
       <%= if @conn.assigns[:character] do %>
         <li class="navbar-item">
           <%= link "Sign out", to: Routes.session_path(@conn, :delete, @conn.assigns[:character]), method: :delete, class: "navbar-link" %>
