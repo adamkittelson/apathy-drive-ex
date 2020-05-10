@@ -241,12 +241,17 @@ defmodule ApathyDrive.Commands.Move do
         |> RoomServer.find()
         |> RoomServer.mobile_entered(character)
 
-        room =
-          put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
-          |> party_move(character, room_exit)
+        put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+        |> party_move(character, room_exit)
+        |> case do
+          %Room{} = room ->
+            Room.update_moblist(room)
+            room
 
-        Room.update_moblist(room)
-        room
+          {:error, :too_tired, room} ->
+            Room.update_moblist(room)
+            room
+        end
       end
     else
       room

@@ -7,7 +7,8 @@ defmodule ApathyDrive.Commands.System.Ability do
     DamageType,
     Mobile,
     Repo,
-    Room
+    Room,
+    Trait
   }
 
   alias ApathyDrive.Commands.Help
