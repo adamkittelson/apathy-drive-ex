@@ -1,8 +1,10 @@
 defmodule ApathyDrive.Commands.System.Ability do
   alias ApathyDrive.{
     Ability,
+    AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
+    Attribute,
     Character,
     DamageType,
     Mobile,
@@ -26,6 +28,15 @@ defmodule ApathyDrive.Commands.System.Ability do
         "trait" | trait
       ]) do
     add_trait(room, character, trait)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
+        "add",
+        "attribute" | attribute
+      ]) do
+    add_attribute(room, character, attribute)
 
     room
   end
@@ -186,6 +197,24 @@ defmodule ApathyDrive.Commands.System.Ability do
 
         %AbilityTrait{ability_id: ability.id, trait_id: trait.id, value: value}
         |> Repo.insert(on_conflict: on_conflict, conflict_target: [:ability_id, :trait_id])
+
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        Help.execute(room, character, [ability.name])
+    end
+  end
+
+  defp add_attribute(room, character, [attribute]) do
+    ability = character.editing
+
+    attribute = Repo.get_by(Attribute, name: attribute)
+
+    cond do
+      is_nil(attribute) ->
+        Mobile.send_scroll(character, "<p>No attribute by that name was found.</p>")
+
+      :else ->
+        %AbilityAttribute{ability_id: ability.id, attribute_id: attribute.id}
+        |> Repo.insert()
 
         ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         Help.execute(room, character, [ability.name])
