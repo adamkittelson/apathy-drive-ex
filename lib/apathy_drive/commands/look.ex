@@ -67,7 +67,9 @@ defmodule ApathyDrive.Commands.Look do
 
     coords =
       if character.admin do
-        "(x:#{room.coordinates["x"]} y:#{room.coordinates["y"]} z:#{room.coordinates["z"]})"
+        "<span style='font-size:0.7em'>Room##{room.id} (x:#{room.coordinates["x"]} y:#{
+          room.coordinates["y"]
+        } z:#{room.coordinates["z"]})</span>"
       else
         ""
       end
@@ -375,21 +377,6 @@ defmodule ApathyDrive.Commands.Look do
         value -> value
       end
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Name:</span> " <>
-        "<span class='dark-cyan'>#{item.name}</span> " <>
-        "<span class='dark-green'>Kind:</span> " <>
-        "<span class='dark-cyan'>#{item.weapon_type}</span> " <>
-        "<span class='dark-green'>DPS:</span> " <>
-        "<span class='dark-cyan'>#{damage.dps} (#{trunc(damage.min_damage)}-#{
-          trunc(damage.max_damage)
-        } @ #{trunc(damage.ability.energy / 10)}% energy per swing)</span> " <>
-        "<span class='dark-green'>Value:</span> " <>
-        "<span class='dark-cyan'>#{value}</span>" <>
-        "</p>"
-    )
-
     Mobile.send_scroll(character, "<p>#{item.description}</p>")
 
     item.effects
@@ -399,6 +386,28 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.each(fn effect_message ->
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Kind:</span> <span class='dark-cyan'>#{item.weapon_type}</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>DPS:</span> <span class='dark-cyan'>#{damage.dps} (#{
+        trunc(damage.min_damage)
+      }-#{trunc(damage.max_damage)} @ #{trunc(damage.ability.energy / 10)}% energy per swing)</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Weight:</span> <span class='dark-cyan'>#{item.weight}</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Value:</span> <span class='dark-cyan'>#{value}</span></p>"
+    )
 
     display_traits(character, item)
 
@@ -430,21 +439,6 @@ defmodule ApathyDrive.Commands.Look do
         value -> value
       end
 
-    if item.worn_on do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span> <span class='dark-green'>Type:</span> <span class='dark-cyan'>#{
-          item.armour_type
-        }</span> <span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> <span class='dark-green'>Value:</span> " <>
-          "<span class='dark-cyan'>#{value}</span> </p>"
-      )
-    else
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Name:</span> <span class='dark-cyan'>#{item.name}</span></p>"
-      )
-    end
-
     Mobile.send_scroll(
       character,
       "<p>#{item.description}</p>"
@@ -457,6 +451,28 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.each(fn effect_message ->
       Mobile.send_scroll(character, "<p>#{effect_message}</p>")
     end)
+
+    if item.worn_on do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Type:</span> <span class='dark-cyan'>#{item.armour_type}</span></p>"
+      )
+
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> </p>"
+      )
+
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Weight:</span> <span class='dark-cyan'>#{item.weight}</span></p>"
+      )
+
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Value:</span> <span class='dark-cyan'>#{value}</span></p>"
+      )
+    end
 
     display_traits(character, item)
 
@@ -562,15 +578,41 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def display_trait(_character, _item, {"timers", _list}, _indent), do: :noop
-
-  def display_trait(character, _item, {trait, list}, indent) when is_list(list) do
-    value = Trait.value(trait, list)
+  def display_trait(character, _item, {"RemoveSpells", list}, indent) do
+    list =
+      list
+      |> Enum.map(&Ability.find/1)
+      |> Enum.map(& &1.name)
 
     Mobile.send_scroll(
       character,
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Remove Spells:</span> <span class='dark-cyan'>#{
+        inspect(list)
+      }</span></p>"
+    )
+  end
+
+  def display_trait(character, _item, {"ClassOk", list}, indent) do
+    list =
+      list
+      |> Enum.map(&ApathyDrive.Repo.get!(ApathyDrive.Class, &1))
+      |> Enum.map(& &1.name)
+
+    Mobile.send_scroll(
+      character,
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>ClassOk:</span> <span class='dark-cyan'>#{
+        inspect(list)
+      }</span></p>"
+    )
+  end
+
+  def display_trait(_character, _item, {"timers", _list}, _indent), do: :noop
+
+  def display_trait(character, _item, {trait, list}, indent) when is_list(list) do
+    Mobile.send_scroll(
+      character,
       "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
-        value
+        inspect(list)
       }</span></p>"
     )
   end
