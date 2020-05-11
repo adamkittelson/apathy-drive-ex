@@ -235,8 +235,6 @@ defmodule ApathyDrive.Enchantment do
   def add_enchantment_exp(enchanter, enchantment) do
     exp = enchantment_exp(enchanter)
 
-    IO.inspect(enchantment.ability.attributes)
-
     Enum.reduce(enchantment.ability.attributes, enchanter, fn attribute, enchanter ->
       attribute = String.to_atom(attribute)
 
