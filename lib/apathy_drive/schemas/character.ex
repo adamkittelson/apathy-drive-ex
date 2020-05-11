@@ -1305,8 +1305,10 @@ defmodule ApathyDrive.Character do
     level = character.attribute_levels[attribute]
 
     exp = get_in(character, [Access.key!(:race), Access.key!(:"#{attribute}_experience")])
-    current = Level.exp_at_level(level, 1.0)
-    to_level = Level.exp_at_level(level + 1, 1.0)
+    modifier = (100 + character.race.race.exp_modifier) / 100
+
+    current = Level.exp_at_level(level, modifier)
+    to_level = Level.exp_at_level(level + 1, modifier)
 
     percent = ((exp - current) / (to_level - current) * 100) |> trunc
 
