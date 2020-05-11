@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
   import ApathyDrive.Scripts
-  alias ApathyDrive.{Ability, Character, Item, Match, Mobile, Monster, Repo, Room, Skill}
+  alias ApathyDrive.{Ability, Character, Item, Match, Mobile, Monster, Repo, Room, Skill, Trait}
   alias ApathyDrive.Commands.System
   require Ecto.Query
 
@@ -191,12 +191,20 @@ defmodule ApathyDrive.Commands.System do
     System.Ability.execute(room, character, args)
   end
 
+  def system(%Room{} = room, character, ["trait" | args]) do
+    System.Trait.execute(room, character, args)
+  end
+
   def system(%Room{} = room, %Character{editing: %Ability{} = ability} = character, args) do
     character =
       character
       |> Map.put(:editing, Repo.get(Ability, ability.id))
 
     System.Ability.execute(room, character, args)
+  end
+
+  def system(%Room{} = room, %Character{editing: %Trait{}} = character, args) do
+    System.Trait.execute(room, character, args)
   end
 
   def system(%Room{} = room, %Character{editing: %Skill{} = skill} = character, args) do

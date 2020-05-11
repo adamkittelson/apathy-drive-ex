@@ -149,6 +149,8 @@ defmodule ApathyDrive.Ability do
     "Intellect",
     "Light",
     "LightVision",
+    "MaxBubble",
+    "MaxBubble%",
     "MaxHP",
     "MaxHP%",
     "MR",
@@ -2687,6 +2689,25 @@ defmodule ApathyDrive.Ability do
   end
 
   def process_duration_trait(
+        {"MaxBubble", %{"min" => min, "max" => max}},
+        effects,
+        target,
+        caster,
+        duration
+      ) do
+    bubble = (min + max) / 2
+
+    process_duration_trait({"MaxBubble", bubble}, effects, target, caster, duration)
+  end
+
+  def process_duration_trait({"MaxBubble", value}, effects, target, _caster, _duration) do
+    percentage = value / Mobile.max_hp_at_level(target, target.level)
+
+    effects
+    |> Map.put("MaxBubble", percentage)
+  end
+
+  def process_duration_trait(
         {"Bubble%", %{"min" => min, "max" => max}},
         effects,
         target,
@@ -2703,6 +2724,25 @@ defmodule ApathyDrive.Ability do
 
     effects
     |> Map.put("Bubble", percentage)
+  end
+
+  def process_duration_trait(
+        {"MaxBubble%", %{"min" => min, "max" => max}},
+        effects,
+        target,
+        caster,
+        duration
+      ) do
+    bubble = (min + max) / 2
+
+    process_duration_trait({"MaxBubble%", bubble}, effects, target, caster, duration)
+  end
+
+  def process_duration_trait({"MaxBubble%", value}, effects, _target, _caster, _duration) do
+    percentage = value / 100
+
+    effects
+    |> Map.put("MaxBubble", percentage)
   end
 
   def process_duration_trait(

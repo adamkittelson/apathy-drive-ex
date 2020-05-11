@@ -235,9 +235,13 @@ defmodule ApathyDrive.Enchantment do
   def add_enchantment_exp(enchanter, enchantment) do
     exp = enchantment_exp(enchanter)
 
-    Enum.reduce(enchantment.ability.attributes, enchanter, fn {attribute, _value}, enchanter ->
+    IO.inspect(enchantment.ability.attributes)
+
+    Enum.reduce(enchantment.ability.attributes, enchanter, fn attribute, enchanter ->
+      attribute = String.to_atom(attribute)
+
       Character.add_attribute_experience(enchanter, %{
-        attribute => 1 / length(Map.keys(enchantment.ability.attributes))
+        attribute => 1 / length(enchantment.ability.attributes)
       })
     end)
     |> ApathyDrive.Character.add_experience_to_buffer(exp)

@@ -6,6 +6,8 @@ defmodule ApathyDrive.Commands.System.Ability do
     AbilityTrait,
     Attribute,
     Character,
+    Class,
+    ClassAbility,
     DamageType,
     Mobile,
     Repo,
@@ -28,6 +30,15 @@ defmodule ApathyDrive.Commands.System.Ability do
         "trait" | trait
       ]) do
     add_trait(room, character, trait)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
+        "add",
+        "class" | trait
+      ]) do
+    add_class(room, character, trait)
 
     room
   end
@@ -173,6 +184,41 @@ defmodule ApathyDrive.Commands.System.Ability do
     Repo.insert!(%Ability{name: ability_name}, on_conflict: :nothing)
 
     Help.execute(room, character, [ability_name])
+  end
+
+  defp add_class(room, character, [class | level]) do
+    level =
+      level
+      |> Enum.join()
+      |> Integer.parse()
+      |> case do
+        {level, ""} ->
+          level
+
+        other ->
+          other
+      end
+
+    ability = character.editing
+
+    class = Repo.get_by(Class, name: class)
+
+    cond do
+      is_nil(class) ->
+        Mobile.send_scroll(character, "<p>No class by that name was found.</p>")
+
+      is_integer(level) ->
+        on_conflict = [set: [level: level]]
+
+        %ClassAbility{ability_id: ability.id, class_id: class.id, level: level, auto_learn: true}
+        |> Repo.insert(on_conflict: on_conflict, conflict_target: [:ability_id, :class_id])
+
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        Help.execute(room, character, [ability.name])
+
+      :else ->
+        Mobile.send_scroll(character, "<p>Must provide a valid level.</p>")
+    end
   end
 
   defp add_trait(room, character, [trait | value]) do

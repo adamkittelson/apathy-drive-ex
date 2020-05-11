@@ -2,6 +2,8 @@ defmodule ApathyDrive.Trait do
   use ApathyDriveWeb, :model
   use GenServer
 
+  alias ApathyDrive.Match
+
   require Logger
 
   schema "traits" do
@@ -42,6 +44,27 @@ defmodule ApathyDrive.Trait do
     end)
 
     {:noreply, state}
+  end
+
+  def set_description_changeset(model, description) do
+    model
+    |> cast(%{description: description}, [:description])
+    |> validate_required(:description)
+    |> validate_length(:description, min: 10, max: 500)
+  end
+
+  def set_name_changeset(model, name) do
+    model
+    |> cast(%{name: name}, [:name])
+    |> validate_required(:name)
+    |> validate_length(:name, min: 1, max: 25)
+  end
+
+  def set_merge_by_changeset(model, merge_by) do
+    model
+    |> cast(%{merge_by: merge_by}, [:merge_by])
+    |> validate_required(:merge_by)
+    |> validate_inclusion(:merge_by, ["add", "multiply", "list", "replace", "mult%"])
   end
 
   def names do
@@ -143,5 +166,13 @@ defmodule ApathyDrive.Trait do
             "replace"
         end
     end
+  end
+
+  def match_by_name(name) do
+    traits =
+      __MODULE__
+      |> ApathyDrive.Repo.all()
+
+    Match.all(traits, :keyword_starts_with, name)
   end
 end
