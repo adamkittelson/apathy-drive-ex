@@ -324,10 +324,10 @@ defmodule ApathyDrive.Item do
     count = Enchantment.count(item)
 
     cond do
-      count > 3 ->
+      count >= 3 ->
         "darkmagenta"
 
-      count >= 3 ->
+      count >= 2 ->
         "blue"
 
       count >= 1 ->
