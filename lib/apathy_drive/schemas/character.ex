@@ -1302,7 +1302,6 @@ defmodule ApathyDrive.Character do
   end
 
   def update_attribute_bar(%Character{socket: socket} = character, attribute) do
-    IO.inspect(attribute)
     level = character.attribute_levels[attribute]
 
     exp = get_in(character, [Access.key!(:race), Access.key!(:"#{attribute}_experience")])

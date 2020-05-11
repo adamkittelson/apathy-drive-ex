@@ -2723,6 +2723,7 @@ defmodule ApathyDrive.Ability do
     percentage = value / 100
 
     effects
+    |> Map.delete("Bubble%")
     |> Map.put("Bubble", percentage)
   end
 
@@ -2742,6 +2743,7 @@ defmodule ApathyDrive.Ability do
     percentage = value / 100
 
     effects
+    |> Map.delete("MaxBubble%")
     |> Map.put("MaxBubble", percentage)
   end
 
