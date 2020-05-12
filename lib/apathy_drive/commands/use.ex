@@ -49,7 +49,7 @@ defmodule ApathyDrive.Commands.Use do
           character
           |> Ecto.Changeset.change(%{lore_name: requested_lore})
           |> Repo.update!()
-          |> Map.put(lore, lore)
+          |> Map.put(:lore, lore)
 
         put_in(room.mobiles[character.ref], character)
       else
