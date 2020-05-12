@@ -45,11 +45,13 @@ defmodule ApathyDrive.Commands.Use do
       if lore.level <= Mobile.ability_value(character, "Elemental") do
         Mobile.send_scroll(character, "<p>You are now using the lore of #{lore.name}.</p>")
 
-        character
-        |> Ecto.Changeset.change(%{lore_name: requested_lore})
-        |> Repo.update!()
+        character =
+          character
+          |> Ecto.Changeset.change(%{lore_name: requested_lore})
+          |> Repo.update!()
+          |> Map.put(lore, lore)
 
-        put_in(room.mobiles[character.ref].lore, lore)
+        put_in(room.mobiles[character.ref], character)
       else
         Mobile.send_scroll(
           character,
