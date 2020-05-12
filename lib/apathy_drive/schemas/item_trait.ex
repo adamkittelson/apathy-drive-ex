@@ -23,6 +23,8 @@ defmodule ApathyDrive.ItemTrait do
         Trait.merge_traits(abilities, trait)
     end)
     |> Trait.merge_traits(ItemResistance.load_resistances(item_id))
+    |> Map.put("stack_key", "traits")
+    |> Map.put("stack_count", 1)
   end
 
   def changeset(%ItemTrait{} = rt, attrs) do
