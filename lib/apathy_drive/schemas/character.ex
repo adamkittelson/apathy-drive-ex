@@ -840,20 +840,24 @@ defmodule ApathyDrive.Character do
     end
   end
 
-  def trainable_experience(%Character{} = character) do
-    used_experience =
+  def used_experience(%Character{} = character) do
+    {used_experience, _level} =
       character.classes
       |> Enum.sort_by(fn c -> Repo.get(Class, c.class_id).exp_modifier end, &>=/2)
-      |> Enum.reduce(0, fn character_class, used_experience ->
-        level = character_class.level
+      |> Enum.reduce({0, -1}, fn character_class, {used_experience, level} ->
+        level = level + character_class.level
         class = Repo.get(Class, character_class.class_id)
 
         modifier = class.exp_modifier / 100
 
-        used_experience + Level.exp_at_level(level - 1, modifier)
+        {used_experience + Level.exp_at_level(level, modifier), level}
       end)
 
-    character.experience - used_experience
+    used_experience
+  end
+
+  def trainable_experience(%Character{} = character) do
+    character.experience - used_experience(character)
   end
 
   def add_attribute_experience(%Character{exp_buffer: buffer} = character, attribute, amount)

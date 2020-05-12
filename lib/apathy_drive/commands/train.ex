@@ -4,7 +4,6 @@ defmodule ApathyDrive.Commands.Train do
   alias ApathyDrive.{
     Character,
     CharacterClass,
-    Class,
     ClassSkill,
     Directory,
     Level,
@@ -24,19 +23,24 @@ defmodule ApathyDrive.Commands.Train do
     end
   end
 
-  def required_experience(character, class_id) do
-    class = Repo.get(Class, class_id)
+  def required_experience(character, class_id, level \\ nil) do
+    initial_exp = Character.used_experience(character)
 
-    modifier = class.exp_modifier / 100
+    classes =
+      if index = Enum.find_index(character.classes, &(&1.class_id == class_id)) do
+        class = Enum.at(character.classes, index)
+        class = update_in(class.level, &(level || &1 + 1))
+        List.replace_at(character.classes, index, class)
+      else
+        [%CharacterClass{level: level || 1, class_id: class_id} | character.classes]
+      end
 
-    if character.level < 1 do
-      0
-    else
-      to_next_level = Level.exp_at_level(character.level, modifier)
-      to_level = Level.exp_at_level(character.level - 1, modifier)
+    new_exp =
+      character
+      |> Map.put(:classes, classes)
+      |> Character.used_experience()
 
-      to_next_level - to_level
-    end
+    new_exp - initial_exp
   end
 
   def train(room, character, class_id, force) do
@@ -62,6 +66,7 @@ defmodule ApathyDrive.Commands.Train do
             nil ->
               %CharacterClass{character_id: character.id, class_id: class_id, level: 1}
               |> Repo.insert!()
+              |> Repo.preload([:class])
           end
 
         character =

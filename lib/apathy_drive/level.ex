@@ -49,9 +49,9 @@ defmodule ApathyDrive.Level do
     put_in(entity.level, level)
   end
 
-  def display_exp_table do
+  def display_exp_table(multiplier) do
     Enum.each(0..50, fn level ->
-      exp = String.pad_leading("#{exp_at_level(level)}", 8)
+      exp = String.pad_leading("#{exp_at_level(level, multiplier)}", 8)
       level = String.pad_leading("#{level}", 2)
 
       IO.puts("Level: #{level}, Exp Required: #{exp}")
