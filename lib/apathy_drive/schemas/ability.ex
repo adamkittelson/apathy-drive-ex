@@ -1401,32 +1401,34 @@ defmodule ApathyDrive.Ability do
     caster = room.mobiles[caster_ref]
     target = room.mobiles[target_ref]
 
-    crit = crit_for_damage(target.ability_shift, ability.crit_tables)
+    if caster && target do
+      if crit = crit_for_damage(target.ability_shift, ability.crit_tables) do
+        crit = put_in(crit.traits["StackCount"], 10)
 
-    if caster && target && crit do
-      crit = put_in(crit.traits["StackCount"], 10)
-
-      target =
-        if ability.traits["ConfusionMessage"] == "You are stunned and cannot move!" do
-          target.effects
-          |> Enum.filter(fn {_key, effect} ->
-            Map.has_key?(effect, "Confusion")
-          end)
-          |> Enum.map(fn {key, _effect} -> key end)
-          |> Enum.reduce(
-            target,
-            &Systems.Effect.remove(&2, &1,
-              fire_after_cast: true,
-              show_expiration_message: false
+        target =
+          if ability.traits["ConfusionMessage"] == "You are stunned and cannot move!" do
+            target.effects
+            |> Enum.filter(fn {_key, effect} ->
+              Map.has_key?(effect, "Confusion")
+            end)
+            |> Enum.map(fn {key, _effect} -> key end)
+            |> Enum.reduce(
+              target,
+              &Systems.Effect.remove(&2, &1,
+                fire_after_cast: true,
+                show_expiration_message: false
+              )
             )
-          )
-        else
-          target
-        end
+          else
+            target
+          end
 
-      room = put_in(room.mobiles[target_ref], target)
+        room = put_in(room.mobiles[target_ref], target)
 
-      apply_ability(room, caster, target, crit)
+        apply_ability(room, caster, target, crit)
+      else
+        room
+      end
     else
       room
     end
