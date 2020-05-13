@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.Move do
   alias ApathyDrive.{
+    Ability,
     Character,
     Currency,
     Companion,
@@ -317,6 +318,98 @@ defmodule ApathyDrive.Commands.Move do
       end
     else
       room
+    end
+  end
+
+  def execute(
+        %Room{} = room,
+        %{} = character,
+        %{"kind" => "Trap", "destination" => destination_id} = room_exit,
+        reattempt
+      ) do
+    if ApathyDrive.Doors.all_remote_actions_triggered?(room, room_exit) do
+      execute(room, character, Map.put(room_exit, "kind", "Normal"), reattempt)
+    else
+      if !Mobile.held(character) and !Mobile.confused(character, room) and
+           !ApathyDrive.Scripts.Asylum.enforce_asylum(room, character) do
+        character =
+          if character.sneaking && !reattempt do
+            character
+            |> Mobile.send_scroll("<p>Sneaking...</p>")
+            |> Character.add_attribute_experience(%{
+              agility: 0.75,
+              charm: 0.25
+            })
+          else
+            character
+          end
+
+        if Mobile.exhausted(character) do
+          room = put_in(room.mobiles[character.ref], character)
+          {:error, :too_tired, room}
+        else
+          Mobile.send_scroll(
+            character,
+            "<p><span class='yellow'>#{room_exit["mover_message"]}</span></p>"
+          )
+
+          room =
+            Room.update_mobile(room, character.ref, fn _room, character ->
+              ability = %ApathyDrive.Ability{
+                traits: %{
+                  "Damage" => [
+                    %{
+                      kind: "raw",
+                      min: trunc(room_exit["max_damage"] * 0.75),
+                      max: room_exit["max_damage"],
+                      damage_type: "Normal"
+                    }
+                  ]
+                },
+                targets: "self",
+                energy: 0,
+                kind: "attack",
+                ignores_round_cooldown?: true,
+                difficulty: nil
+              }
+
+              room
+              |> Ability.execute(character.ref, ability, [character.ref])
+            end)
+
+          character = room.mobiles[character.ref]
+
+          character =
+            if room.area_id != room_exit["area"] do
+              ApathyDrive.KillCount.clear_kill_counts(character)
+            else
+              character
+            end
+
+          destination_id
+          |> RoomServer.find()
+          |> RoomServer.mobile_entered(
+            character,
+            "<span class='yellow'>#{room_exit["to_message"]}</span>"
+          )
+
+          room =
+            Room.display_exit_message(room, %{
+              mobile: character,
+              message: room_exit["from_message"],
+              to: destination_id
+            })
+
+          room =
+            put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
+            |> party_move(character, room_exit)
+
+          Room.update_moblist(room)
+          room
+        end
+      else
+        room
+      end
     end
   end
 
