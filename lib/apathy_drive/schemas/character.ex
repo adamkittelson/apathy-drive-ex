@@ -590,9 +590,9 @@ defmodule ApathyDrive.Character do
     effect =
       effect
       |> Map.put_new("AC", 0)
-      |> update_in(["AC"], &div(&1 + ac, 2))
+      |> update_in(["AC"], &div(&1 + ac * 20, 21))
       |> Map.put_new("MR", 0)
-      |> update_in(["MR"], &div(&1 + mr, 2))
+      |> update_in(["MR"], &div(&1 + mr * 20, 21))
 
     effect =
       if "Heal" in Map.keys(effect) do

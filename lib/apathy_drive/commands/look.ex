@@ -502,9 +502,9 @@ defmodule ApathyDrive.Commands.Look do
       |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
       |> Ability.process_duration_traits(character, character, nil)
       |> Map.put_new("AC", 0)
-      |> update_in(["AC"], &div(&1 + ac, 2))
+      |> update_in(["AC"], &div(&1 + ac * 20, 21))
       |> Map.put_new("MR", 0)
-      |> update_in(["MR"], &div(&1 + mr, 2))
+      |> update_in(["MR"], &div(&1 + mr * 20, 21))
 
     Enum.each(traits, &display_trait(character, item, &1, indent))
   end
