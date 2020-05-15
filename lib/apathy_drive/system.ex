@@ -36,4 +36,14 @@ defmodule ApathyDrive.System do
         Logger.info("#{name} does not exist")
     end
   end
+
+  def measure(description, function) do
+    {time, result} =
+      :timer.tc(fn ->
+        function.()
+      end)
+
+    IO.puts("#{description}: #{div(time, 1000)}")
+    result
+  end
 end
