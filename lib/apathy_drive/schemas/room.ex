@@ -142,14 +142,7 @@ defmodule ApathyDrive.Room do
             put_in(room.mobiles[mobile_ref], updated_mobile)
         end
 
-      case room.mobiles[mobile_ref] do
-        %Character{} = character ->
-          Character.update_score(character, room)
-          room
-
-        _ ->
-          room
-      end
+      room
     else
       room
     end
@@ -1015,8 +1008,6 @@ defmodule ApathyDrive.Room do
       |> Companion.load_for_character(character)
 
     Room.update_moblist(room)
-
-    Character.update_score(character, room)
 
     room
   end

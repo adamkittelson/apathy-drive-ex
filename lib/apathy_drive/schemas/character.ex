@@ -1139,68 +1139,66 @@ defmodule ApathyDrive.Character do
   end
 
   def score_data(%Character{} = character, room) do
-    ApathyDrive.System.measure("score_data", fn ->
-      effects =
-        character.effects
-        |> Map.values()
-        |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
-        |> Enum.map(& &1["StatusMessage"])
-        |> Enum.group_by(& &1)
-        |> Enum.map(fn {effect, list} ->
-          if length(list) > 1 do
-            effect <> " (x#{length(list)})"
-          else
-            effect
-          end
-        end)
+    effects =
+      character.effects
+      |> Map.values()
+      |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
+      |> Enum.map(& &1["StatusMessage"])
+      |> Enum.group_by(& &1)
+      |> Enum.map(fn {effect, list} ->
+        if length(list) > 1 do
+          effect <> " (x#{length(list)})"
+        else
+          effect
+        end
+      end)
 
-      limbs =
-        character.limbs
-        |> Enum.reduce(%{}, fn {limb_name, limb}, limbs ->
-          Map.put(
-            limbs,
-            limb_name,
-            "#{trunc(limb.health * 100)}%"
-          )
-        end)
+    limbs =
+      character.limbs
+      |> Enum.reduce(%{}, fn {limb_name, limb}, limbs ->
+        Map.put(
+          limbs,
+          limb_name,
+          "#{trunc(limb.health * 100)}%"
+        )
+      end)
 
-      %{
-        name: character.name,
-        race: character.race.race.name,
-        combat: character |> Character.combat_level() |> Character.combat_proficiency(),
-        level: character.level,
-        alignment: legal_status(character),
-        perception: Mobile.perception_at_level(character, character.level, room),
-        accuracy: Mobile.accuracy_at_level(character, character.level, room),
-        crits: Mobile.crits_at_level(character, character.level),
-        dodge: Mobile.dodge_at_level(character, character.level, room),
-        stealth: Mobile.stealth_at_level(character, character.level),
-        block: Mobile.block_at_level(character, character.level),
-        parry: Mobile.parry_at_level(character, character.level),
-        physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
-        magical_damage: Mobile.magical_penetration_at_level(character, character.level),
-        magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
-        hp: hp_at_level(character, character.level),
-        max_hp: Mobile.max_hp_at_level(character, character.level),
-        mana: mana_at_level(character, character.level),
-        max_mana: Mobile.max_mana_at_level(character, character.level),
-        energy: character.energy,
-        max_energy: character.max_energy,
-        strength: Mobile.attribute_at_level(character, :strength, character.level),
-        agility: Mobile.attribute_at_level(character, :agility, character.level),
-        intellect: Mobile.attribute_at_level(character, :intellect, character.level),
-        willpower: Mobile.attribute_at_level(character, :willpower, character.level),
-        health: Mobile.attribute_at_level(character, :health, character.level),
-        charm: Mobile.attribute_at_level(character, :charm, character.level),
-        effects: effects,
-        limbs: limbs,
-        round_length_in_ms: 5000,
-        spellcasting:
-          Mobile.spellcasting_at_level(character, character.level, %{
-            attributes: ["intellect", "willpower"]
-          })
-      }
-    end)
+    %{
+      name: character.name,
+      race: character.race.race.name,
+      combat: character |> Character.combat_level() |> Character.combat_proficiency(),
+      level: character.level,
+      alignment: legal_status(character),
+      perception: Mobile.perception_at_level(character, character.level, room),
+      accuracy: Mobile.accuracy_at_level(character, character.level, room),
+      crits: Mobile.crits_at_level(character, character.level),
+      dodge: Mobile.dodge_at_level(character, character.level, room),
+      stealth: Mobile.stealth_at_level(character, character.level),
+      block: Mobile.block_at_level(character, character.level),
+      parry: Mobile.parry_at_level(character, character.level),
+      physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
+      magical_damage: Mobile.magical_penetration_at_level(character, character.level),
+      magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
+      hp: hp_at_level(character, character.level),
+      max_hp: Mobile.max_hp_at_level(character, character.level),
+      mana: mana_at_level(character, character.level),
+      max_mana: Mobile.max_mana_at_level(character, character.level),
+      energy: character.energy,
+      max_energy: character.max_energy,
+      strength: Mobile.attribute_at_level(character, :strength, character.level),
+      agility: Mobile.attribute_at_level(character, :agility, character.level),
+      intellect: Mobile.attribute_at_level(character, :intellect, character.level),
+      willpower: Mobile.attribute_at_level(character, :willpower, character.level),
+      health: Mobile.attribute_at_level(character, :health, character.level),
+      charm: Mobile.attribute_at_level(character, :charm, character.level),
+      effects: effects,
+      limbs: limbs,
+      round_length_in_ms: 5000,
+      spellcasting:
+        Mobile.spellcasting_at_level(character, character.level, %{
+          attributes: ["intellect", "willpower"]
+        })
+    }
   end
 
   def weapon_damage(weapon_speed, target_damage_per_round, level) do
@@ -1901,6 +1899,8 @@ defmodule ApathyDrive.Character do
               :noop
           end
 
+          Character.update_score(character, room)
+
           room
         end
       else
@@ -2082,7 +2082,8 @@ defmodule ApathyDrive.Character do
         |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
         |> Room.average()
 
-      magic_level = div(Mobile.max_mana_at_level(character, level) - 6, max(character.level, 1))
+      magic_level =
+        div(div(Mobile.max_mana_at_level(character, level) - 6, max(character.level, 1)), 2)
 
       sc = trunc(attribute_value * 2 / 3) + magic_level * 5
 

@@ -49,7 +49,6 @@ defmodule ApathyDrive.Commands.Look do
       look(room, character, args)
     end
 
-    Character.update_score(character, room)
     room
   end
 

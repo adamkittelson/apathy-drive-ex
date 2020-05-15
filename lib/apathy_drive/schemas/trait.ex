@@ -82,8 +82,6 @@ defmodule ApathyDrive.Trait do
   end
 
   def merge_traits(traits1, traits2) do
-    # IO.puts("traits1: #{inspect(traits1)}, traits2: #{inspect(traits2)}")
-
     Enum.reduce(traits2, traits1, fn
       {trait, value}, traits ->
         if trait in Map.keys(traits) and !is_nil(value) do

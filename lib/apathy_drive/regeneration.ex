@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Regeneration do
   alias ApathyDrive.{Ability, Aggression, Character, Mobile, Room}
 
-  @ticks_per_round 5
+  @ticks_per_round 20
   @round_length 5000
 
   def tick_time(_mobile), do: trunc(@round_length / @ticks_per_round)
@@ -41,7 +41,6 @@ defmodule ApathyDrive.Regeneration do
   def energy_since_last_tick(%{last_tick_at: last_tick} = mobile) do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
 
-    if mobile.name == "Cole", do: IO.puts("ms_since_last_tick: #{ms_since_last_tick}")
     energy_per_tick = energy_per_tick(mobile)
     energy = energy_per_tick * ms_since_last_tick / tick_time(mobile)
 
