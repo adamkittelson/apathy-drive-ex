@@ -449,7 +449,7 @@ defmodule ApathyDrive.Character do
 
   def set_level(%Character{classes: classes} = character) do
     level = Enum.reduce(classes, 0, &(&1.level + &2))
-    Map.put(character, :level, level)
+    Map.put(character, :level, max(level, 1))
   end
 
   def load_race(%Character{race_id: race_id} = character) do
@@ -966,21 +966,37 @@ defmodule ApathyDrive.Character do
 
     new_skill_level = skill.level
 
-    if new_skill_level > skill_level do
-      message =
-        "<p><span class='yellow'>Your #{skill_name} skill increased to #{new_skill_level}!</span></p>"
+    cond do
+      new_skill_level > skill_level ->
+        message =
+          "<p><span class='yellow'>Your #{skill_name} skill increased to #{new_skill_level}!</span></p>"
 
-      Repo.insert!(%ChannelHistory{
-        character_id: character.id,
-        message: message
-      })
+        Repo.insert!(%ChannelHistory{
+          character_id: character.id,
+          message: message
+        })
 
-      Character.send_chat(
-        character,
-        message
-      )
-    else
-      character
+        Character.send_chat(
+          character,
+          message
+        )
+
+      new_skill_level < skill_level ->
+        message =
+          "<p><span class='yellow'>Your #{skill_name} skill decreased to #{new_skill_level}!</span></p>"
+
+        Repo.insert!(%ChannelHistory{
+          character_id: character.id,
+          message: message
+        })
+
+        Character.send_chat(
+          character,
+          message
+        )
+
+      :else ->
+        character
     end
   end
 

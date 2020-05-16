@@ -89,10 +89,12 @@ defmodule ApathyDrive.Commands.Train do
 
         hp_diff = Mobile.max_hp_at_level(character, character.level) - old_hp
 
-        Mobile.send_scroll(
-          character,
-          "<p><span class='yellow'>Your maximum health is increased by #{hp_diff}.</span></p>"
-        )
+        if hp_diff != 0 do
+          Mobile.send_scroll(
+            character,
+            "<p><span class='yellow'>Your maximum health is increased by #{hp_diff}.</span></p>"
+          )
+        end
 
         Directory.add_character(%{
           name: character.name,

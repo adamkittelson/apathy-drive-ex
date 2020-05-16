@@ -84,6 +84,7 @@ defmodule ApathyDrive.Command do
       Commands.Tell,
       Commands.Top,
       Commands.Train,
+      Commands.Untrain,
       Commands.Use,
       Commands.Wear,
       Commands.Who
