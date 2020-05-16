@@ -301,6 +301,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def ac_for_mitigation_at_level(mitigation_percent, level) do
+    level = max(level, 1)
     percent = mitigation_percent / 100
     trunc(Float.round(-(50 * level * percent / (percent - 1))))
   end

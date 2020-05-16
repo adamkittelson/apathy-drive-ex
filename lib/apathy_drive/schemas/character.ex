@@ -2098,14 +2098,23 @@ defmodule ApathyDrive.Character do
 
       base = div(agility * 3 + charm, 6) + level * 2
 
-      modifier =
-        cond do
-          character.race.race.stealth ->
-            0.4
-
-          :else ->
-            0
+      race_modifier =
+        if character.race.race.stealth do
+          0.4
+        else
+          0
         end
+
+      skill = character.skills["stealth"]
+
+      class_modifier =
+        if level > 0 && skill do
+          div(level, skill.level) * 0.6
+        else
+          0
+        end
+
+      modifier = race_modifier + class_modifier
 
       max(0, trunc(base * modifier) + ability_value(character, "Stealth"))
     end
