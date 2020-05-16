@@ -62,6 +62,16 @@ defmodule ApathyDrive.Commands.System.Ability do
   end
 
   def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
+        "remove",
+        "damage",
+        damage
+      ]) do
+    remove_damage(room, character, damage)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
         "set",
         "description" | description
       ]) do
@@ -272,7 +282,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Enum.join(" ")
     |> Poison.decode()
     |> case do
-      {:ok, %{"kind" => kind, "damage_type" => type, "potency" => potency}} ->
+      {:ok, %{"kind" => kind, "type" => type, "min" => min, "max" => max}} ->
         ability = character.editing
 
         type = Repo.get_by(DamageType, name: type)
@@ -285,7 +295,8 @@ defmodule ApathyDrive.Commands.System.Ability do
             %AbilityDamageType{
               ability_id: ability.id,
               damage_type_id: type.id,
-              potency: potency,
+              min: min,
+              max: max,
               kind: kind
             }
             |> Repo.insert()
@@ -293,6 +304,28 @@ defmodule ApathyDrive.Commands.System.Ability do
             ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
             Help.execute(room, character, [ability.name])
         end
+    end
+  end
+
+  defp remove_damage(room, character, damage) do
+    ability = character.editing
+
+    damage = String.capitalize(damage)
+
+    type = Repo.get_by(DamageType, name: damage)
+
+    if type do
+      abt = Repo.get_by(AbilityDamageType, ability_id: ability.id, damage_type_id: type.id)
+
+      if abt do
+        Repo.delete!(abt)
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        Help.execute(room, character, [ability.name])
+      else
+        Mobile.send_scroll(character, "<p>No damage type by that name was found.</p>")
+      end
+    else
+      Mobile.send_scroll(character, "<p>No damage type by that name was found.</p>")
     end
   end
 

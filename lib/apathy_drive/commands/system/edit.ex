@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Commands.System.Edit do
   alias ApathyDrive.{Ability, Mobile, Room, Skill, Trait}
+  alias ApathyDrive.Commands.Help
 
   def execute(%Room{} = room, character, ["ability" | ability_name]) do
     ability_name = Enum.join(ability_name, " ")
@@ -10,6 +11,7 @@ defmodule ApathyDrive.Commands.System.Edit do
         room
 
       %Ability{} = ability ->
+        Help.execute(room, character, [ability.name])
         Mobile.send_scroll(character, "<p>You are now editing #{ability.name}.</p>")
 
         Room.update_mobile(room, character.ref, fn _room, character ->

@@ -123,7 +123,9 @@ defmodule ApathyDrive.Room do
     Enum.reduce(room.mobiles, room, fn
       {ref, %Character{}}, updated_room ->
         Room.update_mobile(updated_room, ref, fn _updated_room, character ->
-          Character.load_abilities(character)
+          character
+          |> Character.load_items()
+          |> Character.load_abilities()
         end)
 
       _, updated_room ->
