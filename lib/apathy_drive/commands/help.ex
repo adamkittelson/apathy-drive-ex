@@ -604,13 +604,13 @@ defmodule ApathyDrive.Commands.Help do
     {"Bonus Mana per level", amount}
   end
 
-  defp massage_trait({"AC%", amount}, character) do
-    ac_from_percent = Ability.ac_for_mitigation_at_level(amount, character.level)
+  defp massage_trait({"AC%", amount}, _character) do
+    ac_from_percent = Ability.ac_for_mitigation_at_level(amount)
     {"AC", ac_from_percent}
   end
 
-  defp massage_trait({"MR%", amount}, character) do
-    ac_from_percent = Ability.ac_for_mitigation_at_level(amount, character.level)
+  defp massage_trait({"MR%", amount}, _character) do
+    ac_from_percent = Ability.ac_for_mitigation_at_level(amount)
     {"MR", ac_from_percent}
   end
 

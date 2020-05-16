@@ -576,7 +576,7 @@ defmodule ApathyDrive.Companion do
 
       mr_percent = ability_value(companion, "MR%")
 
-      mr_from_percent = Ability.ac_for_mitigation_at_level(mr_percent, level)
+      mr_from_percent = Ability.ac_for_mitigation_at_level(mr_percent)
 
       mr = ability_value(companion, "MR")
 
@@ -629,7 +629,7 @@ defmodule ApathyDrive.Companion do
 
       ac_percent = ability_value(companion, "AC%")
 
-      ac_from_percent = Ability.ac_for_mitigation_at_level(ac_percent, level)
+      ac_from_percent = Ability.ac_for_mitigation_at_level(ac_percent)
 
       ac = ability_value(companion, "AC")
 

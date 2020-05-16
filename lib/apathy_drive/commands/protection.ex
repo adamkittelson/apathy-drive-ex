@@ -110,7 +110,7 @@ defmodule ApathyDrive.Commands.Protection do
         Mobile.magical_resistance_at_level(character, character.level)
       end
 
-    level = max(character.level, 1)
+    level = 25
 
     resist_percent = resist / (level * 50 + resist)
 

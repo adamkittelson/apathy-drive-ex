@@ -4,8 +4,8 @@ defmodule ApathyDrive.Scripts.IncreaseAc do
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     Room.update_mobile(room, mobile_ref, fn _room, mobile ->
       effect = %{
-        "AC" => Ability.ac_for_mitigation_at_level(5, mobile.level),
-        "MR" => Ability.ac_for_mitigation_at_level(5, mobile.level)
+        "AC" => Ability.ac_for_mitigation_at_level(5),
+        "MR" => Ability.ac_for_mitigation_at_level(5)
       }
 
       Systems.Effect.add(mobile, effect, :timer.minutes(1))

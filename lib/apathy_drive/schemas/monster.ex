@@ -703,7 +703,7 @@ defmodule ApathyDrive.Monster do
 
       mr_percent = ability_value(monster, "MR%")
 
-      mr_from_percent = Ability.ac_for_mitigation_at_level(mr_percent, level)
+      mr_from_percent = Ability.ac_for_mitigation_at_level(mr_percent)
 
       mr = ability_value(monster, "MR")
 
@@ -758,7 +758,7 @@ defmodule ApathyDrive.Monster do
 
       ac_percent = ability_value(monster, "AC%")
 
-      ac_from_percent = Ability.ac_for_mitigation_at_level(ac_percent, level)
+      ac_from_percent = Ability.ac_for_mitigation_at_level(ac_percent)
 
       ac = ability_value(monster, "AC")
 

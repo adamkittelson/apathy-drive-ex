@@ -493,8 +493,14 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_traits(character, item, indent \\ 0) do
-    ac = Item.ac_for_character(character, item)
-    mr = Item.mr_for_character(character, item)
+    skill = Item.skill_for_character(character, item)
+
+    modifier =
+      if skill == 0 do
+        0.1
+      else
+        skill / character.level
+      end
 
     traits =
       item.effects
@@ -502,9 +508,9 @@ defmodule ApathyDrive.Commands.Look do
       |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
       |> Ability.process_duration_traits(character, character, nil)
       |> Map.put_new("AC", 0)
-      |> update_in(["AC"], &div(&1 + ac * 20, 21))
+      |> update_in(["AC"], &trunc(&1 * modifier))
       |> Map.put_new("MR", 0)
-      |> update_in(["MR"], &div(&1 + mr * 20, 21))
+      |> update_in(["MR"], &trunc(&1 * modifier))
 
     Enum.each(traits, &display_trait(character, item, &1, indent))
   end
@@ -555,8 +561,8 @@ defmodule ApathyDrive.Commands.Look do
     end)
   end
 
-  def display_trait(character, item, {"AC%", value}, indent) do
-    ac_from_percent = Ability.ac_for_mitigation_at_level(value, item.level)
+  def display_trait(character, _item, {"AC%", value}, indent) do
+    ac_from_percent = Ability.ac_for_mitigation_at_level(value)
 
     Mobile.send_scroll(
       character,
@@ -566,8 +572,8 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def display_trait(character, item, {"MR%", value}, indent) do
-    ac_from_percent = Ability.ac_for_mitigation_at_level(value, item.level)
+  def display_trait(character, _item, {"MR%", value}, indent) do
+    ac_from_percent = Ability.ac_for_mitigation_at_level(value)
 
     Mobile.send_scroll(
       character,

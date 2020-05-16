@@ -138,39 +138,19 @@ defmodule ApathyDrive.Item do
     trunc(target_damage(skill_level) * @weapon_type_modifier[weapon_type])
   end
 
-  def ac_for_character(%Character{} = character, %Item{type: "Armour"} = item) do
+  def skill_for_character(%Character{} = character, %Item{type: "Armour"} = item) do
     type = item.armour_type
 
-    skill_level =
-      case character.skills[type] do
-        %{level: level} ->
-          level
+    case character.skills[type] do
+      %{level: level} ->
+        level
 
-        _ ->
-          0
-      end
-
-    ac(type, skill_level, item.worn_on)
+      _ ->
+        0
+    end
   end
 
-  def ac_for_character(_character, _item), do: 0
-
-  def mr_for_character(%Character{} = character, %Item{type: "Armour"} = item) do
-    type = item.armour_type
-
-    skill_level =
-      case character.skills[type] do
-        %{level: level} ->
-          level
-
-        _ ->
-          0
-      end
-
-    mr(type, skill_level, item.worn_on)
-  end
-
-  def mr_for_character(_character, _item), do: 0
+  def skill_for_character(_character, _item), do: 1
 
   def ac(type, level, slot) do
     mitigation = @armour_type_protection[type]

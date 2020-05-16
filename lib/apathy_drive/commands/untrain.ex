@@ -56,6 +56,19 @@ defmodule ApathyDrive.Commands.Untrain do
           end
 
           character =
+            class_id
+            |> ClassSkill.load_skills()
+            |> Enum.reduce(character, fn skill_name, character ->
+              skill = character.skills[skill_name]
+              exp = skill.experience
+              level = skill.level
+
+              to_level = Level.exp_at_level(level - 1, 1.0)
+
+              Character.add_skill_experience(character, skill_name, -(exp - to_level))
+            end)
+
+          character =
             character
             |> Map.put(:effects, %{})
             |> Character.load_classes()
@@ -88,19 +101,6 @@ defmodule ApathyDrive.Commands.Untrain do
             ref: character.ref,
             title: character.title
           })
-
-          character =
-            class_id
-            |> ClassSkill.load_skills()
-            |> Enum.reduce(character, fn skill_name, character ->
-              skill = character.skills[skill_name]
-              exp = skill.experience
-              level = skill.level
-
-              to_level = Level.exp_at_level(level - 1, 1.0)
-
-              Character.add_skill_experience(character, skill_name, -(exp - to_level))
-            end)
 
           Enum.each(old_abilities, fn ability ->
             unless ability in new_abilities do

@@ -300,8 +300,8 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def ac_for_mitigation_at_level(mitigation_percent, level) do
-    level = max(level, 1)
+  def ac_for_mitigation_at_level(mitigation_percent) do
+    level = 25
     percent = mitigation_percent / 100
     trunc(Float.round(-(50 * level * percent / (percent - 1))))
   end
@@ -2255,7 +2255,7 @@ defmodule ApathyDrive.Ability do
 
           resist = resist - Mobile.physical_penetration_at_level(caster, caster.level)
 
-          resist_percent = 1 - resist / (level * 50 + resist)
+          resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = (ability_damage + bonus_damage) * resist_percent
 
@@ -2270,7 +2270,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent, target} ->
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
-          resist_percent = 1 - resist / (level * 50 + resist)
+          resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = dmg * resist_percent
 
@@ -2295,7 +2295,7 @@ defmodule ApathyDrive.Ability do
 
           resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
 
-          resist_percent = 1 - resist / (level * 50 + resist)
+          resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = (ability_damage + bonus_damage) * resist_percent
 
@@ -2312,7 +2312,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent, target} ->
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist_percent = 1 - resist / (level * 50 + resist)
+          resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = damage * resist_percent
 
@@ -2603,7 +2603,7 @@ defmodule ApathyDrive.Ability do
 
           resist = resist - Mobile.physical_penetration_at_level(caster, caster.level)
 
-          resist_percent = 1 - resist / (target.level * 50 + resist)
+          resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = (ability_damage + bonus_damage) * resist_percent
 
@@ -2627,7 +2627,7 @@ defmodule ApathyDrive.Ability do
 
           resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
 
-          resist_percent = 1 - resist / (target.level * 50 + resist)
+          resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = (ability_damage + bonus_damage) * resist_percent
 
@@ -2647,16 +2647,16 @@ defmodule ApathyDrive.Ability do
     |> Map.put("Damage", damage_percent)
   end
 
-  def process_duration_trait({"AC%", percent}, effects, target, _caster, _duration) do
-    ac_from_percent = ac_for_mitigation_at_level(percent, target.level)
+  def process_duration_trait({"AC%", percent}, effects, _target, _caster, _duration) do
+    ac_from_percent = ac_for_mitigation_at_level(percent)
 
     effects
     |> Map.put("AC", ac_from_percent)
     |> Map.delete("AC%")
   end
 
-  def process_duration_trait({"MR%", percent}, effects, target, _caster, _duration) do
-    mr_from_percent = ac_for_mitigation_at_level(percent, target.level)
+  def process_duration_trait({"MR%", percent}, effects, _target, _caster, _duration) do
+    mr_from_percent = ac_for_mitigation_at_level(percent)
 
     effects
     |> Map.put("MR", mr_from_percent)

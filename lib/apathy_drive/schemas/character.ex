@@ -585,15 +585,21 @@ defmodule ApathyDrive.Character do
         effect
       end
 
-    ac = Item.ac_for_character(character, item)
-    mr = Item.mr_for_character(character, item)
+    skill = Item.skill_for_character(character, item)
+
+    modifier =
+      if skill == 0 do
+        0.1
+      else
+        skill / character.level
+      end
 
     effect =
       effect
       |> Map.put_new("AC", 0)
-      |> update_in(["AC"], &div(&1 + ac * 20, 21))
+      |> update_in(["AC"], &trunc(&1 * modifier))
       |> Map.put_new("MR", 0)
-      |> update_in(["MR"], &div(&1 + mr * 20, 21))
+      |> update_in(["MR"], &trunc(&1 * modifier))
 
     effect =
       if "Heal" in Map.keys(effect) do

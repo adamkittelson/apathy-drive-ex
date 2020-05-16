@@ -1,16 +1,14 @@
 defmodule ApathyDrive.Scripts.EnergyBarrier do
-  alias ApathyDrive.{Ability, Room}
+  alias ApathyDrive.Room
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     Room.update_mobile(room, mobile_ref, fn _room, mobile ->
-      ac =
+      bubble =
         15..40
         |> Enum.random()
-        |> Ability.ac_for_mitigation_at_level(mobile.level)
 
       effect = %{
-        "AC" => ac,
-        "MR" => ac,
+        "Bubble%" => bubble,
         "RemoveMessage" => "The energy barrier around you fades away."
       }
 
