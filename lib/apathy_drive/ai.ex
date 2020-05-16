@@ -7,7 +7,8 @@ defmodule ApathyDrive.AI do
         flee(mobile, room) || mobile
       else
         drain(mobile, room) || heal(mobile, room) || flee(mobile, room) || bless(mobile, room) ||
-          curse(mobile, room) || attack(mobile, room) || auto_attack(mobile, room) ||
+          backstab(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
+          auto_attack(mobile, room) || sneak(mobile, room) ||
           move(mobile, room) || mobile
       end
     end)
@@ -51,6 +52,15 @@ defmodule ApathyDrive.AI do
       end
     end
   end
+
+  def sneak(%Character{} = character, %Room{} = room) do
+    if character.auto_sneak && !character.sneaking &&
+         !Mobile.auto_attack_target(character, room) do
+      ApathyDrive.Commands.Sneak.execute(room, character, [])
+    end
+  end
+
+  def sneak(_mobile, %Room{}), do: nil
 
   def flee(%{} = mobile, %Room{} = room) do
     if should_flee?(mobile, room) do
@@ -217,6 +227,16 @@ defmodule ApathyDrive.AI do
       end
     end
   end
+
+  def backstab(%Character{} = mobile, %Room{} = room) do
+    target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
+
+    if mobile.sneaking && target do
+      ApathyDrive.Commands.Backstab.execute(room, mobile, [target.name])
+    end
+  end
+
+  def backstab(_mobile, %Room{}), do: nil
 
   def attack(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]

@@ -14,6 +14,16 @@ defmodule ApathyDrive.Commands.Auto do
     end)
   end
 
+  def execute(%Room{} = room, %Character{ref: ref} = character, ["sneak"]) do
+    Mobile.send_scroll(character, "<p>Toggling auto sneak.</p>")
+
+    Room.update_mobile(room, ref, fn _room, character ->
+      character
+      |> Ecto.Changeset.change(%{auto_sneak: !character.auto_sneak})
+      |> Repo.update!()
+    end)
+  end
+
   def execute(%Room{} = room, %Character{ref: ref} = character, ["pet", "casting"]) do
     Mobile.send_scroll(character, "<p>Toggling auto pet casting.</p>")
 
