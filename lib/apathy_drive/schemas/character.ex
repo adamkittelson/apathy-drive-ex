@@ -443,7 +443,7 @@ defmodule ApathyDrive.Character do
   end
 
   def set_level(%Character{classes: []} = character) do
-    Map.put(character, :level, 0)
+    Map.put(character, :level, 1)
   end
 
   def set_level(%Character{classes: classes} = character) do
@@ -2108,7 +2108,7 @@ defmodule ApathyDrive.Character do
       skill = character.skills["stealth"]
 
       class_modifier =
-        if level > 0 && skill do
+        if level > 0 && skill && skill.level > 0 do
           div(level, skill.level) * 0.6
         else
           0
