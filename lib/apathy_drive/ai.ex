@@ -363,7 +363,7 @@ defmodule ApathyDrive.AI do
   defp should_move?(%ApathyDrive.Companion{}, _room), do: false
 
   defp should_move?(%ApathyDrive.Character{auto_roam: true} = character, room) do
-    character.hp > 0.8 and character.mana > 0.5 and
+    character.hp > 0.8 and character.mana > 0.5 and character.energy == character.max_energy and
       is_nil(Mobile.auto_attack_target(character, room))
   end
 
