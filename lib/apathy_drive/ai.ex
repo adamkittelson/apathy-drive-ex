@@ -288,10 +288,13 @@ defmodule ApathyDrive.AI do
   def auto_attack(mobile, room, target_ref \\ nil) do
     if target_ref = target_ref || Mobile.auto_attack_target(mobile, room) do
       attack = Mobile.attack_ability(mobile)
-      required_energy = max(attack.energy, 200)
 
-      if attack && mobile.energy >= required_energy && !mobile.casting do
-        Ability.execute(room, mobile.ref, attack, [target_ref])
+      if attack do
+        required_energy = max(attack.energy, 200)
+
+        if mobile.energy >= required_energy && !mobile.casting do
+          Ability.execute(room, mobile.ref, attack, [target_ref])
+        end
       end
     else
       case mobile do

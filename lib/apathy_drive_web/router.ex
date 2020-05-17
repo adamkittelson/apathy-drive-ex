@@ -1,5 +1,9 @@
 defmodule ApathyDriveWeb.Router do
   use ApathyDriveWeb, :router
+  # , pipe_through: [:require_admin, :kaffy_browser]
+  use Kaffy.Routes,
+    scope: "/admin",
+    pipe_through: [:kaffy_browser, :assign_character, :require_admin]
 
   pipeline :browser do
     plug :accepts, ["html"]

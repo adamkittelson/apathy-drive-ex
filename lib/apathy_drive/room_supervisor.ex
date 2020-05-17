@@ -27,6 +27,8 @@ defmodule ApathyDrive.RoomSupervisor do
     end
   end
 
+  def find_supervisor(nil), do: nil
+
   def find_supervisor(id) do
     area =
       Room

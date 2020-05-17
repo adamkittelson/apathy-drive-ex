@@ -68,7 +68,7 @@ defmodule ApathyDrive.Mixfile do
       {:phoenix_pubsub, "~> 2.0"},
       {:phoenix_live_reload, "~> 1.2.1", only: :dev},
       {:phoenix_live_view, "~> 0.12.1"},
-      {:ecto_sql, "~> 3.1.6"},
+      {:ecto_sql, "~> 3.4.3"},
       {:phoenix_ecto, "~> 4.1.0"},
       {:plug_cowboy, "~> 2.1"},
       {:plug, "~> 1.7"},
@@ -87,6 +87,7 @@ defmodule ApathyDrive.Mixfile do
       {:dnsimple, "~> 1.4.0"},
       {:tzdata, "~> 1.0.1"},
       {:timex, "~> 3.6.1"},
+      {:kaffy, "~> 0.5.1"},
       {:floki, ">= 0.0.0", only: :test}
     ]
   end

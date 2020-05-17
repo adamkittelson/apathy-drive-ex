@@ -112,8 +112,8 @@ defmodule ApathyDrive.Item do
     has_many(:items_instances, ApathyDrive.ItemInstance)
   end
 
-  @required_fields ~w(name)a
-  @optional_fields ~w()a
+  @required_fields ~w()a
+  @optional_fields ~w(level global_drop_rarity room_destruct_message destruct_message miss_verbs hit_verbs name type worn_on weapon_type armour_type game_limit weight speed max_uses getable droppable destroy_on_death destroy_when_fully_used robbable cost_value cost_currency min_damage max_damage description)a
 
   @doc """
   Creates a changeset based on the `model` and `params`.
