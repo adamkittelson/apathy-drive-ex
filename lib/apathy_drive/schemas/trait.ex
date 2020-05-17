@@ -104,7 +104,7 @@ defmodule ApathyDrive.Trait do
               Map.put(traits, trait, value)
           end
         else
-          Map.put(traits, trait, value)
+          Map.put(traits, trait, value(%{trait => value}, trait))
         end
     end)
   end
@@ -113,7 +113,9 @@ defmodule ApathyDrive.Trait do
     if value = traits[name] do
       cond do
         merge_by(name) == "list" ->
-          List.flatten(value)
+          value
+          |> List.wrap()
+          |> List.flatten()
 
         :else ->
           value

@@ -676,14 +676,17 @@ defmodule ApathyDrive.Character do
 
     {min_damage, max_damage} =
       if weapon.weapon_type do
-        skill_level = get_in(character.skills, [weapon.weapon_type, Access.key!(:level)]) || 0
+        skill_level = Item.skill_for_character(character, weapon)
 
-        target_damage = Item.target_damage(weapon.weapon_type, skill_level)
+        modifier =
+          if skill_level == 0 do
+            0.1
+          else
+            skill_level / character.level
+          end
 
-        damage = weapon_damage(weapon.speed, target_damage, skill_level)
-
-        min_damage = (weapon.min_damage + damage.min_damage) / 2
-        max_damage = (weapon.max_damage + damage.max_damage) / 2
+        min_damage = weapon.min_damage * modifier
+        max_damage = weapon.max_damage * modifier
 
         {min_damage, max_damage}
       else

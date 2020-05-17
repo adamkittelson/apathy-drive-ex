@@ -600,13 +600,15 @@ defmodule ApathyDrive.Commands.Look do
   def display_trait(character, _item, {"ClassOk", list}, indent) do
     list =
       list
+      |> List.wrap()
       |> Enum.map(&ApathyDrive.Repo.get!(ApathyDrive.Class, &1))
       |> Enum.map(& &1.name)
+      |> ApathyDrive.Commands.Inventory.to_sentence()
 
     Mobile.send_scroll(
       character,
       "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>ClassOk:</span> <span class='dark-cyan'>#{
-        inspect(list)
+        list
       }</span></p>"
     )
   end

@@ -151,6 +151,31 @@ defmodule ApathyDrive.Item do
     end
   end
 
+  def skill_for_character(%Character{} = character, %Item{type: "Weapon"} = item) do
+    type = item.weapon_type
+
+    skill_level =
+      case character.skills[type] do
+        %{level: level} ->
+          level
+
+        _ ->
+          0
+      end
+
+    class_level =
+      item
+      |> Systems.Effect.effect_bonus("ClassOk")
+      |> Enum.map(fn class_id ->
+        Enum.find(character.classes, %{level: 0}, fn character_class ->
+          character_class.class_id == class_id
+        end).level
+      end)
+      |> Enum.max(fn -> 0 end)
+
+    max(skill_level, class_level)
+  end
+
   def skill_for_character(_character, _item), do: 1
 
   def ac(type, level, slot) do
