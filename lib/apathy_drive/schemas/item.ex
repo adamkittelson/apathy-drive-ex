@@ -138,7 +138,8 @@ defmodule ApathyDrive.Item do
     trunc(target_damage(skill_level) * @weapon_type_modifier[weapon_type])
   end
 
-  def skill_for_character(%Character{} = character, %Item{type: "Armour"} = item) do
+  def skill_for_character(%Character{} = character, %Item{type: type} = item)
+      when type in ["Armour", "Shield"] do
     type = item.armour_type
 
     case character.skills[type] do

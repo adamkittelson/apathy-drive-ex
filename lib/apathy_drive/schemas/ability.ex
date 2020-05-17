@@ -2224,11 +2224,6 @@ defmodule ApathyDrive.Ability do
       target
       |> Map.put(:ability_shift, 0)
 
-    level =
-      target.level
-      |> max(caster.level)
-      |> min(50)
-
     {caster, damage_percent, target} =
       Enum.reduce(damages, {caster, 0, target}, fn
         %{kind: "raw", min: min, max: max, damage_type: type}, {caster, damage_percent, target} ->
