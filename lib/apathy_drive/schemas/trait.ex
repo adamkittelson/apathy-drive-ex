@@ -157,7 +157,8 @@ defmodule ApathyDrive.Trait do
             "timers",
             "Aggro",
             "effect_ref",
-            "ClassLevel"
+            "ClassLevel",
+            "Learn"
           ] ->
             "replace"
 

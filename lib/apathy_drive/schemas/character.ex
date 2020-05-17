@@ -19,6 +19,7 @@ defmodule ApathyDrive.Character do
     Currency,
     Directory,
     ElementalLores,
+    Enchantment,
     Regeneration,
     Item,
     Level,
@@ -78,6 +79,7 @@ defmodule ApathyDrive.Character do
     field(:spectator_color, :string, default: "red")
     field(:lore_name, :string)
 
+    field(:enchantment, :any, virtual: true)
     field(:next_drain_at, :integer, virtual: true)
     field(:lore, :any, virtual: true)
     field(:level, :integer, virtual: true)
@@ -1069,16 +1071,25 @@ defmodule ApathyDrive.Character do
     hp = trunc(max_hp * hp_percent)
     mana = trunc(max_mana * mana_percent)
 
-    if character.editing do
-      "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}] <span class='yellow'>*#{
-        character.editing.name
-      }*</span>:"
-    else
-      if max_mana > 0 do
+    cond do
+      character.editing ->
+        "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}] <span class='yellow'>*#{
+          character.editing.name
+        }*</span>:"
+
+      character.enchantment ->
+        lt = Enum.find(TimerManager.timers(character), &match?({:longterm, _}, &1))
+        tick_time_left = 67 - div(TimerManager.time_remaining(character, lt), 1000)
+        time_left = Enchantment.time_left(character, character.enchantment)
+        formatted = Enchantment.formatted_time_left(time_left - tick_time_left)
+
+        "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}/LT=#{formatted}]:"
+
+      max_mana > 0 ->
         "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}]:"
-      else
+
+      :else ->
         "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>]:"
-      end
     end
   end
 

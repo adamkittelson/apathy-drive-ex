@@ -161,6 +161,7 @@ defmodule ApathyDrive.Enchantment do
 
           enchanter
           |> add_enchantment_exp(enchantment)
+          |> Map.put(:enchantment, nil)
           |> Character.load_items()
         else
           Mobile.send_scroll(enchanter, "<p>#{enchantment.ability.traits["TickMessage"]}</p>")
@@ -189,6 +190,7 @@ defmodule ApathyDrive.Enchantment do
 
             enchanter
             |> add_enchantment_exp(enchantment)
+            |> Map.put(:enchantment, enchantment)
             |> Character.load_items()
           else
             ItemInstance
@@ -206,7 +208,9 @@ defmodule ApathyDrive.Enchantment do
               [enchanter]
             )
 
-            Character.load_items(enchanter)
+            enchanter
+            |> Map.put(:enchantment, nil)
+            |> Character.load_items()
           end
         end
       end

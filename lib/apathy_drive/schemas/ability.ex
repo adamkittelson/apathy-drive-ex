@@ -705,11 +705,12 @@ defmodule ApathyDrive.Ability do
                 }</span></p>"
               )
 
-              TimerManager.send_after(
-                caster,
+              caster
+              |> TimerManager.send_after(
                 {{:longterm, item.instance_id}, :timer.seconds(time),
                  {:lt_tick, time, caster_ref, enchantment}}
               )
+              |> Map.put(:enchantment, enchantment)
 
             [] ->
               recipe = CraftingRecipe.for_item(item)
@@ -734,11 +735,12 @@ defmodule ApathyDrive.Ability do
                 }</span></p>"
               )
 
-              TimerManager.send_after(
-                caster,
+              caster
+              |> TimerManager.send_after(
                 {{:longterm, item.instance_id}, :timer.seconds(time),
                  {:lt_tick, time, caster_ref, enchantment}}
               )
+              |> Map.put(:enchantment, enchantment)
           end
         end)
 
@@ -829,6 +831,7 @@ defmodule ApathyDrive.Ability do
                       {{:longterm, item.instance_id}, :timer.seconds(time),
                        {:lt_tick, time, caster_ref, enchantment}}
                     )
+                    |> Map.put(:enchantment, enchantment)
 
                   nil ->
                     start_enchantment(caster, item, ability)
@@ -1085,6 +1088,7 @@ defmodule ApathyDrive.Ability do
       {{:longterm, item.instance_id}, :timer.seconds(time),
        {:lt_tick, time, caster.ref, enchantment}}
     )
+    |> Map.put(:enchantment, enchantment)
   end
 
   def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
