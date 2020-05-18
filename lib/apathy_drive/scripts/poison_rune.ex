@@ -49,7 +49,7 @@ defmodule ApathyDrive.Scripts.PoisonRune do
                   trunc(max_hp * (percent / 100))
 
                 _ ->
-                  25..75
+                  Enum.random(25..75)
               end
 
             ability = %Ability{
