@@ -132,7 +132,36 @@ defmodule ApathyDrive.Regeneration do
   def regenerate_hp(%{} = mobile, room) do
     percentage = hp_since_last_tick(room, mobile)
 
-    Mobile.shift_hp(mobile, percentage)
+    if percentage < 0 do
+      {mobile, percentage} =
+        mobile.effects
+        |> Enum.reduce({mobile, percentage}, fn
+          {id, %{"Bubble" => bubble} = effect}, {mobile, percentage} ->
+            cond do
+              bubble > abs(percentage) ->
+                mobile = update_in(mobile.effects[id]["Bubble"], &(&1 + percentage))
+                {mobile, 0}
+
+              bubble <= abs(percentage) ->
+                if effect["MaxBubble"] do
+                  mobile = put_in(mobile.effects[id]["Bubble"], 0)
+                  # target = Map.put(target, :effects, effects)
+                  {mobile, percentage + bubble}
+                else
+                  mobile = Systems.Effect.remove(mobile, id, show_expiration_message: true)
+
+                  {mobile, percentage + bubble}
+                end
+            end
+
+          {_id, _effect}, {mobile, percentage} ->
+            {mobile, percentage}
+        end)
+
+      Mobile.shift_hp(mobile, percentage)
+    else
+      Mobile.shift_hp(mobile, percentage)
+    end
   end
 
   def regenerate_bubble(%{} = mobile) do
