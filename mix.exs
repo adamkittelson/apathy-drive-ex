@@ -87,7 +87,6 @@ defmodule ApathyDrive.Mixfile do
       {:dnsimple, "~> 1.4.0"},
       {:tzdata, "~> 1.0.1"},
       {:timex, "~> 3.6.1"},
-      {:kaffy, "~> 0.5.1"},
       {:floki, ">= 0.0.0", only: :test}
     ]
   end

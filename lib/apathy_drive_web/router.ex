@@ -1,9 +1,5 @@
 defmodule ApathyDriveWeb.Router do
   use ApathyDriveWeb, :router
-  # , pipe_through: [:require_admin, :kaffy_browser]
-  use Kaffy.Routes,
-    scope: "/admin",
-    pipe_through: [:kaffy_browser, :assign_character, :require_admin]
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -39,11 +35,6 @@ defmodule ApathyDriveWeb.Router do
   scope "/admin", ApathyDriveWeb do
     pipe_through(:browser)
     pipe_through(:admin)
-
-    resources("/abilities", Admin.AbilityController)
-    get("/damage-types", Admin.DamageTypesController, :index)
-    resources("/classes", Admin.ClassController)
-    resources("/races", Admin.RaceController)
   end
 
   # Fetch the current user from the session and add it to `conn.assigns`. This

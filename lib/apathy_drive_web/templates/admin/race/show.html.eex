@@ -1,8 +1,0 @@
-<h2><%= @race.name %></h2>
-
-<p>
-  <%= @race.description %>
-</p>
-
-<span><%= link "Edit", to: Routes.race_path(@conn, :edit, @race) %></span>
-<span><%= link "Back", to: Routes.race_path(@conn, :index) %></span>

@@ -107,7 +107,6 @@ defmodule ApathyDrive.Ability do
     "Heal",
     "HealMana",
     "KillSpell",
-    "Poison",
     "RemoveSpells",
     "Script",
     "Summon",
@@ -2202,20 +2201,6 @@ defmodule ApathyDrive.Ability do
     {caster, Map.put(target, :ability_shift, percentage_healed)}
   end
 
-  def apply_instant_trait({"Poison", damage}, target, _ability, caster, _room) do
-    if Mobile.has_ability?(target, "PoisonImmunity") do
-      {caster, Map.put(target, :ability_shift, 0)}
-    else
-      modifier = Mobile.ability_value(target, "ResistPoison")
-
-      damage = damage * (1 - modifier / 100)
-
-      percent = damage / Mobile.max_hp_at_level(target, target.level)
-
-      {caster, Map.put(target, :ability_shift, -percent)}
-    end
-  end
-
   def apply_instant_trait({"Damage", value}, %{} = target, _ability, caster, _room)
       when is_float(value) do
     {caster, Map.put(target, :ability_shift, -value)}
@@ -2557,7 +2542,7 @@ defmodule ApathyDrive.Ability do
     |> Map.put("StatusMessage", "You are taking damage!")
   end
 
-  def process_duration_trait({"Poison", damage}, effects, target, _caster, _duration) do
+  def process_duration_trait({"Poison", damage}, effects, target, _caster, duration) do
     if Mobile.has_ability?(target, "PoisonImmunity") do
       Map.put(effects, "Damage", 0)
     else
@@ -2565,7 +2550,11 @@ defmodule ApathyDrive.Ability do
 
       damage = damage * (1 - modifier / 100)
 
+      rounds = :timer.seconds(duration) / 5000
+
       percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+      percent = percent / rounds
 
       Map.put(effects, "Damage", percent)
     end
@@ -3293,6 +3282,8 @@ defmodule ApathyDrive.Ability do
   def message_color(%Ability{kind: kind}, _mobile, _perspective)
       when kind in ["attack", "critical"],
       do: "red"
+
+  def message_color(%Ability{kind: "curse"}, _, :target), do: "olive"
 
   def message_color(%Ability{}, _, _), do: "blue"
 

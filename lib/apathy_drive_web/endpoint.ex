@@ -10,12 +10,6 @@ defmodule ApathyDriveWeb.Endpoint do
     gzip: false,
     only: ~w(css fonts images js themes favicon.ico robots.txt)
 
-  plug Plug.Static,
-    at: "/kaffy",
-    from: :kaffy,
-    gzip: false,
-    only: ~w(css img js scss vendor)
-
   # Code reloading will only work if the :code_reloader key of
   # the :phoenix application is set to true in your config file.
   if code_reloading? do
