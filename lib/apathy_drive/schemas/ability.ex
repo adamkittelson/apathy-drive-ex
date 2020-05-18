@@ -79,8 +79,8 @@ defmodule ApathyDrive.Ability do
     timestamps()
   end
 
-  @required_fields ~w(name targets kind command description user_message target_message spectator_message)a
-  @optional_fields ~w(cast_time cooldown duration mana)a
+  @required_fields ~w(name targets kind command description )a
+  @optional_fields ~w(user_message target_message spectator_message duration cooldown energy mana difficulty level letter)a
 
   @valid_targets [
     "monster or single",
@@ -209,6 +209,18 @@ defmodule ApathyDrive.Ability do
     target: "Your armour deflects {{user}}'s feeble attack!",
     spectator: "{{target}}'s armour deflects {{user}}'s feeble attack!"
   }
+
+  @doc """
+  Creates a changeset based on the `model` and `params`.
+
+  If no params are provided, an invalid changeset is returned
+  with no validation performed.
+  """
+  def changeset(model, params \\ %{}) do
+    model
+    |> cast(params, @required_fields ++ @optional_fields)
+    |> validate_required(@required_fields)
+  end
 
   def unbalance(room, mobile_ref) do
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
