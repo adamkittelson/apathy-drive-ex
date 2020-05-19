@@ -104,7 +104,7 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def pets_and_party(room, mobile) do
+  def pets_and_party(room, %Character{} = mobile) do
     party = Party.members(room, mobile)
 
     pets =
@@ -112,14 +112,30 @@ defmodule ApathyDrive.AI do
       |> Enum.map(&pets(room, room.mobiles[&1.ref]))
       |> List.flatten()
 
-    owner = owner(room, mobile)
-
-    pet_owners = Enum.map(pets, &owner(room, &1))
-
-    [party, owner, pets, pet_owners]
+    [party, pets]
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
+  end
+
+  def pets_and_party(room, %Monster{} = mobile) do
+    owner = owner(room, mobile)
+
+    if owner do
+      party = Party.members(room, owner)
+
+      pets =
+        party
+        |> Enum.map(&pets(room, room.mobiles[&1.ref]))
+        |> List.flatten()
+
+      [party, pets]
+      |> List.flatten()
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+    else
+      Party.members(room, mobile)
+    end
   end
 
   def owner(room, mobile) do
