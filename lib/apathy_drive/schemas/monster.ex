@@ -542,6 +542,17 @@ defmodule ApathyDrive.Monster do
     end
 
     def die(monster, room) do
+      pets_and_players =
+        room.mobiles
+        |> Enum.reduce([], fn
+          {_ref, %Character{} = character}, pets_and_players ->
+            AI.pets_and_party(room, character) ++ pets_and_players
+
+          _mobile, pets_and_players ->
+            pets_and_players
+        end)
+        |> length()
+
       room =
         Enum.reduce(room.mobiles, room, fn
           {ref, %Character{} = character}, updated_room ->
@@ -554,10 +565,12 @@ defmodule ApathyDrive.Monster do
 
                 Mobile.send_scroll(character, "<p>#{message}</p>")
 
+                exp = max(1, div(monster.experience, pets_and_players))
+
                 character
-                |> Character.add_experience_to_buffer(monster.experience)
+                |> Character.add_experience_to_buffer(exp)
                 |> Character.add_currency_from_monster(monster)
-                |> KillCount.increment(monster)
+                |> KillCount.increment(monster, exp)
               end)
 
             updated_room =

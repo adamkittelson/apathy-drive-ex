@@ -1033,9 +1033,6 @@ defmodule ApathyDrive.Character do
   def add_experience_to_buffer(%Character{} = character, exp, silent) when exp > 0 do
     unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
-    # 6 attributes, give 6 times the exp so stats level at approximately the same rate as classes
-    # exp = exp * 6
-
     exp_buffer = character.exp_buffer + exp
 
     character =

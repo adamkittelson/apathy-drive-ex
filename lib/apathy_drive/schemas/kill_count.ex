@@ -15,7 +15,11 @@ defmodule ApathyDrive.KillCount do
     field(:monster_name, :string, virtual: true)
   end
 
-  def increment(%Character{kill_counts: counts} = character, %Monster{id: monster_id} = monster) do
+  def increment(
+        %Character{kill_counts: counts} = character,
+        %Monster{id: monster_id} = monster,
+        exp
+      ) do
     with {:kc, %KillCount{} = kill_count} <- {:kc, Map.get(counts, monster_id)},
          kill_count <- reset_counters(kill_count) do
       kill_count =
@@ -29,11 +33,11 @@ defmodule ApathyDrive.KillCount do
 
       character
       |> put_in([Access.key!(:kill_counts), monster_id], kill_count)
-      |> give_bonus_experience(kill_count, monster.experience)
+      |> give_bonus_experience(kill_count, exp)
     else
       {:kc, nil} ->
         put_in(character.kill_counts[monster_id], load(character, monster_id))
-        |> increment(monster)
+        |> increment(monster, exp)
     end
   end
 
