@@ -2149,14 +2149,18 @@ defmodule ApathyDrive.Character do
 
       class_modifier =
         if level > 0 && skill && skill.level > 0 do
-          div(level, skill.level) * 0.6
+          skill.level / level * 0.6
         else
           0
         end
 
       modifier = race_modifier + class_modifier
 
-      max(0, trunc(base * modifier) + ability_value(character, "Stealth"))
+      modified = trunc(base * modifier)
+
+      ability = ability_value(character, "Stealth")
+
+      max(0, modified + ability)
     end
 
     def subtract_mana(character, %{mana: 0} = _ability), do: character
