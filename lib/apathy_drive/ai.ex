@@ -108,41 +108,51 @@ defmodule ApathyDrive.AI do
     party = Party.members(room, mobile)
 
     pets =
-      room.mobiles
-      |> Map.values()
-      |> Enum.filter(fn mob ->
-        if owner_id = Map.get(mob, :owner_id) do
-          owner_id == Map.get(mobile, :room_monster_id) or
-            owner_id == mobile.id
-        end
-      end)
+      party
+      |> Enum.map(&pets(room, room.mobiles[&1.ref]))
+      |> List.flatten()
 
-    owner =
-      room.mobiles
-      |> Map.values()
-      |> Enum.find(fn mob ->
-        if owner_id = Map.get(mobile, :owner_id) do
-          owner_id == Map.get(mob, :room_monster_id) or owner_id == Map.get(mob, :id)
-        end
-      end)
+    owner = owner(room, mobile)
 
-    list =
-      if Map.get(mobile, :auto_pet_casting) do
-        [party, pets, owner]
-      else
-        [party, owner]
-      end
+    pet_owners = Enum.map(pets, &owner(room, &1))
 
-    list
+    [party, owner, pets, pet_owners]
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
   end
 
+  def owner(room, mobile) do
+    room.mobiles
+    |> Map.values()
+    |> Enum.find(fn mob ->
+      if owner_id = Map.get(mobile, :owner_id) do
+        owner_id == Map.get(mob, :room_monster_id) or owner_id == Map.get(mob, :id)
+      end
+    end)
+  end
+
+  def pets(room, mobile) do
+    room.mobiles
+    |> Map.values()
+    |> Enum.filter(fn mob ->
+      if owner_id = Map.get(mob, :owner_id) do
+        owner_id == Map.get(mobile, :room_monster_id) or
+          owner_id == mobile.id
+      end
+    end)
+  end
+
   def heal(%{} = mobile, %Room{} = room) do
+    injured_party_members = pets_and_party(room, mobile)
+
     injured_party_member =
-      room
-      |> pets_and_party(mobile)
+      if Map.get(mobile, :auto_pet_casting) == false do
+        injured_party_members
+        |> Enum.reject(&(&1.__struct__ == Monster))
+      else
+        injured_party_members
+      end
       |> Enum.sort_by(&injury_level/1)
       |> List.first()
 
@@ -178,9 +188,15 @@ defmodule ApathyDrive.AI do
   end
 
   def bless(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
+    members_to_bless = pets_and_party(room, mobile)
+
     member_to_bless =
-      room
-      |> pets_and_party(mobile)
+      if Map.get(mobile, :auto_pet_casting) == false do
+        members_to_bless
+        |> Enum.reject(&(&1.__struct__ == Monster))
+      else
+        members_to_bless
+      end
       |> Enum.random()
 
     ability =
