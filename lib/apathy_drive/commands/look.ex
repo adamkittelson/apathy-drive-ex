@@ -196,33 +196,45 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(character, "<p>#{description}</p>")
     Mobile.send_scroll(character, "<p>#{hp_description}\n\n</p>")
 
-    ac = Mobile.physical_resistance_at_level(target, max(target.level, character.level))
-    mr = Mobile.magical_resistance_at_level(target, max(target.level, character.level))
+    if target.equipment |> Enum.any?() do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-yellow'>{{target:He/She/They}} is equipped with:</span></p>"
+        |> interpolate(%{"target" => target})
+      )
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>#{String.pad_trailing("AC:", 16)}</span> <span class='dark-cyan'>#{
-        String.pad_leading(to_string(ac), 3)
-      }</span>     <span class='dark-green'>#{String.pad_trailing("MR:", 16)}</span> <span class='dark-cyan'>#{
-        String.pad_leading(to_string(mr), 3)
-      }</span></p>"
-    )
+      target.equipment
+      |> Enum.sort_by(fn item ->
+        Enum.find_index(ApathyDrive.Commands.Inventory.slot_order(), &(&1 == item.worn_on))
+      end)
+      |> Enum.each(fn item ->
+        worn_on =
+          if item.type == "Light" do
+            String.pad_trailing("(Readied/#{item.uses})", 15)
+          else
+            if ApathyDrive.Commands.Wear.worn_on_max(item) > 1 do
+              worn_on =
+                item.limb
+                |> String.split(" ")
+                |> Enum.map(&String.capitalize/1)
+                |> Enum.join(" ")
 
-    ApathyDrive.DamageType
-    |> ApathyDrive.Repo.all()
-    |> Enum.map(&{&1.name, Mobile.ability_value(target, "Resist#{&1.name}")})
-    |> Enum.reject(&(elem(&1, 1) == 0))
-    |> Enum.chunk_every(4)
-    |> Enum.each(fn chunks ->
-      chunks =
-        Enum.map(chunks, fn {name, value} ->
-          "<span class='dark-green'>#{String.pad_trailing("Resist" <> name <> ":", 16)}</span> <span class='dark-cyan'>#{
-            String.pad_leading(to_string(value), 3)
-          }</span>"
-        end)
+              String.pad_trailing("(#{worn_on})", 15)
+            else
+              String.pad_trailing("(#{item.worn_on})", 15)
+            end
+          end
 
-      Mobile.send_scroll(character, "<p>" <> Enum.join(chunks, "    ") <> "</p>")
-    end)
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-cyan'>#{worn_on}</span><span class='dark-green'>#{
+            Item.colored_name(item, character: target)
+          }</span></p>"
+        )
+      end)
+
+      Mobile.send_scroll(character, "<br>")
+    end
   end
 
   def look_mobiles(%Room{mobiles: mobiles}, character \\ nil) do

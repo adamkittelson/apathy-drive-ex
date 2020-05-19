@@ -20,6 +20,8 @@ defmodule ApathyDrive.Commands.Inventory do
 
   def keywords, do: ["i", "inv", "inventory"]
 
+  def slot_order, do: @slot_order
+
   def execute(
         %Room{} = room,
         %Character{equipment: equipment, inventory: inventory} = character,
@@ -28,7 +30,7 @@ defmodule ApathyDrive.Commands.Inventory do
     if equipment |> Enum.any?() do
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-yellow'>You are equipped with:</span></p><br>"
+        "<p><span class='dark-yellow'>You are equipped with:</span></p>"
       )
 
       equipment
