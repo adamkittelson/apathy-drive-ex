@@ -1985,7 +1985,8 @@ defmodule ApathyDrive.Ability do
     do: room
 
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, ability) do
-    if (target = room.mobiles[target_ref]) && "Damage" in Map.keys(ability.traits) do
+    if (target = room.mobiles[target_ref]) && ability.kind != "blessing" &&
+         "Damage" in Map.keys(ability.traits) do
       target
       |> Map.get(:effects)
       |> Map.values()
