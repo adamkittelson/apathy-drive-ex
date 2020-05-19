@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Regeneration do
-  alias ApathyDrive.{Ability, Aggression, Character, Mobile, Room}
+  alias ApathyDrive.{Ability, Aggression, AI, Mobile, Monster, Room}
 
   @ticks_per_round 20
   @round_length 5000
@@ -202,7 +202,7 @@ defmodule ApathyDrive.Regeneration do
     regen / @ticks_per_round
   end
 
-  def regen_multiplier(room, %Character{} = mobile, resource) do
+  def regen_multiplier(room, %{} = mobile, resource) do
     multiplier =
       if use_rest_rate?(room, mobile, resource) do
         10
@@ -217,15 +217,20 @@ defmodule ApathyDrive.Regeneration do
     multiplier * (1 / modifier)
   end
 
-  # todo: fix combat detection for mobs for real or rethink out of combat hp regeneration
-  def regen_multiplier(_room, %{} = _mobile, _resource), do: 1
+  def use_rest_rate?(room, %Monster{} = mobile, type) do
+    if owner = AI.owner(room, mobile) do
+      use_rest_rate?(room, owner, type)
+    else
+      false
+    end
+  end
 
-  def use_rest_rate?(room, mobile, :hp) do
+  def use_rest_rate?(room, %{} = mobile, :hp) do
     is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
       !taking_damage?(mobile)
   end
 
-  def use_rest_rate?(room, mobile, :mana) do
+  def use_rest_rate?(room, %{} = mobile, :mana) do
     is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile)
   end
 
