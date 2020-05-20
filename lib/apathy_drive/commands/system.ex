@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Commands.System do
   use ApathyDrive.Command
   import ApathyDrive.Scripts
-  alias ApathyDrive.{Ability, Character, Item, Match, Mobile, Monster, Repo, Room, Skill, Trait}
+  alias ApathyDrive.{Ability, Character, Item, Match, Mobile, Monster, Repo, Room}
   alias ApathyDrive.Commands.System
   require Ecto.Query
 
@@ -195,24 +195,23 @@ defmodule ApathyDrive.Commands.System do
     System.Trait.execute(room, character, args)
   end
 
-  def system(%Room{} = room, %Character{editing: %Ability{} = ability} = character, args) do
-    character =
-      character
-      |> Map.put(:editing, Repo.get(Ability, ability.id))
-
-    System.Ability.execute(room, character, args)
+  def system(%Room{} = room, character, ["item" | args]) do
+    System.Item.execute(room, character, args)
   end
 
-  def system(%Room{} = room, %Character{editing: %Trait{}} = character, args) do
-    System.Trait.execute(room, character, args)
-  end
-
-  def system(%Room{} = room, %Character{editing: %Skill{} = skill} = character, args) do
+  def system(%Room{} = room, %Character{editing: %module{} = editing} = character, args) do
     character =
       character
-      |> Map.put(:editing, Repo.get(Skill, skill.id))
+      |> Map.put(:editing, Repo.get(module, editing.id))
 
-    System.Skill.execute(room, character, args)
+    module =
+      module
+      |> Module.split()
+      |> List.last()
+
+    module = Module.safe_concat(ApathyDrive.Commands.System, module)
+
+    module.execute(room, character, args)
   end
 
   def system(%Room{} = room, character, args) do

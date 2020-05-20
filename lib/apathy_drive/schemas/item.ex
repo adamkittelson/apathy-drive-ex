@@ -11,6 +11,7 @@ defmodule ApathyDrive.Item do
     ItemInstance,
     ItemRace,
     ItemTrait,
+    Match,
     Mobile,
     ShopItem
   }
@@ -63,6 +64,21 @@ defmodule ApathyDrive.Item do
     "Wrist" => 0.2,
     "Worn" => 0.0
   }
+
+  @types [
+    "Armour",
+    "Container",
+    "Drink",
+    "Food",
+    "Key",
+    "Light",
+    "Projectile",
+    "Scroll",
+    "Shield",
+    "Sign",
+    "Special",
+    "Weapon"
+  ]
 
   require Logger
   require Ecto.Query
@@ -125,6 +141,40 @@ defmodule ApathyDrive.Item do
     model
     |> cast(params, @required_fields ++ @optional_fields)
     |> validate_required(@required_fields)
+  end
+
+  def set_description_changeset(model, description) do
+    model
+    |> cast(%{description: description}, [:description])
+    |> validate_required(:description)
+    |> validate_length(:description, min: 20, max: 500)
+  end
+
+  def set_room_destruct_message_changeset(model, room_destruct_message) do
+    model
+    |> cast(%{room_destruct_message: room_destruct_message}, [:room_destruct_message])
+    |> validate_required(:room_destruct_message)
+    |> validate_length(:room_destruct_message, min: 20, max: 500)
+  end
+
+  def set_weight_changeset(model, weight) do
+    model
+    |> cast(%{weight: weight}, [:weight])
+    |> validate_required(:weight)
+    |> validate_number(:weight, greater_than_or_equal_to: 0)
+  end
+
+  def set_type_changeset(model, type) do
+    model
+    |> cast(%{type: type}, [:type])
+    |> validate_required(:type)
+    |> validate_inclusion(:type, @types)
+  end
+
+  def set_getable_changeset(model, getable) do
+    model
+    |> cast(%{getable: getable}, [:getable])
+    |> validate_required(:getable)
   end
 
   def target_damage(0), do: 0
@@ -237,6 +287,14 @@ defmodule ApathyDrive.Item do
       |> ItemTrait.load_traits()
 
     Systems.Effect.add(item, item_traits)
+  end
+
+  def match_by_name(name) do
+    items =
+      __MODULE__
+      |> ApathyDrive.Repo.all()
+
+    Match.all(items, :keyword_starts_with, name)
   end
 
   def slots do
