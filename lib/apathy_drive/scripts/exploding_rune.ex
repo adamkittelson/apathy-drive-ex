@@ -1,12 +1,12 @@
-defmodule ApathyDrive.Scripts.PoisonRune do
+defmodule ApathyDrive.Scripts.ExplodingRune do
   alias ApathyDrive.{Ability, Character, Item, ItemInstance, Mobile, Repo, Room}
 
-  @poison_rune_item_id 4
+  @exploding_rune_item_id 5
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
       %ItemInstance{
-        item_id: @poison_rune_item_id,
+        item_id: @exploding_rune_item_id,
         room_id: room.id,
         character_id: nil,
         dropped_for_character_id: mobile.id,
@@ -22,48 +22,49 @@ defmodule ApathyDrive.Scripts.PoisonRune do
 
   def activate(room, mobile) do
     Enum.reduce(room.items, room, fn
-      %Item{id: @poison_rune_item_id, dropped_for_character_id: id}, room ->
+      %Item{id: @exploding_rune_item_id, dropped_for_character_id: id}, room ->
         Room.update_mobile(room, mobile.ref, fn
           room, %Character{id: ^id} ->
             room
 
           room, %{} = mobile ->
-            Mobile.send_scroll(
-              mobile,
-              "<p><span class='green'>You are poisoned by a rune!</span></p>"
-            )
-
-            Room.send_scroll(
-              room,
-              "<p><span class='green'>#{Mobile.colored_name(mobile)}</span> is poisoned by a rune!</p>",
-              [mobile]
-            )
-
             # percentage of health for characters,
             # raw damage for monsters
-            damage =
+            {min, max} =
               case mobile do
                 %Character{} ->
                   max_hp = Mobile.max_hp_at_level(mobile, mobile.level)
-                  percent = Enum.random(25..75)
-                  trunc(max_hp * (percent / 100))
+
+                  {trunc(max_hp * 0.25), trunc(max_hp * 0.75)}
 
                 _ ->
-                  Enum.random(25..75)
+                  {25, 75}
               end
 
             ability = %Ability{
-              kind: "curse",
-              name: "poison rune",
+              kind: "attack",
+              name: "exploding rune",
               energy: 0,
               mana: 0,
-              duration: 20,
+              target_message: "You are hit by an exploding rune for {{amount}} damage!",
+              spectator_message: "{{Target}} is hit by an exploding rune for {{amount}} damage!",
               traits: %{
-                "Poison" => damage,
-                "StatusMessage" => "You feel ill!",
-                "StackKey" => :poison_rune,
-                "StackCount" => :infinity,
-                "RemoveMessage" => "You feel better."
+                "Damage" => [
+                  %{
+                    kind: "magical",
+                    min: trunc(min * 0.75),
+                    max: trunc(max * 0.75),
+                    damage_type: "Fire",
+                    damage_type_id: 5
+                  },
+                  %{
+                    kind: "magical",
+                    min: trunc(min * 0.25),
+                    max: trunc(max * 0.25),
+                    damage_type: "Impact",
+                    damage_type_id: 11
+                  }
+                ]
               }
             }
 

@@ -343,6 +343,7 @@ defmodule ApathyDrive.Room do
     |> Room.start_timer()
     |> ApathyDrive.Scripts.Sanctuary.enforce_sanctuary()
     |> ApathyDrive.Scripts.PoisonRune.activate(mobile)
+    |> ApathyDrive.Scripts.ExplodingRune.activate(mobile)
   end
 
   def local_hated_targets(%Room{mobiles: mobiles}, %{hate: hate}) do

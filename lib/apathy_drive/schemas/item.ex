@@ -456,6 +456,10 @@ defmodule ApathyDrive.Item do
     "<span class='green'>poison rune</span>"
   end
 
+  def colored_name(%{name: "exploding rune"} = _item, _opts) do
+    "<span class='red'>exploding rune</span>"
+  end
+
   def colored_name(%{name: name} = item, opts) do
     name =
       cond do
