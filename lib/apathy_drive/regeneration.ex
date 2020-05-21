@@ -57,9 +57,7 @@ defmodule ApathyDrive.Regeneration do
     heal_per_tick = heal_effect_per_tick(mobile)
     damage_per_tick = damage_effect_per_tick(mobile)
 
-    total_hp_per_tick = hp_per_tick + heal_per_tick - damage_per_tick
-
-    total_hp_per_tick
+    hp_per_tick + heal_per_tick - damage_per_tick
   end
 
   def hp_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
@@ -198,8 +196,19 @@ defmodule ApathyDrive.Regeneration do
     update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + mana))
   end
 
-  def regen_per_tick(_room, %{} = _mobile, regen) do
-    regen / @ticks_per_round
+  def regen_per_tick(room, %{} = mobile, regen) do
+    regen = regen / @ticks_per_round
+
+    if healing_rune_present?(room) do
+      # 1% per second
+      regen + 0.01 / (1000 / tick_time(mobile))
+    else
+      regen
+    end
+  end
+
+  def healing_rune_present?(room) do
+    !!Enum.find(room.items, &(&1.id == ApathyDrive.Scripts.HealingRune.item_id()))
   end
 
   def regen_multiplier(room, %{} = mobile) do
