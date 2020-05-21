@@ -171,6 +171,12 @@ defmodule ApathyDrive.Commands.System do
     end
   end
 
+  def system(%Room{} = room, character, ["edit"]) do
+    Room.update_mobile(room, character.ref, fn _room, character ->
+      Map.put(character, :editing, nil)
+    end)
+  end
+
   def system(%Room{} = room, character, ["edit" | args]) do
     System.Edit.execute(room, character, args)
   end
