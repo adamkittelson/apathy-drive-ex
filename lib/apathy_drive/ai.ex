@@ -15,47 +15,65 @@ defmodule ApathyDrive.AI do
   end
 
   def move(%{} = mobile, %Room{} = room, force \\ false) do
-    if should_move?(mobile, room) or force do
-      exits =
-        case room.exits do
-          nil ->
-            []
-
-          _exits ->
-            exits_in_area(room, mobile)
+    case should_move?(mobile, room) || force do
+      :hp ->
+        if Map.get(mobile, :auto_rest) do
+          mobile
+          |> Map.put(:resting, true)
+          |> Map.put(:sneaking, false)
         end
 
-      if Enum.any?(exits) do
-        new_exits =
-          exits
-          |> Enum.reject(&(&1["destination"] == mobile.last_room_id))
+      :mana ->
+        if Map.get(mobile, :auto_rest) do
+          mobile
+          |> Map.put(:resting, true)
+          |> Map.put(:sneaking, false)
+        end
 
-        room_exit =
-          cond do
-            is_nil(mobile.last_room_id) ->
-              Enum.random(exits)
+      true ->
+        exits =
+          case room.exits do
+            nil ->
+              []
 
-            Enum.any?(new_exits) ->
-              Enum.random(new_exits)
-
-            :else ->
-              Enum.find(exits, &(&1["destination"] == mobile.last_room_id))
+            _exits ->
+              exits_in_area(room, mobile)
           end
 
-        case ApathyDrive.Commands.Move.execute(room, mobile, room_exit, false) do
-          %Room{} = room ->
-            room
+        if Enum.any?(exits) do
+          new_exits =
+            exits
+            |> Enum.reject(&(&1["destination"] == mobile.last_room_id))
 
-          {:error, :too_tired, room} ->
-            room
+          room_exit =
+            cond do
+              is_nil(mobile.last_room_id) ->
+                Enum.random(exits)
+
+              Enum.any?(new_exits) ->
+                Enum.random(new_exits)
+
+              :else ->
+                Enum.find(exits, &(&1["destination"] == mobile.last_room_id))
+            end
+
+          case ApathyDrive.Commands.Move.execute(room, mobile, room_exit, false) do
+            %Room{} = room ->
+              room
+
+            {:error, :too_tired, room} ->
+              room
+          end
         end
-      end
+
+      _other ->
+        nil
     end
   end
 
   def sneak(%Character{} = character, %Room{} = room) do
     if character.auto_sneak && !character.sneaking &&
-         !Mobile.auto_attack_target(character, room) do
+         !Mobile.auto_attack_target(character, room) && !character.resting do
       ApathyDrive.Commands.Sneak.execute(room, character, [])
     end
   end
@@ -395,8 +413,22 @@ defmodule ApathyDrive.AI do
   defp should_move?(%ApathyDrive.Companion{}, _room), do: false
 
   defp should_move?(%ApathyDrive.Character{auto_roam: true} = character, room) do
-    character.hp > 0.8 and character.mana > 0.5 and character.energy == character.max_energy and
-      is_nil(Mobile.auto_attack_target(character, room))
+    cond do
+      !is_nil(Mobile.auto_attack_target(character, room)) ->
+        :fighting
+
+      character.hp < 0.8 ->
+        :hp
+
+      character.mana < 0.5 ->
+        :mana
+
+      character.energy < character.max_energy ->
+        :energy
+
+      :else ->
+        true
+    end
   end
 
   defp should_move?(%{movement: "stationary"}, _room), do: false

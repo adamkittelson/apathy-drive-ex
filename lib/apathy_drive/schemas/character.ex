@@ -68,6 +68,7 @@ defmodule ApathyDrive.Character do
     field(:auto_curse, :boolean)
     field(:auto_nuke, :boolean)
     field(:auto_roam, :boolean)
+    field(:auto_rest, :boolean)
     field(:auto_sneak, :boolean)
     field(:auto_flee, :boolean)
     field(:auto_pet_casting, :boolean, default: true)
@@ -79,6 +80,7 @@ defmodule ApathyDrive.Character do
     field(:spectator_color, :string, default: "red")
     field(:lore_name, :string)
 
+    field(:resting, :boolean, virtual: true, default: false)
     field(:enchantment, :any, virtual: true)
     field(:next_drain_at, :integer, virtual: true)
     field(:lore, :any, virtual: true)
@@ -1068,26 +1070,38 @@ defmodule ApathyDrive.Character do
     hp = trunc(max_hp * hp_percent)
     mana = trunc(max_mana * mana_percent)
 
-    cond do
-      character.editing ->
-        "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}] <span class='yellow'>*#{
-          character.editing.name
-        }*</span>:"
+    resting =
+      if character.resting do
+        " (Resting) "
+      end
 
-      character.enchantment ->
+    editing =
+      if character.editing do
+        " <span class='yellow'>*#{character.editing.name}*</span> "
+      end
+
+    lt =
+      if character.enchantment do
         lt = Enum.find(TimerManager.timers(character), &match?({:longterm, _}, &1))
         tick_time_left = 67 - div(TimerManager.time_remaining(character, lt), 1000)
         time_left = Enchantment.time_left(character, character.enchantment)
         formatted = Enchantment.formatted_time_left(time_left - tick_time_left)
+        "LT=#{formatted}"
+      end
 
-        "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}/LT=#{formatted}]:"
+    mana =
+      if max_mana > 0 do
+        "MA=#{mana}"
+      end
 
-      max_mana > 0 ->
-        "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>/MA=#{mana}]:"
+    hp = "HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>"
 
-      :else ->
-        "[HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>]:"
-    end
+    prompt =
+      [hp, mana, lt]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join("/")
+
+    "[#{prompt}#{resting}#{editing}]:"
   end
 
   def hp_prompt_color(hp_percent) when hp_percent > 0.5, do: "grey"

@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Regeneration do
-  alias ApathyDrive.{Ability, Aggression, AI, Mobile, Monster, Room}
+  alias ApathyDrive.{Ability, AI, Mobile, Monster, Room}
 
   @ticks_per_round 20
   @round_length 5000
@@ -50,7 +50,7 @@ defmodule ApathyDrive.Regeneration do
   def hp_since_last_tick(room, %{last_tick_at: nil} = mobile) do
     hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
 
-    multiplier = regen_multiplier(room, mobile, :hp)
+    multiplier = regen_multiplier(room, mobile)
 
     hp_per_tick = hp_per_tick * multiplier
 
@@ -67,7 +67,7 @@ defmodule ApathyDrive.Regeneration do
 
     hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
 
-    multiplier = regen_multiplier(room, mobile, :hp)
+    multiplier = regen_multiplier(room, mobile)
 
     hp_per_tick = hp_per_tick * multiplier
 
@@ -110,7 +110,7 @@ defmodule ApathyDrive.Regeneration do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
     mana_per_tick = regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
 
-    multiplier = regen_multiplier(room, mobile, :mana)
+    multiplier = regen_multiplier(room, mobile)
 
     mana_per_tick = mana_per_tick * multiplier
 
@@ -202,10 +202,10 @@ defmodule ApathyDrive.Regeneration do
     regen / @ticks_per_round
   end
 
-  def regen_multiplier(room, %{} = mobile, resource) do
+  def regen_multiplier(room, %{} = mobile) do
     multiplier =
-      if use_rest_rate?(room, mobile, resource) do
-        10
+      if use_rest_rate?(room, mobile) do
+        3
       else
         1
       end
@@ -217,21 +217,16 @@ defmodule ApathyDrive.Regeneration do
     multiplier * (1 / modifier)
   end
 
-  def use_rest_rate?(room, %Monster{} = mobile, type) do
+  def use_rest_rate?(room, %Monster{} = mobile) do
     if owner = AI.owner(room, mobile) do
-      use_rest_rate?(room, owner, type)
+      use_rest_rate?(room, owner)
     else
       false
     end
   end
 
-  def use_rest_rate?(room, %{} = mobile, :hp) do
-    is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile) and
-      !taking_damage?(mobile)
-  end
-
-  def use_rest_rate?(room, %{} = mobile, :mana) do
-    is_nil(mobile.attack_target) and !Aggression.enemies_present?(room, mobile)
+  def use_rest_rate?(_room, %{} = mobile) do
+    !!Map.get(mobile, :resting)
   end
 
   def heal_limbs(room, target_ref, percentage \\ nil) do
@@ -361,9 +356,5 @@ defmodule ApathyDrive.Regeneration do
         end)
       end)
     end)
-  end
-
-  defp taking_damage?(%{} = mobile) do
-    Mobile.ability_value(mobile, "Damage") > 0 || Mobile.has_ability?(mobile, "Poison")
   end
 end

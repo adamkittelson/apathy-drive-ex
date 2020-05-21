@@ -73,6 +73,7 @@ defmodule ApathyDrive.Command do
       Commands.Read,
       Commands.Remove,
       Commands.Reply,
+      Commands.Rest,
       Commands.Return,
       Commands.Say,
       Commands.Search,

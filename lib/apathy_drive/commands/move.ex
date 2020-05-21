@@ -149,6 +149,7 @@ defmodule ApathyDrive.Commands.Move do
         })
       else
         character
+        |> Map.put(:resting, false)
       end
 
     if Mobile.exhausted(character) do
@@ -225,6 +226,7 @@ defmodule ApathyDrive.Commands.Move do
           })
         else
           character
+          |> Map.put(:resting, false)
         end
 
       if Mobile.exhausted(character) do
@@ -277,6 +279,7 @@ defmodule ApathyDrive.Commands.Move do
           })
         else
           character
+          |> Map.put(:resting, false)
         end
 
       if Mobile.exhausted(character) do
@@ -342,6 +345,7 @@ defmodule ApathyDrive.Commands.Move do
             })
           else
             character
+            |> Map.put(:resting, false)
           end
 
         if Mobile.exhausted(character) do

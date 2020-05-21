@@ -28,6 +28,7 @@ defmodule ApathyDrive.Commands.Sneak do
           Room.update_mobile(room, character.ref, fn _room, character ->
             character
             |> Map.put(:sneaking, true)
+            |> Map.put(:resting, false)
             |> Character.add_attribute_experience(%{
               agility: 0.75,
               charm: 0.25
@@ -59,7 +60,10 @@ defmodule ApathyDrive.Commands.Sneak do
           "<p>Attempting to sneak...You don't think you're sneaking.</p>"
         )
 
-        room
+        Room.update_mobile(room, character.ref, fn _room, character ->
+          character
+          |> Map.put(:resting, false)
+        end)
     end
   end
 end

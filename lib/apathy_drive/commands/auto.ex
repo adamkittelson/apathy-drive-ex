@@ -4,34 +4,90 @@ defmodule ApathyDrive.Commands.Auto do
 
   def keywords, do: ["auto"]
 
+  def execute(%Room{} = room, %Character{} = character, []) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='white'>You have the following automation settings:</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-magenta'>Setting   Enabled?</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>Roam         #{emoji(character.auto_roam)}</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>Sneak        #{emoji(character.auto_sneak)}</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>Rest         #{emoji(character.auto_rest)}</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>Pet Casting  #{emoji(character.auto_pet_casting)}</span></p>"
+    )
+
+    room
+  end
+
   def execute(%Room{} = room, %Character{ref: ref} = character, ["roam"]) do
     Mobile.send_scroll(character, "<p>Toggling auto roam.</p>")
 
-    Room.update_mobile(room, ref, fn _room, character ->
-      character
-      |> Ecto.Changeset.change(%{auto_roam: !character.auto_roam})
-      |> Repo.update!()
-    end)
+    room =
+      Room.update_mobile(room, ref, fn _room, character ->
+        character
+        |> Ecto.Changeset.change(%{auto_roam: !character.auto_roam})
+        |> Repo.update!()
+      end)
+
+    execute(room, room.mobiles[ref], [])
   end
 
   def execute(%Room{} = room, %Character{ref: ref} = character, ["sneak"]) do
     Mobile.send_scroll(character, "<p>Toggling auto sneak.</p>")
 
-    Room.update_mobile(room, ref, fn _room, character ->
-      character
-      |> Ecto.Changeset.change(%{auto_sneak: !character.auto_sneak})
-      |> Repo.update!()
-    end)
+    room =
+      Room.update_mobile(room, ref, fn _room, character ->
+        character
+        |> Ecto.Changeset.change(%{auto_sneak: !character.auto_sneak})
+        |> Repo.update!()
+      end)
+
+    execute(room, room.mobiles[ref], [])
+  end
+
+  def execute(%Room{} = room, %Character{ref: ref} = character, ["rest"]) do
+    Mobile.send_scroll(character, "<p>Toggling auto rest.</p>")
+
+    room =
+      Room.update_mobile(room, ref, fn _room, character ->
+        character
+        |> Ecto.Changeset.change(%{auto_rest: !character.auto_rest})
+        |> Repo.update!()
+      end)
+
+    execute(room, room.mobiles[ref], [])
   end
 
   def execute(%Room{} = room, %Character{ref: ref} = character, ["pet", "casting"]) do
     Mobile.send_scroll(character, "<p>Toggling auto pet casting.</p>")
 
-    Room.update_mobile(room, ref, fn _room, character ->
-      character
-      |> Ecto.Changeset.change(%{auto_pet_casting: !character.auto_pet_casting})
-      |> Repo.update!()
-    end)
+    room =
+      Room.update_mobile(room, ref, fn _room, character ->
+        character
+        |> Ecto.Changeset.change(%{auto_pet_casting: !character.auto_pet_casting})
+        |> Repo.update!()
+      end)
+
+    execute(room, room.mobiles[ref], [])
   end
 
   def execute(%Room{} = room, %Character{abilities: abilities} = character, [command]) do
@@ -68,4 +124,7 @@ defmodule ApathyDrive.Commands.Auto do
 
     room
   end
+
+  def emoji(true), do: "✅"
+  def emoji(_), do: "❌"
 end

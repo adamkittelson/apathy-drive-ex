@@ -16,5 +16,6 @@ defmodule ApathyDrive.Stealth do
   def reveal(sneaker) do
     sneaker
     |> Map.put(:sneaking, false)
+    |> Map.put(:resting, false)
   end
 end

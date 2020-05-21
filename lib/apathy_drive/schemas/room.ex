@@ -303,7 +303,6 @@ defmodule ApathyDrive.Room do
         |> Mobile.send_scroll(
           "<p><span class='dark-red'>You make a noise as you enter the room!</span></p>"
         )
-        |> Map.put(:sneaking, false)
         |> Stealth.reveal()
       else
         mobile
