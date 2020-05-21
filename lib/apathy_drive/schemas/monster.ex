@@ -819,30 +819,19 @@ defmodule ApathyDrive.Monster do
       |> AI.think(monster.ref)
     end
 
-    def hp_regen_per_round(%Monster{} = monster) do
-      base_hp_regen =
-        (monster.hp_regen +
-           (monster.level + 30) * attribute_at_level(monster, :health, monster.level) / 500.0) *
-          5000 / 30_000
-
-      modified_hp_regen = base_hp_regen * (1 + ability_value(monster, "HPRegen") / 100)
-
-      max_hp = max_hp_at_level(monster, monster.level)
-
-      modified_hp_regen / max_hp
+    def hp_regen_per_30(%Monster{} = monster) do
+      monster.hp_regen * (1 + ability_value(monster, "HPRegen") / 100)
     end
 
-    def mana_regen_per_round(%Monster{} = monster) do
+    def mana_regen_per_30(%Monster{} = monster) do
       max_mana = max_mana_at_level(monster, monster.level)
 
-      base_mana_regen =
-        (monster.level + 20) * attribute_at_level(monster, :willpower, monster.level) *
-          (div(ability_value(monster, "ManaPerLevel"), 2) + 2) / 1650.0 * 5000 / 30_000
+      base_mana_regen = max_mana * 0.2
 
       modified_mana_regen = base_mana_regen * (1 + ability_value(monster, "ManaRegen") / 100)
 
       if max_mana > 0 do
-        modified_mana_regen / max_mana
+        modified_mana_regen
       else
         0
       end

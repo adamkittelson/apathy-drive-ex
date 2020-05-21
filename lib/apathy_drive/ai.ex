@@ -410,8 +410,6 @@ defmodule ApathyDrive.AI do
 
   defp passable?(_room, _room_exit, _mobile), do: false
 
-  defp should_move?(%ApathyDrive.Companion{}, _room), do: false
-
   defp should_move?(%ApathyDrive.Character{auto_roam: true} = character, room) do
     cond do
       !is_nil(Mobile.auto_attack_target(character, room)) ->
@@ -441,8 +439,6 @@ defmodule ApathyDrive.AI do
   end
 
   defp should_move?(%{} = _mobile, _room), do: false
-
-  defp should_flee?(%ApathyDrive.Companion{}, _room), do: false
 
   defp should_flee?(%Monster{movement: "stationary"}, _room), do: false
 

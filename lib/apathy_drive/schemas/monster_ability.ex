@@ -5,7 +5,6 @@ defmodule ApathyDrive.MonsterAbility do
     Ability,
     AbilityDamageType,
     AbilityTrait,
-    Companion,
     Monster,
     MonsterAbility
   }
@@ -19,10 +18,6 @@ defmodule ApathyDrive.MonsterAbility do
 
   def load_abilities(%Monster{id: id} = monster) do
     load_abilities(monster, id)
-  end
-
-  def load_abilities(%Companion{monster_id: id} = companion) do
-    load_abilities(companion, id)
   end
 
   def load_abilities(entity, id) do

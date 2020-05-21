@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Character, Companion, Mobile, Monster, Room}
+  alias ApathyDrive.{Character, Mobile, Monster, Room}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
@@ -40,9 +40,6 @@ defmodule ApathyDrive.Aggression do
 
         %Monster{} = monster ->
           owner.ref in Monster.enemies(monster, room)
-
-        %Companion{} = monster ->
-          owner.ref in Companion.enemies(monster, room)
       end
     else
       false

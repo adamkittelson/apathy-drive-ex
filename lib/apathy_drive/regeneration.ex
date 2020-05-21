@@ -6,6 +6,8 @@ defmodule ApathyDrive.Regeneration do
 
   def tick_time(_mobile), do: trunc(@round_length / @ticks_per_round)
 
+  def round_length, do: @round_length
+
   def duration_for_energy(mobile, energy) do
     regen_per_tick = energy_per_tick(mobile)
 
@@ -48,31 +50,27 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def hp_since_last_tick(room, %{last_tick_at: nil} = mobile) do
-    hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
+    hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_30(mobile))
 
-    multiplier = regen_multiplier(room, mobile)
-
-    hp_per_tick = hp_per_tick * multiplier
+    hp_percent_per_tick = hp_per_tick / Mobile.max_hp_at_level(mobile, mobile.level)
 
     heal_per_tick = heal_effect_per_tick(mobile)
     damage_per_tick = damage_effect_per_tick(mobile)
 
-    hp_per_tick + heal_per_tick - damage_per_tick
+    hp_percent_per_tick + heal_per_tick - damage_per_tick
   end
 
   def hp_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
 
-    hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_round(mobile))
+    hp_per_tick = regen_per_tick(room, mobile, Mobile.hp_regen_per_30(mobile))
 
-    multiplier = regen_multiplier(room, mobile)
-
-    hp_per_tick = hp_per_tick * multiplier
+    hp_percent_per_tick = hp_per_tick / Mobile.max_hp_at_level(mobile, mobile.level)
 
     heal_per_tick = heal_effect_per_tick(mobile)
     damage_per_tick = damage_effect_per_tick(mobile)
 
-    total_hp_per_tick = hp_per_tick + heal_per_tick - damage_per_tick
+    total_hp_per_tick = hp_percent_per_tick + heal_per_tick - damage_per_tick
 
     hp = total_hp_per_tick * ms_since_last_tick / tick_time(mobile)
 
@@ -101,18 +99,19 @@ defmodule ApathyDrive.Regeneration do
     Mobile.ability_value(mobile, "Damage") / @ticks_per_round
   end
 
-  def mana_since_last_tick(room, %{last_tick_at: nil} = mobile),
-    do: regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
+  def mana_since_last_tick(room, %{last_tick_at: nil} = mobile) do
+    mana_per_tick = regen_per_tick(room, mobile, Mobile.mana_regen_per_30(mobile))
+
+    mana_per_tick / Mobile.max_mana_at_level(mobile, mobile.level)
+  end
 
   def mana_since_last_tick(room, %{last_tick_at: last_tick} = mobile) do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
-    mana_per_tick = regen_per_tick(room, mobile, Mobile.mana_regen_per_round(mobile))
+    mana_per_tick = regen_per_tick(room, mobile, Mobile.mana_regen_per_30(mobile))
 
-    multiplier = regen_multiplier(room, mobile)
+    mana_percent = mana_per_tick / Mobile.max_mana_at_level(mobile, mobile.level)
 
-    mana_per_tick = mana_per_tick * multiplier
-
-    mana = mana_per_tick * ms_since_last_tick / tick_time(mobile)
+    mana = mana_percent * ms_since_last_tick / tick_time(mobile)
 
     min(mana, mana_per_tick)
   end
@@ -196,8 +195,9 @@ defmodule ApathyDrive.Regeneration do
     update_in(mobile, [Access.key!(:mana)], &min(1.0, &1 + mana))
   end
 
-  def regen_per_tick(room, %{} = mobile, regen) do
-    regen = regen / @ticks_per_round
+  def regen_per_tick(room, %{} = mobile, regen_per_second) do
+    ticks_per_30_second = @ticks_per_round * (:timer.seconds(30) / @round_length)
+    regen = regen_per_second / ticks_per_30_second
 
     if healing_rune_present?(room) do
       # 1% per second
@@ -209,21 +209,6 @@ defmodule ApathyDrive.Regeneration do
 
   def healing_rune_present?(room) do
     !!Enum.find(room.items, &(&1.id == ApathyDrive.Scripts.HealingRune.item_id()))
-  end
-
-  def regen_multiplier(room, %{} = mobile) do
-    multiplier =
-      if use_rest_rate?(room, mobile) do
-        3
-      else
-        1
-      end
-
-    speed = Mobile.ability_value(mobile, "Speed")
-
-    modifier = if speed == 0, do: 1, else: speed
-
-    multiplier * (1 / modifier)
   end
 
   def use_rest_rate?(room, %Monster{} = mobile) do

@@ -15,7 +15,6 @@ defmodule ApathyDrive.Character do
     CharacterSkill,
     CharacterTrait,
     Class,
-    Companion,
     Currency,
     Directory,
     ElementalLores,
@@ -1228,8 +1227,10 @@ defmodule ApathyDrive.Character do
       magical_damage: Mobile.magical_penetration_at_level(character, character.level),
       magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
       hp: hp_at_level(character, character.level),
+      hp_regen: Float.round(Mobile.hp_regen_per_30(character), 2),
       max_hp: Mobile.max_hp_at_level(character, character.level),
       mana: mana_at_level(character, character.level),
+      mana_regen: Float.round(Mobile.mana_regen_per_30(character), 2),
       max_mana: Mobile.max_mana_at_level(character, character.level),
       energy: character.energy,
       max_energy: character.max_energy,
@@ -1767,11 +1768,6 @@ defmodule ApathyDrive.Character do
         |> RoomServer.mobile_entered(character)
 
         room =
-          character
-          |> Character.companion(room)
-          |> Companion.dismiss(room)
-
-        room =
           put_in(room.mobiles, Map.delete(room.mobiles, character.ref))
           |> Room.send_scroll("<p><span class='red'>#{character.name} has died.</span></p>")
 
@@ -1860,38 +1856,53 @@ defmodule ApathyDrive.Character do
       |> Enum.member?(ability_name)
     end
 
-    def hp_regen_per_round(%Character{hp: hp} = character) when hp >= 0 do
+    def hp_regen_per_30(%Character{hp: hp} = character) when hp >= 0 do
       if Enum.any?(character.limbs, fn {_name, limb} -> limb.health < 0 end) do
         0.0001
       else
-        base_hp_regen =
-          (character.level + 30) * attribute_at_level(character, :health, character.level) / 500.0 *
-            5000 / 30_000
+        regen =
+          (character.level + 20) * attribute_at_level(character, :health, character.level) / 750
 
-        modified_hp_regen = base_hp_regen * (1 + ability_value(character, "HPRegen") / 100)
+        modified_hp_regen = regen * (1 + ability_value(character, "HPRegen") / 100)
 
-        max_hp = max_hp_at_level(character, character.level)
-
-        modified_hp_regen / max_hp
+        if character.resting do
+          modified_hp_regen * 3
+        else
+          modified_hp_regen
+        end
       end
     end
 
-    def hp_regen_per_round(%Character{hp: _hp} = _character), do: 0
+    def hp_regen_per_30(%Character{hp: _hp} = _character), do: 0
 
-    def mana_regen_per_round(%Character{} = character) do
+    def mana_regen_per_30(%Character{} = character) do
+      level = character.level
+
+      attribute =
+        character.abilities
+        |> Enum.map(fn {_command, ability} ->
+          ability.attributes
+          |> Enum.map(
+            &Mobile.attribute_at_level(character, String.to_existing_atom(&1), character.level)
+          )
+        end)
+        |> List.flatten()
+        |> Room.average()
+
+      magic_level = div(div(Mobile.max_mana_at_level(character, level) - 6, max(level, 1)), 2)
+
       max_mana = max_mana_at_level(character, character.level)
 
-      spellcasting =
-        Mobile.spellcasting_at_level(character, character.level, %{attributes: ["willpower"]})
+      base_mana_regen = (level + 20) * attribute * (magic_level + 2) / 1650.0
 
-      base_mana_regen =
-        (character.level + 20) * spellcasting *
-          (div(ability_value(character, "ManaPerLevel"), 2) + 2) / 1650.0 * 5000 / 30_000
-
-      modified_mana_regen = base_mana_regen * (1 + ability_value(character, "ManaRegen") / 100)
+      rate = base_mana_regen * (1 + ability_value(character, "ManaRegen") / 100)
 
       if max_mana > 0 do
-        modified_mana_regen / max_mana
+        if character.resting do
+          rate * 3
+        else
+          rate
+        end
       else
         0
       end

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Party do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Companion, Party}
+  alias ApathyDrive.{Character, Party}
 
   def keywords, do: ["party", "par"]
 
@@ -50,19 +50,6 @@ defmodule ApathyDrive.Commands.Party do
   defp show_party_member(character, %Character{} = member, color) do
     data = %{
       name: String.pad_trailing(member.name, 13),
-      hp: trunc(member.hp * 100) |> to_string |> String.pad_leading(3),
-      mana: trunc(member.mana * 100) |> to_string |> String.pad_leading(3)
-    }
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='#{color}'>#{data.name}[H:#{data.hp}%] [M:#{data.mana}%]</span></p>"
-    )
-  end
-
-  defp show_party_member(character, %Companion{} = member, color) do
-    data = %{
-      name: String.pad_trailing(member.name, 26),
       hp: trunc(member.hp * 100) |> to_string |> String.pad_leading(3),
       mana: trunc(member.mana * 100) |> to_string |> String.pad_leading(3)
     }

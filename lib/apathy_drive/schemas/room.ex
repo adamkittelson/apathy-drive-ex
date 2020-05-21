@@ -5,7 +5,6 @@ defmodule ApathyDrive.Room do
     Ability,
     Area,
     Character,
-    Companion,
     Directory,
     Item,
     ItemInstance,
@@ -1006,9 +1005,7 @@ defmodule ApathyDrive.Room do
       title: character.title
     })
 
-    room =
-      put_in(room.mobiles[character.ref], character)
-      |> Companion.load_for_character(character)
+    room = put_in(room.mobiles[character.ref], character)
 
     Room.update_moblist(room)
 

@@ -173,6 +173,8 @@ chan.on("update score", function (score_data) {
   update_score_attribute("parry", score_data.parry);
   update_score_attribute("hp", _.padEnd(score_data.hp + "/" + score_data.max_hp, 13));
   update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 11));
+  update_score_attribute("hp-regen", _.padEnd(score_data.hp_regen, 12));
+  update_score_attribute("mana-regen", _.padEnd(score_data.mana_regen, 10));
   update_score_attribute("block", score_data.block);
   update_score_attribute("stealth", score_data.stealth);
   update_score_attribute("strength", _.padEnd(score_data.strength, 7))

@@ -3,7 +3,6 @@ defmodule ApathyDrive.Commands.Move do
     Ability,
     Character,
     Currency,
-    Companion,
     Doors,
     Mobile,
     Repo,
@@ -438,9 +437,6 @@ defmodule ApathyDrive.Commands.Move do
     |> Enum.reduce(room, fn
       %Character{leader: ^ref} = party_member, updated_room ->
         Mobile.send_scroll(party_member, "<p> -- Following your Party leader #{direction} --</p>")
-        execute(updated_room, party_member, room_exit, false)
-
-      %Companion{leader: ^ref} = party_member, updated_room ->
         execute(updated_room, party_member, room_exit, false)
 
       _, updated_room ->

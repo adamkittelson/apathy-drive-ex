@@ -6,7 +6,6 @@ defmodule ApathyDrive.Ability do
     AbilityDamageType,
     AbilityTrait,
     Character,
-    Companion,
     CraftingRecipe,
     Enchantment,
     Item,
@@ -1353,13 +1352,13 @@ defmodule ApathyDrive.Ability do
       ) do
     display_cast_message(room, caster, target, ability)
 
-    if companion = Character.companion(caster, room) do
-      companion
-      |> Companion.dismiss(room)
-      |> Companion.convert_for_character(target, caster)
-    else
-      Companion.convert_for_character(room, target, caster)
-    end
+    # if companion = Character.companion(caster, room) do
+    #   companion
+    #   |> Companion.dismiss(room)
+    #   |> Companion.convert_for_character(target, caster)
+    # else
+    #   Companion.convert_for_character(room, target, caster)
+    # end
   end
 
   def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{} = ability) do

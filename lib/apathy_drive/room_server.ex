@@ -7,7 +7,6 @@ defmodule ApathyDrive.RoomServer do
     ChannelHistory,
     Character,
     Commands,
-    Companion,
     Directory,
     Enchantment,
     Item,
@@ -268,9 +267,7 @@ defmodule ApathyDrive.RoomServer do
 
       Mobile.update_prompt(character, room)
 
-      room =
-        put_in(room.mobiles[character.ref], character)
-        |> Companion.load_for_character(character)
+      room = put_in(room.mobiles[character.ref], character)
 
       Gossip.player_sign_in(character.name)
 
