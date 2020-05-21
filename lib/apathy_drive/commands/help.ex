@@ -358,8 +358,7 @@ defmodule ApathyDrive.Commands.Help do
         ss.class_id == ^class_id and not is_nil(ss.level) and ss.auto_learn == true
       )
       |> Repo.all()
-      |> Enum.sort_by(& &1.level)
-      |> Enum.map(&{&1.level, Ability.find(&1.ability_id).name})
+      |> Enum.group_by(& &1.level)
 
     Mobile.send_scroll(
       character,
@@ -401,7 +400,12 @@ defmodule ApathyDrive.Commands.Help do
       Mobile.send_scroll(character, "<p>  <span class='dark-magenta'>Level    Name</span></p>")
 
       abilities
-      |> Enum.each(fn {level, name} ->
+      |> Enum.each(fn {level, abilities} ->
+        abilities =
+          abilities
+          |> Enum.map(&Ability.find(&1.ability_id).name)
+          |> ApathyDrive.Commands.Inventory.to_sentence()
+
         level =
           level
           |> to_string()
@@ -409,7 +413,7 @@ defmodule ApathyDrive.Commands.Help do
 
         Mobile.send_scroll(
           character,
-          "<p>  <span class='dark-cyan'>#{level}#{name}</span></p>"
+          "<p>  <span class='dark-cyan'>#{level}#{abilities}</span></p>"
         )
       end)
     end

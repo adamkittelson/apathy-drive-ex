@@ -101,7 +101,7 @@ defmodule ApathyDrive.Commands.List do
           |> String.pad_trailing(15)
 
         level =
-          level
+          (character.level + (level - character_class.level))
           |> to_string()
           |> String.pad_trailing(8)
 
