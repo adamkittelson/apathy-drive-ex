@@ -174,7 +174,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_mobile(%{} = target, %Character{} = character) do
+  def look_at_mobile(%Character{} = target, %{} = character) do
     if character != target,
       do:
         Mobile.send_scroll(
@@ -235,6 +235,22 @@ defmodule ApathyDrive.Commands.Look do
 
       Mobile.send_scroll(character, "<br>")
     end
+  end
+
+  def look_at_mobile(%{} = target, %{} = character) do
+    hp_description = Mobile.hp_description(target)
+
+    hp_description =
+      "{{target:He appears/She appears/They appear}} to be #{hp_description}."
+      |> interpolate(%{"target" => target})
+
+    description =
+      target
+      |> Mobile.description(character)
+      |> interpolate(%{"target" => target})
+
+    Mobile.send_scroll(character, "<p>#{description}</p>")
+    Mobile.send_scroll(character, "<p>#{hp_description}\n\n</p>")
   end
 
   def look_mobiles(%Room{mobiles: mobiles}, character \\ nil) do
