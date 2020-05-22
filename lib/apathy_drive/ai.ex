@@ -17,17 +17,13 @@ defmodule ApathyDrive.AI do
   def move(%{} = mobile, %Room{} = room, force \\ false) do
     case should_move?(mobile, room) || force do
       :hp ->
-        if Map.get(mobile, :auto_rest) do
-          mobile
-          |> Map.put(:resting, true)
-          |> Map.put(:sneaking, false)
+        if Map.get(mobile, :auto_rest) && !Map.get(mobile, :resting) do
+          ApathyDrive.Commands.Rest.execute(room, mobile, []).mobiles[mobile.ref]
         end
 
       :mana ->
-        if Map.get(mobile, :auto_rest) do
-          mobile
-          |> Map.put(:resting, true)
-          |> Map.put(:sneaking, false)
+        if Map.get(mobile, :auto_rest) && !Map.get(mobile, :resting) do
+          ApathyDrive.Commands.Rest.execute(room, mobile, []).mobiles[mobile.ref]
         end
 
       true ->
