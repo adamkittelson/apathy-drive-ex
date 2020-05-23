@@ -9,7 +9,7 @@ defmodule ApathyDrive.Scripts.ExplodingRune do
         item_id: @exploding_rune_item_id,
         room_id: room.id,
         character_id: nil,
-        dropped_for_character_id: mobile.id,
+        owner_id: mobile.id,
         equipped: false,
         hidden: false,
         delete_at: Timex.shift(DateTime.utc_now(), minutes: 12)
@@ -22,7 +22,7 @@ defmodule ApathyDrive.Scripts.ExplodingRune do
 
   def activate(room, mobile) do
     Enum.reduce(room.items, room, fn
-      %Item{id: @exploding_rune_item_id, dropped_for_character_id: id}, room ->
+      %Item{id: @exploding_rune_item_id, owner_id: id}, room ->
         Room.update_mobile(room, mobile.ref, fn
           room, %Character{id: ^id} ->
             room
@@ -46,8 +46,10 @@ defmodule ApathyDrive.Scripts.ExplodingRune do
               name: "exploding rune",
               energy: 0,
               mana: 0,
+              caster: %{name: "the exploding rune"},
               target_message: "You are hit by an exploding rune for {{amount}} damage!",
               spectator_message: "{{Target}} is hit by an exploding rune for {{amount}} damage!",
+              crit_tables: [5, 11],
               traits: %{
                 "Damage" => [
                   %{

@@ -44,6 +44,7 @@ defmodule ApathyDrive.Ability do
     field(:level, :integer)
     field(:letter, :string)
 
+    field(:caster, :any, virtual: true)
     field(:limbs, :any, virtual: true, default: [])
     field(:traits, :map, virtual: true, default: %{})
     field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
@@ -1407,6 +1408,7 @@ defmodule ApathyDrive.Ability do
     if caster && target do
       if crit = crit_for_damage(target.ability_shift, ability.crit_tables) do
         crit = put_in(crit.traits["StackCount"], 10)
+        crit = Map.put(crit, :caster, ability.caster)
 
         target =
           if ability.traits["ConfusionMessage"] == "You are stunned and cannot move!" do
@@ -2818,99 +2820,127 @@ defmodule ApathyDrive.Ability do
 
   def caster_cast_message(
         %Ability{result: :dodged} = ability,
-        %{} = _caster,
+        %{} = caster,
         %{} = target,
-        _mobile
+        mobile
       ) do
-    message =
-      ability.traits["DodgeUserMessage"]
-      |> Text.interpolate(%{"target" => target, "ability" => ability.name})
-      |> Text.capitalize_first()
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      message =
+        ability.traits["DodgeUserMessage"]
+        |> Text.interpolate(%{"target" => target, "ability" => ability.name})
+        |> Text.capitalize_first()
 
-    "<p><span class='dark-cyan'>#{message}</span></p>"
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
   end
 
   def caster_cast_message(
-        %Ability{result: :blocked} = _ability,
-        %{} = _caster,
+        %Ability{result: :blocked} = ability,
+        %{} = caster,
         %{} = target,
-        _mobile
+        mobile
       ) do
-    shield = Character.shield(target).name
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      shield = Character.shield(target).name
 
-    message =
-      "{{target}} blocks your attack with {{target:his/her/their}} #{shield}!"
-      |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first()
+      message =
+        "{{target}} blocks your attack with {{target:his/her/their}} #{shield}!"
+        |> Text.interpolate(%{"target" => target})
+        |> Text.capitalize_first()
 
-    "<p><span class='dark-cyan'>#{message}</span></p>"
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
   end
 
   def caster_cast_message(
-        %Ability{result: :parried} = _ability,
-        %{} = _caster,
+        %Ability{result: :parried} = ability,
+        %{} = caster,
         %{} = target,
-        _mobile
+        mobile
       ) do
-    weapon = Character.weapon(target).name
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      weapon = Character.weapon(target).name
 
-    message =
-      "{{target}} parries your attack with {{target:his/her/their}} #{weapon}!"
-      |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first()
+      message =
+        "{{target}} parries your attack with {{target:his/her/their}} #{weapon}!"
+        |> Text.interpolate(%{"target" => target})
+        |> Text.capitalize_first()
 
-    "<p><span class='dark-cyan'>#{message}</span></p>"
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
   end
 
   def caster_cast_message(
         %Ability{result: :resisted} = ability,
-        %{} = _caster,
+        %{} = caster,
         %{} = target,
-        _mobile
+        mobile
       ) do
-    message =
-      @resist_message.user
-      |> Text.interpolate(%{"target" => target, "ability" => ability.name})
-      |> Text.capitalize_first()
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      message =
+        @resist_message.user
+        |> Text.interpolate(%{"target" => target, "ability" => ability.name})
+        |> Text.capitalize_first()
 
-    "<p><span class='dark-cyan'>#{message}</span></p>"
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
   end
 
   def caster_cast_message(
-        %Ability{result: :deflected} = _ability,
-        %{} = _caster,
+        %Ability{result: :deflected} = ability,
+        %{} = caster,
         %{} = target,
-        _mobile
+        mobile
       ) do
-    message =
-      @deflect_message.user
-      |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first()
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      message =
+        @deflect_message.user
+        |> Text.interpolate(%{"target" => target})
+        |> Text.capitalize_first()
 
-    "<p><span class='dark-red'>#{message}</span></p>"
+      "<p><span class='dark-red'>#{message}</span></p>"
+    end
   end
 
-  def caster_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, _mobile) do
-    message =
-      ability.user_message
-      |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first()
+  def caster_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, mobile) do
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      message =
+        ability.user_message
+        |> Text.interpolate(%{"target" => target})
+        |> Text.capitalize_first()
 
-    "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+      "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+    end
   end
 
   def caster_cast_message(
         %Ability{} = ability,
         %{} = caster,
         %{ability_shift: nil} = target,
-        _mobile
+        mobile
       ) do
-    message =
-      ability.user_message
-      |> Text.interpolate(%{"target" => target})
-      |> Text.capitalize_first()
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      message =
+        ability.user_message
+        |> Text.interpolate(%{"target" => target})
+        |> Text.capitalize_first()
 
-    "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+      "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+    end
   end
 
   def caster_cast_message(
@@ -2919,24 +2949,28 @@ defmodule ApathyDrive.Ability do
         %{ability_shift: shift} = target,
         mobile
       ) do
-    amount = -trunc(shift * Mobile.max_hp_at_level(target, mobile.level))
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      amount = -trunc(shift * Mobile.max_hp_at_level(target, mobile.level))
 
-    cond do
-      amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
-        if List.first(ability.traits["Damage"]).kind == "magical" do
-          Map.put(ability, :result, :resisted)
-        else
-          Map.put(ability, :result, :deflected)
-        end
-        |> caster_cast_message(caster, target, mobile)
+      cond do
+        amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
+          if List.first(ability.traits["Damage"]).kind == "magical" do
+            Map.put(ability, :result, :resisted)
+          else
+            Map.put(ability, :result, :deflected)
+          end
+          |> caster_cast_message(caster, target, mobile)
 
-      :else ->
-        message =
-          ability.user_message
-          |> Text.interpolate(%{"target" => target, "amount" => abs(amount)})
-          |> Text.capitalize_first()
+        :else ->
+          message =
+            ability.user_message
+            |> Text.interpolate(%{"target" => target, "amount" => abs(amount)})
+            |> Text.capitalize_first()
 
-        "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+          "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+      end
     end
   end
 
@@ -2946,6 +2980,8 @@ defmodule ApathyDrive.Ability do
         %{} = _target,
         _mobile
       ) do
+    caster = ability.caster || caster
+
     message =
       ability.traits["DodgeTargetMessage"]
       |> Text.interpolate(%{"user" => caster, "ability" => ability.name})
@@ -2955,11 +2991,12 @@ defmodule ApathyDrive.Ability do
   end
 
   def target_cast_message(
-        %Ability{result: :blocked} = _ability,
+        %Ability{result: :blocked} = ability,
         %{} = caster,
         %{} = target,
         _mobile
       ) do
+    caster = ability.caster || caster
     shield = Character.shield(target).name
 
     message =
@@ -2971,11 +3008,12 @@ defmodule ApathyDrive.Ability do
   end
 
   def target_cast_message(
-        %Ability{result: :parried} = _ability,
+        %Ability{result: :parried} = ability,
         %{} = caster,
         %{} = target,
         _mobile
       ) do
+    caster = ability.caster || caster
     weapon = Character.weapon(target).name
 
     message =
@@ -3001,11 +3039,13 @@ defmodule ApathyDrive.Ability do
   end
 
   def target_cast_message(
-        %Ability{result: :deflected} = _ability,
+        %Ability{result: :deflected} = ability,
         %{} = caster,
         %{} = _target,
         _mobile
       ) do
+    caster = ability.caster || caster
+
     message =
       @deflect_message.target
       |> Text.interpolate(%{"user" => caster})
@@ -3020,6 +3060,8 @@ defmodule ApathyDrive.Ability do
         %{ability_shift: nil} = target,
         _mobile
       ) do
+    caster = ability.caster || caster
+
     message =
       ability.target_message
       |> Text.interpolate(%{"user" => caster})
@@ -3034,6 +3076,7 @@ defmodule ApathyDrive.Ability do
         %{ability_shift: _shift} = target,
         mobile
       ) do
+    caster = ability.caster || caster
     amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level))
 
     cond do
@@ -3061,6 +3104,8 @@ defmodule ApathyDrive.Ability do
         %{} = target,
         _mobile
       ) do
+    caster = ability.caster || caster
+
     message =
       ability.traits["DodgeSpectatorMessage"]
       |> Text.interpolate(%{"user" => caster, "target" => target, "ability" => ability.name})
@@ -3070,11 +3115,12 @@ defmodule ApathyDrive.Ability do
   end
 
   def spectator_cast_message(
-        %Ability{result: :blocked} = _ability,
+        %Ability{result: :blocked} = ability,
         %{} = caster,
         %{} = target,
         _mobile
       ) do
+    caster = ability.caster || caster
     shield = Character.shield(target).name
 
     message =
@@ -3086,11 +3132,12 @@ defmodule ApathyDrive.Ability do
   end
 
   def spectator_cast_message(
-        %Ability{result: :parried} = _ability,
+        %Ability{result: :parried} = ability,
         %{} = caster,
         %{} = target,
         _mobile
       ) do
+    caster = ability.caster || caster
     weapon = Character.weapon(target).name
 
     message =
@@ -3107,6 +3154,8 @@ defmodule ApathyDrive.Ability do
         %{} = target,
         _mobile
       ) do
+    caster = ability.caster || caster
+
     message =
       @resist_message.spectator
       |> Text.interpolate(%{"user" => caster, "target" => target, "ability" => ability.name})
@@ -3116,11 +3165,13 @@ defmodule ApathyDrive.Ability do
   end
 
   def spectator_cast_message(
-        %Ability{result: :deflected} = _ability,
+        %Ability{result: :deflected} = ability,
         %{} = caster,
         %{} = target,
         _mobile
       ) do
+    caster = ability.caster || caster
+
     message =
       @deflect_message.spectator
       |> Text.interpolate(%{"user" => caster, "target" => target})
@@ -3130,6 +3181,8 @@ defmodule ApathyDrive.Ability do
   end
 
   def spectator_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, mobile) do
+    caster = ability.caster || caster
+
     message =
       ability.spectator_message
       |> Text.interpolate(%{"user" => caster, "target" => target})
@@ -3144,6 +3197,8 @@ defmodule ApathyDrive.Ability do
         %{ability_shift: nil} = target,
         mobile
       ) do
+    caster = ability.caster || caster
+
     message =
       ability.spectator_message
       |> Text.interpolate(%{"user" => caster, "target" => target})
@@ -3158,6 +3213,8 @@ defmodule ApathyDrive.Ability do
         %{ability_shift: _shift} = target,
         mobile
       ) do
+    caster = ability.caster || caster
+
     amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level))
 
     cond do

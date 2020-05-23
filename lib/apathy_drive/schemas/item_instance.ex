@@ -8,6 +8,7 @@ defmodule ApathyDrive.ItemInstance do
     field(:hidden, :boolean)
     field(:purchased, :boolean, default: false)
     field(:dropped_for_character_id, :integer)
+    field(:owner_id, :integer)
     field(:delete_at, :utc_datetime_usec)
     field(:uses, :integer)
     field(:getable, :boolean)

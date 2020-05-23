@@ -110,6 +110,7 @@ defmodule ApathyDrive.Item do
     field(:global_drop_rarity, :string)
     field(:level, :integer)
 
+    field(:owner_id, :any, virtual: true)
     field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
@@ -248,6 +249,7 @@ defmodule ApathyDrive.Item do
         :hidden,
         :purchased,
         :dropped_for_character_id,
+        :owner_id,
         :delete_at,
         :uses
       ])
