@@ -44,6 +44,15 @@ defmodule ApathyDrive.Commands.System.Ability do
   end
 
   def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
+        "remove",
+        "class" | trait
+      ]) do
+    remove_class(room, character, trait)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
         "add",
         "attribute" | attribute
       ]) do
@@ -228,6 +237,24 @@ defmodule ApathyDrive.Commands.System.Ability do
 
       :else ->
         Mobile.send_scroll(character, "<p>Must provide a valid level.</p>")
+    end
+  end
+
+  defp remove_class(room, character, class) do
+    class = Enum.join(class, " ")
+
+    ability = character.editing
+
+    if class = Repo.get_by(Class, name: class) do
+      if ca = Repo.get_by(ClassAbility, class_id: class.id, ability_id: ability.id) do
+        Repo.delete!(ca)
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        Help.execute(room, character, [ability.name])
+      else
+        Mobile.send_scroll(character, "<p>#{class.name} does not have #{ability.name}.</p>")
+      end
+    else
+      Mobile.send_scroll(character, "<p>No class by that name was found.</p>")
     end
   end
 
