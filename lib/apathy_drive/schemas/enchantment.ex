@@ -21,6 +21,8 @@ defmodule ApathyDrive.Enchantment do
   schema "enchantments" do
     field(:finished, :boolean, default: false)
     field(:time_elapsed_in_seconds, :integer, default: 0)
+    field(:value, ApathyDrive.JSONB)
+
     belongs_to(:items_instances, ItemInstance)
     belongs_to(:ability, Ability)
     belongs_to(:skill, Skill)
@@ -150,9 +152,16 @@ defmodule ApathyDrive.Enchantment do
               enchanter
             end
 
-          enchantment
-          |> Ecto.Changeset.change(%{finished: true})
-          |> Repo.update!()
+          enchantment =
+            enchantment
+            |> Ecto.Changeset.change(%{finished: true})
+            |> Repo.update!()
+
+          if Map.has_key?(enchantment.ability.traits, "Claimed") do
+            enchantment
+            |> Ecto.Changeset.change(%{value: enchanter.id})
+            |> Repo.update!()
+          end
 
           message =
             "<p><span class='blue'>You've enchanted #{item.name} with #{enchantment.ability.name}.</span></p>"
@@ -375,6 +384,19 @@ defmodule ApathyDrive.Enchantment do
                 traits =
                   enchantment.ability.id
                   |> AbilityTrait.load_traits()
+
+                traits =
+                  case traits do
+                    %{"Claimed" => _} ->
+                      if character = Repo.get(Character, enchantment.value) do
+                        Map.put(traits, "Claimed", character.id)
+                      else
+                        Map.delete(traits, "Claimed")
+                      end
+
+                    %{} ->
+                      traits
+                  end
 
                 ability = put_in(ability.traits, traits)
 

@@ -12,6 +12,7 @@ defmodule ApathyDrive.Commands.Look do
     Item,
     Match,
     Mobile,
+    Repo,
     RoomServer,
     Shop,
     Trait
@@ -639,6 +640,17 @@ defmodule ApathyDrive.Commands.Look do
         list
       }</span></p>"
     )
+  end
+
+  def display_trait(character, _item, {"Claimed", id}, indent) do
+    if owner = Repo.get(Character, id) do
+      Mobile.send_scroll(
+        character,
+        "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Claimed by:</span> <span class='dark-cyan'>#{
+          owner.name
+        }</span></p>"
+      )
+    end
   end
 
   def display_trait(_character, _item, {"timers", _list}, _indent), do: :noop

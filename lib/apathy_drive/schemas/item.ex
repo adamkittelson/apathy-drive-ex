@@ -191,21 +191,15 @@ defmodule ApathyDrive.Item do
 
   def skill_for_character(%Character{} = character, %Item{type: type} = item)
       when type in ["Armour", "Shield"] do
-    type = item.armour_type
-
-    case character.skills[type] do
-      %{level: level} ->
-        level
-
-      _ ->
+    if owner_id = Systems.Effect.effect_bonus(item, "Claimed") do
+      if owner_id == character.id do
+        character.level
+      else
         0
-    end
-  end
+      end
+    else
+      type = item.armour_type
 
-  def skill_for_character(%Character{} = character, %Item{type: "Weapon"} = item) do
-    type = item.weapon_type
-
-    skill_level =
       case character.skills[type] do
         %{level: level} ->
           level
@@ -213,18 +207,40 @@ defmodule ApathyDrive.Item do
         _ ->
           0
       end
+    end
+  end
 
-    class_level =
-      item
-      |> Systems.Effect.effect_bonus("ClassOk")
-      |> Enum.map(fn class_id ->
-        Enum.find(character.classes, %{level: 0}, fn character_class ->
-          character_class.class_id == class_id
-        end).level
-      end)
-      |> Enum.max(fn -> 0 end)
+  def skill_for_character(%Character{} = character, %Item{type: "Weapon"} = item) do
+    if owner_id = Systems.Effect.effect_bonus(item, "Claimed") do
+      if owner_id == character.id do
+        character.level
+      else
+        0
+      end
+    else
+      type = item.weapon_type
 
-    max(skill_level, class_level)
+      skill_level =
+        case character.skills[type] do
+          %{level: level} ->
+            level
+
+          _ ->
+            0
+        end
+
+      class_level =
+        item
+        |> Systems.Effect.effect_bonus("ClassOk")
+        |> Enum.map(fn class_id ->
+          Enum.find(character.classes, %{level: 0}, fn character_class ->
+            character_class.class_id == class_id
+          end).level
+        end)
+        |> Enum.max(fn -> 0 end)
+
+      max(skill_level, class_level)
+    end
   end
 
   def skill_for_character(_character, _item), do: 1
