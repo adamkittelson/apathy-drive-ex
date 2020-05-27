@@ -80,7 +80,6 @@ defmodule ApathyDrive.Commands.System.Item do
   # end
 
   def execute(%Room{} = room, character, _args) do
-    IO.inspect(character.editing)
     Mobile.send_scroll(character, "<p>Invalid system command.</p>")
 
     room

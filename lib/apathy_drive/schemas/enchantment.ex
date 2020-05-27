@@ -111,12 +111,27 @@ defmodule ApathyDrive.Enchantment do
 
         enchanter
       else
+        roll = :rand.uniform()
+
         {:ok, enchantment} =
-          enchantment
-          |> Ecto.Changeset.change(%{
-            time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time
-          })
-          |> Repo.update()
+          if roll > 0.01 do
+            enchantment
+            |> Ecto.Changeset.change(%{
+              time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time
+            })
+            |> Repo.update()
+          else
+            message =
+              "<p><span class='magenta'>You fumble the work! Cursing, you start over.</span></p>"
+
+            Character.send_chat(enchanter, message)
+
+            enchantment
+            |> Ecto.Changeset.change(%{
+              time_elapsed_in_seconds: 0
+            })
+            |> Repo.update()
+          end
 
         item =
           enchantment
@@ -175,52 +190,26 @@ defmodule ApathyDrive.Enchantment do
         else
           Mobile.send_scroll(enchanter, "<p>#{enchantment.ability.traits["TickMessage"]}</p>")
 
-          item = load_enchantments(item)
+          Mobile.send_scroll(
+            enchanter,
+            "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+              formatted_time_left(time_left)
+            }</span></p>"
+          )
 
-          roll = :rand.uniform()
+          next_tick_time = next_tick_time(enchanter, enchantment)
 
-          # 1% chance per tick to shatter
-          if roll > 0.01 do
-            Mobile.send_scroll(
-              enchanter,
-              "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                formatted_time_left(time_left)
-              }</span></p>"
+          enchanter =
+            enchanter
+            |> TimerManager.send_after(
+              {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
+               {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
             )
 
-            next_tick_time = next_tick_time(enchanter, enchantment)
-
-            enchanter =
-              enchanter
-              |> TimerManager.send_after(
-                {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
-                 {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
-              )
-
-            enchanter
-            |> add_enchantment_exp(enchantment)
-            |> Map.put(:enchantment, enchantment)
-            |> Character.load_items()
-          else
-            ItemInstance
-            |> Repo.get!(item.instance_id)
-            |> Repo.delete!()
-
-            message =
-              "<p><span class='magenta'>The #{item.name} shatters into a million pieces!</span></p>"
-
-            Character.send_chat(enchanter, message)
-
-            Room.send_scroll(
-              room,
-              "<p><span class='magenta'>#{enchanter.name} shatters a #{item.name} into a million pieces!</span></p>",
-              [enchanter]
-            )
-
-            enchanter
-            |> Map.put(:enchantment, nil)
-            |> Character.load_items()
-          end
+          enchanter
+          |> add_enchantment_exp(enchantment)
+          |> Map.put(:enchantment, enchantment)
+          |> Character.load_items()
         end
       end
     end)
@@ -242,7 +231,6 @@ defmodule ApathyDrive.Enchantment do
       })
     end)
     |> ApathyDrive.Character.add_experience_to_buffer(exp)
-    |> ApathyDrive.Character.add_skill_experience(skill.name, exp)
   end
 
   def add_enchantment_exp(enchanter, enchantment) do

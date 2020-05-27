@@ -4,9 +4,7 @@ defmodule ApathyDrive.Commands.Train do
   alias ApathyDrive.{
     Character,
     CharacterClass,
-    ClassSkill,
     Directory,
-    Level,
     Repo,
     Trainer
   }
@@ -70,22 +68,10 @@ defmodule ApathyDrive.Commands.Train do
           end
 
         character =
-          class_id
-          |> ClassSkill.load_skills()
-          |> Enum.reduce(character, fn skill_name, character ->
-            skill = character.skills[skill_name]
-            exp = skill.experience
-            level = skill.level
-
-            to_level = Level.exp_at_level(level + 1, 1.0)
-
-            Character.add_skill_experience(character, skill_name, to_level - exp)
-          end)
-
-        character =
           character
           |> Character.load_classes()
           |> Character.load_race()
+          |> Character.set_skill_levels()
           |> Character.add_equipped_items_effects()
           |> Character.load_abilities()
           |> Character.set_title()

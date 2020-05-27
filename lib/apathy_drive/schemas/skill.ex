@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Skill do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{CharacterSkill, Match, SkillAttribute}
+  alias ApathyDrive.Match
 
   schema "skills" do
     field(:name, :string)
@@ -11,12 +11,6 @@ defmodule ApathyDrive.Skill do
 
     has_many(:characters_skills, ApathyDrive.CharacterSkill)
     has_many(:characters, through: [:characters_skills, :character])
-  end
-
-  def set_level(%CharacterSkill{experience: exp, exp_multiplier: multiplier} = skill)
-      when not is_nil(exp) do
-    put_in(skill.level, ApathyDrive.Level.level_at_exp(exp, multiplier))
-    |> Map.put(:attributes, SkillAttribute.attributes(skill.id))
   end
 
   def create_changeset(name) do

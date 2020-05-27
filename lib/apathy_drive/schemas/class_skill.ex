@@ -17,8 +17,8 @@ defmodule ApathyDrive.ClassSkill do
     |> where([mt], mt.class_id == ^class_id)
     |> preload(:skill)
     |> Repo.all()
-    |> Enum.reduce([], fn %{skill: %{name: skill}}, skills ->
-      [skill | skills]
+    |> Enum.reduce([], fn %{skill: skill}, skills ->
+      [%{id: skill.id, name: skill.name} | skills]
     end)
   end
 end
