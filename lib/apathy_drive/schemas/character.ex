@@ -407,6 +407,8 @@ defmodule ApathyDrive.Character do
   end
 
   def set_skill_levels(%Character{} = character) do
+    character = put_in(character.skills, %{})
+
     character.classes
     |> Enum.reduce(character, fn %{class_id: id, level: level}, character ->
       id
@@ -1351,13 +1353,7 @@ defmodule ApathyDrive.Character do
 
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
-      character_value = Systems.Effect.effect_bonus(character, ability) || 0
-
-      Enum.reduce(character.equipment, %{ability => character_value}, fn item, value ->
-        bonus = Systems.Effect.effect_bonus(item, ability)
-        Trait.merge_traits(value, %{ability => bonus})
-      end)
-      |> Map.get(ability)
+      Systems.Effect.effect_bonus(character, ability) || 0
     end
 
     def accuracy_at_level(character, _level, _room) do

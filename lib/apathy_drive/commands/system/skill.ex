@@ -1,5 +1,16 @@
 defmodule ApathyDrive.Commands.System.Skill do
-  alias ApathyDrive.{Ability, Mobile, Repo, Room, Skill, SkillAbility, SkillIncompatibility}
+  alias ApathyDrive.{
+    Ability,
+    Class,
+    ClassSkill,
+    Mobile,
+    Repo,
+    Room,
+    Skill,
+    SkillAbility,
+    SkillIncompatibility
+  }
+
   require Ecto.Query
 
   def execute(%Room{} = room, character, ["add", "ability" | args]) do
@@ -11,6 +22,13 @@ defmodule ApathyDrive.Commands.System.Skill do
       |> Enum.join(" ")
 
     add_ability_to_skill(room, character, ability, level)
+    room
+  end
+
+  def execute(%Room{} = room, character, ["add", "class" | args]) do
+    class = Enum.join(args, " ")
+
+    add_class(room, character, class)
     room
   end
 
@@ -161,6 +179,25 @@ defmodule ApathyDrive.Commands.System.Skill do
 
       :error ->
         Mobile.send_scroll(character, "<p>Level must be an integer.</p>")
+    end
+
+    room
+  end
+
+  def add_class(%Room{} = room, character, class) do
+    class = Repo.get_by(Class, name: class)
+
+    skill = character.editing
+
+    cond do
+      is_nil(class) ->
+        Mobile.send_scroll(character, "<p>No class by that name was found.</p>")
+
+      :else ->
+        %ClassSkill{skill_id: skill.id, class_id: class.id}
+        |> Repo.insert(on_conflict: :nothing)
+
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
     end
 
     room
