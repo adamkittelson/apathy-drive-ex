@@ -35,6 +35,15 @@ defmodule ApathyDrive.Commands.System.Ability do
   end
 
   def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
+        "remove",
+        "trait" | trait
+      ]) do
+    remove_trait(room, character, trait)
+
+    room
+  end
+
+  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
         "add",
         "class" | trait
       ]) do
@@ -283,6 +292,24 @@ defmodule ApathyDrive.Commands.System.Ability do
 
         ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
         Help.execute(room, character, [ability.name])
+    end
+  end
+
+  defp remove_trait(room, character, trait) do
+    trait = Enum.join(trait, " ")
+
+    ability = character.editing
+
+    if trait = Repo.get_by(Trait, name: trait) do
+      if ca = Repo.get_by(AbilityTrait, trait_id: trait.id, ability_id: ability.id) do
+        Repo.delete!(ca)
+        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
+        Help.execute(room, character, [ability.name])
+      else
+        Mobile.send_scroll(character, "<p>#{ability.name} does not have #{trait.name}.</p>")
+      end
+    else
+      Mobile.send_scroll(character, "<p>No trait by that name was found.</p>")
     end
   end
 

@@ -526,6 +526,33 @@ defmodule ApathyDrive.Commands.Help do
       )
     end
 
+    if ability.user_message do
+      Mobile.send_scroll(
+        character,
+        "<p>\n<span class='dark-green'>User Message: </span><span class='dark-cyan'>#{
+          ability.user_message
+        }</span></p>"
+      )
+    end
+
+    if ability.target_message do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Target Message: </span><span class='dark-cyan'>#{
+          ability.target_message
+        }</span></p>"
+      )
+    end
+
+    if ability.spectator_message do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Spectator Message: </span><span class='dark-cyan'>#{
+          ability.spectator_message
+        }</span></p>"
+      )
+    end
+
     traits = AbilityTrait.load_traits(ability.id)
 
     traits =
@@ -534,8 +561,36 @@ defmodule ApathyDrive.Commands.Help do
           traits
 
         damage ->
-          Map.put(traits, "Damage", damage)
+          if traits["Elemental"] do
+            elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
+            damage = List.delete(damage, elemental_damage)
+
+            if lore = character.lore do
+              elemental_damage =
+                Enum.map(lore.damage_types, fn damage ->
+                  damage
+                  |> Map.put(:min, elemental_damage.min)
+                  |> Map.put(:max, elemental_damage.min)
+                end)
+
+              Map.put(traits, "Damage", elemental_damage ++ damage)
+            else
+              elemental_damage = Map.put(elemental_damage, :damage_type, "Elemental")
+              Map.put(traits, "Damage", [elemental_damage | damage])
+            end
+          else
+            Map.put(traits, "Damage", damage)
+          end
       end
+
+    if traits["RemoveMessage"] do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Remove Message: </span><span class='dark-cyan'>#{
+          traits["RemoveMessage"]
+        }</span></p>"
+      )
+    end
 
     Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Effects:</span></p>")
 

@@ -866,6 +866,8 @@ defmodule ApathyDrive.Ability do
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, item, ability)
 
+          display_cast_message(room, caster, item, ability)
+
           caster =
             caster
             |> apply_cooldowns(ability)
@@ -875,9 +877,54 @@ defmodule ApathyDrive.Ability do
           effects =
             ability.traits
             |> Map.take(@duration_traits)
-            |> Map.put("stack_key", ability.id)
-            |> Map.put("stack_count", 1)
+            |> Map.put("stack_key", ability.traits["StackKey"] || ability.id)
+            |> Map.put("stack_count", ability.traits["StackCount"] || 1)
             |> Map.put("effect_ref", make_ref())
+
+          effects =
+            if damage = effects["Damage"] do
+              effects =
+                if ability.traits["Elemental"] do
+                  elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
+                  damage = List.delete(damage, elemental_damage)
+
+                  if lore = caster.lore do
+                    elemental_damage =
+                      Enum.map(lore.damage_types, fn damage ->
+                        damage
+                        |> Map.put(:min, elemental_damage.min)
+                        |> Map.put(:max, elemental_damage.min)
+                      end)
+
+                    Map.put(effects, "Damage", elemental_damage ++ damage)
+                  else
+                    elemental_damage = Map.put(elemental_damage, :damage_type, "Elemental")
+                    Map.put(effects, "Damage", [elemental_damage | damage])
+                  end
+                else
+                  Map.put(effects, "Damage", damage)
+                end
+
+              effects
+              |> Map.put("WeaponDamage", effects["Damage"])
+              |> Map.delete("Damage")
+            else
+              effects
+            end
+
+          effects =
+            if message = effects["RemoveMessage"] do
+              message =
+                message
+                |> Text.interpolate(%{
+                  "item" => item.name,
+                  "lore" => caster.lore && caster.lore.name
+                })
+
+              Map.put(effects, "RemoveMessage", message)
+            else
+              effects
+            end
 
           item = Systems.Effect.add(item, effects, :timer.seconds(ability.duration))
 
@@ -2912,17 +2959,13 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def caster_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, mobile) do
-    if target.ref == caster.ref && ability.caster do
-      target_cast_message(ability, caster, target, mobile)
-    else
-      message =
-        ability.user_message
-        |> Text.interpolate(%{"target" => target})
-        |> Text.capitalize_first()
+  def caster_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, _mobile) do
+    message =
+      ability.user_message
+      |> Text.interpolate(%{"target" => target, "lore" => caster.lore.name})
+      |> Text.capitalize_first()
 
-      "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
-    end
+    "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
   end
 
   def caster_cast_message(

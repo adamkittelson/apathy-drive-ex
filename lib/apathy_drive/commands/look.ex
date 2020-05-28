@@ -654,6 +654,7 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_trait(_character, _item, {"timers", _list}, _indent), do: :noop
+  def display_trait(_character, _item, {"effect_ref", _list}, _indent), do: :noop
 
   def display_trait(character, _item, {trait, list}, indent) when is_list(list) do
     Mobile.send_scroll(
@@ -670,7 +671,7 @@ defmodule ApathyDrive.Commands.Look do
     Mobile.send_scroll(
       character,
       "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
-        value
+        inspect(value)
       }</span></p>"
     )
   end

@@ -9,11 +9,7 @@ defmodule ApathyDrive.JSONB do
         {:ok, any}
 
       _ ->
-        if String.contains?(json, ["{", "}", "[", "]"]) do
-          :error
-        else
-          {:ok, json}
-        end
+        {:ok, json}
     end
   end
 
