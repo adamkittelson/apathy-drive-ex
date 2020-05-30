@@ -87,7 +87,7 @@ defmodule Systems.Effect do
       )
     end
 
-    remove(entity, oldest)
+    remove(entity, oldest, show_expiration_message: entity)
   end
 
   def remove_all_stacks(%{effects: _effects} = entity, stack_key) do
@@ -126,6 +126,9 @@ defmodule Systems.Effect do
               case opts[:show_expiration_message] do
                 %Room{} = room ->
                   Room.send_scroll(room, message)
+
+                %Item{} = item ->
+                  Item.send_scroll(item, message)
 
                 %{} = mobile ->
                   Mobile.send_scroll(mobile, message)

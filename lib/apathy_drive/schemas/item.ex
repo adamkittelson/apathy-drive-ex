@@ -13,6 +13,8 @@ defmodule ApathyDrive.Item do
     ItemTrait,
     Match,
     Mobile,
+    PubSub,
+    RoomServer,
     ShopItem
   }
 
@@ -149,6 +151,18 @@ defmodule ApathyDrive.Item do
     |> cast(%{description: description}, [:description])
     |> validate_required(:description)
     |> validate_length(:description, min: 20, max: 500)
+  end
+
+  def send_scroll(%Item{} = item, message) do
+    case Repo.get(ItemInstance, item.instance_id) do
+      %{room_id: room_id, character_id: nil} ->
+        room_id
+        |> RoomServer.find()
+        |> send({:item_message, item.instance_id, message})
+
+      _ ->
+        PubSub.broadcast!("rooms", {:item_message, item.instance_id, message})
+    end
   end
 
   def set_room_destruct_message_changeset(model, room_destruct_message) do

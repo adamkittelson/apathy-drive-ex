@@ -997,6 +997,31 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info({:item_message, instance_id, message}, room) do
+    if Enum.find(room.items, &(&1.instance_id == instance_id)) do
+      Room.send_scroll(room, message)
+    else
+      Enum.find(room.mobiles, fn
+        {_ref, %Character{} = character} ->
+          Enum.find(character.inventory ++ character.equipment, fn item ->
+            item.instance_id == instance_id
+          end)
+
+        _ ->
+          false
+      end)
+      |> case do
+        {_ref, character} ->
+          Mobile.send_scroll(character, message)
+
+        _ ->
+          :noop
+      end
+    end
+
+    {:noreply, room}
+  end
+
   def handle_info(message, room) do
     IO.inspect(message)
     {:noreply, room}
