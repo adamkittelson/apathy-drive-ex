@@ -926,47 +926,72 @@ defmodule ApathyDrive.Ability do
               effects
             end
 
-          item = Systems.Effect.add(item, effects, :timer.seconds(ability.duration))
+          if "lock enchantment" in item.enchantments do
+            lock_enchantment_id = Repo.get_by(Ability, name: "lock enchantment").id
 
-          caster =
-            if item.equipped do
-              location =
-                Enum.find_index(
-                  caster.equipment,
-                  &(&1.instance_id == item.instance_id)
-                )
-
-              update_in(caster.equipment, &List.replace_at(&1, location, item))
-            else
-              location =
-                Enum.find_index(
-                  caster.inventory,
-                  &(&1.instance_id == item.instance_id)
-                )
-
-              update_in(caster.inventory, &List.replace_at(&1, location, item))
-            end
-
-          Mobile.update_prompt(caster, room)
-          room = put_in(room.mobiles[caster_ref], caster)
-
-          Room.update_energy_bar(room, caster_ref)
-          Room.update_hp_bar(room, caster_ref)
-          Room.update_mana_bar(room, caster_ref)
-
-          Room.update_moblist(room)
-
-          if script = ability.traits["Script"] do
-            room
-            |> Room.update_mobile(caster_ref, fn room, caster ->
-              Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
-                room,
-                caster.ref,
-                item
+            enchantment =
+              Enchantment
+              |> Repo.get_by(
+                ability_id: lock_enchantment_id,
+                items_instances_id: item.instance_id
               )
-            end)
+
+            value =
+              if ability.traits["Elemental"] do
+                caster.lore.name
+              end
+
+            enchantment
+            |> Ecto.Changeset.change(%{
+              ability_id: ability.id,
+              value: value
+            })
+            |> Repo.update()
+
+            Character.load_items(caster)
           else
-            room
+            item = Systems.Effect.add(item, effects, :timer.seconds(ability.duration))
+
+            caster =
+              if item.equipped do
+                location =
+                  Enum.find_index(
+                    caster.equipment,
+                    &(&1.instance_id == item.instance_id)
+                  )
+
+                update_in(caster.equipment, &List.replace_at(&1, location, item))
+              else
+                location =
+                  Enum.find_index(
+                    caster.inventory,
+                    &(&1.instance_id == item.instance_id)
+                  )
+
+                update_in(caster.inventory, &List.replace_at(&1, location, item))
+              end
+
+            Mobile.update_prompt(caster, room)
+            room = put_in(room.mobiles[caster_ref], caster)
+
+            Room.update_energy_bar(room, caster_ref)
+            Room.update_hp_bar(room, caster_ref)
+            Room.update_mana_bar(room, caster_ref)
+
+            Room.update_moblist(room)
+
+            if script = ability.traits["Script"] do
+              room
+              |> Room.update_mobile(caster_ref, fn room, caster ->
+                Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
+                  room,
+                  caster.ref,
+                  item
+                )
+              end)
+            else
+              room
+            end
           end
 
         :else ->

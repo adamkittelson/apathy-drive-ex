@@ -7,6 +7,7 @@ defmodule ApathyDrive.Enchantment do
     AbilityTrait,
     Character,
     CraftingRecipe,
+    DamageType,
     Enchantment,
     Item,
     ItemInstance,
@@ -337,7 +338,7 @@ defmodule ApathyDrive.Enchantment do
     )
     |> Ecto.Query.preload(:ability)
     |> Repo.all()
-    |> Enum.map(& &1.ability.cast_time)
+    |> Enum.map(&(&1.ability.cast_time || 0))
     |> Enum.sum()
   end
 
@@ -374,6 +375,36 @@ defmodule ApathyDrive.Enchantment do
                   |> AbilityTrait.load_traits()
 
                 traits =
+                  case AbilityDamageType.load_damage(enchantment.ability.id) do
+                    [] ->
+                      traits
+
+                    damage ->
+                      if traits["Elemental"] do
+                        elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
+                        damage = List.delete(damage, elemental_damage)
+
+                        lore = ApathyDrive.ElementalLores.lores()[enchantment.value]
+
+                        elemental_damage =
+                          Enum.map(lore.damage_types, fn damage ->
+                            damage_type_id = Repo.get_by(DamageType, name: damage.damage_type).id
+
+                            damage
+                            |> Map.put(:min, elemental_damage.min)
+                            |> Map.put(:max, elemental_damage.min)
+                            |> Map.put(:damage_type_id, damage_type_id)
+                          end)
+
+                        traits
+                        |> Map.put("WeaponDamage", elemental_damage ++ damage)
+                        |> Map.delete("Elemental")
+                      else
+                        Map.put(traits, "WeaponDamage", damage)
+                      end
+                  end
+
+                traits =
                   case traits do
                     %{"Claimed" => _} ->
                       if character = Repo.get(Character, enchantment.value) do
@@ -387,15 +418,6 @@ defmodule ApathyDrive.Enchantment do
                   end
 
                 ability = put_in(ability.traits, traits)
-
-                ability =
-                  case AbilityDamageType.load_damage(enchantment.ability.id) do
-                    [] ->
-                      ability
-
-                    damage ->
-                      update_in(ability.traits, &Map.put(&1, "WeaponDamage", damage))
-                  end
 
                 # cond do
                 #   ability.kind in ["attack", "curse"] and item.type == "Weapon" ->
