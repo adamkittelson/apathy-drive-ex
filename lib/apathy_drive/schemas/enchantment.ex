@@ -311,7 +311,17 @@ defmodule ApathyDrive.Enchantment do
   def max_stacks?(%Item{} = item, %Ability{} = ability) do
     stack_count = ability.traits["StackCount"] || 1
 
-    count(item, ability) >= stack_count
+    max_stacks? = count(item, ability) >= stack_count
+
+    lock_count =
+      Enchantment
+      |> Ecto.Query.where([e], e.items_instances_id == ^item.instance_id)
+      |> Ecto.Query.preload([:ability])
+      |> Repo.all()
+      |> Enum.filter(&(&1.ability.kind != "long-term"))
+      |> length()
+
+    max_stacks? or lock_count >= 2
   end
 
   def count(%Item{} = item, %Ability{} = ability) do
@@ -417,6 +427,14 @@ defmodule ApathyDrive.Enchantment do
                       traits
                   end
 
+                traits =
+                  traits
+                  |> Map.put("Enchantment", true)
+                  |> Map.put("stack_count", traits["StackCount"] || 1)
+                  |> Map.put("stack_key", traits["StackKey"] || ability.id)
+                  |> Map.delete("StackCount")
+                  |> Map.delete("StackKey")
+
                 ability = put_in(ability.traits, traits)
 
                 # cond do
@@ -430,9 +448,20 @@ defmodule ApathyDrive.Enchantment do
                 #     Map.put(traits, "Grant", ability)
                 # end
 
+                enchantment_name =
+                  if ability.kind == "long-term" do
+                    ability.name
+                  else
+                    if traits["Elemental"] do
+                      "#{ability.name} (locked)"
+                    else
+                      String.replace(ability.name, "elemental", enchantment.value) <> " (locked)"
+                    end
+                  end
+
                 item
                 |> Systems.Effect.add(ability.traits)
-                |> Map.put(:enchantments, [ability.name | item.enchantments])
+                |> Map.put(:enchantments, [enchantment_name | item.enchantments])
               else
                 item
               end

@@ -926,7 +926,7 @@ defmodule ApathyDrive.Ability do
               effects
             end
 
-          if "lock enchantment" in item.enchantments do
+          if "lock enchantment" in item.enchantments and !ability.traits["Script"] do
             lock_enchantment_id = Repo.get_by(Ability, name: "lock enchantment").id
 
             enchantment =
@@ -948,38 +948,13 @@ defmodule ApathyDrive.Ability do
             })
             |> Repo.update()
 
+            Room.send_scroll(
+              room,
+              "<p><span class='blue'>An enchantment on the weapon flares, making the spell permanent.</span></p>"
+            )
+
             Character.load_items(caster)
           else
-            item = Systems.Effect.add(item, effects, :timer.seconds(ability.duration))
-
-            caster =
-              if item.equipped do
-                location =
-                  Enum.find_index(
-                    caster.equipment,
-                    &(&1.instance_id == item.instance_id)
-                  )
-
-                update_in(caster.equipment, &List.replace_at(&1, location, item))
-              else
-                location =
-                  Enum.find_index(
-                    caster.inventory,
-                    &(&1.instance_id == item.instance_id)
-                  )
-
-                update_in(caster.inventory, &List.replace_at(&1, location, item))
-              end
-
-            Mobile.update_prompt(caster, room)
-            room = put_in(room.mobiles[caster_ref], caster)
-
-            Room.update_energy_bar(room, caster_ref)
-            Room.update_hp_bar(room, caster_ref)
-            Room.update_mana_bar(room, caster_ref)
-
-            Room.update_moblist(room)
-
             if script = ability.traits["Script"] do
               room
               |> Room.update_mobile(caster_ref, fn room, caster ->
@@ -990,7 +965,37 @@ defmodule ApathyDrive.Ability do
                 )
               end)
             else
-              room
+              item = Systems.Effect.add(item, effects, :timer.seconds(ability.duration))
+
+              caster =
+                if item.equipped do
+                  location =
+                    Enum.find_index(
+                      caster.equipment,
+                      &(&1.instance_id == item.instance_id)
+                    )
+
+                  update_in(caster.equipment, &List.replace_at(&1, location, item))
+                else
+                  location =
+                    Enum.find_index(
+                      caster.inventory,
+                      &(&1.instance_id == item.instance_id)
+                    )
+
+                  update_in(caster.inventory, &List.replace_at(&1, location, item))
+                end
+
+              Mobile.update_prompt(caster, room)
+              room = put_in(room.mobiles[caster_ref], caster)
+
+              Room.update_energy_bar(room, caster_ref)
+              Room.update_hp_bar(room, caster_ref)
+              Room.update_mana_bar(room, caster_ref)
+
+              Room.update_moblist(room)
+
+              caster
             end
           end
 
@@ -2508,6 +2513,11 @@ defmodule ApathyDrive.Ability do
 
   def duration_traits(%Ability{} = ability) do
     ability.traits
+    |> Map.take(@duration_traits)
+  end
+
+  def duration_traits(%{} = traits) do
+    traits
     |> Map.take(@duration_traits)
   end
 

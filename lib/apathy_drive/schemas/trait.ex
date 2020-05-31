@@ -158,6 +158,7 @@ defmodule ApathyDrive.Trait do
             "Aggro",
             "effect_ref",
             "ClassLevel",
+            "Enchantment",
             "Passive",
             "Learn"
           ] ->

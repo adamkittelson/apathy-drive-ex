@@ -73,10 +73,11 @@ defmodule Systems.Effect do
     |> Map.put(:last_effect_key, last_effect + 1)
   end
 
-  def remove_oldest_stack(%{effects: _effects} = entity, stack_key) do
+  def remove_oldest_stack(%{effects: effects} = entity, stack_key) do
     oldest =
       entity
       |> stack(stack_key)
+      |> Enum.reject(&effects[&1]["Enchantment"])
       |> Enum.sort()
       |> List.first()
 

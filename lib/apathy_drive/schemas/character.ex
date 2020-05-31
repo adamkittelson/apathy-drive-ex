@@ -553,9 +553,12 @@ defmodule ApathyDrive.Character do
           character
       end)
 
-    Enum.reduce(character.equipment, character, fn item, updated_character ->
-      add_equipped_item_effects(updated_character, item)
-    end)
+    character =
+      Enum.reduce(character.equipment, character, fn item, updated_character ->
+        add_equipped_item_effects(updated_character, item)
+      end)
+
+    character
   end
 
   def add_equipped_item_effects(%Character{} = character, item) do
@@ -563,6 +566,7 @@ defmodule ApathyDrive.Character do
       item.effects
       |> Map.values()
       |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
+      |> Ability.duration_traits()
       |> Ability.process_duration_traits(character, character, nil)
       |> Map.put("stack_key", "item-#{item.instance_id}")
       |> Map.put("stack_count", 1)

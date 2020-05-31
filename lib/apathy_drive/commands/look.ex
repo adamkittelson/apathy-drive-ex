@@ -549,6 +549,7 @@ defmodule ApathyDrive.Commands.Look do
   def display_trait(_character, _item, {"RemoveMessage", _msg}, _indent), do: :noop
   def display_trait(_character, _item, {"stack_count", _msg}, _indent), do: :noop
   def display_trait(_character, _item, {"stack_key", _msg}, _indent), do: :noop
+  def display_trait(_character, _item, {"Enchantment", _msg}, _indent), do: :noop
 
   def display_trait(_character, _item, {"Learn", _list}, _indent), do: :noop
 
@@ -565,6 +566,7 @@ defmodule ApathyDrive.Commands.Look do
   def display_trait(_character, _item, {"OnHit%", _abilities}, _indent), do: :noop
   def display_trait(_character, _item, {"StackCount", _damage}, _indent), do: :noop
   def display_trait(_character, _item, {"StackKey", _damage}, _indent), do: :noop
+  def display_trait(_character, _item, {"Del@Maint", _damage}, _indent), do: :noop
 
   def display_trait(character, item, {"OnHit", abilities}, indent) do
     on_hit = Systems.Effect.effect_bonus(item, "OnHit%")
@@ -626,21 +628,22 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def display_trait(character, _item, {"ClassOk", list}, indent) do
-    list =
-      list
-      |> List.wrap()
-      |> Enum.map(&ApathyDrive.Repo.get!(ApathyDrive.Class, &1))
-      |> Enum.map(& &1.name)
-      |> ApathyDrive.Commands.Inventory.to_sentence()
+  def display_trait(_character, _item, {"ClassOk", _list}, _indent), do: :noop
+  # def display_trait(character, _item, {"ClassOk", list}, indent) do
+  #   list =
+  #     list
+  #     |> List.wrap()
+  #     |> Enum.map(&ApathyDrive.Repo.get!(ApathyDrive.Class, &1))
+  #     |> Enum.map(& &1.name)
+  #     |> ApathyDrive.Commands.Inventory.to_sentence()
 
-    Mobile.send_scroll(
-      character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>ClassOk:</span> <span class='dark-cyan'>#{
-        list
-      }</span></p>"
-    )
-  end
+  #   Mobile.send_scroll(
+  #     character,
+  #     "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>ClassOk:</span> <span class='dark-cyan'>#{
+  #       list
+  #     }</span></p>"
+  #   )
+  # end
 
   def display_trait(character, _item, {"Claimed", id}, indent) do
     if owner = Repo.get(Character, id) do
