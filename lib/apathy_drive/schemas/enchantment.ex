@@ -459,9 +459,17 @@ defmodule ApathyDrive.Enchantment do
                     end
                   end
 
+                weight =
+                  if traits["MassReduction"] do
+                    div(Repo.get(Item, item.id).weight, 2)
+                  else
+                    item.weight
+                  end
+
                 item
                 |> Systems.Effect.add(ability.traits)
                 |> Map.put(:enchantments, [enchantment_name | item.enchantments])
+                |> Map.put(:weight, weight)
               else
                 item
               end

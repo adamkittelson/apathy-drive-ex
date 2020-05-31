@@ -16,6 +16,7 @@ defmodule ApathyDrive.JSONB do
   def cast(%{} = map), do: {:ok, map}
   def cast(list) when is_list(list), do: {:ok, list}
   def cast(number) when is_number(number), do: {:ok, number}
+  def cast(boolean) when is_boolean(boolean), do: {:ok, boolean}
   def cast(_), do: :error
 
   def blank?(nil), do: true
