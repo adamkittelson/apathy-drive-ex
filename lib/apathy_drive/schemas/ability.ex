@@ -62,6 +62,7 @@ defmodule ApathyDrive.Ability do
     field(:crit_tables, :any, virtual: true, default: [])
     field(:auto, :boolean, virtual: true, default: true)
     field(:class_id, :integer, virtual: true)
+    field(:skill_id, :integer, virtual: true)
 
     belongs_to(:crit_table, ApathyDrive.DamageType)
 

@@ -12,6 +12,7 @@ defmodule ApathyDrive.Character do
     CharacterClass,
     CharacterMaterial,
     CharacterRace,
+    CharacterSkill,
     CharacterTrait,
     Class,
     ClassSkill,
@@ -29,6 +30,7 @@ defmodule ApathyDrive.Character do
     RaceTrait,
     Room,
     RoomServer,
+    Skill,
     Statix,
     Text,
     TimerManager,
@@ -306,7 +308,7 @@ defmodule ApathyDrive.Character do
 
     skill_abilities =
       character.skills
-      |> Enum.map(fn {_name, %{id: id, level: level}} ->
+      |> Enum.map(fn {_name, %{skill_id: id, level: level}} ->
         ApathyDrive.SkillAbility.abilities_at_level(id, level)
       end)
       |> List.flatten()
@@ -409,15 +411,44 @@ defmodule ApathyDrive.Character do
   def set_skill_levels(%Character{} = character) do
     character = put_in(character.skills, %{})
 
-    character.classes
-    |> Enum.reduce(character, fn %{class_id: id, level: level}, character ->
-      id
-      |> ClassSkill.load_skills()
-      |> Enum.reduce(character, fn %{name: name} = skill, character ->
-        character
-        |> update_in([:skills], &Map.put_new(&1, name, Map.put(skill, :level, 0)))
-        |> update_in([:skills, name, :level], &(&1 + level))
+    character =
+      character.classes
+      |> Enum.reduce(character, fn %{class_id: id, level: level}, character ->
+        id
+        |> ClassSkill.load_skills()
+        |> Enum.reduce(character, fn %{name: name} = skill, character ->
+          character
+          |> update_in([:skills], &Map.put_new(&1, name, Map.put(skill, :level, 0)))
+          |> update_in([:skills, name, :level], &(&1 + level))
+        end)
       end)
+
+    Skill
+    |> Repo.all()
+    |> Enum.reduce(character, fn skill, character ->
+      case Repo.get_by(CharacterSkill, character_id: character.id, skill_id: skill.id) do
+        nil ->
+          character_skill =
+            %CharacterSkill{
+              character_id: character.id,
+              skill_id: skill.id,
+              exp_multiplier: skill.exp_multiplier,
+              experience: 0
+            }
+            |> Repo.insert!()
+
+          character_skill = Skill.set_level(character_skill)
+
+          put_in(character.skills[skill.name], character_skill)
+
+        %CharacterSkill{} = character_skill ->
+          character_skill =
+            character_skill
+            |> Map.put(:exp_multiplier, skill.exp_multiplier)
+            |> Skill.set_level()
+
+          put_in(character.skills[skill.name], character_skill)
+      end
     end)
   end
 
@@ -940,6 +971,57 @@ defmodule ApathyDrive.Character do
   end
 
   def add_attribute_experience(%{} = character, %{} = _attributes), do: character
+
+  def add_skill_experience(%Character{} = character, skill_name, amount) do
+    old_abilities = Map.values(character.abilities)
+    skill_level = character.skills[skill_name].level
+
+    skill =
+      character.skills[skill_name]
+      |> Ecto.Changeset.change(%{
+        experience: character.skills[skill_name].experience + trunc(amount)
+      })
+      |> Repo.update!()
+      |> Skill.set_level()
+
+    character = put_in(character.skills[skill_name], skill)
+
+    new_skill_level = skill.level
+
+    if new_skill_level > skill_level do
+      message =
+        "<p><span class='yellow'>Your #{skill_name} skill increased to #{new_skill_level}!</span></p>"
+
+      Repo.insert!(%ChannelHistory{
+        character_id: character.id,
+        message: message
+      })
+
+      Character.send_chat(
+        character,
+        message
+      )
+
+      character = Character.load_abilities(character)
+
+      new_abilities = Map.values(character.abilities)
+
+      Enum.each(new_abilities, fn ability ->
+        unless ability in old_abilities do
+          Mobile.send_scroll(
+            character,
+            "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
+          )
+
+          Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
+        end
+      end)
+
+      character
+    else
+      character
+    end
+  end
 
   def drain_exp_buffer(%Character{exp_buffer: 0} = character), do: character
 

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.SkillAbility do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, Skill}
+  alias ApathyDrive.{Ability, AbilityAttribute, Skill}
 
   schema "skills_abilities" do
     belongs_to(:skill, Skill)
@@ -17,5 +17,14 @@ defmodule ApathyDrive.SkillAbility do
     |> Ecto.Query.preload([:ability])
     |> Repo.all()
     |> Enum.map(&put_in(&1, [Access.key!(:ability), Access.key!(:level)], &1.level))
+    |> Enum.map(fn skill_ability ->
+      skill_ability = put_in(skill_ability.ability.level, skill_ability.level)
+      skill_ability = put_in(skill_ability.ability.skill_id, skill_id)
+
+      put_in(
+        skill_ability.ability.attributes,
+        AbilityAttribute.load_attributes(skill_ability.ability.id)
+      )
+    end)
   end
 end

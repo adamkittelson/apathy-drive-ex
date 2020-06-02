@@ -237,6 +237,10 @@ defmodule ApathyDrive.Enchantment do
   def add_enchantment_exp(enchanter, enchantment) do
     exp = enchantment_exp(enchanter)
 
+    skill = Repo.get(Skill, enchantment.ability.skill_id)
+
+    enchanter = Character.add_skill_experience(enchanter, skill.name, exp)
+
     Enum.reduce(enchantment.ability.attributes, enchanter, fn attribute, enchanter ->
       attribute = String.to_atom(attribute)
 
@@ -265,8 +269,19 @@ defmodule ApathyDrive.Enchantment do
     |> Enum.join(":")
   end
 
-  def enchantment_exp(character, _skill \\ nil) do
-    Character.drain_rate(character) * 8
+  def enchantment_exp(character, skill \\ nil) do
+    rate =
+      if skill do
+        level = character.skills[skill].level
+
+        character
+        |> Map.put(:level, level)
+        |> Character.drain_rate()
+      else
+        Character.drain_rate(character)
+      end
+
+    rate * 8
   end
 
   def total_enchantment_time(
