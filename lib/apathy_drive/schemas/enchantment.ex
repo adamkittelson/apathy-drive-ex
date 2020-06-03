@@ -210,7 +210,6 @@ defmodule ApathyDrive.Enchantment do
           enchanter
           |> add_enchantment_exp(enchantment)
           |> Map.put(:enchantment, enchantment)
-          |> Character.load_items()
         end
       end
     end)
