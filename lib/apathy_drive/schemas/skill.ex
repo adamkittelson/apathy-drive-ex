@@ -6,6 +6,7 @@ defmodule ApathyDrive.Skill do
     field(:name, :string)
     field(:description, :string)
     field(:exp_multiplier, :float)
+    field(:universal, :boolean, default: false)
 
     field(:attributes, :any, virtual: true, default: [])
 

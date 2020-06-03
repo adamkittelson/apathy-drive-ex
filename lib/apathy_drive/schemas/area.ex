@@ -127,7 +127,7 @@ defmodule ApathyDrive.Area do
 
   def new_area_changeset(name) do
     %__MODULE__{}
-    |> cast(%{name: name}, ~w(name))
+    |> cast(%{name: name}, [:name])
     |> validate_required(:name)
     |> validate_format(:name, ~r/^[a-zA-Z\d ,\-']+$/)
     |> validate_length(:name, min: 1, max: 20)

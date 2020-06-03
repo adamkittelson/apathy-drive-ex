@@ -424,6 +424,7 @@ defmodule ApathyDrive.Character do
       end)
 
     Skill
+    |> Ecto.Query.where([s], s.universal == true)
     |> Repo.all()
     |> Enum.reduce(character, fn skill, character ->
       case Repo.get_by(CharacterSkill, character_id: character.id, skill_id: skill.id) do
