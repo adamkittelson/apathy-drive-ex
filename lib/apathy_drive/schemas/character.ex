@@ -907,10 +907,10 @@ defmodule ApathyDrive.Character do
 
     character =
       character
-      |> Ecto.Changeset.change(%{
-        exp_buffer: Map.get(character, :exp_buffer) - amount
-      })
-      |> Repo.update!()
+      # |> Ecto.Changeset.change(%{
+      #   exp_buffer: Map.get(character, :exp_buffer) - amount
+      # })
+      # |> Repo.update!()
       |> update_in([:race], fn character_race ->
         character_race
         |> Ecto.Changeset.change(%{

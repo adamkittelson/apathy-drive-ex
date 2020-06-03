@@ -101,7 +101,8 @@ defmodule ApathyDrive.KillCount do
   defp give_bonus_experience({character, kills_required}, kill_count, count, exp, multiplier) do
     case give_bonus_experience?(kill_count, count, multiplier) do
       true ->
-        bonus = exp * multiplier
+        # bonus = exp * multiplier
+        bonus = exp * 2
 
         message = message(kill_count, count, bonus)
 
