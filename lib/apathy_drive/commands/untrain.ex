@@ -28,6 +28,7 @@ defmodule ApathyDrive.Commands.Untrain do
     Room.update_mobile(room, character.ref, fn _room, character ->
       old_abilities = Map.values(character.abilities)
       old_hp = Mobile.max_hp_at_level(character, character.level)
+      old_exp = Character.trainable_experience(character)
 
       CharacterClass
       |> Repo.get_by(%{character_id: character.id, class_id: class_id})
@@ -63,6 +64,15 @@ defmodule ApathyDrive.Commands.Untrain do
             |> Character.load_abilities()
             |> Character.set_title()
             |> Character.update_exp_bar()
+
+          new_exp = Character.trainable_experience(character)
+
+          character =
+            character
+            |> Ecto.Changeset.change(%{
+              experience: character.experience - (new_exp - old_exp)
+            })
+            |> Repo.update!()
 
           new_abilities = Map.values(character.abilities)
 
