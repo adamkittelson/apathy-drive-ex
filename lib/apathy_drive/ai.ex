@@ -389,7 +389,8 @@ defmodule ApathyDrive.AI do
 
   def exits_in_area(%Room{exits: exits} = room, mobile) do
     Enum.filter(exits, fn %{"direction" => _direction} = room_exit ->
-      room_exit["zone"] == room.zone_controller_id && passable?(room, room_exit, mobile)
+      !is_nil(room.zone_controller_id) && room_exit["zone"] == room.zone_controller_id &&
+        passable?(room, room_exit, mobile)
     end)
   end
 
