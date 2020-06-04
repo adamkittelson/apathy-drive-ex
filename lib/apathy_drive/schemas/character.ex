@@ -899,8 +899,7 @@ defmodule ApathyDrive.Character do
     character.experience - used_experience(character)
   end
 
-  def add_attribute_experience(%Character{exp_buffer: buffer} = character, attribute, amount)
-      when buffer >= amount do
+  def add_attribute_experience(%Character{} = character, attribute, amount) do
     Character.pulse_score_attribute(character, attribute)
 
     attribute_level = character.attribute_levels[attribute]
@@ -955,14 +954,10 @@ defmodule ApathyDrive.Character do
     character
   end
 
-  def add_attribute_experience(%Character{} = character, _attribute, _amount), do: character
-
   def add_attribute_experience(%Character{} = character, %{} = attributes) do
     max_buffer = Character.max_exp_buffer(character)
 
-    percent = min(1.0, character.exp_buffer / max_buffer) * 2
-
-    exp = max(1, trunc(character.exp_buffer * 0.01) * percent)
+    exp = max(1, max_buffer * 0.01)
 
     Enum.reduce(attributes, character, fn {attribute, percent}, character ->
       amount = max(1, trunc(exp * percent))
@@ -1046,7 +1041,9 @@ defmodule ApathyDrive.Character do
   def add_experience_to_buffer(%Character{} = character, exp, silent) when exp > 0 do
     unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
-    exp_buffer = character.exp_buffer + exp
+    max_buffer = Character.max_exp_buffer(character)
+
+    exp_buffer = min(max_buffer, character.exp_buffer + exp)
 
     character =
       character
