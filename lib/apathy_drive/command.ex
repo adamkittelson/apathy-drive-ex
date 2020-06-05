@@ -79,6 +79,7 @@ defmodule ApathyDrive.Command do
       Commands.Set,
       Commands.Skills,
       Commands.Sneak,
+      Commands.Status,
       Commands.System,
       Commands.Tell,
       Commands.Top,

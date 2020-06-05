@@ -1025,12 +1025,22 @@ defmodule ApathyDrive.Character do
     now = DateTime.utc_now() |> DateTime.to_unix(:millisecond) |> trunc
 
     if is_nil(drain_at) or drain_at < now do
+      mind = ApathyDrive.Commands.Status.mind(character)
       amount = Character.drain_rate(character)
 
+      character =
+        character
+        |> put_in([:next_drain_at], now + :timer.seconds(10))
+        |> update_in([:exp_buffer], &max(0, &1 - amount))
+        |> add_character_experience(amount)
+
+      new_mind = ApathyDrive.Commands.Status.mind(character)
+
+      if new_mind != mind do
+        ApathyDrive.Commands.Status.status(character)
+      end
+
       character
-      |> put_in([:next_drain_at], now + :timer.seconds(10))
-      |> update_in([:exp_buffer], &max(0, &1 - amount))
-      |> add_character_experience(amount)
     else
       character
     end
@@ -1040,6 +1050,8 @@ defmodule ApathyDrive.Character do
 
   def add_experience_to_buffer(%Character{} = character, exp, silent) when exp > 0 do
     unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
+
+    mind = ApathyDrive.Commands.Status.mind(character)
 
     max_buffer = Character.max_exp_buffer(character)
 
@@ -1053,6 +1065,12 @@ defmodule ApathyDrive.Character do
       |> Repo.update!()
 
     Statix.increment("exp_gained", exp, tags: ["character:#{String.downcase(character.name)}"])
+
+    new_mind = ApathyDrive.Commands.Status.mind(character)
+
+    if new_mind != mind do
+      ApathyDrive.Commands.Status.status(character)
+    end
 
     Character.update_exp_bar(character)
   end
