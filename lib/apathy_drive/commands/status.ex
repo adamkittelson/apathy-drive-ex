@@ -42,11 +42,15 @@ defmodule ApathyDrive.Commands.Status do
         0
       end
 
+    drain_rate = Character.drain_rate(character)
+
+    ttl = ApathyDrive.Enchantment.formatted_time_left(trunc(exp / drain_rate * 10))
+
     Mobile.send_scroll(
       character,
       "<p><span class='cyan'>hp:</span> <span class='white'>#{hp}/#{max_hp}</span> " <>
         "<span class='cyan'>mana:</span> <span class='white'>#{mp}/#{max_mp}</span> " <>
-        "<span class='cyan'>experience:</span> <span class='white'>#{exp}</span> " <>
+        "<span class='cyan'>experience:</span> <span class='white'>#{exp} (#{ttl})</span> " <>
         "<span class='cyan'>mind:</span> #{mind(character)}"
     )
   end
