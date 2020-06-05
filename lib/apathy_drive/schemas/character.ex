@@ -1030,7 +1030,7 @@ defmodule ApathyDrive.Character do
 
       character =
         character
-        |> put_in([:next_drain_at], now + :timer.seconds(10))
+        |> put_in([:next_drain_at], now + :timer.seconds(1))
         |> update_in([:exp_buffer], &max(0, &1 - amount))
         |> add_character_experience(amount)
 
@@ -1356,13 +1356,13 @@ defmodule ApathyDrive.Character do
 
     target_time = 20 * level
 
-    trunc(max(Float.round(exp_to_level / (target_time * 60) * 10), 10.0))
+    trunc(max(Float.round(exp_to_level / (target_time * 60)), 1.0))
   end
 
   def max_exp_buffer(character) do
     rate = drain_rate(character)
 
-    trunc(rate / 10 * 60 * 60)
+    trunc(rate * 60 * 60)
   end
 
   def update_exp_bar(%Character{socket: socket} = character) do

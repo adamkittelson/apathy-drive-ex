@@ -280,7 +280,7 @@ defmodule ApathyDrive.Enchantment do
         Character.drain_rate(character)
       end
 
-    rate * 8
+    rate * 80
   end
 
   def total_enchantment_time(

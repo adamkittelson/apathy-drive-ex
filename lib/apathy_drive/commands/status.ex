@@ -44,7 +44,7 @@ defmodule ApathyDrive.Commands.Status do
 
     drain_rate = Character.drain_rate(character)
 
-    ttl = ApathyDrive.Enchantment.formatted_time_left(trunc(exp / drain_rate * 10))
+    ttl = ApathyDrive.Enchantment.formatted_time_left(trunc(exp / drain_rate))
 
     Mobile.send_scroll(
       character,
