@@ -582,20 +582,71 @@ defmodule ApathyDrive.Commands.Help do
         damage ->
           if traits["Elemental"] do
             elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
-            damage = List.delete(damage, elemental_damage)
 
-            if lore = character.lore do
-              elemental_damage =
-                Enum.map(lore.damage_types, fn damage ->
-                  damage
-                  |> Map.put(:min, elemental_damage.min)
-                  |> Map.put(:max, elemental_damage.min)
-                end)
+            if elemental_damage do
+              damage = List.delete(damage, elemental_damage)
 
-              Map.put(traits, "Damage", elemental_damage ++ damage)
+              if lore = character.lore do
+                elemental_damage =
+                  Enum.map(lore.damage_types, fn damage ->
+                    damage
+                    |> Map.put(:min, elemental_damage.min)
+                    |> Map.put(:max, elemental_damage.min)
+                  end)
+
+                Map.put(traits, "Damage", elemental_damage ++ damage)
+              else
+                elemental_damage = Map.put(elemental_damage, :damage_type, "Elemental")
+                Map.put(traits, "Damage", [elemental_damage | damage])
+              end
             else
-              elemental_damage = Map.put(elemental_damage, :damage_type, "Elemental")
-              Map.put(traits, "Damage", [elemental_damage | damage])
+              if lore = character.lore do
+                min =
+                  damage
+                  |> Enum.map(& &1.min)
+                  |> Enum.sum()
+
+                max =
+                  damage
+                  |> Enum.map(& &1.max)
+                  |> Enum.sum()
+
+                damage =
+                  Enum.reduce(damage, [], fn type, damage ->
+                    type =
+                      type
+                      |> Map.put(:max, max(1, div(max, 2)))
+                      |> Map.put(:min, max(1, div(min, 2)))
+
+                    [type | damage]
+                  end)
+
+                lore_min =
+                  min
+                  |> div(2)
+                  |> div(length(lore.damage_types))
+                  |> max(1)
+
+                lore_max =
+                  max
+                  |> div(2)
+                  |> div(length(lore.damage_types))
+                  |> max(1)
+
+                damage =
+                  Enum.reduce(lore.damage_types, damage, fn type, damage ->
+                    type =
+                      type
+                      |> Map.put(:min, lore_min)
+                      |> Map.put(:max, lore_max)
+
+                    [type | damage]
+                  end)
+
+                Map.put(traits, "Damage", damage)
+              else
+                Map.put(traits, "Damage", damage)
+              end
             end
           else
             Map.put(traits, "Damage", damage)

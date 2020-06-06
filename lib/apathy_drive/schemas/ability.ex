@@ -2287,6 +2287,54 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
+    lore = Map.get(caster, :lore)
+
+    damages =
+      if ability.traits["Elemental"] && lore do
+        min =
+          damages
+          |> Enum.map(& &1.min)
+          |> Enum.sum()
+
+        max =
+          damages
+          |> Enum.map(& &1.max)
+          |> Enum.sum()
+
+        damages =
+          Enum.reduce(damages, [], fn type, damages ->
+            type =
+              type
+              |> Map.put(:max, max(1, div(max, 2)))
+              |> Map.put(:min, max(1, div(min, 2)))
+
+            [type | damages]
+          end)
+
+        lore_min =
+          min
+          |> div(2)
+          |> div(length(lore.damage_types))
+          |> max(1)
+
+        lore_max =
+          max
+          |> div(2)
+          |> div(length(lore.damage_types))
+          |> max(1)
+
+        Enum.reduce(lore.damage_types, damages, fn type, damages ->
+          type =
+            type
+            |> Map.put(:min, lore_min)
+            |> Map.put(:max, lore_max)
+
+          [type | damages]
+        end)
+      else
+        damages
+      end
+
     round_percent = (ability.reaction_energy || ability.energy) / caster.max_energy
 
     target =
