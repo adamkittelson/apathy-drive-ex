@@ -17,6 +17,11 @@ defmodule ApathyDrive.Commands.Auto do
 
     Mobile.send_scroll(
       character,
+      "<p><span class='dark-cyan'>Attack       #{emoji(character.auto_attack)}</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
       "<p><span class='dark-cyan'>Roam         #{emoji(character.auto_roam)}</span></p>"
     )
 
@@ -36,6 +41,19 @@ defmodule ApathyDrive.Commands.Auto do
     )
 
     room
+  end
+
+  def execute(%Room{} = room, %Character{ref: ref} = character, ["attack"]) do
+    Mobile.send_scroll(character, "<p>Toggling auto attack.</p>")
+
+    room =
+      Room.update_mobile(room, ref, fn _room, character ->
+        character
+        |> Ecto.Changeset.change(%{auto_attack: !character.auto_attack})
+        |> Repo.update!()
+      end)
+
+    execute(room, room.mobiles[ref], [])
   end
 
   def execute(%Room{} = room, %Character{ref: ref} = character, ["roam"]) do

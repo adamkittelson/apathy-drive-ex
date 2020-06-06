@@ -59,7 +59,6 @@ defmodule ApathyDrive.Ability do
     field(:can_crit, :boolean, virtual: true, default: false)
     field(:spell?, :boolean, virtual: true, default: true)
     field(:reaction_energy, :integer, virtual: true, default: 0)
-    field(:crit_tables, :any, virtual: true, default: [])
     field(:auto, :boolean, virtual: true, default: true)
     field(:class_id, :integer, virtual: true)
     field(:skill_id, :integer, virtual: true)
@@ -473,11 +472,7 @@ defmodule ApathyDrive.Ability do
         ability
 
       damage ->
-        ability = update_in(ability.traits, &Map.put(&1, "Damage", damage))
-
-        crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
-
-        Map.put(ability, :crit_tables, crit_types)
+        update_in(ability.traits, &Map.put(&1, "Damage", damage))
     end
   end
 
@@ -1484,7 +1479,7 @@ defmodule ApathyDrive.Ability do
     target = room.mobiles[target_ref]
 
     if caster && target do
-      if crit = crit_for_damage(target.ability_shift, ability.crit_tables) do
+      if crit = crit_for_damage(target.ability_shift, ability) do
         crit = put_in(crit.traits["StackCount"], 10)
         crit = Map.put(crit, :caster, ability.caster)
 
@@ -1519,8 +1514,10 @@ defmodule ApathyDrive.Ability do
 
   def apply_criticals(%Room{} = room, _caster_ref, _target_ref, _ability), do: room
 
-  def crit_for_damage(ability_shift, crit_tables)
+  def crit_for_damage(ability_shift, ability)
       when is_number(ability_shift) and ability_shift < 0 do
+    crit_tables = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
+
     percent = trunc(abs(ability_shift) * 100)
 
     crit_tables
@@ -1534,7 +1531,7 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def crit_for_damage(_ability_shift, _crit_tables), do: nil
+  def crit_for_damage(_ability_shift, _ability), do: nil
 
   def critical_ability(table, letter) do
     count =

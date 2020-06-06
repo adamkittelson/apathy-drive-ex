@@ -49,7 +49,6 @@ defmodule ApathyDrive.Scripts.ExplodingRune do
               caster: %{name: "the exploding rune"},
               target_message: "You are hit by an exploding rune for {{amount}} damage!",
               spectator_message: "{{Target}} is hit by an exploding rune for {{amount}} damage!",
-              crit_tables: [5, 11],
               traits: %{
                 "Damage" => [
                   %{

@@ -447,11 +447,7 @@ defmodule ApathyDrive.Monster do
 
           if auto_attack? do
             damage = Mobile.ability_value(monster, "WeaponDamage")
-            attack = update_in(attack.traits["Damage"], &(damage ++ &1))
-
-            crit_types = Enum.map(attack.traits["Damage"], & &1.damage_type_id)
-
-            Map.put(attack, :crit_tables, crit_types)
+            update_in(attack.traits["Damage"], &(damage ++ &1))
           else
             attack
           end

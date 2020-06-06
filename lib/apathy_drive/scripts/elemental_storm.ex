@@ -29,10 +29,6 @@ defmodule ApathyDrive.Scripts.ElementalStorm do
         }
       }
 
-      crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
-
-      ability = Map.put(ability, :crit_tables, crit_types)
-
       Ability.execute(room, mobile_ref, ability, [target_ref])
     end)
   end

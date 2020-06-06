@@ -37,11 +37,7 @@ defmodule ApathyDrive.ItemAbility do
               ability
 
             damage ->
-              ability = update_in(ability.traits, &Map.put(&1, "Damage", damage))
-
-              crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
-
-              Map.put(ability, :crit_tables, crit_types)
+              update_in(ability.traits, &Map.put(&1, "Damage", damage))
           end
 
         ability_traits =

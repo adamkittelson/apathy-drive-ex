@@ -71,6 +71,7 @@ defmodule ApathyDrive.Character do
     field(:auto_rest, :boolean)
     field(:auto_sneak, :boolean)
     field(:auto_flee, :boolean)
+    field(:auto_attack, :boolean)
     field(:auto_pet_casting, :boolean, default: true)
     field(:evil_points, :float)
     field(:last_evil_action_at, :utc_datetime_usec)
@@ -354,11 +355,7 @@ defmodule ApathyDrive.Character do
                 ability
 
               damage ->
-                ability = update_in(ability.traits, &Map.put(&1, "Damage", damage))
-
-                crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
-
-                Map.put(ability, :crit_tables, crit_types)
+                update_in(ability.traits, &Map.put(&1, "Damage", damage))
             end
 
           if Ability.appropriate_alignment?(ability, character) do
@@ -777,10 +774,6 @@ defmodule ApathyDrive.Character do
       limbs: limbs,
       skills: [weapon.weapon_type]
     }
-
-    crit_types = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
-
-    ability = Map.put(ability, :crit_tables, crit_types)
 
     if on_hit = Systems.Effect.effect_bonus(weapon, "OnHit") do
       # if on_hit.kind == "attack" do
