@@ -1,6 +1,6 @@
 defmodule Systems.Effect do
   use Timex
-  alias ApathyDrive.{Item, Mobile, Room, TimerManager, Trait}
+  alias ApathyDrive.{Item, Mobile, Room, RoomServer, Text, TimerManager, Trait}
 
   def add(%{effects: _effects, last_effect_key: key} = entity, effect) do
     add_effect(entity, key + 1, effect)
@@ -115,6 +115,23 @@ defmodule Systems.Effect do
         if opts[:fire_after_cast] && Map.has_key?(effects[key], "after_cast") do
           # ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [entity.ref])
         end
+
+        entity =
+          if Map.has_key?(effects[key], "Enslave") do
+            message =
+              "<p><span class='dark-yellow'>With a shake of {{target:his/her/its}} head, {{target}} regains control of {{target:himself/herself/itself}}.</span></p>"
+              |> Text.interpolate(%{"target" => entity})
+
+            entity.room_id
+            |> RoomServer.find()
+            |> RoomServer.send_scroll(message)
+
+            entity
+            |> Map.put(:owner_id, nil)
+            |> Map.put(:follow, nil)
+          else
+            entity
+          end
 
         if opts[:show_expiration_message] && Map.has_key?(effects[key], "RemoveMessage") do
           message = "<p><span class='dark-yellow'>#{effects[key]["RemoveMessage"]}</span></p>"

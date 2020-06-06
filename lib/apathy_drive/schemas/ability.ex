@@ -140,6 +140,7 @@ defmodule ApathyDrive.Ability do
     "Encumbrance",
     "EndCast",
     "EndCast%",
+    "Enslave",
     "Fear",
     "Heal",
     "Health",
@@ -1094,7 +1095,11 @@ defmodule ApathyDrive.Ability do
           Room.update_mana_bar(room, caster.ref)
 
           room =
-            Room.update_mobile(room, caster_ref, fn _room, caster -> Stealth.reveal(caster) end)
+            if ability.energy > 0 do
+              Room.update_mobile(room, caster_ref, fn _room, caster -> Stealth.reveal(caster) end)
+            else
+              room
+            end
 
           Room.update_moblist(room)
 
@@ -1416,23 +1421,6 @@ defmodule ApathyDrive.Ability do
           update_in(ability.traits, &Map.delete(&1, "Dodgeable"))
         )
     end
-  end
-
-  def apply_ability(
-        %Room{} = room,
-        %Character{} = caster,
-        %{} = target,
-        %Ability{traits: %{"Enslave" => _}} = ability
-      ) do
-    display_cast_message(room, caster, target, ability)
-
-    # if companion = Character.companion(caster, room) do
-    #   companion
-    #   |> Companion.dismiss(room)
-    #   |> Companion.convert_for_character(target, caster)
-    # else
-    #   Companion.convert_for_character(room, target, caster)
-    # end
   end
 
   def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{} = ability) do
@@ -2192,6 +2180,16 @@ defmodule ApathyDrive.Ability do
       trait, {updated_caster, updated_target} ->
         apply_instant_trait(trait, updated_target, ability, updated_caster, room)
     end)
+  end
+
+  def apply_instant_trait({"Enslave", _}, %{} = target, _ability, caster, _room) do
+    target =
+      target
+      |> Map.put(:owner_id, caster.id)
+      |> Map.put(:follow, true)
+      |> Systems.Effect.remove_all_stacks({:aggro, caster.ref})
+
+    {caster, target}
   end
 
   def apply_instant_trait({"RemoveSpells", ability_ids}, %{} = target, _ability, caster, _room) do
