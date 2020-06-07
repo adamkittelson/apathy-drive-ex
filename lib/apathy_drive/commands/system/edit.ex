@@ -17,6 +17,10 @@ defmodule ApathyDrive.Commands.System.Edit do
 
       skill = Skill.match_by_name(query) ->
         edit_skill(room, character, skill)
+
+      :else ->
+        Mobile.send_scroll(character, "<p>No object matched your query.</p>")
+        room
     end
   end
 
