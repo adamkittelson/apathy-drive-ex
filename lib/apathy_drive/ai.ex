@@ -336,7 +336,7 @@ defmodule ApathyDrive.AI do
       attack = Mobile.attack_ability(mobile)
 
       if attack do
-        required_energy = max(attack.energy, 200)
+        required_energy = 1000
 
         if mobile.energy >= required_energy && !mobile.casting do
           Ability.execute(room, mobile.ref, attack, [target_ref])
