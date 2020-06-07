@@ -1064,7 +1064,8 @@ defmodule ApathyDrive.Ability do
 
               Mobile.update_prompt(caster, room)
 
-              if ability.kind in ["attack", "curse"] and !(caster.ref in targets) do
+              if ability.kind in ["attack", "curse"] and !(caster.ref in targets) and
+                   ability.energy > 0 do
                 if targets == [] do
                   caster
                 else
@@ -2159,7 +2160,11 @@ defmodule ApathyDrive.Ability do
     target
   end
 
-  def aggro_target(%{ref: target_ref} = target, %Ability{kind: kind}, %{ref: caster_ref} = caster)
+  def aggro_target(
+        %{ref: target_ref} = target,
+        %Ability{kind: kind},
+        %{ref: caster_ref} = caster
+      )
       when kind in ["attack", "curse"] and target_ref != caster_ref do
     ApathyDrive.Aggression.attack_target(target, caster)
   end
