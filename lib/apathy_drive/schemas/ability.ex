@@ -1502,9 +1502,9 @@ defmodule ApathyDrive.Ability do
 
   def apply_criticals(%Room{} = room, _caster_ref, _target_ref, _ability), do: room
 
-  def crit_for_damage(ability_shift, ability)
-      when is_number(ability_shift) and ability_shift < 0 do
-    crit_tables = Enum.map(ability.traits["Damage"], & &1.damage_type_id)
+  def crit_for_damage(ability_shift, %{traits: %{"Damage" => damage}})
+      when is_number(ability_shift) and ability_shift < 0 and is_list(damage) do
+    crit_tables = Enum.map(damage, & &1.damage_type_id)
 
     percent = trunc(abs(ability_shift) * 100)
 
