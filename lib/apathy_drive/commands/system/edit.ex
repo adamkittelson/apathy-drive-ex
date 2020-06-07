@@ -2,138 +2,118 @@ defmodule ApathyDrive.Commands.System.Edit do
   alias ApathyDrive.{Ability, Item, Mobile, Room, ShopItem, Skill, Trait}
   alias ApathyDrive.Commands.Help
 
-  def execute(%Room{} = room, character, ["ability" | ability_name]) do
-    ability_name = Enum.join(ability_name, " ")
+  def execute(%Room{} = room, character, args) do
+    query = Enum.join(args, " ")
 
-    case Ability.match_by_name(ability_name, true) do
-      nil ->
-        Mobile.send_scroll(character, "<p>\"#{ability_name}\" does not match any abilities.</p>")
-        room
+    cond do
+      ability = Ability.match_by_name(query, true) ->
+        edit_ability(room, character, ability)
 
-      %Ability{} = ability ->
-        Help.execute(room, character, [ability.name])
-        Mobile.send_scroll(character, "<p>You are now editing #{ability.name}.</p>")
+      item = Item.match_by_name(query) ->
+        edit_item(room, character, item)
 
-        Room.update_mobile(room, character.ref, fn _room, character ->
-          character
-          |> Map.put(:editing, ability)
-          |> Mobile.update_prompt(room)
-        end)
+      trait = Trait.match_by_name(query) ->
+        edit_trait(room, character, trait)
 
-      matches ->
-        Mobile.send_scroll(
-          character,
-          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
-        )
-
-        Enum.each(matches, fn match ->
-          Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
-        end)
-
-        room
+      skill = Skill.match_by_name(query) ->
+        edit_skill(room, character, skill)
     end
   end
 
-  def execute(%Room{} = room, character, ["item" | item_name]) do
-    item_name = Enum.join(item_name, " ")
+  def edit_ability(room, character, %Ability{} = ability) do
+    Help.execute(room, character, [ability.name])
+    Mobile.send_scroll(character, "<p>You are now editing #{ability.name}.</p>")
 
-    case Item.match_by_name(item_name) do
-      nil ->
-        Mobile.send_scroll(character, "<p>\"#{item_name}\" does not match any items.</p>")
-        room
-
-      %Item{} = item ->
-        shop_item =
-          %ShopItem{item: item}
-          |> Item.from_assoc()
-
-        ApathyDrive.Commands.Look.look_at_item(character, shop_item)
-        Mobile.send_scroll(character, "<p>You are now editing #{item.name}.</p>")
-
-        Room.update_mobile(room, character.ref, fn _room, character ->
-          character
-          |> Map.put(:editing, item)
-          |> Mobile.update_prompt(room)
-        end)
-
-      matches ->
-        Mobile.send_scroll(
-          character,
-          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
-        )
-
-        Enum.each(matches, fn match ->
-          Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
-        end)
-
-        room
-    end
+    Room.update_mobile(room, character.ref, fn _room, character ->
+      character
+      |> Map.put(:editing, ability)
+      |> Mobile.update_prompt(room)
+    end)
   end
 
-  def execute(%Room{} = room, character, ["trait" | trait_name]) do
-    trait_name = Enum.join(trait_name, " ")
+  def edit_ability(room, character, abilities) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+    )
 
-    case Trait.match_by_name(trait_name) do
-      nil ->
-        Mobile.send_scroll(character, "<p>\"#{trait_name}\" does not match any traits.</p>")
-        room
+    Enum.each(abilities, fn match ->
+      Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
+    end)
 
-      %Trait{} = trait ->
-        Mobile.send_scroll(character, "<p>You are now editing #{trait.name}.</p>")
-
-        Room.update_mobile(room, character.ref, fn _room, character ->
-          character
-          |> Map.put(:editing, trait)
-          |> Mobile.update_prompt(room)
-        end)
-
-      matches ->
-        Mobile.send_scroll(
-          character,
-          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
-        )
-
-        Enum.each(matches, fn match ->
-          Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
-        end)
-
-        room
-    end
+    room
   end
 
-  def execute(%Room{} = room, character, ["skill" | skill_name]) do
-    skill_name = Enum.join(skill_name, " ")
+  def edit_item(room, character, %Item{} = item) do
+    shop_item =
+      %ShopItem{item: item}
+      |> Item.from_assoc()
 
-    case Skill.match_by_name(skill_name, true) do
-      nil ->
-        Mobile.send_scroll(character, "<p>\"#{skill_name}\" does not match any skills.</p>")
-        room
+    ApathyDrive.Commands.Look.look_at_item(character, shop_item)
+    Mobile.send_scroll(character, "<p>You are now editing #{item.name}.</p>")
 
-      %Skill{} = skill ->
-        Mobile.send_scroll(character, "<p>You are now editing #{skill.name}.</p>")
-
-        Room.update_mobile(room, character.ref, fn _room, character ->
-          character
-          |> Map.put(:editing, skill)
-          |> Mobile.update_prompt(room)
-        end)
-
-      matches ->
-        Mobile.send_scroll(
-          character,
-          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
-        )
-
-        Enum.each(matches, fn match ->
-          Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
-        end)
-
-        room
-    end
+    Room.update_mobile(room, character.ref, fn _room, character ->
+      character
+      |> Map.put(:editing, item)
+      |> Mobile.update_prompt(room)
+    end)
   end
 
-  def execute(%Room{} = room, character, _args) do
-    Mobile.send_scroll(character, "<p>Invalid system command.</p>")
+  def edit_item(room, character, items) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+    )
+
+    Enum.each(items, fn match ->
+      Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
+    end)
+
+    room
+  end
+
+  def edit_trait(room, character, %Trait{} = trait) do
+    Mobile.send_scroll(character, "<p>You are now editing #{trait.name}.</p>")
+
+    Room.update_mobile(room, character.ref, fn _room, character ->
+      character
+      |> Map.put(:editing, trait)
+      |> Mobile.update_prompt(room)
+    end)
+  end
+
+  def edit_trait(room, character, traits) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+    )
+
+    Enum.each(traits, fn match ->
+      Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
+    end)
+
+    room
+  end
+
+  def edit_skill(room, character, %Skill{} = skill) do
+    Mobile.send_scroll(character, "<p>You are now editing #{skill.name}.</p>")
+
+    Room.update_mobile(room, character.ref, fn _room, character ->
+      character
+      |> Map.put(:editing, skill)
+      |> Mobile.update_prompt(room)
+    end)
+  end
+
+  def edit_skill(room, character, skills) do
+    Mobile.send_scroll(
+      character,
+      "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+    )
+
+    Enum.each(skills, fn match ->
+      Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
+    end)
 
     room
   end
