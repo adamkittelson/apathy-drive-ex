@@ -39,19 +39,6 @@ defmodule ApathyDrive.Scripts.PoisonRune do
               [mobile]
             )
 
-            # percentage of health for characters,
-            # raw damage for monsters
-            damage =
-              case mobile do
-                %Character{} ->
-                  max_hp = Mobile.max_hp_at_level(mobile, mobile.level)
-                  percent = Enum.random(25..75)
-                  trunc(max_hp * (percent / 100))
-
-                _ ->
-                  Enum.random(25..75)
-              end
-
             ability = %Ability{
               kind: "curse",
               name: "poison rune",
@@ -59,7 +46,7 @@ defmodule ApathyDrive.Scripts.PoisonRune do
               mana: 0,
               duration: 20,
               traits: %{
-                "Poison" => damage,
+                "Poison" => 7,
                 "StatusMessage" => "You feel ill!",
                 "StackKey" => :poison_rune,
                 "StackCount" => :infinity,

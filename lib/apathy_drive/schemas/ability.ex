@@ -2572,8 +2572,9 @@ defmodule ApathyDrive.Ability do
 
   def apply_duration_traits(%{} = target, %Ability{} = _ability, nil), do: target
 
-  def apply_duration_traits(%{} = target, %Ability{duration: duration} = ability, %{} = caster)
-      when is_integer(duration) and duration > 0 do
+  def apply_duration_traits(%{} = target, %Ability{duration: duration} = ability, %{} = caster) do
+    duration = if duration, do: duration, else: 0
+
     effects =
       ability
       |> duration_traits()
@@ -2593,7 +2594,7 @@ defmodule ApathyDrive.Ability do
       target
     else
       target
-      |> Systems.Effect.add(effects, :timer.seconds(ability.duration))
+      |> Systems.Effect.add(effects, :timer.seconds(duration))
     end
   end
 
@@ -2675,21 +2676,39 @@ defmodule ApathyDrive.Ability do
     |> Map.put("StatusMessage", "You are taking damage!")
   end
 
-  def process_duration_trait({"Poison", damage}, effects, target, _caster, duration) do
+  def process_duration_trait({"Poison", damage_per_30}, effects, target, _caster, _duration) do
     if Mobile.has_ability?(target, "PoisonImmunity") do
       Map.put(effects, "Damage", 0)
     else
-      modifier = Mobile.ability_value(target, "ResistPoison")
+      # modifier = Mobile.ability_value(target, "ResistPoison")
 
-      damage = damage * (1 - modifier / 100)
+      # damage = damage * (1 - modifier / 100)
 
-      rounds = :timer.seconds(duration) / 5000
+      rounds = :timer.seconds(30) / Regeneration.round_length()
 
-      percent = damage / Mobile.max_hp_at_level(target, target.level)
+      percent = damage_per_30 / Mobile.max_hp_at_level(target, target.level)
 
       percent = percent / rounds
 
       Map.put(effects, "Damage", percent)
+    end
+  end
+
+  def process_duration_trait({"EndCast", ability_id}, effects, target, caster, _duration) do
+    if ability = Ability.find(ability_id) do
+      ability =
+        ability
+        |> Map.put(:difficulty, nil)
+        |> Map.put(:energy, 0)
+
+      effects
+      |> Map.put("EndCast", %{
+        caster: caster.ref,
+        ability: ability,
+        target: [target.ref]
+      })
+    else
+      Map.delete(effects, "EndCast")
     end
   end
 

@@ -1230,6 +1230,19 @@ defmodule ApathyDrive.Character do
         )
       end)
 
+    max_hp = Mobile.max_hp_at_level(character, character.level)
+
+    hp_regen = Mobile.hp_regen_per_30(character)
+
+    damage_percent_per_30 =
+      character
+      |> Regeneration.damage_effect_per_tick()
+      |> Regeneration.per_tick_to_per_30()
+
+    damage_per_30 = damage_percent_per_30 * Mobile.max_hp_at_level(character, character.level)
+
+    hp_regen = Float.round(hp_regen - damage_per_30, 2)
+
     %{
       name: character.name,
       race: character.race.race.name,
@@ -1247,8 +1260,8 @@ defmodule ApathyDrive.Character do
       magical_damage: Mobile.magical_penetration_at_level(character, character.level),
       magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
       hp: hp_at_level(character, character.level),
-      hp_regen: Float.round(Mobile.hp_regen_per_30(character), 2),
-      max_hp: Mobile.max_hp_at_level(character, character.level),
+      hp_regen: hp_regen,
+      max_hp: max_hp,
       mana: mana_at_level(character, character.level),
       mana_regen: Float.round(Mobile.mana_regen_per_30(character), 2),
       max_mana: Mobile.max_mana_at_level(character, character.level),

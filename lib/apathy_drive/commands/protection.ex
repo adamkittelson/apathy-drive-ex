@@ -49,6 +49,27 @@ defmodule ApathyDrive.Commands.Protection do
     room
   end
 
+  def protection_amount(character, damage_type) do
+    resist =
+      if @damage_types[damage_type] == "physical" do
+        Mobile.physical_resistance_at_level(character, character.level)
+      else
+        Mobile.magical_resistance_at_level(character, character.level)
+      end
+
+    level = 25
+
+    resist_percent = resist / (level * 50 + resist)
+
+    modifier = Mobile.ability_value(character, "Resist#{damage_type}")
+
+    if modifier >= 100 do
+      modifier / 100
+    else
+      max(0, resist_percent + (100 + modifier) / 100 - 1)
+    end
+  end
+
   defp show_protection(character) do
     title = "Average Protection by Damage Type"
 
@@ -100,27 +121,6 @@ defmodule ApathyDrive.Commands.Protection do
       character,
       "<p><span class='dark-blue'>+-----------------+-------------------------+</span></p>"
     )
-  end
-
-  defp protection_amount(character, damage_type) do
-    resist =
-      if @damage_types[damage_type] == "physical" do
-        Mobile.physical_resistance_at_level(character, character.level)
-      else
-        Mobile.magical_resistance_at_level(character, character.level)
-      end
-
-    level = 25
-
-    resist_percent = resist / (level * 50 + resist)
-
-    modifier = Mobile.ability_value(character, "Resist#{damage_type}")
-
-    if modifier >= 100 do
-      modifier / 100
-    else
-      max(0, resist_percent + (100 + modifier) / 100 - 1)
-    end
   end
 
   defp protection_level(protection_amount) do

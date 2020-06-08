@@ -1,12 +1,13 @@
 defmodule ApathyDrive.Commands.Rest do
   use ApathyDrive.Command
-  alias ApathyDrive.{Aggression, Mobile}
+  alias ApathyDrive.{Aggression, Mobile, Regeneration}
 
   def keywords, do: ["rest"]
 
   def execute(%Room{} = room, %Character{} = character, _args) do
     cond do
-      !is_nil(character.attack_target) or Aggression.enemies_present?(room, character) ->
+      taking_damage(character) or
+        !is_nil(character.attack_target) or Aggression.enemies_present?(room, character) ->
         Mobile.send_scroll(character, "<p>You can't rest right now!</p>")
         room
 
@@ -19,5 +20,9 @@ defmodule ApathyDrive.Commands.Rest do
           |> Map.put(:sneaking, false)
         end)
     end
+  end
+
+  defp taking_damage(character) do
+    Regeneration.damage_effect_per_tick(character) != 0
   end
 end

@@ -112,8 +112,23 @@ defmodule Systems.Effect do
   def remove(%{effects: effects} = entity, key, opts \\ []) do
     case effects[key] do
       %{} ->
-        if opts[:fire_after_cast] && Map.has_key?(effects[key], "after_cast") do
-          # ApathyDrive.Ability.after_cast(effects[key]["after_cast"], [entity.ref])
+        if opts[:fire_after_cast] && Map.has_key?(effects[key], "EndCast") do
+          chance = effects[key]["EndCast%"] || 100
+          roll = :rand.uniform(100)
+
+          if roll <= chance do
+            end_cast = effects[key]["EndCast"]
+
+            send(
+              self(),
+              {:execute_ability,
+               %{
+                 caster: end_cast.caster,
+                 ability: end_cast.ability,
+                 target: end_cast.target
+               }}
+            )
+          end
         end
 
         entity =
