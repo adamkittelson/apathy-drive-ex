@@ -721,6 +721,11 @@ defmodule ApathyDrive.Commands.Help do
     {"Modifies Dodge Skill By", amount}
   end
 
+  defp massage_trait({"EndCast", id}, _character) do
+    name = Repo.get(Ability, id).name
+    {"EndCast", name}
+  end
+
   defp massage_trait({"ClassCombatLevel", value}, _character) do
     {"Combat Proficiency", Character.combat_proficiency(value)}
   end
