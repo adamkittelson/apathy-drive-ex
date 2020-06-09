@@ -5,6 +5,7 @@ defmodule ApathyDrive.Commands.List do
     Character,
     CharacterClass,
     Class,
+    Currency,
     Mobile,
     Item,
     Repo,
@@ -62,56 +63,153 @@ defmodule ApathyDrive.Commands.List do
   end
 
   def list(%Room{shop: nil} = room, character) do
-    if Trainer.trainer?(room) && room.trainer_id && room.trainer.class_id do
-      class = Repo.get(Class, room.trainer.class_id)
+    if Trainer.trainer?(room) && room.trainer_id do
+      if room.trainer.class_id do
+        min_level = room.trainer.min_level
+        max_level = room.trainer.max_level
 
-      character_class =
-        Repo.get_by(CharacterClass, character_id: character.id, class_id: room.trainer.class_id) ||
-          %CharacterClass{level: 0, character_id: character.id}
+        class = Repo.get(Class, room.trainer.class_id)
 
-      character
-      |> Mobile.send_scroll("<p>                <span class='white'>#{class.name}</span></p>")
+        character_class =
+          Repo.get_by(CharacterClass,
+            character_id: character.id,
+            class_id: room.trainer.class_id
+          ) ||
+            %CharacterClass{level: 0, character_id: character.id}
 
-      character
-      |> Mobile.send_scroll(
-        "<p><span class='dark-magenta'>Level</span>   <span class='dark-magenta'>Exp Cost</span>       <span class='dark-magenta'>Abilities</span></p>"
-      )
-      |> Mobile.send_scroll(
-        "<p><span class='dark-cyan'>------------------------------------------------------</span></p>"
-      )
+        level = character_class.level + 1
 
-      range = (character_class.level + 1)..(character_class.level + 6)
-
-      Enum.each(range, fn level ->
-        abilities =
-          ApathyDrive.ClassAbility
-          |> Ecto.Query.where(
-            [ss],
-            ss.class_id == ^class.id and ss.level == ^level and ss.auto_learn == true
-          )
-          |> Ecto.Query.preload([:ability])
-          |> Repo.all()
-          |> Enum.map(& &1.ability.name)
-          |> ApathyDrive.Commands.Inventory.to_sentence()
-
-        exp =
+        if (is_nil(min_level) or level >= min_level) and
+             (is_nil(max_level) or level <= max_level) do
           character
-          |> ApathyDrive.Commands.Train.required_experience(class.id, level)
-          |> to_string()
-          |> String.pad_trailing(15)
+          |> Mobile.send_scroll("<p>                <span class='white'>#{class.name}</span></p>")
 
-        level =
-          (character.level + (level - character_class.level))
-          |> to_string()
-          |> String.pad_trailing(8)
+          character
+          |> Mobile.send_scroll(
+            "<p><span class='dark-magenta'>Level</span>   <span class='dark-magenta'>Exp Cost</span>       <span class='dark-magenta'>Abilities</span></p>"
+          )
+          |> Mobile.send_scroll(
+            "<p><span class='dark-cyan'>------------------------------------------------------</span></p>"
+          )
+
+          range = (character_class.level + 1)..(character_class.level + 6)
+
+          Enum.each(range, fn level ->
+            abilities =
+              ApathyDrive.ClassAbility
+              |> Ecto.Query.where(
+                [ss],
+                ss.class_id == ^class.id and ss.level == ^level and ss.auto_learn == true
+              )
+              |> Ecto.Query.preload([:ability])
+              |> Repo.all()
+              |> Enum.map(& &1.ability.name)
+              |> ApathyDrive.Commands.Inventory.to_sentence()
+
+            exp =
+              character
+              |> ApathyDrive.Commands.Train.required_experience(class.id, level)
+              |> to_string()
+              |> String.pad_trailing(15)
+
+            level =
+              level
+              |> to_string()
+              |> String.pad_trailing(8)
+
+            Mobile.send_scroll(
+              character,
+              "<p><span class='dark-cyan'>#{level}</span><span class='dark-cyan'>#{exp}</span><span class='dark-cyan'>#{
+                abilities
+              }</span></p>"
+            )
+          end)
+
+          cost =
+            room.trainer
+            |> Trainer.training_cost(character)
+            |> Currency.set_value()
+            |> Currency.to_string()
+
+          Mobile.send_scroll(
+            character,
+            "<p>\n<span class='yellow'>Training Cost:</span> #{cost}</p>"
+          )
+        else
+          Mobile.send_scroll(
+            character,
+            "<p>There is no training available to you here.</p>"
+          )
+        end
+      else
+        classes = Repo.all(Class)
+
+        character
+        |> Mobile.send_scroll(
+          "<p><span class='dark-magenta'>Class</span>           <span class='dark-magenta'>Level</span>   <span class='dark-magenta'>Exp Req.</span>       <span class='dark-magenta'>Abilities</span></p>"
+        )
+        |> Mobile.send_scroll(
+          "<p><span class='dark-cyan'>------------------------------------------------------</span></p>"
+        )
+
+        Enum.each(classes, fn class ->
+          character_class =
+            Repo.get_by(CharacterClass,
+              character_id: character.id,
+              class_id: class.id
+            ) ||
+              %CharacterClass{level: 0, character_id: character.id}
+
+          level = character_class.level + 1
+          min_level = room.trainer.min_level
+          max_level = room.trainer.max_level
+
+          if (is_nil(min_level) or level >= min_level) and
+               (is_nil(max_level) or level <= max_level) do
+            abilities =
+              ApathyDrive.ClassAbility
+              |> Ecto.Query.where(
+                [ss],
+                ss.class_id == ^class.id and ss.level == ^level and ss.auto_learn == true
+              )
+              |> Ecto.Query.preload([:ability])
+              |> Repo.all()
+              |> Enum.map(& &1.ability.name)
+              |> ApathyDrive.Commands.Inventory.to_sentence()
+
+            exp =
+              character
+              |> ApathyDrive.Commands.Train.required_experience(class.id, level)
+              |> to_string()
+              |> String.pad_trailing(15)
+
+            level =
+              level
+              |> to_string()
+              |> String.pad_trailing(8)
+
+            class = String.pad_trailing(class.name, 15)
+
+            Mobile.send_scroll(
+              character,
+              "<p><span class='white'>#{class}</span> <span class='dark-cyan'>#{level}</span><span class='dark-cyan'>#{
+                exp
+              }</span><span class='dark-cyan'>#{abilities}</span></p>"
+            )
+          end
+        end)
+
+        cost =
+          room.trainer
+          |> Trainer.training_cost(character)
+          |> Currency.set_value()
+          |> Currency.to_string()
 
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-cyan'>#{level}</span><span class='dark-cyan'>#{exp}</span><span class='dark-cyan'>#{
-            abilities
-          }</span></p>"
+          "<p>\n<span class='yellow'>Training Cost:</span> #{cost}</p>"
         )
-      end)
+      end
     else
       Mobile.send_scroll(
         character,

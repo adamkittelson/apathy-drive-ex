@@ -117,7 +117,9 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def execute(%Room{} = room, %{} = character, %{"kind" => "Class"} = room_exit, reattempt) do
-    if character.class_id == room_exit["class_id"] do
+    classes = Enum.map(character.classes, & &1.class_id)
+
+    if room_exit["class_id"] in classes do
       execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"), reattempt)
     else
       Mobile.send_scroll(character, "<p>An invisible barrier blocks your entry!</p>")

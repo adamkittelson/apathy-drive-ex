@@ -33,8 +33,8 @@ defmodule ApathyDrive.Commands.System do
     end)
   end
 
-  def system(%Room{} = room, character, ["train"]) do
-    ApathyDrive.Commands.Train.execute(room, character, true)
+  def system(%Room{} = room, character, ["train" | args]) do
+    ApathyDrive.Commands.Train.execute(room, character, args, true)
   end
 
   def system(%Room{} = room, character, ["add_admin", name]) do

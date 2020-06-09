@@ -972,7 +972,11 @@ defmodule ApathyDrive.Ability do
                       &(&1.instance_id == item.instance_id)
                     )
 
-                  update_in(caster.equipment, &List.replace_at(&1, location, item))
+                  if location do
+                    update_in(caster.equipment, &List.replace_at(&1, location, item))
+                  else
+                    caster
+                  end
                 else
                   location =
                     Enum.find_index(
@@ -980,7 +984,11 @@ defmodule ApathyDrive.Ability do
                       &(&1.instance_id == item.instance_id)
                     )
 
-                  update_in(caster.inventory, &List.replace_at(&1, location, item))
+                  if location do
+                    update_in(caster.inventory, &List.replace_at(&1, location, item))
+                  else
+                    caster
+                  end
                 end
 
               Mobile.update_prompt(caster, room)
@@ -2241,7 +2249,7 @@ defmodule ApathyDrive.Ability do
       target =
         target.effects
         |> Enum.reject(fn {_key, effect} ->
-          String.match?(to_string(effect["stack_key"]), ~r/character|item|class|race/)
+          String.match?(inspect(effect["stack_key"]), ~r/character|item|class|race/)
         end)
         |> Enum.map(fn {key, _effect} -> key end)
         |> Enum.reduce(
