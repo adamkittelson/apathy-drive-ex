@@ -2245,21 +2245,10 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_instant_trait({"DispelMagic", trait_id}, %{} = target, _ability, caster, _room) do
-    if trait_id == 0 do
-      target =
-        target.effects
-        |> Enum.reject(fn {_key, effect} ->
-          String.match?(inspect(effect["stack_key"]), ~r/character|item|class|race/)
-        end)
-        |> Enum.map(fn {key, _effect} -> key end)
-        |> Enum.reduce(
-          target,
-          &Systems.Effect.remove(&2, &1, fire_after_cast: true, show_expiration_message: true)
-        )
+    trait = Repo.get(ApathyDrive.Trait, trait_id)
 
-      {caster, target}
-    else
-      trait = Repo.get!(ApathyDrive.Trait, trait_id).name
+    if trait do
+      trait = trait.name
 
       target =
         target.effects
@@ -2272,6 +2261,8 @@ defmodule ApathyDrive.Ability do
           &Systems.Effect.remove(&2, &1, fire_after_cast: true, show_expiration_message: true)
         )
 
+      {caster, target}
+    else
       {caster, target}
     end
   end

@@ -95,34 +95,37 @@ defmodule ApathyDrive.Commands.List do
           range = (character_class.level + 1)..(character_class.level + 6)
 
           Enum.each(range, fn level ->
-            abilities =
-              ApathyDrive.ClassAbility
-              |> Ecto.Query.where(
-                [ss],
-                ss.class_id == ^class.id and ss.level == ^level and ss.auto_learn == true
+            if (is_nil(min_level) or level >= min_level) and
+                 (is_nil(max_level) or level <= max_level) do
+              abilities =
+                ApathyDrive.ClassAbility
+                |> Ecto.Query.where(
+                  [ss],
+                  ss.class_id == ^class.id and ss.level == ^level and ss.auto_learn == true
+                )
+                |> Ecto.Query.preload([:ability])
+                |> Repo.all()
+                |> Enum.map(& &1.ability.name)
+                |> ApathyDrive.Commands.Inventory.to_sentence()
+
+              exp =
+                character
+                |> ApathyDrive.Commands.Train.required_experience(class.id, level)
+                |> to_string()
+                |> String.pad_trailing(15)
+
+              level =
+                level
+                |> to_string()
+                |> String.pad_trailing(8)
+
+              Mobile.send_scroll(
+                character,
+                "<p><span class='dark-cyan'>#{level}</span><span class='dark-cyan'>#{exp}</span><span class='dark-cyan'>#{
+                  abilities
+                }</span></p>"
               )
-              |> Ecto.Query.preload([:ability])
-              |> Repo.all()
-              |> Enum.map(& &1.ability.name)
-              |> ApathyDrive.Commands.Inventory.to_sentence()
-
-            exp =
-              character
-              |> ApathyDrive.Commands.Train.required_experience(class.id, level)
-              |> to_string()
-              |> String.pad_trailing(15)
-
-            level =
-              level
-              |> to_string()
-              |> String.pad_trailing(8)
-
-            Mobile.send_scroll(
-              character,
-              "<p><span class='dark-cyan'>#{level}</span><span class='dark-cyan'>#{exp}</span><span class='dark-cyan'>#{
-                abilities
-              }</span></p>"
-            )
+            end
           end)
 
           cost =
