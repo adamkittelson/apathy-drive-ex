@@ -82,5 +82,12 @@ defmodule ApathyDrive.Currency do
     currency_holder
     |> to_list
     |> ApathyDrive.Commands.Inventory.to_sentence()
+    |> case do
+      "" ->
+        "FREE"
+
+      other ->
+        other
+    end
   end
 end

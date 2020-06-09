@@ -16,6 +16,8 @@ defmodule ApathyDrive.Trainer do
   def trainer?(%Room{trainer: %Trainer{}}), do: true
   def trainer?(%Room{}), do: false
 
+  def training_cost(%Trainer{}, %Character{level: 1}), do: 0
+
   def training_cost(%Trainer{} = trainer, %Character{level: level} = character) do
     charm = Mobile.attribute_at_level(character, :charm, character.level)
 
