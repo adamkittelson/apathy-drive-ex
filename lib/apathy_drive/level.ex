@@ -18,7 +18,7 @@ defmodule ApathyDrive.Level do
   end
 
   def exp_at_level(level, multiplier \\ 1.0)
-  def exp_at_level(0, _multiplier), do: 0
+  def exp_at_level(level, _multiplier) when level < 1, do: 0
 
   def exp_at_level(level, multiplier) do
     1..level

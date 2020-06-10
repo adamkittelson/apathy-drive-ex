@@ -321,24 +321,15 @@ defmodule ApathyDrive.Character do
       |> Enum.uniq()
       |> Enum.map(&%{ability: Ability.find(&1)})
 
+    base_class_abilities = Enum.filter(class_abilities, &(&1.ability.kind == "base-class"))
+
+    character = set_class_traits(character, base_class_abilities)
+
+    class_abilities = Enum.reject(class_abilities, &(&1.ability.kind == "base-class"))
+
     character =
       (class_abilities ++ skill_abilities ++ granted_abilities)
       |> Enum.reduce(character, fn
-        %{ability: %Ability{id: id, kind: "base-class", level: level}}, character ->
-          effect =
-            id
-            |> AbilityTrait.load_traits()
-            |> Enum.reduce(%{}, fn {key, val}, effect ->
-              effect
-              |> Map.put(key, val * level)
-              |> Map.put("stack_key", id)
-              |> Map.put("stack_count", 1)
-              |> Map.put("ClassLevel", level)
-            end)
-            |> Ability.process_duration_traits(character, character, nil)
-
-          Systems.Effect.add(character, effect)
-
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
           Systems.Effect.add(character, effect)
@@ -383,6 +374,71 @@ defmodule ApathyDrive.Character do
     end)
   end
 
+  def set_class_traits(character, []), do: character
+
+  def set_class_traits(character, base_class_abilities) do
+    traits =
+      base_class_abilities
+      |> Enum.map(fn %{ability: ability} ->
+        ability.id
+        |> AbilityTrait.load_traits()
+        |> Map.put("Level", ability.level)
+      end)
+
+    max_level =
+      traits
+      |> Enum.map(& &1["Level"])
+      |> Enum.max()
+
+    max_hp =
+      Enum.reduce(1..max_level, 0, fn level, max_hp ->
+        hp =
+          traits
+          |> Enum.filter(&(&1["Level"] >= level))
+          |> Enum.map(& &1["MaxHP"])
+          |> Enum.reject(&is_nil/1)
+          |> Enum.max(fn -> 0 end)
+
+        hp + max_hp
+      end)
+
+    max_mana =
+      Enum.reduce(1..max_level, 0, fn level, max_mana ->
+        mana =
+          traits
+          |> Enum.filter(&(&1["Level"] >= level))
+          |> Enum.map(& &1["MaxMana"])
+          |> Enum.reject(&is_nil/1)
+          |> Enum.max(fn -> 0 end)
+
+        mana + max_mana
+      end)
+
+    combat_level =
+      Enum.reduce(1..max_level, 0, fn level, combat_level ->
+        combat =
+          traits
+          |> Enum.filter(&(&1["Level"] >= level))
+          |> Enum.map(& &1["ClassCombatLevel"])
+          |> Enum.reject(&is_nil/1)
+          |> Enum.max(fn -> 0 end)
+
+        combat + combat_level
+      end)
+
+    combat_level = combat_level / max_level
+
+    effect = %{
+      "stack_key" => "class",
+      "stack_count" => 1,
+      "MaxHP" => max_hp,
+      "MaxMana" => max_mana,
+      "CombatLevel" => combat_level
+    }
+
+    Systems.Effect.add(character, effect)
+  end
+
   def set_attribute_levels(%Character{} = character) do
     [:strength, :agility, :intellect, :willpower, :health, :charm]
     |> Enum.reduce(character, fn stat, character ->
@@ -416,7 +472,7 @@ defmodule ApathyDrive.Character do
         |> Enum.reduce(character, fn %{name: name} = skill, character ->
           character
           |> update_in([:skills], &Map.put_new(&1, name, Map.put(skill, :level, 0)))
-          |> update_in([:skills, name, :level], &(&1 + level))
+          |> update_in([:skills, name, :level], &min(max(&1, level), character.level))
         end)
       end)
 
@@ -466,8 +522,15 @@ defmodule ApathyDrive.Character do
   end
 
   def set_level(%Character{classes: classes} = character) do
+    classes = Enum.reject(classes, &(&1.level < 1))
+
     level = Enum.reduce(classes, 0, &(&1.level + &2))
-    Map.put(character, :level, max(level, 1))
+
+    if level > 0 do
+      Map.put(character, :level, div(level, length(classes)))
+    else
+      Map.put(character, :level, max(level, 1))
+    end
   end
 
   def load_race(%Character{race_id: race_id} = character) do
@@ -869,23 +932,17 @@ defmodule ApathyDrive.Character do
   end
 
   def used_experience(%Character{} = character) do
-    {used_experience, _level} =
-      character.classes
-      |> Enum.sort_by(fn c -> Repo.get(Class, c.class_id).exp_modifier end, &Kernel.>=/2)
-      |> Enum.reduce({0, -1}, fn character_class, {used_experience, level} ->
-        level = level + character_class.level
-        class = Repo.get(Class, character_class.class_id)
+    character.classes
+    |> Enum.reduce(0, fn character_class, used_experience ->
+      level = character_class.level - 1
+      class = Repo.get(Class, character_class.class_id)
 
-        modifier = class.exp_modifier / 100
+      modifier = class.exp_modifier / 100
 
-        exp = Level.exp_at_level(level, modifier)
+      exp = Level.exp_at_level(level, modifier)
 
-        diff = exp - used_experience
-
-        {used_experience + diff, level}
-      end)
-
-    used_experience
+      used_experience + exp
+    end)
   end
 
   def trainable_experience(%Character{} = character) do
@@ -1302,24 +1359,7 @@ defmodule ApathyDrive.Character do
   end
 
   def combat_level(%Character{} = character) do
-    {total_combat, total_level} =
-      character.effects
-      |> Map.values()
-      |> Enum.reduce({0, 0}, fn
-        %{"ClassCombatLevel" => combat, "ClassLevel" => level}, {total_combat, total_level} ->
-          {combat + total_combat, level + total_level}
-
-        _, {total_combat, total_level} ->
-          {total_combat, total_level}
-      end)
-
-    if total_level > 0 do
-      class_combat_level = Float.round(total_combat / total_level, 2)
-
-      class_combat_level + Mobile.ability_value(character, "CombatLevel")
-    else
-      Mobile.ability_value(character, "CombatLevel")
-    end
+    Mobile.ability_value(character, "CombatLevel")
   end
 
   def combat_proficiency(combat_level) when combat_level > 4.5, do: "Excellent"

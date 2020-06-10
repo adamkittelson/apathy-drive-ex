@@ -7,6 +7,7 @@ defmodule ApathyDrive.Commands.Train do
     Class,
     Currency,
     Directory,
+    Level,
     Repo,
     Trainer
   }
@@ -28,24 +29,24 @@ defmodule ApathyDrive.Commands.Train do
     end
   end
 
-  def required_experience(character, class_id, level \\ nil) do
-    initial_exp = Character.used_experience(character)
-
-    classes =
-      if index = Enum.find_index(character.classes, &(&1.class_id == class_id)) do
-        class = Enum.at(character.classes, index)
-        class = update_in(class.level, &(level || &1 + 1))
-        List.replace_at(character.classes, index, class)
+  def required_experience(character, class_id, target_level \\ nil) do
+    {current_level, class} =
+      if character_class = Enum.find(character.classes, &(&1.class_id == class_id)) do
+        {character_class.level, Repo.get(Class, class_id)}
       else
-        [%CharacterClass{level: level || 1, class_id: class_id} | character.classes]
+        {0, Repo.get(Class, class_id)}
       end
 
-    new_exp =
-      character
-      |> Map.put(:classes, classes)
-      |> Character.used_experience()
+    level = target_level || current_level + 1
 
-    new_exp - initial_exp
+    level = level - 1
+
+    modifier = class.exp_modifier / 100
+
+    current_exp = Level.exp_at_level(level - 1, modifier)
+    new_exp = Level.exp_at_level(level, modifier)
+
+    new_exp - current_exp
   end
 
   def train(room, character, class, force \\ false)
@@ -87,11 +88,18 @@ defmodule ApathyDrive.Commands.Train do
 
       Character.trainable_experience(character) < required_exp and !force ->
         message = "<p>You don't have the #{required_exp} required experience to train.</p>"
+
         Mobile.send_scroll(character, message)
         room
 
       Trainer.training_cost(room.trainer, character) > Currency.wealth(character) and !force ->
-        message = "<p>You don't have the money required to train!</p>"
+        money =
+          room.trainer
+          |> Trainer.training_cost(character)
+          |> Currency.set_value()
+          |> Currency.to_string()
+
+        message = "<p>You don't have the #{money} required to train!</p>"
         Mobile.send_scroll(character, message)
         room
 
@@ -151,10 +159,12 @@ defmodule ApathyDrive.Commands.Train do
         |> Character.set_title()
         |> Character.update_exp_bar()
 
-      Mobile.send_scroll(
-        character,
-        "<p>You hand over #{Currency.to_string(currency)}.</p>"
-      )
+      if price_in_copper > 0 do
+        Mobile.send_scroll(
+          character,
+          "<p>You hand over #{Currency.to_string(currency)}.</p>"
+        )
+      end
 
       new_abilities = Map.values(character.abilities)
 
