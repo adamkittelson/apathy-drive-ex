@@ -127,17 +127,6 @@ defmodule ApathyDrive.Commands.List do
               )
             end
           end)
-
-          cost =
-            room.trainer
-            |> Trainer.training_cost(character)
-            |> Currency.set_value()
-            |> Currency.to_string()
-
-          Mobile.send_scroll(
-            character,
-            "<p>\n<span class='yellow'>Training Cost:</span> #{cost}</p>"
-          )
         else
           Mobile.send_scroll(
             character,
@@ -201,17 +190,6 @@ defmodule ApathyDrive.Commands.List do
             )
           end
         end)
-
-        cost =
-          room.trainer
-          |> Trainer.training_cost(character)
-          |> Currency.set_value()
-          |> Currency.to_string()
-
-        Mobile.send_scroll(
-          character,
-          "<p>\n<span class='yellow'>Training Cost:</span> #{cost}</p>"
-        )
       end
     else
       Mobile.send_scroll(
