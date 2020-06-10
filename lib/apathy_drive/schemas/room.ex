@@ -340,9 +340,9 @@ defmodule ApathyDrive.Room do
     room
     |> MonsterSpawning.spawn_permanent_npc()
     |> Room.start_timer()
-    |> ApathyDrive.Scripts.Sanctuary.enforce_sanctuary()
     |> ApathyDrive.Scripts.PoisonRune.activate(mobile)
     |> ApathyDrive.Scripts.ExplodingRune.activate(mobile)
+    |> ApathyDrive.Scripts.Sanctuary.enforce_sanctuary()
   end
 
   def local_hated_targets(%Room{mobiles: mobiles}, %{hate: hate}) do
