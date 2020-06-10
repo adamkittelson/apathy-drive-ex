@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Regeneration do
   alias ApathyDrive.{AI, Mobile, Monster}
 
-  @ticks_per_round 20
+  @ticks_per_round 10
   @round_length 5000
 
   def tick_time(_mobile), do: trunc(@round_length / @ticks_per_round)
