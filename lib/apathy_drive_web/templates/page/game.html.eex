@@ -13,12 +13,6 @@
   <div class="progress-bar willpower attribute"><div class="dark-green"></div></div><div class="progress-bar charm attribute"><div class="dark-green"></div></div>
   <span class="attribute-row"><span class="dark-green">Intellect:</span> <span id="score-intellect" class="dark-cyan"></span> <span class="dark-green">Health:</span>  <span id="score-health" class="dark-cyan"></span>
   <span class="dark-green">Willpower:</span> <span id="score-willpower" class="dark-cyan"></span> <span class="dark-green">Charm:</span>   <span id="score-charm" class="dark-cyan"></span>
-
-  <span class="dark-green">Head:</span>      <span id="score-head" class="dark-cyan"></span>   <span class="dark-green">Torso:</span>      <span id="score-torso" class="dark-cyan"></span>
-  <span class="dark-green">Left Arm:</span>  <span id="score-left-arm" class="dark-cyan"></span>   <span class="dark-green">Right Arm:</span>  <span id="score-right-arm" class="dark-cyan"></span>
-  <span class="dark-green">Left Hand:</span> <span id="score-left-hand" class="dark-cyan"></span>   <span class="dark-green">Right Hand:</span> <span id="score-right-hand" class="dark-cyan"></span>
-  <span class="dark-green">Left Leg:</span>  <span id="score-left-leg" class="dark-cyan"></span>   <span class="dark-green">Right Leg:</span>  <span id="score-right-leg" class="dark-cyan"></span>
-  <span class="dark-green">Left Foot:</span> <span id="score-left-foot" class="dark-cyan"></span>   <span class="dark-green">Right Foot:</span> <span id="score-right-foot" class="dark-cyan"></span>
   <span id="score-effects"></span></span>
 </div>
 <div id="scroll-container">

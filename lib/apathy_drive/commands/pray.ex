@@ -54,17 +54,11 @@ defmodule ApathyDrive.Commands.Pray do
       character.limbs
       |> Enum.reduce(character, fn {limb_name, limb}, character ->
         if limb.health <= 0 do
-          Mobile.send_scroll(character, "<p>Your #{limb_name} begins to grow back!</p>")
-
-          effect = %{
-            "StatusMessage" => "Your #{limb_name} is crippled!",
-            "stack_key" => {:crippled, limb_name}
-          }
+          Mobile.send_scroll(character, "<p>Your #{limb_name} grows back!</p>")
 
           character
           |> Systems.Effect.remove_oldest_stack({:severed, limb_name})
-          |> Systems.Effect.add(effect)
-          |> put_in([:limbs, limb_name, :health], 0.01)
+          |> put_in([:limbs, limb_name, :health], 1.0)
         else
           character
         end

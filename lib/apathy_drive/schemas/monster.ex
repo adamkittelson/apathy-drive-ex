@@ -803,8 +803,6 @@ defmodule ApathyDrive.Monster do
             monster
         end
       end)
-      |> Regeneration.heal_limbs(monster.ref)
-      |> Regeneration.balance_limbs(monster.ref)
       |> Ability.unbalance(monster.ref)
       |> Room.update_mobile(monster.ref, fn room, monster ->
         monster

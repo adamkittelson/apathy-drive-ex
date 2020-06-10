@@ -1196,40 +1196,14 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def dodged?(%{} = caster, %{} = target, ability, room) do
+  def dodged?(%{} = caster, %{} = target, _ability, room) do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
-
-    accuracy_modifier =
-      ability.limbs
-      |> Enum.reduce(1.0, fn limb, modifier ->
-        if caster.limbs do
-          max(0, caster.limbs[limb].health) * modifier
-        else
-          modifier
-        end
-      end)
-
-    accuracy = accuracy * accuracy_modifier
 
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
-    dodge_modifier =
-      if Map.has_key?(target, :limbs) do
-        target.limbs
-        |> Enum.reduce(1.0, fn {_name, limb}, modifier ->
-          if limb.type in ["leg", "foot"] do
-            max(0, limb.health) * modifier
-          else
-            modifier
-          end
-        end)
-      else
-        1.0
-      end
-
     modifier = Mobile.ability_value(target, "Dodge")
 
-    dodge = (dodge + modifier) * dodge_modifier
+    dodge = dodge + modifier
 
     difference = dodge - accuracy
 
@@ -1243,34 +1217,15 @@ defmodule ApathyDrive.Ability do
     :rand.uniform(100) < chance
   end
 
-  def blocked?(%{} = caster, %Character{} = target, ability, room) do
-    if shield = Character.shield(target) do
+  def blocked?(%{} = caster, %Character{} = target, _ability, room) do
+    if Character.shield(target) do
       accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
-
-      limb_modifier =
-        ability.limbs
-        |> Enum.reduce(1.0, fn limb, modifier ->
-          if caster.limbs do
-            max(0, caster.limbs[limb].health) * modifier
-          else
-            modifier
-          end
-        end)
-
-      accuracy = accuracy * limb_modifier
 
       block = Mobile.block_at_level(target, target.level)
 
-      block_modifier =
-        if Map.has_key?(target, :limbs) do
-          max(0, target.limbs[shield.limb].health)
-        else
-          1.0
-        end
-
       modifier = Mobile.ability_value(target, "Block")
 
-      block = (block + modifier) * block_modifier
+      block = block + modifier
 
       difference = block - accuracy
 
@@ -1291,40 +1246,15 @@ defmodule ApathyDrive.Ability do
     :rand.uniform(100) < Mobile.ability_value(target, "Block")
   end
 
-  def parried?(%{} = caster, %Character{} = target, ability, room) do
-    if weapon = Character.weapon(target) do
+  def parried?(%{} = caster, %Character{} = target, _ability, room) do
+    if Character.weapon(target) do
       accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
-
-      limb_modifier =
-        ability.limbs
-        |> Enum.reduce(1.0, fn limb, modifier ->
-          if caster.limbs do
-            max(0, caster.limbs[limb].health) * modifier
-          else
-            modifier
-          end
-        end)
-
-      accuracy = accuracy * limb_modifier
 
       parry = Mobile.parry_at_level(target, target.level)
 
-      limbs =
-        if weapon.worn_on == "Two Handed" do
-          ["left hand", "right hand"]
-        else
-          [weapon.limb]
-        end
-
-      parry_modifier =
-        limbs
-        |> Enum.reduce(1.0, fn limb, modifier ->
-          max(0, target.limbs[limb].health) * modifier
-        end)
-
       modifier = Mobile.ability_value(target, "Block")
 
-      parry = (parry + modifier) * parry_modifier
+      parry = parry + modifier
 
       difference = parry - accuracy
 
@@ -1624,30 +1554,6 @@ defmodule ApathyDrive.Ability do
 
   def retaliate(room, _ability, _caster, _target), do: room
 
-  def limb(room, target_ref) do
-    target = room.mobiles[target_ref]
-
-    cond do
-      is_nil(target) ->
-        nil
-
-      Map.has_key?(target, :limbs) ->
-        target.limbs
-        |> Map.keys()
-        |> Enum.filter(&(target.limbs[&1].health > 0))
-        |> case do
-          [] ->
-            nil
-
-          limbs ->
-            Enum.random(limbs)
-        end
-
-      :else ->
-        nil
-    end
-  end
-
   def damage_limb(room, target_ref, limb_name, percentage, bleeding \\ false)
 
   def damage_limb(%Room{} = room, target_ref, limb_name, percentage, bleeding)
@@ -1927,12 +1833,6 @@ defmodule ApathyDrive.Ability do
         is_nil(ability_shift) ->
           room
 
-        ability_shift > 0 ->
-          Regeneration.heal_limbs(room, target_ref, ability_shift)
-
-        (limb = limb(room, target_ref)) && !Mobile.has_ability?(target, "HolyMission") ->
-          damage_limb(room, target_ref, limb, ability_shift * 2)
-
         :else ->
           room
       end
@@ -1973,41 +1873,12 @@ defmodule ApathyDrive.Ability do
       end
 
     room =
-      if room.mobiles[target_ref] && ability.traits["CrippleLimb"] do
-        ability.traits["CrippleLimb"]
-        |> Enum.reduce(room, fn limb_type, room ->
-          target = room.mobiles[target_ref]
+      if room.mobiles[target_ref] &&
+           (ability.traits["SeverLimb"] ||
+              ability.traits["CrippleLimb"]) do
+        limb = ability.traits["SeverLimb"] || ability.traits["CrippleLimb"]
 
-          target.limbs
-          |> Enum.filter(fn {_limb_name, limb} ->
-            correct_limb_type =
-              if limb_type == "non_fatal" do
-                !limb.fatal
-              else
-                limb.type == limb_type
-              end
-
-            correct_limb_type and limb.health >= 0.5
-          end)
-          |> case do
-            [] ->
-              room
-
-            limbs ->
-              {limb_name, limb} = Enum.random(limbs)
-
-              percentage = 0.25 - limb.health
-
-              damage_limb(room, target_ref, limb_name, percentage)
-          end
-        end)
-      else
-        room
-      end
-
-    room =
-      if room.mobiles[target_ref] && ability.traits["SeverLimb"] do
-        ability.traits["SeverLimb"]
+        limb
         |> Enum.reduce(room, fn limb_type, room ->
           target = room.mobiles[target_ref]
 

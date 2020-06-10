@@ -1277,16 +1277,6 @@ defmodule ApathyDrive.Character do
         end
       end)
 
-    limbs =
-      character.limbs
-      |> Enum.reduce(%{}, fn {limb_name, limb}, limbs ->
-        Map.put(
-          limbs,
-          limb_name,
-          "#{trunc(limb.health * 100)}%"
-        )
-      end)
-
     max_hp = Mobile.max_hp_at_level(character, character.level)
 
     hp_regen = Mobile.hp_regen_per_30(character)
@@ -1331,7 +1321,6 @@ defmodule ApathyDrive.Character do
       health: Mobile.attribute_at_level(character, :health, character.level),
       charm: Mobile.attribute_at_level(character, :charm, character.level),
       effects: effects,
-      limbs: limbs,
       round_length_in_ms: 5000,
       spellcasting:
         Mobile.spellcasting_at_level(character, character.level, %{
@@ -1784,7 +1773,6 @@ defmodule ApathyDrive.Character do
             |> Enum.reduce(character, fn {limb_name, _limb}, character ->
               character
               |> Systems.Effect.remove_oldest_stack({:severed, limb_name})
-              |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
             end)
             |> Ecto.Changeset.change(%{
               missing_limbs: []
@@ -1981,12 +1969,8 @@ defmodule ApathyDrive.Character do
 
       room =
         Room.update_mobile(room, character.ref, fn room, character ->
-          hp = Regeneration.hp_since_last_tick(room, character)
-
           room =
             room
-            |> Regeneration.heal_limbs(character.ref, hp)
-            |> Regeneration.balance_limbs(character.ref)
             |> Ability.unbalance(character.ref)
 
           character = room.mobiles[character.ref]
@@ -2218,7 +2202,7 @@ defmodule ApathyDrive.Character do
 
       sc = sc + level * 2
 
-      trunc((sc + ability_value(character, "Spellcasting")) * character.limbs["head"].health)
+      trunc(sc + ability_value(character, "Spellcasting"))
     end
 
     def stealth_at_level(character, level) do

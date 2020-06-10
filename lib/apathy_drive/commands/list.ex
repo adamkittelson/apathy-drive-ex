@@ -5,7 +5,6 @@ defmodule ApathyDrive.Commands.List do
     Character,
     CharacterClass,
     Class,
-    Currency,
     Mobile,
     Item,
     Repo,
