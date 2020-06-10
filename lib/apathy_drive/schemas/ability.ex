@@ -1104,7 +1104,8 @@ defmodule ApathyDrive.Ability do
           Room.update_mana_bar(room, caster.ref)
 
           room =
-            if ability.energy > 0 do
+            if ability.kind in ["attack", "curse"] and
+                 ability.energy > 0 do
               Room.update_mobile(room, caster_ref, fn _room, caster -> Stealth.reveal(caster) end)
             else
               room
