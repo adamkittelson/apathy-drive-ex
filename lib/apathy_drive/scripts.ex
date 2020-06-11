@@ -228,10 +228,10 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "ethereal amulet")
 
       roll <= 27 ->
-        give_item(room, mobile_ref, "serpent armbands")
+        give_item(room, mobile_ref, "serpent armband")
 
       roll <= 29 ->
-        give_item(room, mobile_ref, "padded black boots")
+        give_item(room, mobile_ref, "padded black boot")
 
       roll <= 31 ->
         give_item(room, mobile_ref, "runed cowl")
@@ -246,7 +246,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "elven cloak")
 
       roll <= 35 ->
-        give_item(room, mobile_ref, "elven boots")
+        give_item(room, mobile_ref, "elven boot")
 
       roll <= 40 ->
         give_item(room, mobile_ref, "gilded robes")
@@ -425,7 +425,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "ethereal amulet")
 
       roll <= 29 ->
-        give_item(room, mobile_ref, "serpent armbands")
+        give_item(room, mobile_ref, "serpent armband")
 
       roll <= 30 ->
         give_item(room, mobile_ref, "cat's-eye pendant")
@@ -455,7 +455,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "elven cloak")
 
       roll <= 48 ->
-        give_item(room, mobile_ref, "elven boots")
+        give_item(room, mobile_ref, "elven boot")
 
       roll <= 50 ->
         give_item(room, mobile_ref, "crested war helm")
@@ -614,10 +614,10 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "golden vial")
 
       roll <= 6 ->
-        give_item(room, mobile_ref, "starsteel plate boots")
+        give_item(room, mobile_ref, "starsteel plate boot")
 
       roll <= 8 ->
-        give_item(room, mobile_ref, "starsteel plate gauntlets")
+        give_item(room, mobile_ref, "starsteel plate gauntlet")
 
       roll <= 10 ->
         give_item(room, mobile_ref, "starsteel greathelm")
@@ -674,13 +674,13 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "behemoth hide")
 
       roll <= 68 ->
-        give_item(room, mobile_ref, "prismatic slippers")
+        give_item(room, mobile_ref, "prismatic slipper")
 
       roll <= 69 ->
         give_item(room, mobile_ref, "mithril chainmail hauberk")
 
       roll <= 70 ->
-        give_item(room, mobile_ref, "prismatic gloves")
+        give_item(room, mobile_ref, "prismatic glove")
 
       roll <= 71 ->
         give_item(room, mobile_ref, "dragonscale armour")
@@ -707,13 +707,13 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "stormhammer")
 
       roll <= 89 ->
-        give_item(room, mobile_ref, "astral slippers")
+        give_item(room, mobile_ref, "astral slipper")
 
       roll <= 91 ->
         give_item(room, mobile_ref, "astral trousers")
 
       roll <= 93 ->
-        give_item(room, mobile_ref, "astral gloves")
+        give_item(room, mobile_ref, "astral glove")
 
       roll <= 95 ->
         give_item(room, mobile_ref, "dragontooth trident")
@@ -762,10 +762,10 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "azurite stone")
 
       roll <= 35 ->
-        give_item(room, mobile_ref, "serpent armbands")
+        give_item(room, mobile_ref, "serpent armband")
 
       roll <= 36 ->
-        give_item(room, mobile_ref, "crimson scale gauntlets")
+        give_item(room, mobile_ref, "crimson scale gauntlet")
 
       roll <= 37 ->
         give_item(room, mobile_ref, "vorpal sword")
@@ -780,7 +780,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "gianthair vest")
 
       roll <= 52 ->
-        give_item(room, mobile_ref, "red dragon boots")
+        give_item(room, mobile_ref, "red dragon boot")
 
       roll <= 54 ->
         give_item(room, mobile_ref, "silver bracelet")
@@ -873,7 +873,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "azurite stone")
 
       roll <= 35 ->
-        give_item(room, mobile_ref, "serpent armbands")
+        give_item(room, mobile_ref, "serpent armband")
 
       roll <= 36 ->
         give_item(room, mobile_ref, "fine platinum chain")
