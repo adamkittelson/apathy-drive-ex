@@ -726,20 +726,6 @@ defmodule ApathyDrive.Scripts do
     end
   end
 
-  # 45:message 1437:giveitem 410
-  # 50:message 1437:giveitem 414
-  # 52:message 1434:giveitem 226
-  # 54:message 1433:giveitem 426
-  # 60:message 1433:giveitem 428
-  # 69:message 1429:giveitem 878
-  # 71:message 1423:giveitem 882
-  # 74:message 1423:giveitem 883
-  # 79:message 1424:giveitem 885
-  # 80:message 1428:giveitem 903
-  # 87:message 2622:giveitem 1889
-  # 94:message 2622:giveitem 1342
-  # 100:random 2944
-
   def random_item_2944(room, mobile_ref) do
     roll = :rand.uniform(100)
 
@@ -827,6 +813,112 @@ defmodule ApathyDrive.Scripts do
 
       roll <= 100 ->
         random_item_2944(room, mobile_ref)
+    end
+  end
+
+  def random_item_2921(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 25 ->
+        room
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+
+      roll <= 50 ->
+        room
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+
+      roll <= 75 ->
+        room
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+
+      roll <= 100 ->
+        room
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_895(mobile_ref)
+        |> random_item_895(mobile_ref)
+        |> random_item_2922(mobile_ref)
+        |> random_item_2922(mobile_ref)
+    end
+  end
+
+  def random_item_2922(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 9 ->
+        give_item(room, mobile_ref, "carnelian stone")
+
+      roll <= 14 ->
+        give_item(room, mobile_ref, 889)
+
+      roll <= 25 ->
+        give_item(room, mobile_ref, "glowing broadsword")
+
+      roll <= 30 ->
+        give_item(room, mobile_ref, "fine silvery broadsword")
+
+      roll <= 33 ->
+        give_item(room, mobile_ref, "azurite stone")
+
+      roll <= 35 ->
+        room = give_item(room, mobile_ref, "serpent armbands")
+
+      roll <= 36 ->
+        give_item(room, mobile_ref, "fine platinum chain")
+
+      roll <= 37 ->
+        give_item(room, mobile_ref, "glowing warhammer")
+
+      roll <= 38 ->
+        give_item(room, mobile_ref, "emerald-studded bracelet")
+
+      roll <= 45 ->
+        give_item(room, mobile_ref, "gilded robes")
+
+      roll <= 50 ->
+        give_item(room, mobile_ref, "gianthair vest")
+
+      roll <= 52 ->
+        give_item(room, mobile_ref, "crimson cloak")
+
+      roll <= 57 ->
+        give_item(room, mobile_ref, "silver bracelet")
+
+      roll <= 60 ->
+        give_item(room, mobile_ref, "fingerbone bracelet")
+
+      roll <= 69 ->
+        give_item(room, mobile_ref, "azurite stone")
+
+      roll <= 71 ->
+        give_item(room, mobile_ref, "agate stone")
+
+      roll <= 74 ->
+        give_item(room, mobile_ref, "hematite stone")
+
+      roll <= 77 ->
+        give_item(room, mobile_ref, "malachite stone")
+
+      roll <= 85 ->
+        give_item(room, mobile_ref, "obsidian stone")
+
+      roll <= 90 ->
+        give_item(room, mobile_ref, "turquoise stone")
+
+      roll <= 100 ->
+        give_item(room, mobile_ref, "bloodstone")
     end
   end
 
