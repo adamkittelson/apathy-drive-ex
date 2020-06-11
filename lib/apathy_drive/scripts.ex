@@ -873,7 +873,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "azurite stone")
 
       roll <= 35 ->
-        room = give_item(room, mobile_ref, "serpent armbands")
+        give_item(room, mobile_ref, "serpent armbands")
 
       roll <= 36 ->
         give_item(room, mobile_ref, "fine platinum chain")
