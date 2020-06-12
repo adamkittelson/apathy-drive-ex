@@ -58,7 +58,6 @@ defmodule ApathyDrive.Ability do
     field(:on_hit?, :boolean, virtual: true, default: false)
     field(:can_crit, :boolean, virtual: true, default: false)
     field(:spell?, :boolean, virtual: true, default: true)
-    field(:reaction_energy, :integer, virtual: true, default: 0)
     field(:auto, :boolean, virtual: true, default: true)
     field(:class_id, :integer, virtual: true)
     field(:skill_id, :integer, virtual: true)
@@ -1901,7 +1900,6 @@ defmodule ApathyDrive.Ability do
                 kind: "critical",
                 mana: 0,
                 energy: 0,
-                reaction_energy: Enum.random(100..300),
                 user_message: shield["UserMessage"],
                 target_message: shield["TargetMessage"],
                 spectator_message: shield["SpectatorMessage"],
@@ -2099,8 +2097,6 @@ defmodule ApathyDrive.Ability do
         damages
       end
 
-    round_percent = (ability.reaction_energy || ability.energy) / caster.max_energy
-
     target =
       target
       |> Map.put(:ability_shift, 0)
@@ -2125,7 +2121,7 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
-          bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
+          bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
 
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
@@ -2165,7 +2161,7 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
-          bonus_damage = Mobile.ability_value(caster, "ModifyDamage") * round_percent
+          bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
 
           resist = Mobile.magical_resistance_at_level(target, target.level)
 

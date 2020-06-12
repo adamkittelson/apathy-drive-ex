@@ -33,7 +33,6 @@ defmodule ApathyDrive.Scripts.Cleave do
           "cleave"
           |> Ability.find()
           |> Map.put(:target_list, "")
-          |> Map.put(:reaction_energy, attack.energy)
 
         Map.put(character, :casting, ability)
       else

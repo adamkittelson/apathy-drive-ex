@@ -170,7 +170,6 @@ chan.on("update score", function (score_data) {
   update_score_attribute("dodge", score_data.dodge);
   update_score_attribute("alignment", _.padEnd(_.capitalize(score_data.alignment), 8));
   update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '/' + score_data.magical_resistance, 11));
-  update_score_attribute("parry", score_data.parry);
   update_score_attribute("hp", _.padEnd(score_data.hp + "/" + score_data.max_hp, 13));
   update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 11));
   update_score_attribute("hp-regen", _.padEnd(score_data.hp_regen, 12));

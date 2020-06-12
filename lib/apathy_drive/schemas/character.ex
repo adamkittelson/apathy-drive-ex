@@ -849,7 +849,6 @@ defmodule ApathyDrive.Character do
         Enum.map(on_hit, fn ability ->
           ability
           |> Map.put(:energy, 0)
-          |> Map.put(:reaction_energy, 200)
           |> Map.put(:mana, 0)
           |> Map.put(:on_hit?, true)
           |> Map.put(:difficulty, nil)
