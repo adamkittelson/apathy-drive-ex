@@ -159,7 +159,6 @@ defmodule ApathyDrive.Room do
         send(socket, {:update_moblist, list})
 
         Enum.each(room.mobiles, fn {ref, _mobile} ->
-          Room.update_energy_bar(room, ref)
           Room.update_hp_bar(room, ref)
           Room.update_mana_bar(room, ref)
         end)
@@ -261,7 +260,9 @@ defmodule ApathyDrive.Room do
                 <span class="<%= mob.color %>"><%= mob.name %></span>
                 <div id="<%= mob.ref %>-bars">
                   <div class="progress-bar hp"></div>
-                  <div class="progress-bar energy"></div>
+                  <div class="progress-bar energy">
+                    <div class="yellow"></div>
+                  </div>
                   <div class="progress-bar mana"></div>
                 </div>
               </li>

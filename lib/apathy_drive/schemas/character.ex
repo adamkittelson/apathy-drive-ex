@@ -1208,6 +1208,7 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: trunc(percent * 100),
+         round_length: Regeneration.round_length(mobile),
          max_percent: 100
        }}
     )
@@ -1277,7 +1278,7 @@ defmodule ApathyDrive.Character do
     damage_percent_per_30 =
       character
       |> Regeneration.damage_effect_per_tick()
-      |> Regeneration.per_tick_to_per_30()
+      |> Regeneration.per_tick_to_per_30(character)
 
     damage_per_30 = damage_percent_per_30 * Mobile.max_hp_at_level(character, character.level)
 
@@ -1956,6 +1957,10 @@ defmodule ApathyDrive.Character do
             |> Regeneration.regenerate(room)
             |> Character.drain_exp_buffer()
             |> RoomServer.execute_casting_ability(room)
+            |> TimerManager.send_after(
+              {:heartbeat, ApathyDrive.Regeneration.tick_time(character),
+               {:heartbeat, character.ref}}
+            )
           else
             room
           end
@@ -2242,7 +2247,6 @@ defmodule ApathyDrive.Character do
     def update_prompt(%Character{socket: socket} = character, room) do
       Room.update_hp_bar(room, character.ref)
       Room.update_mana_bar(room, character.ref)
-      Room.update_energy_bar(room, character.ref)
       send(socket, {:update_prompt, Character.prompt(character)})
       character
     end

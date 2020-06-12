@@ -2444,7 +2444,7 @@ defmodule ApathyDrive.Ability do
 
       # damage = damage * (1 - modifier / 100)
 
-      rounds = :timer.seconds(30) / Regeneration.round_length()
+      rounds = :timer.seconds(30) / Regeneration.round_length(target)
 
       percent = damage_per_30 / Mobile.max_hp_at_level(target, target.level)
 

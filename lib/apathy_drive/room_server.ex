@@ -185,8 +185,6 @@ defmodule ApathyDrive.RoomServer do
       send(self(), :execute_room_ability)
     end
 
-    send(self(), :heartbeat)
-
     Process.send_after(self(), :save, 2000)
 
     send(self(), :cleanup)
@@ -263,6 +261,9 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_materials()
         |> TimerManager.send_after(
           {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, ref}}
+        )
+        |> TimerManager.send_after(
+          {:heartbeat, ApathyDrive.Regeneration.tick_time(character), {:heartbeat, ref}}
         )
 
       Mobile.update_prompt(character, room)
@@ -563,14 +564,11 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:heartbeat, room) do
+  def handle_info({:heartbeat, mobile_ref}, room) do
     room =
-      room.mobiles
-      |> Enum.reduce(room, fn {_ref, mobile}, room ->
+      Room.update_mobile(room, mobile_ref, fn room, mobile ->
         Mobile.heartbeat(mobile, room)
       end)
-
-    Process.send_after(self(), :heartbeat, ApathyDrive.Regeneration.tick_time(nil))
 
     {:noreply, room}
   end

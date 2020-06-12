@@ -4,22 +4,30 @@ defmodule ApathyDrive.Regeneration do
   @ticks_per_round 10
   @round_length 5000
 
-  def tick_time(_mobile), do: trunc(@round_length / @ticks_per_round)
+  def tick_time(mobile) do
+    trunc(round_length(mobile) / @ticks_per_round)
+  end
 
-  def round_length, do: @round_length
+  def round_length(mobile) do
+    speed = Mobile.ability_value(mobile, "Speed")
+
+    modifier = if speed == 0, do: 1, else: speed
+
+    trunc(@round_length * (1 / modifier))
+  end
 
   def per_tick_to_per_round(amount) do
     amount * @ticks_per_round
   end
 
-  def per_round_to_per_30(amount) do
-    amount * (:timer.seconds(30) / @round_length)
+  def per_round_to_per_30(amount, mobile) do
+    amount * (:timer.seconds(30) / round_length(mobile))
   end
 
-  def per_tick_to_per_30(amount) do
+  def per_tick_to_per_30(amount, mobile) do
     amount
     |> per_tick_to_per_round()
-    |> per_round_to_per_30()
+    |> per_round_to_per_30(mobile)
   end
 
   def duration_for_energy(mobile, energy) do
@@ -43,13 +51,7 @@ defmodule ApathyDrive.Regeneration do
   end
 
   def energy_per_tick(mobile) do
-    energy = mobile.max_energy / @ticks_per_round
-
-    speed = Mobile.ability_value(mobile, "Speed")
-
-    modifier = if speed == 0, do: 1, else: speed
-
-    trunc(energy * (1 / modifier))
+    mobile.max_energy / @ticks_per_round
   end
 
   def energy_since_last_tick(%{last_tick_at: nil} = mobile), do: energy_per_tick(mobile)

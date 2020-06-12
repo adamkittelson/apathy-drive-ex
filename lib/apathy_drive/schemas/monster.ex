@@ -23,7 +23,8 @@ defmodule ApathyDrive.Monster do
     Room,
     RoomMonster,
     RoomServer,
-    Text
+    Text,
+    TimerManager
   }
 
   require Logger
@@ -216,6 +217,9 @@ defmodule ApathyDrive.Monster do
       |> load_abilities()
       |> load_traits()
       |> load_drops()
+      |> TimerManager.send_after(
+        {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, ref}}
+      )
     end
   end
 
@@ -250,6 +254,9 @@ defmodule ApathyDrive.Monster do
     |> load_abilities()
     |> load_traits()
     |> load_drops()
+    |> TimerManager.send_after(
+      {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, ref}}
+    )
   end
 
   def spawnable?(%Monster{next_spawn_at: nil}, _now), do: true
@@ -801,6 +808,9 @@ defmodule ApathyDrive.Monster do
         monster
         |> Regeneration.regenerate(room)
         |> RoomServer.execute_casting_ability(room)
+        |> TimerManager.send_after(
+          {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, monster.ref}}
+        )
       end)
       |> ApathyDrive.Aggression.react(monster.ref)
       |> AI.think(monster.ref)
@@ -892,7 +902,6 @@ defmodule ApathyDrive.Monster do
     def update_prompt(%Monster{} = monster, room) do
       Room.update_hp_bar(room, monster.ref)
       Room.update_mana_bar(room, monster.ref)
-      Room.update_energy_bar(room, monster.ref)
       monster
     end
   end

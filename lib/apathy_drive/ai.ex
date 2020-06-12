@@ -358,8 +358,9 @@ defmodule ApathyDrive.AI do
 
   def auto_attack?(%{last_auto_attack_at: nil}), do: true
 
-  def auto_attack?(%{last_auto_attack_at: time}) do
-    DateTime.diff(DateTime.utc_now(), time, :millisecond) >= div(Regeneration.round_length(), 5)
+  def auto_attack?(%{last_auto_attack_at: time} = mobile) do
+    DateTime.diff(DateTime.utc_now(), time, :millisecond) >=
+      div(Regeneration.round_length(mobile), 5)
   end
 
   def random_ability([ability], mobile) do
