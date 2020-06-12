@@ -63,6 +63,7 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
+    field(:last_auto_attack_at, :any, virtual: true)
     field(:owner_id, :integer, virtual: true)
     field(:leader, :any, virtual: true)
     field(:hp, :float, virtual: true, default: 1.0)

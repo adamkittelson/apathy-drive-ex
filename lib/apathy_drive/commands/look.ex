@@ -377,7 +377,7 @@ defmodule ApathyDrive.Commands.Look do
   def weapon_damage(%Character{} = character, ability \\ nil) do
     ability = ability || Mobile.attack_ability(character)
 
-    attack_interval = Regeneration.duration_for_energy(character, ability.energy)
+    attack_interval = Regeneration.duration_for_energy(character, max(ability.energy, 200))
 
     {min_damage, max_damage} =
       Enum.reduce(ability.traits["Damage"], {0, 0}, fn damage, {min_damage, max_damage} ->

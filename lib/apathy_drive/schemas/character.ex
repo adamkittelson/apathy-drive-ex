@@ -81,6 +81,7 @@ defmodule ApathyDrive.Character do
     field(:spectator_color, :string, default: "red")
     field(:lore_name, :string)
 
+    field(:last_auto_attack_at, :any, virtual: true)
     field(:resting, :boolean, virtual: true, default: false)
     field(:enchantment, :any, virtual: true)
     field(:next_drain_at, :integer, virtual: true)

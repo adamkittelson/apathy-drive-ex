@@ -1,5 +1,5 @@
 defmodule ApathyDrive.AI do
-  alias ApathyDrive.{Ability, Character, Mobile, Monster, Party, Room}
+  alias ApathyDrive.{Ability, Character, Mobile, Monster, Party, Regeneration, Room}
 
   def think(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn room, mobile ->
@@ -323,10 +323,12 @@ defmodule ApathyDrive.AI do
       attack = Mobile.attack_ability(mobile)
 
       if attack do
-        attack = Map.put(attack, :energy, max(attack.energy, 200))
-
-        if mobile.energy >= 1000 && !mobile.casting do
-          Ability.execute(room, mobile.ref, attack, [target_ref])
+        if mobile.energy >= attack.energy && !mobile.casting && auto_attack?(mobile) do
+          room
+          |> Room.update_mobile(mobile.ref, fn _room, mobile ->
+            Map.put(mobile, :last_auto_attack_at, DateTime.utc_now())
+          end)
+          |> Ability.execute(mobile.ref, attack, [target_ref])
         end
       end
     else
@@ -352,6 +354,12 @@ defmodule ApathyDrive.AI do
           nil
       end
     end
+  end
+
+  def auto_attack?(%{last_auto_attack_at: nil}), do: true
+
+  def auto_attack?(%{last_auto_attack_at: time}) do
+    DateTime.diff(DateTime.utc_now(), time, :millisecond) >= div(Regeneration.round_length(), 5)
   end
 
   def random_ability([ability], mobile) do
