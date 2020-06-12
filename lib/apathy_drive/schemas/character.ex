@@ -722,7 +722,7 @@ defmodule ApathyDrive.Character do
     end
   end
 
-  def ability_for_weapon(character, weapon, riposte) do
+  def ability_for_weapon(character, weapon) do
     verbs = %{
       "beat" => "Crushing",
       "bludgeon" => "Crushing",
@@ -795,18 +795,11 @@ defmodule ApathyDrive.Character do
 
     table = verbs[singular_hit] || "Crushing"
 
-    [singular_hit, plural_hit] =
-      if riposte do
-        ["riposte", "ripostes"]
-      else
-        [singular_hit, plural_hit]
-      end
-
     energy = Character.energy_per_swing(character, weapon)
 
     ability = %Ability{
       kind: "attack",
-      energy: if(riposte, do: 0, else: energy),
+      energy: energy,
       name: weapon.name,
       attributes: ["agility", "strength"],
       mana: 0,
@@ -828,7 +821,7 @@ defmodule ApathyDrive.Character do
           }
           | bonus_damage
         ],
-        "Dodgeable" => if(riposte, do: false, else: true),
+        "Dodgeable" => true,
         "DodgeUserMessage" =>
           "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
         "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
@@ -1302,8 +1295,6 @@ defmodule ApathyDrive.Character do
       crits: Mobile.crits_at_level(character, character.level),
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
-      block: Mobile.block_at_level(character, character.level),
-      parry: Mobile.parry_at_level(character, character.level),
       physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
       magical_damage: Mobile.magical_penetration_at_level(character, character.level),
       magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
@@ -1508,7 +1499,7 @@ defmodule ApathyDrive.Character do
         ability_value(character, attribute |> to_string |> String.capitalize())
     end
 
-    def attack_ability(character, riposte) do
+    def attack_ability(character) do
       punch = %Item{
         type: "Weapon",
         name: "fist",
@@ -1528,7 +1519,7 @@ defmodule ApathyDrive.Character do
 
       weapon = Character.weapon(character) || punch
 
-      Character.ability_for_weapon(character, weapon, riposte)
+      Character.ability_for_weapon(character, weapon)
     end
 
     def auto_attack_target(%Character{attack_target: target} = _character, room) do
@@ -1838,21 +1829,6 @@ defmodule ApathyDrive.Character do
       base = agi + cha / 10
 
       trunc(base + ability_value(character, "Dodge"))
-    end
-
-    def block_at_level(character, level) do
-      str = attribute_at_level(character, :strength, level)
-      cha = attribute_at_level(character, :charm, level)
-      base = str + cha / 10
-      trunc(base + ability_value(character, "Block"))
-    end
-
-    def parry_at_level(character, _level) do
-      str = Mobile.attribute_at_level(character, :strength, character.level)
-      agi = Mobile.attribute_at_level(character, :agility, character.level)
-      cha = Mobile.attribute_at_level(character, :charm, character.level)
-      base = (str + agi) / 2 + cha / 10
-      trunc(base + Mobile.ability_value(character, "Parry"))
     end
 
     def enough_mana_for_ability?(character, %Ability{mana: cost} = _ability) do

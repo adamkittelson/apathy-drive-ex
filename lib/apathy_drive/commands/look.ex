@@ -392,7 +392,7 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
-    ability = Character.ability_for_weapon(character, item, false)
+    ability = Character.ability_for_weapon(character, item)
     damage = weapon_damage(character, ability)
 
     value =

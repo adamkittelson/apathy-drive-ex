@@ -423,7 +423,7 @@ defmodule ApathyDrive.Monster do
         ability_value(monster, attribute |> to_string |> String.capitalize())
     end
 
-    def attack_ability(monster, _riposte) do
+    def attack_ability(monster) do
       monster.abilities
       |> Map.values()
       |> Enum.filter(&(&1.kind == "auto attack" or !is_nil(&1.chance)))
@@ -621,14 +621,6 @@ defmodule ApathyDrive.Monster do
       cha = attribute_at_level(monster, :charm, level)
       base = agi + cha / 10
       trunc(base + ability_value(monster, "Dodge"))
-    end
-
-    def block_at_level(monster, _level) do
-      trunc(Mobile.ability_value(monster, "Block"))
-    end
-
-    def parry_at_level(monster, _level) do
-      Mobile.ability_value(monster, "Parry")
     end
 
     def enough_mana_for_ability?(monster, %Ability{mana: cost}) do
