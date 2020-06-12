@@ -1239,7 +1239,6 @@ defmodule ApathyDrive.Ability do
             agility: 0.9,
             charm: 0.1
           })
-          |> Map.put(:energy, min(target.max_energy, target.energy + 200))
 
         room = put_in(room.mobiles[target.ref], target)
 
