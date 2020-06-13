@@ -334,6 +334,8 @@ defmodule ApathyDrive.Room do
 
     room = put_in(room.mobiles[mobile.ref], mobile)
 
+    Room.update_energy_bar(room, mobile.ref)
+
     if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
 
     update_moblist(room)
