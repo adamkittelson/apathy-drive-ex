@@ -120,6 +120,7 @@ defmodule ApathyDrive.Ability do
     "Alignment",
     "Bubble",
     "Bubble%",
+    "BubbleRegen%PerSecond",
     "Charm",
     "Blind",
     "Charm",
