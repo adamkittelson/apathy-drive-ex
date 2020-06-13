@@ -1956,11 +1956,11 @@ defmodule ApathyDrive.Character do
             character
             |> Regeneration.regenerate(room)
             |> Character.drain_exp_buffer()
-            |> RoomServer.execute_casting_ability(room)
             |> TimerManager.send_after(
               {:heartbeat, ApathyDrive.Regeneration.tick_time(character),
                {:heartbeat, character.ref}}
             )
+            |> RoomServer.execute_casting_ability(room)
           else
             room
           end

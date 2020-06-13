@@ -807,10 +807,10 @@ defmodule ApathyDrive.Monster do
       |> Room.update_mobile(monster.ref, fn room, monster ->
         monster
         |> Regeneration.regenerate(room)
-        |> RoomServer.execute_casting_ability(room)
         |> TimerManager.send_after(
           {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, monster.ref}}
         )
+        |> RoomServer.execute_casting_ability(room)
       end)
       |> ApathyDrive.Aggression.react(monster.ref)
       |> AI.think(monster.ref)
