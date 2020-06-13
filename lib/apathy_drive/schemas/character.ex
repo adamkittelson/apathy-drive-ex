@@ -1207,7 +1207,7 @@ defmodule ApathyDrive.Character do
        %{
          ref: mobile.ref,
          player: mobile.ref == character.ref,
-         percentage: trunc(percent * 100),
+         percentage: max(0, trunc(percent * 100)),
          round_length: Regeneration.round_length(mobile),
          max_percent: 100
        }}
@@ -1225,7 +1225,7 @@ defmodule ApathyDrive.Character do
        %{
          ref: mobile.ref,
          player: mobile.ref == character.ref,
-         percentage: trunc(percent * 100),
+         percentage: max(0, trunc(percent * 100)),
          max_percent: 100
        }}
     )
@@ -1244,7 +1244,7 @@ defmodule ApathyDrive.Character do
        %{
          ref: mobile.ref,
          player: mobile.ref == character.ref,
-         percentage: trunc(percent * 100),
+         percentage: max(0, trunc(percent * 100)),
          shield: Mobile.ability_value(mobile, "Bubble")
        }}
     )
