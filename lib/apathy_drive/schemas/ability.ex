@@ -91,7 +91,8 @@ defmodule ApathyDrive.Ability do
     "single",
     "full area",
     "weapon",
-    "armour"
+    "armour",
+    "stone"
   ]
   @target_required_targets ["monster or single", "monster", "single"]
 
