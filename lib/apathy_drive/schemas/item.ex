@@ -124,7 +124,7 @@ defmodule ApathyDrive.Item do
     field(:required_classes, :any, virtual: true, default: [])
     field(:enchantments, :string, virtual: true, default: [])
     field(:keywords, :any, virtual: true)
-    field(:uses, :integer, virtual: true)
+    field(:uses, :float, virtual: true)
     field(:hidden, :boolean, virtual: true)
     field(:unfinished, :boolean, virtual: true)
 

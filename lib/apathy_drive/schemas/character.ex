@@ -1133,11 +1133,10 @@ defmodule ApathyDrive.Character do
 
   def add_character_experience(%Character{} = character, _exp), do: character
 
-  def prompt(%Character{level: level, hp: hp_percent, mana: mana_percent} = character) do
-    max_hp = Mobile.max_hp_at_level(character, level)
+  def prompt(%Character{level: level, hp: hp_percent} = character) do
     max_mana = Mobile.max_mana_at_level(character, level)
-    hp = trunc(max_hp * hp_percent)
-    mana = trunc(max_mana * mana_percent)
+    hp = hp_at_level(character, level)
+    mana = mana_at_level(character, level)
 
     resting =
       if character.resting do
@@ -1186,7 +1185,16 @@ defmodule ApathyDrive.Character do
   def mana_at_level(%Character{} = character, level) do
     max_mana = Mobile.max_mana_at_level(character, level)
 
-    trunc(max_mana * character.mana)
+    powerstone_uses =
+      Enum.reduce(character.inventory, 0, fn item, total ->
+        if "create powerstone" in item.enchantments do
+          item.uses + total
+        else
+          total
+        end
+      end)
+
+    trunc(max_mana * character.mana + powerstone_uses)
   end
 
   def update_score(%Character{socket: socket} = character, room) do
@@ -2220,6 +2228,20 @@ defmodule ApathyDrive.Character do
     def subtract_mana(character, %{mana: 0} = _ability), do: character
 
     def subtract_mana(character, %Ability{mana: cost}) do
+      {cost, character} =
+        Enum.reduce(character.inventory, {cost, character}, fn item, {cost, character} ->
+          if "create powerstone" in item.enchantments do
+            amount = min(cost, item.uses)
+            cost = cost - amount
+            character = update_in(character.inventory, &List.delete(&1, item))
+            item = update_in(item.uses, &(&1 - amount))
+            character = update_in(character.inventory, &[item | &1])
+            {cost, character}
+          else
+            {cost, character}
+          end
+        end)
+
       percentage = cost / Mobile.max_mana_at_level(character, character.level)
 
       character

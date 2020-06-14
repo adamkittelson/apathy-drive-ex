@@ -743,6 +743,10 @@ defmodule ApathyDrive.Commands.Help do
     {"AC", ac_from_percent}
   end
 
+  defp massage_trait({"Powerstone", _value}, _character) do
+    {"Transforms a stone or gem into a mana granting powerstone", nil}
+  end
+
   defp massage_trait({"MR%", amount}, _character) do
     ac_from_percent = Ability.ac_for_mitigation_at_level(amount)
     {"MR", ac_from_percent}

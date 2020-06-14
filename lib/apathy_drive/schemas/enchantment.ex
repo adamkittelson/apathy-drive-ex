@@ -179,6 +179,12 @@ defmodule ApathyDrive.Enchantment do
             |> Repo.update!()
           end
 
+          if Map.has_key?(enchantment.ability.traits, "Powerstone") do
+            enchantment
+            |> Ecto.Changeset.change(%{value: div(enchanter.skills["enchanting"].level, 5) * 5})
+            |> Repo.update!()
+          end
+
           message =
             "<p><span class='blue'>You've enchanted #{item.name} with #{enchantment.ability.name}.</span></p>"
 
@@ -480,10 +486,25 @@ defmodule ApathyDrive.Enchantment do
                     item.weight
                   end
 
-                item
-                |> Systems.Effect.add(ability.traits)
-                |> Map.put(:enchantments, [enchantment_name | item.enchantments])
-                |> Map.put(:weight, weight)
+                if traits["Powerstone"] do
+                  item
+                  |> Systems.Effect.add(ability.traits)
+                  |> Map.put(:enchantments, [enchantment_name | item.enchantments])
+                  |> Map.put(:weight, 100 + enchantment.value * 10)
+                  |> Map.put(:max_uses, enchantment.value)
+                  |> Map.put(:uses, enchantment.value)
+                  |> Map.put(:name, "#{enchantment.value}-point powerstone")
+                  |> Map.put(:keywords, ["powerstone", "stone"])
+                  |> Map.put(
+                    :description,
+                    "This enchanted stone hums with power. It provides up to #{enchantment.value} points of mana."
+                  )
+                else
+                  item
+                  |> Systems.Effect.add(ability.traits)
+                  |> Map.put(:enchantments, [enchantment_name | item.enchantments])
+                  |> Map.put(:weight, weight)
+                end
               else
                 item
               end

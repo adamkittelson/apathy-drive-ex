@@ -603,6 +603,15 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
+  def display_trait(character, item, {"Powerstone", _}, indent) do
+    Mobile.send_scroll(
+      character,
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Powerstone:</span> <span class='dark-cyan'>#{
+        trunc(item.uses)
+      }/#{item.max_uses} mana</span></p>"
+    )
+  end
+
   def display_trait(character, _item, {"MR%", value}, indent) do
     ac_from_percent = Ability.ac_for_mitigation_at_level(value)
 
@@ -678,6 +687,8 @@ defmodule ApathyDrive.Commands.Look do
       }</span></p>"
     )
   end
+
+  def display_enchantment(_character, %Item{type: "Stone"}), do: :noop
 
   def display_enchantment(character, %Item{enchantments: list}) when length(list) > 0 do
     Mobile.send_scroll(

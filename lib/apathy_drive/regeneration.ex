@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Regeneration do
-  alias ApathyDrive.{AI, Mobile, Monster}
+  alias ApathyDrive.{AI, Character, Mobile, Monster}
 
   @ticks_per_round 10
   @round_length 5000
@@ -45,6 +45,7 @@ defmodule ApathyDrive.Regeneration do
     |> regenerate_energy()
     |> regenerate_hp(room)
     |> regenerate_bubble()
+    |> regenerate_powerstones()
     |> regenerate_mana(room)
     |> Map.put(:last_tick_at, now)
     |> Mobile.update_prompt(room)
@@ -162,6 +163,23 @@ defmodule ApathyDrive.Regeneration do
 
     min(mana, mana_per_tick)
   end
+
+  def regenerate_powerstones(%Character{} = character) do
+    # 1% per second
+    percentage = 0.01 * (tick_time(character) / 1000)
+
+    Enum.reduce(character.inventory, character, fn item, character ->
+      if "create powerstone" in item.enchantments do
+        character = update_in(character.inventory, &List.delete(&1, item))
+        item = update_in(item.uses, &min(item.max_uses, &1 + item.max_uses * percentage))
+        update_in(character.inventory, &[item | &1])
+      else
+        character
+      end
+    end)
+  end
+
+  def regenerate_powerstones(%{} = mobile), do: mobile
 
   def regenerate_energy(mobile) do
     energy = energy_since_last_tick(mobile)
