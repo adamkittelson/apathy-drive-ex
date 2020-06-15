@@ -460,17 +460,18 @@ defmodule ApathyDrive.Commands.Move do
       cond do
         encumbrance_percent < 0.17 ->
           # none
-          100
+          50
 
         encumbrance_percent < 0.34 ->
           # light
-          200
+          100
 
         encumbrance_percent < 0.67 ->
-          300
+          # medium
+          200
 
         :else ->
-          500
+          300
       end
 
     if character.sneaking do
