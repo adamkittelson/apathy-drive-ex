@@ -3362,6 +3362,36 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "rune"}, query) do
+    character = room.mobiles[caster_ref]
+
+    room.items
+    |> Enum.filter(&(&1.type == "Rune"))
+    |> Match.all(:keyword_starts_with, query)
+    |> case do
+      nil ->
+        []
+
+      %Item{} = item ->
+        item
+
+      matches ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+        )
+
+        Enum.each(matches, fn match ->
+          Mobile.send_scroll(
+            character,
+            "<p>-- #{Item.colored_name(match, character: character)}</p>"
+          )
+        end)
+
+        :too_many_matches
+    end
+  end
+
   def not_enough_mana?(%{} = _mobile, %Ability{ignores_round_cooldown?: true}), do: false
 
   def not_enough_mana?(%{} = mobile, %Ability{} = ability) do

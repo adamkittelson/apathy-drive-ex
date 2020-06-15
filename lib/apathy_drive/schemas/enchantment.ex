@@ -32,7 +32,7 @@ defmodule ApathyDrive.Enchantment do
   # crafting an item
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{ability_id: nil} = enchantment) do
     Room.update_mobile(room, enchanter_ref, fn _room, enchanter ->
-      if !present?(enchanter, enchantment.items_instances_id) do
+      if !present?(room, enchanter, enchantment.items_instances_id) do
         message = "<p><span class='cyan'>You interrupt your work.</span></p>"
 
         Character.send_chat(enchanter, message)
@@ -104,121 +104,141 @@ defmodule ApathyDrive.Enchantment do
   end
 
   def tick(%Room{} = room, time, enchanter_ref, %Enchantment{} = enchantment) do
-    Room.update_mobile(room, enchanter_ref, fn _room, enchanter ->
-      if !Enum.all?(enchantment.ability.traits["RequireItems"], &present?(enchanter, &1)) do
-        message = "<p><span class='cyan'>You interrupt your work.</span></p>"
-
-        Character.send_chat(enchanter, message)
-
-        enchanter
-      else
-        roll = :rand.uniform()
-
-        {:ok, enchantment} =
-          if roll > 0.01 do
-            enchantment
-            |> Ecto.Changeset.change(%{
-              time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time
-            })
-            |> Repo.update()
-          else
-            message =
-              "<p><span class='magenta'>You fumble the work! Cursing, you start over.</span></p>"
-
-            Character.send_chat(enchanter, message)
-
-            enchantment
-            |> Ecto.Changeset.change(%{
-              time_elapsed_in_seconds: 0
-            })
-            |> Repo.update()
-          end
-
-        item =
-          enchantment
-          |> Repo.preload(:items_instances)
-          |> Map.get(:items_instances)
-          |> Repo.preload(:item)
-          |> Item.from_assoc()
-
-        time_left = time_left(enchanter, enchantment)
-
-        if time_left <= 0 do
-          Mobile.send_scroll(enchanter, "<p><span class='cyan'>You finish your work!</span></p>")
-
-          enchanter =
-            if instance_id = enchantment.ability.traits["DestroyItem"] do
-              scroll =
-                (enchanter.inventory ++ enchanter.equipment)
-                |> Enum.find(&(&1.instance_id == instance_id))
-
-              Mobile.send_scroll(
-                enchanter,
-                "<p>As you read the #{scroll.name} it crumbles to dust.</p>"
-              )
-
-              ItemInstance
-              |> Repo.get!(instance_id)
-              |> Repo.delete!()
-
-              enchanter
-              |> Character.load_abilities()
-              |> Character.load_items()
-            else
-              enchanter
-            end
-
-          enchantment =
-            enchantment
-            |> Ecto.Changeset.change(%{finished: true})
-            |> Repo.update!()
-
-          if Map.has_key?(enchantment.ability.traits, "Claimed") do
-            enchantment
-            |> Ecto.Changeset.change(%{value: enchanter.id})
-            |> Repo.update!()
-          end
-
-          if Map.has_key?(enchantment.ability.traits, "Powerstone") do
-            enchantment
-            |> Ecto.Changeset.change(%{value: div(enchanter.skills["enchanting"].level, 5) * 5})
-            |> Repo.update!()
-          end
-
-          message =
-            "<p><span class='blue'>You've enchanted #{item.name} with #{enchantment.ability.name}.</span></p>"
+    room =
+      Room.update_mobile(room, enchanter_ref, fn _room, enchanter ->
+        if !Enum.all?(enchantment.ability.traits["RequireItems"], &present?(room, enchanter, &1)) do
+          message = "<p><span class='cyan'>You interrupt your work.</span></p>"
 
           Character.send_chat(enchanter, message)
 
           enchanter
-          |> add_enchantment_exp(enchantment)
-          |> Map.put(:enchantment, nil)
-          |> Character.load_items()
         else
-          Mobile.send_scroll(enchanter, "<p>#{enchantment.ability.traits["TickMessage"]}</p>")
+          roll = :rand.uniform()
 
-          Mobile.send_scroll(
-            enchanter,
-            "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-              formatted_time_left(time_left)
-            }</span></p>"
-          )
+          {:ok, enchantment} =
+            if roll > 0.01 do
+              enchantment
+              |> Ecto.Changeset.change(%{
+                time_elapsed_in_seconds: enchantment.time_elapsed_in_seconds + time
+              })
+              |> Repo.update()
+            else
+              message =
+                "<p><span class='magenta'>You fumble the work! Cursing, you start over.</span></p>"
 
-          next_tick_time = next_tick_time(enchanter, enchantment)
+              Character.send_chat(enchanter, message)
 
-          enchanter =
-            enchanter
-            |> TimerManager.send_after(
-              {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
-               {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
+              enchantment
+              |> Ecto.Changeset.change(%{
+                time_elapsed_in_seconds: 0
+              })
+              |> Repo.update()
+            end
+
+          item =
+            enchantment
+            |> Repo.preload(:items_instances)
+            |> Map.get(:items_instances)
+            |> Repo.preload(:item)
+            |> Item.from_assoc()
+
+          time_left = time_left(enchanter, enchantment)
+
+          if time_left <= 0 do
+            Mobile.send_scroll(
+              enchanter,
+              "<p><span class='cyan'>You finish your work!</span></p>"
             )
 
-          enchanter
-          |> add_enchantment_exp(enchantment)
-          |> Map.put(:enchantment, enchantment)
+            enchanter =
+              if instance_id = enchantment.ability.traits["DestroyItem"] do
+                scroll =
+                  (enchanter.inventory ++ enchanter.equipment)
+                  |> Enum.find(&(&1.instance_id == instance_id))
+
+                Mobile.send_scroll(
+                  enchanter,
+                  "<p>As you read the #{scroll.name} it crumbles to dust.</p>"
+                )
+
+                ItemInstance
+                |> Repo.get!(instance_id)
+                |> Repo.delete!()
+
+                enchanter
+                |> Character.load_abilities()
+                |> Character.load_items()
+              else
+                enchanter
+              end
+
+            enchantment =
+              enchantment
+              |> Ecto.Changeset.change(%{finished: true})
+              |> Repo.update!()
+
+            if Map.has_key?(enchantment.ability.traits, "Claimed") do
+              enchantment
+              |> Ecto.Changeset.change(%{value: enchanter.id})
+              |> Repo.update!()
+            end
+
+            if Map.has_key?(enchantment.ability.traits, "Powerstone") do
+              enchantment
+              |> Ecto.Changeset.change(%{value: div(enchanter.skills["enchanting"].level, 5) * 5})
+              |> Repo.update!()
+            end
+
+            if Map.has_key?(enchantment.ability.traits, "PreserveRune") do
+              %ItemInstance{id: item.instance_id, delete_at: item.delete_at}
+              |> Ecto.Changeset.change(%{delete_at: nil})
+              |> Repo.update!()
+            end
+
+            message =
+              "<p><span class='blue'>You've enchanted #{item.name} with #{
+                enchantment.ability.name
+              }.</span></p>"
+
+            Character.send_chat(enchanter, message)
+
+            enchanter
+            |> add_enchantment_exp(enchantment)
+            |> Map.put(:enchantment, nil)
+            |> Character.load_items()
+          else
+            Mobile.send_scroll(enchanter, "<p>#{enchantment.ability.traits["TickMessage"]}</p>")
+
+            Mobile.send_scroll(
+              enchanter,
+              "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
+                formatted_time_left(time_left)
+              }</span></p>"
+            )
+
+            next_tick_time = next_tick_time(enchanter, enchantment)
+
+            enchanter =
+              enchanter
+              |> TimerManager.send_after(
+                {{:longterm, enchantment.items_instances_id}, :timer.seconds(next_tick_time),
+                 {:lt_tick, next_tick_time, enchanter_ref, enchantment}}
+              )
+
+            if Map.has_key?(enchantment.ability.traits, "PreserveRune") do
+              %ItemInstance{id: item.instance_id, delete_at: item.delete_at}
+              |> Ecto.Changeset.change(%{delete_at: Timex.shift(DateTime.utc_now(), minutes: 5)})
+              |> Repo.update!()
+            end
+
+            enchanter
+            |> add_enchantment_exp(enchantment)
+            |> Map.put(:enchantment, enchantment)
+          end
         end
-      end
-    end)
+      end)
+
+    Room.load_items(room)
   end
 
   def add_enchantment_exp(enchanter, %{ability_id: nil} = enchantment) do
@@ -256,9 +276,9 @@ defmodule ApathyDrive.Enchantment do
     |> ApathyDrive.Character.add_experience_to_buffer(exp)
   end
 
-  def present?(%Character{} = enchanter, instance_id) do
+  def present?(%Room{} = room, %Character{} = enchanter, instance_id) do
     item =
-      (enchanter.inventory ++ enchanter.equipment)
+      (room.items ++ enchanter.inventory ++ enchanter.equipment)
       |> Enum.find(&(&1.instance_id == instance_id))
 
     !!item
