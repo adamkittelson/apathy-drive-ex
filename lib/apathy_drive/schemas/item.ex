@@ -326,7 +326,9 @@ defmodule ApathyDrive.Item do
       __MODULE__
       |> ApathyDrive.Repo.all()
 
-    Match.all(items, :keyword_starts_with, name)
+    items
+    |> Enum.map(&Map.put(&1, :keywords, Match.keywords(&1.name)))
+    |> Match.all(:keyword_starts_with, name)
   end
 
   def slots do
