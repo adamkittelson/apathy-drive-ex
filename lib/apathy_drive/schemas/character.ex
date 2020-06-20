@@ -403,6 +403,18 @@ defmodule ApathyDrive.Character do
         hp + max_hp
       end)
 
+    elemental =
+      Enum.reduce(1..max_level, 0, fn level, total ->
+        elemental =
+          traits
+          |> Enum.filter(&(&1["Level"] >= level))
+          |> Enum.map(& &1["Elemental"])
+          |> Enum.reject(&is_nil/1)
+          |> Enum.max(fn -> 0 end)
+
+        total + elemental
+      end)
+
     max_mana =
       Enum.reduce(1..max_level, 0, fn level, max_mana ->
         mana =
@@ -434,7 +446,8 @@ defmodule ApathyDrive.Character do
       "stack_count" => 1,
       "MaxHP" => max_hp,
       "MaxMana" => max_mana,
-      "CombatLevel" => combat_level
+      "CombatLevel" => combat_level,
+      "Elemental" => elemental
     }
 
     Systems.Effect.add(character, effect)
