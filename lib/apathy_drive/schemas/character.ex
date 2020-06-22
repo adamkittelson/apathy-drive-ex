@@ -1199,7 +1199,7 @@ defmodule ApathyDrive.Character do
   def add_experience_to_buffer(character, exp, silent \\ false)
 
   def add_experience_to_buffer(%Character{} = character, exp, silent) when exp > 0 do
-    unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
+    unless silent, do: Mobile.send_scroll(character, "<p>You gain #{trunc(exp)} experience.</p>")
 
     mind = ApathyDrive.Commands.Status.mind(character)
 
