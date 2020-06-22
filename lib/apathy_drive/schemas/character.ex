@@ -60,7 +60,6 @@ defmodule ApathyDrive.Character do
     field(:gold, :integer, default: 0)
     field(:platinum, :integer, default: 0)
     field(:runic, :integer, default: 0)
-    field(:experience, :integer, default: 0)
     field(:race_id, :integer)
     field(:pity_modifier, :integer, default: 0)
     field(:auto_heal, :boolean)
@@ -525,6 +524,7 @@ defmodule ApathyDrive.Character do
       character
       |> Ecto.assoc(:character_classes)
       |> Repo.all()
+      |> Repo.preload([:class])
 
     character
     |> Map.put(:classes, classes)
@@ -1081,20 +1081,114 @@ defmodule ApathyDrive.Character do
     now = DateTime.utc_now() |> DateTime.to_unix(:millisecond) |> trunc
 
     if is_nil(drain_at) or drain_at < now do
+      max_level =
+        case character.classes do
+          [] ->
+            1
+
+          classes ->
+            classes
+            |> Enum.map(& &1.level)
+            |> Enum.max()
+        end
+
+      drain_total = Character.drain_rate(max_level)
       mind = ApathyDrive.Commands.Status.mind(character)
-      amount = Character.drain_rate(character)
+
+      character =
+        Enum.reduce(character.classes, character, fn class, character ->
+          if class.experience == nil do
+            character = update_in(character.classes, &List.delete(&1, class))
+
+            exp =
+              ApathyDrive.Commands.Train.required_experience(
+                character,
+                class.class_id,
+                class.level
+              ) * 1.0
+
+            class =
+              class
+              |> Ecto.Changeset.change(%{
+                experience: exp
+              })
+              |> Repo.update!()
+
+            update_in(character.classes, &[class | &1])
+          else
+            character
+          end
+        end)
+
+      # don't drain exp to classes that have enough to level
+      drain_targets =
+        Enum.reject(character.classes, fn class ->
+          exp_to_level =
+            ApathyDrive.Commands.Train.required_experience(
+              character,
+              class.class_id,
+              class.level + 1
+            )
+
+          exp_to_level <= 0
+        end)
+
+      target_count = length(drain_targets)
+
+      {character, drain_remaining} =
+        drain_targets
+        |> Enum.sort_by(& &1.level)
+        |> Enum.with_index(1)
+        |> Enum.reduce({character, drain_total}, fn {class, n}, {character, drain_remaining} ->
+          if n == target_count do
+            tnl = Level.exp_at_level(class.level, class.class.exp_modifier) - class.experience
+
+            exp = min(drain_remaining, tnl)
+
+            character = update_in(character.classes, &List.delete(&1, class))
+
+            class =
+              class
+              |> Ecto.Changeset.change(%{
+                experience: class.experience + exp
+              })
+              |> Repo.update!()
+
+            {update_in(character.classes, &[class | &1]), drain_remaining - exp}
+          else
+            rate = Character.drain_rate(class.level)
+
+            tnl = Level.exp_at_level(class.level, class.class.exp_modifier) - class.experience
+
+            exp = Enum.min([rate, drain_total / target_count, tnl])
+
+            character = update_in(character.classes, &List.delete(&1, class))
+
+            class =
+              class
+              |> Ecto.Changeset.change(%{
+                experience: class.experience + exp
+              })
+              |> Repo.update!()
+
+            {update_in(character.classes, &[class | &1]), drain_remaining - exp}
+          end
+        end)
+
+      amount = trunc(drain_total - drain_remaining)
 
       character =
         character
         |> put_in([:next_drain_at], now + :timer.seconds(1))
         |> update_in([:exp_buffer], &max(0, &1 - amount))
-        |> add_character_experience(amount)
 
       new_mind = ApathyDrive.Commands.Status.mind(character)
 
       if new_mind != mind do
         ApathyDrive.Commands.Status.status(character)
       end
+
+      Character.update_exp_bar(character)
 
       character
     else
@@ -1132,19 +1226,6 @@ defmodule ApathyDrive.Character do
   end
 
   def add_experience_to_buffer(character, _exp, _silent), do: character
-
-  def add_character_experience(%Character{} = character, exp) when exp > 0 do
-    character =
-      character
-      |> Ecto.Changeset.change(%{
-        experience: character.experience + exp
-      })
-      |> Repo.update!()
-
-    Character.update_exp_bar(character)
-  end
-
-  def add_character_experience(%Character{} = character, _exp), do: character
 
   def prompt(%Character{level: level, hp: hp_percent} = character) do
     max_mana = Mobile.max_mana_at_level(character, level)
@@ -1397,18 +1478,18 @@ defmodule ApathyDrive.Character do
     character
   end
 
-  def drain_rate(character) do
-    level = max(1, character.level)
+  def drain_rate(level) do
+    level = max(1, level)
 
     exp_to_level = Level.exp_at_level(level) - Level.exp_at_level(level - 1)
 
     target_time = 20 * level
 
-    trunc(max(Float.round(exp_to_level / (target_time * 60)), 1.0))
+    max(exp_to_level / (target_time * 60), 1.0)
   end
 
   def max_exp_buffer(character) do
-    rate = drain_rate(character)
+    rate = drain_rate(character.level)
 
     trunc(rate * 60 * 60)
   end

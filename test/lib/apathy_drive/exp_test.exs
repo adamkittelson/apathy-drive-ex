@@ -4,12 +4,12 @@ defmodule ApathyDrive.ExpTest do
   alias ApathyDrive.Character
 
   test "drain rate" do
-    assert 1 == Character.drain_rate(%Character{level: 1})
-    assert 2 == Character.drain_rate(%Character{level: 10})
-    assert 5 == Character.drain_rate(%Character{level: 20})
-    assert 11 == Character.drain_rate(%Character{level: 30})
-    assert 24 == Character.drain_rate(%Character{level: 40})
-    assert 51 == Character.drain_rate(%Character{level: 50})
+    assert 1 == Character.drain_rate(1)
+    assert 2 == Character.drain_rate(10)
+    assert 5 == Character.drain_rate(20)
+    assert 11 == Character.drain_rate(30)
+    assert 24 == Character.drain_rate(40)
+    assert 51 == Character.drain_rate(50)
   end
 
   test "max exp buffer" do

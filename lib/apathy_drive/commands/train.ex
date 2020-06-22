@@ -30,11 +30,11 @@ defmodule ApathyDrive.Commands.Train do
   end
 
   def required_experience(character, class_id, target_level \\ nil) do
-    {current_level, class} =
+    {current_level, class, current_exp} =
       if character_class = Enum.find(character.classes, &(&1.class_id == class_id)) do
-        {character_class.level, Repo.get(Class, class_id)}
+        {character_class.level, Repo.get(Class, class_id), character_class.experience}
       else
-        {0, Repo.get(Class, class_id)}
+        {0, Repo.get(Class, class_id), 0}
       end
 
     level = target_level || current_level + 1
@@ -43,7 +43,6 @@ defmodule ApathyDrive.Commands.Train do
 
     modifier = class.exp_modifier / 100
 
-    current_exp = Level.exp_at_level(level - 1, modifier)
     new_exp = Level.exp_at_level(level, modifier)
 
     new_exp - current_exp
@@ -86,7 +85,7 @@ defmodule ApathyDrive.Commands.Train do
         Mobile.send_scroll(character, message)
         room
 
-      Character.trainable_experience(character) < required_exp and !force ->
+      required_exp > 0 and !force ->
         message = "<p>You don't have the #{required_exp} required experience to train.</p>"
 
         Mobile.send_scroll(character, message)

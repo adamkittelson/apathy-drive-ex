@@ -10,7 +10,6 @@ defmodule ApathyDrive.Commands.Experience do
       "\n<p><span class='white'>Character:</span></p>"
     )
 
-    exp = Character.trainable_experience(character)
     level = character.level
 
     Mobile.send_scroll(
@@ -19,7 +18,7 @@ defmodule ApathyDrive.Commands.Experience do
         level
         |> to_string
         |> String.pad_trailing(12)
-      }</span> <span class='dark-green'>Experience:</span> <span class='dark-cyan'>#{exp}</p>"
+      }</span>"
     )
 
     if Enum.any?(character.classes) do
@@ -31,7 +30,7 @@ defmodule ApathyDrive.Commands.Experience do
       Enum.each(character.classes, fn character_class ->
         class = Repo.get(Class, character_class.class_id)
 
-        exp = ApathyDrive.Commands.Train.required_experience(character, class.id)
+        exp = trunc(ApathyDrive.Commands.Train.required_experience(character, class.id))
 
         Mobile.send_scroll(
           character,

@@ -299,11 +299,9 @@ defmodule ApathyDrive.Enchantment do
       if skill do
         level = character.skills[skill].level
 
-        character
-        |> Map.put(:level, level)
-        |> Character.drain_rate()
+        Character.drain_rate(level)
       else
-        Character.drain_rate(character)
+        Character.drain_rate(character.level)
       end
 
     rate * 80

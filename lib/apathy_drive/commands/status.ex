@@ -17,34 +17,28 @@ defmodule ApathyDrive.Commands.Status do
     mp = Character.mana_at_level(character, character.level)
     max_mp = Mobile.max_mana_at_level(character, character.level)
 
-    current_exp = Character.trainable_experience(character)
-
-    exp =
+    {exp, time_to_level} =
       if Enum.any?(character.classes) do
-        class =
-          character.classes
-          |> Enum.sort_by(&ApathyDrive.Commands.Train.required_experience(character, &1.class_id))
-          |> Enum.find(fn character_class ->
-            exp =
-              ApathyDrive.Commands.Train.required_experience(character, character_class.class_id)
+        character.classes
+        |> Enum.map(fn character_class ->
+          exp_to_level =
+            ApathyDrive.Commands.Train.required_experience(
+              character,
+              character_class.class_id,
+              character_class.level + 1
+            )
+            |> trunc()
 
-            exp > current_exp
-          end)
+          drain_rate = Character.drain_rate(character_class.level)
 
-        if class do
-          exp = ApathyDrive.Commands.Train.required_experience(character, class.class_id)
-
-          max(0, exp - current_exp)
-        else
-          0
-        end
+          {exp_to_level, trunc(exp_to_level / drain_rate)}
+        end)
+        |> Enum.max_by(fn {_exp_to_level, time_to_level} -> time_to_level end)
       else
-        0
+        {0, 0}
       end
 
-    drain_rate = Character.drain_rate(character)
-
-    ttl = ApathyDrive.Enchantment.formatted_time_left(trunc(exp / drain_rate))
+    ttl = ApathyDrive.Enchantment.formatted_time_left(time_to_level)
 
     Mobile.send_scroll(
       character,

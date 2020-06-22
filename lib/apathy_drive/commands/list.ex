@@ -110,6 +110,7 @@ defmodule ApathyDrive.Commands.List do
               exp =
                 character
                 |> ApathyDrive.Commands.Train.required_experience(class.id, level)
+                |> trunc()
                 |> to_string()
                 |> String.pad_trailing(15)
 
@@ -171,6 +172,7 @@ defmodule ApathyDrive.Commands.List do
             exp =
               character
               |> ApathyDrive.Commands.Train.required_experience(class.id, level)
+              |> trunc()
               |> to_string()
               |> String.pad_trailing(15)
 

@@ -3,7 +3,7 @@ defmodule ApathyDrive.CharacterClass do
   alias ApathyDrive.{Character, CharacterClass, Class}
 
   schema "characters_classes" do
-    field(:experience, :integer)
+    field(:experience, :float, default: 0.0)
     field(:level, :integer)
     field(:delete, :boolean, virtual: true)
 
