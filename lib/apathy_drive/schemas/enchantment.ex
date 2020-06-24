@@ -262,8 +262,7 @@ defmodule ApathyDrive.Enchantment do
   def add_enchantment_exp(enchanter, enchantment) do
     exp = enchantment_exp(enchanter)
 
-    skill = Repo.get(Skill, enchantment.ability.skill_id)
-
+    # skill = Repo.get(Skill, enchantment.ability.skill_id)
     # enchanter = Character.add_skill_experience(enchanter, skill.name, exp)
 
     Enum.reduce(enchantment.ability.attributes, enchanter, fn attribute, enchanter ->
