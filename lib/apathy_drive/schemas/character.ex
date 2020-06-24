@@ -1890,7 +1890,6 @@ defmodule ApathyDrive.Character do
           |> Ecto.Changeset.change(%{auto_roam: false})
           |> Repo.update!()
           |> Map.put(:attack_target, nil)
-          |> Map.put(:attack_roam, false)
           |> update_in([:effects], fn effects ->
             effects
             |> Enum.filter(fn {_key, effect} -> effect["stack_key"] == "class" end)
@@ -1911,6 +1910,10 @@ defmodule ApathyDrive.Character do
           |> Mobile.update_prompt(room)
           |> TimerManager.send_after(
             {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
+          )
+          |> TimerManager.send_after(
+            {:heartbeat, ApathyDrive.Regeneration.tick_time(character),
+             {:heartbeat, character.ref}}
           )
 
         Room.start_room_id()
