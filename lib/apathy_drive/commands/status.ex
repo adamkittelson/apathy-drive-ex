@@ -17,9 +17,34 @@ defmodule ApathyDrive.Commands.Status do
     mp = Character.mana_at_level(character, character.level)
     max_mp = Mobile.max_mana_at_level(character, character.level)
 
+    max_level =
+      case character.classes do
+        [] ->
+          1
+
+        classes ->
+          classes
+          |> Enum.map(& &1.level)
+          |> Enum.max()
+      end
+
+    classes =
+      Enum.reject(character.classes, fn class ->
+        exp_to_level =
+          ApathyDrive.Commands.Train.required_experience(
+            character,
+            class.class_id,
+            class.level + 1
+          )
+
+        exp_to_level <= 0
+      end)
+
+    target_count = length(classes)
+
     {exp, time_to_level} =
-      if Enum.any?(character.classes) do
-        character.classes
+      if Enum.any?(classes) do
+        classes
         |> Enum.map(fn character_class ->
           exp_to_level =
             ApathyDrive.Commands.Train.required_experience(
@@ -27,13 +52,16 @@ defmodule ApathyDrive.Commands.Status do
               character_class.class_id,
               character_class.level + 1
             )
-            |> trunc()
 
-          drain_rate = Character.drain_rate(character_class.level)
+          class_drain_rate = Character.drain_rate(character_class.level)
+          max_drain_rate = Character.drain_rate(max_level)
+
+          drain_rate = min(class_drain_rate, max_drain_rate / target_count)
 
           {exp_to_level, trunc(exp_to_level / drain_rate)}
         end)
-        |> Enum.max_by(fn {_exp_to_level, time_to_level} -> time_to_level end)
+        |> Enum.reject(fn {_exp_to_level, time_to_level} -> 0 == time_to_level end)
+        |> Enum.min_by(fn {_exp_to_level, time_to_level} -> time_to_level end, fn -> {0, 0} end)
       else
         {0, 0}
       end
@@ -44,7 +72,7 @@ defmodule ApathyDrive.Commands.Status do
       character,
       "<p><span class='cyan'>hp:</span> <span class='white'>#{hp}/#{max_hp}</span> " <>
         "<span class='cyan'>mana:</span> <span class='white'>#{mp}/#{max_mp}</span> " <>
-        "<span class='cyan'>experience:</span> <span class='white'>#{exp} (#{ttl})</span> " <>
+        "<span class='cyan'>experience:</span> <span class='white'>#{trunc(exp)} (#{ttl})</span> " <>
         "<span class='cyan'>mind:</span> #{mind(character)}"
     )
   end
