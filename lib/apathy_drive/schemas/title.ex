@@ -15,7 +15,7 @@ defmodule ApathyDrive.Title do
   def for_character(%Character{} = character) do
     if class = Enum.max_by(character.classes, & &1.level, fn -> nil end) do
       __MODULE__
-      |> where([t], t.class_id == ^class.id and t.level <= ^class.level)
+      |> where([t], t.class_id == ^class.class_id and t.level <= ^class.level)
       |> order_by(desc: :level)
       |> limit(1)
       |> select([t], t.text)
