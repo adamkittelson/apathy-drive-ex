@@ -535,13 +535,13 @@ defmodule ApathyDrive.Character do
     Map.put(character, :level, 1)
   end
 
-  def set_level(%Character{classes: classes}) do
+  def set_level(%Character{classes: classes} = character) do
     level =
       classes
-      |> Enum.map(& &1)
+      |> Enum.map(& &1.level)
       |> Enum.max()
 
-    max(level, 1)
+    Map.put(character, :level, max(level, 1))
   end
 
   def load_race(%Character{race_id: race_id} = character) do
