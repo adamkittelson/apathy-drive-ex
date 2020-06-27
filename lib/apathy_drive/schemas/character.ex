@@ -1396,7 +1396,6 @@ defmodule ApathyDrive.Character do
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
       physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
-      magical_damage: Mobile.magical_penetration_at_level(character, character.level),
       magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
       hp: hp_at_level(character, character.level),
       hp_regen: hp_regen,
@@ -2139,14 +2138,6 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
-    def magical_penetration_at_level(character, level) do
-      attribute = attribute_at_level(character, :intellect, level) - 50
-
-      penetration = attribute + ability_value(character, "MagicalPenetration")
-
-      max(0, penetration)
-    end
-
     def magical_resistance_at_level(character, level) do
       willpower = attribute_at_level(character, :willpower, level)
 
@@ -2198,14 +2189,6 @@ defmodule ApathyDrive.Character do
         |> Room.light_modifier()
 
       trunc(base * (1 - light_modifier / 100))
-    end
-
-    def physical_penetration_at_level(character, level) do
-      attribute = attribute_at_level(character, :strength, level) - 50
-
-      penetration = attribute + ability_value(character, "PhysicalPenetration")
-
-      max(0, penetration)
     end
 
     def physical_resistance_at_level(character, level) do

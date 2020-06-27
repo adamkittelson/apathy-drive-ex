@@ -2128,11 +2128,15 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
-          resist = resist - Mobile.physical_penetration_at_level(caster, caster.level)
-
           resist_percent = 1 - resist / (25 * 50 + resist)
 
-          damage = (ability_damage + bonus_damage) * resist_percent
+          damage = ability_damage + bonus_damage
+
+          penetration = min(damage, Mobile.ability_value(caster, "PhysicalPenetration"))
+
+          damage = damage - penetration
+
+          damage = damage * resist_percent + penetration
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -2168,11 +2172,15 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
-
           resist_percent = 1 - resist / (25 * 50 + resist)
 
-          damage = (ability_damage + bonus_damage) * resist_percent
+          damage = ability_damage + bonus_damage
+
+          penetration = min(damage, Mobile.ability_value(caster, "MagicalPenetration"))
+
+          damage = damage - penetration
+
+          damage = damage * resist_percent + penetration
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -2504,11 +2512,15 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
-          resist = resist - Mobile.physical_penetration_at_level(caster, caster.level)
-
           resist_percent = 1 - resist / (25 * 50 + resist)
 
-          damage = (ability_damage + bonus_damage) * resist_percent
+          damage = ability_damage + bonus_damage
+
+          penetration = min(damage, Mobile.ability_value(caster, "PhysicalPenetration"))
+
+          damage = damage - penetration
+
+          damage = damage * resist_percent + penetration
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -2528,11 +2540,15 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist = resist - Mobile.magical_penetration_at_level(caster, caster.level)
-
           resist_percent = 1 - resist / (25 * 50 + resist)
 
-          damage = (ability_damage + bonus_damage) * resist_percent
+          damage = ability_damage + bonus_damage
+
+          penetration = min(damage, Mobile.ability_value(caster, "MagicalPenetration"))
+
+          damage = damage - penetration
+
+          damage = damage * resist_percent + penetration
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -2573,6 +2589,15 @@ defmodule ApathyDrive.Ability do
 
     effects
     |> Map.put("Heal", percentage_healed)
+  end
+
+  def process_duration_trait({"HealMana", value}, effects, target, _caster, _duration) do
+    healing = (value["min"] + value["max"]) / 2
+
+    percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
+
+    effects
+    |> Map.put("HealMana", percentage_healed)
   end
 
   def process_duration_trait(
@@ -2662,22 +2687,6 @@ defmodule ApathyDrive.Ability do
       ) do
     effects
     |> Map.put("MaxBubble", Map.get(effects, "Bubble"))
-  end
-
-  def process_duration_trait({"HealMana", value}, effects, target, caster, _duration) do
-    level = min(target.level, caster.level)
-    healing = Mobile.magical_penetration_at_level(caster, level) * (value / 100)
-
-    percentage_healed =
-      calculate_healing(healing, value) / Mobile.max_mana_at_level(target, level)
-
-    effects
-    |> Map.put("HealMana", percentage_healed)
-    |> Map.put("Interval", 1250)
-    |> Map.put(
-      "NextEffectAt",
-      System.monotonic_time(:millisecond) + 1250
-    )
   end
 
   def process_duration_trait({trait, value}, effects, _target, _caster, _duration) do

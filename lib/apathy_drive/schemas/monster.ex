@@ -699,14 +699,6 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
-    def magical_penetration_at_level(monster, level) do
-      attribute = attribute_at_level(monster, :intellect, level) - 50
-
-      penetration = attribute + ability_value(monster, "MagicalPenetration")
-
-      max(0, penetration)
-    end
-
     def magical_resistance_at_level(monster, level) do
       willpower = attribute_at_level(monster, :willpower, level)
 
@@ -752,14 +744,6 @@ defmodule ApathyDrive.Monster do
       int = int + cha / 10
       modifier = ability_value(monster, "Perception")
       trunc(int * (1 + modifier / 100))
-    end
-
-    def physical_penetration_at_level(monster, level) do
-      attribute = attribute_at_level(monster, :strength, level) - 50
-
-      penetration = attribute + ability_value(monster, "PhysicalPenetration")
-
-      max(0, penetration)
     end
 
     def physical_resistance_at_level(monster, level) do
