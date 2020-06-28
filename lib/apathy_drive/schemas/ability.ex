@@ -121,6 +121,7 @@ defmodule ApathyDrive.Ability do
     "Accuracy",
     "Agility",
     "Alignment",
+    "Beacon",
     "Bubble",
     "Bubble%",
     "BubbleRegen%PerSecond",
@@ -376,7 +377,7 @@ defmodule ApathyDrive.Ability do
     model
     |> cast(%{duration: duration}, [:duration])
     |> validate_required(:duration)
-    |> validate_number(:duration, greater_than: 0)
+    |> validate_number(:duration, greater_than: -2)
   end
 
   def set_energy_changeset(model, energy) do
@@ -2365,8 +2366,13 @@ defmodule ApathyDrive.Ability do
     if has_passive_ability?(target, ability.id) do
       target
     else
-      target
-      |> Systems.Effect.add(effects, :timer.seconds(duration))
+      if duration == -1 do
+        target
+        |> Systems.Effect.add(effects)
+      else
+        target
+        |> Systems.Effect.add(effects, :timer.seconds(duration))
+      end
     end
   end
 
@@ -2482,6 +2488,10 @@ defmodule ApathyDrive.Ability do
     else
       Map.delete(effects, "EndCast")
     end
+  end
+
+  def process_duration_trait({"Beacon", _}, effects, _target, caster, _duration) do
+    Map.put(effects, "Beacon", caster.room_id)
   end
 
   def process_duration_trait({"Damage", damages}, effects, _target, _caster, _duration)
