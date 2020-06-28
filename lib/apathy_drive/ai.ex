@@ -1,5 +1,5 @@
 defmodule ApathyDrive.AI do
-  alias ApathyDrive.{Ability, Character, Mobile, Monster, Party, Regeneration, Room}
+  alias ApathyDrive.{Ability, Character, Mobile, Monster, Party, Room}
 
   def think(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn room, mobile ->
@@ -320,15 +320,22 @@ defmodule ApathyDrive.AI do
 
   def auto_attack(mobile, room, target_ref \\ nil) do
     if target_ref = target_ref || Mobile.auto_attack_target(mobile, room) do
-      attack = Mobile.attack_ability(mobile)
+      if mobile.energy == mobile.max_energy && !mobile.casting do
+        {attacks, _energy} =
+          Enum.reduce(1..5, {[], mobile.energy}, fn _n, {attacks, energy} ->
+            attack = Mobile.attack_ability(mobile)
 
-      if attack do
-        if mobile.energy >= attack.energy && !mobile.casting && auto_attack?(mobile) do
-          room
-          |> Room.update_mobile(mobile.ref, fn _room, mobile ->
-            Map.put(mobile, :last_auto_attack_at, DateTime.utc_now())
+            if attack && attack.energy <= energy do
+              {[attack | attacks], energy - attack.energy}
+            else
+              {attacks, energy}
+            end
           end)
-          |> Ability.execute(mobile.ref, attack, [target_ref])
+
+        if Enum.any?(attacks) do
+          Enum.reduce(attacks, room, fn attack, room ->
+            Ability.execute(room, mobile.ref, attack, [target_ref])
+          end)
         end
       end
     else
@@ -354,13 +361,6 @@ defmodule ApathyDrive.AI do
           nil
       end
     end
-  end
-
-  def auto_attack?(%{last_auto_attack_at: nil}), do: true
-
-  def auto_attack?(%{last_auto_attack_at: time} = mobile) do
-    DateTime.diff(DateTime.utc_now(), time, :millisecond) >=
-      div(Regeneration.round_length(mobile), 5)
   end
 
   def random_ability([ability], mobile) do
