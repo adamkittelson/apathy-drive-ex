@@ -150,7 +150,7 @@ defmodule ApathyDrive.Character do
         name: &1.character.name,
         class: &1.class.name,
         level: &1.level,
-        exp: &1.character.experience
+        exp: trunc(&1.experience || 0)
       }
     )
     |> Enum.group_by(& &1.name)
