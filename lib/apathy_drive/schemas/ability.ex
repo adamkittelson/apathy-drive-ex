@@ -93,7 +93,8 @@ defmodule ApathyDrive.Ability do
     "weapon",
     "armour",
     "stone",
-    "rune"
+    "rune",
+    "scroll"
   ]
   @target_required_targets ["monster or single", "monster", "single"]
 
@@ -3346,6 +3347,36 @@ defmodule ApathyDrive.Ability do
 
     inventory
     |> Enum.filter(&(&1.type == "Stone"))
+    |> Match.all(:keyword_starts_with, query)
+    |> case do
+      nil ->
+        []
+
+      %Item{} = item ->
+        item
+
+      matches ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+        )
+
+        Enum.each(matches, fn match ->
+          Mobile.send_scroll(
+            character,
+            "<p>-- #{Item.colored_name(match, character: character)}</p>"
+          )
+        end)
+
+        :too_many_matches
+    end
+  end
+
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "scroll"}, query) do
+    %Character{inventory: inventory} = character = room.mobiles[caster_ref]
+
+    inventory
+    |> Enum.filter(&(&1.type == "Scroll"))
     |> Match.all(:keyword_starts_with, query)
     |> case do
       nil ->
