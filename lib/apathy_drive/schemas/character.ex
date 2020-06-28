@@ -1265,7 +1265,7 @@ defmodule ApathyDrive.Character do
       |> Enum.reject(&is_nil/1)
       |> Enum.join("/")
 
-    "[#{prompt}#{resting}#{editing}]:"
+    IO.inspect("[#{prompt}#{resting}#{editing}]:")
   end
 
   def hp_prompt_color(hp_percent) when hp_percent > 0.5, do: "grey"
