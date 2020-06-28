@@ -1266,10 +1266,7 @@ defmodule ApathyDrive.Character do
       |> Enum.join("/")
 
     prompt = "[#{prompt}#{resting}#{editing}]:"
-
-    if character.name == "Cole",
-      do: IO.puts("#{energy} - #{DateTime.utc_now() |> DateTime.to_unix()}")
-
+    if character.name == "Cole", do: IO.inspect(energy)
     prompt
   end
 
