@@ -13,7 +13,7 @@ defmodule ApathyDrive.Regeneration do
 
     modifier = if speed == 0, do: 1, else: speed
 
-    trunc(@round_length * (1 / modifier))
+    trunc(@round_length * modifier)
   end
 
   def per_tick_to_per_round(amount) do
