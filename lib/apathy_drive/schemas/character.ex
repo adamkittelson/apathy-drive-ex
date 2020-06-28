@@ -1230,6 +1230,8 @@ defmodule ApathyDrive.Character do
     hp = hp_at_level(character, level)
     mana = mana_at_level(character, level)
 
+    energy = character.energy
+
     resting =
       if character.resting do
         " (Resting) "
@@ -1256,8 +1258,10 @@ defmodule ApathyDrive.Character do
 
     hp = "HP=<span class='#{hp_prompt_color(hp_percent)}'>#{hp}</span>"
 
+    energy = "EN=#{trunc(energy)}"
+
     prompt =
-      [hp, mana, lt]
+      [hp, energy, mana, lt]
       |> Enum.reject(&is_nil/1)
       |> Enum.join("/")
 
