@@ -2,7 +2,7 @@ defmodule ApathyDrive.Commands.Gossip do
   use ApathyDrive.Command
   alias ApathyDrive.{ChannelHistory, Repo}
 
-  def keywords, do: ["gos"]
+  def keywords, do: ["gos", "goss"]
 
   def execute(%Room{} = room, %Character{} = character, args) do
     raw_message = Enum.join(args, " ")
