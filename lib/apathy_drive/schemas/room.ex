@@ -346,6 +346,7 @@ defmodule ApathyDrive.Room do
     |> ApathyDrive.Scripts.PoisonRune.activate(mobile)
     |> ApathyDrive.Scripts.ExplodingRune.activate(mobile)
     |> ApathyDrive.Scripts.Sanctuary.enforce_sanctuary()
+    |> ApathyDrive.Scripts.TransportRune.activate(mobile)
   end
 
   def local_hated_targets(%Room{mobiles: mobiles}, %{hate: hate}) do
@@ -522,7 +523,7 @@ defmodule ApathyDrive.Room do
             message =
               message
               |> ApathyDrive.Text.interpolate(%{
-                "user" => mobile,
+                "name" => mobile,
                 "direction" => to_direction
               })
 

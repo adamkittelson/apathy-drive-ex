@@ -461,11 +461,25 @@ defmodule ApathyDrive.Commands.Help do
       )
     end
 
-    if ability.duration && ability.duration > 0 do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>#{ability.duration} seconds</span></p>"
-      )
+    if ability.duration do
+      cond do
+        ability.duration > 0 ->
+          Mobile.send_scroll(
+            character,
+            "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>#{
+              ability.duration
+            } seconds</span></p>"
+          )
+
+        ability.duration == -1 ->
+          Mobile.send_scroll(
+            character,
+            "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>until logout</span></p>"
+          )
+
+        :else ->
+          :noop
+      end
     end
 
     if ability.energy && ability.energy > 0 do

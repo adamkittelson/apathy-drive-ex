@@ -21,6 +21,7 @@ defmodule ApathyDrive.ItemInstance do
 
     belongs_to(:item, Item)
     belongs_to(:room, Room)
+    belongs_to(:beacon_room, Room)
     belongs_to(:character, Character)
     belongs_to(:class, Class)
     belongs_to(:shop, Shop)

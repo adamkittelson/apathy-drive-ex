@@ -112,6 +112,7 @@ defmodule ApathyDrive.Item do
     field(:global_drop_rarity, :string)
     field(:level, :integer)
 
+    field(:beacon_room_id, :any, virtual: true)
     field(:owner_id, :any, virtual: true)
     field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
@@ -281,7 +282,8 @@ defmodule ApathyDrive.Item do
         :dropped_for_character_id,
         :owner_id,
         :delete_at,
-        :uses
+        :uses,
+        :beacon_room_id
       ])
 
     values =
@@ -496,6 +498,10 @@ defmodule ApathyDrive.Item do
 
   def colored_name(%{name: "healing rune"} = _item, _opts) do
     "<span class='cyan'>healing rune</span>"
+  end
+
+  def colored_name(%{name: "transport rune"} = _item, _opts) do
+    "<span class='yellow'>transport rune</span>"
   end
 
   def colored_name(%{name: name} = item, opts) do
