@@ -20,7 +20,7 @@ defmodule ApathyDrive.Commands.Attack do
       |> Map.values()
       |> Enum.reject(&(&1.ref in Party.refs(room, character)))
       |> Enum.reject(&(&1.sneaking && !(&1.ref in character.detected_characters)))
-      |> Match.one(:name_contains, query)
+      |> Match.one(:keyword_starts_with, query)
 
     room =
       Room.update_mobile(room, character.ref, fn _room, %{} = attacker ->

@@ -3246,7 +3246,7 @@ defmodule ApathyDrive.Ability do
       |> Enum.reject(
         &(&1.sneaking && !(&1.ref in caster.detected_characters) && !(&1.ref == caster_ref))
       )
-      |> Match.one(:name_contains, query)
+      |> Match.one(:keyword_starts_with, query)
 
     List.wrap(match && match.ref)
   end
@@ -3260,7 +3260,7 @@ defmodule ApathyDrive.Ability do
       room.mobiles
       |> Map.values()
       |> Enum.filter(&(&1.__struct__ == Monster))
-      |> Match.one(:name_contains, query)
+      |> Match.one(:keyword_starts_with, query)
 
     List.wrap(match && match.ref)
   end
