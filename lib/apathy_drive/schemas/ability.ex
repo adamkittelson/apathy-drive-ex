@@ -2106,10 +2106,17 @@ defmodule ApathyDrive.Ability do
       target
       |> Map.put(:ability_shift, 0)
 
+    # divide bonus damage across all damage types so the bonus damage
+    # is not duplicated for each type
+    bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
+    bonus_damage = bonus_damage / length(damages)
+
     {caster, damage_percent, target} =
       Enum.reduce(damages, {caster, 0, target}, fn
         %{kind: "raw", min: min, max: max, damage_type: type}, {caster, damage_percent, target} ->
           damage = Enum.random(min..max)
+
+          damage = damage + bonus_damage
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -2126,15 +2133,13 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
-          bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
-
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
           resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = ability_damage + bonus_damage
 
-          penetration = min(damage, Mobile.ability_value(caster, "PhysicalPenetration"))
+          penetration = min(damage, ability.traits["PhysicalPenetration"])
 
           damage = damage - penetration
 
@@ -2153,7 +2158,9 @@ defmodule ApathyDrive.Ability do
 
           resist_percent = 1 - resist / (25 * 50 + resist)
 
-          damage = dmg * resist_percent
+          damage = dmg + bonus_damage
+
+          damage = damage * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -2170,15 +2177,13 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
-          bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
-
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
           resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = ability_damage + bonus_damage
 
-          penetration = min(damage, Mobile.ability_value(caster, "MagicalPenetration"))
+          penetration = min(damage, ability.traits["MagicalPenetration"])
 
           damage = damage - penetration
 
@@ -2199,6 +2204,8 @@ defmodule ApathyDrive.Ability do
 
           resist_percent = 1 - resist / (25 * 50 + resist)
 
+          damage = damage + bonus_damage
+
           damage = damage * resist_percent
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
@@ -2212,6 +2219,8 @@ defmodule ApathyDrive.Ability do
         %{kind: "drain", min: min, max: max, damage_type: type},
         {caster, damage_percent, target} ->
           damage = Enum.random(min..max)
+
+          damage = damage + bonus_damage
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -2230,6 +2239,8 @@ defmodule ApathyDrive.Ability do
         %{kind: "mana-drain", min: min, max: max}, {caster, damage_percent, target} ->
           damage = Enum.random(min..max)
 
+          damage = damage + bonus_damage
+
           percent = damage / Mobile.max_mana_at_level(target, target.level)
 
           heal_percent = damage / Mobile.max_mana_at_level(caster, caster.level)
@@ -2246,13 +2257,6 @@ defmodule ApathyDrive.Ability do
 
           {caster, damage_percent + percent, target}
       end)
-
-    damage_percent =
-      if match?(%Character{}, target) and target.level < 5 and damage_percent > 0.2 do
-        Enum.random(10..20) / 100
-      else
-        damage_percent
-      end
 
     target =
       target
@@ -2500,10 +2504,15 @@ defmodule ApathyDrive.Ability do
   end
 
   def process_duration_trait({"Damage", damages}, effects, target, caster, _duration) do
+    bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
+    bonus_damage = bonus_damage / length(damages)
+
     damage_percent =
       Enum.reduce(damages, 0, fn
         %{kind: "raw", min: min, max: max, damage_type: type}, damage_percent ->
           damage = Enum.random(min..max)
+
+          damage = damage + bonus_damage
 
           modifier = Mobile.ability_value(target, "Resist#{type}")
 
@@ -2519,15 +2528,13 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
-          bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
-
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
           resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = ability_damage + bonus_damage
 
-          penetration = min(damage, Mobile.ability_value(caster, "PhysicalPenetration"))
+          penetration = min(damage, effects["PhysicalPenetration"])
 
           damage = damage - penetration
 
@@ -2547,15 +2554,13 @@ defmodule ApathyDrive.Ability do
 
           ability_damage = Enum.random(min..max)
 
-          bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
-
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
           resist_percent = 1 - resist / (25 * 50 + resist)
 
           damage = ability_damage + bonus_damage
 
-          penetration = min(damage, Mobile.ability_value(caster, "MagicalPenetration"))
+          penetration = min(damage, effects["MagicalPenetration"])
 
           damage = damage - penetration
 
@@ -2841,7 +2846,7 @@ defmodule ApathyDrive.Ability do
     if target.ref == caster.ref && ability.caster do
       target_cast_message(ability, caster, target, mobile)
     else
-      amount = -trunc(shift * Mobile.max_hp_at_level(target, mobile.level))
+      amount = -trunc(shift * Mobile.max_hp_at_level(target, target.level))
 
       cond do
         amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
@@ -2932,7 +2937,7 @@ defmodule ApathyDrive.Ability do
         mobile
       ) do
     caster = ability.caster || caster
-    amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level))
+    amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, target.level))
 
     cond do
       amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
@@ -3036,7 +3041,7 @@ defmodule ApathyDrive.Ability do
       ) do
     caster = ability.caster || caster
 
-    amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, mobile.level))
+    amount = -trunc(target.ability_shift * Mobile.max_hp_at_level(target, target.level))
 
     cond do
       amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->

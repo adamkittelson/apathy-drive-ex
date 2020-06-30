@@ -836,7 +836,9 @@ defmodule ApathyDrive.Character do
           "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
         "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
         "DodgeSpectatorMessage" =>
-          "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!"
+          "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!",
+        "PhysicalPenetration" => Systems.Effect.effect_bonus(weapon, "PhysicalPenetration"),
+        "MagicalPenetration" => Systems.Effect.effect_bonus(weapon, "MagicalPenetration")
       },
       limbs: limbs,
       skills: [weapon.weapon_type]

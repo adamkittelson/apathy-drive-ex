@@ -106,9 +106,13 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
-  def execute(%Room{} = room, %{} = character, %{"kind" => "Alignment"} = room_exit, reattempt) do
-    if Character.alignment(character) in room_exit["allowed"] or
-         Mobile.ability_value(character, "Alignment") in room_exit["allowed"] do
+  def execute(
+        %Room{} = room,
+        %{} = character,
+        %{"kind" => "Alignment", "max" => max, "min" => min} = room_exit,
+        reattempt
+      ) do
+    if character.evil_points <= max and character.evil_points >= min do
       execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"), reattempt)
     else
       Mobile.send_scroll(character, "<p>A strange power holds you back!</p>")
