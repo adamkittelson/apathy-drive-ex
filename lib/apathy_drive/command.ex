@@ -120,15 +120,33 @@ defmodule ApathyDrive.Command do
           scripts = Room.command(room, full_command) ->
             execute_room_command(room, monster, scripts)
 
-          cmd = Match.one(Enum.map(all(), & &1.to_struct), :match_keyword, command) ->
-            cmd.module.execute(room, monster, arguments)
-
           ability = monster.abilities[String.downcase(command)] ->
             Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 
           true ->
-            Mobile.send_scroll(monster, "<p>What?</p>")
-            room
+            case Match.all(Enum.map(all(), & &1.to_struct), :keyword_starts_with, command) do
+              %__MODULE__{} = cmd ->
+                cmd.module.execute(room, monster, arguments)
+
+              nil ->
+                Mobile.send_scroll(monster, "<p>What?</p>")
+                room
+
+              commands ->
+                Mobile.send_scroll(
+                  monster,
+                  "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
+                )
+
+                Enum.each(commands, fn command ->
+                  Mobile.send_scroll(
+                    monster,
+                    "<p>-- #{command.name}</p>"
+                  )
+                end)
+
+                room
+            end
         end
       end)
 
