@@ -226,6 +226,12 @@ chan.on("chat", function (message) {
 });
 
 chan.on("chat-sidebar", function (message) {
+  if (message.time) {
+    if (message.time != window.last_message_time) {
+      $("#chat").append("<p class='time dark-cyan'>---==== " + message.time + " ===---</p>");
+    }
+    window.last_message_time = message.time
+  }
   message = linkify(message.html);
   $("#chat").append(message);
   return adjustChatTop();
