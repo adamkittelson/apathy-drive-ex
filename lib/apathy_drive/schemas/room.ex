@@ -14,6 +14,7 @@ defmodule ApathyDrive.Room do
     MonsterSpawning,
     PlacedItem,
     Room,
+    RoomMonster,
     RoomServer,
     PubSub,
     Shop,
@@ -68,6 +69,31 @@ defmodule ApathyDrive.Room do
     has_one(:shop, Shop)
     has_many(:shop_items, through: [:shop, :shop_items])
     belongs_to(:trainer, Trainer)
+  end
+
+  def dedup_limited_monsters(%Room{mobiles: mobiles} = room) do
+    Enum.reduce(mobiles, room, fn
+      {_ref, %Monster{game_limit: nil}}, room ->
+        room
+
+      {ref, %Monster{game_limit: limit} = monster}, room ->
+        count = MonsterSpawning.limit_count(monster)
+
+        if count > limit do
+          Logger.info("Monster##{monster.id} (#{monster.name}) over limit, deleting")
+
+          RoomMonster
+          |> Repo.get(monster.room_monster_id)
+          |> Repo.delete()
+
+          update_in(room.mobiles, &Map.delete(&1, ref))
+        else
+          room
+        end
+
+      _, room ->
+        room
+    end)
   end
 
   def load_ability(%Room{ability_id: nil} = room), do: room

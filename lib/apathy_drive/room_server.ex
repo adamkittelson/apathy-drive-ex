@@ -539,7 +539,11 @@ defmodule ApathyDrive.RoomServer do
 
     Process.send_after(self(), :cleanup, :timer.minutes(1))
 
-    room = Room.load_items(room)
+    room =
+      room
+      |> Room.load_items()
+      |> Room.dedup_limited_monsters()
+
     {:noreply, room}
   end
 

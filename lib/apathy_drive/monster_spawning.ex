@@ -121,14 +121,15 @@ defmodule ApathyDrive.MonsterSpawning do
 
   def limit_reached?(%Monster{game_limit: nil}), do: false
 
-  def limit_reached?(%Monster{id: id, game_limit: limit}) do
-    count =
-      RoomMonster
-      |> Ecto.Query.where(monster_id: ^id)
-      |> Ecto.Query.select([m], count(m.id))
-      |> Repo.one()
+  def limit_reached?(%Monster{game_limit: limit} = monster) do
+    limit_count(monster) >= limit
+  end
 
-    count >= limit
+  def limit_count(%Monster{id: id}) do
+    RoomMonster
+    |> Ecto.Query.where(monster_id: ^id)
+    |> Ecto.Query.select([m], count(m.id))
+    |> Repo.one()
   end
 
   def zone_limit_reached?(_id, nil), do: true
