@@ -110,6 +110,7 @@ defmodule ApathyDrive.Ability do
     "HealMana",
     "KillSpell",
     "RemoveSpells",
+    "RestoreLimbs",
     "Script",
     "Summon",
     "Teleport"
@@ -1266,6 +1267,8 @@ defmodule ApathyDrive.Ability do
     caster = room.mobiles[caster.ref]
     target = room.mobiles[target.ref]
 
+    missing_target_limbs = target.missing_limbs
+
     {caster, target} =
       target
       |> apply_instant_traits(ability, caster, room)
@@ -1275,25 +1278,49 @@ defmodule ApathyDrive.Ability do
     room = put_in(room.mobiles[caster.ref], caster)
     room = put_in(room.mobiles[target.ref], target)
 
-    if ability.kind == "curse" and ability.duration < 1 do
-      Process.put(:ability_result, :resisted)
-      display_cast_message(room, caster, target, Map.put(ability, :result, :resisted))
+    room =
+      if ability.kind == "curse" and ability.duration < 1 do
+        Process.put(:ability_result, :resisted)
+        display_cast_message(room, caster, target, Map.put(ability, :result, :resisted))
 
-      target =
-        target
-        |> Map.put(:ability_shift, nil)
-        |> Map.put(:ability_special, nil)
-        |> Mobile.update_prompt(room)
+        target =
+          target
+          |> Map.put(:ability_shift, nil)
+          |> Map.put(:ability_special, nil)
+          |> Mobile.update_prompt(room)
+
+        room
+        |> put_in([:mobiles, target.ref], target)
+      else
+        display_cast_message(room, caster, target, ability)
+
+        room
+        |> trigger_damage_shields(caster.ref, target.ref, ability)
+        |> apply_criticals(caster.ref, target.ref, ability)
+        |> finish_ability(caster.ref, target.ref, ability, target.ability_shift)
+      end
+
+    if target = room.mobiles[target.ref] do
+      updated_missing_target_limbs = room.mobiles[target.ref].missing_limbs
+
+      restored_limbs = missing_target_limbs -- updated_missing_target_limbs
+
+      Enum.each(restored_limbs, fn limb ->
+        Mobile.send_scroll(
+          target,
+          "<p><span class='blue'>Your #{limb} has been restored!</span></p>"
+        )
+
+        Room.send_scroll(
+          room,
+          "<p><span class='blue'>#{target.name}'s #{limb} has been restored!</span></p>",
+          [target]
+        )
+      end)
 
       room
-      |> put_in([:mobiles, target.ref], target)
     else
-      display_cast_message(room, caster, target, ability)
-
       room
-      |> trigger_damage_shields(caster.ref, target.ref, ability)
-      |> apply_criticals(caster.ref, target.ref, ability)
-      |> finish_ability(caster.ref, target.ref, ability, target.ability_shift)
     end
   end
 
@@ -1980,6 +2007,36 @@ defmodule ApathyDrive.Ability do
       end)
 
     {caster, target}
+  end
+
+  def apply_instant_trait({"RestoreLimbs", _}, %{} = target, _ability, caster, room) do
+    if Enum.any?(target.missing_limbs) do
+      limb = Enum.random(target.missing_limbs)
+
+      parent = target.limbs[limb][:parent]
+
+      limb =
+        if parent && target.limbs[parent].health <= 0 do
+          parent
+        else
+          limb
+        end
+
+      target =
+        Room.update_mobile(room, target.ref, fn _room, target ->
+          target
+          |> Systems.Effect.remove_oldest_stack({:severed, limb})
+          |> put_in([:limbs, limb, :health], 1.0)
+          |> Ecto.Changeset.change(%{
+            missing_limbs: List.delete(target.missing_limbs, limb)
+          })
+          |> Repo.update!()
+        end).mobiles[target.ref]
+
+      {caster, target}
+    else
+      {caster, target}
+    end
   end
 
   def apply_instant_trait({"CurePoison", _args}, %{} = target, _ability, caster, _room) do

@@ -19,7 +19,12 @@ defmodule ApathyDrive.Commands.System do
   def system(%Room{} = room, character, ["ouch"]) do
     Room.update_mobile(room, character.ref, fn _room, character ->
       ability = %ApathyDrive.Ability{
-        traits: %{"Damage" => 0.1},
+        traits: %{
+          "Damage" => [
+            %{kind: "physical", min: 25, max: 50, damage_type: "Electricity", damage_type_id: 1}
+          ],
+          "SeverLimb" => ["non_fatal"]
+        },
         targets: "self",
         energy: 0,
         kind: "attack",
