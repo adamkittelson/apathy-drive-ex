@@ -46,13 +46,22 @@ defmodule ApathyDriveWeb.MUDChannel do
     |> RoomServer.find()
     |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
 
-    ChannelHistory.fetch(socket.assigns[:character], 1000)
+    [first | rest] = ChannelHistory.fetch(socket.assigns[:character], 1000)
+
+    rest
+    |> Enum.reverse()
     |> Enum.each(fn %{message: message, time: time} ->
       Phoenix.Channel.push(socket, "chat-sidebar", %{
-        :html => message,
+        html: message,
         time: Timex.from_now(time)
       })
     end)
+
+    Phoenix.Channel.push(socket, "chat-sidebar", %{
+      html: first.message,
+      time: Timex.from_now(first.time),
+      force_time: true
+    })
 
     {:noreply, socket}
   end

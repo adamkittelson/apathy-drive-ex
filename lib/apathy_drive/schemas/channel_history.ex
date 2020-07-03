@@ -19,6 +19,5 @@ defmodule ApathyDrive.ChannelHistory do
     |> Ecto.Query.limit(^rows)
     |> Ecto.Query.select([ch], %{message: ch.message, time: ch.inserted_at})
     |> Repo.all()
-    |> Enum.reverse()
   end
 end
