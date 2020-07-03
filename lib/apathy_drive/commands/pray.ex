@@ -1,33 +1,52 @@
 defmodule ApathyDrive.Commands.Pray do
   use ApathyDrive.Command
-  alias ApathyDrive.{Ability, Character, Repo, Room}
+  alias ApathyDrive.{Ability, Character, Currency, Repo, Room}
 
   def keywords, do: ["pray"]
 
   def execute(%Room{} = room, %Character{} = character, _) do
-    if character.evil_points < 30 do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='blue'>You pray for your limbs to be restored.</span></p>"
-      )
+    Mobile.send_scroll(
+      character,
+      "<p><span class='blue'>You pray for your limbs to be restored.</span></p>"
+    )
 
-      if Enum.any?(character.limbs, fn {_, limb} -> limb.health <= 0 end) do
+    if Enum.any?(character.limbs, fn {_, limb} -> limb.health <= 0 end) do
+      price_in_copper = cost(character)
+
+      currency = Currency.set_value(price_in_copper)
+
+      if price_in_copper > Currency.wealth(character) do
+        message = "<p>You lack a sufficient offering!</p>"
+        Mobile.send_scroll(character, message)
         room
-        |> restore_limbs(character)
-        |> Room.update_mobile(character.ref, fn _room, character ->
-          Character.decrement_highest_attribute(character)
-        end)
       else
-        Mobile.send_scroll(character, "<p>You have no missing limbs.</p>")
+        char_currency = Currency.subtract(character, price_in_copper)
+
+        character =
+          character
+          |> Ecto.Changeset.change(%{
+            runic: char_currency.runic,
+            platinum: char_currency.platinum,
+            gold: char_currency.gold,
+            silver: char_currency.silver,
+            copper: char_currency.copper
+          })
+          |> Repo.update!()
+
+        if price_in_copper > 0 do
+          Mobile.send_scroll(
+            character,
+            "<p>You make an offering of #{Currency.to_string(currency)}.</p>"
+          )
+        end
+
         room
+        |> put_in([:mobiles, character.ref], character)
+        |> restore_limbs(character)
       end
     else
-      Mobile.send_scroll(
-        character,
-        "<p><span class='blue'>You pray for absolution.</span></p>"
-      )
-
-      smite(room, character)
+      Mobile.send_scroll(character, "<p>You have no missing limbs.</p>")
+      room
     end
   end
 
@@ -69,4 +88,26 @@ defmodule ApathyDrive.Commands.Pray do
       |> Repo.update!()
     end)
   end
+
+  def cost(%Character{level: level} = character) do
+    charm = Mobile.attribute_at_level(character, :charm, character.level)
+
+    multiplier =
+      character
+      |> Character.legal_status()
+      |> multiplier()
+
+    next_level = level + 1
+    charm_mod = 1 - (trunc(charm / 5.0) - 10) / 100
+    trunc(next_level * 5 * multiplier * 10 * charm_mod)
+  end
+
+  def multiplier("FIEND"), do: 15
+  def multiplier("Villain"), do: 13
+  def multiplier("Criminal"), do: 11
+  def multiplier("Outlaw"), do: 9
+  def multiplier("Seedy"), do: 7
+  def multiplier("Neutral"), do: 5
+  def multiplier("Good"), do: 3
+  def multiplier("Saint"), do: 1
 end

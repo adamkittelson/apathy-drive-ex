@@ -91,7 +91,8 @@ defmodule ApathyDrive.Commands.Train do
         Mobile.send_scroll(character, message)
         room
 
-      Trainer.training_cost(room.trainer, character) > Currency.wealth(character) and !force ->
+      Trainer.training_cost(room.trainer, character) > Currency.wealth(character) and
+          !force ->
         money =
           room.trainer
           |> Trainer.training_cost(character)
@@ -109,16 +110,6 @@ defmodule ApathyDrive.Commands.Train do
 
   def train(room, character, class_id, force) do
     Room.update_mobile(room, character.ref, fn _room, character ->
-      price_in_copper =
-        if force do
-          0
-        else
-          Trainer.training_cost(room.trainer, character)
-        end
-
-      currency = Currency.set_value(price_in_copper)
-      char_currency = Currency.subtract(character, price_in_copper)
-
       old_abilities = Map.values(character.abilities)
       old_hp = Mobile.max_hp_at_level(character, character.level)
 
@@ -139,6 +130,16 @@ defmodule ApathyDrive.Commands.Train do
             |> Repo.insert!()
             |> Repo.preload([:class])
         end
+
+      price_in_copper =
+        if force do
+          0
+        else
+          Trainer.training_cost(room.trainer, character)
+        end
+
+      currency = Currency.set_value(price_in_copper)
+      char_currency = Currency.subtract(character, price_in_copper)
 
       character =
         character
