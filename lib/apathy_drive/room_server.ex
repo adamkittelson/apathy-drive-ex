@@ -595,7 +595,8 @@ defmodule ApathyDrive.RoomServer do
       Room.update_mobile(room, mobile_ref, fn _room, character ->
         character =
           if Character.reduce_evil_points?(character) do
-            Character.alter_evil_points(character, -5 / 60)
+            # 13.8 days from Neutral to Saint
+            Character.alter_evil_points(character, -0.01)
           else
             character
           end
