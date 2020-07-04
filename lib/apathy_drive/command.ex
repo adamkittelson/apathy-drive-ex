@@ -160,12 +160,24 @@ defmodule ApathyDrive.Command do
     response
   end
 
-  defp execute_room_command(room, monster, scripts) do
+  defp execute_room_command(room, monster, scripts) when is_list(scripts) do
     if Mobile.confused(monster, room) do
       room
     else
       scripts = Enum.map(scripts, &ApathyDrive.Script.find/1)
       ApathyDrive.Script.execute(room, monster, scripts)
+    end
+  end
+
+  defp execute_room_command(room, monster, script) when is_binary(script) do
+    if Mobile.confused(monster, room) do
+      room
+    else
+      Module.safe_concat([ApathyDrive, Scripts, Macro.camelize(script)]).execute(
+        room,
+        monster.ref,
+        monster.ref
+      )
     end
   end
 

@@ -13,6 +13,15 @@ defmodule ApathyDrive.Scripts do
 
   require Ecto.Query
 
+  def check_item(mobile, item_id, failure_message) do
+    if Enum.find(mobile.inventory, &(&1.id == item_id)) do
+      true
+    else
+      Mobile.send_scroll(mobile, "<p>#{failure_message}</p>")
+      false
+    end
+  end
+
   def give_coins_up_to(%Room{} = room, mobile_ref, %{} = coins) do
     coins = Map.merge(%{copper: 0, silver: 0, gold: 0, platinum: 0, runic: 0}, coins)
 
@@ -72,6 +81,12 @@ defmodule ApathyDrive.Scripts do
           "<p>You receive a #{Item.colored_name(item, character: mobile)}.</p>"
         )
 
+        Room.send_scroll(
+          room,
+          "<p>#{mobile.name} receives a #{Item.colored_name(item, character: mobile)}.</p>",
+          [mobile]
+        )
+
         mobile
       else
         instance =
@@ -79,7 +94,7 @@ defmodule ApathyDrive.Scripts do
             item_id: item_id,
             room_id: room.id,
             character_id: nil,
-            dropped_for_character_id: mobile.id,
+            dropped_for_character_id: nil,
             equipped: false,
             hidden: false,
             level: level
@@ -93,6 +108,12 @@ defmodule ApathyDrive.Scripts do
         Mobile.send_scroll(
           mobile,
           "<p>A #{Item.colored_name(item, character: mobile)} drops to the floor.</p>"
+        )
+
+        Room.send_scroll(
+          room,
+          "<p>A #{Item.colored_name(item, character: mobile)} drops to the floor.</p>",
+          [mobile]
         )
 
         room
@@ -110,6 +131,60 @@ defmodule ApathyDrive.Scripts do
 
       nil ->
         raise "Item for Scripts.give_item/3 not found: #{name}"
+    end
+  end
+
+  def take_item(%Room{} = room, mobile_ref, item_id) when is_integer(item_id) do
+    Room.update_mobile(room, mobile_ref, fn _room, mobile ->
+      item = Enum.find(mobile.inventory, &(&1.id == item_id))
+
+      ItemInstance
+      |> Repo.get!(item.instance_id)
+      |> Repo.delete!()
+
+      Character.load_items(mobile)
+    end)
+  end
+
+  def take_item(%Room{} = room, mobile_ref, name) do
+    Item
+    |> Ecto.Query.where(name: ^name)
+    |> Repo.one()
+    |> case do
+      %Item{id: item_id} ->
+        take_item(room, mobile_ref, item_id)
+
+      nil ->
+        raise "Item for Scripts.take_item/3 not found: #{name}"
+    end
+  end
+
+  def summon(%Room{} = room, monster_id) when is_integer(monster_id) do
+    Repo.get!(Monster, monster_id)
+
+    monster =
+      %RoomMonster{
+        room_id: room.id,
+        monster_id: monster_id,
+        level: room.area.level,
+        spawned_at: room.id,
+        zone_spawned_at: room.zone_controller_id
+      }
+      |> Monster.from_room_monster()
+
+    Room.mobile_entered(room, monster, "")
+  end
+
+  def summon(%Room{} = room, name) do
+    Monster
+    |> Ecto.Query.where(name: ^name)
+    |> Repo.one()
+    |> case do
+      %Monster{id: monster_id} ->
+        summon(room, monster_id)
+
+      nil ->
+        raise "Monster for Scripts.summon/2 not found: #{name}"
     end
   end
 
@@ -919,35 +994,6 @@ defmodule ApathyDrive.Scripts do
 
       roll <= 100 ->
         give_item(room, mobile_ref, "bloodstone")
-    end
-  end
-
-  def summon(%Room{} = room, monster_id) when is_integer(monster_id) do
-    Repo.get!(Monster, monster_id)
-
-    monster =
-      %RoomMonster{
-        room_id: room.id,
-        monster_id: monster_id,
-        level: room.area.level,
-        spawned_at: room.id,
-        zone_spawned_at: room.zone_controller_id
-      }
-      |> Monster.from_room_monster()
-
-    Room.mobile_entered(room, monster, "")
-  end
-
-  def summon(%Room{} = room, name) do
-    Monster
-    |> Ecto.Query.where(name: ^name)
-    |> Repo.one()
-    |> case do
-      %Monster{id: monster_id} ->
-        summon(room, monster_id)
-
-      nil ->
-        raise "Monster for Scripts.summon/2 not found: #{name}"
     end
   end
 end

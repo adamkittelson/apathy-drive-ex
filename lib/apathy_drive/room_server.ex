@@ -1040,6 +1040,16 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def execute_casting_ability(%{casting: {script, target, energy_req}} = mobile, room) do
+    if energy_req <= mobile.energy do
+      mobile = Map.put(mobile, :casting, nil)
+      room = put_in(room.mobiles[mobile.ref], mobile)
+      script.execute(room, mobile.ref, target)
+    else
+      mobile
+    end
+  end
+
   def execute_casting_ability(%{} = mobile, _room), do: mobile
 
   defp jitter(time) do
