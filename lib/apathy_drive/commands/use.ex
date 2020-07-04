@@ -66,7 +66,64 @@ defmodule ApathyDrive.Commands.Use do
     end
   end
 
-  def execute(%Room{} = room, %Character{} = character, [item_name, target]) do
+  def execute(%Room{} = room, %Character{} = character, [item_name]) do
+    character.inventory
+    |> Match.one(:name_contains, item_name)
+    |> case do
+      nil ->
+        Mobile.send_scroll(
+          character,
+          "<p><span class='red'>Syntax: USE {Item to use} [{target}]</red></p>"
+        )
+
+        room
+
+      %Item{type: "Light", instance_id: instance_id} = item ->
+        ItemInstance
+        |> Repo.get(instance_id)
+        |> Ecto.Changeset.change(%{
+          equipped: true
+        })
+        |> Repo.update!()
+
+        room =
+          if current_light = equipped_light_source(character) do
+            ApathyDrive.Commands.Remove.execute(room, character, current_light.keywords)
+          else
+            room
+          end
+
+        Mobile.send_scroll(character, "<p>You lit the #{Item.colored_name(item)}.</p>")
+
+        Room.update_mobile(room, character.ref, fn _room, char ->
+          Character.load_items(char)
+        end)
+
+      %Item{type: "Container"} = item ->
+        if ability = Systems.Effect.effect_bonus(item, "OnUse") do
+          room
+          |> Ability.execute(character.ref, ability, [character.ref])
+          |> deduct_uses(character.ref, item)
+        else
+          Mobile.send_scroll(character, "<p>This container is not yet implemented!</p>")
+          room
+        end
+
+      %Item{} ->
+        Mobile.send_scroll(character, "<p>You may not use that item!</p>")
+        room
+    end
+  end
+
+  def execute(%Room{} = room, %Character{} = character, item_and_target)
+      when length(item_and_target) >= 2 do
+    target = List.last(item_and_target)
+
+    item_name =
+      item_and_target
+      |> List.delete(target)
+      |> Enum.join(" ")
+
     character.inventory
     |> Match.one(:name_contains, item_name)
     |> case do
@@ -134,55 +191,6 @@ defmodule ApathyDrive.Commands.Use do
             "<p><span class='red'>Syntax: USE {Item to use} [{target}]</red></p>"
           )
 
-          room
-        end
-
-      %Item{} ->
-        Mobile.send_scroll(character, "<p>You may not use that item!</p>")
-        room
-    end
-  end
-
-  def execute(%Room{} = room, %Character{} = character, [item_name]) do
-    character.inventory
-    |> Match.one(:name_contains, item_name)
-    |> case do
-      nil ->
-        Mobile.send_scroll(
-          character,
-          "<p><span class='red'>Syntax: USE {Item to use} [{target}]</red></p>"
-        )
-
-        room
-
-      %Item{type: "Light", instance_id: instance_id} = item ->
-        ItemInstance
-        |> Repo.get(instance_id)
-        |> Ecto.Changeset.change(%{
-          equipped: true
-        })
-        |> Repo.update!()
-
-        room =
-          if current_light = equipped_light_source(character) do
-            ApathyDrive.Commands.Remove.execute(room, character, current_light.keywords)
-          else
-            room
-          end
-
-        Mobile.send_scroll(character, "<p>You lit the #{Item.colored_name(item)}.</p>")
-
-        Room.update_mobile(room, character.ref, fn _room, char ->
-          Character.load_items(char)
-        end)
-
-      %Item{type: "Container"} = item ->
-        if ability = Systems.Effect.effect_bonus(item, "OnUse") do
-          room
-          |> Ability.execute(character.ref, ability, [character.ref])
-          |> deduct_uses(character.ref, item)
-        else
-          Mobile.send_scroll(character, "<p>This container is not yet implemented!</p>")
           room
         end
 

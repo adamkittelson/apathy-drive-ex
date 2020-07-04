@@ -120,6 +120,57 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
+  def execute(
+        %Room{} = room,
+        %{} = character,
+        %{"kind" => "Class", "min" => min, "max" => max} = room_exit,
+        reattempt
+      ) do
+    if class = Enum.find(character.classes, &(&1.class_id == room_exit["class_id"])) do
+      cond do
+        min && class.level < min ->
+          Mobile.send_scroll(character, "<p>An invisible barrier blocks your entry!</p>")
+
+          Room.send_scroll(
+            room,
+            "#{Mobile.colored_name(character)} is stopped by an invisible force!",
+            [character]
+          )
+
+          room
+
+        max && class.level > max ->
+          Mobile.send_scroll(character, "<p>An invisible barrier blocks your entry!</p>")
+
+          Room.send_scroll(
+            room,
+            "#{Mobile.colored_name(character)} is stopped by an invisible force!",
+            [character]
+          )
+
+          room
+
+        :else ->
+          execute(
+            room,
+            room.mobiles[character.ref],
+            Map.put(room_exit, "kind", "Normal"),
+            reattempt
+          )
+      end
+    else
+      Mobile.send_scroll(character, "<p>An invisible barrier blocks your entry!</p>")
+
+      Room.send_scroll(
+        room,
+        "#{Mobile.colored_name(character)} is stopped by an invisible force!",
+        [character]
+      )
+
+      room
+    end
+  end
+
   def execute(%Room{} = room, %{} = character, %{"kind" => "Class"} = room_exit, reattempt) do
     classes = Enum.map(character.classes, & &1.class_id)
 
@@ -371,7 +422,8 @@ defmodule ApathyDrive.Commands.Move do
                       kind: "raw",
                       min: trunc(room_exit["max_damage"] * 0.75),
                       max: room_exit["max_damage"],
-                      damage_type: "Normal"
+                      damage_type: "Unaspected",
+                      damage_type_id: 3
                     }
                   ]
                 },
