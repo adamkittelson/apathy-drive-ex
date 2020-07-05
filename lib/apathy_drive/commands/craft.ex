@@ -89,8 +89,7 @@ defmodule ApathyDrive.Commands.Craft do
                       level: level,
                       character_id: character.id,
                       equipped: false,
-                      hidden: false,
-                      dropped_for_character_id: character.id
+                      hidden: false
                     }
                     |> Repo.insert!()
 

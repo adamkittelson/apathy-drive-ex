@@ -10,7 +10,7 @@ defmodule ApathyDrive.Scripts.Sanctuary do
           item_id: sanctuary,
           room_id: room.id,
           character_id: nil,
-          dropped_for_character_id: mobile.id,
+          owner_id: mobile.id,
           equipped: false,
           hidden: false,
           delete_at: Timex.shift(DateTime.utc_now(), minutes: 24)

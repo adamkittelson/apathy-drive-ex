@@ -117,7 +117,6 @@ defmodule ApathyDrive.Item do
     field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
-    field(:dropped_for_character_id, :integer, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
     field(:last_effect_key, :integer, virtual: true, default: 0)
     field(:timers, :map, virtual: true, default: %{})
@@ -279,7 +278,6 @@ defmodule ApathyDrive.Item do
         :equipped,
         :hidden,
         :purchased,
-        :dropped_for_character_id,
         :owner_id,
         :delete_at,
         :uses,

@@ -9,7 +9,7 @@ defmodule ApathyDrive.Scripts.HealingRune do
         item_id: @healing_rune_item_id,
         room_id: room.id,
         character_id: nil,
-        dropped_for_character_id: mobile.id,
+        owner_id: mobile.id,
         equipped: false,
         hidden: false,
         delete_at: Timex.shift(DateTime.utc_now(), minutes: 12)

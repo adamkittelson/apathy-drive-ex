@@ -9,7 +9,7 @@ defmodule ApathyDrive.Scripts.Asylum do
         item_id: asylum,
         room_id: room.id,
         character_id: nil,
-        dropped_for_character_id: mobile.id,
+        owner_id: mobile.id,
         equipped: false,
         hidden: false,
         delete_at: Timex.shift(DateTime.utc_now(), minutes: 3)
@@ -23,7 +23,7 @@ defmodule ApathyDrive.Scripts.Asylum do
   def enforce_asylum(room, mobile) do
     asylums = Enum.filter(room.items, &(&1.id == 3))
 
-    if Enum.any?(asylums, &(&1.dropped_for_character_id != mobile.id)) do
+    if Enum.any?(asylums, &(&1.owner_id != mobile.id)) do
       Mobile.send_scroll(
         mobile,
         "<p>This room is a prison that you cannot leave until the asylum spell fades.</p>"

@@ -66,7 +66,6 @@ defmodule ApathyDrive.Scripts do
             item_id: item_id,
             room_id: nil,
             character_id: mobile.id,
-            dropped_for_character_id: mobile.id,
             equipped: false,
             hidden: false,
             level: level
@@ -94,7 +93,6 @@ defmodule ApathyDrive.Scripts do
             item_id: item_id,
             room_id: room.id,
             character_id: nil,
-            dropped_for_character_id: nil,
             equipped: false,
             hidden: false,
             level: level

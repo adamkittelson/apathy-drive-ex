@@ -673,17 +673,18 @@ defmodule ApathyDrive.Room do
   end
 
   def delete_items_for_maintenance(%Room{} = room) do
-    Enum.reduce(room.items, room, fn item, room ->
-      if Item.has_ability?(item, "Del@Maint") do
-        ItemInstance
-        |> Repo.get!(item.instance_id)
-        |> Repo.delete!()
+    # Enum.reduce(room.items, room, fn item, room ->
+    #   if Item.has_ability?(item, "Del@Maint") do
+    #     ItemInstance
+    #     |> Repo.get!(item.instance_id)
+    #     |> Repo.delete!()
 
-        Room.load_items(room)
-      else
-        room
-      end
-    end)
+    #     Room.load_items(room)
+    #   else
+    #     room
+    #   end
+    # end)
+    room
   end
 
   def light(%Room{} = room) do

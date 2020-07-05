@@ -11,6 +11,7 @@ defmodule ApathyDrive.Commands.Get do
 
   def execute(%Room{items: items} = room, %Character{} = character, ["all"]) do
     items
+    |> Enum.filter(&(&1.getable == true))
     |> Enum.map(& &1.name)
     |> get_all(room, character)
   end
@@ -81,9 +82,6 @@ defmodule ApathyDrive.Commands.Get do
 
         actual_item =
           items
-          |> Enum.filter(
-            &(&1.dropped_for_character_id == character.id or is_nil(&1.dropped_for_character_id))
-          )
           |> Enum.filter(&(&1.getable == true))
           |> Match.one(:name_contains, item)
 
@@ -100,7 +98,6 @@ defmodule ApathyDrive.Commands.Get do
               |> Ecto.Changeset.change(%{
                 room_id: nil,
                 character_id: character.id,
-                dropped_for_character_id: nil,
                 equipped: false,
                 class_id: nil,
                 hidden: false

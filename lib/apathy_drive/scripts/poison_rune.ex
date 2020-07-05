@@ -9,7 +9,7 @@ defmodule ApathyDrive.Scripts.PoisonRune do
         item_id: @poison_rune_item_id,
         room_id: room.id,
         character_id: nil,
-        dropped_for_character_id: mobile.id,
+        owner_id: mobile.id,
         equipped: false,
         hidden: false,
         delete_at: Timex.shift(DateTime.utc_now(), minutes: 12)
@@ -22,7 +22,7 @@ defmodule ApathyDrive.Scripts.PoisonRune do
 
   def activate(room, mobile) do
     Enum.reduce(room.items, room, fn
-      %Item{id: @poison_rune_item_id, dropped_for_character_id: id}, room ->
+      %Item{id: @poison_rune_item_id, owner_id: id}, room ->
         Room.update_mobile(room, mobile.ref, fn
           room, %Character{id: ^id} ->
             room

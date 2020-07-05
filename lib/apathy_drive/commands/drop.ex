@@ -94,7 +94,6 @@ defmodule ApathyDrive.Commands.Drop do
       equipped: false,
       class_id: nil,
       hidden: false,
-      dropped_for_character_id: nil,
       delete_at: Timex.shift(DateTime.utc_now(), minutes: delete_at)
     })
     |> Repo.update!()
