@@ -4,6 +4,7 @@ defmodule ApathyDrive.Character do
 
   alias ApathyDrive.{
     Ability,
+    AbilityAttribute,
     AbilityDamageType,
     AbilityTrait,
     AI,
@@ -319,7 +320,14 @@ defmodule ApathyDrive.Character do
       |> Mobile.ability_value("Grant")
       |> List.flatten()
       |> Enum.uniq()
-      |> Enum.map(&%{ability: Ability.find(&1)})
+      |> Enum.map(fn ability_id ->
+        ability =
+          ability_id
+          |> Ability.find()
+          |> Map.put(:attributes, AbilityAttribute.load_attributes(ability_id))
+
+        %{ability: ability}
+      end)
 
     base_class_abilities = Enum.filter(class_abilities, &(&1.ability.kind == "base-class"))
 
