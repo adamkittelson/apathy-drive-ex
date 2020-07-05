@@ -6,7 +6,6 @@ defmodule ApathyDrive.Room do
     Area,
     Character,
     Directory,
-    Item,
     ItemInstance,
     Match,
     Mobile,
