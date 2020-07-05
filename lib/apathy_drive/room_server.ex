@@ -104,8 +104,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:mirror_open_fail, mirror_room_id, room_exit})
   end
 
-  def execute_command(room, spirit_id, command, arguments, reattempt \\ false) do
-    GenServer.call(room, {:execute_command, spirit_id, command, arguments, reattempt})
+  def execute_command(room, mobile_ref, command, arguments) do
+    GenServer.call(room, {:execute_command, mobile_ref, command, arguments})
   end
 
   def tell_monsters_to_follow(room, character, destination) do
@@ -194,8 +194,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_call({:execute_command, mobile_ref, command, arguments, reattempt}, _from, room) do
-    case ApathyDrive.Command.execute(room, mobile_ref, command, arguments, reattempt) do
+  def handle_call({:execute_command, mobile_ref, command, arguments}, _from, room) do
+    case ApathyDrive.Command.execute(room, mobile_ref, command, arguments) do
       %Room{} = room ->
         {:reply, :ok, room}
 
@@ -632,7 +632,7 @@ defmodule ApathyDrive.RoomServer do
 
         if Enum.any?(exits) do
           room_exit = Enum.random(exits)
-          {:noreply, Commands.Move.execute(room, mobile, room_exit, false)}
+          {:noreply, Commands.Move.execute(room, mobile, room_exit)}
         else
           {:noreply, room}
         end
@@ -1047,6 +1047,27 @@ defmodule ApathyDrive.RoomServer do
       script.execute(room, mobile.ref, target)
     else
       mobile
+    end
+  end
+
+  def execute_casting_ability(%{casting: {:move, room_exit}} = mobile, room) do
+    if Mobile.exhausted(mobile) do
+      mobile
+    else
+      command = mobile.command
+
+      mobile =
+        mobile
+        |> Map.put(:command, nil)
+        |> Map.put(:casting, nil)
+
+      room = put_in(room.mobiles[mobile.ref], mobile)
+
+      room = Commands.Move.execute(room, mobile, room_exit)
+
+      send(mobile.socket, {:command_finished, command})
+
+      room
     end
   end
 

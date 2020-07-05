@@ -159,7 +159,7 @@ defmodule ApathyDrive.Monster do
          {:follow?, true} <-
            {:follow?, :rand.uniform(100) < monster.chance_to_follow and !monster.follow},
          {:exit, %{} = room_exit} <- {:exit, chase_exit(monster, room, destination)} do
-      case ApathyDrive.Commands.Move.execute(room, monster, room_exit, false) do
+      case ApathyDrive.Commands.Move.execute(room, monster, room_exit) do
         %Room{} = room ->
           room
 
@@ -178,12 +178,11 @@ defmodule ApathyDrive.Monster do
               ApathyDrive.Commands.Move.execute(
                 room,
                 monster,
-                Map.put(room_exit, "kind", "Action"),
-                true
+                Map.put(room_exit, "kind", "Action")
               )
 
             _ ->
-              ApathyDrive.Commands.Move.execute(room, monster, room_exit, true)
+              ApathyDrive.Commands.Move.execute(room, monster, room_exit)
           end
         else
           room

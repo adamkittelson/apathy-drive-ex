@@ -634,7 +634,7 @@ defmodule ApathyDrive.Script do
     }
 
     room =
-      case ApathyDrive.Commands.Move.execute(room, monster, room_exit, false) do
+      case ApathyDrive.Commands.Move.execute(room, monster, room_exit) do
         %Room{} = room ->
           room
 

@@ -87,6 +87,8 @@ defmodule ApathyDriveWeb.MUDChannel do
 
     update_room(socket)
 
+    send(self(), :execute_command)
+
     {:noreply, socket}
   end
 
@@ -202,10 +204,54 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:command_finished, command}, socket) do
+    if command == socket.assigns[:current_command] do
+      send(self(), :execute_command)
+      socket = assign(socket, :current_command, nil)
+      {:noreply, socket}
+    else
+      raise "unexpected command finished: #{inspect(command)}"
+    end
+  end
+
+  def handle_info(:execute_command, socket) do
+    if socket.assigns[:current_command] do
+      # already executing a command, do nothing
+      {:noreply, socket}
+    else
+      case :queue.out(socket.assigns[:commands]) do
+        {:empty, _commands} ->
+          {:noreply, socket}
+
+        {{:value, {command, args}}, commands} ->
+          socket.assigns[:room_id]
+          |> RoomServer.find()
+          |> RoomServer.execute_command(socket.assigns[:monster_ref], command, args)
+          |> case do
+            :ok ->
+              socket =
+                socket
+                |> assign(:commands, commands)
+
+              {:noreply, socket}
+
+            :too_tired ->
+              socket =
+                socket
+                |> assign(:commands, commands)
+                |> assign(:current_command, {command, args})
+
+              {:noreply, socket}
+
+            :not_here ->
+              {:noreply, socket}
+          end
+      end
+    end
+  end
+
   def handle_in("command", %{}, socket) do
-    socket.assigns[:room_id]
-    |> RoomServer.find()
-    |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
+    socket = add_command_to_queue(socket, {"l", []})
 
     {:noreply, socket}
   end
@@ -213,50 +259,11 @@ defmodule ApathyDriveWeb.MUDChannel do
   def handle_in("command", message, socket) do
     case String.split(message) do
       [command | arguments] ->
-        socket.assigns[:room_id]
-        |> RoomServer.find()
-        |> RoomServer.execute_command(
-          socket.assigns[:monster_ref],
-          command,
-          arguments,
-          socket.assigns[:reattempt]
-        )
-        |> case do
-          :ok ->
-            {:noreply, assign(socket, :reattempt, false)}
-
-          :not_here ->
-            payload = message
-
-            message = %Phoenix.Socket.Message{
-              topic: "mud:play",
-              event: "command",
-              payload: payload,
-              ref: make_ref()
-            }
-
-            Process.send_after(self(), message, 50)
-            {:noreply, assign(socket, :reattempt, true)}
-
-          :too_tired ->
-            payload = message
-
-            message = %Phoenix.Socket.Message{
-              topic: "mud:play",
-              event: "command",
-              payload: payload,
-              ref: make_ref()
-            }
-
-            Process.send_after(self(), message, 50)
-            {:noreply, assign(socket, :reattempt, true)}
-        end
+        socket = add_command_to_queue(socket, {command, arguments})
+        {:noreply, socket}
 
       [] ->
-        socket.assigns[:room_id]
-        |> RoomServer.find()
-        |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
-
+        socket = add_command_to_queue(socket, {"l", []})
         {:noreply, socket}
     end
   end
@@ -285,6 +292,21 @@ defmodule ApathyDriveWeb.MUDChannel do
   def handle_out(event, payload, socket) do
     push(socket, event, payload)
     {:noreply, socket}
+  end
+
+  defp add_command_to_queue(socket, command) do
+    socket = assign(socket, :commands, socket.assigns[:commands] || :queue.new())
+
+    if :queue.len(socket.assigns[:commands]) > 10 do
+      send_scroll(socket, "<p>Why don't you slow down for a few seconds?</p>")
+      socket
+    else
+      unless socket.assigns[:current_command] do
+        send(self(), :execute_command)
+      end
+
+      assign(socket, :commands, :queue.in(command, socket.assigns[:commands]))
+    end
   end
 
   defp update_room(socket) do

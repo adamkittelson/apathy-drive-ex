@@ -12,17 +12,17 @@ defmodule ApathyDrive.Commands.Move do
 
   require Logger
 
-  def execute(%Room{} = room, %{} = character, command, reattempt) when is_binary(command) do
+  def execute(%Room{} = room, %{} = character, command) when is_binary(command) do
     direction = Room.direction(command)
     room_exit = Room.get_exit(room, direction)
 
-    execute(room, character, room_exit, reattempt)
+    execute(room, character, room_exit)
   end
 
-  def execute(%Room{} = room, %{} = mob, %{"kind" => kind} = re, reattempt)
+  def execute(%Room{} = room, %{} = mob, %{"kind" => kind} = re)
       when kind in ["Door", "Gate", "Key"] do
     if Doors.open?(room, re) do
-      execute(room, mob, Map.put(re, "kind", "Normal"), reattempt)
+      execute(room, mob, Map.put(re, "kind", "Normal"))
     else
       name = if kind == "Gate", do: "gate", else: "door"
 
@@ -35,49 +35,47 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
-  def execute(%Room{} = room, %{} = mob, %{"kind" => "Block Guard"} = re, reattempt) do
-    execute(room, mob, Map.put(re, "kind", "Normal"), reattempt)
+  def execute(%Room{} = room, %{} = mob, %{"kind" => "Block Guard"} = re) do
+    execute(room, mob, Map.put(re, "kind", "Normal"))
   end
 
   def execute(
         %Room{} = room,
         character,
-        %{"kind" => "Hidden", "passable_while_hidden" => true} = room_exit,
-        reattempt
+        %{"kind" => "Hidden", "passable_while_hidden" => true} = room_exit
       ) do
-    execute(room, character, Map.put(room_exit, "kind", "Normal"), reattempt)
+    execute(room, character, Map.put(room_exit, "kind", "Normal"))
   end
 
   def execute(
         %Room{} = room,
         %{} = character,
-        %{"kind" => "Hidden", "passable_while_hidden" => false} = room_exit,
-        reattempt
+        %{"kind" => "Hidden", "passable_while_hidden" => false} = room_exit
       ) do
     if Doors.open?(room, room_exit) do
-      execute(room, character, Map.put(room_exit, "kind", "Normal"), reattempt)
+      execute(room, character, Map.put(room_exit, "kind", "Normal"))
     else
       Mobile.send_scroll(character, "<p>There is no exit in that direction.</p>")
       room
     end
   end
 
-  def execute(%Room{} = room, %{} = character, nil, _reattempt) do
+  def execute(%Room{} = room, %{} = character, nil) do
     Mobile.send_scroll(character, "<p>There is no exit in that direction.</p>")
     room
   end
 
-  def execute(%Room{} = room, %{} = character, %{"kind" => "Command"}, _reattempt) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Command"}) do
     Mobile.send_scroll(character, "<p>There is no exit in that direction.</p>")
     room
   end
 
-  def execute(%Room{} = room, %{} = character, %{"kind" => "RemoteAction"}, _reattempt) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "RemoteAction"}) do
     Mobile.send_scroll(character, "<p>There is no exit in that direction.</p>")
     room
   end
 
-  def execute(%Room{} = room, %{} = character, %{"kind" => "Level"} = room_exit, reattempt) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Level"} = room_exit) do
     cond do
       room_exit["min"] && character.level < room_exit["min"] ->
         Mobile.send_scroll(character, "<p>#{room_exit["failure_message"]}</p>")
@@ -88,18 +86,17 @@ defmodule ApathyDrive.Commands.Move do
         room
 
       :else ->
-        execute(room, character, Map.put(room_exit, "kind", "Normal"), reattempt)
+        execute(room, character, Map.put(room_exit, "kind", "Normal"))
     end
   end
 
   def execute(
         %Room{} = room,
         %{} = character,
-        %{"kind" => "Item", "item" => item_id} = room_exit,
-        reattempt
+        %{"kind" => "Item", "item" => item_id} = room_exit
       ) do
     if Enum.find(character.inventory ++ character.equipment, &(&1.id == item_id)) do
-      execute(room, character, Map.put(room_exit, "kind", "Action"), reattempt)
+      execute(room, character, Map.put(room_exit, "kind", "Action"))
     else
       Mobile.send_scroll(character, "<p>#{room_exit["failure_message"]}</p>")
       room
@@ -109,11 +106,10 @@ defmodule ApathyDrive.Commands.Move do
   def execute(
         %Room{} = room,
         %{} = character,
-        %{"kind" => "Alignment", "max" => max, "min" => min} = room_exit,
-        reattempt
+        %{"kind" => "Alignment", "max" => max, "min" => min} = room_exit
       ) do
     if character.evil_points <= max and character.evil_points >= min do
-      execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"), reattempt)
+      execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"))
     else
       Mobile.send_scroll(character, "<p>A strange power holds you back!</p>")
       room
@@ -123,8 +119,7 @@ defmodule ApathyDrive.Commands.Move do
   def execute(
         %Room{} = room,
         %{} = character,
-        %{"kind" => "Class", "min" => min, "max" => max} = room_exit,
-        reattempt
+        %{"kind" => "Class", "min" => min, "max" => max} = room_exit
       ) do
     if class = Enum.find(character.classes, &(&1.class_id == room_exit["class_id"])) do
       cond do
@@ -154,8 +149,7 @@ defmodule ApathyDrive.Commands.Move do
           execute(
             room,
             room.mobiles[character.ref],
-            Map.put(room_exit, "kind", "Normal"),
-            reattempt
+            Map.put(room_exit, "kind", "Normal")
           )
       end
     else
@@ -171,11 +165,11 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
-  def execute(%Room{} = room, %{} = character, %{"kind" => "Class"} = room_exit, reattempt) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => "Class"} = room_exit) do
     classes = Enum.map(character.classes, & &1.class_id)
 
     if room_exit["class_id"] in classes do
-      execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"), reattempt)
+      execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"))
     else
       Mobile.send_scroll(character, "<p>An invisible barrier blocks your entry!</p>")
 
@@ -192,11 +186,10 @@ defmodule ApathyDrive.Commands.Move do
   def execute(
         %Room{} = room,
         %Character{} = character,
-        %{"kind" => "Toll"} = room_exit,
-        reattempt
+        %{"kind" => "Toll"} = room_exit
       ) do
     character =
-      if character.sneaking && !reattempt do
+      if character.sneaking do
         character
         |> Mobile.send_scroll("<p>Sneaking...</p>")
         |> Character.add_attribute_experience(%{
@@ -246,22 +239,20 @@ defmodule ApathyDrive.Commands.Move do
         execute(
           room,
           room.mobiles[character.ref],
-          Map.put(room_exit, "kind", "Normal"),
-          reattempt
+          Map.put(room_exit, "kind", "Normal")
         )
       end
     end
   end
 
-  def execute(%Room{} = room, %{} = mobile, %{"kind" => "Toll"} = room_exit, reattempt) do
-    execute(room, mobile, Map.put(room_exit, "kind", "Normal"), reattempt)
+  def execute(%Room{} = room, %{} = mobile, %{"kind" => "Toll"} = room_exit) do
+    execute(room, mobile, Map.put(room_exit, "kind", "Normal"))
   end
 
   def execute(
         %Room{} = room,
         %{} = character,
-        %{"kind" => "Normal", "destination" => destination_id} = room_exit,
-        reattempt
+        %{"kind" => "Normal", "destination" => destination_id} = room_exit
       ) do
     if !Mobile.held(character) and !Mobile.confused(character, room) and
          !ApathyDrive.Scripts.Asylum.enforce_asylum(room, character) do
@@ -273,7 +264,7 @@ defmodule ApathyDrive.Commands.Move do
         })
 
       character =
-        if character.sneaking && !reattempt do
+        if character.sneaking do
           character
           |> Mobile.send_scroll("<p>Sneaking...</p>")
           |> Character.add_attribute_experience(%{
@@ -286,6 +277,7 @@ defmodule ApathyDrive.Commands.Move do
         end
 
       if Mobile.exhausted(character) do
+        character = Map.put(character, :casting, {:move, room_exit})
         room = put_in(room.mobiles[character.ref], character)
         {:error, :too_tired, room}
       else
@@ -320,13 +312,12 @@ defmodule ApathyDrive.Commands.Move do
   def execute(
         %Room{} = room,
         %{} = character,
-        %{"kind" => "Action", "destination" => destination_id} = room_exit,
-        reattempt
+        %{"kind" => "Action", "destination" => destination_id} = room_exit
       ) do
     if !Mobile.held(character) and !Mobile.confused(character, room) and
          !ApathyDrive.Scripts.Asylum.enforce_asylum(room, character) do
       character =
-        if character.sneaking && !reattempt do
+        if character.sneaking do
           character
           |> Mobile.send_scroll("<p>Sneaking...</p>")
           |> Character.add_attribute_experience(%{
@@ -383,16 +374,15 @@ defmodule ApathyDrive.Commands.Move do
   def execute(
         %Room{} = room,
         %{} = character,
-        %{"kind" => "Trap", "destination" => destination_id} = room_exit,
-        reattempt
+        %{"kind" => "Trap", "destination" => destination_id} = room_exit
       ) do
     if ApathyDrive.Doors.all_remote_actions_triggered?(room, room_exit) do
-      execute(room, character, Map.put(room_exit, "kind", "Normal"), reattempt)
+      execute(room, character, Map.put(room_exit, "kind", "Normal"))
     else
       if !Mobile.held(character) and !Mobile.confused(character, room) and
            !ApathyDrive.Scripts.Asylum.enforce_asylum(room, character) do
         character =
-          if character.sneaking && !reattempt do
+          if character.sneaking do
             character
             |> Mobile.send_scroll("<p>Sneaking...</p>")
             |> Character.add_attribute_experience(%{
@@ -474,7 +464,7 @@ defmodule ApathyDrive.Commands.Move do
     end
   end
 
-  def execute(%Room{} = room, %{} = character, %{"kind" => kind} = room_exit, reattempt) do
+  def execute(%Room{} = room, %{} = character, %{"kind" => kind} = room_exit) do
     Logger.error("unimplemented exit type '#{inspect(kind)}': #{inspect(room_exit)}")
 
     Mobile.send_scroll(
@@ -482,7 +472,7 @@ defmodule ApathyDrive.Commands.Move do
       "<p>unimplemented exit type '#{inspect(kind)}': #{inspect(room_exit)}</p>"
     )
 
-    execute(room, character, Map.put(room_exit, "kind", "Normal"), reattempt)
+    execute(room, character, Map.put(room_exit, "kind", "Normal"))
   end
 
   def party_move(
@@ -495,7 +485,7 @@ defmodule ApathyDrive.Commands.Move do
     |> Enum.reduce(room, fn
       %Character{leader: ^ref} = party_member, updated_room ->
         Mobile.send_scroll(party_member, "<p> -- Following your Party leader #{direction} --</p>")
-        execute(updated_room, party_member, room_exit, false)
+        execute(updated_room, party_member, room_exit)
 
       _, updated_room ->
         updated_room

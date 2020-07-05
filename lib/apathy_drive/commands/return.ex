@@ -14,6 +14,6 @@ defmodule ApathyDrive.Commands.Return do
       "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
     }
 
-    ApathyDrive.Commands.Move.execute(room, monster, room_exit, false)
+    ApathyDrive.Commands.Move.execute(room, monster, room_exit)
   end
 end

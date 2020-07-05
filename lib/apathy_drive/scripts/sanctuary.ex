@@ -80,7 +80,7 @@ defmodule ApathyDrive.Scripts.Sanctuary do
 
       mobile = Map.put(mobile, :energy, mobile.max_energy)
 
-      ApathyDrive.Commands.Move.execute(room, mobile, room_exit, false)
+      ApathyDrive.Commands.Move.execute(room, mobile, room_exit)
     else
       room
     end

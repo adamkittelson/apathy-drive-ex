@@ -91,12 +91,16 @@ defmodule ApathyDrive.Command do
     ]
   end
 
-  def execute(%Room{} = room, monster_ref, command, arguments, reattempt \\ false) do
+  def execute(%Room{} = room, monster_ref, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
+
+    room = Room.update_mobile(room, monster_ref, fn _room, mobile ->
+      Map.put(mobile, :command, {command, arguments})
+    end)
 
     monster = room.mobiles[monster_ref]
 
-    unless reattempt, do: Logger.info("#{monster && monster.name} command: #{full_command}")
+    Logger.info("#{monster && monster.name} command: #{full_command}")
 
     {time, response} =
       :timer.tc(fn ->
@@ -105,14 +109,13 @@ defmodule ApathyDrive.Command do
             {:error, :not_here, room}
 
           command in @directions ->
-            Commands.Move.execute(room, monster, command, reattempt)
+            Commands.Move.execute(room, monster, command)
 
           command_exit = Room.command_exit(room, full_command) ->
             Commands.Move.execute(
               room,
               monster,
-              Map.put(command_exit, "kind", "Action"),
-              reattempt
+              Map.put(command_exit, "kind", "Action")
             )
 
           remote_action_exit = Room.remote_action_exit(room, full_command) ->

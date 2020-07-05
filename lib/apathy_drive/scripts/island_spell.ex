@@ -318,7 +318,7 @@ defmodule ApathyDrive.Scripts.IslandSpell do
       "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
     }
 
-    case ApathyDrive.Commands.Move.execute(room, mobile, room_exit, false) do
+    case ApathyDrive.Commands.Move.execute(room, mobile, room_exit) do
       %Room{} = room ->
         room
 
