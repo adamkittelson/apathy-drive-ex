@@ -35,12 +35,18 @@ defmodule ApathyDrive.Commands.Top do
     number
     |> Character.top_list()
     |> Enum.map(fn %{character: character, class: class} ->
-      exp =
+      classes =
         character
         |> Ecto.assoc(:character_classes)
         |> Repo.all()
         |> Enum.map(& &1.experience)
-        |> Enum.sum()
+
+      exp =
+        if Enum.any?(classes) do
+          Enum.sum(classes)
+        else
+          0
+        end
 
       %{name: character.name, class: class, total_exp: trunc(exp)}
     end)
