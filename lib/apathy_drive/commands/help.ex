@@ -461,14 +461,37 @@ defmodule ApathyDrive.Commands.Help do
       )
     end
 
+    chance =
+      if ability.difficulty do
+        ability =
+          Map.put(ability, :attributes, ApathyDrive.AbilityAttribute.load_attributes(ability.id))
+
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-green'>Attributes:</span> <span class='dark-cyan'>#{
+            Enum.join(ability.attributes, ", ")
+          }</span></p>"
+        )
+
+        Mobile.spellcasting_at_level(character, character.level, ability) + ability.difficulty
+      else
+        100
+      end
+
     if ability.duration do
       cond do
         ability.duration > 0 ->
+          duration =
+            if chance > 100 do
+              # increase duration by 10% for each point above 100% chance to cast
+              trunc(ability.duration * (1 + 0.10 * (chance - 100)))
+            else
+              ability.duration
+            end
+
           Mobile.send_scroll(
             character,
-            "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>#{
-              ability.duration
-            } seconds</span></p>"
+            "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>#{duration} seconds</span></p>"
           )
 
         ability.duration == -1 ->
@@ -488,23 +511,6 @@ defmodule ApathyDrive.Commands.Help do
         "<p><span class='dark-green'>Energy:</span> <span class='dark-cyan'>#{ability.energy}</span></p>"
       )
     end
-
-    chance =
-      if ability.difficulty do
-        ability =
-          Map.put(ability, :attributes, ApathyDrive.AbilityAttribute.load_attributes(ability.id))
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Attributes:</span> <span class='dark-cyan'>#{
-            Enum.join(ability.attributes, ", ")
-          }</span></p>"
-        )
-
-        Mobile.spellcasting_at_level(character, character.level, ability) + ability.difficulty
-      else
-        100
-      end
 
     Mobile.send_scroll(
       character,

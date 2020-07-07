@@ -2433,6 +2433,18 @@ defmodule ApathyDrive.Ability do
         target
         |> Systems.Effect.add(effects)
       else
+        difficulty = ability.difficulty || 0
+        spellcasting = Mobile.spellcasting_at_level(caster, caster.level, ability)
+        chance = spellcasting + difficulty
+
+        duration =
+          if chance > 100 do
+            # increase duration by 10% for each point above 100% chance to cast
+            trunc(ability.duration * (1 + 0.10 * (chance - 100)))
+          else
+            ability.duration
+          end
+
         target
         |> Systems.Effect.add(effects, :timer.seconds(duration))
       end
