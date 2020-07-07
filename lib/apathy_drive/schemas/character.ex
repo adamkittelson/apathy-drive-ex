@@ -1314,7 +1314,7 @@ defmodule ApathyDrive.Character do
 
     adjusted_max_mana = base_max_mana + powerstone_uses
 
-    min(adjusted_max_mana, trunc(base_max_mana * character.mana + powerstone_uses))
+    trunc(min(adjusted_max_mana, base_max_mana * character.mana + powerstone_uses))
   end
 
   def update_score(%Character{socket: socket} = character, room) do
