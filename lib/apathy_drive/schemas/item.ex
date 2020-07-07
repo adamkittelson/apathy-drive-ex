@@ -2,6 +2,7 @@ defmodule ApathyDrive.Item do
   use ApathyDriveWeb, :model
 
   alias ApathyDrive.{
+    Ability,
     Character,
     Currency,
     Enchantment,
@@ -12,8 +13,8 @@ defmodule ApathyDrive.Item do
     ItemRace,
     ItemTrait,
     Match,
-    Mobile,
     PubSub,
+    Regeneration,
     RoomServer,
     ShopItem
   }
@@ -438,41 +439,116 @@ defmodule ApathyDrive.Item do
 
   def color(%Item{}, _opts), do: "teal"
 
-  def upgrade_for_character?(%Item{type: "Armour"} = item, %Character{} = character) do
+  def items_to_compare(%Item{type: type} = item, %Character{} = character)
+      when type in ["Armour", "Shield"] do
+    worn_items = Enum.filter(character.equipment, &(&1.worn_on == item.worn_on))
+
+    if Enum.count(worn_items) >= ApathyDrive.Commands.Wear.worn_on_max(character, item) do
+      worn_items
+    else
+      []
+    end
+  end
+
+  def items_to_compare(%Item{type: "Weapon"}, %Character{} = character) do
+    character.equipment
+    |> Enum.filter(&(&1.type == "Weapon"))
+  end
+
+  def traits(%Item{} = item) do
+    item.effects
+    |> Map.values()
+    |> Enum.find(&(&1["stack_key"] == "traits"))
+    |> Ability.process_duration_traits(%{}, %{}, nil)
+  end
+
+  def upgrade_for_character?(%Item{type: type} = item, %Character{} = character)
+      when type in ["Armour", "Shield"] do
     unless item in character.equipment do
-      original_ac = Mobile.physical_resistance_at_level(character, character.level)
-      original_mr = Mobile.magical_resistance_at_level(character, character.level)
+      item_traits = traits(item)
+      item_ac = item_traits["AC"] || 0
+      item_mr = item_traits["MR"] || 0
+      item_prot = item_ac + item_mr
 
-      case ApathyDrive.Commands.Wear.equip_item(character, item, false) do
-        %{character: with_item} ->
-          ac = Mobile.physical_resistance_at_level(with_item, with_item.level)
-          mr = Mobile.magical_resistance_at_level(with_item, with_item.level)
+      skill_level = Item.skill_for_character(character, item)
 
-          ac + mr > original_ac + original_mr
+      modifier =
+        if skill_level == 0 do
+          0.1
+        else
+          skill_level / character.level
+        end
 
-        _other ->
-          false
+      item_prot = item_prot * modifier
+
+      case items_to_compare(item, character) do
+        [] ->
+          true
+
+        items ->
+          Enum.any?(items, fn worn_item ->
+            worn_item_traits = traits(worn_item)
+
+            worn_ac = worn_item_traits["AC"] || 0
+            worn_mr = worn_item_traits["MR"] || 0
+            worn_prot = worn_ac + worn_mr
+
+            skill_level = Item.skill_for_character(character, worn_item)
+
+            modifier =
+              if skill_level == 0 do
+                0.1
+              else
+                skill_level / character.level
+              end
+
+            worn_prot = worn_prot * modifier
+
+            item_prot > worn_prot
+          end)
       end
     end
   end
 
   def upgrade_for_character?(%Item{type: "Weapon"} = item, %Character{} = character) do
     unless item in character.equipment do
-      %{dps: original_dps} = ApathyDrive.Commands.Look.weapon_damage(character)
+      item_dps = base_weapon_damage(character, item)
 
-      case ApathyDrive.Commands.Wear.equip_item(character, item, false) do
-        %{character: with_item} ->
-          %{dps: dps} = ApathyDrive.Commands.Look.weapon_damage(with_item)
+      case items_to_compare(item, character) do
+        [] ->
+          true
 
-          dps > original_dps
-
-        _other ->
-          false
+        items ->
+          Enum.any?(items, fn worn_item ->
+            base_weapon_damage(character, worn_item) < item_dps
+          end)
       end
     end
   end
 
   def upgrade_for_character?(_item, _character), do: false
+
+  def base_weapon_damage(character, weapon) do
+    skill_level = Item.skill_for_character(character, weapon)
+
+    modifier =
+      if skill_level == 0 do
+        0.1
+      else
+        skill_level / character.level
+      end
+
+    min_damage = weapon.min_damage * modifier
+    max_damage = weapon.max_damage * modifier
+
+    ability = Character.ability_for_weapon(character, weapon)
+
+    attack_interval = Regeneration.duration_for_energy(character, max(ability.energy, 200))
+
+    average = (min_damage + max_damage) / 2
+
+    Float.round(average / (attack_interval / 1000), 2)
+  end
 
   def researchable?(_item, _character), do: false
 

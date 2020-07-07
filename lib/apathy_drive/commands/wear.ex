@@ -251,7 +251,7 @@ defmodule ApathyDrive.Commands.Wear do
   defp conflicting_worn_on("Two Handed"), do: ["Held"]
   defp conflicting_worn_on(_), do: []
 
-  defp conflicting_items(item, equipment) do
+  def conflicting_items(item, equipment) do
     Enum.filter(equipment, fn equipped_item ->
       equipped_item.worn_on in conflicting_worn_on(item.worn_on)
     end)
