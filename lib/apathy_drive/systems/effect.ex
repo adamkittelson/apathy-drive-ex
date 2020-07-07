@@ -48,9 +48,14 @@ defmodule Systems.Effect do
         |> Map.put(:last_effect_key, last_effect + 1)
 
       _count ->
-        entity
-        |> remove_oldest_stack(effect["stack_key"])
-        |> add_effect(key, effect)
+        if effect["toggle"] do
+          entity
+          |> remove_all_stacks(effect["stack_key"])
+        else
+          entity
+          |> remove_oldest_stack(effect["stack_key"])
+          |> add_effect(key, effect)
+        end
     end
   end
 
@@ -97,7 +102,7 @@ defmodule Systems.Effect do
       |> stack(stack_key)
 
     Enum.reduce(stacks, entity, fn stack, entity ->
-      remove(entity, stack)
+      remove(entity, stack, show_expiration_message: entity)
     end)
   end
 

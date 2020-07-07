@@ -161,7 +161,8 @@ defmodule ApathyDrive.Trait do
             "Enchantment",
             "Passive",
             "Learn",
-            "OnUse"
+            "OnUse",
+            "toggle"
           ] ->
             "replace"
 

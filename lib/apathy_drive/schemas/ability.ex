@@ -2433,20 +2433,18 @@ defmodule ApathyDrive.Ability do
         target
         |> Systems.Effect.add(effects)
       else
-        difficulty = ability.difficulty || 0
-        spellcasting = Mobile.spellcasting_at_level(caster, caster.level, ability)
-        chance = spellcasting + difficulty
+        if ability.kind == "blessing" and target.ref == caster.ref do
+          effects =
+            effects
+            |> Map.put("MaxMana", -ability.mana)
+            |> Map.put("toggle", true)
 
-        duration =
-          if chance > 100 and ability.kind == "blessing" do
-            # increase duration by 10% for each point above 100% chance to cast
-            trunc(ability.duration * (1 + 0.10 * (chance - 100)))
-          else
-            ability.duration
-          end
-
-        target
-        |> Systems.Effect.add(effects, :timer.seconds(duration))
+          target
+          |> Systems.Effect.add(effects)
+        else
+          target
+          |> Systems.Effect.add(effects, :timer.seconds(duration))
+        end
       end
     end
   end

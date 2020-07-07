@@ -135,13 +135,17 @@ defmodule ApathyDrive.Regeneration do
   def mana_since_last_tick(room, %{last_tick_at: nil} = mobile) do
     mana_per_tick = regen_per_tick(Mobile.mana_regen_per_30(mobile))
 
-    mana_percent_per_tick = mana_per_tick / Mobile.max_mana_at_level(mobile, mobile.level)
+    if mana_per_tick > 0 do
+      mana_percent_per_tick = mana_per_tick / Mobile.max_mana_at_level(mobile, mobile.level)
 
-    if healing_rune_present?(room) do
-      # 1% per second
-      mana_percent_per_tick + 0.01 / (1000 / tick_time(mobile))
+      if healing_rune_present?(room) do
+        # 1% per second
+        mana_percent_per_tick + 0.01 / (1000 / tick_time(mobile))
+      else
+        mana_percent_per_tick
+      end
     else
-      mana_percent_per_tick
+      0
     end
   end
 
@@ -149,19 +153,23 @@ defmodule ApathyDrive.Regeneration do
     ms_since_last_tick = DateTime.diff(DateTime.utc_now(), last_tick, :millisecond)
     mana_per_tick = regen_per_tick(Mobile.mana_regen_per_30(mobile))
 
-    mana_percent = mana_per_tick / Mobile.max_mana_at_level(mobile, mobile.level)
+    if mana_per_tick > 0 do
+      mana_percent = mana_per_tick / Mobile.max_mana_at_level(mobile, mobile.level)
 
-    mana_percent =
-      if healing_rune_present?(room) do
-        # 1% per second
-        mana_percent + 0.01 / (1000 / tick_time(mobile))
-      else
-        mana_percent
-      end
+      mana_percent =
+        if healing_rune_present?(room) do
+          # 1% per second
+          mana_percent + 0.01 / (1000 / tick_time(mobile))
+        else
+          mana_percent
+        end
 
-    mana = mana_percent * ms_since_last_tick / tick_time(mobile)
+      mana = mana_percent * ms_since_last_tick / tick_time(mobile)
 
-    min(mana, mana_per_tick)
+      min(mana, mana_per_tick)
+    else
+      0
+    end
   end
 
   def regenerate_powerstones(%Character{} = character) do

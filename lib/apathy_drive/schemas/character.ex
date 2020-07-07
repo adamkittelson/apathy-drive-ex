@@ -1241,6 +1241,18 @@ defmodule ApathyDrive.Character do
 
   def prompt(%Character{level: level, hp: hp_percent} = character) do
     max_mana = Mobile.max_mana_at_level(character, level)
+
+    powerstone =
+      Enum.reduce(character.inventory, 0, fn item, powerstone ->
+        if "create powerstone" in item.enchantments do
+          item.max_uses + powerstone
+        else
+          powerstone
+        end
+      end)
+
+    max_mana = max_mana + powerstone
+
     hp = hp_at_level(character, level)
     mana = mana_at_level(character, level)
 
@@ -1289,7 +1301,7 @@ defmodule ApathyDrive.Character do
   end
 
   def mana_at_level(%Character{} = character, level) do
-    max_mana = Mobile.max_mana_at_level(character, level)
+    base_max_mana = Mobile.max_mana_at_level(character, level)
 
     powerstone_uses =
       Enum.reduce(character.inventory, 0, fn item, total ->
@@ -1300,7 +1312,9 @@ defmodule ApathyDrive.Character do
         end
       end)
 
-    trunc(max_mana * character.mana + powerstone_uses)
+    adjusted_max_mana = base_max_mana + powerstone_uses
+
+    min(adjusted_max_mana, trunc(base_max_mana * character.mana + powerstone_uses))
   end
 
   def update_score(%Character{socket: socket} = character, room) do
@@ -1331,7 +1345,20 @@ defmodule ApathyDrive.Character do
   end
 
   def update_mana_bar(%Character{socket: socket} = character, mobile, _room) do
-    percent = mobile.mana
+    mana = mana_at_level(character, character.level)
+
+    powerstone =
+      Enum.reduce(character.inventory, 0, fn item, powerstone ->
+        if "create powerstone" in item.enchantments do
+          item.max_uses + powerstone
+        else
+          powerstone
+        end
+      end)
+
+    max_mana = Mobile.max_mana_at_level(character, character.level) + powerstone
+
+    percent = mana / max_mana
 
     send(
       socket,
@@ -1398,6 +1425,15 @@ defmodule ApathyDrive.Character do
 
     hp_regen = Float.round(hp_regen - damage_per_30, 2)
 
+    powerstone =
+      Enum.reduce(character.inventory, 0, fn item, powerstone ->
+        if "create powerstone" in item.enchantments do
+          item.max_uses + powerstone
+        else
+          powerstone
+        end
+      end)
+
     %{
       name: character.name,
       race: character.race.race.name,
@@ -1416,7 +1452,7 @@ defmodule ApathyDrive.Character do
       max_hp: max_hp,
       mana: mana_at_level(character, character.level),
       mana_regen: Float.round(Mobile.mana_regen_per_30(character), 2),
-      max_mana: Mobile.max_mana_at_level(character, character.level),
+      max_mana: Mobile.max_mana_at_level(character, character.level) + powerstone,
       energy: character.energy,
       max_energy: character.max_energy,
       strength: Mobile.attribute_at_level(character, :strength, character.level),
@@ -2023,7 +2059,7 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def hp_regen_per_30(%Character{hp: _hp} = _character), do: 0
+    def hp_regen_per_30(%Character{hp: _hp} = _character), do: 0.0
 
     def mana_regen_per_30(%Character{} = character) do
       level = character.level
@@ -2054,7 +2090,7 @@ defmodule ApathyDrive.Character do
           rate
         end
       else
-        0
+        0.0
       end
     end
 
@@ -2336,10 +2372,17 @@ defmodule ApathyDrive.Character do
           end
         end)
 
-      percentage = cost / Mobile.max_mana_at_level(character, character.level)
+      max_mana = Mobile.max_mana_at_level(character, character.level)
 
-      character
-      |> update_in([Access.key!(:mana)], &max(0, &1 - percentage))
+      if max_mana > 0 do
+        percentage = cost / max_mana
+
+        character
+        |> update_in([Access.key!(:mana)], &max(0, &1 - percentage))
+      else
+        character
+        |> put_in([Access.key!(:mana)], 0.0)
+      end
     end
 
     def subtract_energy(character, ability) do

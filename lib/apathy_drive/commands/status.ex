@@ -17,6 +17,17 @@ defmodule ApathyDrive.Commands.Status do
     mp = Character.mana_at_level(character, character.level)
     max_mp = Mobile.max_mana_at_level(character, character.level)
 
+    powerstone =
+      Enum.reduce(character.inventory, 0, fn item, powerstone ->
+        if "create powerstone" in item.enchantments do
+          item.max_uses + powerstone
+        else
+          powerstone
+        end
+      end)
+
+    max_mp = max_mp + powerstone
+
     max_level =
       case character.classes do
         [] ->
