@@ -1331,7 +1331,9 @@ defmodule ApathyDrive.Ability do
     caster = room.mobiles[caster_ref]
     target = room.mobiles[target_ref]
 
-    if caster && target do
+    lowbie? = target.__struct__ == Character and target.level <= 5
+
+    if caster && target && !lowbie? do
       if crit = crit_for_damage(target.ability_shift, ability) do
         crit = put_in(crit.traits["StackCount"], 10)
         crit = Map.put(crit, :caster, ability.caster)

@@ -1018,9 +1018,11 @@ defmodule ApathyDrive.Character do
   end
 
   def add_attribute_experience(%Character{} = character, %{} = attributes) do
-    max_buffer = Character.max_exp_buffer(character)
+    rate = drain_rate(character.level)
 
-    exp = max(1, max_buffer * 0.01)
+    hour_buffer = trunc(rate * 60 * 60)
+
+    exp = max(1, hour_buffer * 0.01)
 
     Enum.reduce(attributes, character, fn {attribute, percent}, character ->
       amount = max(1, trunc(exp * percent))
@@ -1496,9 +1498,11 @@ defmodule ApathyDrive.Character do
   end
 
   def max_exp_buffer(character) do
+    minutes = 4 + character.level
+
     rate = drain_rate(character.level)
 
-    trunc(rate * 60 * 60)
+    trunc(rate * minutes * 60)
   end
 
   def update_exp_bar(%Character{socket: socket} = character) do

@@ -87,15 +87,17 @@ defmodule ApathyDrive.Commands.Buy do
               currency = Currency.set_value(price_in_copper)
               char_currency = Currency.subtract(char, price_in_copper)
 
+              item = Item.from_assoc(item_instance)
+
               if price_in_copper == 0 do
                 Mobile.send_scroll(
                   char,
-                  "<p>You purchase #{Item.colored_name(item_instance.item, character: char)} for nothing.</p>"
+                  "<p>You purchase #{Item.colored_name(item, character: char)} for nothing.</p>"
                 )
               else
                 Mobile.send_scroll(
                   char,
-                  "<p>You purchase #{Item.colored_name(item_instance.item, character: char)} for #{
+                  "<p>You purchase #{Item.colored_name(item, character: char)} for #{
                     Currency.to_string(currency)
                   }.</p>"
                 )
