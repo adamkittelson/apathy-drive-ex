@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Top do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile}
+  alias ApathyDrive.{Character, Mobile, Repo}
 
   def keywords, do: ["top"]
 
@@ -34,9 +34,19 @@ defmodule ApathyDrive.Commands.Top do
 
     number
     |> Character.top_list()
-    |> Enum.sort_by(&(-&1.exp))
+    |> Enum.map(fn %{character: character, class: class} ->
+      exp =
+        character
+        |> Ecto.assoc(:character_classes)
+        |> Repo.all()
+        |> Enum.map(& &1.experience)
+        |> Enum.sum()
+
+      %{name: character.name, class: class, total_exp: trunc(exp)}
+    end)
+    |> Enum.sort_by(&(-&1.total_exp))
     |> Enum.with_index()
-    |> Enum.each(fn {%{name: name, exp: exp, class: class}, index} ->
+    |> Enum.each(fn {%{name: name, total_exp: exp, class: class}, index} ->
       index = (index + 1) |> to_string |> String.pad_leading(3)
       name = String.pad_trailing(name, 22)
       class = String.pad_trailing(class, 14)

@@ -142,21 +142,23 @@ defmodule ApathyDrive.Character do
   end
 
   def top_list(number \\ 10) do
-    CharacterClass
-    |> Ecto.Query.order_by(desc: :level)
-    |> Ecto.Query.preload([:class, :character])
-    |> ApathyDrive.Repo.all()
+    classes =
+      CharacterClass
+      |> Ecto.Query.order_by(desc: :experience)
+      |> Ecto.Query.preload([:class, :character])
+      |> ApathyDrive.Repo.all()
+
+    classes
     |> Enum.map(
       &%{
-        name: &1.character.name,
+        character: &1.character,
         class: &1.class.name,
-        level: &1.level,
         exp: trunc(&1.experience || 0)
       }
     )
-    |> Enum.group_by(& &1.name)
-    |> Enum.map(fn {_name, list} ->
-      Enum.max_by(list, & &1.level)
+    |> Enum.group_by(& &1.character)
+    |> Enum.map(fn {_character, list} ->
+      Enum.max_by(list, & &1.exp)
     end)
     |> Enum.sort_by(&{&1.exp}, &>=/2)
     |> Enum.take(number)
