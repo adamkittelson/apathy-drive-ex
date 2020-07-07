@@ -37,6 +37,8 @@ defmodule ApathyDrive.Scripts.BodyOfElements do
         |> Map.put("Willpower", 5)
         |> Map.put("Charm", 5)
         |> Map.put("Health", 5)
+        |> Map.put("MaxMana", -6)
+        |> Map.put("toggle", true)
 
       ability = %Ability{
         id: 8110,
@@ -44,7 +46,7 @@ defmodule ApathyDrive.Scripts.BodyOfElements do
         name: "body of elements",
         energy: 0,
         mana: 0,
-        duration: 600,
+        duration: -1,
         user_message: "You transform your body into a form of #{lore.name}!",
         spectator_message: "{{User}} transforms into a form of #{lore.name}!",
         traits: traits
