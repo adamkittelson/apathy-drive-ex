@@ -13,11 +13,11 @@ defmodule ApathyDrive.ExpTest do
   end
 
   test "max exp buffer" do
-    assert 3600 == Character.max_exp_buffer(%Character{level: 1})
-    assert 7437 == Character.max_exp_buffer(%Character{level: 10})
-    assert 18260 == Character.max_exp_buffer(%Character{level: 20})
-    assert 40103 == Character.max_exp_buffer(%Character{level: 30})
-    assert 85977 == Character.max_exp_buffer(%Character{level: 40})
-    assert 183_757 == Character.max_exp_buffer(%Character{level: 50})
+    assert 300 == Character.max_exp_buffer(%Character{level: 1})
+    assert 1735 == Character.max_exp_buffer(%Character{level: 10})
+    assert 7304 == Character.max_exp_buffer(%Character{level: 20})
+    assert 22725 == Character.max_exp_buffer(%Character{level: 30})
+    assert 63050 == Character.max_exp_buffer(%Character{level: 40})
+    assert 165_382 == Character.max_exp_buffer(%Character{level: 50})
   end
 end
