@@ -2433,7 +2433,7 @@ defmodule ApathyDrive.Ability do
         target
         |> Systems.Effect.add(effects)
       else
-        if ability.kind == "blessing" and target.ref == caster.ref do
+        if ability.kind == "blessing" and target.ref == caster.ref and ability.mana > 0 do
           effects =
             effects
             |> Map.put("MaxMana", -ability.mana)

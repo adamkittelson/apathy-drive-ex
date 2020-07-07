@@ -30,7 +30,7 @@ defmodule ApathyDrive.Commands.Experience do
       Enum.each(character.classes, fn character_class ->
         class = Repo.get(Class, character_class.class_id)
 
-        exp = trunc(ApathyDrive.Commands.Train.required_experience(character, class.id))
+        exp = max(0, trunc(ApathyDrive.Commands.Train.required_experience(character, class.id)))
 
         Mobile.send_scroll(
           character,
