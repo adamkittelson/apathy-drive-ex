@@ -2438,7 +2438,7 @@ defmodule ApathyDrive.Ability do
         chance = spellcasting + difficulty
 
         duration =
-          if chance > 100 do
+          if chance > 100 and ability.kind == "blessing" do
             # increase duration by 10% for each point above 100% chance to cast
             trunc(ability.duration * (1 + 0.10 * (chance - 100)))
           else
