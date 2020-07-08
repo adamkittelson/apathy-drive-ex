@@ -26,6 +26,7 @@ defmodule ApathyDriveWeb.MUDChannel do
               |> assign(:power, Mobile.power_at_level(character, character.level))
               |> assign(:level, character.level)
               |> assign(:monster_ref, character.ref)
+              |> assign(:commands, :queue.new())
 
             ApathyDrive.PubSub.subscribe("spirits:online")
             ApathyDrive.PubSub.subscribe("chat:gossip")
@@ -295,8 +296,6 @@ defmodule ApathyDriveWeb.MUDChannel do
   end
 
   defp add_command_to_queue(socket, command) do
-    socket = assign(socket, :commands, socket.assigns[:commands] || :queue.new())
-
     if :queue.len(socket.assigns[:commands]) > 10 do
       send_scroll(socket, "<p>Why don't you slow down for a few seconds?</p>")
       socket
