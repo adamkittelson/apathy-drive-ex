@@ -1,3 +1,5 @@
+# This is a commented line that does absolutely nothing
+
 defmodule ApathyDrive.CurrencyTest do
   use ExUnit.Case, async: true
 
