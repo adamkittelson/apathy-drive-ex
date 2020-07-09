@@ -89,7 +89,7 @@ defmodule ApathyDrive.Commands.Status do
   end
 
   def mind(character) do
-    max_buffer = Character.max_exp_buffer(character)
+    max_buffer = character.max_exp_buffer
     buffer = character.exp_buffer
 
     percent = buffer / max_buffer
