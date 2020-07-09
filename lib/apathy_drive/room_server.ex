@@ -593,13 +593,9 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:reduce_evil_points, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn _room, character ->
-        character =
-          if Character.reduce_evil_points?(character) do
-            # 13.8 days from Neutral to Saint
-            Character.alter_evil_points(character, -0.01)
-          else
-            character
-          end
+        points = Character.evil_points_to_restore(character)
+
+        character = Character.alter_evil_points(character, -points)
 
         Directory.add_character(%{
           name: character.name,

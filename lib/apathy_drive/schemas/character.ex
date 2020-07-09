@@ -74,12 +74,12 @@ defmodule ApathyDrive.Character do
     field(:auto_attack, :boolean)
     field(:auto_pet_casting, :boolean, default: true)
     field(:evil_points, :float)
-    field(:last_evil_action_at, :utc_datetime_usec)
     field(:missing_limbs, {:array, :string}, default: [])
     field(:attack_color, :string, default: "red")
     field(:target_color, :string, default: "red")
     field(:spectator_color, :string, default: "red")
     field(:lore_name, :string)
+    field(:evil_points_last_reduced_at, :utc_datetime_usec)
 
     field(:last_auto_attack_at, :any, virtual: true)
     field(:resting, :boolean, virtual: true, default: false)
@@ -196,14 +196,6 @@ defmodule ApathyDrive.Character do
       _ ->
         "evil"
     end
-  end
-
-  def reduce_evil_points?(%Character{last_evil_action_at: nil}), do: true
-
-  def reduce_evil_points?(%Character{last_evil_action_at: time}) do
-    one_day_ago = Timex.shift(DateTime.utc_now(), days: -1)
-
-    :lt == DateTime.compare(time, one_day_ago)
   end
 
   def set_title(%Character{} = character) do
@@ -1582,6 +1574,12 @@ defmodule ApathyDrive.Character do
     character
   end
 
+  def evil_points_to_restore(%Character{evil_points_last_reduced_at: nil}), do: 0
+
+  def evil_points_to_restore(%Character{evil_points_last_reduced_at: time}) do
+    DateTime.diff(DateTime.utc_now(), time) * 0.01 / 60
+  end
+
   def alter_evil_points(character, points) do
     initial_legal_status = Character.legal_status(character)
 
@@ -1593,16 +1591,18 @@ defmodule ApathyDrive.Character do
         )
 
         %{
-          evil_points: min(300.0, character.evil_points + points),
-          last_evil_action_at: DateTime.utc_now()
+          evil_points: min(300.0, character.evil_points + points)
         }
       else
-        %{evil_points: max(-220.0, character.evil_points + points)}
+        %{
+          evil_points: max(-220.0, character.evil_points + points),
+          evil_points_last_reduced_at: DateTime.utc_now()
+        }
       end
 
     character =
       character
-      |> Ecto.Changeset.cast(change, ~w(evil_points last_evil_action_at)a)
+      |> Ecto.Changeset.cast(change, ~w(evil_points evil_points_last_reduced_at)a)
       |> Repo.update!()
 
     Directory.add_character(%{
