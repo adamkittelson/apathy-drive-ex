@@ -439,22 +439,28 @@ defmodule ApathyDrive.Commands.Help do
       "<p>    #{ability.description}</p>"
     )
 
-    Mobile.send_scroll(
-      character,
-      "\n\n<p><span class='dark-green'>Command:</span> <span class='dark-cyan'>#{ability.command}</span></p>"
-    )
+    if ability.kind != "passive" do
+      Mobile.send_scroll(
+        character,
+        "\n\n<p><span class='dark-green'>Command:</span> <span class='dark-cyan'>#{
+          ability.command
+        }</span></p>"
+      )
+    end
 
     Mobile.send_scroll(
       character,
       "<p><span class='dark-green'>Kind:</span> <span class='dark-cyan'>#{ability.kind}</span></p>"
     )
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Targets:</span> <span class='dark-cyan'>#{ability.targets}</span></p>"
-    )
+    if ability.kind != "passive" do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Targets:</span> <span class='dark-cyan'>#{ability.targets}</span></p>"
+      )
+    end
 
-    if ability.mana && ability.mana > 0 do
+    if ability.mana && ability.mana > 0 && ability.kind != "passive" do
       Mobile.send_scroll(
         character,
         "<p><span class='dark-green'>Mana Cost:</span> <span class='dark-cyan'>#{ability.mana}</span></p>"
@@ -478,20 +484,14 @@ defmodule ApathyDrive.Commands.Help do
         100
       end
 
-    if ability.duration do
+    if ability.duration && !ability.kind == "passive" do
       cond do
         ability.duration > 0 ->
-          duration =
-            if chance > 100 do
-              # increase duration by 10% for each point above 100% chance to cast
-              trunc(ability.duration * (1 + 0.10 * (chance - 100)))
-            else
-              ability.duration
-            end
-
           Mobile.send_scroll(
             character,
-            "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>#{duration} seconds</span></p>"
+            "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>#{
+              ability.duration
+            } seconds</span></p>"
           )
 
         ability.duration == -1 ->
@@ -505,19 +505,21 @@ defmodule ApathyDrive.Commands.Help do
       end
     end
 
-    if ability.energy && ability.energy > 0 do
+    if ability.energy && ability.energy > 0 && ability.kind != "passive" do
       Mobile.send_scroll(
         character,
         "<p><span class='dark-green'>Energy:</span> <span class='dark-cyan'>#{ability.energy}</span></p>"
       )
     end
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{
-        min(100, chance)
-      }%</span></p>"
-    )
+    if ability.kind != "passive" do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{
+          min(100, chance)
+        }%</span></p>"
+      )
+    end
 
     if ability.cast_time do
       Mobile.send_scroll(
@@ -561,33 +563,6 @@ defmodule ApathyDrive.Commands.Help do
         character,
         "<p><span class='dark-green'>Skills: </span><span class='dark-cyan'>#{
           ApathyDrive.Commands.Inventory.to_sentence(skills)
-        }</span></p>"
-      )
-    end
-
-    if ability.user_message do
-      Mobile.send_scroll(
-        character,
-        "<p>\n<span class='dark-green'>User Message: </span><span class='dark-cyan'>#{
-          ability.user_message
-        }</span></p>"
-      )
-    end
-
-    if ability.target_message do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Target Message: </span><span class='dark-cyan'>#{
-          ability.target_message
-        }</span></p>"
-      )
-    end
-
-    if ability.spectator_message do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Spectator Message: </span><span class='dark-cyan'>#{
-          ability.spectator_message
         }</span></p>"
       )
     end
@@ -673,13 +648,42 @@ defmodule ApathyDrive.Commands.Help do
           end
       end
 
-    if traits["RemoveMessage"] do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Remove Message: </span><span class='dark-cyan'>#{
-          traits["RemoveMessage"]
-        }</span></p>"
-      )
+    if ability.kind != "passive" do
+      if ability.user_message do
+        Mobile.send_scroll(
+          character,
+          "<p>\n<span class='dark-green'>User Message: </span><span class='dark-cyan'>#{
+            ability.user_message
+          }</span></p>"
+        )
+      end
+
+      if ability.target_message do
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-green'>Target Message: </span><span class='dark-cyan'>#{
+            ability.target_message
+          }</span></p>"
+        )
+      end
+
+      if ability.spectator_message do
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-green'>Spectator Message: </span><span class='dark-cyan'>#{
+            ability.spectator_message
+          }</span></p>"
+        )
+      end
+
+      if traits["RemoveMessage"] do
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-green'>Remove Message: </span><span class='dark-cyan'>#{
+            traits["RemoveMessage"]
+          }</span></p>"
+        )
+      end
     end
 
     Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Effects:</span></p>")

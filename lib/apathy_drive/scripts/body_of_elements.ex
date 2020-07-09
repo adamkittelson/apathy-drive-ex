@@ -37,8 +37,6 @@ defmodule ApathyDrive.Scripts.BodyOfElements do
         |> Map.put("Willpower", 5)
         |> Map.put("Charm", 5)
         |> Map.put("Health", 5)
-        |> Map.put("MaxMana", -6)
-        |> Map.put("toggle", true)
 
       ability = %Ability{
         id: 8110,

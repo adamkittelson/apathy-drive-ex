@@ -335,6 +335,14 @@ defmodule ApathyDrive.Character do
       |> Enum.reduce(character, fn
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
+
+          effect =
+            effect
+            |> Map.put("stack_count", effect["StackCount"] || 1)
+            |> Map.put("stack_key", effect["StackKey"] || id)
+            |> Map.delete("StatusMessage")
+            |> Map.delete("RemoveMessage")
+
           Systems.Effect.add(character, effect)
 
         %{ability: %Ability{id: id} = ability}, character ->

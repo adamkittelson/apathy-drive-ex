@@ -2433,18 +2433,8 @@ defmodule ApathyDrive.Ability do
         target
         |> Systems.Effect.add(effects)
       else
-        if ability.kind == "blessing" and target.ref == caster.ref and ability.mana > 0 do
-          effects =
-            effects
-            |> Map.put("MaxMana", -ability.mana)
-            |> Map.put("toggle", true)
-
-          target
-          |> Systems.Effect.add(effects)
-        else
-          target
-          |> Systems.Effect.add(effects, :timer.seconds(duration))
-        end
+        target
+        |> Systems.Effect.add(effects, :timer.seconds(duration))
       end
     end
   end
