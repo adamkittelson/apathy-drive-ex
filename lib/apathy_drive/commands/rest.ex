@@ -4,11 +4,13 @@ defmodule ApathyDrive.Commands.Rest do
 
   def keywords, do: ["rest"]
 
-  def execute(%Room{} = room, %Character{} = character, _args) do
+  def execute(%Room{} = room, %Character{} = character, args) do
     cond do
       taking_damage(character) or
         !is_nil(character.attack_target) or Aggression.enemies_present?(room, character) ->
-        Mobile.send_scroll(character, "<p>You can't rest right now!</p>")
+        unless args[:silent],
+          do: Mobile.send_scroll(character, "<p>You can't rest right now!</p>")
+
         room
 
       :else ->

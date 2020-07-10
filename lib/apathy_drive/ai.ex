@@ -18,12 +18,12 @@ defmodule ApathyDrive.AI do
     case should_move?(mobile, room) || force do
       :hp ->
         if Map.get(mobile, :auto_rest) && !Map.get(mobile, :resting) do
-          ApathyDrive.Commands.Rest.execute(room, mobile, []).mobiles[mobile.ref]
+          ApathyDrive.Commands.Rest.execute(room, mobile, [:silent]).mobiles[mobile.ref]
         end
 
       :mana ->
         if Map.get(mobile, :auto_rest) && !Map.get(mobile, :resting) do
-          ApathyDrive.Commands.Rest.execute(room, mobile, []).mobiles[mobile.ref]
+          ApathyDrive.Commands.Rest.execute(room, mobile, [:silent]).mobiles[mobile.ref]
         end
 
       true ->
