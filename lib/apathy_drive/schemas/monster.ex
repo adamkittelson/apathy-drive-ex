@@ -831,7 +831,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def shift_hp(monster, percentage) do
-      update_in(monster.hp, &min(1.0, &1 + percentage))
+      update_in(monster.hp, &max(0.0, min(1.0, &1 + percentage)))
     end
 
     def silenced(%Monster{effects: effects} = monster, %Room{} = room) do

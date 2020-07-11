@@ -2302,7 +2302,7 @@ defmodule ApathyDrive.Character do
     end
 
     def shift_hp(character, percentage) do
-      update_in(character.hp, &min(1.0, &1 + percentage))
+      update_in(character.hp, &max(0.0, min(1.0, &1 + percentage)))
     end
 
     def silenced(%Character{effects: effects} = character, %Room{} = room) do
