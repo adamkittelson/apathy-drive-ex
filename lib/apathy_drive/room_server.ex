@@ -1060,7 +1060,7 @@ defmodule ApathyDrive.RoomServer do
 
   def execute_casting_ability(%{casting: {:move, room_exit}} = mobile, room) do
     if Mobile.exhausted(mobile) do
-      mobile
+      Map.put(mobile, :casting, {:move, room_exit})
     else
       command = mobile.command
 

@@ -202,6 +202,7 @@ defmodule ApathyDrive.Commands.Move do
       end
 
     if Mobile.exhausted(character) do
+      character = Map.put(character, :casting, {:move, room_exit})
       room = put_in(room.mobiles[character.ref], character)
       {:error, :too_tired, room}
     else
@@ -330,6 +331,7 @@ defmodule ApathyDrive.Commands.Move do
         end
 
       if Mobile.exhausted(character) do
+        character = Map.put(character, :casting, {:move, room_exit})
         room = put_in(room.mobiles[character.ref], character)
         {:error, :too_tired, room}
       else
@@ -395,6 +397,7 @@ defmodule ApathyDrive.Commands.Move do
           end
 
         if Mobile.exhausted(character) do
+          character = Map.put(character, :casting, {:move, room_exit})
           room = put_in(room.mobiles[character.ref], character)
           {:error, :too_tired, room}
         else
