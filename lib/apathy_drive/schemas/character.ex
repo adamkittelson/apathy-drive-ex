@@ -1165,7 +1165,12 @@ defmodule ApathyDrive.Character do
           |> Enum.with_index(1)
           |> Enum.reduce({character, drain_total}, fn {class, n}, {character, drain_remaining} ->
             if n == target_count do
-              tnl = Level.exp_at_level(class.level, class.class.exp_modifier) - class.experience
+              tnl =
+                ApathyDrive.Commands.Train.required_experience(
+                  character,
+                  class.class_id,
+                  class.level + 1
+                )
 
               exp = min(drain_remaining, tnl)
 
@@ -1180,9 +1185,14 @@ defmodule ApathyDrive.Character do
 
               {update_in(character.classes, &[class | &1]), drain_remaining - exp}
             else
-              rate = Character.drain_rate(class.level)
+              rate = Character.exp_to_drain(character, class.level)
 
-              tnl = Level.exp_at_level(class.level, class.class.exp_modifier) - class.experience
+              tnl =
+                ApathyDrive.Commands.Train.required_experience(
+                  character,
+                  class.class_id,
+                  class.level + 1
+                )
 
               exp = Enum.min([rate, drain_total / target_count, tnl])
 
