@@ -25,7 +25,7 @@ defmodule ApathyDrive.Commands.System.Misc do
               "to_message" => "<span class='blue'>{{Name}} appears out of thin air!</span>"
             }
 
-            ApathyDrive.Commands.Move.execute(room, character, room_exit)
+            ApathyDrive.Commands.Move.execute(room, character, room_exit, 0)
 
           _ ->
             Mobile.send_scroll(character, "<p>#{area.name} has no rooms!</p>")

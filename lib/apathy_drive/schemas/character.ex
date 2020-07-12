@@ -2183,8 +2183,8 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def exhausted(%{energy: energy} = character) do
-      required_energy = ApathyDrive.Commands.Move.energy_cost(character)
+    def exhausted(%{energy: energy} = character, req \\ nil) do
+      required_energy = req || ApathyDrive.Commands.Move.energy_cost(character)
 
       if energy < required_energy do
         true

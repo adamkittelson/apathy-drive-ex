@@ -73,7 +73,6 @@ defmodule ApathyDrive.Command do
       Commands.Remove,
       Commands.Reply,
       Commands.Rest,
-      Commands.Return,
       Commands.Say,
       Commands.Search,
       Commands.Sell,
@@ -94,9 +93,10 @@ defmodule ApathyDrive.Command do
   def execute(%Room{} = room, monster_ref, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
 
-    room = Room.update_mobile(room, monster_ref, fn _room, mobile ->
-      Map.put(mobile, :command, {command, arguments})
-    end)
+    room =
+      Room.update_mobile(room, monster_ref, fn _room, mobile ->
+        Map.put(mobile, :command, {command, arguments})
+      end)
 
     monster = room.mobiles[monster_ref]
 
