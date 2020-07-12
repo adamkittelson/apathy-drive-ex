@@ -1,5 +1,5 @@
 defmodule ApathyDrive.MonsterSpawning do
-  alias ApathyDrive.{LairMonster, Monster, Repo, Room, RoomMonster}
+  alias ApathyDrive.{ChannelHistory, LairMonster, Monster, Repo, Room, RoomMonster}
   require Ecto.Query
   require Logger
 
@@ -78,6 +78,29 @@ defmodule ApathyDrive.MonsterSpawning do
       |> Monster.from_room_monster()
 
     if monster do
+      first_letter = String.first(monster.name)
+
+      name =
+        if first_letter == String.upcase(first_letter) do
+          monster.name
+        else
+          "The #{monster.name}"
+        end
+
+      raw_message = "#{name} has respawned."
+
+      message = "<p>[<span class='yellow'>announce</span> : Apotheosis] #{raw_message}</p>"
+
+      Repo.insert!(%ChannelHistory{
+        character_name: "Apotheosis",
+        channel_name: "announce",
+        message: message
+      })
+
+      ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
+        html: message
+      })
+
       Room.mobile_entered(room, monster)
     end
   end

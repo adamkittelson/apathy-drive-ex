@@ -6,6 +6,7 @@ defmodule ApathyDrive.Monster do
     Ability,
     Aggression,
     AI,
+    ChannelHistory,
     Character,
     Currency,
     Regeneration,
@@ -566,6 +567,21 @@ defmodule ApathyDrive.Monster do
                   |> Text.capitalize_first()
 
                 Mobile.send_scroll(character, "<p>#{message}</p>")
+
+                if monster.game_limit && monster.regen_time_in_hours do
+                  message =
+                    "<p>[<span class='yellow'>announce</span> : Apotheosis] #{message}</p>"
+
+                  Repo.insert!(%ChannelHistory{
+                    character_name: "Apotheosis",
+                    channel_name: "announce",
+                    message: message
+                  })
+
+                  ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
+                    html: message
+                  })
+                end
 
                 exp = max(1, div(monster.experience, pets_and_players))
 
