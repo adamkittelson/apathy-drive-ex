@@ -537,7 +537,8 @@ defmodule ApathyDrive.Commands.Move do
       end
 
     if character.sneaking do
-      energy * 2
+      modifier = max(1.0, 2 - Mobile.stealth_at_level(character, character.level) / 100)
+      energy * modifier
     else
       energy
     end
