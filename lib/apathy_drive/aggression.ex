@@ -56,6 +56,10 @@ defmodule ApathyDrive.Aggression do
     false
   end
 
+  def enemy?(%{}, %Monster{npc: true}) do
+    false
+  end
+
   def enemy?(%Monster{alignment: "neutral"}, %{} = _mobile) do
     false
   end
