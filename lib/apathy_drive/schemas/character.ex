@@ -1091,7 +1091,7 @@ defmodule ApathyDrive.Character do
   def exp_to_drain(%Character{exp_buffer: 0}), do: 0
   def exp_to_drain(%Character{exp_buffer_last_drained_at: nil}), do: 0
 
-  def exp_to_drain(%Character{exp_buffer_last_drained_at: time, exp_buffer: buffer} = character) do
+  def exp_to_drain(%Character{} = character) do
     max_level =
       case character.classes do
         [] ->
@@ -1103,7 +1103,11 @@ defmodule ApathyDrive.Character do
           |> Enum.max()
       end
 
-    drain_total = Character.drain_rate(max_level)
+    exp_to_drain(character, max_level)
+  end
+
+  def exp_to_drain(%Character{exp_buffer_last_drained_at: time, exp_buffer: buffer}, level) do
+    drain_total = Character.drain_rate(level)
 
     min(buffer, DateTime.diff(DateTime.utc_now(), time) * drain_total)
   end
