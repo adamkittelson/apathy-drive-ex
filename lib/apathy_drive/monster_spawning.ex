@@ -78,28 +78,30 @@ defmodule ApathyDrive.MonsterSpawning do
       |> Monster.from_room_monster()
 
     if monster do
-      first_letter = String.first(monster.name)
+      if monster.game_limit && monster.regen_time_in_hours do
+        first_letter = String.first(monster.name)
 
-      name =
-        if first_letter == String.upcase(first_letter) do
-          monster.name
-        else
-          "The #{monster.name}"
-        end
+        name =
+          if first_letter == String.upcase(first_letter) do
+            monster.name
+          else
+            "The #{monster.name}"
+          end
 
-      raw_message = "#{name} has respawned."
+        raw_message = "#{name} has respawned."
 
-      message = "<p>[<span class='yellow'>announce</span> : Apotheosis] #{raw_message}</p>"
+        message = "<p>[<span class='yellow'>announce</span> : Apotheosis] #{raw_message}</p>"
 
-      Repo.insert!(%ChannelHistory{
-        character_name: "Apotheosis",
-        channel_name: "announce",
-        message: message
-      })
+        Repo.insert!(%ChannelHistory{
+          character_name: "Apotheosis",
+          channel_name: "announce",
+          message: message
+        })
 
-      ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
-        html: message
-      })
+        ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
+          html: message
+        })
+      end
 
       Room.mobile_entered(room, monster)
     end
