@@ -1,5 +1,5 @@
 defmodule ApathyDrive.AI do
-  alias ApathyDrive.{Ability, Character, Mobile, Monster, Party, Room}
+  alias ApathyDrive.{Ability, Aggression, Character, Mobile, Monster, Party, Room}
 
   def think(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn room, mobile ->
@@ -69,7 +69,8 @@ defmodule ApathyDrive.AI do
 
   def sneak(%Character{} = character, %Room{} = room) do
     if character.auto_sneak && !character.sneaking &&
-         !Mobile.auto_attack_target(character, room) && !character.resting do
+         !Mobile.auto_attack_target(character, room) && !character.resting &&
+         !Aggression.enemies_present?(room, character) do
       ApathyDrive.Commands.Sneak.execute(room, character, [])
     end
   end
