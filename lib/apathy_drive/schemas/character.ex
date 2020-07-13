@@ -2287,6 +2287,8 @@ defmodule ApathyDrive.Character do
       |> Enum.reduce(0, &(&2 + Mobile.attribute_at_level(character, &1, level)))
     end
 
+    def send_scroll(character, nil), do: character
+
     def send_scroll(%Character{socket: socket} = character, html) do
       send(socket, {:scroll, html})
       character

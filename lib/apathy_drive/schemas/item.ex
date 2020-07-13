@@ -154,6 +154,8 @@ defmodule ApathyDrive.Item do
     |> validate_length(:description, min: 20, max: 500)
   end
 
+  def send_scroll(item, nil), do: :ok
+
   def send_scroll(%Item{} = item, message) do
     case Repo.get(ItemInstance, item.instance_id) do
       %{room_id: room_id, character_id: nil} ->

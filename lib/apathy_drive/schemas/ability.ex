@@ -2875,7 +2875,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"target" => target, "lore" => caster.lore.name})
       |> Text.capitalize_first()
 
-    "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+    end
   end
 
   def caster_cast_message(
@@ -2892,7 +2894,9 @@ defmodule ApathyDrive.Ability do
         |> Text.interpolate(%{"target" => target})
         |> Text.capitalize_first()
 
-      "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+      unless message == "" do
+        "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+      end
     end
   end
 
@@ -2922,7 +2926,9 @@ defmodule ApathyDrive.Ability do
             |> Text.interpolate(%{"target" => target, "amount" => abs(amount)})
             |> Text.capitalize_first()
 
-          "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+          unless message == "" do
+            "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+          end
       end
     end
   end
@@ -2940,7 +2946,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster, "ability" => ability.name})
       |> Text.capitalize_first()
 
-    "<p><span class='dark-cyan'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
   end
 
   def target_cast_message(
@@ -2954,7 +2962,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster, "ability" => ability.name})
       |> Text.capitalize_first()
 
-    "<p><span class='dark-cyan'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
   end
 
   def target_cast_message(
@@ -2970,7 +2980,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster})
       |> Text.capitalize_first()
 
-    "<p><span class='dark-red'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span class='dark-red'>#{message}</span></p>"
+    end
   end
 
   def target_cast_message(
@@ -2986,7 +2998,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster})
       |> Text.capitalize_first()
 
-    "<p><span style='color: #{message_color(ability, target, :target)};'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span style='color: #{message_color(ability, target, :target)};'>#{message}</span></p>"
+    end
   end
 
   def target_cast_message(
@@ -3013,7 +3027,9 @@ defmodule ApathyDrive.Ability do
           |> Text.interpolate(%{"user" => caster, "amount" => abs(amount)})
           |> Text.capitalize_first()
 
-        "<p><span style='color: #{message_color(ability, target, :target)};'>#{message}</span></p>"
+        unless message == "" do
+          "<p><span style='color: #{message_color(ability, target, :target)};'>#{message}</span></p>"
+        end
     end
   end
 
@@ -3030,7 +3046,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster, "target" => target, "ability" => ability.name})
       |> Text.capitalize_first()
 
-    "<p><span class='dark-cyan'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
   end
 
   def spectator_cast_message(
@@ -3046,7 +3064,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster, "target" => target, "ability" => ability.name})
       |> Text.capitalize_first()
 
-    "<p><span class='dark-cyan'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
   end
 
   def spectator_cast_message(
@@ -3062,7 +3082,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first()
 
-    "<p><span class='dark-red'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span class='dark-red'>#{message}</span></p>"
+    end
   end
 
   def spectator_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, mobile) do
@@ -3073,7 +3095,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first()
 
-    "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
+    end
   end
 
   def spectator_cast_message(
@@ -3089,7 +3113,9 @@ defmodule ApathyDrive.Ability do
       |> Text.interpolate(%{"user" => caster, "target" => target})
       |> Text.capitalize_first()
 
-    "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
+    unless message == "" do
+      "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
+    end
   end
 
   def spectator_cast_message(
@@ -3117,7 +3143,9 @@ defmodule ApathyDrive.Ability do
           |> Text.interpolate(%{"user" => caster, "target" => target, "amount" => abs(amount)})
           |> Text.capitalize_first()
 
-        "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
+        unless message == "" do
+          "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
+        end
     end
   end
 

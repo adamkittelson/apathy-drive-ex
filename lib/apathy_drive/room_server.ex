@@ -48,6 +48,8 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
+  def send_scroll(room, nil), do: room
+
   def send_scroll(room, html) do
     GenServer.cast(room, {:send_scroll, html})
   end
