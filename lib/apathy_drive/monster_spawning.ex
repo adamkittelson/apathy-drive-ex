@@ -78,7 +78,8 @@ defmodule ApathyDrive.MonsterSpawning do
       |> Monster.from_room_monster()
 
     if monster do
-      if monster.game_limit && monster.regen_time_in_hours do
+      if monster.game_limit == 1 && monster.regen_time_in_hours && monster.regen_time_in_hours > 1 &&
+           !is_nil(monster.next_spawn_at) do
         first_letter = String.first(monster.name)
 
         name =
@@ -98,7 +99,7 @@ defmodule ApathyDrive.MonsterSpawning do
           message: message
         })
 
-        ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
+        ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "sidebar", %{
           html: message
         })
       end

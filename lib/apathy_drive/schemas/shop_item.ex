@@ -52,7 +52,7 @@ defmodule ApathyDrive.ShopItem do
             message: message
           })
 
-          ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
+          ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "sidebar", %{
             html: message
           })
         end

@@ -1552,6 +1552,11 @@ defmodule ApathyDrive.Character do
     character
   end
 
+  def send_sidebar(%Character{socket: socket} = character, html) do
+    send(socket, {:sidebar, html})
+    character
+  end
+
   def drain_rate(level) do
     level = max(1, level)
 

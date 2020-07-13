@@ -36,8 +36,49 @@ defmodule ApathyDrive do
   end
 
   def load_shops do
+    import Ecto.Query
+
     Task.start_link(fn ->
-      ApathyDrive.Shop.room_ids()
+      query =
+        from(
+          monster in ApathyDrive.Monster,
+          where: monster.regen_time_in_hours > 2 and monster.game_limit == 1,
+          select: monster.id
+        )
+
+      boss_ids =
+        query
+        |> ApathyDrive.Repo.all()
+
+      query =
+        from(
+          room in ApathyDrive.Room,
+          where: room.permanent_npc in ^boss_ids,
+          select: room.id
+        )
+
+      perm_ids =
+        query
+        |> ApathyDrive.Repo.all()
+        |> Enum.uniq()
+
+      query =
+        from(
+          lair in ApathyDrive.LairMonster,
+          where: lair.monster_id in ^boss_ids,
+          select: lair.room_id
+        )
+
+      lair_ids =
+        query
+        |> ApathyDrive.Repo.all()
+        |> Enum.uniq()
+
+      shop_room_ids = ApathyDrive.Shop.room_ids()
+
+      room_ids = Enum.uniq(perm_ids ++ lair_ids ++ shop_room_ids)
+
+      room_ids
       |> Enum.each(&ApathyDrive.RoomServer.load/1)
     end)
   end
