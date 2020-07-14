@@ -674,6 +674,8 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:spawn_permanent_npc, room) do
+    time = ((95..100 |> Enum.random()) * :timer.minutes(10)) |> div(100)
+    Process.send_after(self(), :spawn_permanent_npc, time)
     {:noreply, MonsterSpawning.spawn_permanent_npc(room)}
   end
 
