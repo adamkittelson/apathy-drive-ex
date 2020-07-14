@@ -42,7 +42,7 @@ defmodule ApathyDrive do
       query =
         from(
           monster in ApathyDrive.Monster,
-          where: monster.regen_time_in_hours > 2 and monster.game_limit == 1,
+          where: not is_nil(monster.regen_time_in_hours) and monster.game_limit == 1,
           select: monster.id
         )
 
