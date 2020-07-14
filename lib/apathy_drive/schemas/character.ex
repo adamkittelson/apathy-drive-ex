@@ -961,10 +961,6 @@ defmodule ApathyDrive.Character do
     end)
   end
 
-  def trainable_experience(%Character{} = character) do
-    character.experience - used_experience(character)
-  end
-
   def add_attribute_experience(%Character{} = character, attribute, amount) do
     Character.pulse_score_attribute(character, attribute)
 
