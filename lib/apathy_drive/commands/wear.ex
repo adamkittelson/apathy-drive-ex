@@ -44,12 +44,42 @@ defmodule ApathyDrive.Commands.Wear do
                   character,
                   "<p>You remove #{Item.colored_name(item, character: character)}.</p>"
                 )
+
+                char_ref = character.ref
+
+                Enum.each(room.mobiles, fn
+                  {ref, %Character{} = mobile} when ref != char_ref ->
+                    Mobile.send_scroll(
+                      mobile,
+                      "<p>#{Mobile.colored_name(character)} removes #{
+                        Item.colored_name(item, character: mobile)
+                      }.</p>"
+                    )
+
+                  _ ->
+                    :noop
+                end)
               end)
 
               Mobile.send_scroll(
                 character,
                 "<p>You are now wearing #{Item.colored_name(equipped, character: character)}.</p>"
               )
+
+              char_ref = character.ref
+
+              Enum.each(room.mobiles, fn
+                {ref, %Character{} = mobile} when ref != char_ref ->
+                  Mobile.send_scroll(
+                    mobile,
+                    "<p>#{Mobile.colored_name(character)} is now wearing #{
+                      Item.colored_name(item, character: mobile)
+                    }.</p>"
+                  )
+
+                _ ->
+                  :noop
+              end)
 
               send(
                 character.socket,
@@ -68,6 +98,21 @@ defmodule ApathyDrive.Commands.Wear do
                 character,
                 "<p>You are now wearing #{Item.colored_name(equipped, character: character)}.</p>"
               )
+
+              char_ref = character.ref
+
+              Enum.each(room.mobiles, fn
+                {ref, %Character{} = mobile} when ref != char_ref ->
+                  Mobile.send_scroll(
+                    mobile,
+                    "<p>#{Mobile.colored_name(character)} is now wearing #{
+                      Item.colored_name(item, character: mobile)
+                    }.</p>"
+                  )
+
+                _ ->
+                  :noop
+              end)
 
               send(
                 character.socket,

@@ -53,11 +53,41 @@ defmodule ApathyDrive.Commands.Remove do
                 char,
                 "<p>You remove the #{Item.colored_name(item_to_remove)} and extinguish it.</p>"
               )
+
+              char_ref = character.ref
+
+              Enum.each(room.mobiles, fn
+                {ref, %Character{} = mobile} when ref != char_ref ->
+                  Mobile.send_scroll(
+                    mobile,
+                    "<p>#{Mobile.colored_name(character)} removes the #{
+                      Item.colored_name(item_to_remove, character: mobile)
+                    } and extinguishes it.</p>"
+                  )
+
+                _ ->
+                  :noop
+              end)
             else
               Mobile.send_scroll(
                 char,
                 "<p>You remove #{Item.colored_name(item_to_remove, character: char)}.</p>"
               )
+
+              char_ref = character.ref
+
+              Enum.each(room.mobiles, fn
+                {ref, %Character{} = mobile} when ref != char_ref ->
+                  Mobile.send_scroll(
+                    mobile,
+                    "<p>#{Mobile.colored_name(character)} removes the #{
+                      Item.colored_name(item_to_remove, character: mobile)
+                    }.</p>"
+                  )
+
+                _ ->
+                  :noop
+              end)
             end
 
             send(
