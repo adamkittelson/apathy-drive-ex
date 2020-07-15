@@ -94,6 +94,21 @@ defmodule ApathyDrive.Commands.Buy do
                   char,
                   "<p>You purchase #{Item.colored_name(item, character: char)} for nothing.</p>"
                 )
+
+                char_ref = char.ref
+
+                Enum.each(room.mobiles, fn
+                  {ref, %Character{} = mobile} when ref != char_ref ->
+                    Mobile.send_scroll(
+                      mobile,
+                      "<p>#{Mobile.colored_name(char)} purchases #{
+                        Item.colored_name(item, character: mobile)
+                      } for nothing.</p>"
+                    )
+
+                  _ ->
+                    :noop
+                end)
               else
                 Mobile.send_scroll(
                   char,
@@ -101,6 +116,21 @@ defmodule ApathyDrive.Commands.Buy do
                     Currency.to_string(currency)
                   }.</p>"
                 )
+
+                char_ref = char.ref
+
+                Enum.each(room.mobiles, fn
+                  {ref, %Character{} = mobile} when ref != char_ref ->
+                    Mobile.send_scroll(
+                      mobile,
+                      "<p>#{Mobile.colored_name(char)} purchases #{
+                        Item.colored_name(item, character: mobile)
+                      } for #{Currency.to_string(currency)}.</p>"
+                    )
+
+                  _ ->
+                    :noop
+                end)
               end
 
               char

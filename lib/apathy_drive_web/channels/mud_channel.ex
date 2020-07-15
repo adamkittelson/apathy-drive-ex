@@ -217,7 +217,7 @@ defmodule ApathyDriveWeb.MUDChannel do
       socket = assign(socket, :current_command, nil)
       {:noreply, socket}
     else
-      raise "unexpected command finished: #{inspect(command)}"
+      {:noreply, socket}
     end
   end
 
