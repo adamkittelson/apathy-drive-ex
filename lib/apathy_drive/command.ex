@@ -54,6 +54,7 @@ defmodule ApathyDrive.Command do
       Commands.Drop,
       Commands.Experience,
       Commands.Get,
+      Commands.Give,
       Commands.Go,
       Commands.Gossip,
       Commands.Grapevine,
@@ -135,7 +136,7 @@ defmodule ApathyDrive.Command do
                 cmd.module.execute(room, monster, arguments)
 
               nil ->
-                Mobile.send_scroll(monster, "<p>What?</p>")
+                Mobile.send_scroll(monster, "<p>Your command had no effect.</p>")
                 room
 
               commands ->

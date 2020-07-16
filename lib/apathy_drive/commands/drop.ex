@@ -120,13 +120,18 @@ defmodule ApathyDrive.Commands.Drop do
           "<p>You dropped #{Item.colored_name(item, character: character)}.</p>"
         )
 
-        Room.send_scroll(
-          room,
-          "<p><span class='dark-yellow'>#{char.name} dropped #{
-            Item.colored_name(item, character: character)
-          }.</span></p>",
-          [char]
-        )
+        char_ref = char.ref
+
+        Enum.each(room.mobiles, fn
+          {ref, %Character{} = mobile} when ref != char_ref ->
+            Mobile.send_scroll(
+              mobile,
+              "<p>#{Mobile.colored_name(char)} dropped #{Item.colored_name(item, character: char)}.</p>"
+            )
+
+          _ ->
+            :noop
+        end)
 
         char
       end)

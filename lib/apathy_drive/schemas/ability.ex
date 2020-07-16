@@ -3092,7 +3092,7 @@ defmodule ApathyDrive.Ability do
 
     message =
       ability.spectator_message
-      |> Text.interpolate(%{"user" => caster, "target" => target})
+      |> Text.interpolate(%{"user" => caster, "target" => target, "lore" => caster.lore.name})
       |> Text.capitalize_first()
 
     unless message == "" do
