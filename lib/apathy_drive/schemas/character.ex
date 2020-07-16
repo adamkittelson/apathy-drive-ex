@@ -39,6 +39,8 @@ defmodule ApathyDrive.Character do
     Trait
   }
 
+  alias ApathyDrive.Commands.Protection
+
   require Logger
   import Comeonin.Bcrypt
 
@@ -1468,8 +1470,22 @@ defmodule ApathyDrive.Character do
       crits: Mobile.crits_at_level(character, character.level),
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
-      physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
-      magical_resistance: Mobile.magical_resistance_at_level(character, character.level),
+      physical_resistance:
+        trunc(
+          (1 -
+             Protection.percent_for_ac_mr(
+               Mobile.physical_resistance_at_level(character, character.level)
+             )) *
+            100
+        ),
+      magical_resistance:
+        trunc(
+          (1 -
+             Protection.percent_for_ac_mr(
+               Mobile.magical_resistance_at_level(character, character.level)
+             )) *
+            100
+        ),
       hp: hp_at_level(character, character.level),
       hp_regen: hp_regen,
       max_hp: max_hp,

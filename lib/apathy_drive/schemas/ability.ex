@@ -24,6 +24,8 @@ defmodule ApathyDrive.Ability do
     TimerManager
   }
 
+  alias ApathyDrive.Commands.Protection
+
   require Logger
 
   schema "abilities" do
@@ -2194,7 +2196,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
-          resist_percent = 1 - resist / (25 * 50 + resist)
+          resist_percent = Protection.percent_for_ac_mr(resist)
 
           damage = ability_damage + bonus_damage
 
@@ -2215,7 +2217,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent, target} ->
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
-          resist_percent = 1 - resist / (25 * 50 + resist)
+          resist_percent = Protection.percent_for_ac_mr(resist)
 
           damage = dmg + bonus_damage
 
@@ -2238,7 +2240,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist_percent = 1 - resist / (25 * 50 + resist)
+          resist_percent = Protection.percent_for_ac_mr(resist)
 
           damage = ability_damage + bonus_damage
 
@@ -2261,7 +2263,7 @@ defmodule ApathyDrive.Ability do
         %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent, target} ->
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist_percent = 1 - resist / (25 * 50 + resist)
+          resist_percent = Protection.percent_for_ac_mr(resist)
 
           damage = damage + bonus_damage
 
@@ -2589,7 +2591,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.physical_resistance_at_level(target, target.level)
 
-          resist_percent = 1 - resist / (25 * 50 + resist)
+          resist_percent = Protection.percent_for_ac_mr(resist)
 
           damage = ability_damage + bonus_damage
 
@@ -2615,7 +2617,7 @@ defmodule ApathyDrive.Ability do
 
           resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist_percent = 1 - resist / (25 * 50 + resist)
+          resist_percent = Protection.percent_for_ac_mr(resist)
 
           damage = ability_damage + bonus_damage
 
