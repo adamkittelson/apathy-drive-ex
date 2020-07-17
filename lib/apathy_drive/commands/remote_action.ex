@@ -13,7 +13,8 @@ defmodule ApathyDrive.Commands.RemoteAction do
         |> clear_triggers?(exit_to_trigger, room_exit)
         |> trigger(%{
           direction: exit_to_trigger["direction"],
-          remote_exit: %{"direction" => direction, "room" => from}
+          remote_exit: %{"direction" => direction, "room" => from},
+          order: room_exit["remote_action_order"]
         })
 
       if Doors.open?(room, exit_to_trigger) do
@@ -63,11 +64,12 @@ defmodule ApathyDrive.Commands.RemoteAction do
   def clear_triggers?(room, %{"remote_action_order_matters" => true, "direction" => direction}, %{
         "remote_action_order" => order
       }) do
-    triggered_count =
-      Doors.triggered?(room, direction)
-      |> Enum.count()
+    wrong_order? =
+      room
+      |> Doors.triggered?(direction)
+      |> Enum.any?(&(&1[:triggered][:order] < order))
 
-    if order != triggered_count + 1 do
+    if wrong_order? do
       clear_triggers(room, direction)
     else
       room
