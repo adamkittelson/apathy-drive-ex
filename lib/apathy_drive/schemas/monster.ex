@@ -573,21 +573,6 @@ defmodule ApathyDrive.Monster do
 
                 Mobile.send_scroll(character, "<p>#{message}</p>")
 
-                if monster.game_limit && monster.regen_time_in_hours do
-                  message =
-                    "<p>[<span class='yellow'>announce</span> : Apotheosis] #{message}</p>"
-
-                  Repo.insert!(%ChannelHistory{
-                    character_name: "Apotheosis",
-                    channel_name: "announce",
-                    message: message
-                  })
-
-                  ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat-sidebar", %{
-                    html: message
-                  })
-                end
-
                 exp = max(1, div(monster.experience, pets_and_players))
 
                 character
@@ -619,6 +604,20 @@ defmodule ApathyDrive.Monster do
         %Monster{id: monster.id}
         |> Ecto.Changeset.change(next_spawn_at: spawn_at)
         |> Repo.update!()
+      end
+
+      if monster.game_limit && monster.regen_time_in_hours do
+        message = "<p>[<span class='yellow'>announce</span> : Apotheosis] #{message}</p>"
+
+        Repo.insert!(%ChannelHistory{
+          character_name: "Apotheosis",
+          channel_name: "announce",
+          message: message
+        })
+
+        ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat-sidebar", %{
+          html: message
+        })
       end
 
       room =

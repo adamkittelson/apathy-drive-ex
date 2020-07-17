@@ -464,7 +464,8 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "opal")
 
       roll <= 97 ->
-        give_item(room, mobile_ref, "diamond")
+        # diamond
+        give_item(room, mobile_ref, 902)
 
       roll <= 98 ->
         give_item(room, mobile_ref, "emerald")
@@ -536,7 +537,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "crested war helm")
 
       roll <= 52 ->
-        give_item(room, mobile_ref, "gauntlets of power")
+        give_item(room, mobile_ref, "gauntlet of power")
 
       roll <= 54 ->
         give_item(room, mobile_ref, "high-necked robes")
@@ -725,7 +726,7 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "belt of might")
 
       roll <= 38 ->
-        give_item(room, mobile_ref, "gauntlets of power")
+        give_item(room, mobile_ref, "gauntlet of power")
 
       roll <= 43 ->
         give_item(room, mobile_ref, "prismatic robes")
@@ -809,7 +810,8 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "sapphire")
 
       roll <= 6 ->
-        give_item(room, mobile_ref, "diamond")
+        # diamond
+        give_item(room, mobile_ref, 902)
 
       roll <= 9 ->
         give_item(room, mobile_ref, "onyx stone")
