@@ -155,7 +155,6 @@ defmodule ApathyDrive.Ability do
     "HPRegen",
     "Intellect",
     "Light",
-    "LightVision",
     "MaxBubble",
     "MaxBubble%",
     "MaxHP",
