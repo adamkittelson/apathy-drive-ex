@@ -157,7 +157,9 @@ defmodule ApathyDrive.Scripts do
     end
   end
 
-  def summon(%Room{} = room, monster_id) when is_integer(monster_id) do
+  def summon(room, monster, force \\ false)
+
+  def summon(%Room{} = room, monster_id, force) when is_integer(monster_id) do
     Repo.get!(Monster, monster_id)
 
     monster =
@@ -168,18 +170,18 @@ defmodule ApathyDrive.Scripts do
         spawned_at: room.id,
         zone_spawned_at: room.zone_controller_id
       }
-      |> Monster.from_room_monster()
+      |> Monster.from_room_monster(force)
 
     Room.mobile_entered(room, monster, "")
   end
 
-  def summon(%Room{} = room, name) do
+  def summon(%Room{} = room, name, force) do
     Monster
     |> Ecto.Query.where(name: ^name)
     |> Repo.one()
     |> case do
       %Monster{id: monster_id} ->
-        summon(room, monster_id)
+        summon(room, monster_id, force)
 
       nil ->
         raise "Monster for Scripts.summon/2 not found: #{name}"

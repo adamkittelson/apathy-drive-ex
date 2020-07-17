@@ -489,7 +489,8 @@ defmodule ApathyDrive.Room do
               "You notice {{name}} sneak in from {{direction}}."
               |> ApathyDrive.Text.interpolate(%{
                 "name" => Mobile.colored_name(mobile),
-                "direction" => from_direction
+                "direction" => from_direction,
+                "user" => mobile
               })
               |> ApathyDrive.Text.capitalize_first()
 
@@ -500,7 +501,8 @@ defmodule ApathyDrive.Room do
               (message || Mobile.enter_message(mobile))
               |> ApathyDrive.Text.interpolate(%{
                 "name" => Mobile.colored_name(mobile),
-                "direction" => from_direction
+                "direction" => from_direction,
+                "user" => mobile
               })
               |> ApathyDrive.Text.capitalize_first()
 
@@ -537,7 +539,8 @@ defmodule ApathyDrive.Room do
               "You notice {{name}} sneak out to {{direction}}."
               |> ApathyDrive.Text.interpolate(%{
                 "name" => Mobile.colored_name(mobile),
-                "direction" => to_direction
+                "direction" => to_direction,
+                "user" => mobile
               })
               |> ApathyDrive.Text.capitalize_first()
 
@@ -548,8 +551,9 @@ defmodule ApathyDrive.Room do
             message =
               message
               |> ApathyDrive.Text.interpolate(%{
-                "name" => mobile,
-                "direction" => to_direction
+                "name" => Mobile.colored_name(mobile),
+                "direction" => to_direction,
+                "user" => mobile
               })
 
             Mobile.send_scroll(observer, "<p>#{message}</p>")

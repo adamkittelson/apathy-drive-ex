@@ -106,7 +106,7 @@ defmodule ApathyDrive.Commands.System do
         |> Match.all(:match_name, monster_id_or_name)
         |> case do
           %Monster{id: monster_id} ->
-            summon(room, monster_id)
+            summon(room, monster_id, true)
 
           nil ->
             Mobile.send_scroll(character, "<p>Monster not found.</p>")

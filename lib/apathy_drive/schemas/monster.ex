@@ -191,7 +191,12 @@ defmodule ApathyDrive.Monster do
     end
   end
 
-  def from_room_monster(%RoomMonster{id: nil, room_id: room_id, monster_id: monster_id} = rm) do
+  def from_room_monster(room_monster, force \\ false)
+
+  def from_room_monster(
+        %RoomMonster{id: nil, room_id: room_id, monster_id: monster_id} = rm,
+        force
+      ) do
     now =
       DateTime.utc_now()
       |> DateTime.to_unix()
@@ -207,7 +212,7 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:owner_id, rm.owner_id)
       |> Map.put(:lore, ApathyDrive.ElementalLores.lore(rm.lore))
 
-    if !MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now) do
+    if force or (!MonsterSpawning.limit_reached?(monster) and spawnable?(monster, now)) do
       ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
       monster
@@ -223,7 +228,7 @@ defmodule ApathyDrive.Monster do
     end
   end
 
-  def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm) do
+  def from_room_monster(%RoomMonster{id: id, monster_id: monster_id} = rm, _force) do
     monster = Repo.get(Monster, monster_id)
 
     attributes =
