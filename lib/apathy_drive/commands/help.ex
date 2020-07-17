@@ -402,6 +402,7 @@ defmodule ApathyDrive.Commands.Help do
       Mobile.send_scroll(character, "<p>  <span class='dark-magenta'>Level    Name</span></p>")
 
       abilities
+      |> Enum.sort_by(fn {level, _} -> level end)
       |> Enum.each(fn {level, abilities} ->
         abilities =
           abilities

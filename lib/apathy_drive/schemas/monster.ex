@@ -561,16 +561,16 @@ defmodule ApathyDrive.Monster do
         end)
         |> length()
 
+      message =
+        monster.death_message
+        |> Text.interpolate(%{"name" => monster.name})
+        |> Text.capitalize_first()
+
       room =
         Enum.reduce(room.mobiles, room, fn
           {ref, %Character{} = character}, updated_room ->
             updated_room =
               Room.update_mobile(updated_room, ref, fn _updated_room, character ->
-                message =
-                  monster.death_message
-                  |> Text.interpolate(%{"name" => monster.name})
-                  |> Text.capitalize_first()
-
                 Mobile.send_scroll(character, "<p>#{message}</p>")
 
                 exp = max(1, div(monster.experience, pets_and_players))
