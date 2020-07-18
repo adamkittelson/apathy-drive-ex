@@ -1711,11 +1711,7 @@ defmodule ApathyDrive.Ability do
                   {target, ability_shift}
               end
 
-            if ability_shift < 0 do
-              Mobile.shift_hp(target, ability_shift)
-            else
-              target
-            end
+            Mobile.shift_hp(target, ability_shift)
           else
             target
           end
