@@ -1706,6 +1706,9 @@ defmodule ApathyDrive.Ability do
                     {_id, _effect}, {target, ability_shift} ->
                       {target, ability_shift}
                   end)
+
+                :else ->
+                  {target, ability_shift}
               end
 
             if ability_shift < 0 do
