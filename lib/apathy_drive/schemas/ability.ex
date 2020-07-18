@@ -1662,84 +1662,56 @@ defmodule ApathyDrive.Ability do
         target =
           if ability_shift do
             {target, ability_shift} =
-              if ability_shift < 0 do
-                target.effects
-                |> Enum.reduce({target, ability_shift}, fn
-                  {id, %{"Bubble" => bubble} = effect}, {target, ability_shift} ->
-                    cond do
-                      bubble > abs(ability_shift) ->
-                        target = update_in(target.effects[id]["Bubble"], &(&1 + ability_shift))
-                        {target, 0}
-
-                      bubble <= abs(ability_shift) ->
-                        if effect["MaxBubble"] do
-                          target = put_in(target.effects[id]["Bubble"], 0)
-                          # target = Map.put(target, :effects, effects)
-                          {target, ability_shift + bubble}
-                        else
-                          target =
-                            Systems.Effect.remove(target, id, show_expiration_message: true)
-
-                          {target, ability_shift + bubble}
-                        end
-                    end
-
-                  {_id, _effect}, {target, ability_shift} ->
-                    {target, ability_shift}
-                end)
-              else
-                {target, ability_shift}
-              end
-
-            if ability_shift < 0 and Mobile.has_ability?(target, "HolyMission") do
-              duration = :timer.seconds(30)
-              rounds = duration / 5000
-
-              Systems.Effect.add(
-                target,
-                %{
-                  "Damage" => -ability_shift / rounds,
-                  "StatusMessage" => "You are taking damage!",
-                  "stack_key" => :holy_mission_damage,
-                  "stack_count" => :infinity
-                },
-                duration
-              )
-            else
-              initial_hp = target.hp
-
-              target = Mobile.shift_hp(target, ability_shift)
-
               cond do
-                initial_hp > 0 and target.hp < 0 and target.__struct__ == Character ->
-                  Mobile.send_scroll(target, "<p>You lose conciousness!</p>")
+                ability_shift < 0 and Mobile.has_ability?(target, "HolyMission") ->
+                  duration = :timer.seconds(30)
+                  rounds = duration / 5000
 
-                  Room.send_scroll(
-                    room,
-                    "<p>#{Mobile.colored_name(target)} loses conciousness!</p>",
-                    [
-                      target
-                    ]
-                  )
+                  target =
+                    Systems.Effect.add(
+                      target,
+                      %{
+                        "Damage" => -ability_shift / rounds,
+                        "StatusMessage" => "You are taking damage!",
+                        "stack_key" => :holy_mission_damage,
+                        "stack_count" => :infinity
+                      },
+                      duration
+                    )
 
-                  target
+                  {target, 0}
 
-                initial_hp < 0 and target.hp > 0 ->
-                  Mobile.send_scroll(target, "<p>You regain conciousness.</p>")
+                ability_shift < 0 ->
+                  target.effects
+                  |> Enum.reduce({target, ability_shift}, fn
+                    {id, %{"Bubble" => bubble} = effect}, {target, ability_shift} ->
+                      cond do
+                        bubble > abs(ability_shift) ->
+                          target = update_in(target.effects[id]["Bubble"], &(&1 + ability_shift))
+                          {target, 0}
 
-                  Room.send_scroll(
-                    room,
-                    "<p>#{Mobile.colored_name(target)} regains conciousness.</p>",
-                    [
-                      target
-                    ]
-                  )
+                        bubble <= abs(ability_shift) ->
+                          if effect["MaxBubble"] do
+                            target = put_in(target.effects[id]["Bubble"], 0)
+                            # target = Map.put(target, :effects, effects)
+                            {target, ability_shift + bubble}
+                          else
+                            target =
+                              Systems.Effect.remove(target, id, show_expiration_message: true)
 
-                  target
+                            {target, ability_shift + bubble}
+                          end
+                      end
 
-                :else ->
-                  target
+                    {_id, _effect}, {target, ability_shift} ->
+                      {target, ability_shift}
+                  end)
               end
+
+            if ability_shift < 0 do
+              Mobile.shift_hp(target, ability_shift)
+            else
+              target
             end
           else
             target
