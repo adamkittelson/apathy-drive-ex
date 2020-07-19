@@ -2085,6 +2085,29 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
+    ability =
+      if caster.__struct__ == Character && ability.mana && ability.mana > 0 do
+        base_damage = Character.base_spell_damage(caster, ability)
+
+        min_damage = trunc(base_damage * 0.8)
+        max_damage = trunc(base_damage * 1.2)
+
+        count = length(damages)
+
+        damages =
+          Enum.map(damages, fn element ->
+            element
+            |> Map.put(:min, div(min_damage, count))
+            |> Map.put(:max, div(max_damage, count))
+          end)
+
+        put_in(ability.traits["Damage"], damages)
+      else
+        ability
+      end
+
+    damages = ability.traits["Damage"]
+
     lore = Map.get(caster, :lore)
 
     damages =
@@ -3516,6 +3539,16 @@ defmodule ApathyDrive.Ability do
       )
     end
   end
+
+  def mana_cost(%Character{} = character, %Ability{kind: "attack"} = ability) do
+    if ability.targets =~ "area" do
+      max(1, trunc(character.level * 1.75))
+    else
+      max(1, trunc(character.level * 0.75))
+    end
+  end
+
+  def mana_cost(%{} = _mobile, %Ability{mana: cost}), do: cost
 
   def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false
 

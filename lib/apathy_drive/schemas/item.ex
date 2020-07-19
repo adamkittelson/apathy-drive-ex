@@ -113,6 +113,7 @@ defmodule ApathyDrive.Item do
     field(:global_drop_rarity, :string)
     field(:level, :integer)
 
+    field(:equipped, :boolean, virtual: true, default: false)
     field(:beacon_room_id, :any, virtual: true)
     field(:owner_id, :any, virtual: true)
     field(:limb, :string, virtual: true)
@@ -226,6 +227,10 @@ defmodule ApathyDrive.Item do
       end
     end
   end
+
+  # bare handed
+  def skill_for_character(%Character{} = character, %Item{type: "Weapon", weapon_type: nil}),
+    do: character.level
 
   def skill_for_character(%Character{} = character, %Item{type: "Weapon"} = item) do
     if owner_id = Systems.Effect.effect_bonus(item, "Claimed") do

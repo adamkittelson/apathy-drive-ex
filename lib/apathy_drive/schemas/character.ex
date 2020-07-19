@@ -738,7 +738,21 @@ defmodule ApathyDrive.Character do
     |> Enum.filter(&(&1.type == "Weapon"))
     |> case do
       [] ->
-        nil
+        punch = %Item{
+          type: "Weapon",
+          name: "fist",
+          hit_verbs: [["punch", "punches"]],
+          miss_verbs: ["throw a punch", "throws a punch"],
+          min_damage: 2,
+          max_damage: 7,
+          speed: 1150
+        }
+
+        if damage = Mobile.ability_value(character, "WeaponDamage") do
+          put_in(punch.effects[1], %{"WeaponDamage" => damage})
+        else
+          punch
+        end
 
       list ->
         Enum.random(list)
@@ -887,6 +901,26 @@ defmodule ApathyDrive.Character do
     else
       ability
     end
+  end
+
+  def base_spell_damage(character, ability) do
+    weapon = weapon(character)
+
+    weapon_ability = Character.ability_for_weapon(character, weapon)
+
+    {min_damage, max_damage} =
+      weapon_ability.traits["Damage"]
+      |> Enum.reduce({0, 0}, fn damage, {min, max} ->
+        {min + damage.min, max + damage.max}
+      end)
+
+    energy = Character.spell_energy_per_swing(character, weapon, ability)
+
+    attack_interval = Regeneration.duration_for_energy(character, max(energy, 200))
+
+    average = (min_damage + max_damage) / 2
+
+    trunc(average * (5000 / attack_interval) * (Character.magic_level(character) / 1.5))
   end
 
   def shield(%Character{} = character) do
@@ -1531,6 +1565,13 @@ defmodule ApathyDrive.Character do
     Mobile.ability_value(character, "CombatLevel")
   end
 
+  def magic_level(%Character{} = character) do
+    div(
+      div(Mobile.max_mana_at_level(character, character.level) - 6, max(character.level, 1)),
+      2
+    )
+  end
+
   def combat_proficiency(combat_level) when combat_level > 4.5, do: "Excellent"
   def combat_proficiency(combat_level) when combat_level > 3.5, do: "Good"
   def combat_proficiency(combat_level) when combat_level > 2.5, do: "Average"
@@ -1548,6 +1589,31 @@ defmodule ApathyDrive.Character do
     cost =
       weapon.speed * 1000 /
         ((character.level * (combat_level + 2) + 45) * (agility + 150) *
+           1500 /
+           9000.0)
+
+    energy =
+      trunc(
+        cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
+      )
+
+    min(energy, 1000)
+  end
+
+  def spell_energy_per_swing(character, weapon, ability) do
+    encumbrance = Character.encumbrance(character)
+    max_encumbrance = Character.max_encumbrance(character)
+
+    attribute_value =
+      (ability.attributes || [])
+      |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
+      |> Room.average()
+
+    magic_level = magic_level(character)
+
+    cost =
+      weapon.speed * 1000 /
+        ((character.level * (magic_level + 4) + 45) * (attribute_value + 150) *
            1500 /
            9000.0)
 
@@ -1695,24 +1761,7 @@ defmodule ApathyDrive.Character do
     end
 
     def attack_ability(character) do
-      punch = %Item{
-        type: "Weapon",
-        name: "fist",
-        hit_verbs: [["punch", "punches"]],
-        miss_verbs: ["throw a punch", "throws a punch"],
-        min_damage: 2,
-        max_damage: 7,
-        speed: 1150
-      }
-
-      punch =
-        if damage = Mobile.ability_value(character, "WeaponDamage") do
-          put_in(punch.effects[1], %{"WeaponDamage" => damage})
-        else
-          punch
-        end
-
-      weapon = Character.weapon(character) || punch
+      weapon = Character.weapon(character)
 
       Character.ability_for_weapon(character, weapon)
     end
@@ -2030,10 +2079,10 @@ defmodule ApathyDrive.Character do
       trunc(base + ability_value(character, "Dodge"))
     end
 
-    def enough_mana_for_ability?(character, %Ability{mana: cost} = _ability) do
+    def enough_mana_for_ability?(character, %Ability{} = ability) do
       mana = Character.mana_at_level(character, character.level)
 
-      mana >= cost
+      mana >= Ability.mana_cost(character, ability)
     end
 
     def evil_points(character, %Character{} = attacker) do
@@ -2120,7 +2169,7 @@ defmodule ApathyDrive.Character do
         |> List.flatten()
         |> Room.average()
 
-      magic_level = div(div(Mobile.max_mana_at_level(character, level) - 6, max(level, 1)), 2)
+      magic_level = Character.magic_level(character)
 
       max_mana = max_mana_at_level(character, character.level)
 
@@ -2360,9 +2409,7 @@ defmodule ApathyDrive.Character do
         |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
         |> Room.average()
 
-      mana_per_level = ability_value(character, "ManaPerLevel")
-
-      magic_level = div(div(mana_per_level * (level - 1), max(character.level, 1)), 2)
+      magic_level = Character.magic_level(character)
 
       sc = trunc(attribute_value * 2 / 3) + magic_level * 5
 
@@ -2404,7 +2451,9 @@ defmodule ApathyDrive.Character do
 
     def subtract_mana(character, %{mana: 0} = _ability), do: character
 
-    def subtract_mana(character, %Ability{mana: cost}) do
+    def subtract_mana(character, %Ability{} = ability) do
+      cost = Ability.mana_cost(character, ability)
+
       {cost, character} =
         Enum.reduce(character.inventory, {cost, character}, fn item, {cost, character} ->
           if "create powerstone" in item.enchantments do

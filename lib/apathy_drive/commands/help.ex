@@ -464,15 +464,17 @@ defmodule ApathyDrive.Commands.Help do
     if ability.mana && ability.mana > 0 && ability.kind != "passive" do
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-green'>Mana Cost:</span> <span class='dark-cyan'>#{ability.mana}</span></p>"
+        "<p><span class='dark-green'>Mana Cost:</span> <span class='dark-cyan'>#{
+          Ability.mana_cost(character, ability)
+        }</span></p>"
       )
     end
 
+    ability =
+      Map.put(ability, :attributes, ApathyDrive.AbilityAttribute.load_attributes(ability.id))
+
     chance =
       if ability.difficulty do
-        ability =
-          Map.put(ability, :attributes, ApathyDrive.AbilityAttribute.load_attributes(ability.id))
-
         Mobile.send_scroll(
           character,
           "<p><span class='dark-green'>Attributes:</span> <span class='dark-cyan'>#{
@@ -576,6 +578,29 @@ defmodule ApathyDrive.Commands.Help do
           traits
 
         damage ->
+          traits =
+            if ability.mana && ability.mana > 0 do
+              base_damage = Character.base_spell_damage(character, ability)
+
+              min_damage = trunc(base_damage * 0.8)
+              max_damage = trunc(base_damage * 1.2)
+
+              count = length(damage)
+
+              damage =
+                Enum.map(damage, fn element ->
+                  element
+                  |> Map.put(:min, div(min_damage, count))
+                  |> Map.put(:max, div(max_damage, count))
+                end)
+
+              Map.put(traits, "Damage", damage)
+            else
+              traits
+            end
+
+          damage = traits["Damage"]
+
           if traits["Elemental"] do
             elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
 
