@@ -2028,6 +2028,7 @@ defmodule ApathyDrive.Character do
           |> Map.put(:mana, 1.0)
           |> Map.put(:energy, character.max_energy)
           |> Map.put(:enchantment, nil)
+          |> Map.put(:casting, nil)
           |> Ecto.Changeset.change(%{auto_roam: false})
           |> Repo.update!()
           |> Map.put(:attack_target, nil)
