@@ -37,9 +37,19 @@ defmodule ApathyDrive.Commands.Attack do
     Mobile.send_scroll(character, "<p>Attack whom?</p>")
   end
 
+  def attack(%{casting: nil} = character, %{ref: target_ref}) do
+    character
+    |> Map.put(:attack_target, target_ref)
+    |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+  end
+
   def attack(%{} = character, %{ref: target_ref}) do
     character
     |> Map.put(:attack_target, target_ref)
+    |> Map.put(:casting, :auto_attack)
+    |> Mobile.send_scroll(
+      "<p><span class='dark-red'>You interrupt your other ability.</span></p>"
+    )
     |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
   end
 end

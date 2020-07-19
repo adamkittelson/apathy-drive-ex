@@ -3,10 +3,13 @@ defmodule ApathyDrive.AI do
 
   def think(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn room, mobile ->
-      if mobile.casting do
+      if mobile.casting && mobile.casting != :auto_attack do
         flee(mobile, room) || mobile
       else
-        drain(mobile, room) || heal(mobile, room) || flee(mobile, room) || bless(mobile, room) ||
+        drain(mobile, room) || heal(mobile, room) || freedom(mobile, room) || flee(mobile, room) ||
+          cure_blindness(mobile, room) ||
+          cure_poison(mobile, room) ||
+          bless(mobile, room) ||
           backstab(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
           auto_attack(mobile, room) || sneak(mobile, room) ||
           move(mobile, room) || mobile
@@ -63,7 +66,9 @@ defmodule ApathyDrive.AI do
         end
 
       _other ->
-        nil
+        if Map.get(mobile, :auto_rest) && !Map.get(mobile, :resting) do
+          ApathyDrive.Commands.Rest.execute(room, mobile, silent: true).mobiles[mobile.ref]
+        end
     end
   end
 
@@ -76,6 +81,8 @@ defmodule ApathyDrive.AI do
   end
 
   def sneak(_mobile, %Room{}), do: nil
+
+  def flee(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
   def flee(%{} = mobile, %Room{} = room) do
     if should_flee?(mobile, room) do
@@ -99,6 +106,8 @@ defmodule ApathyDrive.AI do
       end
     end
   end
+
+  def drain(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
   def drain(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
@@ -174,6 +183,8 @@ defmodule ApathyDrive.AI do
     end)
   end
 
+  def heal(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
+
   def heal(%{} = mobile, %Room{} = room) do
     injured_party_members = pets_and_party(room, mobile)
 
@@ -205,46 +216,166 @@ defmodule ApathyDrive.AI do
     end
   end
 
+  def bless(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
+
   def bless(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
-    members_to_bless = pets_and_party(room, mobile)
+    if !Aggression.enemies_present?(room, mobile) do
+      members_to_bless = pets_and_party(room, mobile)
 
-    member_to_bless =
-      if Map.get(mobile, :auto_pet_casting) == false do
-        members_to_bless
-        |> Enum.reject(&(&1.__struct__ == Monster))
-      else
-        members_to_bless
-      end
-      |> Enum.random()
-
-    ability =
-      mobile
-      |> Ability.bless_abilities(member_to_bless)
-      |> Enum.reject(&(!&1.auto))
-      |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
-      |> reject_item_if_monster(mobile)
-      |> reject_elemental_if_no_lore(mobile)
-      |> reject_light_spells_if_it_isnt_dark(room)
-      |> reject_target_has_ability_passively(member_to_bless)
-      |> random_ability(mobile)
-
-    case ability do
-      nil ->
-        nil
-
-      %Ability{targets: "weapon"} = ability ->
-        if weapon = Character.weapon(mobile) do
-          unless Systems.Effect.max_stacks?(weapon, ability) do
-            Ability.execute(room, mobile.ref, ability, weapon)
-          end
+      member_to_bless =
+        if Map.get(mobile, :auto_pet_casting) == false do
+          members_to_bless
+          |> Enum.reject(&(&1.__struct__ == Monster))
+        else
+          members_to_bless
         end
+        |> Enum.random()
 
-      ability ->
-        Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
+      ability =
+        mobile
+        |> Ability.bless_abilities(member_to_bless)
+        |> Enum.reject(&(!&1.auto))
+        |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
+        |> reject_item_if_monster(mobile)
+        |> reject_elemental_if_no_lore(mobile)
+        |> reject_light_spells_if_it_isnt_dark(room)
+        |> reject_target_has_ability_passively(member_to_bless)
+        |> random_ability(mobile)
+
+      case ability do
+        nil ->
+          nil
+
+        %Ability{targets: "weapon"} = ability ->
+          if weapon = Character.weapon(mobile) do
+            unless Systems.Effect.max_stacks?(weapon, ability) do
+              Ability.execute(room, mobile.ref, ability, weapon)
+            end
+          end
+
+        ability ->
+          Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
+      end
     end
   end
 
   def bless(%{} = _mobile, %Room{}), do: nil
+
+  def freedom(%{} = mobile, %Room{} = room) do
+    members_to_free = pets_and_party(room, mobile)
+
+    members_to_free =
+      if Map.get(mobile, :auto_pet_casting) == false do
+        members_to_free
+        |> Enum.reject(&(&1.__struct__ == Monster))
+      else
+        members_to_free
+      end
+      |> Enum.filter(&Mobile.has_ability?(&1, "Root"))
+
+    if Enum.any?(members_to_free) do
+      member_to_free = Enum.random(members_to_free)
+
+      ability =
+        mobile.abilities
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.filter(&(!is_nil(&1.traits["Freedom"])))
+        |> Ability.useable(mobile)
+        |> Enum.sort_by(&(-&1.level))
+        |> Enum.reject(&(!&1.auto))
+        |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
+        |> reject_item_if_monster(mobile)
+        |> reject_elemental_if_no_lore(mobile)
+        |> random_ability(mobile)
+
+      case ability do
+        nil ->
+          nil
+
+        ability ->
+          Ability.execute(room, mobile.ref, ability, [member_to_free.ref])
+      end
+    end
+  end
+
+  def cure_blindness(%{} = mobile, %Room{} = room) do
+    members_to_free = pets_and_party(room, mobile)
+
+    members_to_free =
+      if Map.get(mobile, :auto_pet_casting) == false do
+        members_to_free
+        |> Enum.reject(&(&1.__struct__ == Monster))
+      else
+        members_to_free
+      end
+      |> Enum.filter(&Mobile.has_ability?(&1, "Blind"))
+
+    if Enum.any?(members_to_free) do
+      member_to_free = Enum.random(members_to_free)
+
+      ability =
+        mobile.abilities
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.filter(&(&1.traits["DispelMagic"] == 107))
+        |> Ability.useable(mobile)
+        |> Enum.sort_by(&(-&1.level))
+        |> Enum.reject(&(!&1.auto))
+        |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
+        |> reject_item_if_monster(mobile)
+        |> reject_elemental_if_no_lore(mobile)
+        |> random_ability(mobile)
+
+      case ability do
+        nil ->
+          nil
+
+        ability ->
+          Ability.execute(room, mobile.ref, ability, [member_to_free.ref])
+      end
+    end
+  end
+
+  def cure_poison(%{} = mobile, %Room{} = room) do
+    members_to_free = pets_and_party(room, mobile)
+
+    members_to_free =
+      if Map.get(mobile, :auto_pet_casting) == false do
+        members_to_free
+        |> Enum.reject(&(&1.__struct__ == Monster))
+      else
+        members_to_free
+      end
+      |> Enum.filter(&Mobile.has_ability?(&1, "Poison"))
+
+    if Enum.any?(members_to_free) do
+      member_to_free = Enum.random(members_to_free)
+
+      ability =
+        mobile.abilities
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.filter(&(&1.traits["DispelMagic"] == 19))
+        |> Ability.useable(mobile)
+        |> Enum.sort_by(&(-&1.level))
+        |> Enum.reject(&(!&1.auto))
+        |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
+        |> reject_item_if_monster(mobile)
+        |> reject_elemental_if_no_lore(mobile)
+        |> random_ability(mobile)
+
+      case ability do
+        nil ->
+          nil
+
+        ability ->
+          Ability.execute(room, mobile.ref, ability, [member_to_free.ref])
+      end
+    end
+  end
+
+  def curse(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
   def curse(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
@@ -271,6 +402,8 @@ defmodule ApathyDrive.AI do
   end
 
   def backstab(_mobile, %Room{}), do: nil
+
+  def attack(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
   def attack(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
@@ -321,7 +454,7 @@ defmodule ApathyDrive.AI do
 
   def auto_attack(mobile, room, target_ref \\ nil) do
     if target_ref = target_ref || Mobile.auto_attack_target(mobile, room) do
-      if mobile.energy == mobile.max_energy && !mobile.casting do
+      if mobile.energy == mobile.max_energy && (!mobile.casting or mobile.casting == :auto_attack) do
         {attacks, _energy} =
           Enum.reduce(1..5, {[], mobile.energy}, fn _n, {attacks, energy} ->
             attack = Mobile.attack_ability(mobile)
@@ -334,6 +467,11 @@ defmodule ApathyDrive.AI do
           end)
 
         if Enum.any?(attacks) do
+          room =
+            Room.update_mobile(room, mobile.ref, fn _room, mobile ->
+              Map.put(mobile, :casting, nil)
+            end)
+
           Enum.reduce(attacks, room, fn attack, room ->
             Ability.execute(room, mobile.ref, attack, [target_ref])
           end)
@@ -350,6 +488,7 @@ defmodule ApathyDrive.AI do
           mobile =
             mobile
             |> Map.put(:attack_target, nil)
+            |> Map.put(:casting, nil)
 
           room = put_in(room.mobiles[mobile.ref], mobile)
 
@@ -436,7 +575,7 @@ defmodule ApathyDrive.AI do
 
   defp should_flee?(%Monster{movement: "stationary"}, _room), do: false
 
-  defp should_flee?(%{auto_flee: true} = mobile, room) do
+  defp should_flee?(%{auto_roam: true} = mobile, room) do
     hp_low? = mobile.hp < 0.20
 
     enemies_present? =

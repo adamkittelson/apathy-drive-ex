@@ -25,6 +25,7 @@ defmodule ApathyDrive.Commands.Rest do
   end
 
   defp taking_damage(character) do
-    Regeneration.damage_effect_per_tick(character) != 0
+    Regeneration.damage_effect_per_tick(character) != 0 and
+      !Mobile.has_ability?(character, "HolyMission")
   end
 end
