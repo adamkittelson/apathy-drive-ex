@@ -573,23 +573,12 @@ defmodule ApathyDrive.AI do
 
   defp should_move?(%{} = _mobile, _room), do: false
 
-  defp should_flee?(%Monster{movement: "stationary"}, _room), do: false
+  defp should_flee?(%Monster{}, _room), do: false
 
   defp should_flee?(%{auto_roam: true} = mobile, room) do
     hp_low? = mobile.hp < 0.20
 
-    enemies_present? =
-      room.mobiles
-      |> Map.values()
-      |> Enum.any?(fn
-        %Monster{hostile: true} ->
-          true
-
-        _ ->
-          false
-      end)
-
-    hp_low? and enemies_present?
+    hp_low? and Aggression.enemies_present?(room, mobile)
   end
 
   defp should_flee?(%{} = _mobile, _room), do: false
