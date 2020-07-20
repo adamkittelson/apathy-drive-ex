@@ -110,6 +110,10 @@ defmodule ApathyDrive.RoomServer do
     GenServer.call(room, {:execute_command, mobile_ref, command, arguments})
   end
 
+  def enqueue_command(room, mobile_ref, command, arguments) do
+    GenServer.call(room, {:enqueue_command, mobile_ref, command, arguments})
+  end
+
   def tell_monsters_to_follow(room, character, destination) do
     GenServer.cast(room, {:tell_monsters_to_follow, character, destination})
   end
@@ -196,8 +200,8 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_call({:execute_command, mobile_ref, command, arguments}, _from, room) do
-    case ApathyDrive.Command.execute(room, mobile_ref, command, arguments) do
+  def handle_call({:enqueue_command, mobile_ref, command, arguments}, _from, room) do
+    case ApathyDrive.Command.enqueue(room, mobile_ref, command, arguments) do
       %Room{} = room ->
         {:reply, :ok, room}
 
@@ -459,6 +463,44 @@ defmodule ApathyDrive.RoomServer do
 
   def handle_cast({:mobile_entered, %{} = mobile, message}, room) do
     room = Room.mobile_entered(room, mobile, message)
+
+    {:noreply, room}
+  end
+
+  def handle_info({:execute_command, mobile_ref}, room) do
+    room =
+      Room.update_mobile(room, mobile_ref, fn room, mobile ->
+        if mobile.current_command do
+          TimerManager.send_after(mobile, {:execute_command, 0, {:execute_command, mobile_ref}})
+        else
+          case :queue.out(mobile.commands) do
+            {:empty, _commands} ->
+              {:noreply, room}
+
+            {{:value, {command, args}}, commands} ->
+              room
+              |> put_in([:mobiles, mobile_ref, :commands], commands)
+              |> put_in([:mobiles, mobile_ref, :current_command], {command, args})
+              |> update_in(
+                [:mobiles, mobile_ref],
+                &TimerManager.send_after(
+                  &1,
+                  {:execute_command, 0, {:execute_command, mobile_ref}}
+                )
+              )
+              |> ApathyDrive.Command.execute(mobile_ref, command, args)
+              |> case do
+                %Room{} = room ->
+                  Room.update_mobile(room, mobile_ref, fn _room, mobile ->
+                    Map.put(mobile, :current_command, nil)
+                  end)
+
+                {:error, :too_tired, room} ->
+                  room
+              end
+          end
+        end
+      end)
 
     {:noreply, room}
   end
@@ -1066,20 +1108,14 @@ defmodule ApathyDrive.RoomServer do
     if Mobile.exhausted(mobile) do
       Map.put(mobile, :casting, {:move, room_exit})
     else
-      command = mobile.command
-
       mobile =
         mobile
-        |> Map.put(:command, nil)
+        |> Map.put(:current_command, nil)
         |> Map.put(:casting, nil)
 
       room = put_in(room.mobiles[mobile.ref], mobile)
 
-      room = Commands.Move.execute(room, mobile, room_exit)
-
-      send(mobile.socket, {:command_finished, command})
-
-      room
+      Commands.Move.execute(room, mobile, room_exit)
     end
   end
 

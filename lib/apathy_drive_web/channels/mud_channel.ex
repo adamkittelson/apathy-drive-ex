@@ -1,6 +1,7 @@
 defmodule ApathyDriveWeb.MUDChannel do
   use ApathyDriveWeb, :channel
   alias ApathyDrive.{ChannelHistory, Character, Mobile, RoomServer}
+  require Logger
 
   def join("mud:play", %{"character" => token}, socket) do
     case Phoenix.Token.verify(socket, "character", token, max_age: 1_209_600) do
@@ -18,6 +19,8 @@ defmodule ApathyDriveWeb.MUDChannel do
               room_id
               |> RoomServer.find()
               |> RoomServer.character_connected(character, self())
+
+            Logger.metadata(character: character.name)
 
             socket =
               socket
@@ -45,7 +48,7 @@ defmodule ApathyDriveWeb.MUDChannel do
   def handle_info(:after_join, socket) do
     socket.assigns[:room_id]
     |> RoomServer.find()
-    |> RoomServer.execute_command(socket.assigns[:monster_ref], "l", [])
+    |> RoomServer.enqueue_command(socket.assigns[:monster_ref], "l", [])
 
     [first | rest] = ChannelHistory.fetch(socket.assigns[:character], 1000)
 
@@ -87,8 +90,6 @@ defmodule ApathyDriveWeb.MUDChannel do
       |> assign(:level, level)
 
     update_room(socket)
-
-    send(self(), :execute_command)
 
     {:noreply, socket}
   end
@@ -211,55 +212,10 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:command_finished, command}, socket) do
-    if command == socket.assigns[:current_command] do
-      send(self(), :execute_command)
-      socket = assign(socket, :current_command, nil)
-      {:noreply, socket}
-    else
-      {:noreply, socket}
-    end
-  end
-
-  def handle_info(:execute_command, socket) do
-    if socket.assigns[:current_command] do
-      # already executing a command, do nothing
-      {:noreply, socket}
-    else
-      case :queue.out(socket.assigns[:commands]) do
-        {:empty, _commands} ->
-          {:noreply, socket}
-
-        {{:value, {command, args}}, commands} ->
-          socket.assigns[:room_id]
-          |> RoomServer.find()
-          |> RoomServer.execute_command(socket.assigns[:monster_ref], command, args)
-          |> case do
-            :ok ->
-              socket =
-                socket
-                |> assign(:commands, commands)
-
-              {:noreply, socket}
-
-            :too_tired ->
-              socket =
-                socket
-                |> assign(:commands, commands)
-                |> assign(:current_command, {command, args})
-
-              {:noreply, socket}
-
-            :not_here ->
-              # raise "Character sent command to a room they are not in"
-              {:noreply, socket}
-          end
-      end
-    end
-  end
-
   def handle_in("command", %{}, socket) do
-    socket = add_command_to_queue(socket, {"l", []})
+    # socket = add_command_to_queue(socket, {"l", []})
+
+    socket = execute_command(socket, "l", [])
 
     {:noreply, socket}
   end
@@ -267,11 +223,14 @@ defmodule ApathyDriveWeb.MUDChannel do
   def handle_in("command", message, socket) do
     case String.split(message) do
       [command | arguments] ->
-        socket = add_command_to_queue(socket, {command, arguments})
+        # socket = add_command_to_queue(socket, {command, arguments})
+
+        execute_command(socket, command, arguments)
         {:noreply, socket}
 
       [] ->
-        socket = add_command_to_queue(socket, {"l", []})
+        # socket = add_command_to_queue(socket, {"l", []})
+        socket = execute_command(socket, "l", [])
         {:noreply, socket}
     end
   end
@@ -302,16 +261,21 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
-  defp add_command_to_queue(socket, command) do
-    if :queue.len(socket.assigns[:commands]) > 10 do
-      send_scroll(socket, "<p>Why don't you slow down for a few seconds?</p>")
-      socket
-    else
-      unless socket.assigns[:current_command] do
-        send(self(), :execute_command)
-      end
+  defp execute_command(socket, command, args) do
+    Logger.info("command received: #{inspect({command, args})}")
 
-      assign(socket, :commands, :queue.in(command, socket.assigns[:commands]))
+    socket.assigns[:room_id]
+    |> RoomServer.find()
+    |> RoomServer.enqueue_command(socket.assigns[:monster_ref], command, args)
+    |> case do
+      :ok ->
+        Logger.info("command enqueued #{inspect({command, args})}")
+        {:noreply, socket}
+
+      :not_here ->
+        Logger.info("command sent to wrong room!")
+        # raise "Character sent command to a room they are not in"
+        {:noreply, socket}
     end
   end
 

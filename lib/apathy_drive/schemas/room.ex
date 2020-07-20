@@ -162,6 +162,9 @@ defmodule ApathyDrive.Room do
     if mobile = room.mobiles[mobile_ref] do
       room =
         case fun.(room, mobile) do
+          {:noreply, %Room{} = updated_room} ->
+            updated_room
+
           %Room{} = updated_room ->
             updated_room
 

@@ -10,7 +10,8 @@ defmodule ApathyDrive.Command do
     Match,
     Mobile,
     Room,
-    RoomServer
+    RoomServer,
+    TimerManager
   }
 
   @callback execute(%Room{}, %Monster{}, list) :: %Room{}
@@ -93,6 +94,20 @@ defmodule ApathyDrive.Command do
     ]
   end
 
+  def enqueue(%Room{} = room, mobile_ref, command, arguments) do
+    Room.update_mobile(room, mobile_ref, fn _room, mobile ->
+      Logger.info("Enqueueing command for #{mobile.name}: #{inspect({command, arguments})}")
+
+      if :queue.len(mobile.commands) > 10 do
+        Mobile.send_scroll(mobile, "<p>Why don't you slow down for a few seconds?</p>")
+        mobile
+      else
+        update_in(mobile.commands, &:queue.in({command, arguments}, &1))
+        |> TimerManager.send_after({:execute_command, 0, {:execute_command, mobile_ref}})
+      end
+    end)
+  end
+
   def execute(%Room{} = room, monster_ref, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
 
@@ -103,7 +118,7 @@ defmodule ApathyDrive.Command do
 
     monster = room.mobiles[monster_ref]
 
-    Logger.info("#{monster && monster.name} command: #{full_command}")
+    Logger.info("#{monster && monster.name} executing command: #{full_command}")
 
     {time, response} =
       :timer.tc(fn ->

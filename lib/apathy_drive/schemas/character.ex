@@ -84,6 +84,8 @@ defmodule ApathyDrive.Character do
     field(:evil_points_last_reduced_at, :utc_datetime_usec)
     field(:exp_buffer_last_drained_at, :utc_datetime_usec)
 
+    field(:current_command, :any, virtual: true)
+    field(:commands, :any, virtual: true, default: :queue.new())
     field(:max_exp_buffer, :any, virtual: true)
     field(:last_auto_attack_at, :any, virtual: true)
     field(:resting, :boolean, virtual: true, default: false)
