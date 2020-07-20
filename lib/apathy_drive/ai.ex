@@ -11,7 +11,7 @@ defmodule ApathyDrive.AI do
           cure_poison(mobile, room) ||
           bless(mobile, room) ||
           backstab(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
-          auto_attack(mobile, room) || sneak(mobile, room) ||
+          auto_attack(mobile, room) || rest_or_sneak(mobile, room) ||
           move(mobile, room) || mobile
       end
     end)
@@ -19,16 +19,6 @@ defmodule ApathyDrive.AI do
 
   def move(%{} = mobile, %Room{} = room, force \\ false) do
     case should_move?(mobile, room) || force do
-      :hp ->
-        if Map.get(mobile, :auto_rest) && !Map.get(mobile, :resting) do
-          ApathyDrive.Commands.Rest.execute(room, mobile, silent: true).mobiles[mobile.ref]
-        end
-
-      :mana ->
-        if Map.get(mobile, :auto_rest) && !Map.get(mobile, :resting) do
-          ApathyDrive.Commands.Rest.execute(room, mobile, silent: true).mobiles[mobile.ref]
-        end
-
       true ->
         exits =
           case room.exits do
@@ -66,21 +56,52 @@ defmodule ApathyDrive.AI do
         end
 
       _other ->
-        if Map.get(mobile, :auto_rest) && !Map.get(mobile, :resting) do
-          ApathyDrive.Commands.Rest.execute(room, mobile, silent: true).mobiles[mobile.ref]
-        end
+        nil
     end
   end
 
-  def sneak(%Character{} = character, %Room{} = room) do
-    if character.auto_sneak && !character.sneaking &&
-         !Mobile.auto_attack_target(character, room) && !character.resting &&
+  def rest_or_sneak(%Character{} = character, %Room{} = room) do
+    if !Mobile.auto_attack_target(character, room) and
          !Aggression.enemies_present?(room, character) do
-      ApathyDrive.Commands.Sneak.execute(room, character, [])
+      case should_move?(character, room) do
+        :hp ->
+          if Map.get(character, :auto_rest) && !Map.get(character, :resting) do
+            ApathyDrive.Commands.Rest.execute(room, character, silent: true).mobiles[
+              character.ref
+            ]
+          end
+
+        :mana ->
+          if Map.get(character, :auto_rest) && !Map.get(character, :resting) do
+            ApathyDrive.Commands.Rest.execute(room, character, silent: true).mobiles[
+              character.ref
+            ]
+          end
+
+        _ ->
+          if character.auto_sneak do
+            cond do
+              character.mana == 1.0 && character.hp == 1.0 && !character.sneaking ->
+                ApathyDrive.Commands.Sneak.execute(room, character, [])
+
+              character.auto_roam && !character.sneaking ->
+                ApathyDrive.Commands.Sneak.execute(room, character, [])
+
+              :else ->
+                nil
+            end
+          else
+            if character.auto_rest && !character.resting && !character.sneaking do
+              ApathyDrive.Commands.Rest.execute(room, character, silent: true).mobiles[
+                character.ref
+              ]
+            end
+          end
+      end
     end
   end
 
-  def sneak(_mobile, %Room{}), do: nil
+  def rest_or_sneak(_mobile, %Room{}), do: nil
 
   def flee(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
@@ -543,7 +564,7 @@ defmodule ApathyDrive.AI do
 
   defp passable?(_room, _room_exit, _mobile), do: false
 
-  defp should_move?(%ApathyDrive.Character{auto_roam: true} = character, room) do
+  defp should_move?(%ApathyDrive.Character{} = character, room) do
     cond do
       !is_nil(Mobile.auto_attack_target(character, room)) ->
         :fighting
@@ -558,7 +579,7 @@ defmodule ApathyDrive.AI do
         :energy
 
       :else ->
-        true
+        !!character.auto_roam
     end
   end
 

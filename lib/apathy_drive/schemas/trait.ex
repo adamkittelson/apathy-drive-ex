@@ -162,7 +162,8 @@ defmodule ApathyDrive.Trait do
             "Passive",
             "Learn",
             "OnUse",
-            "toggle"
+            "toggle",
+            "cooldown"
           ] ->
             "replace"
 

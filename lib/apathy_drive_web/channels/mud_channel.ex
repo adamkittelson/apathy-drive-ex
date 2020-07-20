@@ -251,6 +251,7 @@ defmodule ApathyDriveWeb.MUDChannel do
               {:noreply, socket}
 
             :not_here ->
+              raise "Character sent command to a room they are not in"
               {:noreply, socket}
           end
       end
