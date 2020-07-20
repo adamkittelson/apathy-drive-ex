@@ -79,7 +79,13 @@ defmodule ApathyDrive do
       room_ids = Enum.uniq(perm_ids ++ lair_ids ++ shop_room_ids)
 
       room_ids
-      |> Enum.each(&ApathyDrive.RoomServer.load/1)
+      |> Enum.each(fn room_id ->
+        Process.sleep(100)
+
+        Task.start(fn ->
+          ApathyDrive.RoomServer.load(room_id)
+        end)
+      end)
     end)
   end
 end
