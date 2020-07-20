@@ -359,6 +359,7 @@ defmodule ApathyDrive.Room do
         [Access.key!(:energy)],
         &max(0, &1 - ApathyDrive.Commands.Move.energy_cost(mobile))
       )
+      |> Map.put(:current_command, nil)
 
     room = put_in(room.mobiles[mobile.ref], mobile)
 

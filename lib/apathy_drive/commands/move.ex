@@ -299,7 +299,6 @@ defmodule ApathyDrive.Commands.Move do
           else
             character
           end
-          |> Map.put(:current_command, nil)
 
         destination_id
         |> RoomServer.find()

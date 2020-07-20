@@ -471,7 +471,11 @@ defmodule ApathyDrive.RoomServer do
     room =
       Room.update_mobile(room, mobile_ref, fn room, mobile ->
         if mobile.current_command do
-          TimerManager.send_after(mobile, {:execute_command, 0, {:execute_command, mobile_ref}})
+          Logger.info(
+            "#{mobile.name} already executing command: #{inspect(mobile.current_command)}"
+          )
+
+          TimerManager.send_after(mobile, {:execute_command, 500, {:execute_command, mobile_ref}})
         else
           case :queue.out(mobile.commands) do
             {:empty, _commands} ->
