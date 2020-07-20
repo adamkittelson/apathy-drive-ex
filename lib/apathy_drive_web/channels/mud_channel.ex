@@ -215,7 +215,7 @@ defmodule ApathyDriveWeb.MUDChannel do
   def handle_in("command", %{}, socket) do
     # socket = add_command_to_queue(socket, {"l", []})
 
-    socket = execute_command(socket, "l", [])
+    execute_command(socket, "l", [])
 
     {:noreply, socket}
   end
@@ -230,7 +230,7 @@ defmodule ApathyDriveWeb.MUDChannel do
 
       [] ->
         # socket = add_command_to_queue(socket, {"l", []})
-        socket = execute_command(socket, "l", [])
+        execute_command(socket, "l", [])
         {:noreply, socket}
     end
   end
@@ -270,12 +270,10 @@ defmodule ApathyDriveWeb.MUDChannel do
     |> case do
       :ok ->
         Logger.info("command enqueued #{inspect({command, args})}")
-        {:noreply, socket}
 
       :not_here ->
         Logger.info("command sent to wrong room!")
         # raise "Character sent command to a room they are not in"
-        {:noreply, socket}
     end
   end
 
