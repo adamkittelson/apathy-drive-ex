@@ -905,8 +905,17 @@ defmodule ApathyDrive.Character do
     end
   end
 
-  def base_spell_damage(character, ability) do
-    weapon = weapon(character)
+  def best_spell_weapon(character, ability) do
+    weapon =
+      character.equipment
+      |> Enum.filter(&(&1.type == "Weapon"))
+      |> Enum.max_by(&base_spell_damage(character, ability, &1), fn -> nil end)
+
+    weapon || weapon(character)
+  end
+
+  def base_spell_damage(character, ability, weapon \\ nil) do
+    weapon = weapon || best_spell_weapon(character, ability)
 
     weapon_ability = Character.ability_for_weapon(character, weapon)
 
