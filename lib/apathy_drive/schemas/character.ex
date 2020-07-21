@@ -959,41 +959,6 @@ defmodule ApathyDrive.Character do
     dummy_checkpw()
   end
 
-  def decrement_highest_attribute(%Character{} = character) do
-    {attribute, level} =
-      Enum.max_by(character.attribute_levels, fn {_attribute, level} -> level end)
-
-    if level > 1 do
-      modifier = (100 + character.race.race.exp_modifier) / 100
-
-      exp = Level.exp_at_level(level - 1, modifier)
-
-      character =
-        character
-        |> update_in([:race], fn character_race ->
-          character_race
-          |> Ecto.Changeset.change(%{"#{attribute}_experience": exp})
-          |> Repo.update!()
-        end)
-        |> set_attribute_levels()
-
-      message =
-        "<p><span class='yellow'>Your #{attribute} decreased to #{Map.get(character, attribute)}!</span></p>"
-
-      Repo.insert!(%ChannelHistory{
-        character_id: character.id,
-        message: message
-      })
-
-      Character.send_chat(
-        character,
-        message
-      )
-    else
-      character
-    end
-  end
-
   def used_experience(%Character{} = character) do
     character.classes
     |> Enum.reduce(0, fn character_class, used_experience ->
@@ -2051,10 +2016,10 @@ defmodule ApathyDrive.Character do
           |> Map.put(:timers, %{})
           |> Character.load_race()
           |> Ecto.Changeset.change(%{
-            missing_limbs: []
+            missing_limbs: [],
+            exp_buffer: div(character.exp_buffer, 2)
           })
           |> Repo.update!()
-          |> Character.decrement_highest_attribute()
           |> Character.load_limbs()
           |> Character.load_traits()
           |> Character.set_attribute_levels()
