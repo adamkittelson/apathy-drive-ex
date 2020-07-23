@@ -998,4 +998,46 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, "bloodstone")
     end
   end
+
+  def random_item_4106(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 10 ->
+        # shadow cloak
+        give_item(room, mobile_ref, 420)
+
+      roll <= 20 ->
+        # embroidered black gauntlet
+        give_item(room, mobile_ref, 432)
+
+      roll <= 30 ->
+        # bloodstained shortsword
+        give_item(room, mobile_ref, 204)
+
+      roll <= 40 ->
+        # black chainmail hauberk
+        give_item(room, mobile_ref, 179)
+
+      roll <= 50 ->
+        # sacrificial robes
+        give_item(room, mobile_ref, 202)
+
+      roll <= 60 ->
+        # opal ring
+        give_item(room, mobile_ref, 435)
+
+      roll <= 70 ->
+        # ebony greataxe
+        give_item(room, mobile_ref, 226)
+
+      roll <= 80 ->
+        # black scimitar
+        give_item(room, mobile_ref, 458)
+
+      roll <= 100 ->
+        # yellow potion
+        give_item(room, mobile_ref, 467)
+    end
+  end
 end
