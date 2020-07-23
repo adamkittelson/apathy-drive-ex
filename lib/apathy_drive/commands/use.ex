@@ -234,7 +234,18 @@ defmodule ApathyDrive.Commands.Use do
           |> Repo.get(item.instance_id)
           |> Repo.delete!()
 
-          Mobile.send_scroll(character, "<p>#{item.destruct_message}</p>")
+          if item.destruct_message do
+            Mobile.send_scroll(character, "<p>#{item.destruct_message}</p>")
+          end
+
+          if item.room_destruct_message do
+            message =
+              item.room_destruct_message
+              |> ApathyDrive.Text.interpolate(%{"user" => character})
+
+            Room.send_scroll(room, "<p>#{message}</p>", [character])
+          end
+
           Character.load_items(character)
         end
       else

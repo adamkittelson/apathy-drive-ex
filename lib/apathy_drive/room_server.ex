@@ -578,8 +578,8 @@ defmodule ApathyDrive.RoomServer do
 
       %Item{delete_at: delete_at, instance_id: id} = item ->
         if DateTime.compare(DateTime.utc_now(), delete_at) == :gt do
-          if item.room_destruct_message do
-            Room.send_scroll(room, item.room_destruct_message)
+          if item.destruct_message do
+            Room.send_scroll(room, "<p>#{item.destruct_message}</p>")
           end
 
           Repo.delete!(%ItemInstance{id: id})
