@@ -959,14 +959,25 @@ defmodule ApathyDrive.Ability do
             Character.load_items(caster)
           else
             if script = ability.traits["Script"] do
-              room
-              |> Room.update_mobile(caster_ref, fn room, caster ->
-                Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
-                  room,
-                  caster.ref,
-                  item
+              if is_integer(script) do
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='red'>Not Implemented: Script##{script} for Ability##{
+                    ability.id
+                  } (#{ability.name})</span>"
                 )
-              end)
+
+                room
+              else
+                room
+                |> Room.update_mobile(caster_ref, fn room, caster ->
+                  Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
+                    room,
+                    caster.ref,
+                    item
+                  )
+                end)
+              end
             else
               item = Systems.Effect.add(item, effects, :timer.seconds(ability.duration))
 
@@ -1761,13 +1772,24 @@ defmodule ApathyDrive.Ability do
 
     room =
       if script = ability.traits["Script"] do
-        Room.update_mobile(room, caster_ref, fn room, caster ->
-          Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
-            room,
-            caster.ref,
-            target_ref
+        if is_integer(script) do
+          Mobile.send_scroll(
+            room.mobiles[caster_ref],
+            "<p><span class='red'>Not Implemented: Script##{script} for Ability##{ability.id} (#{
+              ability.name
+            })</span>"
           )
-        end)
+
+          room
+        else
+          Room.update_mobile(room, caster_ref, fn room, caster ->
+            Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
+              room,
+              caster.ref,
+              target_ref
+            )
+          end)
+        end
       else
         room
       end
