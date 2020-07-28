@@ -423,24 +423,30 @@ defmodule ApathyDrive.Room do
   end
 
   def start_timer(%Room{timer: timer} = room) do
-    if next_timer = Room.next_timer(room) do
-      send_at = max(0, trunc(next_timer - DateTime.to_unix(DateTime.utc_now(), :millisecond)))
+    {:messages, messages} = :erlang.process_info(self(), :messages)
 
-      cond do
-        is_nil(timer) ->
-          timer = Process.send_after(self(), :tick, send_at)
-          Map.put(room, :timer, timer)
-
-        Process.read_timer(timer) >= send_at ->
-          Process.cancel_timer(timer)
-          timer = Process.send_after(self(), :tick, send_at)
-          Map.put(room, :timer, timer)
-
-        :else ->
-          room
-      end
-    else
+    if :tick in messages do
       room
+    else
+      if next_timer = Room.next_timer(room) do
+        send_at = max(0, trunc(next_timer - DateTime.to_unix(DateTime.utc_now(), :millisecond)))
+
+        cond do
+          is_nil(timer) ->
+            timer = Process.send_after(self(), :tick, send_at)
+            Map.put(room, :timer, timer)
+
+          Process.read_timer(timer) >= send_at ->
+            Process.cancel_timer(timer)
+            timer = Process.send_after(self(), :tick, send_at)
+            Map.put(room, :timer, timer)
+
+          :else ->
+            room
+        end
+      else
+        room
+      end
     end
   end
 

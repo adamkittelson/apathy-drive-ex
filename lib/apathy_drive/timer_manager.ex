@@ -9,7 +9,9 @@ defmodule ApathyDrive.TimerManager do
 
     timers = Map.put(timers, name, %{send_at: send_at, message: term})
 
-    send(self(), :start_timer)
+    {:messages, messages} = :erlang.process_info(self(), :messages)
+
+    unless :start_timer in messages, do: send(self(), :start_timer)
 
     Map.put(entity, :timers, timers)
   end
