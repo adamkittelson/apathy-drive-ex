@@ -120,7 +120,7 @@ defmodule ApathyDrive.Commands.System do
             Enum.each(items, fn match ->
               Mobile.send_scroll(
                 character,
-                "<p>-- #{Item.colored_name(match, character: character)} (#{match.id})</p>"
+                "<p>-- #{Mobile.colored_name(match)} (#{match.id})</p>"
               )
             end)
 
