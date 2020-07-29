@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Character, Mobile, Monster, Room}
+  alias ApathyDrive.{Character, Mobile, Monster, Room, Trait}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
@@ -148,16 +148,20 @@ defmodule ApathyDrive.Aggression do
   end
 
   def attack_target(%{} = attacker, %{ref: ref} = _intruder) do
-    effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
+    if Trait.get_cached(attacker, "Aggro") != ref do
+      effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
 
-    attacker =
-      attacker
-      |> Systems.Effect.add(effect, 60_000)
+      attacker =
+        attacker
+        |> Systems.Effect.add(effect, 60_000)
 
-    if Map.has_key?(attacker, :attack_target) and attacker.attack_target == nil do
-      attacker
-      |> Map.put(:attack_target, ref)
-      |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+      if Map.has_key?(attacker, :attack_target) and attacker.attack_target == nil do
+        attacker
+        |> Map.put(:attack_target, ref)
+        |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
+      else
+        attacker
+      end
     else
       attacker
     end

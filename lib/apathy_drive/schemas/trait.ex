@@ -32,6 +32,14 @@ defmodule ApathyDrive.Trait do
       write_concurrency: true
     ])
 
+    :ets.new(:ability_cache, [
+      :named_table,
+      :set,
+      :public,
+      read_concurrency: true,
+      write_concurrency: true
+    ])
+
     {:ok, state, {:continue, :populate_traits}}
   end
 
@@ -42,6 +50,16 @@ defmodule ApathyDrive.Trait do
     |> Enum.each(fn trait ->
       :ets.insert(:traits, {trait.name, trait.merge_by})
     end)
+
+    send(self(), :bust_cache)
+
+    {:noreply, state}
+  end
+
+  def handle_info(:bust_cache, state) do
+    bust_cache()
+
+    Process.send_after(self(), :bust_cache, :timer.minutes(5))
 
     {:noreply, state}
   end
@@ -139,6 +157,30 @@ defmodule ApathyDrive.Trait do
       end
     end
   end
+
+  def get_cached(mobile, ability) do
+    key = {mobile.ref, ability}
+
+    case :ets.lookup(:ability_cache, key) do
+      [{^key, value}] ->
+        value
+
+      _ ->
+        value = Systems.Effect.effect_bonus(mobile, ability) || 0
+        :ets.insert(:ability_cache, {key, value})
+        value
+    end
+  end
+
+  def bust_cache() do
+    :ets.delete_all_objects(:ability_cache)
+  end
+
+  def bust_cache(%{ref: ref}) do
+    :ets.match_delete(:ability_cache, {{ref, :_}, :_})
+  end
+
+  def bust_cache(_), do: :noop
 
   def merge_by(trait_name) do
     case :ets.lookup(:traits, trait_name) do

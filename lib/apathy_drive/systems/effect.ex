@@ -46,6 +46,7 @@ defmodule Systems.Effect do
         entity
         |> Map.put(:effects, effects)
         |> Map.put(:last_effect_key, last_effect + 1)
+        |> Map.put(:bust_cache, true)
 
       _count ->
         if effect["toggle"] do
@@ -59,7 +60,8 @@ defmodule Systems.Effect do
     end
   end
 
-  def add_effect(%{effects: effects, last_effect_key: last_effect} = entity, key, effect) do
+  def add_effect(%{effects: effects, last_effect_key: last_effect} = entity, key, effect)
+      when map_size(effect) > 0 do
     if Map.has_key?(effect, "application_message") do
       Mobile.send_scroll(
         entity,
@@ -76,7 +78,10 @@ defmodule Systems.Effect do
     entity
     |> Map.put(:effects, effects)
     |> Map.put(:last_effect_key, last_effect + 1)
+    |> Map.put(:bust_cache, true)
   end
+
+  def add_effect(%{} = entity, _key, _effect), do: entity
 
   def remove_oldest_stack(%{effects: effects} = entity, stack_key) do
     oldest =
@@ -189,7 +194,9 @@ defmodule Systems.Effect do
 
         # if Map.has_key?(entity, :ref), do: send(self(), {:think, entity.ref})
 
-        Map.put(entity, :effects, Map.delete(effects, key))
+        entity
+        |> Map.put(:effects, Map.delete(effects, key))
+        |> Map.put(:bust_cache, true)
 
       _ ->
         found_key =

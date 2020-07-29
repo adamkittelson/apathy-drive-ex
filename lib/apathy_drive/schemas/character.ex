@@ -84,6 +84,7 @@ defmodule ApathyDrive.Character do
     field(:evil_points_last_reduced_at, :utc_datetime_usec)
     field(:exp_buffer_last_drained_at, :utc_datetime_usec)
 
+    field(:bust_cache, :boolean, virtual: true, default: false)
     field(:current_command, :any, virtual: true)
     field(:commands, :any, virtual: true, default: :queue.new())
     field(:max_exp_buffer, :any, virtual: true)
@@ -1719,7 +1720,7 @@ defmodule ApathyDrive.Character do
 
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
-      Systems.Effect.effect_bonus(character, ability) || 0
+      Trait.get_cached(character, ability)
     end
 
     def accuracy_at_level(character, _level, _room) do
@@ -2178,7 +2179,10 @@ defmodule ApathyDrive.Character do
           character = room.mobiles[character.ref]
 
           if character do
+            if character.bust_cache, do: Trait.bust_cache(character)
+
             character
+            |> Map.put(:bust_cache, false)
             |> Regeneration.regenerate(room)
             |> TimerManager.send_after(
               {:heartbeat, ApathyDrive.Regeneration.tick_time(character),

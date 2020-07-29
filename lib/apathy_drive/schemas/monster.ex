@@ -25,7 +25,8 @@ defmodule ApathyDrive.Monster do
     RoomMonster,
     RoomServer,
     Text,
-    TimerManager
+    TimerManager,
+    Trait
   }
 
   require Logger
@@ -65,6 +66,7 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
+    field(:bust_cache, :boolean, virtual: true, default: false)
     field(:last_auto_attack_at, :any, virtual: true)
     field(:owner_id, :integer, virtual: true)
     field(:leader, :any, virtual: true)
@@ -222,9 +224,7 @@ defmodule ApathyDrive.Monster do
       |> load_abilities()
       |> load_traits()
       |> load_drops()
-      |> TimerManager.send_after(
-        {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, ref}}
-      )
+      |> TimerManager.send_after({:heartbeat, 100, {:heartbeat, ref}})
     end
   end
 
@@ -259,9 +259,7 @@ defmodule ApathyDrive.Monster do
     |> load_abilities()
     |> load_traits()
     |> load_drops()
-    |> TimerManager.send_after(
-      {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, ref}}
-    )
+    |> TimerManager.send_after({:heartbeat, 100, {:heartbeat, ref}})
   end
 
   def spawnable?(%Monster{next_spawn_at: nil}, _now), do: true
@@ -418,7 +416,7 @@ defmodule ApathyDrive.Monster do
 
   defimpl ApathyDrive.Mobile, for: Monster do
     def ability_value(monster, ability) do
-      Systems.Effect.effect_bonus(monster, ability)
+      Trait.get_cached(monster, ability)
     end
 
     def accuracy_at_level(monster, level, _room) do
@@ -807,7 +805,10 @@ defmodule ApathyDrive.Monster do
       end)
       |> Ability.unbalance(monster.ref)
       |> Room.update_mobile(monster.ref, fn room, monster ->
+        if monster.bust_cache, do: Trait.bust_cache(monster)
+
         monster
+        |> Map.put(:bust_cache, false)
         |> Regeneration.regenerate(room)
         |> TimerManager.send_after(
           {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, monster.ref}}
