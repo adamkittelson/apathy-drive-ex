@@ -1343,7 +1343,12 @@ defmodule ApathyDrive.Ability do
     caster = room.mobiles[caster_ref]
     target = room.mobiles[target_ref]
 
-    lowbie? = target.__struct__ == Character and target.level <= 5
+    lowbie? =
+      if target do
+        target.__struct__ == Character and target.level <= 5
+      else
+        false
+      end
 
     if caster && target && !lowbie? do
       if crit = crit_for_damage(target.ability_shift, ability) do
