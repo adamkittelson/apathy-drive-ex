@@ -6,7 +6,8 @@ defmodule ApathyDrive.AI do
       if mobile.casting && mobile.casting != :auto_attack do
         flee(mobile, room) || mobile
       else
-        drain(mobile, room) || heal(mobile, room) || freedom(mobile, room) || flee(mobile, room) ||
+        drain(mobile, room) || heal(mobile, room) || shield(mobile, room) || freedom(mobile, room) ||
+          flee(mobile, room) ||
           cure_blindness(mobile, room) ||
           cure_poison(mobile, room) ||
           bless(mobile, room) ||
@@ -203,6 +204,50 @@ defmodule ApathyDrive.AI do
       end
     end)
   end
+
+  def shield(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
+
+  def shield(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
+    members_to_bless = pets_and_party(room, mobile)
+
+    member_to_bless =
+      if Map.get(mobile, :auto_pet_casting) == false do
+        members_to_bless
+        |> Enum.reject(&(&1.__struct__ == Monster))
+      else
+        members_to_bless
+      end
+      |> Enum.random()
+
+    ability =
+      mobile
+      |> Ability.bless_abilities(member_to_bless)
+      |> Enum.reject(&(!&1.auto))
+      |> Enum.filter(&(Map.has_key?(&1.traits, "Bubble") or Map.has_key?(&1.traits, "Bubble%")))
+      |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
+      |> reject_item_if_monster(mobile)
+      |> reject_elemental_if_no_lore(mobile)
+      |> reject_light_spells_if_it_isnt_dark(room)
+      |> reject_target_has_ability_passively(member_to_bless)
+      |> random_ability(mobile)
+
+    case ability do
+      nil ->
+        nil
+
+      %Ability{targets: "weapon"} = ability ->
+        if weapon = Character.weapon(mobile) do
+          unless Systems.Effect.max_stacks?(weapon, ability) do
+            Ability.execute(room, mobile.ref, ability, weapon)
+          end
+        end
+
+      ability ->
+        Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
+    end
+  end
+
+  def shield(%{} = _mobile, %Room{}), do: nil
 
   def heal(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
