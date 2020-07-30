@@ -596,7 +596,7 @@ defmodule ApathyDrive.Commands.Help do
 
               Map.put(traits, "Damage", damage)
             else
-              traits
+              Map.put(traits, "Damage", damage)
             end
 
           damage = traits["Damage"]

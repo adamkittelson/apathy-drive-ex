@@ -560,14 +560,17 @@ defmodule ApathyDrive.Commands.Look do
   def display_trait(character, item, {"OnHit", abilities}, indent) do
     on_hit = Systems.Effect.effect_bonus(item, "OnHit%")
 
+    names =
+      abilities
+      |> Enum.map(& &1.name)
+      |> ApathyDrive.Commands.Inventory.to_sentence()
+
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{on_hit || "100"}% chance of:</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{on_hit || "100"}% chance of:</span> <span class='dark-cyan'>#{
+        names
+      }</span></p>"
     )
-
-    Enum.each(abilities, fn ability ->
-      display_traits(character, Map.put(item, :effects, %{1 => ability.traits}), 2)
-    end)
   end
 
   def display_trait(character, _item, {"Damage", list}, indent) when is_list(list) do
