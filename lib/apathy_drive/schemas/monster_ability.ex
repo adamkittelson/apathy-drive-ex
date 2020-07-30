@@ -36,6 +36,7 @@ defmodule ApathyDrive.MonsterAbility do
         ability =
           put_in(ability.traits, AbilityTrait.load_traits(id))
           |> Map.put(:chance, chance)
+          |> Map.put(:level, ability.level || 1)
 
         ability =
           case AbilityDamageType.load_damage(id) do
