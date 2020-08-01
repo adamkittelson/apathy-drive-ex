@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Scripts.MadAttack do
-  alias ApathyDrive.{Mobile, Room}
+  alias ApathyDrive.{Ability, Mobile, Room}
 
   def execute(%Room{} = room, mobile_ref, _target_ref) do
     rounds = Enum.random(2..7)
@@ -30,7 +30,7 @@ defmodule ApathyDrive.Scripts.MadAttack do
           mobile = Map.put(mobile, :energy, mobile.max_energy)
           room = put_in(room.mobiles[mobile_ref].energy, mobile.max_energy)
 
-          ApathyDrive.AI.auto_attack(mobile, room) || room
+          attack_round(mobile, room) || room
         else
           room
         end
@@ -38,5 +38,50 @@ defmodule ApathyDrive.Scripts.MadAttack do
         room
       end
     end)
+  end
+
+  def attack_round(mobile, room) do
+    if target_ref = Mobile.auto_attack_target(mobile, room) do
+      if mobile.energy == mobile.max_energy && !mobile.casting do
+        {attacks, _energy} =
+          Enum.reduce(1..5, {[], mobile.energy}, fn _n, {attacks, energy} ->
+            attack = Mobile.attack_ability(mobile)
+
+            if attack && attack.energy <= energy do
+              {[attack | attacks], energy - attack.energy}
+            else
+              {attacks, energy}
+            end
+          end)
+
+        if Enum.any?(attacks) do
+          Enum.reduce(attacks, room, fn attack, room ->
+            Ability.execute(room, mobile.ref, attack, [target_ref])
+          end)
+        end
+      end
+    else
+      case mobile do
+        %{attack_target: target} = mobile when not is_nil(target) ->
+          Mobile.send_scroll(
+            mobile,
+            "<p><span class='dark-yellow'>*Combat Off*</span></p>"
+          )
+
+          mobile =
+            mobile
+            |> Map.put(:attack_target, nil)
+
+          room = put_in(room.mobiles[mobile.ref], mobile)
+
+          Room.update_hp_bar(room, mobile.ref)
+          Room.update_mana_bar(room, mobile.ref)
+
+          room
+
+        _mobile ->
+          nil
+      end
+    end
   end
 end
