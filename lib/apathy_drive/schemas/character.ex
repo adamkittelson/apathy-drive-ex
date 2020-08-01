@@ -1479,6 +1479,7 @@ defmodule ApathyDrive.Character do
       perception: Mobile.perception_at_level(character, character.level, room),
       accuracy: Mobile.accuracy_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level),
+      lockpicking: ApathyDrive.Commands.Pick.skill(character),
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
       physical_resistance:

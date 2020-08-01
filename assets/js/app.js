@@ -176,6 +176,7 @@ chan.on("update score", function (score_data) {
   update_score_attribute("mana-regen", _.padEnd(score_data.mana_regen, 10));
   update_score_attribute("block", score_data.block);
   update_score_attribute("stealth", score_data.stealth);
+  update_score_attribute("lockpicking", score_data.lockpicking);
   update_score_attribute("strength", _.padEnd(score_data.strength, 7))
   update_score_attribute("agility", _.padEnd(score_data.agility, 10));
   update_score_attribute("perception", score_data.perception);

@@ -20,6 +20,23 @@ defmodule ApathyDrive.Commands.Pick do
     |> pick(mobile, room)
   end
 
+  def skill(%{} = mobile) do
+    modifier = lockpicking_modifier(mobile)
+    agility = Mobile.attribute_at_level(mobile, :agility, mobile.level)
+    intellect = Mobile.attribute_at_level(mobile, :intellect, mobile.level)
+
+    level =
+      if mobile.level <= 15 do
+        mobile.level * 2
+      else
+        (trunc((mobile.level - 15) / 2) + 15) * 2
+      end
+
+    base = trunc((level * 5 + (agility + intellect)) * 2 / 7)
+
+    trunc(base * modifier)
+  end
+
   defp pick(nil, %{} = mobile, %Room{} = room) do
     Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
     room
@@ -36,8 +53,7 @@ defmodule ApathyDrive.Commands.Pick do
 
       pick?(
         room_exit,
-        Mobile.attribute_at_level(mobile, :agility, mobile.level),
-        lockpicking_modifier(mobile)
+        mobile
       ) ->
         mirror_pick!(room_exit, room.id)
         Mobile.send_scroll(mobile, "<p>You successfully unlocked the #{name}.</p>")
@@ -87,10 +103,10 @@ defmodule ApathyDrive.Commands.Pick do
     skill / mobile.level
   end
 
-  defp pick?(%{"kind" => "Key"}, _agility, _modifier), do: false
+  defp pick?(%{"kind" => "Key"}, _mobile), do: false
 
-  defp pick?(%{"difficulty" => difficulty}, agility, lockpicking) do
-    agility * lockpicking + difficulty >= :rand.uniform(100)
+  defp pick?(%{"difficulty" => difficulty}, mobile) do
+    skill(mobile) + difficulty >= :rand.uniform(100)
   end
 
   defp mirror_pick!(%{"destination" => destination} = room_exit, room_id) do
