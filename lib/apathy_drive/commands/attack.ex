@@ -46,7 +46,6 @@ defmodule ApathyDrive.Commands.Attack do
   def attack(%{} = character, %{ref: target_ref}) do
     character
     |> Map.put(:attack_target, target_ref)
-    |> Map.put(:casting, :auto_attack)
     |> Mobile.send_scroll(
       "<p><span class='dark-red'>You interrupt your other ability.</span></p>"
     )

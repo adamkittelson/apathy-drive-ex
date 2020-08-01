@@ -1,9 +1,9 @@
 defmodule ApathyDrive.AI do
-  alias ApathyDrive.{Ability, Aggression, Character, Mobile, Monster, Party, Room}
+  alias ApathyDrive.{Ability, Aggression, Character, Mobile, Monster, Party, Regeneration, Room}
 
   def think(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn room, mobile ->
-      if mobile.casting && mobile.casting != :auto_attack do
+      if mobile.casting do
         flee(mobile, room) || mobile
       else
         drain(mobile, room) || heal(mobile, room) || shield(mobile, room) || freedom(mobile, room) ||
@@ -104,8 +104,6 @@ defmodule ApathyDrive.AI do
 
   def rest_or_sneak(_mobile, %Room{}), do: nil
 
-  def flee(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
-
   def flee(%{} = mobile, %Room{} = room) do
     if should_flee?(mobile, room) do
       exits =
@@ -128,8 +126,6 @@ defmodule ApathyDrive.AI do
       end
     end
   end
-
-  def drain(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
   def drain(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
@@ -205,8 +201,6 @@ defmodule ApathyDrive.AI do
     end)
   end
 
-  def shield(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
-
   def shield(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
     members_to_bless = pets_and_party(room, mobile)
 
@@ -249,8 +243,6 @@ defmodule ApathyDrive.AI do
 
   def shield(%{} = _mobile, %Room{}), do: nil
 
-  def heal(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
-
   def heal(%{} = mobile, %Room{} = room) do
     injured_party_members = pets_and_party(room, mobile)
 
@@ -281,8 +273,6 @@ defmodule ApathyDrive.AI do
       end
     end
   end
-
-  def bless(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
   def bless(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
     if !Aggression.enemies_present?(room, mobile) do
@@ -441,8 +431,6 @@ defmodule ApathyDrive.AI do
     end
   end
 
-  def curse(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
-
   def curse(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
 
@@ -468,8 +456,6 @@ defmodule ApathyDrive.AI do
   end
 
   def backstab(_mobile, %Room{}), do: nil
-
-  def attack(%{casting: :auto_attack} = _mobile, %Room{}), do: nil
 
   def attack(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
@@ -520,27 +506,15 @@ defmodule ApathyDrive.AI do
 
   def auto_attack(mobile, room, target_ref \\ nil) do
     if target_ref = target_ref || Mobile.auto_attack_target(mobile, room) do
-      if mobile.energy == mobile.max_energy && (!mobile.casting or mobile.casting == :auto_attack) do
-        {attacks, _energy} =
-          Enum.reduce(1..5, {[], mobile.energy}, fn _n, {attacks, energy} ->
-            attack = Mobile.attack_ability(mobile)
+      attack = Mobile.attack_ability(mobile)
 
-            if attack && attack.energy <= energy do
-              {[attack | attacks], energy - attack.energy}
-            else
-              {attacks, energy}
-            end
+      if attack do
+        if mobile.energy >= attack.energy && !mobile.casting && auto_attack?(mobile) do
+          room
+          |> Room.update_mobile(mobile.ref, fn _room, mobile ->
+            Map.put(mobile, :last_auto_attack_at, DateTime.utc_now())
           end)
-
-        if Enum.any?(attacks) do
-          room =
-            Room.update_mobile(room, mobile.ref, fn _room, mobile ->
-              Map.put(mobile, :casting, nil)
-            end)
-
-          Enum.reduce(attacks, room, fn attack, room ->
-            Ability.execute(room, mobile.ref, attack, [target_ref])
-          end)
+          |> Ability.execute(mobile.ref, attack, [target_ref])
         end
       end
     else
@@ -567,6 +541,13 @@ defmodule ApathyDrive.AI do
           nil
       end
     end
+  end
+
+  def auto_attack?(%{last_auto_attack_at: nil}), do: true
+
+  def auto_attack?(%{last_auto_attack_at: time} = mobile) do
+    DateTime.diff(DateTime.utc_now(), time, :millisecond) >=
+      div(Regeneration.round_length(mobile), 5)
   end
 
   def random_ability([ability], mobile) do
@@ -619,9 +600,6 @@ defmodule ApathyDrive.AI do
 
       character.mana < 0.5 ->
         :mana
-
-      character.energy < character.max_energy ->
-        :energy
 
       :else ->
         !!character.auto_roam
