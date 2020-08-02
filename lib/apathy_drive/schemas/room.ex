@@ -189,6 +189,7 @@ defmodule ApathyDrive.Room do
         Enum.each(room.mobiles, fn {ref, _mobile} ->
           Room.update_hp_bar(room, ref)
           Room.update_mana_bar(room, ref)
+          Room.update_energy_bar(room, ref)
         end)
 
       _ ->
