@@ -153,7 +153,6 @@ chan.on("update hp bar", function (data) {
 
 chan.on("update mob list", function (data) {
   $("#moblist").html(data.html);
-  adjustChatTop();
 })
 
 chan.on("show talents", function (score_data) {
