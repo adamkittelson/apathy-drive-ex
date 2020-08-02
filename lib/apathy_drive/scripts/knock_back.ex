@@ -1,8 +1,8 @@
 defmodule ApathyDrive.Scripts.KnockBack do
   alias ApathyDrive.Room
 
-  def execute(%Room{} = room, mobile_ref, _target_ref) do
-    Room.update_mobile(room, mobile_ref, fn room, mobile ->
+  def execute(%Room{} = room, _mobile_ref, target_ref) do
+    Room.update_mobile(room, target_ref, fn room, mobile ->
       exits =
         case room.exits do
           nil ->
