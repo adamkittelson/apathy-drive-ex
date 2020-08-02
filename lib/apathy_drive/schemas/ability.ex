@@ -1077,8 +1077,6 @@ defmodule ApathyDrive.Ability do
               end)
             end)
 
-          Room.update_moblist(room)
-
           room =
             Room.update_mobile(room, caster.ref, fn _room, caster ->
               caster =
@@ -1127,8 +1125,6 @@ defmodule ApathyDrive.Ability do
             else
               room
             end
-
-          Room.update_moblist(room)
 
           room =
             if instance_id = ability.traits["DestroyItem"] do
