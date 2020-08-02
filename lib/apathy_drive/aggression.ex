@@ -147,21 +147,22 @@ defmodule ApathyDrive.Aggression do
     end)
   end
 
-  def attack_target(%{} = attacker, %{ref: ref} = _intruder) do
+  def attack_target(%Monster{} = attacker, %{ref: ref} = _intruder) do
     if Trait.get_cached(attacker, "Aggro") != ref do
       effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
 
-      attacker =
-        attacker
-        |> Systems.Effect.add(effect, 60_000)
+      attacker
+      |> Systems.Effect.add(effect, 60_000)
+    else
+      attacker
+    end
+  end
 
-      if Map.has_key?(attacker, :attack_target) and attacker.attack_target == nil do
-        attacker
-        |> Map.put(:attack_target, ref)
-        |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
-      else
-        attacker
-      end
+  def attack_target(%Character{} = attacker, %{ref: ref} = _intruder) do
+    if Map.has_key?(attacker, :attack_target) and attacker.attack_target == nil do
+      attacker
+      |> Map.put(:attack_target, ref)
+      |> Mobile.send_scroll("<p><span class='dark-yellow'>*Combat Engaged*</span></p>")
     else
       attacker
     end
