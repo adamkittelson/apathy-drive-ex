@@ -21,20 +21,22 @@ defmodule ApathyDrive.Commands.Pick do
   end
 
   def skill(%{} = mobile) do
-    modifier = lockpicking_modifier(mobile)
+    skill_level = lockpicking_skill(mobile)
     agility = Mobile.attribute_at_level(mobile, :agility, mobile.level)
     intellect = Mobile.attribute_at_level(mobile, :intellect, mobile.level)
 
-    level =
-      if mobile.level <= 15 do
-        mobile.level * 2
-      else
-        (trunc((mobile.level - 15) / 2) + 15) * 2
-      end
+    cond do
+      skill_level == 0 ->
+        0
 
-    base = trunc((level * 5 + (agility + intellect)) * 2 / 7)
+      skill_level <= 15 ->
+        level = skill_level * 2
+        trunc((level * 5 + (agility + intellect)) * 2 / 7)
 
-    trunc(base * modifier)
+      :else ->
+        level = (trunc((skill_level - 15) / 2) + 15) * 2
+        trunc((level * 5 + (agility + intellect)) * 2 / 7)
+    end
   end
 
   defp pick(nil, %{} = mobile, %Room{} = room) do
@@ -90,17 +92,14 @@ defmodule ApathyDrive.Commands.Pick do
     room
   end
 
-  defp lockpicking_modifier(mobile) do
-    skill =
-      case mobile.skills["lockpicking"] do
-        %{level: level} ->
-          level
+  defp lockpicking_skill(mobile) do
+    case mobile.skills["lockpicking"] do
+      %{level: level} ->
+        level
 
-        _ ->
-          0
-      end
-
-    skill / mobile.level
+      _ ->
+        0
+    end
   end
 
   defp pick?(%{"kind" => "Key"}, _mobile), do: false
