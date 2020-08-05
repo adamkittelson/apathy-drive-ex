@@ -4,12 +4,16 @@ defmodule ApathyDrive.Commands.Read do
   alias ApathyDrive.{
     Ability,
     Character,
+    CharacterAbility,
+    ClassAbility,
     Item,
     ItemInstance,
     Match,
     Repo,
     Room
   }
+
+  require Ecto.Query
 
   def keywords, do: ["read"]
 
@@ -37,6 +41,18 @@ defmodule ApathyDrive.Commands.Read do
 
             room
 
+          already_learned?(character, ability) ->
+            message = "<p>You already know #{ability.name}.</p>"
+            Mobile.send_scroll(character, message)
+
+            room
+
+          wrong_class?(character, ability) ->
+            message = "<p>You cannot learn #{ability.name}.</p>"
+
+            Mobile.send_scroll(character, message)
+            room
+
           !Ability.appropriate_alignment?(ability, character) ->
             message = "<p>You don't have the disposition to learn #{ability.name}.</p>"
 
@@ -55,27 +71,50 @@ defmodule ApathyDrive.Commands.Read do
     end
   end
 
+  def already_learned?(_character, nil), do: false
+
+  def already_learned?(character, ability) do
+    !!Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id)
+  end
+
+  def wrong_class?(_character, nil), do: true
+
+  def wrong_class?(character, ability) do
+    class_ids =
+      character.classes
+      |> Enum.map(& &1.class_id)
+      |> Enum.into(MapSet.new())
+
+    ability_classes =
+      ClassAbility
+      |> Ecto.Query.where([ca], ca.ability_id == ^ability.id)
+      |> Ecto.Query.select([:class_id])
+      |> Repo.all()
+      |> Enum.map(& &1.class_id)
+      |> Enum.into(MapSet.new())
+
+    IO.puts("class_ids: #{inspect(class_ids)}, ability_classes: #{inspect(ability_classes)}")
+
+    !(Enum.any?(class_ids) and Enum.any?(MapSet.intersection(class_ids, ability_classes)))
+  end
+
   defp learn_ability(room, character, scroll, ability) do
     Room.update_mobile(room, character.ref, fn _room, character ->
-      effect = %{
-        "Grant" => [ability.id],
-        "StatusMessage" => "You know how to cast #{ability.name}!",
-        "RemoveMessage" => "You forget how to cast #{ability.name}."
-      }
-
-      Mobile.send_scroll(character, "<p>As you read the #{scroll.name} it crumbles to dust!</p>")
-
       Mobile.send_scroll(
         character,
-        "<p><span class='blue'>You know how to cast #{ability.name}!</span></p>"
+        "<p>You read #{scroll.name} and learn the spell #{ability.name}.</span></p>"
       )
+
+      Mobile.send_scroll(character, "<p>Its magic used, the #{scroll.name} disintegrates.</p>")
+
+      %CharacterAbility{character_id: character.id, ability_id: ability.id, learned: true}
+      |> Repo.insert!()
 
       ItemInstance
       |> Repo.get!(scroll.instance_id)
       |> Repo.delete!()
 
       character
-      |> Systems.Effect.add(effect, :timer.hours(1))
       |> Character.load_abilities()
       |> Character.load_items()
     end)

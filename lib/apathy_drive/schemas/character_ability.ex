@@ -4,6 +4,8 @@ defmodule ApathyDrive.CharacterAbility do
 
   schema "characters_abilities" do
     field :auto, :boolean
+    field :learned, :boolean
+
     belongs_to(:ability, Ability)
     belongs_to(:character, Character)
   end

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.ClassAbility do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Ability, AbilityAttribute, Class}
+  alias ApathyDrive.{Ability, AbilityAttribute, CharacterAbility, Class}
 
   schema "classes_abilities" do
     field(:level, :integer)
@@ -15,15 +15,25 @@ defmodule ApathyDrive.ClassAbility do
     |> cast(params, ~w(damage_type_id kind potency)a)
   end
 
-  def abilities_at_level(class_id, level) do
+  def abilities_at_level(character, class_id, level) do
     leveled_abilities =
       ApathyDrive.ClassAbility
       |> Ecto.Query.where(
         [ss],
-        ss.class_id == ^class_id and ss.level <= ^level and ss.auto_learn == true
+        ss.class_id == ^class_id and ss.level <= ^level
       )
       |> Ecto.Query.preload([:ability])
       |> Repo.all()
+      |> Enum.filter(fn class_ability ->
+        if class_ability.auto_learn do
+          true
+        else
+          !!Repo.get_by(CharacterAbility,
+            character_id: character.id,
+            ability_id: class_ability.ability_id
+          )
+        end
+      end)
       |> Enum.map(fn class_ability ->
         class_ability = put_in(class_ability.ability.level, class_ability.level)
         class_ability = put_in(class_ability.ability.class_id, class_id)

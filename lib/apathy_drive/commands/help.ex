@@ -357,7 +357,7 @@ defmodule ApathyDrive.Commands.Help do
       ApathyDrive.ClassAbility
       |> Ecto.Query.where(
         [ss],
-        ss.class_id == ^class_id and not is_nil(ss.level) and ss.auto_learn == true
+        ss.class_id == ^class_id and not is_nil(ss.level)
       )
       |> Repo.all()
       |> Enum.group_by(& &1.level)
@@ -406,7 +406,7 @@ defmodule ApathyDrive.Commands.Help do
       |> Enum.each(fn {level, abilities} ->
         abilities =
           abilities
-          |> Enum.map(&Ability.find(&1.ability_id).name)
+          |> Enum.map(&ability_name(&1))
           |> ApathyDrive.Commands.Inventory.to_sentence()
 
         level =
@@ -540,8 +540,17 @@ defmodule ApathyDrive.Commands.Help do
       ClassAbility
       |> Ecto.Query.where(ability_id: ^ability.id)
       |> Repo.all()
-      |> Enum.map(fn ca ->
-        Repo.get(Class, ca.class_id).name
+      |> Enum.map(fn %{class_id: id, auto_learn: auto_learn} ->
+        name = Repo.get(Class, id).name
+
+        color =
+          if auto_learn do
+            "dark-magenta"
+          else
+            "dark-cyan"
+          end
+
+        "<span class='#{color}'>#{name}</span>"
       end)
 
     if Enum.any?(classes) do
@@ -806,4 +815,17 @@ defmodule ApathyDrive.Commands.Help do
   defp massage_trait({"StatusMessage", _}, _character), do: nil
   defp massage_trait({"RemoveMessage", _}, _character), do: nil
   defp massage_trait({name, value}, _character), do: {name, inspect(value)}
+
+  defp ability_name(%{ability_id: id, auto_learn: auto_learn}) do
+    name = Ability.find(id).name
+
+    color =
+      if auto_learn do
+        "dark-magenta"
+      else
+        "dark-cyan"
+      end
+
+    "<span class='#{color}'>#{name}</span>"
+  end
 end

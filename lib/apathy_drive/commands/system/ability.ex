@@ -47,9 +47,12 @@ defmodule ApathyDrive.Commands.System.Ability do
 
   def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
         "add",
-        "class" | trait
+        "class",
+        class,
+        level,
+        auto_learn
       ]) do
-    add_class(room, character, trait)
+    add_class(room, character, class, level, auto_learn)
 
     room
   end
@@ -234,10 +237,9 @@ defmodule ApathyDrive.Commands.System.Ability do
     Help.execute(room, character, [ability_name])
   end
 
-  defp add_class(room, character, [class | level]) do
+  defp add_class(room, character, class, level, auto_learn) do
     level =
       level
-      |> Enum.join()
       |> Integer.parse()
       |> case do
         {level, ""} ->
@@ -247,18 +249,32 @@ defmodule ApathyDrive.Commands.System.Ability do
           other
       end
 
+    auto_learn =
+      case auto_learn do
+        "true" ->
+          true
+
+        "false" ->
+          false
+      end
+
     ability = character.editing
 
-    class = Repo.get_by(Class, name: class)
+    class = Class.match_by_name(class)
 
     cond do
       is_nil(class) ->
         Mobile.send_scroll(character, "<p>No class by that name was found.</p>")
 
       is_integer(level) ->
-        on_conflict = [set: [level: level]]
+        on_conflict = [set: [level: level, auto_learn: auto_learn]]
 
-        %ClassAbility{ability_id: ability.id, class_id: class.id, level: level, auto_learn: true}
+        %ClassAbility{
+          ability_id: ability.id,
+          class_id: class.id,
+          level: level,
+          auto_learn: auto_learn
+        }
         |> Repo.insert(on_conflict: on_conflict, conflict_target: [:ability_id, :class_id])
 
         ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
@@ -274,7 +290,7 @@ defmodule ApathyDrive.Commands.System.Ability do
 
     ability = character.editing
 
-    if class = Repo.get_by(Class, name: class) do
+    if class = Class.match_by_name(class) do
       if ca = Repo.get_by(ClassAbility, class_id: class.id, ability_id: ability.id) do
         Repo.delete!(ca)
         ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)

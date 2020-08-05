@@ -305,7 +305,9 @@ defmodule ApathyDrive.Character do
 
     class_abilities =
       Enum.reduce(character.classes, [], fn %{class_id: class_id, level: level}, abilities ->
-        Enum.uniq(ApathyDrive.ClassAbility.abilities_at_level(class_id, level) ++ abilities)
+        Enum.uniq(
+          ApathyDrive.ClassAbility.abilities_at_level(character, class_id, level) ++ abilities
+        )
       end)
 
     skill_abilities =
