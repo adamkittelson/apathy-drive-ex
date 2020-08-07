@@ -999,6 +999,129 @@ defmodule ApathyDrive.Scripts do
     end
   end
 
+  def random_item_4102(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 4 ->
+        # moonstone
+        give_item(room, mobile_ref, 889)
+
+      roll <= 9 ->
+        # glowing broadsword
+        give_item(room, mobile_ref, 361)
+
+      roll <= 12 ->
+        # starsteel greatsword
+        room = give_item(room, mobile_ref, 450)
+        character = room.mobiles[mobile_ref]
+
+        # if starsteel greatsword could not be spawned because it is a limited item
+        # then give a red dragon boots instead
+        if !Enum.find(character.inventory ++ room.items, &(&1.id == 450)) do
+          # red dragon boots
+          give_item(room, mobile_ref, 1434)
+        else
+          room
+        end
+
+      roll <= 13 ->
+        # emerald
+        give_item(room, mobile_ref, 903)
+
+      roll <= 15 ->
+        # serpent armbands
+        give_item(room, mobile_ref, 202)
+
+      roll <= 16 ->
+        # moonstone
+        give_item(room, mobile_ref, 436)
+
+      roll <= 17 ->
+        # glowing warhammer
+        give_item(room, mobile_ref, 116)
+
+      roll <= 18 ->
+        # adamantite bracer
+        give_item(room, mobile_ref, 423)
+
+      roll <= 19 ->
+        # scroll of dragonfire
+        give_item(room, mobile_ref, 549)
+
+      roll <= 25 ->
+        # adamantite chainmail
+        give_item(room, mobile_ref, 419)
+
+      roll <= 30 ->
+        # red enamled scalemail
+        give_item(room, mobile_ref, 415)
+
+      roll <= 32 ->
+        # ebony greataxe
+        give_item(room, mobile_ref, 226)
+
+      roll <= 34 ->
+        # silver bracelet
+        give_item(room, mobile_ref, 426)
+
+      roll <= 40 ->
+        # fingerbone bracelet
+        give_item(room, mobile_ref, 428)
+
+      roll <= 49 ->
+        # crimson cloak
+        give_item(room, mobile_ref, 421)
+
+      roll <= 51 ->
+        # agate stone
+        give_item(room, mobile_ref, 882)
+
+      roll <= 54 ->
+        # hematite stone
+        give_item(room, mobile_ref, 883)
+
+      roll <= 59 ->
+        # obsidian stone
+        give_item(room, mobile_ref, 885)
+
+      roll <= 65 ->
+        # emerald
+        give_item(room, mobile_ref, 903)
+
+      roll <= 70 ->
+        # diamond
+        give_item(room, mobile_ref, 902)
+
+      roll <= 72 ->
+        # tattered white bible
+        give_item(room, mobile_ref, 1869)
+
+      roll <= 75 ->
+        # starsteel shortsword
+        give_item(room, mobile_ref, 1904)
+
+      roll <= 78 ->
+        # blood-stained manual
+        give_item(room, mobile_ref, 1876)
+
+      roll <= 80 ->
+        # starsteel scimitar
+        give_item(room, mobile_ref, 272)
+
+      roll <= 85 ->
+        random_item_889(room, mobile_ref)
+
+      roll <= 95 ->
+        random_item_898(room, mobile_ref)
+
+      roll <= 100 ->
+        room
+        |> random_item_898(mobile_ref)
+        |> random_item_898(mobile_ref)
+    end
+  end
+
   def random_item_4106(room, mobile_ref) do
     roll = :rand.uniform(100)
 
