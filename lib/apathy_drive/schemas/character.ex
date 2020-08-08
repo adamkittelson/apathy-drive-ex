@@ -1625,8 +1625,16 @@ defmodule ApathyDrive.Character do
     max(exp_to_level / (target_time * 60), 1.0)
   end
 
+  def max_exp_buffer(character) do
+    minutes = 4 + character.level
+
+    rate = drain_rate(character.level)
+
+    max(trunc(rate * minutes * 60), character.max_exp_buffer || 1)
+  end
+
   def update_exp_bar(%Character{socket: socket} = character) do
-    max_buffer = max(character.max_exp_buffer || 1, character.exp_buffer)
+    max_buffer = max_exp_buffer(character)
 
     percent = min(100, character.exp_buffer / max_buffer * 100)
 
