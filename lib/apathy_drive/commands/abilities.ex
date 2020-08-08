@@ -7,7 +7,6 @@ defmodule ApathyDrive.Commands.Abilities do
 
   def execute(%Room{} = room, %Character{} = character, _arguments) do
     display_abilities(character)
-    display_auto_abilities(character)
     room
   end
 
@@ -19,13 +18,12 @@ defmodule ApathyDrive.Commands.Abilities do
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-magenta'>Command  Ability Name</span>             <span class='dark-magenta'>Command  Ability Name</span></p>"
+      "<p><span class='dark-magenta'>Mana   Command  Ability Name</span>                  <span class='dark-magenta'>Mana   Command  Ability Name</span></p>"
     )
 
     character.abilities
     |> Map.values()
     |> Enum.sort_by(& &1.name)
-    |> Enum.reject(&(&1.auto == true))
     |> Enum.map(&format_ability/1)
     |> Enum.chunk_every(2)
     |> Enum.each(fn
@@ -40,44 +38,24 @@ defmodule ApathyDrive.Commands.Abilities do
     end)
   end
 
-  def format_ability(%{name: name, command: command}) do
+  def format_ability(%{name: name, mana: mana, command: command, auto: auto}) do
     command =
       command
       |> to_string
       |> String.pad_trailing(8)
 
-    name = String.pad_trailing(name, 25)
+    mana_cost = String.pad_trailing(to_string(mana), 6)
 
-    "<span class='dark-cyan'>#{command} #{name}</span>"
-  end
+    name = String.pad_trailing(name, 30)
 
-  def display_auto_abilities(%Character{} = character) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='white'>You will automatically cast the following abilities:</span></p>"
-    )
+    name =
+      if auto do
+        "<span class='dark-magenta'>#{name}</span>"
+      else
+        name
+      end
 
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-magenta'>Command  Ability Name</span>             <span class='dark-magenta'>Command  Ability Name</span></p>"
-    )
-
-    character.abilities
-    |> Map.values()
-    |> Enum.sort_by(& &1.name)
-    |> Enum.filter(&(&1.auto == true))
-    |> Enum.map(&format_ability/1)
-    |> Enum.chunk_every(2)
-    |> Enum.each(fn
-      [ability1, ability2] ->
-        Mobile.send_scroll(
-          character,
-          "<p>#{ability1}#{ability2}</p>"
-        )
-
-      [ability] ->
-        Mobile.send_scroll(character, "<p>#{ability}</p>")
-    end)
+    "<span class='dark-cyan'>#{mana_cost} #{command} #{name}</span>"
   end
 
   def emoji(true), do: "✅"
