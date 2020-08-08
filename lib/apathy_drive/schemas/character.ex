@@ -1155,35 +1155,15 @@ defmodule ApathyDrive.Character do
             end
           end)
 
-        # don't drain exp to classes that have enough to level
-        drain_targets =
-          Enum.reject(character.classes, fn class ->
-            exp_to_level =
-              ApathyDrive.Commands.Train.required_experience(
-                character,
-                class.class_id,
-                class.level + 1
-              )
-
-            exp_to_level <= 0
-          end)
-
-        target_count = length(drain_targets)
+        target_count = length(character.classes)
 
         {character, drain_remaining} =
-          drain_targets
+          character.classes
           |> Enum.sort_by(& &1.level)
           |> Enum.with_index(1)
           |> Enum.reduce({character, drain_total}, fn {class, n}, {character, drain_remaining} ->
             if n == target_count do
-              tnl =
-                ApathyDrive.Commands.Train.required_experience(
-                  character,
-                  class.class_id,
-                  class.level + 1
-                )
-
-              exp = min(drain_remaining, tnl)
+              exp = drain_remaining
 
               character = update_in(character.classes, &List.delete(&1, class))
 
@@ -1198,14 +1178,7 @@ defmodule ApathyDrive.Character do
             else
               rate = Character.exp_to_drain(character, class.level)
 
-              tnl =
-                ApathyDrive.Commands.Train.required_experience(
-                  character,
-                  class.class_id,
-                  class.level + 1
-                )
-
-              exp = Enum.min([rate, drain_total / target_count, tnl])
+              exp = min(rate, drain_total / target_count)
 
               character = update_in(character.classes, &List.delete(&1, class))
 
