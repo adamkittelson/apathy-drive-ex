@@ -2110,18 +2110,14 @@ defmodule ApathyDrive.Ability do
   def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
     ability =
       if caster.__struct__ == Character && ability.mana && ability.mana > 0 do
-        base_damage = Character.base_spell_damage(caster, ability)
-
-        min_damage = trunc(base_damage * 0.8)
-        max_damage = trunc(base_damage * 1.2)
-
         count = length(damages)
+        bonus_damage = Character.base_spell_damage(caster, ability) * 0.1 / count
 
         damages =
           Enum.map(damages, fn element ->
             element
-            |> Map.put(:min, div(min_damage, count))
-            |> Map.put(:max, div(max_damage, count))
+            |> Map.update(:min, 0, &trunc(&1 + bonus_damage))
+            |> Map.update(:max, 0, &trunc(&1 + bonus_damage))
           end)
 
         put_in(ability.traits["Damage"], damages)

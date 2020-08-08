@@ -464,9 +464,7 @@ defmodule ApathyDrive.Commands.Help do
     if ability.mana && ability.mana > 0 && ability.kind != "passive" do
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-green'>Mana Cost:</span> <span class='dark-cyan'>#{
-          Ability.mana_cost(character, ability)
-        }</span></p>"
+        "<p><span class='dark-green'>Mana Cost:</span> <span class='dark-cyan'>#{ability.mana}</span></p>"
       )
     end
 
@@ -589,18 +587,14 @@ defmodule ApathyDrive.Commands.Help do
         damage ->
           traits =
             if ability.mana && ability.mana > 0 do
-              base_damage = Character.base_spell_damage(character, ability)
-
-              min_damage = trunc(base_damage * 0.8)
-              max_damage = trunc(base_damage * 1.2)
-
               count = length(damage)
+              bonus_damage = Character.base_spell_damage(character, ability) * 0.1 / count
 
               damage =
                 Enum.map(damage, fn element ->
                   element
-                  |> Map.put(:min, div(min_damage, count))
-                  |> Map.put(:max, div(max_damage, count))
+                  |> Map.update(:min, 0, &trunc(&1 + bonus_damage))
+                  |> Map.update(:max, 0, &trunc(&1 + bonus_damage))
                 end)
 
               Map.put(traits, "Damage", damage)
