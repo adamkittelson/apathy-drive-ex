@@ -39,17 +39,7 @@ defmodule ApathyDrive.Commands.Status do
           |> Enum.max()
       end
 
-    classes =
-      Enum.reject(character.classes, fn class ->
-        exp_to_level =
-          ApathyDrive.Commands.Train.required_experience(
-            character,
-            class.class_id,
-            class.level + 1
-          )
-
-        exp_to_level <= 0
-      end)
+    classes = character.classes
 
     target_count = length(classes)
 
@@ -69,9 +59,8 @@ defmodule ApathyDrive.Commands.Status do
 
           drain_rate = min(class_drain_rate, max_drain_rate / target_count)
 
-          {exp_to_level, trunc(exp_to_level / drain_rate)}
+          {max(0, exp_to_level), max(0, trunc(exp_to_level / drain_rate))}
         end)
-        |> Enum.reject(fn {_exp_to_level, time_to_level} -> 0 == time_to_level end)
         |> Enum.min_by(fn {_exp_to_level, time_to_level} -> time_to_level end, fn -> {0, 0} end)
       else
         {0, 0}
