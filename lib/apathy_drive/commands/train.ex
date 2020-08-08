@@ -48,6 +48,20 @@ defmodule ApathyDrive.Commands.Train do
     new_exp - current_exp
   end
 
+  def required_level(character, class_id) do
+    CharacterClass
+    |> Repo.get_by(%{character_id: character.id, class_id: class_id})
+    |> Repo.preload([:class])
+    |> case do
+      %CharacterClass{} ->
+        # already training this class, no requirement
+        0
+
+      nil ->
+        length(character.classes) * 25
+    end
+  end
+
   def train(room, character, class, force \\ false)
 
   def train(room, character, %Class{} = class, force) do
@@ -62,7 +76,7 @@ defmodule ApathyDrive.Commands.Train do
           0
       end
 
-    required_exp = required_experience(character, class.id)
+    required_exp = trunc(required_experience(character, class.id))
 
     cond do
       !Trainer.trainer?(room) or !room.trainer_id ->
@@ -101,6 +115,13 @@ defmodule ApathyDrive.Commands.Train do
 
         message = "<p>You don't have the #{money} required to train!</p>"
         Mobile.send_scroll(character, message)
+        room
+
+      character.level < required_level(character, class.id) ->
+        level = required_level(character, class.id)
+        message = "<p>You must be at least level #{level} to train an additional class!</p>"
+        Mobile.send_scroll(character, message)
+
         room
 
       :else ->
