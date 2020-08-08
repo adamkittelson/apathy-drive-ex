@@ -538,7 +538,7 @@ defmodule ApathyDrive.Commands.Help do
       ClassAbility
       |> Ecto.Query.where(ability_id: ^ability.id)
       |> Repo.all()
-      |> Enum.map(fn %{class_id: id, auto_learn: auto_learn} ->
+      |> Enum.map(fn %{class_id: id, auto_learn: auto_learn, level: level} ->
         name = Repo.get(Class, id).name
 
         color =
@@ -548,7 +548,7 @@ defmodule ApathyDrive.Commands.Help do
             "dark-cyan"
           end
 
-        "<span class='#{color}'>#{name}</span>"
+        "<span class='#{color}'>#{name} (#{level})</span>"
       end)
 
     if Enum.any?(classes) do
