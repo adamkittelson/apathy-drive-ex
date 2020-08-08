@@ -631,6 +631,13 @@ defmodule ApathyDrive.Item do
     |> Enum.member?(ability_name)
   end
 
+  def useable_by_character?(%Character{} = character, %Item{type: "Scroll"} = scroll) do
+    ability = Systems.Effect.effect_bonus(scroll, "Learn")
+
+    !ApathyDrive.Commands.Read.wrong_class?(character, ability) and
+      Ability.appropriate_alignment?(ability, character)
+  end
+
   def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
     class_ids =
       character.classes
@@ -677,6 +684,23 @@ defmodule ApathyDrive.Item do
 
   def too_powerful_for_character?(character, item) do
     too_high_level_for_character?(character, item)
+  end
+
+  def too_high_level_for_character?(character, %Item{type: "Scroll"} = scroll) do
+    ability = Systems.Effect.effect_bonus(scroll, "Learn")
+
+    levels =
+      ApathyDrive.ClassAbility
+      |> Ecto.Query.where(ability_id: ^ability.id)
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn ca, map ->
+        Map.put(map, ca.class_id, ca.level)
+      end)
+
+    !Enum.any?(character.classes, fn character_class ->
+      levels[character_class.class_id] &&
+        levels[character_class.class_id] <= character_class.level
+    end)
   end
 
   def too_high_level_for_character?(character, item) do
