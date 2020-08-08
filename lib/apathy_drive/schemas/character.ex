@@ -1915,14 +1915,14 @@ defmodule ApathyDrive.Character do
     end
 
     def die?(character) do
-      max_hp = Mobile.max_hp_at_level(character, character.level)
+      hp = Character.hp_at_level(character, character.level)
 
       missing_fatal_limb =
         character.limbs
         |> Map.values()
         |> Enum.any?(&(&1.fatal && &1.health <= 0))
 
-      max_hp <= 0 or character.hp <= 0 or missing_fatal_limb
+      hp <= 0 or missing_fatal_limb
     end
 
     def die(character, room) do
