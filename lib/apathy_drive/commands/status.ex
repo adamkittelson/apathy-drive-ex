@@ -11,23 +11,6 @@ defmodule ApathyDrive.Commands.Status do
   end
 
   def status(character) do
-    hp = Character.hp_at_level(character, character.level)
-    max_hp = Mobile.max_hp_at_level(character, character.level)
-
-    mp = Character.mana_at_level(character, character.level)
-    max_mp = Mobile.max_mana_at_level(character, character.level)
-
-    powerstone =
-      Enum.reduce(character.inventory, 0, fn item, powerstone ->
-        if "create powerstone" in item.enchantments do
-          item.max_uses + powerstone
-        else
-          powerstone
-        end
-      end)
-
-    max_mp = max_mp + powerstone
-
     max_level =
       case character.classes do
         [] ->
@@ -43,6 +26,8 @@ defmodule ApathyDrive.Commands.Status do
 
     target_count = length(classes)
 
+    max_drain_rate = Character.drain_rate(max_level)
+
     {exp, time_to_level} =
       if Enum.any?(classes) do
         classes
@@ -55,7 +40,6 @@ defmodule ApathyDrive.Commands.Status do
             )
 
           class_drain_rate = Character.drain_rate(character_class.level)
-          max_drain_rate = Character.drain_rate(max_level)
 
           drain_rate = min(class_drain_rate, max_drain_rate / target_count)
 
@@ -68,12 +52,15 @@ defmodule ApathyDrive.Commands.Status do
 
     ttl = ApathyDrive.Enchantment.formatted_time_left(time_to_level)
 
+    buffer_time =
+      ApathyDrive.Enchantment.formatted_time_left(trunc(character.exp_buffer / max_drain_rate))
+
     Mobile.send_scroll(
       character,
-      "<p><span class='cyan'>hp:</span> <span class='white'>#{hp}/#{max_hp}</span> " <>
-        "<span class='cyan'>mana:</span> <span class='white'>#{mp}/#{max_mp}</span> " <>
-        "<span class='cyan'>experience:</span> <span class='white'>#{trunc(exp)} (#{ttl})</span> " <>
-        "<span class='cyan'>mind:</span> #{mind(character)}"
+      "<p><span class='cyan'>experience:</span> <span class='white'>#{trunc(exp)} (#{ttl})</span> " <>
+        "<span class='cyan'>mind:</span> #{mind(character)}</span> <span class='white'>(#{
+          buffer_time
+        })</span>"
     )
   end
 
