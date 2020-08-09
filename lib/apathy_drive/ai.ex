@@ -10,9 +10,10 @@ defmodule ApathyDrive.AI do
           flee(mobile, room) ||
           cure_blindness(mobile, room) ||
           cure_poison(mobile, room) ||
+          rest_or_sneak(mobile, room) ||
           bless(mobile, room) ||
           backstab(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
-          auto_attack(mobile, room) || rest_or_sneak(mobile, room) ||
+          auto_attack(mobile, room) ||
           move(mobile, room) || mobile
       end
     end)
@@ -62,18 +63,20 @@ defmodule ApathyDrive.AI do
   end
 
   def rest_or_sneak(%Character{} = character, %Room{} = room) do
+    energy_pct = character.energy / character.max_energy * 100
+
     if !Mobile.auto_attack_target(character, room) and
          !Aggression.enemies_present?(room, character) do
       case should_move?(character, room) do
         :hp ->
-          if Map.get(character, :auto_rest) && !Map.get(character, :resting) do
+          if energy_pct == 100 && Map.get(character, :auto_rest) && !Map.get(character, :resting) do
             ApathyDrive.Commands.Rest.execute(room, character, silent: true).mobiles[
               character.ref
             ]
           end
 
         :mana ->
-          if Map.get(character, :auto_rest) && !Map.get(character, :resting) do
+          if energy_pct == 100 && Map.get(character, :auto_rest) && !Map.get(character, :resting) do
             ApathyDrive.Commands.Rest.execute(room, character, silent: true).mobiles[
               character.ref
             ]
@@ -92,7 +95,8 @@ defmodule ApathyDrive.AI do
                 nil
             end
           else
-            if character.auto_rest && !character.resting && !character.sneaking do
+            if energy_pct == 100 && character.auto_rest && !character.resting &&
+                 !character.sneaking do
               ApathyDrive.Commands.Rest.execute(room, character, silent: true).mobiles[
                 character.ref
               ]
@@ -276,41 +280,46 @@ defmodule ApathyDrive.AI do
 
   def bless(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
     if !Aggression.enemies_present?(room, mobile) do
-      members_to_bless = pets_and_party(room, mobile)
+      # sets combat off instead of casting all blesses first
+      if updated_room = auto_attack(mobile, room) do
+        updated_room
+      else
+        members_to_bless = pets_and_party(room, mobile)
 
-      member_to_bless =
-        if Map.get(mobile, :auto_pet_casting) == false do
-          members_to_bless
-          |> Enum.reject(&(&1.__struct__ == Monster))
-        else
-          members_to_bless
-        end
-        |> Enum.random()
-
-      ability =
-        mobile
-        |> Ability.bless_abilities(member_to_bless)
-        |> Enum.reject(&(!&1.auto))
-        |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
-        |> reject_item_if_monster(mobile)
-        |> reject_elemental_if_no_lore(mobile)
-        |> reject_light_spells_if_it_isnt_dark(room)
-        |> reject_target_has_ability_passively(member_to_bless)
-        |> random_ability(mobile)
-
-      case ability do
-        nil ->
-          nil
-
-        %Ability{targets: "weapon"} = ability ->
-          if weapon = Character.weapon(mobile) do
-            unless Systems.Effect.max_stacks?(weapon, ability) do
-              Ability.execute(room, mobile.ref, ability, weapon)
-            end
+        member_to_bless =
+          if Map.get(mobile, :auto_pet_casting) == false do
+            members_to_bless
+            |> Enum.reject(&(&1.__struct__ == Monster))
+          else
+            members_to_bless
           end
+          |> Enum.random()
 
-        ability ->
-          Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
+        ability =
+          mobile
+          |> Ability.bless_abilities(member_to_bless)
+          |> Enum.reject(&(!&1.auto))
+          |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
+          |> reject_item_if_monster(mobile)
+          |> reject_elemental_if_no_lore(mobile)
+          |> reject_light_spells_if_it_isnt_dark(room)
+          |> reject_target_has_ability_passively(member_to_bless)
+          |> random_ability(mobile)
+
+        case ability do
+          nil ->
+            nil
+
+          %Ability{targets: "weapon"} = ability ->
+            if weapon = Character.weapon(mobile) do
+              unless Systems.Effect.max_stacks?(weapon, ability) do
+                Ability.execute(room, mobile.ref, ability, weapon)
+              end
+            end
+
+          ability ->
+            Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
+        end
       end
     end
   end
