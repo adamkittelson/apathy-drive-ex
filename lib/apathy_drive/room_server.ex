@@ -467,6 +467,19 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
+  def handle_info(:reload, room) do
+    room.mobiles
+    |> Enum.each(fn
+      {_ref, %Character{socket: socket}} ->
+        send(socket, :reconnect)
+
+      {_ref, %{}} ->
+        :noop
+    end)
+
+    {:stop, :reload, room}
+  end
+
   def handle_info({:execute_command, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn room, mobile ->

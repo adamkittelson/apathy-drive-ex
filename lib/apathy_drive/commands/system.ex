@@ -37,6 +37,11 @@ defmodule ApathyDrive.Commands.System do
     end)
   end
 
+  def system(%Room{} = room, _character, ["reload"]) do
+    send(self(), :reload)
+    room
+  end
+
   def system(%Room{} = room, character, ["train" | args]) do
     ApathyDrive.Commands.Train.execute(room, character, args, true)
   end

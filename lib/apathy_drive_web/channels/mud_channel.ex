@@ -40,7 +40,7 @@ defmodule ApathyDriveWeb.MUDChannel do
             {:ok, socket}
         end
 
-      {:error, _} ->
+      {:error, error} ->
         {:error, %{reason: "unauthorized"}}
     end
   end
@@ -98,6 +98,10 @@ defmodule ApathyDriveWeb.MUDChannel do
     Phoenix.Channel.push(socket, "update score", data)
 
     {:noreply, socket}
+  end
+
+  def handle_info(:reconnect, socket) do
+    {:stop, :reconnect, socket}
   end
 
   def handle_info(:show_talent_tree, socket) do
