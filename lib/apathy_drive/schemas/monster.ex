@@ -780,42 +780,48 @@ defmodule ApathyDrive.Monster do
     end
 
     def heartbeat(%Monster{} = monster, %Room{} = room) do
-      room
-      |> Room.update_mobile(monster.ref, fn room, monster ->
-        cond do
-          monster.delete_at && :lt == DateTime.compare(monster.delete_at, DateTime.utc_now()) ->
-            Room.send_scroll(
-              room,
-              "<p><span class='dark-yellow'>#{monster.name} winks out of existence.</span></p>"
-            )
+      room =
+        room
+        |> Room.update_mobile(monster.ref, fn room, monster ->
+          cond do
+            monster.delete_at && :lt == DateTime.compare(monster.delete_at, DateTime.utc_now()) ->
+              Room.send_scroll(
+                room,
+                "<p><span class='dark-yellow'>#{monster.name} winks out of existence.</span></p>"
+              )
 
-            ApathyDrive.Repo.delete!(%RoomMonster{id: monster.room_monster_id})
+              ApathyDrive.Repo.delete!(%RoomMonster{id: monster.room_monster_id})
 
-            room = put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
+              room = put_in(room.mobiles, Map.delete(room.mobiles, monster.ref))
 
-            Room.update_moblist(room)
-            room
+              Room.update_moblist(room)
+              room
 
-          Mobile.die?(monster) ->
-            Mobile.die(monster, room)
+            Mobile.die?(monster) ->
+              Mobile.die(monster, room)
 
-          :else ->
-            monster
-        end
-      end)
-      |> Ability.unbalance(monster.ref)
-      |> Room.update_mobile(monster.ref, fn room, monster ->
-        if monster.bust_cache, do: Trait.bust_cache(monster)
+            :else ->
+              monster
+          end
+        end)
+        |> Ability.unbalance(monster.ref)
+        |> Room.update_mobile(monster.ref, fn room, monster ->
+          if monster.bust_cache, do: Trait.bust_cache(monster)
 
-        monster
-        |> Map.put(:bust_cache, false)
-        |> Regeneration.regenerate(room)
-        |> TimerManager.send_after(
-          {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, monster.ref}}
-        )
-        |> RoomServer.execute_casting_ability(room)
-      end)
-      |> ApathyDrive.Aggression.react(monster.ref)
+          monster
+          |> Map.put(:bust_cache, false)
+          |> Regeneration.regenerate(room)
+          |> TimerManager.send_after(
+            {:heartbeat, ApathyDrive.Regeneration.tick_time(monster), {:heartbeat, monster.ref}}
+          )
+          |> RoomServer.execute_casting_ability(room)
+        end)
+
+      if :rand.uniform(100) > 75 do
+        ApathyDrive.Aggression.react(room, monster.ref)
+      else
+        room
+      end
       |> AI.think(monster.ref)
     end
 
