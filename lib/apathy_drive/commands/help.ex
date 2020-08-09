@@ -797,7 +797,8 @@ defmodule ApathyDrive.Commands.Help do
   end
 
   defp massage_trait({"Powerstone", _value}, _character) do
-    {"Transforms a stone or gem into a mana granting powerstone", nil}
+    {"<span class='dark-cyan'>Transforms a stone or gem into a mana granting powerstone</span>",
+     nil}
   end
 
   defp massage_trait({"MR%", amount}, _character) do

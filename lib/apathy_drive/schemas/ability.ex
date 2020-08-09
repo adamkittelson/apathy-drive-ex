@@ -96,7 +96,8 @@ defmodule ApathyDrive.Ability do
     "armour",
     "stone",
     "rune",
-    "scroll"
+    "scroll",
+    "single global"
   ]
   @target_required_targets ["monster or single", "monster", "single"]
 
