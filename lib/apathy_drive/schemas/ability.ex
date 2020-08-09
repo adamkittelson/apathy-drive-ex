@@ -562,14 +562,11 @@ defmodule ApathyDrive.Ability do
     |> useable(mobile)
   end
 
-  def bless_abilities(%{abilities: abilities} = mobile, %{} = target) do
+  def bless_abilities(%{abilities: abilities} = mobile, %{} = _target) do
     abilities
     |> Map.values()
     |> List.flatten()
     |> Enum.filter(&(&1.kind == "blessing"))
-    |> Enum.reject(fn ability ->
-      removes_blessing?(target, ability)
-    end)
     |> useable(mobile)
     |> Enum.sort_by(&(-&1.level))
   end
