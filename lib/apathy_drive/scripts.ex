@@ -1163,4 +1163,53 @@ defmodule ApathyDrive.Scripts do
         give_item(room, mobile_ref, 467)
     end
   end
+
+  def random_item_4151(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 25 ->
+        room
+        |> random_item_898(mobile_ref)
+        |> random_item_898(mobile_ref)
+
+      # |> random_item_896(mobile_ref)
+      # |> random_item_896(mobile_ref)
+
+      roll <= 45 ->
+        room
+        |> random_item_895(mobile_ref)
+        |> random_item_898(mobile_ref)
+        |> random_item_874(mobile_ref)
+        |> random_item_886(mobile_ref)
+        |> random_item_898(mobile_ref)
+        |> random_item_889(mobile_ref)
+
+      roll <= 80 ->
+        room
+        |> random_item_886(mobile_ref)
+        |> random_item_889(mobile_ref)
+        |> random_item_889(mobile_ref)
+        |> random_item_889(mobile_ref)
+        |> random_item_886(mobile_ref)
+
+      roll <= 90 ->
+        room
+        |> random_item_2922(mobile_ref)
+        |> random_item_889(mobile_ref)
+        |> random_item_874(mobile_ref)
+        # |> random_item_896(mobile_ref)
+        |> random_item_898(mobile_ref)
+
+      roll <= 100 ->
+        room
+        |> random_item_898(mobile_ref)
+        |> random_item_895(mobile_ref)
+        |> random_item_898(mobile_ref)
+        |> random_item_874(mobile_ref)
+        |> random_item_886(mobile_ref)
+        |> random_item_889(mobile_ref)
+        |> random_item_2922(mobile_ref)
+    end
+  end
 end
