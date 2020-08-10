@@ -485,7 +485,7 @@ defmodule ApathyDrive.Commands.Help do
         100
       end
 
-    if ability.duration && !ability.kind == "passive" do
+    if ability.duration && ability.kind != "passive" do
       cond do
         ability.duration > 0 ->
           Mobile.send_scroll(

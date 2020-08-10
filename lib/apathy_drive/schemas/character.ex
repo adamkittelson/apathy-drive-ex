@@ -384,6 +384,7 @@ defmodule ApathyDrive.Character do
         [ability] = abilities
 
         update_in(character.abilities, fn abilities ->
+          ability = Map.put(ability, :attributes, AbilityAttribute.load_attributes(ability.id))
           Map.put(abilities, ability.command, ability)
         end)
       else

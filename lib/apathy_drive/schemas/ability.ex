@@ -2106,248 +2106,254 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_instant_trait({"Damage", damages}, %{} = target, ability, caster, room) do
-    ability =
-      if caster.__struct__ == Character && ability.mana && ability.mana > 0 do
-        count = length(damages)
-        bonus_damage = Character.base_spell_damage(caster, ability) * 0.1 / count
+    if ability.duration && ability.duration > 0 do
+      {caster, target}
+    else
+      ability =
+        if caster.__struct__ == Character && ability.mana && ability.mana > 0 do
+          count = length(damages)
+          bonus_damage = Character.base_spell_damage(caster, ability) * 0.1 / count
 
-        damages =
-          Enum.map(damages, fn element ->
-            element
-            |> Map.update(:min, 0, &trunc(&1 + bonus_damage))
-            |> Map.update(:max, 0, &trunc(&1 + bonus_damage))
-          end)
+          damages =
+            Enum.map(damages, fn element ->
+              element
+              |> Map.update(:min, 0, &trunc(&1 + bonus_damage))
+              |> Map.update(:max, 0, &trunc(&1 + bonus_damage))
+            end)
 
-        put_in(ability.traits["Damage"], damages)
-      else
-        ability
-      end
+          put_in(ability.traits["Damage"], damages)
+        else
+          ability
+        end
 
-    damages = ability.traits["Damage"]
+      damages = ability.traits["Damage"]
 
-    lore = Map.get(caster, :lore)
+      lore = Map.get(caster, :lore)
 
-    damages =
-      if ability.traits["Elemental"] && lore do
-        min =
-          damages
-          |> Enum.map(& &1.min)
-          |> Enum.sum()
+      damages =
+        if ability.traits["Elemental"] && lore do
+          min =
+            damages
+            |> Enum.map(& &1.min)
+            |> Enum.sum()
 
-        max =
-          damages
-          |> Enum.map(& &1.max)
-          |> Enum.sum()
+          max =
+            damages
+            |> Enum.map(& &1.max)
+            |> Enum.sum()
 
-        damages =
-          Enum.reduce(damages, [], fn type, damages ->
+          damages =
+            Enum.reduce(damages, [], fn type, damages ->
+              type =
+                type
+                |> Map.put(:max, max(1, div(max, 2)))
+                |> Map.put(:min, max(1, div(min, 2)))
+
+              [type | damages]
+            end)
+
+          lore_min =
+            min
+            |> div(2)
+            |> div(length(lore.damage_types))
+            |> max(1)
+
+          lore_max =
+            max
+            |> div(2)
+            |> div(length(lore.damage_types))
+            |> max(1)
+
+          Enum.reduce(lore.damage_types, damages, fn type, damages ->
             type =
               type
-              |> Map.put(:max, max(1, div(max, 2)))
-              |> Map.put(:min, max(1, div(min, 2)))
+              |> Map.put(:min, lore_min)
+              |> Map.put(:max, lore_max)
 
             [type | damages]
           end)
+        else
+          damages
+        end
 
-        lore_min =
-          min
-          |> div(2)
-          |> div(length(lore.damage_types))
-          |> max(1)
+      target =
+        target
+        |> Map.put(:ability_shift, 0)
 
-        lore_max =
-          max
-          |> div(2)
-          |> div(length(lore.damage_types))
-          |> max(1)
+      # divide bonus damage across all damage types so the bonus damage
+      # is not duplicated for each type
+      bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
+      bonus_damage = bonus_damage / length(damages)
 
-        Enum.reduce(lore.damage_types, damages, fn type, damages ->
-          type =
-            type
-            |> Map.put(:min, lore_min)
-            |> Map.put(:max, lore_max)
+      {caster, damage_percent, target} =
+        Enum.reduce(damages, {caster, 0, target}, fn
+          %{kind: "raw", min: min, max: max, damage_type: type},
+          {caster, damage_percent, target} ->
+            damage = Enum.random(min..max)
 
-          [type | damages]
+            damage = damage + bonus_damage
+
+            modifier = Mobile.ability_value(target, "Resist#{type}")
+
+            damage = damage * (1 - modifier / 100)
+
+            percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+            {caster, damage_percent + percent, target}
+
+          %{kind: "physical", min: min, max: max, damage_type: type},
+          {caster, damage_percent, target} ->
+            min = trunc(min)
+            max = trunc(max)
+
+            ability_damage = Enum.random(min..max)
+
+            resist = Mobile.physical_resistance_at_level(target, target.level)
+
+            resist_percent = Protection.percent_for_ac_mr(resist)
+
+            damage = ability_damage + bonus_damage
+
+            penetration = min(damage, ability.traits["PhysicalPenetration"])
+
+            damage = damage - penetration
+
+            damage = damage * resist_percent + penetration
+
+            modifier = Mobile.ability_value(target, "Resist#{type}")
+
+            damage = damage * (1 - modifier / 100)
+
+            percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+            {caster, damage_percent + percent, target}
+
+          %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent, target} ->
+            resist = Mobile.physical_resistance_at_level(target, target.level)
+
+            resist_percent = Protection.percent_for_ac_mr(resist)
+
+            damage = dmg + bonus_damage
+
+            damage = damage * resist_percent
+
+            modifier = Mobile.ability_value(target, "Resist#{type}")
+
+            damage = damage * (1 - modifier / 100)
+
+            percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+            {caster, damage_percent + percent, target}
+
+          %{kind: "magical", min: min, max: max, damage_type: type},
+          {caster, damage_percent, target} ->
+            min = trunc(min)
+            max = trunc(max)
+
+            ability_damage = Enum.random(min..max)
+
+            resist = Mobile.magical_resistance_at_level(target, target.level)
+
+            resist_percent = Protection.percent_for_ac_mr(resist)
+
+            damage = ability_damage + bonus_damage
+
+            penetration = min(damage, ability.traits["MagicalPenetration"])
+
+            damage = damage - penetration
+
+            damage = damage * resist_percent + penetration
+
+            modifier = Mobile.ability_value(target, "Resist#{type}")
+
+            damage = damage * (1 - modifier / 100)
+
+            max_hp = Mobile.max_hp_at_level(target, target.level)
+
+            percent = damage / max_hp
+
+            {caster, damage_percent + percent, target}
+
+          %{kind: "magical", damage: damage, damage_type: type},
+          {caster, damage_percent, target} ->
+            resist = Mobile.magical_resistance_at_level(target, target.level)
+
+            resist_percent = Protection.percent_for_ac_mr(resist)
+
+            damage = damage + bonus_damage
+
+            damage = damage * resist_percent
+
+            modifier = Mobile.ability_value(target, "Resist#{type}")
+
+            damage = damage * (1 - modifier / 100)
+
+            percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+            {caster, damage_percent + percent, target}
+
+          %{kind: "drain", min: min, max: max, damage_type: type},
+          {caster, damage_percent, target} ->
+            damage = Enum.random(min..max)
+
+            damage = damage + bonus_damage
+
+            modifier = Mobile.ability_value(target, "Resist#{type}")
+
+            damage = damage * (1 - modifier / 100)
+
+            percent = damage / Mobile.max_hp_at_level(target, target.level)
+
+            heal_percent = damage / Mobile.max_hp_at_level(caster, caster.level)
+
+            caster = Mobile.shift_hp(caster, heal_percent)
+
+            Mobile.update_prompt(caster, room)
+
+            {caster, damage_percent + percent, target}
+
+          %{kind: "mana-drain", min: min, max: max}, {caster, damage_percent, target} ->
+            damage = Enum.random(min..max)
+
+            damage = damage + bonus_damage
+
+            percent = damage / Mobile.max_mana_at_level(target, target.level)
+
+            heal_percent = damage / Mobile.max_mana_at_level(caster, caster.level)
+
+            caster =
+              caster
+              |> update_in([Access.key!(:mana)], &min(1.0, &1 + heal_percent))
+
+            target =
+              target
+              |> update_in([Access.key!(:mana)], &max(0, &1 - percent))
+
+            Mobile.update_prompt(caster, room)
+
+            {caster, damage_percent + percent, target}
         end)
-      else
-        damages
-      end
 
-    target =
-      target
-      |> Map.put(:ability_shift, 0)
-
-    # divide bonus damage across all damage types so the bonus damage
-    # is not duplicated for each type
-    bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
-    bonus_damage = bonus_damage / length(damages)
-
-    {caster, damage_percent, target} =
-      Enum.reduce(damages, {caster, 0, target}, fn
-        %{kind: "raw", min: min, max: max, damage_type: type}, {caster, damage_percent, target} ->
-          damage = Enum.random(min..max)
-
-          damage = damage + bonus_damage
-
-          modifier = Mobile.ability_value(target, "Resist#{type}")
-
-          damage = damage * (1 - modifier / 100)
-
-          percent = damage / Mobile.max_hp_at_level(target, target.level)
-
-          {caster, damage_percent + percent, target}
-
-        %{kind: "physical", min: min, max: max, damage_type: type},
-        {caster, damage_percent, target} ->
-          min = trunc(min)
-          max = trunc(max)
-
-          ability_damage = Enum.random(min..max)
-
-          resist = Mobile.physical_resistance_at_level(target, target.level)
-
-          resist_percent = Protection.percent_for_ac_mr(resist)
-
-          damage = ability_damage + bonus_damage
-
-          penetration = min(damage, ability.traits["PhysicalPenetration"])
-
-          damage = damage - penetration
-
-          damage = damage * resist_percent + penetration
-
-          modifier = Mobile.ability_value(target, "Resist#{type}")
-
-          damage = damage * (1 - modifier / 100)
-
-          percent = damage / Mobile.max_hp_at_level(target, target.level)
-
-          {caster, damage_percent + percent, target}
-
-        %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent, target} ->
-          resist = Mobile.physical_resistance_at_level(target, target.level)
-
-          resist_percent = Protection.percent_for_ac_mr(resist)
-
-          damage = dmg + bonus_damage
-
-          damage = damage * resist_percent
-
-          modifier = Mobile.ability_value(target, "Resist#{type}")
-
-          damage = damage * (1 - modifier / 100)
-
-          percent = damage / Mobile.max_hp_at_level(target, target.level)
-
-          {caster, damage_percent + percent, target}
-
-        %{kind: "magical", min: min, max: max, damage_type: type},
-        {caster, damage_percent, target} ->
-          min = trunc(min)
-          max = trunc(max)
-
-          ability_damage = Enum.random(min..max)
-
-          resist = Mobile.magical_resistance_at_level(target, target.level)
-
-          resist_percent = Protection.percent_for_ac_mr(resist)
-
-          damage = ability_damage + bonus_damage
-
-          penetration = min(damage, ability.traits["MagicalPenetration"])
-
-          damage = damage - penetration
-
-          damage = damage * resist_percent + penetration
-
-          modifier = Mobile.ability_value(target, "Resist#{type}")
-
-          damage = damage * (1 - modifier / 100)
-
-          max_hp = Mobile.max_hp_at_level(target, target.level)
-
-          percent = damage / max_hp
-
-          {caster, damage_percent + percent, target}
-
-        %{kind: "magical", damage: damage, damage_type: type}, {caster, damage_percent, target} ->
-          resist = Mobile.magical_resistance_at_level(target, target.level)
-
-          resist_percent = Protection.percent_for_ac_mr(resist)
-
-          damage = damage + bonus_damage
-
-          damage = damage * resist_percent
-
-          modifier = Mobile.ability_value(target, "Resist#{type}")
-
-          damage = damage * (1 - modifier / 100)
-
-          percent = damage / Mobile.max_hp_at_level(target, target.level)
-
-          {caster, damage_percent + percent, target}
-
-        %{kind: "drain", min: min, max: max, damage_type: type},
-        {caster, damage_percent, target} ->
-          damage = Enum.random(min..max)
-
-          damage = damage + bonus_damage
-
-          modifier = Mobile.ability_value(target, "Resist#{type}")
-
-          damage = damage * (1 - modifier / 100)
-
-          percent = damage / Mobile.max_hp_at_level(target, target.level)
-
-          heal_percent = damage / Mobile.max_hp_at_level(caster, caster.level)
-
-          caster = Mobile.shift_hp(caster, heal_percent)
-
-          Mobile.update_prompt(caster, room)
-
-          {caster, damage_percent + percent, target}
-
-        %{kind: "mana-drain", min: min, max: max}, {caster, damage_percent, target} ->
-          damage = Enum.random(min..max)
-
-          damage = damage + bonus_damage
-
-          percent = damage / Mobile.max_mana_at_level(target, target.level)
-
-          heal_percent = damage / Mobile.max_mana_at_level(caster, caster.level)
-
-          caster =
-            caster
-            |> update_in([Access.key!(:mana)], &min(1.0, &1 + heal_percent))
-
-          target =
-            target
-            |> update_in([Access.key!(:mana)], &max(0, &1 - percent))
-
-          Mobile.update_prompt(caster, room)
-
-          {caster, damage_percent + percent, target}
-      end)
-
-    target =
-      target
-      |> Map.put(:ability_special, :normal)
-      |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
-
-    target_attribute =
-      if ability.mana > 0 do
-        :willpower
-      else
-        :strength
-      end
-
-    target =
-      Character.add_attribute_experience(target, %{
-        target_attribute => 0.2,
-        :health => 0.8
-      })
-
-    {caster, target}
+      target =
+        target
+        |> Map.put(:ability_special, :normal)
+        |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
+
+      target_attribute =
+        if ability.mana > 0 do
+          :willpower
+        else
+          :strength
+        end
+
+      target =
+        Character.add_attribute_experience(target, %{
+          target_attribute => 0.2,
+          :health => 0.8
+        })
+
+      {caster, target}
+    end
   end
 
   # just to silence the Not Implemented, handled elsewhere
@@ -2577,83 +2583,92 @@ defmodule ApathyDrive.Ability do
     effects
   end
 
-  def process_duration_trait({"Damage", damages}, effects, target, caster, _duration) do
-    bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
-    bonus_damage = bonus_damage / length(damages)
+  def process_duration_trait({"Damage", damages}, effects, target, caster, duration) do
+    if duration && duration > 0 do
+      bonus_damage = Mobile.ability_value(caster, "ModifyDamage")
+      bonus_damage = bonus_damage / length(damages)
 
-    damage_percent =
-      Enum.reduce(damages, 0, fn
-        %{kind: "raw", min: min, max: max, damage_type: type}, damage_percent ->
-          damage = Enum.random(min..max)
+      damage_percent =
+        Enum.reduce(damages, 0, fn
+          %{kind: "raw", min: min, max: max, damage_type: type}, damage_percent ->
+            damage = Enum.random(min..max)
 
-          damage = damage + bonus_damage
+            damage = damage + bonus_damage
 
-          modifier = Mobile.ability_value(target, "Resist#{type}")
+            modifier = Mobile.ability_value(target, "Resist#{type}")
 
-          damage = damage * (1 - modifier / 100)
+            damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target.level)
+            percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-          damage_percent + percent
+            damage_percent + percent
 
-        %{kind: "physical", min: min, max: max, damage_type: type}, damage_percent ->
-          min = trunc(min)
-          max = trunc(max)
+          %{kind: "physical", min: min, max: max, damage_type: type}, damage_percent ->
+            min = trunc(min)
+            max = trunc(max)
 
-          ability_damage = Enum.random(min..max)
+            ability_damage = Enum.random(min..max)
 
-          resist = Mobile.physical_resistance_at_level(target, target.level)
+            resist = Mobile.physical_resistance_at_level(target, target.level)
 
-          resist_percent = Protection.percent_for_ac_mr(resist)
+            resist_percent = Protection.percent_for_ac_mr(resist)
 
-          damage = ability_damage + bonus_damage
+            damage = ability_damage + bonus_damage
 
-          penetration = min(damage, effects["PhysicalPenetration"])
+            penetration = min(damage, effects["PhysicalPenetration"])
 
-          damage = damage - penetration
+            damage = damage - penetration
 
-          damage = damage * resist_percent + penetration
+            damage = damage * resist_percent + penetration
 
-          modifier = Mobile.ability_value(target, "Resist#{type}")
+            modifier = Mobile.ability_value(target, "Resist#{type}")
 
-          damage = damage * (1 - modifier / 100)
+            damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target.level)
+            percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-          damage_percent + percent
+            damage_percent + percent
 
-        %{kind: "magical", min: min, max: max, damage_type: type}, damage_percent ->
-          min = trunc(min)
-          max = trunc(max)
+          %{kind: "magical", min: min, max: max, damage_type: type}, damage_percent ->
+            min = trunc(min)
+            max = trunc(max)
 
-          ability_damage = Enum.random(min..max)
+            ability_damage = Enum.random(min..max)
 
-          resist = Mobile.magical_resistance_at_level(target, target.level)
+            resist = Mobile.magical_resistance_at_level(target, target.level)
 
-          resist_percent = Protection.percent_for_ac_mr(resist)
+            resist_percent = Protection.percent_for_ac_mr(resist)
 
-          damage = ability_damage + bonus_damage
+            damage = ability_damage + bonus_damage
 
-          penetration = min(damage, effects["MagicalPenetration"])
+            penetration = min(damage, effects["MagicalPenetration"])
 
-          damage = damage - penetration
+            damage = damage - penetration
 
-          damage = damage * resist_percent + penetration
+            damage = damage * resist_percent + penetration
 
-          modifier = Mobile.ability_value(target, "Resist#{type}")
+            modifier = Mobile.ability_value(target, "Resist#{type}")
 
-          damage = damage * (1 - modifier / 100)
+            damage = damage * (1 - modifier / 100)
 
-          percent = damage / Mobile.max_hp_at_level(target, target.level)
+            percent = damage / Mobile.max_hp_at_level(target, target.level)
 
-          damage_percent + percent
+            damage_percent + percent
 
-        %{kind: "drain", min: _min, max: _max, damage_type: _type}, damage_percent ->
-          damage_percent
-      end)
+          %{kind: "drain", min: _min, max: _max, damage_type: _type}, damage_percent ->
+            damage_percent
+        end)
 
-    effects
-    |> Map.put("Damage", damage_percent)
+      rounds = :timer.seconds(duration) / 5000
+
+      percent = damage_percent / rounds
+
+      effects
+      |> Map.put("Damage", percent)
+    else
+      effects
+      |> Map.delete("Damage")
+    end
   end
 
   def process_duration_trait({"AC%", percent}, effects, _target, _caster, _duration) do
