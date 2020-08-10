@@ -205,7 +205,7 @@ defmodule ApathyDrive.AI do
     end)
   end
 
-  def shield(%{mana: mana} = mobile, %Room{} = room) do
+  def shield(%{} = mobile, %Room{} = room) do
     members_to_bless = pets_and_party(room, mobile)
 
     member_to_bless =
