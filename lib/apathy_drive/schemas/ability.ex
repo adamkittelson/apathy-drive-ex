@@ -2431,6 +2431,19 @@ defmodule ApathyDrive.Ability do
       |> process_duration_traits(target, caster, ability.duration)
       |> Map.put("effect_ref", make_ref())
 
+    target =
+      if has_passive_ability?(target, ability.id) do
+        target
+      else
+        if duration == -1 do
+          target
+          |> Systems.Effect.add(effects)
+        else
+          target
+          |> Systems.Effect.add(effects, :timer.seconds(duration))
+        end
+      end
+
     if message = effects["StatusMessage"] do
       Mobile.send_scroll(
         target,
@@ -2438,17 +2451,7 @@ defmodule ApathyDrive.Ability do
       )
     end
 
-    if has_passive_ability?(target, ability.id) do
-      target
-    else
-      if duration == -1 do
-        target
-        |> Systems.Effect.add(effects)
-      else
-        target
-        |> Systems.Effect.add(effects, :timer.seconds(duration))
-      end
-    end
+    target
   end
 
   def apply_duration_traits(%{} = target, _ability, _caster), do: target

@@ -713,6 +713,15 @@ defmodule ApathyDrive.Commands.Help do
           }</span></p>"
         )
       end
+
+      if traits["StatusMessage"] do
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-green'>Status Message: </span><span class='dark-cyan'>#{
+            traits["StatusMessage"]
+          }</span></p>"
+        )
+      end
     end
 
     Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Effects:</span></p>")
