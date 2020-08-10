@@ -16,15 +16,25 @@ defmodule ApathyDrive.Commands.Abilities do
       "<p><span class='white'>You know the following abilities:</span></p>"
     )
 
+    name_width =
+      character.abilities
+      |> Map.values()
+      |> Enum.max_by(&String.length(&1.name))
+      |> Map.get(:name)
+      |> String.length()
+      |> max(15)
+
+    ability_name = String.pad_trailing("Ability Name", name_width)
+
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-magenta'>Mana   Command  Ability Name</span>                  <span class='dark-magenta'>Mana   Command  Ability Name</span></p>"
+      "<p><span class='dark-magenta'>Mana   Command  #{ability_name}</span> <span class='dark-magenta'>Mana   Command  Ability Name</span></p>"
     )
 
     character.abilities
     |> Map.values()
     |> Enum.sort_by(& &1.name)
-    |> Enum.map(&format_ability/1)
+    |> Enum.map(&format_ability(&1, name_width))
     |> Enum.chunk_every(2)
     |> Enum.each(fn
       [ability1, ability2] ->
@@ -38,7 +48,7 @@ defmodule ApathyDrive.Commands.Abilities do
     end)
   end
 
-  def format_ability(%{name: name, mana: mana, command: command, auto: auto}) do
+  def format_ability(%{name: name, mana: mana, command: command, auto: auto}, name_width) do
     command =
       command
       |> to_string
@@ -46,7 +56,7 @@ defmodule ApathyDrive.Commands.Abilities do
 
     mana_cost = String.pad_trailing(to_string(mana), 6)
 
-    name = String.pad_trailing(name, 30)
+    name = String.pad_trailing(name, name_width + 1)
 
     name =
       if auto do
