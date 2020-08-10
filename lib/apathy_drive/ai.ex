@@ -205,7 +205,7 @@ defmodule ApathyDrive.AI do
     end)
   end
 
-  def shield(%{mana: mana} = mobile, %Room{} = room) when mana > 0.5 do
+  def shield(%{mana: mana} = mobile, %Room{} = room) do
     members_to_bless = pets_and_party(room, mobile)
 
     member_to_bless =
@@ -251,8 +251,6 @@ defmodule ApathyDrive.AI do
         Ability.execute(room, mobile.ref, ability, [member_to_bless.ref])
     end
   end
-
-  def shield(%{} = _mobile, %Room{}), do: nil
 
   def heal(%{} = mobile, %Room{} = room) do
     injured_party_members = pets_and_party(room, mobile)
