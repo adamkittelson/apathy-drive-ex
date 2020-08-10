@@ -489,6 +489,9 @@ defmodule ApathyDrive.AI do
         mobile
         |> Ability.attack_abilities(target)
         |> Enum.reject(&(!&1.auto))
+        |> Enum.reject(fn ability ->
+          Ability.removes_blessing?(target, ability)
+        end)
         |> reject_elemental_if_no_lore(mobile)
 
       attack_abilities =
