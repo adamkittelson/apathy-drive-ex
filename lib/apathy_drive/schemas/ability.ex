@@ -18,6 +18,7 @@ defmodule ApathyDrive.Ability do
     Repo,
     Room,
     RoomMonster,
+    RoomServer,
     Scripts,
     Stealth,
     Text,
@@ -642,11 +643,15 @@ defmodule ApathyDrive.Ability do
             end
 
           _ ->
-            room
-            |> Room.get_mobile(caster_ref)
-            |> Mobile.send_scroll(
-              "<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>"
-            )
+            if ability.targets == "single global" do
+              execute(room, caster_ref, ability, {nil, nil})
+            else
+              room
+              |> Room.get_mobile(caster_ref)
+              |> Mobile.send_scroll(
+                "<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>"
+              )
+            end
 
             room
         end
@@ -1165,6 +1170,49 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
+  def execute(%Room{} = room, caster_ref, %Ability{} = ability, {_room_id, _ref} = targets) do
+    Room.update_mobile(room, caster_ref, fn room, caster ->
+      cond do
+        mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
+          mobile
+
+        casting_failed?(caster, ability) ->
+          casting_failed(room, caster_ref, ability)
+
+        can_execute?(room, caster, ability) ->
+          display_pre_cast_message(room, caster, targets, ability)
+
+          {caster, ability} = crit(caster, ability)
+
+          room = put_in(room.mobiles[caster_ref], caster)
+
+          room =
+            Room.update_mobile(room, caster.ref, fn _room, caster ->
+              caster =
+                caster
+                |> apply_cooldowns(ability)
+                |> Mobile.subtract_mana(ability)
+                |> Mobile.subtract_energy(ability)
+
+              Mobile.update_prompt(caster, room)
+            end)
+
+          room = apply_ability(room, room.mobiles[caster.ref], targets, ability)
+
+          Room.update_energy_bar(room, caster.ref)
+          Room.update_hp_bar(room, caster.ref)
+          Room.update_mana_bar(room, caster.ref)
+
+          room
+
+        :else ->
+          Room.update_mobile(room, caster_ref, fn _room, caster ->
+            Mobile.subtract_energy(caster, ability)
+          end)
+      end
+    end)
+  end
+
   def start_enchantment(caster, item, ability) do
     enchantment =
       %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id}
@@ -1265,6 +1313,34 @@ defmodule ApathyDrive.Ability do
           target,
           update_in(ability.traits, &Map.delete(&1, "Dodgeable"))
         )
+    end
+  end
+
+  def apply_ability(%Room{} = room, %{} = caster, {_room_id, _ref} = target, %Ability{} = ability) do
+    caster = room.mobiles[caster.ref]
+    display_cast_message(room, caster, target, ability)
+
+    if script = ability.traits["Script"] do
+      if is_integer(script) do
+        Mobile.send_scroll(
+          room.mobiles[caster.ref],
+          "<p><span class='red'>Not Implemented: Script##{script} for Ability##{ability.id} (#{
+            ability.name
+          })</span>"
+        )
+
+        room
+      else
+        Room.update_mobile(room, caster.ref, fn room, caster ->
+          Module.safe_concat([Scripts, Macro.camelize(script)]).execute(
+            room,
+            caster.ref,
+            target
+          )
+        end)
+      end
+    else
+      room
     end
   end
 
@@ -2910,6 +2986,16 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def caster_cast_message(%Ability{} = ability, %{} = caster, {_room_id, _ref} = _target, _mobile) do
+    message =
+      ability.user_message
+      |> Text.capitalize_first()
+
+    unless message == "" do
+      "<p><span style='color: #{message_color(ability, caster, :caster)};'>#{message}</span></p>"
+    end
+  end
+
   def caster_cast_message(
         %Ability{} = ability,
         %{} = caster,
@@ -3133,6 +3219,24 @@ defmodule ApathyDrive.Ability do
   def spectator_cast_message(
         %Ability{} = ability,
         %{} = caster,
+        {_room_id, _ref} = _target,
+        mobile
+      ) do
+    caster = ability.caster || caster
+
+    message =
+      ability.spectator_message
+      |> Text.interpolate(%{"user" => caster})
+      |> Text.capitalize_first()
+
+    unless message == "" do
+      "<p><span style='color: #{message_color(ability, mobile, :spectator)};'>#{message}</span></p>"
+    end
+  end
+
+  def spectator_cast_message(
+        %Ability{} = ability,
+        %{} = caster,
         %{ability_shift: nil} = target,
         mobile
       ) do
@@ -3206,6 +3310,28 @@ defmodule ApathyDrive.Ability do
 
         mobile.ref == target.ref and not is_nil(ability.target_message) ->
           Mobile.send_scroll(mobile, target_cast_message(ability, caster, target, mobile))
+
+        mobile && not is_nil(ability.spectator_message) ->
+          Mobile.send_scroll(mobile, spectator_cast_message(ability, caster, target, mobile))
+
+        true ->
+          :noop
+      end
+    end)
+  end
+
+  def display_cast_message(
+        %Room{} = room,
+        %{} = caster,
+        {_room_id, _ref} = target,
+        %Ability{} = ability
+      ) do
+    room.mobiles
+    |> Map.values()
+    |> Enum.each(fn mobile ->
+      cond do
+        mobile.ref == caster.ref and not is_nil(ability.user_message) ->
+          Mobile.send_scroll(mobile, caster_cast_message(ability, caster, target, mobile))
 
         mobile && not is_nil(ability.spectator_message) ->
           Mobile.send_scroll(mobile, spectator_cast_message(ability, caster, target, mobile))
@@ -3351,6 +3477,42 @@ defmodule ApathyDrive.Ability do
     effects
     |> Map.values()
     |> Enum.find(&(&1["cooldown"] == name))
+  end
+
+  def get_targets(%Room{} = room, caster_ref, %Ability{targets: "single global"}, query) do
+    caster = room.mobiles[caster_ref]
+
+    monsters =
+      RoomMonster
+      |> order_by(fragment("RANDOM()"))
+      |> ApathyDrive.Repo.all()
+
+    characters =
+      Character
+      |> order_by(fragment("RANDOM()"))
+      |> ApathyDrive.Repo.all()
+
+    match = Match.one(monsters ++ characters, :keyword_starts_with, query)
+
+    if match do
+      if caster.room_id == match.room_id do
+        match =
+          room.mobiles
+          |> Map.values()
+          |> Match.one(:keyword_starts_with, query)
+
+        {match.room_id, match.ref}
+      else
+        ref =
+          match.room_id
+          |> RoomServer.find()
+          |> RoomServer.ref_for_mobile(match.name)
+
+        {match.room_id, ref}
+      end
+    else
+      []
+    end
   end
 
   def get_targets(%Room{} = room, caster_ref, %Ability{targets: "monster or single"}, query) do

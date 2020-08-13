@@ -106,6 +106,14 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:mirror_open_fail, mirror_room_id, room_exit})
   end
 
+  def ref_for_mobile(room, mobile_name) do
+    GenServer.call(room, {:ref_for_mobile, mobile_name})
+  end
+
+  def scry(room, ref) do
+    GenServer.call(room, {:scry, ref})
+  end
+
   def execute_command(room, mobile_ref, command, arguments) do
     GenServer.call(room, {:execute_command, mobile_ref, command, arguments})
   end
@@ -198,6 +206,26 @@ defmodule ApathyDrive.RoomServer do
     send(self(), :restore_limbs)
 
     {:noreply, room}
+  end
+
+  def handle_call({:ref_for_mobile, mobile_name}, _from, room) do
+    mobile =
+      room.mobiles
+      |> Map.values()
+      |> Enum.find(&(&1.name == mobile_name))
+
+    {:reply, mobile && mobile.ref, room}
+  end
+
+  def handle_call({:scry, ref}, _from, room) do
+    if target = room.mobiles[ref] do
+      Mobile.send_scroll(
+        target,
+        "<p><span class='dark-magenta'>You feel the presence of another mind.</span></p>"
+      )
+    end
+
+    {:reply, :ok, room}
   end
 
   def handle_call({:enqueue_command, mobile_ref, command, arguments}, _from, room) do

@@ -43,6 +43,32 @@ defmodule ApathyDrive.Commands.Look do
 
   def keywords, do: ["look", "l"]
 
+  def execute(%Room{} = room, %Character{} = character, ignore_light: true) do
+    coords =
+      if character.admin do
+        "<span style='font-size:0.7em'>Room##{room.id} (x:#{room.coordinates["x"]} y:#{
+          room.coordinates["y"]
+        } z:#{room.coordinates["z"]})</span>"
+      else
+        ""
+      end
+
+    Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span> #{coords}</p>")
+    Mobile.send_scroll(character, "<p>    #{room.description}</p>")
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>#{look_items(room, character)}</span></p>"
+    )
+
+    Mobile.send_scroll(character, look_mobiles(room, character))
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>#{look_directions(room)}</span></p>"
+    )
+  end
+
   def execute(%Room{} = room, %Character{} = character, args) do
     if blind?(character) do
       Mobile.send_scroll(character, "<p>You are blind.</p>")
