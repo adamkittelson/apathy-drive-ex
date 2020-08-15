@@ -596,7 +596,7 @@ defmodule ApathyDrive.Ability do
       Ability.affects_target?(target, ability)
     end)
     |> Enum.reject(fn ability ->
-      Enum.any?(ability.traits["Damage"], &(&1.kind == "drain"))
+      ability.traits["Damage"] && Enum.any?(ability.traits["Damage"], &(&1.kind == "drain"))
     end)
     |> useable(mobile)
   end
