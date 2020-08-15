@@ -761,7 +761,6 @@ defmodule ApathyDrive.Commands.Help do
       |> Enum.map(fn id ->
         Repo.get!(Ability, id)
       end)
-      |> Enum.filter(&(&1 in Ability.learnable_abilities()))
       |> Enum.map(& &1.name)
 
     if Enum.any?(spells) do

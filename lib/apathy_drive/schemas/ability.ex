@@ -2000,7 +2000,7 @@ defmodule ApathyDrive.Ability do
 
             damage ->
               reaction = %Ability{
-                kind: "critical",
+                kind: "attack",
                 mana: 0,
                 energy: 0,
                 user_message: shield["UserMessage"],
