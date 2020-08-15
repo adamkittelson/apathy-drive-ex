@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Scripts.Scry do
   alias ApathyDrive.{Mobile, Room, RoomServer}
 
-  def execute(%Room{} = room, mobile_ref, {_room_id, nil}) do
+  def execute(%Room{} = room, mobile_ref, {:scry, %{room_id: nil}}) do
     Room.update_mobile(room, mobile_ref, fn _room, character ->
       Mobile.send_scroll(
         character,
@@ -12,10 +12,10 @@ defmodule ApathyDrive.Scripts.Scry do
     end)
   end
 
-  def execute(%Room{} = room, mobile_ref, {room_id, ref}) do
+  def execute(%Room{} = room, mobile_ref, {:scry, mobile}) do
     Room.update_mobile(room, mobile_ref, fn _room, character ->
-      if room_id == character.room_id do
-        target = room.mobiles[ref]
+      if mobile.room_id == character.room_id do
+        target = room.mobiles[mobile.ref]
 
         if target do
           ApathyDrive.Commands.Look.execute(room, character, ignore_light: true)
@@ -26,14 +26,33 @@ defmodule ApathyDrive.Scripts.Scry do
           )
         end
       else
-        room_id
+        mobile.room_id
         |> RoomServer.find()
         |> RoomServer.look(character, ignore_light: true)
 
-        room_id
+        mobile.room_id
         |> RoomServer.find()
-        |> RoomServer.scry(ref)
+        |> RoomServer.scry(mobile.ref)
       end
+
+      character =
+        character
+        |> Systems.Effect.add(
+          %{
+            "Scry" =>
+              {mobile.__struct__, Map.get(mobile, :room_monster_id) || Map.get(mobile, :id)},
+            "stack_key" => :scry,
+            "stack_count" => 1,
+            "StatusMessage" => "Your mind is locked on to #{mobile.name}.",
+            "RemoveMessage" => "Your awareness of #{mobile.name} fades."
+          },
+          :timer.seconds(240)
+        )
+
+      Mobile.send_scroll(
+        character,
+        "<p span class='blue'>Your mind is locked on to #{mobile.name}.</p>"
+      )
 
       character
     end)

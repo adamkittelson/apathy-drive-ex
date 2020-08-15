@@ -106,8 +106,8 @@ defmodule ApathyDrive.RoomServer do
     GenServer.cast(room, {:mirror_open_fail, mirror_room_id, room_exit})
   end
 
-  def ref_for_mobile(room, mobile_name) do
-    GenServer.call(room, {:ref_for_mobile, mobile_name})
+  def find_mobile(room, mobile_name) do
+    GenServer.call(room, {:find_mobile, mobile_name})
   end
 
   def scry(room, ref) do
@@ -207,13 +207,13 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_call({:ref_for_mobile, mobile_name}, _from, room) do
+  def handle_call({:find_mobile, mobile_name}, _from, room) do
     mobile =
       room.mobiles
       |> Map.values()
       |> Enum.find(&(&1.name == mobile_name))
 
-    {:reply, mobile && mobile.ref, room}
+    {:reply, mobile, room}
   end
 
   def handle_call({:scry, ref}, _from, room) do

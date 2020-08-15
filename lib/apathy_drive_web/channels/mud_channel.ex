@@ -40,7 +40,7 @@ defmodule ApathyDriveWeb.MUDChannel do
             {:ok, socket}
         end
 
-      {:error, error} ->
+      {:error, _error} ->
         {:error, %{reason: "unauthorized"}}
     end
   end

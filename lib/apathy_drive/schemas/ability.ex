@@ -650,7 +650,7 @@ defmodule ApathyDrive.Ability do
 
           _ ->
             if ability.targets == "single global" do
-              execute(room, caster_ref, ability, {nil, nil})
+              execute(room, caster_ref, ability, {:scry, %{room_id: nil, ref: nil}})
             else
               room
               |> Room.get_mobile(caster_ref)
@@ -1176,7 +1176,12 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def execute(%Room{} = room, caster_ref, %Ability{} = ability, {_room_id, _ref} = targets) do
+  def execute(
+        %Room{} = room,
+        caster_ref,
+        %Ability{} = ability,
+        {:scry, %{room_id: _, ref: _}} = targets
+      ) do
     Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
@@ -1322,7 +1327,7 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def apply_ability(%Room{} = room, %{} = caster, {_room_id, _ref} = target, %Ability{} = ability) do
+  def apply_ability(%Room{} = room, %{} = caster, {:scry, %{}} = target, %Ability{} = ability) do
     caster = room.mobiles[caster.ref]
     display_cast_message(room, caster, target, ability)
 
@@ -3501,21 +3506,18 @@ defmodule ApathyDrive.Ability do
     match = Match.one(monsters ++ characters, :keyword_starts_with, query)
 
     if match do
-      if caster.room_id == match.room_id do
-        match =
+      match =
+        if caster.room_id == match.room_id do
           room.mobiles
           |> Map.values()
           |> Match.one(:keyword_starts_with, query)
-
-        {match.room_id, match.ref}
-      else
-        ref =
+        else
           match.room_id
           |> RoomServer.find()
-          |> RoomServer.ref_for_mobile(match.name)
+          |> RoomServer.find_mobile(match.name)
+        end
 
-        {match.room_id, ref}
-      end
+      {:scry, match}
     else
       []
     end
