@@ -1,7 +1,7 @@
 defmodule ApathyDrive.Scripts.Scry do
   alias ApathyDrive.{Mobile, Room, RoomServer}
 
-  def execute(%Room{} = room, mobile_ref, {nil, nil}) do
+  def execute(%Room{} = room, mobile_ref, {_room_id, nil}) do
     Room.update_mobile(room, mobile_ref, fn _room, character ->
       Mobile.send_scroll(
         character,

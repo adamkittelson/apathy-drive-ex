@@ -171,15 +171,14 @@ defmodule ApathyDrive.RoomServer do
       |> Repo.preload(:placed_items)
       |> Shop.load()
       |> Room.load_ability()
+      |> MonsterSpawning.load_monsters()
+      |> spawn_permanent_npc()
 
     Logger.metadata(room: room.name <> "##{room.id}")
 
     PubSub.subscribe("rooms")
     PubSub.subscribe("rooms:#{room.id}")
     PubSub.subscribe("areas:#{room.area_id}")
-
-    send(self(), :load_monsters)
-    send(self(), :spawn_permanent_npc)
 
     send(self(), :perform_maintenance)
 
@@ -761,9 +760,8 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:spawn_permanent_npc, room) do
-    time = ((95..100 |> Enum.random()) * :timer.minutes(10)) |> div(100)
-    Process.send_after(self(), :spawn_permanent_npc, time)
-    {:noreply, MonsterSpawning.spawn_permanent_npc(room)}
+    spawn_permanent_npc(room)
+    {:noreply, room}
   end
 
   def handle_info({:update_area, area}, room) do
@@ -1165,6 +1163,12 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def execute_casting_ability(%{} = mobile, _room), do: mobile
+
+  defp spawn_permanent_npc(room) do
+    time = ((95..100 |> Enum.random()) * :timer.minutes(10)) |> div(100)
+    Process.send_after(self(), :spawn_permanent_npc, time)
+    MonsterSpawning.spawn_permanent_npc(room)
+  end
 
   defp jitter(time) do
     time
