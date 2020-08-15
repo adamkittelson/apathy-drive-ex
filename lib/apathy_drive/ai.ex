@@ -479,7 +479,7 @@ defmodule ApathyDrive.AI do
 
     energy_pct = mobile.energy / mobile.max_energy * 100
 
-    if target && energy_pct >= 40 do
+    if target && energy_pct >= 15 do
       potential_targets =
         Ability.get_targets(room, mobile.ref, %Ability{targets: "full attack area"}, "")
 
