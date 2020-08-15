@@ -222,13 +222,6 @@ defmodule ApathyDrive.AI do
       |> Ability.bless_abilities(member_to_bless)
       |> Enum.reject(&(!&1.auto))
       |> Enum.filter(&(Map.has_key?(&1.traits, "Bubble") or Map.has_key?(&1.traits, "Bubble%")))
-      |> Enum.filter(fn ability ->
-        traits = Ability.process_duration_traits(ability.traits, mobile, mobile, nil)
-        current_bubble = Mobile.ability_value(mobile, "Bubble")
-        ability_bubble = traits["Bubble"]
-
-        ability_bubble / 2 > current_bubble
-      end)
       |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
       |> reject_item_if_monster(mobile)
       |> reject_elemental_if_no_lore(mobile)
@@ -304,9 +297,6 @@ defmodule ApathyDrive.AI do
           mobile
           |> Ability.bless_abilities(member_to_bless)
           |> Enum.reject(&(!&1.auto))
-          |> Enum.reject(fn ability ->
-            Ability.removes_blessing?(member_to_bless, ability)
-          end)
           |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
           |> reject_item_if_monster(mobile)
           |> reject_elemental_if_no_lore(mobile)
