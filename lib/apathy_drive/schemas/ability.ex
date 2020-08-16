@@ -3523,7 +3523,11 @@ defmodule ApathyDrive.Ability do
           |> RoomServer.find_mobile(match.name)
         end
 
-      {:scry, match}
+      if match do
+        {:scry, match}
+      else
+        []
+      end
     else
       []
     end
