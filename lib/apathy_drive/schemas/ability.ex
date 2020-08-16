@@ -47,6 +47,7 @@ defmodule ApathyDrive.Ability do
     field(:level, :integer)
     field(:letter, :string)
 
+    field(:damage_shield, :any, virtual: true)
     field(:caster, :any, virtual: true)
     field(:limbs, :any, virtual: true, default: [])
     field(:traits, :map, virtual: true, default: %{})
@@ -1933,8 +1934,10 @@ defmodule ApathyDrive.Ability do
       when target_ref == caster_ref,
       do: room
 
-  def trigger_damage_shields(%Room{} = room, _caster_ref, _target_ref, %Ability{kind: "critical"}),
-    do: room
+  def trigger_damage_shields(%Room{} = room, _caster_ref, _target_ref, %Ability{
+        damage_shield: true
+      }),
+      do: room
 
   def trigger_damage_shields(%Room{} = room, caster_ref, target_ref, ability) do
     if (target = room.mobiles[target_ref]) && ability.kind != "blessing" &&
@@ -1954,6 +1957,7 @@ defmodule ApathyDrive.Ability do
 
             reaction = %Ability{
               kind: "critical",
+              damage_shield: true,
               mana: 0,
               energy: 0,
               user_message: ability.traits["DamageShieldUserMessage"],
@@ -1989,6 +1993,7 @@ defmodule ApathyDrive.Ability do
                   target,
                   caster,
                   %Ability{
+                    damage_shield: true,
                     user_message: shield["UserMessage"],
                     target_message: shield["TargetMessage"],
                     spectator_message: shield["SpectatorMessage"]
@@ -2012,6 +2017,7 @@ defmodule ApathyDrive.Ability do
             damage ->
               reaction = %Ability{
                 kind: "attack",
+                damage_shield: true,
                 mana: 0,
                 energy: 0,
                 user_message: shield["UserMessage"],
