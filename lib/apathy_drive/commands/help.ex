@@ -586,7 +586,7 @@ defmodule ApathyDrive.Commands.Help do
 
         damage ->
           traits =
-            if ability.mana && ability.mana > 0 && ability.kind != "blessing" do
+            if ability.mana && ability.mana > 0 && ability.kind == "attack" do
               count = length(damage)
               bonus_damage = Character.base_spell_damage(character, ability) * 0.1 / count
 
