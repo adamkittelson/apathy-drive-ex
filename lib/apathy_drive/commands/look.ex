@@ -599,6 +599,20 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
+  def display_trait(character, item, {"Grant", abilities}, indent) do
+    names =
+      abilities
+      |> Enum.map(& &1.name)
+      |> ApathyDrive.Commands.Inventory.to_sentence()
+
+    Mobile.send_scroll(
+      character,
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Grants the ability to cast:</span> <span class='dark-cyan'>#{
+        names
+      }</span></p>"
+    )
+  end
+
   def display_trait(character, _item, {"Damage", list}, indent) when is_list(list) do
     Enum.each(list, fn %{kind: kind, damage_type: type, min: min, max: max} ->
       Mobile.send_scroll(
