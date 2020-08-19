@@ -760,8 +760,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info(:spawn_permanent_npc, room) do
-    spawn_permanent_npc(room)
-    {:noreply, room}
+    {:noreply, spawn_permanent_npc(room)}
   end
 
   def handle_info({:update_area, area}, room) do
