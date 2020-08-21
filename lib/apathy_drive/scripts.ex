@@ -1260,4 +1260,51 @@ defmodule ApathyDrive.Scripts do
         |> random_item_2922(mobile_ref)
     end
   end
+
+  def random_item_9645(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 50 ->
+        room
+
+      roll <= 100 ->
+        room
+        |> random_item_9646(mobile_ref)
+        |> random_item_9646(mobile_ref)
+        |> random_item_9646(mobile_ref)
+    end
+  end
+
+  def random_item_9646(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 5 ->
+        # golden sun robes
+        room = give_item(room, mobile_ref, 1666)
+        character = room.mobiles[mobile_ref]
+
+        # if golden sun robes could not be spawned because it is a limited item
+        # then give a longsword instead
+        if !Enum.find(character.inventory ++ room.items, &(&1.name == "golden sun robes")) do
+          # morningstar ring
+          give_item(room, mobile_ref, 1656)
+        else
+          room
+        end
+
+      roll <= 25 ->
+        # morningstar ring
+        give_item(room, mobile_ref, 1656)
+
+      roll <= 50 ->
+        # holy miter
+        give_item(room, mobile_ref, 400)
+
+      roll <= 100 ->
+        # holy vestements
+        give_item(room, mobile_ref, 409)
+    end
+  end
 end
