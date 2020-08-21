@@ -1122,6 +1122,28 @@ defmodule ApathyDrive.Scripts do
     end
   end
 
+  def random_item_4104(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 25 ->
+        # diamond-studded ring
+        give_item(room, mobile_ref, 829)
+
+      roll <= 50 ->
+        # mithril-runed tunic
+        give_item(room, mobile_ref, 836)
+
+      roll <= 75 ->
+        # pristine scroll
+        give_item(room, mobile_ref, 835)
+
+      roll <= 100 ->
+        # large silvery cross
+        give_item(room, mobile_ref, 831)
+    end
+  end
+
   def random_item_4106(room, mobile_ref) do
     roll = :rand.uniform(100)
 
