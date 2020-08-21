@@ -1186,6 +1186,32 @@ defmodule ApathyDrive.Scripts do
     end
   end
 
+  def random_item_4149(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 10 ->
+        # ivory bracelet
+        give_item(room, mobile_ref, 832)
+
+      roll <= 30 ->
+        # arcane tome
+        give_item(room, mobile_ref, 833)
+
+      roll <= 40 ->
+        # darkwood shield
+        give_item(room, mobile_ref, 834)
+
+      roll <= 70 ->
+        # pristine scroll
+        give_item(room, mobile_ref, 835)
+
+      roll <= 100 ->
+        room
+        |> random_item_2922(mobile_ref)
+    end
+  end
+
   def random_item_4151(room, mobile_ref) do
     roll = :rand.uniform(100)
 

@@ -599,7 +599,7 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def display_trait(character, item, {"Grant", abilities}, indent) do
+  def display_trait(character, _item, {"Grant", abilities}, indent) do
     names =
       abilities
       |> Enum.map(& &1.name)
