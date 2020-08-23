@@ -406,7 +406,7 @@ defmodule ApathyDrive.Commands.Help do
       |> Enum.each(fn {level, abilities} ->
         abilities =
           abilities
-          |> Enum.map(&ability_name(&1))
+          |> Enum.map(&ability_name(character, &1))
           |> ApathyDrive.Commands.Inventory.to_sentence()
 
         level =
@@ -819,14 +819,23 @@ defmodule ApathyDrive.Commands.Help do
   defp massage_trait({"RemoveMessage", _}, _character), do: nil
   defp massage_trait({name, value}, _character), do: {name, inspect(value)}
 
-  defp ability_name(%{ability_id: id, auto_learn: auto_learn}) do
+  defp ability_name(character, %{ability_id: id, auto_learn: auto_learn}) do
     name = Ability.find(id).name
 
     color =
       if auto_learn do
         "dark-magenta"
       else
-        "dark-cyan"
+        known =
+          character.abilities
+          |> Map.values()
+          |> Enum.find(&(&1.id == id))
+
+        if known do
+          "white"
+        else
+          "dark-cyan"
+        end
       end
 
     "<span class='#{color}'>#{name}</span>"

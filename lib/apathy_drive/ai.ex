@@ -31,13 +31,10 @@ defmodule ApathyDrive.AI do
         if Mobile.auto_attack_target(mobile, room) do
           room
         else
-          # unless Aggression.enemies_present?(room, mobile) do
           Mobile.send_scroll(
             mobile,
             "<p><span class='dark-yellow'>*Combat Off*</span></p>"
           )
-
-          # end
 
           mobile =
             mobile
