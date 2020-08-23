@@ -14,6 +14,12 @@ defmodule ApathyDrive.Party do
     |> Enum.filter(&(Map.get(&1, :leader) == ref))
   end
 
+  def exhausted(%Room{} = room, character, energy \\ nil) do
+    room
+    |> members(character)
+    |> Enum.any?(&Mobile.exhausted(&1, energy))
+  end
+
   def size(%Room{} = room, member) do
     room
     |> members(member)

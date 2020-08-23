@@ -14,6 +14,7 @@ defmodule ApathyDrive.RoomServer do
     LairMonster,
     Mobile,
     MonsterSpawning,
+    Party,
     PubSub,
     Repo,
     Room,
@@ -1158,7 +1159,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def execute_casting_ability(%{casting: {:move, room_exit}} = mobile, room) do
-    if Mobile.exhausted(mobile) do
+    if Party.exhausted(room, mobile) do
       Map.put(mobile, :casting, {:move, room_exit})
     else
       mobile =

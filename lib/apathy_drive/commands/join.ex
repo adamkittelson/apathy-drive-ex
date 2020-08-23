@@ -19,19 +19,23 @@ defmodule ApathyDrive.Commands.Join do
             room
 
           ref in invitees ->
+            room =
+              room
+              |> Room.update_mobile(character.ref, fn _room, character ->
+                Mobile.send_scroll(character, "<p>You are now following #{target.name}</p>")
+
+                character
+                |> put_in([:leader], target.ref)
+              end)
+              |> Room.update_mobile(target.ref, fn _room, target ->
+                Mobile.send_scroll(target, "<p>#{character.name} started to follow you</p>")
+
+                target
+                |> update_in([:invitees], &List.delete(&1, ref))
+              end)
+
+            Room.update_moblist(room)
             room
-            |> Room.update_mobile(character.ref, fn _room, character ->
-              Mobile.send_scroll(character, "<p>You are now following #{target.name}</p>")
-
-              character
-              |> put_in([:leader], target.ref)
-            end)
-            |> Room.update_mobile(target.ref, fn _room, target ->
-              Mobile.send_scroll(target, "<p>#{character.name} started to follow you</p>")
-
-              target
-              |> update_in([:invitees], &List.delete(&1, ref))
-            end)
 
           true ->
             Mobile.send_scroll(

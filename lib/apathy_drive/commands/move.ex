@@ -5,6 +5,7 @@ defmodule ApathyDrive.Commands.Move do
     Currency,
     Doors,
     Mobile,
+    Party,
     Repo,
     Room,
     RoomServer
@@ -210,7 +211,7 @@ defmodule ApathyDrive.Commands.Move do
         |> Map.put(:resting, false)
       end
 
-    if Mobile.exhausted(character, energy) do
+    if Party.exhausted(room, character, energy) do
       character = Map.put(character, :casting, {:move, room_exit})
       room = put_in(room.mobiles[character.ref], character)
       {:error, :too_tired, room}
@@ -288,7 +289,7 @@ defmodule ApathyDrive.Commands.Move do
           |> Map.put(:resting, false)
         end
 
-      if Mobile.exhausted(character, energy) do
+      if Party.exhausted(room, character, energy) do
         character = Map.put(character, :casting, {:move, room_exit})
         room = put_in(room.mobiles[character.ref], character)
         {:error, :too_tired, room}
@@ -342,7 +343,7 @@ defmodule ApathyDrive.Commands.Move do
           |> Map.put(:resting, false)
         end
 
-      if Mobile.exhausted(character, energy) do
+      if Party.exhausted(room, character, energy) do
         character = Map.put(character, :casting, {:move, room_exit})
         room = put_in(room.mobiles[character.ref], character)
         {:error, :too_tired, room}
@@ -409,7 +410,7 @@ defmodule ApathyDrive.Commands.Move do
             |> Map.put(:resting, false)
           end
 
-        if Mobile.exhausted(character, energy) do
+        if Party.exhausted(room, character, energy) do
           character = Map.put(character, :casting, {:move, room_exit})
           room = put_in(room.mobiles[character.ref], character)
           {:error, :too_tired, room}
