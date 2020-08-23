@@ -123,7 +123,7 @@ defmodule ApathyDrive.AI do
               character.mana == 1.0 && character.hp == 1.0 && !character.sneaking ->
                 ApathyDrive.Commands.Sneak.execute(room, character, [])
 
-              !character.resting && !character.sneaking ->
+              !character.sneaking ->
                 ApathyDrive.Commands.Sneak.execute(room, character, [])
 
               :else ->
