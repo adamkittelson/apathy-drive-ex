@@ -557,6 +557,7 @@ defmodule ApathyDrive.Monster do
           _mobile, pets_and_players ->
             pets_and_players
         end)
+        |> Enum.uniq()
         |> length()
 
       message =
