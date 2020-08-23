@@ -3,6 +3,9 @@ defmodule ApathyDrive.AI do
 
   def think(%Room{} = room, ref) do
     Room.update_mobile(room, ref, fn room, mobile ->
+      room = break_combat(room, mobile)
+      mobile = room.mobiles[mobile.ref]
+
       if mobile.casting do
         flee(mobile, room) || mobile
       else
@@ -17,6 +20,41 @@ defmodule ApathyDrive.AI do
           move(mobile, room) || mobile
       end
     end)
+  end
+
+  def break_combat(%Room{} = room, %{} = mobile) do
+    case mobile do
+      %{attack_target: nil} ->
+        room
+
+      %{attack_target: _target} = mobile ->
+        if Mobile.auto_attack_target(mobile, room) do
+          room
+        else
+          # unless Aggression.enemies_present?(room, mobile) do
+          Mobile.send_scroll(
+            mobile,
+            "<p><span class='dark-yellow'>*Combat Off*</span></p>"
+          )
+
+          # end
+
+          mobile =
+            mobile
+            |> Map.put(:attack_target, nil)
+            |> Map.put(:casting, nil)
+
+          room = put_in(room.mobiles[mobile.ref], mobile)
+
+          Room.update_hp_bar(room, mobile.ref)
+          Room.update_mana_bar(room, mobile.ref)
+
+          room
+        end
+
+      %{} = _mobile ->
+        room
+    end
   end
 
   def move(%{} = mobile, %Room{} = room, force \\ false) do
@@ -526,29 +564,6 @@ defmodule ApathyDrive.AI do
           end)
           |> Ability.execute(mobile.ref, attack, [target_ref])
         end
-      end
-    else
-      case mobile do
-        %{attack_target: target} = mobile when not is_nil(target) ->
-          Mobile.send_scroll(
-            mobile,
-            "<p><span class='dark-yellow'>*Combat Off*</span></p>"
-          )
-
-          mobile =
-            mobile
-            |> Map.put(:attack_target, nil)
-            |> Map.put(:casting, nil)
-
-          room = put_in(room.mobiles[mobile.ref], mobile)
-
-          Room.update_hp_bar(room, mobile.ref)
-          Room.update_mana_bar(room, mobile.ref)
-
-          room
-
-        _mobile ->
-          nil
       end
     end
   end
