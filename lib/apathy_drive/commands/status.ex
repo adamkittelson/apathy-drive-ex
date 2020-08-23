@@ -4,7 +4,7 @@ defmodule ApathyDrive.Commands.Status do
 
   def keywords, do: ["st", "stat", "status"]
 
-  def execute(%Room{} = room, %Character{} = character, []) do
+  def execute(%Room{} = room, %Character{} = character, _args) do
     status(character)
 
     room

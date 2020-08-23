@@ -2110,7 +2110,7 @@ defmodule ApathyDrive.Character do
         modified_hp_regen = regen * (1 + ability_value(character, "HPRegen") / 100)
 
         if character.resting do
-          modified_hp_regen * 3
+          modified_hp_regen * 10
         else
           modified_hp_regen
         end
