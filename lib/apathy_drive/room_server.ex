@@ -515,7 +515,18 @@ defmodule ApathyDrive.RoomServer do
             "#{mobile.name} already executing command: #{inspect(mobile.current_command)}"
           )
 
-          TimerManager.send_after(mobile, {:execute_command, 500, {:execute_command, mobile_ref}})
+          if mobile.current_command_error_count > 10 do
+            Logger.info("skipping stuck command: #{inspect(mobile.current_command)} ")
+
+            mobile
+            |> Map.put(:current_command, nil)
+            |> Map.put(:current_command_error_count, 0)
+            |> TimerManager.send_after({:execute_command, 10, {:execute_command, mobile_ref}})
+          else
+            mobile
+            |> TimerManager.send_after({:execute_command, 500, {:execute_command, mobile_ref}})
+            |> update_in([:current_command_error_count], &(&1 + 1))
+          end
         else
           case :queue.out(mobile.commands) do
             {:empty, _commands} ->

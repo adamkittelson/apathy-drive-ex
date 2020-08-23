@@ -87,6 +87,7 @@ defmodule ApathyDrive.Character do
     field(:scry_target, :any, virtual: true)
     field(:bust_cache, :boolean, virtual: true, default: false)
     field(:current_command, :any, virtual: true)
+    field(:current_command_error_count, :any, virtual: true, default: 0)
     field(:commands, :any, virtual: true, default: :queue.new())
     field(:max_exp_buffer, :any, virtual: true)
     field(:last_auto_attack_at, :any, virtual: true)
