@@ -11,41 +11,48 @@ defmodule ApathyDrive.Commands.Abilities do
   end
 
   def display_abilities(%Character{} = character) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='white'>You know the following abilities:</span></p>"
-    )
+    if Enum.any?(character.abilities) do
+      Mobile.send_scroll(
+        character,
+        "<p><span class='white'>You know the following abilities:</span></p>"
+      )
 
-    name_width =
+      name_width =
+        character.abilities
+        |> Map.values()
+        |> Enum.max_by(&String.length(&1.name))
+        |> Map.get(:name)
+        |> String.length()
+        |> max(15)
+
+      ability_name = String.pad_trailing("Ability Name", name_width)
+
+      Mobile.send_scroll(
+        character,
+        "<p><span class='dark-magenta'>Mana   Command  #{ability_name}</span> <span class='dark-magenta'>Mana   Command  Ability Name</span></p>"
+      )
+
       character.abilities
       |> Map.values()
-      |> Enum.max_by(&String.length(&1.name))
-      |> Map.get(:name)
-      |> String.length()
-      |> max(15)
+      |> Enum.sort_by(& &1.name)
+      |> Enum.map(&format_ability(&1, name_width))
+      |> Enum.chunk_every(2)
+      |> Enum.each(fn
+        [ability1, ability2] ->
+          Mobile.send_scroll(
+            character,
+            "<p>#{ability1}#{ability2}</p>"
+          )
 
-    ability_name = String.pad_trailing("Ability Name", name_width)
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-magenta'>Mana   Command  #{ability_name}</span> <span class='dark-magenta'>Mana   Command  Ability Name</span></p>"
-    )
-
-    character.abilities
-    |> Map.values()
-    |> Enum.sort_by(& &1.name)
-    |> Enum.map(&format_ability(&1, name_width))
-    |> Enum.chunk_every(2)
-    |> Enum.each(fn
-      [ability1, ability2] ->
-        Mobile.send_scroll(
-          character,
-          "<p>#{ability1}#{ability2}</p>"
-        )
-
-      [ability] ->
-        Mobile.send_scroll(character, "<p>#{ability}</p>")
-    end)
+        [ability] ->
+          Mobile.send_scroll(character, "<p>#{ability}</p>")
+      end)
+    else
+      Mobile.send_scroll(
+        character,
+        "<p><span class='white'>You don't know any abilities.</span></p>"
+      )
+    end
   end
 
   def format_ability(%{name: name, mana: mana, command: command, auto: auto}, name_width) do
