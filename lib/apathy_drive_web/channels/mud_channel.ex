@@ -50,21 +50,23 @@ defmodule ApathyDriveWeb.MUDChannel do
     |> RoomServer.find()
     |> RoomServer.enqueue_command(socket.assigns[:monster_ref], "l", [])
 
-    [first | rest] = ChannelHistory.fetch(socket.assigns[:character], 1000)
+    [first | rest] = ChannelHistory.fetch(socket.assigns[:character], 100)
 
     rest
     |> Enum.reverse()
-    |> Enum.each(fn %{message: message, time: time} ->
+    |> Enum.each(fn %{message: message, time: time, channel: channel} ->
       Phoenix.Channel.push(socket, "chat-sidebar", %{
         html: message,
-        time: Timex.from_now(time)
+        time: Timex.from_now(time),
+        chat_tab: chat_tab(channel)
       })
     end)
 
     Phoenix.Channel.push(socket, "chat-sidebar", %{
       html: first.message,
       time: Timex.from_now(first.time),
-      force_time: true
+      force_time: true,
+      chat_tab: chat_tab(first.channel)
     })
 
     {:noreply, socket}
@@ -216,6 +218,14 @@ defmodule ApathyDriveWeb.MUDChannel do
     {:noreply, socket}
   end
 
+  def handle_in("set_chat_tab", tab, socket) do
+    socket.assigns[:room_id]
+    |> RoomServer.find()
+    |> RoomServer.set_chat_tab(socket.assigns[:monster_ref], tab)
+
+    {:noreply, socket}
+  end
+
   def handle_in("command", %{}, socket) do
     # socket = add_command_to_queue(socket, {"l", []})
 
@@ -292,4 +302,7 @@ defmodule ApathyDriveWeb.MUDChannel do
   defp send_scroll(socket, html) do
     Phoenix.Channel.push(socket, "scroll", %{:html => html})
   end
+
+  defp chat_tab("announce"), do: "announce"
+  defp chat_tab(_), do: "chat"
 end

@@ -55,7 +55,8 @@ defmodule ApathyDrive.Directory do
       message = "<p>#{character.name} just entered the Realm.</p>"
 
       ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
-        html: message
+        html: message,
+        chat_tab: "chat"
       })
     end
 
@@ -113,7 +114,8 @@ defmodule ApathyDrive.Directory do
       message = "<p>#{character.name} just left the Realm.</p>"
 
       ApathyDriveWeb.Endpoint.broadcast!("mud:play", "chat", %{
-        html: message
+        html: message,
+        chat_tab: "chat"
       })
     end
 

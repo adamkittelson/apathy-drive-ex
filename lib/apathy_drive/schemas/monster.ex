@@ -615,7 +615,8 @@ defmodule ApathyDrive.Monster do
         })
 
         ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat-sidebar", %{
-          html: message
+          html: message,
+          chat_tab: "announce"
         })
       end
 

@@ -123,6 +123,10 @@ defmodule ApathyDrive.RoomServer do
     GenServer.call(room, {:enqueue_command, mobile_ref, command, arguments})
   end
 
+  def set_chat_tab(room, mobile_ref, tab) do
+    GenServer.call(room, {:set_chat_tab, mobile_ref, tab})
+  end
+
   def tell_monsters_to_follow(room, character, destination) do
     GenServer.cast(room, {:tell_monsters_to_follow, character, destination})
   end
@@ -236,6 +240,19 @@ defmodule ApathyDrive.RoomServer do
       {:error, error, %Room{} = room} ->
         {:reply, error, room}
     end
+  end
+
+  def handle_call({:set_chat_tab, mobile_ref, tab}, _from, room) do
+    room =
+      Room.update_mobile(room, mobile_ref, fn _room, mobile ->
+        mobile
+        |> Ecto.Changeset.change(%{
+          chat_tab: tab
+        })
+        |> Repo.update!()
+      end)
+
+    {:reply, :ok, room}
   end
 
   def handle_call({:lock, direction}, _from, room) do

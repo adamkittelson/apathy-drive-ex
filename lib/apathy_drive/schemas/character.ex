@@ -83,6 +83,7 @@ defmodule ApathyDrive.Character do
     field(:lore_name, :string)
     field(:evil_points_last_reduced_at, :utc_datetime_usec)
     field(:exp_buffer_last_drained_at, :utc_datetime_usec)
+    field(:chat_tab, :string)
 
     field(:scry_target, :any, virtual: true)
     field(:bust_cache, :boolean, virtual: true, default: false)

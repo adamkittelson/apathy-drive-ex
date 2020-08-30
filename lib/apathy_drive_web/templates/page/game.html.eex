@@ -1,5 +1,9 @@
 <%= render "nav.html", conn: @conn %>
 
+<script>
+  var chat_tab = "<%= @chat_tab %>"
+</script>
+
 <div class="score">
   <span class="dark-green">Name:</span> <span id="score-name" class="dark-cyan"></span> <span class="dark-green">Level:</span> <span id="score-level" class="dark-cyan"></span> <span class="dark-green">Accuracy:</span>  <span id="score-accuracy" class="dark-cyan"></span>
   <span class="dark-green">Race:</span> <span id="score-race" class="dark-cyan"></span> <span class="dark-green">Combat:</span> <span id="score-combat" class="dark-cyan"></span> <span class="dark-green">Dodge:</span>     <span id="score-dodge" class="dark-cyan"></span>
@@ -23,7 +27,16 @@
   </footer>
 </div>
 <div id="right-sidebar">
+  <ul class="tabrow">
+    <li id="all_chat">All</li>
+    <li id="chat_only">Chat</li>
+    <li id="announce_only">Announce</li>
+  </ul>
+  <div id="all">
+  </div>
   <div id="chat">
+  </div>
+  <div id="announce">
   </div>
   <div id="moblist">
   </div>

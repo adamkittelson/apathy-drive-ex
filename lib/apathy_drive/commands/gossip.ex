@@ -18,7 +18,8 @@ defmodule ApathyDrive.Commands.Gossip do
     })
 
     ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
-      html: message
+      html: message,
+      chat_tab: "chat"
     })
 
     room

@@ -53,10 +53,17 @@ window.linkify = function (text) {
 }
 
 
-window.adjustChatTop = function () {
-  if ($('#chat').scrollTop() + $('#chat').height() > $('#chat')[0].scrollHeight - 400) {
-    return $("#chat").scrollTop($('#chat')[0].scrollHeight);
+window.adjustChatTop = function (force) {
+  if (force || ($('#chat').scrollTop() + $('#chat').height() > $('#chat')[0].scrollHeight - 400)) {
+    $("#chat").scrollTop($('#chat')[0].scrollHeight);
   }
+  if (force || ($('#all').scrollTop() + $('#all').height() > $('#all')[0].scrollHeight - 400)) {
+    $("#all").scrollTop($('#all')[0].scrollHeight);
+  }
+  if (force || ($('#announce').scrollTop() + $('#announce').height() > $('#announce')[0].scrollHeight - 400)) {
+    $("#announce").scrollTop($('#announce')[0].scrollHeight);
+  }
+  return true;
 };
 
 setFocus = function (selector) {
@@ -219,27 +226,94 @@ chan.on("scroll", function (message) {
 });
 
 chan.on("chat", function (message) {
-  message = linkify(message.html);
-  addToScroll("#scroll", message);
-  $("#chat").append(message);
+  var line = linkify(message.html);
+  addToScroll("#scroll", line);
+
+  $("#all").append(line);
+  if (message.chat_tab == "chat") {
+    $("#chat").append(line);
+  }
+  else if (message.chat_tab == "announce") {
+    $("#announce").append(line);
+  }
+
   return adjustChatTop();
 });
 
 chan.on("chat-sidebar", function (message) {
   if (message.time) {
     if ((message.time != window.last_message_time) || message.force_time) {
-      $("#chat").append("<p class='time dark-cyan'>༺──── <span class='white'>" + message.time + "</span> ────༻</p>");
+      var divider = "<p class='time dark-cyan'>༺──── <span class='white'>" + message.time + "</span> ────༻</p>"
+      $("#all").append(divider);
+      if (message.chat_tab == "chat") {
+        $("#chat").append(divider);
+      }
+      else if (message.chat_tab == "announce") {
+        $("#announce").append(divider);
+      }
     }
     window.last_message_time = message.time
   }
-  message = linkify(message.html);
-  $("#chat").append(message);
+  $("#all").append(linkify(message.html));
+  if (message.chat_tab == "chat") {
+    $("#chat").append(linkify(message.html));
+  }
+  else if (message.chat_tab == "announce") {
+    $("#announce").append(linkify(message.html));
+  }
   return adjustChatTop();
 });
 
 window.push = function (event, message) {
   chan.push(event, message)
 };
+
+$(document).ready(function () {
+  show_tab(chat_tab);
+});
+
+var show_tab = function (tab) {
+  if (tab === "all") {
+    $("#all_chat").addClass("selected")
+    $("#chat_only").removeClass("selected")
+    $("#announce_only").removeClass("selected")
+    $("#all").show();
+    $("#chat").hide();
+    $("#announce").hide();
+  }
+  else if (tab === "chat") {
+    $("#all_chat").removeClass("selected")
+    $("#chat_only").addClass("selected")
+    $("#announce_only").removeClass("selected")
+    $("#all").hide();
+    $("#chat").show();
+    $("#announce").hide();
+  }
+  else if (tab === "announce") {
+    $("#all_chat").removeClass("selected")
+    $("#chat_only").removeClass("selected")
+    $("#announce_only").addClass("selected")
+    $("#all").hide();
+    $("#chat").hide();
+    $("#announce").show();
+  }
+  return adjustChatTop(true);
+}
+
+$("#all_chat").on("click", function (event) {
+  show_tab("all")
+  window.push("set_chat_tab", "all")
+});
+
+$("#chat_only").on("click", function (event) {
+  show_tab("chat")
+  window.push("set_chat_tab", "chat")
+});
+
+$("#announce_only").on("click", function (event) {
+  show_tab("announce")
+  window.push("set_chat_tab", "announce")
+});
 
 pruneBackscroll = function () {
   var backscroll_size = 1000;

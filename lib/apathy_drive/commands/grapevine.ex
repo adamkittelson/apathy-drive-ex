@@ -18,7 +18,8 @@ defmodule ApathyDrive.Commands.Grapevine do
     })
 
     ApathyDriveWeb.Endpoint.broadcast!("chat:gossip", "chat", %{
-      html: message
+      html: message,
+      chat_tab: "chat"
     })
 
     Gossip.broadcast("gossip", %{name: character.name, message: raw_message})

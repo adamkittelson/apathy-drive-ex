@@ -23,7 +23,7 @@ $("#class").on("change", function (event) {
 });
 
 var show_tab = function (tab) {
-  if (tab === "signup_tab") {
+  if (tab === "all") {
     $("#signup_tab").addClass("selected")
     $("#signin_tab").removeClass("selected")
     $("#signup_form").show();

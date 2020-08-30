@@ -46,7 +46,8 @@ defmodule ApathyDrive.Gossip.Core do
       }</p>"
 
     ApathyDriveWeb.Endpoint.broadcast!("chat:#{payload.channel}", "chat", %{
-      html: message
+      html: message,
+      chat_tab: "chat"
     })
   end
 end

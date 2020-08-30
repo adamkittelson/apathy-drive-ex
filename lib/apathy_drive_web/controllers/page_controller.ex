@@ -20,10 +20,10 @@ defmodule ApathyDriveWeb.PageController do
             |> put_session(:character, id)
             |> redirect(to: Routes.character_path(conn, :edit))
 
-          %Character{} ->
+          %Character{chat_tab: tab} ->
             conn
             |> put_layout({ApathyDriveWeb.LayoutView, :game})
-            |> render("game.html", [])
+            |> render("game.html", chat_tab: tab)
 
           nil ->
             conn
