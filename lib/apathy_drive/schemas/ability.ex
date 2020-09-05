@@ -2995,7 +2995,7 @@ defmodule ApathyDrive.Ability do
   def caster_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, _mobile) do
     message =
       ability.user_message
-      |> Text.interpolate(%{"target" => target, "lore" => caster.lore.name})
+      |> Text.interpolate(%{"target" => target, "lore" => caster.lore && caster.lore.name})
       |> Text.capitalize_first()
 
     unless message == "" do
@@ -3225,7 +3225,11 @@ defmodule ApathyDrive.Ability do
 
     message =
       ability.spectator_message
-      |> Text.interpolate(%{"user" => caster, "target" => target, "lore" => caster.lore.name})
+      |> Text.interpolate(%{
+        "user" => caster,
+        "target" => target,
+        "lore" => caster.lore && caster.lore.name
+      })
       |> Text.capitalize_first()
 
     unless message == "" do
