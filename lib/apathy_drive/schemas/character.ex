@@ -249,7 +249,20 @@ defmodule ApathyDrive.Character do
   end
 
   def encumbrance(%Character{} = character) do
-    Enum.reduce(character.equipment ++ character.inventory, 0, &(&1.weight + &2))
+    equipment_weight =
+      Enum.reduce(character.equipment, 0, fn item, weight ->
+        skill_level = Item.skill_for_character(character, item)
+        multiplier = 1 - skill_level / 100
+
+        weight + trunc(item.weight * multiplier)
+      end)
+
+    inventory_weight =
+      Enum.reduce(character.inventory, 0, fn item, weight ->
+        weight + item.weight
+      end)
+
+    equipment_weight + inventory_weight
   end
 
   def max_encumbrance(%Character{} = character) do
@@ -806,25 +819,6 @@ defmodule ApathyDrive.Character do
       "whip" => "Cutting"
     }
 
-    {min_damage, max_damage} =
-      if weapon.weapon_type do
-        skill_level = Item.skill_for_character(character, weapon)
-
-        modifier =
-          if skill_level == 0 do
-            0.1
-          else
-            skill_level / character.level
-          end
-
-        min_damage = weapon.min_damage * modifier
-        max_damage = weapon.max_damage * modifier
-
-        {min_damage, max_damage}
-      else
-        {weapon.min_damage, weapon.max_damage}
-      end
-
     %Item{
       type: "Weapon",
       name: name,
@@ -861,8 +855,8 @@ defmodule ApathyDrive.Character do
           %{
             kind: "physical",
             damage_type: table,
-            min: min_damage,
-            max: max_damage,
+            min: weapon.min_damage,
+            max: weapon.max_damage,
             damage_type_id: Repo.get_by(ApathyDrive.DamageType, name: table).id
           }
           | bonus_damage
@@ -1537,15 +1531,16 @@ defmodule ApathyDrive.Character do
 
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
+    level = Item.skill_for_character(character, weapon)
     encumbrance = Character.encumbrance(character)
     max_encumbrance = Character.max_encumbrance(character)
-    agility = Mobile.attribute_at_level(character, :agility, character.level)
+    agility = Mobile.attribute_at_level(character, :agility, level)
 
     combat_level = Character.combat_level(character)
 
     cost =
       weapon.speed * 1000 /
-        ((character.level * (combat_level + 2) + 45) * (agility + 150) *
+        ((level * (combat_level + 2) + 45) * (agility + 150) *
            1500 /
            9000.0)
 
