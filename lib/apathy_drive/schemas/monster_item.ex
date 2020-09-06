@@ -16,7 +16,7 @@ defmodule ApathyDrive.MonsterItem do
     drops =
       __MODULE__
       |> where([ic], ic.monster_id == ^id)
-      |> select([:item_id, :chance])
+      |> select([:item_id, :chance, :id])
       |> Repo.all()
 
     Map.put(monster, :drops, drops)

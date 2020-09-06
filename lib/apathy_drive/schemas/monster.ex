@@ -14,6 +14,7 @@ defmodule ApathyDrive.Monster do
     ItemInstance,
     KillCount,
     LimbSet,
+    LootPity,
     Mobile,
     Monster,
     MonsterAbility,
@@ -386,8 +387,10 @@ defmodule ApathyDrive.Monster do
         %Monster{} = monster,
         %Character{} = character
       ) do
-    Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id}, room ->
-      if :rand.uniform(100) <= chance do
+    Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id, id: drop_id}, room ->
+      pity = LootPity.pity_for_character(character, drop_id)
+
+      if :rand.uniform(100) <= chance + pity do
         item =
           %ItemInstance{
             item_id: item_id,
@@ -406,6 +409,10 @@ defmodule ApathyDrive.Monster do
           character,
           "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
         )
+
+        LootPity.reset_pity(character, drop_id)
+      else
+        LootPity.increase_pity(character, drop_id)
       end
 
       room
