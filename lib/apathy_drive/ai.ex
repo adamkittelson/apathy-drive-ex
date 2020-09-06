@@ -614,7 +614,8 @@ defmodule ApathyDrive.AI do
 
   defp should_move?(%ApathyDrive.Character{} = character, room) do
     cond do
-      !is_nil(Mobile.auto_attack_target(character, room)) ->
+      !is_nil(Mobile.auto_attack_target(character, room)) or
+          Aggression.enemies_present?(room, character) ->
         :fighting
 
       character.hp < 0.8 ->
