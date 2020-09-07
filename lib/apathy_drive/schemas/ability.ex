@@ -3759,14 +3759,6 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def mana_cost(%Character{} = character, %Ability{kind: "attack"} = ability) do
-    if ability.targets =~ "area" do
-      max(1, trunc(character.level * 1.75))
-    else
-      max(1, trunc(character.level * 0.75))
-    end
-  end
-
   def mana_cost(%{} = _mobile, %Ability{mana: cost}), do: cost
 
   def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false
