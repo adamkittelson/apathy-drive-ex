@@ -391,6 +391,8 @@ defmodule ApathyDrive.Monster do
       pity = LootPity.pity_for_character(character, drop_id)
 
       if :rand.uniform(100) <= chance + pity do
+        Logger.info("Dropping item##{item_id} for #{character.name} in Room##{room.id}")
+
         item =
           %ItemInstance{
             item_id: item_id,
