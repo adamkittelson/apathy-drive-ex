@@ -166,10 +166,26 @@ defmodule ApathyDrive.RoomServer do
     {:ok, id, {:continue, :init}}
   end
 
+  defp preload_area(%Room{area_id: nil} = room), do: room
+
+  defp preload_area(%Room{area_id: area_id} = room) do
+    area =
+      case Repo.get(Area, area_id) do
+        %Area{id: id, name: name, level: level} ->
+          %Area{id: id, name: name, level: level}
+
+        _ ->
+          %Area{id: id, name: name, level: level} = Repo.get_by!(Area, name: "unassigned")
+          %Area{id: id, name: name, level: level}
+      end
+
+    Map.put(room, :area, area)
+  end
+
   def handle_continue(:init, id) do
     room =
       Repo.get!(Room, id)
-      |> Repo.preload(area: Area.without_map())
+      |> preload_area()
       |> Repo.preload(:trainer)
       |> Room.load_exits()
       |> Room.load_items()

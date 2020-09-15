@@ -67,6 +67,7 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
+    field(:base_name, :string, virtual: true)
     field(:bust_cache, :boolean, virtual: true, default: false)
     field(:last_auto_attack_at, :any, virtual: true)
     field(:owner_id, :integer, virtual: true)
@@ -256,6 +257,7 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:room_monster_id, id)
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
+    |> Map.put(:base_name, monster.name)
     |> load_limbs()
     |> load_abilities()
     |> load_traits()
@@ -335,6 +337,7 @@ defmodule ApathyDrive.Monster do
       Map.take(room_monster, [:strength, :agility, :intellect, :willpower, :health, :charm, :name])
     )
     |> Map.put(:room_monster_id, room_monster.id)
+    |> Map.put(:base_name, monster.name)
   end
 
   def generate_monster_attributes(%Monster{} = monster), do: monster

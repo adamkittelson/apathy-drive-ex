@@ -42,10 +42,16 @@ defmodule ApathyDrive.Commands.Ask do
   end
 
   def ask(%Room{} = room, %Character{} = character, %{} = target, question) do
-    questions = Map.get(target, :questions)
+    name =
+      target.base_name
+      |> String.split(~r/[^\w]+/)
+      |> Enum.map(&Macro.camelize/1)
+      |> Enum.join()
 
-    if questions |> Map.keys() |> Enum.member?(question) do
-      Script.execute(room, character, questions[question])
+    module = Module.concat([ApathyDrive, Scripts, name])
+
+    if function_exported?(module, :ask, 4) do
+      module.ask(room, character.ref, target.ref, question)
     else
       Mobile.send_scroll(
         character,

@@ -37,6 +37,8 @@ defmodule ApathyDrive.RoomSupervisor do
       |> Ecto.Query.select([r, a], a.name)
       |> Repo.one()
 
+    area = area || "unassigned"
+
     if area do
       case Supervisor.start_child(
              __MODULE__,
