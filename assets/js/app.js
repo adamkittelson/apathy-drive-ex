@@ -269,10 +269,10 @@ window.push = function (event, message) {
 };
 
 $(document).ready(function () {
-  show_tab(chat_tab);
+  show_chat_tab(chat_tab);
 });
 
-var show_tab = function (tab) {
+var show_chat_tab = function (tab) {
   if (tab === "all") {
     $("#all_chat").addClass("selected")
     $("#chat_only").removeClass("selected")
@@ -301,17 +301,17 @@ var show_tab = function (tab) {
 }
 
 $("#all_chat").on("click", function (event) {
-  show_tab("all")
+  show_chat_tab("all")
   window.push("set_chat_tab", "all")
 });
 
 $("#chat_only").on("click", function (event) {
-  show_tab("chat")
+  show_chat_tab("chat")
   window.push("set_chat_tab", "chat")
 });
 
 $("#announce_only").on("click", function (event) {
-  show_tab("announce")
+  show_chat_tab("announce")
   window.push("set_chat_tab", "announce")
 });
 

@@ -1,17 +1,17 @@
 import $ from "js/jquery-1.10.2.min";
 
 $(document).ready(function () {
-  show_tab(tab);
+  show_signup_tab(tab);
   show_race($("#race").val())
   show_class($("#class").val())
 });
 
 $("#signup_tab").on("click", function (event) {
-  show_tab("signup_tab")
+  show_signup_tab("signup_tab")
 });
 
 $("#signin_tab").on("click", function (event) {
-  show_tab("signin_tab")
+  show_signup_tab("signin_tab")
 });
 
 $("#race").on("change", function (event) {
@@ -22,8 +22,8 @@ $("#class").on("change", function (event) {
   show_class(event.target.value)
 });
 
-var show_tab = function (tab) {
-  if (tab === "all") {
+var show_signup_tab = function (tab) {
+  if (tab === "signup_tab") {
     $("#signup_tab").addClass("selected")
     $("#signin_tab").removeClass("selected")
     $("#signup_form").show();
