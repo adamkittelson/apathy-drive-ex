@@ -88,8 +88,8 @@ defmodule ApathyDrive.Emote do
     )
   end
 
-  def execute(%Emote{targeted: true}, _room, _character, nil) do
-    Mobile.send_scroll("<p>You don't see that here!</p>")
+  def execute(%Emote{targeted: true}, _room, character, nil) do
+    Mobile.send_scroll(character, "<p>You don't see that here!</p>")
   end
 
   def execute(%Emote{targeted: true} = emote, room, character, target) when is_binary(target) do
