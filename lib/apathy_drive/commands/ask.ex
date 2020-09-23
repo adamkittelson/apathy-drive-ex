@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Ask do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Match, Script}
+  alias ApathyDrive.{Character, Match}
 
   def keywords, do: ["ask"]
 

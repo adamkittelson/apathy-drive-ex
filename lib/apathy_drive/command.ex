@@ -6,6 +6,7 @@ defmodule ApathyDrive.Command do
     Ability,
     Character,
     Commands,
+    Emote,
     Monster,
     Match,
     Mobile,
@@ -145,6 +146,12 @@ defmodule ApathyDrive.Command do
 
           ability = monster.abilities[String.downcase(command)] ->
             Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
+
+          emote = Emote.match_by_name(command, arguments) ->
+            target = Enum.join(arguments, " ")
+            Emote.execute(emote, room, monster, target)
+
+            room
 
           true ->
             case Match.all(Enum.map(all(), & &1.to_struct), :keyword_starts_with, command) do
