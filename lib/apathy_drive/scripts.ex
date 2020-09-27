@@ -1221,9 +1221,6 @@ defmodule ApathyDrive.Scripts do
         |> random_item_898(mobile_ref)
         |> random_item_898(mobile_ref)
 
-      # |> random_item_896(mobile_ref)
-      # |> random_item_896(mobile_ref)
-
       roll <= 45 ->
         room
         |> random_item_895(mobile_ref)
@@ -1258,6 +1255,640 @@ defmodule ApathyDrive.Scripts do
         |> random_item_886(mobile_ref)
         |> random_item_889(mobile_ref)
         |> random_item_2922(mobile_ref)
+    end
+  end
+
+  def random_item_9059(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 9 ->
+        # sharktooth trident
+        give_item(room, mobile_ref, 1068)
+
+      roll <= 18 ->
+        # beaded belt
+        give_item(room, mobile_ref, 1218)
+
+      roll <= 26 ->
+        # trollskin boots
+        give_item(room, mobile_ref, 1232)
+
+      roll <= 29 ->
+        # mithril earrings
+        give_item(room, mobile_ref, 1238)
+
+      roll <= 30 ->
+        # ruby earrings
+        give_item(room, mobile_ref, 1237)
+
+      roll <= 34 ->
+        # sapling longbow
+        give_item(room, mobile_ref, 1201)
+
+      roll <= 38 ->
+        # ruby earrings
+        give_item(room, mobile_ref, 1237)
+
+      roll <= 43 ->
+        # wyvernhide pants
+        give_item(room, mobile_ref, 1194)
+
+      roll <= 48 ->
+        # emerald studded bracelet
+        give_item(room, mobile_ref, 1325)
+
+      roll <= 53 ->
+        # wyvernhide tunic
+        give_item(room, mobile_ref, 412)
+
+      roll <= 58 ->
+        # stormetal scalemail tunic
+        give_item(room, mobile_ref, 1214)
+
+      roll <= 63 ->
+        # red chitin shield
+        give_item(room, mobile_ref, 1200)
+
+      roll <= 65 ->
+        # mithril plate leggings
+        give_item(room, mobile_ref, 1192)
+
+      roll <= 66 ->
+        # giant spiked collar
+        give_item(room, mobile_ref, 1205)
+
+      roll <= 69 ->
+        # bronze chakram
+        give_item(room, mobile_ref, 1203)
+
+      roll <= 72 ->
+        # mithril chain leggings
+        give_item(room, mobile_ref, 1193)
+
+      roll <= 74 ->
+        # ogre bone bracelet
+        give_item(room, mobile_ref, 1220)
+
+      roll <= 79 ->
+        # javelin
+        give_item(room, mobile_ref, 1190)
+
+      roll <= 84 ->
+        # lionskin belt
+        give_item(room, mobile_ref, 1209)
+
+      roll <= 86 ->
+        # stormhammer
+        give_item(room, mobile_ref, 877)
+
+      roll <= 90 ->
+        # stormhammer
+        give_item(room, mobile_ref, 1207)
+
+      roll <= 100 ->
+        room
+        |> random_item_9062(mobile_ref)
+    end
+  end
+
+  def random_item_9060(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 5 ->
+        # bloodstone
+        give_item(room, mobile_ref, 887)
+
+      roll <= 10 ->
+        # carnelion stone
+        give_item(room, mobile_ref, 888)
+
+      roll <= 15 ->
+        # moonstone
+        give_item(room, mobile_ref, 889)
+
+      roll <= 20 ->
+        # onyx stone
+        give_item(room, mobile_ref, 890)
+
+      roll <= 25 ->
+        # piece of crystal
+        give_item(room, mobile_ref, 891)
+
+      roll <= 34 ->
+        # piece of amber
+        give_item(room, mobile_ref, 892)
+
+      roll <= 43 ->
+        # amethyst stone
+        give_item(room, mobile_ref, 893)
+
+      roll <= 52 ->
+        # piece of jade
+        give_item(room, mobile_ref, 894)
+
+      roll <= 58 ->
+        # aquamarine stone
+        give_item(room, mobile_ref, 895)
+
+      roll <= 64 ->
+        # garnet
+        give_item(room, mobile_ref, 896)
+
+      roll <= 70 ->
+        # pearl
+        give_item(room, mobile_ref, 897)
+
+      roll <= 76 ->
+        # topaz stone
+        give_item(room, mobile_ref, 898)
+
+      roll <= 81 ->
+        # black opal
+        give_item(room, mobile_ref, 899)
+
+      roll <= 86 ->
+        # fire opal
+        give_item(room, mobile_ref, 900)
+
+      roll <= 92 ->
+        # opal
+        give_item(room, mobile_ref, 901)
+
+      roll <= 94 ->
+        # diamond
+        give_item(room, mobile_ref, 902)
+
+      roll <= 96 ->
+        # emerald
+        give_item(room, mobile_ref, 903)
+
+      roll <= 98 ->
+        # ruby
+        give_item(room, mobile_ref, 904)
+
+      roll <= 100 ->
+        room
+        |> random_item_9060(mobile_ref)
+        |> random_item_9061(mobile_ref)
+    end
+  end
+
+  def random_item_9061(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 3 ->
+        # black potion
+        give_item(room, mobile_ref, 879)
+
+      roll <= 8 ->
+        # golden vial
+        give_item(room, mobile_ref, 880)
+
+      roll <= 18 ->
+        # turquoise potion
+        give_item(room, mobile_ref, 465)
+
+      roll <= 22 ->
+        # crimson bracers
+        give_item(room, mobile_ref, 425)
+
+      roll <= 26 ->
+        # mithril ring
+        give_item(room, mobile_ref, 434)
+
+      roll <= 30 ->
+        # moonstone ring
+        give_item(room, mobile_ref, 436)
+
+      roll <= 34 ->
+        # piece of amber
+        give_item(room, mobile_ref, 892)
+
+      roll <= 43 ->
+        # amethyst stone
+        give_item(room, mobile_ref, 893)
+
+      roll <= 42 ->
+        # piece of jade
+        give_item(room, mobile_ref, 894)
+
+      roll <= 48 ->
+        # aquamarine stone
+        give_item(room, mobile_ref, 895)
+
+      roll <= 54 ->
+        # garnet
+        give_item(room, mobile_ref, 896)
+
+      roll <= 60 ->
+        # pearl
+        give_item(room, mobile_ref, 897)
+
+      roll <= 66 ->
+        # topaz stone
+        give_item(room, mobile_ref, 898)
+
+      roll <= 76 ->
+        # fire opal
+        give_item(room, mobile_ref, 900)
+
+      roll <= 77 ->
+        # opal
+        give_item(room, mobile_ref, 901)
+
+      roll <= 80 ->
+        # diamond
+        give_item(room, mobile_ref, 902)
+
+      roll <= 86 ->
+        # emerald
+        give_item(room, mobile_ref, 903)
+
+      roll <= 90 ->
+        # ruby
+        give_item(room, mobile_ref, 904)
+
+      roll <= 100 ->
+        room
+        |> random_item_9061(mobile_ref)
+        |> random_item_9062(mobile_ref)
+    end
+  end
+
+  def random_item_9062(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 4 ->
+        # crimson scale gauntlets
+        give_item(room, mobile_ref, 1336)
+
+      roll <= 10 ->
+        # hide inscripted scroll
+        give_item(room, mobile_ref, 1879)
+
+      roll <= 15 ->
+        # black leather belt
+        give_item(room, mobile_ref, 1227)
+
+      roll <= 20 ->
+        # sunsword
+        give_item(room, mobile_ref, 221)
+
+      roll <= 29 ->
+        # dragontooth trident
+        give_item(room, mobile_ref, 874)
+
+      roll <= 35 ->
+        # gunsen
+        give_item(room, mobile_ref, 1253)
+
+      roll <= 40 ->
+        # spider silk robes
+        give_item(room, mobile_ref, 1262)
+
+      roll <= 43 ->
+        # webbed gauntlets
+        give_item(room, mobile_ref, 1256)
+
+      roll <= 53 ->
+        # bronze chakram
+        give_item(room, mobile_ref, 1203)
+
+      roll <= 65 ->
+        # stormmetal bracers
+        give_item(room, mobile_ref, 1215)
+
+      roll <= 76 ->
+        # black potion
+        give_item(room, mobile_ref, 879)
+
+      roll <= 81 ->
+        # emerald studded bracelet
+        give_item(room, mobile_ref, 1325)
+
+      roll <= 86 ->
+        # trollskin boots
+        give_item(room, mobile_ref, 1232)
+
+      roll <= 94 ->
+        # golden vial
+        give_item(room, mobile_ref, 880)
+
+      roll <= 100 ->
+        # vorpal sword
+        give_item(room, mobile_ref, 220)
+    end
+  end
+
+  def random_item_9384(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 10 ->
+        room
+        |> random_item_895(mobile_ref)
+
+      roll <= 20 ->
+        room
+        |> random_item_898(mobile_ref)
+
+      roll <= 30 ->
+        room
+        |> random_item_2944(mobile_ref)
+
+      roll <= 40 ->
+        room
+        |> random_item_9059(mobile_ref)
+
+      roll <= 50 ->
+        room
+        |> random_item_9469(mobile_ref)
+
+      roll <= 100 ->
+        room
+        |> random_item_9387(mobile_ref)
+    end
+  end
+
+  def random_item_9385(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 10 ->
+        room
+        |> random_item_895(mobile_ref)
+
+      roll <= 20 ->
+        room
+        |> random_item_898(mobile_ref)
+
+      roll <= 30 ->
+        room
+        |> random_item_2944(mobile_ref)
+
+      roll <= 40 ->
+        room
+        |> random_item_9059(mobile_ref)
+
+      roll <= 50 ->
+        room
+        |> random_item_9469(mobile_ref)
+
+      roll <= 100 ->
+        room
+        |> random_item_9387(mobile_ref)
+    end
+  end
+
+  def random_item_9387(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 25 ->
+        room
+        |> random_item_9467(mobile_ref)
+
+      roll <= 55 ->
+        room
+        |> random_item_9468(mobile_ref)
+
+      roll <= 75 ->
+        room
+        |> random_item_9469(mobile_ref)
+
+      roll <= 100 ->
+        room
+        |> random_item_9470(mobile_ref)
+    end
+  end
+
+  def random_item_9467(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 10 ->
+        # cruel bone greatsword
+        give_item(room, mobile_ref, 1436)
+
+      roll <= 15 ->
+        # jewel-encrusted warhammer
+        give_item(room, mobile_ref, 1448)
+
+      roll <= 18 ->
+        # rod of might
+        give_item(room, mobile_ref, 1475)
+
+      roll <= 25 ->
+        # demon-carved halberd
+        give_item(room, mobile_ref, 1470)
+
+      roll <= 30 ->
+        # ruby staff
+        give_item(room, mobile_ref, 1514)
+
+      roll <= 40 ->
+        # iron wand
+        give_item(room, mobile_ref, 1503)
+
+      roll <= 50 ->
+        # yellow potion
+        give_item(room, mobile_ref, 1658)
+
+      roll <= 60 ->
+        # crimson potion
+        give_item(room, mobile_ref, 1659)
+
+      roll <= 70 ->
+        # bubbling blue potion
+        give_item(room, mobile_ref, 1660)
+
+      roll <= 80 ->
+        # grey potion
+        give_item(room, mobile_ref, 1661)
+
+      roll <= 90 ->
+        # sickly green potion
+        give_item(room, mobile_ref, 1662)
+
+      roll <= 100 ->
+        # frothing brown potion
+        give_item(room, mobile_ref, 1664)
+    end
+  end
+
+  def random_item_9468(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 20 ->
+        room
+
+      roll <= 30 ->
+        # vorpal hatchet
+        give_item(room, mobile_ref, 1445)
+
+      roll <= 40 ->
+        # ethereal dagger
+        give_item(room, mobile_ref, 1454)
+
+      roll <= 50 ->
+        # bone club
+        give_item(room, mobile_ref, 1473)
+
+      roll <= 55 ->
+        # blackwood cudgel
+        give_item(room, mobile_ref, 1474)
+
+      roll <= 60 ->
+        # blackwood longbow
+        give_item(room, mobile_ref, 1514)
+
+      roll <= 65 ->
+        # blackwood war-spear
+        give_item(room, mobile_ref, 1478)
+
+      roll <= 70 ->
+        # templar greatsword
+        give_item(room, mobile_ref, 1480)
+
+      roll <= 80 ->
+        # arlesian longsword
+        give_item(room, mobile_ref, 1651)
+
+      roll <= 90 ->
+        # arlysian mace
+        give_item(room, mobile_ref, 1652)
+
+      roll <= 100 ->
+        # arlysian dagger
+        give_item(room, mobile_ref, 1653)
+    end
+  end
+
+  def random_item_9469(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 5 ->
+        # platinum plate boots
+        give_item(room, mobile_ref, 1880)
+
+      roll <= 9 ->
+        # hide inscripted scroll
+        give_item(room, mobile_ref, 1879)
+
+      roll <= 16 ->
+        # diamond-encrusted bracelet
+        give_item(room, mobile_ref, 1468)
+
+      roll <= 20 ->
+        # blackened bracelet
+        give_item(room, mobile_ref, 1470)
+
+      roll <= 25 ->
+        # bone ring
+        give_item(room, mobile_ref, 1472)
+
+      roll <= 30 ->
+        # feather-tipped hat
+        give_item(room, mobile_ref, 1482)
+
+      roll <= 40 ->
+        # blackwood shield
+        give_item(room, mobile_ref, 1645)
+
+      roll <= 45 ->
+        # blackwood harp
+        give_item(room, mobile_ref, 1650)
+
+      roll <= 50 ->
+        # amber pearl earrings
+        give_item(room, mobile_ref, 1516)
+
+      roll <= 55 ->
+        # fur cloak
+        give_item(room, mobile_ref, 1450)
+
+      roll <= 56 ->
+        # fur gloves
+        give_item(room, mobile_ref, 1451)
+
+      roll <= 57 ->
+        # amber pearl earrings
+        give_item(room, mobile_ref, 1516)
+
+      roll <= 59 ->
+        # fur boots
+        give_item(room, mobile_ref, 1517)
+
+      roll <= 60 ->
+        # brown leather boots
+        give_item(room, mobile_ref, 1518)
+
+      roll <= 71 ->
+        # bleeding main-gauche
+        give_item(room, mobile_ref, 1520)
+
+      roll <= 82 ->
+        # onyx earrings
+        give_item(room, mobile_ref, 1521)
+
+      roll <= 90 ->
+        # battered chainmail hauberk
+        give_item(room, mobile_ref, 1522)
+
+      roll <= 96 ->
+        # serrated spiked shield
+        give_item(room, mobile_ref, 1523)
+
+      roll <= 100 ->
+        # black velvet gloves
+        give_item(room, mobile_ref, 1524)
+    end
+  end
+
+  def random_item_9470(room, mobile_ref) do
+    roll = :rand.uniform(100)
+
+    cond do
+      roll <= 10 ->
+        # crimson scalemail tunic
+        give_item(room, mobile_ref, 1491)
+
+      roll <= 20 ->
+        # crimson scalemail leggings
+        give_item(room, mobile_ref, 1492)
+
+      roll <= 30 ->
+        # crimson helm
+        give_item(room, mobile_ref, 1493)
+
+      roll <= 40 ->
+        # etched adamant broadsword
+        give_item(room, mobile_ref, 1005)
+
+      roll <= 50 ->
+        # etched adamant warhammer
+        give_item(room, mobile_ref, 1069)
+
+      roll <= 60 ->
+        # etched adamant greatsword
+        give_item(room, mobile_ref, 1070)
+
+      roll <= 70 ->
+        # crimson scale gauntlets
+        give_item(room, mobile_ref, 1336)
+
+      roll <= 80 ->
+        # crimson spiked shield
+        give_item(room, mobile_ref, 1067)
+
+      roll <= 100 ->
+        room
     end
   end
 
