@@ -197,7 +197,6 @@ defmodule ApathyDrive.Trait do
             "stack_count",
             "stack_key",
             "timers",
-            "Aggro",
             "effect_ref",
             "ClassLevel",
             "Enchantment",

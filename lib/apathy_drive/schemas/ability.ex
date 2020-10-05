@@ -5,6 +5,7 @@ defmodule ApathyDrive.Ability do
     Ability,
     AbilityDamageType,
     AbilityTrait,
+    Aggression,
     Character,
     CraftingRecipe,
     Enchantment,
@@ -1542,11 +1543,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def retaliate?(caster, target) do
-    targets =
-      caster.effects
-      |> Map.values()
-      |> Enum.filter(&Map.has_key?(&1, "Aggro"))
-      |> Enum.map(&Map.get(&1, "Aggro"))
+    targets = Map.keys(caster.hate)
 
     target.ref in targets
   end
@@ -2057,7 +2054,8 @@ defmodule ApathyDrive.Ability do
         %{ref: caster_ref} = caster
       )
       when kind in ["attack", "curse"] and target_ref != caster_ref do
-    ApathyDrive.Aggression.attack_target(target, caster)
+    target = Aggression.add_hate(target, caster_ref, 1)
+    Aggression.attack_target(target, caster)
   end
 
   def aggro_target(%{} = target, %Ability{}, %{} = _caster), do: target
@@ -2444,6 +2442,10 @@ defmodule ApathyDrive.Ability do
           target_attribute => 0.2,
           :health => 0.8
         })
+
+      enmity = abs(trunc(damage_percent * Mobile.max_hp_at_level(target, target.level)))
+
+      target = Aggression.add_hate(target, caster.ref, enmity)
 
       {caster, target}
     end

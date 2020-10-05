@@ -237,8 +237,6 @@ defmodule ApathyDriveWeb.MUDChannel do
   def handle_in("command", message, socket) do
     case String.split(message) do
       [command | arguments] ->
-        # socket = add_command_to_queue(socket, {command, arguments})
-
         execute_command(socket, command, arguments)
         {:noreply, socket}
 

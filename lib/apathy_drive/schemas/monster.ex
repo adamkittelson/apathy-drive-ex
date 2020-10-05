@@ -67,6 +67,7 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
+    field(:hate, :map, virtual: true, default: %{})
     field(:base_name, :string, virtual: true)
     field(:bust_cache, :boolean, virtual: true, default: false)
     field(:last_auto_attack_at, :any, virtual: true)
@@ -139,10 +140,8 @@ defmodule ApathyDrive.Monster do
   end
 
   def enemies(%Monster{} = monster, room) do
-    monster.effects
-    |> Map.values()
-    |> Enum.filter(&Map.has_key?(&1, "Aggro"))
-    |> Enum.map(&Map.get(&1, "Aggro"))
+    monster.hate
+    |> Map.keys()
     |> Enum.filter(&(&1 in Map.keys(room.mobiles)))
     |> Enum.reject(&room.mobiles[&1].sneaking)
   end
@@ -362,27 +361,24 @@ defmodule ApathyDrive.Monster do
     nil
   end
 
-  # weak monsters attack enemy with lowest % hp remaining
-  def auto_attack_target(%Monster{grade: "weak"}, enemies, room) do
-    enemies
-    |> Enum.map(&room.mobiles[&1])
-    |> Enum.sort_by(& &1.hp)
+  def auto_attack_target(%Monster{hate: hate}, room) do
+    here =
+      room.mobiles
+      |> Map.keys()
+
+    hate
+    |> Enum.reject(fn {ref, _enmity} ->
+      !(ref in here)
+    end)
+    |> Enum.sort_by(fn {_ref, enmity} -> enmity end, &>=/2)
     |> List.first()
-    |> Map.get(:ref)
-  end
+    |> case do
+      {ref, _enmity} ->
+        ref
 
-  # normal monsters attack a random enemy
-  def auto_attack_target(%Monster{grade: "normal"}, enemies, _room) do
-    Enum.random(enemies)
-  end
-
-  # strong monsters attack enemy with highest % hp remaining
-  def auto_attack_target(%Monster{}, enemies, room) do
-    enemies
-    |> Enum.map(&room.mobiles[&1])
-    |> Enum.sort_by(& &1.hp)
-    |> List.last()
-    |> Map.get(:ref)
+      _ ->
+        nil
+    end
   end
 
   def drop_loot_for_character(
@@ -479,9 +475,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def auto_attack_target(%Monster{} = monster, room) do
-      enemies = Monster.enemies(monster, room)
-
-      Monster.auto_attack_target(monster, enemies, room)
+      Monster.auto_attack_target(monster, room)
     end
 
     def color(%Monster{alignment: "evil"}), do: "magenta"

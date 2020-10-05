@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Aggression do
-  alias ApathyDrive.{Character, Mobile, Monster, Room, Trait}
+  alias ApathyDrive.{Character, Mobile, Monster, Room, TimerManager}
   require Logger
 
   def react(%Room{} = room, monster_ref) do
@@ -49,7 +49,7 @@ defmodule ApathyDrive.Aggression do
   def attacking_owner?(%{}, _mobile, _room), do: false
 
   def enemy?(%Character{} = character, %Monster{} = monster) do
-    character.auto_attack && enemy?(monster, character)
+    character.auto_attack && (hated?(monster, character) or enemy?(monster, character))
   end
 
   def enemy?(%Monster{npc: true}, %{} = _mobile) do
@@ -123,7 +123,23 @@ defmodule ApathyDrive.Aggression do
   end
 
   def enemy?(%{attack_target: target} = _monster, %{ref: ref} = _mob) when ref == target, do: true
+
   def enemy?(%{} = _monster, %{} = _mob), do: false
+
+  def hated?(%{hate: hate} = _monster, %{ref: ref} = _mob) do
+    ref in Map.keys(hate)
+  end
+
+  def add_hate(%{} = mobile, ref, amount) do
+    IO.puts("adding #{amount} hate to #{mobile.name} for #{ref}")
+    current = mobile.hate[ref] || 0
+
+    update_in(mobile.hate, fn hate ->
+      hate
+      |> Map.put(ref, current + amount)
+    end)
+    |> TimerManager.send_after({:clear_hate, :timer.seconds(60), {:clear_hate, mobile.ref, ref}})
+  end
 
   def attack(%Room{} = room, %{} = attacker, %{} = intruder) do
     attacker = attack_target(attacker, intruder)
@@ -148,14 +164,7 @@ defmodule ApathyDrive.Aggression do
   end
 
   def attack_target(%Monster{} = attacker, %{ref: ref} = _intruder) do
-    if Trait.get_cached(attacker, "Aggro") != ref do
-      effect = %{"Aggro" => ref, "stack_key" => {:aggro, ref}, "stack_count" => 1}
-
-      attacker
-      |> Systems.Effect.add(effect, 60_000)
-    else
-      attacker
-    end
+    add_hate(attacker, ref, 1)
   end
 
   def attack_target(%Character{} = attacker, %{ref: ref} = _intruder) do

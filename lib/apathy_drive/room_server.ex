@@ -541,6 +541,15 @@ defmodule ApathyDrive.RoomServer do
     {:stop, :reload, room}
   end
 
+  def handle_info({:clear_hate, monster_ref, hated_ref}, room) do
+    room =
+      Room.update_mobile(room, monster_ref, fn _room, monster ->
+        update_in(monster.hate, &Map.delete(&1, hated_ref))
+      end)
+
+    {:noreply, room}
+  end
+
   def handle_info({:execute_command, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn room, mobile ->

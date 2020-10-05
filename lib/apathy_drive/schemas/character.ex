@@ -85,6 +85,7 @@ defmodule ApathyDrive.Character do
     field(:exp_buffer_last_drained_at, :utc_datetime_usec)
     field(:chat_tab, :string)
 
+    field(:hate, :map, virtual: true, default: %{})
     field(:scry_target, :any, virtual: true)
     field(:bust_cache, :boolean, virtual: true, default: false)
     field(:current_command, :any, virtual: true)
