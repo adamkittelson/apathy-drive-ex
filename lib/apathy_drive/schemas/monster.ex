@@ -19,6 +19,7 @@ defmodule ApathyDrive.Monster do
     Monster,
     MonsterAbility,
     MonsterItem,
+    MonsterPowerLevel,
     MonsterSpawning,
     MonsterTrait,
     Party,
@@ -67,6 +68,7 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
+    field(:power_level, :any, virtual: true)
     field(:hate, :map, virtual: true, default: %{})
     field(:base_name, :string, virtual: true)
     field(:bust_cache, :boolean, virtual: true, default: false)
@@ -122,6 +124,12 @@ defmodule ApathyDrive.Monster do
 
     has_many(:monsters_traits, ApathyDrive.MonsterTrait)
     has_many(:traits, through: [:monsters_traits, :trait])
+  end
+
+  def max_hp_at_level(%Monster{} = _monster, 1), do: 21
+
+  def max_hp_at_level(%Monster{} = monster, level) do
+    max_hp_at_level(monster, level - 1) + 10 + level / 2.42
   end
 
   def changeset(%Monster{} = monster, params \\ %{}) do
@@ -225,6 +233,7 @@ defmodule ApathyDrive.Monster do
       |> load_abilities()
       |> load_traits()
       |> load_drops()
+      |> load_power_level()
       |> TimerManager.send_after({:heartbeat, 100, {:heartbeat, ref}})
     end
   end
@@ -261,12 +270,17 @@ defmodule ApathyDrive.Monster do
     |> load_abilities()
     |> load_traits()
     |> load_drops()
+    |> load_power_level()
     |> TimerManager.send_after({:heartbeat, 100, {:heartbeat, ref}})
   end
 
   def spawnable?(%Monster{next_spawn_at: nil}, _now), do: true
   def spawnable?(%Monster{regen_time_in_hours: nil}, _now), do: true
   def spawnable?(%Monster{next_spawn_at: time}, now), do: now >= time
+
+  def load_power_level(%Monster{} = monster) do
+    MonsterPowerLevel.load(monster)
+  end
 
   def load_traits(%Monster{id: id} = monster) do
     effect =
@@ -736,9 +750,10 @@ defmodule ApathyDrive.Monster do
     end
 
     def max_hp_at_level(%Monster{} = monster, level) do
+      base = Monster.max_hp_at_level(monster, level)
+
       health = attribute_at_level(monster, :health, level)
 
-      base = monster.base_hp
       bonus = (health - 50) * level / 16
 
       max_hp_percent = ability_value(monster, "MaxHP%")
