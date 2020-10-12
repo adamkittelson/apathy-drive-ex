@@ -749,8 +749,8 @@ defmodule ApathyDrive.Monster do
       max(willpower - 50 + mr + mr_from_percent, 0)
     end
 
-    def max_hp_at_level(%Monster{} = monster, level) do
-      base = Monster.max_hp_at_level(monster, level)
+    def max_hp_at_level(%Monster{power_level: power_level} = monster, level) do
+      base = Monster.max_hp_at_level(monster, level) * power_level.hp_multiplier
 
       health = attribute_at_level(monster, :health, level)
 
@@ -760,7 +760,7 @@ defmodule ApathyDrive.Monster do
 
       modifier = if max_hp_percent > 0, do: max_hp_percent, else: 1.0
 
-      trunc((base + bonus + ability_value(monster, "MaxHP")) * modifier)
+      IO.inspect(trunc((base + bonus + ability_value(monster, "MaxHP")) * modifier))
     end
 
     def max_mana_at_level(monster, level) do
