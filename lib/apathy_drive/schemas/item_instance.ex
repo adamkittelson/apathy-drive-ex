@@ -11,6 +11,7 @@ defmodule ApathyDrive.ItemInstance do
     field(:delete_at, :utc_datetime_usec)
     field(:uses, :integer)
     field(:getable, :boolean)
+    field(:quality, :string)
 
     # overrides name and description of an item
     # used for severed limbs

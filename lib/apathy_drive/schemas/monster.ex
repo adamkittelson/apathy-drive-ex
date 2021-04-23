@@ -386,40 +386,177 @@ defmodule ApathyDrive.Monster do
         %Monster{} = monster,
         %Character{} = character
       ) do
-    Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id, id: drop_id}, room ->
-      pity = LootPity.pity_for_character(character, drop_id)
+    room =
+      Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id, id: drop_id},
+                                          room ->
+        pity = LootPity.pity_for_character(character, drop_id)
 
-      if :rand.uniform(100) <= chance + pity do
-        Logger.info("Dropping item##{item_id} for #{character.name} in Room##{room.id}")
+        if :rand.uniform(100) <= chance + pity do
+          Logger.info("Dropping item##{item_id} for #{character.name} in Room##{room.id}")
 
-        item =
-          %ItemInstance{
-            item_id: item_id,
-            room_id: room.id,
-            character_id: nil,
-            equipped: false,
-            hidden: false,
-            level: max(1, character.level),
-            delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
-          }
-          |> Repo.insert!()
-          |> Repo.preload(:item)
-          |> Item.from_assoc()
+          item =
+            %ItemInstance{
+              item_id: item_id,
+              room_id: room.id,
+              character_id: nil,
+              equipped: false,
+              hidden: false,
+              level: max(1, character.level),
+              delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
+            }
+            |> Repo.insert!()
+            |> Repo.preload(:item)
+            |> Item.from_assoc()
 
-        Mobile.send_scroll(
-          character,
-          "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
-        )
+          Mobile.send_scroll(
+            character,
+            "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+          )
 
-        LootPity.reset_pity(character, drop_id)
-      else
-        LootPity.increase_pity(character, drop_id)
-      end
+          LootPity.reset_pity(character, drop_id)
+        else
+          LootPity.increase_pity(character, drop_id)
+        end
 
-      room
-    end)
-    # |> CraftingRecipe.drop_loot_for_character(character)
+        room
+      end)
+
+    drop_random_loot_for_character(room, monster.level, character)
+
+    IO.puts("monster level #{monster.level} killed")
+
+    room
     |> Room.load_items()
+  end
+
+  def drop_random_loot_for_character(
+        %Room{} = room,
+        monster_level,
+        %Character{} = character
+      ) do
+    items = Item.of_quality_level(monster_level)
+
+    if Enum.any?(items) and :rand.uniform(100) <= 25 do
+      item = Enum.random(items)
+      Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
+
+      quality = determine_item_quality(monster_level, item)
+
+      IO.puts("quality: #{quality}")
+
+      name =
+        case quality do
+          "superior" ->
+            "superior #{item.name}"
+
+          "low" ->
+            prefix = Enum.random(["cracked", "damaged", "low quality", "crude"])
+            "#{prefix} #{item.name}"
+
+          _ ->
+            item.name
+        end
+
+      item =
+        %ItemInstance{
+          item_id: item.id,
+          room_id: room.id,
+          name: name,
+          character_id: nil,
+          equipped: false,
+          hidden: false,
+          quality: quality,
+          level: max(1, character.level),
+          delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
+        }
+        |> Repo.insert!()
+        |> Repo.preload(:item)
+        |> Item.from_assoc()
+
+      Mobile.send_scroll(
+        character,
+        "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+      )
+    end
+  end
+
+  def determine_item_quality(monster_level, item) do
+    cond do
+      unique?(monster_level, item.quality_level) ->
+        "unique"
+
+      set?(monster_level, item.quality_level) ->
+        "set"
+
+      rare?(monster_level, item.quality_level) ->
+        "rare"
+
+      magic?(monster_level, item.quality_level) ->
+        "magic"
+
+      high?(monster_level, item.quality_level) ->
+        "superior"
+
+      normal?(monster_level, item.quality_level) ->
+        "normal"
+
+      :else ->
+        "low"
+    end
+  end
+
+  def unique?(monster_level, quality_level) do
+    magic_find = 0
+    chance = (400 - (monster_level - quality_level) / 1) * 128
+
+    chance = max(6400, trunc(chance * 100 / (100 + magic_find)))
+    IO.puts("unique chance: #{chance}")
+    IO.inspect(:rand.uniform(chance)) < 128
+  end
+
+  def set?(monster_level, quality_level) do
+    magic_find = 0
+    chance = (160 - (monster_level - quality_level) / 2) * 128
+
+    chance = max(5600, trunc(chance * 100 / (100 + magic_find)))
+    IO.puts("set chance: #{chance}")
+    IO.inspect(:rand.uniform(chance)) < 128
+  end
+
+  def rare?(monster_level, quality_level) do
+    magic_find = 0
+    chance = (100 - (monster_level - quality_level) / 2) * 128
+
+    chance = max(3200, trunc(chance * 100 / (100 + magic_find)))
+    IO.puts("rare chance: #{chance}")
+    IO.inspect(:rand.uniform(chance)) < 128
+  end
+
+  def magic?(monster_level, quality_level) do
+    magic_find = 0
+    chance = (34 - (monster_level - quality_level) / 3) * 128
+
+    chance = max(192, trunc(chance * 100 / (100 + magic_find)))
+    IO.puts("magic chance: #{chance}")
+    IO.inspect(:rand.uniform(chance)) < 128
+  end
+
+  def high?(monster_level, quality_level) do
+    magic_find = 0
+    chance = (12 - (monster_level - quality_level) / 8) * 128
+
+    chance = trunc(chance * 100 / (100 + magic_find))
+    IO.puts("high chance: #{chance}")
+    IO.inspect(:rand.uniform(chance)) < 128
+  end
+
+  def normal?(monster_level, quality_level) do
+    magic_find = 0
+    chance = (2 - (monster_level - quality_level) / 2) * 128
+
+    chance = trunc(chance * 100 / (100 + magic_find))
+    IO.puts("normal chance: #{chance}")
+    IO.inspect(:rand.uniform(chance)) < 128
   end
 
   defimpl ApathyDrive.Mobile, for: Monster do

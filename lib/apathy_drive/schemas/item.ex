@@ -112,7 +112,9 @@ defmodule ApathyDrive.Item do
     field(:room_destruct_message, :string)
     field(:global_drop_rarity, :string)
     field(:level, :integer)
+    field(:quality_level, :integer)
 
+    field(:quality, :any, virtual: true)
     field(:equipped, :boolean, virtual: true, default: false)
     field(:beacon_room_id, :any, virtual: true)
     field(:owner_id, :any, virtual: true)
@@ -289,7 +291,8 @@ defmodule ApathyDrive.Item do
         :owner_id,
         :delete_at,
         :uses,
-        :beacon_room_id
+        :beacon_room_id,
+        :quality
       ])
 
     values =
@@ -327,6 +330,12 @@ defmodule ApathyDrive.Item do
       |> ItemTrait.load_traits()
 
     Systems.Effect.add(item, item_traits)
+  end
+
+  def of_quality_level(level) do
+    __MODULE__
+    |> Ecto.Query.where(quality_level: ^level)
+    |> ApathyDrive.Repo.all()
   end
 
   def match_by_name(name) do
@@ -427,19 +436,32 @@ defmodule ApathyDrive.Item do
 
   def color(%Item{type: type} = item, _opts)
       when type in ["Armour", "Shield", "Weapon"] do
-    count = Enchantment.count(item)
+    case item.quality do
+      "unique" ->
+        "#908858"
 
-    cond do
-      count >= 3 ->
-        "darkmagenta"
+      "set" ->
+        "#00c400"
 
-      count >= 2 ->
-        "blue"
+      "rare" ->
+        "yellow"
 
-      count >= 1 ->
-        "chartreuse"
+      "magic" ->
+        "#4850B8"
 
-      :else ->
+      "crafted" ->
+        "orange"
+
+      "normal" ->
+        "white"
+
+      "superior" ->
+        "#FFFFFF"
+
+      "low" ->
+        "grey"
+
+      _ ->
         "teal"
     end
   end
