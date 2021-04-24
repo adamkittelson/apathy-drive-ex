@@ -4,6 +4,7 @@ defmodule ApathyDrive.Monster do
 
   alias ApathyDrive.{
     Ability,
+    Affix,
     Aggression,
     AI,
     ChannelHistory,
@@ -444,33 +445,35 @@ defmodule ApathyDrive.Monster do
 
       IO.puts("quality: #{quality}")
 
-      name =
-        case quality do
-          "superior" ->
-            "superior #{item.name}"
-
-          "low" ->
-            prefix = Enum.random(["cracked", "damaged", "low quality", "crude"])
-            "#{prefix} #{item.name}"
-
-          _ ->
-            item.name
-        end
-
-      item =
+      item_instance =
         %ItemInstance{
           item_id: item.id,
           room_id: room.id,
-          name: name,
           character_id: nil,
           equipped: false,
           hidden: false,
+          name: item.name,
           quality: quality,
-          level: max(1, character.level),
+          level: max(1, monster_level),
           delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
         }
         |> Repo.insert!()
         |> Repo.preload(:item)
+
+      # magic_level 0 for now
+      affix_level = affix_level(item.quality_level, monster_level, 0)
+
+      {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+
+      name = item_name(item_instance, prefixes, suffixes)
+
+      item_instance =
+        item_instance
+        |> Ecto.Changeset.change(%{name: name})
+        |> Repo.update!()
+
+      item =
+        item_instance
         |> Item.from_assoc()
 
       Mobile.send_scroll(
@@ -478,6 +481,92 @@ defmodule ApathyDrive.Monster do
         "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
       )
     end
+  end
+
+  def affix_level(quality_level, monster_level, magic_level) do
+    monster_level = min(monster_level, 99)
+
+    monster_level = max(quality_level, monster_level)
+
+    affix_level =
+      if magic_level > 0 do
+        monster_level + magic_level
+      else
+        if monster_level < 99 - quality_level / 2 do
+          monster_level - div(quality_level, 2)
+        else
+          2 * monster_level - 99
+        end
+      end
+
+    min(affix_level, 99)
+  end
+
+  def item_affixes(%ItemInstance{quality: "magic"} = item_instance, affix_level) do
+    case :rand.uniform(4) do
+      4 ->
+        {[generate_prefix(item_instance, affix_level)],
+         [generate_suffix(item_instance, affix_level)]}
+
+      3 ->
+        {[generate_prefix(item_instance, affix_level)], []}
+
+      _ ->
+        {[], [generate_suffix(item_instance, affix_level)]}
+    end
+  end
+
+  def item_affixes(%ItemInstance{}, _affix_level) do
+    {[], []}
+  end
+
+  def generate_prefix(_item_instance, affix_level) do
+    prefix =
+      affix_level
+      |> Affix.prefix_for_level()
+
+    prefix.name
+  end
+
+  def generate_suffix(_item_instance, affix_level) do
+    suffix =
+      affix_level
+      |> Affix.suffix_for_level()
+
+    suffix.name
+  end
+
+  def item_name(%ItemInstance{quality: "superior"} = item, _prefixes, _suffixes) do
+    "superior #{item.name}"
+  end
+
+  def item_name(%ItemInstance{quality: "low"} = item, _prefixes, _suffixes) do
+    prefix = Enum.random(["cracked", "damaged", "low quality", "crude"])
+    "#{prefix} #{item.name}"
+  end
+
+  def item_name(%ItemInstance{quality: "magic"} = item, prefixes, suffixes) do
+    prefix =
+      if Enum.any?(prefixes) do
+        Enum.random(prefixes)
+      else
+        ""
+      end
+
+    suffix =
+      if Enum.any?(suffixes) do
+        Enum.random(suffixes)
+      else
+        ""
+      end
+
+    "#{prefix} #{item.name} #{suffix}"
+    |> String.trim()
+    |> String.downcase()
+  end
+
+  def item_name(%ItemInstance{quality: _} = item, _prefixes, _suffixes) do
+    item.name
   end
 
   def determine_item_quality(monster_level, item) do
