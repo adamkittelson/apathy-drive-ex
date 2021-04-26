@@ -114,6 +114,7 @@ defmodule ApathyDrive.Item do
     field(:level, :integer)
     field(:quality_level, :integer)
 
+    field(:affix_traits, :any, virtual: true, default: [])
     field(:quality, :any, virtual: true)
     field(:equipped, :boolean, virtual: true, default: false)
     field(:beacon_room_id, :any, virtual: true)
@@ -282,6 +283,8 @@ defmodule ApathyDrive.Item do
   end
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
+    ii = Repo.preload(ii, :affix_traits)
+
     values =
       ii
       |> Map.take([
@@ -292,7 +295,8 @@ defmodule ApathyDrive.Item do
         :delete_at,
         :uses,
         :beacon_room_id,
-        :quality
+        :quality,
+        :affix_traits
       ])
 
     values =

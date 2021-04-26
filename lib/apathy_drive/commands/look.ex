@@ -406,6 +406,45 @@ defmodule ApathyDrive.Commands.Look do
     %{dps: dps, min_damage: min_damage, max_damage: max_damage, ability: ability}
   end
 
+  def affix_trait_descriptions(item) do
+    item.affix_traits
+    |> Enum.map(& &1.description)
+    |> Enum.join("\n")
+  end
+
+  def look_at_item(%Character{} = character, %Item{type: "Armour"} = item) do
+    skill = Item.skill_for_character(character, item)
+
+    modifier =
+      if skill == 0 do
+        0.1
+      else
+        skill / character.level
+      end
+
+    traits =
+      item.effects
+      |> Map.values()
+      |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
+      |> Ability.process_duration_traits(character, character, nil)
+      |> Map.put_new("AC", 0)
+      |> update_in(["AC"], &trunc(&1 * modifier))
+      |> Map.put_new("MR", 0)
+      |> update_in(["MR"], &trunc(&1 * modifier))
+
+    ac_from_percent = Ability.ac_for_mitigation_at_level(traits["AC"])
+
+    item = """
+    <p class='item'>
+      #{Item.colored_name(item)}
+      Defense: #{ac_from_percent}
+      <span style='color: #4850B8'>#{affix_trait_descriptions(item)}</span>
+    </p>
+    """
+
+    Mobile.send_scroll(character, item)
+  end
+
   def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
     ability = Character.ability_for_weapon(character, item)
     damage = weapon_damage(character, ability)

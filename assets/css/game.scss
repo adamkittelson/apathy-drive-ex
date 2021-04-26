@@ -14,6 +14,12 @@ a.autolink {
 
 .container {margin-left: 25px;}
 
+p.item {
+  text-align: center;
+  width: 500px;
+  padding-right: 0px !important;
+}
+
 #scroll-container {
   position: fixed;
   display: flex;
