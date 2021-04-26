@@ -13,6 +13,8 @@ defmodule ApathyDrive.Affix do
     field(:frequency, :integer)
     field(:group, :integer)
 
+    has_many(:affixes_traits, ApathyDrive.AffixTrait)
+
     timestamps()
   end
 

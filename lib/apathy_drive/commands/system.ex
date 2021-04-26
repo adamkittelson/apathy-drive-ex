@@ -54,6 +54,14 @@ defmodule ApathyDrive.Commands.System do
     room
   end
 
+  def system(%Room{} = room, character, ["random_item", level, quality]) do
+    {level, ""} = Integer.parse(level)
+
+    room
+    |> random_item(character.ref, level, quality)
+    |> Room.load_items()
+  end
+
   def system(%Room{} = room, character, ["give_item" | item_id_or_name]) do
     item_id_or_name = Enum.join(item_id_or_name, " ")
 

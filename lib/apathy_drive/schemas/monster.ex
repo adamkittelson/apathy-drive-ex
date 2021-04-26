@@ -433,15 +433,16 @@ defmodule ApathyDrive.Monster do
   def drop_random_loot_for_character(
         %Room{} = room,
         monster_level,
-        %Character{} = character
+        %Character{} = character,
+        quality \\ nil
       ) do
     items = Item.of_quality_level(monster_level)
 
-    if Enum.any?(items) and :rand.uniform(100) <= 25 do
+    if Enum.any?(items) and (quality || :rand.uniform(100) <= 25) do
       item = Enum.random(items)
       Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
 
-      quality = determine_item_quality(monster_level, item)
+      quality = quality || determine_item_quality(monster_level, item)
 
       IO.puts("quality: #{quality}")
 
@@ -480,6 +481,8 @@ defmodule ApathyDrive.Monster do
         character,
         "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
       )
+    else
+      room
     end
   end
 
@@ -520,20 +523,70 @@ defmodule ApathyDrive.Monster do
     {[], []}
   end
 
-  def generate_prefix(_item_instance, affix_level) do
+  def generate_prefix(item_instance, affix_level) do
     prefix =
       affix_level
       |> Affix.prefix_for_level()
+      |> Repo.preload(:affixes_traits)
+      |> IO.inspect()
 
-    prefix.name
+    if prefix.affixes_traits == [] do
+      generate_prefix(item_instance, affix_level)
+    else
+      prefix.affixes_traits
+      |> Enum.each(fn at ->
+        val = affix_value(at.value)
+
+        %ApathyDrive.ItemInstanceAffixTrait{
+          affix_traits_id: at.id,
+          item_instance_id: item_instance.id,
+          value: val,
+          description: affix_description(at.description, val)
+        }
+        |> Repo.insert!()
+      end)
+
+      prefix.name
+    end
   end
 
-  def generate_suffix(_item_instance, affix_level) do
+  def generate_suffix(item_instance, affix_level) do
     suffix =
       affix_level
       |> Affix.suffix_for_level()
+      |> Repo.preload(:affixes_traits)
+      |> IO.inspect()
 
-    suffix.name
+    if suffix.affixes_traits == [] do
+      generate_suffix(item_instance, affix_level)
+    else
+      suffix.affixes_traits
+      |> Enum.each(fn at ->
+        val = affix_value(at.value)
+
+        %ApathyDrive.ItemInstanceAffixTrait{
+          affix_traits_id: at.id,
+          item_instance_id: item_instance.id,
+          value: val,
+          description: affix_description(at.description, val)
+        }
+        |> Repo.insert!()
+      end)
+
+      suffix.name
+    end
+  end
+
+  def affix_description(description, val) when is_integer(val) do
+    ApathyDrive.Text.interpolate(description, %{"amount" => val})
+  end
+
+  def affix_value(%{"min" => min, "max" => max}) do
+    Enum.random(min..max)
+  end
+
+  def affix_value(value) when is_integer(value) do
+    value
   end
 
   def item_name(%ItemInstance{quality: "superior"} = item, _prefixes, _suffixes) do
