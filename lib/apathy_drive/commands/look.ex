@@ -413,31 +413,10 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def look_at_item(%Character{} = character, %Item{type: "Armour"} = item) do
-    skill = Item.skill_for_character(character, item)
-
-    modifier =
-      if skill == 0 do
-        0.1
-      else
-        skill / character.level
-      end
-
-    traits =
-      item.effects
-      |> Map.values()
-      |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
-      |> Ability.process_duration_traits(character, character, nil)
-      |> Map.put_new("AC", 0)
-      |> update_in(["AC"], &trunc(&1 * modifier))
-      |> Map.put_new("MR", 0)
-      |> update_in(["MR"], &trunc(&1 * modifier))
-
-    ac_from_percent = Ability.ac_for_mitigation_at_level(traits["AC"])
-
     item = """
     <p class='item'>
       #{Item.colored_name(item, titleize: true)}
-      Defense: #{ac_from_percent}
+      Defense: #{item.ac}
       <span style='color: #4850B8'>#{affix_trait_descriptions(item)}</span>
     </p>
     """

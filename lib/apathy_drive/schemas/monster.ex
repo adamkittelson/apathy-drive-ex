@@ -438,13 +438,18 @@ defmodule ApathyDrive.Monster do
       ) do
     items = Item.of_quality_level(monster_level)
 
-    if Enum.any?(items) and (quality || :rand.uniform(100) <= 25) do
+    roll = :rand.uniform(100)
+    IO.puts("roll: #{roll}")
+
+    if Enum.any?(items) and (quality || roll <= 25) do
       item = Enum.random(items)
       Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
 
       quality = quality || determine_item_quality(monster_level, item)
 
       IO.puts("quality: #{quality}")
+
+      ac = ac_for_item(item, quality)
 
       item_instance =
         %ItemInstance{
@@ -453,6 +458,7 @@ defmodule ApathyDrive.Monster do
           character_id: nil,
           equipped: false,
           hidden: false,
+          ac: ac,
           name: item.name,
           quality: quality,
           level: max(1, monster_level),
@@ -484,6 +490,15 @@ defmodule ApathyDrive.Monster do
     else
       room
     end
+  end
+
+  def ac_for_item(item, "low") do
+    ac = Enum.random(item.min_ac..item.max_ac)
+    trunc(ac * 0.75)
+  end
+
+  def ac_for_item(item, _quality) do
+    Enum.random(item.min_ac..item.max_ac)
   end
 
   def affix_level(quality_level, monster_level, magic_level) do

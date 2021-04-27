@@ -115,7 +115,7 @@ defmodule ApathyDrive.Item do
     field(:quality_level, :integer)
     field(:min_ac, :integer)
     field(:max_ac, :integer)
-    field(:max_sockets)
+    field(:max_sockets, :integer)
     field(:required_str, :integer)
     field(:magic_level, :integer)
 
@@ -301,7 +301,8 @@ defmodule ApathyDrive.Item do
         :uses,
         :beacon_room_id,
         :quality,
-        :affix_traits
+        :affix_traits,
+        :ac
       ])
 
     values =
@@ -343,7 +344,7 @@ defmodule ApathyDrive.Item do
 
   def of_quality_level(level) do
     __MODULE__
-    |> Ecto.Query.where(quality_level: ^level)
+    |> Ecto.Query.where([i], i.quality_level <= ^level and i.quality_level >= ^level - 3)
     |> ApathyDrive.Repo.all()
   end
 
