@@ -505,6 +505,31 @@ defmodule ApathyDrive.Monster do
     min(affix_level, 99)
   end
 
+  def item_affixes(
+        %ItemInstance{quality: "superior", item: %Item{type: "Armour"}} = item_instance,
+        _affix_level
+      ) do
+    affix =
+      Affix
+      |> Repo.get_by(name: "superior armor")
+      |> Repo.preload(:affixes_traits)
+
+    affix.affixes_traits
+    |> Enum.each(fn at ->
+      val = affix_value(at.value)
+
+      %ApathyDrive.ItemInstanceAffixTrait{
+        affix_traits_id: at.id,
+        item_instance_id: item_instance.id,
+        value: val,
+        description: affix_description(at.description, val)
+      }
+      |> Repo.insert!()
+    end)
+
+    {[], []}
+  end
+
   def item_affixes(%ItemInstance{quality: "magic"} = item_instance, affix_level) do
     case :rand.uniform(4) do
       4 ->
