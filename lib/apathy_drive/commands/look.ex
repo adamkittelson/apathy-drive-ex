@@ -436,7 +436,7 @@ defmodule ApathyDrive.Commands.Look do
 
     item = """
     <p class='item'>
-      #{Item.colored_name(item)}
+      #{Item.colored_name(item, titleize: true)}
       Defense: #{ac_from_percent}
       <span style='color: #4850B8'>#{affix_trait_descriptions(item)}</span>
     </p>

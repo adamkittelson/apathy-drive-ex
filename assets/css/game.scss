@@ -14,10 +14,12 @@ a.autolink {
 
 .container {margin-left: 25px;}
 
-p.item {
+p.item, span.item {
   text-align: center;
   width: 500px;
   padding-right: 0px !important;
+  font-family: 'exocet-blizzard-mixed-caps-medium', Helvetica, Arial, Verdana, sans-serif;
+  margin-top: -20px;
 }
 
 #scroll-container {

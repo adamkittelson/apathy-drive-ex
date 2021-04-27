@@ -113,6 +113,11 @@ defmodule ApathyDrive.Item do
     field(:global_drop_rarity, :string)
     field(:level, :integer)
     field(:quality_level, :integer)
+    field(:min_ac, :integer)
+    field(:max_ac, :integer)
+    field(:max_sockets)
+    field(:required_str, :integer)
+    field(:magic_level, :integer)
 
     field(:affix_traits, :any, virtual: true, default: [])
     field(:quality, :any, virtual: true)
@@ -636,7 +641,16 @@ defmodule ApathyDrive.Item do
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 
+    name = if opts[:titleize], do: titleize(name), else: name
+
     "<span style='color: #{color(item, opts)};'>#{name}</span>"
+  end
+
+  def titleize(string) do
+    string
+    |> String.split()
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join(" ")
   end
 
   def cost_in_copper(%Item{cost_currency: nil} = item) do
